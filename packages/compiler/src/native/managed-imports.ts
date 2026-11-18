@@ -220,6 +220,10 @@ export function resolveManagedPointers(
     native.managedImports.length === 0
   )
     return reject("Expected an unresolved managed module");
+  // Callback thunks are AOT-only: their registry range and callback key
+  // are installed by image startup, never for published live code.
+  if (native.callbackThunks !== undefined)
+    return reject("Live code cannot contain callback thunks");
   const brand = native.functionDescriptorImport;
   const needsBrand = native.managedImports.some(
     (request) =>

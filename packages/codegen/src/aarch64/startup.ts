@@ -12,6 +12,7 @@ import {
   nativeStackLimitOffset,
   nativeStackMapRegistryEntryBytes,
   nativeStackMapRegistryHeaderBytes,
+  nativeStackMapTransitionTable,
   nativeStackMapRegistryOffset,
   type PosixHostABI,
 } from "@tint/abi/host";
@@ -152,6 +153,20 @@ export interface HostedCode {
    * target has one. */
   readonly processStartUnwind?: UnwindRange | undefined;
   readonly diagnostics?: HostedDiagnostics | undefined;
+  /** Writable data the program's callbacks share (docs/native-ffi.md,
+   * "Callbacks"): the pthread key under which each thread's callback state
+   * is found (created at startup), and the code sites addressing it. */
+  readonly callbackData?:
+    | {
+        readonly byteLength: number;
+        readonly references: readonly {
+          readonly offset: number;
+          readonly rd: number;
+          readonly scratch: number;
+          readonly target: number;
+        }[];
+      }
+    | undefined;
 }
 export type HostEmission =
   | { readonly ok: true; readonly value: HostedCode }
@@ -291,6 +306,18 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     codeLength: number;
     tableOffset: number;
   }[] = [];
+  // Callback entry thunks first: the walk takes the first range holding a
+  // return address, and the thunks lie inside the program's range. Their
+  // table word is the transition sentinel (docs/gc-stack-maps.md,
+  // "Transition records").
+  const callbackThunks = request.program.native.callbackThunks;
+  if (callbackThunks !== undefined)
+    staticStackMaps.push({
+      module: 2,
+      codeOffset: callbackThunks.offset,
+      codeLength: callbackThunks.byteLength,
+      tableOffset: -1,
+    });
   for (let index = 0; index < 3; index++) {
     const native =
       index === 0
@@ -337,6 +364,14 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       entry: string;
     }[] = [],
     dataReferences: {
+      offset: number;
+      rd: number;
+      scratch: number;
+      target: number;
+    }[] = [],
+    // Sites addressing the callback key word (docs/native-ffi.md,
+    // "Callbacks"), in the callback data after the diagnostic state.
+    callbackKeyReferences: {
       offset: number;
       rd: number;
       scratch: number;
@@ -724,6 +759,22 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       offset: nativeArrayDataOffset,
     });
   }
+  // Callback thunks find each thread's callback state under one pthread
+  // key, created here before any managed code (or agent) runs.
+  if (request.program.native.callbackThunks !== undefined) {
+    callbackKeyReferences.push({
+      offset: instructions.length * 4,
+      rd: 0,
+      scratch: 17,
+      target: 0,
+    });
+    pointer(0);
+    imm(1, 0);
+    foreign("pthread_key_create");
+    imm(10, 0);
+    compare(0, 10);
+    branch("runtime-failure", "ne");
+  }
   // Publish the registry before any managed code runs. Mapped control
   // storage is zero: the walk start and unused entries need no stores.
   address(10, 20, stackMapRegistry);
@@ -741,7 +792,8 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     emit({ op: "str", width: 64, rt: 11, rn: 10, offset: entry });
     imm(11, table.codeLength);
     emit({ op: "str", width: 64, rt: 11, rn: 10, offset: entry + 8 });
-    local(11, table.module, table.tableOffset);
+    if (table.tableOffset < 0) imm(11, nativeStackMapTransitionTable);
+    else local(11, table.module, table.tableOffset);
     emit({ op: "str", width: 64, rt: 11, rn: 10, offset: entry + 16 });
   }
   // Diagnostics thunks (signposts) sit between managed frames and hold no
@@ -1215,6 +1267,40 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     code.set(module.code, base);
     for (const fixup of module.imports) {
       if (fixup === undefined) throw "host import invariant";
+      // Callbacks (docs/native-ffi.md, "Callbacks"): a thunk's entry is a
+      // program code address; the slot table is writable image data.
+      const name = fixup.target.name;
+      if (name.startsWith("tint:callback-thunk:")) {
+        const slot = Number(name.slice(20));
+        let thunkOffset = -1;
+        for (const thunk of module.callbackThunks?.thunks ?? []) {
+          if (thunk === undefined) throw "callback thunk invariant";
+          if (thunk.slot === slot) thunkOffset = thunk.offset;
+        }
+        if (thunkOffset < 0)
+          return { ok: false, error: "unknown callback thunk " + name };
+        const patched = patchRelativeAddress(code, {
+          offset: base + fixup.offset,
+          rd: fixup.rd,
+          scratch: fixup.scratch,
+          targetOffset: base + thunkOffset,
+        });
+        if (!patched.ok)
+          return {
+            ok: false,
+            error: "callback thunk relocation: " + patched.error,
+          };
+        continue;
+      }
+      if (name === "tint:callback-key") {
+        callbackKeyReferences.push({
+          offset: base + fixup.offset,
+          rd: fixup.rd,
+          scratch: fixup.scratch,
+          target: 0,
+        });
+        continue;
+      }
       if (fixup.target.name === "tint:collector-worker-entry") {
         if (collectorWorkerOffset === undefined)
           throw "collector worker thunk invariant";
@@ -1471,6 +1557,11 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       },
       processStartUnwind,
       diagnostics: hostedDiagnostics,
+      callbackData:
+        callbackKeyReferences.length === 0 &&
+        program.callbackThunks === undefined
+          ? undefined
+          : { byteLength: 16, references: callbackKeyReferences },
     },
   };
 }

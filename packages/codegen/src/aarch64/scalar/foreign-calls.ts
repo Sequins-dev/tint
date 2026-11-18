@@ -6,7 +6,11 @@ import {
   type CTarget,
   type CType,
 } from "@tint/abi/c";
-import { dynamicCallFrame, type ForeignCall } from "@tint/ir/scalar";
+import {
+  transitionBytes,
+  dynamicCallFrame,
+  type ForeignCall,
+} from "@tint/ir/scalar";
 /** Outgoing frame use of one c-call: the classified layout, the frame
  * offset of each indirect argument's caller-owned copy (-1 otherwise), the
  * byte size checked for each record or record-pointee operand (0: none)
@@ -18,6 +22,9 @@ export interface ForeignCallPlan {
   /** A record result's size (its trailing buffer operand's minimum). */
   readonly resultBytes: number;
   readonly frameBytes: number;
+  /** A may-callback call's transition record offset in the outgoing area
+   * (after the stack arguments and copies), else -1. */
+  readonly transition: number;
 }
 export type ForeignCallPlanResult =
   | { readonly ok: true; readonly value: ForeignCallPlan }
@@ -43,7 +50,14 @@ export function planForeignCall(
         copies: layout.arguments.map(() => -1),
         minimums: layout.arguments.map(() => 0),
         resultBytes: 0,
-        frameBytes: dynamicCallFrame.stackCapacity,
+        // A may-callback trampoline's transition follows the stack area.
+        frameBytes:
+          dynamicCallFrame.stackCapacity +
+          (call.mayCallback === true
+            ? transitionBytes(dynamicCallFrame.callbackOperands)
+            : 0),
+        transition:
+          call.mayCallback === true ? dynamicCallFrame.stackCapacity : -1,
       },
     };
   const copies: number[] = [],
@@ -70,9 +84,25 @@ export function planForeignCall(
     call.signature.result.kind === "record"
       ? sizeOf(call.signature.result, target)
       : 0;
+  let transition = -1;
+  if (call.mayCallback === true) {
+    // The record holds one word per callback operand.
+    let callbacks = 0;
+    for (const operand of call.operands)
+      if (operand === "callback") callbacks++;
+    transition = Math.ceil(frame / 16) * 16;
+    frame = transition + transitionBytes(callbacks);
+  }
   return {
     ok: true,
-    value: { layout, copies, minimums, resultBytes, frameBytes: frame },
+    value: {
+      layout,
+      copies,
+      minimums,
+      resultBytes,
+      frameBytes: frame,
+      transition,
+    },
   };
 }
 /** The C scalar a `number` operand or result converts as: raw pointers

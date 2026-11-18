@@ -111,7 +111,19 @@ declare module "tint:ffi/unsafe" {
     index: number,
     image: Uint8Array,
   ): void;
-  /** One leaf call through the universal trampoline. */
+  /** A dynamic callback: C's arguments as numbers (bools 0 or 1), its
+   * result as a number (ignored for void). */
+  export type DynamicCallback = (args: number[]) => number;
+  /** Pass `callback` as pointer argument `index`; C may call it with
+   * prototype `signature` during this function's calls (which become
+   * may-callback calls). What it throws is rethrown after the call. */
+  export function setCallback(
+    fn: ForeignFunction,
+    index: number,
+    signature: ForeignSignature,
+    callback: DynamicCallback,
+  ): void;
+  /** One call through the universal trampoline. */
   export function invoke(fn: ForeignFunction): void;
   /** Result readers for the last call. */
   export function resultNumber(fn: ForeignFunction): number;

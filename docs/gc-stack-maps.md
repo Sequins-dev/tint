@@ -146,3 +146,49 @@ The tests are `tools/native-gc-stack-maps.test.ts` (native, many collections in
 a 4 MiB heap, with register-held references through chains of frames that
 save all, some or none of the registers), `packages/codegen/test/scalar-stack-maps.test.ts`
 and the runtime scan tests.
+
+## Transition records
+
+C callbacks ([native FFI](native-ffi.md#callbacks)) put C frames between
+Tint frames: a may-callback call's caller, C (which need not keep frame
+pointers and saves x19–x28 wherever it likes), a callback thunk, then the
+callback's Tint frames. The walk never reads C frames. Instead:
+
+- The registry lists the callback thunks as one range whose table word is 1
+  (`nativeStackMapTransitionTable`), the transition sentinel. Startup
+  registers it first; `registerStackMaps` cannot register it (it requires an
+  8-aligned table) and code storage refuses live code that carries thunks.
+- A thunk's frame holds, at frame pointer + 48
+  (`nativeCallbackThunkTransitionOffset`), the address of the transition
+  record of the may-callback call it entered through. The record, pushed
+  into that call's outgoing argument area before `blr`, begins with the
+  caller's frame pointer and the call's return address, so it is itself a
+  frame record:
+
+      +0 caller frame pointer, +8 return address of the may-callback call,
+      +16 previous record, +24 entered, +32 thread, +40 context,
+      +48 dispatcher closure, +56 callback closures
+
+- When a frame returns into the transition range, the walk
+  (`tracing/transitions.ts`, `transitionFrame`, called from
+  `walkNativeStack`) reads the record address from the thunk frame and
+  resumes there: the next frame visited is the may-callback caller's, at
+  the call's safepoint. The record must be 16-aligned and above the thunk
+  frame (toward the stack base), else the walk fails as malformed; an
+  unreadable word fails it as unreadable. The frame-size chain check is
+  skipped across it, as after a transparent frame, and every register save
+  location is forgotten: values in x19–x28 there are C's.
+- So nothing below a record may depend on register saves: a function with a
+  may-callback call saves all of x19–x28 in its prologue and keeps no
+  reference in a register across the call (codegen asserts it); references
+  live across it, including the record's closure words, are frame slots in
+  the call's map, which collections inside callbacks update.
+
+Records nest (C → TS → C → TS): each thread's state block links them
+through `previous`, and each thunk frame names its own record, so the walk
+crosses each C region in turn; `maxFrames` still bounds it. The walk reads
+only words and keeps plain locals (no allocation). Tests:
+`packages/native-runtime/test/native-tracing-transitions.test.ts` (crossing,
+the frame bound, malformed and unreadable records) and the native callback
+fixtures (collections two transitions deep, under the generational and
+copying collectors).

@@ -27,7 +27,11 @@ import {
   adoptExternal,
   externalAddress,
   retargetExternal,
+  stableBytes as stableArray,
+  callbackKey,
 } from "./primitives.ts";
+import { pthread_setspecific } from "tint:c/dl";
+import { bytesAt } from "./unsafe.ts";
 import { createWeakSlot, weakSlotKey } from "../intrinsics/weak.ts";
 import { collectGarbage } from "../intrinsics/memory.ts";
 
@@ -193,4 +197,143 @@ export function external(byteLength: number): Uint8Array {
   registry.addresses.push(address);
   registry.cells.push(createWeakSlot(view, undefined, false));
   return view;
+}
+/** Callback state for may-callback calls (docs/native-ffi.md, "Callbacks"):
+ * the calling mutator's state block, whose first word is the innermost
+ * transition record (0: no may-callback call is running). It is external
+ * storage, so callback thunks read it at a fixed address; one block per
+ * runtime instance (each mutator has its own module instances), never
+ * released. */
+interface CallbackState {
+  block: Uint8Array | undefined;
+}
+const callbacks: CallbackState = { block: undefined };
+export function callbackState(): Uint8Array {
+  const known = callbacks.block;
+  if (known !== undefined) return known;
+  const block = allocate(16);
+  // Thunks find it under the image's key (created at startup), on this
+  // thread only: a callback on another thread finds none and traps.
+  const word = bytesAt(callbackKey(), 8);
+  let key = 0;
+  for (let index = 7; index >= 0; index--) key = key * 256 + (word[index] ?? 0);
+  if (pthread_setspecific(key, address(block)) !== 0)
+    throw new RangeError("callback state registration failed");
+  callbacks.block = block;
+  return block;
+}
+/** Whether `view`'s data never moves (external storage or foreign memory):
+ * only such data may stay reachable from C across a may-callback call,
+ * during which collections run. */
+export function stableBytes(view: Uint8Array): boolean {
+  return stableArray(view);
+}
+/** Registered callbacks (docs/native-ffi.md, "Callbacks"): TypeScript
+ * functions C keeps a pointer to and calls during later may-callback calls
+ * (zlib's allocator). Each is an adapter taking up to seven numbers; its
+ * C function pointer is a registered thunk for its id (`registeredCallbacks`
+ * ids at a time), which calls the dispatcher every may-callback call
+ * passes. What a registered callback throws is rethrown when the
+ * may-callback call that ran it returns; C gets 0. */
+export type RegisteredCallback = (
+  a0: number,
+  a1: number,
+  a2: number,
+  a3: number,
+  a4: number,
+  a5: number,
+  a6: number,
+) => number;
+export type CallbackDispatcher = (
+  id: number,
+  a0: number,
+  a1: number,
+  a2: number,
+  a3: number,
+  a4: number,
+  a5: number,
+  a6: number,
+) => number;
+/** How many registered callbacks may exist at once (per mutator). */
+export const registeredCallbacks = 16;
+interface CallbackRegistry {
+  readonly functions: (RegisteredCallback | undefined)[];
+  readonly addresses: number[];
+  failed: boolean;
+  error: unknown;
+  dispatcher: CallbackDispatcher | undefined;
+}
+const registry$: CallbackRegistry = {
+  functions: [],
+  addresses: [],
+  failed: false,
+  error: undefined,
+  dispatcher: undefined,
+};
+/** Register `fn`; its id (its thunk address is noted by `noteCallback`). */
+export function registerCallback(fn: RegisteredCallback): number {
+  const functions = registry$.functions;
+  while (functions.length < registeredCallbacks) {
+    functions.push(undefined);
+    registry$.addresses.push(0);
+  }
+  for (let id = 0; id < registeredCallbacks; id++)
+    if (functions[id] === undefined) {
+      functions[id] = fn;
+      return id;
+    }
+  throw new RangeError("too many registered callbacks");
+}
+/** Record registered callback `id`'s C function pointer. */
+export function noteCallback(id: number, address: number): void {
+  registry$.addresses[id] = address;
+}
+/** Unregister the callback whose C function pointer is `address`; C must
+ * not call it afterwards (it would reach whatever reuses the id). */
+export function releaseCallback(address: number): void {
+  const addresses = registry$.addresses;
+  for (let id = 0; id < addresses.length; id++)
+    if (addresses[id] === address && registry$.functions[id] !== undefined) {
+      registry$.functions[id] = undefined;
+      addresses[id] = 0;
+      return;
+    }
+  throw new TypeError("not a registered callback");
+}
+/** The dispatcher may-callback calls pass for registered thunks. */
+export function callbackDispatcher(): CallbackDispatcher {
+  const known = registry$.dispatcher;
+  if (known !== undefined) return known;
+  const dispatcher = (
+    id: number,
+    a0: number,
+    a1: number,
+    a2: number,
+    a3: number,
+    a4: number,
+    a5: number,
+    a6: number,
+  ): number => {
+    if (registry$.failed) return 0;
+    const fn = registry$.functions[id];
+    if (fn === undefined) return 0;
+    try {
+      return fn(a0, a1, a2, a3, a4, a5, a6);
+    } catch (error) {
+      registry$.failed = true;
+      registry$.error = error;
+      return 0;
+    }
+  };
+  registry$.dispatcher = dispatcher;
+  return dispatcher;
+}
+/** Rethrow what a registered callback raised during the may-callback call
+ * that just returned. */
+export function rethrowCallbackFailure(): void {
+  if (!registry$.failed) return;
+  const error = registry$.error;
+  registry$.failed = false;
+  registry$.error = undefined;
+  throw error;
 }

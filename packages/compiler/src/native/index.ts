@@ -1710,8 +1710,11 @@ function lowerTypedProgram(request: CompileRequest): TypedLowering {
       );
     const operation = binding.operation;
     foreignBindings.push(
-      operation === "call"
-        ? { function: index, call: dynamicForeignCall() }
+      operation === "call" || operation === "call-callbacks"
+        ? {
+            function: index,
+            call: dynamicForeignCall(operation === "call-callbacks"),
+          }
         : {
             function: index,
             memory: {

@@ -13,6 +13,10 @@ dlsym, dlclose and dlerror as leaf c-calls, and dynamic calls of any C
 function address through one AOT-compiled universal trampoline. The exact
 `node:ffi` layer over them waits for the typed/untyped convergence
 ([what it needs](#what-nodeffi-needs-from-the-convergence)).
+Phase 4 implemented on both targets: C calls TypeScript through AOT
+callback thunks, scoped and registered, with collections inside callbacks,
+exceptions rethrown after the call, contract traps and dynamic callbacks
+([callbacks](#callbacks)).
 Phase 6a implemented: the clang-driven binding generator
 ([binding generator](#binding-generator)), verified on both targets and
 regenerating every hand-written binding with equal layouts and signatures.
@@ -89,30 +93,33 @@ specializations.
 
 ### Vocabulary
 
-| Declaration                               | C                                                | TypeScript value               | Notes                                                                                                                                                                                                                                                                           |
-| ----------------------------------------- | ------------------------------------------------ | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `bool`                                    | `_Bool`                                          | `boolean`                      |                                                                                                                                                                                                                                                                                 |
-| `char i8 u8 i16 u16 i32 u32`              | fixed-width integers                             | `number`                       | Exact conversion; inexact or out-of-range values trap. `char` signedness is the target's.                                                                                                                                                                                       |
-| `i64 u64 isize usize`                     | 64-bit integers                                  | `number`                       | Arguments and results must be exact numbers; a value a number cannot hold exactly traps (no silent rounding, cf. fino's `usize` bug), including the saturation bounds 2^64−1 and 2^63−1, which a float round trip alone would accept. BigInt forms come with the dynamic layer. |
-| `f32 f64`                                 | `float`, `double`                                | `number`                       | `f32` rounds like `Math.fround`.                                                                                                                                                                                                                                                |
-| `Ptr<T>`                                  | `T *` (argument)                                 | `Uint8Array`                   | The data pointer, borrowed for the call. A record pointee requires at least the record's size (checked); scalar pointees are buffers whose extent the C function defines.                                                                                                       |
-| `Address<T>`                              | `T *` (result, member, argument)                 | `number`                       | A raw address: an exact unsigned 64-bit integer. Values a number cannot hold exactly trap, never round. Only external storage has an address that stays valid across calls.                                                                                                     |
-| `(): Available<"f">`                      | `&f != NULL` (weak import)                       | `boolean`                      | Availability query: whether declared function `f`'s symbol is bound. An optional library's imports are weak and read as 0 when it is absent; the query is one load of the import slot and a comparison.                                                                         |
-| `View<R>`, `R.view(bytes)`                | `R *` as an object                               | `R`'s members as properties    | A C view ([C views](#c-views)): `v.m` is one load and `v.m = x` one store at the member's constant offset; nested records and fixed arrays are views too. `Layout<R>` constants make views. A view is a `Ptr<R>`.                                                               |
-| `viewAt(R, a)`, `arrayAt(R, a, n)`        | `R *`, `R[n]` C owns                             | `View<R>`, `View<R>[]`         | Foreign views from `tint:ffi/unsafe` ([foreign memory](#foreign-memory)): the same views over memory at an address; `bytesAt(a, n)` and `cStringAt(a)` read raw bytes and C strings.                                                                                            |
-| `CString`                                 | `const char *`                                   | `string`                       | NUL-terminated UTF-8 copy; lone surrogates become U+FFFD.                                                                                                                                                                                                                       |
-| `CStringBytes`                            | `const char *`                                   | `Uint8Array`                   | Must be nonempty and end in NUL (checked).                                                                                                                                                                                                                                      |
-| `interface R { ... }`                     | `struct R`                                       | object with R's fields         | Members in declaration order. By value: copied to/from the C image.                                                                                                                                                                                                             |
-| `extends Packed` / `Union` / `Aligned<N>` | `__attribute__((packed))`, `union`, `aligned(N)` |                                |                                                                                                                                                                                                                                                                                 |
-| `FixedArray<T, N>`                        | `T m[N]` (member)                                | `number[]` etc.                | Members only; C never passes arrays by value.                                                                                                                                                                                                                                   |
-| `const R: Layout<R>`                      |                                                  | `{ size, alignment, offsets }` | Generated from the shared layout computation.                                                                                                                                                                                                                                   |
-| `OrErrno<i32 \| i64 \| isize>`            | result                                           | `number`                       | Negative results become `-errno`, captured immediately after the call.                                                                                                                                                                                                          |
-| `Variadic<T>`                             | `...`                                            | as T                           | Marks this and all later parameters as variadic arguments of this prototype (C default promotion applies).                                                                                                                                                                      |
-| `name$variant`                            | symbol `name`                                    |                                | Several prototypes of one symbol (e.g. variadic shapes).                                                                                                                                                                                                                        |
-| `type A = T`                              | `typedef`                                        |                                |                                                                                                                                                                                                                                                                                 |
-| `const NAME: 0x20`                        | `#define NAME 0x20`                              | `number`                       | A non-negative integer header constant; the generated module exports it.                                                                                                                                                                                                        |
-| `ByTarget<{ "darwin-arm64": A; ... }>`    | per-target type or constant                      | any of the choices             | Wherever a type or constant literal goes: the build target's choice (`mode_t` is `u16` on Darwin, `u32` in glibc; `MAP_ANONYMOUS` is 0x1000 or 0x20). A target without a choice cannot use the declaration; one file serves every target.                                       |
-| `MayCallback<T>`, `Async<T>`              | call classes                                     |                                | Parsed into the model; rejected until Phases 4–5.                                                                                                                                                                                                                               |
+| Declaration                               | C                                                | TypeScript value               | Notes                                                                                                                                                                                                                                                                               |
+| ----------------------------------------- | ------------------------------------------------ | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bool`                                    | `_Bool`                                          | `boolean`                      |                                                                                                                                                                                                                                                                                     |
+| `char i8 u8 i16 u16 i32 u32`              | fixed-width integers                             | `number`                       | Exact conversion; inexact or out-of-range values trap. `char` signedness is the target's.                                                                                                                                                                                           |
+| `i64 u64 isize usize`                     | 64-bit integers                                  | `number`                       | Arguments and results must be exact numbers; a value a number cannot hold exactly traps (no silent rounding, cf. fino's `usize` bug), including the saturation bounds 2^64−1 and 2^63−1, which a float round trip alone would accept. BigInt forms come with the dynamic layer.     |
+| `f32 f64`                                 | `float`, `double`                                | `number`                       | `f32` rounds like `Math.fround`.                                                                                                                                                                                                                                                    |
+| `Ptr<T>`                                  | `T *` (argument)                                 | `Uint8Array`                   | The data pointer, borrowed for the call. A record pointee requires at least the record's size (checked); scalar pointees are buffers whose extent the C function defines.                                                                                                           |
+| `Address<T>`                              | `T *` (result, member, argument)                 | `number`                       | A raw address: an exact unsigned 64-bit integer. Values a number cannot hold exactly trap, never round. Only external storage has an address that stays valid across calls.                                                                                                         |
+| `(): Available<"f">`                      | `&f != NULL` (weak import)                       | `boolean`                      | Availability query: whether declared function `f`'s symbol is bound. An optional library's imports are weak and read as 0 when it is absent; the query is one load of the import slot and a comparison.                                                                             |
+| `View<R>`, `R.view(bytes)`                | `R *` as an object                               | `R`'s members as properties    | A C view ([C views](#c-views)): `v.m` is one load and `v.m = x` one store at the member's constant offset; nested records and fixed arrays are views too. `Layout<R>` constants make views. A view is a `Ptr<R>`.                                                                   |
+| `viewAt(R, a)`, `arrayAt(R, a, n)`        | `R *`, `R[n]` C owns                             | `View<R>`, `View<R>[]`         | Foreign views from `tint:ffi/unsafe` ([foreign memory](#foreign-memory)): the same views over memory at an address; `bytesAt(a, n)` and `cStringAt(a)` read raw bytes and C strings.                                                                                                |
+| `CString`                                 | `const char *`                                   | `string`                       | NUL-terminated UTF-8 copy; lone surrogates become U+FFFD.                                                                                                                                                                                                                           |
+| `CStringBytes`                            | `const char *`                                   | `Uint8Array`                   | Must be nonempty and end in NUL (checked).                                                                                                                                                                                                                                          |
+| `interface R { ... }`                     | `struct R`                                       | object with R's fields         | Members in declaration order. By value: copied to/from the C image.                                                                                                                                                                                                                 |
+| `extends Packed` / `Union` / `Aligned<N>` | `__attribute__((packed))`, `union`, `aligned(N)` |                                |                                                                                                                                                                                                                                                                                     |
+| `FixedArray<T, N>`                        | `T m[N]` (member)                                | `number[]` etc.                | Members only; C never passes arrays by value.                                                                                                                                                                                                                                       |
+| `const R: Layout<R>`                      |                                                  | `{ size, alignment, offsets }` | Generated from the shared layout computation.                                                                                                                                                                                                                                       |
+| `OrErrno<i32 \| i64 \| isize>`            | result                                           | `number`                       | Negative results become `-errno`, captured immediately after the call.                                                                                                                                                                                                              |
+| `Variadic<T>`                             | `...`                                            | as T                           | Marks this and all later parameters as variadic arguments of this prototype (C default promotion applies).                                                                                                                                                                          |
+| `name$variant`                            | symbol `name`                                    |                                | Several prototypes of one symbol (e.g. variadic shapes).                                                                                                                                                                                                                            |
+| `type A = T`                              | `typedef`                                        |                                |                                                                                                                                                                                                                                                                                     |
+| `const NAME: 0x20`                        | `#define NAME 0x20`                              | `number`                       | A non-negative integer header constant; the generated module exports it.                                                                                                                                                                                                            |
+| `ByTarget<{ "darwin-arm64": A; ... }>`    | per-target type or constant                      | any of the choices             | Wherever a type or constant literal goes: the build target's choice (`mode_t` is `u16` on Darwin, `u32` in glibc; `MAP_ANONYMOUS` is 0x1000 or 0x20). A target without a choice cannot use the declaration; one file serves every target.                                           |
+| `Callback<(a: T, ...) => R>`              | function pointer (argument)                      | a function                     | A TypeScript function C may call during this call ([callbacks](#callbacks)); the function is then may-callback. Parameters: scalars, bools, `Address<T>` (numbers) and `Ptr<R>` of a record with a `Layout` (a foreign `View<R>`); results: scalars, bools, `Address<T>` or `void`. |
+| `type f = Callback<...>`                  | named function-pointer type                      | `f(fn)`: a C function pointer  | Registers `fn` for C to keep (a member such as zlib's `zalloc`); `releaseCallback(pointer)` unregisters it. Members of this type hold the pointer (`Address<void>` at the ABI).                                                                                                     |
+| `MayCallback<T>`                          | call class (result)                              | as T                           | A call that may run registered callbacks though it takes none (zlib's `deflate` calling `zalloc`).                                                                                                                                                                                  |
+| `Async<T>`                                | call class                                       |                                | Parsed into the model; rejected until Phase 5.                                                                                                                                                                                                                                      |
 
 Everything else fails explicitly with a located diagnostic: unions of types,
 optional or rest parameters, bodies, `Ptr<T>` results or members (use
@@ -358,9 +365,9 @@ single-instruction functions, so availability queries inline.
 Consequences: C may use a borrowed view only until it returns (memory C
 retains, such as zlib's `z_stream` and windows, must be external storage); a
 long blocking leaf call blocks only its own context (an event-loop concern,
-solved by the async class, not a GC hazard); a C library that unexpectedly
-calls back during a leaf call is undefined behaviour until Phase 4's
-trampolines detect it.
+solved by the async class, not a GC hazard); a C library that calls back
+during a leaf call reaches a callback thunk with no may-callback call in
+progress, which traps ([callbacks](#callbacks)).
 
 ## Raw addresses
 
@@ -946,7 +953,9 @@ indirect record result). The trampoline:
 4. copies the stack words to the outgoing argument area (512 bytes reserved
    in the calling frame, like any c-call's), loads x8, d0–d7, x0–x7 and
    `blr`s the target;
-5. stores x0, x1 and d0–d3 back into the frame.
+5. stores x0, x1 and d0–d3 back into the frame; `invoke` moves them out
+   to the function's result words and restores the argument words they
+   overwrote, so arguments stay set for the next call.
 
 **Why patches.** A borrowed array may move at any safepoint. Its address is
 never computed in TypeScript (where an allocation could intervene before
@@ -973,6 +982,174 @@ collections in between, libc's `strlen` through `openProgram`, and every
 contract error. `packages/codegen/test/scalar-foreign-memory.test.ts`
 checks the emitted register loads, call, result stores, copy loop and
 patch store; `foreign-declarations.test.ts` the frame layout.
+
+## Callbacks
+
+C calls TypeScript through function pointers that are AOT-compiled entry
+thunks; there is no run-time code generation. A function with a `Callback`
+parameter is a **may-callback** call ([call classes](#call-classes-and-the-gc-invariant)):
+
+```ts
+declare module "tint:c/libsystem" {
+  import type { i32, usize, Ptr, Layout, Callback } from "tint:ffi";
+  export interface Item {
+    key: i32;
+    tag: i32;
+  }
+  export const Item: Layout<Item>;
+  export function qsort(
+    base: Ptr<Item>,
+    count: usize,
+    size: usize,
+    compare: Callback<(a: Ptr<Item>, b: Ptr<Item>) => i32>,
+  ): void;
+}
+```
+
+```ts
+import { allocate } from "tint:ffi";
+import { Item, qsort } from "tint:c/libsystem";
+const block = allocate(Item.size * count); // external storage: never moves
+// ... fill the items ...
+qsort(block, count, Item.size, (a, b) => a.key - b.key); // a, b: View<Item>
+```
+
+C keeping a callback beyond the call (zlib's allocator in `z_stream`) uses a
+named callback type, whose generated function registers a TypeScript
+function and returns its C function pointer:
+
+```ts
+// declarations
+export type alloc_func = Callback<
+  (opaque: Address<void>, items: u32, size: u32) => Address<void>
+>;
+export type free_func = Callback<
+  (opaque: Address<void>, address: Address<void>) => void
+>;
+export interface z_stream {
+  /* ... */ zalloc: alloc_func;
+  zfree: free_func; /* ... */
+}
+export function deflate(strm: Ptr<z_stream>, flush: i32): MayCallback<i32>;
+// use
+const stream = z_stream.view(block);
+stream.zalloc = alloc_func((opaque, items, size) => arena.take(items * size));
+stream.zfree = free_func((opaque, address) => arena.give(address));
+deflate(block, Z_FINISH); // may call zalloc/zfree
+releaseCallback(stream.zalloc); // from tint:ffi, once C no longer calls it
+```
+
+**Contract.**
+
+- _Lifetimes._ A callback argument is **scoped**: C may call it only during
+  the call it was passed to (qsort). A **registered** callback stays callable
+  until `releaseCallback`, but only during may-callback calls (`MayCallback<T>`
+  functions or functions with callback parameters); at most 16 are registered
+  at once (`registeredCallbacks`), and its thunk is per id and prototype.
+- _Calls made outside a may-callback call trap._ A thunk entered on a thread
+  with no may-callback call in progress (a callback C saved and called from a
+  later leaf call), while a callback of that call is already running (a leaf
+  call inside the callback that called back), or on another thread
+  (`brk #3`; nothing in the heap is touched). Callbacks from other threads
+  are Phase 5's (queued to the context); the collector's single-mutator
+  invariant holds because a callback runs only on the thread that made the
+  call, inside it.
+- _Exceptions never unwind through C._ The generated adapter catches what
+  the TypeScript function throws, records it, and returns 0 to C; later
+  calls of that callback during the same call return 0 without running.
+  After C returns, the wrapper rethrows the first recorded exception (a
+  scoped callback's, then a registered one's). Nested calls compose: an
+  exception raised two levels down is rethrown by the inner call into the
+  outer callback, which records it in turn. C sees a result of 0 (zlib a
+  failed allocation, qsort "equal").
+- _Results are checked._ An integer or address result outside its C type's
+  range (or not an integer) is a TypeError, recorded like any exception.
+- _C may hold only non-moving memory._ Collections run inside callbacks
+  (generational and copying collectors move objects), so a may-callback
+  call's `Ptr` arguments must be external storage or foreign memory
+  (`stableBytes`), else TypeError before the call. Movable arrays are not
+  pinned or copied: copy-in/copy-out would change aliasing that C relies on
+  (qsort sorts in place) and pinning would add a collector feature for no
+  current user.
+- Callbacks take at most seven parameters (eight for scoped ones), all scalars,
+  bools, addresses or `Ptr<R>` record views; records by value are rejected
+  explicitly. Optional libraries take no callbacks yet.
+
+**Mechanics.**
+
+- _The may-callback c-call._ Its first two operands are the calling thread's
+  callback state block (`callbackState()`, external storage) and the
+  registered-callback dispatcher (a closure). Before `blr`, the call pushes a
+  **transition record** into its outgoing argument area and links it into
+  the state block; after it returns it unlinks it:
+
+      +0  caller frame pointer (x29)      +32 thread (TPIDRRO_EL0 / TPIDR_EL0)
+      +8  return address of the blr       +40 context (x0 of the caller)
+      +16 previous record                 +48 dispatcher closure
+      +24 entered (a callback is running) +56 callback closures, 8 bytes each
+
+  The record is `ceil((56 + 8n) / 16) * 16` bytes; its closure words are
+  listed as references in the call's stack map, so collections inside
+  callbacks update them. The call is a safepoint whose return address is
+  exactly the record's return address. A function containing one saves all
+  of x19–x28 in its prologue and keeps no reference in a register across
+  it (codegen asserts this), so the walk never needs C's register saves.
+  ([GC stack maps](gc-stack-maps.md#transition-records) has the walk.)
+
+- _Thunks._ Each callback prototype gets AOT thunks per (prototype, operand
+  position), registered thunks per (prototype, id), and four universal
+  thunks for the dynamic path, all in one code range after the program. A
+  thunk saves C's x0–x7/d0–d7, finds the thread's state block under a
+  pthread key that startup creates (`pthread_getspecific`; image data word
+  `tint:callback-key`), checks the innermost record (present, not entered,
+  this thread), sets `entered`, converts C's arguments to numbers
+  (`classifyCCall` in reverse), calls the closure from the record with the
+  record's context, traps unless it completed normally (the adapter catches
+  everything), converts the number result to C's register and clears
+  `entered`. The registry lists the thunk range with table word 1, the
+  transition sentinel.
+- _Registered callbacks_ call the dispatcher from the record with their id;
+  the dispatcher looks the function up in `tint:ffi`'s registry.
+
+**Dynamic callbacks.** `setCallback(fn, index, signature, callback)`
+(`tint:ffi/unsafe`) passes a TypeScript function `(args: number[]) =>
+number` as pointer argument `index`, with the C prototype as data; `invoke`
+then makes a may-callback call (`callForeignCallbacks`, the universal
+trampoline's may-callback form) with up to four callbacks. Their argument
+words are patched with universal thunks' addresses (bases 9–12), which pass
+the callback their frame address; the dynamic layer decodes the saved C
+arguments with the same classification and writes the result over the saved
+x0 and d0. The frame is copied to a non-moving frame (one per nesting depth)
+for the call, since C holds addresses into its scratch area while
+collections run. This is what the `node:ffi` adapter's callback descriptors
+will use.
+
+**Costs** (measurements below): a leaf call is unchanged: functions without
+may-callback calls emit the same code (no new saves or spills; the leaf loop
+is still `adr; mov; movk; add; ldr x16; blr x16; scvtf`). A may-callback call
+adds the record push (about 15 instructions: state load, six stores, closure
+stores, link) and the unlink, saves all callee-saved registers in its
+function's prologue, and spills references to the frame across the call.
+
+**Tests.** `tools/native-callback-fixtures.ts` (native, generational and
+copying collectors): qsort over records with a `View<Item>` comparator,
+movable arrays refused, churn and collections inside callbacks with live
+outer arrays and strings that must survive and move, nested C → TS → C → TS
+with a forced collection at the innermost level, exceptions inner and
+outer, out-of-range results; the zlib allocator round trip (registered
+`zalloc`/`zfree` over an external arena, collections inside the
+allocator, an allocator exception rethrown); and the contract traps (a
+clang-built library that saves a callback and calls it from a leaf call,
+from inside a callback, and from a new thread; each must stop on `brk`
+under LLDB). `tools/native-dynamic-fixtures.ts` sorts through
+`setCallback` with collections inside, rethrows a dynamic callback's
+exception and refuses movable buffers. Unit tests: the transition walk
+(`native-tracing-transitions.test.ts`, including malformed records and the
+frame bound), the push sequence and saves (`scalar-foreign-memory.test.ts`),
+declarations and generated wrappers (`foreign-declarations.test.ts`) and the
+live-code guard (`native-managed-imports.test.ts`: published code cannot
+carry thunks; the registry also rejects table word 1 from
+`registerStackMaps`, which requires an 8-aligned table).
 
 ## What `node:ffi` needs from the convergence
 
@@ -1138,11 +1315,16 @@ revisit when profiles show it.
   to C, every creation contract, release/address rejection, collections in
   between) and `node:os` against Node, under the generational and copying
   runtimes.
+- Callbacks ([tests](#callbacks)): `tools/native-ffi.test.ts` runs the
+  callback, zlib-allocator and contract-trap fixtures natively on both
+  targets and collectors; unit tests cover the transition walk, the push
+  sequence, declarations and the live-code guard.
 - `tools/c-bindgen.test.ts`: the binding generator (rules, determinism,
   parity, facts, the layout and prototype oracle, and a native fixture
   under LLDB; [binding generator](#binding-generator)).
-- `tools/ffi-microbench.ts`, `tools/zlib-microbench.ts`: call overhead and
-  codec throughput (below), not part of `pnpm check`.
+- `tools/ffi-microbench.ts`, `tools/zlib-microbench.ts`,
+  `tools/ffi-callback-microbench.ts`: call overhead, codec throughput and
+  callback costs (below), not part of `pnpm check`.
 
 ## Measurements
 
@@ -1211,11 +1393,22 @@ convergence ([progressive lowering](progressive-lowering.md)), not design:
 | Narrowing `string \| Uint8Array` did not lower                                                                                                                                                                                               | fixed: `general-value` extracts a checked `Uint8Array`                                                                                                                                                                                                                   |
 | No typed BigInt values (`typed BigInt values are not implemented`, stage link)                                                                                                                                                               | `Address<T>` and 64-bit integers are exact numbers (or trap); BigInt at general boundaries waits for typed BigInt and for general code calling bindings                                                                                                                  |
 | `for (const x of list)` followed by a property read of `x` fails in runtime modules (`invalid property read`, `typescript/src/checker/closures.ts:3061`)                                                                                     | indexed loops (`ffi/index.ts`, `node/zlib.ts`)                                                                                                                                                                                                                           |
+| `for (const x of list)` over a `Uint8Array[]` passing `x` to a call fails (`invalid call`)                                                                                                                                                   | indexed loop (`ffi/dynamic.ts` `invoke`)                                                                                                                                                                                                                                 |
+| A `let` narrowed from `T \| undefined` and reassigned in the narrowing branch loses its type (`expected an supported numeric typed array` on a later method call)                                                                            | `const x = list[i] ?? fallback` (`ffi/dynamic.ts` callback frames)                                                                                                                                                                                                       |
+| `tint:ffi` (a retained runtime module) rejects top-level loops and non-literal module initializers                                                                                                                                           | object-literal module state initialized lazily (`callbacks`, `registry$` in `ffi/index.ts`)                                                                                                                                                                              |
 | No objects with dynamic keys (index signatures); no iteration of a `Map` (`for-of`, `keys()`: `invalid method call`, `typescript/src/checker/closures.ts:3697` handles only get/has/set/delete/clear)                                        | KNOWN DEFECT (API shape): `node:os` `networkInterfaces()` returns a `Map` where Node returns a plain object keyed by interface name; the convergence removes it. Its fixture pins the current shape and walks Node's names (`node/os.ts`, `tools/native-os-fixtures.ts`) |
 | No plain `Error`/`SystemError` construction                                                                                                                                                                                                  | `node:os` failures are TypeErrors with Node's messages (`node/os.ts`)                                                                                                                                                                                                    |
 | Compiler sources: no tuple types, `JSON`, `Math.pow`, nested type declarations; forward references to unannotated module consts fail the native bootstrap; a ternary choosing opcodes of different ISA union members fails contextual typing | interface instead of tuple, string concatenation, constants, module-level `Operand`, annotated helper texts (`foreign/*.ts`); `integerToFloat`/`floatToInteger`/`narrowLoad`/`narrowStore` helpers (codegen `c-call` lowering)                                           |
 
 ## Open items (FFI scope)
+
+- Callbacks: no records by value; at most 16 registered callbacks at once
+  and four per dynamic call; no callbacks for optional libraries; callbacks
+  from other threads trap rather than queue (Phase 5).
+- A may-callback call with one trivial callback costs far more than a leaf
+  call (measurements): the wrapper allocates the adapter closure and its
+  captured state per call and calls through two closures. Reusing adapters
+  and inlining the wrapper are the obvious next steps.
 
 - Narrow-integer and 64-bit arguments trap rather than throw on bad values;
   the `node:ffi` layer will throw Node's errors.
@@ -1287,10 +1480,11 @@ definitions lowered to address-slot direct calls. Generated wrappers' TypeScript
 also runs on Node over the descriptors. Node's own FFI tests as a separate
 conformance population.
 
-**Phase 4 — callbacks (may-callback).** Caller-side root spills at
-may-callback calls, transition records, the walker extension, AOT callback thunk
-pools and rooted callback handles; record-typed callback signatures from the same
-interfaces. Leaf-contract violations detected by the trampoline.
+**Phase 4 (implemented) — callbacks (may-callback).** `Callback<...>`
+parameters and callback types, may-callback calls with transition records
+and the walker extension, AOT thunks (scoped, registered, universal),
+exceptions rethrown after the call, contract traps in the thunks, dynamic
+callbacks ([callbacks](#callbacks)).
 
 **Phase 5 — async calls and the event loop.** Worker execution with completion
 queued to the context, borrow tokens that block detach and resize; `Async<T>`

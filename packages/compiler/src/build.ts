@@ -972,6 +972,22 @@ export function linkMacOSProgram(
           byteLength: helper.byteLength,
         });
       }
+      // Callback thunks (docs/native-ffi.md, "Callbacks").
+      const thunks = native.callbackThunks;
+      for (let i = 0; i < (thunks?.thunks.length ?? 0); i++) {
+        const thunk = thunks?.thunks[i],
+          next = thunks?.thunks[i + 1];
+        if (thunks === undefined || thunk === undefined)
+          throw "debug callback thunk invariant";
+        symbols.push({
+          name: label + ":callback-thunk:" + String(thunk.slot),
+          offset: base + thunk.offset,
+          byteLength:
+            (next === undefined
+              ? thunks.offset + thunks.byteLength
+              : next.offset) - thunk.offset,
+        });
+      }
     }
   }
   // Heap introspection: each record descriptor is a DWARF variable whose
@@ -1091,6 +1107,25 @@ export function linkMacOSProgram(
       target: { kind: "data", offset: reference.target },
     });
   }
+  // The callback data (docs/native-ffi.md, "Callbacks") follows the
+  // diagnostic state in the image's writable data, zero-filled.
+  let imageData = hostedDiagnostics?.data;
+  const callbackData = hosted.value.callbackData;
+  if (callbackData !== undefined) {
+    const base = Math.ceil((imageData?.length ?? 0) / 16) * 16;
+    const combined = new Uint8Array(base + callbackData.byteLength);
+    if (imageData !== undefined) combined.set(imageData);
+    imageData = combined;
+    for (const reference of callbackData.references) {
+      if (reference === undefined) throw "callback table reference invariant";
+      references.push({
+        offset: reference.offset,
+        rd: reference.rd,
+        scratch: reference.scratch,
+        target: { kind: "data", offset: base + reference.target },
+      });
+    }
+  }
   const relocations = aarch64ImageRelocations(references);
   const imageSymbols: ImageSymbol[] = [];
   if (request.debugSymbols === true)
@@ -1108,7 +1143,7 @@ export function linkMacOSProgram(
       allowDebugger: request.allowDebugger ?? request.debugSymbols ?? false,
       allowJit: request.allowJit ?? false,
       symbols: imageSymbols,
-      data: hostedDiagnostics?.data,
+      data: imageData,
       dataSymbols: hostedDiagnostics?.dataSymbols,
       readOnlySections,
       unwind,

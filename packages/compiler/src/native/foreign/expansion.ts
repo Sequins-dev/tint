@@ -2,7 +2,9 @@ import {
   cLayout,
   cScalarBytes,
   cScalarSigned,
+  type CCallbackDeclaration,
   type CFunctionDeclaration,
+  type CSignature,
   type CLibraryDeclaration,
   type CScalar,
   type CTarget,
@@ -59,6 +61,9 @@ function machineOperand(form: CValueForm): ForeignOperand {
       return "terminated-bytes";
     case "record":
       return "record";
+    case "callback":
+      // A function value; C gets a thunk's entry.
+      return "callback";
     case "void":
       throw "void operand invariant";
   }
@@ -95,9 +100,185 @@ function tsType(form: CValueForm, type: CType): string {
       return "Uint8Array";
     case "record":
       return type.kind === "record" ? type.name : "never";
+    case "callback":
+      return "never";
     case "void":
       return "void";
   }
+}
+/** The TypeScript function type of a callback. */
+function callbackTsType(callback: CCallbackDeclaration): string {
+  const parameters: string[] = [];
+  for (let index = 0; index < callback.parameterNames.length; index++) {
+    const name = callback.parameterNames[index],
+      form = callback.parameterForms[index];
+    if (name === undefined || form === undefined)
+      throw "callback parameter invariant";
+    const record = callback.parameterRecords[index] ?? "";
+    parameters.push(
+      name +
+        ": " +
+        (record !== ""
+          ? "View$<" + record + ">"
+          : form === "boolean"
+            ? "boolean"
+            : "number"),
+    );
+  }
+  return (
+    "(" +
+    parameters.join(", ") +
+    ") => " +
+    (callback.resultForm === "void"
+      ? "void"
+      : callback.resultForm === "boolean"
+        ? "boolean"
+        : "number")
+  );
+}
+/** The adapter a may-callback wrapper passes to C for callback parameter
+ * `name` (docs/native-ffi.md, "Callbacks"): the function value a thunk
+ * calls with numbers (C bools as 0 or 1). It calls the user's function,
+ * converts its result (integers and addresses must be exact and in range)
+ * and records what it raises in the wrapper's `failed$name`/`error$name`,
+ * then returns 0 to C; once failed it returns 0 without calling. The
+ * wrapper rethrows after C returns, so no exception unwinds through C. */
+function callbackAdapter(
+  name: string,
+  callback: CCallbackDeclaration,
+  target: CTarget,
+): string {
+  const parameters: string[] = [];
+  for (const parameter of callback.parameterNames) {
+    if (parameter === undefined) throw "callback parameter invariant";
+    parameters.push(parameter + ": number");
+  }
+  const call =
+    name + "(" + callbackArguments(callback, callback.parameterNames) + ")";
+  return (
+    "  let failed$" +
+    name +
+    " = false;\n  let error$" +
+    name +
+    ": unknown = undefined;\n  const adapter$" +
+    name +
+    " = (" +
+    parameters.join(", ") +
+    "): number => {\n    if (failed$" +
+    name +
+    ") return 0;\n    try {\n" +
+    callbackResult(callback, call, target, "      ") +
+    "\n    } catch (error) {\n      failed$" +
+    name +
+    " = true;\n      error$" +
+    name +
+    " = error;\n      return 0;\n    }\n  };"
+  );
+}
+/** The user function's arguments from the adapter's numbers `names`: C
+ * bools as booleans, `Ptr<R>` parameters as foreign views of R. */
+function callbackArguments(
+  callback: CCallbackDeclaration,
+  names: readonly string[],
+): string {
+  const args: string[] = [];
+  for (let index = 0; index < callback.parameterNames.length; index++) {
+    const name = names[index],
+      record = callback.parameterRecords[index] ?? "";
+    if (name === undefined) throw "callback argument invariant";
+    args.push(
+      record !== ""
+        ? "viewAt$(" + record + ", " + name + ")"
+        : callback.parameterForms[index] === "boolean"
+          ? name + " !== 0"
+          : name,
+    );
+  }
+  return args.join(", ");
+}
+/** Statements (each line indented by `indent`) returning `call`'s value
+ * as the number the thunk converts for C: C bools as 0 or 1, integers and
+ * addresses checked exact and in range for the C type (TypeError). */
+function callbackResult(
+  callback: CCallbackDeclaration,
+  call: string,
+  target: CTarget,
+  indent: string,
+): string {
+  const result = callback.signature.result;
+  if (callback.resultForm === "void")
+    return indent + call + ";\n" + indent + "return 0;";
+  if (callback.resultForm === "boolean")
+    return indent + "return " + call + " ? 1 : 0;";
+  if (
+    result.kind === "scalar" &&
+    (result.scalar === "f32" || result.scalar === "f64")
+  )
+    return indent + "return " + call + ";";
+  let min = 0,
+    max = 18446744073709549568;
+  if (result.kind === "scalar") {
+    const range = integerRange(result.scalar, target);
+    min = range.min;
+    max = range.max;
+  }
+  return (
+    indent +
+    "const value = " +
+    call +
+    ";\n" +
+    indent +
+    "if (!Number.isInteger(value) || value < " +
+    String(min) +
+    " || value > " +
+    String(max) +
+    ")\n" +
+    indent +
+    '  throw new TypeError("callback result out of range for its C type");\n' +
+    indent +
+    "return value;"
+  );
+}
+/** How many registered callbacks may exist at once: tint:ffi's
+ * `registeredCallbacks` (one registered thunk per id and prototype). */
+const registeredCallbackLimit = 16;
+/** Whether a callback takes `Ptr<R>` parameters (foreign views). */
+function viewsRecords(callback: CCallbackDeclaration): boolean {
+  for (const record of callback.parameterRecords)
+    if (record !== undefined && record !== "") return true;
+  return false;
+}
+/** A placeholder for parameters that take no callback. */
+const noCallback: CCallbackDeclaration = {
+  signature: {
+    parameters: [],
+    result: { kind: "void" },
+    fixedParameters: 0,
+    callClass: "leaf",
+    errno: "none",
+  },
+  parameterNames: [],
+  parameterForms: [],
+  parameterRecords: [],
+  resultForm: "void",
+};
+/** Per parameter: the C prototype of each callback parameter. */
+function callbackPrototypes(
+  declaration: CFunctionDeclaration,
+): (CSignature | undefined)[] {
+  const prototypes: (CSignature | undefined)[] = [];
+  for (let index = 0; index < declaration.parameterForms.length; index++)
+    prototypes.push(declaration.callbacks?.[index]?.signature);
+  return prototypes;
+}
+/** The function type of a callback adapter: numbers in, a number out. */
+function adapterTsType(callback: CCallbackDeclaration): string {
+  const parameters: string[] = [];
+  for (const parameter of callback.parameterNames) {
+    if (parameter === undefined) throw "callback parameter invariant";
+    parameters.push(parameter + ": number");
+  }
+  return "(" + parameters.join(", ") + ") => number";
 }
 function memberTsType(type: CType): string {
   switch (type.kind) {
@@ -263,14 +444,126 @@ export function expandForeignLibrary(
       },
     });
   }
+  let importsCallbacks = false,
+    importsViews = false;
+  for (const callbackType of library.callbackTypes ?? []) {
+    if (callbackType === undefined) throw "foreign callback type invariant";
+    importsCallbacks = true;
+    if (viewsRecords(callbackType.callback)) importsViews = true;
+  }
+  for (const declaration of library.functions) {
+    if (declaration === undefined) throw "foreign function invariant";
+    if (declaration.signature.callClass !== "may-callback") continue;
+    if (lazy)
+      return {
+        ok: false,
+        error: declaration.name + ": optional libraries take no callbacks yet",
+      };
+    importsCallbacks = true;
+    for (const callback of declaration.callbacks ?? [])
+      if (callback !== undefined && viewsRecords(callback)) importsViews = true;
+  }
+  if (importsCallbacks)
+    lines.push(
+      'import { callbackState as callbackState$, stableBytes as stableBytes$, callbackDispatcher as callbackDispatcher$, rethrowCallbackFailure as rethrowCallbackFailure$, registerCallback as registerCallback$, noteCallback as noteCallback$, registeredCallbacks as registeredCallbacks$ } from "tint:ffi";',
+    );
+  // Ptr<R> callback parameters arrive as foreign views (C owns the memory).
+  if (importsViews)
+    lines.push(
+      'import type { View as View$ } from "tint:ffi";\nimport { viewAt as viewAt$ } from "tint:ffi/unsafe";',
+    );
+  // Callback types: register a TypeScript function for C to keep (its C
+  // function pointer is a registered thunk of the type's prototype).
+  for (const callbackType of library.callbackTypes ?? []) {
+    if (callbackType === undefined) throw "foreign callback type invariant";
+    const name = callbackType.name,
+      callback = callbackType.callback;
+    const cases: string[] = [];
+    for (let id = 0; id < registeredCallbackLimit; id++) {
+      const stub = "thunk$" + name + "$" + String(id);
+      lines.push(
+        "export function " +
+          stub +
+          '(): number {\n  throw "FOREIGN_UNAVAILABLE";\n}',
+      );
+      stubs.push({
+        name: stub,
+        memory: {
+          operation: "callback-address",
+          type: { kind: "void" },
+          offset: 0,
+          minimum: 0,
+          callback: callback.signature,
+          slot: id,
+        },
+      });
+      cases.push("  if (id === " + String(id) + ") return " + stub + "();");
+    }
+    const parameters: string[] = [],
+      names: string[] = [];
+    for (let index = 0; index < 7; index++) {
+      parameters.push("a" + String(index) + ": number");
+      names.push("a" + String(index));
+    }
+    lines.push(
+      "export type " +
+        name +
+        " = " +
+        callbackTsType(callback) +
+        ";\nfunction address$" +
+        name +
+        "(id: number): number {\n" +
+        cases.join("\n") +
+        '\n  throw "callback id invariant";\n}\n/** Register `fn` for C to call during later may-callback calls; its C\n * function pointer (release it with tint:ffi\'s releaseCallback). */\nexport function ' +
+        name +
+        "(fn: " +
+        name +
+        "): number {\n  const id = registerCallback$((" +
+        parameters.join(", ") +
+        "): number => {\n" +
+        callbackResult(
+          callback,
+          "fn(" + callbackArguments(callback, names) + ")",
+          target,
+          "    ",
+        ) +
+        "\n  });\n  const address = address$" +
+        name +
+        "(id);\n  noteCallback$(id, address);\n  return address;\n}",
+    );
+  }
   for (const declaration of library.functions) {
     if (declaration === undefined) throw "foreign function invariant";
     const direct = foreignCall(declaration);
-    const call: ForeignCall = lazy ? { ...direct, indirect: true } : direct;
-    const wrapped = lazy || converts(declaration);
+    // A may-callback call (docs/native-ffi.md, "Callbacks") takes the
+    // calling thread's callback state first.
+    const mayCallback = declaration.signature.callClass === "may-callback";
+    const stateFirst: ForeignOperand[] = ["bytes", "callback"];
+    for (const operand of direct.operands) {
+      if (operand === undefined) throw "foreign operand invariant";
+      stateFirst.push(operand);
+    }
+    const call: ForeignCall = lazy
+      ? { ...direct, indirect: true }
+      : mayCallback
+        ? {
+            ...direct,
+            operands: stateFirst,
+            mayCallback: true,
+            callbacks: callbackPrototypes(declaration),
+          }
+        : direct;
+    const wrapped = lazy || mayCallback || converts(declaration);
     const stubName = wrapped ? declaration.name + "$c" : declaration.name;
     const parameters = declaration.signature.parameters;
-    const rawParameters: string[] = lazy ? ["target$: number"] : [];
+    const rawParameters: string[] = lazy
+      ? ["target$: number"]
+      : mayCallback
+        ? [
+            "state$: Uint8Array",
+            "dispatcher$: (id: number, a0: number, a1: number, a2: number, a3: number, a4: number, a5: number, a6: number) => number",
+          ]
+        : [];
     for (let index = 0; index < parameters.length; index++) {
       const name = declaration.parameterNames[index],
         form = declaration.parameterForms[index],
@@ -282,7 +575,9 @@ export function expandForeignLibrary(
           ": " +
           (form === "number" || form === "boolean"
             ? tsType(form, type)
-            : "Uint8Array"),
+            : form === "callback"
+              ? adapterTsType(declaration.callbacks?.[index] ?? noCallback)
+              : "Uint8Array"),
       );
     }
     if (declaration.resultForm === "record")
@@ -306,7 +601,14 @@ export function expandForeignLibrary(
     if (!wrapped) continue;
     const userParameters: string[] = [],
       prologue: string[] = [],
-      args: string[] = [];
+      args: string[] = [],
+      rethrows: string[] = [];
+    if (mayCallback) {
+      prologue.push("  const state$ = callbackState$();");
+      args.push("state$", "callbackDispatcher$()");
+      // Registered callbacks' failures are rethrown after C returns.
+      rethrows.push("  rethrowCallbackFailure$();");
+    }
     if (lazy) {
       // Never call address 0: an absent library or symbol throws.
       prologue.push(
@@ -324,7 +626,26 @@ export function expandForeignLibrary(
         type = parameters[index];
       if (name === undefined || form === undefined || type === undefined)
         throw "foreign parameter invariant";
+      const callback = declaration.callbacks?.[index];
+      if (form === "callback") {
+        if (callback === undefined) throw "foreign callback invariant";
+        userParameters.push(name + ": " + callbackTsType(callback));
+        prologue.push(callbackAdapter(name, callback, target));
+        rethrows.push("  if (failed$" + name + ") throw error$" + name + ";");
+        args.push("adapter$" + name);
+        continue;
+      }
       userParameters.push(name + ": " + tsType(form, type));
+      if (mayCallback && (form === "bytes" || form === "terminated-bytes"))
+        // A collection inside a callback may move movable arrays while C
+        // holds their address: may-callback calls take non-moving storage.
+        prologue.push(
+          "  if (!stableBytes$(" +
+            name +
+            '))\n    throw new TypeError("may-callback calls take external storage or foreign memory for ' +
+            name +
+            '");',
+        );
       if (form === "string") {
         helpers.add("cString");
         args.push("cString$(" + name + ")");
@@ -373,6 +694,19 @@ export function expandForeignLibrary(
         "(" +
         args.join(", ") +
         ");";
+    // What the callbacks raised is rethrown once C has returned.
+    if (rethrows.length > 0) {
+      const at = body.lastIndexOf("  return ");
+      body =
+        at < 0
+          ? body + "\n" + rethrows.join("\n")
+          : body.slice(0, at) +
+            "  const value$ = " +
+            body.slice(at + 9) +
+            "\n" +
+            rethrows.join("\n") +
+            "\n  return value$;";
+    }
     lines.push(
       "export function " +
         declaration.name +
@@ -414,7 +748,10 @@ export function expandForeignLibrary(
   if (helpers.has("f64") || helpers.has("f32")) lines.push(pow2Helpers);
   if (helpers.has("f64")) lines.push(f64Helpers);
   if (helpers.has("f32")) lines.push(f32Helpers);
-  return { ok: true, value: { text: lines.join("\n") + "\n", stubs } };
+  return {
+    ok: true,
+    value: { text: lines.join("\n") + "\n", stubs },
+  };
 }
 function recordCodec(
   type: CType,

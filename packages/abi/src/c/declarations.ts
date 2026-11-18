@@ -9,6 +9,8 @@ import type { CSignature, CType } from "./types.ts";
  * - `terminated-bytes`: as `bytes`, but the array must end in NUL
  *   (CStringBytes);
  * - `record`: a struct by value, as an object with the interface's fields;
+ * - `callback`: a C function pointer to a TypeScript function
+ *   (`Callback<(a: T) => R>`), entering Tint through a thunk;
  * - `void`: no value (results only). */
 export type CValueForm =
   | "number"
@@ -17,7 +19,20 @@ export type CValueForm =
   | "bytes"
   | "terminated-bytes"
   | "record"
+  | "callback"
   | "void";
+/** A callback parameter's C prototype (docs/native-ffi.md, "Callbacks"):
+ * scalar, address and bool parameters and result, as numbers and
+ * booleans in TypeScript; a `Ptr<R>` parameter arrives as a foreign view
+ * of record R. */
+export interface CCallbackDeclaration {
+  readonly signature: CSignature;
+  readonly parameterNames: readonly string[];
+  readonly parameterForms: readonly CValueForm[];
+  /** Per parameter: the record a `Ptr<R>` parameter views, else "". */
+  readonly parameterRecords: readonly string[];
+  readonly resultForm: CValueForm;
+}
 export interface CFunctionDeclaration {
   /** The exported TypeScript name; `symbol` is the C symbol it binds (a
    * `name$variant` declaration binds `name`). */
@@ -27,6 +42,15 @@ export interface CFunctionDeclaration {
   readonly parameterNames: readonly string[];
   readonly parameterForms: readonly CValueForm[];
   readonly resultForm: CValueForm;
+  /** Per parameter: the prototype of a `callback` parameter. */
+  readonly callbacks?: readonly (CCallbackDeclaration | undefined)[];
+}
+/** A named callback type (`type alloc_func = Callback<(...) => R>`):
+ * TypeScript functions of this type can be registered for C to keep and
+ * call during later may-callback calls (docs/native-ffi.md, "Callbacks"). */
+export interface CCallbackTypeDeclaration {
+  readonly name: string;
+  readonly callback: CCallbackDeclaration;
 }
 /** An availability query (`(): Available<"name">`): whether the symbol of
  * declared function `name` is bound in the running process. An optional
@@ -58,4 +82,5 @@ export interface CLibraryDeclaration {
   readonly availability: readonly CAvailabilityDeclaration[];
   readonly layouts: readonly string[];
   readonly constants: readonly CConstantDeclaration[];
+  readonly callbackTypes?: readonly CCallbackTypeDeclaration[] | undefined;
 }

@@ -51,13 +51,20 @@ export function instructionEffects(op: Instruction): number {
     // managed pointer past its return; it may read and write any memory its
     // byte operands reach.
     case "c-call":
-      return effectReadHeap | effectWriteHeap;
+      // A may-callback call runs managed callbacks, which may allocate (and
+      // so collect) and touch any heap memory.
+      return op.call.mayCallback === true
+        ? effectAllocate | effectReadHeap | effectWriteHeap
+        : effectReadHeap | effectWriteHeap;
     // C memory accesses read or write only the bytes they name (adoption
     // rewrites the adopted array's header). An import slot never changes
     // after launch, so an availability query has no effect.
     case "c-memory":
+      // The callback key word's address is a constant.
       return op.access.operation === "available" ||
-        op.access.operation === "fits"
+        op.access.operation === "fits" ||
+        op.access.operation === "callback-key" ||
+        op.access.operation === "callback-address"
         ? 0
         : op.access.operation === "store"
           ? effectWriteHeap
