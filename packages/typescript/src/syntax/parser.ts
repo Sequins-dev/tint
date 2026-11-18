@@ -1115,7 +1115,8 @@ function parseSource(
                     ? Number(token.value.split("_").join(""))
                     : token.value === "true";
             node = { kind: "literal", value, start: token.start, end: end() };
-          } else if (eat("{"))
+          } else if (at("[")) fail("tuple types are not supported");
+          else if (eat("{"))
             node = {
               kind: "object",
               ...propertiesBody(),

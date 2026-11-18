@@ -74,6 +74,14 @@ export interface ExpressionInfo {
   /** A list iterated by for-of whose element type excludes undefined: a
    * hole throws a TypeError instead of binding undefined. */
   readonly holeCheck?: boolean | undefined;
+  /** A fresh list packed after the leading arguments of a typed call. */
+  readonly rest?:
+    | {
+        readonly start: number;
+        readonly element: "number" | "string" | number;
+        readonly admitsUndefined: boolean;
+      }
+    | undefined;
   readonly listElement?: "number" | "string" | number | undefined;
   readonly mapKey?: "number" | "string" | number | undefined;
   readonly mapValue?: "number" | "string" | number | undefined;

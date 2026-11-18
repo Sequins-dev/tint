@@ -56,12 +56,9 @@ export function indirectCallClass(
   return (targets.witnessClass[op.target] ?? 0) - 1;
 }
 
-/** The physical calling-signature key of a function: its result and ordered
- * parameter slot types. Native indirect calls trap unless the callee's
- * signature identity equals the witness's, and equal identities imply equal
- * keys (local signature groups only ever merge functions with one key). */
-function signatureKey(fn: FunctionIR): string {
-  let key: string = fn.returnType;
+/** Ordered parameter encodings shared by value-producing and void calls. */
+function parameterKey(fn: FunctionIR): string {
+  let key = "";
   for (const parameter of fn.parameters) {
     if (parameter === undefined) throw "call target parameter invariant";
     const type = fn.slots[parameter];
@@ -89,8 +86,9 @@ function holdsFunctions(type: ScalarType | "void" | undefined): boolean {
  * is created only by this module's `function-new` and `function-address`)
  * and stable record layouts (no raw-memory capability forges function
  * objects or writes managed fields), an indirect call reaches only the
- * address-taken functions whose signature key matches its witness's and
- * whose values may flow to its callee operand (see functionFlows). A
+ * address-taken functions whose parameter encodings match its witness's
+ * and whose values may flow to its callee operand (see functionFlows).
+ * A value-producing call also requires a matching result encoding. A
  * function whose entry address is exposed may be paired with any signature
  * and value, so it joins every class, and calls keep their signature
  * classes.
@@ -139,11 +137,7 @@ export function indirectCallTargets(
   // address-taken function has get a class only when entries are exposed.
   const byKey = new Map<string, number>(),
     classes: number[][] = [];
-  for (const id of members) {
-    if (id === undefined) throw "call target member invariant";
-    const fn = module.functions[id];
-    if (fn === undefined) throw "call target member invariant";
-    const key = signatureKey(fn);
+  function add(key: string, id: number): void {
     let index = byKey.get(key);
     if (index === undefined) {
       index = classes.length;
@@ -152,10 +146,18 @@ export function indirectCallTargets(
     }
     classes[index]?.push(id);
   }
+  for (const id of members) {
+    if (id === undefined) throw "call target member invariant";
+    const fn = module.functions[id];
+    if (fn === undefined) throw "call target member invariant";
+    const parameters = parameterKey(fn);
+    add("void" + parameters, id);
+    if (fn.returnType !== "void") add(fn.returnType + parameters, id);
+  }
   for (const fn of module.functions) {
     if (fn === undefined) throw "call target function invariant";
     visited += fn.parameters.length + 1;
-    const key = signatureKey(fn);
+    const key = fn.returnType + parameterKey(fn);
     let index = byKey.get(key);
     if (index === undefined && exposed.length > 0) {
       index = classes.length;

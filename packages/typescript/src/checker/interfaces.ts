@@ -230,6 +230,18 @@ export function resolveInterfaceTypes(
         fail(node, "INVALID_TYPE", "type parameter does not accept arguments");
       return parameter;
     }
+    if (
+      (name === "Array" || name === "ReadonlyArray") &&
+      !declarations.has(name)
+    ) {
+      const element = args[0];
+      if (args.length !== 1 || element === undefined)
+        fail(node, "INVALID_TYPE", "Array requires one element type");
+      return add(
+        { kind: "array", element, readonly: name === "ReadonlyArray" },
+        node,
+      );
+    }
     if ((name === "Map" || name === "ReadonlyMap") && !declarations.has(name)) {
       const key = args[0],
         value = args[1];
@@ -467,14 +479,9 @@ export function resolveInterfaceTypes(
     node: Span,
   ): number {
     let minimumArguments = 0,
-      seenOptional = false;
+      seenOptional = false,
+      rest = false;
     const parameterTypes = parameters.map((p, i): number => {
-      if (p.rest)
-        fail(
-          p,
-          "UNSUPPORTED",
-          "rest function type layouts are not implemented",
-        );
       const annotation = p.type;
       if (annotation === undefined)
         return fail(
@@ -483,6 +490,12 @@ export function resolveInterfaceTypes(
           "function type parameter requires annotation",
         );
       const value = resolve(annotation);
+      if (p.rest) {
+        if (types[canonical(value)]?.kind !== "array")
+          fail(p, "INVALID_TYPE", "rest parameter requires an array type");
+        rest = true;
+        return value;
+      }
       if (p.optional || p.initializer !== undefined) {
         if (p.optional) seenOptional = true;
         const absent = add({ kind: "undefined" }, p);
@@ -502,6 +515,7 @@ export function resolveInterfaceTypes(
         kind: "function",
         parameters: parameterTypes,
         minimumArguments,
+        ...(rest ? { rest: true } : {}),
         result,
         ...(receiver === undefined ? {} : { receiver }),
       },

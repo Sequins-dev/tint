@@ -315,6 +315,35 @@ the collection helpers compare references). Evidence:
 failures, `TINT_GENERAL_FALLBACK=0`) and its Node reference
 `tools/typed-bigint-fixture.test.ts`.
 
+### Typed rest parameters and void callbacks (slice 4a)
+
+A rest signature stores one final array parameter and a rest flag. The minimum
+arity counts only the required leading parameters. The checker contextually
+checks each trailing argument against the array element type. A spread can
+supply elements once the call reaches the rest position, using a typed list or
+supported numeric typed array. Lowering evaluates the callee and leading
+arguments, then appends each trailing value or spread element to a fresh list
+in source order. Direct and indirect calls use the same packed ABI. Defaults
+still run in the callee when a leading argument is omitted or undefined.
+
+Rest and fixed signatures cannot be assigned to each other, and two rest
+signatures must have the same parameter count. Those calls would otherwise
+disagree about which argument holds the packed array. Tuple rest remains
+outside the parser's type subset. Spreading a hole into a rest list whose
+element contract excludes undefined throws a TypeError, following the typed
+list iteration contract.
+
+A value-returning function can satisfy a void callback signature. An
+unannotated contextual callback retains its inferred result, and a
+void-typed indirect call reads only the completion status from the common
+completion buffer. A local void witness accepts the exact signature identity
+or a local identity with the same physical parameter layout. The function
+object and callee ABI stay unchanged. Managed signature contracts at service
+boundaries still require exact identities.
+
+The native fixtures and their Node references share the source in
+`tools/typed-rest-void-fixture-source.ts`.
+
 ### What happens to each front end
 
 - js-engine lowering becomes a library of construct lowerings callable for a
@@ -372,6 +401,10 @@ the ledger corpus reproduce the ones expressible in a single application.
 | (Removed by 2b: checked downcasts) `x as Uint8Array` from a general value                                                                                                                                      | `general-value-casts`                                                  | 2 (projection), 4                   |
 | Typed-array views over another buffer                                                                                                                                                                          | `typed-array-buffer-views`                                             | 4                                   |
 | Forward reference to an unannotated module const (inferred binding treated as a contract; the runtime-stage error also lacks a location)                                                                       | `forward-inferred-const`                                               | 4 (open slots); location separately |
+| (Removed by 4a) Typed rest parameters and spreads in the rest position                                                                                                                                         | `rest-default-parameters`, `rest-spread`                               | 4a                                  |
+| (Removed by 4a) Value-returning functions rejected in void callback slots                                                                                                                                      | `void-callbacks`                                                       | 4a                                  |
+| Rest and fixed-arity signatures are incompatible, and rest signatures require matching parameter counts                                                                                                        | Packed and fixed calls need ABI adapters                               | Not yet scheduled                   |
+| Typed call spreads before the rest position require positional expansion                                                                                                                                       | `spread`                                                               | Not yet scheduled                   |
 | Tuple types and `implements` clauses fail to parse                                                                                                                                                             | `tuple-types`, `spread`, `iterator-protocol`                           | parser fix (both forms parse first) |
 | Nested type declarations; ternary over union discriminants in an object literal                                                                                                                                | `nested-type-declarations`, `union-object-ternary`                     | 5                                   |
 | `for (const x of list)` followed by a property read of `x` (in runtime modules)                                                                                                                                | `for-of-record-reads`                                                  | 5                                   |
@@ -451,8 +484,7 @@ adds `for…of` element typing (elements are `T`; a hole read as a `T`
 excluding undefined throws a TypeError) and assignment narrowing with `??=`
 on optional records: 14 typed forms stay typed (the three `for-of-*` gap
 constructs and `reassignment-narrowing` moved), no regressions against the
-BigInt ledger. A `() => number` function is not yet accepted where
-`() => void` is expected (TypeScript accepts it).
+BigInt ledger.
 
 Slice 1: image sizes of hosted programs, measured before and after.
 Importing one function through the `js-runtime/objects` entrypoint from a

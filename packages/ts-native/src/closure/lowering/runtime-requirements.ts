@@ -43,6 +43,7 @@ export function collectRuntimeRequirements(
   }
   for (const type of checked.bindingTypes) if (type !== undefined) add(type);
   checked.expressions.forEach((type, expression) => add(type));
+  checked.restCalls?.forEach((rest, _expression) => add(rest.list));
   for (const [id, body] of checked.bodies) add(body.result);
   for (let index = 0; index < pending.length; index++) {
     const id = pending[index];

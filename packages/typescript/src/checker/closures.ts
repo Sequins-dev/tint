@@ -198,6 +198,12 @@ export interface CheckedTypeFlow {
   readonly target: number;
   readonly node: Span;
 }
+export interface RestCall {
+  /** First packed argument, relative to the arguments after any explicit receiver. */
+  readonly start: number;
+  readonly list: number;
+  readonly admitsUndefined: boolean;
+}
 export interface CheckedClosures {
   /** Resolved declaration names share IDs with this result's finite type graph. */
   readonly typeNames: ReadonlyKeyIndex<string, number>;
@@ -223,6 +229,7 @@ export interface CheckedClosures {
   readonly expressions: ReadonlyKeyIndex<Expression, number>;
   readonly chainValues: ReadonlyKeyIndex<Expression, number>;
   readonly chainReceivers: ReadonlyKeyIndex<Expression, number>;
+  readonly restCalls?: ReadonlyKeyIndex<Expression, RestCall>;
   /** `x as T` assertions from `unknown` to T: checked downcasts, which
    * throw a TypeError when the value is not a T (docs/unified-pipeline.md). */
   readonly downcasts?: ReadonlyKeyIndex<Expression, number>;
@@ -317,12 +324,6 @@ export function checkClosureModule(
           "UNSUPPORTED",
           "typed parameter destructuring is not supported yet",
         );
-      if (p.rest)
-        fail(
-          p,
-          "UNSUPPORTED",
-          "typed rest parameter layouts are not implemented",
-        );
       if (p.initializer !== undefined) collect(p.initializer);
       annotation(
         p,
@@ -347,15 +348,26 @@ export function checkClosureModule(
       );
     }
     if (result !== undefined) annotations.push(result);
+    let signatureResult = result;
+    if (result === undefined && !named && params.some((p) => p.rest)) {
+      const provisional: TypeNode = {
+        kind: "named",
+        name: "void",
+        start: node.start,
+        end: node.end,
+        nodeHash: syntheticNodeHash(),
+      };
+      signatureResult = provisional;
+    }
     if (
       params.every((p) => p !== undefined && p.type !== undefined) &&
-      result !== undefined
+      signatureResult !== undefined
     ) {
       const type: TypeNode = {
         kind: "function",
         parameters: params,
         ...(receiver === undefined ? {} : { receiver }),
-        returnType: result,
+        returnType: signatureResult,
         start: node.start,
         end: node.end,
         nodeHash: syntheticNodeHash(),
@@ -775,6 +787,7 @@ export function checkClosureModule(
   const bindingTypes: number[] = [],
     expressions = createKeyIndex<Expression, number>(syntaxHash),
     operations: BindingOperation[] = [];
+  const restCalls = createKeyIndex<Expression, RestCall>(syntaxHash);
   const typeFlows: CheckedTypeFlow[] = [];
   const flowTargets = new Map<number, Set<number>>();
   function recordTypeFlow(source: number, target: number, node: Span): void {
@@ -1410,7 +1423,25 @@ export function checkClosureModule(
         );
     }
     const checked = system.cell({ type, mutable: b.mutable }, op);
-    if (!checked.ok) fail(node, checked.error, "invalid binding operation");
+    if (!checked.ok) {
+      if (checked.error === "TYPE_MISMATCH" && op.kind !== "read") {
+        const source = types[op.value],
+          target = types[type];
+        if (
+          source?.kind === "function" &&
+          target?.kind === "function" &&
+          (source.rest === true || target.rest === true) &&
+          ((source.rest === true) !== (target.rest === true) ||
+            source.parameters.length !== target.parameters.length)
+        )
+          fail(
+            node,
+            checked.error,
+            "rest function assignments require matching rest layouts",
+          );
+      }
+      fail(node, checked.error, "invalid binding operation");
+    }
     operations.push({
       node,
       function: owner,
@@ -1610,7 +1641,7 @@ export function checkClosureModule(
   let internedCount = 0;
   function internKey(type: Type): string | undefined {
     if (type.kind === "function")
-      return type.receiver === undefined
+      return type.receiver === undefined && type.rest !== true
         ? "f" + type.result + "(" + type.parameters.join(",") + ")"
         : undefined;
     if (type.kind === "never") return "n";
@@ -2479,6 +2510,12 @@ export function checkClosureModule(
       if (type?.kind !== "function") throw "signature invariant";
       if (params.length !== type.parameters.length)
         fail(node, "ARITY", "parameter count does not match context");
+      if ((params[params.length - 1]?.rest === true) !== (type.rest === true))
+        fail(
+          node,
+          "TYPE_MISMATCH",
+          "rest parameter layout does not match context",
+        );
       const owner = functions.get(node);
       if (owner === undefined) throw "function identity invariant";
       const receiverType = type.receiver;
@@ -2540,7 +2577,7 @@ export function checkClosureModule(
       }
       let result =
         returnAnnotation === undefined ? type.result : typeOf(returnAnnotation);
-      requireType(result, type.result, node);
+      if (type.result !== voidType) requireType(result, type.result, node);
       bodies.set(owner, { node, parameters: params, body, result });
       if (body.kind === "block") {
         const returns: number[] = [];
@@ -2751,6 +2788,75 @@ export function checkClosureModule(
     if (receiver === undefined) throw "checked receiver invariant";
     return receiver;
   }
+  function callArguments(
+    node: Expression & { readonly kind: "call" | "new" },
+    owner: number | undefined,
+    signature: Type & { readonly kind: "function" },
+    offset: number = 0,
+  ): number[] {
+    const start = signature.parameters.length - 1;
+    const list =
+      signature.rest === true ? signature.parameters[start] : undefined;
+    const rest = list === undefined ? undefined : types[list];
+    const element = rest?.kind === "array" ? rest.element : undefined;
+    if (list !== undefined && element !== undefined) {
+      if (!isList(list))
+        fail(
+          node,
+          "UNSUPPORTED",
+          "rest parameter requires a supported array layout",
+        );
+      restCalls.set(node, {
+        start,
+        list,
+        admitsUndefined: system.assignable(undefinedType, element),
+      });
+    }
+    const args: number[] = [];
+    for (let i = offset; i < node.arguments.length; i++) {
+      const argument = node.arguments[i];
+      if (argument === undefined) throw "call argument invariant";
+      const position = i - offset;
+      const trailing = element !== undefined && position >= start;
+      if (argument.kind !== "spread") {
+        args.push(
+          expression(
+            argument,
+            owner,
+            trailing ? element : signature.parameters[position],
+          ),
+        );
+        continue;
+      }
+      if (!trailing || element === undefined)
+        fail(
+          argument,
+          "UNSUPPORTED",
+          "spread arguments are only supported in the rest position",
+        );
+      const source = expression(
+        argument.value,
+        owner,
+        ungroup(argument.value).kind === "array" ? list : undefined,
+      );
+      const supplied = isArray(source)
+        ? number
+        : isList(source)
+          ? listElement(source, argument)
+          : undefined;
+      if (supplied === undefined)
+        fail(argument, "UNSUPPORTED", "rest spread requires a supported array");
+      recordTypeFlow(supplied, element, argument);
+      if (!system.assignable(supplied, element))
+        fail(
+          argument,
+          "TYPE_MISMATCH",
+          "rest spread element does not match rest parameter",
+        );
+      args.push(supplied);
+    }
+    return args;
+  }
   function expression(
     input: Expression,
     owner: number | undefined,
@@ -2785,6 +2891,12 @@ export function checkClosureModule(
         return live;
       }
       switch (node.kind) {
+        case "spread":
+          return fail(
+            node,
+            "UNSUPPORTED",
+            "spread arguments are only supported in the rest position",
+          );
         case "private-in":
           return fail(
             node,
@@ -3337,15 +3449,26 @@ export function checkClosureModule(
               "invalid receiver signature",
             );
           }
-          checkFunction(
+          const signature = types[result];
+          if (signature?.kind !== "function")
+            throw "callback signature invariant";
+          const infer =
+            node.returnType === undefined && signature.result === voidType;
+          const returned = checkFunction(
             node,
             node.parameters,
             node.returnType,
             node.body,
             result,
-            false,
+            infer,
             true,
           );
+          if (returned !== signature.result)
+            result = appendType(
+              { ...signature, result: returned },
+              node,
+              "invalid callback result signature",
+            );
           break;
         }
         case "member": {
@@ -3602,9 +3725,7 @@ export function checkClosureModule(
                 "TYPE_MISMATCH",
                 "callee must have a construct signature",
               );
-            const args = node.arguments.map((argument, index) =>
-              expression(argument, owner, signature.parameters[index]),
-            );
+            const args = callArguments(node, owner, signature);
             const constructed = system.construct(callee, args);
             if (!constructed.ok)
               fail(node, constructed.error, "invalid construction");
@@ -3650,9 +3771,7 @@ export function checkClosureModule(
                 "TYPE_MISMATCH",
                 "callee must have a function type",
               );
-            const args = node.arguments.map((a, i) =>
-              expression(a, owner, signature.parameters[i]),
-            );
+            const args = callArguments(node, owner, signature);
             const checked = system.call(
               callee,
               args,
@@ -3913,12 +4032,7 @@ export function checkClosureModule(
                 suppliedReceiver === undefined
                   ? undefinedType
                   : expression(suppliedReceiver, owner, map.receiver);
-              const args: number[] = [];
-              for (let i = 1; i < node.arguments.length; i++) {
-                const argument = node.arguments[i];
-                if (argument === undefined) throw "call argument invariant";
-                args.push(expression(argument, owner, map.parameters[i - 1]));
-              }
+              const args = callArguments(node, owner, map, 1);
               const called = system.call(obj, args, receiver);
               if (!called.ok)
                 fail(node, called.error, "invalid explicit receiver call");
@@ -4630,9 +4744,7 @@ export function checkClosureModule(
             const signature = types[member.value];
             if (signature?.kind !== "function")
               fail(target, "TYPE_MISMATCH", "property must have function type");
-            const args = node.arguments.map((a, i) =>
-              expression(a, owner, signature.parameters[i]),
-            );
+            const args = callArguments(node, owner, signature);
             const checked = system.call(member.value, args, obj);
             if (!checked.ok) fail(node, checked.error, "invalid call");
             invalidateCalls();
@@ -4643,9 +4755,7 @@ export function checkClosureModule(
             signature = types[callee];
           if (signature?.kind !== "function")
             fail(node, "TYPE_MISMATCH", "callee must have a function type");
-          const args = node.arguments.map((a, i) =>
-            expression(a, owner, signature.parameters[i]),
-          );
+          const args = callArguments(node, owner, signature);
           const checked = system.call(
             callee,
             args,
@@ -5840,6 +5950,7 @@ export function checkClosureModule(
       expressions,
       chainValues,
       chainReceivers,
+      restCalls,
       downcasts,
       operations,
       intrinsics,

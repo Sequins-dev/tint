@@ -51,8 +51,10 @@ function fingerprint(type: Type): number {
       hash = mix(hash, type.receiver === undefined ? 0 : type.receiver + 1);
       hash = mix(
         mix(hash, type.result),
-        type.minimumArguments ?? type.parameters.length,
+        type.minimumArguments ??
+          type.parameters.length - (type.rest === true ? 1 : 0),
       );
+      if (type.rest === true) hash = mix(hash, 1);
       for (const parameter of type.parameters) {
         if (parameter === undefined) throw "type identity parameter invariant";
         hash = mix(hash, parameter);
@@ -120,10 +122,13 @@ function same(left: Type, right: Type): boolean {
       if (
         right.kind !== "function" ||
         left.result !== right.result ||
+        (left.rest === true) !== (right.rest === true) ||
         left.receiver !== right.receiver ||
         left.parameters.length !== right.parameters.length ||
-        (left.minimumArguments ?? left.parameters.length) !==
-          (right.minimumArguments ?? right.parameters.length)
+        (left.minimumArguments ??
+          left.parameters.length - (left.rest === true ? 1 : 0)) !==
+          (right.minimumArguments ??
+            right.parameters.length - (right.rest === true ? 1 : 0))
       )
         return false;
       for (let i = 0; i < left.parameters.length; i++)
