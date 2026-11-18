@@ -69,7 +69,12 @@ export {
   indirectCallTargets,
   type IndirectCallTargets,
 } from "./call-targets.ts";
-export { provenWordFacts, type WordFacts } from "./word-facts.ts";
+export {
+  provenWordFacts,
+  provenWordReturns,
+  type WordFacts,
+} from "./word-facts.ts";
+export { functionHeader } from "./model.ts";
 import { instructionResult } from "./operands.ts";
 export { instructionResult } from "./operands.ts";
 export {
@@ -127,6 +132,8 @@ export {
   dynamicForeignCall,
   dynamicCallFrame,
   callbackTransition,
+  callbackEntered,
+  directCallbackExtras,
   callbackState,
   transitionBytes,
   type ForeignCall,
@@ -148,6 +155,8 @@ export {
 export type * from "./model.ts";
 import type {
   ModuleIR,
+  FunctionBodySource,
+  FunctionIR,
   FunctionDebug,
   Instruction,
   Verification,
@@ -301,7 +310,22 @@ function successors(block: Block): readonly number[] {
   result.push(handler.target);
   return result;
 }
-export function verify(module: ModuleIR): Verification {
+export function verify(
+  module: ModuleIR,
+  bodies?: FunctionBodySource,
+): Verification {
+  let held = -1;
+  function releaseBody(): void {
+    if (held >= 0) bodies?.release(held);
+    held = -1;
+  }
+  function readBody(header: FunctionIR): FunctionIR {
+    releaseBody();
+    if (bodies === undefined) return header;
+    held = header.id;
+    return bodies.get(held);
+  }
+  let hasRecordReads = false;
   const abort = {};
   let failure: Diagnostic | undefined,
     fnId = 0,
@@ -406,10 +430,11 @@ export function verify(module: ModuleIR): Verification {
     }
     const names = createStringIndex<number>();
     for (let i = 0; i < module.functions.length; i++) {
-      const f = module.functions[i];
+      const header = module.functions[i];
       fnId = i;
-      if (f === undefined || f.id !== i || names.has(f.name))
+      if (header === undefined || header.id !== i || names.has(header.name))
         fail("GRAPH", "function IDs must be dense and names unique");
+      const f = readBody(header);
       names.set(f.name, i);
       if (!scalar(f.returnType) && f.returnType !== "void")
         fail("TYPE", "invalid return type");
@@ -564,8 +589,9 @@ export function verify(module: ModuleIR): Verification {
           fail("GRAPH", "managed imports require an ABI-only declaration");
       }
     }
-    for (const f of module.functions) {
-      if (f === undefined) fail("GRAPH", "missing function");
+    for (const header of module.functions) {
+      if (header === undefined) fail("GRAPH", "missing function");
+      const f = readBody(header);
       fnId = f.id;
       blockId = undefined;
       instruction = undefined;
@@ -653,6 +679,7 @@ export function verify(module: ModuleIR): Verification {
           origin(op.inline, f.debug);
           switch (op.kind) {
             case "record-read": {
+              hasRecordReads = true;
               const type = use(op.object);
               if (type !== "reference" && type !== "optional-reference")
                 fail("TYPE", "record read requires a reference");
@@ -735,6 +762,19 @@ export function verify(module: ModuleIR): Verification {
                 op.id,
                 op.kind === "general-record-is" ? "boolean" : "number",
               );
+              break;
+            case "general-is":
+              equal(use(op.value), "general");
+              if (
+                op.type !== "undefined" &&
+                op.type !== "number" &&
+                op.type !== "boolean" &&
+                op.type !== "string" &&
+                op.type !== "null" &&
+                op.type !== "Uint8Array"
+              )
+                fail("TYPE", "general test requires a known category");
+              define(op.id, "boolean");
               break;
             case "general-null":
             case "general-none":
@@ -1600,9 +1640,12 @@ export function verify(module: ModuleIR): Verification {
         }
       }
     }
-    let stableLayouts: boolean | undefined;
-    for (const fn of module.functions) {
-      if (fn === undefined) throw "record proof function invariant";
+    releaseBody();
+    if (!hasRecordReads) return { ok: true };
+    const stableLayouts = stableDescriptors(module, bodies);
+    for (const header of module.functions) {
+      if (header === undefined) throw "record proof function invariant";
+      const fn = readBody(header);
       let proofs: Uint8Array | undefined;
       fnId = fn.id;
       for (const block of fn.blocks) {
@@ -1614,7 +1657,6 @@ export function verify(module: ModuleIR): Verification {
           if (op.kind !== "record-read") continue;
           instruction = index;
           if (proofs === undefined) {
-            stableLayouts ??= stableDescriptors(module);
             proofs = provenRecordReads(fn, verifierRecordWork, stableLayouts);
           }
           if (proofs === undefined || proofs[op.id] !== 1)
@@ -1624,6 +1666,8 @@ export function verify(module: ModuleIR): Verification {
     }
   } catch (error) {
     if (error !== abort) throw error;
+  } finally {
+    releaseBody();
   }
   if (failure !== undefined) return { ok: false, error: failure };
   return { ok: true };

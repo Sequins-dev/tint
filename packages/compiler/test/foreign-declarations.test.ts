@@ -1171,10 +1171,21 @@ test("callback parameters make may-callback calls; callback types register funct
     generated,
     /compare: \(a: View\$<Item>, b: View\$<Item>\) => number/,
   );
+  // qsort's comparator (numbers and record views in, a number out) is
+  // direct: C's thunk calls it with one view per record parameter, made
+  // once per call and parked at the guard once C returns; failures arrive
+  // through the call's notes.
   assert.match(
     generated,
-    /compare\(viewAt\$\(Item, a\), viewAt\$\(Item, b\)\)/,
+    /const view\$compare\$0 = viewAt\$\(Item, guard\$compare\);/,
   );
+  assert.match(
+    generated,
+    /qsort\$c\(state\$, callbackDispatcher\$\(\), base, count, size, compare, onThrow\$, onInvalid\$, view\$compare\$0, view\$compare\$1\);\n {2}retargetCallbackView\$\(view\$compare\$0, guard\$compare\);/,
+  );
+  assert.match(generated, /if \(failed\$\) throw error\$;/);
+  // walk's visitor takes a bool, so it goes through an adapter.
+  assert.match(generated, /retargetCallbackView\$\(view\$visit\$0, item\);/);
   assert.match(generated, /stableBytes\$\(base\)/);
   assert.match(
     generated,
@@ -1189,6 +1200,15 @@ test("callback parameters make may-callback calls; callback types register funct
   )?.call;
   assert.equal(call?.mayCallback, true);
   assert.deepEqual(call?.operands.slice(0, 2), ["bytes", "callback"]);
+  // The comparator's two record views; two notes and two views follow the
+  // prototype's operands.
+  assert.deepEqual(call?.directCallbacks, [
+    undefined,
+    undefined,
+    undefined,
+    [0, 1],
+  ]);
+  assert.equal(call?.operands.length, 2 + 4 + 2 + 2);
   assert.equal(
     prepared.value.library.stubs.filter((item) =>
       item.name.startsWith("thunk$visit_func$"),

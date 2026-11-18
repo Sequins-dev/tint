@@ -148,8 +148,10 @@ import {
   type InlineSequenceBuilder,
 } from "./executable-memory.ts";
 import { rememberedBarrier } from "./barrier.ts";
+import { allocationHelper, type AllocationHelper } from "./allocation.ts";
 export type LeafHelperKind =
   | SharedMemoryPrimitive
+  | AllocationHelper
   | NumericHelper
   | StringHelper
   | "array-initialize"
@@ -172,6 +174,9 @@ import {
   dataflowRecordGuards,
   provenRecordFacts,
   provenWordFacts,
+  provenWordReturns,
+  functionHeader,
+  type FunctionBodySource,
   provenWordArguments,
   provenInductionWords,
   wordOnlyValues,
@@ -188,6 +193,7 @@ import {
   foreignMemoryTypes,
   dynamicCallFrame,
   callbackTransition,
+  callbackEntered,
   callbackState,
   naturalLoops,
   blockSuccessors,
@@ -312,7 +318,12 @@ export interface NativeStringLiteral {
  * maps return offsets relative to codeOffset, for codeLength bytes, to the
  * frame words holding live references while that call runs. Composition
  * registers each table with the hosted stack-map registry. */
-export { decodeStackMaps, type DecodedSafepoint } from "./stack-maps.ts";
+export {
+  decodeStackMaps,
+  encodeStackMapTable,
+  type DecodedSafepoint,
+  type SafepointEntry,
+} from "./stack-maps.ts";
 export interface NativeStackMapTable {
   readonly codeOffset: number;
   readonly codeLength: number;
@@ -866,6 +877,7 @@ const compactAddressInstructions: number = 65536;
  * affect: computed by the first attempt, reused by compact-range retries. */
 interface EmissionFacts {
   verified: Verification | undefined;
+  frameModule: ModuleIR | undefined;
   wordReturns: Uint8Array | undefined;
   wordArguments: readonly Uint8Array[] | undefined;
   wordArgumentsKnown: boolean;
@@ -926,16 +938,49 @@ function rootHeadBinding(fn: FunctionIR): boolean {
   }
   return reads;
 }
+/** Frame preparation may replace bodies with compacted slot layouts. */
+export interface EmissionBodies extends FunctionBodySource {
+  readonly put: (fn: FunctionIR) => void;
+}
 export function emitModule(
   module: ModuleIR,
+  options: EmissionOptions = {},
+): Emission {
+  const functions = module.functions.slice();
+  const bodies: EmissionBodies = {
+    get: (id: number): FunctionIR => {
+      const fn = functions[id];
+      if (fn === undefined) throw "function body invariant";
+      return fn;
+    },
+    put: (fn: FunctionIR): void => {
+      functions[fn.id] = fn;
+    },
+    release: (_id: number): void => {},
+  };
+  return emitModuleFromStore(module, bodies, options);
+}
+/** Emit with function headers and a rereadable source of bodies. */
+export function emitModuleFromStore(
+  module: ModuleIR,
+  bodies: EmissionBodies,
   options: EmissionOptions = {},
 ): Emission {
   // Single-instruction local addresses only pay off below ADR's 1 MiB reach;
   // larger modules start with the four-instruction form instead of retrying.
   let size = 0;
-  for (const fn of module.functions)
-    for (const block of fn?.blocks ?? [])
-      size += 1 + (block?.instructions.length ?? 0);
+  if (options.compactAddresses === undefined)
+    for (let id = 0; id < module.functions.length; id++) {
+      if (size >= compactAddressInstructions) break;
+      if (module.functions[id] === undefined) continue;
+      const fn = bodies.get(id);
+      try {
+        for (const block of fn.blocks)
+          size += 1 + (block?.instructions.length ?? 0);
+      } finally {
+        bodies.release(id);
+      }
+    }
   const forms: BranchForms = {
     calls: true,
     addresses: options.compactAddresses ?? size < compactAddressInstructions,
@@ -955,6 +1000,7 @@ export function emitModule(
   }
   const facts: EmissionFacts = {
     verified: undefined,
+    frameModule: undefined,
     wordReturns: undefined,
     wordArguments: undefined,
     wordArgumentsKnown: false,
@@ -997,7 +1043,7 @@ export function emitModule(
         forms.farBranches.size,
       calls = forms.calls,
       far = forms.far;
-    const emitted = emitModuleForms(module, options, forms, facts);
+    const emitted = emitModuleForms(module, bodies, options, forms, facts);
     if (emitted.ok) {
       // A module this large re-emits in the far model, so its sites (and
       // those the image patches later) reach anywhere in a large image.
@@ -1049,6 +1095,7 @@ function describeForms(
 }
 function emitModuleForms(
   module: ModuleIR,
+  bodies: EmissionBodies,
   options: EmissionOptions,
   forms: BranchForms,
   facts: EmissionFacts,
@@ -1079,6 +1126,7 @@ function emitModuleForms(
     span: Span | undefined,
     failure: Diagnostic | undefined;
   const abort = {};
+  let emitting = -1;
   const sourceRanges: {
     function: number;
     offset: number;
@@ -1677,10 +1725,17 @@ function emitModuleForms(
     /** Undefined: a universal thunk (dynamic callbacks). */
     readonly signature: CSignature | undefined;
     readonly ordinal: number;
+    /** A direct callback's thunk (calls the TypeScript function itself):
+     * the parameters delivered as record views and their views' record
+     * offsets; undefined for an adapter's. */
+    readonly views: readonly number[] | undefined;
+    readonly viewOffsets: readonly number[];
   }[] = [];
   function callbackThunk(
     signature: CSignature | undefined,
     ordinal: number,
+    views: readonly number[] | undefined = undefined,
+    viewOffsets: readonly number[] = [],
   ): number {
     const names: string[] = [];
     for (const parameter of signature?.parameters ?? []) {
@@ -1692,10 +1747,19 @@ function emitModuleForms(
       ":" +
       (signature === undefined
         ? "universal"
-        : cTypeName(signature.result) + "(" + names.join(",") + ")");
+        : cTypeName(signature.result) + "(" + names.join(",") + ")") +
+      (views === undefined
+        ? ""
+        : ":direct:" + views.join(",") + "@" + viewOffsets.join(","));
     for (let index = 0; index < callbackThunkRequests.length; index++)
       if (callbackThunkRequests[index]?.key === key) return index;
-    callbackThunkRequests.push({ key, signature, ordinal });
+    callbackThunkRequests.push({
+      key,
+      signature,
+      ordinal,
+      views,
+      viewOffsets,
+    });
     return callbackThunkRequests.length - 1;
   }
   /** A callback thunk: C calls it with `signature`'s ABI during a
@@ -1752,24 +1816,7 @@ function emitModuleForms(
       shift: 0,
       setFlags: false,
     });
-    for (let register = 0; register < 8; register += 2) {
-      emit({
-        op: "stp",
-        width: 64,
-        rt: register,
-        rt2: register + 1,
-        rn: 29,
-        offset: 64 + register * 8,
-        mode: "offset",
-      });
-      emit({
-        op: "stp-d",
-        rt: register,
-        rt2: register + 1,
-        rn: 29,
-        offset: 128 + register * 8,
-      });
-    }
+    saveArgumentRegisters(signature === undefined ? undefined : locations);
     // This thread's callback state block.
     importAddress(9, 17, "tint:callback-key");
     emit({ op: "ldr", width: 64, rt: 0, rn: 9, offset: 0 });
@@ -1779,7 +1826,10 @@ function emitModuleForms(
     // and entered on this very thread.
     emit({ op: "ldr", width: 64, rt: 11, rn: 0, offset: 0 });
     trapBranch({ op: "cbz", width: 64, rt: 11 });
+    // A callback already running under this record (a leaf call that called
+    // back) traps; a failed direct callback's record (2) does not.
     emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.entered });
+    emit({ op: "ubfm", width: 64, rd: 12, rn: 12, immr: 0, imms: 0 });
     trapBranch({ op: "cbnz", width: 64, rt: 12 });
     emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.thread });
     emit({ op: "mrs-thread", rt: 13, readOnly: host().os === "darwin" });
@@ -1794,7 +1844,16 @@ function emitModuleForms(
       setFlags: true,
     });
     trapBranch({ op: "b.cond", condition: "ne" });
-    imm(12, 1);
+    emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.entered });
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 12,
+      rn: 12,
+      immediate: 1,
+      shift: 0,
+      setFlags: false,
+    });
     emit({ op: "str", width: 64, rt: 12, rn: 11, offset: t.entered });
     emit({ op: "str", width: 64, rt: 11, rn: 29, offset: 48 });
     // C arguments to numbers in d16.., then d0.. (the callback's numbers).
@@ -1920,7 +1979,17 @@ function emitModuleForms(
     else if (result.kind !== "void" && result.kind !== "scalar")
       fail("UNSUPPORTED", "callback results are scalars or pointers");
     emit({ op: "ldr", width: 64, rt: 11, rn: 29, offset: 48 });
-    emit({ op: "str", width: 64, rt: "zr", rn: 11, offset: t.entered });
+    emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.entered });
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: 12,
+      rn: 12,
+      immediate: 1,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({ op: "str", width: 64, rt: 12, rn: 11, offset: t.entered });
     emit({
       op: "ldp",
       width: 64,
@@ -1941,6 +2010,447 @@ function emitModuleForms(
       patchInstruction(site.at, {
         ...site.branch,
         displacement: (trap - site.at) * 4,
+      });
+    }
+  }
+  /** Save a callback thunk's C argument registers in its frame (x0..x7
+   * at 64, d0..d7 at 128) before calls clobber them: the pairs holding
+   * `locations`' register arguments, or all of them (`undefined`: a
+   * universal thunk, whose callback reads the whole save area). */
+  function saveArgumentRegisters(
+    locations: readonly CValueLocation[] | undefined,
+  ): void {
+    const gp = new Uint8Array(8),
+      fp = new Uint8Array(8);
+    for (let index = 0; index < 8; index++) {
+      gp[index] = locations === undefined ? 1 : 0;
+      fp[index] = locations === undefined ? 1 : 0;
+    }
+    const known = locations ?? [];
+    for (let index = 0; index < known.length; index++) {
+      const location = known[index];
+      if (location === undefined || location.stackOffset >= 0) continue;
+      if (location.class === "float") fp[location.fp] = 1;
+      else gp[location.gp] = 1;
+    }
+    for (let register = 0; register < 8; register += 2) {
+      if (gp[register] === 1 || gp[register + 1] === 1)
+        emit({
+          op: "stp",
+          width: 64,
+          rt: register,
+          rt2: register + 1,
+          rn: 29,
+          offset: 64 + register * 8,
+          mode: "offset",
+        });
+      if (fp[register] === 1 || fp[register + 1] === 1)
+        emit({
+          op: "stp-d",
+          rt: register,
+          rt2: register + 1,
+          rn: 29,
+          offset: 128 + register * 8,
+        });
+    }
+  }
+  /** A direct callback's thunk (docs/native-ffi.md, "Callbacks"): like
+   * an adapter's, but it calls the TypeScript function in the record's
+   * `ordinal`th callback word itself. Parameters `views` arrive as the
+   * record views at `viewOffsets` (retargeted to C's pointer; x4..x7), the
+   * others as numbers (d0..); the number result converts exactly to the C
+   * result type. An exception (status 2) calls the record's `onThrow` with
+   * it, a null record pointer or an inexact result calls `onInvalid` with
+   * 0 or 1; either marks the record failed and returns 0 to C, as does
+   * every later entry under that record. Frame as an adapter thunk's. */
+  function emitDirectCallbackThunk(
+    signature: CSignature,
+    ordinal: number,
+    views: readonly number[],
+    viewOffsets: readonly number[],
+  ): void {
+    const classified = classifyCCall(signature, cTarget());
+    if (!classified.ok) fail("UNSUPPORTED", "callback: " + classified.error);
+    const locations: readonly CValueLocation[] = classified.ok
+      ? classified.value.arguments
+      : [];
+    const frame = 192,
+      t = callbackTransition;
+    const traps: { at: number; branch: Branch }[] = [],
+      labels: { at: number; branch: Branch; label: string }[] = [];
+    function trapBranch(branch: Branch): void {
+      traps.push({ at: instructions.length, branch });
+      emit({ ...branch, displacement: 0 });
+    }
+    function forward(branch: Branch, label: string): void {
+      labels.push({ at: instructions.length, branch, label });
+      emit({ ...branch, displacement: 0 });
+    }
+    const targets: { label: string; at: number }[] = [];
+    function place(label: string): void {
+      targets.push({ label, at: instructions.length });
+    }
+    function mov(rd: number, rn: number): void {
+      emit({
+        op: "add-imm",
+        width: 64,
+        rd,
+        rn,
+        immediate: 0,
+        shift: 0,
+        setFlags: false,
+      });
+    }
+    emit({
+      op: "stp",
+      width: 64,
+      rt: 29,
+      rt2: 30,
+      rn: "sp",
+      offset: -frame,
+      mode: "pre",
+    });
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 29,
+      rn: "sp",
+      immediate: 0,
+      shift: 0,
+      setFlags: false,
+    });
+    saveArgumentRegisters(locations);
+    importAddress(9, 17, "tint:callback-key");
+    emit({ op: "ldr", width: 64, rt: 0, rn: 9, offset: 0 });
+    importCall(host().symbolPrefix + "pthread_getspecific");
+    trapBranch({ op: "cbz", width: 64, rt: 0 });
+    emit({ op: "ldr", width: 64, rt: 11, rn: 0, offset: 0 });
+    trapBranch({ op: "cbz", width: 64, rt: 11 });
+    // Running (a leaf call inside a callback) traps; failed returns 0.
+    emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.entered });
+    emit({ op: "ubfm", width: 64, rd: 13, rn: 12, immr: 0, imms: 0 });
+    trapBranch({ op: "cbnz", width: 64, rt: 13 });
+    forward({ op: "cbnz", width: 64, rt: 12 }, "failed-return");
+    emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.thread });
+    emit({ op: "mrs-thread", rt: 13, readOnly: host().os === "darwin" });
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: "zr",
+      rn: 12,
+      rm: 13,
+      shift: "lsl",
+      amount: 0,
+      setFlags: true,
+    });
+    trapBranch({ op: "b.cond", condition: "ne" });
+    imm(12, callbackEntered.running);
+    emit({ op: "str", width: 64, rt: 12, rn: 11, offset: t.entered });
+    emit({ op: "str", width: 64, rt: 11, rn: 29, offset: 48 });
+    // Arguments: numbers into d16.. (then d0..), views into x4..x7.
+    let numbers = 0,
+      others = 0;
+    for (let index = 0; index < locations.length; index++) {
+      const location = locations[index],
+        type = signature.parameters[index];
+      if (location === undefined || type === undefined)
+        throw "callback argument invariant";
+      const viewAt = views.indexOf(index);
+      if (viewAt >= 0) {
+        const offset = viewOffsets[viewAt];
+        if (offset === undefined || location.class !== "integer")
+          throw "callback view invariant";
+        if (others >= 4)
+          fail("UNSUPPORTED", "callbacks take at most four record views");
+        emit({
+          op: "ldr",
+          width: 64,
+          rt: 14,
+          rn: 29,
+          offset:
+            location.stackOffset >= 0
+              ? frame + location.stackOffset
+              : 64 + location.gp * 8,
+        });
+        forward({ op: "cbz", width: 64, rt: 14 }, "null");
+        emit({ op: "ldr", width: 64, rt: 9, rn: 11, offset });
+        emit({
+          op: "ldr",
+          width: 64,
+          rt: 10,
+          rn: 9,
+          offset: nativeArrayOwnerOffset,
+        });
+        emit({
+          op: "str",
+          width: 64,
+          rt: 14,
+          rn: 10,
+          offset: nativeArrayDataOffset,
+        });
+        emit({
+          op: "str",
+          width: 64,
+          rt: 14,
+          rn: 9,
+          offset: nativeArrayDataOffset,
+        });
+        mov(4 + others, 9);
+        others++;
+        continue;
+      }
+      if (numbers >= 8)
+        fail("UNSUPPORTED", "callbacks take at most eight numbers");
+      const rd = 16 + numbers;
+      numbers++;
+      if (location.class === "float") {
+        const from =
+          location.stackOffset >= 0
+            ? frame + location.stackOffset
+            : 128 + location.fp * 8;
+        if (location.size === 4) {
+          emit({ op: "ldr", width: 32, rt: 14, rn: 29, offset: from });
+          emit({ op: "fmov-s-w", rd, rn: 14 });
+          emit({ op: "fcvt-d-s", rd, rn: rd });
+        } else emit({ op: "ldr-d", rt: rd, rn: 29, offset: from });
+        continue;
+      }
+      if (location.class !== "integer")
+        fail("UNSUPPORTED", "callback arguments are scalars or pointers");
+      emit({
+        op: "ldr",
+        width: 64,
+        rt: 14,
+        rn: 29,
+        offset:
+          location.stackOffset >= 0
+            ? frame + location.stackOffset
+            : 64 + location.gp * 8,
+      });
+      const scalar: CScalar =
+        type.kind === "pointer" ? "usize" : numericScalar(type);
+      const bytes = cScalarBytes(scalar),
+        signed = scalar !== "bool" && cScalarSigned(scalar, cTarget());
+      if (bytes < 8)
+        emit({
+          op: signed ? "sbfm" : "ubfm",
+          width: 64,
+          rd: 14,
+          rn: 14,
+          immr: 0,
+          imms: bytes * 8 - 1,
+        });
+      if (signed) emit({ op: "scvtf-d-x", rd, rn: 14 });
+      else emit({ op: "ucvtf-d-x", rd, rn: 14 });
+    }
+    for (let index = 0; index < numbers; index++)
+      emit({ op: "fmov-d-d", rd: index, rn: 16 + index });
+    // Call the function value with the caller's context.
+    function callRecordFunction(offset: number): void {
+      emit({ op: "ldr", width: 64, rt: 11, rn: 29, offset: 48 });
+      emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset });
+      emit({ op: "ldr", width: 64, rt: 0, rn: 11, offset: t.context });
+      emit({
+        op: "ldr",
+        width: 64,
+        rt: 1,
+        rn: 12,
+        offset: nativeFunctionEnvironmentOffset,
+      });
+      emit({
+        op: "ldr",
+        width: 64,
+        rt: 16,
+        rn: 12,
+        offset: nativeFunctionEntryOffset,
+      });
+      imm(2, 0);
+      emit({
+        op: "add-imm",
+        width: 64,
+        rd: 3,
+        rn: 29,
+        immediate: 16,
+        shift: 0,
+        setFlags: false,
+      });
+      emit({ op: "blr", rn: 16 });
+    }
+    callRecordFunction(t.callbacks + ordinal * 8);
+    emit({
+      op: "sub-imm",
+      width: 32,
+      rd: "zr",
+      rn: 0,
+      immediate: 1,
+      shift: 0,
+      setFlags: true,
+    });
+    forward({ op: "b.cond", condition: "ne" }, "abrupt");
+    // The number result, exactly in the C result type's range.
+    const result = signature.result;
+    if (result.kind === "scalar" || result.kind === "pointer") {
+      emit({ op: "ldr-d", rt: 0, rn: 29, offset: 32 });
+      const scalar: CScalar =
+        result.kind === "pointer" ? "usize" : result.scalar;
+      if (scalar === "f32") emit({ op: "fcvt-s-d", rd: 0, rn: 0 });
+      else if (scalar === "bool")
+        fail("UNSUPPORTED", "direct callbacks return numbers");
+      else if (scalar !== "f64") {
+        const bytes = cScalarBytes(scalar),
+          signed = cScalarSigned(scalar, cTarget());
+        if (bytes === 8) {
+          if (signed) {
+            emit({ op: "fcvtzs-x-d", rd: 0, rn: 0 });
+            emit({ op: "scvtf-d-x", rd: 1, rn: 0 });
+          } else {
+            emit({ op: "fcvtzu-x-d", rd: 0, rn: 0 });
+            emit({ op: "ucvtf-d-x", rd: 1, rn: 0 });
+          }
+        } else if (bytes === 4 && !signed) {
+          emit({ op: "fcvtzu-w-d", rd: 0, rn: 0 });
+          emit({ op: "ucvtf-d-w", rd: 1, rn: 0 });
+        } else {
+          emit({ op: "fcvtzs-w-d", rd: 0, rn: 0 });
+          emit({ op: "scvtf-d-w", rd: 1, rn: 0 });
+        }
+        emit({ op: "fcmp", rn: 0, rm: 1 });
+        forward({ op: "b.cond", condition: "ne" }, "range");
+        if (bytes === 8) {
+          // The saturation bounds round-trip too: reject them.
+          if (signed) imm64(9, 0xffffffff, 0x7fffffff);
+          else imm64(9, 0xffffffff, 0xffffffff);
+          emit({
+            op: "sub-reg",
+            width: 64,
+            rd: "zr",
+            rn: 0,
+            rm: 9,
+            shift: "lsl",
+            amount: 0,
+            setFlags: true,
+          });
+          forward({ op: "b.cond", condition: "eq" }, "range");
+        } else if (bytes < 4) {
+          emit({
+            op: signed ? "sbfm" : "ubfm",
+            width: 32,
+            rd: 9,
+            rn: 0,
+            immr: 0,
+            imms: bytes * 8 - 1,
+          });
+          emit({
+            op: "sub-reg",
+            width: 32,
+            rd: "zr",
+            rn: 9,
+            rm: 0,
+            shift: "lsl",
+            amount: 0,
+            setFlags: true,
+          });
+          forward({ op: "b.cond", condition: "ne" }, "range");
+        }
+      }
+    } else if (result.kind !== "void")
+      fail("UNSUPPORTED", "callback results are scalars or pointers");
+    emit({ op: "ldr", width: 64, rt: 11, rn: 29, offset: 48 });
+    emit({ op: "str", width: 64, rt: "zr", rn: 11, offset: t.entered });
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 29,
+      rt2: 30,
+      rn: "sp",
+      offset: frame,
+      mode: "post",
+    });
+    emit({ op: "ret", rn: 30 });
+    // Failures: tell the wrapper, then this record's callbacks return 0.
+    place("abrupt");
+    emit({
+      op: "sub-imm",
+      width: 32,
+      rd: "zr",
+      rn: 0,
+      immediate: 2,
+      shift: 0,
+      setFlags: true,
+    });
+    trapBranch({ op: "b.cond", condition: "ne" });
+    // The exception is a general value (two words at x3 + 16), passed by
+    // reference like any general argument.
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 4,
+      rn: 29,
+      immediate: 32,
+      shift: 0,
+      setFlags: false,
+    });
+    callRecordFunction(t.onThrow);
+    forward({ op: "b" }, "noted");
+    place("null");
+    imm(9, 0);
+    emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+    forward({ op: "b" }, "invalid");
+    place("range");
+    imm(9, 1);
+    emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+    place("invalid");
+    callRecordFunction(t.onInvalid);
+    place("noted");
+    emit({
+      op: "sub-imm",
+      width: 32,
+      rd: "zr",
+      rn: 0,
+      immediate: 1,
+      shift: 0,
+      setFlags: true,
+    });
+    trapBranch({ op: "b.cond", condition: "ne" });
+    emit({ op: "ldr", width: 64, rt: 11, rn: 29, offset: 48 });
+    imm(12, callbackEntered.failed);
+    emit({ op: "str", width: 64, rt: 12, rn: 11, offset: t.entered });
+    place("failed-return");
+    imm(0, 0);
+    emit({ op: "fmov-d-x", rd: 0, rn: 0 });
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 29,
+      rt2: 30,
+      rn: "sp",
+      offset: frame,
+      mode: "post",
+    });
+    emit({ op: "ret", rn: 30 });
+    const trap = instructions.length;
+    emit({ op: "brk", immediate: 3 });
+    for (let index = 0; index < traps.length; index++) {
+      const site = traps[index];
+      if (site === undefined) throw "direct callback trap invariant";
+      patchInstruction(site.at, {
+        ...site.branch,
+        displacement: (trap - site.at) * 4,
+      });
+    }
+    for (let index = 0; index < labels.length; index++) {
+      const site = labels[index];
+      if (site === undefined) throw "direct callback label invariant";
+      let target = -1;
+      for (let other = 0; other < targets.length; other++) {
+        const candidate = targets[other];
+        if (candidate !== undefined && candidate.label === site.label)
+          target = candidate.at;
+      }
+      if (target < 0) throw "direct callback thunk label invariant";
+      patchInstruction(site.at, {
+        ...site.branch,
+        displacement: (target - site.at) * 4,
       });
     }
   }
@@ -2508,36 +3018,103 @@ function emitModuleForms(
       maxByteLength > 0xffffffff
     )
       fail("CODE_LIMIT", "invalid byte budget");
-    const valid = facts.verified ?? verify(module);
+    const valid = facts.verified ?? verify(module, bodies);
     facts.verified = valid;
     if (!valid.ok) {
       const error = valid.error;
       functionId = error.function;
       blockId = error.block;
-      const invalid = module.functions.find(
+      const invalid = module.functions.findIndex(
         (fn) => fn !== undefined && fn.id === functionId,
       );
-      const block = invalid?.blocks.find(
-        (block) => block !== undefined && block.id === blockId,
-      );
-      const instruction = error.instruction;
-      const operation =
-        instruction === undefined
-          ? undefined
-          : block?.instructions[instruction];
-      if (operation !== undefined)
-        span = { start: operation.start, end: operation.end };
+      if (invalid >= 0) {
+        const fn = bodies.get(invalid);
+        try {
+          const block = fn.blocks.find(
+            (block) => block !== undefined && block.id === blockId,
+          );
+          const instruction = error.instruction;
+          const operation =
+            instruction === undefined
+              ? undefined
+              : block?.instructions[instruction];
+          if (operation !== undefined)
+            span = { start: operation.start, end: operation.end };
+        } finally {
+          bodies.release(invalid);
+        }
+      }
       fail("INVALID_IR", error.message);
     }
     // Optional scalar optimization can exhaust its module budget before slot
     // cleanup. Plan frames from used locals, retaining ABI and transfer slots.
     // Normalize before slot-indexed analyses; a bounded failure keeps the input.
-    const frameFunctions = module.functions.map(
-      (fn) => compactSlots(fn, work(1000000))?.fn ?? fn,
-    );
-    if (frameFunctions.some((fn, index) => fn !== module.functions[index]))
+    const prepared = facts.frameModule;
+    if (prepared === undefined) {
+      const frameFunctions: FunctionIR[] = [];
+      for (const header of module.functions) {
+        if (header === undefined) throw "frame function invariant";
+        const fn = bodies.get(header.id);
+        try {
+          const compacted = compactSlots(fn, work(1000000))?.fn ?? fn;
+          if (compacted !== fn) bodies.put(compacted);
+          frameFunctions.push(functionHeader(compacted));
+        } finally {
+          bodies.release(header.id);
+        }
+      }
       module = { ...module, functions: frameFunctions };
+      facts.frameModule = module;
+    } else module = prepared;
     const managedABI = options.managedABI;
+    const witnesses = new Uint8Array(module.functions.length);
+    const scanWitnesses =
+      managedABI?.signatures.some(
+        (binding) => binding?.witness !== undefined,
+      ) ?? false;
+    // Root-head bindings identify the calls that start stack walks.
+    const rootHeadBindings = new Uint8Array(module.functions.length);
+    const listShapes: (ListReadShape | undefined)[] = [];
+    const vectorShapes: (number | undefined)[] = [];
+    const writeShapes: (ListWriteShape | undefined)[] = [];
+    let hasFunctionOperations = false,
+      hasTypeErrors = false;
+    for (const header of module.functions) {
+      if (header === undefined) throw "feature function invariant";
+      const fn = bodies.get(header.id);
+      try {
+        listShapes.push(listReadShape(fn));
+        vectorShapes.push(listVectorShape(fn));
+        writeShapes.push(listWriteShape(fn));
+        if (rootHeadBinding(fn)) rootHeadBindings[fn.id] = 1;
+        for (const block of fn.blocks) {
+          if (!scanWitnesses && hasFunctionOperations && hasTypeErrors) break;
+          if (block === undefined) throw "feature block invariant";
+          for (const op of block.instructions) {
+            if (op === undefined) throw "feature instruction invariant";
+            if (op.kind === "function-new" || op.kind === "call-indirect") {
+              hasFunctionOperations = true;
+              if (scanWitnesses)
+                witnesses[op.target] =
+                  (witnesses[op.target] ?? 0) |
+                  (op.kind === "function-new" ? 1 : 2);
+            } else if (
+              op.kind === "function-environment" ||
+              (op.kind === "host-call" &&
+                (op.operation === "native-function-descriptor" ||
+                  op.operation === "native-function-signature" ||
+                  op.operation === "native-value-function-descriptor" ||
+                  op.operation === "native-value-function-signature"))
+            )
+              hasFunctionOperations = true;
+            else if (op.kind === "error-new" || op.kind === "error-is")
+              hasTypeErrors = true;
+          }
+        }
+      } finally {
+        bodies.release(header.id);
+      }
+    }
     if (managedABI !== undefined) {
       if (managedABI.version !== 1)
         fail("UNSUPPORTED", "unsupported managed ABI version");
@@ -2615,24 +3192,13 @@ function emitModuleForms(
                 "managed signature parameter contract does not match witness",
               );
           }
-          let used = false;
-          for (const input of module.functions) {
-            if (input === undefined) throw "managed function invariant";
-            for (const block of input.blocks) {
-              if (block === undefined) throw "managed block invariant";
-              for (const op of block.instructions) {
-                if (op === undefined) throw "managed instruction invariant";
-                if (op.kind === "function-new" && op.target === witness)
-                  fail(
-                    "INVALID_IR",
-                    "cannot create a local function using an imported signature witness",
-                  );
-                if (op.kind === "call-indirect" && op.target === witness)
-                  used = true;
-              }
-            }
-          }
-          if (!used)
+          const uses = witnesses[witness] ?? 0;
+          if ((uses & 1) !== 0)
+            fail(
+              "INVALID_IR",
+              "cannot create a local function using an imported signature witness",
+            );
+          if ((uses & 2) === 0)
             fail(
               "INVALID_IR",
               "managed signature binding has no indirect-call witness",
@@ -2775,7 +3341,7 @@ function emitModuleForms(
         fail("INVALID_IR", "imported functions cannot be executable roots");
     }
     if (generationalBarriers) {
-      if (!stableRecordLayouts(module))
+      if (!stableRecordLayouts(module, bodies))
         fail(
           "INVALID_IR",
           "generational mutator requires tracked managed writes; raw memory capabilities are unsupported",
@@ -2796,23 +3362,7 @@ function emitModuleForms(
       }
     }
     const functionRecord = module.records?.length ?? 0;
-    const hasFunctions =
-      brandImport !== undefined ||
-      module.functions.some((f) =>
-        f.blocks.some((b) =>
-          b.instructions.some(
-            (op) =>
-              op.kind === "function-new" ||
-              op.kind === "call-indirect" ||
-              op.kind === "function-environment" ||
-              (op.kind === "host-call" &&
-                (op.operation === "native-function-descriptor" ||
-                  op.operation === "native-function-signature" ||
-                  op.operation === "native-value-function-descriptor" ||
-                  op.operation === "native-value-function-signature")),
-          ),
-        ),
-      );
+    const hasFunctions = brandImport !== undefined || hasFunctionOperations;
     const recordLayouts: RecordLayout[] = [];
     for (const record of module.records ?? []) {
       if (record === undefined) throw "record layout invariant";
@@ -2830,13 +3380,6 @@ function emitModuleForms(
         ],
       });
     const typeErrorRecord = recordLayouts.length;
-    const hasTypeErrors = module.functions.some((f) =>
-      f.blocks.some((b) =>
-        b.instructions.some(
-          (op) => op.kind === "error-new" || op.kind === "error-is",
-        ),
-      ),
-    );
     if (hasTypeErrors)
       for (let i = 0; i < 2; i++)
         recordLayouts.push({
@@ -2854,78 +3397,36 @@ function emitModuleForms(
     );
     if (!localSignatures.ok) fail("INVALID_IR", localSignatures.error);
     const localGroups = localSignatures.groups;
-    const signatureIds = module.functions.map((input): number => {
-      const f = input;
+    const signatureIds = new Uint32Array(module.functions.length);
+    const signatureKeys = createStringIndex<number>();
+    for (const f of module.functions) {
       if (f === undefined) throw "function invariant";
+      let key: string = f.returnType + ":";
+      for (const slot of f.parameters) {
+        if (slot === undefined) throw "parameter invariant";
+        const type = f.slots[slot];
+        if (type === undefined) throw "parameter type invariant";
+        key += type + ":";
+      }
+      const prior = signatureKeys.get(key);
+      const first = prior ?? f.id + 1;
+      if (prior === undefined) signatureKeys.set(key, first);
       const group = localSignatures.byFunction[f.id] ?? 0;
-      if (group !== 0) return module.functions.length + group;
-      return (
-        module.functions.findIndex((candidate): boolean => {
-          const other = candidate;
-          if (other === undefined) throw "function invariant";
-          if (
-            f.returnType !== other.returnType ||
-            f.parameters.length !== other.parameters.length
-          )
-            return false;
-          for (let i = 0; i < f.parameters.length; i++) {
-            const slot = f.parameters[i],
-              otherSlot = other.parameters[i];
-            if (slot === undefined || otherSlot === undefined)
-              throw "parameter invariant";
-            if (f.slots[slot] !== other.slots[otherSlot]) return false;
-          }
-          return true;
-        }) + 1
-      );
-    });
-    const stableLayouts = stableRecordLayouts(module),
+      signatureIds[f.id] =
+        group === 0 ? first : module.functions.length + group;
+    }
+    const stableLayouts = stableRecordLayouts(module, bodies),
       // Intraprocedural descriptor proofs need descriptor stability only.
-      stableGuards = stableDescriptors(module);
+      stableGuards = stableDescriptors(module, bodies);
     const stableSlots =
       stableLayouts &&
       !module.functions.some((fn) => fn.environment !== undefined);
-    /** Numeric outcomes of each function's returns (word-facts masks, 0
-     * unknown), swept to a fixpoint: each sweep proves calls with the
-     * previous sweep's returns, so words flow through functions returning
-     * other calls' results. Each sweep's masks are met with the previous
-     * ones (both sound), so they only shrink and the sweeps terminate. */
-    function provenWordReturns(): Uint8Array {
-      let proven = new Uint8Array(module.functions.length);
-      if (stableSlots) {
-        let budget = work(10000000),
-          first = true;
-        for (;;) {
-          const next = new Uint8Array(module.functions.length);
-          for (const fn of module.functions) {
-            if (fn === undefined) throw "word return function invariant";
-            const proof = provenWordFacts(
-              fn,
-              Math.min(work(1000000), budget),
-              first ? undefined : proven,
-            );
-            if (proof !== undefined) {
-              next[fn.id] = proof.returned;
-              budget -= proof.work;
-            }
-          }
-          let changed = first;
-          for (let id = 0; id < next.length; id++) {
-            const a = proven[id] ?? 0,
-              b = next[id] ?? 0;
-            const met = first ? b : a === 0 ? b : b === 0 ? a : a & b;
-            next[id] = met;
-            if (met !== a) changed = true;
-          }
-          proven = next;
-          first = false;
-          if (!changed) break;
-        }
-      }
-      facts.wordReturns = proven;
-      return proven;
-    }
-    const wordReturns: Uint8Array = facts.wordReturns ?? provenWordReturns();
+    const wordReturns =
+      facts.wordReturns ??
+      (stableSlots
+        ? provenWordReturns(module, work(10000000), work(1000000), bodies)
+        : new Uint8Array(module.functions.length));
+    facts.wordReturns = wordReturns;
     if (!facts.wordArgumentsKnown) {
       facts.wordArguments =
         stableSlots && closedRoots !== undefined
@@ -2934,6 +3435,7 @@ function emitModuleForms(
               closedRoots,
               wordReturns,
               work(10000000),
+              bodies,
             )
           : undefined;
       facts.wordArgumentsKnown = true;
@@ -2943,26 +3445,32 @@ function emitModuleForms(
       facts.recordFlows =
         closedRoots === undefined
           ? undefined
-          : provenRecordFacts(module, work(10000000), true, closedRoots);
+          : provenRecordFacts(
+              module,
+              work(10000000),
+              true,
+              closedRoots,
+              bodies,
+            );
       facts.recordFlowsKnown = true;
     }
     const recordValues = facts.recordFlows,
       recordFlows = recordValues?.blocks;
     if (!facts.noSafepointsKnown) {
-      facts.noSafepoints = provenNoSafepoints(module, work(10000000));
+      facts.noSafepoints = provenNoSafepoints(module, work(10000000), bodies);
       facts.noSafepointsKnown = true;
     }
     const noSafepoints = facts.noSafepoints;
-    // Root-head bindings: functions whose own body only reads the root head
-    // (see the root-head operation). Their callers start stack walks.
-    const rootHeadBindings = new Uint8Array(module.functions.length);
-    for (const fn of module.functions)
-      if (fn !== undefined && rootHeadBinding(fn)) rootHeadBindings[fn.id] = 1;
     if (!facts.directReturnsKnown) {
       facts.directReturns =
         closedRoots === undefined
           ? undefined
-          : provenDirectOnlyFunctions(module, closedRoots, work(10000000));
+          : provenDirectOnlyFunctions(
+              module,
+              closedRoots,
+              work(10000000),
+              bodies,
+            );
       facts.directReturnsKnown = true;
     }
     const directReturns = facts.directReturns;
@@ -2970,19 +3478,9 @@ function emitModuleForms(
       if (fn === undefined) throw "function invariant";
       return signatureLayout(fn);
     });
-    const listShapes = module.functions.map((fn): ListReadShape | undefined =>
-      fn === undefined ? undefined : listReadShape(fn),
-    );
     function listReadShapes(id: number): ListReadShape | undefined {
       return listShapes[id];
     }
-    const vectorShapes = module.functions.map((fn): number | undefined =>
-      fn === undefined ? undefined : listVectorShape(fn),
-    );
-    const writeShapes = module.functions.map(
-      (fn): ListWriteShape | undefined =>
-        fn === undefined ? undefined : listWriteShape(fn),
-    );
     /** Whether a conditional branch recorded since `firstFixup` that
      * targets a block of `owner` cannot reach it in compact form. */
     function ownBranchesOutOfReach(owner: number, firstFixup: number): boolean {
@@ -3064,10 +3562,10 @@ function emitModuleForms(
       // Import call sites in re-emitted code are recorded again.
       while (imports.length > mark.imports) imports.pop();
     }
-    for (const inputFunction of module.functions) {
-      if (inputFunction === undefined) throw "function invariant";
-      const fn = inputFunction;
-      if (fn.import === true) {
+    for (const header of module.functions) {
+      if (header === undefined) throw "function invariant";
+      if (header.import === true) {
+        const fn = header;
         const signature = signatures[fn.id];
         if (signature === undefined) throw "import signature layout invariant";
         functions.push({
@@ -3083,6 +3581,8 @@ function emitModuleForms(
         blockOffsets.push({ offsets: [] });
         continue;
       }
+      emitting = header.id;
+      const fn = bodies.get(emitting);
       // A function whose own conditional branches end out of reach is
       // re-emitted alone with islands (then long forms) instead of failing
       // and re-emitting the whole module: functions precede everything that
@@ -3386,6 +3886,9 @@ function emitModuleForms(
                 // payloads are converted when wrapped.
                 op.kind === "string-slice" ||
                 op.kind === "optional-wrap" ||
+                // C integer arguments convert from an int64 directly
+                // (numberToInteger); C double arguments through floatLoad.
+                op.kind === "c-call" ||
                 // Inline list reads and writes index with an int64; their
                 // fallback calls convert the argument (floatLoad).
                 (op.kind === "call" &&
@@ -4221,6 +4724,7 @@ function emitModuleForms(
               case "general-equal":
               case "record-has":
               case "general-record-is":
+              case "general-is":
               case "boolean-value":
               case "boolean-present":
                 id = op.id;
@@ -5833,6 +6337,18 @@ function emitModuleForms(
           if (signed) emit({ op: "fcvtzs-x-d", rd, rn });
           else emit({ op: "fcvtzu-x-d", rd, rn });
         }
+        /** rd = the kind flags of the object header at [rn]. */
+        function headerFlags(rd: number, rn: number): void {
+          emit({ op: "ldr", width: 64, rt: rd, rn, offset: 0 });
+          emit({
+            op: "ubfm",
+            width: 64,
+            rd,
+            rn: rd,
+            immr: nativeHeaderFlagsShift,
+            imms: nativeHeaderFlagsShift + 2,
+          });
+        }
         function compareImmediate(rn: number, value: number): void {
           if (value <= 4095)
             emit({
@@ -5895,6 +6411,8 @@ function emitModuleForms(
           callees: readonly number[],
           record: number,
           words: number[],
+          notes: readonly number[] = [],
+          views: readonly number[] = [],
         ): number {
           const t = callbackTransition;
           dataPointer(state, 14, false, callbackState.size);
@@ -5945,6 +6463,25 @@ function emitModuleForms(
               offset: t.callbacks + ordinal * 8,
             });
             words.push(record + t.callbacks + ordinal * 8);
+          }
+          // Direct callbacks: the failure notes, then their views.
+          const extras = [t.onThrow, t.onInvalid];
+          for (let index = 0; index < notes.length; index++) {
+            const note = notes[index],
+              offset = extras[index];
+            if (note === undefined || offset === undefined)
+              throw "transition note invariant";
+            rawValue(9, note);
+            emit({ op: "str", width: 64, rt: 9, rn: 13, offset });
+            words.push(record + offset);
+          }
+          for (let index = 0; index < views.length; index++) {
+            const view = views[index];
+            if (view === undefined) throw "transition view invariant";
+            const offset = t.callbacks + (callees.length + index) * 8;
+            rawValue(9, view);
+            emit({ op: "str", width: 64, rt: 9, rn: 13, offset });
+            words.push(record + offset);
           }
           emit({
             op: "str",
@@ -6298,6 +6835,48 @@ function emitModuleForms(
         ): void {
           const bytes = cScalarBytes(scalar),
             signed = cScalarSigned(scalar, cTarget());
+          if (storedAsInteger(id)) {
+            // An exact int64 already: only the C type's range is
+            // checked (sign for 64-bit unsigned, else the extension of
+            // its low bits, which then also is the register's value).
+            rawValue(rd, id);
+            if (bytes === 8) {
+              if (!signed) {
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: rd,
+                  rm: "zr",
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                trapIf({ op: "b.cond", condition: "mi" });
+              }
+              return;
+            }
+            emit({
+              op: signed ? "sbfm" : "ubfm",
+              width: 64,
+              rd: 9,
+              rn: rd,
+              immr: 0,
+              imms: bytes * 8 - 1,
+            });
+            emit({
+              op: "sub-reg",
+              width: 64,
+              rd: "zr",
+              rn: 9,
+              rm: rd,
+              shift: "lsl",
+              amount: 0,
+              setFlags: true,
+            });
+            trapIf({ op: "b.cond", condition: "ne" });
+            return;
+          }
           floatLoad(0, id);
           if (bytes === 8) {
             floatToInteger(rd, 0, signed);
@@ -6988,20 +7567,13 @@ function emitModuleForms(
               displacement: (slow - exhausted) * 4,
             });
           }
-          zeroWords([
-            resultOffset,
-            resultOffset + 8,
-            resultOffset + 16,
-            resultOffset + 24,
-          ]);
+          // The slow path: the shared allocate-call kernel zeroes the result
+          // area and loads the allocator's arguments; the call, its
+          // safepoint and exceptional edge stay here.
           rawLoad(0, contextOffset);
-          emit({ op: "ldr", width: 64, rt: 1, rn: 0, offset: 24 });
-          emit({ op: "ldr", width: 64, rt: 16, rn: 0, offset: 16 });
-          trapIf({ op: "cbz", width: 64, rt: 16 });
-          imm(2, 0);
           address(3, resultOffset);
           size(9);
-          emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
+          callHelper("allocate-call");
           emit({ op: "blr", rn: 16 });
           safepoint();
           emit({
@@ -7014,56 +7586,12 @@ function emitModuleForms(
             setFlags: true,
           });
           exceptionalBranch({ op: "b.cond", condition: "ne" });
-          // The allocator returns `number | undefined` (one NaN-boxed
-          // word); `undefined` is an invariant failure.
+          // The allocator returns `number | undefined` (one NaN-boxed word);
+          // allocate-finish checks it and forms the object's address in x9.
           rawLoad(9, resultOffset + 16);
-          absentFlags(9, 10);
-          trapIf({ op: "b.cond", condition: "eq" });
-          // Validate the allocator's numeric offset (still in x9) before
-          // forming a native pointer.
-          callHelper("to-uint32");
-          emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
-          emit({ op: "ldr-d", rt: 1, rn: "sp", offset: resultOffset + 16 });
-          emit({ op: "fcmp", rn: 0, rm: 1 });
-          trapIf({ op: "b.cond", condition: "ne" });
-          emit({ op: "ubfm", width: 32, rd: 10, rn: 9, immr: 0, imms: 2 });
-          trapIf({ op: "cbnz", width: 32, rt: 10 });
           size(10);
-          emit({
-            op: "add-reg",
-            width: 64,
-            rd: 11,
-            rn: 9,
-            rm: 10,
-            shift: "lsl",
-            amount: 0,
-            setFlags: false,
-          });
-          rawLoad(10, contextOffset);
-          emit({ op: "ldr", width: 64, rt: 12, rn: 10, offset: 32 });
-          emit({
-            op: "sub-reg",
-            width: 64,
-            rd: "zr",
-            rn: 11,
-            rm: 12,
-            shift: "lsl",
-            amount: 0,
-            setFlags: true,
-          });
-          trapIf({ op: "b.cond", condition: "hi" });
-          emit({ op: "ldr", width: 64, rt: 10, rn: 10, offset: 8 });
-          trapIf({ op: "cbz", width: 64, rt: 10 });
-          emit({
-            op: "add-reg",
-            width: 64,
-            rd: 9,
-            rn: 10,
-            rm: 9,
-            shift: "lsl",
-            amount: 0,
-            setFlags: false,
-          });
+          rawLoad(11, contextOffset);
+          callHelper("allocate-finish");
           if (fastDone >= 0)
             patchInstruction(fastDone, {
               op: "b",
@@ -8111,6 +8639,75 @@ function emitModuleForms(
                 });
                 if (reflection) floatStore(0, op.id);
                 else saveRaw(12, op.id);
+                break;
+              }
+              case "general-is": {
+                const tag =
+                  op.type === "undefined"
+                    ? 0
+                    : op.type === "number"
+                      ? 1
+                      : op.type === "boolean"
+                        ? 2
+                        : op.type === "string"
+                          ? 3
+                          : op.type === "null"
+                            ? 4
+                            : 5;
+                rawValue(9, op.value);
+                imm(12, 0);
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  immediate: tag,
+                  shift: 0,
+                  setFlags: true,
+                });
+                if (op.type !== "Uint8Array") {
+                  emit({ op: "cset", rd: 12, condition: "eq" });
+                  saveRaw(12, op.id);
+                  break;
+                }
+                // An object whose header marker (bits 0-47) is 2: a typed
+                // array of 1-byte elements, as general-value checks.
+                const nonObject = instructions.length;
+                emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                rawLoad(9, value(op.value).offset + 8);
+                const absent = instructions.length;
+                emit({ op: "cbz", width: 64, rt: 9, displacement: 0 });
+                emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 10,
+                  rn: 10,
+                  immr: 0,
+                  imms: nativeHeaderFlagsShift - 1,
+                });
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 10,
+                  immediate: 2,
+                  shift: 0,
+                  setFlags: true,
+                });
+                emit({ op: "cset", rd: 12, condition: "eq" });
+                patchInstruction(nonObject, {
+                  op: "b.cond",
+                  condition: "ne",
+                  displacement: (instructions.length - nonObject) * 4,
+                });
+                patchInstruction(absent, {
+                  op: "cbz",
+                  width: 64,
+                  rt: 9,
+                  displacement: (instructions.length - absent) * 4,
+                });
+                saveRaw(12, op.id);
                 break;
               }
               case "general-kind": {
@@ -9798,32 +10395,43 @@ function emitModuleForms(
                   break;
                 }
                 if (access.operation === "retarget") {
-                  // An external view (borrowed flag exactly) gets a new data
-                  // address; its length is unchanged.
+                  // An external array (borrowed flag exactly) gets a new data
+                  // address, or a view whose owner is one (foreign views):
+                  // then both. Lengths are unchanged; collectors never move
+                  // external data, so the pair stays consistent.
                   const address = operands[1];
                   if (address === undefined)
                     throw "c-memory retarget invariant";
                   numberToInteger(address, 12, "usize");
                   rawValue(9, base);
-                  emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
-                  emit({
-                    op: "ubfm",
-                    width: 64,
-                    rd: 10,
-                    rn: 10,
-                    immr: nativeHeaderFlagsShift,
-                    imms: nativeHeaderFlagsShift + 2,
-                  });
-                  emit({
-                    op: "sub-imm",
-                    width: 64,
-                    rd: "zr",
-                    rn: 10,
-                    immediate: 1,
-                    shift: 0,
-                    setFlags: true,
-                  });
+                  headerFlags(10, 9);
+                  compareImmediate(10, 1);
+                  const external = instructions.length;
+                  emit({ op: "b.cond", condition: "eq", displacement: 0 });
+                  compareImmediate(10, 2);
                   trapIf({ op: "b.cond", condition: "ne" });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 11,
+                    rn: 9,
+                    offset: nativeArrayOwnerOffset,
+                  });
+                  headerFlags(10, 11);
+                  compareImmediate(10, 1);
+                  trapIf({ op: "b.cond", condition: "ne" });
+                  emit({
+                    op: "str",
+                    width: 64,
+                    rt: 12,
+                    rn: 11,
+                    offset: nativeArrayDataOffset,
+                  });
+                  patchInstruction(external, {
+                    op: "b.cond",
+                    condition: "eq",
+                    displacement: (instructions.length - external) * 4,
+                  });
                   emit({
                     op: "str",
                     width: 64,
@@ -10103,25 +10711,56 @@ function emitModuleForms(
                     throw "c-call state invariant";
                   stateOperand = state;
                   operands = operands.slice(2);
+                  // Direct callbacks (no adapter): the failure notes and
+                  // their views follow the prototype's operands.
+                  const prototypeEnd = call.signature.parameters.length,
+                    extras = operands.slice(prototypeEnd),
+                    notes = extras.slice(0, 2),
+                    views = extras.slice(2);
+                  let count = 0;
+                  for (let index = 0; index < prototypeEnd; index++)
+                    if (call.callbacks?.[index] !== undefined) count++;
                   const callees: number[] = [];
-                  for (let index = 0; index < operands.length; index++) {
+                  let viewIndex = 0;
+                  for (let index = 0; index < prototypeEnd; index++) {
                     if (call.operands[index + 2] !== "callback") continue;
                     const prototype = call.callbacks?.[index],
                       callee = operands[index];
                     if (prototype === undefined || callee === undefined)
                       throw "c-call callback invariant";
-                    callbackThunks[index] = callbackThunk(
-                      prototype,
-                      callees.length,
-                    );
+                    const direct = call.directCallbacks?.[index];
+                    if (direct === undefined)
+                      callbackThunks[index] = callbackThunk(
+                        prototype,
+                        callees.length,
+                      );
+                    else {
+                      const offsets: number[] = [];
+                      for (let view = 0; view < direct.length; view++)
+                        offsets.push(
+                          callbackTransition.callbacks +
+                            (count + viewIndex + view) * 8,
+                        );
+                      viewIndex += direct.length;
+                      callbackThunks[index] = callbackThunk(
+                        prototype,
+                        callees.length,
+                        direct,
+                        offsets,
+                      );
+                    }
                     callees.push(callee);
                   }
+                  if (views.length !== viewIndex)
+                    throw "c-call direct callback view invariant";
                   returnAddressAt = pushTransition(
                     state,
                     dispatcher,
                     callees,
                     plan.transition,
                     callbackWords,
+                    notes,
+                    views,
                   );
                 }
                 if (indirect) {
@@ -10783,21 +11422,10 @@ function emitModuleForms(
                   // runtime allocators reserve for a forced full collection
                   // (no allocation producer passes 0). Exhaustion throws through
                   // the exceptional edge; any other result is an invariant trap.
-                  zeroWords([
-                    resultOffset,
-                    resultOffset + 8,
-                    resultOffset + 16,
-                    resultOffset + 24,
-                  ]);
                   rawLoad(0, contextOffset);
-                  emit({ op: "ldr", width: 64, rt: 1, rn: 0, offset: 24 });
-                  emit({ op: "ldr", width: 64, rt: 16, rn: 0, offset: 16 });
-                  emit({ op: "cbnz", width: 64, rt: 16, displacement: 8 });
-                  emit({ op: "brk", immediate: 3 });
-                  imm(2, 0);
                   address(3, resultOffset);
                   imm(9, 0);
-                  emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
+                  callHelper("allocate-call");
                   emit({ op: "blr", rn: 16 });
                   safepoint();
                   emit({
@@ -15688,7 +16316,7 @@ function emitModuleForms(
             const site = callSites[index];
             if (site === undefined) throw "safepoint site invariant";
             if (collecting[index] !== true) {
-              safepoints.push({ offset: site.offset, map: empty });
+              safepoints.push({ offset: site.offset, start, map: empty });
               continue;
             }
             const references: number[] = [],
@@ -15769,7 +16397,7 @@ function emitModuleForms(
             )
               throw "register root across a may-callback call";
             registerSection(map, held);
-            safepoints.push({ offset: site.offset, map });
+            safepoints.push({ offset: site.offset, start, map });
           }
         }
         functions.push({
@@ -15845,6 +16473,8 @@ function emitModuleForms(
           else forms.islands.add(fn.id);
         }
       }
+      bodies.release(emitting);
+      emitting = -1;
     }
     scalarRegisters = undefined;
     // Each private leaf helper is appended once, regardless of the number of call sites.
@@ -15875,7 +16505,9 @@ function emitModuleForms(
                     ? rememberedBarrier()
                     : kind === "stack-overflow"
                       ? stackOverflowHelper()
-                      : stringHelper(kind);
+                      : kind === "allocate-call" || kind === "allocate-finish"
+                        ? allocationHelper(kind)
+                        : stringHelper(kind);
         for (const instruction of body) {
           if (instruction === undefined) throw "helper instruction invariant";
           emit(instruction);
@@ -15894,7 +16526,14 @@ function emitModuleForms(
       const thunk = callbackThunkRequests[index];
       if (thunk === undefined) throw "callback thunk invariant";
       thunkOffsets.push({ slot: index, offset: instructions.length * 4 });
-      emitCallbackThunk(thunk.signature, thunk.ordinal);
+      if (thunk.views !== undefined && thunk.signature !== undefined)
+        emitDirectCallbackThunk(
+          thunk.signature,
+          thunk.ordinal,
+          thunk.views,
+          thunk.viewOffsets,
+        );
+      else emitCallbackThunk(thunk.signature, thunk.ordinal);
     }
     const thunkEnd = instructions.length * 4;
     let codeLength = instructions.length * 4;
@@ -16064,12 +16703,12 @@ function emitModuleForms(
       codeLength += 8;
     }
     // The safepoint table, then the footer naming it, end the module.
-    const stackMapWords = encodeStackMapTable(safepoints);
-    if (stackMapWords === undefined)
-      fail("CODE_LIMIT", "stack map table exceeds its encoding");
     codeLength = Math.ceil(codeLength / 8) * 8;
     const stackMapOffset = codeLength,
-      stackMapBytes = stackMapWords.length * 8 + nativeStackMapFooterBytes;
+      stackMapWords = encodeStackMapTable(safepoints, stackMapOffset);
+    if (stackMapWords === undefined)
+      fail("CODE_LIMIT", "stack map table exceeds its encoding");
+    const stackMapBytes = stackMapWords.length * 8 + nativeStackMapFooterBytes;
     if (stackMapBytes > maxByteLength - codeLength)
       fail("CODE_LIMIT", "stack map table exceeds byte budget");
     codeLength += stackMapBytes;
@@ -16424,6 +17063,7 @@ function emitModuleForms(
       },
     };
   } catch (error) {
+    if (emitting >= 0) bodies.release(emitting);
     if (error !== abort) throw error;
   }
   if (failure === undefined) throw "emission failure invariant";

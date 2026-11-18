@@ -1,4 +1,5 @@
 import { startNativeHeartbeat } from "./test262-native-heartbeat.ts";
+import { attributeNativeModule } from "./native-image-attribution.ts";
 import { nativeVariantSelection } from "./native-variant-selection.ts";
 import { readFileSync, writeFileSync } from "node:fs";
 import {
@@ -39,6 +40,8 @@ import {
   createNativeBatchBuilder,
   createNativeUnitBatchBuilder,
   type NativeBatchBuild,
+  deferNativeCase,
+  type NativeModuleInput,
   type NativeTestCase,
   nativeTestResources,
   capturedScriptEvaluation,
@@ -260,7 +263,8 @@ try {
       : undefined;
   const buildSyntax = createNativeSyntaxBatchBuilder(snapshot);
   const suiteFunctions = process.env.TINT_TEST262_SUITE_FUNCTIONS,
-    suiteImage = process.env.TINT_TEST262_SUITE_IMAGE;
+    suiteImage = process.env.TINT_TEST262_SUITE_IMAGE,
+    suiteAttribution = process.env.TINT_TEST262_SUITE_ATTRIBUTION;
   const suiteMembers: {
     readonly item: PendingItem;
     readonly member: NativeSuiteCase;
@@ -289,7 +293,7 @@ try {
     QueueKind,
     {
       input: ObservationInput;
-      prepared: NativeTestCase | undefined;
+      prepared: NativeTestCase<NativeModuleInput> | undefined;
       plan: ExecutionPlan;
       started: number;
       /** Selection order, which the journal preserves for resume. */
@@ -593,7 +597,7 @@ try {
       const sequence = nextSequence++;
       function enqueue(
         kind: QueueKind,
-        prepared: NativeTestCase | undefined,
+        prepared: NativeTestCase<NativeModuleInput> | undefined,
         unitCompileMs = 0,
       ) {
         const item = {
@@ -690,7 +694,11 @@ try {
               units = buildUnits.accepts(prepared.value);
               unitCompileMs = performance.now() - routeStarted;
             }
-            enqueue(units ? "units" : "program", prepared.value, unitCompileMs);
+            enqueue(
+              units ? "units" : "program",
+              deferNativeCase(prepared.value),
+              unitCompileMs,
+            );
           } else
             record(
               input,
@@ -733,6 +741,16 @@ try {
               writeFileSync(suiteFunctions, JSON.stringify(functions), {
                 flag: "wx",
               }),
+        // Analysis: TINT_TEST262_SUITE_ATTRIBUTION names a new JSON file for
+        // the program module's per-function code and safepoint-map bytes.
+        suiteAttribution === undefined
+          ? undefined
+          : (compiled) =>
+              writeFileSync(
+                suiteAttribution,
+                JSON.stringify(attributeNativeModule(compiled.program.native)),
+                { flag: "wx" },
+              ),
       ),
       nextCompilation: () => batches.length,
       compilation: (compilation) => {

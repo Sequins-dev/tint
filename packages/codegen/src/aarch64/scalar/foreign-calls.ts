@@ -86,12 +86,18 @@ export function planForeignCall(
       : 0;
   let transition = -1;
   if (call.mayCallback === true) {
-    // The record holds one word per callback operand.
-    let callbacks = 0;
-    for (const operand of call.operands)
-      if (operand === "callback") callbacks++;
+    // The record holds one word per callback, then direct callbacks'
+    // views.
+    const prototypes = call.callbacks ?? [],
+      directs = call.directCallbacks ?? [];
+    let callbacks = 0,
+      views = 0;
+    for (let index = 0; index < prototypes.length; index++)
+      if (prototypes[index] !== undefined) callbacks++;
+    for (let index = 0; index < directs.length; index++)
+      views += directs[index]?.length ?? 0;
     transition = Math.ceil(frame / 16) * 16;
-    frame = transition + transitionBytes(callbacks);
+    frame = transition + transitionBytes(callbacks, views);
   }
   return {
     ok: true,

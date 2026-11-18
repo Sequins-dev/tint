@@ -22,13 +22,16 @@ import {
   type CompiledMacOSProgram,
   type ImageFunctionRange,
 } from "@tint/compiler/build";
-import type { SourceModule } from "@tint/typescript/modules/model";
+
 import type { ExecutionOutcome, ExecutionPlan } from "./test262-execution.ts";
 import {
   nativeBatchConfiguration,
   nativeBatchImageRequest,
   nativeExitOutcome,
-  parsedNativeHost,
+  loadNativeModule,
+  nativeHostRecipe,
+  type NativeModuleInput,
+  type NativeModuleRecipe,
   prepareConfiguredBatch,
   type NativeTestCase,
 } from "./test262-native.ts";
@@ -36,7 +39,10 @@ import type { WorkspaceSourceSnapshot } from "./workspace-sources.ts";
 
 /** One suite member: an execution case or a parse/early-negative plan. */
 export type NativeSuiteCase =
-  | { readonly kind: "execution"; readonly prepared: NativeTestCase }
+  | {
+      readonly kind: "execution";
+      readonly prepared: NativeTestCase<NativeModuleInput>;
+    }
   | { readonly kind: "early-error"; readonly plan: ExecutionPlan };
 
 export interface NativeSuiteBuildFailure {
@@ -127,8 +133,8 @@ const earlyCaseId = (index: number) => `test262-case-${index}-host`;
  * before it compiles an entry. Nothing is compiled or evaluated.
  * Exit statuses follow the syntax host: 40 rejected with SyntaxError at
  * parse/early-error time, 42 accepted, 10 unsupported. */
-function earlyRejectionHost(): SourceModule {
-  return parsedNativeHost(
+function earlyRejectionHost(): NativeModuleRecipe {
+  return nativeHostRecipe(
     earlyRejectionModule,
     `import {createSourceTextView} from "source";
 import {parseScript,parseModule} from "syntax";
@@ -148,8 +154,8 @@ export function rejectEarly(text:string,module:boolean):number{
     ]),
   );
 }
-function earlyCaseHost(index: number, plan: ExecutionPlan): SourceModule {
-  return parsedNativeHost(
+function earlyCaseHost(index: number, plan: ExecutionPlan): NativeModuleRecipe {
+  return nativeHostRecipe(
     earlyCaseId(index),
     `import {rejectEarly} from "early";
 export function run():number{return rejectEarly(${JSON.stringify(plan.source)},${plan.goal === "module" ? "true" : "false"});}`,
@@ -160,11 +166,16 @@ export function run():number{return rejectEarly(${JSON.stringify(plan.source)},$
 /** A dispatch tree over the case hosts: leaves call `run` of up to
  * `dispatchFanOut` hosts by relative index; inner levels route by range. */
 export function suiteDispatchModules(
+  ...args: Parameters<typeof suiteDispatchRecipes>
+) {
+  return suiteDispatchRecipes(...args).map(loadNativeModule);
+}
+function suiteDispatchRecipes(
   hosts: readonly string[],
   agentRuntime: string | undefined,
-): SourceModule[] {
+): NativeModuleInput[] {
   if (hosts.length === 0) throw Error("empty Test262 suite");
-  const modules: SourceModule[] = [];
+  const modules: NativeModuleInput[] = [];
   let level = hosts.map((id) => ({ id, name: "run", size: 1 }));
   for (let depth = 0; level.length > 1; depth++) {
     const next: { id: string; name: string; size: number }[] = [];
@@ -185,7 +196,7 @@ export function suiteDispatchModules(
         return test + call;
       });
       modules.push(
-        parsedNativeHost(
+        nativeHostRecipe(
           id,
           `${children.map((child, index) => `import {${child.name} as child${index}} from ${JSON.stringify(child.id)};`).join("\n")}
 export function select(selected:number):number{
@@ -202,7 +213,7 @@ export function select(selected:number):number{
   const root = level[0]!;
   const call = root.size === 1 ? "(selected===0?root():99)" : "root(selected)";
   modules.push(
-    parsedNativeHost(
+    nativeHostRecipe(
       suiteEntry,
       `import {${root.name} as root} from ${JSON.stringify(root.id)};
 ${agentRuntime === undefined ? "" : `import {runNativeAgent,finishNativeAgents} from "agent-runtime";`}
@@ -236,7 +247,9 @@ export function run(${agentRuntime === undefined ? "" : "argument:number"}):numb
 }
 
 /** Map each generated module to the suite members that depend on it. */
-function memberOwners(modules: readonly SourceModule[]): Map<string, number[]> {
+function memberOwners(
+  modules: readonly NativeModuleInput[],
+): Map<string, number[]> {
   const owners = new Map<string, number[]>();
   for (const module of modules) {
     const match = /^test262-case-(\d+)-/.exec(module.id);
@@ -259,6 +272,8 @@ export function createNativeSuiteBuilder(
   report: (stage: string) => void = () => {},
   /** Analysis: receives every emitted function of a successful build. */
   onEmittedFunctions?: (functions: readonly ImageFunctionRange[]) => void,
+  /** Analysis: receives the compiled program of a successful build. */
+  onCompiled?: (compiled: CompiledMacOSProgram) => void,
 ) {
   const config = nativeBatchConfiguration(snapshot, moduleExecution);
   const request = nativeBatchImageRequest(
@@ -268,11 +283,11 @@ export function createNativeSuiteBuilder(
     config,
   );
   /** The program for members in order; member i is selected by index i. */
-  function modulesFor(cases: readonly NativeSuiteCase[]): SourceModule[] {
+  function modulesFor(cases: readonly NativeSuiteCase[]): NativeModuleInput[] {
     const executions = cases.flatMap((item, index) =>
       item.kind === "execution" ? [{ index, prepared: item.prepared }] : [],
     );
-    const modules: SourceModule[] = [];
+    const modules: NativeModuleInput[] = [];
     if (executions.length > 0) {
       const batch = prepareConfiguredBatch(
         executions.map((item) => item.prepared),
@@ -311,7 +326,7 @@ export function createNativeSuiteBuilder(
           modules.push(earlyCaseHost(index, item.plan));
     }
     modules.push(
-      ...suiteDispatchModules(
+      ...suiteDispatchRecipes(
         cases.map((_, index) => earlyCaseId(index)),
         config.agentProvider === undefined ? undefined : "test262-runtime",
       ),
@@ -326,6 +341,8 @@ export function createNativeSuiteBuilder(
     const buildRequest = {
       ...base,
       ...(onEmittedFunctions === undefined ? {} : { onEmittedFunctions }),
+      // Analysis builds keep each operation's code range in the module.
+      ...(onCompiled === undefined ? {} : { onOperationRanges: () => {} }),
       report: (stage: string) => {
         const now = performance.now();
         stages.push({ stage: current.stage, ms: now - current.started });
@@ -342,6 +359,7 @@ export function createNativeSuiteBuilder(
       stage: current.stage,
       ms: performance.now() - current.started,
     });
+    if (built.ok && compiled.ok) onCompiled?.(compiled.value);
     if (built.ok)
       return {
         ok: true,

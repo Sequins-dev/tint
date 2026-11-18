@@ -433,16 +433,12 @@ export function createCheneyCollector(
   // Each managed frame's safepoint map, found by walking the stack.
   const readWord: ReadWord = (address: number): number | undefined =>
     read(address);
-  const scanFrame = (
-    descriptor: number,
-    base: number,
-    extent: number,
-  ): boolean => {
-    scanFields(state, currentStarts, descriptor, base);
+  const scanReference = (slot: number): boolean => {
+    referenceSlot(state, currentStarts, slot);
     return true;
   };
-  const scanRegister = (slot: number): boolean => {
-    referenceSlot(state, currentStarts, slot);
+  const scanGeneral = (slot: number): boolean => {
+    generalSlot(state, currentStarts, slot);
     return true;
   };
   return {
@@ -470,9 +466,9 @@ export function createCheneyCollector(
         walkNativeStack(
           readWord,
           rootHead,
-          scanFrame,
+          scanReference,
+          scanGeneral,
           1000000,
-          scanRegister,
         ) !== "complete"
       )
         throw "CHENEY_ROOT";
@@ -899,28 +895,20 @@ export function createCompactor(
   };
   const readWord: ReadWord = (address: number): number | undefined =>
     read(address);
-  const markFrame = (
-    descriptor: number,
-    base: number,
-    extent: number,
-  ): boolean => {
-    markFields(state, descriptor, base);
-    return true;
-  };
-  const markRegister = (slot: number): boolean => {
+  const markRoot = (slot: number): boolean => {
     markReference(state, read(slot));
     return true;
   };
-  const forwardFrame = (
-    descriptor: number,
-    base: number,
-    extent: number,
-  ): boolean => {
-    forwardFields(state, descriptor, base);
+  const markGeneralRoot = (slot: number): boolean => {
+    markGeneral(state, slot);
     return true;
   };
-  const forwardRegister = (slot: number): boolean => {
+  const forwardRoot = (slot: number): boolean => {
     forwardReference(state, slot);
+    return true;
+  };
+  const forwardGeneralRoot = (slot: number): boolean => {
+    forwardGeneral(state, slot);
     return true;
   };
   return {
@@ -959,9 +947,9 @@ export function createCompactor(
         walkNativeStack(
           readWord,
           rootHead,
-          markFrame,
+          markRoot,
+          markGeneralRoot,
           1000000,
-          markRegister,
         ) !== "complete"
       )
         throw "COMPACT_ROOT";
@@ -992,9 +980,9 @@ export function createCompactor(
         walkNativeStack(
           readWord,
           rootHead,
-          forwardFrame,
+          forwardRoot,
+          forwardGeneralRoot,
           1000000,
-          forwardRegister,
         ) !== "complete"
       )
         throw "COMPACT_ROOT";

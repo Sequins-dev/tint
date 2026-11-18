@@ -1,6 +1,8 @@
-// Parity between a hand-written binding and the generator's (docs/native-
-// ffi.md, "Binding generator"): every difference in what the two declare,
-// as one line each. Parameter names and comments are not compared;
+// Parity between two versions of a binding (docs/native-ffi.md, "Binding
+// generator"): every difference in what they declare, one line each. It
+// replaced the hand-written bindings with generated ones (no layout or
+// signature changed), and `pnpm bindgen check` uses it to describe what a
+// regeneration would change. Parameter names and comments are not compared;
 // pointers to non-record memory compare equal whatever their scalar
 // pointee (`Ptr<u8>` and `Ptr<void>` are the same borrowed bytes).
 import {
@@ -48,7 +50,8 @@ function functionKey(fn: CFunctionDeclaration): string {
   ].join(" ");
 }
 
-/** What `generated` declares differently from `written` on `target`. */
+/** What `generated` (the newer version) declares differently from
+ * `written` on `target`. */
 export function bindingDifferences(
   written: CLibraryDeclaration,
   generated: CLibraryDeclaration,

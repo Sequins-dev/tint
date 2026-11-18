@@ -21,6 +21,7 @@ export function visitInstructionOperands(
     case "store":
     case "general-kind":
     case "general-record-is":
+    case "general-is":
     case "general-record-descriptor":
     case "general-wrap":
     case "general-value":

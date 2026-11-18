@@ -91,6 +91,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/aarch64/scalar/allocation.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/aarch64/scalar/arrays.ts",
       packageId: "codegen",
     },
@@ -364,6 +368,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/compiler/src/project.ts",
+      packageId: "compiler",
+    },
+    {
+      id: "packages/compiler/src/spill-files.ts",
       packageId: "compiler",
     },
     {
@@ -1016,6 +1024,22 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ir/src/semantic/index.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/storage/bytes.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/storage/codec.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/storage/index.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/storage/store.ts",
       packageId: "ir",
     },
     {
@@ -2068,6 +2092,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-runtime/src/objects/proxy.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/record-views.ts",
       packageId: "js-runtime",
     },
     {
@@ -3307,6 +3335,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "codegen",
+      specifier: "@tint/ir/storage",
+      target: "packages/ir/src/storage/index.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/ir/structured",
       target: "packages/ir/src/structured/index.ts",
     },
@@ -3659,6 +3692,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/ir/semantic",
       target: "packages/ir/src/semantic/index.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/ir/storage",
+      target: "packages/ir/src/storage/index.ts",
     },
     {
       packageId: "compiler",
@@ -4442,6 +4480,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "js-engine",
+      specifier: "@tint/compiler/spill-files",
+      target: "packages/compiler/src/spill-files.ts",
+    },
+    {
+      packageId: "js-engine",
       specifier: "@tint/foundation/binary/bytes",
       target: "packages/foundation/src/binary/bytes.ts",
     },
@@ -5634,6 +5677,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "ts-native",
       specifier: "@tint/ir/semantic",
       target: "packages/ir/src/semantic/index.ts",
+    },
+    {
+      packageId: "ts-native",
+      specifier: "@tint/ir/storage",
+      target: "packages/ir/src/storage/index.ts",
     },
     {
       packageId: "ts-native",

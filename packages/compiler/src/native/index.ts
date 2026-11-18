@@ -54,6 +54,9 @@ export {
   boundaryNull,
   boundaryUnknown,
   type BoundaryExport,
+  type BoundaryField,
+  type BoundaryRecord,
+  type BoundaryRecordUse,
   type TypedBoundaryModule,
 } from "./general-partition.ts";
 import { pruneUnusedModules } from "./module-pruning.ts";
@@ -88,7 +91,10 @@ import {
   type ModuleIR,
   type ScalarType,
   type FunctionIR,
+  functionHeader,
 } from "@tint/ir/scalar";
+import { createEmissionStore, type BuildStorage } from "../spill-files.ts";
+import type { FunctionStore } from "@tint/ir/storage";
 import { bindModule } from "@tint/typescript/binding";
 import {
   checkClosureModule,
@@ -96,6 +102,7 @@ import {
 } from "@tint/typescript/checker";
 import {
   closeGeneralPartition,
+  type BoundaryRecord,
   type TypedBoundaryModule,
 } from "./general-partition.ts";
 import {
@@ -111,6 +118,11 @@ import {
   type LinkedExport,
   type SourceRange,
 } from "@tint/ts-native/modules";
+import {
+  requestModules,
+  type ModuleRequest,
+  type SourcePosition,
+} from "@tint/typescript/modules";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import {
   prepareCollectionRuntimes,
@@ -124,7 +136,10 @@ import {
 } from "@tint/ts-native/closure/lowering";
 import {
   emitModule,
+  emitModuleFromStore,
   type CodegenAnalysis,
+  type Emission,
+  type EmissionOptions,
   type NativeModule,
   type ManagedFunctionEntryBinding,
   type EmissionFormHints,
@@ -188,7 +203,8 @@ export interface NativeServiceImport {
   /** A managed factory must exactly match this host-owned surface frame. */
   readonly surface?: string;
 }
-export interface CompileRequest {
+export interface CompileRequest extends ModuleRequest {
+  readonly storage?: BuildStorage;
   readonly serviceImports?: readonly NativeServiceImport[];
   readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
   /** The target's host policy (NativeTarget.hostABI). Builds pass their
@@ -245,8 +261,6 @@ export interface CompileRequest {
   readonly foreignBindings?: readonly NativeForeignBinding[];
   /** Explicit external-storage primitive capabilities (c-memory). */
   readonly foreignMemoryBindings?: readonly NativeForeignMemoryBinding[];
-  /** Parsed modules with imports already resolved to module IDs. */
-  readonly modules: readonly SourceModule[];
   readonly entry: string;
   readonly exports: readonly string[];
   /** Optional one-shot export invocation after initialization. */
@@ -297,6 +311,8 @@ export interface GeneralProgramRequest {
    * entries: the host imports their exports and presents them to general
    * code as synthetic modules. */
   readonly boundaries: readonly TypedBoundaryModule[];
+  /** Record types the boundaries use; they cross as JavaScript views. */
+  readonly records?: readonly BoundaryRecord[];
 }
 export type GeneralProgram =
   | {
@@ -306,6 +322,10 @@ export type GeneralProgram =
         readonly modules: readonly SourceModule[];
         /** The generated host module; it exports `start(): number`. */
         readonly entry: string;
+        /** Record bindings of generated runtime modules (record view
+         * slots), and those runtime modules. */
+        readonly recordBindings?: readonly NativeRecordBinding[];
+        readonly runtimes?: readonly RuntimeSource[];
       };
     }
   | { readonly ok: false; readonly error: string };
@@ -402,7 +422,7 @@ interface FunctionSourceNames {
   readonly names: Map<string, string>;
   /** Source binding names by module:start:end of their declaration. */
   readonly variables: Map<string, string>;
-  readonly modules: Map<string, SourceModule>;
+  readonly positions: Map<string, SourcePosition>;
 }
 /** The front-end facts dense reference-list lowering needs. */
 interface ReferenceListPlan {
@@ -488,13 +508,19 @@ type TypedLowering =
 function withForeignRuntimes(request: CompileRequest): CompileRequest {
   const libraries = request.foreignLibraries ?? [];
   if (libraries.length === 0) return request;
+  const loader = request.moduleLoader;
+  const ids = new Set<string>();
+  if (loader !== undefined) {
+    for (const id of loader.ids) if (id !== undefined) ids.add(id);
+  } else {
+    for (const module of request.modules)
+      if (module !== undefined) ids.add(module.id);
+  }
   const runtimes: RuntimeSource[] = request.runtimes.slice();
   for (const library of libraries) {
     if (library === undefined) throw "foreign library invariant";
     if (
-      !request.modules.some(
-        (module) => module !== undefined && module.id === library.id,
-      ) ||
+      !ids.has(library.id) ||
       runtimes.some(
         (runtime) => runtime !== undefined && runtime.module === library.id,
       )
@@ -543,7 +569,8 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       typed.error.stage,
       typed.error.message + " (general fallback requires a start export)",
     );
-  const application = generalApplicationModules(request);
+  const available = requestModules(request);
+  const application = generalApplicationModules(request, available);
   if (!application.ok)
     return failure(
       typed.error.stage,
@@ -616,23 +643,33 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       if (module !== undefined) seed.add(module.id);
     const lowered = lowering.lower({
       modules: partition.general,
-      available: request.modules,
+      available,
       entry: request.entry,
       start,
       boundaries: partition.boundaries,
+      ...(partition.records === undefined
+        ? {}
+        : { records: partition.records }),
     });
     if (!lowered.ok)
       return failure("general", lowered.error + " (typed: " + reason + ")");
     const modules: SourceModule[] = [];
-    for (const module of request.modules)
+    for (const module of available)
       if (module !== undefined) modules.push(module);
     for (const module of lowered.value.modules)
       if (module !== undefined) modules.push(module);
+    const programBindings = recordBindings.slice(),
+      programRuntimes = runtimes.slice();
+    for (const binding of lowered.value.recordBindings ?? [])
+      if (binding !== undefined) programBindings.push(binding);
+    for (const runtime of lowered.value.runtimes ?? [])
+      if (runtime !== undefined) programRuntimes.push(runtime);
     const compiled = compileTypedProgram({
       ...request,
-      recordBindings,
-      runtimes,
+      recordBindings: programBindings,
+      runtimes: programRuntimes,
       modules,
+      moduleLoader: undefined,
       entry: lowered.value.entry,
       exports: [start],
     });
@@ -660,7 +697,10 @@ export function compileArm64Program(original: CompileRequest): Compilation {
  * replace, and the trusted runtime and host-bound modules they import. Trusted
  * modules always stay typed: general code reaches them through checked
  * boundaries, and the walk does not enter them. */
-function generalApplicationModules(request: CompileRequest):
+function generalApplicationModules(
+  request: CompileRequest,
+  available: readonly SourceModule[],
+):
   | {
       readonly ok: true;
       readonly value: readonly SourceModule[];
@@ -668,7 +708,7 @@ function generalApplicationModules(request: CompileRequest):
     }
   | { readonly ok: false; readonly error: string } {
   const byId = new Map<string, SourceModule>();
-  for (const module of request.modules) {
+  for (const module of available) {
     if (module === undefined) throw "general module invariant";
     byId.set(module.id, module);
   }
@@ -740,7 +780,7 @@ const typedGlobals: readonly string[] = [
 /** Links the program and prepares its globals and managed surfaces. */
 function linkTypedProgram(request: CompileRequest): TypedLinking {
   const globals = typedGlobals;
-  const modules = request.modules.slice();
+  const modules = requestModules(request).slice();
   let entry = "$tint$compiler-entry";
   while (modules.some((m) => m !== undefined && m.id === entry)) entry += "$";
   const roots = [request.entry];
@@ -1817,11 +1857,13 @@ function lowerTypedProgram(request: CompileRequest): TypedLowering {
   function functionSourceNames(): FunctionSourceNames {
     const originalNames = new Map<string, string>(),
       variables = new Map<string, string>();
-    const sourceModules = new Map<string, SourceModule>();
+    const positions = new Map<string, SourcePosition>();
     const names = new Map<string, string>();
-    for (const source of request.modules) {
+    for (const source of requestModules(request)) {
       if (source === undefined) throw "debug source invariant";
-      sourceModules.set(source.id, source);
+      const position = source.sourcePosition;
+      if (position === undefined) positions.delete(source.id);
+      else positions.set(source.id, position);
       const boundSource = bindModule(source.module, typedGlobals);
       // Modules outside the typed globals (JavaScript compiled with general
       // semantics) keep generated function names.
@@ -1850,7 +1892,7 @@ function lowerTypedProgram(request: CompileRequest): TypedLowering {
         names.set(generated, origin.module + ":" + sourceName);
       }
     }
-    return { names, variables, modules: sourceModules };
+    return { names, variables, positions };
   }
   const observer = request.optimizationObserver;
   const describeSources =
@@ -2021,6 +2063,37 @@ function lowerProgramReferenceLists(
     program.ir.module,
   );
 }
+/** Replace the optimization owner's module so original bodies can be collected
+ * before emission. Observability callers may keep their own IR snapshots. */
+function packEmissionIR(program: ModuleVersion, store: FunctionStore): void {
+  const functions: FunctionIR[] = [];
+  for (const fn of program.module.functions) {
+    if (fn === undefined) throw "emission function invariant";
+    store.put(fn);
+    functions.push(functionHeader(fn));
+  }
+  program.module = { ...program.module, functions };
+}
+
+function emitProgram(
+  program: ModuleVersion,
+  storage: BuildStorage | undefined,
+  options: EmissionOptions,
+): Emission {
+  // The default keeps bodies decoded in memory: packing them only pays when a
+  // budget or full spill is requested, and every emitter sweep would
+  // otherwise decode each body again.
+  if (storage === undefined || storage.policy === "memory")
+    return emitModule(program.module, options);
+  const store = createEmissionStore(storage);
+  try {
+    packEmissionIR(program, store);
+    return emitModuleFromStore(program.module, store, options);
+  } finally {
+    store.close();
+  }
+}
+
 function compileTypedProgram(request: CompileRequest): Compilation {
   // Only the lowered IR and compact source facts outlive the front end.
   const lowered = lowerTypedProgram(request);
@@ -2041,10 +2114,12 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   function locatedRemarks(
     sink: (remark: LocatedRemark) => void,
   ): (remark: OptimizationRemark) => void {
-    const byId = new Map<string, SourceModule>();
-    for (const source of request.modules) {
+    const byId = new Map<string, SourcePosition>();
+    for (const source of requestModules(request)) {
       if (source === undefined) throw "remark source invariant";
-      byId.set(source.id, source);
+      const position = source.sourcePosition;
+      if (position === undefined) byId.delete(source.id);
+      else byId.set(source.id, position);
     }
     return (remark: OptimizationRemark): void => {
       const origin =
@@ -2065,8 +2140,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         });
         return;
       }
-      const source = byId.get(origin.module),
-        positionAt = source === undefined ? undefined : source.sourcePosition,
+      const positionAt = byId.get(origin.module),
         position =
           positionAt === undefined ? undefined : positionAt(origin.start);
       sink({
@@ -2147,8 +2221,23 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         roots.push(binding.function);
       }
     }
-    const result = pruneClosedModule(module, roots, 10000000, foreign);
-    if (result === undefined) return module;
+    // Tracing and remapping are linear in the instructions of the module;
+    // a capped budget silently kept every function of large programs.
+    const result = pruneClosedModule(module, roots, unboundedWork, foreign);
+    if (result === undefined) {
+      // Declined (raw memory capabilities or unstable record layouts).
+      recordPass(
+        {
+          phase: "scalar",
+          pass: "remove-unreachable",
+          visited: 0,
+          rewritten: 0,
+          skipped: module.functions.length,
+        },
+        module,
+      );
+      return module;
+    }
     // Every identity foreign code binds must survive; otherwise keep all.
     for (const plan of identityPlans) {
       if (plan === undefined) throw "service identity plan invariant";
@@ -2228,17 +2317,18 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     }
   }
   program.ir.module = prune(program.ir.module);
-  const optimizedModule = program.ir.module,
+  const observedModule =
+      observePass === undefined ? undefined : program.ir.module,
     initializer = program.initializer,
     invocation = program.invocation;
   if (reportIR !== undefined && reachable !== undefined) {
     reportIR("lowered", reachable);
-    reportIR("optimized", optimizedModule);
+    reportIR("optimized", program.ir.module);
   }
   // Codegen analyses that still have size limits fall back to conservative
   // code; each fallback is a missed remark and counts in the emission pass.
   let analysisLimits = 0;
-  const native = emitModule(optimizedModule, {
+  const native = emitProgram(program.ir, request.storage, {
     maxByteLength: 0xffffffff,
     unboundedAnalysis: true,
     analysisLimit: (analysis: CodegenAnalysis, fn: FunctionIR): void => {
@@ -2275,6 +2365,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     pageAlignedCode: request.pageAlignedCode ?? false,
     forceFarReach: request.forceFarReach === true ? true : undefined,
   });
+  const optimizedModule = program.ir.module;
   if (!native.ok) {
     const error = native.error;
     const invalid = optimizedModule.functions.find(
@@ -2298,7 +2389,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         error.message,
     );
   }
-  if (observePass !== undefined)
+  if (observePass !== undefined && observedModule !== undefined)
     observePass({
       statistics: {
         phase: "codegen",
@@ -2307,7 +2398,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         rewritten: 0,
         skipped: analysisLimits,
       },
-      module: optimizedModule,
+      module: observedModule,
       budgetExhausted: false,
     });
   const serviceIdentities: NativeServiceBinding[] = [],
@@ -2365,13 +2456,12 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     const names = sourceNames.names;
     // Linking renames bindings; variables keep their source names.
     const variableNames = sourceNames.variables,
-      sourceModules = sourceNames.modules;
+      positions = sourceNames.positions;
     for (const range of native.value.sourceRanges) {
       if (range === undefined) throw "debug source range invariant";
       const origin = locateSourceRange(ranges, range);
       if (origin === undefined) continue;
-      const source = sourceModules.get(origin.module),
-        positionAt = source?.sourcePosition;
+      const positionAt = positions.get(origin.module);
       if (positionAt === undefined) continue;
       const position = positionAt(origin.start);
       if (position === undefined) continue;
@@ -2407,7 +2497,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       (span) => {
         const origin = locateSourceRange(ranges, span);
         if (origin === undefined) return undefined;
-        const positionAt = sourceModules.get(origin.module)?.sourcePosition;
+        const positionAt = positions.get(origin.module);
         const position =
           positionAt === undefined ? undefined : positionAt(origin.start);
         return position === undefined

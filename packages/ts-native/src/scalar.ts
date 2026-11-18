@@ -14,6 +14,7 @@ import type {
   CheckedFunction,
   Local,
   ExpressionInfo,
+  DowncastTest,
   Expression,
   Statement,
   Span,
@@ -375,6 +376,7 @@ export function lowerFunction(
       case "general-equal":
       case "record-has":
       case "general-record-is":
+      case "general-is":
       case "boolean-value":
       case "boolean-present":
         type = "boolean";
@@ -2007,6 +2009,79 @@ export function lowerFunction(
       end: node.end,
     });
     return save(id, "number", node);
+  }
+  /** `x as T` from a general value: one test per accepted category and
+   * record layout; a value passing none throws a TypeError (an explicit
+   * contract), and a passing value converts to T's representation. */
+  function checkedDowncast(
+    node: Expression & { readonly kind: "satisfies" },
+    downcast: {
+      readonly tests: readonly DowncastTest[];
+      readonly records: readonly number[];
+    },
+  ): number {
+    const operand = expression(node.expression);
+    if (operand === undefined) throw "downcast operand invariant";
+    if (info(node.expression).type !== "general")
+      throw "downcast operand representation invariant";
+    // Values are block-local: each test block reloads the operand slot.
+    const accepted = block();
+    for (const test of downcast.tests) {
+      if (test === undefined) throw "downcast test invariant";
+      const id = nextValue++;
+      emit({
+        kind: "general-is",
+        id,
+        value: load(operand, node),
+        type: test,
+        start: node.start,
+        end: node.end,
+      });
+      const next = block();
+      choose(id, accepted, next, node);
+      current = next;
+    }
+    for (const record of downcast.records) {
+      if (record === undefined) throw "downcast record invariant";
+      const id = nextValue++;
+      emit({
+        kind: "general-record-is",
+        id,
+        value: load(operand, node),
+        record,
+        start: node.start,
+        end: node.end,
+      });
+      const next = block();
+      choose(id, accepted, next, node);
+      current = next;
+    }
+    const message = nextValue++;
+    emit({
+      kind: "string-literal",
+      id: message,
+      value: "value does not match the asserted type",
+      start: node.start,
+      end: node.end,
+    });
+    const thrown = nextValue++;
+    emit({
+      kind: "error-new",
+      error: "TypeError",
+      id: thrown,
+      message,
+      start: node.start,
+      end: node.end,
+    });
+    finish({
+      kind: "throw",
+      value: coerce(thrown, "general", node),
+      start: node.start,
+      end: node.end,
+    });
+    current = accepted;
+    const type = scalarType(node);
+    return save(coerce(load(operand, node), type, node), type, node);
   }
   function requireRange(condition: number, node: Span): void {
     requireCondition(condition, "RangeError", "Invalid range", node);
@@ -3926,7 +4001,11 @@ export function lowerFunction(
         if (target === undefined) throw "function target invariant";
         return functionValue(target, node);
       }
-      case "satisfies":
+      case "satisfies": {
+        const downcast = info(node).downcast;
+        if (downcast === undefined) return expression(node.expression);
+        return checkedDowncast(node, downcast);
+      }
       case "group":
         return expression(node.expression);
       case "unary": {

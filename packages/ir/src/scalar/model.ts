@@ -25,6 +25,9 @@ export interface Span {
 export interface DebugOrigin {
   readonly inline?: number | undefined;
 }
+/** Categories general-is tests. */
+export type GeneralTest =
+  "undefined" | "number" | "boolean" | "string" | "null" | "Uint8Array";
 export type Instruction = Span &
   DebugOrigin &
   (
@@ -54,6 +57,15 @@ export type Instruction = Span &
         readonly kind: "general-kind";
         readonly id: number;
         readonly value: number;
+      }
+    | {
+        /** Whether a general value has a category, or (Uint8Array) is an
+         * object whose header marks 1-byte typed array elements, as
+         * general-value checks. A boolean test; never traps. */
+        readonly kind: "general-is";
+        readonly id: number;
+        readonly value: number;
+        readonly type: GeneralTest;
       }
     | {
         readonly kind: "general-equal";
@@ -570,6 +582,36 @@ export interface RecordDebugInfo {
   /** Field names by field index. */
   readonly fields: readonly string[];
 }
+/** A source of function bodies keyed by the module's dense function IDs.
+ * When supplied alongside a module, its functions need only contain headers. */
+export interface FunctionBodySource {
+  readonly get: (id: number) => FunctionIR;
+  readonly release: (id: number) => void;
+}
+/** Keep the ABI and slot layout while the instructions and debug data are
+ * owned by a body source. */
+export function functionHeader(fn: FunctionIR): FunctionIR {
+  let header: FunctionIR = {
+    id: fn.id,
+    name: fn.name,
+    exported: fn.exported,
+    parameters: fn.parameters,
+    slots: fn.slots,
+    returnType: fn.returnType,
+    entry: fn.entry,
+    blocks: [],
+  };
+  if (fn.import !== undefined) header = { ...header, import: fn.import };
+  const receiverSlot = fn.receiverSlot,
+    closureEnvironment = fn.closureEnvironment,
+    environment = fn.environment;
+  if (receiverSlot !== undefined) header = { ...header, receiverSlot };
+  if (closureEnvironment !== undefined)
+    header = { ...header, closureEnvironment };
+  if (environment !== undefined) header = { ...header, environment };
+  return header;
+}
+
 export interface ModuleIR {
   readonly records?: readonly RecordLayout[];
   readonly functions: readonly FunctionIR[];

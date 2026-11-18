@@ -1,9 +1,10 @@
 import { readFileSync, writeFileSync, mkdirSync, chmodSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { loadSourceGraph } from "@tint/typescript/modules";
+import { loadSourceGraphLoader } from "@tint/typescript/modules";
 import { expandForeignInputs } from "@tint/compiler/native";
 import { nativeTargetNamed } from "@tint/platform/target";
 import { nodeHostTarget } from "./native-host-target.ts";
+import { functionStorageFromEnvironment } from "./emission-storage.ts";
 import {
   buildMacOSProgram,
   type ImageOperationRange,
@@ -77,7 +78,9 @@ const project: Pick<
   typeof currentProject,
   "projectFiles" | "projectMappings" | "projectRoots" | "projectBuildRequest"
 > &
-  Partial<Pick<typeof currentProject, "compilerBuildRequest">> =
+  Partial<
+    Pick<typeof currentProject, "compilerBuildRequest" | "projectModuleLoader">
+  > =
   rootArgument === undefined
     ? currentProject
     : {
@@ -92,7 +95,12 @@ const project: Pick<
           typeof currentProject,
           "projectRoots" | "projectBuildRequest"
         > &
-          Partial<Pick<typeof currentProject, "compilerBuildRequest">>),
+          Partial<
+            Pick<
+              typeof currentProject,
+              "compilerBuildRequest" | "projectModuleLoader"
+            >
+          >),
       };
 const started = performance.now();
 function report(stage: string) {
@@ -119,19 +127,24 @@ report("parse");
 // them (docs/native-ffi.md); frozen roots that predate them have none.
 const foreign = expandForeignInputs(inputs, target.c);
 if (!foreign.ok) throw Error(foreign.error);
-const graph = loadSourceGraph(
+const libraries = foreign.value.libraries;
+const graph = loadSourceGraphLoader(
   foreign.value.inputs,
   [...project.projectMappings(), ...foreign.value.mappings],
   project.projectRoots(),
 );
 if (!graph.ok) throw Error(JSON.stringify(graph.error));
-// The compiler's own request (with the clock its --pass-stats reads); older
-// frozen source roots predate it.
-const request = (project.compilerBuildRequest ?? project.projectBuildRequest)(
-  graph.value,
-  report,
-  foreign.value.libraries,
-);
+const loader = graph.value;
+// Older frozen projects accept parsed modules when selecting their bindings.
+// Keep that temporary load in this frame, then pass the loader to the build.
+function createRequest() {
+  const build = project.compilerBuildRequest ?? project.projectBuildRequest;
+  if (project.projectModuleLoader === true)
+    return build([], report, libraries, loader);
+  const request = build(loader.load(), report, libraries);
+  return { ...request, modules: [], moduleLoader: loader };
+}
+const request = createRequest();
 // Compiler observability (docs/compiler-observability.md): --pass-stats,
 // --code-size, TINT_PASS_STATS, TINT_CODE_SIZE, TINT_DUMP_PASSES,
 // TINT_REMARKS and TINT_OPT_PASS_LIMIT write <output>.* reports.
@@ -144,9 +157,11 @@ let operationRanges: readonly ImageOperationRange[] | undefined;
 // for program functions whose names contain it ("" = all).
 const dumps: [string, string][] = [];
 const dumpFilter = process.env.TINT_DUMP_IR;
+const storage = functionStorageFromEnvironment();
 const built = buildMacOSProgram({
   ...request,
   target,
+  ...(storage === undefined ? {} : { storage }),
   // The self-build (and the frozen workloads built from older project
   // sources) must stay typed: its speed is the compiler benchmark.
   requireTyped: true,

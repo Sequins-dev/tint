@@ -600,6 +600,9 @@ export function entryType(
 export interface RecordContracts extends RecordOperations {
   readonly classes: readonly ClassRecordStorage[];
   readonly forType: (type: number) => number | undefined;
+  /** The hidden field of a viewed record layout that holds the record's
+   * JavaScript view (the value bridge), or undefined. */
+  readonly viewSlot: (record: number) => number | undefined;
   /** Debugging: the record a type's values statically use, among layouts
    * already planned (never plans one), and a record's source names. */
   readonly plannedRecord: (type: number) => number | undefined;
@@ -626,6 +629,9 @@ export type RecordIdentitySelection =
   | { readonly ok: true; readonly value: number | undefined }
   | { readonly ok: false; readonly error: string };
 export type RecordIdentityResolver = (type: number) => RecordIdentitySelection;
+/** The name of a viewed record's hidden view slot (debug information and
+ * layout keys); source property access never reaches it. */
+export const viewSlotName = "[[view]]";
 /** Representation-specialized record contracts; object unions travel as managed references. */
 export function createRecordContracts(
   checked: CheckedClosures,
@@ -637,6 +643,11 @@ export function createRecordContracts(
   mapTypes: readonly MapEncoding[] = [],
   typeSystem?: TypeSystem,
   identity?: RecordIdentityResolver,
+  /** Object types whose values cross into JavaScript as views: their
+   * layouts get one hidden optional general field holding the view, so a
+   * record keeps one JavaScript identity (docs/unified-pipeline.md). Other
+   * layouts are unchanged. */
+  viewed: ReadonlySet<number> = new Set<number>(),
 ): RecordContracts {
   if (target.pointerSize !== 8 || target.wordSize !== 8)
     fail("record IR currently requires a 64-bit target");
@@ -656,6 +667,7 @@ export function createRecordContracts(
     // Source class names by record (instances, prototypes, constructors).
     classNames: (string | undefined)[] = [],
     byType: (number | undefined)[] = [],
+    viewSlots: (number | undefined)[] = [],
     unsupported = new Uint8Array(checked.types.length);
   // Equal physical layouts share storage: the first record (object or class)
   // with the same identity partition, field encodings, mutability, presence
@@ -1065,6 +1077,18 @@ export function createRecordContracts(
         optional: p.optional === true,
       });
     }
+    const fieldNames: string[] = [];
+    for (const p of t.properties) {
+      if (p === undefined) throw "record property invariant";
+      fieldNames.push(p.name);
+    }
+    // A viewed layout ends with its view slot: optional (absent until the
+    // record first crosses), general, and named so that no source property
+    // can reach it (field access resolves source property names).
+    if (viewed.has(id)) {
+      fields.push({ type: "general", mutable: true, optional: true });
+      fieldNames.push(viewSlotName);
+    }
     // AOT may share storage descriptors. Managed imports must preserve checked
     // identities until their semantic contracts have been selected.
     const selectedIdentity = identity?.(id);
@@ -1075,7 +1099,7 @@ export function createRecordContracts(
     let wanted = identityKey(key) + "#" + String(fields.length);
     for (let i = 0; i < fields.length; i++) {
       const field = fields[i],
-        name = t.properties[i]?.name;
+        name = fieldNames[i];
       if (field === undefined || name === undefined)
         throw "record field invariant";
       wanted += layoutFieldKey(field.type, field.mutable, field.optional, name);
@@ -1088,7 +1112,8 @@ export function createRecordContracts(
     const result = records.length;
     if (identity !== undefined) identities[result] = key;
     records.push(planRecordLayout(fields, layout, fail));
-    names.push(t.properties.map((p) => p.name));
+    names.push(fieldNames);
+    if (viewed.has(id)) viewSlots[result] = fields.length - 1;
     byType[id] = result;
     return result;
   }
@@ -1323,6 +1348,7 @@ export function createRecordContracts(
     classes,
     records,
     forType: record,
+    viewSlot: (record: number): number | undefined => viewSlots[record],
     plannedRecord: (type) => {
       const shapes = classShapes[type];
       if (shapes !== undefined)

@@ -1,6 +1,12 @@
 import { createNumberIndex } from "@tint/foundation/collections/key-index";
 import { instructionResult } from "./operands.ts";
-import type { Block, FunctionIR, Instruction } from "./model.ts";
+import type {
+  Block,
+  FunctionBodySource,
+  FunctionIR,
+  Instruction,
+  ModuleIR,
+} from "./model.ts";
 /** Possible numeric outcomes: 1 = signed/unsigned 32-bit integer (never -0),
  * 2 = NaN,
  * 4 = other number, 8 = absent optional. Zero establishes no usable proof.
@@ -320,4 +326,48 @@ export function provenWordFacts(
     returned: facts[fn.slots.length] ?? 0,
     work,
   };
+}
+
+/** Prove numeric return masks in verified IR with stable slots. Each sweep
+ * meets its masks with the previous sweep, using those masks at direct calls. */
+export function provenWordReturns(
+  module: ModuleIR,
+  budget: number,
+  functionBudget: number,
+  bodies?: FunctionBodySource,
+): Uint8Array {
+  let proven = new Uint8Array(module.functions.length);
+  let remaining = budget,
+    first = true;
+  for (;;) {
+    const next = new Uint8Array(module.functions.length);
+    for (const header of module.functions) {
+      if (header === undefined) throw "word return function invariant";
+      const fn = bodies?.get(header.id) ?? header;
+      try {
+        const proof = provenWordFacts(
+          fn,
+          Math.min(functionBudget, remaining),
+          first ? undefined : proven,
+        );
+        if (proof !== undefined) {
+          next[fn.id] = proof.returned;
+          remaining -= proof.work;
+        }
+      } finally {
+        bodies?.release(header.id);
+      }
+    }
+    let changed = first;
+    for (let id = 0; id < next.length; id++) {
+      const a = proven[id] ?? 0,
+        b = next[id] ?? 0;
+      const met = first ? b : a === 0 ? b : b === 0 ? a : a & b;
+      next[id] = met;
+      if (met !== a) changed = true;
+    }
+    proven = next;
+    first = false;
+    if (!changed) return proven;
+  }
 }

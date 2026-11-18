@@ -132,3 +132,24 @@ test("a source graph cache reuses decoded and parsed inputs only for the same in
     first.value.map((module) => module.id),
   );
 });
+
+test("a source module loader selects IDs and parses fresh syntax on each load", async () => {
+  const loaders = await import("../src/modules/index.ts");
+  assert.equal(typeof loaders.createSourceModuleLoader, "function");
+  const dependencies = new Map([["./lib.ts", "lib.ts"]]);
+  const loader = loaders.createSourceModuleLoader([
+    { id: "main.ts", text: 'import "./lib.ts";', dependencies },
+    { id: "lib.ts", text: "export const value = 1;", dependencies: new Map() },
+  ]);
+  assert.deepEqual(loader.ids, ["main.ts", "lib.ts"]);
+  const all = loader.load();
+  const subset = loader.load(["lib.ts", "missing.ts"]);
+  assert.deepEqual(
+    subset.map((module) => module.id),
+    ["lib.ts"],
+  );
+  assert.deepEqual(subset[0]?.module, all[1]?.module);
+  assert.notEqual(subset[0]?.module, all[1]?.module);
+  assert.equal(all[0]?.dependencies.get("./lib.ts"), "lib.ts");
+  assert.deepEqual(loader.load([]), []);
+});

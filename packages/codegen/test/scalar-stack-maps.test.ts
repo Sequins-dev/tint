@@ -12,7 +12,11 @@ import {
   type NativeModule,
 } from "../src/aarch64/scalar/index.ts";
 import { encodeStackMapTable } from "../src/aarch64/scalar/stack-maps.ts";
-import { nativeStackMapMagic, nativeStackMapVersion } from "@tint/abi/host";
+import {
+  nativeStackMapMagic,
+  nativeStackMapCompactVersion,
+  nativeStackMapWideVersion,
+} from "@tint/abi/host";
 const s = { start: 0, end: 0 };
 const record = {
   byteLength: 32,
@@ -376,24 +380,37 @@ test("callers of the root-head binding save every callee-saved register", () => 
   assert.deepEqual(site.registers, []);
 });
 
-test("safepoint tables sort by return offset, share equal maps and reject duplicates", () => {
-  // The first map's frame saves x22 at sp + 8 and holds a reference in it.
-  const held = [32, 1, 16, 0, 2 ** 3 + 2 ** 13, 8];
-  const words = encodeStackMapTable([
-    { offset: 40, map: held },
-    { offset: 8, map: held },
-    { offset: 24, map: [48, 0, 1, 16, 0] },
-  ]);
-  assert.ok(words);
-  const code = new Uint8Array(words.length * 8),
+/** Table words as module bytes at `tableOffset`, decoded. */
+function decodeTable(words: readonly number[], tableOffset = 0) {
+  const code = new Uint8Array(tableOffset + words.length * 8),
     view = new DataView(code.buffer);
-  words.forEach((word, index) =>
-    view.setBigUint64(index * 8, BigInt(word), true),
-  );
-  const decoded = decodeStackMaps({
-    code,
-    stackMaps: [{ codeOffset: 100, tableOffset: 0 }],
+  words.forEach((word, index) => {
+    assert.ok(Number.isSafeInteger(word) && word >= 0, String(word));
+    view.setBigUint64(tableOffset + index * 8, BigInt(word), true);
   });
+  return decodeStackMaps({
+    code,
+    stackMaps: [{ codeOffset: 100, tableOffset }],
+  });
+}
+
+test("compact tables group safepoints by function, keep exact maps and reject duplicates", () => {
+  // Function at 0: frame 32, saves x22 at sp + 8, holds a reference in it.
+  const held = [32, 1, 16, 0, 2 ** 3 + 2 ** 13, 8];
+  const words = encodeStackMapTable(
+    [
+      { offset: 40, start: 0, map: held },
+      { offset: 8, start: 0, map: held },
+      { offset: 64, start: 48, map: [48, 0, 1, 16, 0] },
+    ],
+    96,
+  );
+  assert.ok(words);
+  assert.deepEqual(words.slice(0, 3), [
+    nativeStackMapMagic,
+    nativeStackMapCompactVersion,
+    2,
+  ]);
   const register = {
     frameBytes: 32,
     references: [16],
@@ -401,74 +418,100 @@ test("safepoint tables sort by return offset, share equal maps and reject duplic
     registers: [22],
     saves: [{ register: 22, offset: 8 }],
   };
-  assert.deepEqual(decoded, [
+  assert.deepEqual(decodeTable(words, 96), [
     { offset: 108, ...register },
+    { offset: 140, ...register },
     {
-      offset: 124,
+      offset: 164,
       frameBytes: 48,
       references: [],
       generals: [16],
       registers: [],
       saves: [],
     },
-    { offset: 140, ...register },
   ]);
-  // Header, three entries, two distinct maps.
-  assert.equal(words.length, 3 + 3 + 11);
   assert.equal(
-    encodeStackMapTable([
-      { offset: 8, map: [16, 0, 0, 0] },
-      { offset: 8, map: [16, 0, 0, 0] },
-    ]),
+    encodeStackMapTable(
+      [
+        { offset: 8, start: 0, map: [16, 0, 0, 0] },
+        { offset: 8, start: 0, map: [16, 0, 0, 0] },
+      ],
+      64,
+    ),
+    undefined,
+  );
+  // A function's maps must agree on its frame.
+  assert.equal(
+    encodeStackMapTable(
+      [
+        { offset: 8, start: 0, map: [16, 0, 0, 0] },
+        { offset: 12, start: 0, map: [32, 0, 0, 0] },
+      ],
+      64,
+    ),
     undefined,
   );
 });
 
-test("tables whose maps pass the packed 2^21-word index range switch to wide entries", () => {
-  // Distinct maps of a very large frame (a test262 unit host function) can
-  // exceed what a packed index * 2^32 + offset word encodes exactly.
-  const many = 2 ** 21,
-    large = [many * 8 + 16, many];
-  for (let at = 0; at < many; at++) large.push(16 + at * 8);
-  large.push(0, 0);
-  const small = [48, 0, 1, 16, 0];
-  const words = encodeStackMapTable([
-    { offset: 8, map: large },
-    { offset: 24, map: small },
-    { offset: 40, map: large },
-  ]);
+test("long-lived words are encoded once as runs, so maps of growing live sets stay linear", () => {
+  // An initializer-like function: safepoint k keeps every word defined
+  // before it live (word i from safepoint i on), plus one short-lived word.
+  const count = 400,
+    entries: { offset: number; start: number; map: number[] }[] = [];
+  let listed = 0;
+  for (let k = 0; k < count; k++) {
+    const references: number[] = [];
+    for (let word = 0; word <= k; word++) references.push(16 + word * 8);
+    if (k % 2 === 0) references.push(16 + 1000 * 8);
+    references.sort((left, right) => left - right);
+    listed += references.length;
+    entries.push({
+      offset: 4 + k * 4,
+      start: 0,
+      map: [16 * 1024, references.length, ...references, 0, 0],
+    });
+  }
+  const words = encodeStackMapTable(entries, count * 4 + 64);
   assert.ok(words);
-  assert.deepEqual(words.slice(0, 3), [nativeStackMapMagic, 3, 3]);
-  // Header, two words per entry, then both maps once.
-  assert.equal(words.length, 3 + 3 * 2 + large.length + small.length);
-  assert.deepEqual(words.slice(3, 9), [8, 9, 24, 9 + large.length, 40, 9]);
-  const code = new Uint8Array(words.length * 8),
-    view = new DataView(code.buffer);
-  words.forEach((word, index) =>
-    view.setBigUint64(index * 8, BigInt(word), true),
-  );
-  const decoded = decodeStackMaps({
-    code,
-    stackMaps: [{ codeOffset: 100, tableOffset: 0 }],
-  });
+  // Full-word maps would need a word per listed offset; runs need a few
+  // bytes per word.
+  assert.ok(words.length * 8 < listed / 10, String(words.length));
+  const decoded = decodeTable(words, count * 4 + 64);
   assert.ok(decoded);
-  assert.deepEqual(
-    decoded.map((site) => [
-      site.offset,
-      site.frameBytes,
-      site.references.length,
-    ]),
+  assert.equal(decoded.length, count);
+  for (let k = 0; k < count; k++)
+    assert.deepEqual(
+      decoded[k]?.references,
+      entries[k]!.map.slice(2, 2 + entries[k]!.map[1]!),
+    );
+});
+
+test("modules whose offsets reach 2^32 switch to wide tables", () => {
+  const small = [48, 0, 1, 16, 0];
+  const far = 2 ** 32 + 8;
+  const words = encodeStackMapTable(
     [
-      [108, many * 8 + 16, many],
-      [124, 48, 0],
-      [140, many * 8 + 16, many],
+      { offset: 8, start: 0, map: small },
+      { offset: far, start: far - 8, map: small },
     ],
+    far + 64,
   );
-  assert.deepEqual(decoded[1]?.generals, [16]);
-  // Below the range the packed layout is unchanged.
-  assert.equal(
-    encodeStackMapTable([{ offset: 8, map: small }])?.[1],
-    nativeStackMapVersion,
+  assert.ok(words);
+  assert.deepEqual(words.slice(0, 3), [
+    nativeStackMapMagic,
+    nativeStackMapWideVersion,
+    2,
+  ]);
+  // Header, two words per entry, then the shared map once.
+  assert.equal(words.length, 3 + 2 * 2 + small.length);
+  assert.deepEqual(words.slice(3, 7), [8, 7, far, 7]);
+  const decoded = decodeTable(words);
+  assert.deepEqual(
+    decoded?.map((site) => [site.offset, site.frameBytes, site.generals]),
+    [
+      [108, 48, [16]],
+      [100 + far, 48, [16]],
+    ],
   );
 });
 

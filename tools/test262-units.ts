@@ -12,7 +12,7 @@ import {
 import { runtimeSources } from "@tint/compiler/cli";
 import { createInterfaceResolutionCache } from "@tint/typescript/checker/interfaces";
 import { scriptRuntimeSurface } from "@tint/js-engine/lowering";
-import type { SourceModule } from "@tint/typescript/modules/model";
+import type { NativeModuleInput } from "./test262-native.ts";
 import { scriptRuntimeGlobals } from "./script-runtime-request.ts";
 import {
   workspaceModules,
@@ -105,12 +105,12 @@ export function createScriptUnitCompiler(
     specifiers.add(entry.specifier);
     instantiations.set(entry.name, entry.typeArguments);
   }
-  return (script: SourceModule): ScriptUnitCompilation => {
+  return (script: NativeModuleInput): ScriptUnitCompilation => {
     const key = scriptKey(script);
     const known = compiled.get(key);
     if (known !== undefined) return known;
     const unit = compileNativeServiceUnit({
-      module: script.module,
+      module: "module" in script ? script.module : script.load(),
       entry: "execute",
       specifiers,
       instantiations,
@@ -132,11 +132,18 @@ export function createScriptUnitCompiler(
 
 /** Lowered Scripts import only the runtime vocabulary, so the module syntax
  * and its resolved dependencies identify the compiled unit. */
-function scriptKey(script: SourceModule): string {
+function scriptKey(script: NativeModuleInput): string {
   return createHash("sha256")
-    .update(JSON.stringify(script.module))
+    .update(nativeSyntaxKey(script))
     .update(JSON.stringify([...script.dependencies]))
     .digest("hex");
+}
+
+/** Match structurally identical syntax without keeping its serialization. */
+export function nativeSyntaxKey(input: NativeModuleInput): string {
+  if ("load" in input && input.syntaxKey !== undefined) return input.syntaxKey;
+  const syntax = "module" in input ? input.module : input.load();
+  return createHash("sha256").update(JSON.stringify(syntax)).digest("hex");
 }
 
 /** A unit links only into an image publishing the surface it was compiled

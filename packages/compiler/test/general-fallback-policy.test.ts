@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createSourceText } from "@tint/source/text";
+import { createSourceModuleLoader } from "@tint/typescript/modules";
 import { parseModule } from "@tint/typescript/syntax";
 import {
   compileArm64Program,
@@ -41,15 +42,13 @@ function recordingLowering(): {
 
 // A generator is rejected by the typed pipeline, so compiling it needs the
 // general fallback.
+const generatorText =
+  "function* count(): Generator<number> { yield 1; }\n" +
+  "export function run(): number { let total = 0; for (const n of count()) total += n; return total; }";
+
 function generatorProgram(lowering: GeneralLowering): CompileRequest {
   return {
-    modules: [
-      source(
-        "main",
-        "function* count(): Generator<number> { yield 1; }\n" +
-          "export function run(): number { let total = 0; for (const n of count()) total += n; return total; }",
-      ),
-    ],
+    modules: [source("main", generatorText)],
     entry: "main",
     exports: ["run"],
     start: "run",
@@ -93,4 +92,29 @@ test("requireTyped refuses the general fallback and keeps the typed error", () =
 
 test("the compiler's own build request requires typed compilation", () => {
   assert.equal(compilerBuildRequest([], () => {}).requireTyped, true);
+});
+
+test("general fallback reparses loader input after the typed attempt", () => {
+  const { lowering, requests } = recordingLowering();
+  const loader = createSourceModuleLoader([
+    { id: "main", text: generatorText, dependencies: new Map() },
+  ]);
+  const parses: ReturnType<typeof loader.load>[] = [];
+  const compiled = compileArm64Program({
+    ...generatorProgram(lowering),
+    modules: [],
+    moduleLoader: {
+      ids: loader.ids,
+      load: (ids) => {
+        const modules = loader.load(ids);
+        parses.push(modules);
+        return modules;
+      },
+    },
+  });
+  assert.equal(compiled.ok, false);
+  assert.equal(parses.length, 2);
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0]?.available, parses[1]);
+  assert.notEqual(parses[0]?.[0]?.module, parses[1]?.[0]?.module);
 });
