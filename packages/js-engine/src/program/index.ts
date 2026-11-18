@@ -4,6 +4,7 @@ import {
   boundaryNumber,
   boundaryString,
   boundaryUndefined,
+  boundaryUnknown,
   type GeneralLowering,
   type GeneralProgram,
   type GeneralProgramRequest,
@@ -299,6 +300,8 @@ function lowerGeneralProgram(
 /** A checked argument: the value narrowed to its declared primitive
  * classes, or a TypeError. */
 function checkedArgument(value: string, classes: number): string {
+  // `unknown` parameters take any value unchanged, keeping its identity.
+  if ((classes & boundaryUnknown) !== 0) return value;
   let expression = "rejectArgument(realm)";
   const tests: [number, string, string][] = [
     [boundaryNull, "a===null", "null"],
