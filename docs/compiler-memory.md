@@ -103,6 +103,23 @@ Median wall time rose by 0.35% and median cycles rose by 0.96%. The first
 round overlapped with other validation work and recorded a faster branch
 run. The latter two pairs recorded a small increase on the branch.
 
+A second measurement ran five interleaved rounds of the same pair of stage-2
+compilers on an otherwise idle host. All ten outputs were identical.
+
+| Round | Main wall (s) | Single-copy wall (s) | Main cycles (billions) | Single-copy cycles (billions) |
+| ----: | ------------: | -------------------: | ---------------------: | ----------------------------: |
+|     1 |        114.93 |               117.86 |                541.002 |                       550.288 |
+|     2 |        113.76 |               124.34 |                540.524 |                       574.540 |
+|     3 |        122.78 |               125.55 |                566.046 |                       571.499 |
+|     4 |        125.67 |               120.34 |                572.068 |                       556.115 |
+|     5 |        116.19 |               119.55 |                547.920 |                       556.941 |
+
+Median cycles rose by 1.5% (547.9 to 556.1 billion) and median wall time
+by 3.6%. Round 4 recorded a faster branch run. The change was accepted
+for its memory saving: build memory caps what can be built at all, while
+build time only lengthens the build. Generated code is byte-identical,
+so runtime is unaffected.
+
 ## What is global and what is per function
 
 | Data                                                                                         | Scope                    | Needed by                                          |
