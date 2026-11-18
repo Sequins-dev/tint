@@ -1,6 +1,12 @@
 import { instructionResult } from "./operands.ts";
 import { analyzeLiveSlots } from "./liveness.ts";
-import type { FunctionIR, Block, Instruction, ModuleIR } from "./model.ts";
+import type {
+  FunctionBodySource,
+  FunctionIR,
+  Block,
+  Instruction,
+  ModuleIR,
+} from "./model.ts";
 /** Host operations that neither write managed memory outside fields nor
  * admit code the closed-world analyses cannot see. A forced collection is
  * the allocator's own slow path (it moves objects and preserves layouts, as
@@ -90,15 +96,21 @@ function descriptorPreservingHostOperation(operation: string): boolean {
 function everyHostOperation(
   module: ModuleIR,
   allowed: (operation: string) => boolean,
+  bodies: FunctionBodySource | undefined,
 ): boolean {
-  for (const fn of module.functions) {
-    if (fn === undefined) throw "layout effect function invariant";
-    for (const block of fn.blocks) {
-      if (block === undefined) throw "layout effect block invariant";
-      for (const op of block.instructions) {
-        if (op === undefined) throw "layout effect instruction invariant";
-        if (op.kind === "host-call" && !allowed(op.operation)) return false;
+  for (const header of module.functions) {
+    if (header === undefined) throw "layout effect function invariant";
+    const fn = bodies?.get(header.id) ?? header;
+    try {
+      for (const block of fn.blocks) {
+        if (block === undefined) throw "layout effect block invariant";
+        for (const op of block.instructions) {
+          if (op === undefined) throw "layout effect instruction invariant";
+          if (op.kind === "host-call" && !allowed(op.operation)) return false;
+        }
       }
+    } finally {
+      bodies?.release(header.id);
     }
   }
   return true;
@@ -112,15 +124,21 @@ function everyHostOperation(
  * tracking) also rely on. New host operations are unsafe until explicitly
  * classified. This is not a proof for externally supplied code or arbitrary
  * FFI callbacks. */
-export function stableRecordLayouts(module: ModuleIR): boolean {
-  return everyHostOperation(module, closedWorldHostOperation);
+export function stableRecordLayouts(
+  module: ModuleIR,
+  bodies?: FunctionBodySource,
+): boolean {
+  return everyHostOperation(module, closedWorldHostOperation, bodies);
 }
 /** Descriptor stability alone: no reachable operation can replace a managed
  * object's descriptor, so a descriptor proven for an object held in a slot
  * survives calls. Sufficient for intraprocedural descriptor proofs (guards and
  * verified direct reads), not for closed-world interprocedural facts. */
-export function stableDescriptors(module: ModuleIR): boolean {
-  return everyHostOperation(module, descriptorPreservingHostOperation);
+export function stableDescriptors(
+  module: ModuleIR,
+  bodies?: FunctionBodySource,
+): boolean {
+  return everyHostOperation(module, descriptorPreservingHostOperation, bodies);
 }
 /** Descriptor proofs for verified fixed-layout IR. Constructors establish exact
  * layouts; successful guards establish facts along unique normal predecessor

@@ -45,6 +45,7 @@ import { linuxAArch64Target } from "@tint/platform/target";
 import { formatModule } from "./ir-dump/format.ts";
 import { decodeProfile } from "./op-cost/profile.ts";
 import { findLlvmTool } from "./host-tools.ts";
+import { createNodeFileHost } from "./node-file-host.ts";
 
 // Exercises the main remark producers: an inlined helper, a recursive
 // call that stays, a loop-invariant product, in-bounds typed-array
@@ -113,6 +114,49 @@ const everything: ObservabilityOptions = {
   passDumps: "",
   remarks: parseRemarkFilter(""),
 };
+
+test("forced disk spilling preserves the hosted image", () => {
+  const request = { ...fixtureRequest(), debugSymbols: true };
+  const memory = build(request);
+  const directory = mkdtempSync(join(tmpdir(), "tint-streaming-image-"));
+  try {
+    const host = createNodeFileHost();
+    let writes = 0;
+    let reads = 0;
+    let releases = 0;
+    const spilled = build({
+      ...request,
+      storage: {
+        policy: "all",
+        directory,
+        files: {
+          ...host,
+          createTemporary: (prefix: string) => {
+            const result = host.createTemporary(prefix);
+            if (result.ok) writes++;
+            return result;
+          },
+          openRead: (path: string) => {
+            const result = host.openRead(path);
+            if (result.ok) reads++;
+            return result;
+          },
+          remove: (path: string) => {
+            const result = host.remove(path);
+            if (result.ok) releases++;
+            return result;
+          },
+        },
+      },
+    });
+    assert.ok(writes > 0);
+    assert.ok(reads > 0);
+    assert.equal(releases, writes);
+    assert.deepEqual(spilled, memory);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
 
 test("observing a build leaves the image byte-identical and writes every report", () => {
   const request = fixtureRequest();

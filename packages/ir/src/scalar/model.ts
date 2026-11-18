@@ -582,6 +582,36 @@ export interface RecordDebugInfo {
   /** Field names by field index. */
   readonly fields: readonly string[];
 }
+/** A source of function bodies keyed by the module's dense function IDs.
+ * When supplied alongside a module, its functions need only contain headers. */
+export interface FunctionBodySource {
+  readonly get: (id: number) => FunctionIR;
+  readonly release: (id: number) => void;
+}
+/** Keep the ABI and slot layout while the instructions and debug data are
+ * owned by a body source. */
+export function functionHeader(fn: FunctionIR): FunctionIR {
+  let header: FunctionIR = {
+    id: fn.id,
+    name: fn.name,
+    exported: fn.exported,
+    parameters: fn.parameters,
+    slots: fn.slots,
+    returnType: fn.returnType,
+    entry: fn.entry,
+    blocks: [],
+  };
+  if (fn.import !== undefined) header = { ...header, import: fn.import };
+  const receiverSlot = fn.receiverSlot,
+    closureEnvironment = fn.closureEnvironment,
+    environment = fn.environment;
+  if (receiverSlot !== undefined) header = { ...header, receiverSlot };
+  if (closureEnvironment !== undefined)
+    header = { ...header, closureEnvironment };
+  if (environment !== undefined) header = { ...header, environment };
+  return header;
+}
+
 export interface ModuleIR {
   readonly records?: readonly RecordLayout[];
   readonly functions: readonly FunctionIR[];

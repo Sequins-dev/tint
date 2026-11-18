@@ -1,6 +1,53 @@
-import type { SpillBackend } from "@tint/ir/storage";
+import {
+  createFunctionStore,
+  type FunctionStore,
+  type SpillBackend,
+  type SpillPolicy,
+} from "@tint/ir/storage";
 import { readFile, type FileHost } from "@tint/platform/files/service";
 import { writeAll } from "@tint/platform/io/sync";
+
+/** The packed IR policy for ahead-of-time emission. The host supplies its
+ * file service and an existing directory when spilling to disk. */
+export interface BuildStorage {
+  readonly policy: SpillPolicy;
+  readonly byteBudget?: number;
+  readonly directory?: string;
+  readonly files?: FileHost<number>;
+}
+
+export function createEmissionStore(
+  storage: BuildStorage | undefined,
+): FunctionStore {
+  const policy: SpillPolicy = storage?.policy ?? "memory";
+  const budget = storage?.byteBudget;
+  if (
+    policy === "budget" &&
+    (budget === undefined || !Number.isSafeInteger(budget) || budget < 0)
+  )
+    throw "function store budget requires a nonnegative byte budget";
+  const files = storage?.files,
+    directory = storage?.directory;
+  if ((files === undefined) !== (directory === undefined))
+    throw "function store spill directory and file host must be supplied together";
+  const backend: SpillBackend | undefined =
+    policy === "memory" || files === undefined || directory === undefined
+      ? undefined
+      : createFileSpillBackend(files, directory + "/tint-ir");
+  const packedBytes: number = budget ?? Number.MAX_SAFE_INTEGER;
+  const chunkBytes: number =
+    policy === "budget"
+      ? Math.max(1024, Math.min(budget ?? 0, 1048576))
+      : 1048576;
+  return createFunctionStore({
+    policy,
+    // A budget keeps recently used bodies decoded within it; `all` keeps none.
+    residentBytes: policy === "budget" ? (budget ?? 0) : 0,
+    packedBytes,
+    chunkBytes,
+    backend,
+  });
+}
 /** Function-store spill segments as temporary files beside `prefix`
  * (docs/compiler-memory.md, "Spill backend"): each segment is created,
  * written and closed once, read back whole and removed when released, so

@@ -1,5 +1,5 @@
 import { escapedFunction } from "./function-references.ts";
-import type { ModuleIR } from "./model.ts";
+import type { FunctionBodySource, ModuleIR } from "./model.ts";
 import { stableRecordLayouts } from "./record-facts.ts";
 /** Verified closed IR with explicit external entries. 1 means that all callers
  * use direct calls within this module. Address-taken functions retain their public
@@ -10,11 +10,12 @@ export function provenDirectOnlyFunctions(
   module: ModuleIR,
   roots: readonly number[],
   maxWork: number = 10000000,
+  bodies?: FunctionBodySource,
 ): Uint8Array | undefined {
   if (
     !Number.isSafeInteger(maxWork) ||
     maxWork < module.functions.length ||
-    !stableRecordLayouts(module)
+    !stableRecordLayouts(module, bodies)
   )
     return undefined;
   const direct = new Uint8Array(module.functions.length);
@@ -31,18 +32,23 @@ export function provenDirectOnlyFunctions(
       return undefined;
     direct[root] = 0;
   }
-  for (const fn of module.functions) {
-    if (fn === undefined) throw "call boundary function invariant";
-    if (fn.import === true) direct[fn.id] = 0;
-    for (const block of fn.blocks) {
-      if (block === undefined) throw "call boundary block invariant";
-      if (++work > maxWork) return undefined;
-      for (const op of block.instructions) {
-        if (op === undefined) throw "call boundary instruction invariant";
+  for (const header of module.functions) {
+    if (header === undefined) throw "call boundary function invariant";
+    const fn = bodies?.get(header.id) ?? header;
+    try {
+      if (fn.import === true) direct[fn.id] = 0;
+      for (const block of fn.blocks) {
+        if (block === undefined) throw "call boundary block invariant";
         if (++work > maxWork) return undefined;
-        const escaped = escapedFunction(op);
-        if (escaped !== undefined) direct[escaped] = 0;
+        for (const op of block.instructions) {
+          if (op === undefined) throw "call boundary instruction invariant";
+          if (++work > maxWork) return undefined;
+          const escaped = escapedFunction(op);
+          if (escaped !== undefined) direct[escaped] = 0;
+        }
       }
+    } finally {
+      bodies?.release(header.id);
     }
   }
   return direct;

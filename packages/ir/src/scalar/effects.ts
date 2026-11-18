@@ -1,5 +1,5 @@
 import { solveDataflow } from "@tint/foundation/graph/dataflow";
-import type { Instruction, ModuleIR } from "./model.ts";
+import type { FunctionBodySource, Instruction, ModuleIR } from "./model.ts";
 export const effectThrow = 1;
 export const effectAllocate = 2;
 export const effectReadHeap = 4;
@@ -137,6 +137,7 @@ export function instructionEffects(op: Instruction): number {
 export function summarizeEffects(
   module: ModuleIR,
   maxWork: number = 10000000,
+  bodies?: FunctionBodySource,
 ): Uint32Array | undefined {
   if (!Number.isSafeInteger(maxWork) || maxWork < 1) return undefined;
   const count = module.functions.length;
@@ -153,46 +154,51 @@ export function summarizeEffects(
     callees.push([]);
     seeds.push(fn.id);
   }
-  for (const fn of module.functions) {
-    if (fn === undefined) return undefined;
-    let mask = fn.import === true ? effectUnknown : 0;
-    for (const block of fn.blocks) {
-      if (block === undefined || ++work > maxWork) return undefined;
-      const term = block.terminator;
-      switch (term.kind) {
-        case "throw":
-        case "throw-literal":
-          mask |= effectThrow;
-          break;
-        case "record":
-        case "record-cell":
-        case "cell":
-          mask |=
-            term.operation === "read"
-              ? effectReadHeap
-              : effectWriteHeap | effectEscape;
-          break;
-        case "return":
-        case "jump":
-        case "branch":
-        case "trap":
-          break;
-        default:
-          mask |= effectUnknown;
+  for (const header of module.functions) {
+    if (header === undefined) return undefined;
+    const fn = bodies?.get(header.id) ?? header;
+    try {
+      let mask = fn.import === true ? effectUnknown : 0;
+      for (const block of fn.blocks) {
+        if (block === undefined || ++work > maxWork) return undefined;
+        const term = block.terminator;
+        switch (term.kind) {
+          case "throw":
+          case "throw-literal":
+            mask |= effectThrow;
+            break;
+          case "record":
+          case "record-cell":
+          case "cell":
+            mask |=
+              term.operation === "read"
+                ? effectReadHeap
+                : effectWriteHeap | effectEscape;
+            break;
+          case "return":
+          case "jump":
+          case "branch":
+          case "trap":
+            break;
+          default:
+            mask |= effectUnknown;
+        }
+        for (const op of block.instructions) {
+          if (op === undefined || ++work > maxWork) return undefined;
+          if (op.kind === "call") {
+            const incoming = callers[op.target],
+              outgoing = callees[fn.id];
+            if (incoming === undefined || outgoing === undefined)
+              return undefined;
+            incoming.push(fn.id);
+            outgoing.push(op.target);
+          } else mask |= instructionEffects(op);
+        }
       }
-      for (const op of block.instructions) {
-        if (op === undefined || ++work > maxWork) return undefined;
-        if (op.kind === "call") {
-          const incoming = callers[op.target],
-            outgoing = callees[fn.id];
-          if (incoming === undefined || outgoing === undefined)
-            return undefined;
-          incoming.push(fn.id);
-          outgoing.push(op.target);
-        } else mask |= instructionEffects(op);
-      }
+      local[fn.id] = mask & ~(effectReadLocal | effectWriteLocal);
+    } finally {
+      bodies?.release(header.id);
     }
-    local[fn.id] = mask & ~(effectReadLocal | effectWriteLocal);
   }
   let exhausted = false;
   const result = solveDataflow(

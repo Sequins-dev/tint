@@ -1,5 +1,5 @@
 import { escapedFunction } from "./function-references.ts";
-import type { ModuleIR } from "./model.ts";
+import type { FunctionBodySource, ModuleIR } from "./model.ts";
 import { stableRecordLayouts } from "./record-facts.ts";
 import { provenWordFacts } from "./word-facts.ts";
 /** Verified closed module only. Aggregate actual arguments at every direct call.
@@ -13,11 +13,12 @@ export function provenWordArguments(
   roots: readonly number[],
   returns: Uint8Array | undefined = undefined,
   maxWork: number = 10000000,
+  bodies?: FunctionBodySource,
 ): readonly Uint8Array[] | undefined {
   if (
     !Number.isSafeInteger(maxWork) ||
     maxWork < 1 ||
-    !stableRecordLayouts(module)
+    !stableRecordLayouts(module, bodies)
   )
     return undefined;
   let work = module.functions.length;
@@ -35,24 +36,29 @@ export function provenWordArguments(
     if (++work > maxWork) return undefined;
     exposed[root] = 1;
   }
-  for (const fn of module.functions) {
-    if (fn === undefined) throw "word argument function invariant";
-    if (fn.import === true) exposed[fn.id] = 1;
-    work += fn.slots.length;
-    if (work > maxWork || fn.id !== argumentsBySlot.length) return undefined;
-    // Functions borrowing an environment keep unknown parameters; the rest
-    // of the module is still proven.
-    if (fn.environment !== undefined) exposed[fn.id] = 1;
-    argumentsBySlot.push(new Uint8Array(fn.slots.length));
-    for (const block of fn.blocks) {
-      if (block === undefined) throw "word argument block invariant";
-      if (++work > maxWork) return undefined;
-      for (const op of block.instructions) {
-        if (op === undefined) throw "word argument instruction invariant";
+  for (const header of module.functions) {
+    if (header === undefined) throw "word argument function invariant";
+    const fn = bodies?.get(header.id) ?? header;
+    try {
+      if (fn.import === true) exposed[fn.id] = 1;
+      work += fn.slots.length;
+      if (work > maxWork || fn.id !== argumentsBySlot.length) return undefined;
+      // Functions borrowing an environment keep unknown parameters; the rest
+      // of the module is still proven.
+      if (fn.environment !== undefined) exposed[fn.id] = 1;
+      argumentsBySlot.push(new Uint8Array(fn.slots.length));
+      for (const block of fn.blocks) {
+        if (block === undefined) throw "word argument block invariant";
         if (++work > maxWork) return undefined;
-        const escaped = escapedFunction(op);
-        if (escaped !== undefined) exposed[escaped] = 1;
+        for (const op of block.instructions) {
+          if (op === undefined) throw "word argument instruction invariant";
+          if (++work > maxWork) return undefined;
+          const escaped = escapedFunction(op);
+          if (escaped !== undefined) exposed[escaped] = 1;
+        }
       }
+    } finally {
+      bodies?.release(header.id);
     }
   }
   // Sweep to a fixpoint: each sweep proves every function with the argument
@@ -68,33 +74,41 @@ export function provenWordArguments(
       if (fn === undefined) throw "word argument function invariant";
       next.push(new Uint8Array(fn.slots.length));
     }
-    for (const fn of module.functions) {
-      if (fn === undefined) throw "word argument function invariant";
-      const known =
-        prior === undefined || exposed[fn.id] === 1 ? undefined : prior[fn.id];
-      const proof = provenWordFacts(
-        fn,
-        maxWork - work,
-        returns,
-        undefined,
-        known,
-        true,
-      );
-      if (proof === undefined || proof.calls === undefined) return undefined;
-      work += proof.work;
-      for (const call of proof.calls) {
-        if (call === undefined) throw "word argument call invariant";
-        const target = module.functions[call.target],
-          destination = next[call.target];
-        if (target === undefined || destination === undefined) return undefined;
-        for (let i = 0; i < target.parameters.length; i++) {
-          if (++work > maxWork) return undefined;
-          const slot = target.parameters[i];
-          if (slot === undefined) throw "word argument slot invariant";
-          if (exposed[call.target] !== 1)
-            destination[slot] =
-              (destination[slot] ?? 0) | (call.masks[i] ?? 15);
+    for (const header of module.functions) {
+      if (header === undefined) throw "word argument function invariant";
+      const fn = bodies?.get(header.id) ?? header;
+      try {
+        const known =
+          prior === undefined || exposed[fn.id] === 1
+            ? undefined
+            : prior[fn.id];
+        const proof = provenWordFacts(
+          fn,
+          maxWork - work,
+          returns,
+          undefined,
+          known,
+          true,
+        );
+        if (proof === undefined || proof.calls === undefined) return undefined;
+        work += proof.work;
+        for (const call of proof.calls) {
+          if (call === undefined) throw "word argument call invariant";
+          const target = module.functions[call.target],
+            destination = next[call.target];
+          if (target === undefined || destination === undefined)
+            return undefined;
+          for (let i = 0; i < target.parameters.length; i++) {
+            if (++work > maxWork) return undefined;
+            const slot = target.parameters[i];
+            if (slot === undefined) throw "word argument slot invariant";
+            if (exposed[call.target] !== 1)
+              destination[slot] =
+                (destination[slot] ?? 0) | (call.masks[i] ?? 15);
+          }
         }
+      } finally {
+        bodies?.release(header.id);
       }
     }
     let changed = prior === undefined;
