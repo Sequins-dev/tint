@@ -7,9 +7,9 @@ It then linked and wrote each image through the production hosted path.
 Both builds used Node 24.12.0 and the same 768-file compiler source snapshot,
 SHA-256 `2b6b3f273411c7c10ef506b966994ca2d959e004f047c41f414aff249ebd1a0d`.
 
-| Target | Image bytes | SHA-256 |
-| --- | ---: | --- |
-| macOS 26.6.2, arm64 | 4,332,685,956 | `cf8fe122b2621671d854545ce53db233d790dd7997523582673ce218571ae8d3` |
+| Target                 |   Image bytes | SHA-256                                                            |
+| ---------------------- | ------------: | ------------------------------------------------------------------ |
+| macOS 26.6.2, arm64    | 4,332,685,956 | `cf8fe122b2621671d854545ce53db233d790dd7997523582673ce218571ae8d3` |
 | Linux, arm64, `dev` VM | 4,299,008,048 | `e79f128e1e493a3b428c959cd4e37e2078f41271746e052c8bb551121bfb0e4a` |
 
 LLDB resolved the Mach-O symbol `program:fixture:retainAcrossCollection` at
