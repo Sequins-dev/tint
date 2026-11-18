@@ -277,6 +277,10 @@ try {
   };
   heartbeat.counts(progress);
   let priorIndex = 0;
+  /** The linked-unit host's one-time compilation or cache load; journaled on
+   * the first units batch, never charged to a variant's execution. */
+  let hostPreparationMs: number | undefined,
+    hostPreparationJournaled = false;
   /** Pending variants by how their batch is built. Each queue fills to the
    * batch size on its own, so interleaved kinds do not cut batches short. */
   type QueueKind = "syntax" | "units" | "program";
@@ -290,6 +294,8 @@ try {
       /** Selection order, which the journal preserves for resume. */
       sequence: number;
       kind: QueueKind;
+      /** Time spent compiling this case's Script units while routing it. */
+      unitCompileMs: number;
     }[]
   >([
     ["syntax", []],
@@ -353,12 +359,20 @@ try {
     };
   }
   type PendingItem = ReturnType<typeof queue>[number];
-  type BuiltBatch = NativeBatchBuild;
+  type BuiltBatch = NativeBatchBuild & {
+    readonly compilation: NativeCompilation;
+  };
+  function commitCompilation(compilation: NativeCompilation) {
+    batches.push(compilation);
+    journal({ kind: "compilation", compilation });
+  }
+  /** A failed compilation is journaled at once; a compiled batch's record
+   * waits for staging so it can carry the image's launch admission time. */
   function compileGroup(group: readonly PendingItem[]): BuiltBatch {
     const id = batches.length;
     const started = performance.now();
     heartbeat.phase(`compiling batch ${id} (${group.length} variants)`);
-    let built: BuiltBatch;
+    let built: NativeBatchBuild;
     try {
       const kind = group[0]!.kind;
       built =
@@ -379,7 +393,18 @@ try {
           : ("execution" as const),
       compileMs: performance.now() - started,
       outcome: built.ok ? "compiled" : built.outcome.kind,
-      ...(group[0]!.kind === "units" ? { linking: "units" as const } : {}),
+      ...(group[0]!.kind === "units"
+        ? {
+            linking: "units" as const,
+            unitCompileMs: group.reduce(
+              (total, item) => total + item.unitCompileMs,
+              0,
+            ),
+          }
+        : {}),
+      ...(!hostPreparationJournaled && hostPreparationMs !== undefined
+        ? { hostPreparationMs }
+        : {}),
       ...(!built.ok && built.outcome.kind === "unsupported"
         ? { reason: built.outcome.reason }
         : {}),
@@ -387,24 +412,35 @@ try {
         ? { fallback: built.fallback }
         : {}),
     };
-    batches.push(compilation);
-    journal({ kind: "compilation", compilation });
-    return built;
+    if ("hostPreparationMs" in compilation) hostPreparationJournaled = true;
+    if (!built.ok) commitCompilation(compilation);
+    return { ...built, compilation };
   }
   function executeGroup(group: readonly PendingItem[], built: BuiltBatch) {
-    const id = batches.length - 1;
+    const id = built.compilation.id;
     let image: NativeImageRunner | undefined;
     let setupFailure: ExecutionOutcome | undefined;
     if (built.ok) {
+      let admissionMs: number | undefined;
       try {
         heartbeat.phase(`staging batch ${id}`);
         image = new NativeImageRunner(
           built.bytes,
           nativeTestResources.timeoutMs,
+          nativeTestResources.admissionTimeoutMs,
         );
+        heartbeat.phase(`admitting batch ${id} (first launch)`);
+        const admission = image.admit();
+        admissionMs = admission.admissionMs;
+        if (!admission.admitted) setupFailure = admission.outcome;
       } catch (error) {
         setupFailure = adapterCrash(error);
       }
+      commitCompilation(
+        admissionMs === undefined
+          ? built.compilation
+          : { ...built.compilation, admissionMs },
+      );
     }
     try {
       for (const [index, item] of group.entries()) {
@@ -554,8 +590,20 @@ try {
       if (checkpoint.complete)
         throw Error("completed native journal population differs");
       const sequence = nextSequence++;
-      function enqueue(kind: QueueKind, prepared: NativeTestCase | undefined) {
-        const item = { input, plan, prepared, started, sequence, kind };
+      function enqueue(
+        kind: QueueKind,
+        prepared: NativeTestCase | undefined,
+        unitCompileMs = 0,
+      ) {
+        const item = {
+          input,
+          plan,
+          prepared,
+          started,
+          sequence,
+          kind,
+          unitCompileMs,
+        };
         if (scriptLinking === "suite") {
           suiteMembers.push({
             item,
@@ -627,14 +675,22 @@ try {
                 }
               : scripts;
           }
-          if (prepared.ok)
-            enqueue(
-              buildUnits !== undefined && buildUnits.accepts(prepared.value)
-                ? "units"
-                : "program",
-              prepared.value,
-            );
-          else
+          if (prepared.ok) {
+            let units = false,
+              unitCompileMs = 0;
+            if (buildUnits !== undefined) {
+              if (hostPreparationMs === undefined) {
+                heartbeat.phase("preparing the linked-unit host");
+                const hostStarted = performance.now();
+                buildUnits.prepare();
+                hostPreparationMs = performance.now() - hostStarted;
+              }
+              const routeStarted = performance.now();
+              units = buildUnits.accepts(prepared.value);
+              unitCompileMs = performance.now() - routeStarted;
+            }
+            enqueue(units ? "units" : "program", prepared.value, unitCompileMs);
+          } else
             record(
               input,
               prepared.outcome,
@@ -694,6 +750,7 @@ try {
               ),
           }),
       timeoutMs: nativeTestResources.timeoutMs,
+      admissionTimeoutMs: nativeTestResources.admissionTimeoutMs,
       jobs: suiteJobs(),
       // Analysis: TINT_TEST262_SUITE_IMAGE names a new file for the image.
       ...(suiteImage === undefined

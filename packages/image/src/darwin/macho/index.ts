@@ -236,7 +236,8 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
       )
         return { ok: false, error: "INVALID_IMPORT" };
       ordinals.set(symbol, index + 2);
-      if (dylib.weak) weakImports.add(symbol);
+      if (dylib.weak || (dylib.weakSymbols ?? []).includes(symbol))
+        weakImports.add(symbol);
     }
     dylibBytes += dylibCommandSize(installName);
   }

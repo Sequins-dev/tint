@@ -523,6 +523,7 @@ export interface NativeSuiteCompilation {
   readonly reason?: string;
   readonly imageBytes?: number;
   readonly modules?: number;
+  readonly admissionMs?: number;
   readonly native?: NativeSuiteStatistics;
   readonly stages: readonly { stage: string; ms: number }[];
 }
@@ -540,6 +541,7 @@ export async function runNativeSuite(options: {
    * processes. */
   readonly execute?: (binary: string, selector: string) => ExecutionOutcome;
   readonly timeoutMs: number;
+  readonly admissionTimeoutMs: number;
   readonly jobs: number;
   /** Analysis: receives the built suite image before it runs. */
   readonly saveImage?: (bytes: Uint8Array) => void;
@@ -556,6 +558,9 @@ export async function runNativeSuite(options: {
       ? { route: "early-error-dynamic" }
       : {};
   let started = performance.now();
+  /** The failed attempt that reported each build error. */
+  const attempts = new Map<NativeSuiteBuildFailure, number>();
+  let compiled: NativeSuiteCompilation | undefined;
   const { image, failures } = buildSuiteExcludingFailures(
     members.length,
     (subset) => {
@@ -564,14 +569,13 @@ export async function runNativeSuite(options: {
       return options.build(subset.map((member) => members[member]!));
     },
     (variants, result) => {
-      const id = options.nextCompilation();
-      options.compilation({
-        id,
+      const record = {
+        id: options.nextCompilation(),
         variants,
         compileMs: performance.now() - started,
         outcome: result.ok ? "compiled" : "build-failure",
-        kind: "execution",
-        linking: "suite",
+        kind: "execution" as const,
+        linking: "suite" as const,
         ...(result.ok
           ? {
               imageBytes: result.bytes.length,
@@ -580,10 +584,15 @@ export async function runNativeSuite(options: {
             }
           : { reason: JSON.stringify(result.error) }),
         stages: result.stages,
-      });
+      };
+      // A compiled image's record waits for its launch admission.
+      if (result.ok) compiled = record;
+      else {
+        attempts.set(result.error, record.id);
+        options.compilation(record);
+      }
     },
   );
-  const failedCompilation = options.nextCompilation() - 1;
   for (const [member, error] of [...failures].sort((a, b) => a[0] - b[0]))
     options.record(
       member,
@@ -591,15 +600,30 @@ export async function runNativeSuite(options: {
         kind: "unsupported",
         reason: "native compilation: " + JSON.stringify(error),
       },
-      failedCompilation,
+      attempts.get(error),
       { buildFailure: error, ...route(member) },
     );
-  if (image === undefined) return;
-  const compilation = options.nextCompilation() - 1;
+  if (image === undefined || compiled === undefined) return;
+  const compilation = compiled.id;
   const { NativeImageRunner } = await import("./test262-native-process.ts");
   options.phase("staging suite image");
   options.saveImage?.(image.build.bytes);
-  const runner = new NativeImageRunner(image.build.bytes, options.timeoutMs);
+  const runner = new NativeImageRunner(
+    image.build.bytes,
+    options.timeoutMs,
+    options.admissionTimeoutMs,
+  );
+  // One image, one launch admission (macOS assesses each new executable on
+  // its first exec); no case's budget includes it.
+  options.phase("admitting suite image (first launch)");
+  const admission = runner.admit();
+  options.compilation({ ...compiled, admissionMs: admission.admissionMs });
+  if (!admission.admitted) {
+    for (const member of image.members)
+      options.record(member, admission.outcome, compilation, route(member));
+    runner.close();
+    return;
+  }
   try {
     const selectors = image.members.map((_, position) => String(position));
     const done = (position: number, outcome: ExecutionOutcome, ms: number) => {

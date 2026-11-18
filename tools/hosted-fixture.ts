@@ -30,6 +30,7 @@ import {
 import {
   expandForeignInputs,
   foreignRuntimeBindings,
+  foreignRuntimeModules,
   prepareForeignLibrary,
   type ForeignLibrary,
   type NativeForeignBinding,
@@ -179,6 +180,8 @@ export function verifyHostedFixture(
   const foreign = expandForeignSnapshot(captured);
   const foreignLibraries: ForeignLibrary[] = [...foreign.libraries];
   const foreignModules: SourceModule[] = [];
+  /** Runtime modules the generated binding modules import. */
+  const dependencyIds: string[] = [];
   for (const declaration of options.foreignDeclarations ?? []) {
     const prepared = prepareForeignLibrary(
       declaration.id,
@@ -193,10 +196,18 @@ export function verifyHostedFixture(
     const generatedModule = parseModule(generatedSource.value);
     assert.ok(generatedModule.ok, JSON.stringify(generatedModule));
     foreignLibraries.push(prepared.value.library);
+    // Like a binding package's grant (expandForeignInputs): a lazily
+    // loaded optional library's module resolves through tint:ffi/unsafe.
+    const dependencies = new Map<string, string>();
+    if (prepared.value.text.includes('from "tint:ffi/unsafe"')) {
+      dependencies.set("tint:ffi/unsafe", foreignRuntimeModules.unsafe);
+      if (!dependencyIds.includes(foreignRuntimeModules.unsafe))
+        dependencyIds.push(foreignRuntimeModules.unsafe);
+    }
     foreignModules.push({
       id: declaration.id,
       module: generatedModule.value,
-      dependencies: new Map(),
+      dependencies,
     });
   }
   const serviceMode = process.env.TINT_HOSTED_NATIVE_SERVICES;
@@ -232,6 +243,7 @@ export function verifyHostedFixture(
         ...dependencies
           .map((dependency) => dependency[1])
           .filter((id) => !fixtureGenerated.some((module) => module.id === id)),
+        ...dependencyIds,
       ],
       foreign.snapshot,
     ),
