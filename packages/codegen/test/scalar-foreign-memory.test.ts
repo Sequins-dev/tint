@@ -5,6 +5,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   bindForeignCalls,
+  dynamicCallFrame,
+  dynamicForeignCall,
+  foreignCallTypes,
   type ForeignCall,
   type ForeignMemoryAccess,
   type Instruction as IRInstruction,
@@ -702,4 +705,116 @@ test("functions containing c-calls reserve C stack in their entry check", () => 
       },
     ]),
   );
+});
+
+test("the universal trampoline loads every argument register from its frame and calls the address", () => {
+  const call = dynamicForeignCall(),
+    frame = dynamicCallFrame;
+  assert.deepEqual(foreignCallTypes(call), {
+    ok: true,
+    value: {
+      parameters: [
+        "number",
+        "Uint8Array",
+        ...Array.from({ length: frame.byteOperands }, () => "Uint8Array"),
+      ],
+      result: "void",
+    },
+  });
+  // Only the exact trampoline shape is a dynamic call.
+  assert.equal(foreignCallTypes({ ...call, symbol: "write" }).ok, false);
+  assert.equal(
+    foreignCallTypes({ ...call, operands: call.operands.slice(1) }).ok,
+    false,
+  );
+  const parameters: ScalarType[] = ["number"];
+  for (let index = 0; index <= frame.byteOperands; index++)
+    parameters.push("Uint8Array");
+  const code = emitted({ call }, parameters, "void");
+  // x8, d0-d7 and x0-x7 from the frame (x12), then blr to the address.
+  const loads: Instruction[] = [
+    { op: "ldr", width: 64, rt: 8, rn: 12, offset: frame.indirect },
+  ];
+  for (let register = 0; register < 8; register += 2)
+    loads.push({
+      op: "ldp-d",
+      rt: register,
+      rt2: register + 1,
+      rn: 12,
+      offset: frame.floats + register * 8,
+    });
+  for (let register = 0; register < 8; register += 2)
+    loads.push({
+      op: "ldp",
+      width: 64,
+      rt: register,
+      rt2: register + 1,
+      rn: 12,
+      offset: frame.registers + register * 8,
+      mode: "offset",
+    });
+  loads.push({ op: "blr", rn: 15 });
+  assert.ok(contains(code, loads));
+  // Results x0, x1 and d0-d3 back into the frame.
+  assert.ok(
+    contains(code, [
+      {
+        op: "stp",
+        width: 64,
+        rt: 0,
+        rt2: 1,
+        rn: 12,
+        offset: frame.registers,
+        mode: "offset",
+      },
+      { op: "stp-d", rt: 0, rt2: 1, rn: 12, offset: frame.floats },
+      { op: "stp-d", rt: 2, rt2: 3, rn: 12, offset: frame.floats + 16 },
+    ]),
+  );
+  // Stack words are copied one at a time into the outgoing area at sp.
+  assert.ok(
+    contains(code, [
+      { op: "ldr", width: 64, rt: 14, rn: 10, offset: 0 },
+      { op: "str", width: 64, rt: 14, rn: 11, offset: 0 },
+    ]),
+  );
+  // Patches store base + addend at a frame word.
+  assert.ok(
+    contains(code, [
+      {
+        op: "str-indexed",
+        size: 3,
+        fp: false,
+        rt: 14,
+        rn: 12,
+        rm: 11,
+        scaled: false,
+      },
+    ]),
+  );
+});
+
+test("an indirect c-call converts its callee first and branches to it, never to 0", () => {
+  const call: ForeignCall = {
+    symbol: "q_sum",
+    signature: {
+      parameters: [scalar("u32"), scalar("f64")],
+      result: scalar("u32"),
+      fixedParameters: 2,
+      callClass: "leaf",
+      errno: "none",
+    },
+    operands: ["number", "number"],
+    result: "number",
+    indirect: true,
+  };
+  assert.deepEqual(foreignCallTypes(call), {
+    ok: true,
+    value: { parameters: ["number", "number", "number"], result: "number" },
+  });
+  const code = emitted({ call }, ["number", "number", "number"], "number");
+  // The callee (x15) is checked before the arguments; the call is blr x15
+  // with no import.
+  assert.ok(contains(code, [{ op: "blr", rn: 15 }]));
+  assert.ok(!contains(code, [{ op: "blr", rn: 16 }]));
 });

@@ -14,11 +14,7 @@
  * the address space RangeError); accesses through a view of R stay within
  * R's size like any other view. */
 import { adoptExternal } from "./primitives.ts";
-import { strlen, memcpy } from "tint:c/memory";
-import {
-  createUTF8Decoder,
-  decodeUTF8,
-} from "@tint/foundation/text/text-encoding";
+import { readCString } from "./c-string.ts";
 
 /** Largest view: typed-array lengths are 32-bit. */
 const maximumBytes = 4294967295;
@@ -79,11 +75,28 @@ export function arrayAt(
  * become U+FFFD); a null address throws TypeError. */
 export function cStringAt(text: number): string {
   if (text === 0) throw new TypeError("null C string");
-  foreignAddress(text);
-  const length = strlen(text);
-  const bytes = new Uint8Array(length);
-  memcpy(bytes, text, length);
-  const decoded = decodeUTF8(createUTF8Decoder(false, true), bytes);
-  if (decoded === undefined) throw new TypeError("C string decoding failed");
-  return decoded;
+  return readCString(foreignAddress(text));
 }
+export {
+  foreignFunction,
+  setNumber,
+  setBoolean,
+  setWords,
+  setBytes,
+  setRecord,
+  invoke,
+  resultNumber,
+  resultBoolean,
+  resultLow,
+  resultHigh,
+  resultRecord,
+  openLibrary,
+  openProgram,
+  findSymbol,
+  closeLibrary,
+  optionalSymbol,
+  type ForeignFunction,
+  type LibraryHandle,
+  type ForeignSignature,
+  type ForeignType,
+} from "./dynamic.ts";

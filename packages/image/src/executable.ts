@@ -34,8 +34,13 @@ export interface ReadOnlySection {
 export interface ImageLibrary {
   /** Darwin install name or Linux soname. */
   readonly name: string;
+  /** Load the library optionally (every binding using it is optional). */
   readonly weak: boolean;
   readonly symbols: readonly string[];
+  /** Symbols imported weakly although the library itself is required:
+   * those an optional binding declares when a required binding loads the
+   * same image (Mach-O binds a missing weak import as 0). */
+  readonly weakSymbols?: readonly string[] | undefined;
 }
 export interface ImageDebugInfo {
   readonly directory: string;
