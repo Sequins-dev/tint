@@ -90,7 +90,7 @@ export function createFunctionStore(
 ): FunctionStore {
   const policy = options.policy,
     backend = options.backend;
-  if (policy !== "memory" && backend === undefined)
+  if (policy === "all" && backend === undefined)
     throw "function store spilling requires a backend";
   const vocabulary: PackedVocabulary = createPackedVocabulary();
   const entries: (Entry | undefined)[] = [];
@@ -177,6 +177,7 @@ export function createFunctionStore(
     for (let index = 0; index < chunks.length; index++) spillChunk(index);
   }
   function spillOldest(): void {
+    if (backend === undefined) return;
     for (
       let index = 0;
       index < chunks.length && packedInMemory > options.packedBytes;
@@ -379,7 +380,9 @@ export function createFunctionStore(
     // sealed chunk is read back from the backend.
     if (policy !== "all") makeResident(id, entry, fn);
     if (open.length >= options.chunkBytes) seal();
-    if (sinceCompaction > options.chunkBytes * 4) {
+    // A spilling store retires dead segments as their final records are
+    // replaced. Compaction of packed memory must not race its own eviction.
+    if (backend === undefined && sinceCompaction > options.chunkBytes * 4) {
       sinceCompaction = 0;
       compact();
     }
@@ -389,6 +392,7 @@ export function createFunctionStore(
     if (entry === undefined) throw "function store has no body " + String(id);
     const resident = entry.resident;
     if (resident !== undefined) return resident;
+    if (policy === "all" && entry.chunk === openChunk) seal();
     const bytes = chunkBytes(entry.chunk);
     const fn = decodeFunction(
       bytes,
@@ -432,25 +436,23 @@ export function createFunctionStore(
 }
 /** A backend that keeps segments in memory (tests and hosts without files). */
 export function createMemorySpillBackend(): SpillBackend {
-  const segments = new Map<number, Uint8Array>();
-  let next = 0;
+  const segments: (Uint8Array | undefined)[] = [];
   return {
     write: (bytes: Uint8Array): number => {
-      const segment = next;
-      next++;
-      segments.set(segment, bytes.slice());
+      const segment = segments.length;
+      segments.push(bytes.slice());
       return segment;
     },
     read: (segment: number): Uint8Array => {
-      const bytes = segments.get(segment);
+      const bytes = segments[segment];
       if (bytes === undefined) throw "memory spill segment missing";
       return bytes.slice();
     },
     release: (segment: number): void => {
-      segments.delete(segment);
+      segments[segment] = undefined;
     },
     close: (): void => {
-      segments.clear();
+      segments.splice(0, segments.length);
     },
   };
 }

@@ -174,6 +174,9 @@ import {
   dataflowRecordGuards,
   provenRecordFacts,
   provenWordFacts,
+  provenWordReturns,
+  functionHeader,
+  type FunctionBodySource,
   provenWordArguments,
   provenInductionWords,
   wordOnlyValues,
@@ -847,6 +850,7 @@ const compactAddressInstructions: number = 65536;
  * affect: computed by the first attempt, reused by compact-range retries. */
 interface EmissionFacts {
   verified: Verification | undefined;
+  frameModule: ModuleIR | undefined;
   wordReturns: Uint8Array | undefined;
   wordArguments: readonly Uint8Array[] | undefined;
   wordArgumentsKnown: boolean;
@@ -900,16 +904,49 @@ function rootHeadBinding(fn: FunctionIR): boolean {
   }
   return reads;
 }
+/** Frame preparation may replace bodies with compacted slot layouts. */
+export interface EmissionBodies extends FunctionBodySource {
+  readonly put: (fn: FunctionIR) => void;
+}
 export function emitModule(
   module: ModuleIR,
+  options: EmissionOptions = {},
+): Emission {
+  const functions = module.functions.slice();
+  const bodies: EmissionBodies = {
+    get: (id: number): FunctionIR => {
+      const fn = functions[id];
+      if (fn === undefined) throw "function body invariant";
+      return fn;
+    },
+    put: (fn: FunctionIR): void => {
+      functions[fn.id] = fn;
+    },
+    release: (_id: number): void => {},
+  };
+  return emitModuleFromStore(module, bodies, options);
+}
+/** Emit with function headers and a rereadable source of bodies. */
+export function emitModuleFromStore(
+  module: ModuleIR,
+  bodies: EmissionBodies,
   options: EmissionOptions = {},
 ): Emission {
   // Single-instruction local addresses only pay off below ADR's 1 MiB reach;
   // larger modules start with the four-instruction form instead of retrying.
   let size = 0;
-  for (const fn of module.functions)
-    for (const block of fn?.blocks ?? [])
-      size += 1 + (block?.instructions.length ?? 0);
+  if (options.compactAddresses === undefined)
+    for (let id = 0; id < module.functions.length; id++) {
+      if (size >= compactAddressInstructions) break;
+      if (module.functions[id] === undefined) continue;
+      const fn = bodies.get(id);
+      try {
+        for (const block of fn.blocks)
+          size += 1 + (block?.instructions.length ?? 0);
+      } finally {
+        bodies.release(id);
+      }
+    }
   const forms: BranchForms = {
     calls: true,
     addresses: options.compactAddresses ?? size < compactAddressInstructions,
@@ -919,6 +956,7 @@ export function emitModule(
   };
   const facts: EmissionFacts = {
     verified: undefined,
+    frameModule: undefined,
     wordReturns: undefined,
     wordArguments: undefined,
     wordArgumentsKnown: false,
@@ -953,7 +991,7 @@ export function emitModule(
     const before =
         forms.longBranches.size + forms.longAddresses.size + forms.islands.size,
       calls = forms.calls;
-    const emitted = emitModuleForms(module, options, forms, facts);
+    const emitted = emitModuleForms(module, bodies, options, forms, facts);
     if (emitted.ok)
       return {
         ok: true,
@@ -990,6 +1028,7 @@ function describeForms(
 }
 function emitModuleForms(
   module: ModuleIR,
+  bodies: EmissionBodies,
   options: EmissionOptions,
   forms: BranchForms,
   facts: EmissionFacts,
@@ -1020,6 +1059,7 @@ function emitModuleForms(
     span: Span | undefined,
     failure: Diagnostic | undefined;
   const abort = {};
+  let emitting = -1;
   const sourceRanges: {
     function: number;
     offset: number;
@@ -2840,36 +2880,103 @@ function emitModuleForms(
       maxByteLength > 0xffffffff
     )
       fail("CODE_LIMIT", "invalid byte budget");
-    const valid = facts.verified ?? verify(module);
+    const valid = facts.verified ?? verify(module, bodies);
     facts.verified = valid;
     if (!valid.ok) {
       const error = valid.error;
       functionId = error.function;
       blockId = error.block;
-      const invalid = module.functions.find(
+      const invalid = module.functions.findIndex(
         (fn) => fn !== undefined && fn.id === functionId,
       );
-      const block = invalid?.blocks.find(
-        (block) => block !== undefined && block.id === blockId,
-      );
-      const instruction = error.instruction;
-      const operation =
-        instruction === undefined
-          ? undefined
-          : block?.instructions[instruction];
-      if (operation !== undefined)
-        span = { start: operation.start, end: operation.end };
+      if (invalid >= 0) {
+        const fn = bodies.get(invalid);
+        try {
+          const block = fn.blocks.find(
+            (block) => block !== undefined && block.id === blockId,
+          );
+          const instruction = error.instruction;
+          const operation =
+            instruction === undefined
+              ? undefined
+              : block?.instructions[instruction];
+          if (operation !== undefined)
+            span = { start: operation.start, end: operation.end };
+        } finally {
+          bodies.release(invalid);
+        }
+      }
       fail("INVALID_IR", error.message);
     }
     // Optional scalar optimization can exhaust its module budget before slot
     // cleanup. Plan frames from used locals, retaining ABI and transfer slots.
     // Normalize before slot-indexed analyses; a bounded failure keeps the input.
-    const frameFunctions = module.functions.map(
-      (fn) => compactSlots(fn, work(1000000))?.fn ?? fn,
-    );
-    if (frameFunctions.some((fn, index) => fn !== module.functions[index]))
+    const prepared = facts.frameModule;
+    if (prepared === undefined) {
+      const frameFunctions: FunctionIR[] = [];
+      for (const header of module.functions) {
+        if (header === undefined) throw "frame function invariant";
+        const fn = bodies.get(header.id);
+        try {
+          const compacted = compactSlots(fn, work(1000000))?.fn ?? fn;
+          if (compacted !== fn) bodies.put(compacted);
+          frameFunctions.push(functionHeader(compacted));
+        } finally {
+          bodies.release(header.id);
+        }
+      }
       module = { ...module, functions: frameFunctions };
+      facts.frameModule = module;
+    } else module = prepared;
     const managedABI = options.managedABI;
+    const witnesses = new Uint8Array(module.functions.length);
+    const scanWitnesses =
+      managedABI?.signatures.some(
+        (binding) => binding?.witness !== undefined,
+      ) ?? false;
+    // Root-head bindings identify the calls that start stack walks.
+    const rootHeadBindings = new Uint8Array(module.functions.length);
+    const listShapes: (ListReadShape | undefined)[] = [];
+    const vectorShapes: (number | undefined)[] = [];
+    const writeShapes: (ListWriteShape | undefined)[] = [];
+    let hasFunctionOperations = false,
+      hasTypeErrors = false;
+    for (const header of module.functions) {
+      if (header === undefined) throw "feature function invariant";
+      const fn = bodies.get(header.id);
+      try {
+        listShapes.push(listReadShape(fn));
+        vectorShapes.push(listVectorShape(fn));
+        writeShapes.push(listWriteShape(fn));
+        if (rootHeadBinding(fn)) rootHeadBindings[fn.id] = 1;
+        for (const block of fn.blocks) {
+          if (!scanWitnesses && hasFunctionOperations && hasTypeErrors) break;
+          if (block === undefined) throw "feature block invariant";
+          for (const op of block.instructions) {
+            if (op === undefined) throw "feature instruction invariant";
+            if (op.kind === "function-new" || op.kind === "call-indirect") {
+              hasFunctionOperations = true;
+              if (scanWitnesses)
+                witnesses[op.target] =
+                  (witnesses[op.target] ?? 0) |
+                  (op.kind === "function-new" ? 1 : 2);
+            } else if (
+              op.kind === "function-environment" ||
+              (op.kind === "host-call" &&
+                (op.operation === "native-function-descriptor" ||
+                  op.operation === "native-function-signature" ||
+                  op.operation === "native-value-function-descriptor" ||
+                  op.operation === "native-value-function-signature"))
+            )
+              hasFunctionOperations = true;
+            else if (op.kind === "error-new" || op.kind === "error-is")
+              hasTypeErrors = true;
+          }
+        }
+      } finally {
+        bodies.release(header.id);
+      }
+    }
     if (managedABI !== undefined) {
       if (managedABI.version !== 1)
         fail("UNSUPPORTED", "unsupported managed ABI version");
@@ -2947,24 +3054,13 @@ function emitModuleForms(
                 "managed signature parameter contract does not match witness",
               );
           }
-          let used = false;
-          for (const input of module.functions) {
-            if (input === undefined) throw "managed function invariant";
-            for (const block of input.blocks) {
-              if (block === undefined) throw "managed block invariant";
-              for (const op of block.instructions) {
-                if (op === undefined) throw "managed instruction invariant";
-                if (op.kind === "function-new" && op.target === witness)
-                  fail(
-                    "INVALID_IR",
-                    "cannot create a local function using an imported signature witness",
-                  );
-                if (op.kind === "call-indirect" && op.target === witness)
-                  used = true;
-              }
-            }
-          }
-          if (!used)
+          const uses = witnesses[witness] ?? 0;
+          if ((uses & 1) !== 0)
+            fail(
+              "INVALID_IR",
+              "cannot create a local function using an imported signature witness",
+            );
+          if ((uses & 2) === 0)
             fail(
               "INVALID_IR",
               "managed signature binding has no indirect-call witness",
@@ -3107,7 +3203,7 @@ function emitModuleForms(
         fail("INVALID_IR", "imported functions cannot be executable roots");
     }
     if (generationalBarriers) {
-      if (!stableRecordLayouts(module))
+      if (!stableRecordLayouts(module, bodies))
         fail(
           "INVALID_IR",
           "generational mutator requires tracked managed writes; raw memory capabilities are unsupported",
@@ -3128,23 +3224,7 @@ function emitModuleForms(
       }
     }
     const functionRecord = module.records?.length ?? 0;
-    const hasFunctions =
-      brandImport !== undefined ||
-      module.functions.some((f) =>
-        f.blocks.some((b) =>
-          b.instructions.some(
-            (op) =>
-              op.kind === "function-new" ||
-              op.kind === "call-indirect" ||
-              op.kind === "function-environment" ||
-              (op.kind === "host-call" &&
-                (op.operation === "native-function-descriptor" ||
-                  op.operation === "native-function-signature" ||
-                  op.operation === "native-value-function-descriptor" ||
-                  op.operation === "native-value-function-signature")),
-          ),
-        ),
-      );
+    const hasFunctions = brandImport !== undefined || hasFunctionOperations;
     const recordLayouts: RecordLayout[] = [];
     for (const record of module.records ?? []) {
       if (record === undefined) throw "record layout invariant";
@@ -3162,13 +3242,6 @@ function emitModuleForms(
         ],
       });
     const typeErrorRecord = recordLayouts.length;
-    const hasTypeErrors = module.functions.some((f) =>
-      f.blocks.some((b) =>
-        b.instructions.some(
-          (op) => op.kind === "error-new" || op.kind === "error-is",
-        ),
-      ),
-    );
     if (hasTypeErrors)
       for (let i = 0; i < 2; i++)
         recordLayouts.push({
@@ -3186,78 +3259,36 @@ function emitModuleForms(
     );
     if (!localSignatures.ok) fail("INVALID_IR", localSignatures.error);
     const localGroups = localSignatures.groups;
-    const signatureIds = module.functions.map((input): number => {
-      const f = input;
+    const signatureIds = new Uint32Array(module.functions.length);
+    const signatureKeys = createStringIndex<number>();
+    for (const f of module.functions) {
       if (f === undefined) throw "function invariant";
+      let key: string = f.returnType + ":";
+      for (const slot of f.parameters) {
+        if (slot === undefined) throw "parameter invariant";
+        const type = f.slots[slot];
+        if (type === undefined) throw "parameter type invariant";
+        key += type + ":";
+      }
+      const prior = signatureKeys.get(key);
+      const first = prior ?? f.id + 1;
+      if (prior === undefined) signatureKeys.set(key, first);
       const group = localSignatures.byFunction[f.id] ?? 0;
-      if (group !== 0) return module.functions.length + group;
-      return (
-        module.functions.findIndex((candidate): boolean => {
-          const other = candidate;
-          if (other === undefined) throw "function invariant";
-          if (
-            f.returnType !== other.returnType ||
-            f.parameters.length !== other.parameters.length
-          )
-            return false;
-          for (let i = 0; i < f.parameters.length; i++) {
-            const slot = f.parameters[i],
-              otherSlot = other.parameters[i];
-            if (slot === undefined || otherSlot === undefined)
-              throw "parameter invariant";
-            if (f.slots[slot] !== other.slots[otherSlot]) return false;
-          }
-          return true;
-        }) + 1
-      );
-    });
-    const stableLayouts = stableRecordLayouts(module),
+      signatureIds[f.id] =
+        group === 0 ? first : module.functions.length + group;
+    }
+    const stableLayouts = stableRecordLayouts(module, bodies),
       // Intraprocedural descriptor proofs need descriptor stability only.
-      stableGuards = stableDescriptors(module);
+      stableGuards = stableDescriptors(module, bodies);
     const stableSlots =
       stableLayouts &&
       !module.functions.some((fn) => fn.environment !== undefined);
-    /** Numeric outcomes of each function's returns (word-facts masks, 0
-     * unknown), swept to a fixpoint: each sweep proves calls with the
-     * previous sweep's returns, so words flow through functions returning
-     * other calls' results. Each sweep's masks are met with the previous
-     * ones (both sound), so they only shrink and the sweeps terminate. */
-    function provenWordReturns(): Uint8Array {
-      let proven = new Uint8Array(module.functions.length);
-      if (stableSlots) {
-        let budget = work(10000000),
-          first = true;
-        for (;;) {
-          const next = new Uint8Array(module.functions.length);
-          for (const fn of module.functions) {
-            if (fn === undefined) throw "word return function invariant";
-            const proof = provenWordFacts(
-              fn,
-              Math.min(work(1000000), budget),
-              first ? undefined : proven,
-            );
-            if (proof !== undefined) {
-              next[fn.id] = proof.returned;
-              budget -= proof.work;
-            }
-          }
-          let changed = first;
-          for (let id = 0; id < next.length; id++) {
-            const a = proven[id] ?? 0,
-              b = next[id] ?? 0;
-            const met = first ? b : a === 0 ? b : b === 0 ? a : a & b;
-            next[id] = met;
-            if (met !== a) changed = true;
-          }
-          proven = next;
-          first = false;
-          if (!changed) break;
-        }
-      }
-      facts.wordReturns = proven;
-      return proven;
-    }
-    const wordReturns: Uint8Array = facts.wordReturns ?? provenWordReturns();
+    const wordReturns =
+      facts.wordReturns ??
+      (stableSlots
+        ? provenWordReturns(module, work(10000000), work(1000000), bodies)
+        : new Uint8Array(module.functions.length));
+    facts.wordReturns = wordReturns;
     if (!facts.wordArgumentsKnown) {
       facts.wordArguments =
         stableSlots && closedRoots !== undefined
@@ -3266,6 +3297,7 @@ function emitModuleForms(
               closedRoots,
               wordReturns,
               work(10000000),
+              bodies,
             )
           : undefined;
       facts.wordArgumentsKnown = true;
@@ -3275,26 +3307,32 @@ function emitModuleForms(
       facts.recordFlows =
         closedRoots === undefined
           ? undefined
-          : provenRecordFacts(module, work(10000000), true, closedRoots);
+          : provenRecordFacts(
+              module,
+              work(10000000),
+              true,
+              closedRoots,
+              bodies,
+            );
       facts.recordFlowsKnown = true;
     }
     const recordValues = facts.recordFlows,
       recordFlows = recordValues?.blocks;
     if (!facts.noSafepointsKnown) {
-      facts.noSafepoints = provenNoSafepoints(module, work(10000000));
+      facts.noSafepoints = provenNoSafepoints(module, work(10000000), bodies);
       facts.noSafepointsKnown = true;
     }
     const noSafepoints = facts.noSafepoints;
-    // Root-head bindings: functions whose own body only reads the root head
-    // (see the root-head operation). Their callers start stack walks.
-    const rootHeadBindings = new Uint8Array(module.functions.length);
-    for (const fn of module.functions)
-      if (fn !== undefined && rootHeadBinding(fn)) rootHeadBindings[fn.id] = 1;
     if (!facts.directReturnsKnown) {
       facts.directReturns =
         closedRoots === undefined
           ? undefined
-          : provenDirectOnlyFunctions(module, closedRoots, work(10000000));
+          : provenDirectOnlyFunctions(
+              module,
+              closedRoots,
+              work(10000000),
+              bodies,
+            );
       facts.directReturnsKnown = true;
     }
     const directReturns = facts.directReturns;
@@ -3302,19 +3340,9 @@ function emitModuleForms(
       if (fn === undefined) throw "function invariant";
       return signatureLayout(fn);
     });
-    const listShapes = module.functions.map((fn): ListReadShape | undefined =>
-      fn === undefined ? undefined : listReadShape(fn),
-    );
     function listReadShapes(id: number): ListReadShape | undefined {
       return listShapes[id];
     }
-    const vectorShapes = module.functions.map((fn): number | undefined =>
-      fn === undefined ? undefined : listVectorShape(fn),
-    );
-    const writeShapes = module.functions.map(
-      (fn): ListWriteShape | undefined =>
-        fn === undefined ? undefined : listWriteShape(fn),
-    );
     /** Whether a conditional branch recorded since `firstFixup` that
      * targets a block of `owner` cannot reach it in compact form. */
     function ownBranchesOutOfReach(owner: number, firstFixup: number): boolean {
@@ -3396,10 +3424,10 @@ function emitModuleForms(
       // Import call sites in re-emitted code are recorded again.
       while (imports.length > mark.imports) imports.pop();
     }
-    for (const inputFunction of module.functions) {
-      if (inputFunction === undefined) throw "function invariant";
-      const fn = inputFunction;
-      if (fn.import === true) {
+    for (const header of module.functions) {
+      if (header === undefined) throw "function invariant";
+      if (header.import === true) {
+        const fn = header;
         const signature = signatures[fn.id];
         if (signature === undefined) throw "import signature layout invariant";
         functions.push({
@@ -3415,6 +3443,8 @@ function emitModuleForms(
         blockOffsets.push({ offsets: [] });
         continue;
       }
+      emitting = header.id;
+      const fn = bodies.get(emitting);
       // A function whose own conditional branches end out of reach is
       // re-emitted alone with islands (then long forms) instead of failing
       // and re-emitting the whole module: functions precede everything that
@@ -16305,6 +16335,8 @@ function emitModuleForms(
           else forms.islands.add(fn.id);
         }
       }
+      bodies.release(emitting);
+      emitting = -1;
     }
     scalarRegisters = undefined;
     // Each private leaf helper is appended once, regardless of the number of call sites.
@@ -16866,6 +16898,7 @@ function emitModuleForms(
       },
     };
   } catch (error) {
+    if (emitting >= 0) bodies.release(emitting);
     if (error !== abort) throw error;
   }
   if (failure === undefined) throw "emission failure invariant";
