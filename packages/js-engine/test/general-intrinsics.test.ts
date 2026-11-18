@@ -1,0 +1,117 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { createSourceText } from "@tint/source/text";
+import { parseModule, type Module } from "@tint/typescript/syntax";
+import {
+  generalIntrinsics,
+  intrinsicInstallers,
+} from "../src/program/intrinsics.ts";
+
+function parse(text: string): Module {
+  const bytes = new TextEncoder().encode(text),
+    decoded = createSourceText(bytes, bytes.length);
+  assert.ok(decoded.ok);
+  const parsed = parseModule(decoded.value);
+  assert.ok(parsed.ok, JSON.stringify(parsed));
+  return parsed.value;
+}
+const core = [
+  "installErrorIntrinsics",
+  "installArrayIntrinsics",
+  "installObjectIntrinsics",
+  "installFunctionIntrinsics",
+  "installPrimitiveIntrinsics",
+  "installIteratorConstructor",
+  "installSymbolIntrinsics",
+];
+function extra(text: string): string[] {
+  return generalIntrinsics([parse(text)]).filter(
+    (installer) => !core.includes(installer),
+  );
+}
+
+test("plain code installs only the core, in installation order", () => {
+  const selected = generalIntrinsics([
+    parse(
+      "export function run() { let t = 0; for (const x of [1, 2]) t += x; return `${t}`.length; }",
+    ),
+  ]);
+  assert.deepEqual(
+    selected,
+    intrinsicInstallers.filter((installer) => core.includes(installer)),
+  );
+});
+
+test("named globals select their installers", () => {
+  assert.deepEqual(extra("export const m = new Map(), s = new Set();"), [
+    "installMapIntrinsics",
+    "installSetIntrinsics",
+  ]);
+  assert.deepEqual(extra("export const b = new Uint8Array(2);"), [
+    "installArrayBufferIntrinsics",
+    "installTypedArrayIntrinsics",
+  ]);
+  assert.deepEqual(
+    extra("export const v = new DataView(new ArrayBuffer(1));"),
+    ["installArrayBufferIntrinsics", "installDataViewIntrinsics"],
+  );
+  assert.deepEqual(extra("export const x = Math.max(1, 2);"), [
+    "installMathIntrinsics",
+  ]);
+  assert.deepEqual(extra("export const r = Reflect.has({}, 'a');"), [
+    "installReflectIntrinsics",
+  ]);
+});
+
+test("a local binding of the same name does not select the global", () => {
+  assert.deepEqual(
+    extra("const Map = 1; export function run() { return Map; }"),
+    [],
+  );
+});
+
+test("syntax that creates objects selects their installers", () => {
+  assert.deepEqual(extra("export const r = /a/g;"), [
+    "installRegExpIntrinsics",
+  ]);
+  for (const text of [
+    "export async function f() { return 1; }",
+    "export const f = async () => 1;",
+    "export const o = { async m() { return 1; } };",
+    "export class C { async m() { return 1; } }",
+    "export async function* g() { yield 1; }",
+    "export const p = import('./x.js');",
+    "export const v = await 1;",
+    "export async function f(xs) { for await (const x of xs) {} }",
+  ])
+    assert.deepEqual(extra(text), ["installPromiseIntrinsics"], text);
+  assert.deepEqual(extra("export function f(r) { using x = r; }"), [
+    "installDisposableStackIntrinsics",
+  ]);
+  assert.deepEqual(extra("export async function f(r) { await using x = r; }"), [
+    "installAsyncDisposableStackIntrinsics",
+    "installPromiseIntrinsics",
+  ]);
+});
+
+test("member operations that create objects select their installers", () => {
+  assert.deepEqual(extra("export const m = 'abc'.match('b');"), [
+    "installRegExpIntrinsics",
+  ]);
+  assert.deepEqual(extra("export const a = Array.fromAsync([1]);"), [
+    "installPromiseIntrinsics",
+  ]);
+});
+
+test("dynamic access to globals installs everything", () => {
+  for (const text of [
+    "export const g = globalThis;",
+    "export const v = eval('1');",
+    "export const f = Function('return 1');",
+  ])
+    assert.deepEqual(
+      generalIntrinsics([parse(text)]),
+      intrinsicInstallers,
+      text,
+    );
+});

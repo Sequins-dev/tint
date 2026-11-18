@@ -19,9 +19,17 @@ type Form = "typed" | "untyped";
 interface Entry {
   readonly construct: string;
   readonly form: Form;
-  /** "general" when the build used the general fallback. */
-  readonly path: "typed" | "general" | "none";
-  readonly outcome: "pass" | "build-failed" | "run-failed";
+  /** "general" when the build used the general fallback; "type-error" when
+   * an ill-typed form was rejected at compile time as expected. */
+  readonly path: "typed" | "general" | "type-error" | "none";
+  /** "missed-type-error": an ill-typed form compiled; "unsupported": the
+   * construct needs compiler options Tint does not offer yet. */
+  readonly outcome:
+    | "pass"
+    | "build-failed"
+    | "run-failed"
+    | "missed-type-error"
+    | "unsupported";
   readonly generalModules?: readonly string[];
   readonly reason?: string;
   readonly error?: string;
@@ -103,26 +111,42 @@ function verify(construct: string, form: Form): Promise<Entry> {
         sourceSnapshot = manifest.sourceSnapshot.sha256;
         rmSync(dirname(image), { recursive: true, force: true });
       }
-      const outcome =
-        status === 0 && stdout.includes("Verified native")
-          ? "pass"
-          : image === undefined
-            ? "build-failed"
-            : "run-failed";
       // A build that fails before compiling (the hosted builder asserts its
       // parse) or in the compiler reports the error object.
       const assertion = /AssertionError \[ERR_ASSERTION\]: (\{.*\})\n/.exec(
         stderr,
       )?.[1];
+      const expectsTypeError =
+        form === "typed" &&
+        constructs.find((item) => item.name === construct)?.typedError === true;
+      const rejected =
+        image === undefined &&
+        assertion !== undefined &&
+        assertion.includes('"stage":"check"');
+      const outcome: Entry["outcome"] = stdout.includes("UNSUPPORTED_OPTION")
+        ? "unsupported"
+        : expectsTypeError
+          ? rejected
+            ? "pass"
+            : image === undefined
+              ? "build-failed"
+              : "missed-type-error"
+          : status === 0 && stdout.includes("Verified native")
+            ? "pass"
+            : image === undefined
+              ? "build-failed"
+              : "run-failed";
       done({
         construct,
         form,
         path:
-          image === undefined
-            ? "none"
-            : fallback === null
-              ? "typed"
-              : "general",
+          expectsTypeError && rejected
+            ? "type-error"
+            : image === undefined
+              ? "none"
+              : fallback === null
+                ? "typed"
+                : "general",
         outcome,
         ...(fallback === null
           ? assertion === undefined || image !== undefined

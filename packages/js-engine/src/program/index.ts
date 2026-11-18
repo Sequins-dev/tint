@@ -14,9 +14,11 @@ import {
   eraseTypeSyntax,
   parseModule,
   typeOnlyDeclarations,
+  type Module,
 } from "@tint/typescript/syntax";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import { lowerSourceTextModule } from "../lowering/index.ts";
+import { generalIntrinsics } from "./intrinsics.ts";
 
 /** Module IDs of the JavaScript runtime the general lowering targets. */
 export interface GeneralRuntimeModules {
@@ -121,7 +123,8 @@ function lowerGeneralProgram(
     return id;
   }
   const generated: SourceModule[] = [];
-  const names: string[] = [];
+  const names: string[] = [],
+    erasedModules: Module[] = [];
   let imports = "",
     creates = "",
     edges = "";
@@ -135,6 +138,7 @@ function lowerGeneralProgram(
         return typeNames(target)?.has(name) ?? false;
       },
     });
+    erasedModules.push(erased);
     const lowered = lowerSourceTextModule(erased);
     if (!lowered.ok)
       return {
@@ -262,6 +266,7 @@ function lowerGeneralProgram(
     entryIndex,
     request.start,
     output !== undefined,
+    generalIntrinsics(erasedModules),
   );
   const parsed = parseModule(createSourceTextView(text));
   if (!parsed.ok)
@@ -323,6 +328,18 @@ function checkedArgument(value: string, classes: number): string {
   );
 }
 
+/** Arguments installers take after `(global object, realm, hooks)`. */
+const installerArguments: ReadonlyMap<string, string> = new Map<string, string>(
+  [
+    ["installTypedArrayIntrinsics", ',"little"'],
+    ["installMathIntrinsics", ",undefined"],
+    [
+      "installPromiseIntrinsics",
+      ",(promise:unknown,operation:string):void=>{}",
+    ],
+  ],
+);
+
 /** The typed host for a general program. Module records are created on
  * first request and resolved per referrer, as the source graph resolved
  * them; the start export's result (a number, or undefined for 0) is the
@@ -335,13 +352,24 @@ function generalHostSource(
   entry: number,
   start: string,
   output: boolean,
+  installers: readonly string[],
 ): string {
+  let installs = "";
+  for (const installer of installers) {
+    if (installer === undefined) throw "general installer invariant";
+    installs +=
+      " " +
+      installer +
+      "(object,realm,hooks" +
+      (installerArguments.get(installer) ?? "") +
+      ");\n";
+  }
   const write = output
     ? `function emit(fd:number,text:string):void{const bytes=new TextEncoder().encode(text);let offset=0;while(offset<bytes.length){const written=writeOutput(fd,bytes.subarray(offset));if(written<=0)return;offset+=written;}}`
     : `function emit(fd:number,text:string):void{}`;
-  return `${imports}import {createGlobalEnvironment} from "global";
+  return `${imports}import {createGlobalEnvironment,type GlobalEnvironment} from "global";
 import {createSyntheticModule,setSyntheticModuleExport,loadRequestedModules,finishLoadingImportedModule,linkModule,evaluateModule,settledModulePromise,getModuleNamespace,type ModuleRecord,type ModuleRequest,type ModuleReferrer,type ModuleLoadPayload} from "modules";
-import {createObject,createCallableObject,createDataProperty,createErrorRealm,createScriptAgent,createSymbolRegistry,createRuntimeError,getProperty,callObjectValue,stringValue,drainScriptJobs,scriptSameValue,installGlobalProperties,installErrorIntrinsics,installDisposableStackIntrinsics,installAsyncDisposableStackIntrinsics,installArrayIntrinsics,installArrayBufferIntrinsics,installDataViewIntrinsics,installTypedArrayIntrinsics,installObjectIntrinsics,installFunctionIntrinsics,installEvalIntrinsic,installPrimitiveIntrinsics,installIteratorConstructor,installMapIntrinsics,installSetIntrinsics,installRegExpIntrinsics,installSymbolIntrinsics,installMathIntrinsics,installProxyIntrinsics,installReflectIntrinsics,installPromiseIntrinsics,type ErrorRealm,type ScriptPropertyKey,type ObjectHooks} from "objects";
+import {createObject,createCallableObject,createDataProperty,createErrorRealm,createScriptAgent,createSymbolRegistry,createRuntimeError,getProperty,callObjectValue,stringValue,drainScriptJobs,scriptSameValue,installGlobalProperties,${installers.join(",")},type ErrorRealm,type ScriptPropertyKey,type ObjectHooks,type OrdinaryObject} from "objects";
 ${output ? 'import {write as writeOutput} from "output";' : ""}
 ${write}
 function rejectArgument(realm:ErrorRealm):never{throw createRuntimeError(realm,"type");}
@@ -349,22 +377,28 @@ function describe(value:unknown,hooks:ObjectHooks<unknown>,realm:ErrorRealm):str
  try{const converted=stringValue(value,hooks,realm);if(converted.error==="none")return converted.value;}catch(error){}
  return "<unprintable value>";
 }
-export function ${start}():number {
+interface ProgramRealm{readonly global:GlobalEnvironment<ScriptPropertyKey,unknown>;readonly realm:ErrorRealm;readonly hooks:ObjectHooks<unknown>;readonly object:OrdinaryObject<ScriptPropertyKey,unknown>;}
+let current:ProgramRealm|undefined=undefined;
+/** The program's realm, created on first use with the intrinsics the
+ * program can reach. */
+export function programRealm():ProgramRealm{
+ if(current!==undefined)return current;
  const prototype=createObject<ScriptPropertyKey,unknown>(undefined),object=createObject<ScriptPropertyKey,unknown>(prototype);
  const hooks:ObjectHooks<unknown>={undefinedValue:undefined,sameValue:(a:unknown,b:unknown):boolean=>scriptSameValue(a,b),call:(callee:unknown,receiver:unknown,args:readonly unknown[]):unknown=>{const result=callObjectValue(callee,receiver,args,object);if(result.error!=="none")throw "GENERAL_HOST_HOOK_CALL";return result.value;}};
  const global=createGlobalEnvironment<ScriptPropertyKey,unknown>(object,object,object,(name:string):ScriptPropertyKey=>name,hooks);
  installGlobalProperties(object,object,hooks);
  const realm=createErrorRealm(prototype,hooks,createSymbolRegistry(),createScriptAgent(false));
- installErrorIntrinsics(object,realm,hooks);installDisposableStackIntrinsics(object,realm,hooks);installAsyncDisposableStackIntrinsics(object,realm,hooks);
- installArrayIntrinsics(object,realm,hooks);installArrayBufferIntrinsics(object,realm,hooks);installDataViewIntrinsics(object,realm,hooks);installTypedArrayIntrinsics(object,realm,hooks,"little");
- installObjectIntrinsics(object,realm,hooks);installFunctionIntrinsics(object,realm,hooks);installEvalIntrinsic(object,realm,hooks);
- installPrimitiveIntrinsics(object,realm,hooks);installIteratorConstructor(object,realm,hooks);installMapIntrinsics(object,realm,hooks);installSetIntrinsics(object,realm,hooks);
- installRegExpIntrinsics(object,realm,hooks);installSymbolIntrinsics(object,realm,hooks);installMathIntrinsics(object,realm,hooks,undefined);
- installProxyIntrinsics(object,realm,hooks);installReflectIntrinsics(object,realm,hooks);installPromiseIntrinsics(object,realm,hooks,(promise:unknown,operation:string):void=>{});
- const console=createObject<ScriptPropertyKey,unknown>(realm.objectPrototype);
+${installs} const console=createObject<ScriptPropertyKey,unknown>(realm.objectPrototype);
  function printer(fd:number):unknown{return createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver:unknown,args:readonly unknown[]):unknown=>{let line="";for(let i=0;i<args.length;i++){if(i>0)line+=" ";line+=describe(args[i],hooks,realm);}emit(fd,line+"\\n");return undefined;},realm.executionContext);}
  createDataProperty<ScriptPropertyKey,unknown>(console,"log",printer(1),hooks);createDataProperty<ScriptPropertyKey,unknown>(console,"error",printer(2),hooks);
  createDataProperty<ScriptPropertyKey,unknown>(object,"console",console,hooks);
+ const created:ProgramRealm={global,realm,hooks,object};
+ current=created;
+ return created;
+}
+export function ${start}():number {
+ const program=programRealm();
+ const global=program.global,realm=program.realm,hooks=program.hooks,object=program.object;
  const records:(ModuleRecord|undefined)[]=[];for(let i=0;i<${count};i++)records.push(undefined);
  function create(index:number):ModuleRecord{
   switch(index){

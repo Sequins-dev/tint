@@ -343,6 +343,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "compiler",
     },
     {
+      id: "packages/compiler/src/native/module-pruning.ts",
+      packageId: "compiler",
+    },
+    {
       id: "packages/compiler/src/native/runtime-contracts.ts",
       packageId: "compiler",
     },
@@ -1084,6 +1088,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-engine/src/program/index.ts",
+      packageId: "js-engine",
+    },
+    {
+      id: "packages/js-engine/src/program/intrinsics.ts",
       packageId: "js-engine",
     },
     {
