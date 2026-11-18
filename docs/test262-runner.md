@@ -118,7 +118,8 @@ With `TINT_TEST262_LINKING=units`, the runtime host is compiled once per
 toolchain and each batch links its cases' separately compiled Script units
 against it (see [separate compilation](test262-separate-compilation.md)); the
 default, `program`, compiles each batch as one whole program, as do cases
-ineligible for units. Phases are timed separately and none of them counts against a variant's
+ineligible for units; `suite` compiles the whole selection as one program (see
+[Suite images](#suite-images)). Phases are timed separately and none of them counts against a variant's
 containment budget, which covers only its own launch and execution:
 
 - `compileMs`: building the batch image (for units, linking the batch).
@@ -465,6 +466,41 @@ admission. Compilation records carry `admissionMs`; heartbeats show the
 `admitting batch N (first launch)` phase. An image not admitted within its
 budget runs no case: every variant in the batch is a timeout whose detail says
 it was not admitted. See [the load-timeout investigation](results/test262-load-timeouts-v1.md).
+
+### Suite images
+
+`TINT_TEST262_LINKING=suite` compiles the whole selection, with the engine, as
+one whole program (`tools/test262-native-suite.ts`); the batch size is
+ignored. The process argument is the variant's index in the image; a dispatch
+tree of 64-way modules selects its case host, so no dispatch function grows with
+the suite. Execution variants use the program-mode case hosts unchanged:
+identical lowered Scripts (shared harness files) are one module, and every
+variant still runs in a fresh process with its own realm. Plain-process launches
+run `TINT_TEST262_SUITE_JOBS` at a time (default 6); debugger launch modes run
+serially. The image is staged and admitted once.
+
+Parse/early-negative variants are not compiled as program code. Their source is
+embedded as text; when selected, the image passes it to the engine's own runtime
+front end (the parse and lowering that `$262.evalScript` applies before
+compiling an entry: syntax, binding and early errors), with the variant's goal
+and strictness. Rejection with SyntaxError passes; nothing is compiled or
+evaluated. Observations carry `route: "early-error-dynamic"`.
+
+A build failure is not a run outcome. The compiler names the module a failure
+belongs to; the variants owning it are recorded with their compiler error
+(`buildFailure`, outcome unsupported), and the image is rebuilt without them. A
+failure naming no member is bisected, as a diagnostic, to one variant; a
+compiler limit fails the image without bisection. Reports add
+`compilation.suite` (built variants, build failures grouped by cause, and the
+dynamic early-error variants by phase and status). Compilation records add
+`imageBytes`, `modules`, compile `stages` and `native` module statistics (code,
+safepoint table, literal and descriptor bytes). For analysis,
+`TINT_TEST262_SUITE_IMAGE` and `TINT_TEST262_SUITE_FUNCTIONS` name new files for
+the image and its emitted function ranges.
+
+Measurements, the image-size and compiler-memory limits that keep the whole
+`language` + `built-ins` selection from one image today, and the
+recommendation: [suite-program scaling](results/test262-suite-program-v1.md).
 
 ## Legacy host object
 

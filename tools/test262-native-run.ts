@@ -65,6 +65,7 @@ import { createNativeSyntaxBatchBuilder } from "./test262-native-syntax.ts";
 import { buildWithBisection } from "./native-batch-bisect.ts";
 import {
   createNativeSuiteBuilder,
+  nativeSuiteSummary,
   runNativeSuite,
   type NativeSuiteCase,
 } from "./test262-native-suite.ts";
@@ -856,7 +857,12 @@ try {
           batchSize,
           batches,
           failurePolicy:
-            "A failed batch compilation is bisected until each failure is attributed to a single-variant build.",
+            scriptLinking === "suite"
+              ? "One suite image holds every selected variant. A build failure is attributed to the variants whose modules the compiler names (otherwise bisected, diagnostically, to one variant), recorded with its compiler error and excluded from the rebuilt image; it is never executed elsewhere."
+              : "A failed batch compilation is bisected until each failure is attributed to a single-variant build.",
+          ...(scriptLinking === "suite"
+            ? { suite: nativeSuiteSummary(observations) }
+            : {}),
         },
         dirty: suite.dirty,
         selection:

@@ -669,3 +669,61 @@ export async function runNativeSuite(options: {
     runner.close();
   }
 }
+
+/** A suite report's build failures (apart from run outcomes, grouped by
+ * compiler error) and its dynamically compiled parse/early-negative
+ * variants by negative phase and status. */
+export function nativeSuiteSummary(
+  observations: readonly {
+    readonly path: string;
+    readonly variant: string;
+    readonly status: string;
+    readonly metadata: { readonly negative?: { readonly phase: string } };
+    readonly buildFailure?: NativeSuiteBuildFailure;
+    readonly route?: string;
+  }[],
+) {
+  const buildFailures: {
+      path: string;
+      variant: string;
+      failure: NativeSuiteBuildFailure;
+    }[] = [],
+    causes = new Map<string, number>(),
+    dynamic = new Map<string, Map<string, number>>();
+  let built = 0;
+  for (const observation of observations) {
+    const failure = observation.buildFailure;
+    if (failure !== undefined) {
+      buildFailures.push({
+        path: observation.path,
+        variant: observation.variant,
+        failure,
+      });
+      const cause = failure.stage + ": " + failure.message;
+      causes.set(cause, (causes.get(cause) ?? 0) + 1);
+      continue;
+    }
+    built++;
+    if (observation.route !== "early-error-dynamic") continue;
+    const phase = observation.metadata.negative?.phase ?? "none",
+      statuses = dynamic.get(phase) ?? new Map<string, number>();
+    statuses.set(
+      observation.status,
+      (statuses.get(observation.status) ?? 0) + 1,
+    );
+    dynamic.set(phase, statuses);
+  }
+  return {
+    builtVariants: built,
+    buildFailureCount: buildFailures.length,
+    buildFailureCauses: [...causes]
+      .sort((a, b) => b[1] - a[1])
+      .map(([cause, variants]) => ({ cause, variants })),
+    buildFailures,
+    dynamicEarlyErrors: [...dynamic].map(([phase, statuses]) => ({
+      phase,
+      variants: [...statuses.values()].reduce((a, b) => a + b, 0),
+      statuses: Object.fromEntries(statuses),
+    })),
+  };
+}

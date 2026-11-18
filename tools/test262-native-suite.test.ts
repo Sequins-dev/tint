@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   buildSuiteExcludingFailures,
+  nativeSuiteSummary,
   suiteDispatchModules,
   type NativeSuiteBuild,
 } from "./test262-native-suite.ts";
@@ -107,4 +108,47 @@ test("whole-program limits fail the suite without bisection", () => {
   assert.equal(attempts, 1);
   assert.equal(result.image, undefined);
   assert.equal(result.failures.size, 64);
+});
+
+test("suite summaries separate build failures from run outcomes", () => {
+  const negative = { negative: { phase: "parse" } };
+  const summary = nativeSuiteSummary([
+    { path: "a.js", variant: "strict", status: "pass", metadata: {} },
+    {
+      path: "b.js",
+      variant: "sloppy",
+      status: "unsupported",
+      metadata: {},
+      buildFailure: { stage: "check", message: "x", module: "m" },
+    },
+    {
+      path: "c.js",
+      variant: "sloppy",
+      status: "unsupported",
+      metadata: {},
+      buildFailure: { stage: "check", message: "x" },
+    },
+    {
+      path: "d.js",
+      variant: "sloppy",
+      status: "pass",
+      metadata: negative,
+      route: "early-error-dynamic",
+    },
+    {
+      path: "d.js",
+      variant: "strict",
+      status: "fail",
+      metadata: negative,
+      route: "early-error-dynamic",
+    },
+  ]);
+  assert.equal(summary.builtVariants, 3);
+  assert.equal(summary.buildFailureCount, 2);
+  assert.deepEqual(summary.buildFailureCauses, [
+    { cause: "check: x", variants: 2 },
+  ]);
+  assert.deepEqual(summary.dynamicEarlyErrors, [
+    { phase: "parse", variants: 2, statuses: { pass: 1, fail: 1 } },
+  ]);
 });
