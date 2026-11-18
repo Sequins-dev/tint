@@ -9,11 +9,20 @@ gate_tools=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 
 export TINT_GATE_EXCLUSIVE_LOCK="${TINT_GATE_EXCLUSIVE_LOCK:-$HOME/.t3/tint-gate.lock}"
 export TINT_GATE_MEMORY_DIRECTORY="${TINT_GATE_MEMORY_DIRECTORY:-$HOME/.t3/tint-gate-memory}"
-test262=${TINT_GATE_TEST262:-$gate_root/.tint-bootstrap/test262}
+test262_link="$gate_root/.tint-bootstrap/test262"
+test262=${TINT_GATE_TEST262:-$test262_link}
 if [ ! -d "$test262/test" ] && [ -z "${TINT_GATE_TEST262:-}" ]; then
   test262="$HOME/Code/nodejs/tint/.tint-bootstrap/test262"
 fi
-test -d "$test262/test"
+if [ ! -d "$test262/test" ]; then
+  printf 'Test262 checkout is missing at %s. Set TINT_GATE_TEST262.\n' "$test262" >&2
+  exit 1
+fi
+# A workspace module-graph test reads this path directly; mirror the old gate.
+if [ ! -e "$test262_link" ] && [ ! -L "$test262_link" ]; then
+  test262=$(CDPATH= cd -- "$test262" && pwd -P)
+  ln -s "$test262" "$test262_link"
+fi
 
 run_step build unlocked pnpm build
 echo build=0
