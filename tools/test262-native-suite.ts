@@ -259,6 +259,8 @@ export function createNativeSuiteBuilder(
   report: (stage: string) => void = () => {},
   /** Analysis: receives every emitted function of a successful build. */
   onEmittedFunctions?: (functions: readonly ImageFunctionRange[]) => void,
+  /** Analysis: receives the compiled program of a successful build. */
+  onCompiled?: (compiled: CompiledMacOSProgram) => void,
 ) {
   const config = nativeBatchConfiguration(snapshot, moduleExecution);
   const request = nativeBatchImageRequest(
@@ -326,6 +328,8 @@ export function createNativeSuiteBuilder(
     const buildRequest = {
       ...base,
       ...(onEmittedFunctions === undefined ? {} : { onEmittedFunctions }),
+      // Analysis builds keep each operation's code range in the module.
+      ...(onCompiled === undefined ? {} : { onOperationRanges: () => {} }),
       report: (stage: string) => {
         const now = performance.now();
         stages.push({ stage: current.stage, ms: now - current.started });
@@ -342,6 +346,7 @@ export function createNativeSuiteBuilder(
       stage: current.stage,
       ms: performance.now() - current.started,
     });
+    if (built.ok && compiled.ok) onCompiled?.(compiled.value);
     if (built.ok)
       return {
         ok: true,
