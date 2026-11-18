@@ -1,0 +1,128 @@
+{
+  "spec": "memory",
+  "target": "linux-arm64",
+  "clang": "Debian clang version 19.1.7",
+  "aliases": [],
+  "types": [],
+  "records": [],
+  "functions": [
+    {
+      "name": "getpagesize",
+      "parameters": [],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "mmap",
+      "parameters": [
+        {
+          "name": "__addr",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "__len",
+          "type": { "kind": "scalar", "scalar": "usize", "aliases": ["size_t"] }
+        },
+        {
+          "name": "__prot",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        },
+        {
+          "name": "__flags",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        },
+        {
+          "name": "__fd",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        },
+        {
+          "name": "__offset",
+          "type": { "kind": "scalar", "scalar": "i64", "aliases": ["__off_t"] }
+        }
+      ],
+      "result": {
+        "kind": "pointer",
+        "pointee": { "kind": "void" },
+        "constPointee": false
+      },
+      "variadic": false
+    },
+    {
+      "name": "munmap",
+      "parameters": [
+        {
+          "name": "__addr",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "__len",
+          "type": { "kind": "scalar", "scalar": "usize", "aliases": ["size_t"] }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "strlen",
+      "parameters": [
+        {
+          "name": "__s",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": true
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "usize", "aliases": ["size_t"] },
+      "variadic": false
+    },
+    {
+      "name": "memcpy",
+      "parameters": [
+        {
+          "name": "__dest",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "__src",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": true
+          }
+        },
+        {
+          "name": "__n",
+          "type": { "kind": "scalar", "scalar": "usize", "aliases": ["size_t"] }
+        }
+      ],
+      "result": {
+        "kind": "pointer",
+        "pointee": { "kind": "void" },
+        "constPointee": false
+      },
+      "variadic": false
+    }
+  ],
+  "constants": [
+    { "name": "PROT_NONE", "value": "0" },
+    { "name": "PROT_READ", "value": "1" },
+    { "name": "PROT_WRITE", "value": "2" },
+    { "name": "MAP_PRIVATE", "value": "2" },
+    { "name": "MAP_ANONYMOUS", "value": "32" }
+  ],
+  "skipped": []
+}

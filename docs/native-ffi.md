@@ -13,6 +13,9 @@ dlsym, dlclose and dlerror as leaf c-calls, and dynamic calls of any C
 function address through one AOT-compiled universal trampoline. The exact
 `node:ffi` layer over them waits for the typed/untyped convergence
 ([what it needs](#what-nodeffi-needs-from-the-convergence)).
+Phase 6a implemented: the clang-driven binding generator
+([binding generator](#binding-generator)), verified on both targets and
+regenerating every hand-written binding with equal layouts and signatures.
 Later phases are planned below. The exploration that chose this design (prior
 art, `node:ffi`, the GC argument) is summarized here; this document is the
 design of record.
@@ -36,8 +39,8 @@ to an inline C call. The same declaration also yields a runtime descriptor
 | Runtime           | `@tint/native-runtime` (`ffi/`, `node/`)         | `tint:ffi` external storage and its trusted primitives; `tint:ffi/unsafe` foreign memory; `node:zlib`, `node:os`.                                                                                         |
 
 No C compiler or platform linker participates. clang is used only as a
-test-time oracle (below) and, later, as a dev-time binding generator whose
-output is checked in.
+test-time oracle (below) and as the dev-time binding generator
+([below](#binding-generator)), whose output is checked in.
 
 ## Declarations as IDL
 
@@ -733,6 +736,129 @@ level, each mode, window/memory/strategy options and chunk sizes), checks Node
 inflates the oracle's stream, and inflates Node's streams. Results are
 Uint8Arrays (Node returns Buffers).
 
+## Binding generator
+
+Bindings to large C APIs are generated, not hand-written: hand-written
+struct offsets were fino's largest source of bugs. `tools/c-bindgen.ts`
+reads C headers with clang and emits declaration modules in exactly this
+document's syntax. clang runs only at development time, as the generator
+and as a test oracle; a Tint build never invokes it.
+
+**Specs.** One checked-in spec per library,
+`tools/c-bindgen/specs/<library>.ts` (type `BindingSpec`,
+`tools/c-bindgen/spec.ts`), selects declarations and states the choices C
+cannot express:
+
+```ts
+export default {
+  library: "zlib", // tint:c/zlib
+  summary: ["zlib (<zlib.h>), ..."],
+  targets: ["darwin-arm64", "linux-arm64"],
+  headers: ["zlib.h"], // or per target
+  aliases: ["uInt", "uLong"], // scalar typedefs kept as `type` aliases
+  records: [{ name: "z_stream", opaque: ["zalloc", "zfree"] }],
+  functions: [
+    "deflate",
+    { name: "deflateInit2_", parameters: { version: "Address" } },
+  ],
+} satisfies BindingSpec;
+```
+
+- Records name a struct/union tag or a typedef; records they hold by value
+  follow automatically (`in6_addr`, anonymous member records as
+  `<record>_<member>`). Pointers to records the module does not declare
+  are `Address<void>`/`Ptr<void>` (opaque memory). `layout: false` omits
+  the `Layout<R>` constant.
+- Pointer parameters default to `Ptr<T>` (a borrowed view) and
+  `const char *` to `CString`; `as` picks `Address`, `Ptr`, `CString` or
+  `CStringBytes`. `pointee` points at an emitted record of the C pointee's
+  layout or an array of the C pointee (`struct ifaddrs **` as a one-member
+  out-parameter record). `record` passes a pointer-sized value as an
+  8-byte record without floats (dlopen's handle as two 32-bit halves).
+- Results: `"OrErrno"` (a pointer result is read as `isize`), `"void"`
+  (ignored), `{ record }`. `variant` emits `name$variant`; a variadic
+  function needs `variadic: [C types]` per call shape (promoted).
+  `callClass` wraps the result in `MayCallback`/`Async` (Phases 4–5).
+- `constants` lists `#define`s and enumerators; each must be an integer
+  constant expression (checked by clang). `availability` or `optional:
+true` emit availability queries (`has<Name>`).
+- `prelude` is C compiled after the headers: records Tint defines itself
+  (out-parameter holders, the trampoline's frame) and target constants, so
+  clang verifies them too.
+
+**Extraction and emission.** Extraction runs clang (`-Xclang
+-ast-dump=json -fno-builtin`; without `-fno-builtin` library builtins lose
+the header's `size_t`) on the host's target and writes facts,
+`tools/c-bindgen/facts/<library>.<target>.json`: each selected type in the
+binding model (typedef chains, `size_t`/`ssize_t` as `usize`/`isize`,
+enums at clang's width and signedness), and a probe program clang compiles
+and the host runs gives every record's `sizeof`, `_Alignof` and `offsetof`
+and every constant's value. A record is kept only when `cLayout` of the
+declaration reproduces clang's layout exactly. Emission merges every
+target's facts into one module: equal texts stay, differing ones become
+`ByTarget<{ ... }>` (a listed alias that one target reaches through another
+typedef, glibc's `__mode_t`, stays the alias). The output is formatted with
+prettier and read back by `parseForeignDeclarations` for every target,
+whose layouts must equal the facts; a header names the spec and each
+target's clang version. Same facts, byte-identical output.
+
+**Not bound, reported.** Bitfields, flexible and zero-length arrays,
+anonymous (C11) members, `long double`, `__int128`, complex and vector
+types, `va_list`, function pointers (members, parameters and results,
+until `Callback<…>` lands with Phase 4; `opaque`/`as: "Address"` binds one
+as `Address<void>`), variadic functions without call shapes, static or
+inline header functions, functions an asm label renames, negative or
+non-integer constants and those beyond 2^53, records that differ between
+targets beyond member types (bind them in per-target specs), and anything
+holding such a record by value. Each is left out with its reason, in the
+generator's output and in the module's header. A spec choice the C
+declaration contradicts (a `pointee` that is not the C pointee's layout, a
+word record that is not 8 bytes, `OrErrno` on an unsigned result) fails
+generation.
+
+**Workflow.** `pnpm bindgen` extracts this host's facts and emits every
+module; `pnpm bindgen extract|emit|check [libraries]` runs one step
+(`check` fails on drift without writing). To add a library: write its
+spec, add it to the library manifest (`cLibraryManifest`), then extract on
+each target (linux-arm64 on the shared `dev` container machine: `container
+machine run -n dev -- "cd <worktree> && node tools/c-bindgen.ts extract
+<library>"`) and emit on either host. Changing only binding choices
+(`as`, `result`, names) needs no re-extraction. Generated modules are
+written to `tools/c-bindgen/generated/` for review; the hand-written
+bindings under `packages/native-runtime/src/c/` stay authoritative until
+they are replaced (after Phase 4).
+
+**Verification** (`tools/c-bindgen.test.ts`, both targets):
+
+- emission rules on synthetic facts (ByTarget merging, alias unification,
+  reports, spec errors, call classes, availability queries), determinism
+  (checked-in modules equal emission from the checked-in facts), and
+  `tsc` over each module with `tint:ffi`;
+- with clang on the host: re-extraction equals the checked-in facts (the
+  clang version aside); the oracle (`tools/c-bindgen/oracle.ts`) checks
+  every generated and hand-written record against clang's `sizeof`,
+  `_Alignof` and `offsetof`, and every function against clang's own
+  prototype via C++ type traits (each parameter's and result's width,
+  signedness, float-ness, pointer and pointee); a mutated module shows the
+  oracle catches wrong offsets, widths and pointees; a synthetic header
+  exercises every unsupported shape;
+- natively under LLDB: a binding generated fresh from the host's headers
+  (`struct stat` with nested `timespec`s, `struct utsname`, a variadic
+  `open`, errno results, aliases, constants) is compiled into a program
+  that writes, `fstat`s and unlinks a file and reads `uname` through views
+  (`tools/c-bindgen-fixtures.ts`).
+
+**Parity** with the hand-written bindings (commoncrypto, zlib, darwin-os,
+linux-os, dl, libsystem, memory): the test compares every record layout,
+member, function signature (types, forms, errno, variadics, call class),
+constant, `Layout` constant and availability query for each target, and
+lists the differences with their explanation. Layouts and signatures agree
+everywhere; no hand-written binding was wrong. The remaining differences
+are the generator keeping nested records the hand-written files flattened
+to a member of equal size and offset (`struct in_addr`, `struct in6_addr`
+and glibc's `ifa_ifu` union) and Darwin's `sin_zero`, which the header
+declares `char[8]` (hand-written `u8`).
+
 ## Runtime descriptors (one layout engine, two consumers)
 
 `cLibraryDescriptor` turns the same parsed declaration into `node:ffi` `dlopen`
@@ -1012,6 +1138,9 @@ revisit when profiles show it.
   to C, every creation contract, release/address rejection, collections in
   between) and `node:os` against Node, under the generational and copying
   runtimes.
+- `tools/c-bindgen.test.ts`: the binding generator (rules, determinism,
+  parity, facts, the layout and prototype oracle, and a native fixture
+  under LLDB; [binding generator](#binding-generator)).
 - `tools/ffi-microbench.ts`, `tools/zlib-microbench.ts`: call overhead and
   codec throughput (below), not part of `pnpm check`.
 
@@ -1167,9 +1296,12 @@ interfaces. Leaf-contract violations detected by the trampoline.
 queued to the context, borrow tokens that block detach and resize; `Async<T>`
 declarations return promises.
 
-**Phase 6 — binding generator and Windows.** `tools/c-bindgen.ts` (clang AST and
-record layouts as a dev-time generator) emitting the declaration modules in this
-document's syntax, per target (`ByTarget` where they differ), checked in and
-re-verified by the layout oracle; later Windows. Linux aarch64 landed with
+**Phase 6 — binding generator and Windows.** 6a (implemented):
+`tools/c-bindgen.ts` (clang AST and record layouts as a dev-time generator)
+emitting the declaration modules in this document's syntax, per target
+(`ByTarget` where they differ), checked in and re-verified by the layout and
+prototype oracle ([binding generator](#binding-generator)). Remaining:
+`Callback<…>` members and parameters once Phase 4 lands, replacing the
+hand-written bindings with the generated ones, and Windows. Linux aarch64 landed with
 Phase 2: ELF dynamic imports, the target facts verified by the oracle and
 per-target declarations.
