@@ -183,6 +183,14 @@ slot (variable, parameter, field, element type):
   code, views or reflection needs the runtime transition of its object's
   layout (slice 4b).
 
+**Checked downcasts.** `x as T` where `x` is `unknown` is a checked downcast,
+an explicit contract like an annotation: the value is tested at run time
+against T (primitive categories, 1-byte typed arrays, the record layouts of
+object types, and unions of these); a value outside T throws a TypeError, and
+a passing value keeps its identity. Types without a run-time test yet (lists,
+functions, object types with several layouts) are rejected at compile time.
+Other `as` assertions keep their compile-time meaning (upcasts).
+
 Today's typed checker does the opposite for open slots: it treats the
 inferred type as a contract and rejects the program, which sends the module
 to the general fallback. Probed on 2026-11-17: `let y = 1; y = ...` ("value
@@ -311,7 +319,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | Classes rejected in module-instance (runtime) contexts                                                                                                                                                         | `class-basic`                                                          | 3                                   |
 | `new Error`, `.message` and untyped reads of caught values, `instanceof Uint8Array`                                                                                                                            | `errors`, `caught-error-reads`, `typed-arrays`                         | 4                                   |
 | `toLowerCase` and other unlisted String methods; `Math.pow`/`log2`/`fround`; `JSON`                                                                                                                            | `string-methods`, `math`, `json`                                       | 4                                   |
-| `x as Uint8Array` from a general value                                                                                                                                                                         | `general-value-casts`                                                  | 2 (projection), 4                   |
+| (Removed by 2b: checked downcasts) `x as Uint8Array` from a general value                                                                                                                                      | `general-value-casts`                                                  | 2 (projection), 4                   |
 | Typed-array views over another buffer                                                                                                                                                                          | `typed-array-buffer-views`                                             | 4                                   |
 | Forward reference to an unannotated module const (inferred binding treated as a contract; the runtime-stage error also lacks a location)                                                                       | `forward-inferred-const`                                               | 4 (open slots); location separately |
 | Tuple types and `implements` clauses fail to parse                                                                                                                                                             | `tuple-types`, `spread`, `iterator-protocol`                           | parser fix (both forms parse first) |

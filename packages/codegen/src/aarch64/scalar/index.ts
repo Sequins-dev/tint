@@ -4083,6 +4083,7 @@ function emitModuleForms(
               case "general-equal":
               case "record-has":
               case "general-record-is":
+              case "general-is":
               case "boolean-value":
               case "boolean-present":
                 id = op.id;
@@ -7973,6 +7974,75 @@ function emitModuleForms(
                 });
                 if (reflection) floatStore(0, op.id);
                 else saveRaw(12, op.id);
+                break;
+              }
+              case "general-is": {
+                const tag =
+                  op.type === "undefined"
+                    ? 0
+                    : op.type === "number"
+                      ? 1
+                      : op.type === "boolean"
+                        ? 2
+                        : op.type === "string"
+                          ? 3
+                          : op.type === "null"
+                            ? 4
+                            : 5;
+                rawValue(9, op.value);
+                imm(12, 0);
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  immediate: tag,
+                  shift: 0,
+                  setFlags: true,
+                });
+                if (op.type !== "Uint8Array") {
+                  emit({ op: "cset", rd: 12, condition: "eq" });
+                  saveRaw(12, op.id);
+                  break;
+                }
+                // An object whose header marker (bits 0-47) is 2: a typed
+                // array of 1-byte elements, as general-value checks.
+                const nonObject = instructions.length;
+                emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                rawLoad(9, value(op.value).offset + 8);
+                const absent = instructions.length;
+                emit({ op: "cbz", width: 64, rt: 9, displacement: 0 });
+                emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 10,
+                  rn: 10,
+                  immr: 0,
+                  imms: nativeHeaderFlagsShift - 1,
+                });
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 10,
+                  immediate: 2,
+                  shift: 0,
+                  setFlags: true,
+                });
+                emit({ op: "cset", rd: 12, condition: "eq" });
+                patchInstruction(nonObject, {
+                  op: "b.cond",
+                  condition: "ne",
+                  displacement: (instructions.length - nonObject) * 4,
+                });
+                patchInstruction(absent, {
+                  op: "cbz",
+                  width: 64,
+                  rt: 9,
+                  displacement: (instructions.length - absent) * 4,
+                });
+                saveRaw(12, op.id);
                 break;
               }
               case "general-kind": {

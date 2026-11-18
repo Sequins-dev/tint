@@ -53,6 +53,7 @@ import type {
   CheckedFunction,
   Local,
   ExpressionInfo,
+  DowncastTest,
   CViewUse,
 } from "@tint/typescript/checker";
 import type {
@@ -2479,7 +2480,54 @@ function lowerEntries(
           builtin,
           constant,
           cView: viewUse ?? viewTarget,
+          downcast: downcastOf(node),
         });
+      }
+      /** The run-time tests of a checked downcast: a category per
+       * primitive member and a record layout per object member. */
+      function downcastOf(node: Expression):
+        | {
+            readonly tests: readonly DowncastTest[];
+            readonly records: readonly number[];
+          }
+        | undefined {
+        const target = checked.downcasts?.get(node);
+        if (target === undefined) return undefined;
+        const tests: DowncastTest[] = [],
+          records: number[] = [];
+        function visit(member: number): void {
+          const type = checked.types[member];
+          if (type === undefined) fail("downcast type invariant");
+          switch (type.kind) {
+            case "union":
+              for (const inner of type.members) {
+                if (inner === undefined) fail("downcast union invariant");
+                visit(inner);
+              }
+              return;
+            case "number":
+            case "string":
+            case "boolean":
+            case "undefined":
+            case "null":
+            case "Uint8Array":
+              if (!tests.includes(type.kind)) tests.push(type.kind);
+              return;
+            case "object": {
+              const record = recordContracts?.forType(member);
+              if (record === undefined)
+                fail(
+                  "checked downcasts to object types need one record layout",
+                );
+              if (!records.includes(record)) records.push(record);
+              return;
+            }
+            default:
+              fail("checked downcast to an untestable type");
+          }
+        }
+        visit(target);
+        return { tests, records };
       }
       function stmt(input: Statement): void {
         const node = input;
@@ -3216,6 +3264,7 @@ function cells(
         let type: ScalarType;
         switch (op.kind) {
           case "general-record-is":
+          case "general-is":
             type = "boolean";
             break;
           case "general-kind":
@@ -3500,6 +3549,7 @@ function cells(
           break;
         case "general-kind":
         case "general-record-is":
+        case "general-is":
         case "general-wrap":
         case "general-value":
         case "primitive-wrap":
