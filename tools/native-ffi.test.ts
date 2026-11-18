@@ -150,7 +150,13 @@ test("registered callbacks: zlib's allocator round trip under GC (generational)"
 test("registered callbacks: zlib's allocator round trip under GC (copying)", () => {
   verifyZlibCallbackFixture("initializeCopyingRuntime");
 });
-for (const scenario of ["ok", "leaf-later", "leaf-inside", "thread"] as const)
+for (const scenario of [
+  "ok",
+  "leaf-later",
+  "leaf-inside",
+  "thread",
+  "view-escape",
+] as const)
   test(
     scenario === "ok"
       ? "callback contract: a may-callback call's callback runs"

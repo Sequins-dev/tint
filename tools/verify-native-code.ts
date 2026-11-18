@@ -25,12 +25,22 @@ const target = nativeFixtureTarget(),
   linux = target.os === "linux";
 // Linux arenas are dual mappings (docs/native-code-loading.md): a window must
 // be a whole arena, and /proc/self/maps must show its two views of the
-// memory file, never a writable and executable page.
+// memory file, never a writable and executable page. Where the kernel refuses
+// executable memory files (run under tools/linux/refuse-executable-memfd.py
+// with TINT_EXPECT_JIT_MAPPING=single) each arena is one anonymous
+// read/execute mapping instead.
+const expectedMapping = process.env.TINT_EXPECT_JIT_MAPPING ?? "dual";
+if (expectedMapping !== "dual" && expectedMapping !== "single")
+  throw Error("TINT_EXPECT_JIT_MAPPING must be dual or single");
+const viewCounts =
+  expectedMapping === "dual"
+    ? "if(executableViews!==2||writableViews!==2||anonymousViews!==0)return 32;"
+    : "if(executableViews!==0||writableViews!==0||anonymousViews!==2)return 32;";
 const linuxChecks = linux
   ? `
- const views=mappings().split(String.fromCharCode(10));let executableViews=0,writableViews=0;
- for(const view of views){if(view===undefined)return 32;if(view.indexOf(" rwx")>=0)return 32;if(view.indexOf("/memfd:tint-jit")>=0){if(view.indexOf(" r-xp ")>=0)executableViews++;else if(view.indexOf(" rw-s ")>=0)writableViews++;else return 32;}}
- if(executableViews!==2||writableViews!==2)return 32;
+ const views=mappings().split(String.fromCharCode(10));let executableViews=0,writableViews=0,anonymousViews=0;
+ for(const view of views){if(view===undefined)return 32;if(view.indexOf(" rwx")>=0)return 32;if(view.indexOf("/memfd:tint-jit")>=0){if(view.indexOf(" r-xp ")>=0)executableViews++;else if(view.indexOf(" rw-s ")>=0)writableViews++;else return 32;}else if(view.indexOf(" r-xp 00000000 00:00 0")>=0&&view.indexOf("/")<0&&view.indexOf("[")<0)anonymousViews++;}
+ ${viewCounts}
  if(writeExecutableMemory(small,16385,0,first)!==-1||writeExecutableMemory(address+64,size-64,0,first)!==-1)return 33;
  if(unmapExecutableMemory(address+16384,16)!==-22||unmapExecutableMemory(small,0)!==-22||unmapExecutableMemory(address+64,64)!==-22)return 34;
  if(mapExecutableMemory(1099511627777)!==-12)return 35;`
@@ -189,6 +199,7 @@ writeFileSync(
       path,
       expectedExitStatus: 42,
       source: text,
+      ...(linux ? { expectedJitMapping: expectedMapping } : {}),
       scope:
         "A native Tint program generates AArch64 instructions using Tint's assembler, publishes executable memory, invokes numeric entries and republishes code. It also parses, checks, lowers and emits numeric and unknown-value TypeScript functions inside native Tint, preserving borrowed managed identities through the standard ABI. General managed modules and eval scope semantics are not implemented by this fixture.",
     },

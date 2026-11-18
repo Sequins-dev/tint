@@ -1,4 +1,9 @@
-import { nativeWeakSlotMarker } from "@tint/abi/weak-slot";
+import {
+  nativeWeakSlotMarker,
+  nativeWeakSlotEphemeron,
+  nativeWeakSlotKeyOffset,
+  nativeWeakSlotValueOffset,
+} from "@tint/abi/weak-slot";
 import {
   nativeHeaderClaimed,
   nativeHeaderForwarded,
@@ -29,6 +34,10 @@ import {
   cheneyExtent,
   compactObjectSize,
   compactForwardObject,
+  compactKeyAlive,
+  evacuatedKeyAlive,
+  finishCompactWeak,
+  finishEvacuatedWeak,
   type CompactRegion,
   type CompactHelpers,
 } from "./cheney.ts";
@@ -62,7 +71,18 @@ import {
  * atomic compare-exchange. LAB tails stay unused holes: nothing walks survivor
  * space linearly (start bits identify objects). A LAB retires only when an
  * object of at most `largeBytes` does not fit, so holes waste at most
- * largeBytes / labBytes of the destination. */
+ * largeBytes / labBytes of the destination.
+ *
+ * Weak slots (docs/parallel-gc.md#weak-slots) are deferred per worker: an
+ * evacuation links each copied slot into its winner's lists through the
+ * source's dead payload, and the mark records each marked slot in its
+ * marker's bounded list. After the strong closure, ephemeron rounds run on
+ * the pool (each worker traces the values of its own pending ephemerons
+ * whose keys are live, then the pool drains) until a round traces nothing;
+ * the requesting thread then clears dead keys' pairs and weak cells' values
+ * over every list. A round cannot miss a key that becomes live during it:
+ * keys become live only through tracing, and a round that traced anything
+ * is followed by another. */
 
 const labBytes = 32768;
 /** Objects above this size are reserved directly from the shared cursor. */
@@ -93,6 +113,9 @@ const recordWorker = 0,
   recordWake = 112,
   recordParked = 120,
   recordSegments = 4096;
+/** Mark-compact weak slots each worker can record before the serial
+ * fixpoint takes over (raw words, mapped once per worker). */
+const weakListCapacity = 65536;
 /** Outstanding scan segments are bounded by retired LABs plus large objects,
  * at most heap / 4 KiB: 2^20 pairs cover a 4 GiB space. */
 const segmentCapacity = 1048576;
@@ -101,6 +124,10 @@ const commandEvacuate = 1;
 /** Mark-compact phases (see createCompactor in cheney.ts). */
 const commandMark = 2;
 const commandForward = 3;
+/** Ephemeron rounds: a minor's (evacuating values) and a major's (marking
+ * them). */
+const commandEvacuateEphemerons = 4;
+const commandMarkEphemerons = 5;
 /** Per-worker mark stack entries (granule indexes, one word each). */
 const markStackCapacity = 262144;
 /** The shared mark stack reuses the segment area, one granule per word. */
@@ -138,6 +165,22 @@ interface Worker {
   readonly markStack: number;
   markDepth: number;
   liveBytes: number;
+  /** Evacuation: the weak slots this worker copied, as lists of source
+   * addresses (0 ends a list) linked through each source's first payload
+   * word, dead once copied: ephemerons whose values are not yet traced, and
+   * every other slot. */
+  weakPending: number;
+  weakDone: number;
+  /** Mark: the weak slots this worker marked (raw words: pending
+   * ephemerons first, then the rest), their count and whether a slot did
+   * not fit. */
+  readonly weakList: number;
+  weakCount: number;
+  weakOverflowed: boolean;
+  /** Pending ephemerons (either phase). */
+  weakPendingCount: number;
+  /** Ephemeron values this worker traced in the current round. */
+  traced: number;
   /** The next worker's state (the runtime module has no list helpers). */
   readonly next: Worker | undefined;
 }
@@ -357,7 +400,18 @@ function evacuate(w: Worker, starts: Uint32Array, address: number): number {
         );
         write(destination + nativeArrayOwnerOffset, moved);
       }
-    } else if (marker === nativeWeakSlotMarker) fail(w, 10);
+    } else if (marker === nativeWeakSlotMarker) {
+      // The source's payload is dead once copied: it links the slot into
+      // this worker's lists (no other thread reads past a source header).
+      if (flags === nativeWeakSlotEphemeron) {
+        write(address + nativeWeakSlotKeyOffset, w.weakPending);
+        w.weakPending = address;
+        w.weakPendingCount += 1;
+      } else {
+        write(address + nativeWeakSlotKeyOffset, w.weakDone);
+        w.weakDone = address;
+      }
+    }
     storeReleaseMemoryWord(address, 8, 0, destination + nativeHeaderForwarded);
     if (size > largeBytes) push(w, destination, destination + size);
     return destination;
@@ -403,7 +457,9 @@ function scanObject(w: Worker, starts: Uint32Array, address: number): number {
   scanHeaded(w, starts, address, marker, flags);
   return cheneyExtent(address, marker, flags);
 }
-/** Updates the fields of one object whose header words were read. */
+/** Updates the fields of one object whose header words were read. A copied
+ * weak slot's key and value wait for the strong closure (it was linked into
+ * its copier's lists). */
 function scanHeaded(
   w: Worker,
   starts: Uint32Array,
@@ -412,7 +468,7 @@ function scanHeaded(
   flags: number,
 ): void {
   if (marker > 6) {
-    if (marker === nativeWeakSlotMarker) fail(w, 10);
+    if (marker === nativeWeakSlotMarker) return;
     if (marker % 8 !== 0 || flags !== 0) fail(w, 5);
     scanFields(w, starts, marker + 8, address);
     return;
@@ -466,6 +522,60 @@ function drain(w: Worker, starts: Uint32Array): void {
   }
 }
 
+/** Updates the fields of a remembered old object. An old weak slot is
+ * scanned strongly, as the serial minor does: its key is old (keys never
+ * change and every minor survivor is promoted), so it is live for a minor,
+ * and the barrier remembered it for a young value. */
+function scanOld(w: Worker, starts: Uint32Array, address: number): void {
+  const header = read(address),
+    marker = headerMarker(header);
+  if (marker === nativeWeakSlotMarker) {
+    generalSlot(w, starts, address + nativeWeakSlotKeyOffset);
+    generalSlot(w, starts, address + nativeWeakSlotValueOffset);
+  } else scanHeaded(w, starts, address, marker, headerFlags(header));
+}
+
+/** One ephemeron round of an evacuation over `owner`'s pending list (the
+ * worker's own on the pool): an ephemeron whose key survived traces its
+ * value and moves to the finished list; the rest stay pending. Slots copied
+ * meanwhile join the copier's lists for the next round. */
+function traceCopiedEphemerons(
+  w: Worker,
+  starts: Uint32Array,
+  owner: Worker,
+): void {
+  let source = owner.weakPending;
+  owner.weakPending = 0;
+  owner.weakPendingCount = 0;
+  while (source !== 0) {
+    const next = read(source + nativeWeakSlotKeyOffset),
+      slot = read(source) - nativeHeaderForwarded;
+    if (evacuatedKeyAlive(w.fromBase, w.fromEnd, slot) === 1) {
+      generalSlot(w, starts, slot + nativeWeakSlotValueOffset);
+      write(source + nativeWeakSlotKeyOffset, owner.weakDone);
+      owner.weakDone = source;
+      w.traced += 1;
+    } else {
+      write(source + nativeWeakSlotKeyOffset, owner.weakPending);
+      owner.weakPending = source;
+      owner.weakPendingCount += 1;
+    }
+    source = next;
+  }
+}
+/** Clears the copied weak slots of one list once the closure is final. */
+function finishCopiedList(w: Worker, source: number): void {
+  let at = source;
+  while (at !== 0) {
+    finishEvacuatedWeak(
+      w.fromBase,
+      w.fromEnd,
+      read(at) - nativeHeaderForwarded,
+    );
+    at = read(at + nativeWeakSlotKeyOffset);
+  }
+}
+
 function scanRemembered(
   w: Worker,
   starts: Uint32Array,
@@ -488,7 +598,7 @@ function scanRemembered(
       for (let i = first; i < end; i++) {
         const offset = remembered[i];
         if (offset === undefined) fail(w, 6);
-        scanObject(w, starts, shared.oldBase + offset);
+        scanOld(w, starts, shared.oldBase + offset);
       }
     }
   }
@@ -516,7 +626,7 @@ function scanRemembered(
               offset < shared.oldTop &&
               ((starts[unit >>> 5] ?? 0) & (1 << (unit & 31))) !== 0
             )
-              scanObject(w, starts, shared.oldBase + offset);
+              scanOld(w, starts, shared.oldBase + offset);
           }
     }
   }
@@ -656,12 +766,52 @@ function markFields(
   for (let index = 0; index < generalCount; index++)
     markGeneral(w, region, base + read(generals + 8 + index * 8));
 }
+/** Records a marked weak slot: its key and value wait for the strong
+ * closure. Pending ephemerons stay a prefix of the list. A full list leaves
+ * the slot to the compactor's serial fixpoint (which walks every live slot). */
+function recordMarkedWeak(w: Worker, address: number, header: number): void {
+  const count = w.weakCount,
+    list = w.weakList;
+  if (count >= weakListCapacity) {
+    w.weakOverflowed = true;
+    return;
+  }
+  if (headerFlags(header) === nativeWeakSlotEphemeron) {
+    const pending = w.weakPendingCount;
+    write(list + count * 8, read(list + pending * 8));
+    write(list + pending * 8, address);
+    w.weakPendingCount = pending + 1;
+  } else write(list + count * 8, address);
+  w.weakCount = count + 1;
+}
+/** One ephemeron round of a mark over `owner`'s pending prefix: a live key
+ * marks its ephemeron's value, which leaves the prefix. */
+function traceMarkedEphemerons(
+  w: Worker,
+  region: CompactRegion,
+  owner: Worker,
+): void {
+  const list = owner.weakList;
+  let index = 0,
+    pending = owner.weakPendingCount;
+  while (index < pending) {
+    const slot = read(list + index * 8);
+    if (compactKeyAlive(region, slot) === 1) {
+      pending -= 1;
+      write(list + index * 8, read(list + pending * 8));
+      write(list + pending * 8, slot);
+      markGeneral(w, region, slot + nativeWeakSlotValueOffset);
+      w.traced += 1;
+    } else index += 1;
+  }
+  owner.weakPendingCount = pending;
+}
 function markChildren(w: Worker, region: CompactRegion, address: number): void {
   const header = read(address),
     marker = headerMarker(header);
   if (marker > 6) {
-    if (marker === nativeWeakSlotMarker) fail(w, 10);
-    markFields(w, region, marker + 8, address);
+    if (marker === nativeWeakSlotMarker) recordMarkedWeak(w, address, header);
+    else markFields(w, region, marker + 8, address);
   } else if (marker === 6) {
     const capacity = read(address + nativeArrayLengthOffset);
     for (let index = 0; index < capacity; index++)
@@ -789,10 +939,10 @@ export interface ParallelEvacuator extends CompactHelpers {
    * offset (LAB holes included), or -1 when `survivorLimit` survivors plus
    * the bounded LAB waste might not fit (the caller then evacuates serially).
    * More survivors than `survivorLimit` must already mean exhaustion: they
-   * can overflow the destination, which is fatal. Weak slots are not
-   * traced here: once a program creates one, the generational runtime
-   * evacuates and marks serially (Cheney and the serial mark trace them), so
-   * meeting one is fatal. */
+   * can overflow the destination, which is fatal. Copied weak slots follow
+   * the serial rules: ephemerons whose keys survived keep their values, to
+   * a fixpoint, then dead keys clear both pairs and weak cells drop their
+   * value pair; remembered old slots are scanned strongly. */
   readonly collect: (
     fromBase: number,
     fromLength: number,
@@ -848,6 +998,13 @@ export function createParallelEvacuator(
       markStack: mapMemory(markStackCapacity * 8),
       markDepth: 0,
       liveBytes: 0,
+      weakPending: 0,
+      weakDone: 0,
+      weakList: mapMemory(weakListCapacity * 8),
+      weakCount: 0,
+      weakPendingCount: 0,
+      weakOverflowed: false,
+      traced: 0,
       record,
       startsData,
       managedBase,
@@ -858,7 +1015,12 @@ export function createParallelEvacuator(
   if (head === undefined) return undefined;
   for (let state: Worker | undefined = head; state !== undefined;) {
     const current: Worker = state;
-    if (!Number.isSafeInteger(current.markStack) || current.markStack <= 0)
+    if (
+      !Number.isSafeInteger(current.markStack) ||
+      current.markStack <= 0 ||
+      !Number.isSafeInteger(current.weakList) ||
+      current.weakList <= 0
+    )
       return undefined;
     state = current.next;
   }
@@ -904,6 +1066,22 @@ export function createParallelEvacuator(
     region: undefined,
     words: 0,
   };
+  /** One thread's part of a pool command (the caller's included, after its
+   * root walk). */
+  function work(state: Worker, command: number): void {
+    const region = shared.region;
+    if (command === commandEvacuate)
+      share(state, starts, shared, undefined, undefined, readWord);
+    else if (command === commandEvacuateEphemerons) {
+      traceCopiedEphemerons(state, starts, state);
+      drain(state, starts);
+    } else if (region === undefined) fail(state, 13);
+    else if (command === commandMark) drainMarks(state, region);
+    else if (command === commandMarkEphemerons) {
+      traceMarkedEphemerons(state, region, state);
+      drainMarks(state, region);
+    } else forwardChunks(state, region, starts, shared.words);
+  }
   // Created here, so permanent: pool threads enter through it.
   const worker = (address: number): number => {
     const index = fetchAddMemoryWord(address + recordNextIndex, 8, 0, 1);
@@ -921,23 +1099,11 @@ export function createParallelEvacuator(
     let seen = 0;
     while (true) {
       seen = waitEpoch(address, seen);
-      const command = read(address + recordCommand),
-        region = shared.region;
-      if (
-        command !== commandEvacuate &&
-        command !== commandMark &&
-        command !== commandForward
-      )
+      const command = read(address + recordCommand);
+      if (command < commandEvacuate || command > commandMarkEphemerons)
         return 0;
       try {
-        if (command === commandEvacuate)
-          share(state, starts, shared, undefined, undefined, readWord);
-        else if (region === undefined) fail(state, 13);
-        else if (command === commandMark) {
-          state.markDepth = 0;
-          state.liveBytes = 0;
-          drainMarks(state, region);
-        } else forwardChunks(state, region, starts, shared.words);
+        work(state, command);
       } catch {
         compareExchangeMemoryWord(address + recordFailure, 8, 0, 0, 8);
         // Leave the active count consistent so the others terminate.
@@ -959,24 +1125,16 @@ export function createParallelEvacuator(
     return true;
   }
   let epoch = 0;
-  /** Runs one mark-compact phase on the pool; false when the pool cannot
-   * start (the caller then runs the phase serially). */
-  function runPhase(
-    command: number,
-    region: CompactRegion,
-    words: number,
-    rootHead: number,
-  ): boolean {
-    if (!started && !start()) return false;
-    const liveData = permanentArrayAddress(region.live);
-    if (!Number.isSafeInteger(liveData) || liveData <= 0) return false;
-    shared.region = region;
-    shared.words = words;
+  /** Runs one command on the pool, the caller taking part as worker 0
+   * (after walking the roots for a mark), and waits for every worker.
+   * `cursor` seeds the shared cursor (an evacuation's destination top). A
+   * failure anywhere is fatal. */
+  function runCommand(command: number, cursor: number, rootHead: number): void {
     for (let state: Worker | undefined = head; state !== undefined;) {
       const current: Worker = state;
-      current.liveData = liveData;
       current.markDepth = 0;
       current.liveBytes = 0;
+      current.traced = 0;
       state = current.next;
     }
     write(record + recordCommand, command);
@@ -984,7 +1142,8 @@ export function createParallelEvacuator(
     write(record + recordFinished, 0);
     write(record + recordFailure, 0);
     write(record + recordCount, 0);
-    write(record + recordCursor, 0);
+    write(record + recordCursor, cursor);
+    write(record + recordRemembered, 0);
     write(record + recordMarkOverflow, 0);
     write(record + recordSawView, 0);
     write(record + recordParked, 0);
@@ -994,8 +1153,11 @@ export function createParallelEvacuator(
     const main = mainState;
     let failed = false;
     try {
-      if (command === commandMark) {
+      if (command === commandEvacuate)
+        share(main, starts, shared, scanFrame, scanRegister, readWord);
+      else {
         if (
+          command === commandMark &&
           walkNativeStack(
             readWord,
             rootHead,
@@ -1005,8 +1167,8 @@ export function createParallelEvacuator(
           ) !== "complete"
         )
           fail(main, 7);
-        drainMarks(main, region);
-      } else forwardChunks(main, region, starts, words);
+        work(main, command);
+      }
     } catch {
       failed = true;
       fetchAddMemoryWord(record + recordActive, 8, 0, -1);
@@ -1016,32 +1178,139 @@ export function createParallelEvacuator(
       if (finished >= workers - 1) break;
       parkNativeWord(record + recordFinished, finished, 0);
     }
-    shared.region = undefined;
     if (failed || read(record + recordFailure) !== 0)
       throw "PARALLEL_COLLECTOR_FAILED";
-    return true;
+  }
+  /** Values traced by every worker in the last command. */
+  function tracedTotal(): number {
+    let total = 0;
+    for (let state: Worker | undefined = head; state !== undefined;) {
+      const current: Worker = state;
+      total += current.traced;
+      state = current.next;
+    }
+    return total;
+  }
+  /** Bytes marked by every worker in the last command. */
+  function markedTotal(): number {
+    let bytes = 0;
+    for (let state: Worker | undefined = head; state !== undefined;) {
+      const current: Worker = state;
+      bytes += current.liveBytes;
+      state = current.next;
+    }
+    return bytes;
+  }
+  // Mark outcome across the mark and its ephemeron rounds.
+  let markOverflow = false,
+    markView = false,
+    weakPending = false;
+  /** Pending ephemerons over every worker. */
+  function pendingTotal(): number {
+    let total = 0;
+    for (let state: Worker | undefined = head; state !== undefined;) {
+      const current: Worker = state;
+      total += current.weakPendingCount;
+      state = current.next;
+    }
+    return total;
+  }
+  /** The ephemeron fixpoint and clearing after a parallel mark; returns the
+   * bytes the rounds marked. Stops (leaving every slot to the compactor's
+   * serial fixpoint) once a list or the mark stacks overflow. */
+  function finishMarkedWeak(region: CompactRegion): number {
+    let marked = 0;
+    while (true) {
+      for (let state: Worker | undefined = head; state !== undefined;) {
+        const current: Worker = state;
+        if (current.weakOverflowed) weakPending = true;
+        state = current.next;
+      }
+      if (weakPending) return marked;
+      if (pendingTotal() === 0) break;
+      runCommand(commandMarkEphemerons, 0, 0);
+      marked += markedTotal();
+      if (read(record + recordSawView) !== 0) markView = true;
+      if (read(record + recordMarkOverflow) !== 0) {
+        markOverflow = true;
+        weakPending = true;
+        return marked;
+      }
+      if (tracedTotal() === 0) break;
+    }
+    for (let state: Worker | undefined = head; state !== undefined;) {
+      const current: Worker = state;
+      for (let index = 0; index < current.weakCount; index++)
+        finishCompactWeak(region, read(current.weakList + index * 8));
+      state = current.next;
+    }
+    return marked;
+  }
+  /** The ephemeron fixpoint and clearing after a parallel evacuation. */
+  function finishCopiedWeak(): void {
+    while (pendingTotal() > 0) {
+      runCommand(commandEvacuateEphemerons, read(record + recordCursor), 0);
+      if (tracedTotal() === 0) break;
+    }
+    for (let state: Worker | undefined = head; state !== undefined;) {
+      const current: Worker = state;
+      finishCopiedList(current, current.weakPending);
+      finishCopiedList(current, current.weakDone);
+      current.weakPending = 0;
+      current.weakDone = 0;
+      current.weakPendingCount = 0;
+      state = current.next;
+    }
   }
   return {
     workers,
     mark(region, rootHead) {
-      if (!runPhase(commandMark, region, 0, rootHead)) return -1;
-      let bytes = 0;
+      if (!started && !start()) return -1;
+      const liveData = permanentArrayAddress(region.live);
+      if (!Number.isSafeInteger(liveData) || liveData <= 0) return -1;
+      shared.region = region;
+      let sawWeak = false;
       for (let state: Worker | undefined = head; state !== undefined;) {
         const current: Worker = state;
-        bytes += current.liveBytes;
+        current.liveData = liveData;
+        current.weakCount = 0;
+        current.weakPendingCount = 0;
+        current.weakOverflowed = false;
         state = current.next;
       }
+      runCommand(commandMark, 0, rootHead);
+      let bytes = markedTotal();
+      markOverflow = read(record + recordMarkOverflow) !== 0;
+      markView = read(record + recordSawView) !== 0;
+      weakPending = false;
+      for (let state: Worker | undefined = head; state !== undefined;) {
+        const current: Worker = state;
+        if (current.weakCount > 0 || current.weakOverflowed) sawWeak = true;
+        state = current.next;
+      }
+      // A mark overflow leaves weak slots to the serial rescan and fixpoint.
+      if (sawWeak) {
+        if (markOverflow) weakPending = true;
+        else bytes += finishMarkedWeak(region);
+      }
+      shared.region = undefined;
       return bytes;
     },
     markOverflowed() {
-      return read(record + recordMarkOverflow) !== 0;
+      return markOverflow;
     },
     markSawView() {
-      return read(record + recordSawView) !== 0;
+      return markView;
+    },
+    markWeakPending() {
+      return weakPending;
     },
     forward(region, words) {
-      if (!runPhase(commandForward, region, words, 0))
-        throw "PARALLEL_COLLECTOR_FAILED";
+      if (!started && !start()) throw "PARALLEL_COLLECTOR_FAILED";
+      shared.region = region;
+      shared.words = words;
+      runCommand(commandForward, 0, 0);
+      shared.region = undefined;
     },
     collect(
       fromBase,
@@ -1082,37 +1351,16 @@ export function createParallelEvacuator(
         state.free = 0;
         state.limit = 0;
         state.scan = 0;
+        state.weakPending = 0;
+        state.weakDone = 0;
+        state.weakPendingCount = 0;
       }
       shared.rootHead = rootHead;
       shared.rememberedCount = rememberedObjects ? rememberedCount : -2;
       shared.oldBase = toBase;
       shared.oldTop = oldTop;
-      write(record + recordCommand, commandEvacuate);
-      write(record + recordActive, workers);
-      write(record + recordFinished, 0);
-      write(record + recordFailure, 0);
-      write(record + recordCount, 0);
-      write(record + recordCursor, first);
-      write(record + recordRemembered, 0);
-      write(record + recordParked, 0);
-      epoch = epoch + 1;
-      storeReleaseMemoryWord(record + recordEpoch, 8, 0, epoch);
-      wakeNativeWord(record + recordEpoch, 1);
-      const main = head;
-      let failed = false;
-      try {
-        share(main, starts, shared, scanFrame, scanRegister, readWord);
-      } catch {
-        failed = true;
-        fetchAddMemoryWord(record + recordActive, 8, 0, -1);
-      }
-      while (true) {
-        const finished = loadAcquireMemoryWord(record + recordFinished, 8, 0);
-        if (finished >= workers - 1) break;
-        parkNativeWord(record + recordFinished, finished, 0);
-      }
-      if (failed || read(record + recordFailure) !== 0)
-        throw "PARALLEL_COLLECTOR_FAILED";
+      runCommand(commandEvacuate, first, rootHead);
+      finishCopiedWeak();
       return read(record + recordCursor);
     },
   };

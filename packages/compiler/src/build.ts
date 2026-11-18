@@ -208,7 +208,12 @@ export type BuildResult =
   | { readonly ok: true; readonly value: Uint8Array }
   | {
       readonly ok: false;
-      readonly error: { readonly stage: string; readonly message: string };
+      readonly error: {
+        readonly stage: string;
+        readonly message: string;
+        /** The source module the failure is attributed to, when known. */
+        readonly module?: string;
+      };
     };
 function failure(stage: string, message: string): BuildResult {
   return { ok: false, error: { stage, message } };
@@ -231,13 +236,23 @@ export type CompiledMacOSProgramResult =
   | { readonly ok: true; readonly value: CompiledMacOSProgram }
   | {
       readonly ok: false;
-      readonly error: { readonly stage: string; readonly message: string };
+      readonly error: {
+        readonly stage: string;
+        readonly message: string;
+        /** The source module the failure is attributed to, when known. */
+        readonly module?: string;
+      };
     };
 function compileFailure(
   stage: string,
   message: string,
+  module?: string,
 ): CompiledMacOSProgramResult {
-  return { ok: false, error: { stage, message } };
+  return {
+    ok: false,
+    error:
+      module === undefined ? { stage, message } : { stage, message, module },
+  };
 }
 /** Pure artifact composition shared by Node bootstrap and the native compiler. */
 export function buildMacOSProgram(request: BuildRequest): BuildResult {
@@ -623,7 +638,11 @@ export function compileMacOSProgram(
     weakBindings: request.weakBindings ?? [],
   });
   if (!program.ok)
-    return compileFailure(program.error.stage, program.error.message);
+    return compileFailure(
+      program.error.stage,
+      program.error.message,
+      program.error.module,
+    );
   const general = program.value.general,
     reportGeneral = request.onGeneralFallback;
   if (general !== undefined && reportGeneral !== undefined)

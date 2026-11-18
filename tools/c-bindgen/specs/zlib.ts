@@ -12,13 +12,9 @@ export default {
   targets: ["darwin-arm64", "linux-arm64"],
   headers: ["zlib.h"],
   aliases: ["uInt", "uLong"],
-  records: [
-    {
-      name: "z_stream",
-      // The allocator hooks stay null (zlib's defaults) until Phase 4.
-      opaque: ["zalloc", "zfree"],
-    },
-  ],
+  // z_stream's allocator hooks become the callback types alloc_func and
+  // free_func (node:zlib leaves them null: zlib's own allocator).
+  records: ["z_stream"],
   functions: [
     {
       name: "zlibVersion",

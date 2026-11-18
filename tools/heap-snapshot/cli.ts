@@ -1,6 +1,7 @@
 // External heap tooling for native Tint images (docs/native-heap-profiling.md).
 //
-//   node tools/heap-snapshot/cli.ts capture <image> --out <dir> [where] [-- args]
+//   node tools/heap-snapshot/cli.ts capture <image> --out <dir> [where]
+//       [--debugger lldb|gdb] [-- args]
 //       where: --after N,.. | --before N,.. | --after-majors | --before-majors
 //              | --peak            (launch; collections are 1-based)
 //              --pid <pid>         (attach; dump at the next allocation)
@@ -10,7 +11,7 @@
 //       [--pprof <file>] [--report <file.json>] [--include-unreachable]
 //   node tools/heap-snapshot/cli.ts allocations <image> --interval <bytes>
 //       --out <profile.pb.gz> [--samples <file.jsonl>] [--max-samples N]
-//       [--fixed] [-- args]
+//       [--fixed] [--debugger lldb|gdb] [-- args]
 //   node tools/heap-snapshot/cli.ts allocations --from <file.jsonl>
 //       --out <profile.pb.gz> [--heapprofile <file.heapprofile>]
 //   node tools/heap-snapshot/cli.ts cpu <profile.pb.gz> [--image <exe>]
@@ -24,11 +25,12 @@
 //        the image's DWARF the same way; see tools/profiling/perf-script.ts)
 //
 // The formats come from the shared profiling core (tools/profiling).
-// Captures run LLDB with tools/lldb/tint.py, which reads the image's
+// Captures run LLDB with tools/lldb/tint.py (the default) or GDB with
+// tools/gdb/tint.py (`--debugger gdb`), adapters of the same debugger-neutral
+// core (tools/debugger/tint_heap.py), which reads the image's
 // `__tint_heap_descriptor` and DWARF. Conversion needs only the dump and the
 // executable. Heap snapshots load in Chrome DevTools (Memory > Load) and
 // Memlab; profiles in `go tool pprof` and pprofessor.
-import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -44,6 +46,7 @@ import {
   runPerfScript,
 } from "../profiling/perf-script.ts";
 import { imageSegments } from "./dump.ts";
+import { heapDebugger, quote, runLldb } from "./debuggers.ts";
 import {
   inUseSamples,
   readAllocationSamples,
@@ -57,10 +60,6 @@ import {
   symbolised,
   type SourceLine,
 } from "../profiling/samples.ts";
-
-export const lldbModule = fileURLToPath(
-  new URL("../lldb/tint.py", import.meta.url),
-);
 
 /** Generic (runtime-neutral) LLDB helpers shared with the DevTools bridge. */
 export const devtoolsLldbModule = fileURLToPath(
@@ -78,62 +77,33 @@ function programArguments(args: string[]): string[] {
   const index = args.indexOf("--");
   return index >= 0 ? args.slice(index + 1) : [];
 }
-function quote(text: string): string {
-  return "'" + text.replaceAll("'", "'\\''") + "'";
-}
-
-/** Runs LLDB in batch mode with the tint module; fails on a failed command. */
-export function runLldb(
-  image: string | undefined,
-  commands: string[],
-  extra: string[] = [],
-): string {
-  const args = [
-    "--no-lldbinit",
-    "--batch",
-    "-o",
-    "command script import " + lldbModule,
-  ];
-  for (const command of commands) args.push("-o", command);
-  args.push(...extra);
-  if (image !== undefined) args.push(image);
-  const result = spawnSync("lldb", args, {
-    encoding: "utf8",
-    maxBuffer: 1 << 28,
-  });
-  if (result.error !== undefined) throw result.error;
-  const output = result.stdout + result.stderr;
-  if (result.status !== 0 || /\berror: /.test(output))
-    throw Error("lldb failed:\n" + output.slice(-4000));
-  return output;
-}
-
 function capture(args: string[]): void {
   const image = args[0],
     out = option(args, "--out");
   if (image === undefined || out === undefined)
     throw Error("usage: capture <image> --out <dir> ...");
+  const debug = heapDebugger(option(args, "--debugger"));
   const pid = option(args, "--pid"),
     core = option(args, "--core");
   if (pid !== undefined) {
-    const output = runLldb(undefined, [
-      "process attach --pid " + pid,
+    const output = debug.run(undefined, [
+      debug.attach(pid),
       "tint-heap arm 1",
-      "breakpoint set --name __tint_allocation_sample",
-      "continue",
+      debug.breakAtSymbol("__tint_allocation_sample"),
+      debug.resume,
       "tint-heap dump " + quote(resolve(out)),
       "tint-heap arm 0",
-      "breakpoint delete --force",
-      "process detach",
+      debug.deleteBreakpoints,
+      debug.detach,
     ]);
     console.log(output.match(/dumped heap[^\n]*/)?.[0] ?? output);
     return;
   }
   if (core !== undefined) {
-    const output = runLldb(
+    const output = debug.run(
       image,
       ["tint-heap dump " + quote(resolve(out))],
-      ["-c", core],
+      debug.coreArguments(core),
     );
     console.log(output.match(/dumped heap[^\n]*/)?.[0] ?? output);
     return;
@@ -146,13 +116,8 @@ function capture(args: string[]): void {
   for (const name of ["--after-majors", "--before-majors", "--peak"])
     if (flag(args, name)) points.push(name);
   if (points.length === 0) points.push("--peak");
-  const launch =
-    "process launch --stop-at-entry" +
-    (programArguments(args).length > 0
-      ? " -- " + programArguments(args).map(quote).join(" ")
-      : "");
-  const output = runLldb(image, [
-    launch,
+  const output = debug.run(image, [
+    debug.launchAtEntry(programArguments(args)),
     "tint-heap snapshot-points --out " +
       quote(resolve(out)) +
       " " +
@@ -227,13 +192,9 @@ function allocations(args: string[]): void {
         ? ""
         : " --max-samples " + option(args, "--max-samples")) +
       (flag(args, "--fixed") ? " --fixed" : "");
-    const launch =
-      "process launch --stop-at-entry" +
-      (programArguments(args).length > 0
-        ? " -- " + programArguments(args).map(quote).join(" ")
-        : "");
-    const output = runLldb(image, [
-      launch,
+    const debug = heapDebugger(option(args, "--debugger"));
+    const output = debug.run(image, [
+      debug.launchAtEntry(programArguments(args)),
       "tint-heap sample --interval " +
         interval +
         " --out " +

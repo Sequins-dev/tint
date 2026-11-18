@@ -33,7 +33,14 @@ export type TypeFact =
       readonly element: TypeFact;
       readonly length: number;
     }
-  | { readonly kind: "function" }
+  | {
+      readonly kind: "function";
+      /** The typedef naming this function (pointer) type, if any. */
+      readonly name?: string;
+      readonly parameters: readonly TypeFact[];
+      readonly result: TypeFact;
+      readonly variadic: boolean;
+    }
   | { readonly kind: "unsupported"; readonly reason: string };
 
 export interface FieldFact {

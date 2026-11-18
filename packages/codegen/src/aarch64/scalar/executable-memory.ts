@@ -5,9 +5,21 @@ import type { Condition, Instruction } from "../isa.ts";
  * reservation holds a read-only header page, then the read/execute view
  * (the address `mapExecutableMemory` returns) and the read/write view of
  * the same memory-file pages, each `size` bytes (the request rounded up to
- * the granule). No page is writable and executable at once.
+ * the granule). No page is writable and executable at once. The views
+ * start on a granule boundary even where the kernel's pages are smaller
+ * (the reservation has a granule of slack), so the granules a write
+ * reprotects never reach past its arena's executable view.
  *
- *     reservation: [header | read/execute view | read/write view]
+ *     reservation: [slack | header | read/execute view | read/write view | slack]
+ *
+ * Kernels that refuse executable memory files (vm.memfd_noexec=2 on Linux
+ * 6.3+: memfd_create fails with EACCES) get a single mapping instead: the
+ * executable view is anonymous memory, the header names it as its own
+ * writable view, the read/write range stays an unused reservation, and
+ * every write makes the granules it spans read/write (never executable),
+ * copies, and makes them read/execute again. Systems that forbid making
+ * once-writable memory executable (PaX MPROTECT) refuse that protection
+ * change, so the write fails.
  *
  * The executable view is a private mapping of the file: until a page is
  * copied on write it maps the file's own page, so writes through the
@@ -32,11 +44,18 @@ export const dualMappingHeaderMagicOffset = 0;
 export const dualMappingHeaderExecutableOffset = 8;
 export const dualMappingHeaderSizeOffset = 16;
 export const dualMappingHeaderWritableOffset = 24;
-/** Largest request: keeps the reservation (header plus two views) exact
+/** The whole reservation's address; its length is two granules (header
+ * and slack) plus both views. */
+export const dualMappingHeaderReservationOffset = 32;
+/** Largest request: keeps the reservation (two granules plus two views) exact
  * in a double and far below the 48-bit user address space. */
 export const dualMappingMaximumBytes = 1099511627776;
-const EINVAL = 22,
+const EACCES = 13,
+  EINVAL = 22,
   ENOMEM = 12;
+/** PROT_READ | PROT_WRITE and PROT_READ | PROT_EXEC. */
+const readWrite = 3,
+  readExecute = 5;
 
 export interface DualMappingSymbols {
   readonly map: string;
@@ -51,6 +70,9 @@ export interface DualMappingSymbols {
 }
 export interface DualMappingFlags {
   readonly memoryFile: number;
+  readonly executableFile: number;
+  /** MAP_PRIVATE | MAP_ANONYMOUS (the single-mapping fallback's view). */
+  readonly anonymous: number;
   readonly shared: number;
   readonly private: number;
   readonly fixed: number;
@@ -82,6 +104,8 @@ export function dualMappingOf(host: PosixHostABI): DualMapping | undefined {
     },
     flags: {
       memoryFile: memory.memoryFileFlags,
+      executableFile: memory.executableFileFlag,
+      anonymous: host.anonymousPrivateFlags,
       shared: memory.sharedFlag,
       private: memory.privateFlag,
       fixed,
@@ -240,8 +264,11 @@ export function emitDualMappingLookup(
  * integer). Leaves the executable view's address in x0, or -errno (an
  * invalid length reports EINVAL, an oversized one ENOMEM). Every failure
  * releases whatever the sequence mapped or opened. Scratch words: 0 the
- * reservation, 1 the view size, 2 the name and then the file descriptor,
- * 3 the error number. */
+ * header (whose page records the reservation from the start), 1 the view
+ * size, 2 the name, then the file descriptor and
+ * then the writable view's offset from the executable one (the size, or 0
+ * for a single mapping), 3 the name's terminator and then the error
+ * number. */
 export function emitDualMappingMap(
   s: InlineSequence,
   mapping: DualMapping,
@@ -281,9 +308,9 @@ export function emitDualMappingMap(
   });
   emit({ op: "ubfm", width: 64, rd: 1, rn: 1, immr: 50, imms: 49 });
   s.store(1, 1);
-  // The reservation: mmap(NULL, header + 2 * size, RW, reservation, -1, 0).
-  add(s, 1, 1, 1);
-  offsetByGranule(s, 1, 1, false);
+  // The reservation: mmap(NULL, 2 * granule + 2 * size, RW, reservation,
+  // -1, 0).
+  reservationLength(s, 1, 1);
   s.constant(0, 0);
   s.constant(2, 3);
   s.constant(3, flags.reservation);
@@ -292,16 +319,73 @@ export function emitDualMappingMap(
   s.call(symbols.map);
   compareZero(s, 0, 64);
   s.branch("error", "lt");
-  s.store(0, 0);
-  // memfd_create("tint-jit", flags): the name lives in words 2 and 3.
+  // header = (reservation + 2 * granule - 1) rounded down to the granule,
+  // minus a granule: the first granule boundary after it starts the view.
+  offsetByGranule(s, 9, 0, false);
+  offsetByGranule(s, 9, 9, false);
+  emit({
+    op: "sub-imm",
+    width: 64,
+    rd: 9,
+    rn: 9,
+    immediate: 1,
+    shift: 0,
+    setFlags: false,
+  });
+  granuleFloor(s, 9, 9);
+  offsetByGranule(s, 9, 9, true);
+  emit({
+    op: "str",
+    width: 64,
+    rt: 0,
+    rn: 9,
+    offset: dualMappingHeaderReservationOffset,
+  });
+  s.store(9, 0);
+  // memfd_create("tint-jit", flags | MFD_EXEC): the name lives in words 2
+  // and 3. Kernels before 6.3 reject the flag (EINVAL): retry without it.
+  // A kernel that refuses executable memory files (EACCES) gets the
+  // single mapping.
   s.constant(9, 0x746e6974, 0x74696a2d);
   s.store(9, 2);
-  s.store("zr", 3);
-  s.address(0, 2);
-  s.constant(1, flags.memoryFile);
-  s.call(symbols.memoryFile);
-  compareZero(s, 0, 32);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const explicit = attempt === 0;
+    s.store("zr", 3);
+    s.address(0, 2);
+    s.constant(
+      1,
+      explicit ? flags.memoryFile | flags.executableFile : flags.memoryFile,
+    );
+    s.call(symbols.memoryFile);
+    compareZero(s, 0, 32);
+    s.branch("file", "ge");
+    captureErrno(s, symbols);
+    s.load(9, 3);
+    s.constant(10, explicit ? EINVAL : EACCES);
+    compare(s, 9, 10);
+    if (explicit) s.branch("refused", "ne");
+    else s.branch("single", "eq");
+  }
+  s.branch("release");
+  s.label("refused");
+  s.constant(10, EACCES);
+  compare(s, 9, 10);
+  s.branch("release", "ne");
+  // The single mapping: mmap(view, size, RX, anonymous | MAP_FIXED, -1, 0).
+  s.label("single");
+  s.load(0, 0);
+  offsetByGranule(s, 0, 0, false);
+  s.load(1, 1);
+  s.constant(2, readExecute);
+  s.constant(3, flags.anonymous | flags.fixed);
+  s.constant(4, 0xffffffff);
+  s.constant(5, 0);
+  s.call(symbols.map);
+  compareZero(s, 0, 64);
   s.branch("error-mapped", "lt");
+  s.store("zr", 2);
+  s.branch("header");
+  s.label("file");
   emit({ op: "sbfm", width: 64, rd: 0, rn: 0, immr: 0, imms: 31 });
   s.store(0, 2);
   // ftruncate(fd, size)
@@ -318,7 +402,7 @@ export function emitDualMappingMap(
     offsetByGranule(s, 0, 0, false);
     s.load(1, 1);
     if (writable) add(s, 0, 0, 1);
-    s.constant(2, writable ? 3 : 5);
+    s.constant(2, writable ? readWrite : readExecute);
     s.constant(3, (writable ? flags.shared : flags.private) | flags.fixed);
     s.load(4, 2);
     s.constant(5, 0);
@@ -328,7 +412,10 @@ export function emitDualMappingMap(
   }
   s.load(0, 2);
   s.call(symbols.close);
+  s.load(9, 1);
+  s.store(9, 2);
   // The header, then make its page read-only.
+  s.label("header");
   s.load(10, 0);
   magic(s, 9);
   emit({
@@ -354,6 +441,7 @@ export function emitDualMappingMap(
     rn: 10,
     offset: dualMappingHeaderSizeOffset,
   });
+  s.load(12, 2);
   add(s, 11, 11, 12);
   emit({
     op: "str",
@@ -381,9 +469,15 @@ export function emitDualMappingMap(
   captureErrno(s, symbols);
   s.label("release");
   s.load(1, 1);
-  add(s, 1, 1, 1);
-  offsetByGranule(s, 1, 1, false);
-  s.load(0, 0);
+  reservationLength(s, 1, 1);
+  s.load(9, 0);
+  emit({
+    op: "ldr",
+    width: 64,
+    rt: 0,
+    rn: 9,
+    offset: dualMappingHeaderReservationOffset,
+  });
   s.call(symbols.unmap);
   s.branch("failed");
   s.label("error");
@@ -391,6 +485,11 @@ export function emitDualMappingMap(
   s.label("failed");
   negate(s, 0, 3);
   s.label("done");
+}
+/** rd = the reservation length for view size rn: 2 * (rn + granule). */
+function reservationLength(s: InlineSequence, rd: number, rn: number): void {
+  offsetByGranule(s, rd, rn, false);
+  add(s, rd, rd, rd);
 }
 /** x`rd` = -(scratch word `word`). */
 function negate(s: InlineSequence, rd: number, word: number): void {
@@ -426,10 +525,15 @@ export function emitDualMappingUnmap(
   emitDualMappingLookup(s, (condition: "ne" | "hi"): void =>
     s.branch("invalid", condition),
   );
-  // munmap(header, header + 2 * size)
-  s.emit({ op: "orr-reg", width: 64, rd: 0, rn: "zr", rm: 11 });
-  add(s, 1, 12, 12);
-  offsetByGranule(s, 1, 1, false);
+  // munmap(reservation, 2 * granule + 2 * size)
+  s.emit({
+    op: "ldr",
+    width: 64,
+    rt: 0,
+    rn: 11,
+    offset: dualMappingHeaderReservationOffset,
+  });
+  reservationLength(s, 1, 12);
   s.call(symbols.unmap);
   compareZero(s, 0, 32);
   s.constant(0, 0);
@@ -493,22 +597,27 @@ function protectWritten(
  * validated and aligned). Copies through the writable view, then reads the
  * executable view back: a page a debugger copied on write (to plant a
  * breakpoint) no longer shows the file, so the copy is repeated there under
- * a temporary read/write (never executable) protection. Finishes with the
- * instruction-cache sequence and leaves x0 = 0; failures call `reject`.
- * Scratch words: 0 the executable destination, 1 the bytes, 2 the length,
- * 3 the writable destination and then the first granule to reprotect. */
+ * a temporary read/write (never executable) protection. A single mapping
+ * (whose header names the executable view as the writable one) always
+ * copies that way. Finishes with the instruction-cache sequence and leaves
+ * x0 = 0; failures call `reject`. Scratch words: 0 the executable
+ * destination, 1 the bytes, 2 the length, 3 the writable destination and
+ * then the first granule to reprotect. */
 export function emitDualMappingWrite(
   s: InlineSequence,
   symbols: DualMappingSymbols,
   reject: (condition: "ne" | "hi") => void,
 ): void {
   emitDualMappingLookup(s, reject);
+  // Flags survive the additions and stores below.
+  compare(s, 13, 0);
   add(s, 13, 13, 2);
   s.store(13, 3);
   add(s, 0, 0, 2);
   s.store(0, 0);
   s.store(3, 1);
   s.store(10, 2);
+  s.branch("single", "eq");
   for (let pass = 0; pass < 2; pass++) {
     const repair = pass === 1;
     s.load(0, repair ? 0 : 3);
@@ -516,7 +625,7 @@ export function emitDualMappingWrite(
     s.load(2, 2);
     s.call(symbols.move);
     if (repair) {
-      protectWritten(s, symbols, 5, reject);
+      protectWritten(s, symbols, readExecute, reject);
       break;
     }
     s.load(0, 0);
@@ -525,10 +634,11 @@ export function emitDualMappingWrite(
     s.call(symbols.compare);
     compareZero(s, 0, 32);
     s.branch("visible", "eq");
+    s.label("single");
     s.load(0, 0);
     granuleFloor(s, 0, 0);
     s.store(0, 3);
-    protectWritten(s, symbols, 3, reject);
+    protectWritten(s, symbols, readWrite, reject);
   }
   s.label("visible");
   s.load(0, 0);

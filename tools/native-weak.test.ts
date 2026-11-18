@@ -3,6 +3,10 @@
 // minor collections (promoted), die old or stay reachable, and ephemeron
 // values stored into promoted cells (the generational barrier), executed
 // natively under LLDB with each runtime entry.
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { rmSync } from "node:fs";
+import { dirname } from "node:path";
 import test from "node:test";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 
@@ -130,6 +134,44 @@ export function run(): number {
   return 42;
 }
 `;
+const fixtureModules: [string, string][] = [
+    ["weak", weak],
+    ["memory", memory],
+  ],
+  fixtureNamespaces = [
+    { module: weak, namespace: "weak-storage" },
+    { module: memory, namespace: "native-memory" },
+  ];
+function fixtureOptions(
+  runtimeEntry: "initializeGenerationalRuntime" | "initializeCopyingRuntime",
+  managedBytes: number,
+) {
+  return {
+    managedBytes,
+    allocationCapacity: managedBytes / 16,
+    rootCapacity: 16384,
+    stackBytes: 2097152,
+    hostBindings: [
+      {
+        module: memory,
+        name: "collectGarbage",
+        operation: "collect-garbage" as const,
+      },
+    ],
+    runtimeEntry,
+    weakBindings: [
+      { module: weak, name: "createWeakSlot", operation: "new" as const },
+      { module: weak, name: "weakSlotKey", operation: "key" as const },
+      { module: weak, name: "weakSlotValue", operation: "value" as const },
+      {
+        module: weak,
+        name: "setWeakSlotValue",
+        operation: "set-value" as const,
+      },
+      { module: weak, name: "clearWeakSlot", operation: "clear" as const },
+    ],
+  };
+}
 function verify(
   name: string,
   runtimeEntry: "initializeGenerationalRuntime" | "initializeCopyingRuntime",
@@ -146,46 +188,237 @@ function verify(
             "; round++) {",
         ),
     name,
-    [
-      ["weak", weak],
-      ["memory", memory],
-    ],
+    fixtureModules,
     [],
     [],
-    [
-      { module: weak, namespace: "weak-storage" },
-      { module: memory, namespace: "native-memory" },
-    ],
-    {
-      managedBytes,
-      allocationCapacity: managedBytes / 16,
-      rootCapacity: 16384,
-      stackBytes: 2097152,
-      hostBindings: [
-        {
-          module: memory,
-          name: "collectGarbage",
-          operation: "collect-garbage",
-        },
-      ],
-      runtimeEntry,
-      weakBindings: [
-        { module: weak, name: "createWeakSlot", operation: "new" },
-        { module: weak, name: "weakSlotKey", operation: "key" },
-        { module: weak, name: "weakSlotValue", operation: "value" },
-        { module: weak, name: "setWeakSlotValue", operation: "set-value" },
-        { module: weak, name: "clearWeakSlot", operation: "clear" },
-      ],
-    },
+    fixtureNamespaces,
+    fixtureOptions(runtimeEntry, managedBytes),
   );
+}
+
+/** Weak slots on the collector pool (docs/parallel-gc.md#weak-slots). A
+ * 128 MiB heap has a 16 MiB nursery, so every minor evacuates in parallel,
+ * and majors mark in parallel. Tens of thousands of cells and ephemerons
+ * are spread over many small arrays, so different workers copy and mark
+ * them; ephemeron chains, whose links are reachable only through the
+ * previous link's value, and ephemeron cycles cross workers; padding
+ * between them has odd word counts. */
+const parallelSource = `import {createWeakSlot,weakSlotKey,weakSlotValue,setWeakSlotValue,clearWeakSlot} from "weak";
+import {collectGarbage} from "memory";
+interface Item { readonly id: number; readonly tag: string; }
+interface Pad1 { readonly a: number; }
+interface Pad3 { readonly a: number; readonly b: number; readonly c: string; }
+let sink: (Pad1 | Pad3 | string)[] = [];
+/** About 2 MiB of short-lived objects of odd word counts per unit. */
+function churn(units: number): void {
+  for (let unit = 0; unit < units * 6; unit++) {
+    const batch: (Pad1 | Pad3 | string)[] = [];
+    for (let i = 0; i < 8192; i++)
+      batch.push(i % 3 === 0 ? { a: i } : i % 3 === 1 ? { a: i, b: unit, c: "p" } : "s" + String(i));
+    sink = batch;
+  }
+}
+function item(id: number): Item {
+  return { id, tag: "item-" + String(id) };
+}
+function intact(t: Item | undefined, id: number): boolean {
+  return t !== undefined && t.id === id && t.tag === "item-" + String(id);
+}
+/** A fresh heap string (odd lengths among them), reachable only where it
+ * is stored. */
+function text(id: number): string {
+  return "value-" + String(id);
+}
+/** Cells in groups of eight, so the pool's workers share them out. */
+function grouped(count: number): unknown[][] {
+  const groups: unknown[][] = [];
+  for (let i = 0; i < count; i += 8) groups.push([]);
+  return groups;
+}
+function at(groups: unknown[][], index: number): unknown {
+  const group = groups[index >>> 3];
+  return group === undefined ? undefined : group[index & 7];
+}
+function put(groups: unknown[][], index: number, cell: unknown): void {
+  const group = groups[index >>> 3];
+  if (group !== undefined) group.push(cell);
+}
+/** \`chains\` chains of \`length\` ephemeron links from fresh heads: link j's
+ * key is node j and its value node j + 1, reachable only through it; tag j
+ * maps node j + 1 to its id's text. */
+function chain(heads: Item[], links: unknown[][], tags: unknown[][], chains: number, length: number, base: number): void {
+  for (let c = 0; c < chains; c++) {
+    let key = item(base + c * 100);
+    heads.push(key);
+    for (let j = 0; j < length; j++) {
+      const next = item(base + c * 100 + j + 1);
+      put(links, c * length + j, createWeakSlot(key, next, true));
+      put(tags, c * length + j, createWeakSlot(next, text(base + c * 100 + j + 1), true));
+      key = next;
+    }
+  }
+}
+/** Chains whose head is the original one are complete (each link's value
+ * is the next link's key, every tag intact); \`mode\` 1 expects every chain
+ * live, otherwise a replaced head (id -1) must have cleared its chain. */
+function chainsIntact(heads: Item[], links: unknown[][], tags: unknown[][], chains: number, length: number, base: number, mode: number): boolean {
+  for (let c = 0; c < chains; c++) {
+    const head = heads[c];
+    if (head === undefined) return false;
+    const alive = head.id !== -1;
+    if (mode === 1 && !alive) return false;
+    for (let j = 0; j < length; j++) {
+      const link = at(links, c * length + j), tag = at(tags, c * length + j);
+      if (alive) {
+        if (j === 0 ? weakSlotKey(link) !== head || !intact(head, base + c * 100) : weakSlotKey(link) !== weakSlotValue(at(links, c * length + j - 1))) return false;
+        if (weakSlotValue(link) === undefined || weakSlotKey(tag) !== weakSlotValue(link)) return false;
+        if (weakSlotValue(tag) !== text(base + c * 100 + j + 1)) return false;
+      } else if (weakSlotKey(link) !== undefined || weakSlotValue(link) !== undefined || weakSlotKey(tag) !== undefined || weakSlotValue(tag) !== undefined) return false;
+    }
+  }
+  return true;
+}
+export function run(): number {
+  // 1. Young cells and ephemerons: half of their keys stay reachable.
+  const count = 24000;
+  const cells = grouped(count), pairs = grouped(count);
+  const kept: Item[] = [];
+  for (let i = 0; i < count; i++) {
+    const t = item(i);
+    if (i % 2 === 0) kept.push(t);
+    put(cells, i, createWeakSlot(t, undefined, false));
+    put(pairs, i, createWeakSlot(t, text(100000 + i), true));
+    if (i % 3000 === 0) churn(1);
+  }
+  churn(24);
+  for (let i = 0; i < count; i++) {
+    const alive = i % 2 === 0;
+    const key = weakSlotKey(at(cells, i));
+    if (alive ? key !== kept[i / 2] || !intact(kept[i / 2], i) : key !== undefined) return 1;
+    if (weakSlotValue(at(cells, i)) !== undefined) return 2;
+    const value = weakSlotValue(at(pairs, i));
+    if (alive ? value !== text(100000 + i) : value !== undefined) return 3;
+    if (!alive && weakSlotKey(at(pairs, i)) !== undefined) return 4;
+  }
+  // 2. Ephemeron chains: link j's value is link j + 1's key, reachable
+  // only through it. Chains with a reachable head survive minors and
+  // majors; the others clear link by link to the fixpoint.
+  // Each link also tags its value with a string (an ephemeron keyed by
+  // it), whose survival shows the value's.
+  const chains = 96, length = 48;
+  const heads: Item[] = [];
+  const links = grouped(chains * length), tags = grouped(chains * length);
+  chain(heads, links, tags, chains, length, 200000);
+  churn(24);
+  if (!chainsIntact(heads, links, tags, chains, length, 200000, 1)) return 5;
+  for (let c = 1; c < chains; c += 2) heads[c] = item(-1);
+  collectGarbage();
+  churn(8);
+  collectGarbage();
+  if (!chainsIntact(heads, links, tags, chains, length, 200000, 2)) return 6;
+  // Young chains through minors: unreachable heads die with the nursery.
+  const youngHeads: Item[] = [];
+  const youngLinks = grouped(chains * 8), youngTags = grouped(chains * 8);
+  chain(youngHeads, youngLinks, youngTags, chains, 8, 400000);
+  for (let c = 0; c < chains; c += 3) youngHeads[c] = item(-1);
+  churn(24);
+  if (!chainsIntact(youngHeads, youngLinks, youngTags, chains, 8, 400000, 3)) return 9;
+  // 3. Ephemeron cycles: a reachable member keeps its cycle, unreachable
+  // cycles clear.
+  const cycles = grouped(4000);
+  const anchors: Item[] = [];
+  for (let i = 0; i < 2000; i++) {
+    const x = item(500000 + 2 * i), y = item(500001 + 2 * i);
+    if (i % 4 === 0) anchors.push(x);
+    put(cycles, 2 * i, createWeakSlot(x, y, true));
+    put(cycles, 2 * i + 1, createWeakSlot(y, x, true));
+  }
+  churn(24);
+  collectGarbage();
+  for (let i = 0; i < 2000; i++) {
+    const alive = i % 4 === 0;
+    const forward = at(cycles, 2 * i), backward = at(cycles, 2 * i + 1);
+    const first = weakSlotValue(forward), second = weakSlotValue(backward);
+    if (alive) {
+      if (second !== anchors[i / 4] || weakSlotKey(forward) !== second || !intact(anchors[i / 4], 500000 + 2 * i)) return 10;
+      if (first === undefined || weakSlotKey(backward) !== first) return 10;
+    } else if (first !== undefined || second !== undefined || weakSlotKey(forward) !== undefined) return 10;
+  }
+  // 4. Young values stored into promoted ephemerons (remembered by the
+  // barrier, scanned strongly by parallel minors), then their keys die.
+  const lateKeys: Item[] = [];
+  const late = grouped(4096);
+  for (let i = 0; i < 4096; i++) {
+    const key = item(600000 + i);
+    lateKeys.push(key);
+    put(late, i, createWeakSlot(key, undefined, true));
+  }
+  churn(24);
+  for (let i = 0; i < 4096; i++) setWeakSlotValue(at(late, i), text(700000 + i));
+  churn(24);
+  for (let i = 0; i < 4096; i++) if (weakSlotValue(at(late, i)) !== text(700000 + i)) return 11;
+  for (let i = 0; i < 4096; i += 2) lateKeys[i] = item(-1);
+  collectGarbage();
+  for (let i = 0; i < 4096; i++) {
+    const value = weakSlotValue(at(late, i));
+    if (i % 2 === 1 ? value !== text(700000 + i) || !intact(lateKeys[i], 600000 + i) : value !== undefined || weakSlotKey(at(late, i)) !== undefined) return 12;
+  }
+  // 5. An explicit clear stays cleared and releases its chain.
+  clearWeakSlot(at(links, 0));
+  collectGarbage();
+  if (weakSlotKey(at(links, 1)) !== undefined || weakSlotValue(at(links, length - 1)) !== undefined) return 13;
+  if (weakSlotValue(at(tags, length - 1)) !== undefined) return 13;
+  if (weakSlotValue(at(tags, 2 * length + length - 1)) !== text(200000 + 200 + length)) return 14;
+  // The heads stay reachable until here (stack maps are precise).
+  if (!intact(heads[2], 200200)) return 15;
+  return 42;
+}
+`;
+/** LLDB breakpoint hits (auto-continued) per function of a debug image that
+ * must exit with status 42. */
+function functionHits(
+  image: string,
+  functions: readonly string[],
+): Map<string, number> {
+  const args = ["--no-lldbinit", "--batch"];
+  for (const name of functions)
+    args.push(
+      "-o",
+      "breakpoint set -G true -r '" + name.replaceAll(".", "\\.") + " '",
+    );
+  args.push(
+    "-o",
+    "process launch",
+    "-o",
+    "script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42",
+    "-o",
+    "breakpoint list",
+    image,
+  );
+  const result = spawnSync("lldb", args, {
+    encoding: "utf8",
+    timeout: 600000,
+  });
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stdout, /exited with status = 42 /, result.stdout);
+  const hits = new Map<string, number>();
+  for (const [index, name] of functions.entries()) {
+    const match = new RegExp(
+      "^" + String(index + 1) + ": regex = .*hit count = (\\d+)",
+      "m",
+    ).exec(result.stdout);
+    assert.ok(match, "no breakpoint for " + name + ":\n" + result.stdout);
+    hits.set(name, Number(match[1]));
+  }
+  return hits;
 }
 test("weak cells clear and survive exactly under the generational collector", () => {
   verify("weak-cells-generational", "initializeGenerationalRuntime");
 });
-test("weak cells take the serial collector paths in a large generational heap", () => {
+test("weak cells take the parallel collector paths in a large generational heap", () => {
   // A 64 MiB heap has an 8 MiB nursery and majors above the 4 MiB parallel
-  // threshold: without the weak flag, the parallel evacuator and mark would
-  // meet weak slots (fatal).
+  // threshold.
   verify(
     "weak-cells-generational-large",
     "initializeGenerationalRuntime",
@@ -195,4 +428,56 @@ test("weak cells take the serial collector paths in a large generational heap", 
 });
 test("weak cells clear and survive exactly under the copying collector", () => {
   verify("weak-cells-copying", "initializeCopyingRuntime");
+});
+test("weak slots, chains and cycles across parallel workers", () => {
+  verifyHostedFixture(
+    parallelSource,
+    "weak-cells-parallel",
+    fixtureModules,
+    [],
+    [],
+    fixtureNamespaces,
+    fixtureOptions("initializeGenerationalRuntime", 134217728),
+  );
+  // A debug build of the same program, run with its weak paths counted:
+  // parallel minors and majors met weak slots and ran ephemeron rounds.
+  const saved = {
+    build: process.env.TINT_BUILD_ONLY,
+    debug: process.env.TINT_DEBUG_SYMBOLS,
+  };
+  process.env.TINT_BUILD_ONLY = "1";
+  process.env.TINT_DEBUG_SYMBOLS = "1";
+  let image: string;
+  try {
+    image = verifyHostedFixture(
+      parallelSource,
+      "weak-cells-parallel-debug",
+      fixtureModules,
+      [],
+      [],
+      fixtureNamespaces,
+      fixtureOptions("initializeGenerationalRuntime", 134217728),
+    );
+  } finally {
+    if (saved.build === undefined) delete process.env.TINT_BUILD_ONLY;
+    else process.env.TINT_BUILD_ONLY = saved.build;
+    if (saved.debug === undefined) delete process.env.TINT_DEBUG_SYMBOLS;
+    else process.env.TINT_DEBUG_SYMBOLS = saved.debug;
+  }
+  try {
+    const parallel = "packages/native-runtime/src/tracing/parallel.ts:";
+    const hits = functionHits(image, [
+      parallel + "finishCopiedWeak",
+      parallel + "traceCopiedEphemerons",
+      parallel + "finishCopiedList",
+      parallel + "finishMarkedWeak",
+      parallel + "traceMarkedEphemerons",
+    ]);
+    console.log(JSON.stringify(Object.fromEntries(hits)));
+    for (const [name, count] of hits)
+      assert.ok(count > 0, name + " never ran: " + JSON.stringify([...hits]));
+  } finally {
+    if (process.env.TINT_KEEP_NATIVE !== "1")
+      rmSync(dirname(image), { recursive: true, force: true });
+  }
 });

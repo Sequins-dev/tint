@@ -12,6 +12,7 @@ import { join } from "node:path";
 import {
   cLayout,
   cScalarBytes,
+  type CCallbackDeclaration,
   type CFunctionDeclaration,
   type CLibraryDeclaration,
   type CTarget,
@@ -121,8 +122,9 @@ export function layoutOracle(
 }
 
 // Type codes: v void, b1 bool, c1 char, i/u<bytes> integers, f<bytes>
-// floats, r<bytes> records; pointers p:<pointee> with pointee v void, f
-// function, p pointer, o opaque record, r<bytes>, or a scalar code.
+// floats, r<bytes> records; pointers p:<pointee> with pointee v void, p
+// pointer, o opaque record, r<bytes>, a scalar code, or a function
+// f<result>(<parameter>,...) (`...` last when variadic).
 const traits = `
 template <class T, class = decltype(sizeof(T))> constexpr bool complete(int) { return true; }
 template <class T> constexpr bool complete(...) { return false; }
@@ -135,10 +137,11 @@ template <class T> void scalar(const char *prefix) {
   else if constexpr (__is_floating_point(U)) printf("%sf%zu", prefix, sizeof(U));
   else printf("%s?", prefix);
 }
+template <class F> struct Prototype;
 template <class T> void pointee() {
   using U = __remove_cv(T);
   if constexpr (__is_same(U, void)) printf(":v");
-  else if constexpr (__is_function(U)) printf(":f");
+  else if constexpr (__is_function(U)) { printf(":f"); Prototype<U>::print(); }
   else if constexpr (__is_pointer(U)) printf(":p");
   else if constexpr (__is_class(U) || __is_union(U)) {
     if constexpr (complete<U>(0)) printf(":r%zu", sizeof(U)); else printf(":o");
@@ -151,6 +154,21 @@ template <class T> void code() {
   else if constexpr (__is_class(U) || __is_union(U)) printf(" r%zu", sizeof(U));
   else scalar<U>(" ");
 }
+template <class T> void value() {
+  using U = __remove_cv(T);
+  if constexpr (__is_same(U, void)) printf("v");
+  else if constexpr (__is_pointer(U)) { printf("p"); pointee<__remove_pointer(U)>(); }
+  else if constexpr (__is_class(U) || __is_union(U)) printf("r%zu", sizeof(U));
+  else scalar<U>("");
+}
+template <class R, class... A> struct Prototype<R(A...)> {
+  static void print() { int n = 0; value<R>(); printf("("); ((printf(n++ ? "," : ""), value<A>()), ...); printf(")"); }
+};
+template <class R, class... A> struct Prototype<R(A...) noexcept> : Prototype<R(A...)> {};
+template <class R, class... A> struct Prototype<R(A..., ...)> {
+  static void print() { value<R>(); printf("("); ((value<A>(), printf(",")), ...); printf("...)"); }
+};
+template <class R, class... A> struct Prototype<R(A..., ...) noexcept> : Prototype<R(A..., ...)> {};
 template <class F> struct Signature;
 template <class R, class... A> struct Signature<R(A...)> {
   static void print() { code<R>(); printf(" |"); (code<A>(), ...); printf(" | fixed\\n"); }
@@ -299,6 +317,77 @@ export function prototypeOracle(
   }
   return mismatches;
 }
+/** A callback parameter's prototype against the C function pointer type
+ * (`p:f<result>(<parameters>)`). */
+function compareCallback(
+  callback: CCallbackDeclaration,
+  actual: string,
+  target: CTarget,
+  what: string,
+): string[] {
+  const prototype = functionCode(actual);
+  if (prototype === undefined)
+    return [`${what}: a callback declared, C passes ${actual}`];
+  const mismatches: string[] = [];
+  const signature = callback.signature;
+  if (prototype.variadic)
+    mismatches.push(`${what}: the C function pointer is variadic`);
+  if (prototype.parameters.length !== signature.parameters.length)
+    mismatches.push(
+      `${what}: the callback takes ${signature.parameters.length} parameters, C passes ${prototype.parameters.length}`,
+    );
+  for (const [position, declared] of signature.parameters.entries()) {
+    const code = prototype.parameters[position];
+    if (code !== undefined && !valueAccepts(declared, code, target, false))
+      mismatches.push(
+        `${what} callback parameter ${position}: declared ${JSON.stringify(declared)}, C ${code}`,
+      );
+  }
+  const result = signature.result;
+  if (
+    (result.kind === "void") !== (prototype.result === "v") ||
+    (result.kind !== "void" &&
+      !valueAccepts(result, prototype.result, target, false))
+  )
+    mismatches.push(
+      `${what} callback result: declared ${JSON.stringify(result)}, C ${prototype.result}`,
+    );
+  return mismatches;
+}
+/** A function pointer's code `p:f<result>(<a>,<b>)` as its parts. */
+function functionCode(code: string): CPrototype | undefined {
+  if (!code.startsWith("p:f")) return undefined;
+  const items: string[] = [];
+  let depth = 0,
+    start = -1,
+    resultEnd = -1;
+  for (let position = 3; position < code.length; position++) {
+    const character = code[position];
+    if (character === "(") {
+      if (depth === 0) {
+        resultEnd = position;
+        start = position + 1;
+      }
+      depth++;
+    } else if (character === ")") {
+      depth--;
+      if (depth === 0) {
+        if (position > start) items.push(code.slice(start, position));
+        break;
+      }
+    } else if (character === "," && depth === 1) {
+      items.push(code.slice(start, position));
+      start = position + 1;
+    }
+  }
+  if (resultEnd < 0) return undefined;
+  const variadic = items[items.length - 1] === "...";
+  return {
+    result: code.slice(3, resultEnd),
+    parameters: variadic ? items.slice(0, -1) : items,
+    variadic,
+  };
+}
 function compareFunction(
   fn: CFunctionDeclaration,
   prototype: CPrototype,
@@ -323,10 +412,14 @@ function compareFunction(
   ) {
     const declared = signature.parameters[position]!,
       actual = prototype.parameters[position]!;
+    const what = `function ${fn.name} parameter ${fn.parameterNames[position]}`;
     if (!valueAccepts(declared, actual, target, false))
       mismatches.push(
-        `function ${fn.name} parameter ${fn.parameterNames[position]}: declared ${JSON.stringify(declared)}, C ${actual}`,
+        `${what}: declared ${JSON.stringify(declared)}, C ${actual}`,
       );
+    const callback = fn.callbacks?.[position];
+    if (callback !== undefined)
+      mismatches.push(...compareCallback(callback, actual, target, what));
   }
   // A declared void result ignores whatever C returns.
   if (

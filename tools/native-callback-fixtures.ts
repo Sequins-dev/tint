@@ -192,13 +192,17 @@ export function verifyCallbackFixture(
 }
 
 /** A C library for callback contract tests: it keeps a callback for later
- * (as C libraries do), calls one now, and calls one from a new thread. */
+ * (as C libraries do), calls one now, calls one from a new thread, and
+ * passes one a pointer to a record. */
 export const callbackLibrarySource = `#include <pthread.h>
 #include <stdint.h>
 static int32_t (*saved)(int32_t);
 void remember(int32_t (*f)(int32_t)) { saved = f; }
 int32_t call_saved(int32_t x) { return saved(x); }
 int32_t call_now(int32_t (*f)(int32_t), int32_t x) { return f(x); }
+int32_t call_with_record(int32_t (*f)(const int32_t *), int32_t x) {
+  return f(&x);
+}
 static void *run(void *f) {
   return (void *)(intptr_t)((int32_t (*)(int32_t))f)(7);
 }
@@ -210,19 +214,24 @@ int32_t call_on_thread(int32_t (*f)(int32_t)) {
   return (int32_t)(intptr_t)result;
 }
 `;
-/** The scenarios: `ok` returns 42; the others must trap in the thunk. */
+/** The scenarios: `ok` returns 42; `view-escape` (a record view kept past
+ * its call, parked at the inaccessible guard) must fault on access; the
+ * others must trap in the thunk. */
 export type CallbackTrapScenario =
-  "ok" | "leaf-later" | "leaf-inside" | "thread";
+  "ok" | "leaf-later" | "leaf-inside" | "thread" | "view-escape";
 function callbackTrapDeclarations(library: string): FixtureForeignDeclaration {
   return {
     id: "fixture/callback-traps.d.ts",
     text: `declare module "tint:c/callback-traps" {
-  import type { i32, Callback } from "tint:ffi";
+  import type { i32, Ptr, Layout, Callback } from "tint:ffi";
+  export interface Cell { v: i32 }
+  export const Cell: Layout<Cell>;
   export function remember(f: Callback<(x: i32) => i32>): void;
   /** Declared leaf, though it calls the remembered callback. */
   export function call_saved(x: i32): i32;
   export function call_now(f: Callback<(x: i32) => i32>, x: i32): i32;
   export function call_on_thread(f: Callback<(x: i32) => i32>): i32;
+  export function call_with_record(f: Callback<(p: Ptr<Cell>) => i32>, x: i32): i32;
 }
 `,
     manifest: [
@@ -252,8 +261,18 @@ export function callbackTrapSource(scenario: CallbackTrapScenario): string {
         ? `remember((x: number): number => x);\n  return call_saved(1);`
         : scenario === "leaf-inside"
           ? `remember((x: number): number => x);\n  return call_now((x: number): number => call_saved(x), 1);`
-          : `return call_on_thread((x: number): number => x);`;
-  return `import { remember, call_saved, call_now, call_on_thread } from "traps";
+          : scenario === "thread"
+            ? `return call_on_thread((x: number): number => x);`
+            : `const kept: View<Cell>[] = [];
+  const seen = call_with_record((p: View<Cell>): number => {
+    kept.push(p);
+    return p.v;
+  }, 5);
+  const view = kept[0];
+  if (seen !== 5 || view === undefined) return 1;
+  return view.v;`;
+  return `import type { View } from "tint:ffi";
+import { remember, call_saved, call_now, call_on_thread, call_with_record, type Cell } from "traps";
 export function run(): number {
   ${body}
 }
@@ -273,7 +292,10 @@ export function verifyCallbackTrap(
     binary = verifyHostedFixture(
       callbackTrapSource(scenario),
       "ffi-callback-" + scenario,
-      [["traps", declarations.id]],
+      [
+        ["traps", declarations.id],
+        ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
+      ],
       [],
       [],
       [],
@@ -311,7 +333,9 @@ export function verifyCallbackTrap(
     assert.equal(result.status, 0, result.stdout + result.stderr);
     assert.match(
       result.stdout,
-      /stop reason = (EXC_BREAKPOINT|signal SIGTRAP)/,
+      scenario === "view-escape"
+        ? /stop reason = (EXC_BAD_ACCESS|signal SIGSEGV|signal SIGBUS)/
+        : /stop reason = (EXC_BREAKPOINT|signal SIGTRAP)/,
       result.stdout,
     );
     return binary;
