@@ -32,6 +32,8 @@ export interface Emission {
   readonly text: string;
   /** What was left out and why, one line each (also in the header). */
   readonly report: readonly string[];
+  /** Function pointers bound as opaque addresses, and why. */
+  readonly opaque: readonly string[];
 }
 export interface EmitOptions {
   /** The spec's path as the header names it. */
@@ -65,6 +67,7 @@ const ffiNames = [
   "OrErrno",
   "Variadic",
   "Available",
+  "Callback",
   "MayCallback",
   "Async",
   "Packed",
@@ -80,6 +83,78 @@ interface Context {
   /** Records the module declares (on every target). */
   readonly emitted: ReadonlySet<string>;
   readonly aliases: ReadonlySet<string>;
+  readonly callbacks: Callbacks;
+}
+
+/** A function pointer whose prototype a `Callback<…>` cannot express. */
+class Opaque extends Error {}
+/** What one emission pass collects across targets: named callback types
+ * (`type name = Callback<…>`) per target, and the function pointers bound
+ * as opaque addresses. */
+class Callbacks {
+  readonly types = new Map<string, Map<TargetName, string>>();
+  readonly opaque: string[] = [];
+  declare(name: string, target: TargetName, signature: string): void {
+    const texts = this.types.get(name) ?? new Map<TargetName, string>();
+    texts.set(target, `Callback<${signature}>`);
+    this.types.set(name, texts);
+  }
+  note(line: string): void {
+    if (!this.opaque.includes(line)) this.opaque.push(line);
+  }
+}
+/** A C function type as a callback prototype: parameters are scalars,
+ * bools or addresses (at most seven), the result one of those or void. */
+function callbackSignature(
+  type: TypeFact & { kind: "function" },
+  context: Context,
+): string {
+  if (type.variadic) throw new Opaque("a variadic prototype");
+  if (type.parameters.length > 7)
+    throw new Opaque("callbacks take at most seven parameters");
+  const value = (item: TypeFact, what: string): string => {
+    switch (item.kind) {
+      case "scalar":
+        return scalarText(item, context);
+      case "pointer":
+        return `Address<${pointeeText(item.pointee, context)}>`;
+      case "record":
+        throw new Opaque(`${what} passes record ${item.name} by value`);
+      case "unsupported":
+        throw new Opaque(`${what}: ${item.reason}`);
+      default:
+        throw new Opaque(`${what} has no callback type (${item.kind})`);
+    }
+  };
+  const parameters = type.parameters.map(
+    (item, position) =>
+      `arg${position}: ${value(item, `parameter ${position}`)}`,
+  );
+  const result =
+    type.result.kind === "void" ? "void" : value(type.result, "the result");
+  return `(${parameters.join(", ")}) => ${result}`;
+}
+/** A function pointer stored in C memory or passed to C: its named
+ * callback type (the typedef's, else `fallback`), a `Callback<…>` for an
+ * anonymous parameter (`fallback` empty), or an opaque `Address<void>`
+ * when the prototype cannot be a callback. */
+function functionPointerText(
+  type: TypeFact & { kind: "function" },
+  context: Context,
+  fallback: string,
+  what: string,
+): string {
+  try {
+    const signature = callbackSignature(type, context);
+    const name = type.name ?? fallback;
+    if (name === "") return `Callback<${signature}>`;
+    context.callbacks.declare(name, context.target, signature);
+    return name;
+  } catch (error) {
+    if (!(error instanceof Opaque)) throw error;
+    context.callbacks.note(`${what}: ${error.message}`);
+    return "Address<void>";
+  }
 }
 
 function scalarText(
@@ -100,14 +175,24 @@ function pointeeText(type: TypeFact, context: Context): string {
       return "void";
   }
 }
-function memberText(type: TypeFact, context: Context, opaque: boolean): string {
+/** A member's type; `owner` names an anonymous function pointer's callback
+ * type (`<record>_<member>`). */
+function memberText(
+  type: TypeFact,
+  context: Context,
+  opaque: boolean,
+  owner: string,
+): string {
   switch (type.kind) {
     case "scalar":
       return scalarText(type, context);
     case "pointer":
       if (type.pointee.kind === "function" && !opaque)
-        throw new Skip(
-          "is a function pointer (Callback<…> lands with Phase 4; list it in `opaque` to bind Address<void>)",
+        return functionPointerText(
+          type.pointee,
+          context,
+          owner,
+          `member ${owner}`,
         );
       return `Address<${pointeeText(type.pointee, context)}>`;
     case "record":
@@ -117,7 +202,7 @@ function memberText(type: TypeFact, context: Context, opaque: boolean): string {
         );
       return type.name;
     case "array":
-      return `FixedArray<${memberText(type.element, context, opaque)}, ${type.length}>`;
+      return `FixedArray<${memberText(type.element, context, opaque, owner)}, ${type.length}>`;
     case "unsupported":
       throw new Skip(type.reason);
     default:
@@ -216,11 +301,11 @@ function parameterText(
       pointee.scalar === "u8");
   let mode: PointerMode;
   if (choice.as !== undefined) mode = choice.as;
-  else if (pointee.kind === "function")
-    throw new Skip(
-      `${what} is a function pointer (Callback<…> lands with Phase 4; bind it \`as: "Address"\` to pass an opaque address)`,
-    );
-  else if (
+  else if (pointee.kind === "function") {
+    if (choice.pointee !== undefined)
+      throw new SpecError(`${what}: a function pointer takes no pointee`);
+    return functionPointerText(pointee, context, "", what);
+  } else if (
     charPointee &&
     pointee.kind === "scalar" &&
     pointee.scalar === "char" &&
@@ -235,8 +320,10 @@ function parameterText(
       throw new SpecError(`${what}: ${mode} takes no pointee`);
     return mode;
   }
-  if (mode === "Ptr" && pointee.kind === "function")
-    throw new SpecError(`${what}: a function pointer is not a borrowed view`);
+  if (mode !== "Address" && pointee.kind === "function")
+    throw new SpecError(
+      `${what}: a function pointer is a Callback or, with \`as: "Address"\`, an opaque address`,
+    );
   return `${mode}<${pointeeOverride(pointee, choice.pointee, context, what)}>`;
 }
 function pointeeOverride(
@@ -292,9 +379,11 @@ function resultText(
     case "scalar":
       return scalarText(type, context);
     case "pointer":
+      // C hands TypeScript a function pointer: an address (callbacks are
+      // argument-only).
       if (type.pointee.kind === "function")
-        throw new Skip(
-          `${what} is a function pointer (Callback<…> lands with Phase 4)`,
+        context.callbacks.note(
+          `${what}: a returned function pointer is an address`,
         );
       return `Address<${pointeeText(type.pointee, context)}>`;
     case "record":
@@ -308,6 +397,15 @@ function resultText(
     default:
       throw new Skip(`${what} has no binding type (${type.kind})`);
   }
+}
+/** The records an argument hands C: by value, or behind its pointer (the
+ * spec's `pointee` record when it names one). */
+function argumentRecords(type: TypeFact, choice: ParameterSpec): string[] {
+  if (choice.pointee !== undefined) return [choice.pointee];
+  if (type.kind === "record") return [type.name];
+  if (type.kind === "pointer" && type.pointee.kind === "record")
+    return [type.pointee.name];
+  return [];
 }
 /** C default argument promotion of a variadic argument's type. */
 function promoted(type: TypeFact): TypeFact {
@@ -478,7 +576,7 @@ export async function emitBinding(
             .map(([target]) => target)
             .join(", "),
       );
-  const contexts = (): Map<TargetName, Context> =>
+  const contexts = (callbacks: Callbacks): Map<TargetName, Context> =>
     new Map(
       [...facts].map(([target, item]) => [
         target,
@@ -488,14 +586,17 @@ export async function emitBinding(
           records: new Map(item.records.map((record) => [record.name, record])),
           emitted,
           aliases: aliasNames,
+          callbacks,
         },
       ]),
     );
   const recordTexts = new Map<string, string>();
+  let callbacks = new Callbacks();
   for (let changed = true; changed;) {
     changed = false;
     recordTexts.clear();
-    const byTarget = contexts();
+    callbacks = new Callbacks();
+    const byTarget = contexts(callbacks);
     for (const name of order) {
       if (!emitted.has(name)) continue;
       try {
@@ -512,9 +613,9 @@ export async function emitBinding(
       }
     }
   }
-  const byTarget = contexts();
 
-  // Functions, in spec order.
+  // Functions, in spec order. Each collects its callback types apart, so
+  // a function left out declares none.
   const functionTexts: string[] = [];
   const declaredFunctions: string[] = [];
   for (const item of (spec.functions ?? []).map(functionSpec)) {
@@ -522,8 +623,13 @@ export async function emitBinding(
     // Extraction already reported functions it could not read.
     if (skippedReasons.has("function " + item.name)) continue;
     try {
-      functionTexts.push(functionText(item, byTarget));
+      const local = new Callbacks();
+      functionTexts.push(functionText(item, contexts(local)));
       declaredFunctions.push(name);
+      for (const [type, texts] of local.types)
+        for (const [target, text] of texts)
+          callbacks.declare(type, target, text.slice(9, -1));
+      for (const line of local.opaque) callbacks.note(line);
     } catch (error) {
       if (!(error instanceof Skip)) throw error;
       skip("function " + name, error.message);
@@ -572,9 +678,22 @@ export async function emitBinding(
     }
   }
 
+  const declaredNames = new Set([
+    ...aliasTexts.keys(),
+    ...emitted,
+    ...declaredFunctions,
+    ...(spec.constants ?? []),
+  ]);
+  for (const name of callbacks.types.keys())
+    if (declaredNames.has(name))
+      throw new SpecError(
+        `callback type ${name} collides with another declaration of tint:c/${spec.library}`,
+      );
   const body: string[] = [];
   for (const [name, texts] of aliasTexts)
     body.push(`  type ${name} = ${merged(texts)};\n`);
+  for (const [name, texts] of callbacks.types)
+    body.push(`  export type ${name} = ${merged(texts)};\n`);
   body.push(...constantTexts);
   for (const name of order) {
     const text = recordTexts.get(name);
@@ -597,7 +716,10 @@ export async function emitBinding(
     `// clang: ${clangs}.\n` +
     (report.length === 0
       ? ""
-      : `// Not bound:\n${report.map((line) => `//   ${line}\n`).join("")}`);
+      : `// Not bound:\n${report.map((line) => `//   ${line}\n`).join("")}`) +
+    (callbacks.opaque.length === 0
+      ? ""
+      : `// Function pointers bound as addresses:\n${callbacks.opaque.map((line) => `//   ${line}\n`).join("")}`);
   const summary = spec.summary.map((line) => `  // ${line}\n`).join("");
   const text =
     header +
@@ -610,7 +732,7 @@ export async function emitBinding(
     "}\n";
   const formatted = await format(text, { parser: "typescript" });
   verifyEmission(spec, formatted, facts);
-  return { text: formatted, report };
+  return { text: formatted, report, opaque: callbacks.opaque };
 
   function recordText(
     name: string,
@@ -664,7 +786,12 @@ export async function emitBinding(
         try {
           texts.set(
             target,
-            memberText(fact.type, context, opaque.has(field.name)),
+            memberText(
+              fact.type,
+              context,
+              opaque.has(field.name),
+              `${name}_${field.name}`,
+            ),
           );
         } catch (error) {
           if (error instanceof Skip)
@@ -685,6 +812,38 @@ export async function emitBinding(
     );
   }
 
+  /** Whether record `name` (or a record it holds or points to) has a
+   * member bound as a callback type. */
+  function reachesCallbacks(
+    context: Context,
+    name: string,
+    seen: Set<string>,
+  ): boolean {
+    if (seen.has(name) || !context.emitted.has(name)) return false;
+    seen.add(name);
+    const record = context.records.get(name);
+    if (record === undefined) return false;
+    const opaque = new Set(recordSpecs.get(name)?.opaque ?? []);
+    const calls = (type: TypeFact, member: string): boolean => {
+      if (type.kind === "array") return calls(type.element, member);
+      if (type.kind === "record")
+        return reachesCallbacks(context, type.name, seen);
+      if (type.kind !== "pointer") return false;
+      const pointee = type.pointee;
+      if (pointee.kind === "record")
+        return reachesCallbacks(context, pointee.name, seen);
+      if (pointee.kind !== "function" || opaque.has(member)) return false;
+      try {
+        callbackSignature(pointee, context);
+        return true;
+      } catch (error) {
+        if (error instanceof Opaque) return false;
+        throw error;
+      }
+    };
+    return record.fields.some((field) => calls(field.type, field.name));
+  }
+
   function functionText(
     item: FunctionSpec,
     contexts: ReadonlyMap<TargetName, Context>,
@@ -695,6 +854,9 @@ export async function emitBinding(
     const variadicTexts: Map<TargetName, string>[] = [];
     const resultTexts = new Map<TargetName, string>();
     let count = -1;
+    // Records with callbacks this function's arguments reach (C may call
+    // them during the call).
+    const reached = new Set<string>();
     for (const [target, context] of contexts) {
       const fact = context.facts.functions.find((fn) => fn.name === item.name);
       if (fact === undefined) throw new Skip(`not extracted on ${target}`);
@@ -723,6 +885,8 @@ export async function emitBinding(
             position,
             choice.name ?? identifier(parameter.name, position),
           );
+        for (const record of argumentRecords(parameter.type, choice))
+          if (reachesCallbacks(context, record, new Set())) reached.add(record);
         const texts = (parameterTexts[position] ??= new Map());
         texts.set(
           target,
@@ -785,8 +949,12 @@ export async function emitBinding(
     for (const [position, texts] of variadicTexts.entries())
       parameters.push(`${"variadic" + position}: ${merged(texts, aliasTexts)}`);
     let result = merged(resultTexts, aliasTexts);
-    if (item.callClass === "may-callback") result = `MayCallback<${result}>`;
-    if (item.callClass === "async") result = `Async<${result}>`;
+    // Correctness first: a call that hands C a record holding callbacks may
+    // call back through them, unless the spec says it never does (leaf).
+    const callClass =
+      item.callClass ?? (reached.size > 0 ? "may-callback" : "leaf");
+    if (callClass === "may-callback") result = `MayCallback<${result}>`;
+    if (callClass === "async") result = `Async<${result}>`;
     return (
       docComment(item.doc, "  ") +
       `  export function ${name}(${parameters.join(", ")}): ${result};\n`

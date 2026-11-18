@@ -17,9 +17,10 @@ Phase 4 implemented on both targets: C calls TypeScript through AOT
 callback thunks, scoped and registered, with collections inside callbacks,
 exceptions rethrown after the call, contract traps and dynamic callbacks
 ([callbacks](#callbacks)).
-Phase 6a implemented: the clang-driven binding generator
-([binding generator](#binding-generator)), verified on both targets and
-regenerating every hand-written binding with equal layouts and signatures.
+Phase 6 a/b implemented: every `tint:c` binding is generated from C
+headers by the clang-driven binding generator
+([binding generator](#binding-generator)), verified on both targets, with
+function pointers as `Callback<…>` types.
 Later phases are planned below. The exploration that chose this design (prior
 art, `node:ffi`, the GC argument) is summarized here; this document is the
 design of record.
@@ -49,11 +50,13 @@ test-time oracle (below) and as the dev-time binding generator
 ## Declarations as IDL
 
 A binding is a `.d.ts` file under a package's `src/c/` whose only statement is
-`declare module "tint:c/<library>"`. The real CommonCrypto binding:
+`declare module "tint:c/<library>"`. The real CommonCrypto binding,
+generated from `<CommonCrypto/CommonDigest.h>`
+([binding generator](#binding-generator)), without its comments:
 
 ```ts
 declare module "tint:c/commoncrypto" {
-  import type { i32, u8, u32, Ptr, FixedArray, Layout } from "tint:ffi";
+  import type { u8, i32, u32, Ptr, FixedArray, Layout } from "tint:ffi";
   type CC_LONG = u32;
   export interface CC_SHA256_CTX {
     count: FixedArray<CC_LONG, 2>;
@@ -64,7 +67,7 @@ declare module "tint:c/commoncrypto" {
   export function CC_SHA256_Init(c: Ptr<CC_SHA256_CTX>): i32;
   export function CC_SHA256_Update(
     c: Ptr<CC_SHA256_CTX>,
-    data: Ptr<u8>,
+    data: Ptr<void>,
     len: CC_LONG,
   ): i32;
   export function CC_SHA256_Final(md: Ptr<u8>, c: Ptr<CC_SHA256_CTX>): i32;
@@ -749,7 +752,9 @@ Bindings to large C APIs are generated, not hand-written: hand-written
 struct offsets were fino's largest source of bugs. `tools/c-bindgen.ts`
 reads C headers with clang and emits declaration modules in exactly this
 document's syntax. clang runs only at development time, as the generator
-and as a test oracle; a Tint build never invokes it.
+and as a test oracle; a Tint build never invokes it. Every `tint:c`
+binding under `packages/native-runtime/src/c/` is generated (the files say
+so in their first line); edit the spec, never the module.
 
 **Specs.** One checked-in spec per library,
 `tools/c-bindgen/specs/<library>.ts` (type `BindingSpec`,
@@ -763,7 +768,7 @@ export default {
   targets: ["darwin-arm64", "linux-arm64"],
   headers: ["zlib.h"], // or per target
   aliases: ["uInt", "uLong"], // scalar typedefs kept as `type` aliases
-  records: [{ name: "z_stream", opaque: ["zalloc", "zfree"] }],
+  records: ["z_stream"], // zalloc/zfree: callback types alloc_func, free_func
   functions: [
     "deflate",
     { name: "deflateInit2_", parameters: { version: "Address" } },
@@ -776,6 +781,24 @@ export default {
   `<record>_<member>`). Pointers to records the module does not declare
   are `Address<void>`/`Ptr<void>` (opaque memory). `layout: false` omits
   the `Layout<R>` constant.
+- Function pointers become callbacks ([callbacks](#callbacks)): a member
+  or parameter whose type a typedef names (`alloc_func`) uses an exported
+  callback type of that name, `type alloc_func = Callback<(...) => R>`; an
+  anonymous member gets one named `<record>_<member>`, and an anonymous
+  parameter an inline `Callback<(...) => R>`, which makes the function
+  may-callback. Callback parameters are `argN` (clang's type spelling
+  drops the typedef's names). A prototype no callback can express
+  (records by value, more than seven parameters, variadic, unsupported
+  types) is an opaque `Address<void>`, as is a returned function pointer;
+  each is listed in the generator's output and the module's header.
+  `opaque` (members) and `as: "Address"` (parameters) choose the address
+  explicitly.
+- Call classes follow the callbacks: a function whose argument hands C a
+  record with callback members (by pointer or by value, through nested
+  records or pointers to records) is `MayCallback`, since C may call them
+  during the call (zlib's `deflate` calling a registered `zalloc`; as a
+  leaf call it would hit the leaf-violation trap). `callClass: "leaf"`
+  overrides that for functions documented never to call them.
 - Pointer parameters default to `Ptr<T>` (a borrowed view) and
   `const char *` to `CString`; `as` picks `Address`, `Ptr`, `CString` or
   `CStringBytes`. `pointee` points at an emitted record of the C pointee's
@@ -785,7 +808,7 @@ export default {
 - Results: `"OrErrno"` (a pointer result is read as `isize`), `"void"`
   (ignored), `{ record }`. `variant` emits `name$variant`; a variadic
   function needs `variadic: [C types]` per call shape (promoted).
-  `callClass` wraps the result in `MayCallback`/`Async` (Phases 4–5).
+  `callClass` sets `leaf`, `may-callback` or `async` (Phase 5) explicitly.
 - `constants` lists `#define`s and enumerators; each must be an integer
   constant expression (checked by clang). `availability` or `optional:
 true` emit availability queries (`has<Name>`).
@@ -811,9 +834,7 @@ target's clang version. Same facts, byte-identical output.
 
 **Not bound, reported.** Bitfields, flexible and zero-length arrays,
 anonymous (C11) members, `long double`, `__int128`, complex and vector
-types, `va_list`, function pointers (members, parameters and results,
-until `Callback<…>` lands with Phase 4; `opaque`/`as: "Address"` binds one
-as `Address<void>`), variadic functions without call shapes, static or
+types, `va_list`, variadic functions without call shapes, static or
 inline header functions, functions an asm label renames, negative or
 non-integer constants and those beyond 2^53, records that differ between
 targets beyond member types (bind them in per-target specs), and anything
@@ -825,46 +846,62 @@ generation.
 
 **Workflow.** `pnpm bindgen` extracts this host's facts and emits every
 module; `pnpm bindgen extract|emit|check [libraries]` runs one step
-(`check` fails on drift without writing). To add a library: write its
+(`check` fails on drift without writing, and lists what the regeneration
+would change in each target's declarations). To add a library: write its
 spec, add it to the library manifest (`cLibraryManifest`), then extract on
 each target (linux-arm64 on the shared `dev` container machine: `container
 machine run -n dev -- "cd <worktree> && node tools/c-bindgen.ts extract
 <library>"`) and emit on either host. Changing only binding choices
-(`as`, `result`, names) needs no re-extraction. Generated modules are
-written to `tools/c-bindgen/generated/` for review; the hand-written
-bindings under `packages/native-runtime/src/c/` stay authoritative until
-they are replaced (after Phase 4).
+(`as`, `result`, names) needs no re-extraction. Emission writes the
+binding modules in place, `packages/native-runtime/src/c/<library>.d.ts`,
+where the compiler expands them; a test fails if any `tint:c` module there
+has no spec.
 
 **Verification** (`tools/c-bindgen.test.ts`, both targets):
 
 - emission rules on synthetic facts (ByTarget merging, alias unification,
-  reports, spec errors, call classes, availability queries), determinism
+  callback types, opaque function pointers, reports, spec errors, call
+  classes, availability queries), determinism
   (checked-in modules equal emission from the checked-in facts), and
   `tsc` over each module with `tint:ffi`;
 - with clang on the host: re-extraction equals the checked-in facts (the
   clang version aside); the oracle (`tools/c-bindgen/oracle.ts`) checks
-  every generated and hand-written record against clang's `sizeof`,
-  `_Alignof` and `offsetof`, and every function against clang's own
-  prototype via C++ type traits (each parameter's and result's width,
-  signedness, float-ness, pointer and pointee); a mutated module shows the
-  oracle catches wrong offsets, widths and pointees; a synthetic header
-  exercises every unsupported shape;
+  every record against clang's `sizeof`, `_Alignof` and `offsetof`, and
+  every function against clang's own prototype via C++ type traits (each
+  parameter's and result's width, signedness, float-ness, pointer and
+  pointee, and each callback parameter's prototype against the C function
+  pointer's); mutated modules show the oracle catches wrong offsets,
+  widths, pointees and callback prototypes; a synthetic header exercises
+  every unsupported shape;
 - natively under LLDB: a binding generated fresh from the host's headers
   (`struct stat` with nested `timespec`s, `struct utsname`, a variadic
   `open`, errno results, aliases, constants) is compiled into a program
   that writes, `fstat`s and unlinks a file and reads `uname` through views
-  (`tools/c-bindgen-fixtures.ts`).
+  (`tools/c-bindgen-fixtures.ts`); and a registered TypeScript allocator
+  runs inside the generated zlib binding's may-callback calls with
+  node:zlib's call pattern (gzip `deflateInit2_`, 64-byte output windows,
+  `inflateInit2_` with header detection, `inflateReset`), collections inside
+  the allocator and a throwing allocator rethrown, under both collectors.
 
-**Parity** with the hand-written bindings (commoncrypto, zlib, darwin-os,
-linux-os, dl, libsystem, memory): the test compares every record layout,
-member, function signature (types, forms, errno, variadics, call class),
-constant, `Layout` constant and availability query for each target, and
-lists the differences with their explanation. Layouts and signatures agree
-everywhere; no hand-written binding was wrong. The remaining differences
-are the generator keeping nested records the hand-written files flattened
-to a member of equal size and offset (`struct in_addr`, `struct in6_addr`
-and glibc's `ifa_ifu` union) and Darwin's `sin_zero`, which the header
-declares `char[8]` (hand-written `u8`).
+**Replacing the hand-written bindings.** The generated modules replaced
+the hand-written commoncrypto, zlib, darwin-os, linux-os, dl, libsystem and
+memory bindings after a parity comparison (`tools/c-bindgen/parity.ts`) of
+every record layout, member, function signature (types, forms, errno,
+variadics, call class), constant, `Layout` constant and availability query
+on each target. Layouts and signatures agreed everywhere; no hand-written
+binding was wrong. The generated modules keep the headers' nested records
+the hand-written files had flattened to a member of equal size and offset
+(`struct in_addr`, `struct in6_addr` with its address union, glibc's
+`ifa_ifu` union), declare Darwin's `sin_zero` as the header's `char[8]`
+(glibc's is `unsigned char`), and give zlib's allocator hooks their callback
+types (`alloc_func`, `free_func`). No `node:os`, `node:zlib` or
+`node:crypto` code read the flattened members, so none changed. Every zlib
+function taking a `z_stream` became may-callback (below); `node:zlib`, which
+leaves the hooks null, measured no cost (best of three alternating runs at
+host load 16–29, µs per operation, may-callback vs leaf: deflate 1 KiB 8.56
+vs 8.92, inflate 1 KiB 3.99 vs 4.30, deflate 64 KiB 234 vs 274, inflate
+64 KiB 32.0 vs 38.2; the load let the clang `-O2` baseline itself vary 2×,
+so only the absence of a regression is resolved).
 
 ## Runtime descriptors (one layout engine, two consumers)
 
@@ -1490,12 +1527,12 @@ callbacks ([callbacks](#callbacks)).
 queued to the context, borrow tokens that block detach and resize; `Async<T>`
 declarations return promises.
 
-**Phase 6 — binding generator and Windows.** 6a (implemented):
+**Phase 6 — binding generator and Windows.** 6a and 6b (implemented):
 `tools/c-bindgen.ts` (clang AST and record layouts as a dev-time generator)
 emitting the declaration modules in this document's syntax, per target
-(`ByTarget` where they differ), checked in and re-verified by the layout and
-prototype oracle ([binding generator](#binding-generator)). Remaining:
-`Callback<…>` members and parameters once Phase 4 lands, replacing the
-hand-written bindings with the generated ones, and Windows. Linux aarch64 landed with
+(`ByTarget` where they differ), function pointers as `Callback<…>` types,
+checked in as the `tint:c` bindings themselves and re-verified by the layout
+and prototype oracle ([binding generator](#binding-generator)). Remaining:
+Windows. Linux aarch64 landed with
 Phase 2: ELF dynamic imports, the target facts verified by the oracle and
 per-target declarations.

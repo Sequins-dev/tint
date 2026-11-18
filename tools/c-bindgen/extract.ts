@@ -381,6 +381,8 @@ function extractIn(
     const marked = text.replace(anonymousMarker, " @anon ");
     if (marked.includes("__attribute__"))
       return unsupported(`attributed type ${text}`);
+    const open = marked.indexOf("(");
+    if (open >= 0) return declaratorType(marked, open, anonymous, text);
     const tokens =
       marked.match(/@anon|\.\.\.|[A-Za-z_]\w*|\d+|[*[\](),]/g) ?? [];
     let position = 0;
@@ -413,28 +415,6 @@ function extractIn(
       };
       levelConst.push(isConst);
     }
-    if (tokens[position] === "(") {
-      let stars = 0,
-        cursor = position + 1;
-      while (
-        tokens[cursor] === "*" ||
-        qualifierWords.has(tokens[cursor] ?? "")
-      ) {
-        if (tokens[cursor] === "*") stars++;
-        cursor++;
-      }
-      if (stars > 0 && tokens[cursor] === ")") {
-        const next = tokens[cursor + 1];
-        let pointee: TypeFact =
-          next === "("
-            ? { kind: "function" }
-            : unsupported(`pointer to array ${text}`);
-        for (let level = 0; level < stars; level++)
-          pointee = { kind: "pointer", pointee, constPointee: false };
-        return pointee;
-      }
-      return { kind: "function" };
-    }
     const lengths: number[] = [];
     while (tokens[position] === "[") {
       const length = tokens[position + 1];
@@ -455,6 +435,76 @@ function extractIn(
       base = { kind: "array", element: base, length };
     }
     return base;
+  }
+  /** A type spelled with parentheses: a function type `R (P, ...)`, or
+   * pointers to one `R (*)(P, ...)`; `open` is the first parenthesis. */
+  function declaratorType(
+    marked: string,
+    open: number,
+    anonymous: AstNode | undefined,
+    text: string,
+  ): TypeFact {
+    const prefix = marked.slice(0, open).trim();
+    const rest = marked.slice(open);
+    const pointers =
+      /^\(\s*((?:\*\s*(?:const|volatile|restrict|__restrict|_Nullable|_Nonnull|_Null_unspecified)?\s*)+)\)\s*(.*)$/s.exec(
+        rest,
+      );
+    if (pointers !== null) {
+      const stars = (pointers[1]!.match(/\*/g) ?? []).length;
+      const tail = pointers[2]!;
+      if (!tail.startsWith("(")) return unsupported(`pointer to array ${text}`);
+      let type = declaratorType(
+        prefix + " " + tail,
+        prefix.length + 1,
+        anonymous,
+        text,
+      );
+      for (let level = 0; level < stars; level++)
+        type = { kind: "pointer", pointee: type, constPointee: false };
+      return type;
+    }
+    // A function returning a function pointer: `R (*(P, ...))(Q, ...)`.
+    const returning = /^\(\s*\*\s*(\(.*\))\s*\)\s*(\(.*\))$/s.exec(rest);
+    if (returning !== null) {
+      const parameters = declaratorType(
+        `int ${returning[1]!}`,
+        4,
+        anonymous,
+        text,
+      );
+      if (parameters.kind !== "function") return parameters;
+      return {
+        ...parameters,
+        result: parseType(`${prefix} (*)${returning[2]!}`, anonymous),
+      };
+    }
+    // A function type: the parameter list closes the spelling.
+    let depth = 0,
+      close = -1;
+    for (let position = 0; position < rest.length; position++) {
+      if (rest[position] === "(") depth++;
+      else if (rest[position] === ")" && --depth === 0) {
+        close = position;
+        break;
+      }
+    }
+    if (close !== rest.length - 1 || prefix.includes("("))
+      return unsupported(`C type ${text}`);
+    const parameters: TypeFact[] = [];
+    let variadic = false;
+    const inner = rest.slice(1, close).trim();
+    if (inner !== "" && inner !== "void")
+      for (const item of splitParameters(inner)) {
+        if (item === "...") variadic = true;
+        else parameters.push(parseType(item, anonymous));
+      }
+    return {
+      kind: "function",
+      parameters,
+      result: parseType(prefix, anonymous),
+      variadic,
+    };
   }
   function baseType(
     words: readonly string[],
@@ -513,6 +563,14 @@ function extractIn(
     )
       return enumType(name, [name]);
     const resolved = parseType(target, undefined);
+    if (resolved.kind === "function" && resolved.name === undefined)
+      return { ...resolved, name };
+    if (
+      resolved.kind === "pointer" &&
+      resolved.pointee.kind === "function" &&
+      resolved.pointee.name === undefined
+    )
+      return { ...resolved, pointee: { ...resolved.pointee, name } };
     if (resolved.kind !== "scalar") return resolved;
     const sized = pointerSizedNames.get(name);
     return scalar(sized ?? resolved.scalar, [name, ...resolved.aliases]);
@@ -657,21 +715,8 @@ function extractIn(
     });
   }
   function resultType(text: string): TypeFact {
-    if (!text.endsWith(")")) return unsupported(`function type ${text}`);
-    let depth = 0;
-    for (let position = text.length - 1; position >= 0; position--) {
-      const character = text[position];
-      if (character === ")") depth++;
-      else if (character === "(" && --depth === 0) {
-        const prefix = text.slice(0, position).trim();
-        return prefix.includes("(")
-          ? unsupported(
-              "returns a function pointer (Callback<…> lands with Phase 4)",
-            )
-          : parseType(prefix, undefined);
-      }
-    }
-    return unsupported(`function type ${text}`);
+    const type = parseType(text, undefined);
+    return type.kind === "function" ? type.result : type;
   }
 
   const aliases: NamedTypeFact[] = [];
@@ -800,6 +845,23 @@ function extractIn(
   };
 }
 
+/** A parameter list's items, split at top-level commas. */
+function splitParameters(text: string): string[] {
+  const items: string[] = [];
+  let depth = 0,
+    start = 0;
+  for (let position = 0; position < text.length; position++) {
+    const character = text[position];
+    if (character === "(" || character === "[") depth++;
+    else if (character === ")" || character === "]") depth--;
+    else if (character === "," && depth === 0) {
+      items.push(text.slice(start, position).trim());
+      start = position + 1;
+    }
+  }
+  items.push(text.slice(start).trim());
+  return items;
+}
 /** Why a member type cannot be declared, if it cannot. */
 function memberProblem(type: TypeFact): string | undefined {
   switch (type.kind) {
@@ -864,6 +926,12 @@ function substituteEnums(
         kind: "array",
         element: substituteEnums(type.element, enums),
         length: type.length,
+      };
+    case "function":
+      return {
+        ...type,
+        parameters: type.parameters.map((item) => substituteEnums(item, enums)),
+        result: substituteEnums(type.result, enums),
       };
     default:
       return type;
