@@ -388,7 +388,18 @@ interfaces cross as views (2b): untyped code reads and writes a typed
 record's fields live, with identity, declared field types and `readonly`
 enforced, while the record's module stays typed. `x as T` from `unknown` is
 a checked downcast. On the frozen v5 workload the 2b toolchain produces a
-byte-identical image to 2a's (no type crosses there).
+byte-identical image to 2a's (no type crosses there). The
+[2b ledger](results/unified-pipeline-ledger-slice2b-v1.json) (58
+constructs) has 9 typed forms on the typed path; the six FFI phase 4 gap
+constructs pass natively in both forms on the general path. Its one
+difference from baseline v2, `typed-array-index` typed moving from pass to
+`missed-type-error`, is the construct's own change in slice 1 (the read is
+`number | undefined` under noUncheckedIndexedAccess, so it must be a
+compile-time error) and appears unchanged in the slice 1 and 2a ledgers. It
+exposes a real gap: hosted builds fall back to the general path on a
+genuine type error instead of failing the build; type errors and
+unsupported constructs need distinct outcomes (slice 3, where fallback
+becomes per construct). Later ledgers should compare against slice2b-v1.
 
 Slice 1: image sizes of hosted programs, measured before and after.
 Importing one function through the `js-runtime/objects` entrypoint from a
