@@ -93,6 +93,9 @@ export interface DumpMeta {
   /** The allocation reported at the sample hook, not yet initialized. */
   readonly pending?: { readonly address: number; readonly size: number } | null;
   readonly records: Readonly<Record<string, RecordInfo>>;
+  /** Bytes a core file did not hold (never-modified pages), dumped as
+   * zeros. */
+  readonly absentBytes?: number;
   readonly kindTypes: Readonly<Record<string, RecordInfo>>;
   readonly label?: string;
 }

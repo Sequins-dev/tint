@@ -170,6 +170,73 @@ bpftrace and perf attach uprobes and need `CONFIG_UPROBE_EVENTS` and tracefs.
 `node tools/verify-hosted-signposts.ts <dir>` on Linux checks the notes and
 the probe hits under GDB.
 
+#### Live tracing check
+
+`tools/linux/verify-usdt-live.ts` checks perf and bpftrace against GDB on
+the signpost fixture:
+
+```sh
+node tools/linux/verify-usdt-live.ts <new-output-directory> [--image <image>] [--static-only]
+```
+
+1. **Static** (no kernel support needed): it reads the image's
+   `.note.stapsdt` notes itself and checks provider `tint`, no semaphores,
+   the `.stapsdt.base` address, the argument specs above, one probe per
+   name and a `nop` at every site. It then checks that `readelf --notes`,
+   `perf list sdt` (through a build-id cache entry it removes again) and
+   `bpftrace -l 'usdt:<image>:*'` list the same probes.
+2. **GDB reference**: `tools/gdb/tint-probes.py` counts every probe and
+   records `gc__end`'s metrics; the fixture must exit 42.
+3. **perf**: `perf probe -x <image> -a %sdt_tint:<name>` for every probe,
+   `perf record -e 'sdt_tint:*'`, `perf script -F tid,event,trace`.
+4. **bpftrace**: one program counting `usdt:<image>:tint:*` by probe and
+   `gc_worker__begin` by thread, and printing `gc__end`'s arguments.
+
+Each tracer's count must equal GDB's for every probe, and the major,
+nursery, copied and old values of every `gc__end`, in order, must equal
+GDB's. Only `gc.worker` may differ, because a worker may join a pool phase
+or not; its edges must balance across more than one thread. On the
+development container the counts were identical in three GDB runs (91
+collections, 4 majors, 48 worker intervals on 6 threads).
+
+perf and bpftrace run through `sudo -n` unless the script runs as root. The
+image is copied to a local temporary directory first, because uprobes
+attach to an inode, and network or shared mounts may not support them. The
+output directory receives `summary.json`, the listings, `gdb.txt`,
+`perf-record.txt`, `perf-script.txt`, `perf.data` (root-owned when sudo
+was used), `probes.bt` and `bpftrace.jsonl`. Exit status: 0 when every
+check passed, 77 when the static checks passed but the kernel cannot attach
+uprobes (the reason is printed and recorded), 1 on a failed check.
+`tools/usdt-live.test.ts` tests the note reader, the output parsers and the
+comparison without a kernel.
+
+The development container (Debian 12, kernel 6.1 without uprobes or
+tracefs, GDB 13.1, perf 6.1, bpftrace 0.17) passes the static checks (21
+probes) and exits 77. To run it live on an aarch64 VM, such as Fedora in
+UTM:
+
+1. Use a kernel with `CONFIG_UPROBE_EVENTS=y`
+   (`grep UPROBE_EVENTS /boot/config-$(uname -r)`) and 4 KiB or 16 KiB
+   pages (`getconf PAGESIZE`; Tint images reject 64 KiB pages). Stock
+   Fedora and Debian arm64 kernels are built this way.
+2. Mount tracefs if it is not mounted:
+   `sudo mount -t tracefs nodev /sys/kernel/tracing`.
+3. Install the tools. On Fedora:
+   `sudo dnf install -y git gdb perf bpftrace binutils`. On Debian:
+   `sudo apt install git gdb linux-perf bpftrace binutils`.
+4. Install Node 24.12 (for example from nodejs.org's
+   `node-v24.12.0-linux-arm64.tar.xz`), then
+   `corepack enable && corepack prepare pnpm@10.34.8 --activate`.
+5. In a checkout: `pnpm install --frozen-lockfile && pnpm build`.
+6. As a user with passwordless sudo, or as root:
+   `node tools/linux/verify-usdt-live.ts /tmp/usdt-live-1`.
+   It prints one line per stage, ending with
+   `Verified live USDT tracing with perf and bpftrace.`
+
+`--image <image>` checks an image built elsewhere (for `linux-aarch64`,
+with signposts) instead of building the fixture; it must run the signpost
+fixture's program for the GDB checks to hold.
+
 ## JIT code visibility
 
 With `jitDebugInterface`, the image exports `__jit_debug_register_code` (a

@@ -157,8 +157,9 @@ may have invalidated. Concretely:
 - Captured variables (closure cells), scalar-replaced records and 16-byte
   values held only as SSA values are not described.
 - Nested object fields point to opaque `object` structures: field record types
-  are not propagated. The LLDB formatters in `tools/lldb/tint.py` retype them
-  from the object header at display time (see
+  are not propagated. The LLDB formatters in `tools/lldb/tint.py` and the
+  GDB pretty-printers in `tools/gdb/tint.py` retype them from the object
+  header at display time (see
   [native heap profiling](native-heap-profiling.md)).
 - There are no lexical blocks: shadowed names appear once per declaration,
   and only the live one has a location.
