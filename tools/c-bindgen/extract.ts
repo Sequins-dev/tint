@@ -6,7 +6,7 @@
 // exactly. Clang is a dev-time generator and test oracle here, never part
 // of a Tint build.
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CScalar } from "@tint/abi/c";
@@ -58,8 +58,17 @@ export function hostTarget(): TargetName | undefined {
       ? "linux-arm64"
       : undefined;
 }
+/** The compiler extraction uses: `CLANG` when set, else on Darwin Apple's
+ * `/usr/bin/clang` (the xcrun shim, which selects the active SDK: the
+ * headers the checked-in facts describe; a Homebrew or other clang first on
+ * PATH reads different SDK headers, e.g. named `dlopen` parameters), else
+ * `clang`. */
 export function clangCommand(): string {
-  return process.env.CLANG ?? "clang";
+  const chosen = process.env.CLANG;
+  if (chosen !== undefined) return chosen;
+  if (process.platform === "darwin" && existsSync("/usr/bin/clang"))
+    return "/usr/bin/clang";
+  return "clang";
 }
 /** `clang --version`'s first line without its parenthesized build
  * details: "Apple clang version 17.0.0", "Debian clang version 19.1.7". */
