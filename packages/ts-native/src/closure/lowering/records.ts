@@ -390,6 +390,16 @@ export function setElement(
 /** Whether the program operates on BigInts: every BigInt value reaches an
  * operation through an expression, and parameters bind them. (`bigint` is a
  * primitive in every checked type table, so the table itself says nothing.) */
+/** Whether undefined is a value of the type (hole reads need no check). */
+export function admitsUndefined(checked: CheckedClosures, id: number): boolean {
+  const t = checked.types[id];
+  if (t === undefined) return true;
+  if (t.kind === "undefined" || t.kind === "void" || t.kind === "unknown")
+    return true;
+  return (
+    t.kind === "union" && t.members.some((m) => admitsUndefined(checked, m))
+  );
+}
 export function usesBigInt(checked: CheckedClosures): boolean {
   let found = false;
   checked.expressions.forEach((type, _expression) => {

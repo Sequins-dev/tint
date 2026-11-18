@@ -39,6 +39,7 @@ import {
   stringType,
   bigIntType,
   usesBigInt,
+  admitsUndefined,
   type RecordContracts,
   type RecordIdentityResolver,
 } from "./records.ts";
@@ -2931,6 +2932,22 @@ function lowerEntries(
                 ...metadata,
                 setElement: element,
               });
+            }
+            const iteratedList =
+              iterableType === undefined
+                ? undefined
+                : checked.types[iterableType];
+            const elementType =
+              checked.bindingTypes[bindingId(iterationBinding)];
+            if (
+              iteratedList?.kind === "array" &&
+              elementType !== undefined &&
+              !admitsUndefined(checked, elementType)
+            ) {
+              const metadata = expressions.get(node.iterable);
+              if (metadata === undefined)
+                fail("list iterable expression invariant");
+              expressions.set(node.iterable, { ...metadata, holeCheck: true });
             }
             stmt(node.body);
             break;

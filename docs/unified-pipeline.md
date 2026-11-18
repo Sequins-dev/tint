@@ -460,15 +460,28 @@ genuine type error instead of failing the build; type errors and
 unsupported constructs need distinct outcomes (slice 3, where fallback
 becomes per construct). Later ledgers should compare against slice2b-v1.
 
-Slice 4a (in progress) includes typed BigInt and mixed callable
-classification. The [BigInt ledger](results/unified-pipeline-ledger-slice4a-bigint-v1.json)
-records the typed BigInt transition. The
+Slice 4a (in progress): typed BigInt. The
+[4a BigInt ledger](results/unified-pipeline-ledger-slice4a-bigint-v1.json)
+(58 constructs) moves `bigint` typed from the general path to the typed path
+(10 typed forms on the typed path); every other form matches slice2b-v1. Its
+four run failures (`reassignment-narrowing`, `module-initializers`, both
+forms) are LLDB admission attach failures before execution, kept as
+observed; the [recheck](results/unified-pipeline-ledger-slice4a-bigint-v1-recheck.json)
+passes all four. The
+[4a for-of ledger](results/unified-pipeline-ledger-slice4a-forof-v1.json)
+adds `for…of` element typing (elements are `T`; a hole read as a `T`
+excluding undefined throws a TypeError) and assignment narrowing with `??=`
+on optional records: 14 typed forms stay typed (the three `for-of-*` gap
+constructs and `reassignment-narrowing` moved), no regressions against the
+BigInt ledger. A `() => number` function is not yet accepted where
+`() => void` is expected (TypeScript accepts it). The
 [classifier ledger](results/unified-pipeline-ledger-slice4a-callable-classifier-v1.json)
-covers 59 constructs. Both new `unknown-typeof-callable` forms pass, with
-the typed form staying typed. The full run preserves 18 first-launch LLDB
-failures. The [serial recheck](results/unified-pipeline-ledger-slice4a-callable-classifier-v1-recheck.json)
-has zero regressions against the BigInt baseline, with both
-`weak-collections` forms still failing at execution as before.
+(59 constructs) adds mixed callable classification: both new
+`unknown-typeof-callable` forms pass, with the typed form staying typed. The
+full run kept 18 first-launch LLDB attach failures as observed; the
+[serial recheck](results/unified-pipeline-ledger-slice4a-callable-classifier-v1-recheck.json)
+has zero regressions against the BigInt baseline (both `weak-collections`
+forms still fail at execution, as before).
 
 Slice 1: image sizes of hosted programs, measured before and after.
 Importing one function through the `js-runtime/objects` entrypoint from a
