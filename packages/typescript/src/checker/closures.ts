@@ -4,6 +4,7 @@ import {
   syntaxHash,
   literalPropertyName,
   isOptionalChain,
+  rewriteModule,
 } from "../syntax/index.ts";
 import { createUnionIndex } from "./union-index.ts";
 import {
@@ -2071,6 +2072,46 @@ export function checkClosureModule(
     result.add(narrowToken(binding.id, selectedType, target.property));
     return result;
   }
+  /** Bindings an expression assigns directly (not inside nested
+   * functions, whose bindings are captured and so never retain facts across
+   * effects), or undefined when a destructuring target hides them. */
+  function assignedWithin(node: Expression): Set<number> | undefined {
+    const written = new Set<number>();
+    let complete = true;
+    rewriteModule(
+      {
+        start: node.start,
+        end: node.end,
+        imports: [],
+        statements: [
+          {
+            start: node.start,
+            end: node.end,
+            kind: "expression",
+            expression: node,
+          },
+        ],
+      },
+      {
+        expression: (mapped: Expression, original: Expression): Expression => {
+          if (
+            original.kind === "assignment" ||
+            original.kind === "compound" ||
+            original.kind === "update"
+          ) {
+            const target = ungroup(original.target);
+            const binding =
+              target.kind === "identifier" ? references.get(target) : undefined;
+            if (binding !== undefined) written.add(binding.id);
+            else if (target.kind !== "member" && target.kind !== "index")
+              complete = false;
+          }
+          return mapped;
+        },
+      },
+    );
+    return complete ? written : undefined;
+  }
   function refine(
     node: Expression,
     truth: boolean,
@@ -2120,8 +2161,40 @@ export function checkClosureModule(
     }
     if (!pure(node)) {
       // Evaluation already invalidated unsafe preexisting facts. Only newly
-      // reconstructed short-circuit facts need to survive another effect.
+      // reconstructed short-circuit facts need to survive another effect:
+      // facts of bindings no closure captures survive calls, except for
+      // bindings the operand itself assigns.
+      const written = assignedWithin(node);
       const retained = stableFacts(base);
+      // stableFacts keeps facts of immutable bindings and narrowed facts of
+      // uncaptured bindings; binding facts of uncaptured mutable bindings
+      // survive too unless the operand assigns them.
+      for (const token of base)
+        if (
+          token >= 0 &&
+          token < graph.bindings.length &&
+          graph.bindings[token]?.captured === false &&
+          written !== undefined &&
+          !written.has(token)
+        )
+          retained.add(token);
+      if (written === undefined || written.size !== 0) {
+        const tokens: number[] = [];
+        for (const token of retained) tokens.push(token);
+        for (const token of tokens) {
+          if (token === undefined) throw "refined token invariant";
+          let binding: number | undefined = undefined;
+          if (token >= 0 && token < graph.bindings.length) binding = token;
+          else if (token >= graph.bindings.length)
+            binding = narrowed[token - graph.bindings.length]?.binding;
+          if (
+            binding !== undefined &&
+            graph.bindings[binding]?.mutable !== false &&
+            (written === undefined || written.has(binding))
+          )
+            retained.delete(token);
+        }
+      }
       for (const token of base) if (evaluated.has(token)) retained.add(token);
       return retained;
     }

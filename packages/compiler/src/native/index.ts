@@ -55,6 +55,7 @@ export {
   type BoundaryExport,
   type TypedBoundaryModule,
 } from "./general-partition.ts";
+import { pruneUnusedModules } from "./module-pruning.ts";
 import type { PosixHostABI } from "@tint/abi/host";
 import { darwinAArch64Target } from "@tint/platform/target";
 import { bindingIdentifiers, rewriteModule } from "@tint/typescript/syntax";
@@ -805,9 +806,64 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
     module: { statements, imports, start: 0, end: 0 },
     dependencies,
   });
-  const linked = linkModules(modules, entry, globals, {
-    evaluation: "instance",
-  });
+  // Runtimes with retained exports are used only through those exports and
+  // the request's bindings to them; unused modules they re-export are not
+  // instantiated.
+  const rootExports = new Map<string, string[]>();
+  for (const runtime of request.runtimes) {
+    if (runtime === undefined) throw "runtime source invariant";
+    if (runtime.retainedExports !== undefined)
+      rootExports.set(runtime.module, runtime.retainedExports.slice());
+  }
+  // Managed surfaces select exports of their modules by name and publish
+  // them; those modules stay entirely used.
+  for (const surface of request.managedSurfaces ?? []) {
+    if (surface === undefined) throw "surface request invariant";
+    rootExports.delete(surface.bind.module);
+    for (const selection of surface.values) {
+      if (selection === undefined) throw "surface selection invariant";
+      rootExports.delete(selection.module);
+    }
+    for (const selection of surface.types) {
+      if (selection === undefined) throw "surface type selection invariant";
+      rootExports.delete(selection.module);
+    }
+  }
+  function retainBinding(module: string, name: string): void {
+    rootExports.get(module)?.push(name);
+  }
+  for (const binding of request.hostBindings ?? []) {
+    if (binding === undefined) throw "host binding invariant";
+    retainBinding(binding.module, binding.name);
+  }
+  for (const binding of request.recordBindings ?? []) {
+    if (binding === undefined) throw "record binding invariant";
+    retainBinding(binding.module, binding.name);
+  }
+  for (const binding of request.weakBindings ?? []) {
+    if (binding === undefined) throw "weak binding invariant";
+    retainBinding(binding.module, binding.name);
+  }
+  for (const binding of request.serviceImports ?? []) {
+    if (binding === undefined) throw "service import invariant";
+    retainBinding(binding.module, binding.name);
+  }
+  for (const binding of request.foreignBindings ?? []) {
+    if (binding === undefined) throw "foreign binding invariant";
+    retainBinding(binding.module, binding.name);
+  }
+  for (const binding of request.foreignMemoryBindings ?? []) {
+    if (binding === undefined) throw "foreign memory binding invariant";
+    retainBinding(binding.module, binding.name);
+  }
+  const linked = linkModules(
+    pruneUnusedModules(modules, entry, rootExports),
+    entry,
+    globals,
+    {
+      evaluation: "instance",
+    },
+  );
   if (!linked.ok)
     return stageFailure("link", linked.error.message, linked.error.module);
   const retainedRuntimeExports: string[] = [];
