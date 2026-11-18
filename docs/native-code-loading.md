@@ -179,13 +179,13 @@ below. It is still W^X, at a cost:
   memory files.
 
 `tools/linux/refuse-executable-memfd.py <command>` runs a command under a
-seccomp filter that fails `memfd_create` with `EACCES` exactly as
-`vm.memfd_noexec=2` does, so older kernels exercise the single mapping. To
-check a real 6.3+ kernel (e.g. a Fedora VM): run the live-code fixtures with
-`vm.memfd_noexec` at 0 and 1 (dual mapping, `MFD_EXEC` accepted; dmesg shows no
-"memfd_create() called without MFD_EXEC" warning) and at 2
-(`TINT_EXPECT_JIT_MAPPING=single` for `verify-native-code`, which checks
-`/proc/self/maps` for one anonymous read/execute view per arena).
+seccomp filter that fails `memfd_create` with `EACCES` as
+`vm.memfd_noexec=2` does, so older kernels exercise the single mapping. On
+Debian 13 arm64 (Linux 6.12), strace confirmed that the kernel accepts
+`MFD_EXEC` and Tint creates dual mappings at policies 0 and 1. At policy
+2 the kernel returns `EACCES` and Tint publishes into one anonymous
+view per arena by flipping it from RX to RW and back to RX.
+[Kernel verification](results/linux-real-kernel-v1.md)
 
 The writable view is a shared mapping; the executable view is private. Until a
 page is copied on write a private file mapping shows the file's page, so writes

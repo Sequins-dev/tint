@@ -1,11 +1,11 @@
-import type { PosixHostABI } from "@tint/abi/host";
+import type { PosixHostABI, PosixHostFacts } from "@tint/abi/host";
 import {
   darwinArm64CTarget,
   linuxArm64CTarget,
   type CTarget,
 } from "@tint/abi/c";
 import { darwinHostABI } from "./darwin/host-abi.ts";
-import { linuxHostABI } from "./linux/host-abi.ts";
+import { linuxHostABI, linuxX86_64HostFacts } from "./linux/host-abi.ts";
 
 /** A `major.minor.patch` platform version (Mach-O deployment target / SDK). */
 export interface PlatformVersion {
@@ -18,17 +18,19 @@ export interface PlatformVersion {
  * "Separate the dimensions"). The compiler's execution host is a separate
  * input: a build may target an OS other than the one it runs on. */
 interface NativeTargetFacts {
-  readonly arch: "aarch64";
   /** Alignment of executable image segments in the file and in memory. */
   readonly segmentAlignment: number;
   /** Granularity of the hosted startup's mappings and guard pages: a
    * multiple of every page size the target's kernels may use. */
   readonly memoryPageBytes: number;
-  /** The C calling convention of foreign (c-call) bindings. */
+}
+
+interface AArch64TargetFacts extends NativeTargetFacts {
+  readonly arch: "aarch64";
   readonly c: CTarget;
 }
 
-export interface DarwinAArch64Target extends NativeTargetFacts {
+export interface DarwinAArch64Target extends AArch64TargetFacts {
   readonly name: "darwin-aarch64";
   readonly os: "darwin";
   readonly objectFormat: "macho";
@@ -39,7 +41,7 @@ export interface DarwinAArch64Target extends NativeTargetFacts {
 }
 
 /** Linux arm64 with glibc (docs/linux-aarch64-target.md). */
-export interface LinuxAArch64Target extends NativeTargetFacts {
+export interface LinuxAArch64Target extends AArch64TargetFacts {
   readonly name: "linux-aarch64";
   readonly os: "linux";
   readonly objectFormat: "elf";
@@ -48,7 +50,19 @@ export interface LinuxAArch64Target extends NativeTargetFacts {
   readonly interpreter: string;
 }
 
-export type NativeTarget = DarwinAArch64Target | LinuxAArch64Target;
+/** Experimental Linux x86-64 output. Backend-specific C and CPU feature
+ * policies will be supplied with code generation. */
+export interface LinuxX86_64Target extends NativeTargetFacts {
+  readonly name: "linux-x86_64";
+  readonly os: "linux";
+  readonly arch: "x86_64";
+  readonly objectFormat: "elf";
+  readonly hostABI: PosixHostFacts;
+  readonly interpreter: string;
+}
+
+export type AArch64Target = DarwinAArch64Target | LinuxAArch64Target;
+export type NativeTarget = AArch64Target | LinuxX86_64Target;
 
 export const darwinAArch64Target: DarwinAArch64Target = {
   name: "darwin-aarch64",
@@ -77,9 +91,21 @@ export const linuxAArch64Target: LinuxAArch64Target = {
   interpreter: "/lib/ld-linux-aarch64.so.1",
 };
 
+export const linuxX86_64Target: LinuxX86_64Target = {
+  name: "linux-x86_64",
+  os: "linux",
+  arch: "x86_64",
+  objectFormat: "elf",
+  segmentAlignment: 4096,
+  memoryPageBytes: 4096,
+  hostABI: linuxX86_64HostFacts(),
+  interpreter: "/lib64/ld-linux-x86-64.so.2",
+};
+
 /** The target a `--target` argument names, if any. */
 export function nativeTargetNamed(name: string): NativeTarget | undefined {
   if (name === darwinAArch64Target.name) return darwinAArch64Target;
   if (name === linuxAArch64Target.name) return linuxAArch64Target;
+  if (name === linuxX86_64Target.name) return linuxX86_64Target;
   return undefined;
 }

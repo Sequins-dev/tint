@@ -445,7 +445,14 @@ Slice 4a (in progress): typed BigInt. The
 four run failures (`reassignment-narrowing`, `module-initializers`, both
 forms) are LLDB admission attach failures before execution, kept as
 observed; the [recheck](results/unified-pipeline-ledger-slice4a-bigint-v1-recheck.json)
-passes all four.
+passes all four. The
+[4a for-of ledger](results/unified-pipeline-ledger-slice4a-forof-v1.json)
+adds `for…of` element typing (elements are `T`; a hole read as a `T`
+excluding undefined throws a TypeError) and assignment narrowing with `??=`
+on optional records: 14 typed forms stay typed (the three `for-of-*` gap
+constructs and `reassignment-narrowing` moved), no regressions against the
+BigInt ledger. A `() => number` function is not yet accepted where
+`() => void` is expected (TypeScript accepts it).
 
 Slice 1: image sizes of hosted programs, measured before and after.
 Importing one function through the `js-runtime/objects` entrypoint from a

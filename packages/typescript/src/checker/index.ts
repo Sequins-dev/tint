@@ -71,6 +71,9 @@ export interface ExpressionInfo {
   /** `typeof` of a general value: the BigIntValue record layout, whose
    * descriptor marks a BigInt (general values carry BigInts as objects). */
   readonly bigIntRecord?: number | undefined;
+  /** A list iterated by for-of whose element type excludes undefined: a
+   * hole throws a TypeError instead of binding undefined. */
+  readonly holeCheck?: boolean | undefined;
   readonly listElement?: "number" | "string" | number | undefined;
   readonly mapKey?: "number" | "string" | number | undefined;
   readonly mapValue?: "number" | "string" | number | undefined;

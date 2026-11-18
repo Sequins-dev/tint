@@ -13,7 +13,11 @@ import { linuxHostABI } from "@tint/platform/linux/host-abi";
 import type { PosixHostABI } from "@tint/abi/host";
 import { buildMacOSProgram, type BuildRequest } from "../src/build.ts";
 import { writeExecutableImage } from "../src/image-writer.ts";
-import type { ForeignLibrary } from "../src/native/index.ts";
+import {
+  compileNativeProgram,
+  type ForeignLibrary,
+} from "../src/native/index.ts";
+import { parseCompilerArguments } from "../src/cli-arguments.ts";
 
 // mov w0, #42; ret
 const code = new Uint8Array([0x40, 5, 0x80, 0x52, 0xc0, 3, 0x5f, 0xd6]);
@@ -233,4 +237,38 @@ test("image writers place deferred code and patches at final offsets", () => {
     assert.deepEqual(actual, expected);
     assert.equal(payload[0x10001], 6);
   }
+});
+
+test("an explicit x86-64 target reaches the native backend dispatch", () => {
+  const parsed = parseCompilerArguments(
+    ["src", "out", "--target", "linux-x86_64"],
+    darwinAArch64Target,
+  );
+  assert.ok(parsed);
+  const target = parsed.target;
+  assert.equal(target.name, "linux-x86_64");
+  assert.equal(target.arch, "x86_64");
+  assert.equal(target.objectFormat, "elf");
+  assert.equal(target.segmentAlignment, 4096);
+  assert.equal(target.memoryPageBytes, 4096);
+  assert.equal(target.hostABI.parking?.kind, "linux-futex");
+  if (target.hostABI.parking?.kind === "linux-futex")
+    assert.equal(target.hostABI.parking.futexSyscall, 202);
+  assert.equal(target.interpreter, "/lib64/ld-linux-x86-64.so.2");
+
+  const expected = {
+    ok: false,
+    error: {
+      stage: "emit",
+      message: "linux-x86_64: x86_64 code generation is not implemented yet",
+    },
+  };
+  assert.deepEqual(buildMacOSProgram({ ...request(), target }), expected);
+  assert.deepEqual(
+    compileNativeProgram(
+      { modules: [], entry: "main", exports: [], runtimes: [] },
+      target,
+    ),
+    expected,
+  );
 });

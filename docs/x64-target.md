@@ -1,0 +1,263 @@
+# Linux x86-64 target design
+
+The first x86-64 target is `linux-x86_64`, a proposed name for the 64-bit
+System V ABI, ELF PIE and glibc combination. Tint emits and links the native
+image directly. The same scalar IR, runtime contracts and x86-64 backend serve
+strict and live code, including runtime compilation. Build host, output target
+and execution runner are independent. This plan follows the
+[Linux arm64 port](linux-aarch64-target.md) and the
+[platform roadmap](platform-roadmap.md).
+
+| Order | Target         | Scope                                                                                                                                                                                                                                                                                                                    |
+| ----- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1     | Linux x86-64   | Baseline glibc 2.34 and 4 KiB base pages. Reuse Linux libc service policy, ELF64 layout, loader binding, W^X, POSIX threading and USDT. Validate first on Debian 13, then on the declared glibc floor.                                                                                                                   |
+| 2     | macOS x86-64   | Mach-O CPU subtype, load commands, fixups, deployment policy, signing, dyld entry and import stubs, Darwin x86-64 C ABI and system constants, VM and JIT policy, compact unwind or DWARF fallback, and debugger behavior. Rosetta provides translated testing and Intel hardware is needed to establish native behavior. |
+| 3     | Windows x86-64 | PE32+ image layout, sections, imports and base relocations, Win64 C ABI with four register positions and 32-byte shadow space, SEH unwind metadata, process/CRT entry, Windows file, clock, memory and thread APIs, and publication including `FlushInstructionCache`.                                                   |
+
+## Backend boundary and inventory
+
+At `53963a945`, [the arm64 backend](../packages/codegen/src/aarch64/) has
+32 TypeScript files and 29,306 physical lines. The scalar entry is 17,120 lines
+with 149 named function declarations at module, emitter and per-function scope
+by a line-prefix count. The ISA is 1,413 lines, startup 1,663, diagnostics
+1,871 and the stack-map module 794. The three slot, temporary and leaf register
+allocation files total 1,186 lines. These are inventory counts. Slice estimates
+below measure expected new and edited lines.
+
+Build a second emitter for the existing scalar IR. IR cases in
+[`scalar/index.ts`](../packages/codegen/src/aarch64/scalar/index.ts) combine
+instruction selection with physical register lifetimes, scaled immediates,
+flag dependencies, spill placement, leaf helper conventions and instruction
+sizing. A mechanical translation would inherit those assumptions, and
+extracting a general machine selection layer now would couple the first x86
+execution to a rewrite of the arm64 emitter. Share IR verification and storage,
+CFG and liveness analysis, logical layouts, descriptor semantics and
+format-neutral module/link contracts. Extract a narrow shared calculation when
+both emitters can use it and the existing arm64 fixtures retain their bytes.
+Keep machine IR as a later investment based on the two backends.
+
+| Surface                               | Existing owners                                                                                                                                                                                                                                                                                                           | Shared contract and x86-64 work                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Target selection and host fingerprint | [target.ts](../packages/platform/src/target.ts), [host.ts](../packages/platform/src/host.ts), [host ABI](../packages/abi/src/host.ts), [process intrinsics](../packages/native-runtime/src/intrinsics/process.ts), [CLI](../packages/compiler/src/cli-arguments.ts), [Node target helper](../tools/native-host-target.ts) | Discriminated target descriptor with OS, arch, format, C target and page policy. Native compiler derives its own target from compile-time OS plus arch identity. Node maps the actual OS/arch pair. Freeze the output target separately.                                                                                                                                                                                                                                                                                                                    |
+| Frontend, AOT, emission planning      | [build.ts](../packages/compiler/src/build.ts), [native/index.ts](../packages/compiler/src/native/index.ts), [scalar IR](../packages/ir/src/scalar/), [catalog](../packages/compiler/src/catalog.ts)                                                                                                                       | Keep checker, strict/live semantics, target layouts, optimizer, body store, spilling, streaming and emission sizing. Select backend through the native compiler's public entry. Move neutral module metadata and plan types out of arm64 imports, including closed-function, managed-contract and debug consumers. Preserve catalog order and regenerate the catalog and export boundaries for new modules. See [compiler memory](compiler-memory.md#streaming-emission-codegen) and [framework ownership](framework-consolidation.md#framework-ownership). |
+| Machine emission                      | [ISA](../packages/codegen/src/aarch64/isa.ts), [scalar emitter and helpers](../packages/codegen/src/aarch64/scalar/), [cell leaves](../packages/codegen/src/aarch64/cell.ts)                                                                                                                                              | Shared scalar operations, proven bounds, stack-slot sharing, safepoint liveness and signature semantics. Per-arch selection, clobbers, argument moves, register homes, prologues and fixups. Port allocation, memory, numeric/string/array, cell, indirect-call, barrier and external-memory leaves as emitted paths require them.                                                                                                                                                                                                                          |
+| Hosted entry and OS services          | [startup](../packages/codegen/src/aarch64/startup.ts), [Linux host policy](../packages/platform/src/linux/host-abi.ts), [runtime intrinsics](../packages/native-runtime/src/intrinsics/)                                                                                                                                  | Share context layout, stack limits, heap/control regions, registry setup, mapping policy and OS service names. Split out process and pthread entry sequences, calling convention, syscall facts and CPU features. Keep raw libc imports for the hosted manifest separate from public FFI.                                                                                                                                                                                                                                                                   |
+| Link and relocations                  | [arm64 relocations](../packages/codegen/src/aarch64/image-relocations.ts), [executable contract](../packages/image/src/executable.ts), [service-unit linker](../packages/compiler/src/native/service-unit-link.ts), [managed surface reader](../packages/compiler/src/native/managed-directory-reader.ts)                 | Keep symbol identities, code/data placement and streaming plans. Use architecture-tagged fixups with byte offsets, width, addend and validated PC base. Apply through the selected backend to local, import, managed service, signature, descriptor and data sites. Audit every fixed instruction width and ADRP page-alignment assumption.                                                                                                                                                                                                                 |
+| Executable and debugger image         | [ELF](../packages/image/src/linux/elf/), [Mach-O](../packages/image/src/darwin/macho/), [image dispatch](../packages/compiler/src/image-writer.ts)                                                                                                                                                                        | Reuse ELF64 little-endian sections, segments, dynamic strings and symbols, GOT, RELA, SysV hash and note layout. Supply machine ID, relocations, segment alignments, interpreter and CFI target. Keep Mach-O stubs, signing, dyld fixups and compact unwind in Darwin. Use `EM_X86_64` in executable and in-memory ELF objects.                                                                                                                                                                                                                             |
+| Stack maps and GC                     | [encoder](../packages/codegen/src/aarch64/scalar/stack-maps.ts), [ABI constants](../packages/abi/src/host.ts), [scanner](../packages/native-runtime/src/tracing/scan.ts), [transitions](../packages/native-runtime/src/tracing/transitions.ts)                                                                            | Share liveness, table registry, word tracing and moving collector. Supply physical frame/save rules and byte-PC tables, including the initially stack-only roots. Preserve arm64 v2–v4 readers. Track transition offsets and saved-register order with FFI.                                                                                                                                                                                                                                                                                                 |
+| Unwind and debug                      | [unwind contract](../packages/abi/src/unwind.ts), [arm64 unwind](../packages/codegen/src/aarch64/unwind.ts), [EH frame](../packages/image/src/eh-frame.ts), [DWARF](../packages/image/src/dwarf.ts), [debug functions](../packages/compiler/src/native/debug-functions.ts)                                                | Reuse byte ranges, type/line tables, call-frame writer and large PC extents. x86-64 DWARF RBP=6, RSP=7, RIP=16, XMM0–15=17–32. Use byte CFI advances and describe entry, frame build, epilogue and outermost state. Drop the return-address-register assumption. Route debug variable register locations through target maps.                                                                                                                                                                                                                               |
+| Live linking and executable memory    | [managed JIT entry](../packages/compiler/src/native/managed-jit-entry.ts), [engine](../packages/js-engine/src/native/), [Linux mapping leaves](../packages/codegen/src/aarch64/scalar/executable-memory.ts), [JIT ELF](../packages/image/src/linux/elf/jit-object.ts)                                                     | Share binding/domain checks, code arena ownership, permissions, registration and debugger lifetimes. Select the backend for general and managed entry emission, apply fixups at the RX address and publish target-compatible code. Audit JIT object symbols, disassembly and breakpoint copying.                                                                                                                                                                                                                                                            |
+| Fast paths and shared memory          | [shared-memory leaves](../packages/codegen/src/aarch64/scalar/shared-memory.ts), [remembered barrier](../packages/codegen/src/aarch64/scalar/barrier.ts), [atomic intrinsics](../packages/native-runtime/src/intrinsics/shared-atomics.ts), [SHA-256](../packages/foundation/src/binary/sha256-compression.ts)            | Keep GC and atomic contracts, alignment, word widths and waiter authority. Emit x86 lock/fence/pause and SIMD forms where required. Keep portable SHA-256 initially and provide a valid lowering for any retained optional intrinsic in the frozen compiler.                                                                                                                                                                                                                                                                                                |
+| Diagnostics and USDT                  | [diagnostics](../packages/codegen/src/aarch64/diagnostics.ts), [ELF notes](../packages/image/src/linux/elf/index.ts), [profiler tooling](../tools/profiling/perf-script.ts)                                                                                                                                               | Share trace schema and note base/semaphore semantics. Emit x86 NOP probe sites and SysV register capture thunks, x86 operand strings such as `8@%rdi`, and byte-relative site offsets. Preserve flags and live state across transparent probes. Validate attach against a running process.                                                                                                                                                                                                                                                                  |
+| C, callbacks and FFI                  | [C ABI](../packages/abi/src/c/), [foreign declarations](../packages/compiler/src/native/foreign/), [C facade](../packages/native-runtime/src/c/), [FFI](../packages/native-runtime/src/ffi/), [Node adapters](../packages/native-runtime/src/node/), [fixtures](../tools/native-ffi-fixtures.ts)                          | FFI/convergence owns the SysV classifier, type/struct layout, c-call lowering, dynamic and static symbol bindings, callbacks/thunks and foreign fixtures. The target team supplies the descriptor hook, encoder, import/fixup interface, managed frames and transition hooks. Coordinate `scalar/foreign-calls.ts` and equivalent x86 files through that owner.                                                                                                                                                                                             |
+| Tools, tests and documentation        | [bootstrap](../tools/bootstrap-compiler.ts), [Test262](../tools/test262-native-run.ts), [trap handling](../tools/native-test-traps.ts), [arm64 verifier](../tools/verify-aarch64.ts), [large images](large-images.md#verification)                                                                                        | Audit hardcoded target names, `process.arch` guards, hosted fixture paths and manifests, ARM-only assembler/opcode and trap assertions, disassemblers, profiling registers, seccomp audit arch/syscall numbers, C bindgen, and Linux container rules. Keep arm64-specific verifiers and add x86 equivalents. Bind runner selection to the artifact's target.                                                                                                                                                                                                |
+
+## Physical ABI and runtime
+
+| Item                      | Initial x86-64 contract                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Managed calls             | `rdi` context, `rsi` environment, `rdx` receiver slot, `rcx` result area. Typed arguments use `r8,r9` for integer/reference/indirect and `xmm0–7` for Number. Overflow slots are 8 bytes in source order, with the outgoing area rounded to 16. General entry uses `r8` argc and `r9` argv. `eax` mirrors Normal/Throw. Preserve the caller-owned result, receiver and argv protocols from the [managed contract](macos-arm64-target.md#tint-physical-call-abi-version-0).                                                                                                                                                              |
+| Registers and frames      | 16 GPRs and 16 XMM registers. Reserve `rsp,rbp` for the stack and chain, `r11` as call/address scratch, and keep `rbx,r12–15` preserved. Allocate `rax,rdx,rcx` with explicit fixed uses for division, CAS, variable shifts and calls. XMM registers are volatile across both managed and SysV calls initially. Align `rsp` to 16 before calls, giving `rsp % 16 = 8` on entry. `push rbp; mov rbp,rsp` places the chain at `[rbp]`, return PC at `[rbp+8]`, first overflow slot at `[rbp+16]`. Use fixed aligned frames and omit use of the 128-byte red zone.                                                                         |
+| Host and FFI              | SysV integer/pointer args use `rdi,rsi,rdx,rcx,r8,r9`, scalar FP `xmm0–7`, results `rax` or `xmm0`. Variadic call sites set `al` to the vector-register count or a valid upper bound, including zero for `open` and `syscall`. Stage stack args before call and preserve live managed state. Leave aggregate classes, hidden sret, larger stack alignment, foreign callbacks and foreign result ownership to FFI/convergence.                                                                                                                                                                                                           |
+| Representation            | Keep two-word tagged general values, raw binary64 Numbers, canonical booleans, integer lowering types, exact raw word halves, descriptors and completion areas. Defer NaN boxing. Preserve signed zero, unordered tests, NaN category semantics, JS integer conversion and overflow behavior. Keep the existing low-48-bit managed address contract. On LA57 systems validate mappings and registrations before encoding addresses into headers, with bounded low-address retry or explicit failure for an unusable range.                                                                                                              |
+| Flags and addressing      | Select signed and unsigned Jcc separately. `ucomisd` makes unordered set ZF/PF/CF, so test PF or compose conditions for NaN-sensitive equality and order. Model EFLAGS as a clobberable dependency; keep compares near consumers. Use base + index × 1/2/4/8 + displacement for slots and arrays and `lea` for flag-preserving address arithmetic. Guard integer divide by zero and signed overflow before `idiv` where the source operation requires it.                                                                                                                                                                               |
+| Safepoints and unwinding  | Key maps by the exact PC after each allocating call. Start with all live reference and tagged roots homed, including across runtime leaves, and zero held-register masks. Use the wide v3 byte-PC format initially, with the existing frame-chain geometry and frame size measured below RBP. Validate that the runtime's walk-start saves, transparent ranges and registry agree. If compression becomes material, add a version with byte distances and explicit register-save order. Keep arm64 v4's implicit /4 units unchanged. CFI at entry uses CFA=RSP+8 and RIP at CFA−8, then describes the pushed RBP and framed CFA=RBP+16. |
+| Stack and heap protection | Preserve explicit stack-limit checks before reserving frames, C headroom, RangeError completion and guard mappings. Large frames need page probing or a proof the reservation remains within a committed stack window. Handle language errors through checked operations and completion propagation. Guard-page faults remain a last resort. Keep the remembered-set bitmap, queue overflow fallback and moving-GC publication order.                                                                                                                                                                                                   |
+| Atomics                   | For aligned ordinary write-back memory, acquire loads and release stores use plain size-matched MOV and preserve compiler ordering. Drop the arm64 fences used only for those edges. TSO still allows Store→Load reorder: establish a coherent SC mapping across all access paths, for example MOV loads and XCHG stores, with locked CMPXCHG/XADD or CAS loops for RMW and MFENCE for an explicit full fence. CAS mismatch retains SC order. Preserve alignment and bounds checks, publication and futex wake/recheck semantics. Use PAUSE in spin loops.                                                                              |
+| CPU profile               | Recommend x86-64-v2 as the deployment contract. It avoids AVX/OSXSAVE bring-up and is sufficient for mainstream Linux x86-64 environments. Keep initial emission within baseline integer/SSE2 where practical. A fixed profile needs no per-op detection. Verify the actual guest CPUID model and loader compatibility. If later dispatching AVX or BMI paths, use CPUID with OSXSAVE/XGETBV for AVX and include chosen ISA policy in JIT/compiled artifact identity.                                                                                                                                                                   |
+
+The physical SysV rules and relocation formulas come from the
+[x86-64 psABI](https://gitlab.com/x86-psABIs/x86-64-ABI). Instruction encoding,
+ordering and self-modifying code rules follow the
+[Intel architecture manuals](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html).
+
+## Executable image, startup and reach
+
+- Emit ELF64 `ET_DYN`, little endian, `EM_X86_64` (62), with
+  `/lib64/ld-linux-x86-64.so.2`. Keep RX and RW load segments, section and
+  segment congruence, non-executable stack and GOT binding. Use
+  `R_X86_64_GLOB_DAT` for dynamic GOT slots and reserve
+  `R_X86_64_RELATIVE` for any future loader-rebased in-image data cells.
+  Internal address patches stay in Tint. Their meanings correspond to
+  `PC32` (`S + A - P`), `PLT32` for PLT calls if adopted, and
+  `GOTPCREL` for RIP-relative GOT operands. Compute the addend so the
+  displacement is relative to the end of the full instruction, including
+  any trailing immediate. Default imports call indirectly through GOT.
+- `_start` captures the loader finalizer from `rdx` before reusing it as
+  argv, reads argc/argv from the initial stack, aligns RSP, clears RBP,
+  and calls `__libc_start_main(main, argc, argv, 0, 0, rtld_fini, stack_end)`.
+  SysV passes the finalizer in `r9` and stack_end as the seventh stack
+  argument. Set up the normal hosted context, allocator and registry in
+  main. Thread entry uses the SysV `void* -> void*` boundary and an
+  isolated managed context. Linux futex via variadic libc `syscall` uses
+  number 202 on x86-64. Raw kernel calls in freestanding fixtures use the
+  kernel convention, including `r10` for arg four.
+- Start with conservative fixed-size rel32 branches and RIP-relative data
+  references. Use byte positions for labels, actual encoded lengths for
+  fixups, deliberate NOP padding and optional function alignment. Add rel8
+  shortening only with stable sizing/relaxation or independent local
+  layout. The missing ADRP page window removes 4 GiB page-relative
+  constraints. Near x86 branches, calls and RIP-relative references still
+  have signed 32-bit reach, about ±2 GiB from next RIP.
+- Use the [large-image plan](large-images.md#code-model) to size and place
+  sites, detect overflow and re-emit once in far mode. A far site can use
+  a nearby address island or a RIP anchor plus a full-width image-relative
+  delta loaded into registers. Preserve PIE, flags, reserved scratch rules
+  and GOT indirection. Far conditional branches invert the condition over
+  an indirect jump. Keep load-time rebasing out of instruction bytes.
+  Carry full-width code offsets through maps, trace tables and CFI. Exercise
+  forced far sites and synthetic signed boundaries, then verify a large ELF
+  with real code/data/GOT spans before claiming large-image support.
+
+## Instruction encoder
+
+Build a portable typed instruction model with explicit operand size,
+register class, memory addressing, displacement and immediate kind.
+Encode only forms used by the backend. Emit legacy prefixes before REX,
+then opcode, ModRM/SIB, displacement and immediate in architectural order.
+Test REX.W/R/X/B, SPL/BPL/SIL/DIL and extended byte registers. Exclude
+AH–DH from the register model. Handle the RSP/R12 SIB case, RBP/R13
+zero-displacement encoding, absent base/index, invalid index selections,
+and RIP-relative addressing explicitly. Range-check sign-extended imm8
+and imm32 forms, 64-bit constants, displacement and fixup fields. Use the
+existing exact low/high word representation for bits beyond safe integers.
+Keep SSE2 scalar moves, arithmetic, comparisons, conversions and bit
+transfers in the first encoder. Add VEX forms when an AVX profile needs
+them, with independent tests for inverted fields, two-/three-byte prefixes
+and SSE/AVX transition policy.
+
+Use deterministic byte goldens and generated operand matrices against
+`llvm-mc`. Disassemble emitted bytes with `llvm-objdump` or GNU
+`objdump` and compare canonical operands and decoded sizes, allowing
+equivalent encodings where required. Cover every emitter-used form,
+invalid forms, displacement/relocation limits and label-to-end-of-instruction
+math. Cross-build a native fixture for the portable byte writer and
+execute representative instruction groups. Keep assembler and disassembler
+tools as test oracles.
+
+## Live execution and observability
+
+Reuse Linux memfd RX/RW aliases and the RW→RX fallback, including debugger
+private-page repair and target page policy. Keep concurrent execution
+excluded while a range is written. x86 instruction/data caches are coherent,
+so the ARM DC/IC maintenance loops disappear. Follow the x86 instruction
+stream synchronization rules for code reuse or cross-core publication.
+Publish newly written immutable ranges through the existing synchronization
+and registration contract, and require a verified quiescence and instruction
+serialization protocol before allowing live replacement or reuse by other
+cores. Register roots and the x86 ELF JIT object before making its entry
+available according to the existing lifetime protocol. Cross-check W^X and
+USDT on the guest kernel, including exec-memfd policy, since user-mode
+emulation translates kernel interfaces. See [native code loading](native-code-loading.md#linux)
+and [Linux diagnostics](runtime-diagnostics.md#linux-usdt-probes).
+
+## Bootstrap and validation
+
+1. Pin an arm64-hosted build toolchain, compiler source snapshot, catalog,
+   target and runner configuration. Cross-build and run the first ELF
+   smoke, then hosted runtime fixtures through the same public target
+   entry. Use [frozen manifest provenance](bootstrap.md#evidence-required).
+2. Check the minimum compiler/runtime operation set from the frozen build
+   and port incrementally. Use target diagnostics for missing operations.
+   Cross-build a frozen stage 1 with the Node-hosted compiler on arm64,
+   then repeat the cross-build with the native arm64 compiler once the x86
+   emitter itself builds and runs in the native subset.
+3. Run stage 1 on Linux x86-64 to build stage 2 from that exact snapshot.
+   Run stage 2 there to build stage 3. Require successful stages, exact
+   stage 2/3 byte equality and recorded hashes. Compare stage 1 as an
+   additional diagnostic. Run the resulting compiler on fixtures and
+   verify debug info when built with debug. Keep both arm64 targets
+   working throughout with regression and frozen native self-build gates.
+
+| Tier             | Runner and evidence                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit             | Node on the existing arm64 host for differential encoding, relocation limits, register/stack assignment and malformed map tests. Use readelf/objdump to verify image headers, dynamic imports and CFI independently.                                                                                                                                                                                                                                |
+| Per binary       | Use explicit `qemu-x86_64` in the shared arm64 Linux `dev` machine, with a pinned x86-64 sysroot via `-L` for interpreter, libc and fixture libraries. Copy binaries once and batch launches. Keep exit codes, signals, stdout, artifact manifests and executor identity. User emulation routes syscalls and cannot establish kernel, ptrace/USDT or exact memory-model behavior. [QEMU user mode](https://www.qemu.org/docs/master/user/main.html) |
+| Guest end to end | Debian 13 x86-64 QEMU TCG VM via `~/.t3/vms/start-x64.sh`, SSH 2223, 8 emulated vCPUs. Batch transfers and tests. Verify actual guest loader, page protections, threads, futex, USDT, GDB, JIT and self-build. Budget serial self-builds and avoid treating emulated CPU time as native performance. Shut down with `~/.t3/vms/stop.sh`.                                                                                                            |
+| Darwin later     | Host Rosetta can run x86-64 Mach-O. Direct macOS execution requires Mach-O. Linux ELF translation through a virtualization service would require separate configuration and verification. Keep Linux x86-64 verification independent of the Darwin port.                                                                                                                                                                                            |
+| Conformance      | Run unchanged pinned Test262 selections against both backends under the same variant/negative-phase policy. Start with calls, abrupt completion, numeric edges, object/array behavior, then live eval and shared/atomic behavior. Store immutable per-target reports with the actual denominator, unsupported and failed variants, heartbeat/stall records and no whole-suite extrapolation.                                                        |
+| Hardware         | Before declaring production parity, run the supported baseline and a current x86-64 machine, exercise concurrency/GC and live publication, then measure native self-compile cycles and wall time and matched JS workloads.                                                                                                                                                                                                                          |
+
+## Performance stance
+
+Get correct frames, calls and guards first. With fewer registers than arm64,
+prioritize reducing spills around calls and retaining the most reused values
+in preserved GPRs. Reuse CFG and liveness information, then tune slot and
+temporary allocation from spill counts and measured costs. x86 memory operands
+can eliminate separate loads, LEA can avoid clobbering flags, and CMP/TEST plus
+Jcc can fuse on many cores. Use CMOV for measured profitable cases, keeping
+memory loads and language evaluation order safe. Favor 32-bit zero-extending
+operations where semantics allow it, and consider BMI/BMI2 or VEX forms under
+a measured feature profile. Base the runtime and compiler comparison on
+native cycles and wall time with frozen inputs.
+
+## Feasibility measurements
+
+The same 132-byte static x86-64 ELF exited 42 in every run. It contains an
+ELF header, a single RX load segment and a raw Linux exit syscall. SHA-256
+`d93aa7e7fd49e17fb09ac7cd6b0cd0776dea9e40503595ae28b1abf7c71c48c7`.
+Each sample times a guest-side Bash loop of 100 fresh processes, excluding
+boot, SSH, copying and installation. Use these as launch-overhead observations.
+
+| Environment                                              | Wall seconds per 100 launches | Median per launch |
+| -------------------------------------------------------- | ----------------------------- | ----------------- |
+| Debian 13 x86-64 VM, Linux 6.12.117, full-system TCG     | 0.508, 0.754, 0.479           | 5.08 ms           |
+| Debian 12 arm64 `dev`, explicit `qemu-x86_64-static` 7.2 | 0.704, 0.776, 0.748           | 7.48 ms           |
+
+User mode avoided boot and SSH but took longer per launch in this probe.
+Choose it for convenient isolated fixture runs and use a representative
+hosted workload before picking a throughput runner. The statically linked
+emulator came from a scratch extraction of the Debian arm64 package.
+Dynamic loader/sysroot and JIT execution were outside the probe. On macOS,
+`arch -x86_64 /usr/bin/uname -m` returned `x86_64` under Rosetta. The guest
+VM was stopped after the probe.
+
+## Ordered slices
+
+Sizes are rough estimates of changed production and test lines. Each row
+is independently mergeable after its dependencies and keeps both arm64
+targets operational. Use private fixtures or explicit experimental selection
+until the supported CLI and self-hosting gates pass. For implementation
+merges, run workspace checks, relevant native fixtures and the arm64
+regression gate. Keep new exports, workspace contracts and generated catalog
+updates with their owning slices.
+
+| Slice                             | Scope and likely files                                                                                                                                                                                                                  | Size        | Depends on | Acceptance                                                                                                                                                                                                                 |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Architecture plumbing          | `platform/src/target.ts`, `compiler/src/{build,native/index}.ts`, target/CLI tests. Centralize output arch dispatch, extract the neutral request/module seam and retain arm64 defaults.                                                 | 200–400     | —          | Both arm64 target paths preserve fixture bytes, target defaults and diagnostics. Unsupported target selection fails explicitly.                                                                                            |
+| 2. Encoder                        | `codegen/src/x86_64/isa.ts` and codegen tests. REX, ModRM/SIB, integer/memory forms, SSE2, byte labels and near fixups.                                                                                                                 | 900–1,500   | —          | Differential byte/disassembly matrices, invalid operands and exact signed-fit edge cases. Stable encoding lengths and no new dependency in the native source closure.                                                      |
+| 3. ELF machine policy             | `image/src/linux/elf/{format,index,jit-object}.ts`, ELF tests. Parameterize machine, relocs, alignments and interpreter through a writer-local descriptor.                                                                              | 250–500     | —          | Test bytes with readelf and a hand-encoded ELF with imports under the guest loader. Existing arm64 ELF and JIT object bytes match. Unwind payload support lands in slice 10.                                               |
+| 4. Execution harness              | `tools/native-host-target.ts`, hosted fixture runner, `tools/bootstrap-compiler.ts` host adapter. Add explicit emulation/SSH runner, sysroot, provenance and artifact checks.                                                           | 300–600     | —          | Launch a raw static ELF and a glibc fixture, recover exit/signal failures and mark execution unavailable when a target runner is absent. Preserve build-only mode and Darwin LLDB path.                                    |
+| 5. Freestanding scalar emission   | `codegen/src/x86_64/scalar/`, compiler backend dispatch and native fixture tests. Integer/FP, branches, frames, basic direct managed calls and near data/import fixup model.                                                            | 1,500–2,800 | 1–4        | Cross-build IR through Tint into an ELF. Run call/branch, register pressure, mixed overflow args, NaN and signed-zero fixtures. Stable unsupported-op diagnostics.                                                         |
+| 6. Hosted entry and libc          | `codegen/src/x86_64/startup.ts`, platform Linux host policy, native host identity/process intrinsics, `compiler/src/{build,image-writer}.ts` and bootstrap.                                                                             | 900–1,700   | 5          | Cross-build hosted CLI smoke, argv/env, file/time/entropy and runtime init. Verify loader finalizer/stack args, native host identity, fixed glibc floor, guard checks and AArch64 output parity for unchanged programs.    |
+| 7. Managed runtime and roots      | x86 scalar helpers, `abi/src/host.ts`, tracing scanner, managed compiler/linker contracts and GC fixtures. Land numeric/string/array, record, closure and completion families in smaller merges with exact-PC maps and barrier support. | 4,000–8,000 | 6          | Root relocation through nested calls, tagged throws, GC under allocation pressure, safepoint faults and missing-map rejection. Pass managed call and typed-contract fixtures before enabling corresponding language paths. |
+| 8. Parallel runtime               | x86 atomics/thread leaves, Linux host policy, waiter, contention and collector fixtures.                                                                                                                                                | 700–1,500   | 7          | Exact-width access, CAS failure and RMW tests, concurrent collection and futex park/wake under guest kernel. Verify SC mapping and repeat on hardware for release.                                                         |
+| 9. Far image and service link     | x86 fixups, emission plans, service-unit linker and large-image verifier.                                                                                                                                                               | 600–1,200   | 5          | Forced-far native execution at normal size, synthetic rel32 bounds and far GOT/data/call recipes, then a real large ELF spanning the signed limit. Preserve PIE and streaming memory behavior.                             |
+| 10. Unwind, debug and diagnostics | x86 frame/debug/USDT emission, `abi/src/unwind.ts`, DWARF/EH frame and ELF policies. Land CFI and USDT in separately testable changes.                                                                                                  | 700–1,400   | 6          | Independent CFI and DWARF readers, GDB chain across startup and managed code, real guest USDT hits with correct operands, large CFI offsets alongside slice 9.                                                             |
+| 11. Live publishing               | x86 code-memory leaves and adapters, compiler managed JIT/linking, runtime registry, engine tests and ELF JIT registration.                                                                                                             | 1,200–2,400 | 7, 9, 10   | In-image compilation and generated-code execution, code-range map registration/GC, W^X policies and ptrace breakpoint copying on guest kernel, same-target entries and cross-context rejection.                            |
+| 12. Native fixed point            | Bootstrap catalog and closure, x86 lowering gaps for the compiler, frozen self-build tools and reports.                                                                                                                                 | 800–2,500   | 7–9        | Native arm64 cross-build runs on x86-64, and x86-64 makes identical stage 2 and stage 3 images. Publish manifest and hashes. Debug variant uses slice 10.                                                                  |
+| 13. Test262 and support gate      | `tools/test262-native-run.ts` and runner adapters, target docs and immutable reports.                                                                                                                                                   | 450–900     | 8, 10–12   | Pinned equivalent AOT and live selections with complete terminal records, glibc floor and kernel tests, verified arm64 regressions and baseline x86 hardware validation before supported status.                           |
+| F1. SysV C calls and layout       | **FFI/convergence**. `abi/src/c/*`, compiler foreign bindings, x86 call adapter, native runtime `c`, `ffi`, `node` and FFI fixture tools.                                                                                               | 900–1,800   | 2, 5, 6    | C oracle fixtures for scalar, variadic and mixed aggregate classification, sret, exact layout/padding and by-value copies, plus dynamic and static import coverage.                                                        |
+| F2. C callbacks and thunks        | **FFI/convergence**. Same ownership plus x86 thunk rows, managed transitions and scanner integration.                                                                                                                                   | 900–1,800   | F1, 7, 10  | ABI preservation across may-callback, moving GC across foreign frames, failure/throw policy, nesting and stale-entry rejection.                                                                                            |
+
+Slices 1–4 can start in parallel on distinct files, with catalog and
+bootstrap edits coordinated at merge. After slice 5, the far linker can
+proceed alongside hosted work. After slice 6, managed roots, CFI and F1
+can proceed in parallel. After slice 7, thread support and live work can
+advance independently as their dependencies clear. Start frozen bootstrap
+closure checks during slice 7 and run the self-build as soon as its actual
+closure is complete. If closure analysis needs an FFI-owned binding,
+make F1 an explicit prerequisite for that build. FFI changes belong to
+<t3-thread://v2/c549f3f5-0f49-4d5d-bb8b-d1030331591d/56f31528-4f32-45ff-a477-97f802cc50ce>.
+Full public FFI parity requires F1 and F2 evidence in addition to the
+core support gate.
+
+## Coordinator decisions
+
+- Confirm the public target spelling, the glibc floor and the x86-64-v2
+  deployment profile. Choose whether to advertise baseline SSE2 compatibility
+  separately if the finished emitted closure stays within it.
+- Assign the general far-link work and set the first milestone's reach gate.
+  The early experimental target may diagnose overflow until slice 9.
+- Identify x86-64 hardware for the support gate. Decide whether initial support
+  includes public FFI parity or publishes it as a follow-on owned by FFI/convergence.
