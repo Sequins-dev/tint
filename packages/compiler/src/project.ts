@@ -46,6 +46,10 @@ export function runtimeSources(): RuntimeSource[] {
       namespace: "primitive-value",
     },
     {
+      module: "packages/native-runtime/src/values/bigint.ts",
+      namespace: "bigint",
+    },
+    {
       module: "packages/foundation/src/numeric/number-text/index.ts",
       namespace: "number-text",
     },

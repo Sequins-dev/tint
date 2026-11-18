@@ -1,7 +1,7 @@
 import type { ModuleEntryOptions } from "../closure/lowering/index.ts";
 
 export type RuntimeFunctionKind =
-  "list" | "set" | "map" | "primitive" | "number-text";
+  "list" | "set" | "map" | "primitive" | "number-text" | "bigint";
 export type RuntimeFunctionVisitor = (
   id: number,
   kind: RuntimeFunctionKind,
@@ -106,6 +106,33 @@ export function visitRuntimeFunctions(
       -1,
       "canonicalOptionalNumber",
     );
+  }
+  const bigints = options.bigints;
+  if (bigints !== undefined) {
+    add(bigints.literal, "bigint", -1, "literal");
+    const binary = bigints.binary;
+    add(binary["+"], "bigint", -1, "binary+");
+    add(binary["-"], "bigint", -1, "binary-");
+    add(binary["*"], "bigint", -1, "binary*");
+    add(binary["/"], "bigint", -1, "binary/");
+    add(binary["%"], "bigint", -1, "binary%");
+    add(binary["**"], "bigint", -1, "binary**");
+    add(binary["&"], "bigint", -1, "binary&");
+    add(binary["|"], "bigint", -1, "binary|");
+    add(binary["^"], "bigint", -1, "binary^");
+    add(binary["<<"], "bigint", -1, "binary<<");
+    add(binary[">>"], "bigint", -1, "binary>>");
+    add(bigints.negate, "bigint", -1, "negate");
+    add(bigints.not, "bigint", -1, "not");
+    add(bigints.compare, "bigint", -1, "compare");
+    add(bigints.compareNumber, "bigint", -1, "compareNumber");
+    add(bigints.equal, "bigint", -1, "equal");
+    add(bigints.truthy, "bigint", -1, "truthy");
+    add(bigints.toString, "bigint", -1, "toString");
+    add(bigints.toNumber, "bigint", -1, "toNumber");
+    add(bigints.fromNumber, "bigint", -1, "fromNumber");
+    add(bigints.fromBoolean, "bigint", -1, "fromBoolean");
+    add(bigints.asWidth, "bigint", -1, "asWidth");
   }
   add(options.numberToString, "number-text", -1, "toString");
   add(options.numberFromString, "number-text", -1, "fromString");

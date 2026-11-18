@@ -9,19 +9,21 @@
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 const source = String.raw`#include <zlib.h>
 #include <stdio.h>
 #include <stdlib.h>
-/* usage: oracle mode level windowBits memLevel strategy chunkSize < input */
+/* usage: oracle mode level windowBits memLevel strategy chunkSize input */
 int main(int argc, char **argv) {
-  if (argc != 7) return 64;
+  if (argc != 8) return 64;
+  FILE *source = fopen(argv[7], "rb");
+  if (source == NULL) return 67;
   int mode = atoi(argv[1]), level = atoi(argv[2]), bits = atoi(argv[3]),
       memLevel = atoi(argv[4]), strategy = atoi(argv[5]);
   size_t chunk = (size_t)atol(argv[6]), size = 0, capacity = 1 << 16, n;
   unsigned char *in = malloc(capacity), *out = malloc(chunk);
-  while ((n = fread(in + size, 1, capacity - size, stdin)) > 0) {
+  while ((n = fread(in + size, 1, capacity - size, source)) > 0) {
     size += n;
     if (size == capacity) in = realloc(in, capacity *= 2);
   }
@@ -46,6 +48,7 @@ int main(int argc, char **argv) {
 }
 `;
 let compiled: string | undefined;
+let calls = 0;
 /** Why the oracle is unavailable (clang missing), else undefined. */
 export function zlibOracleUnavailable(): string | undefined {
   const clang = spawnSync("clang", ["--version"], { encoding: "utf8" });
@@ -85,11 +88,19 @@ export function systemDeflate(
       throw Error("zlib oracle build failed: " + built.stderr);
     compiled = join(directory, "oracle");
   }
+  // The input travels as a file: feeding it through spawnSync's stdin pipe
+  // once deadlocked (both processes idle, the oracle blocked in fread).
+  const inputFile = join(dirname(compiled), "input-" + String(calls++));
+  writeFileSync(inputFile, input);
   const result = spawnSync(
     compiled,
-    [mode, level, windowBits, memLevel, strategy, chunkSize].map(String),
-    { input, maxBuffer: 1 << 28 },
+    [
+      ...[mode, level, windowBits, memLevel, strategy, chunkSize].map(String),
+      inputFile,
+    ],
+    { stdio: ["ignore", "pipe", "pipe"], maxBuffer: 1 << 28 },
   );
+  rmSync(inputFile, { force: true });
   if (result.status !== 0)
     throw Error("zlib oracle failed with status " + String(result.status));
   return new Uint8Array(result.stdout);

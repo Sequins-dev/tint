@@ -87,26 +87,29 @@ export interface FixtureForeignDeclaration {
   readonly manifest?: readonly CLibraryManifestEntry[];
 }
 
+type GeneralLowering = ReturnType<typeof createGeneralLowering>;
+let generalLowering: GeneralLowering | undefined;
 /** General (JavaScript-semantics) lowering for application code the typed
  * pipeline rejects, with console output through the hosted fs binding.
- * TINT_GENERAL_FALLBACK=0 disables it. */
-export const workspaceGeneralLowering =
-  process.env.TINT_GENERAL_FALLBACK === "0"
-    ? undefined
-    : createGeneralLowering({
-        runtime: {
-          objects: "packages/js-runtime/src/objects/index.ts",
-          modules: "packages/js-runtime/src/modules/index.ts",
-          globalEnvironment:
-            "packages/js-runtime/src/environments/global/index.ts",
-          environmentRecords:
-            "packages/js-runtime/src/environments/records/index.ts",
-        },
-        output: {
-          module: "packages/native-runtime/src/intrinsics/fs.ts",
-          name: "write",
-        },
-      });
+ * TINT_GENERAL_FALLBACK=0 disables it. Read per build, not at import:
+ * fixtures set the variable after their (hoisted) imports. */
+export function workspaceGeneralLowering(): GeneralLowering | undefined {
+  if (process.env.TINT_GENERAL_FALLBACK === "0") return undefined;
+  generalLowering ??= createGeneralLowering({
+    runtime: {
+      objects: "packages/js-runtime/src/objects/index.ts",
+      modules: "packages/js-runtime/src/modules/index.ts",
+      globalEnvironment: "packages/js-runtime/src/environments/global/index.ts",
+      environmentRecords:
+        "packages/js-runtime/src/environments/records/index.ts",
+    },
+    output: {
+      module: "packages/native-runtime/src/intrinsics/fs.ts",
+      name: "write",
+    },
+  });
+  return generalLowering;
+}
 
 /** Build through the full hosted pipeline; always contain native failures in
  * LLDB. Returns the image path (kept only with TINT_BUILD_ONLY=1 or
@@ -173,6 +176,7 @@ export function verifyHostedFixture(
   },
 ): string {
   const bytes = new TextEncoder().encode(text);
+  const general = workspaceGeneralLowering();
   const stackTraces =
       options.stackTraces ?? process.env.TINT_STACK_TRACES === "1",
     signposts = options.signposts ?? process.env.TINT_SIGNPOSTS === "1",
@@ -254,7 +258,7 @@ export function verifyHostedFixture(
     ...workspaceModules(
       [
         ...projectRoots(),
-        ...(workspaceGeneralLowering?.runtimeModules ?? []),
+        ...(general?.runtimeModules ?? []),
         ...dependencies
           .map((dependency) => dependency[1])
           .filter((id) => !fixtureGenerated.some((module) => module.id === id)),
@@ -343,10 +347,10 @@ export function verifyHostedFixture(
       options.runtimeEntry ?? request.runtimeEntry ?? "initializeRuntime",
     entry: "fixture",
     start: "run",
-    ...(workspaceGeneralLowering === undefined
+    ...(general === undefined
       ? {}
       : {
-          generalLowering: workspaceGeneralLowering,
+          generalLowering: general,
           ...(options.requireTyped === true ? { requireTyped: true } : {}),
           onGeneralFallback: (modules: readonly string[], reason: string) => {
             options.onGeneralFallback?.(modules, reason);

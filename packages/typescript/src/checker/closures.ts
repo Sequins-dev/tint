@@ -121,6 +121,10 @@ export type ClosureIntrinsic =
   | "list-unshift"
   | "list-push"
   | "number-from-string"
+  | "number-from-bigint"
+  | "bigint-identity"
+  | "bigint-from-number"
+  | "bigint-from-boolean"
   | "number-is-integer"
   | "string-convert"
   | "number-is-safe-integer"
@@ -262,6 +266,7 @@ export function checkClosureModule(
     "Map",
     "Number",
     "String",
+    "BigInt",
     "Math",
     "Uint8Array",
     "Uint16Array",
@@ -922,6 +927,7 @@ export function checkClosureModule(
     undefinedType = primitive("undefined"),
     nullType = primitive("null"),
     string = primitive("string"),
+    bigint = primitive("bigint"),
     voidType = primitive("void"),
     optionalNumber = typeOf(optionalAnnotation);
   declared.forEach((type, node) => {
@@ -1114,6 +1120,7 @@ export function checkClosureModule(
       value.kind === "number" ||
       value.kind === "string" ||
       value.kind === "boolean" ||
+      value.kind === "bigint" ||
       value.kind === "undefined" ||
       value.kind === "literal"
     )
@@ -1164,6 +1171,17 @@ export function checkClosureModule(
     const b = declarations.get(node);
     if (b === undefined) throw "declaration invariant";
     return b;
+  }
+  function mentionsBigInt(id: number): boolean {
+    const type = types[id];
+    if (type?.kind === "bigint") return true;
+    return (
+      type?.kind === "union" &&
+      type.members.some(
+        (member: number | undefined) =>
+          member !== undefined && mentionsBigInt(member),
+      )
+    );
   }
   function requireType(actual: number, expected: number, node: Span): void {
     recordTypeFlow(actual, expected, node);
@@ -1838,6 +1856,7 @@ export function checkClosureModule(
         if (type?.kind === "unknown") {
           if (!equal) selected.push(id);
           else if (literalValue === "number") selected.push(number);
+          else if (literalValue === "bigint") selected.push(bigint);
           else if (literalValue === "boolean") selected.push(boolean);
           else if (literalValue === "string") selected.push(string);
           else if (literalValue === "undefined") selected.push(undefinedType);
@@ -1864,6 +1883,7 @@ export function checkClosureModule(
           tag !== "number" &&
           tag !== "boolean" &&
           tag !== "string" &&
+          tag !== "bigint" &&
           tag !== "undefined" &&
           tag !== "object" &&
           tag !== "function"
@@ -2652,6 +2672,7 @@ export function checkClosureModule(
       case "number":
       case "string":
       case "boolean":
+      case "bigint":
       case "undefined":
       case "null":
       case "Uint8Array":
@@ -2756,6 +2777,9 @@ export function checkClosureModule(
         case "string":
           result = string;
           break;
+        case "bigint":
+          result = bigint;
+          break;
         case "identifier": {
           const b = references.get(node);
           if (b === undefined) {
@@ -2833,8 +2857,8 @@ export function checkClosureModule(
               throw "TEMPLATE_SUBSTITUTION_INVARIANT";
             const input = expression(substitution, owner);
             if (
-              ![number, string, boolean, undefinedType, nullType].some((type) =>
-                system.assignable(input, type),
+              ![number, string, boolean, undefinedType, nullType, bigint].some(
+                (type) => system.assignable(input, type),
               )
             )
               fail(
@@ -3634,7 +3658,7 @@ export function checkClosureModule(
             if (argument !== undefined) {
               const input = expression(argument, owner);
               if (
-                ![number, string, boolean, undefinedType].some((type) =>
+                ![number, string, boolean, undefinedType, bigint].some((type) =>
                   system.assignable(input, type),
                 )
               )
@@ -3661,9 +3685,52 @@ export function checkClosureModule(
               );
             const argument = node.arguments[0];
             if (argument === undefined) throw "Number argument invariant";
-            requireType(expression(argument, owner), string, argument);
-            intrinsics.set(node, "number-from-string");
+            const input = expression(argument, owner);
+            if (system.assignable(input, bigint))
+              intrinsics.set(node, "number-from-bigint");
+            else {
+              requireType(input, string, argument);
+              intrinsics.set(node, "number-from-string");
+            }
             result = number;
+            break;
+          }
+          if (
+            target.kind === "identifier" &&
+            target.name === "BigInt" &&
+            !references.has(target)
+          ) {
+            // BigInt(value): integral Numbers convert exactly (others throw
+            // a RangeError) and booleans give 0n/1n. Strings parse as
+            // StringIntegerLiteral and invalid text throws a SyntaxError,
+            // which typed code gains with realm errors (slice 4).
+            if (node.arguments.length !== 1)
+              fail(node, "ARITY", "BigInt requires one argument");
+            const argument = node.arguments[0];
+            if (argument === undefined || argument.kind === "spread")
+              fail(node, "UNSUPPORTED", "BigInt requires one plain argument");
+            const input = expression(argument, owner);
+            intrinsics.set(
+              node,
+              system.assignable(input, bigint)
+                ? "bigint-identity"
+                : system.assignable(input, number)
+                  ? "bigint-from-number"
+                  : system.assignable(input, string)
+                    ? fail(
+                        argument,
+                        "UNSUPPORTED",
+                        "BigInt(string) needs realm SyntaxError (slice 4)",
+                      )
+                    : system.assignable(input, boolean)
+                      ? "bigint-from-boolean"
+                      : fail(
+                          argument,
+                          "TYPE_MISMATCH",
+                          "BigInt requires a bigint, number, string or boolean",
+                        ),
+            );
+            result = bigint;
             break;
           }
           if (target.kind === "member") {
@@ -4974,9 +5041,26 @@ export function checkClosureModule(
               "TYPE_MISMATCH",
               "void result cannot be a binary operand",
             );
-          if (["===", "!==", "==", "!="].includes(node.operator))
+          const leftBigInt = system.assignable(left, bigint),
+            rightBigInt = system.assignable(right, bigint);
+          if (["===", "!==", "==", "!="].includes(node.operator)) {
+            // BigInts compare by value, which lowering does for two bigint
+            // operands; a possibly absent BigInt may be tested only against
+            // undefined or null (a presence test, no value comparison).
+            if (
+              (mentionsBigInt(left) || mentionsBigInt(right)) &&
+              !(leftBigInt && rightBigInt) &&
+              ![left, right].some(
+                (type) => type === undefinedType || type === nullType,
+              )
+            )
+              fail(
+                node,
+                "UNSUPPORTED",
+                "BigInt equality requires two bigint operands or a test against undefined or null",
+              );
             result = boolean;
-          else if (
+          } else if (
             node.operator === "+" &&
             (system.assignable(left, string) ||
               system.assignable(right, string)) &&
@@ -4984,10 +5068,39 @@ export function checkClosureModule(
               (t) =>
                 system.assignable(t, string) ||
                 system.assignable(t, number) ||
-                system.assignable(t, boolean),
+                system.assignable(t, boolean) ||
+                system.assignable(t, bigint),
             )
           )
             result = string;
+          else if (
+            ["<", ">", "<=", ">="].includes(node.operator) &&
+            (leftBigInt || rightBigInt) &&
+            [left, right].every(
+              (t) =>
+                system.assignable(t, bigint) || system.assignable(t, number),
+            )
+          )
+            // BigInt comparisons are exact, also against a Number (no
+            // rounding through binary64; NaN is unordered).
+            result = boolean;
+          else if (
+            ["+", "-", "*", "/", "%", "**", "|", "&", "^", "<<", ">>"].includes(
+              node.operator,
+            ) &&
+            (leftBigInt || rightBigInt)
+          ) {
+            // Mixing BigInt and Number throws a TypeError in JavaScript and
+            // is a type error in TypeScript: both operands must be bigint.
+            requireType(left, bigint, node.left);
+            requireType(right, bigint, node.right);
+            result = bigint;
+          } else if (node.operator === ">>>" && (leftBigInt || rightBigInt))
+            fail(
+              node,
+              "TYPE_MISMATCH",
+              "BigInt values have no unsigned right shift",
+            );
           else if (
             ["<", ">", "<=", ">="].includes(node.operator) &&
             system.assignable(left, string) &&
@@ -5041,7 +5154,13 @@ export function checkClosureModule(
           if (node.operator === "void") result = undefinedType;
           else if (node.operator === "typeof") result = string;
           else if (node.operator === "!") result = boolean;
+          else if (
+            (node.operator === "-" || node.operator === "~") &&
+            system.assignable(value, bigint)
+          )
+            result = bigint;
           else if (["+", "-", "~"].includes(node.operator)) {
+            // Unary plus on a BigInt throws a TypeError: it requires number.
             requireType(value, number, node);
             result = number;
           } else fail(node, "UNSUPPORTED", "unary operation is unsupported");

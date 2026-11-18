@@ -37,6 +37,8 @@ import {
   arrayElement,
   mapEncoding,
   stringType,
+  bigIntType,
+  usesBigInt,
   type RecordContracts,
   type RecordIdentityResolver,
 } from "./records.ts";
@@ -77,6 +79,7 @@ import {
   type SetRuntimeBinding,
   type MapRuntimeBinding,
   type PrimitiveRuntime,
+  type BigIntRuntime,
 } from "../../scalar.ts";
 import {
   verify,
@@ -135,6 +138,11 @@ export interface ModuleEntryOptions {
   /** Caller-authorized module functions with a checked record test or view result. */
   readonly recordBindings?: readonly RecordBinding[];
   readonly primitives?: PrimitiveRuntime;
+  /** Checked function IDs of the BigInt helpers (native-runtime values/bigint). */
+  readonly bigints?: BigIntRuntime;
+  /** A checked function whose result type is js-runtime's BigIntValue, so a
+   * general value can be tested for being a BigInt (typeof, downcasts). */
+  readonly bigIntRepresentation?: number;
   readonly numberFromString?: number;
   readonly numberToString?: number;
   readonly lists?: readonly ListRuntimeBinding[];
@@ -240,6 +248,8 @@ export function lowerModuleEntries(
     sets: options?.sets,
     maps: options?.maps,
     primitives: options?.primitives,
+    bigints: options?.bigints,
+    bigIntRepresentation: options?.bigIntRepresentation,
     recordBindings: options?.recordBindings,
     recordTypes: options?.recordTypes,
     recordIdentity: options?.recordIdentity,
@@ -269,6 +279,8 @@ function lowerEntries(
     sets: readonly SetRuntimeBinding[] | undefined;
     maps: readonly MapRuntimeBinding[] | undefined;
     primitives: PrimitiveRuntime | undefined;
+    bigints?: BigIntRuntime | undefined;
+    bigIntRepresentation?: number | undefined;
     recordBindings?: readonly RecordBinding[] | undefined;
     recordTypes?: boolean | undefined;
     recordIdentity?: RecordIdentityResolver | undefined;
@@ -325,18 +337,21 @@ function lowerEntries(
     if (id === undefined) return fail("missing checked type");
     const cached = scalarEncodings[id];
     if (cached !== undefined) return cached;
+    const bigint = bigIntType(checked, id);
     let type: SourceScalarType | undefined =
       checked.types[id]?.kind === "ArrayBuffer"
         ? "reference"
-        : layout === undefined
-          ? entryType(
-              checked,
-              id,
-              listElements,
-              setElements,
-              recordTarget?.maps ?? [],
-            )
-          : scalarType(checked, id);
+        : bigint !== undefined
+          ? bigint
+          : layout === undefined
+            ? entryType(
+                checked,
+                id,
+                listElements,
+                setElements,
+                recordTarget?.maps ?? [],
+              )
+            : scalarType(checked, id);
     // A standalone null needs no allocated primitive wrapper. Preserve the
     // established primitive-runtime representation when that runtime is linked.
     if (
@@ -348,7 +363,8 @@ function lowerEntries(
       type === undefined ||
       (layout !== undefined &&
         type === "reference" &&
-        checked.types[id]?.kind !== "ArrayBuffer")
+        checked.types[id]?.kind !== "ArrayBuffer" &&
+        bigint === undefined)
     )
       fail(
         "type requires an unsupported native representation (type " +
@@ -758,6 +774,109 @@ function lowerEntries(
               "boolean",
             ),
           };
+    /** The BigInt helpers, validated once a checked type mentions bigint:
+     * every reference parameter and result must be exactly the record the
+     * literal helper returns (js-runtime's BigIntValue). */
+    const bigIntSources = recordTarget?.bigints;
+    const bigints: BigIntRuntime | undefined =
+      bigIntSources === undefined || !usesBigInt(checked)
+        ? undefined
+        : validateBigIntRuntime(bigIntSources);
+    function validateBigIntRuntime(sources: BigIntRuntime): BigIntRuntime {
+      const representation = bodyByFunction[sources.literal]?.result;
+      if (
+        !validatedTypes.ok ||
+        representation === undefined ||
+        checked.types[representation]?.kind !== "object"
+      )
+        fail("BigInt runtime requires a BigIntValue record representation");
+      const system = validatedTypes.value;
+      function same(type: number | undefined): boolean {
+        return (
+          type !== undefined &&
+          representation !== undefined &&
+          system.assignable(type, representation) &&
+          system.assignable(representation, type)
+        );
+      }
+      function helper(
+        source: number,
+        parameters: readonly SourceScalarType[],
+        result: SourceScalarType,
+      ): number {
+        const target = targetIds[source],
+          signature = target === undefined ? undefined : signatures[target],
+          binding = checked.bindings.functions[source];
+        if (
+          target === undefined ||
+          signature === undefined ||
+          binding === undefined ||
+          binding.parent !== undefined ||
+          binding.captures.length !== 0 ||
+          signature.returnType !== result ||
+          signature.parameters.length !== parameters.length ||
+          signature.parameters.some((p, i) => p !== parameters[i])
+        )
+          fail(
+            "BigInt runtime helper " +
+              String(source) +
+              " is missing or has an incompatible signature",
+          );
+        for (let i = 0; i < parameters.length; i++)
+          if (parameters[i] === "reference" && !same(parameterType(source, i)))
+            fail("BigInt runtime parameter representation mismatch");
+        if (result === "reference" && !same(bodyByFunction[source]?.result))
+          fail("BigInt runtime result representation mismatch");
+        return target;
+      }
+      const pair = (source: number): number =>
+        helper(source, ["reference", "reference"], "reference");
+      const unary = (source: number): number =>
+        helper(source, ["reference"], "reference");
+      const binary = sources.binary;
+      return {
+        literal: helper(sources.literal, ["string"], "reference"),
+        binary: {
+          "+": pair(binary["+"]),
+          "-": pair(binary["-"]),
+          "*": pair(binary["*"]),
+          "/": pair(binary["/"]),
+          "%": pair(binary["%"]),
+          "**": pair(binary["**"]),
+          "&": pair(binary["&"]),
+          "|": pair(binary["|"]),
+          "^": pair(binary["^"]),
+          "<<": pair(binary["<<"]),
+          ">>": pair(binary[">>"]),
+        },
+        negate: unary(sources.negate),
+        not: unary(sources.not),
+        compare: helper(sources.compare, ["reference", "reference"], "number"),
+        compareNumber: helper(
+          sources.compareNumber,
+          ["reference", "number"],
+          "number",
+        ),
+        equal: helper(sources.equal, ["reference", "reference"], "boolean"),
+        truthy: helper(sources.truthy, ["reference"], "boolean"),
+        toString: helper(sources.toString, ["reference"], "string"),
+        toNumber: helper(sources.toNumber, ["reference"], "number"),
+        fromNumber: helper(sources.fromNumber, ["number"], "reference"),
+        fromBoolean: helper(sources.fromBoolean, ["boolean"], "reference"),
+        asWidth: helper(
+          sources.asWidth,
+          ["number", "reference", "boolean"],
+          "reference",
+        ),
+      };
+    }
+    /** The BigIntValue record layout, planned on first use. */
+    function bigIntRecord(): number | undefined {
+      const source = recordTarget?.bigIntRepresentation;
+      const type =
+        source === undefined ? undefined : bodyByFunction[source]?.result;
+      return type === undefined ? undefined : recordContracts?.forType(type);
+    }
     function numberFormatter(): number {
       const source = recordTarget?.numberToString;
       const target = source === undefined ? undefined : targetIds[source];
@@ -1656,6 +1775,13 @@ function lowerEntries(
                 fail("string values require managed module lowering");
               constant = node.value;
               break;
+            case "bigint":
+              // The literal helper takes the canonical decimal text.
+              if (layout !== undefined)
+                fail("BigInt literals require managed module lowering");
+              if (bigints === undefined)
+                fail("BigInt literals require the bigint runtime");
+              break;
             case "this": {
               const owner = fn?.receiver;
               const binding =
@@ -1843,7 +1969,17 @@ function lowerEntries(
                 );
                 if (
                   !operands.every(
-                    (t) => t === "string" || t === "number" || t === "boolean",
+                    (t, i) =>
+                      t === "string" ||
+                      t === "number" ||
+                      t === "boolean" ||
+                      (t === "reference" &&
+                        bigIntType(
+                          checked,
+                          checked.expressions.get(
+                            i === 0 ? node.left : node.right,
+                          ) ?? -1,
+                        ) === "reference"),
                   )
                 )
                   fail(
@@ -2027,6 +2163,18 @@ function lowerEntries(
                   if (scalar(checked.expressions.get(argument)) === "number")
                     callee = numberFormatter();
                 }
+                break;
+              }
+              if (
+                intrinsic === "number-from-bigint" ||
+                intrinsic === "bigint-identity" ||
+                intrinsic === "bigint-from-number" ||
+                intrinsic === "bigint-from-boolean"
+              ) {
+                if (bigints === undefined)
+                  fail("BigInt conversion requires the bigint runtime");
+                builtin = intrinsic;
+                exprArguments(node.arguments);
                 break;
               }
               if (intrinsic === "number-from-string") {
@@ -2476,6 +2624,15 @@ function lowerEntries(
             checked.types[checkedType]?.kind === "never",
           functionTarget,
           indirect,
+          bigint:
+            checkedType !== undefined &&
+            bigIntType(checked, checkedType) !== undefined,
+          bigIntRecord:
+            node.kind === "unary" &&
+            node.operator === "typeof" &&
+            scalar(checked.expressions.get(node.operand)) === "general"
+              ? bigIntRecord()
+              : undefined,
           typeofFunction:
             node.kind === "unary" &&
             node.operator === "typeof" &&
@@ -2539,6 +2696,13 @@ function lowerEntries(
                 fail(
                   "checked downcasts to object types need one record layout",
                 );
+              if (!records.includes(record)) records.push(record);
+              return;
+            }
+            case "bigint": {
+              const record = bigIntRecord();
+              if (record === undefined)
+                fail("checked downcasts to bigint need the bigint runtime");
               if (!records.includes(record)) records.push(record);
               return;
             }
@@ -2943,6 +3107,7 @@ function lowerEntries(
         maps,
         owned,
         primitives,
+        bigints,
       );
       // Debug builds name the slots holding this function's own parameters
       // and locals. Captured and environment-owned bindings live in cells.

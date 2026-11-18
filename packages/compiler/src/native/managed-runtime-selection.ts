@@ -14,7 +14,8 @@ import type { SerializedManagedSurfaceDirectory } from "./managed-directory-data
 import { managedSurfaceContract } from "./managed-directory-reader.ts";
 
 export interface ManagedRuntimeKey {
-  readonly kind: "list" | "set" | "map" | "primitive" | "number-text";
+  readonly kind:
+    "list" | "set" | "map" | "primitive" | "number-text" | "bigint";
   readonly element: string;
   readonly value: string;
 }
