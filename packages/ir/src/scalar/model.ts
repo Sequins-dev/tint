@@ -1,5 +1,7 @@
 import type { HostOperation } from "./host.ts";
 import type { ForeignCall, ForeignMemoryAccess } from "./foreign.ts";
+export type NativeErrorKind = "Error" | "TypeError" | "RangeError";
+
 export type ScalarType =
   | "general"
   | "optional-boolean"
@@ -236,13 +238,18 @@ export type Instruction = Span &
       }
     | {
         readonly kind: "error-new";
-        readonly error: "TypeError" | "RangeError";
+        readonly error: NativeErrorKind;
         readonly id: number;
         readonly message: number;
       }
     | {
         readonly kind: "error-is";
-        readonly error: "TypeError" | "RangeError";
+        readonly error: NativeErrorKind;
+        readonly id: number;
+        readonly value: number;
+      }
+    | {
+        readonly kind: "error-message";
         readonly id: number;
         readonly value: number;
       }

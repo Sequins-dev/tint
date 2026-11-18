@@ -2908,3 +2908,34 @@ test("`as` from unknown is a checked downcast to testable types", () => {
     false,
   );
 });
+
+test("native Error constructors and guards expose TypeScript error members", () => {
+  for (const source of [
+    'function f(): Error { return new Error("message"); }',
+    'function f(): Error { return { name: "Custom", message: "text" }; }',
+    'function f(): string { try { throw new RangeError("range"); } catch (e) { if (!(e instanceof RangeError)) throw e; return e.message; } }',
+    "function f(e: Error | string): string { if (e instanceof Error) return e.name; return e; }",
+    "function f(e: Error): string | undefined { return e.stack; }",
+    'function f(e: unknown): string { if (e instanceof Error && e.message === "a") return e.name; return ""; }',
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify(result));
+  }
+
+  for (const source of [
+    "function f(): boolean { return 42 instanceof Error; }",
+    "function f(): Error { return new Error(1); }",
+    "function f(e: Error): string { return e.code; }",
+    'function f(): Error { return { name: "Custom", message: 1 }; }',
+  ])
+    assert.equal(check(source).ok, false, source);
+
+  const cause = check(
+    'function f(): Error { return new Error("x", {cause: 42}); }',
+  );
+  assert.equal(cause.ok, false);
+  assert.match(
+    JSON.stringify(cause),
+    /Error options \(cause\) require the realm Error constructor/,
+  );
+});

@@ -53,6 +53,8 @@ export interface ExpressionInfo {
     | {
         readonly tests: readonly DowncastTest[];
         readonly records: readonly number[];
+        readonly errors?:
+          readonly ("Error" | "TypeError" | "RangeError")[] | undefined;
       }
     | undefined;
   /** C views: the use of a creation call or member/element read, or the
@@ -142,6 +144,9 @@ export interface ExpressionInfo {
     | "array-set"
     | "array-subarray"
     | "array-slice"
+    | "error-new"
+    | "error-is"
+    | "error-property"
     | "range-error-new"
     | "range-error-is"
     | "type-error-new"

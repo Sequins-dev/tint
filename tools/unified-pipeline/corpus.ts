@@ -865,6 +865,29 @@ export function run() {
 }`,
   },
   {
+    name: "native-error-flow",
+    typed: `function describe(value: Error | string): string {
+  if (!(value instanceof Error)) return value;
+  if (value instanceof TypeError) return value.name;
+  return value.message;
+}
+export function run(): number {
+  return describe("other") === "other" && describe(new Error()) === "" &&
+      describe(new TypeError("message")) === "TypeError" &&
+      describe(new RangeError("range")) === "range" ? 42 : 1;
+}`,
+    untyped: `function describe(value) {
+  if (!(value instanceof Error)) return value;
+  if (value instanceof TypeError) return value.name;
+  return value.message;
+}
+export function run() {
+  return describe("other") === "other" && describe(new Error()) === "" &&
+      describe(new TypeError("message")) === "TypeError" &&
+      describe(new RangeError("range")) === "range" ? 42 : 1;
+}`,
+  },
+  {
     name: "caught-error-reads",
     typed: `export function run(): number {
   let message = "", name = "", plain = "";

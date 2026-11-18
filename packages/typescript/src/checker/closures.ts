@@ -156,6 +156,9 @@ export type ClosureIntrinsic =
   | "list-fill"
   | "array-read"
   | "array-write"
+  | "error-new"
+  | "error-is"
+  | "error-property"
   | "range-error-new"
   | "range-error-is"
   | "type-error-new"
@@ -274,6 +277,7 @@ export function checkClosureModule(
     "Float64Array",
     "TypeError",
     "RangeError",
+    "Error",
   ]);
   if (!bound.ok) return bound;
   const graph = bound.value,
@@ -1870,6 +1874,86 @@ export function checkClosureModule(
     result.add(narrowToken(binding.id, unionSubset(selected, node)));
     return result;
   }
+  function isErrorKind(kind: string | undefined): boolean {
+    return kind === "Error" || kind === "TypeError" || kind === "RangeError";
+  }
+  function isErrorType(id: number): boolean {
+    const type = types[id];
+    if (type?.kind === "union") return type.members.every(isErrorType);
+    return isErrorKind(type?.kind);
+  }
+  function refineErrorGuard(
+    node: Expression,
+    truth: boolean,
+    base: Set<number>,
+  ): Set<number> | undefined {
+    if (node.kind !== "binary" || node.operator !== "instanceof")
+      return undefined;
+    const target = ungroup(node.right);
+    if (
+      target.kind !== "identifier" ||
+      !isErrorKind(target.name) ||
+      references.has(target)
+    )
+      return undefined;
+    const binding = references.get(ungroup(node.left));
+    if (binding === undefined) return undefined;
+    const declared = bindingTypes[binding.id];
+    if (declared === undefined) return undefined;
+    const name = target.name,
+      brand = primitive(name);
+    const selected: number[] = [];
+    function collect(id: number): void {
+      const type = types[id];
+      if (type?.kind === "union") {
+        for (const member of type.members) {
+          if (member === undefined) throw "error guard member invariant";
+          collect(member);
+        }
+      } else if (type?.kind === "unknown") selected.push(truth ? brand : id);
+      else if (isErrorKind(type?.kind)) {
+        if (name === "Error" || type?.kind === name) {
+          if (truth) selected.push(id);
+        } else if (type?.kind === "Error") selected.push(truth ? brand : id);
+        else if (!truth) selected.push(id);
+      } else if (!truth) selected.push(id);
+      else if (type?.kind === "object") selected.push(brand);
+    }
+    collect(narrowedType(binding.id, declared, base));
+    if (selected.length === 0) return undefined;
+    const result = new Set(base);
+    for (const token of result) {
+      const fact = narrowed[token - graph.bindings.length];
+      if (
+        fact !== undefined &&
+        fact.binding === binding.id &&
+        fact.property === undefined
+      )
+        result.delete(token);
+    }
+    result.add(narrowToken(binding.id, unionSubset(selected, node)));
+    return result;
+  }
+  function validInstanceofOperand(id: number): boolean {
+    const type = types[id];
+    if (type?.kind === "union")
+      return type.members.some(validInstanceofOperand);
+    return (
+      type?.kind === "unknown" ||
+      type?.kind === "never" ||
+      type?.kind === "object" ||
+      type?.kind === "array" ||
+      type?.kind === "function" ||
+      type?.kind === "map" ||
+      type?.kind === "set" ||
+      type?.kind === "ArrayBuffer" ||
+      type?.kind === "Uint8Array" ||
+      type?.kind === "Uint16Array" ||
+      type?.kind === "Uint32Array" ||
+      type?.kind === "Float64Array" ||
+      isErrorKind(type?.kind)
+    );
+  }
   function refineLiteralBinding(
     node: Expression,
     truth: boolean,
@@ -1929,8 +2013,7 @@ export function checkClosureModule(
                 type?.kind === "Uint16Array" ||
                 type?.kind === "Uint32Array" ||
                 type?.kind === "Float64Array" ||
-                type?.kind === "TypeError" ||
-                type?.kind === "RangeError"
+                isErrorKind(type?.kind)
               ? "object"
               : type?.kind;
         if (
@@ -2275,6 +2358,8 @@ export function checkClosureModule(
       for (const token of base) if (evaluated.has(token)) retained.add(token);
       return retained;
     }
+    const error = refineErrorGuard(node, truth, base);
+    if (error !== undefined) return error;
     const nullable = refineNullBinding(node, truth, base);
     if (nullable !== undefined) return nullable;
     const literal = refineLiteralBinding(node, truth, base);
@@ -2730,6 +2815,9 @@ export function checkClosureModule(
       case "undefined":
       case "null":
       case "Uint8Array":
+      case "TypeError":
+      case "RangeError":
+      case "Error":
         return true;
       case "object":
         return t.call === undefined && t.construct === undefined;
@@ -3062,6 +3150,14 @@ export function checkClosureModule(
               "typed object accessors require accessor layout support",
             );
           const hasSpread = node.properties.some((p) => p.kind === "spread");
+          if (types[expected ?? -1]?.kind === "Error") {
+            // Keep the actual record shape, even when the context is Error.
+            // Its optional stack may be absent and its identity is observable.
+            const actual = expression(node, owner, undefined, preserveContext);
+            requireType(actual, primitive("Error"), node);
+            result = actual;
+            break;
+          }
           if (expected === undefined || hasSpread || preserveContext) {
             const contexts: number[] = [];
             const visited = new Set<number>();
@@ -3360,6 +3456,19 @@ export function checkClosureModule(
             break;
           }
           const obj = chainReceiver(node.object, node.optional === true);
+          if (
+            isErrorType(obj) &&
+            (node.property === "message" ||
+              node.property === "name" ||
+              node.property === "stack")
+          ) {
+            intrinsics.set(node, "error-property");
+            result =
+              node.property === "stack"
+                ? unionSubset([string, undefinedType], node)
+                : string;
+            break;
+          }
           const viewRead = viewAccess(
             node,
             obj,
@@ -3477,24 +3586,27 @@ export function checkClosureModule(
           const target = ungroup(node.callee);
           if (
             target.kind === "identifier" &&
-            (target.name === "TypeError" || target.name === "RangeError") &&
+            isErrorKind(target.name) &&
             !references.has(target)
           ) {
             if (node.arguments.length > 1)
               fail(
                 node,
-                "ARITY",
-                "native errors accept at most one message in this slice",
+                "UNSUPPORTED",
+                "Error options (cause) require the realm Error constructor",
               );
             for (const argument of node.arguments) {
               if (argument === undefined) throw "error argument invariant";
-              requireType(expression(argument, owner), string, argument);
+              const messageType = unionSubset([string, undefinedType], node);
+              requireType(expression(argument, owner), messageType, argument);
             }
             intrinsics.set(
               node,
               target.name === "TypeError"
                 ? "type-error-new"
-                : "range-error-new",
+                : target.name === "RangeError"
+                  ? "range-error-new"
+                  : "error-new",
             );
             result = primitive(target.name);
             break;
@@ -5026,7 +5138,7 @@ export function checkClosureModule(
             const target = ungroup(node.right);
             if (
               target.kind !== "identifier" ||
-              (target.name !== "TypeError" && target.name !== "RangeError") ||
+              !isErrorKind(target.name) ||
               references.has(target)
             )
               fail(
@@ -5035,15 +5147,19 @@ export function checkClosureModule(
                 "instanceof requires an unshadowed supported error constructor in this slice",
               );
             const operand = expression(node.left, owner);
-            if (operand === voidType)
+            if (!validInstanceofOperand(operand))
               fail(
                 node.left,
                 "TYPE_MISMATCH",
-                "void is not an instanceof operand",
+                "instanceof requires an object or unknown operand",
               );
             intrinsics.set(
               node,
-              target.name === "TypeError" ? "type-error-is" : "range-error-is",
+              target.name === "TypeError"
+                ? "type-error-is"
+                : target.name === "RangeError"
+                  ? "range-error-is"
+                  : "error-is",
             );
             result = boolean;
             break;

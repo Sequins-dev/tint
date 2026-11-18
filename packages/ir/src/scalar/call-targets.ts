@@ -546,6 +546,7 @@ function functionFlows(
           case "string-allocate":
           case "string-write":
           case "constant":
+          case "error-message":
           case "error-is":
           case "array-subarray":
           case "reference-vector-new":
