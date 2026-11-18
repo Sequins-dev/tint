@@ -2,14 +2,21 @@
 // kernel page size (memory-release granule), the CPUs available to the
 // process (collector worker count) and the SHA-256 instructions (the
 // compiler's hashing intrinsic). Each native value is checked against the
-// host's own report, and SHA-256 digests against Node's crypto on both the
-// instruction path and the portable path (forced by leaving cpu-sha256
-// unbound). On Linux, the processor count follows the affinity mask
-// (taskset), and the generational collector keeps data intact with one
-// (serial) or two collector threads.
+// host's own report (cgroup v1 and hybrid hierarchies, which the
+// development VM lacks, from fixture files), and SHA-256 digests against
+// Node's crypto on both the instruction path and the portable path (forced
+// by leaving cpu-sha256 unbound). On Linux, the processor count follows the
+// affinity mask (taskset), and the generational collector keeps data intact
+// with one (serial) or two collector threads.
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { availableParallelism, platform, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -221,6 +228,121 @@ test("page size, processor count and CPU limit match the host's report", () => {
     availableParallelism(),
   );
   buildFacts("host-facts", processors);
+});
+
+// cgroup hierarchies the development VM lacks (it runs cgroup v2 only), as
+// files below a root that the native reader prepends: each case's limit.
+const cgroupCases: readonly {
+  readonly files: Readonly<Record<string, string>>;
+  readonly limit: number;
+}[] = [
+  {
+    // cgroup v1, 2.5 CPUs at the leaf, unlimited ancestors; a mountinfo
+    // longer than one page (proc files return a page per read).
+    files: {
+      "/proc/self/cgroup":
+        "12:memory:/a/b\n4:cpu,cpuacct:/a/b\n1:name=systemd:/a/b\n",
+      "/proc/self/mountinfo":
+        "22 1 259:1 / / rw shared:1 - ext4 /dev/root rw\n".repeat(120) +
+        "31 25 0:28 / /sys/fs/cgroup/cpu,cpuacct rw shared:10 - cgroup cgroup rw,cpu,cpuacct\n",
+      "/sys/fs/cgroup/cpu,cpuacct/a/b/cpu.cfs_quota_us": "250000\n",
+      "/sys/fs/cgroup/cpu,cpuacct/a/b/cpu.cfs_period_us": "100000\n",
+      "/sys/fs/cgroup/cpu,cpuacct/a/cpu.cfs_quota_us": "-1\n",
+      "/sys/fs/cgroup/cpu,cpuacct/cpu.cfs_quota_us": "-1\n",
+    },
+    limit: 3,
+  },
+  {
+    // A container's own cgroup as the mounted root, mount point escaped.
+    files: {
+      "/proc/self/cgroup": "5:cpu:/docker/abc\n",
+      "/proc/self/mountinfo":
+        "40 30 0:30 /docker/abc /sys/fs/cgroup/cpu\\040x rw - cgroup cgroup rw,cpu\n",
+      "/sys/fs/cgroup/cpu x/cpu.cfs_quota_us": "400000\n",
+      "/sys/fs/cgroup/cpu x/cpu.cfs_period_us": "100000\n",
+    },
+    limit: 4,
+  },
+  {
+    // Hybrid: the tighter of v2 cpu.max and the v1 quota.
+    files: {
+      "/proc/self/cgroup": "4:cpu:/\n0::/x\n",
+      "/proc/self/mountinfo":
+        "31 25 0:28 / /sys/fs/cgroup/cpu rw - cgroup cgroup rw,cpu\n",
+      "/sys/fs/cgroup/x/cpu.max": "600000 100000\n",
+      "/sys/fs/cgroup/cpu/cpu.cfs_quota_us": "200000\n",
+      "/sys/fs/cgroup/cpu/cpu.cfs_period_us": "100000\n",
+    },
+    limit: 2,
+  },
+];
+
+test("cgroup v1, v2 and hybrid limits parse natively from fixture files", () => {
+  const directory = mkdtempSync(join(tmpdir(), "tint-cgroups-"));
+  try {
+    const roots = cgroupCases.map((item, index) => {
+      const root = join(directory, String(index));
+      for (const [path, contents] of Object.entries(item.files)) {
+        mkdirSync(dirname(root + path), { recursive: true });
+        writeFileSync(root + path, contents);
+      }
+      return root;
+    });
+    const fixture = `import {openRuntimeFile,readRuntimeFile,closeRuntimeFile} from "memory";
+import {cgroupProcessorLimitFrom} from "processors";
+let root="";
+function readBelowRoot(path:Uint8Array,buffer:Uint8Array):number{
+ let length=0;while((path[length]??0)!==0)length++;
+ const full=new Uint8Array(root.length+length+1);
+ for(let i=0;i<root.length;i++)full[i]=root.charCodeAt(i);
+ for(let i=0;i<length;i++)full[root.length+i]=path[i]??0;
+ const fd=openRuntimeFile(full);if(fd<0)return -1;
+ let total=0;const chunk=new Uint8Array(4096);
+ while(total<buffer.length){const count=readRuntimeFile(fd,chunk);if(count<=0)break;for(let i=0;i<count&&total<buffer.length;i++)buffer[total++]=chunk[i]??0;}
+ closeRuntimeFile(fd);return total;
+}
+export function run():number{
+${roots.map((root, index) => ` root=${JSON.stringify(root)};if(cgroupProcessorLimitFrom(readBelowRoot)!==${cgroupCases[index]!.limit})return ${10 + index};`).join("\n")}
+ return 42;
+}
+`;
+    for (const [index, root] of roots.entries())
+      assert.equal(
+        cgroupProcessorLimitFrom((path, buffer) => {
+          const name = new TextDecoder().decode(
+            path.subarray(0, path.indexOf(0)),
+          );
+          let contents: Buffer;
+          try {
+            contents = readFileSync(root + name);
+          } catch {
+            return -2;
+          }
+          const count = Math.min(contents.length, buffer.length);
+          buffer.set(contents.subarray(0, count));
+          return count;
+        }),
+        cgroupCases[index]!.limit,
+      );
+    verifyHostedFixture(
+      fixture,
+      "cgroup-files",
+      [
+        ["memory", memory],
+        ["processors", processorsModule],
+      ],
+      [],
+      [],
+      [{ module: memory, namespace: "native-memory" }],
+      {
+        managedBytes: 4194304,
+        allocationCapacity: 65536,
+        hostBindings: factBindings,
+      },
+    );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 test("SHA-256 digests match Node on the instruction path", () => {

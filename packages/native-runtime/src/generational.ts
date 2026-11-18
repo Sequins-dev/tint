@@ -31,7 +31,9 @@ import {
  * module initializes, so throwing it never allocates. */
 const managedHeapExhausted: () => void = (): void => {};
 /** Most collector threads, including the mutator's own (tuned on six
- * performance cores); fewer when the process may use fewer CPUs. */
+ * performance cores; 8 or 9 measured no faster on a 9-CPU Linux VM, see
+ * docs/native-performance-analysis.md); fewer when the process may use fewer
+ * CPUs. */
 const maximumParallelWorkers = 6;
 /** Source bytes below which a collection stays serial. */
 const parallelMinimum = 4194304;

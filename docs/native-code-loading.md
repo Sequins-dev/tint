@@ -137,19 +137,55 @@ Linux arenas are W^X dual mappings (`linux-dual-mapping`). `mapExecutableMemory`
 reserves one address range and replaces it with a read-only header page, the
 read/execute view (the returned address) and a read/write view, each the request
 rounded up to 16 KiB, the largest supported kernel page. Both views map one
-`memfd_create("tint-jit", MFD_CLOEXEC)` file, whose descriptor is closed once
-mapped. No page is ever writable and executable, so the arena works where
-`PROT_WRITE|PROT_EXEC` mappings are refused (PaX MPROTECT, SELinux
+`memfd_create("tint-jit", MFD_CLOEXEC | MFD_EXEC)` file, whose descriptor is
+closed once mapped. Linux 6.3+ wants `MFD_EXEC` explicit (under
+`vm.memfd_noexec=1` a file created without it is sealed non-executable);
+older kernels reject the unknown flag with `EINVAL`, and the file is created
+again without it. No page is ever writable and executable, so the arena works
+where `PROT_WRITE|PROT_EXEC` mappings are refused (PaX MPROTECT, SELinux
 `deny_execmem`, which checks anonymous executable memory; an executable file
 mapping instead needs the policy's `execute` permission on the tmpfs file).
 Any failure undoes the partial mapping and reports `-errno`; there is
-deliberately no RWX fallback. Kernels 6.3+ with `vm.memfd_noexec=2` refuse a memory
-file created without `MFD_NOEXEC_SEAL`, so the arena reports `-EACCES` there
-(untested: the validation kernel is 6.1). The header names the views, so a write or
+deliberately no RWX fallback. The header names the views, so a write or
 release whose window is not a whole arena (starting at its executable address,
 no longer than the view) is rejected with -1 or `-EINVAL` instead of writing
 through an unrelated alias. `unmapExecutableMemory` releases the header and
 both views together.
+
+A kernel that refuses executable memory files outright (`vm.memfd_noexec=2`,
+6.3+: `memfd_create` fails with `EACCES` unless the file is sealed
+non-executable) gets a **single mapping** instead. The executable view is an
+anonymous read/execute mapping, and the header names it as its own writable
+view (the read/write range stays an unused reservation). Each write makes the
+16 KiB granules spanning the written bytes read/write (never executable),
+copies, makes them read/execute again and maintains the instruction cache as
+below. It is still W^X, at a cost:
+
+- A write removes execute permission from whole granules, not just the
+  written bytes, so the owner must exclude execution of everything sharing
+  those granules (other entries in the arena) on other threads for the
+  duration, where the dual mapping only excludes the written range. Each
+  write also pays two `mprotect` calls and their TLB invalidations.
+- Debugger breakpoints keep working: ptrace writes the private anonymous
+  page directly, and a write replaces only the bytes it publishes, so
+  breakpoints elsewhere in the page survive as they do in the dual mapping
+  (`verify-hosted-jit-debug` passes in both modes, including its publication
+  into a page holding a breakpoint).
+- Policies that forbid making once-writable memory executable (PaX
+  MPROTECT) refuse the first `mprotect` to read/write, so every write fails
+  explicitly (-1) and nothing is published; SELinux `deny_execmem` refuses the
+  anonymous executable mapping itself (`-EACCES` from
+  `mapExecutableMemory`). Such systems need a kernel that permits executable
+  memory files.
+
+`tools/linux/refuse-executable-memfd.py <command>` runs a command under a
+seccomp filter that fails `memfd_create` with `EACCES` exactly as
+`vm.memfd_noexec=2` does, so older kernels exercise the single mapping. To
+check a real 6.3+ kernel (e.g. a Fedora VM): run the live-code fixtures with
+`vm.memfd_noexec` at 0 and 1 (dual mapping, `MFD_EXEC` accepted; dmesg shows no
+"memfd_create() called without MFD_EXEC" warning) and at 2
+(`TINT_EXPECT_JIT_MAPPING=single` for `verify-native-code`, which checks
+`/proc/self/maps` for one anonymous read/execute view per arena).
 
 The writable view is a shared mapping; the executable view is private. Until a
 page is copied on write a private file mapping shows the file's page, so writes

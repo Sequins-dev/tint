@@ -10,8 +10,9 @@ export function linuxHostABI(): PosixHostABI {
     executableMemory: {
       kind: "linux-dual-mapping",
       memoryFileSymbol: "memfd_create",
-      // MFD_CLOEXEC
+      // MFD_CLOEXEC; MFD_EXEC
       memoryFileFlags: 1,
+      executableFileFlag: 0x10,
       truncateSymbol: "ftruncate",
       protectSymbol: "mprotect",
       // MAP_SHARED, MAP_PRIVATE
