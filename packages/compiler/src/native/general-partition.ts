@@ -6,17 +6,21 @@ import {
   type TypeNode,
 } from "@tint/typescript/syntax";
 
-/** Primitive value classes a checked boundary accepts, as a bit set. */
+/** Value classes a checked boundary accepts, as a bit set. `unknown`
+ * accepts every value unchanged: typed `unknown` and general values share
+ * one representation, so such values cross with their identity. */
 export const boundaryNumber = 1,
   boundaryString = 2,
   boundaryBoolean = 4,
   boundaryUndefined = 8,
-  boundaryNull = 16;
+  boundaryNull = 16,
+  boundaryUnknown = 32;
 
 /** A typed export that general code may use through a checked boundary:
- * a function whose parameters and result are primitives, or a constant of a
- * primitive type. Arguments are checked against the declared types on entry
- * (an explicit cast); results need no conversion. */
+ * a function whose parameters and result are primitives or `unknown`, or a
+ * constant of such a type. Arguments are checked against the declared types
+ * on entry (an explicit cast; `unknown` accepts any value); results need no
+ * conversion. */
 export type BoundaryExport =
   | {
       readonly kind: "function";
@@ -56,6 +60,8 @@ function primitiveClasses(type: TypeNode | undefined): number {
           return boundaryUndefined;
         case "null":
           return boundaryNull;
+        case "unknown":
+          return boundaryUnknown;
         default:
           return 0;
       }
@@ -167,6 +173,9 @@ export interface GeneralPartition {
   readonly general: readonly SourceModule[];
   /** Typed modules general code imports, with their checked exports. */
   readonly boundaries: readonly TypedBoundaryModule[];
+  /** A trusted module general code uses through exports that cannot cross a
+   * checked boundary; trusted modules always stay typed. */
+  readonly blocked?: { readonly module: string; readonly exports: string };
 }
 
 /** Closes a set of general modules: every importer of a general module is
@@ -176,10 +185,19 @@ export interface GeneralPartition {
 export function closeGeneralPartition(
   application: readonly SourceModule[],
   seed: ReadonlySet<string>,
+  /** Trusted runtime modules general code imports: typed boundaries only. */
+  trusted: readonly SourceModule[] = [],
 ): GeneralPartition {
   const byId = new Map<string, SourceModule>();
   for (const module of application)
     if (module !== undefined) byId.set(module.id, module);
+  const trustedIds = new Set<string>();
+  for (const module of trusted)
+    if (module !== undefined) {
+      byId.set(module.id, module);
+      trustedIds.add(module.id);
+    }
+  let blocked: { module: string; exports: string } | undefined = undefined;
   const general = new Set<string>(seed);
   for (let changed = true; changed;) {
     changed = false;
@@ -236,6 +254,11 @@ export function closeGeneralPartition(
             )
               crossing = false;
         if (!crossing) {
+          if (trustedIds.has(target)) {
+            if (blocked === undefined)
+              blocked = { module: target, exports: crossingNames(statement) };
+            continue;
+          }
           general.add(target);
           changed = true;
         }
@@ -290,5 +313,23 @@ export function closeGeneralPartition(
       }
     }
   }
-  return { general: generalModules, boundaries };
+  return blocked === undefined
+    ? { general: generalModules, boundaries }
+    : { general: generalModules, boundaries, blocked };
+}
+
+/** The value names an import or re-export statement uses, for diagnostics. */
+function crossingNames(statement: Statement): string {
+  const names: string[] = [];
+  if (statement.kind === "export")
+    for (const binding of statement.declaration.bindings ?? []) {
+      if (binding !== undefined && !binding.typeOnly) names.push(binding.local);
+    }
+  else if (statement.kind === "import")
+    for (const binding of statement.declaration.bindings)
+      if (binding !== undefined && !binding.typeOnly)
+        names.push(
+          binding.namespace ? "* as " + binding.local : binding.imported,
+        );
+  return names.join(", ");
 }

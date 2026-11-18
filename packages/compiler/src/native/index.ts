@@ -52,6 +52,7 @@ export {
   boundaryBoolean,
   boundaryUndefined,
   boundaryNull,
+  boundaryUnknown,
   type BoundaryExport,
   type TypedBoundaryModule,
 } from "./general-partition.ts";
@@ -593,7 +594,22 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     )
       for (const id of applicationIds) seed.add(id);
     else seed.add(culprit);
-    const partition = closeGeneralPartition(application.value, seed);
+    const partition = closeGeneralPartition(
+      application.value,
+      seed,
+      application.trusted,
+    );
+    if (partition.blocked !== undefined)
+      return failure(
+        "general",
+        "general code uses " +
+          partition.blocked.exports +
+          " of the trusted module " +
+          partition.blocked.module +
+          ", whose types cannot cross a checked boundary (typed: " +
+          reason +
+          ")",
+      );
     for (const module of partition.general)
       if (module !== undefined) seed.add(module.id);
     const lowered = lowering.lower({
@@ -638,13 +654,16 @@ export function compileArm64Program(original: CompileRequest): Compilation {
   }
   throw "general partition did not converge";
 }
-/** The modules reachable from the entry that the general lowering replaces:
- * everything except trusted runtime and host-bound modules, which stay typed
- * and must not be imported by general code. */
-function generalApplicationModules(
-  request: CompileRequest,
-):
-  | { readonly ok: true; readonly value: readonly SourceModule[] }
+/** The modules reachable from the entry that the general lowering may
+ * replace, and the trusted runtime and host-bound modules they import. Trusted
+ * modules always stay typed: general code reaches them through checked
+ * boundaries, and the walk does not enter them. */
+function generalApplicationModules(request: CompileRequest):
+  | {
+      readonly ok: true;
+      readonly value: readonly SourceModule[];
+      readonly trusted: readonly SourceModule[];
+    }
   | { readonly ok: false; readonly error: string } {
   const byId = new Map<string, SourceModule>();
   for (const module of request.modules) {
@@ -667,6 +686,7 @@ function generalApplicationModules(
   for (const service of request.serviceImports ?? [])
     if (service !== undefined) trusted.add(service.module);
   const result: SourceModule[] = [],
+    imported: SourceModule[] = [],
     seen = new Set<string>();
   const queue = [request.entry];
   for (let index = 0; index < queue.length; index++) {
@@ -677,11 +697,10 @@ function generalApplicationModules(
     const module = byId.get(id);
     if (module === undefined)
       return { ok: false, error: "missing module " + id };
-    if (trusted.has(id))
-      return {
-        ok: false,
-        error: "general code cannot import the trusted module " + id,
-      };
+    if (trusted.has(id)) {
+      imported.push(module);
+      continue;
+    }
     result.push(module);
     for (const declaration of module.module.imports) {
       if (declaration === undefined) throw "general import invariant";
@@ -690,7 +709,7 @@ function generalApplicationModules(
       if (dependency !== undefined) queue.push(dependency);
     }
   }
-  return { ok: true, value: result };
+  return { ok: true, value: result, trusted: imported };
 }
 /** Globals of typed (non-general) programs. */
 const typedGlobals: readonly string[] = [

@@ -8,6 +8,7 @@ import {
   boundaryNumber,
   boundaryString,
   boundaryUndefined,
+  boundaryUnknown,
   closeGeneralPartition,
 } from "../src/native/general-partition.ts";
 
@@ -96,4 +97,74 @@ test("general modules close over importers and unsafe typed imports", () => {
       ],
     },
   ]);
+});
+
+test("unknown parameters and results cross with their identity", () => {
+  const lib = module(
+    "lib",
+    "export function identity(value: unknown): unknown { return value; }\nexport function kind(value: unknown, fallback?: string): string { return typeof value; }\nexport const seed: unknown = 1;",
+  );
+  assert.deepEqual(boundaryExport(lib, "identity"), {
+    kind: "function",
+    name: "identity",
+    local: "identity",
+    parameters: [boundaryUnknown],
+  });
+  assert.deepEqual(boundaryExport(lib, "kind"), {
+    kind: "function",
+    name: "kind",
+    local: "kind",
+    parameters: [boundaryUnknown, boundaryString | boundaryUndefined],
+  });
+  assert.deepEqual(boundaryExport(lib, "seed"), {
+    kind: "constant",
+    name: "seed",
+    local: "seed",
+  });
+});
+
+test("trusted modules stay typed behind checked boundaries", () => {
+  const runtime = module(
+    "runtime",
+    "export function identity(value: unknown): unknown { return value; }\nexport function make(): { x: number } { return { x: 1 }; }",
+  );
+  const main = module(
+    "main",
+    'import { identity } from "runtime";\nexport function run(): unknown { return identity(1); }',
+    [["runtime", "runtime"]],
+  );
+  const partition = closeGeneralPartition([main], new Set(["main"]), [runtime]);
+  assert.deepEqual(
+    partition.general.map((m) => m.id),
+    ["main"],
+  );
+  assert.equal(partition.blocked, undefined);
+  assert.deepEqual(partition.boundaries, [
+    {
+      id: "runtime",
+      exports: [
+        {
+          kind: "function",
+          name: "identity",
+          local: "identity",
+          parameters: [boundaryUnknown],
+        },
+      ],
+    },
+  ]);
+  // An export whose type cannot cross is reported instead of making the
+  // trusted module general.
+  const records = module(
+    "main",
+    'import { make } from "runtime";\nexport function run(): number { return make().x; }',
+    [["runtime", "runtime"]],
+  );
+  const blocked = closeGeneralPartition([records], new Set(["main"]), [
+    runtime,
+  ]);
+  assert.deepEqual(
+    blocked.general.map((m) => m.id),
+    ["main"],
+  );
+  assert.deepEqual(blocked.blocked, { module: "runtime", exports: "make" });
 });
