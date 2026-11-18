@@ -115,6 +115,8 @@ export interface LinkOptions {
   /** Preserve runtime initializers for an explicitly instantiated closed module graph. */
   readonly evaluation?: "instance";
 }
+/** Most modules one link accepts. */
+export const maxLinkedModules = 1048576;
 /** Resolve bindings; instance mode also schedules synchronous dependency evaluation. */
 export function linkModules(
   inputs: readonly SourceModule[],
@@ -134,7 +136,9 @@ export function linkModules(
     throw abort;
   }
   try {
-    if (inputs.length > 4096)
+    // A sanity bound on the input graph, not a representation limit: one
+    // whole-program Test262 suite image links about two modules per variant.
+    if (inputs.length > maxLinkedModules)
       fail(entry, { start: 0, end: 0 }, "module count limit exceeded");
     for (const input of inputs) {
       if (input === undefined) throw "missing input";
