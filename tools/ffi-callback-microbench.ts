@@ -30,6 +30,7 @@ function nextKey(): number {
 }`;
 const librarySource = `#include <stdint.h>
 int32_t bench_leaf(int32_t x) { return x + 1; }
+int32_t bench_leaf0(void) { return 1; }
 int32_t bench_once(int32_t (*f)(int32_t), int32_t x) { return f(x); }
 `;
 const cSource = `#include <stdint.h>
@@ -88,6 +89,7 @@ function declarations(library: string): FixtureForeignDeclaration[] {
       text: `declare module "tint:c/callback-bench" {
   import type { i32, Callback } from "tint:ffi";
   export function bench_leaf(x: i32): i32;
+  export function bench_leaf0(): i32;
   export function bench_once(f: Callback<(x: i32) => i32>, x: i32): i32;
 }
 `,
@@ -99,6 +101,7 @@ function declarations(library: string): FixtureForeignDeclaration[] {
   import type { i32, usize, Ptr, Address, Layout, Callback } from "tint:ffi";
   export interface Item { key: i32; tag: i32 }
   export const Item: Layout<Item>;
+  export function getpid(): i32;
   export function qsort(base: Ptr<Item>, count: usize, size: usize, compare: Callback<(a: Ptr<Item>, b: Ptr<Item>) => i32>): void;
   export function qsort$address(base: Ptr<Item>, count: usize, size: usize, compare: Callback<(a: Address<Item>, b: Address<Item>) => i32>): void;
 }
@@ -109,8 +112,8 @@ function declarations(library: string): FixtureForeignDeclaration[] {
 const tintSource = `import { monotonicMilliseconds } from "clock";
 import { allocate, address, type View } from "tint:ffi";
 import { arrayAt } from "tint:ffi/unsafe";
-import { Item, qsort, qsort$address } from "sorting";
-import { bench_leaf, bench_once } from "bench";
+import { Item, getpid, qsort, qsort$address } from "sorting";
+import { bench_leaf, bench_leaf0, bench_once } from "bench";
 ${keys}
 function report(name: string, elapsed: number, count: number, unit: string): void {
   console.log(name + " " + String(elapsed * 1000000 / count) + " ns/" + unit);
@@ -119,8 +122,29 @@ export function run(): number {
   {
     let sum = 0;
     const start = monotonicMilliseconds();
+    for (let i = 0; i < ${calls}; i++) sum += getpid();
+    report("tint leaf call getpid()", monotonicMilliseconds() - start, ${calls}, "call");
+    if (sum === 0) return 1;
+  }
+  {
+    let sum = 0;
+    const start = monotonicMilliseconds();
+    for (let i = 0; i < ${calls}; i++) sum += bench_leaf0();
+    report("tint leaf call bench_leaf0()", monotonicMilliseconds() - start, ${calls}, "call");
+    if (sum === 0) return 1;
+  }
+  {
+    let sum = 0;
+    const start = monotonicMilliseconds();
+    for (let i = 0; i < ${calls}; i++) sum += bench_leaf(7);
+    report("tint leaf call bench_leaf(7)", monotonicMilliseconds() - start, ${calls}, "call");
+    if (sum === 0) return 1;
+  }
+  {
+    let sum = 0;
+    const start = monotonicMilliseconds();
     for (let i = 0; i < ${calls}; i++) sum += bench_leaf(i);
-    report("tint leaf call", monotonicMilliseconds() - start, ${calls}, "call");
+    report("tint leaf call bench_leaf(i)", monotonicMilliseconds() - start, ${calls}, "call");
     if (sum === 0) return 1;
   }
   {
@@ -292,5 +316,8 @@ try {
   assert.equal(node.status, 0, node.stderr);
   console.log(node.stdout.trim());
 } finally {
-  rmSync(directory, { recursive: true, force: true });
+  // CALLBACK_BENCH_KEEP=1 keeps the C library and programs for profiling
+  // (the image's own directory is kept by TINT_KEEP_NATIVE=1).
+  if (process.env.CALLBACK_BENCH_KEEP === "1") console.log("kept " + directory);
+  else rmSync(directory, { recursive: true, force: true });
 }

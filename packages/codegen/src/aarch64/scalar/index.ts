@@ -3248,6 +3248,9 @@ function emitModuleForms(
                 // payloads are converted when wrapped.
                 op.kind === "string-slice" ||
                 op.kind === "optional-wrap" ||
+                // C integer arguments convert from an int64 directly
+                // (numberToInteger); C double arguments through floatLoad.
+                op.kind === "c-call" ||
                 // Inline list reads and writes index with an int64; their
                 // fallback calls convert the argument (floatLoad).
                 (op.kind === "call" &&
@@ -6160,6 +6163,48 @@ function emitModuleForms(
         ): void {
           const bytes = cScalarBytes(scalar),
             signed = cScalarSigned(scalar, cTarget());
+          if (storedAsInteger(id)) {
+            // An exact int64 already: only the C type's range is
+            // checked (sign for 64-bit unsigned, else the extension of
+            // its low bits, which then also is the register's value).
+            rawValue(rd, id);
+            if (bytes === 8) {
+              if (!signed) {
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: rd,
+                  rm: "zr",
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                trapIf({ op: "b.cond", condition: "mi" });
+              }
+              return;
+            }
+            emit({
+              op: signed ? "sbfm" : "ubfm",
+              width: 64,
+              rd: 9,
+              rn: rd,
+              immr: 0,
+              imms: bytes * 8 - 1,
+            });
+            emit({
+              op: "sub-reg",
+              width: 64,
+              rd: "zr",
+              rn: 9,
+              rm: rd,
+              shift: "lsl",
+              amount: 0,
+              setFlags: true,
+            });
+            trapIf({ op: "b.cond", condition: "ne" });
+            return;
+          }
           floatLoad(0, id);
           if (bytes === 8) {
             floatToInteger(rd, 0, signed);

@@ -259,3 +259,117 @@ test("import call sites stay exact when a function is re-emitted with long branc
   const word = view.getUint32(references[0]!.offset, true);
   assert.equal((word & 0x9f00001f) >>> 0, 0x10000010);
 });
+
+test("an int64 loop counter passed as a C integer stays int64 (no double round trip)", () => {
+  // let sum = 0; for (let i = 0; i < n; i++) sum += abs(i); return sum;
+  // with i an integer slot: the argument is range-checked from its int64
+  // (sxtw; cmp) and i + 1 stays an integer add.
+  const at = { start: 0, end: 0 };
+  const call: ForeignCall = {
+    symbol: "abs",
+    signature: {
+      parameters: [s("i32")],
+      result: s("i32"),
+      fixedParameters: 1,
+      callClass: "leaf",
+      errno: "none",
+    },
+    operands: ["number"],
+    result: "number",
+  };
+  const module: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "loop",
+        exported: true,
+        parameters: [0],
+        slots: ["number", "number", "number"],
+        integerSlots: [1],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "constant", id: 0, value: 0, ...at },
+              { kind: "store", slot: 1, value: 0, ...at },
+              { kind: "store", slot: 2, value: 0, ...at },
+            ],
+            terminator: { kind: "jump", target: 1, ...at },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "load", id: 1, slot: 1, ...at },
+              { kind: "load", id: 2, slot: 0, ...at },
+              {
+                kind: "binary",
+                id: 3,
+                operator: "<",
+                left: 1,
+                right: 2,
+                ...at,
+              },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 3,
+              consequent: 2,
+              alternate: 3,
+              ...at,
+            },
+          },
+          {
+            id: 2,
+            instructions: [
+              { kind: "load", id: 4, slot: 1, ...at },
+              { kind: "c-call", call, id: 5, arguments: [4], ...at },
+              { kind: "load", id: 6, slot: 2, ...at },
+              {
+                kind: "binary",
+                id: 7,
+                operator: "+",
+                left: 6,
+                right: 5,
+                ...at,
+              },
+              { kind: "store", slot: 2, value: 7, ...at },
+              { kind: "constant", id: 8, value: 1, ...at },
+              {
+                kind: "binary",
+                id: 9,
+                operator: "+",
+                left: 4,
+                right: 8,
+                ...at,
+              },
+              { kind: "store", slot: 1, value: 9, ...at },
+            ],
+            terminator: { kind: "jump", target: 1, ...at },
+          },
+          {
+            id: 3,
+            instructions: [{ kind: "load", id: 10, slot: 2, ...at }],
+            terminator: { kind: "return", value: 10, ...at },
+          },
+        ],
+      },
+    ],
+  };
+  const emitted = emitModule(module, { hostABI: darwinHostABI() });
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  const bytes = emitted.value.code,
+    words = new Uint32Array(
+      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+    );
+  const has = (mask: number, pattern: number): boolean =>
+    words.some((word) => (word & mask) >>> 0 === pattern);
+  // sxtw xd, wn (sbfm xd, xn, #0, #31): the i32 range check.
+  assert.ok(has(0xfffffc00, 0x93407c00), "sxtw");
+  // No conversion of the counter back from a double: neither the
+  // argument (fcvtzs w, d) nor i + 1 (fcvtzs x, d). The loop test still
+  // converts i to compare it with the double n.
+  assert.ok(!has(0xfffffc00, 0x1e780000), "fcvtzs w, d");
+  assert.ok(!has(0xfffffc00, 0x9e780000), "fcvtzs x, d");
+});
