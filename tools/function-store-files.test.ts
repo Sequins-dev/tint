@@ -5,7 +5,12 @@ import { join } from "node:path";
 import { test } from "node:test";
 import type { FunctionIR } from "@tint/ir/scalar";
 import { createFunctionStore } from "@tint/ir/storage";
-import { createFileSpillBackend } from "@tint/compiler/spill-files";
+import {
+  automaticPackingSize,
+  automaticResidentBytes,
+  createFileSpillBackend,
+  emissionStorage,
+} from "@tint/compiler/spill-files";
 import { createNodeFileHost } from "./node-file-host.ts";
 
 function body(id: number): FunctionIR {
@@ -65,4 +70,23 @@ test("spilled function bodies round-trip through temporary files", () => {
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+});
+
+test("emission packs automatically only above the IR size threshold", () => {
+  assert.equal(emissionStorage(undefined, automaticPackingSize), undefined);
+  assert.deepEqual(emissionStorage(undefined, automaticPackingSize + 1), {
+    policy: "budget",
+    byteBudget: automaticResidentBytes,
+  });
+  assert.deepEqual(emissionStorage(undefined, 11, 10), {
+    policy: "budget",
+    byteBudget: automaticResidentBytes,
+  });
+  // An explicit request wins in both directions.
+  assert.equal(
+    emissionStorage({ policy: "memory" }, automaticPackingSize * 4),
+    undefined,
+  );
+  const budget = { policy: "budget" as const, byteBudget: 1024 };
+  assert.equal(emissionStorage(budget, 1), budget);
 });

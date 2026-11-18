@@ -158,6 +158,18 @@ test("forced disk spilling preserves the hosted image", () => {
   }
 });
 
+test("in-memory packing without a file host preserves the hosted image", () => {
+  // Automatic packing for large programs uses this store: a budget with no
+  // spill backend keeps packed chunks in memory and evicts decoded bodies.
+  const request = { ...fixtureRequest(), debugSymbols: true };
+  const memory = build(request);
+  const packed = build({
+    ...request,
+    storage: { policy: "budget", byteBudget: 4096 },
+  });
+  assert.deepEqual(packed, memory);
+});
+
 test("observing a build leaves the image byte-identical and writes every report", () => {
   const request = fixtureRequest();
   const plain = build(request);
