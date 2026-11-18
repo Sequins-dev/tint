@@ -1071,4 +1071,101 @@ export function run() {
   return intact({ label: "x7", payload: [1, 2] }, 7) && !intact(undefined, 7) ? 42 : 1;
 }`,
   },
+  // FFI phase 4 reports (2026-11-18).
+  {
+    name: "for-of-typed-array-list",
+    typed: `function sum(bytes: Uint8Array): number {
+  let total = 0;
+  for (let i = 0; i < bytes.length; i++) total += bytes[i] ?? 0;
+  return total;
+}
+export function run(): number {
+  const list: Uint8Array[] = [new Uint8Array([20, 1]), new Uint8Array([21])];
+  let total = 0;
+  for (const bytes of list) total += sum(bytes);
+  return total === 42 ? 42 : 1;
+}`,
+    untyped: `function sum(bytes) {
+  let total = 0;
+  for (let i = 0; i < bytes.length; i++) total += bytes[i] ?? 0;
+  return total;
+}
+export function run() {
+  const list = [new Uint8Array([20, 1]), new Uint8Array([21])];
+  let total = 0;
+  for (const bytes of list) total += sum(bytes);
+  return total === 42 ? 42 : 1;
+}`,
+  },
+  {
+    name: "for-of-object-list",
+    typed: `export function run(): number {
+  const items = [{ value: 40 }, { value: 2 }];
+  let total = 0;
+  for (const item of items) total += item.value;
+  return total === 42 ? 42 : 1;
+}`,
+    untyped: `export function run() {
+  const items = [{ value: 40 }, { value: 2 }];
+  let total = 0;
+  for (const item of items) total += item.value;
+  return total === 42 ? 42 : 1;
+}`,
+  },
+  {
+    name: "reassignment-narrowing",
+    typed: `interface Item { readonly value: number }
+function find(id: number): Item | undefined { return id > 0 ? { value: id } : undefined; }
+export function run(): number {
+  let first = find(0);
+  first = first === undefined ? { value: 40 } : first;
+  let second = find(0);
+  second ??= { value: 2 };
+  return first.value + second.value === 42 ? 42 : 1;
+}`,
+    untyped: `function find(id) { return id > 0 ? { value: id } : undefined; }
+export function run() {
+  let first = find(0);
+  first = first === undefined ? { value: 40 } : first;
+  let second = find(0);
+  second ??= { value: 2 };
+  return first.value + second.value === 42 ? 42 : 1;
+}`,
+  },
+  {
+    name: "module-initializers",
+    typed: `function scale(n: number): number { return n * 2; }
+const table: number[] = [];
+for (let i = 0; i < 4; i++) table.push(scale(i));
+const total: number = table.reduce((a: number, b: number) => a + b, 0) + scale(15);
+export function run(): number { return total === 42 ? 42 : 1; }`,
+    untyped: `function scale(n) { return n * 2; }
+const table = [];
+for (let i = 0; i < 4; i++) table.push(scale(i));
+const total = table.reduce((a, b) => a + b, 0) + scale(15);
+export function run() { return total === 42 ? 42 : 1; }`,
+  },
+  {
+    name: "evolving-empty-array",
+    typed: `export function run(): number {
+  let list = [];
+  list.push(40);
+  list.push(2);
+  return (list[0] ?? 0) + (list[1] ?? 0) === 42 ? 42 : 1;
+}`,
+    untyped: `export function run() {
+  let list = [];
+  list.push(40);
+  list.push(2);
+  return (list[0] ?? 0) + (list[1] ?? 0) === 42 ? 42 : 1;
+}`,
+  },
+  {
+    name: "discriminant-narrowing",
+    typed: `type Shape = { kind: "square"; size: number } | { kind: "rect"; w: number; h: number };
+function area(shape: Shape): number { return shape.kind === "square" ? shape.size * shape.size : shape.w * shape.h; }
+export function run(): number { return area({ kind: "rect", w: 21, h: 2 }) === 42 ? 42 : 1; }`,
+    untyped: `function area(shape) { return shape.kind === "square" ? shape.size * shape.size : shape.w * shape.h; }
+export function run() { return area({ kind: "rect", w: 21, h: 2 }) === 42 ? 42 : 1; }`,
+  },
 ];
