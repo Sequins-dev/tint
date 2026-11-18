@@ -353,5 +353,6 @@ native construction fixtures; the self-hosted compiler executable remains unprov
 
 ## Large images
 
-Images beyond the compact layout's reach (about 2 GiB of VM on macOS, 4 GiB of
-file) follow the code-model contract in [large-images.md](large-images.md).
+Tint selects a high-base Mach-O layout with separately signed code chunks
+when its compact VM extent reaches the shared-region guard. See the
+[large-image contract and verifier](large-images.md#mach-o-layout-selection).

@@ -281,5 +281,6 @@ generations are byte-identical ELF images; each native generation takes about
 
 ## Large images
 
-Images beyond the compact layout's reach (about 2 GiB of VM on macOS, 4 GiB of
-file) follow the code-model contract in [large-images.md](large-images.md).
+ELF uses 64-bit layout coordinates and widens unwind fields when code
+exceeds signed 32-bit reach. See the
+[large-image contract and verifier](large-images.md#elf-and-diagnostics).

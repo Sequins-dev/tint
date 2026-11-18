@@ -1,12 +1,7 @@
-# Large images (> 2 GiB VM, > 4 GiB file)
+# Large AArch64 executable images
 
-Status: research complete; the codegen far forms are implemented and tested
-(see [Status](#status)); the Mach-O and ELF large layouts are designed, not
-yet implemented. Tint must produce executables of any size its programs need
-(the whole-program Test262 suite image projects to 8.8–15.6 GB, see
-[the suite program report](results/test262-suite-program-v1.md)), selecting the
-large layout automatically and failing explicitly at any limit it does not
-handle.
+Tint automatically selects address, unwind and image layouts from the final
+code and metadata placements. The compiler writes Mach-O and ELF directly.
 
 ## Findings
 
@@ -107,7 +102,7 @@ register-indirect (x16) when BL cannot reach. Tint emits no jump tables.
   moves its target function's long branches to `ADR/MOVZ/MOVK[/MOVK]/ADD x16`
   - `BR x16` (x16/x17 are the reserved call/address scratch), with the inverted
     conditional skipping the whole sequence.
-- **Stack maps**: tables switch to the wide version (v3, 64-bit return
+- **Stack maps**: compact v4 tables switch to the wide version (v3, 64-bit return
   offsets) when a return offset reaches 2^32; the runtime walk already reads
   full-word offsets and the registry holds 64-bit code ranges.
 - `forceFarReach` (EmissionOptions, `compileArm64Program`, `BuildRequest`,
@@ -115,79 +110,97 @@ register-indirect (x16) when BL cannot reach. Tint emits no jump tables.
   model, register-indirect calls and far branches everywhere: the forms a large
   image uses where reach requires them, exercised natively on small programs.
 
-### Mach-O large layout (designed)
+### Mach-O layout selection
 
-Selected automatically when the compact layout's VM end would reach the shared
-region (about 2 GiB) or any 32-bit field would overflow; until implemented,
-such images must fail explicitly in the writer.
+The compact layout has a VM extent ceiling of 1,920 MiB, including its
+page-rounded signature segment. This leaves 128 MiB below the shared region
+for the main stack and ASLR. XNU's 16 KiB-page arm64 slide is less than 80 MiB.
+The compact layout and its signature are unchanged below the ceiling.
+[XNU slide calculation](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/mach_loader.c)
+and [slide limits](https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/vm/vm_map.c).
+
+When the compact extent reaches the ceiling, Tint links the executable at
+`0x300000000` with the following order in its segment commands, file and VM.
 
 ```
-base ≥ 0x300000000 (past the shared region); __PAGEZERO still [0, 4 GiB)
-[__TEXT    header + load commands + signature-loader stub ] ┐ main signature
-[__DATA    import slots, writable data                     ] │ (codeLimit < 4 GiB)
-[__DWARF / __eh_frame (sdata8) / __unwind_info (near part) ] │
-[__LINKEDIT chained fixups, symtab, main signature         ] ┘ all < 4 GiB of file
-[__TEXT_1  code chunk ≤ ~4 GiB][its signature blob]
-[__TEXT_2  …                  ][its signature blob]          contiguous VM
+__PAGEZERO  [0, 4 GiB), no file bytes
+__TEXT      header, signature loader, __eh_frame
+__DATA      imports and writable payload, followed by the signature table
+__DWARF     optional source-level debug sections
+__LINKEDIT  chained fixups, symbol table and main signature
+__TEXT_1   [code chunk][its signature blob, outside the segment]
+__TEXT_2   [code chunk][its signature blob, outside the segment]
+...
 ```
 
-- Code is contiguous in VM across the chunk segments (each segment's
-  `vmaddr - fileoff` may differ; only VM matters to page-relative code). Each
-  chunk's ad-hoc signature (CodeDirectory `codeLimit` relative to the chunk's
-  file start) follows it in the file, outside any segment.
-- The signature-loader stub (in `__TEXT`, covered by the main signature) runs
-  first from `LC_MAIN`: it opens the executable (`apple[0]`
-  `executable_path=`), registers each chunk's blob with
-  `fcntl(F_ADDFILESIGS_RETURN)` from a writer-filled table in `__DATA`, closes
-  it, then enters the hosted entry. It must precede any far code, including far
-  callback thunks. A failed registration leaves the pages unvalidated, which
-  current kernels execute (documented, not relied on).
-- Far `__text` sections carry `offset` 0 (LLDB reads memory; dyld ignores
-  section offsets); symbols use per-chunk section numbers (`n_sect` ≤ 255).
-- Explicit errors: region-0 metadata (DWARF, unwind, `__LINKEDIT`) beyond
-  4 GiB of file; compact-unwind entries beyond 4 GiB of the header are left to
-  `__eh_frame` FDEs (`sdata8`).
+- All metadata and the main signature fit below 4 GiB of file. Runtime CFI
+  stays in `__TEXT,__eh_frame` so dyld can return it to the system unwinder.
+  In the large layout all FDEs use signed 64-bit PC-relative fields. The
+  normal layout still uses compact entries and falls back to FDEs as before.
+  [dyld unwind-section lookup](https://github.com/apple-oss-distributions/dyld/blob/main/dyld/DyldAPIs.cpp).
+- Chunk segments have contiguous VM addresses. The default signing unit is
+  1 GiB, and a chunk's CodeDirectory covers its file bytes relative to the
+  chunk start, including its final page padding. The next file segment starts
+  on a 16 KiB boundary. A relocation can span a chunk boundary, and always
+  uses the virtual placement for its PC-relative displacement.
+- `LC_MAIN` enters the loader in the main signature's range. The loader opens
+  the executable path from the Darwin `apple` vector, calls
+  `fcntl(F_ADDFILESIGS_RETURN)` on each chunk, closes the file and transfers
+  control with the original argument registers. Failure exits with status
+  126 before entering the hosted code or its callback thunks.
+- Far section offsets are zero because Mach-O section file offsets are
+  32-bit. The segment file offsets and symbol values are 64-bit and LLDB
+  reads far instructions from the inferior. Symbol section indexes identify
+  the particular chunk. Up to 255 sections can be represented.
+- `LARGE_METADATA_LIMIT` and `LARGE_SECTION_LIMIT` identify bounds the
+  format cannot represent. `SIZE_LIMIT` marks a caller's lower byte budget.
 
-### ELF large layout (designed)
+### ELF and diagnostics
 
-64-bit fields throughout; `.eh_frame`/`.eh_frame_hdr` switch to `sdata8`
-encodings past ±2 GiB; DWARF sections stay DWARF32 unless one exceeds 4 GiB
-(explicit error).
+ELF's file and VM layout uses 64-bit fields. The writer widens `.eh_frame`
+and `.eh_frame_hdr` to `sdata8` when the signed 32-bit fields cannot reach.
+Both writers keep DWARF32 section offsets while encoding code addresses and
+large PC extents at full width. Runtime trace table v2 uses full-width
+code offsets while retaining 32-bit metadata offsets. Compact stack map v4
+still falls back to v3 for return offsets beyond 4 GiB within a module.
 
-## Limits that fail explicitly
+Startup uses far windows when the combined code extent requires them.
+A diagnostics call without BL reach, or a late image relocation without
+relative address reach, causes one rebuild in the far model. Far
+diagnostics calls preserve the trace-capture argument registers across their
+address calculation. Individual signpost-entry branches still require
+the single-instruction B reach and fail with an explicit range error.
+Managed-factory service-unit linking retains its near-model contract.
 
-- A near site out of reach in a module pinned to the near model
-  (`farAddresses: false`): the emitter's "local address failed"/"helper call
-  failed", the writers' `ADDRESS_OUT_OF_RANGE`.
-- Service-unit linking (managed-factory units) handles near units only and
-  rejects far ones ("managed reference bytes differ" / "relative address
-  exceeds target range").
-- Diagnostics calls (`startupCalls`, BL into the hosted diagnostics block)
-  beyond ±128 MiB: "diagnostics call: OUT_OF_RANGE" (to be relaxed with the
-  startup slice).
-- JIT-published live code: modules published at run time are small and use the
-  near model; published code addresses image code only through registered
-  tables and absolute pointers.
+The executable writers accept images larger than 4 GiB on a host whose
+typed arrays can hold the image. They materialize contiguous buffers. The
+native self-host has a smaller contiguous managed allocation domain, so
+use the Node host for multi-GiB image generation.
 
-## Status
+## Verification
 
-Implemented (branch `image/large-images`): `farRelativeAddress` and the
-self-describing `patchRelativeAddress` (isa.ts); far-model selection, far
-import sites, register-indirect far branches and `forceFarReach` in the scalar
-emitter; wide stack maps past 2^32; `far` propagation through startup imports,
-callback-key references, `aarch64ImageRelocations` and build.ts; the
-`forceFarReach` build/hosted-fixture option. Tests:
-`packages/codegen/test/isa-far-address.test.ts`,
-`packages/codegen/test/scalar-far-model.test.ts`, the wide-offset case in
-`scalar-stack-maps.test.ts`. Native: `TINT_FORCE_FAR_REACH=1` runs of
-`tools/native-ffi.test.ts` (C calls, optional libraries, callbacks and their
-contract traps) and `tools/native-weak.test.ts` (generational, copying and
-parallel collection) pass, 29/29, with images whose code holds ~15k far
-address sequences, ~13k far branches and no BL.
+`pnpm check` exercises scaled layout thresholds, signatures, VM-relative
+patches, wide offsets and the Darwin multi-chunk GC fixture. On arm64 you can
+run the same fixture with a gap of just over 4 GiB inserted between the
+compiled runtime and application. It uses the hosted compiler, startup,
+collecting runtime, fixups and executable writer, then requires a debugger
+breakpoint and unwind from the far function through Tint's hosted entry.
+The program must survive a copying collection with a live far root and
+exit with status 42. The verifier removes the temporary image.
 
-Not yet implemented: the Mach-O and ELF large layouts and the signature
-loader, large-layout selection and the explicit compact-layout 2 GiB error in
-the writers, `maxByteLength` beyond 4 GiB in build.ts and the emitter calls,
-far forms in startup's own cross-module references and diagnostics calls, the
-pnpm-check fixture (forced far reach + forced large layout with small chunks)
-and the full-size (> 4 GiB) verifier on macOS and Linux.
+```sh
+pnpm build
+TZ=UTC node tools/verify-large-image.ts --full-size
+container machine run -n dev -w "$PWD" -- env TZ=UTC node tools/verify-large-image.ts --full-size
+```
+
+The full runs need a Node 24 build host with memory for several image-sized
+buffers and free space for the executable. The macOS run uses LLDB and the
+Linux run uses GDB. For a quick verification omit `--full-size`.
+
+The native FFI and weak-reference tests can exercise a forced large Mach-O
+layout with 64 KiB signing chunks without requiring multi-GiB files.
+
+```sh
+TZ=UTC TINT_FORCE_FAR_REACH=1 TINT_FORCE_LARGE_IMAGE=1 \  node --test tools/native-ffi.test.ts tools/native-weak.test.ts
+```
