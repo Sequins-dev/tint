@@ -1,4 +1,10 @@
-import type { FunctionIR, Block, Span } from "@tint/ir/scalar";
+import type {
+  FunctionIR,
+  Block,
+  ScalarType,
+  Span,
+  Terminator,
+} from "@tint/ir/scalar";
 
 export type RecordOperation =
   | "test"
@@ -29,50 +35,50 @@ export function bindRecordOperation(
     // view-slot reads into an added general slot; set-view-slot writes its
     // second parameter. A record of another layout takes the alternate.
     const slot = read ? fn.slots.length : 1;
-    return {
-      ...fn,
-      slots: read ? [...fn.slots, "general"] : fn.slots,
-      entry: 0,
-      blocks: [
-        {
-          id: 0,
-          instructions: [{ ...span, kind: "load", id: 0, slot: input }],
-          terminator: {
-            ...span,
-            kind: "record",
-            object: 0,
-            record,
-            field,
-            operation: read ? "read" : "write",
-            slot,
-            consequent: 1,
-            alternate: 2,
-          },
-        },
-        read
-          ? {
-              id: 1,
-              instructions: [{ ...span, kind: "load", id: 1, slot }],
-              terminator: { ...span, kind: "return", value: 1 },
-            }
-          : {
-              id: 1,
-              instructions: [],
-              terminator: { ...span, kind: "return", value: undefined },
-            },
-        read
-          ? {
-              id: 2,
-              instructions: [{ ...span, kind: "general-none", id: 2 }],
-              terminator: { ...span, kind: "return", value: 2 },
-            }
-          : {
-              id: 2,
-              instructions: [],
-              terminator: { ...span, kind: "return", value: undefined },
-            },
-      ],
+    const slots: ScalarType[] = [];
+    for (const type of fn.slots) {
+      if (type === undefined) throw "record view slot type invariant";
+      slots.push(type);
+    }
+    if (read) slots.push("general");
+    const direction: "read" | "write" = read ? "read" : "write";
+    const access: Terminator = {
+      ...span,
+      kind: "record",
+      object: 0,
+      record,
+      field,
+      operation: direction,
+      slot,
+      consequent: 1,
+      alternate: 2,
     };
+    const blocks: Block[] = [
+      {
+        id: 0,
+        instructions: [{ ...span, kind: "load", id: 0, slot: input }],
+        terminator: access,
+      },
+    ];
+    if (read) {
+      blocks.push({
+        id: 1,
+        instructions: [{ ...span, kind: "load", id: 1, slot }],
+        terminator: { ...span, kind: "return", value: 1 },
+      });
+      blocks.push({
+        id: 2,
+        instructions: [{ ...span, kind: "general-none", id: 2 }],
+        terminator: { ...span, kind: "return", value: 2 },
+      });
+    } else
+      for (let id = 1; id <= 2; id++)
+        blocks.push({
+          id,
+          instructions: [],
+          terminator: { ...span, kind: "return", value: undefined },
+        });
+    return { ...fn, slots, entry: 0, blocks };
   }
   if (operation === "identity")
     return {

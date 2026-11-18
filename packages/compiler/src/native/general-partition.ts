@@ -77,7 +77,9 @@ export interface BoundaryRecords {
 export function createBoundaryRecords(
   modules: ReadonlyMap<string, SourceModule>,
 ): BoundaryRecords {
+  // Records by key, and their keys in resolution order.
   const table = new Map<string, BoundaryRecord>(),
+    order: string[] = [],
     failed = new Set<string>();
   function declared(
     module: SourceModule,
@@ -137,9 +139,9 @@ export function createBoundaryRecords(
     if (type.arguments !== undefined && type.arguments.length !== 0)
       return undefined;
     const found = declared(module, type.name, 0);
-    if (found === undefined || found.statement.kind !== "interface")
-      return undefined;
+    if (found === undefined) return undefined;
     const statement = found.statement;
+    if (statement.kind !== "interface") return undefined;
     const key = found.module.id + "\u0000" + statement.name;
     if (failed.has(key)) return undefined;
     if (table.has(key)) return { key, optional: false };
@@ -160,6 +162,7 @@ export function createBoundaryRecords(
       name: statement.name,
       fields,
     });
+    order.push(key);
     for (const property of statement.properties) {
       if (property === undefined) throw "boundary property invariant";
       const classes = primitiveClasses(property.type);
@@ -210,7 +213,11 @@ export function createBoundaryRecords(
     resolve,
     records: (): readonly BoundaryRecord[] => {
       const result: BoundaryRecord[] = [];
-      for (const record of table.values()) result.push(record);
+      for (const key of order) {
+        if (key === undefined) throw "boundary record order invariant";
+        const record = table.get(key);
+        if (record !== undefined) result.push(record);
+      }
       return result;
     },
   };
