@@ -41,6 +41,7 @@ import {
   type ManagedSurfaceRequest,
 } from "@tint/compiler/native";
 import { nativeFixtureTarget } from "./native-host-target.ts";
+import { admitUnderLldb } from "./native-admission.ts";
 /** Hosted fixtures run on this host, under LLDB. */
 const fixtureTarget = nativeFixtureTarget();
 import type { CLibraryManifestEntry } from "@tint/abi/c";
@@ -196,14 +197,18 @@ export function verifyHostedFixture(
     const generatedModule = parseModule(generatedSource.value);
     assert.ok(generatedModule.ok, JSON.stringify(generatedModule));
     foreignLibraries.push(prepared.value.library);
-    // Like a binding package's grant (expandForeignInputs): a lazily
-    // loaded optional library's module resolves through tint:ffi/unsafe.
+    // Like a binding package's grant (expandForeignInputs): lazily loaded
+    // optional libraries resolve through tint:ffi/unsafe, may-callback
+    // wrappers take their callback state from tint:ffi.
     const dependencies = new Map<string, string>();
-    if (prepared.value.text.includes('from "tint:ffi/unsafe"')) {
-      dependencies.set("tint:ffi/unsafe", foreignRuntimeModules.unsafe);
-      if (!dependencyIds.includes(foreignRuntimeModules.unsafe))
-        dependencyIds.push(foreignRuntimeModules.unsafe);
-    }
+    for (const [specifier, id] of [
+      ["tint:ffi/unsafe", foreignRuntimeModules.unsafe],
+      ["tint:ffi", foreignRuntimeModules.index],
+    ] as const)
+      if (prepared.value.text.includes('from "' + specifier + '"')) {
+        dependencies.set(specifier, id);
+        if (!dependencyIds.includes(id)) dependencyIds.push(id);
+      }
     foreignModules.push({
       id: declaration.id,
       module: generatedModule.value,
@@ -458,6 +463,9 @@ export function verifyHostedFixture(
     { flag: "wx" },
   );
   console.log(path);
+  // Admitted once, untimed and stopped at entry, before any run (the
+  // caller's too when TINT_BUILD_ONLY is set): native-admission.ts.
+  if (fixtureTarget.os === "darwin") admitUnderLldb(path);
   if (process.env.TINT_BUILD_ONLY !== "1")
     try {
       for (let attempt = 0; attempt < 2; attempt++) {

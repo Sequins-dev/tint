@@ -31,6 +31,8 @@ export {
 } from "./classify.ts";
 export type {
   CAvailabilityDeclaration,
+  CCallbackDeclaration,
+  CCallbackTypeDeclaration,
   CConstantDeclaration,
   CValueForm,
   CFunctionDeclaration,

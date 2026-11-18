@@ -3,6 +3,8 @@ import { createSourceTextView } from "@tint/source/text";
 import {
   cScalar,
   type CAvailabilityDeclaration,
+  type CCallbackDeclaration,
+  type CCallbackTypeDeclaration,
   type CConstantDeclaration,
   type CField,
   type CFunctionDeclaration,
@@ -31,11 +33,18 @@ interface TypeReference {
   readonly number: number;
   readonly text: string | undefined;
   readonly offset: number;
+  /** A function type `(a: T, b: U) => R` (`name` is "=>"), the argument
+   * of `Callback<...>`. */
+  readonly signature?: FunctionTypeSyntax | undefined;
 }
 interface FieldSyntax {
   readonly name: string;
   readonly type: TypeReference;
   readonly offset: number;
+}
+interface FunctionTypeSyntax {
+  readonly parameters: readonly FieldSyntax[];
+  readonly result: TypeReference;
 }
 interface InterfaceSyntax {
   readonly name: string;
@@ -65,6 +74,7 @@ interface Operand {
   readonly type: CType;
   readonly form: CValueForm;
   readonly variadic: boolean;
+  readonly callback?: CCallbackDeclaration | undefined;
 }
 /** The `tint:ffi` C scalar width aliases. */
 function scalarNamed(name: string): CScalar | undefined {
@@ -102,6 +112,7 @@ function ffiExport(name: string): boolean {
     case "OrErrno":
     case "Variadic":
     case "MayCallback":
+    case "Callback":
     case "Async":
     case "Packed":
     case "Union":
@@ -199,6 +210,31 @@ export function parseForeignDeclarations(
         number: NaN,
         text: token.value,
         offset: token.start,
+      };
+    }
+    if (at("(")) {
+      // A function type: `(name: T, ...) => R`.
+      position++;
+      const parameters: FieldSyntax[] = [];
+      while (!at(")")) {
+        const parameterOffset = current().start;
+        const parameter = identifier();
+        if (parameter === undefined || !expect(":")) return undefined;
+        const type = typeReference();
+        if (type === undefined) return undefined;
+        parameters.push({ name: parameter, type, offset: parameterOffset });
+        if (!eat(",")) break;
+      }
+      if (!expect(")") || !expect("=>")) return undefined;
+      const result = typeReference();
+      if (result === undefined) return undefined;
+      return {
+        name: "=>",
+        arguments: [],
+        number: NaN,
+        text: undefined,
+        offset: token.start,
+        signature: { parameters, result },
       };
     }
     if (token.kind !== "identifier" && !at("void")) {
@@ -572,6 +608,9 @@ function resolveDeclarations(
     if (alias !== undefined) {
       if (reference.arguments.length !== 0)
         return fail("type aliases take no arguments", reference.offset);
+      // A callback type as a member is a C function pointer.
+      if (alias.type.name === "Callback")
+        return { kind: "pointer", pointee: { kind: "void" } };
       return memberType(alias.type);
     }
     const item = interfaceByName.get(reference.name);
@@ -661,6 +700,36 @@ function resolveDeclarations(
       if (type === undefined) return undefined;
       return { type, form: "bytes", variadic };
     }
+    const callbackAlias = aliasByName.get(reference.name);
+    if (
+      callbackAlias !== undefined &&
+      callbackAlias.type.name === "Callback" &&
+      reference.arguments.length === 0
+    )
+      return operand(callbackAlias.type, variadic);
+    if (reference.name === "Callback") {
+      if (!marker("Callback", reference.offset)) return undefined;
+      const inner = reference.arguments[0];
+      const signature = inner === undefined ? undefined : inner.signature;
+      if (
+        variadic ||
+        reference.arguments.length !== 1 ||
+        inner === undefined ||
+        signature === undefined
+      )
+        return fail(
+          "Callback takes one function type, e.g. Callback<(a: i32) => i32>",
+          reference.offset,
+        );
+      const callback = callbackDeclaration(signature, inner.offset);
+      if (callback === undefined) return undefined;
+      return {
+        type: { kind: "pointer", pointee: { kind: "void" } },
+        form: "callback",
+        variadic,
+        callback,
+      };
+    }
     const type = memberType(reference);
     if (type === undefined) return undefined;
     if (type.kind === "array")
@@ -684,6 +753,84 @@ function resolveDeclarations(
       return { type, form: "record", variadic };
     }
     return fail("unsupported C operand", reference.offset);
+  }
+  /** A callback's prototype: scalar, address or bool parameters (at most
+   * seven) and result, or a void result. */
+  function callbackDeclaration(
+    syntax: FunctionTypeSyntax,
+    offset: number,
+  ): CCallbackDeclaration | undefined {
+    const parameters: CType[] = [],
+      names: string[] = [],
+      forms: CValueForm[] = [],
+      records: string[] = [];
+    if (syntax.parameters.length > 7)
+      return fail("callbacks take at most seven parameters", offset);
+    for (const parameter of syntax.parameters) {
+      if (parameter === undefined) throw "callback parameter invariant";
+      const resolved = operand(parameter.type, false);
+      if (resolved === undefined) return undefined;
+      // Ptr<R>: the callback gets a foreign view of record R (made with
+      // R's Layout constant).
+      let viewed = "";
+      const type = resolved.type;
+      if (resolved.form === "bytes" && type.kind === "pointer") {
+        const pointee = type.pointee;
+        if (pointee.kind === "record")
+          viewed = parameter.type.arguments[0]?.name ?? "";
+      }
+      if (viewed !== "" && !hasLayout(viewed))
+        return fail(
+          "a Ptr<R> callback parameter needs R's Layout constant",
+          parameter.offset,
+        );
+      if (
+        viewed === "" &&
+        resolved.form !== "number" &&
+        resolved.form !== "boolean"
+      )
+        return fail(
+          "callback parameters are C scalars, bools, Address<T> or Ptr<R> of a record",
+          parameter.offset,
+        );
+      parameters.push(resolved.type);
+      names.push(parameter.name);
+      forms.push(viewed === "" ? resolved.form : "number");
+      records.push(viewed);
+    }
+    let result: CType = { kind: "void" },
+      resultForm: CValueForm = "void";
+    if (syntax.result.name !== "void") {
+      const resolved = memberType(syntax.result);
+      if (resolved === undefined) return undefined;
+      if (resolved.kind !== "scalar" && resolved.kind !== "pointer")
+        return fail(
+          "callback results are C scalars, bools, Address<T> or void",
+          syntax.result.offset,
+        );
+      result = resolved;
+      resultForm =
+        resolved.kind === "scalar" && resolved.scalar === "bool"
+          ? "boolean"
+          : "number";
+    }
+    return {
+      signature: {
+        parameters,
+        result,
+        fixedParameters: parameters.length,
+        callClass: "leaf",
+        errno: "none",
+      },
+      parameterNames: names,
+      parameterForms: forms,
+      parameterRecords: records,
+      resultForm,
+    };
+  }
+  function hasLayout(name: string): boolean {
+    for (const layout of layouts) if (layout?.name === name) return true;
+    return false;
   }
   /** `(): Available<"name">` with `name` a declared C function (not
    * another query): its symbol's availability. */
@@ -802,12 +949,17 @@ function resolveDeclarations(
     }
     const parameters: CType[] = [],
       names: string[] = [],
-      forms: CValueForm[] = [];
-    let fixed = -1;
+      forms: CValueForm[] = [],
+      callbacks: (CCallbackDeclaration | undefined)[] = [];
+    let fixed = -1,
+      callsBack = false;
     for (const parameter of fn.parameters) {
       if (parameter === undefined) throw "parameter invariant";
       const resolved = operand(parameter.type, false);
       if (resolved === undefined) break;
+      callbacks.push(resolved.callback);
+      // A function taking a callback may call back: may-callback.
+      if (resolved.callback !== undefined) callsBack = true;
       if (resolved.variadic && fixed < 0) fixed = parameters.length;
       if (!resolved.variadic && fixed >= 0) {
         fail(
@@ -827,6 +979,11 @@ function resolveDeclarations(
       fail("a $variant needs a symbol before it", fn.offset);
       break;
     }
+    if (callsBack && callClass === "async") {
+      fail("async calls take no callbacks", fn.offset);
+      break;
+    }
+    if (callsBack) callClass = "may-callback";
     const signature: CSignature = {
       parameters,
       result: resultType,
@@ -834,14 +991,26 @@ function resolveDeclarations(
       callClass,
       errno,
     };
-    declarations.push({
-      name: fn.name,
-      symbol,
-      signature,
-      parameterNames: names,
-      parameterForms: forms,
-      resultForm,
-    });
+    declarations.push(
+      callsBack
+        ? {
+            name: fn.name,
+            symbol,
+            signature,
+            parameterNames: names,
+            parameterForms: forms,
+            resultForm,
+            callbacks,
+          }
+        : {
+            name: fn.name,
+            symbol,
+            signature,
+            parameterNames: names,
+            parameterForms: forms,
+            resultForm,
+          },
+    );
   }
   const recordDeclarations: CRecordDeclaration[] = [];
   for (const item of interfaces) {
@@ -859,6 +1028,15 @@ function resolveDeclarations(
     }
     layoutNames.push(layout.name);
   }
+  // Callback types: aliases of Callback<...>.
+  const callbackTypes: CCallbackTypeDeclaration[] = [];
+  for (const alias of aliases) {
+    if (alias === undefined) throw "alias invariant";
+    if (alias.type.name !== "Callback") continue;
+    const resolved = operand(alias.type, false);
+    if (resolved === undefined || resolved.callback === undefined) break;
+    callbackTypes.push({ name: alias.name, callback: resolved.callback });
+  }
   if (failure !== undefined) return { ok: false, error: failure };
   return {
     ok: true,
@@ -869,6 +1047,7 @@ function resolveDeclarations(
       availability,
       layouts: layoutNames,
       constants,
+      ...(callbackTypes.length === 0 ? {} : { callbackTypes }),
     },
   };
 }

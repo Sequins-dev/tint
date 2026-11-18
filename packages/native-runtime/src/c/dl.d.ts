@@ -47,6 +47,13 @@ declare module "tint:c/dl" {
   export function dlopen$self(path: Address<char>, mode: i32): Handle;
   export function dlsym(handle: Handle, name: CString): Handle;
   export function dlclose(handle: Handle): i32;
+  /** pthread.h: sets the calling thread's value of `key` (callback state
+   * blocks; docs/native-ffi.md, "Callbacks"). pthread_key_t is unsigned
+   * long on Darwin and unsigned int in glibc. */
+  export function pthread_setspecific(
+    key: ByTarget<{ "darwin-arm64": u64; "linux-arm64": u32 }>,
+    value: Address<void>,
+  ): i32;
   /** The last dlfcn error's text (C-owned, cleared by the call), or 0. */
   export function dlerror(): Address<char>;
   /** One 64-bit register or stack word, by type. */
@@ -71,7 +78,9 @@ declare module "tint:c/dl" {
     x8: Word;
     stackBytes: u64;
     patchCount: u64;
-    bases: FixedArray<Address<void>, 9>;
+    /** The frame, the 8 byte operands, then 4 universal callback thunks
+     * (may-callback calls). */
+    bases: FixedArray<Address<void>, 13>;
     /** Patch k: frame word patchTargets[k] = bases[patchBases[k]] +
      * patchAddends[k]. */
     patchTargets: FixedArray<u64, 16>;

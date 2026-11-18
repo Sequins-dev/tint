@@ -10,6 +10,12 @@ import {
   verifyViewFixture,
 } from "./native-ffi-fixtures.ts";
 import { verifyDylibProbe } from "./ffi-dylib-probe.ts";
+import {
+  verifyCallbackFixture,
+  verifyCallbackTrap,
+  verifyZlibCallbackFixture,
+  withCallbackLibrary,
+} from "./native-callback-fixtures.ts";
 import { verifyZlibFixture } from "./native-zlib-fixtures.ts";
 import { verifyOsFixture } from "./native-os-fixtures.ts";
 import {
@@ -132,3 +138,25 @@ test(
     );
   },
 );
+test("callbacks: qsort over records, nesting, GC inside and exceptions (generational)", () => {
+  verifyCallbackFixture();
+});
+test("callbacks: qsort over records, nesting, GC inside and exceptions (copying)", () => {
+  verifyCallbackFixture("initializeCopyingRuntime");
+});
+test("registered callbacks: zlib's allocator round trip under GC (generational)", () => {
+  verifyZlibCallbackFixture();
+});
+test("registered callbacks: zlib's allocator round trip under GC (copying)", () => {
+  verifyZlibCallbackFixture("initializeCopyingRuntime");
+});
+for (const scenario of ["ok", "leaf-later", "leaf-inside", "thread"] as const)
+  test(
+    scenario === "ok"
+      ? "callback contract: a may-callback call's callback runs"
+      : "callback contract violation traps: " + scenario,
+    clang,
+    () => {
+      withCallbackLibrary((library) => verifyCallbackTrap(library, scenario));
+    },
+  );

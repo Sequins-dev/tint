@@ -5,6 +5,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   bindForeignCalls,
+  callbackState,
+  callbackTransition,
   dynamicCallFrame,
   dynamicForeignCall,
   foreignCallTypes,
@@ -817,4 +819,106 @@ test("an indirect c-call converts its callee first and branches to it, never to 
   // with no import.
   assert.ok(contains(code, [{ op: "blr", rn: 15 }]));
   assert.ok(!contains(code, [{ op: "blr", rn: 16 }]));
+});
+
+test("a may-callback call pushes and pops its transition, is a safepoint and saves x19..x28", () => {
+  const call: ForeignCall = {
+    symbol: "qsort",
+    signature: {
+      parameters: [address, scalar("u64"), scalar("u64"), address],
+      result: { kind: "void" },
+      fixedParameters: 4,
+      callClass: "may-callback",
+      errno: "none",
+    },
+    // The callback state and dispatcher, then the C arguments (the
+    // comparator here as a plain address).
+    operands: ["bytes", "callback", "bytes", "number", "number", "number"],
+    result: "void",
+    mayCallback: true,
+  };
+  const types: ScalarType[] = [
+    "Uint8Array",
+    "reference",
+    "Uint8Array",
+    "number",
+    "number",
+    "number",
+  ];
+  assert.deepEqual(foreignCallTypes(call), {
+    ok: true,
+    value: { parameters: types, result: "void" },
+  });
+  // The state and dispatcher come first, and only may-callback signatures
+  // qualify.
+  assert.equal(
+    foreignCallTypes({
+      ...call,
+      signature: { ...call.signature, callClass: "leaf" },
+    }).ok,
+    false,
+  );
+  const bound = bindForeignCalls(stub(types, "void"), [{ function: 0, call }]);
+  assert.ok(bound.ok, JSON.stringify(bound));
+  const module = emitModule(bound.value, { hostABI: darwinHostABI() });
+  assert.ok(module.ok, JSON.stringify(module));
+  // One safepoint: the call's return address.
+  assert.equal(
+    module.value.stackMaps.reduce((total, table) => total + table.entries, 0),
+    1,
+  );
+  const bytes = module.value.code,
+    code = new Uint32Array(
+      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+    );
+  const t = callbackTransition;
+  // Push: previous, x29, the return address, entered = 0, the thread, the
+  // context and the dispatcher, then current.
+  assert.ok(
+    contains(code, [
+      { op: "ldr", width: 64, rt: 12, rn: 14, offset: callbackState.current },
+      { op: "str", width: 64, rt: 12, rn: 13, offset: t.previous },
+      { op: "str", width: 64, rt: 29, rn: 13, offset: t.frame },
+    ]),
+  );
+  assert.ok(
+    contains(code, [
+      { op: "str", width: 64, rt: "zr", rn: 13, offset: t.entered },
+      { op: "mrs-thread", rt: 12, readOnly: true },
+      { op: "str", width: 64, rt: 12, rn: 13, offset: t.thread },
+    ]),
+  );
+  assert.ok(
+    contains(code, [
+      { op: "str", width: 64, rt: 9, rn: 13, offset: t.registered },
+      { op: "str", width: 64, rt: 13, rn: 14, offset: callbackState.current },
+    ]),
+  );
+  // Every callee-saved GP register is saved (callers' references may be
+  // held in any of them while C runs).
+  for (const pair of [
+    [19, 20],
+    [21, 22],
+    [23, 24],
+    [25, 26],
+    [27, 28],
+  ]) {
+    const [first, second] = pair;
+    if (first === undefined || second === undefined) continue;
+    let found = false;
+    for (let at = 0; at < code.length && !found; at++)
+      for (let offset = 0; offset < 512 && !found; offset += 8)
+        found =
+          code[at] ===
+          word({
+            op: "stp",
+            width: 64,
+            rt: first,
+            rt2: second,
+            rn: "sp",
+            offset,
+            mode: "offset",
+          });
+    assert.ok(found, "stp x" + first + ", x" + second);
+  }
 });

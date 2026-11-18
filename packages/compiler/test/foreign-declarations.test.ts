@@ -165,13 +165,21 @@ test("unsupported C shapes and malformed declarations fail explicitly", () => {
     module(`  export function f(): OrErrno<u32>;`, "u32, OrErrno"),
     /OrErrno needs/,
   );
-  const callback = prepareForeignLibrary(
+  // May-callback calls are bound; async calls are not yet.
+  assert.ok(
+    prepareForeignLibrary(
+      "x.d.ts",
+      module(`  export function f(): MayCallback<i32>;`, "i32, MayCallback"),
+      darwinArm64CTarget,
+    ).ok,
+  );
+  const asynchronous = prepareForeignLibrary(
     "x.d.ts",
-    module(`  export function f(): MayCallback<i32>;`, "i32, MayCallback"),
+    module(`  export function f(): Async<i32>;`, "i32, Async"),
     darwinArm64CTarget,
   );
-  assert.equal(callback.ok, false);
-  if (!callback.ok) assert.match(callback.error, /only leaf calls/);
+  assert.equal(asynchronous.ok, false);
+  if (!asynchronous.ok) assert.match(asynchronous.error, /is a async call/);
   const other = prepareForeignLibrary(
     "x.d.ts",
     `declare module "tint:c/libunknown" {}`,
@@ -1031,7 +1039,11 @@ test("the dl binding's DynamicFrame is the universal trampoline's frame", () => 
         f.scratch,
       ],
     );
-    assert.equal(f.bases + 8 * (f.byteOperands + 1), f.patches);
+    // Bases: the frame, the byte operands, then the callback thunks.
+    assert.equal(
+      f.bases + 8 * (1 + f.byteOperands + f.callbackOperands),
+      f.patches,
+    );
     assert.equal(f.patchArray, 8 * f.patchCapacity);
     assert.equal(f.stack + f.stackCapacity, f.scratch);
     assert.equal(f.scratch + f.scratchCapacity, f.size);
@@ -1109,5 +1121,101 @@ test("optional libraries load lazily on linux-arm64 and weakly on darwin-arm64",
       ["q_sum", undefined],
       ["q_sum$twice", undefined],
     ],
+  );
+});
+
+test("callback parameters make may-callback calls; callback types register functions", () => {
+  const text = module(
+    `  export interface Item { key: i32; tag: i32 }
+  export const Item: Layout<Item>;
+  export type visit_func = Callback<(item: Ptr<Item>, last: bool) => bool>;
+  export function qsort(
+    base: Ptr<Item>,
+    count: usize,
+    size: usize,
+    compare: Callback<(a: Ptr<Item>, b: Ptr<Item>) => i32>,
+  ): void;
+  export function walk(items: Ptr<Item>, visit: visit_func): MayCallback<i32>;`,
+    "i32, bool, usize, Ptr, Layout, Callback, MayCallback",
+  );
+  const library = parsed(text);
+  const qsort = library.functions.find((fn) => fn.name === "qsort");
+  assert.equal(qsort?.signature.callClass, "may-callback");
+  assert.deepEqual(qsort?.parameterForms, [
+    "bytes",
+    "number",
+    "number",
+    "callback",
+  ]);
+  const compare = qsort?.callbacks?.[3];
+  assert.deepEqual(compare?.parameterRecords, ["Item", "Item"]);
+  assert.deepEqual(compare?.parameterForms, ["number", "number"]);
+  assert.deepEqual(compare?.signature.result, {
+    kind: "scalar",
+    scalar: "i32",
+  });
+  assert.deepEqual(
+    library.callbackTypes?.map((item) => [
+      item.name,
+      item.callback.parameterRecords,
+      item.callback.resultForm,
+    ]),
+    [["visit_func", ["Item", ""], "boolean"]],
+  );
+  const prepared = prepareForeignLibrary("a.d.ts", text, darwinArm64CTarget);
+  if (!prepared.ok) assert.fail(prepared.error);
+  const generated = prepared.value.text;
+  // Record parameters arrive as foreign views; the wrapper adapts, checks
+  // pointer arguments are stable and rethrows after the call.
+  assert.match(
+    generated,
+    /compare: \(a: View\$<Item>, b: View\$<Item>\) => number/,
+  );
+  assert.match(
+    generated,
+    /compare\(viewAt\$\(Item, a\), viewAt\$\(Item, b\)\)/,
+  );
+  assert.match(generated, /stableBytes\$\(base\)/);
+  assert.match(
+    generated,
+    /export type visit_func = \(item: View\$<Item>, last: boolean\) => boolean;/,
+  );
+  assert.match(
+    generated,
+    /export function visit_func\(fn: visit_func\): number/,
+  );
+  const call = prepared.value.library.stubs.find((item) =>
+    item.name.startsWith("qsort"),
+  )?.call;
+  assert.equal(call?.mayCallback, true);
+  assert.deepEqual(call?.operands.slice(0, 2), ["bytes", "callback"]);
+  assert.equal(
+    prepared.value.library.stubs.filter((item) =>
+      item.name.startsWith("thunk$visit_func$"),
+    ).length,
+    16,
+  );
+  // Explicit errors.
+  const callback = (signature: string, imports = "") =>
+    module(
+      `  export interface Item { key: i32 }\n  export function f(c: Callback<${signature}>): void;`,
+      "i32, u8, Ptr, Address, Callback" + imports,
+    );
+  rejected(callback("(a: Ptr<u8>) => i32"), /Ptr<R> of a record/);
+  rejected(callback("(a: Ptr<Item>) => i32"), /needs R's Layout constant/);
+  rejected(callback("(a: Item) => i32"), /callback parameters are C scalars/);
+  rejected(callback("(a: i32) => Item"), /callback results are C scalars/);
+  rejected(
+    callback(
+      "(a: i32, b: i32, c: i32, d: i32, e: i32, f: i32, g: i32, h: i32) => i32",
+    ),
+    /at most seven/,
+  );
+  rejected(
+    module(
+      `  export function f(c: Callback<(a: i32) => i32>): Async<i32>;`,
+      "i32, Callback, Async",
+    ),
+    /async calls take no callbacks/,
   );
 });

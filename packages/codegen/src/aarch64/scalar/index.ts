@@ -187,6 +187,8 @@ import {
   foreignCallTypes,
   foreignMemoryTypes,
   dynamicCallFrame,
+  callbackTransition,
+  callbackState,
   naturalLoops,
   blockSuccessors,
   type LoopForest,
@@ -208,10 +210,15 @@ import {
 import { compactSlots } from "@tint/ir/optimization";
 import type { BaseRegister } from "../isa.ts";
 import {
+  classifyCCall,
+  cTypeName,
   cScalarBytes,
   cScalarSigned,
   type CScalar,
+  type CSignature,
+  type CType,
   type CTarget,
+  type CValueLocation,
 } from "@tint/abi/c";
 import {
   numericScalar,
@@ -405,6 +412,18 @@ export interface NativeModule {
   readonly helpers: readonly NativeHelper[];
   readonly code: Uint8Array;
   readonly functions: readonly NativeFunction[];
+  /** Callback entry thunks, contiguous (one registry range whose frames
+   * the stack walk crosses through their transition records). */
+  readonly callbackThunks?:
+    | {
+        readonly offset: number;
+        readonly byteLength: number;
+        readonly thunks: readonly {
+          readonly slot: number;
+          readonly offset: number;
+        }[];
+      }
+    | undefined;
 }
 export interface NativeManagedAddressReference {
   readonly offset: number;
@@ -1486,6 +1505,11 @@ function emitModuleForms(
     emit({ op: "blr", rn: 16 });
   }
   /** The address of import `name`'s slot in `rd` (`scratch` is clobbered). */
+  /** rd = the address of callback thunk `thunk` (resolved at link time). */
+  function thunkAddress(rd: number, thunk: number | undefined): void {
+    if (thunk === undefined) throw "callback thunk invariant";
+    importAddress(rd, 17, "tint:callback-thunk:" + String(thunk));
+  }
   function importAddress(rd: number, scratch: number, name: string): void {
     imports.push({
       offset: instructions.length * 4,
@@ -1549,6 +1573,281 @@ function emitModuleForms(
     else {
       signatureFixups.push({ offset: instructions.length * 4, target, rd });
       localPointer(rd);
+    }
+  }
+  /** Callback thunks this module's may-callback calls pass to C, one per
+   * (C prototype, callback position) (docs/native-ffi.md, "Callbacks");
+   * startup resolves `tint:callback-thunk:<index>` to each one's entry. */
+  const callbackThunkRequests: {
+    readonly key: string;
+    /** Undefined: a universal thunk (dynamic callbacks). */
+    readonly signature: CSignature | undefined;
+    readonly ordinal: number;
+  }[] = [];
+  function callbackThunk(
+    signature: CSignature | undefined,
+    ordinal: number,
+  ): number {
+    const names: string[] = [];
+    for (const parameter of signature?.parameters ?? []) {
+      if (parameter === undefined) throw "callback parameter invariant";
+      names.push(cTypeName(parameter));
+    }
+    const key =
+      String(ordinal) +
+      ":" +
+      (signature === undefined
+        ? "universal"
+        : cTypeName(signature.result) + "(" + names.join(",") + ")");
+    for (let index = 0; index < callbackThunkRequests.length; index++)
+      if (callbackThunkRequests[index]?.key === key) return index;
+    callbackThunkRequests.push({ key, signature, ordinal });
+    return callbackThunkRequests.length - 1;
+  }
+  /** A callback thunk: C calls it with `signature`'s ABI during a
+   * may-callback call, and it calls the call's `ordinal`th callback (a
+   * function value in the innermost transition record) with numbers; a
+   * negative `ordinal` makes registered callback `-1 - ordinal`'s thunk,
+   * which calls the transition's dispatcher with that id first.
+   * Frame (192 bytes, x29 = sp): the frame record, the callback's result
+   * record at +16, the transition at +48 (the stack walk reads it), C's
+   * x0..x7 at +64 and d0..d7 at +128; C's stack arguments follow the
+   * frame. Traps unless this thread has a callback state (pthread key)
+   * whose innermost transition is not already running a callback. */
+  function emitCallbackThunk(
+    signature: CSignature | undefined,
+    ordinal: number,
+  ): void {
+    // A universal thunk (no prototype) passes the callback its frame's
+    // address instead: the dynamic layer reads the saved C arguments there
+    // and writes x0 and d0 back (docs/native-ffi.md, "Dynamic callbacks").
+    const classified =
+      signature === undefined ? undefined : classifyCCall(signature, cTarget());
+    if (classified !== undefined && !classified.ok)
+      fail("UNSUPPORTED", "callback: " + classified.error);
+    const locations: readonly CValueLocation[] =
+      classified === undefined || !classified.ok
+        ? []
+        : classified.value.arguments;
+    const registered = ordinal < 0,
+      first = registered ? 1 : 0;
+    if (locations.length + first > 8)
+      fail("UNSUPPORTED", "callbacks take at most eight arguments");
+    const frame = 192;
+    const traps: { at: number; branch: Branch }[] = [];
+    function trapBranch(branch: Branch): void {
+      traps.push({ at: instructions.length, branch });
+      emit({ ...branch, displacement: 0 });
+    }
+    const t = callbackTransition;
+    emit({
+      op: "stp",
+      width: 64,
+      rt: 29,
+      rt2: 30,
+      rn: "sp",
+      offset: -frame,
+      mode: "pre",
+    });
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 29,
+      rn: "sp",
+      immediate: 0,
+      shift: 0,
+      setFlags: false,
+    });
+    for (let register = 0; register < 8; register += 2) {
+      emit({
+        op: "stp",
+        width: 64,
+        rt: register,
+        rt2: register + 1,
+        rn: 29,
+        offset: 64 + register * 8,
+        mode: "offset",
+      });
+      emit({
+        op: "stp-d",
+        rt: register,
+        rt2: register + 1,
+        rn: 29,
+        offset: 128 + register * 8,
+      });
+    }
+    // This thread's callback state block.
+    importAddress(9, 17, "tint:callback-key");
+    emit({ op: "ldr", width: 64, rt: 0, rn: 9, offset: 0 });
+    importCall(host().symbolPrefix + "pthread_getspecific");
+    trapBranch({ op: "cbz", width: 64, rt: 0 });
+    // The innermost transition: present, not already running a callback,
+    // and entered on this very thread.
+    emit({ op: "ldr", width: 64, rt: 11, rn: 0, offset: 0 });
+    trapBranch({ op: "cbz", width: 64, rt: 11 });
+    emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.entered });
+    trapBranch({ op: "cbnz", width: 64, rt: 12 });
+    emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.thread });
+    emit({ op: "mrs-thread", rt: 13, readOnly: host().os === "darwin" });
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: "zr",
+      rn: 12,
+      rm: 13,
+      shift: "lsl",
+      amount: 0,
+      setFlags: true,
+    });
+    trapBranch({ op: "b.cond", condition: "ne" });
+    imm(12, 1);
+    emit({ op: "str", width: 64, rt: 12, rn: 11, offset: t.entered });
+    emit({ op: "str", width: 64, rt: 11, rn: 29, offset: 48 });
+    // C arguments to numbers in d16.., then d0.. (the callback's numbers).
+    for (let index = 0; index < locations.length; index++) {
+      const location = locations[index],
+        type = signature?.parameters[index];
+      if (location === undefined || type === undefined)
+        throw "callback argument invariant";
+      const rd = 16 + index;
+      if (location.class === "float") {
+        const from =
+          location.stackOffset >= 0
+            ? frame + location.stackOffset
+            : 128 + location.fp * 8;
+        if (location.size === 4) {
+          emit({ op: "ldr", width: 32, rt: 14, rn: 29, offset: from });
+          emit({ op: "fmov-s-w", rd, rn: 14 });
+          emit({ op: "fcvt-d-s", rd, rn: rd });
+        } else emit({ op: "ldr-d", rt: rd, rn: 29, offset: from });
+        continue;
+      }
+      if (location.class !== "integer")
+        fail("UNSUPPORTED", "callback arguments are scalars or pointers");
+      emit({
+        op: "ldr",
+        width: 64,
+        rt: 14,
+        rn: 29,
+        offset:
+          location.stackOffset >= 0
+            ? frame + location.stackOffset
+            : 64 + location.gp * 8,
+      });
+      const scalar: CScalar =
+        type.kind === "pointer" ? "usize" : numericScalar(type);
+      const bytes = cScalarBytes(scalar),
+        signed = scalar !== "bool" && cScalarSigned(scalar, cTarget());
+      // The callee extends narrow integers (AAPCS64 leaves upper bits
+      // unspecified); 64-bit values convert directly.
+      if (bytes < 8)
+        emit({
+          op: signed ? "sbfm" : "ubfm",
+          width: 64,
+          rd: 14,
+          rn: 14,
+          immr: 0,
+          imms: bytes * 8 - 1,
+        });
+      if (signed) emit({ op: "scvtf-d-x", rd, rn: 14 });
+      else emit({ op: "ucvtf-d-x", rd, rn: 14 });
+    }
+    for (let index = 0; index < locations.length; index++)
+      emit({ op: "fmov-d-d", rd: first + index, rn: 16 + index });
+    if (registered) {
+      imm(14, -1 - ordinal);
+      emit({ op: "scvtf-d-x", rd: 0, rn: 14 });
+    }
+    if (signature === undefined) emit({ op: "scvtf-d-x", rd: 0, rn: 29 });
+    // Call the function value with the caller's context.
+    emit({ op: "ldr", width: 64, rt: 11, rn: 29, offset: 48 });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 12,
+      rn: 11,
+      offset: registered ? t.registered : t.callbacks + ordinal * 8,
+    });
+    emit({ op: "ldr", width: 64, rt: 0, rn: 11, offset: t.context });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 1,
+      rn: 12,
+      offset: nativeFunctionEnvironmentOffset,
+    });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 16,
+      rn: 12,
+      offset: nativeFunctionEntryOffset,
+    });
+    imm(2, 0);
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 3,
+      rn: 29,
+      immediate: 16,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({ op: "blr", rn: 16 });
+    // The generated callback catches every exception: anything but a
+    // normal completion is an invariant failure.
+    emit({
+      op: "sub-imm",
+      width: 32,
+      rd: "zr",
+      rn: 0,
+      immediate: 1,
+      shift: 0,
+      setFlags: true,
+    });
+    trapBranch({ op: "b.cond", condition: "ne" });
+    if (signature === undefined) {
+      // The dynamic layer wrote the result words over the saved x0, d0.
+      emit({ op: "ldr", width: 64, rt: 0, rn: 29, offset: 64 });
+      emit({ op: "ldr-d", rt: 0, rn: 29, offset: 128 });
+    } else emit({ op: "ldr-d", rt: 0, rn: 29, offset: 32 });
+    const result: CType =
+      signature === undefined ? { kind: "void" } : signature.result;
+    if (result.kind === "scalar" && result.scalar === "f32")
+      emit({ op: "fcvt-s-d", rd: 0, rn: 0 });
+    else if (result.kind === "scalar" && result.scalar !== "f64") {
+      const scalar = result.scalar;
+      if (scalar === "bool") emit({ op: "fcvtzu-w-d", rd: 0, rn: 0 });
+      else if (cScalarSigned(scalar, cTarget()))
+        emit({ op: "fcvtzs-x-d", rd: 0, rn: 0 });
+      else emit({ op: "fcvtzu-x-d", rd: 0, rn: 0 });
+    } else if (result.kind === "pointer")
+      emit({ op: "fcvtzu-x-d", rd: 0, rn: 0 });
+    else if (result.kind !== "void" && result.kind !== "scalar")
+      fail("UNSUPPORTED", "callback results are scalars or pointers");
+    emit({ op: "ldr", width: 64, rt: 11, rn: 29, offset: 48 });
+    emit({ op: "str", width: 64, rt: "zr", rn: 11, offset: t.entered });
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 29,
+      rt2: 30,
+      rn: "sp",
+      offset: frame,
+      mode: "post",
+    });
+    emit({ op: "ret", rn: 30 });
+    // Outside a may-callback call, on a thread without callback state, or
+    // while a callback already runs (a leaf call that called back): a
+    // contract violation, so trap loudly.
+    const trap = instructions.length;
+    emit({ op: "brk", immediate: 3 });
+    for (const site of traps) {
+      if (site === undefined) throw "callback trap invariant";
+      patchInstruction(site.at, {
+        ...site.branch,
+        displacement: (trap - site.at) * 4,
+      });
     }
   }
   function imm(rd: number, value: number): void {
@@ -3254,6 +3553,15 @@ function emitModuleForms(
         // Slot register homes are chosen after frame sharing (below).
         let homes: SlotHomes | undefined;
         /** Safepoints: operations during which the collector may run. */
+        // May-callback calls (docs/native-ffi.md, "Callbacks"): C frames
+        // between this frame and a callback may save x19..x28 anywhere, so
+        // the frame keeps no reference in a register across them and saves
+        // all of x19..x28 for its callers' register-held references.
+        let callsBack = false;
+        for (const block of fn.blocks)
+          for (const op of block?.instructions ?? [])
+            if (op?.kind === "c-call" && op.call.mayCallback === true)
+              callsBack = true;
         function mayCollect(op: IRInstruction): boolean {
           return op.kind === "call"
             ? closedRoots === undefined ||
@@ -3275,6 +3583,9 @@ function emitModuleForms(
         // stack map of the frame words live while it runs (see stack-maps.ts).
         const callSites: { offset: number; block: number; index: number }[] =
           [];
+        // Frame words outside slots and temporaries that a safepoint's map
+        // must list (a may-callback call's callback function values).
+        const siteReferences = new Map<number, readonly number[]>();
         let siteIndex = 0;
         function safepoint(): void {
           const block = blockId;
@@ -3439,6 +3750,7 @@ function emitModuleForms(
                     eligible: (slot: number): boolean => {
                       const type = fn.slots[slot];
                       return (
+                        !callsBack &&
                         type !== undefined &&
                         managed(type) &&
                         scalarByteLength(type) === 8
@@ -3934,7 +4246,7 @@ function emitModuleForms(
                 // NaN-boxed optional numbers are single FP words too.
                 else if (type === "number" || type === "optional-number")
                   candidates[id] = 1;
-                else if (managed(type) && type !== "primitive")
+                else if (managed(type) && type !== "primitive" && !callsBack)
                   candidates[id] = 2;
               }
             }
@@ -4306,7 +4618,7 @@ function emitModuleForms(
               (op?.kind === "call" && rootHeadBindings[op.target] === 1)
             )
               walkStart = true;
-        if (walkStart && !ownRootHead) {
+        if ((walkStart && !ownRootHead) || callsBack) {
           savedWords.length = 0;
           for (let register = 19; register <= 28; register++)
             savedWords.push(register);
@@ -5431,14 +5743,146 @@ function emitModuleForms(
         }
         /** Exact integer conversion of number `id` into `rd`; inexact
          * or out-of-range values trap (d0, d1, x9 scratch). */
+        /** Push a may-callback call's transition record at `record` (an
+         * outgoing-area offset) onto callback state `state` (docs/native-
+         * ffi.md, "Callbacks"), before any argument register is loaded:
+         * this frame's x29, the call's return address (an ADR patched by
+         * popTransition), the previous record, a clear entered flag, the
+         * thread, the context, the dispatcher and the `callees` function
+         * values. Appends the words holding function values (for the
+         * call's stack map) to `words`; returns the ADR's index. */
+        function pushTransition(
+          state: number,
+          dispatcher: number,
+          callees: readonly number[],
+          record: number,
+          words: number[],
+        ): number {
+          const t = callbackTransition;
+          dataPointer(state, 14, false, callbackState.size);
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: 13,
+            rn: "sp",
+            immediate: record,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 12,
+            rn: 14,
+            offset: callbackState.current,
+          });
+          emit({ op: "str", width: 64, rt: 12, rn: 13, offset: t.previous });
+          emit({ op: "str", width: 64, rt: 29, rn: 13, offset: t.frame });
+          const returnAddressAt = instructions.length;
+          emit({ op: "adr", rd: 12, displacement: 0 });
+          emit({
+            op: "str",
+            width: 64,
+            rt: 12,
+            rn: 13,
+            offset: t.returnAddress,
+          });
+          emit({ op: "str", width: 64, rt: "zr", rn: 13, offset: t.entered });
+          emit({ op: "mrs-thread", rt: 12, readOnly: host().os === "darwin" });
+          emit({ op: "str", width: 64, rt: 12, rn: 13, offset: t.thread });
+          rawLoad(12, contextOffset);
+          emit({ op: "str", width: 64, rt: 12, rn: 13, offset: t.context });
+          rawValue(9, dispatcher);
+          emit({ op: "str", width: 64, rt: 9, rn: 13, offset: t.registered });
+          words.push(record + t.registered);
+          for (let ordinal = 0; ordinal < callees.length; ordinal++) {
+            const callee = callees[ordinal];
+            if (callee === undefined) throw "transition callee invariant";
+            rawValue(9, callee);
+            emit({
+              op: "str",
+              width: 64,
+              rt: 9,
+              rn: 13,
+              offset: t.callbacks + ordinal * 8,
+            });
+            words.push(record + t.callbacks + ordinal * 8);
+          }
+          emit({
+            op: "str",
+            width: 64,
+            rt: 13,
+            rn: 14,
+            offset: callbackState.current,
+          });
+          return returnAddressAt;
+        }
+        /** After a may-callback call's BLR: its return address is here (a
+         * safepoint whose map also lists the transition's function-value
+         * `words`), then pop the record. x0, x1 and d0-d3 are untouched. */
+        function popTransition(
+          state: number,
+          record: number,
+          returnAddressAt: number,
+          words: readonly number[],
+        ): void {
+          patchInstruction(returnAddressAt, {
+            op: "adr",
+            rd: 12,
+            displacement: (instructions.length - returnAddressAt) * 4,
+          });
+          safepoint();
+          siteReferences.set(callSites.length - 1, words);
+          dataPointer(state, 14, false, 0);
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 12,
+            rn: "sp",
+            offset: record + callbackTransition.previous,
+          });
+          emit({
+            op: "str",
+            width: 64,
+            rt: 12,
+            rn: 14,
+            offset: callbackState.current,
+          });
+        }
         /** The universal trampoline (docs/native-ffi.md, "Dynamic
          * calls"): a leaf call of the address in operand 0 with every
          * register and stack argument taken from the frame (operand 1, see
          * dynamicCallFrame). Inside the call nothing moves, so the frame's
          * patches form borrowed addresses here: the bases are the frame's
          * and the byte operands' data addresses. Scratch: x9-x15, d0-d1. */
-        function dynamicCall(operands: readonly number[]): void {
-          const frame = dynamicCallFrame;
+        function dynamicCall(call: ForeignCall, all: readonly number[]): void {
+          const frame = dynamicCallFrame,
+            mayCallback = call.mayCallback === true;
+          // A may-callback trampoline takes the callback state and
+          // dispatcher first and its callback function values last; its
+          // transition is pushed before anything else.
+          const operands = mayCallback ? all.slice(2) : all;
+          const callees: number[] = [];
+          for (let index = 0; index < frame.callbackOperands; index++) {
+            const callee = operands[2 + frame.byteOperands + index];
+            if (mayCallback && callee !== undefined) callees.push(callee);
+          }
+          const record = frame.stackCapacity,
+            words: number[] = [];
+          let returnAddressAt = -1;
+          if (mayCallback) {
+            const state = all[0],
+              dispatcher = all[1];
+            if (state === undefined || dispatcher === undefined)
+              throw "dynamic c-call state invariant";
+            returnAddressAt = pushTransition(
+              state,
+              dispatcher,
+              callees,
+              record,
+              words,
+            );
+          }
           function operand(index: number): number {
             const id = operands[index];
             if (id === undefined) throw "dynamic c-call argument invariant";
@@ -5470,6 +5914,23 @@ function emitModuleForms(
               offset: frame.bases + 8 + index * 8,
             });
           }
+          // Universal callback thunks' entries for the callback operands.
+          const bases =
+            1 + frame.byteOperands + (mayCallback ? frame.callbackOperands : 0);
+          for (let index = 0; index < callees.length; index++) {
+            importAddress(
+              14,
+              17,
+              "tint:callback-thunk:" + String(callbackThunk(undefined, index)),
+            );
+            emit({
+              op: "str",
+              width: 64,
+              rt: 14,
+              rn: 12,
+              offset: frame.bases + (1 + frame.byteOperands + index) * 8,
+            });
+          }
           // Patches: frame[target] = bases[base] + addend.
           emit({
             op: "ldr",
@@ -5498,7 +5959,7 @@ function emitModuleForms(
             rn: 10,
             offset: frame.patchArray,
           });
-          compareImmediate(14, frame.byteOperands);
+          compareImmediate(14, bases - 1);
           trapIf({ op: "b.cond", condition: "hi" });
           emit({
             op: "add-reg",
@@ -5659,6 +6120,12 @@ function emitModuleForms(
               mode: "offset",
             });
           emit({ op: "blr", rn: 15 });
+          // A may-callback trampoline's return address is its safepoint.
+          if (mayCallback) {
+            const state = all[0];
+            if (state === undefined) throw "dynamic c-call state invariant";
+            popTransition(state, record, returnAddressAt, words);
+          }
           // Results: x0, x1 and d0-d3 back into the frame.
           rawValue(9, operand(1));
           emit({
@@ -8990,6 +9457,91 @@ function emitModuleForms(
                   operands = op.arguments,
                   base = operands[0],
                   resultId = op.id;
+                if (access.operation === "stable") {
+                  // Borrowed (flag 1), or a view (flag 2) of a borrowed
+                  // owner: data that no collection moves.
+                  const array = op.arguments[0];
+                  if (resultId === undefined || array === undefined)
+                    throw "c-memory stable invariant";
+                  rawValue(9, array);
+                  const flags = (): void => {
+                    emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+                    emit({
+                      op: "ubfm",
+                      width: 64,
+                      rd: 10,
+                      rn: 10,
+                      immr: nativeHeaderFlagsShift,
+                      imms: nativeHeaderFlagsShift + 2,
+                    });
+                  };
+                  flags();
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 10,
+                    immediate: 2,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  const notView = instructions.length;
+                  emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 9,
+                    rn: 9,
+                    offset: nativeArrayOwnerOffset,
+                  });
+                  flags();
+                  patchInstruction(notView, {
+                    op: "b.cond",
+                    condition: "ne",
+                    displacement: (instructions.length - notView) * 4,
+                  });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 10,
+                    immediate: 1,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  emit({ op: "cset", rd: 9, condition: "eq" });
+                  saveRaw(9, resultId);
+                  break;
+                }
+                if (access.operation === "callback-address") {
+                  // A registered callback thunk's entry.
+                  const prototype = access.callback,
+                    slot = access.slot;
+                  if (
+                    resultId === undefined ||
+                    prototype === undefined ||
+                    slot === undefined
+                  )
+                    throw "c-memory callback address invariant";
+                  importAddress(
+                    9,
+                    10,
+                    "tint:callback-thunk:" +
+                      String(callbackThunk(prototype, -1 - slot)),
+                  );
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (access.operation === "callback-key") {
+                  // The image's callback key word (startup resolves it).
+                  if (resultId === undefined)
+                    throw "c-memory callback key invariant";
+                  importAddress(9, 10, "tint:callback-key");
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                  floatStore(0, resultId);
+                  break;
+                }
                 if (access.operation === "available") {
                   // An absent weak import reads as zero.
                   const symbol = access.symbol;
@@ -9388,7 +9940,7 @@ function emitModuleForms(
               }
               case "c-call": {
                 if (op.call.dynamic === true) {
-                  dynamicCall(op.arguments);
+                  dynamicCall(op.call, op.arguments);
                   break;
                 }
                 // Leaf C call (docs/native-ffi.md): not a safepoint, so no
@@ -9404,8 +9956,51 @@ function emitModuleForms(
                 // An indirect call's callee address comes first: convert
                 // it into x15 (untouched by the helpers below) before any
                 // argument register is loaded.
-                const indirect = call.indirect === true;
+                const indirect = call.indirect === true,
+                  mayCallback = call.mayCallback === true,
+                  // The prototype's operand forms (a may-callback call's
+                  // state operand comes first).
+                  forms = mayCallback ? call.operands.slice(2) : call.operands;
                 let operands = op.arguments;
+                // A may-callback call pushes its transition record onto the
+                // calling thread's callback state block (operand 0) before
+                // any argument register is loaded: previous record, this
+                // frame's x29, the call's return address (patched once the
+                // blr is emitted) and a clear entered flag.
+                let returnAddressAt = -1,
+                  stateOperand = -1;
+                // Callback operands: their thunks, and the transition words
+                // holding their function values.
+                const callbackThunks: number[] = [],
+                  callbackWords: number[] = [];
+                if (mayCallback) {
+                  const state = operands[0],
+                    dispatcher = operands[1];
+                  if (state === undefined || dispatcher === undefined)
+                    throw "c-call state invariant";
+                  stateOperand = state;
+                  operands = operands.slice(2);
+                  const callees: number[] = [];
+                  for (let index = 0; index < operands.length; index++) {
+                    if (call.operands[index + 2] !== "callback") continue;
+                    const prototype = call.callbacks?.[index],
+                      callee = operands[index];
+                    if (prototype === undefined || callee === undefined)
+                      throw "c-call callback invariant";
+                    callbackThunks[index] = callbackThunk(
+                      prototype,
+                      callees.length,
+                    );
+                    callees.push(callee);
+                  }
+                  returnAddressAt = pushTransition(
+                    state,
+                    dispatcher,
+                    callees,
+                    plan.transition,
+                    callbackWords,
+                  );
+                }
                 if (indirect) {
                   const callee = operands[0];
                   if (callee === undefined) throw "c-call callee invariant";
@@ -9421,7 +10016,7 @@ function emitModuleForms(
                 // Stack arguments and indirect copies.
                 for (let index = 0; index < layout.arguments.length; index++) {
                   const location = layout.arguments[index],
-                    form = call.operands[index],
+                    form = forms[index],
                     type = call.signature.parameters[index];
                   if (
                     location === undefined ||
@@ -9461,6 +10056,9 @@ function emitModuleForms(
                       emit({ op: "fmov-w-s", rd: 14, rn: 16 });
                       emit({ op: "str", width: 32, rt: 14, rn: "sp", offset });
                     } else emit({ op: "str-d", rt: 16, rn: "sp", offset });
+                  } else if (form === "callback") {
+                    thunkAddress(14, callbackThunks[index]);
+                    emit({ op: "str", width: 64, rt: 14, rn: "sp", offset });
                   } else if (form === "bytes" || form === "terminated-bytes") {
                     dataPointer(
                       id,
@@ -9486,7 +10084,7 @@ function emitModuleForms(
                 // X registers.
                 for (let index = 0; index < layout.arguments.length; index++) {
                   const location = layout.arguments[index],
-                    form = call.operands[index],
+                    form = forms[index],
                     type = call.signature.parameters[index];
                   if (
                     location === undefined ||
@@ -9508,7 +10106,9 @@ function emitModuleForms(
                         word * 8,
                         Math.min(8, location.size - word * 8),
                       );
-                  } else if (form === "bytes" || form === "terminated-bytes")
+                  } else if (form === "callback")
+                    thunkAddress(rd, callbackThunks[index]);
+                  else if (form === "bytes" || form === "terminated-bytes")
                     dataPointer(
                       id,
                       rd,
@@ -9567,6 +10167,13 @@ function emitModuleForms(
                 }
                 if (indirect) emit({ op: "blr", rn: 15 });
                 else importCall(host().symbolPrefix + call.symbol);
+                if (mayCallback)
+                  popTransition(
+                    stateOperand,
+                    plan.transition,
+                    returnAddressAt,
+                    callbackWords,
+                  );
                 const resultId = op.id,
                   result = layout.result,
                   resultType = call.signature.result;
@@ -14990,6 +15597,10 @@ function emitModuleForms(
                   else references.push(offset);
                 }
             }
+            for (const offset of siteReferences.get(index) ?? []) {
+              if (offset === undefined) throw "site reference invariant";
+              references.push(offset);
+            }
             const map: number[] = [frameBytes];
             for (const list of [references, generals]) {
               if (list === undefined) throw "safepoint map invariant";
@@ -15019,6 +15630,21 @@ function emitModuleForms(
                 throw "register root invariant";
               held |= 1 << (register - 19);
             }
+            // C frames between a may-callback call and its callbacks may
+            // save x19..x28 anywhere: no reference may be register-held
+            // across one (docs/native-ffi.md, "Callbacks").
+            const siteBlock = fn.blocks[site.block],
+              siteOp =
+                siteBlock === undefined
+                  ? undefined
+                  : siteBlock.instructions[site.index];
+            if (
+              held !== 0 &&
+              siteOp !== undefined &&
+              siteOp.kind === "c-call" &&
+              siteOp.call.mayCallback === true
+            )
+              throw "register root across a may-callback call";
             registerSection(map, held);
             safepoints.push({ offset: site.offset, map });
           }
@@ -15138,6 +15764,16 @@ function emitModuleForms(
         });
       }
     }
+    // Callback entry thunks, after the helpers: one contiguous range.
+    const thunkStart = instructions.length * 4,
+      thunkOffsets: { slot: number; offset: number }[] = [];
+    for (let index = 0; index < callbackThunkRequests.length; index++) {
+      const thunk = callbackThunkRequests[index];
+      if (thunk === undefined) throw "callback thunk invariant";
+      thunkOffsets.push({ slot: index, offset: instructions.length * 4 });
+      emitCallbackThunk(thunk.signature, thunk.ordinal);
+    }
+    const thunkEnd = instructions.length * 4;
     let codeLength = instructions.length * 4;
     const cellOffsets = new Map<string, number>(),
       cellBytes: { offset: number; bytes: Uint8Array }[] = [];
@@ -15593,6 +16229,14 @@ function emitModuleForms(
         operationRanges: recordOperations ? operationRanges : undefined,
         startupCalls: startupCalls.length > 0 ? startupCalls : undefined,
         functions,
+        callbackThunks:
+          thunkOffsets.length === 0
+            ? undefined
+            : {
+                offset: thunkStart,
+                byteLength: thunkEnd - thunkStart,
+                thunks: thunkOffsets,
+              },
         helpers,
         cellHelpers,
         strings,
