@@ -567,7 +567,7 @@ function mapOn(
 const executable = reservation + granule,
   magicWord = 0x50414d58544e4954n;
 const reserve = "mmap(0x0,0x10000,0x3,0x4022,0xffffffff,0x0)";
-const dualCalls = (memoryFileCalls: string[]): string[] => [
+const dualCalls = (memoryFileCalls: readonly string[]): string[] => [
   reserve,
   ...memoryFileCalls,
   "ftruncate(0x3,0x4000)",
@@ -599,7 +599,7 @@ test("executable memory files are requested with MFD_EXEC, retried without it on
 });
 
 test("a kernel refusing executable memory files gets a single W^X mapping", () => {
-  const singleCalls = (memoryFileCalls: string[]): string[] => [
+  const singleCalls = (memoryFileCalls: readonly string[]): string[] => [
     reserve,
     ...memoryFileCalls,
     "mmap(0x40004000,0x4000,0x5,0x32,0xffffffff,0x0)",
