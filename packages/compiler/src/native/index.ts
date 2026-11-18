@@ -2145,8 +2145,23 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         roots.push(binding.function);
       }
     }
-    const result = pruneClosedModule(module, roots, 10000000, foreign);
-    if (result === undefined) return module;
+    // Tracing and remapping are linear in the instructions of the module;
+    // a capped budget silently kept every function of large programs.
+    const result = pruneClosedModule(module, roots, unboundedWork, foreign);
+    if (result === undefined) {
+      // Declined (raw memory capabilities or unstable record layouts).
+      recordPass(
+        {
+          phase: "scalar",
+          pass: "remove-unreachable",
+          visited: 0,
+          rewritten: 0,
+          skipped: module.functions.length,
+        },
+        module,
+      );
+      return module;
+    }
     // Every identity foreign code binds must survive; otherwise keep all.
     for (const plan of identityPlans) {
       if (plan === undefined) throw "service identity plan invariant";
