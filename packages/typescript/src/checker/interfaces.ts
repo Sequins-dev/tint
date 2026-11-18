@@ -71,7 +71,6 @@ interface InterfaceSnapshot {
   readonly instanceValues: readonly number[];
   readonly redirectIndexes: readonly number[];
   readonly redirectValues: readonly number[];
-  readonly intersectionSteps: number;
 }
 /** Caller-owned reuse of declared-type resolution across modules that share
  * their type declarations (a compiler's eval entries share the image
@@ -580,6 +579,9 @@ export function resolveInterfaceTypes(
     }
     return id;
   }
+  /** Expansion steps of the current intersection type expression: the
+   * budget bounds one expression's distribution over unions, not the
+   * program (a linked program checks every module's types at once). */
   let intersectionSteps = 0;
   function intersect(
     left: number,
@@ -587,6 +589,7 @@ export function resolveInterfaceTypes(
     node: Span,
     level: number = 0,
   ): number {
+    if (level === 0) intersectionSteps = 0;
     if (level >= 64 || ++intersectionSteps > 4096)
       fail(node, "LIMIT", "intersection expansion limit exceeded");
     left = canonical(left);
@@ -868,7 +871,6 @@ export function resolveInterfaceTypes(
       instanceValues,
       redirectIndexes,
       redirectValues,
-      intersectionSteps,
     };
   }
   /** Rebuild exactly the state phase two leaves: the same type table and
@@ -904,7 +906,6 @@ export function resolveInterfaceTypes(
         throw "interface snapshot invariant";
       redirects[at] = value;
     }
-    intersectionSteps = snapshot.intersectionSteps;
   }
   try {
     for (let index = 0; index < module.statements.length; index++) {

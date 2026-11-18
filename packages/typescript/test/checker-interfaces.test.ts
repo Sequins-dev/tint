@@ -178,6 +178,22 @@ test("intersection expansion rejects unresolved, nonstructural and conflicting o
   assert.ok(r.value.system.writeProperty(id, "x", number).ok);
 });
 
+test("the intersection expansion budget bounds each expression, not the program", () => {
+  // A 64-member union distributed over 80 intersections takes 5120 steps in
+  // all (a linked program checks every module's types at once) but only 64
+  // in any one expression.
+  const members: string[] = [];
+  for (let i = 0; i < 64; i++) members.push(`{readonly kind:${i}}`);
+  let text = `type Node=${members.join("|")};`;
+  for (let i = 0; i < 80; i++)
+    text += `type Tagged${i}=Node&{readonly tag${i}:number};`;
+  const r = resolve(text);
+  assert.ok(r.ok, JSON.stringify(r));
+  const tagged = r.value.types[r.value.names.get("Tagged79")!];
+  assert.ok(tagged?.kind === "union");
+  assert.equal(tagged.members.length, 64);
+});
+
 test("generic type contracts instantiate nested and recursive arguments independently", () => {
   const r = resolve(
     "type Result<T>={readonly ok:true;readonly value:T}|{readonly ok:false;readonly error:string}; interface Box<T>{readonly value:T;readonly next:Box<T>|undefined} type NumberBox=Box<number>;type StringBox=Box<string>;type Nested=Result<Box<Result<number>>>;",
