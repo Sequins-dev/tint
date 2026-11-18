@@ -4,6 +4,7 @@ import type {
   EnvironmentCell,
   FunctionDebug,
   FunctionIR,
+  GeneralTest,
   InlineSite,
   Instruction,
   ReturnType,
@@ -290,6 +291,15 @@ function writePrefix(
 function bit(present: boolean, value: number): number {
   return present ? value : 0;
 }
+/** General-value tests by their packed index; append only. */
+const generalTests: readonly GeneralTest[] = [
+  "undefined",
+  "number",
+  "boolean",
+  "string",
+  "null",
+  "Uint8Array",
+];
 export function encodeInstruction(
   writer: ByteWriter,
   vocabulary: PackedVocabulary,
@@ -318,6 +328,12 @@ export function encodeInstruction(
       writePrefix(writer, 4, op, 0);
       writeSigned(writer, op.id);
       writeSigned(writer, op.value);
+      return true;
+    case "general-is":
+      writePrefix(writer, 80, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.value);
+      writeByte(writer, generalTests.indexOf(op.type));
       return true;
     case "general-equal":
       writePrefix(writer, 5, op, 0);
@@ -1217,6 +1233,13 @@ export function decodeInstruction(
         right = readSigned(reader);
       if (operator === undefined) throw "packed IR operator";
       return { kind: "binary", id, operator, left, right, ...span };
+    }
+    case 80: {
+      const id = readSigned(reader),
+        value = readSigned(reader),
+        type = generalTests[readByte(reader)];
+      if (type === undefined) throw "packed general test invariant";
+      return { kind: "general-is", id, value, type, ...span };
     }
     case 79: {
       const receiver = flagged(flags, 2) ? readSigned(reader) : undefined,
