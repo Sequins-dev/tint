@@ -65,6 +65,7 @@ import type {
   MapRuntimeBinding,
   CollectionElement,
   PrimitiveRuntime,
+  BigIntRuntime,
 } from "../scalar.ts";
 /** The reified helper requests of a converged pass. Roots name helpers by
  * `namespace:export`, so a plan stays meaningful for another linking of the
@@ -944,6 +945,40 @@ function prepareCollectionPass(
           canonicalOptionalNumber: primitiveHelper("canonicalOptionalNumber"),
         }
       : undefined;
+    function bigIntHelper(name: string): number {
+      return functionId(helper("bigint", name));
+    }
+    const bigints: BigIntRuntime | undefined =
+      helpers.has("bigint:literal") &&
+      types.some((type) => type !== undefined && type.kind === "bigint")
+        ? {
+            literal: bigIntHelper("literal"),
+            binary: {
+              "+": bigIntHelper("addBigInt"),
+              "-": bigIntHelper("subtractBigInt"),
+              "*": bigIntHelper("multiplyBigInt"),
+              "/": bigIntHelper("divideBigInt"),
+              "%": bigIntHelper("remainderBigInt"),
+              "**": bigIntHelper("exponentiateBigInt"),
+              "&": bigIntHelper("andBigInt"),
+              "|": bigIntHelper("orBigInt"),
+              "^": bigIntHelper("xorBigInt"),
+              "<<": bigIntHelper("leftShiftBigInt"),
+              ">>": bigIntHelper("rightShiftBigInt"),
+            },
+            negate: bigIntHelper("negateBigInt"),
+            not: bigIntHelper("notBigInt"),
+            compare: bigIntHelper("compareBigInt"),
+            compareNumber: bigIntHelper("compareBigIntNumber"),
+            equal: bigIntHelper("equalBigInt"),
+            truthy: bigIntHelper("truthyBigInt"),
+            toString: bigIntHelper("bigIntToString"),
+            toNumber: bigIntHelper("bigIntToNumber"),
+            fromNumber: bigIntHelper("bigIntFromNumber"),
+            fromBoolean: bigIntHelper("bigIntFromBoolean"),
+            asWidth: bigIntHelper("bigIntAsWidth"),
+          }
+        : undefined;
     return {
       ok: true,
       value: {
@@ -964,6 +999,7 @@ function prepareCollectionPass(
           sets,
           maps,
           ...(primitives === undefined ? {} : { primitives }),
+          ...(bigints === undefined ? {} : { bigints }),
         },
       },
     };

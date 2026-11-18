@@ -82,6 +82,24 @@ function referenceType(
         : "reference"
     : undefined;
 }
+/** A BigInt is a reference to js-runtime's BigIntValue record; with
+ * undefined members it is an optional reference. BigInts never share a
+ * reference encoding with other records. */
+export function bigIntType(
+  checked: CheckedClosures,
+  id: number,
+): "reference" | "optional-reference" | undefined {
+  const t = checked.types[id];
+  if (t?.kind === "bigint") return "reference";
+  if (t?.kind !== "union") return undefined;
+  let present = false;
+  for (const member of t.members) {
+    const kind = checked.types[member]?.kind;
+    if (kind === "bigint") present = true;
+    else if (kind !== "undefined") return undefined;
+  }
+  return present ? "optional-reference" : undefined;
+}
 function primitiveEncoding(
   checked: CheckedClosures,
   id: number,
@@ -110,7 +128,8 @@ function collectionElement(
     (checked.types[id]?.kind === "union" &&
       entryType(checked, id) === "primitive") ||
     referenceType(checked, id) === "reference" ||
-    referenceType(checked, id) === "optional-reference"
+    referenceType(checked, id) === "optional-reference" ||
+    bigIntType(checked, id) !== undefined
       ? id
       : undefined)
   );
@@ -362,7 +381,17 @@ export function setElement(
   id: number,
 ): CollectionElement | undefined {
   const t = checked.types[id];
-  return t?.kind === "set" ? collectionElement(checked, t.element) : undefined;
+  // Set membership is SameValueZero, which compares BigInts by value; the
+  // set helpers compare references, so BigInt elements have no encoding yet.
+  if (t?.kind !== "set" || mentionsBigInt(checked, t.element)) return undefined;
+  return collectionElement(checked, t.element);
+}
+function mentionsBigInt(checked: CheckedClosures, id: number): boolean {
+  const t = checked.types[id];
+  if (t?.kind === "bigint") return true;
+  return (
+    t?.kind === "union" && t.members.some((m) => mentionsBigInt(checked, m))
+  );
 }
 interface MapEncoding {
   readonly key: CollectionElement;
@@ -373,7 +402,8 @@ export function mapEncoding(
   id: number,
 ): MapEncoding | undefined {
   const t = checked.types[id];
-  if (t?.kind !== "map") return undefined;
+  // Map keys compare by SameValueZero (BigInts by value); see setElement.
+  if (t?.kind !== "map" || mentionsBigInt(checked, t.key)) return undefined;
   const key = collectionElement(checked, t.key),
     value = collectionElement(checked, t.value);
   return key === undefined || value === undefined ? undefined : { key, value };
@@ -462,6 +492,8 @@ export function entryType(
   if (checked.types[id]?.kind === "RangeError") return "reference";
   if (checked.types[id]?.kind === "TypeError") return "reference";
   if (checked.types[id]?.kind === "ArrayBuffer") return "reference";
+  const bigint = bigIntType(checked, id);
+  if (bigint !== undefined) return bigint;
   if (checked.types[id]?.kind === "null") return "primitive";
   if (generalType(checked, id)) return "general";
   if (stringType(checked, id)) return "string";

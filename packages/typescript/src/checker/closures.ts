@@ -124,7 +124,6 @@ export type ClosureIntrinsic =
   | "number-from-bigint"
   | "bigint-identity"
   | "bigint-from-number"
-  | "bigint-from-string"
   | "bigint-from-boolean"
   | "number-is-integer"
   | "string-convert"
@@ -1121,6 +1120,7 @@ export function checkClosureModule(
       value.kind === "number" ||
       value.kind === "string" ||
       value.kind === "boolean" ||
+      value.kind === "bigint" ||
       value.kind === "undefined" ||
       value.kind === "literal"
     )
@@ -1171,6 +1171,17 @@ export function checkClosureModule(
     const b = declarations.get(node);
     if (b === undefined) throw "declaration invariant";
     return b;
+  }
+  function mentionsBigInt(id: number): boolean {
+    const type = types[id];
+    if (type?.kind === "bigint") return true;
+    return (
+      type?.kind === "union" &&
+      type.members.some(
+        (member: number | undefined) =>
+          member !== undefined && mentionsBigInt(member),
+      )
+    );
   }
   function requireType(actual: number, expected: number, node: Span): void {
     recordTypeFlow(actual, expected, node);
@@ -2844,8 +2855,8 @@ export function checkClosureModule(
               throw "TEMPLATE_SUBSTITUTION_INVARIANT";
             const input = expression(substitution, owner);
             if (
-              ![number, string, boolean, undefinedType, nullType].some((type) =>
-                system.assignable(input, type),
+              ![number, string, boolean, undefinedType, nullType, bigint].some(
+                (type) => system.assignable(input, type),
               )
             )
               fail(
@@ -3688,8 +3699,9 @@ export function checkClosureModule(
             !references.has(target)
           ) {
             // BigInt(value): integral Numbers convert exactly (others throw
-            // a RangeError), strings parse as StringIntegerLiteral (invalid
-            // text throws a SyntaxError), booleans give 0n/1n.
+            // a RangeError) and booleans give 0n/1n. Strings parse as
+            // StringIntegerLiteral and invalid text throws a SyntaxError,
+            // which typed code gains with realm errors (slice 4).
             if (node.arguments.length !== 1)
               fail(node, "ARITY", "BigInt requires one argument");
             const argument = node.arguments[0];
@@ -3703,7 +3715,11 @@ export function checkClosureModule(
                 : system.assignable(input, number)
                   ? "bigint-from-number"
                   : system.assignable(input, string)
-                    ? "bigint-from-string"
+                    ? fail(
+                        argument,
+                        "UNSUPPORTED",
+                        "BigInt(string) needs realm SyntaxError (slice 4)",
+                      )
                     : system.assignable(input, boolean)
                       ? "bigint-from-boolean"
                       : fail(
@@ -5025,8 +5041,24 @@ export function checkClosureModule(
             );
           const leftBigInt = system.assignable(left, bigint),
             rightBigInt = system.assignable(right, bigint);
-          if (["===", "!==", "==", "!="].includes(node.operator))
+          if (["===", "!==", "==", "!="].includes(node.operator)) {
+            // BigInts compare by value, which lowering does for two bigint
+            // operands; a possibly absent BigInt may be tested only against
+            // undefined or null (a presence test, no value comparison).
+            if (
+              (mentionsBigInt(left) || mentionsBigInt(right)) &&
+              !(leftBigInt && rightBigInt) &&
+              ![left, right].some(
+                (type) => type === undefinedType || type === nullType,
+              )
+            )
+              fail(
+                node,
+                "UNSUPPORTED",
+                "BigInt equality requires two bigint operands or a test against undefined or null",
+              );
             result = boolean;
+          }
           else if (
             node.operator === "+" &&
             (system.assignable(left, string) ||
