@@ -122,4 +122,18 @@ declare module "tint:ffi" {
   /** The address of live external storage (throws TypeError for movable
    * arrays, views and released storage). */
   export function address(view: Uint8Array): Address<u8>;
+  /** Whether `view`'s data never moves (external storage or foreign
+   * memory): what may-callback calls take for pointer arguments. */
+  export function stableBytes(view: Uint8Array): boolean;
+  /** The calling mutator's callback state block (generated may-callback
+   * wrappers pass it to C calls; docs/native-ffi.md, "Callbacks"). */
+  export function callbackState(): Uint8Array;
+  /** A C function pointer argument entering TypeScript: the callback is
+   * valid for the duration of the call it is passed to. A type alias of a
+   * Callback (`type alloc_func = Callback<...>`) also declares a callback
+   * type whose functions can be registered for C to keep. */
+  export type Callback<F> = F;
+  /** Unregister the registered callback whose C function pointer is
+   * `address` (docs/native-ffi.md, "Callbacks"). */
+  export function releaseCallback(address: number): void;
 }

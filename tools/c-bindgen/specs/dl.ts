@@ -4,12 +4,13 @@ import type { BindingSpec } from "../spec.ts";
 export default {
   library: "dl",
   summary: [
-    "Dynamic loading (dlfcn.h) and the universal trampoline's call frame",
+    "Dynamic loading (dlfcn.h), the universal trampoline's call frame and",
+    "the callback state key (pthread_setspecific)",
     '(docs/native-ffi.md, "Dynamic calls"): libSystem on Darwin, glibc',
     "(libc.so.6, which holds dlopen since 2.34) on Linux.",
   ],
   targets: ["darwin-arm64", "linux-arm64"],
-  headers: ["dlfcn.h", "stdint.h"],
+  headers: ["dlfcn.h", "pthread.h", "stdint.h"],
   // Records Tint defines: a handle as its two 32-bit halves (Darwin's
   // dlopen(NULL) handle has high bits set, which no number holds), and the
   // trampoline's frame (dynamicCallFrame in @tint/ir/scalar).
@@ -27,7 +28,7 @@ union Word {
 };
 struct DynamicFrame {
   union Word x[8]; union Word d[8]; union Word x8;
-  uint64_t stackBytes; uint64_t patchCount; void *bases[9];
+  uint64_t stackBytes; uint64_t patchCount; void *bases[13];
   uint64_t patchTargets[16]; uint64_t patchBases[16]; int64_t patchAddends[16];
   uint8_t stack[512]; uint8_t scratch[512];
 };
@@ -94,6 +95,11 @@ union Cell {
     {
       name: "dlerror",
       doc: "The last dlfcn error's text (C-owned, cleared by the call), or 0.",
+    },
+    {
+      name: "pthread_setspecific",
+      parameters: { 0: { name: "key" }, 1: { name: "value", as: "Address" } },
+      doc: 'Sets the calling thread\'s value of `key` (callback state blocks; docs/native-ffi.md, "Callbacks").',
     },
   ],
 } satisfies BindingSpec;

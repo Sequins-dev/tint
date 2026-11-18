@@ -135,7 +135,7 @@
       "union": false,
       "packed": false,
       "alignment": 0,
-      "size": 1632,
+      "size": 1664,
       "align": 8,
       "fields": [
         {
@@ -188,7 +188,7 @@
               "pointee": { "kind": "void" },
               "constPointee": false
             },
-            "length": 9
+            "length": 13
           },
           "offset": 152
         },
@@ -203,7 +203,7 @@
             },
             "length": 16
           },
-          "offset": 224
+          "offset": 256
         },
         {
           "name": "patchBases",
@@ -216,7 +216,7 @@
             },
             "length": 16
           },
-          "offset": 352
+          "offset": 384
         },
         {
           "name": "patchAddends",
@@ -229,7 +229,7 @@
             },
             "length": 16
           },
-          "offset": 480
+          "offset": 512
         },
         {
           "name": "stack",
@@ -242,7 +242,7 @@
             },
             "length": 512
           },
-          "offset": 608
+          "offset": 640
         },
         {
           "name": "scratch",
@@ -255,7 +255,7 @@
             },
             "length": 512
           },
-          "offset": 1120
+          "offset": 1152
         }
       ]
     },
@@ -454,6 +454,29 @@
         "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
         "constPointee": false
       },
+      "variadic": false
+    },
+    {
+      "name": "pthread_setspecific",
+      "parameters": [
+        {
+          "name": "__key",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u32",
+            "aliases": ["pthread_key_t"]
+          }
+        },
+        {
+          "name": "__pointer",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": true
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
       "variadic": false
     }
   ],

@@ -40,7 +40,15 @@ import {
   dlsym,
 } from "tint:c/dl";
 import type { View } from "tint:ffi";
-import { callForeign } from "./primitives.ts";
+import { callForeign, callForeignCallbacks } from "./primitives.ts";
+import {
+  allocate,
+  callbackDispatcher,
+  stableBytes,
+  callbackState,
+  rethrowCallbackFailure,
+} from "./index.ts";
+import { bytesAt } from "./unsafe.ts";
 import { readCString } from "./c-string.ts";
 
 /** A C prototype and C type as data (@tint/abi/c's model). */
@@ -49,12 +57,22 @@ export type ForeignType = CType;
 /** Frame offsets (DynamicFrame's layout, dynamicCallFrame in the IR). */
 const frameFloats = 64,
   frameIndirect = 128,
-  frameStack = 608,
-  frameScratch = 1120,
+  frameStack = 640,
+  frameScratch = 1152,
   scratchCapacity = 512,
   stackCapacity = 512,
   patchCapacity = 16,
-  byteOperands = 8;
+  byteOperands = 8,
+  callbackOperands = 4;
+/** A universal callback thunk's frame (docs/native-ffi.md, "Dynamic
+ * callbacks"): C's x0..x7 and d0..d7 as saved, its stack arguments after
+ * the frame; the callback writes its result over the saved x0 and d0. */
+const thunkRegisters = 64,
+  thunkFloats = 128,
+  thunkFrame = 192;
+/** A dynamic callback: the C arguments as numbers (bools 0 or 1), its
+ * result as a number (ignored for void). */
+export type DynamicCallback = (args: number[]) => number;
 /** A classified C function at an address, with its argument state. */
 export interface ForeignFunction {
   readonly address: number;
@@ -64,6 +82,9 @@ export interface ForeignFunction {
   readonly frame: Uint8Array;
   /** One 8-byte conversion cell. */
   readonly cell: Uint8Array;
+  /** The last call's result registers: the trampoline writes x0, x1 and
+   * d0-d3 over the frame's argument words, which `settle` restores. */
+  readonly results: Uint8Array;
   /** Per parameter: the borrowed array (pointer parameters set by bytes)
    * or the shared empty array. */
   readonly bytes: Uint8Array[];
@@ -75,8 +96,20 @@ export interface ForeignFunction {
   readonly assigned: boolean[];
   /** The scratch offset of an indirect record result, else -1. */
   readonly resultCopy: number;
+  /** Per parameter: its callback adapter (a pointer set by setCallback). */
+  readonly callbacks: (((frame: number) => number) | undefined)[];
+  /** What a callback raised during the current call (rethrown after it). */
+  failure: { failed: boolean; error: unknown };
 }
 const noBytes = new Uint8Array(0);
+/** x0 and x1, then d0-d3: the result registers the trampoline stores. */
+const resultBytes = 48;
+/** Non-moving frames for calls with callbacks, one per nesting depth
+ * (kept for reuse): a collection inside a callback may move a function's
+ * own frame while C still holds addresses in its scratch area (x8's
+ * indirect result, by-value record copies). */
+const callbackFrames: Uint8Array[] = [];
+const callbackNesting = { depth: 0 };
 
 function cTarget(): CTarget {
   return TARGET_AAPCS64 === 1 ? linuxArm64CTarget : darwinArm64CTarget;
@@ -137,11 +170,14 @@ export function foreignFunction(
     layout,
     frame: new Uint8Array(DynamicFrame.size),
     cell: new Uint8Array(Cell.size),
+    results: new Uint8Array(resultBytes),
     bytes,
     slots,
     copies,
     assigned,
     resultCopy,
+    callbacks: assigned.map(() => undefined),
+    failure: { failed: false, error: undefined },
   };
 }
 function parameter(fn: ForeignFunction, index: number): CType {
@@ -349,6 +385,108 @@ export function setRecord(
   }
   fn.assigned[index] = true;
 }
+/** Pass a TypeScript function as pointer argument `index`: C may call it
+ * during this function's calls (made may-callback calls) with prototype
+ * `signature` (scalar, bool and pointer parameters and result). What it
+ * throws is rethrown after the call; C then gets 0 from it. */
+export function setCallback(
+  fn: ForeignFunction,
+  index: number,
+  signature: CSignature,
+  callback: DynamicCallback,
+): void {
+  if (parameter(fn, index).kind !== "pointer")
+    throw new TypeError("not a C pointer parameter");
+  const classified = classifyCCall(signature, cTarget());
+  if (!classified.ok) throw new TypeError(classified.error);
+  const layout = classified.value;
+  for (const location of layout.arguments) {
+    if (location === undefined) throw "dynamic callback invariant";
+    if (location.class !== "integer" && location.class !== "float")
+      throw new TypeError("callback arguments are C scalars or pointers");
+  }
+  let used = 0;
+  for (const other of fn.callbacks) if (other !== undefined) used++;
+  if (fn.callbacks[index] === undefined && used >= callbackOperands)
+    throw new RangeError("a dynamic call takes at most 4 callbacks");
+  const failure = fn.failure;
+  fn.callbacks[index] = (frame: number): number => {
+    if (failure.failed) return 0;
+    try {
+      const args: number[] = [];
+      for (let at = 0; at < layout.arguments.length; at++) {
+        const location = layout.arguments[at],
+          type = signature.parameters[at];
+        if (location === undefined || type === undefined)
+          throw "dynamic callback invariant";
+        const word =
+          location.stackOffset >= 0
+            ? frame + thunkFrame + location.stackOffset
+            : location.class === "float"
+              ? frame + thunkFloats + location.fp * 8
+              : frame + thunkRegisters + location.gp * 8;
+        const view = Cell.view(bytesAt(word, 8)),
+          scalar = scalarOf(type);
+        args.push(
+          wide(scalar)
+            ? wordNumber(view.halves.low, view.halves.high, scalar)
+            : cellValue(view, scalar),
+        );
+      }
+      const value = callback(args);
+      const result = signature.result;
+      if (result.kind === "void") return 0;
+      const scalar = scalarOf(result);
+      if (scalar === "f32" || scalar === "f64") {
+        const view = Cell.view(bytesAt(frame + thunkFloats, 8));
+        view.u64 = 0;
+        if (scalar === "f32") view.f32 = value;
+        else view.f64 = value;
+      } else {
+        const view = Cell.view(bytesAt(frame + thunkRegisters, 8));
+        view.u64 = 0;
+        if (isSigned(scalar)) view.i64 = cellRange(value, scalar);
+        else view.u64 = cellRange(value, scalar);
+      }
+      return 0;
+    } catch (error) {
+      failure.failed = true;
+      failure.error = error;
+      return 0;
+    }
+  };
+  fn.bytes[index] = noBytes;
+  fn.assigned[index] = true;
+}
+/** `value` checked against C integer `scalar`'s range (TypeError). */
+function cellRange(value: number, scalar: string): number {
+  const probe = new Uint8Array(8);
+  const view = Cell.view(probe);
+  if (scalar === "i8") view.i8 = value;
+  else if (scalar === "u8" || scalar === "bool") view.u8 = value;
+  else if (scalar === "i16") view.i16 = value;
+  else if (scalar === "u16") view.u16 = value;
+  else if (scalar === "i32") view.i32 = value;
+  else if (scalar === "u32") view.u32 = value;
+  else if (isSigned(scalar)) view.i64 = value;
+  else view.u64 = value;
+  return value;
+}
+/** A 64-bit word's number (exact, else RangeError). */
+function wordNumber(low: number, high: number, scalar: string): number {
+  const negative =
+    high >= 2147483648 && (scalar === "i64" || scalar === "isize");
+  let magnitudeLow = low,
+    magnitudeHigh = high;
+  if (negative) {
+    magnitudeLow = (4294967296 - low) % 4294967296;
+    magnitudeHigh = 4294967295 - high + (low === 0 ? 1 : 0);
+  }
+  if (!exactWords(magnitudeLow, magnitudeHigh))
+    throw new RangeError("C value is not exactly representable");
+  const magnitude = magnitudeHigh * 4294967296 + magnitudeLow;
+  return negative ? -magnitude : magnitude;
+}
 /** Call the function with the arguments set since its creation (each
  * keeps its value until set again). */
 export function invoke(fn: ForeignFunction): void {
@@ -376,8 +514,75 @@ export function invoke(fn: ForeignFunction): void {
     } else if (copy >= 0) patch(wordOffset(location), 0, frameScratch + copy);
   }
   if (fn.resultCopy >= 0) patch(frameIndirect, 0, frameScratch + fn.resultCopy);
+  // Callbacks: a may-callback trampoline, each callback's argument word
+  // patched with its universal thunk's entry (bases after the bytes).
+  const callees: ((frame: number) => number)[] = [];
+  for (let index = 0; index < fn.callbacks.length; index++) {
+    const callee = fn.callbacks[index];
+    if (callee === undefined) continue;
+    patch(
+      wordOffset(argumentLocation(fn, index)),
+      1 + byteOperands + callees.length,
+      0,
+    );
+    callees.push(callee);
+  }
   frame.patchCount = patches;
   frame.stackBytes = fn.layout.stackBytes;
+  if (callees.length > 0) {
+    // Collections run inside callbacks: C may hold only non-moving data.
+    for (let slot = 0; slot < byteOperands; slot++) {
+      const borrowed = operands[slot] ?? noBytes;
+      if (borrowed !== noBytes && !stableBytes(borrowed))
+        throw new TypeError(
+          "calls with callbacks take external storage or foreign memory",
+        );
+    }
+    const dispatcher = callbackDispatcher();
+    const idle = (frame: number): number => 0;
+    const depth = callbackNesting.depth;
+    if (callbackFrames.length <= depth)
+      callbackFrames.push(allocate(DynamicFrame.size));
+    const stable = callbackFrames[depth] ?? noBytes;
+    settle(fn, false);
+    stable.set(fn.frame);
+    fn.failure.failed = false;
+    fn.failure.error = undefined;
+    callbackNesting.depth = depth + 1;
+    try {
+      callForeignCallbacks(
+        callbackState(),
+        dispatcher,
+        fn.address,
+        stable,
+        operands[0] ?? noBytes,
+        operands[1] ?? noBytes,
+        operands[2] ?? noBytes,
+        operands[3] ?? noBytes,
+        operands[4] ?? noBytes,
+        operands[5] ?? noBytes,
+        operands[6] ?? noBytes,
+        operands[7] ?? noBytes,
+        callees[0] ?? idle,
+        callees[1] ?? idle,
+        callees[2] ?? idle,
+        callees[3] ?? idle,
+      );
+    } finally {
+      callbackNesting.depth = depth;
+    }
+    fn.frame.set(stable);
+    settle(fn, true);
+    rethrowCallbackFailure();
+    if (fn.failure.failed) {
+      const error = fn.failure.error;
+      fn.failure.failed = false;
+      fn.failure.error = undefined;
+      throw error;
+    }
+    return;
+  }
+  settle(fn, false);
   callForeign(
     fn.address,
     fn.frame,
@@ -390,11 +595,30 @@ export function invoke(fn: ForeignFunction): void {
     operands[6] ?? noBytes,
     operands[7] ?? noBytes,
   );
+  settle(fn, true);
+}
+/** The trampoline writes the result registers (x0, x1, d0-d3) over the
+ * frame's argument words. Before a call (`returned` false) `fn.results`
+ * keeps those argument words; after it, they are exchanged with the
+ * results, so arguments stay set for the next call. */
+function settle(fn: ForeignFunction, returned: boolean): void {
+  for (let at = 0; at < resultBytes; at++) {
+    const offset = at < 16 ? at : frameFloats + at - 16,
+      word = fn.frame[offset] ?? 0;
+    if (returned) fn.frame[offset] = fn.results[at] ?? 0;
+    fn.results[at] = word;
+  }
+}
+/** Result register word `offset` (frame layout) of the last call. */
+function resultByte(fn: ForeignFunction, offset: number): number {
+  return (
+    fn.results[offset < frameFloats ? offset : offset - frameFloats + 16] ?? 0
+  );
 }
 /** Load result register word `offset` into the cell. */
 function resultCell(fn: ForeignFunction, offset: number): void {
   for (let index = 0; index < 8; index++)
-    fn.cell[index] = fn.frame[offset + index] ?? 0;
+    fn.cell[index] = resultByte(fn, offset + index);
 }
 /** The last call's number result: an integer, float or pointer. A 64-bit
  * value a number cannot hold exactly throws RangeError (read it with
@@ -451,7 +675,7 @@ export function resultHigh(fn: ForeignFunction): number {
 export function resultBoolean(fn: ForeignFunction): boolean {
   if (scalarOf(fn.signature.result) !== "bool")
     throw new TypeError("not a C bool result");
-  return (fn.frame[0] ?? 0) !== 0;
+  return resultByte(fn, 0) !== 0;
 }
 /** Copy the last call's record result into `into` (at least its size). */
 export function resultRecord(fn: ForeignFunction, into: Uint8Array): void {
@@ -467,9 +691,11 @@ export function resultRecord(fn: ForeignFunction, into: Uint8Array): void {
   } else if (result.class === "hfa") {
     for (let member = 0; member < result.registers; member++)
       for (let at = 0; at < result.memberBytes; at++)
-        into[member * result.memberBytes + at] =
-          fn.frame[frameFloats + member * 8 + at] ?? 0;
-  } else for (let at = 0; at < result.size; at++) into[at] = fn.frame[at] ?? 0;
+        into[member * result.memberBytes + at] = resultByte(
+          fn,
+          frameFloats + member * 8 + at,
+        );
+  } else for (let at = 0; at < result.size; at++) into[at] = resultByte(fn, at);
 }
 /** dlerror's text, or `fallback` when it reports none. */
 function loaderError(fallback: string): TypeError {

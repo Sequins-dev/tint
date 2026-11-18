@@ -59,7 +59,14 @@ export interface NativeForeignBinding {
 export interface NativeForeignMemoryBinding {
   readonly module: string;
   readonly name: string;
-  readonly operation: "address" | "adopt" | "retarget" | "call";
+  readonly operation:
+    | "address"
+    | "adopt"
+    | "retarget"
+    | "stable"
+    | "callback-key"
+    | "call"
+    | "call-callbacks";
 }
 /** The `tint:ffi` runtime: its trusted primitives and the weak-storage and
  * collection intrinsics its collector-registered storage uses. */
@@ -118,6 +125,17 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
         operation: "retarget",
       },
       { module: modules.primitives, name: "callForeign", operation: "call" },
+      {
+        module: modules.primitives,
+        name: "callForeignCallbacks",
+        operation: "call-callbacks",
+      },
+      { module: modules.primitives, name: "stableBytes", operation: "stable" },
+      {
+        module: modules.primitives,
+        name: "callbackKey",
+        operation: "callback-key",
+      },
     ],
     weakBindings: [
       { module: modules.weak, name: "createWeakSlot", operation: "new" },
@@ -196,7 +214,7 @@ export function prepareForeignLibrary(
     };
   for (const fn of parsed.value.functions) {
     if (fn === undefined) throw "foreign library function invariant";
-    if (fn.signature.callClass !== "leaf")
+    if (fn.signature.callClass === "async")
       return {
         ok: false,
         error:
@@ -205,7 +223,7 @@ export function prepareForeignLibrary(
           fn.name +
           " is a " +
           fn.signature.callClass +
-          " call; only leaf calls are supported in this phase",
+          " call; only leaf and may-callback calls are supported",
       };
   }
   // Mach-O loads optional libraries weakly; ELF has no optional
