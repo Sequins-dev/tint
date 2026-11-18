@@ -3248,6 +3248,9 @@ function emitModuleForms(
                 // payloads are converted when wrapped.
                 op.kind === "string-slice" ||
                 op.kind === "optional-wrap" ||
+                // C integer arguments convert from an int64 directly
+                // (numberToInteger); C double arguments through floatLoad.
+                op.kind === "c-call" ||
                 // Inline list reads and writes index with an int64; their
                 // fallback calls convert the argument (floatLoad).
                 (op.kind === "call" &&
@@ -5695,6 +5698,18 @@ function emitModuleForms(
           if (signed) emit({ op: "fcvtzs-x-d", rd, rn });
           else emit({ op: "fcvtzu-x-d", rd, rn });
         }
+        /** rd = the kind flags of the object header at [rn]. */
+        function headerFlags(rd: number, rn: number): void {
+          emit({ op: "ldr", width: 64, rt: rd, rn, offset: 0 });
+          emit({
+            op: "ubfm",
+            width: 64,
+            rd,
+            rn: rd,
+            immr: nativeHeaderFlagsShift,
+            imms: nativeHeaderFlagsShift + 2,
+          });
+        }
         function compareImmediate(rn: number, value: number): void {
           if (value <= 4095)
             emit({
@@ -6160,6 +6175,48 @@ function emitModuleForms(
         ): void {
           const bytes = cScalarBytes(scalar),
             signed = cScalarSigned(scalar, cTarget());
+          if (storedAsInteger(id)) {
+            // An exact int64 already: only the C type's range is
+            // checked (sign for 64-bit unsigned, else the extension of
+            // its low bits, which then also is the register's value).
+            rawValue(rd, id);
+            if (bytes === 8) {
+              if (!signed) {
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: rd,
+                  rm: "zr",
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                trapIf({ op: "b.cond", condition: "mi" });
+              }
+              return;
+            }
+            emit({
+              op: signed ? "sbfm" : "ubfm",
+              width: 64,
+              rd: 9,
+              rn: rd,
+              immr: 0,
+              imms: bytes * 8 - 1,
+            });
+            emit({
+              op: "sub-reg",
+              width: 64,
+              rd: "zr",
+              rn: 9,
+              rm: rd,
+              shift: "lsl",
+              amount: 0,
+              setFlags: true,
+            });
+            trapIf({ op: "b.cond", condition: "ne" });
+            return;
+          }
           floatLoad(0, id);
           if (bytes === 8) {
             floatToInteger(rd, 0, signed);
@@ -9660,32 +9717,43 @@ function emitModuleForms(
                   break;
                 }
                 if (access.operation === "retarget") {
-                  // An external view (borrowed flag exactly) gets a new data
-                  // address; its length is unchanged.
+                  // An external array (borrowed flag exactly) gets a new data
+                  // address, or a view whose owner is one (foreign views):
+                  // then both. Lengths are unchanged; collectors never move
+                  // external data, so the pair stays consistent.
                   const address = operands[1];
                   if (address === undefined)
                     throw "c-memory retarget invariant";
                   numberToInteger(address, 12, "usize");
                   rawValue(9, base);
-                  emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
-                  emit({
-                    op: "ubfm",
-                    width: 64,
-                    rd: 10,
-                    rn: 10,
-                    immr: nativeHeaderFlagsShift,
-                    imms: nativeHeaderFlagsShift + 2,
-                  });
-                  emit({
-                    op: "sub-imm",
-                    width: 64,
-                    rd: "zr",
-                    rn: 10,
-                    immediate: 1,
-                    shift: 0,
-                    setFlags: true,
-                  });
+                  headerFlags(10, 9);
+                  compareImmediate(10, 1);
+                  const external = instructions.length;
+                  emit({ op: "b.cond", condition: "eq", displacement: 0 });
+                  compareImmediate(10, 2);
                   trapIf({ op: "b.cond", condition: "ne" });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 11,
+                    rn: 9,
+                    offset: nativeArrayOwnerOffset,
+                  });
+                  headerFlags(10, 11);
+                  compareImmediate(10, 1);
+                  trapIf({ op: "b.cond", condition: "ne" });
+                  emit({
+                    op: "str",
+                    width: 64,
+                    rt: 12,
+                    rn: 11,
+                    offset: nativeArrayDataOffset,
+                  });
+                  patchInstruction(external, {
+                    op: "b.cond",
+                    condition: "eq",
+                    displacement: (instructions.length - external) * 4,
+                  });
                   emit({
                     op: "str",
                     width: 64,

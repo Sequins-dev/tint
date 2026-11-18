@@ -142,20 +142,27 @@ function callbackTsType(callback: CCallbackDeclaration): string {
  * converts its result (integers and addresses must be exact and in range)
  * and records what it raises in the wrapper's `failed$name`/`error$name`,
  * then returns 0 to C; once failed it returns 0 without calling. The
- * wrapper rethrows after C returns, so no exception unwinds through C. */
+ * wrapper rethrows after C returns, so no exception unwinds through C.
+ * `park` (statements for after the call) points its record views at the
+ * guard: they hold C's last record while the call runs, and fault after. */
 function callbackAdapter(
   name: string,
   callback: CCallbackDeclaration,
   target: CTarget,
-): string {
+): { readonly text: string; readonly park: string } {
   const parameters: string[] = [];
   for (const parameter of callback.parameterNames) {
     if (parameter === undefined) throw "callback parameter invariant";
     parameters.push(parameter + ": number");
   }
-  const call =
-    name + "(" + callbackArguments(callback, callback.parameterNames) + ")";
-  return (
+  const views = callbackViews(
+    callback,
+    name,
+    callback.parameterNames,
+    "      ",
+  );
+  const text =
+    views.declarations +
     "  let failed$" +
     name +
     " = false;\n  let error$" +
@@ -167,54 +174,123 @@ function callbackAdapter(
     "): number => {\n    if (failed$" +
     name +
     ") return 0;\n    try {\n" +
-    callbackResult(callback, call, target, "      ") +
+    views.enter +
+    callbackResult(
+      callback,
+      name + "(" + views.arguments + ")",
+      target,
+      "      ",
+      "",
+    ) +
     "\n    } catch (error) {\n      failed$" +
     name +
     " = true;\n      error$" +
     name +
-    " = error;\n      return 0;\n    }\n  };"
-  );
+    " = error;\n      return 0;\n    }\n  };";
+  return {
+    text,
+    park: callbackViews(callback, name, callback.parameterNames, "  ").leave,
+  };
 }
-/** The user function's arguments from the adapter's numbers `names`: C
- * bools as booleans, `Ptr<R>` parameters as foreign views of R. */
-function callbackArguments(
+/** A callback's arguments from the adapter's numbers `names`: C bools as
+ * booleans, and for each `Ptr<R>` parameter one foreign view of R made once
+ * per adapter (`declarations`), pointed at C's record for each invocation
+ * (`enter`) and at an inaccessible guard after it (`leave`), so an
+ * invocation allocates nothing and a view kept past its invocation faults. */
+function callbackViews(
   callback: CCallbackDeclaration,
+  prefix: string,
   names: readonly string[],
-): string {
-  const args: string[] = [];
+  indent: string,
+): {
+  /** Statements made once per adapter (indented two spaces). */
+  readonly declarations: string;
+  readonly enter: string;
+  readonly leave: string;
+  readonly arguments: string;
+} {
+  const args: string[] = [],
+    declared: string[] = [];
+  let enter = "",
+    leave = "";
   for (let index = 0; index < callback.parameterNames.length; index++) {
     const name = names[index],
       record = callback.parameterRecords[index] ?? "";
     if (name === undefined) throw "callback argument invariant";
-    args.push(
-      record !== ""
-        ? "viewAt$(" + record + ", " + name + ")"
-        : callback.parameterForms[index] === "boolean"
-          ? name + " !== 0"
-          : name,
-    );
+    if (record !== "") {
+      const view = "view$" + prefix + "$" + String(index);
+      declared.push(
+        "const " + view + " = viewAt$(" + record + ", guard$" + prefix + ");",
+      );
+      enter +=
+        indent +
+        "if (" +
+        name +
+        ' === 0) throw new TypeError("null C record pointer");\n' +
+        indent +
+        "retargetCallbackView$(" +
+        view +
+        ", " +
+        name +
+        ");\n";
+      leave +=
+        indent + "retargetCallbackView$(" + view + ", guard$" + prefix + ");\n";
+      args.push(view);
+    } else
+      args.push(
+        callback.parameterForms[index] === "boolean" ? name + " !== 0" : name,
+      );
   }
-  return args.join(", ");
+  let declarations = "";
+  if (declared.length > 0) {
+    declarations = "  const guard$" + prefix + " = callbackGuard$();\n";
+    for (let index = 0; index < declared.length; index++)
+      declarations += "  " + (declared[index] ?? "") + "\n";
+  }
+  return {
+    declarations,
+    enter,
+    leave,
+    arguments: args.join(", "),
+  };
 }
 /** Statements (each line indented by `indent`) returning `call`'s value
  * as the number the thunk converts for C: C bools as 0 or 1, integers and
- * addresses checked exact and in range for the C type (TypeError). */
+ * addresses checked exact and in range for the C type (TypeError). `after`
+ * (statements) runs once the call has returned. */
 function callbackResult(
   callback: CCallbackDeclaration,
   call: string,
   target: CTarget,
   indent: string,
+  after: string,
 ): string {
   const result = callback.signature.result;
   if (callback.resultForm === "void")
-    return indent + call + ";\n" + indent + "return 0;";
+    return indent + call + ";\n" + after + indent + "return 0;";
   if (callback.resultForm === "boolean")
-    return indent + "return " + call + " ? 1 : 0;";
+    return (
+      indent +
+      "const flag = " +
+      call +
+      ";\n" +
+      after +
+      indent +
+      "return flag ? 1 : 0;"
+    );
   if (
     result.kind === "scalar" &&
     (result.scalar === "f32" || result.scalar === "f64")
   )
-    return indent + "return " + call + ";";
+    return (
+      indent +
+      "const value = " +
+      call +
+      ";\n" +
+      after +
+      indent +
+      "return value;"
+    );
   let min = 0,
     max = 18446744073709549568;
   if (result.kind === "scalar") {
@@ -227,6 +303,7 @@ function callbackResult(
     "const value = " +
     call +
     ";\n" +
+    after +
     indent +
     "if (!Number.isInteger(value) || value < " +
     String(min) +
@@ -470,7 +547,7 @@ export function expandForeignLibrary(
   // Ptr<R> callback parameters arrive as foreign views (C owns the memory).
   if (importsViews)
     lines.push(
-      'import type { View as View$ } from "tint:ffi";\nimport { viewAt as viewAt$ } from "tint:ffi/unsafe";',
+      'import { type View as View$, callbackGuard as callbackGuard$, retargetCallbackView as retargetCallbackView$ } from "tint:ffi";\nimport { viewAt as viewAt$ } from "tint:ffi/unsafe";',
     );
   // Callback types: register a TypeScript function for C to keep (its C
   // function pointer is a registered thunk of the type's prototype).
@@ -505,6 +582,7 @@ export function expandForeignLibrary(
       parameters.push("a" + String(index) + ": number");
       names.push("a" + String(index));
     }
+    const views = callbackViews(callback, name, names, "      ");
     lines.push(
       "export type " +
         name +
@@ -518,15 +596,31 @@ export function expandForeignLibrary(
         name +
         "(fn: " +
         name +
-        "): number {\n  const id = registerCallback$((" +
+        "): number {\n" +
+        views.declarations +
+        "  const id = registerCallback$((" +
         parameters.join(", ") +
         "): number => {\n" +
-        callbackResult(
-          callback,
-          "fn(" + callbackArguments(callback, names) + ")",
-          target,
-          "    ",
-        ) +
+        (views.leave === ""
+          ? callbackResult(
+              callback,
+              "fn(" + views.arguments + ")",
+              target,
+              "    ",
+              "",
+            )
+          : "    try {\n" +
+            views.enter +
+            callbackResult(
+              callback,
+              "fn(" + views.arguments + ")",
+              target,
+              "      ",
+              views.leave,
+            ) +
+            "\n    } catch (error) {\n" +
+            views.leave +
+            "      throw error;\n    }") +
         "\n  });\n  const address = address$" +
         name +
         "(id);\n  noteCallback$(id, address);\n  return address;\n}",
@@ -630,7 +724,9 @@ export function expandForeignLibrary(
       if (form === "callback") {
         if (callback === undefined) throw "foreign callback invariant";
         userParameters.push(name + ": " + callbackTsType(callback));
-        prologue.push(callbackAdapter(name, callback, target));
+        const adapter = callbackAdapter(name, callback, target);
+        prologue.push(adapter.text);
+        if (adapter.park !== "") rethrows.unshift(adapter.park.trimEnd());
         rethrows.push("  if (failed$" + name + ") throw error$" + name + ";");
         args.push("adapter$" + name);
         continue;
