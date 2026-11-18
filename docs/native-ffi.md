@@ -756,6 +756,13 @@ and as a test oracle; a Tint build never invokes it. Every `tint:c`
 binding under `packages/native-runtime/src/c/` is generated (the files say
 so in their first line); edit the spec, never the module.
 
+Which clang reads the headers matters: SDK headers differ between
+toolchains (Homebrew's clang sees named `dlopen` parameters that Xcode's
+SDK leaves unnamed). Extraction and the oracle therefore use `CLANG` when
+set, else Apple's `/usr/bin/clang` on Darwin (the xcrun shim, selecting the
+active Xcode SDK the checked-in facts were made with) and `clang` on Linux,
+never whatever clang comes first on PATH.
+
 **Specs.** One checked-in spec per library,
 `tools/c-bindgen/specs/<library>.ts` (type `BindingSpec`,
 `tools/c-bindgen/spec.ts`), selects declarations and states the choices C

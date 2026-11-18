@@ -18,7 +18,7 @@ import {
   semanticDifferences,
 } from "./c-bindgen.ts";
 import { emitBinding, SpecError } from "./c-bindgen/emit.ts";
-import { extractFacts, hostTarget } from "./c-bindgen/extract.ts";
+import { clangCommand, extractFacts, hostTarget } from "./c-bindgen/extract.ts";
 import type {
   FieldFact,
   RecordFact,
@@ -44,7 +44,7 @@ const clang =
     ? {
         skip: "clang facts and the oracle run on darwin-arm64 and linux-arm64 hosts",
       }
-    : spawnSync(process.env.CLANG ?? "clang", ["--version"]).status === 0
+    : spawnSync(clangCommand(), ["--version"]).status === 0
       ? {}
       : { skip: "clang is not installed (dev-time generator and test oracle)" };
 const bindings = new URL("../packages/native-runtime/src/c/", import.meta.url);
