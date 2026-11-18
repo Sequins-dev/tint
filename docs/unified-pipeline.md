@@ -278,6 +278,43 @@ The bridge is also what lets general code import typed, trusted runtime and
 FFI modules: their exports cross as boxed values with typed adapters instead
 of being refused.
 
+### Typed BigInt (slice 4a)
+
+A typed `bigint` is a reference to js-runtime's `BigIntValue` record, the
+value general code already creates, so a BigInt crosses to and from
+`unknown` without conversion: general values carry BigInts as objects whose
+descriptor is that record's (`viewBigIntValue` tests it). The checker has a
+`bigint` type kind; lowering calls the helpers in
+`native-runtime/src/values/bigint.ts` (the `bigint` runtime namespace),
+validated like the primitive runtime: every reference parameter and result
+must be exactly `BigIntValue`. The helpers link only when an expression or
+binding of the program mentions `bigint`; `bigint` is a primitive of every
+checked type table, so the table itself says nothing.
+
+- Arithmetic and bitwise operators need two BigInts (mixing with Number is a
+  type error, as in TypeScript; `>>>` and unary `+` are rejected). RangeErrors
+  follow V8's messages, except V8's malformed one for a negative exponent.
+- Relational operators are exact, also against a Number, and NaN is
+  unordered. `===`/`==` compare values, never references; a possibly absent
+  BigInt may be compared only with `undefined`/`null`.
+- Truthiness, `typeof`, `String`, templates and concatenation,
+  `Number(bigint)`, `BigInt(number | boolean)`, `bigint | undefined` and
+  BigInt list elements are supported.
+- `typeof` of a general value tests the `BigIntValue` descriptor before
+  `general-kind` (which reports `"object"` for it); `typeof x === "bigint"`
+  narrows `unknown`, and `x as bigint` is a checked downcast through the
+  same record test. The record is found through the `literal` helper's
+  result type whenever the runtime is linked, even in programs that create
+  no BigInt themselves.
+
+Still rejected explicitly: `BigInt(string)` (invalid text throws a
+SyntaxError, which typed code gains with realm errors in slice 4), and
+BigInts as Set elements or Map keys (SameValueZero compares them by value;
+the collection helpers compare references). Evidence:
+`tools/build-typed-bigint-fixture.ts` (37 checks plus checked-downcast
+failures, `TINT_GENERAL_FALLBACK=0`) and its Node reference
+`tools/typed-bigint-fixture.test.ts`.
+
 ### What happens to each front end
 
 - js-engine lowering becomes a library of construct lowerings callable for a
@@ -338,7 +375,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | Tuple types and `implements` clauses fail to parse                                                                                                                                                             | `tuple-types`, `spread`, `iterator-protocol`                           | parser fix (both forms parse first) |
 | Nested type declarations; ternary over union discriminants in an object literal                                                                                                                                | `nested-type-declarations`, `union-object-ternary`                     | 5                                   |
 | `for (const x of list)` followed by a property read of `x` (in runtime modules)                                                                                                                                | `for-of-record-reads`                                                  | 5                                   |
-| Typed BigInt values (blocks FFI pointer/u64 values crossing into general code as BigInt)                                                                                                                       | `bigint`                                                               | 4                                   |
+| (Removed by 4a: typed BigInt) Typed BigInt values (blocks FFI pointer/u64 values crossing into general code as BigInt)                                                                                         | `bigint`                                                               | 4                                   |
 | Node API errors without `code`/`errno` (no plain `Error` in typed runtime code: zlib, crypto)                                                                                                                  | (runtime modules)                                                      | 4                                   |
 | Top-level statements in typed modules ("module statement is outside the declaration checking slice")                                                                                                           | `module-statements`                                                    | 5                                   |
 | A compile-time type error (`noUncheckedIndexedAccess`) becomes a general fallback instead of a diagnostic                                                                                                      | `typed-array-index`                                                    | 4                                   |
@@ -400,6 +437,15 @@ exposes a real gap: hosted builds fall back to the general path on a
 genuine type error instead of failing the build; type errors and
 unsupported constructs need distinct outcomes (slice 3, where fallback
 becomes per construct). Later ledgers should compare against slice2b-v1.
+
+Slice 4a (in progress): typed BigInt. The
+[4a BigInt ledger](results/unified-pipeline-ledger-slice4a-bigint-v1.json)
+(58 constructs) moves `bigint` typed from the general path to the typed path
+(10 typed forms on the typed path); every other form matches slice2b-v1. Its
+four run failures (`reassignment-narrowing`, `module-initializers`, both
+forms) are LLDB admission attach failures before execution, kept as
+observed; the [recheck](results/unified-pipeline-ledger-slice4a-bigint-v1-recheck.json)
+passes all four.
 
 Slice 1: image sizes of hosted programs, measured before and after.
 Importing one function through the `js-runtime/objects` entrypoint from a
