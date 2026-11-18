@@ -7,13 +7,14 @@ import {
   darwinAArch64Target,
   linuxAArch64Target,
   type NativeTarget,
+  type AArch64Target,
 } from "./target.ts";
 
 /** The target a native program was compiled for, which is the host it runs
  * on. Builds fix it through the `targetOperatingSystem` binding (the
  * `target-os` host operation); Node, which never runs a native image, has
  * no such fact and throws HOST_UNAVAILABLE. */
-export function nativeHostTarget(): NativeTarget {
+export function nativeHostTarget(): AArch64Target {
   const os = targetOperatingSystem();
   if (os === nativeTargetOSDarwin) return darwinAArch64Target;
   if (os === nativeTargetOSLinux) return linuxAArch64Target;
