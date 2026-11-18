@@ -44,12 +44,14 @@ export function aarch64ImageRelocations(
       index: number,
       siteOffset: number,
       targetOffset: number,
+      siteAddress?: number,
     ) => {
       const reference = captured[index];
       if (reference === undefined) return "invalid";
       const patched = patchRelativeAddress(bytes, {
         offset: siteOffset,
         targetOffset,
+        siteAddress,
         rd: reference.rd,
         scratch: reference.scratch,
       });

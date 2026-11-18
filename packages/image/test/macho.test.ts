@@ -592,3 +592,38 @@ test("lists libraries beyond libSystem with ordinals and weak imports for option
     buildAArch64Executable(plain),
   );
 });
+
+test("selects the high Mach-O layout when compact VM placement reaches its limit", () => {
+  const page = 16384;
+  const input = request();
+  const code = new Uint8Array(page * 2 + input.code.length);
+  code.set(input.code, page * 2);
+  const built = buildAArch64Executable({
+    ...input,
+    code,
+    entryOffset: page * 2,
+    compactVMLimit: page * 3,
+    signedChunkBytes: page,
+    symbols: [{ name: "far", offset: page * 2 }],
+  });
+  assert.ok(built.ok);
+  const bytes = built.value.bytes;
+  const segments = commands(bytes).get(0x19)!;
+  const v = view(bytes);
+  const u64 = (offset: number): number => Number(v.getBigUint64(offset, true));
+  const text = segments[1]!;
+  assert.ok(u64(text + 24) >= 0x300000000);
+  const chunks = segments.slice(-3);
+  const [first, second, last] = chunks;
+  assert.ok(first && second && last);
+  assert.equal(u64(second + 24), u64(first + 24) + page);
+  assert.ok(u64(second + 40) > u64(first + 40) + page);
+  assert.equal(v.getUint32(last + 72 + 48, true), 0);
+  assert.equal(u64(last + 72 + 32), u64(last + 24));
+  assert.equal(built.value.codeFileOffset, u64(first + 40));
+  assert.ok(built.value.entryFileOffset < built.value.signatureFileOffset);
+  const symtab = commands(bytes).get(2)![0]!;
+  const symbol = v.getUint32(symtab + 8, true);
+  assert.equal(v.getUint8(symbol + 5), 5);
+  assert.equal(u64(symbol + 8), u64(last + 24));
+});

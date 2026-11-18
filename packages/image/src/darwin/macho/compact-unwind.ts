@@ -60,18 +60,27 @@ export function buildUnwindSections(
   ranges: readonly UnwindRange[],
   codeAddress: number,
   ehFrameAddress: number,
+  large: boolean = false,
 ): UnwindSections {
   const descriptions: FrameDescription[] = [];
   for (const range of ranges) {
     if (range === undefined) throw "unwind range invariant";
-    if (!isCompact(range.rule))
+    if (large || !isCompact(range.rule))
       descriptions.push({
         address: codeAddress + range.offset,
         byteLength: range.byteLength,
         rule: range.rule,
       });
   }
-  const ehFrame = buildEhFrame(descriptions, ehFrameAddress, ARM64_TARGET);
+  const ehFrame = buildEhFrame(
+    descriptions,
+    ehFrameAddress,
+    ARM64_TARGET,
+    large,
+  );
+  // The compact directory addresses code with u32 offsets from the header.
+  // Large images describe all their frames with full-width FDEs.
+  if (large) return { ehFrame: ehFrame.bytes, unwindInfo: new Uint8Array(0) };
   const entries: Entry[] = [];
   let dwarfIndex = 0,
     end = -1;

@@ -1339,6 +1339,7 @@ export function patchRelativeAddress(
   fixup: {
     readonly offset: number;
     readonly targetOffset: number;
+    readonly siteAddress?: number | undefined;
     readonly rd: number;
     readonly scratch: number;
   },
@@ -1361,7 +1362,10 @@ export function patchRelativeAddress(
     ? farTemplate
     : relativeAddress(fixup.rd, fixup.scratch, 0);
   if (!template.ok) return template;
-  const displacement = fixup.targetOffset - fixup.offset;
+  const address = fixup.siteAddress ?? fixup.offset;
+  if (!integer(address, 0, Number.MAX_SAFE_INTEGER))
+    return fail("INVALID_OFFSET");
+  const displacement = fixup.targetOffset - address;
   const sequence = far
     ? farRelativeAddress(fixup.rd, fixup.scratch, displacement)
     : relativeAddress(fixup.rd, fixup.scratch, displacement);

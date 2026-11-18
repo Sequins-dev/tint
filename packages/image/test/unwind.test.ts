@@ -387,3 +387,19 @@ test("Mach-O rejects unwind ranges outside the code or out of order", () => {
     assert.deepEqual(built, { ok: false, error: "INVALID_UNWIND" });
   }
 });
+
+test("eh_frame uses signed 64-bit fields when a displacement exceeds sdata4", () => {
+  const address = 0x140000000;
+  const frame = buildEhFrame(
+    [{ address: 0x1000, byteLength: 8, rule: { kind: "leaf" } }],
+    address,
+    arm64,
+  );
+  const fde = frame.offsets[0]!;
+  assert.equal(frame.bytes[16], 0x1c);
+  assert.equal(
+    address + fde + 8 + Number(view(frame.bytes).getBigInt64(fde + 8, true)),
+    0x1000,
+  );
+  assert.equal(view(frame.bytes).getBigInt64(fde + 16, true), 8n);
+});
