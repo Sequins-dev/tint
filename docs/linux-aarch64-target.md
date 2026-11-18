@@ -124,10 +124,28 @@ never imported, each call resolves (once) and goes through the resolved
 address, an absent library or symbol makes `Available<"x">` false and a call
 throw TypeError, and nothing jumps to 0 ([native FFI](native-ffi.md#optional-libraries-on-elf)).
 
-## Not yet supported
+## Known limitations
 
-Nothing in the FFI or `node:os` surface; each target-specific gap would fail
-once, before compilation, with a message naming the target.
+No Linux feature is missing relative to macOS: a target-specific gap fails
+once, before compilation, with a message naming the target, and none is
+currently known. These limits are recorded instead:
+
+- **Kernels with `vm.memfd_noexec=2`** (Linux 6.3+) refuse the executable
+  memfd behind live code publication; mapping reports `-EACCES`. Untested here
+  (the development kernel is 6.1).
+- **Collector parallelism** reads cgroup v2 limits only (cgroup v1 is not
+  consulted), and the six-thread cap was tuned on a six-core Mac and has not
+  been re-measured on larger Linux machines.
+- **Page sizes:** 4 KiB and 16 KiB kernels were run natively; 64 KiB kernels
+  only under QEMU, because Apple silicon has no 64 KiB translation granule.
+- **Live USDT tracing** (`perf probe sdt_*`, bpftrace) has not been exercised:
+  the development VM's kernel has no uprobes. The probe notes are verified
+  statically and under GDB.
+- **`tint-heap` debugger commands** are LLDB Python only; GDB reads the DWARF
+  and probes but has no port of them.
+- **Performance counters:** the development VM exposes none, so Linux timings
+  are wall time and RSS only.
+- **Test262 on Linux** is in progress; see the [dashboard](test262.md).
 
 ## Collector parallelism
 
