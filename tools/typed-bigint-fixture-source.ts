@@ -20,6 +20,22 @@ function half(value: bigint, high: boolean): number {
 function first(values: (bigint | undefined)[]): bigint | undefined {
   return values[0];
 }
+// BigInts in general values: typeof, narrowing and checked downcasts.
+function describe(value: unknown): string {
+  if (typeof value === "bigint") return "big:" + String(value + 1n);
+  return typeof value;
+}
+function toBig(value: unknown): bigint {
+  return value as bigint;
+}
+function downcastFails(value: unknown): boolean {
+  try {
+    toBig(value);
+  } catch (error) {
+    return error instanceof TypeError;
+  }
+  return false;
+}
 export function run(): number {
   const big = 18446744073709551615n;
   const one = 1n;
@@ -73,6 +89,38 @@ export function run(): number {
   if (!present || !!absent) return 31;
   const zero = first([0n]);
   if (zero === undefined || !!zero) return 32;
+  const general: unknown = 41n;
+  if (typeof general !== "bigint" || describe(general) !== "big:42") return 33;
+  if (describe(5) !== "number" || describe({ x: 1 }) !== "object") return 34;
+  if (toBig(general) + 1n !== 42n) return 35;
+  if (downcastFails(7n)) return 36;
+  const mixed: unknown[] = [1n, 2, "3"];
+  let bigints = 0;
+  for (const item of mixed) if (typeof item === "bigint") bigints++;
+  if (bigints !== 1) return 37;
+  return 42;
+}
+`;
+
+// Native only: Tint checks `x as T` from unknown and throws a TypeError on a
+// mismatch, where JavaScript erases the assertion (so Node cannot serve as
+// the reference here).
+export const typedBigIntDowncastSource = `function toBig(value: unknown): bigint {
+  return value as bigint;
+}
+function downcastFails(value: unknown): boolean {
+  try {
+    toBig(value);
+  } catch (error) {
+    return error instanceof TypeError;
+  }
+  return false;
+}
+export function run(): number {
+  if (!downcastFails("41")) return 1;
+  if (!downcastFails(41)) return 2;
+  if (!downcastFails({ value: 41 })) return 3;
+  if (downcastFails(41n)) return 4;
   return 42;
 }
 `;

@@ -17,6 +17,7 @@ import {
   mapEncodingClass,
   narrowBooleanListElement,
   presentListElement,
+  usesBigInt,
 } from "../closure/lowering/records.ts";
 export type {
   RuntimeBindingContext,
@@ -950,7 +951,8 @@ function prepareCollectionPass(
     }
     const bigints: BigIntRuntime | undefined =
       helpers.has("bigint:literal") &&
-      types.some((type) => type !== undefined && type.kind === "bigint")
+      checked !== undefined &&
+      usesBigInt(checked)
         ? {
             literal: bigIntHelper("literal"),
             binary: {
@@ -1000,6 +1002,9 @@ function prepareCollectionPass(
           maps,
           ...(primitives === undefined ? {} : { primitives }),
           ...(bigints === undefined ? {} : { bigints }),
+          ...(helpers.has("bigint:literal")
+            ? { bigIntRepresentation: bigIntHelper("literal") }
+            : {}),
         },
       },
     };

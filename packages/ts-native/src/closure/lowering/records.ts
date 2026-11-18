@@ -94,6 +94,7 @@ export function bigIntType(
   if (t?.kind !== "union") return undefined;
   let present = false;
   for (const member of t.members) {
+    if (member === undefined) throw "bigint union member invariant";
     const kind = checked.types[member]?.kind;
     if (kind === "bigint") present = true;
     else if (kind !== "undefined") return undefined;
@@ -385,6 +386,19 @@ export function setElement(
   // set helpers compare references, so BigInt elements have no encoding yet.
   if (t?.kind !== "set" || mentionsBigInt(checked, t.element)) return undefined;
   return collectionElement(checked, t.element);
+}
+/** Whether the program operates on BigInts: every BigInt value reaches an
+ * operation through an expression, and parameters bind them. (`bigint` is a
+ * primitive in every checked type table, so the table itself says nothing.) */
+export function usesBigInt(checked: CheckedClosures): boolean {
+  let found = false;
+  checked.expressions.forEach((type, _expression) => {
+    if (!found && mentionsBigInt(checked, type)) found = true;
+  });
+  if (found) return true;
+  for (const type of checked.bindingTypes)
+    if (type !== undefined && mentionsBigInt(checked, type)) return true;
+  return false;
 }
 function mentionsBigInt(checked: CheckedClosures, id: number): boolean {
   const t = checked.types[id];

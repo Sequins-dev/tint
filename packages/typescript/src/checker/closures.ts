@@ -1856,6 +1856,7 @@ export function checkClosureModule(
         if (type?.kind === "unknown") {
           if (!equal) selected.push(id);
           else if (literalValue === "number") selected.push(number);
+          else if (literalValue === "bigint") selected.push(bigint);
           else if (literalValue === "boolean") selected.push(boolean);
           else if (literalValue === "string") selected.push(string);
           else if (literalValue === "undefined") selected.push(undefinedType);
@@ -2671,6 +2672,7 @@ export function checkClosureModule(
       case "number":
       case "string":
       case "boolean":
+      case "bigint":
       case "undefined":
       case "null":
       case "Uint8Array":
@@ -5058,8 +5060,7 @@ export function checkClosureModule(
                 "BigInt equality requires two bigint operands or a test against undefined or null",
               );
             result = boolean;
-          }
-          else if (
+          } else if (
             node.operator === "+" &&
             (system.assignable(left, string) ||
               system.assignable(right, string)) &&
@@ -5076,7 +5077,8 @@ export function checkClosureModule(
             ["<", ">", "<=", ">="].includes(node.operator) &&
             (leftBigInt || rightBigInt) &&
             [left, right].every(
-              (t) => system.assignable(t, bigint) || system.assignable(t, number),
+              (t) =>
+                system.assignable(t, bigint) || system.assignable(t, number),
             )
           )
             // BigInt comparisons are exact, also against a Number (no

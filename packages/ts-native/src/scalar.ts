@@ -1543,11 +1543,7 @@ export function lowerFunction(
     });
     choose(test, present, absent, node);
     current = present;
-    const presentSlot = save(
-      load(slot, node),
-      "reference",
-      node,
-    );
+    const presentSlot = save(load(slot, node), "reference", node);
     const truthy = runtimeCall(runtime.truthy, [presentSlot], node);
     if (truthy === undefined) throw "BigInt truthiness invariant";
     store(result, load(truthy, node), node);
@@ -1569,6 +1565,37 @@ export function lowerFunction(
   /** BigInt binary operators. Comparisons are exact, also against a Number
    * (compareNumber yields NaN for NaN, which every relation rejects);
    * equality compares values, never references. */
+  function bigIntBinaryHelper(
+    runtime: BigIntRuntime,
+    operator: string,
+  ): number {
+    const binary = runtime.binary;
+    switch (operator) {
+      case "+":
+        return binary["+"];
+      case "-":
+        return binary["-"];
+      case "*":
+        return binary["*"];
+      case "/":
+        return binary["/"];
+      case "%":
+        return binary["%"];
+      case "**":
+        return binary["**"];
+      case "&":
+        return binary["&"];
+      case "|":
+        return binary["|"];
+      case "^":
+        return binary["^"];
+      case "<<":
+        return binary["<<"];
+      case ">>":
+        return binary[">>"];
+    }
+    throw "BigInt binary operator invariant";
+  }
   function bigIntBinary(
     node: Expression & { readonly kind: "binary" },
     left: number,
@@ -1591,7 +1618,11 @@ export function lowerFunction(
       case "<<":
       case ">>":
         if (!leftBigInt || !rightBigInt) return undefined;
-        return bigIntCall(runtime.binary[operator], [left, right], node);
+        return bigIntCall(
+          bigIntBinaryHelper(runtime, operator),
+          [left, right],
+          node,
+        );
       case "<":
       case ">":
       case "<=":
@@ -4215,15 +4246,50 @@ export function lowerFunction(
             type = info(node.operand).type;
           if (type === "general") {
             if (operand === undefined) throw "general typeof operand invariant";
-            const id = nextValue++;
+            const record = info(node).bigIntRecord;
+            const kind = (): number => {
+              const id = nextValue++;
+              emit({
+                kind: "general-kind",
+                id,
+                value: load(operand, node),
+                start: node.start,
+                end: node.end,
+              });
+              return id;
+            };
+            if (record === undefined) return save(kind(), "string", node);
+            // General values carry BigInts as BigIntValue objects.
+            const result = temporary("string"),
+              bigint = block(),
+              other = block(),
+              merge = block(),
+              test = nextValue++;
             emit({
-              kind: "general-kind",
-              id,
+              kind: "general-record-is",
+              id: test,
               value: load(operand, node),
+              record,
               start: node.start,
               end: node.end,
             });
-            return save(id, "string", node);
+            choose(test, bigint, other, node);
+            current = bigint;
+            const name = nextValue++;
+            emit({
+              kind: "string-literal",
+              id: name,
+              value: "bigint",
+              start: node.start,
+              end: node.end,
+            });
+            store(result, name, node);
+            jump(merge.id, node);
+            current = other;
+            store(result, kind(), node);
+            jump(merge.id, node);
+            current = merge;
+            return result;
           }
           if (type === "primitive") {
             if (primitives === undefined || operand === undefined)
@@ -4303,10 +4369,12 @@ export function lowerFunction(
                 : info(node.operand).bigint === true
                   ? "bigint"
                   : type === "void"
-                  ? "undefined"
-                  : type === "number" || type === "boolean" || type === "string"
-                    ? type
-                    : "object",
+                    ? "undefined"
+                    : type === "number" ||
+                        type === "boolean" ||
+                        type === "string"
+                      ? type
+                      : "object",
             );
           return result;
         }

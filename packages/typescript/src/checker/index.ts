@@ -68,6 +68,9 @@ export interface ExpressionInfo {
    * possibly absent (`bigint | undefined`); operations on it call the
    * `bigint` runtime helpers. */
   readonly bigint?: boolean | undefined;
+  /** `typeof` of a general value: the BigIntValue record layout, whose
+   * descriptor marks a BigInt (general values carry BigInts as objects). */
+  readonly bigIntRecord?: number | undefined;
   readonly listElement?: "number" | "string" | number | undefined;
   readonly mapKey?: "number" | "string" | number | undefined;
   readonly mapValue?: "number" | "string" | number | undefined;

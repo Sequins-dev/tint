@@ -111,20 +111,17 @@ export function visitRuntimeFunctions(
   if (bigints !== undefined) {
     add(bigints.literal, "bigint", -1, "literal");
     const binary = bigints.binary;
-    for (const operator of [
-      "+",
-      "-",
-      "*",
-      "/",
-      "%",
-      "**",
-      "&",
-      "|",
-      "^",
-      "<<",
-      ">>",
-    ] as const)
-      add(binary[operator], "bigint", -1, "binary" + operator);
+    add(binary["+"], "bigint", -1, "binary+");
+    add(binary["-"], "bigint", -1, "binary-");
+    add(binary["*"], "bigint", -1, "binary*");
+    add(binary["/"], "bigint", -1, "binary/");
+    add(binary["%"], "bigint", -1, "binary%");
+    add(binary["**"], "bigint", -1, "binary**");
+    add(binary["&"], "bigint", -1, "binary&");
+    add(binary["|"], "bigint", -1, "binary|");
+    add(binary["^"], "bigint", -1, "binary^");
+    add(binary["<<"], "bigint", -1, "binary<<");
+    add(binary[">>"], "bigint", -1, "binary>>");
     add(bigints.negate, "bigint", -1, "negate");
     add(bigints.not, "bigint", -1, "not");
     add(bigints.compare, "bigint", -1, "compare");

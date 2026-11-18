@@ -2783,6 +2783,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/values/bigint.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/values/index.ts",
       packageId: "native-runtime",
     },
@@ -4730,6 +4734,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "js-engine",
+      specifier: "@tint/js-runtime/bigints",
+      target: "packages/js-runtime/src/objects/bigints.ts",
+    },
+    {
+      packageId: "js-engine",
       specifier: "@tint/js-runtime/bytes",
       target: "packages/js-runtime/src/bytes/index.ts",
     },
@@ -5267,6 +5276,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "native-runtime",
       specifier: "@tint/foundation/unicode/segmentation",
       target: "packages/foundation/src/unicode/segmentation/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/js-runtime/bigints",
+      target: "packages/js-runtime/src/objects/bigints.ts",
     },
     {
       packageId: "native-runtime",

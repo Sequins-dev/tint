@@ -38,6 +38,7 @@ import {
   mapEncoding,
   stringType,
   bigIntType,
+  usesBigInt,
   type RecordContracts,
   type RecordIdentityResolver,
 } from "./records.ts";
@@ -139,6 +140,9 @@ export interface ModuleEntryOptions {
   readonly primitives?: PrimitiveRuntime;
   /** Checked function IDs of the BigInt helpers (native-runtime values/bigint). */
   readonly bigints?: BigIntRuntime;
+  /** A checked function whose result type is js-runtime's BigIntValue, so a
+   * general value can be tested for being a BigInt (typeof, downcasts). */
+  readonly bigIntRepresentation?: number;
   readonly numberFromString?: number;
   readonly numberToString?: number;
   readonly lists?: readonly ListRuntimeBinding[];
@@ -245,6 +249,7 @@ export function lowerModuleEntries(
     maps: options?.maps,
     primitives: options?.primitives,
     bigints: options?.bigints,
+    bigIntRepresentation: options?.bigIntRepresentation,
     recordBindings: options?.recordBindings,
     recordTypes: options?.recordTypes,
     recordIdentity: options?.recordIdentity,
@@ -275,6 +280,7 @@ function lowerEntries(
     maps: readonly MapRuntimeBinding[] | undefined;
     primitives: PrimitiveRuntime | undefined;
     bigints?: BigIntRuntime | undefined;
+    bigIntRepresentation?: number | undefined;
     recordBindings?: readonly RecordBinding[] | undefined;
     recordTypes?: boolean | undefined;
     recordIdentity?: RecordIdentityResolver | undefined;
@@ -338,14 +344,14 @@ function lowerEntries(
         : bigint !== undefined
           ? bigint
           : layout === undefined
-          ? entryType(
-              checked,
-              id,
-              listElements,
-              setElements,
-              recordTarget?.maps ?? [],
-            )
-          : scalarType(checked, id);
+            ? entryType(
+                checked,
+                id,
+                listElements,
+                setElements,
+                recordTarget?.maps ?? [],
+              )
+            : scalarType(checked, id);
     // A standalone null needs no allocated primitive wrapper. Preserve the
     // established primitive-runtime representation when that runtime is linked.
     if (
@@ -773,8 +779,7 @@ function lowerEntries(
      * literal helper returns (js-runtime's BigIntValue). */
     const bigIntSources = recordTarget?.bigints;
     const bigints: BigIntRuntime | undefined =
-      bigIntSources === undefined ||
-      !checked.types.some((type) => type?.kind === "bigint")
+      bigIntSources === undefined || !usesBigInt(checked)
         ? undefined
         : validateBigIntRuntime(bigIntSources);
     function validateBigIntRuntime(sources: BigIntRuntime): BigIntRuntime {
@@ -864,6 +869,13 @@ function lowerEntries(
           "reference",
         ),
       };
+    }
+    /** The BigIntValue record layout, planned on first use. */
+    function bigIntRecord(): number | undefined {
+      const source = recordTarget?.bigIntRepresentation;
+      const type =
+        source === undefined ? undefined : bodyByFunction[source]?.result;
+      return type === undefined ? undefined : recordContracts?.forType(type);
     }
     function numberFormatter(): number {
       const source = recordTarget?.numberToString;
@@ -2615,6 +2627,12 @@ function lowerEntries(
           bigint:
             checkedType !== undefined &&
             bigIntType(checked, checkedType) !== undefined,
+          bigIntRecord:
+            node.kind === "unary" &&
+            node.operator === "typeof" &&
+            scalar(checked.expressions.get(node.operand)) === "general"
+              ? bigIntRecord()
+              : undefined,
           typeofFunction:
             node.kind === "unary" &&
             node.operator === "typeof" &&
@@ -2678,6 +2696,13 @@ function lowerEntries(
                 fail(
                   "checked downcasts to object types need one record layout",
                 );
+              if (!records.includes(record)) records.push(record);
+              return;
+            }
+            case "bigint": {
+              const record = bigIntRecord();
+              if (record === undefined)
+                fail("checked downcasts to bigint need the bigint runtime");
               if (!records.includes(record)) records.push(record);
               return;
             }
