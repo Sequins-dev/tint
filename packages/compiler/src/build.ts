@@ -3,13 +3,18 @@ import {
   aarch64ImageRelocations,
   type AArch64AddressReference,
 } from "@tint/codegen/aarch64/image-relocations";
-import { darwinAArch64Target, type NativeTarget } from "@tint/platform/target";
+import {
+  darwinAArch64Target,
+  type AArch64Target,
+  type NativeTarget,
+} from "@tint/platform/target";
 import type { CodePlan } from "@tint/abi/relocation";
 import { planNativeServiceModules } from "./native/service-unit-link.ts";
 import type { PosixHostABI } from "@tint/abi/host";
 import { optimizeModule, unboundedWork } from "@tint/ir/optimization";
 import {
-  compileArm64Program,
+  compileNativeProgram,
+  selectNativeBackend,
   type NativeServiceUnit,
   type NativeServiceBinding,
   type NativeServiceLink,
@@ -315,7 +320,10 @@ function runtimeModules(request: BuildRequest): readonly SourceModule[] {
 export function compileMacOSProgram(
   request: BuildRequest,
 ): CompiledMacOSProgramResult {
-  const unsupported = targetUnsupported(request);
+  const backend = selectNativeBackend(buildTarget(request));
+  if (!backend.ok) return { ok: false, error: backend.error };
+  const target = backend.target;
+  const unsupported = targetUnsupported(request, target);
   if (unsupported !== undefined) return compileFailure("target", unsupported);
   if (
     request.allowJit !== true &&
@@ -372,7 +380,7 @@ export function compileMacOSProgram(
           : "copying runtime allocation metadata cannot cover the managed semispace",
       );
   }
-  const hostABI: PosixHostABI = buildTarget(request).hostABI;
+  const hostABI = target.hostABI;
   request.report("allocator");
   const source = requestModules(request, [request.allocatorModule])[0];
   if (source === undefined)
@@ -576,22 +584,24 @@ export function compileMacOSProgram(
     if (binding === undefined) throw "collector binding invariant";
     runtimeBindings.push(binding);
   }
-  const runtime = compileArm64Program({
-    hostABI,
-    pageAlignedCode: true,
-    forceFarReach: request.forceFarReach === true,
-    optimization: request.optimization ?? "basic",
-    debugSymbols: request.debugSymbols ?? false,
-    stackTraces: request.stackTraces === true,
-    symbols: request.signposts === true,
-    maxSpecializations: request.maxSpecializations ?? 4096,
-    modules: runtimeModules(request),
-    entry: request.runtimeModule,
-    exports: [request.runtimeEntry ?? "initializeRuntime"],
-    start: request.runtimeEntry ?? "initializeRuntime",
-    runtimes: [{ module: request.memoryModule, namespace: "native-memory" }],
-    hostBindings: runtimeBindings,
-  });
+  const runtime = compileNativeProgram(
+    {
+      pageAlignedCode: true,
+      forceFarReach: request.forceFarReach === true,
+      optimization: request.optimization ?? "basic",
+      debugSymbols: request.debugSymbols ?? false,
+      stackTraces: request.stackTraces === true,
+      symbols: request.signposts === true,
+      maxSpecializations: request.maxSpecializations ?? 4096,
+      modules: runtimeModules(request),
+      entry: request.runtimeModule,
+      exports: [request.runtimeEntry ?? "initializeRuntime"],
+      start: request.runtimeEntry ?? "initializeRuntime",
+      runtimes: [{ module: request.memoryModule, namespace: "native-memory" }],
+      hostBindings: runtimeBindings,
+    },
+    target,
+  );
   if (!runtime.ok)
     return compileFailure(
       "runtime " + runtime.error.stage,
@@ -629,55 +639,57 @@ export function compileMacOSProgram(
           },
     );
   }
-  const program = compileArm64Program({
-    hostABI,
-    ...(request.storage === undefined ? {} : { storage: request.storage }),
-    pageAlignedCode: true,
-    forceFarReach: request.forceFarReach === true,
-    serviceImports,
-    managedSurfaces: request.managedSurfaces ?? [],
-    closedProgram: true,
-    denseReferenceLists: request.denseReferenceLists ?? false,
-    linearAllocation:
-      request.inlineAllocation ??
-      (request.runtimeEntry === "initializeCopyingRuntime" ||
-        request.runtimeEntry === "initializeGenerationalRuntime"),
-    generationalBarriers:
-      request.runtimeEntry === "initializeGenerationalRuntime",
-    optimization: request.optimization ?? "basic",
-    debugSymbols: request.debugSymbols ?? false,
-    stackTraces: request.stackTraces === true,
-    operationRanges: request.onOperationRanges !== undefined,
-    ...(request.onScalarIR === undefined
-      ? {}
-      : { onScalarIR: request.onScalarIR }),
-    ...(request.optimizationObserver === undefined
-      ? {}
-      : { optimizationObserver: request.optimizationObserver }),
-    ...(request.optimizationPassLimit === undefined
-      ? {}
-      : { optimizationPassLimit: request.optimizationPassLimit }),
-    ...(request.emissionFormHints === undefined
-      ? {}
-      : { emissionFormHints: request.emissionFormHints }),
-    maxSpecializations: request.maxSpecializations ?? 4096,
-    modules: request.modules,
-    moduleLoader: request.moduleLoader,
-    entry: request.entry,
-    exports: [request.start],
-    start: request.start,
-    runtimes: request.runtimes,
-    ...(request.generalLowering === undefined
-      ? {}
-      : { generalLowering: request.generalLowering }),
-    ...(request.requireTyped === true ? { requireTyped: true } : {}),
-    hostBindings: request.hostBindings,
-    foreignLibraries: request.foreignLibraries ?? [],
-    foreignBindings: request.foreignBindings ?? [],
-    foreignMemoryBindings: request.foreignMemoryBindings ?? [],
-    recordBindings: request.recordBindings ?? [],
-    weakBindings: request.weakBindings ?? [],
-  });
+  const program = compileNativeProgram(
+    {
+      ...(request.storage === undefined ? {} : { storage: request.storage }),
+      pageAlignedCode: true,
+      forceFarReach: request.forceFarReach === true,
+      serviceImports,
+      managedSurfaces: request.managedSurfaces ?? [],
+      closedProgram: true,
+      denseReferenceLists: request.denseReferenceLists ?? false,
+      linearAllocation:
+        request.inlineAllocation ??
+        (request.runtimeEntry === "initializeCopyingRuntime" ||
+          request.runtimeEntry === "initializeGenerationalRuntime"),
+      generationalBarriers:
+        request.runtimeEntry === "initializeGenerationalRuntime",
+      optimization: request.optimization ?? "basic",
+      debugSymbols: request.debugSymbols ?? false,
+      stackTraces: request.stackTraces === true,
+      operationRanges: request.onOperationRanges !== undefined,
+      ...(request.onScalarIR === undefined
+        ? {}
+        : { onScalarIR: request.onScalarIR }),
+      ...(request.optimizationObserver === undefined
+        ? {}
+        : { optimizationObserver: request.optimizationObserver }),
+      ...(request.optimizationPassLimit === undefined
+        ? {}
+        : { optimizationPassLimit: request.optimizationPassLimit }),
+      ...(request.emissionFormHints === undefined
+        ? {}
+        : { emissionFormHints: request.emissionFormHints }),
+      maxSpecializations: request.maxSpecializations ?? 4096,
+      modules: request.modules,
+      moduleLoader: request.moduleLoader,
+      entry: request.entry,
+      exports: [request.start],
+      start: request.start,
+      runtimes: request.runtimes,
+      ...(request.generalLowering === undefined
+        ? {}
+        : { generalLowering: request.generalLowering }),
+      ...(request.requireTyped === true ? { requireTyped: true } : {}),
+      hostBindings: request.hostBindings,
+      foreignLibraries: request.foreignLibraries ?? [],
+      foreignBindings: request.foreignBindings ?? [],
+      foreignMemoryBindings: request.foreignMemoryBindings ?? [],
+      recordBindings: request.recordBindings ?? [],
+      weakBindings: request.weakBindings ?? [],
+    },
+    target,
+  );
   if (!program.ok)
     return compileFailure(
       program.error.stage,
@@ -716,7 +728,9 @@ export function linkMacOSProgram(
   compiled: CompiledMacOSProgram,
   request: BuildRequest,
 ): BuildResult {
-  const image = linkHostedImage(compiled, request);
+  const backend = selectNativeBackend(buildTarget(request));
+  if (!backend.ok) return { ok: false, error: backend.error };
+  const image = linkHostedImage(compiled, request, backend.target);
   if (image.ok || request.forceFarReach === true) return image;
   if (
     image.error.message !== "diagnostics call: OUT_OF_RANGE" &&
@@ -732,9 +746,9 @@ export function linkMacOSProgram(
 function linkHostedImage(
   compiled: CompiledMacOSProgram,
   request: BuildRequest,
+  target: AArch64Target,
 ): BuildResult {
-  const target = buildTarget(request),
-    hostABI: PosixHostABI = target.hostABI;
+  const hostABI: PosixHostABI = target.hostABI;
   const source = compiled.allocatorSource,
     runtimeEntry = compiled.runtimeEntry,
     programEntry = compiled.programEntry;
@@ -1279,8 +1293,10 @@ function buildTarget(request: BuildRequest): NativeTarget {
 /** Why the request needs a facility its target does not provide yet, if it
  * does: one explicit failure before compilation instead of a missing
  * import or a wrong constant at run time. */
-function targetUnsupported(request: BuildRequest): string | undefined {
-  const target = buildTarget(request);
+function targetUnsupported(
+  request: BuildRequest,
+  target: AArch64Target,
+): string | undefined {
   if (
     target.hostABI.executableMemory === undefined &&
     request.hostBindings.some(

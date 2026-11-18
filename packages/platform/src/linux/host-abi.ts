@@ -1,10 +1,11 @@
-import type { PosixHostABI } from "@tint/abi/host";
+import type { PosixHostABI, PosixHostFacts } from "@tint/abi/host";
 import { linuxArm64CTarget } from "@tint/abi/c";
-/** glibc on Linux arm64 (docs/linux-aarch64-target.md). Constants are the
+
+/** glibc on Linux (docs/linux-aarch64-target.md). Constants are the
  * generic Linux values (asm-generic/fcntl.h, mman-common.h, errno-base.h;
- * futex.h; unistd.h syscall numbers for arm64; memfd.h). Runtime signposts
+ * futex.h; memfd.h). Runtime signposts
  * are USDT probes of provider `tint` (docs/runtime-diagnostics.md). */
-export function linuxHostABI(): PosixHostABI {
+function linuxHostFacts(futexSyscall: number): PosixHostFacts {
   return {
     os: "linux",
     executableMemory: {
@@ -28,7 +29,7 @@ export function linuxHostABI(): PosixHostABI {
     parking: {
       kind: "linux-futex",
       syscallSymbol: "syscall",
-      futexSyscall: 98,
+      futexSyscall,
       waitOperation: 128,
       wakeOperation: 129,
     },
@@ -36,7 +37,6 @@ export function linuxHostABI(): PosixHostABI {
       kind: "glibc-start-main",
       startMainSymbol: "__libc_start_main",
     },
-    // Kernels may use 4, 16 or 64 KiB pages.
     pageSize: { kind: "query", symbol: "getpagesize" },
     // The affinity mask also reflects cpusets (taskset, container CPU
     // pinning); glibc's cpu_set_t covers 1024 CPUs.
@@ -45,20 +45,11 @@ export function linuxHostABI(): PosixHostABI {
       symbol: "sched_getaffinity",
       maskBytes: 128,
     },
-    // getauxval(AT_HWCAP) & HWCAP_SHA2 (asm/hwcap.h).
-    sha256Instructions: {
-      kind: "hwcap",
-      symbol: "getauxval",
-      type: 16,
-      mask: 64,
-    },
-    c: linuxArm64CTarget,
     symbolPrefix: "",
     errnoSymbol: "__errno_location",
     readFlags: 0,
     // O_WRONLY | O_CREAT | O_EXCL
     exclusiveFlags: 0xc1,
-    // AAPCS64 passes variadic arguments like fixed ones.
     creationModeOnStack: false,
     // MAP_PRIVATE | MAP_ANONYMOUS
     anonymousPrivateFlags: 0x22,
@@ -72,4 +63,24 @@ export function linuxHostABI(): PosixHostABI {
     random: { kind: "fill", symbol: "getrandom" },
     signposts: { kind: "elf-usdt", provider: "tint" },
   };
+}
+
+export function linuxHostABI(): PosixHostABI {
+  return {
+    ...linuxHostFacts(98),
+    // getauxval(AT_HWCAP) & HWCAP_SHA2 (asm/hwcap.h).
+    sha256Instructions: {
+      kind: "hwcap",
+      symbol: "getauxval",
+      type: 16,
+      mask: 64,
+    },
+    c: linuxArm64CTarget,
+  };
+}
+
+/** x86-64 Linux syscall and page policy. C lowering and CPU feature
+ * detection are supplied by the x86-64 backend when available. */
+export function linuxX86_64HostFacts(): PosixHostFacts {
+  return { ...linuxHostFacts(202), pageSize: { kind: "fixed", bytes: 4096 } };
 }
