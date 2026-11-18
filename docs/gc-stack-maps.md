@@ -96,16 +96,54 @@ collecting call and kept valid by entry zeroing and dead-slot and pool clears.
 
 ## Tables
 
-Each emitted module ends with its safepoint table and a footer:
+Each emitted module ends with its safepoint table and a footer naming its
+byte offset (`0x544f4f46`, then the offset). Table words stay below 2^53.
 
-    table   magic 0x50414d53, version 2, entry count,
-            entries: map word index * 2^32 + return offset (sorted),
-            maps: frame bytes, reference count, offsets..., general count, offsets...,
-                  register word, save offsets...
-    footer  0x544f4f46, table byte offset
+A compact table (version 4) holds magic `0x50414d53`, the version and the
+count of functions with safepoints, then a directory sorted by function
+start (one word each: start / 4 + record word index * 2^30), then a record
+per function:
 
-Equal maps are shared. `NativeModule.stackMaps` lists the module's tables with
-the code range each covers; service-unit linking keeps each unit's table.
+    word 0  the record's byte distance from its function's start
+    word 1  safepoint count * 4 + unit width (0: three 16-bit units per
+            word, 1: two 26-bit, 2: one per word)
+    units   each safepoint's return offset from the function start / 4,
+            ascending, then each one's residual position (stream byte)
+    stream  varints, six bytes per word:
+            frame bytes / 16, saved register mask (bit i: x(19 + i)),
+            save offsets / 8 in register order;
+            long words: count, then per word its key delta, run count and
+            runs (gap from the previous run's end, length - 1) over
+            safepoint indexes;
+            residual records: held register mask, count, key deltas
+
+A key is the stack-pointer-relative word index * 2, plus 1 for the tag word
+of a tagged general value; keys ascend and deltas count from the previous
+key plus one. A safepoint lists the long words whose runs contain its index
+and the words of its residual record (records are shared by equal
+safepoints of the function).
+
+Per function, the encoder moves words listed over runs of at least L
+consecutive safepoints into the long section, choosing L (2 to 256, or no
+long section) to minimise the record while the long words stay listed at
+half or more of the function's safepoints: a frame visit decodes the whole
+long section, so it does at most twice the work of the words it visits. A
+word live from its definition to the end of a function is one run, so maps
+of a growing live set (a program initializer holding every module's values)
+cost linear rather than quadratic space; on a built-ins/Map suite image the
+maps fall from 49 MB to about 3 MB.
+
+Modules whose offsets reach 2^32 or whose records pass the directory's
+2^23-word index range use the wide table (version 3): two words per
+safepoint (return offset, map word index), sorted, and maps of full words
+(frame bytes, reference count and offsets, general count and offsets, the
+register word with bit 10 + i when x(19 + i) holds a live reference, then
+the save offsets). Equal maps are shared. Collectors also read the packed
+form (version 2: one word per safepoint, map word index * 2^32 + offset).
+
+`NativeModule.stackMaps` lists the module's tables with the code range each
+covers; service-unit linking keeps each unit's table (records address their
+functions by relative distance, which linking preserves).
 `decodeStackMaps` decodes them for tests and tools.
 
 ## Registry and walk
@@ -129,15 +167,16 @@ non-generational heap takes a `withRootHead(collect)` callback that reads the
 root head and runs the collection inside it.
 
 `walkNativeStack` (native-runtime `tracing/scan.ts`) starts at that frame and,
-for each frame record, maps the return address to its registry range and
-safepoint (binary search), checks that the caller's frame size agrees with the
+for each frame record, maps the return address to its registry range,
+function record and safepoint (binary searches), checks that the caller's frame size agrees with the
 chain (`caller - frameBytes = callee + 16`, except after a transparent frame),
-visits the map relative to the caller's stack pointer, and passes the save
-slot of each register the map lists to a word visitor. Unknown return
+decodes the map in place, passing each listed word (relative to the
+caller's stack pointer) to a reference or tagged-value visitor, and passes the
+save slot of each register the map lists to the reference visitor. Unknown return
 addresses, missing safepoints, malformed tables, chains that do not move toward
 the stack base and frame-count overruns fail the collection; the walk never
-guesses. The checked scanners additionally bound and validate every listed
-offset against the frame size. The walk and the root scanners built on it
+guesses. Every listed word is checked against the frame size, and a
+per-frame bound limits the words a frame may list. The walk and the root scanners built on it
 (`createNativeRootScan`, created with each collector) allocate nothing: they run
 while the managed allocator refuses requests (a scan that allocated trapped the
 region collector, `tools/native-region-collection.test.ts`).

@@ -227,6 +227,7 @@ test("stack walks never guess: unknown code, missing safepoints, bad frames", ()
     { sp: 256, references: [16] },
     { sp: 320, references: [16] },
   ];
+  // Each frame lists one reference word.
   const count = (words: Map<number, number>, head: number) => {
     let frames = 0;
     const status = walkNativeStack(
@@ -236,8 +237,8 @@ test("stack walks never guess: unknown code, missing safepoints, bad frames", ()
         frames++;
         return true;
       },
-      100,
       () => true,
+      100,
     );
     return { status, frames };
   };

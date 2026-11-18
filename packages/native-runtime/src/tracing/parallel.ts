@@ -46,7 +46,6 @@ import {
   headerMarker,
   headerFlags,
   type ReadWord,
-  type VisitFrame,
   type VisitWord,
 } from "./scan.ts";
 
@@ -901,20 +900,15 @@ function share(
   w: Worker,
   starts: Uint32Array,
   shared: ParallelShared,
-  roots: VisitFrame | undefined,
-  registerRoots: VisitWord | undefined,
+  roots: VisitWord | undefined,
+  generalRoots: VisitWord | undefined,
   readWord: ReadWord,
 ): void {
   if (
     roots !== undefined &&
-    registerRoots !== undefined &&
-    walkNativeStack(
-      readWord,
-      shared.rootHead,
-      roots,
-      1000000,
-      registerRoots,
-    ) !== "complete"
+    generalRoots !== undefined &&
+    walkNativeStack(readWord, shared.rootHead, roots, generalRoots, 1000000) !==
+      "complete"
   )
     fail(w, 7);
   if (shared.rememberedCount !== -2) scanRemembered(w, starts, shared);
@@ -1026,33 +1020,25 @@ export function createParallelEvacuator(
   }
   // Created here, so permanent: the caller (worker 0) scans the stack.
   const mainState: Worker = head;
-  const scanFrame = (
-    descriptor: number,
-    base: number,
-    extent: number,
-  ): boolean => {
-    scanFields(mainState, starts, descriptor, base);
+  const scanReference = (slot: number): boolean => {
+    referenceSlot(mainState, starts, slot);
     return true;
   };
-  const scanRegister = (slot: number): boolean => {
-    referenceSlot(mainState, starts, slot);
+  const scanGeneral = (slot: number): boolean => {
+    generalSlot(mainState, starts, slot);
     return true;
   };
   const readWord: ReadWord = (address: number): number | undefined =>
     read(address);
   // The mark phase's roots, also walked by the caller's worker.
-  const markFrameRoots = (
-    descriptor: number,
-    base: number,
-    extent: number,
-  ): boolean => {
-    const region = shared.region;
-    if (region !== undefined) markFields(mainState, region, descriptor, base);
-    return true;
-  };
-  const markRegisterRoot = (slot: number): boolean => {
+  const markRoot = (slot: number): boolean => {
     const region = shared.region;
     if (region !== undefined) markReference(mainState, region, read(slot));
+    return true;
+  };
+  const markGeneralRoot = (slot: number): boolean => {
+    const region = shared.region;
+    if (region !== undefined) markGeneral(mainState, region, slot);
     return true;
   };
   const shared: ParallelShared = {
@@ -1154,16 +1140,16 @@ export function createParallelEvacuator(
     let failed = false;
     try {
       if (command === commandEvacuate)
-        share(main, starts, shared, scanFrame, scanRegister, readWord);
+        share(main, starts, shared, scanReference, scanGeneral, readWord);
       else {
         if (
           command === commandMark &&
           walkNativeStack(
             readWord,
             rootHead,
-            markFrameRoots,
+            markRoot,
+            markGeneralRoot,
             1000000,
-            markRegisterRoot,
           ) !== "complete"
         )
           fail(main, 7);

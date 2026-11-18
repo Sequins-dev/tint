@@ -148,8 +148,10 @@ import {
   type InlineSequenceBuilder,
 } from "./executable-memory.ts";
 import { rememberedBarrier } from "./barrier.ts";
+import { allocationHelper, type AllocationHelper } from "./allocation.ts";
 export type LeafHelperKind =
   | SharedMemoryPrimitive
+  | AllocationHelper
   | NumericHelper
   | StringHelper
   | "array-initialize"
@@ -311,7 +313,12 @@ export interface NativeStringLiteral {
  * maps return offsets relative to codeOffset, for codeLength bytes, to the
  * frame words holding live references while that call runs. Composition
  * registers each table with the hosted stack-map registry. */
-export { decodeStackMaps, type DecodedSafepoint } from "./stack-maps.ts";
+export {
+  decodeStackMaps,
+  encodeStackMapTable,
+  type DecodedSafepoint,
+  type SafepointEntry,
+} from "./stack-maps.ts";
 export interface NativeStackMapTable {
   readonly codeOffset: number;
   readonly codeLength: number;
@@ -7392,20 +7399,13 @@ function emitModuleForms(
               displacement: (slow - exhausted) * 4,
             });
           }
-          zeroWords([
-            resultOffset,
-            resultOffset + 8,
-            resultOffset + 16,
-            resultOffset + 24,
-          ]);
+          // The slow path: the shared allocate-call kernel zeroes the result
+          // area and loads the allocator's arguments; the call, its
+          // safepoint and exceptional edge stay here.
           rawLoad(0, contextOffset);
-          emit({ op: "ldr", width: 64, rt: 1, rn: 0, offset: 24 });
-          emit({ op: "ldr", width: 64, rt: 16, rn: 0, offset: 16 });
-          trapIf({ op: "cbz", width: 64, rt: 16 });
-          imm(2, 0);
           address(3, resultOffset);
           size(9);
-          emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
+          callHelper("allocate-call");
           emit({ op: "blr", rn: 16 });
           safepoint();
           emit({
@@ -7418,56 +7418,12 @@ function emitModuleForms(
             setFlags: true,
           });
           exceptionalBranch({ op: "b.cond", condition: "ne" });
-          // The allocator returns `number | undefined` (one NaN-boxed
-          // word); `undefined` is an invariant failure.
+          // The allocator returns `number | undefined` (one NaN-boxed word);
+          // allocate-finish checks it and forms the object's address in x9.
           rawLoad(9, resultOffset + 16);
-          absentFlags(9, 10);
-          trapIf({ op: "b.cond", condition: "eq" });
-          // Validate the allocator's numeric offset (still in x9) before
-          // forming a native pointer.
-          callHelper("to-uint32");
-          emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
-          emit({ op: "ldr-d", rt: 1, rn: "sp", offset: resultOffset + 16 });
-          emit({ op: "fcmp", rn: 0, rm: 1 });
-          trapIf({ op: "b.cond", condition: "ne" });
-          emit({ op: "ubfm", width: 32, rd: 10, rn: 9, immr: 0, imms: 2 });
-          trapIf({ op: "cbnz", width: 32, rt: 10 });
           size(10);
-          emit({
-            op: "add-reg",
-            width: 64,
-            rd: 11,
-            rn: 9,
-            rm: 10,
-            shift: "lsl",
-            amount: 0,
-            setFlags: false,
-          });
-          rawLoad(10, contextOffset);
-          emit({ op: "ldr", width: 64, rt: 12, rn: 10, offset: 32 });
-          emit({
-            op: "sub-reg",
-            width: 64,
-            rd: "zr",
-            rn: 11,
-            rm: 12,
-            shift: "lsl",
-            amount: 0,
-            setFlags: true,
-          });
-          trapIf({ op: "b.cond", condition: "hi" });
-          emit({ op: "ldr", width: 64, rt: 10, rn: 10, offset: 8 });
-          trapIf({ op: "cbz", width: 64, rt: 10 });
-          emit({
-            op: "add-reg",
-            width: 64,
-            rd: 9,
-            rn: 10,
-            rm: 9,
-            shift: "lsl",
-            amount: 0,
-            setFlags: false,
-          });
+          rawLoad(11, contextOffset);
+          callHelper("allocate-finish");
           if (fastDone >= 0)
             patchInstruction(fastDone, {
               op: "b",
@@ -11298,21 +11254,10 @@ function emitModuleForms(
                   // runtime allocators reserve for a forced full collection
                   // (no allocation producer passes 0). Exhaustion throws through
                   // the exceptional edge; any other result is an invariant trap.
-                  zeroWords([
-                    resultOffset,
-                    resultOffset + 8,
-                    resultOffset + 16,
-                    resultOffset + 24,
-                  ]);
                   rawLoad(0, contextOffset);
-                  emit({ op: "ldr", width: 64, rt: 1, rn: 0, offset: 24 });
-                  emit({ op: "ldr", width: 64, rt: 16, rn: 0, offset: 16 });
-                  emit({ op: "cbnz", width: 64, rt: 16, displacement: 8 });
-                  emit({ op: "brk", immediate: 3 });
-                  imm(2, 0);
                   address(3, resultOffset);
                   imm(9, 0);
-                  emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
+                  callHelper("allocate-call");
                   emit({ op: "blr", rn: 16 });
                   safepoint();
                   emit({
@@ -16203,7 +16148,7 @@ function emitModuleForms(
             const site = callSites[index];
             if (site === undefined) throw "safepoint site invariant";
             if (collecting[index] !== true) {
-              safepoints.push({ offset: site.offset, map: empty });
+              safepoints.push({ offset: site.offset, start, map: empty });
               continue;
             }
             const references: number[] = [],
@@ -16284,7 +16229,7 @@ function emitModuleForms(
             )
               throw "register root across a may-callback call";
             registerSection(map, held);
-            safepoints.push({ offset: site.offset, map });
+            safepoints.push({ offset: site.offset, start, map });
           }
         }
         functions.push({
@@ -16390,7 +16335,9 @@ function emitModuleForms(
                     ? rememberedBarrier()
                     : kind === "stack-overflow"
                       ? stackOverflowHelper()
-                      : stringHelper(kind);
+                      : kind === "allocate-call" || kind === "allocate-finish"
+                        ? allocationHelper(kind)
+                        : stringHelper(kind);
         for (const instruction of body) {
           if (instruction === undefined) throw "helper instruction invariant";
           emit(instruction);
@@ -16586,12 +16533,12 @@ function emitModuleForms(
       codeLength += 8;
     }
     // The safepoint table, then the footer naming it, end the module.
-    const stackMapWords = encodeStackMapTable(safepoints);
-    if (stackMapWords === undefined)
-      fail("CODE_LIMIT", "stack map table exceeds its encoding");
     codeLength = Math.ceil(codeLength / 8) * 8;
     const stackMapOffset = codeLength,
-      stackMapBytes = stackMapWords.length * 8 + nativeStackMapFooterBytes;
+      stackMapWords = encodeStackMapTable(safepoints, stackMapOffset);
+    if (stackMapWords === undefined)
+      fail("CODE_LIMIT", "stack map table exceeds its encoding");
+    const stackMapBytes = stackMapWords.length * 8 + nativeStackMapFooterBytes;
     if (stackMapBytes > maxByteLength - codeLength)
       fail("CODE_LIMIT", "stack map table exceeds byte budget");
     codeLength += stackMapBytes;
