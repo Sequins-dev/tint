@@ -3,8 +3,13 @@
 // tint:ffi/unsafe views and must match Node's results on this machine.
 import * as os from "node:os";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 
-const osModule = "packages/native-runtime/src/node/os.ts";
+/** The node:os module of the fixture target (os-darwin.ts or os-linux.ts). */
+const osModule =
+  "packages/native-runtime/src/node/os-" +
+  (nativeFixtureTarget().os === "darwin" ? "darwin" : "linux") +
+  ".ts";
 
 /** One line per user field set, interface name and address, in Node's
  * order: the text both sides render and compare. */

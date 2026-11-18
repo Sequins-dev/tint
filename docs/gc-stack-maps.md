@@ -137,7 +137,10 @@ slot of each register the map lists to a word visitor. Unknown return
 addresses, missing safepoints, malformed tables, chains that do not move toward
 the stack base and frame-count overruns fail the collection; the walk never
 guesses. The checked scanners additionally bound and validate every listed
-offset against the frame size.
+offset against the frame size. The walk and the root scanners built on it
+(`createNativeRootScan`, created with each collector) allocate nothing: they run
+while the managed allocator refuses requests (a scan that allocated trapped the
+region collector, `tools/native-region-collection.test.ts`).
 
 The tests are `tools/native-gc-stack-maps.test.ts` (native, many collections in
 a 4 MiB heap, with register-held references through chains of frames that

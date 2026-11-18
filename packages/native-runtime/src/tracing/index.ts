@@ -1,13 +1,14 @@
 export {
   scanNativeObject,
   scanNativeObjectWithVerifiedDescriptor,
-  scanNativeRootsWithVerifiedDescriptors,
-  scanNativeRoots,
+  createNativeRootScan,
+  createVerifiedNativeRootScan,
   walkNativeStack,
   type ReadWord,
   type VisitFrame,
   type VisitWord,
   type VisitReference,
+  type NativeRootScan,
   type ScanStatus,
 } from "./scan.ts";
 export { createNativeCollector, type NativeCollector } from "./collector.ts";

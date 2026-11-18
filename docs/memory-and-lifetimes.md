@@ -99,8 +99,8 @@ hidden in error construction, property accessors, host callbacks, and runtime he
 
 A weak cell (marker 7, 40 bytes: a header whose flags say weak or ephemeron,
 then key and value tag/payload pairs) holds its key weakly; an ephemeron also
-holds its value exactly as long as its key. Every collector implements the same
-rule: weak slots are not traced in the strong closure; afterwards an ephemeron
+holds its value exactly as long as its key. Every moving collector implements the
+same rule: weak slots are not traced in the strong closure; afterwards an ephemeron
 whose key survived traces its value, to a fixpoint; then a dead key clears both
 pairs and a weak cell drops its value pair. Per collector:
 
@@ -117,6 +117,9 @@ pairs and a weak cell drops its value pair. Per collector:
   serially; weak slots mark as objects without their key and value, the
   ephemeron fixpoint re-marks values of live keys until a pass marks nothing new,
   dead keys clear, and the forwarding phase rewrites surviving pairs.
+- **Region** (`initializeRuntime`, non-moving mark and sweep): no weak
+  processing yet. Weak slots are traced strongly, so a weak cell's key (and an
+  ephemeron's value) lives as long as the cell and never clears.
 
 Programs that never create a weak cell keep the parallel collector paths.
 External storage (`tint:ffi`'s `external`) registers views through weak cells,

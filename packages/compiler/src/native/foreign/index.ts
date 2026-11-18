@@ -52,13 +52,14 @@ export interface NativeForeignBinding {
   readonly library: string;
   readonly declaration: string;
 }
-/** Explicit binding of a declared runtime export to an external-storage
- * primitive (docs/native-ffi.md, "External storage"): its body becomes one
- * c-memory `address`, `adopt` or `retarget` access. */
+/** Explicit binding of a declared runtime export to a `tint:ffi`
+ * primitive (docs/native-ffi.md, "External storage", "Dynamic calls"): its
+ * body becomes one c-memory `address`, `adopt` or `retarget` access, or
+ * (`call`) the universal trampoline's dynamic c-call. */
 export interface NativeForeignMemoryBinding {
   readonly module: string;
   readonly name: string;
-  readonly operation: "address" | "adopt" | "retarget";
+  readonly operation: "address" | "adopt" | "retarget" | "call";
 }
 /** The `tint:ffi` runtime: its trusted primitives and the weak-storage and
  * collection intrinsics its collector-registered storage uses. */
@@ -116,6 +117,7 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
         name: "retargetExternal",
         operation: "retarget",
       },
+      { module: modules.primitives, name: "callForeign", operation: "call" },
     ],
     weakBindings: [
       { module: modules.weak, name: "createWeakSlot", operation: "new" },
@@ -206,7 +208,13 @@ export function prepareForeignLibrary(
           " call; only leaf calls are supported in this phase",
       };
   }
-  const expanded = expandForeignLibrary(parsed.value, target);
+  // Mach-O loads optional libraries weakly; ELF has no optional
+  // DT_NEEDED, so their symbols resolve lazily through dlopen/dlsym.
+  const expanded = expandForeignLibrary(
+    parsed.value,
+    target,
+    image.optional && target.name !== "darwin-arm64" ? image.name : undefined,
+  );
   if (!expanded.ok) return { ok: false, error: id + ": " + expanded.error };
   const views = foreignViews(parsed.value, target);
   if (!views.ok) return { ok: false, error: id + ": " + views.error };

@@ -527,42 +527,67 @@ export function walkNativeStack(
     afterTransparent = false;
   }
 }
-/** Stack frames are external stack memory; their maps are immutable code
- * metadata. Bound both the frame count and each map's size; only a complete
- * scan may authorize a later sweep. `head` is the stack-map registry. */
-function scanRoots(
-  read: ReadWord,
+/** Scans the stack roots named by a stack-map registry (`head`). Stack
+ * frames are external stack memory; their maps are immutable code metadata.
+ * Both the frame count and each map's size are bounded; only a complete scan
+ * may authorize a later sweep. */
+export type NativeRootScan = (
   head: number,
   visit: VisitReference,
-  maxFrames: number,
-  maxReferencesPerFrame: number,
+  maxFrames?: number,
+  maxReferencesPerFrame?: number,
+) => ScanStatus;
+/** Collectors scan roots while the managed allocator refuses requests, so a
+ * scan must not allocate: its frame and register visitors and their state are
+ * allocated here, once, with the scanner (create it with the collector). A
+ * scanner is not reentrant. */
+function createRootScan(
+  read: ReadWord,
   verifiedDescriptor: boolean,
-): ScanStatus {
-  if (!natural(head) || !bounded(maxFrames) || !bounded(maxReferencesPerFrame))
-    return "invalid";
-  let failure: ScanStatus = "complete";
-  const status = walkNativeStack(
-    read,
+): NativeRootScan {
+  let visitor: VisitReference = (address, slot) => false,
+    maxReferences = 0,
+    failure: ScanStatus = "complete";
+  const visitFrame: VisitFrame = (descriptor, base, extent) => {
+    failure = scanFields(
+      read,
+      descriptor,
+      base,
+      extent,
+      visitor,
+      maxReferences,
+      verifiedDescriptor,
+    );
+    return failure === "complete";
+  };
+  const visitWord: VisitWord = (slot) => {
+    failure = reference(read, slot, visitor);
+    return failure === "complete";
+  };
+  return (
     head,
-    (descriptor, base, extent) => {
-      failure = scanFields(
-        read,
-        descriptor,
-        base,
-        extent,
-        visit,
-        maxReferencesPerFrame,
-        verifiedDescriptor,
-      );
-      return failure === "complete";
-    },
-    maxFrames,
-    (slot) => {
-      failure = reference(read, slot, visit);
-      return failure === "complete";
-    },
-  );
-  return status === "visitor" ? failure : status;
+    visit,
+    maxFrames: number = 1000000,
+    maxReferencesPerFrame: number = 1000000,
+  ) => {
+    if (
+      !natural(head) ||
+      !bounded(maxFrames) ||
+      !bounded(maxReferencesPerFrame)
+    )
+      return "invalid";
+    visitor = visit;
+    maxReferences = maxReferencesPerFrame;
+    failure = "complete";
+    const status = walkNativeStack(
+      read,
+      head,
+      visitFrame,
+      maxFrames,
+      visitWord,
+    );
+    return status === "visitor" ? failure : status;
+  };
 }
 
 /** Checked scanner for descriptors supplied by an embedding or an unproved mutator. */
@@ -584,14 +609,10 @@ export function scanNativeObject(
     traceWeakReferences,
   );
 }
-export function scanNativeRoots(
-  read: ReadWord,
-  head: number,
-  visit: VisitReference,
-  maxFrames: number = 1000000,
-  maxReferencesPerFrame: number = 1000000,
-): ScanStatus {
-  return scanRoots(read, head, visit, maxFrames, maxReferencesPerFrame, false);
+/** A root scanner for an embedding's or an unproved mutator's frames: every
+ * root descriptor is checked. */
+export function createNativeRootScan(read: ReadWord): NativeRootScan {
+  return createRootScan(read, false);
 }
 /** Requires compiler-verified, immutable descriptors and headers published only by
  * the managed allocator/emitter. Counts, offsets, alignment and descriptor extent
@@ -617,13 +638,7 @@ export function scanNativeObjectWithVerifiedDescriptor(
   );
 }
 /** Same descriptor proof contract as scanNativeObjectWithVerifiedDescriptor,
- * including compiler-published root frames and immutable root descriptors. */
-export function scanNativeRootsWithVerifiedDescriptors(
-  read: ReadWord,
-  head: number,
-  visit: VisitReference,
-  maxFrames: number = 1000000,
-  maxReferencesPerFrame: number = 1000000,
-): ScanStatus {
-  return scanRoots(read, head, visit, maxFrames, maxReferencesPerFrame, true);
+ * for compiler-published stack maps and immutable root descriptors. */
+export function createVerifiedNativeRootScan(read: ReadWord): NativeRootScan {
+  return createRootScan(read, true);
 }

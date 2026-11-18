@@ -77,6 +77,7 @@ import {
 import {
   bindHostOperations,
   bindForeignCalls,
+  dynamicForeignCall,
   type ForeignBinding,
   bindWeakOperations,
   type WeakOperation,
@@ -1707,15 +1708,20 @@ function lowerTypedProgram(request: CompileRequest): TypedLowering {
         "foreign memory bindings require a module entry exported by a declared runtime: " +
           binding.name,
       );
-    foreignBindings.push({
-      function: index,
-      memory: {
-        operation: binding.operation,
-        type: { kind: "void" },
-        offset: 0,
-        minimum: 0,
-      },
-    });
+    const operation = binding.operation;
+    foreignBindings.push(
+      operation === "call"
+        ? { function: index, call: dynamicForeignCall() }
+        : {
+            function: index,
+            memory: {
+              operation,
+              type: { kind: "void" },
+              offset: 0,
+              minimum: 0,
+            },
+          },
+    );
   }
   for (const library of request.foreignLibraries ?? []) {
     if (library === undefined) throw "foreign library invariant";

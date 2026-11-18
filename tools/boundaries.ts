@@ -58,7 +58,8 @@ export function foreignBindingModule(
  * unsafe part, so each user is listed here and reviewed. */
 export const unsafeForeignMemoryModules: readonly string[] = [
   "packages/native-runtime/src/node/zlib.ts",
-  "packages/native-runtime/src/node/os.ts",
+  "packages/native-runtime/src/node/os-darwin.ts",
+  "packages/native-runtime/src/node/os-linux.ts",
 ];
 /** Check package contracts. `unsafeModules` lists the source paths that may
  * import `tint:ffi/unsafe` (in packages declaring bindings); a listed path
@@ -145,6 +146,19 @@ export function checkBoundaries(
           const resolved = posix.normalize(
             posix.join(posix.dirname(source.path), specifier),
           );
+          // Reaching foreign memory or dynamic calls by path, from outside
+          // the ffi framework itself, is the same unsafe import.
+          const ffi = `${pkg.directory}/src/ffi/`;
+          if (
+            !source.path.startsWith(ffi) &&
+            (resolved === ffi + "unsafe.ts" || resolved === ffi + "dynamic.ts")
+          ) {
+            unsafeImporters.add(source.path);
+            if (!unsafeModules.includes(source.path))
+              report(
+                "tint:ffi/unsafe importers must be listed in unsafeForeignMemoryModules",
+              );
+          }
           if (
             !resolved.startsWith(sourceRoot) ||
             !specifier.endsWith(".ts") ||

@@ -1168,6 +1168,8 @@ function foreignImageLibraries(
   const names: string[] = [],
     weak: boolean[] = [],
     symbols: string[][] = [],
+    weakSymbols: string[][] = [],
+    required = new Set<string>(),
     owners = new Map<string, string>();
   for (const library of libraries) {
     if (library === undefined) throw "foreign library invariant";
@@ -1181,16 +1183,25 @@ function foreignImageLibraries(
       const owner = owners.get(name);
       if (owner !== undefined && owner !== image.name)
         return "symbol " + fn.symbol + " is bound to two libraries";
-      if (owner !== undefined) continue;
-      owners.set(name, image.name);
       if (index < 0) {
         index = names.length;
         names.push(image.name);
         weak.push(image.optional);
         symbols.push([]);
+        weakSymbols.push([]);
       }
-      const list = symbols[index];
-      if (list === undefined) throw "foreign library symbol invariant";
+      // The image is optional only if every binding using it is; a symbol
+      // only optional bindings declare stays weak either way, so one the
+      // library lacks binds as 0 instead of failing the launch.
+      if (!image.optional) weak[index] = false;
+      const list = symbols[index],
+        weakList = weakSymbols[index];
+      if (list === undefined || weakList === undefined)
+        throw "foreign library symbol invariant";
+      if (!image.optional) required.add(name);
+      else if (!weakList.includes(name)) weakList.push(name);
+      if (owner !== undefined) continue;
+      owners.set(name, image.name);
       list.push(name);
     }
   }
@@ -1198,10 +1209,22 @@ function foreignImageLibraries(
   for (let index = 0; index < names.length; index++) {
     const name = names[index],
       optional = weak[index],
-      list = symbols[index];
-    if (name === undefined || optional === undefined || list === undefined)
+      list = symbols[index],
+      weakList = (weakSymbols[index] ?? []).filter(
+        (symbol) => !required.has(symbol),
+      );
+    if (
+      name === undefined ||
+      optional === undefined ||
+      list === undefined ||
+      weakList === undefined
+    )
       throw "foreign library list invariant";
-    result.push({ name, weak: optional, symbols: list });
+    result.push(
+      optional || weakList.length === 0
+        ? { name, weak: optional, symbols: list }
+        : { name, weak: optional, symbols: list, weakSymbols: weakList },
+    );
   }
   return result;
 }

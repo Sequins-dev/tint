@@ -180,7 +180,12 @@ export function createCollectingRegion(
     }
   }
   return {
+    // Request size 0 is reserved for a forced full collection (the Test262
+    // host's $262.gc, collect-garbage): +0 when it completed. A failed or
+    // reentrant collection is an invariant failure (undefined traps).
     allocate: (bytes) => {
+      if (bytes === 0)
+        return !collecting && collect() === "complete" ? 0 : undefined;
       if (
         collecting ||
         !Number.isInteger(bytes) ||

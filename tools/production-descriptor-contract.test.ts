@@ -4,7 +4,7 @@ import test from "node:test";
 import { decodeStackMaps, emitModule } from "@tint/codegen/aarch64/scalar";
 import {
   scanNativeObject,
-  scanNativeRoots,
+  createNativeRootScan,
 } from "@tint/native-runtime/tracing";
 import { ownedClosureFixture } from "./owned-closure-fixture.ts";
 import { generalValueFixture } from "./general-value-fixture.ts";
@@ -105,7 +105,7 @@ for (const [name, fixture] of [
             : words.get(address);
         const seen: number[] = [];
         assert.equal(
-          scanNativeRoots(read, registry, (pointer) => {
+          createNativeRootScan(read)(registry, (pointer) => {
             seen.push(pointer);
             return true;
           }),
