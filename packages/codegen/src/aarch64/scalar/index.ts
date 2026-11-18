@@ -148,8 +148,10 @@ import {
   type InlineSequenceBuilder,
 } from "./executable-memory.ts";
 import { rememberedBarrier } from "./barrier.ts";
+import { allocationHelper, type AllocationHelper } from "./allocation.ts";
 export type LeafHelperKind =
   | SharedMemoryPrimitive
+  | AllocationHelper
   | NumericHelper
   | StringHelper
   | "array-initialize"
@@ -6855,20 +6857,13 @@ function emitModuleForms(
               displacement: (slow - exhausted) * 4,
             });
           }
-          zeroWords([
-            resultOffset,
-            resultOffset + 8,
-            resultOffset + 16,
-            resultOffset + 24,
-          ]);
+          // The slow path: the shared allocate-call kernel zeroes the result
+          // area and loads the allocator's arguments; the call, its
+          // safepoint and exceptional edge stay here.
           rawLoad(0, contextOffset);
-          emit({ op: "ldr", width: 64, rt: 1, rn: 0, offset: 24 });
-          emit({ op: "ldr", width: 64, rt: 16, rn: 0, offset: 16 });
-          trapIf({ op: "cbz", width: 64, rt: 16 });
-          imm(2, 0);
           address(3, resultOffset);
           size(9);
-          emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
+          callHelper("allocate-call");
           emit({ op: "blr", rn: 16 });
           safepoint();
           emit({
@@ -6881,56 +6876,12 @@ function emitModuleForms(
             setFlags: true,
           });
           exceptionalBranch({ op: "b.cond", condition: "ne" });
-          // The allocator returns `number | undefined` (one NaN-boxed
-          // word); `undefined` is an invariant failure.
+          // The allocator returns `number | undefined` (one NaN-boxed word);
+          // allocate-finish checks it and forms the object's address in x9.
           rawLoad(9, resultOffset + 16);
-          absentFlags(9, 10);
-          trapIf({ op: "b.cond", condition: "eq" });
-          // Validate the allocator's numeric offset (still in x9) before
-          // forming a native pointer.
-          callHelper("to-uint32");
-          emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
-          emit({ op: "ldr-d", rt: 1, rn: "sp", offset: resultOffset + 16 });
-          emit({ op: "fcmp", rn: 0, rm: 1 });
-          trapIf({ op: "b.cond", condition: "ne" });
-          emit({ op: "ubfm", width: 32, rd: 10, rn: 9, immr: 0, imms: 2 });
-          trapIf({ op: "cbnz", width: 32, rt: 10 });
           size(10);
-          emit({
-            op: "add-reg",
-            width: 64,
-            rd: 11,
-            rn: 9,
-            rm: 10,
-            shift: "lsl",
-            amount: 0,
-            setFlags: false,
-          });
-          rawLoad(10, contextOffset);
-          emit({ op: "ldr", width: 64, rt: 12, rn: 10, offset: 32 });
-          emit({
-            op: "sub-reg",
-            width: 64,
-            rd: "zr",
-            rn: 11,
-            rm: 12,
-            shift: "lsl",
-            amount: 0,
-            setFlags: true,
-          });
-          trapIf({ op: "b.cond", condition: "hi" });
-          emit({ op: "ldr", width: 64, rt: 10, rn: 10, offset: 8 });
-          trapIf({ op: "cbz", width: 64, rt: 10 });
-          emit({
-            op: "add-reg",
-            width: 64,
-            rd: 9,
-            rn: 10,
-            rm: 9,
-            shift: "lsl",
-            amount: 0,
-            setFlags: false,
-          });
+          rawLoad(11, contextOffset);
+          callHelper("allocate-finish");
           if (fastDone >= 0)
             patchInstruction(fastDone, {
               op: "b",
@@ -10650,21 +10601,10 @@ function emitModuleForms(
                   // runtime allocators reserve for a forced full collection
                   // (no allocation producer passes 0). Exhaustion throws through
                   // the exceptional edge; any other result is an invariant trap.
-                  zeroWords([
-                    resultOffset,
-                    resultOffset + 8,
-                    resultOffset + 16,
-                    resultOffset + 24,
-                  ]);
                   rawLoad(0, contextOffset);
-                  emit({ op: "ldr", width: 64, rt: 1, rn: 0, offset: 24 });
-                  emit({ op: "ldr", width: 64, rt: 16, rn: 0, offset: 16 });
-                  emit({ op: "cbnz", width: 64, rt: 16, displacement: 8 });
-                  emit({ op: "brk", immediate: 3 });
-                  imm(2, 0);
                   address(3, resultOffset);
                   imm(9, 0);
-                  emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
+                  callHelper("allocate-call");
                   emit({ op: "blr", rn: 16 });
                   safepoint();
                   emit({
@@ -15742,7 +15682,9 @@ function emitModuleForms(
                     ? rememberedBarrier()
                     : kind === "stack-overflow"
                       ? stackOverflowHelper()
-                      : stringHelper(kind);
+                      : kind === "allocate-call" || kind === "allocate-finish"
+                        ? allocationHelper(kind)
+                        : stringHelper(kind);
         for (const instruction of body) {
           if (instruction === undefined) throw "helper instruction invariant";
           emit(instruction);

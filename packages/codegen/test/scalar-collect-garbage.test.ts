@@ -47,8 +47,9 @@ test("collect-garbage calls the runtime allocator entry with request size 0", ()
   const emitted = emitModule(bound.value);
   assert.ok(emitted.ok, JSON.stringify(emitted));
   const code = words(emitted.value.code);
-  // Allocator code pointer (context +16) and environment (+24), then d0 = 0
-  // from w9 and an indirect call through x16.
+  // The shared allocate-call kernel loads the allocator code pointer
+  // (context +16) and environment (+24) and converts the request in w9 to
+  // d0; the function sets w9 = 0 and calls through x16.
   const loadEntry = word({ op: "ldr", width: 64, rt: 16, rn: 0, offset: 16 }),
     loadEnvironment = word({ op: "ldr", width: 64, rt: 1, rn: 0, offset: 24 }),
     zeroRequest = word({ op: "ucvtf-d-w", rd: 0, rn: 9 }),
@@ -56,8 +57,21 @@ test("collect-garbage calls the runtime allocator entry with request size 0", ()
   const at = code.indexOf(call);
   assert.ok(at > 0, "allocator call");
   assert.equal(code.filter((w) => w === call).length, 1);
-  assert.ok(code.slice(0, at).includes(loadEntry));
-  assert.ok(code.slice(0, at).includes(loadEnvironment));
-  assert.ok(code.slice(0, at).includes(zeroRequest));
+  const kernel = emitted.value.helpers.find(
+    (helper) => helper.kind === "allocate-call",
+  );
+  assert.ok(kernel, "allocate-call kernel");
+  const body = code.slice(
+    kernel.offset / 4,
+    (kernel.offset + kernel.byteLength) / 4,
+  );
+  assert.ok(body.includes(loadEntry));
+  assert.ok(body.includes(loadEnvironment));
+  assert.ok(body.includes(zeroRequest));
+  assert.ok(
+    code
+      .slice(0, at)
+      .includes(word({ op: "movz", width: 64, rd: 9, immediate: 0, shift: 0 })),
+  );
   assert.deepEqual(emitted.value.imports, []);
 });

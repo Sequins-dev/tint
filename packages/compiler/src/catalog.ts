@@ -91,6 +91,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/aarch64/scalar/allocation.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/aarch64/scalar/arrays.ts",
       packageId: "codegen",
     },
