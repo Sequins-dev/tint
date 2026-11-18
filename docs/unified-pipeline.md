@@ -460,14 +460,15 @@ genuine type error instead of failing the build; type errors and
 unsupported constructs need distinct outcomes (slice 3, where fallback
 becomes per construct). Later ledgers should compare against slice2b-v1.
 
-Slice 4a (in progress): typed BigInt. The
-[4a BigInt ledger](results/unified-pipeline-ledger-slice4a-bigint-v1.json)
-(58 constructs) moves `bigint` typed from the general path to the typed path
-(10 typed forms on the typed path); every other form matches slice2b-v1. Its
-four run failures (`reassignment-narrowing`, `module-initializers`, both
-forms) are LLDB admission attach failures before execution, kept as
-observed; the [recheck](results/unified-pipeline-ledger-slice4a-bigint-v1-recheck.json)
-passes all four.
+Slice 4a (in progress) includes typed BigInt and mixed callable
+classification. The [BigInt ledger](results/unified-pipeline-ledger-slice4a-bigint-v1.json)
+records the typed BigInt transition. The
+[classifier ledger](results/unified-pipeline-ledger-slice4a-callable-classifier-v1.json)
+covers 59 constructs. Both new `unknown-typeof-callable` forms pass, with
+the typed form staying typed. The full run preserves 18 first-launch LLDB
+failures. The [serial recheck](results/unified-pipeline-ledger-slice4a-callable-classifier-v1-recheck.json)
+has zero regressions against the BigInt baseline, with both
+`weak-collections` forms still failing at execution as before.
 
 Slice 1: image sizes of hosted programs, measured before and after.
 Importing one function through the `js-runtime/objects` entrypoint from a
