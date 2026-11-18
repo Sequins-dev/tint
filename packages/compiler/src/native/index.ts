@@ -61,7 +61,11 @@ export {
 } from "./general-partition.ts";
 import { pruneUnusedModules, reachableModules } from "./module-pruning.ts";
 import type { PosixHostABI } from "@tint/abi/host";
-import { darwinAArch64Target } from "@tint/platform/target";
+import {
+  darwinAArch64Target,
+  type AArch64Target,
+  type NativeTarget,
+} from "@tint/platform/target";
 import { bindingIdentifiers, rewriteModule } from "@tint/typescript/syntax";
 import {
   optimizeModuleVersion,
@@ -555,6 +559,34 @@ function withForeignRuntimes(request: CompileRequest): CompileRequest {
   }
   return { ...request, runtimes };
 }
+export type NativeBackendSelection =
+  | { readonly ok: true; readonly target: AArch64Target }
+  | { readonly ok: false; readonly error: CompilationError };
+
+/** Select the backend before preparing inputs that need its ABI. */
+export function selectNativeBackend(
+  target: NativeTarget,
+): NativeBackendSelection {
+  if (target.arch === "aarch64") return { ok: true, target };
+  return {
+    ok: false,
+    error: {
+      stage: "emit",
+      message: target.name + ": x86_64 code generation is not implemented yet",
+    },
+  };
+}
+
+/** Compile for the selected output target, independently of the host. */
+export function compileNativeProgram(
+  request: CompileRequest,
+  target: NativeTarget = darwinAArch64Target,
+): Compilation {
+  const backend = selectNativeBackend(target);
+  if (!backend.ok) return { ok: false, error: backend.error };
+  return compileArm64Program({ ...request, hostABI: backend.target.hostABI });
+}
+
 export function compileArm64Program(original: CompileRequest): Compilation {
   const request = withForeignRuntimes(original);
   const typed = compileTypedProgram(request);

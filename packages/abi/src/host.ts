@@ -45,7 +45,7 @@ export const nativeTargetOSLinux = 2;
 /** Target policy for POSIX-shaped file and clock calls.
  * Constants, symbol names, variadic mode placement are target
  * facts; image format is separate. */
-export interface PosixHostABI {
+export interface PosixHostFacts {
   /** The operating system this policy describes; the `target-os` host
    * operation reports it to the compiled program. */
   readonly os: "darwin" | "linux";
@@ -151,21 +151,6 @@ export interface PosixHostABI {
         readonly symbol: string;
         readonly maskBytes: number;
       };
-  /** Whether the CPU implements the SHA-256 instructions (cpu-sha256):
-   * `baseline` when every CPU the target runs on does (Apple silicon),
-   * `hwcap` when `symbol(type) & mask` reports them (getauxval(AT_HWCAP) &
-   * HWCAP_SHA2 on Linux). */
-  readonly sha256Instructions:
-    | { readonly kind: "baseline" }
-    | {
-        readonly kind: "hwcap";
-        readonly symbol: string;
-        readonly type: number;
-        readonly mask: number;
-      };
-  /** The target's C calling convention for foreign (c-call) calls; targets
-   * without it cannot emit them. */
-  readonly c?: CTarget;
   readonly symbolPrefix: string;
   readonly errnoSymbol: string;
   readonly readFlags: number;
@@ -196,6 +181,25 @@ export interface PosixHostABI {
   /** Opt-in runtime signposts (docs/runtime-diagnostics.md). */
   readonly signposts?: HostSignpostFacility;
 }
+/** Host facts and the CPU/C ABI policy used by a native backend. */
+export interface PosixHostABI extends PosixHostFacts {
+  /** Whether the CPU implements the SHA-256 instructions (cpu-sha256):
+   * `baseline` when every CPU the target runs on does (Apple silicon),
+   * `hwcap` when `symbol(type) & mask` reports them (getauxval(AT_HWCAP) &
+   * HWCAP_SHA2 on Linux). */
+  readonly sha256Instructions:
+    | { readonly kind: "baseline" }
+    | {
+        readonly kind: "hwcap";
+        readonly symbol: string;
+        readonly type: number;
+        readonly mask: number;
+      };
+  /** The target's C calling convention for foreign (c-call) calls; targets
+   * without it cannot emit them. */
+  readonly c?: CTarget;
+}
+
 /** How a target exposes runtime intervals to external tracers.
  * `darwin-os-signpost`: the main image's header, log-handle creation and an
  * os_signpost-style emitter whose name/format strings must lie in the

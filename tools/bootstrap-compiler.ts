@@ -3,7 +3,10 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { writeNodeExecutable } from "./node-file-host.ts";
 import { dirname, resolve } from "node:path";
 import { loadSourceGraphLoader } from "@tint/typescript/modules";
-import { expandForeignInputs } from "@tint/compiler/native";
+import {
+  expandForeignInputs,
+  selectNativeBackend,
+} from "@tint/compiler/native";
 import { nativeTargetNamed } from "@tint/platform/target";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
 import { nodeHostTarget } from "./native-host-target.ts";
@@ -69,14 +72,18 @@ if (
   throw Error("--allocation-capacity requires a positive uint32 count");
 // The compiler image runs on the target it is built for: default to Node's.
 const targetFlag = bootstrapArgv.indexOf("--target");
-const target =
+const selectedTarget =
   targetFlag < 0
     ? nodeHostTarget()
     : nativeTargetNamed(bootstrapArgv[targetFlag + 1] ?? "");
-if (target === undefined)
+if (selectedTarget === undefined)
   throw Error(
     "unknown or missing --target: " + (bootstrapArgv[targetFlag + 1] ?? ""),
   );
+const backend = selectNativeBackend(selectedTarget);
+if (!backend.ok)
+  throw Error(backend.error.stage + ": " + backend.error.message);
+const target = backend.target;
 const rootFlag = bootstrapArgv.indexOf("--source-root");
 const rootArgument = rootFlag < 0 ? undefined : bootstrapArgv[rootFlag + 1];
 if (
