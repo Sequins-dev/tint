@@ -124,7 +124,13 @@ export function lowerClosureEntries(
 ): Result {
   return lowerEntries(checked, entries, layout, undefined);
 }
+interface RealmTypeof {
+  readonly function: number;
+  readonly applies: (span: IRSpan) => boolean;
+}
+
 export interface ModuleEntryOptions {
+  readonly realmTypeof?: RealmTypeof | undefined;
   /** Caller-selected top-level managed functions supplied by the linker. Their
    * checked ABI is lowered, but their bodies and child closures are not. */
   readonly importedFunctions?: readonly number[];
@@ -250,6 +256,7 @@ export function lowerModuleEntries(
     primitives: options?.primitives,
     bigints: options?.bigints,
     bigIntRepresentation: options?.bigIntRepresentation,
+    realmTypeof: options?.realmTypeof,
     recordBindings: options?.recordBindings,
     recordTypes: options?.recordTypes,
     recordIdentity: options?.recordIdentity,
@@ -281,6 +288,7 @@ function lowerEntries(
     primitives: PrimitiveRuntime | undefined;
     bigints?: BigIntRuntime | undefined;
     bigIntRepresentation?: number | undefined;
+    realmTypeof?: RealmTypeof | undefined;
     recordBindings?: readonly RecordBinding[] | undefined;
     recordTypes?: boolean | undefined;
     recordIdentity?: RecordIdentityResolver | undefined;
@@ -869,6 +877,24 @@ function lowerEntries(
           "reference",
         ),
       };
+    }
+    const realmTypeof = recordTarget?.realmTypeof;
+    function realmTypeofTarget(span: IRSpan): number | undefined {
+      if (realmTypeof === undefined || !realmTypeof.applies(span))
+        return undefined;
+      const target = targetIds[realmTypeof.function];
+      const signature = target === undefined ? undefined : signatures[target];
+      if (
+        target === undefined ||
+        signature?.returnType !== "string" ||
+        signature.parameters.length !== 1 ||
+        signature.parameters[0] !== "general" ||
+        checked.bindings.functions[realmTypeof.function]?.parent !==
+          undefined ||
+        checked.bindings.functions[realmTypeof.function]?.captures.length !== 0
+      )
+        fail("realm typeof helper requires (unknown) => string");
+      return target;
     }
     /** The BigIntValue record layout, planned on first use. */
     function bigIntRecord(): number | undefined {
@@ -2608,6 +2634,11 @@ function lowerEntries(
                 receiver.listElement,
             });
         }
+        const generalTypeof =
+          node.kind === "unary" &&
+          node.operator === "typeof" &&
+          scalar(checked.expressions.get(node.operand)) === "general";
+        const realmTypeof = generalTypeof ? realmTypeofTarget(node) : undefined;
         expressions.set(node, {
           chainType:
             chain === undefined
@@ -2627,10 +2658,9 @@ function lowerEntries(
           bigint:
             checkedType !== undefined &&
             bigIntType(checked, checkedType) !== undefined,
+          realmTypeof,
           bigIntRecord:
-            node.kind === "unary" &&
-            node.operator === "typeof" &&
-            scalar(checked.expressions.get(node.operand)) === "general"
+            generalTypeof && realmTypeof === undefined
               ? bigIntRecord()
               : undefined,
           typeofFunction:

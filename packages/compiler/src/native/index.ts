@@ -91,6 +91,7 @@ import {
   type ModuleIR,
   type ScalarType,
   type FunctionIR,
+  type Span,
   functionHeader,
 } from "@tint/ir/scalar";
 import {
@@ -617,6 +618,26 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       )
     )
       runtimes.push(runtime);
+  // Engine dependencies already classify source-level JS through their own
+  // helper. Their host-language typeof tests inspect raw representation (for
+  // example, distinguishing a native engine abort from a thrown realm function).
+  const rawTypeofModules = new Set<string>();
+  const byId = new Map<string, SourceModule>();
+  for (const module of available)
+    if (module !== undefined) byId.set(module.id, module);
+  const pending = lowering.runtimeModules.slice();
+  for (let i = 0; i < pending.length; i++) {
+    const id = pending[i];
+    if (id === undefined || rawTypeofModules.has(id)) continue;
+    rawTypeofModules.add(id);
+    const module = byId.get(id);
+    if (module === undefined) continue;
+    for (const [, dependency] of module.dependencies) pending.push(dependency);
+  }
+  const realmTypeofModules = new Set<string>();
+  for (const module of available)
+    if (module !== undefined && !rawTypeofModules.has(module.id))
+      realmTypeofModules.add(module.id);
   let error = typed.error;
   for (let attempt = 0; attempt <= application.value.length; attempt++) {
     const culprit = error.module;
@@ -668,15 +689,18 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       if (binding !== undefined) programBindings.push(binding);
     for (const runtime of lowered.value.runtimes ?? [])
       if (runtime !== undefined) programRuntimes.push(runtime);
-    const compiled = compileTypedProgram({
-      ...request,
-      recordBindings: programBindings,
-      runtimes: programRuntimes,
-      modules,
-      moduleLoader: undefined,
-      entry: lowered.value.entry,
-      exports: [start],
-    });
+    const compiled = compileTypedProgram(
+      {
+        ...request,
+        recordBindings: programBindings,
+        runtimes: programRuntimes,
+        modules,
+        moduleLoader: undefined,
+        entry: lowered.value.entry,
+        exports: [start],
+      },
+      realmTypeofModules,
+    );
     const generalIds: string[] = [];
     for (const module of partition.general)
       if (module !== undefined) generalIds.push(module.id);
@@ -1205,9 +1229,21 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
     },
   };
 }
+function realmTypeofSourcePredicate(
+  ranges: readonly SourceRange[],
+  modules: ReadonlySet<string>,
+): (span: Span) => boolean {
+  return (span): boolean => {
+    const origin = locateSourceRange(ranges, span);
+    return origin !== undefined && modules.has(origin.module);
+  };
+}
 /** Lowers the checked program and binds its host, foreign and weak
  * operations. Returns the IR with the compact facts later stages need. */
-function lowerTypedProgram(request: CompileRequest): TypedLowering {
+function lowerTypedProgram(
+  request: CompileRequest,
+  realmTypeofModules?: ReadonlySet<string>,
+): TypedLowering {
   const front = checkTypedProgram(request);
   if (!front.ok) return { ok: false, error: front.error };
   const checkedProgram = front.value,
@@ -1454,6 +1490,21 @@ function lowerTypedProgram(request: CompileRequest): TypedLowering {
       contract,
     });
   }
+  const classifier =
+    realmTypeofModules === undefined
+      ? undefined
+      : exports.find(
+          (item) =>
+            item !== undefined &&
+            item.namespace === "value" &&
+            item.name === "generalValueTypeof" &&
+            runtimeNamespacesByModule.get(item.module) ===
+              "general-object-views",
+        );
+  const classifierSource =
+    classifier === undefined
+      ? undefined
+      : runtimeSources.get(classifier.linkedName);
   const lowered = lowerModuleEntries(
     nativeChecked,
     entries,
@@ -1461,6 +1512,13 @@ function lowerTypedProgram(request: CompileRequest): TypedLowering {
     4096,
     {
       ...checkedProgram.options,
+      realmTypeof:
+        classifierSource === undefined || realmTypeofModules === undefined
+          ? undefined
+          : {
+              function: classifierSource,
+              applies: realmTypeofSourcePredicate(ranges, realmTypeofModules),
+            },
       recordBindings,
       functionAddressBindings,
       importedFunctions: serviceSources.map((source) => source.function),
@@ -2111,9 +2169,12 @@ function emitProgram(
   }
 }
 
-function compileTypedProgram(request: CompileRequest): Compilation {
+function compileTypedProgram(
+  request: CompileRequest,
+  realmTypeofModules?: ReadonlySet<string>,
+): Compilation {
   // Only the lowered IR and compact source facts outlive the front end.
-  const lowered = lowerTypedProgram(request);
+  const lowered = lowerTypedProgram(request, realmTypeofModules);
   if (!lowered.ok) return { ok: false, error: lowered.error };
   const program = lowered.value,
     ranges = program.ranges,

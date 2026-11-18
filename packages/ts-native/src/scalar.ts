@@ -4246,6 +4246,13 @@ export function lowerFunction(
             type = info(node.operand).type;
           if (type === "general") {
             if (operand === undefined) throw "general typeof operand invariant";
+            const classifier = info(node).realmTypeof;
+            if (classifier !== undefined)
+              return save(
+                primitiveCall(classifier, [load(operand, node)], node),
+                "string",
+                node,
+              );
             const record = info(node).bigIntRecord;
             const kind = (): number => {
               const id = nextValue++;
