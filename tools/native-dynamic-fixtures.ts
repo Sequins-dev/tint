@@ -93,7 +93,8 @@ export function buildDynamicLibrary(directory: string): string | undefined {
 }
 
 export function dynamicFixtureSource(library: string): string {
-  return `import {
+  return `import { allocate, release } from "tint:ffi";
+import {
   openLibrary,
   openProgram,
   findSymbol,
@@ -110,6 +111,8 @@ export function dynamicFixtureSource(library: string): string {
   resultLow,
   resultHigh,
   resultRecord,
+  setCallback,
+  bytesAt,
   type ForeignFunction,
   type LibraryHandle,
   type ForeignSignature,
@@ -323,6 +326,34 @@ export function run(): number {
   if (!throwsType(() => { openLibrary("/nonexistent/libtint-missing.so"); })) return 31;
   if (!throwsType(() => { foreignFunction(0, signature([], v, 0)); })) return 32;
   if (!throwsRange(() => { setRecord(bigSum, 0, new Uint8Array(8)); })) return 33;
+  // Dynamic callbacks: libc's qsort with a TypeScript comparator through a
+  // universal callback thunk, collections inside it.
+  const qsort = fn(program, "qsort", [pointer, usize, usize, pointer], v);
+  const words = allocate(4 * 64);
+  for (let i = 0; i < 64; i++) words[i * 4] = (i * 37) % 64;
+  setBytes(qsort, 0, words);
+  setNumber(qsort, 1, 64);
+  setNumber(qsort, 2, 4);
+  let compared = 0;
+  setCallback(qsort, 3, signature([pointer, pointer], i32, 2), (args: number[]): number => {
+    compared++;
+    if (compared % 50 === 0) churn();
+    const left = bytesAt(args[0] ?? 0, 4)[0] ?? 0,
+      right = bytesAt(args[1] ?? 0, 4)[0] ?? 0;
+    return left - right;
+  });
+  invoke(qsort);
+  if (compared === 0) return 34;
+  for (let i = 0; i < 64; i++) if (words[i * 4] !== i) return 35;
+  // An exception in a dynamic callback is rethrown after the call.
+  setCallback(qsort, 3, signature([pointer, pointer], i32, 2), (args: number[]): number => {
+    throw new RangeError("from a dynamic callback");
+  });
+  if (!throwsRange(() => { invoke(qsort); })) return 36;
+  // Movable buffers are refused while callbacks may collect.
+  setBytes(qsort, 0, new Uint8Array(16));
+  if (!throwsType(() => { invoke(qsort); })) return 37;
+  release(words);
   closeLibrary(library);
   return 42;
 }
@@ -335,7 +366,10 @@ export function verifyDynamicFixture(
   return verifyHostedFixture(
     dynamicFixtureSource(library),
     runtimeEntry === undefined ? "ffi-dynamic" : "ffi-dynamic-copying",
-    [["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"]],
+    [
+      ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
+      ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
+    ],
     [],
     [],
     [],
