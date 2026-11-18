@@ -96,19 +96,18 @@ let generalLowering: GeneralLowering | undefined;
 export function workspaceGeneralLowering(): GeneralLowering | undefined {
   if (process.env.TINT_GENERAL_FALLBACK === "0") return undefined;
   generalLowering ??= createGeneralLowering({
-        runtime: {
-          objects: "packages/js-runtime/src/objects/index.ts",
-          modules: "packages/js-runtime/src/modules/index.ts",
-          globalEnvironment:
-            "packages/js-runtime/src/environments/global/index.ts",
-          environmentRecords:
-            "packages/js-runtime/src/environments/records/index.ts",
-        },
-        output: {
-          module: "packages/native-runtime/src/intrinsics/fs.ts",
-          name: "write",
-        },
-      });
+    runtime: {
+      objects: "packages/js-runtime/src/objects/index.ts",
+      modules: "packages/js-runtime/src/modules/index.ts",
+      globalEnvironment: "packages/js-runtime/src/environments/global/index.ts",
+      environmentRecords:
+        "packages/js-runtime/src/environments/records/index.ts",
+    },
+    output: {
+      module: "packages/native-runtime/src/intrinsics/fs.ts",
+      name: "write",
+    },
+  });
   return generalLowering;
 }
 

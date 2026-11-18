@@ -24,10 +24,7 @@ import {
   truncateInteger,
   type Integer,
 } from "@tint/foundation/numeric/big-integer";
-import {
-  createBigIntValue,
-  type BigIntValue,
-} from "@tint/js-runtime/bigints";
+import { createBigIntValue, type BigIntValue } from "@tint/js-runtime/bigints";
 
 /** Digits are base 2^26; a value is limited to 2^30 bits, V8's limit. */
 const maxDigits = 41297762;
@@ -75,8 +72,7 @@ export function exponentiateBigInt(
   a: BigIntValue,
   b: BigIntValue,
 ): BigIntValue {
-  if (b.integer.negative)
-    throw new RangeError("Exponent must be non-negative");
+  if (b.integer.negative) throw new RangeError("Exponent must be non-negative");
   return finish(power(a.integer, b.integer, maxDigits));
 }
 export function andBigInt(a: BigIntValue, b: BigIntValue): BigIntValue {
