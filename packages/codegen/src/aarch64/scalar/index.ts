@@ -188,6 +188,7 @@ import {
   foreignMemoryTypes,
   dynamicCallFrame,
   callbackTransition,
+  callbackEntered,
   callbackState,
   naturalLoops,
   blockSuccessors,
@@ -1583,10 +1584,17 @@ function emitModuleForms(
     /** Undefined: a universal thunk (dynamic callbacks). */
     readonly signature: CSignature | undefined;
     readonly ordinal: number;
+    /** A direct callback's thunk (calls the TypeScript function itself):
+     * the parameters delivered as record views and their views' record
+     * offsets; undefined for an adapter's. */
+    readonly views: readonly number[] | undefined;
+    readonly viewOffsets: readonly number[];
   }[] = [];
   function callbackThunk(
     signature: CSignature | undefined,
     ordinal: number,
+    views: readonly number[] | undefined = undefined,
+    viewOffsets: readonly number[] = [],
   ): number {
     const names: string[] = [];
     for (const parameter of signature?.parameters ?? []) {
@@ -1598,10 +1606,19 @@ function emitModuleForms(
       ":" +
       (signature === undefined
         ? "universal"
-        : cTypeName(signature.result) + "(" + names.join(",") + ")");
+        : cTypeName(signature.result) + "(" + names.join(",") + ")") +
+      (views === undefined
+        ? ""
+        : ":direct:" + views.join(",") + "@" + viewOffsets.join(","));
     for (let index = 0; index < callbackThunkRequests.length; index++)
       if (callbackThunkRequests[index]?.key === key) return index;
-    callbackThunkRequests.push({ key, signature, ordinal });
+    callbackThunkRequests.push({
+      key,
+      signature,
+      ordinal,
+      views,
+      viewOffsets,
+    });
     return callbackThunkRequests.length - 1;
   }
   /** A callback thunk: C calls it with `signature`'s ABI during a
@@ -1658,24 +1675,7 @@ function emitModuleForms(
       shift: 0,
       setFlags: false,
     });
-    for (let register = 0; register < 8; register += 2) {
-      emit({
-        op: "stp",
-        width: 64,
-        rt: register,
-        rt2: register + 1,
-        rn: 29,
-        offset: 64 + register * 8,
-        mode: "offset",
-      });
-      emit({
-        op: "stp-d",
-        rt: register,
-        rt2: register + 1,
-        rn: 29,
-        offset: 128 + register * 8,
-      });
-    }
+    saveArgumentRegisters(signature === undefined ? undefined : locations);
     // This thread's callback state block.
     importAddress(9, 17, "tint:callback-key");
     emit({ op: "ldr", width: 64, rt: 0, rn: 9, offset: 0 });
@@ -1685,7 +1685,10 @@ function emitModuleForms(
     // and entered on this very thread.
     emit({ op: "ldr", width: 64, rt: 11, rn: 0, offset: 0 });
     trapBranch({ op: "cbz", width: 64, rt: 11 });
+    // A callback already running under this record (a leaf call that called
+    // back) traps; a failed direct callback's record (2) does not.
     emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.entered });
+    emit({ op: "ubfm", width: 64, rd: 12, rn: 12, immr: 0, imms: 0 });
     trapBranch({ op: "cbnz", width: 64, rt: 12 });
     emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.thread });
     emit({ op: "mrs-thread", rt: 13, readOnly: host().os === "darwin" });
@@ -1700,7 +1703,16 @@ function emitModuleForms(
       setFlags: true,
     });
     trapBranch({ op: "b.cond", condition: "ne" });
-    imm(12, 1);
+    emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.entered });
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 12,
+      rn: 12,
+      immediate: 1,
+      shift: 0,
+      setFlags: false,
+    });
     emit({ op: "str", width: 64, rt: 12, rn: 11, offset: t.entered });
     emit({ op: "str", width: 64, rt: 11, rn: 29, offset: 48 });
     // C arguments to numbers in d16.., then d0.. (the callback's numbers).
@@ -1826,7 +1838,17 @@ function emitModuleForms(
     else if (result.kind !== "void" && result.kind !== "scalar")
       fail("UNSUPPORTED", "callback results are scalars or pointers");
     emit({ op: "ldr", width: 64, rt: 11, rn: 29, offset: 48 });
-    emit({ op: "str", width: 64, rt: "zr", rn: 11, offset: t.entered });
+    emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.entered });
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: 12,
+      rn: 12,
+      immediate: 1,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({ op: "str", width: 64, rt: 12, rn: 11, offset: t.entered });
     emit({
       op: "ldp",
       width: 64,
@@ -1847,6 +1869,447 @@ function emitModuleForms(
       patchInstruction(site.at, {
         ...site.branch,
         displacement: (trap - site.at) * 4,
+      });
+    }
+  }
+  /** Save a callback thunk's C argument registers in its frame (x0..x7
+   * at 64, d0..d7 at 128) before calls clobber them: the pairs holding
+   * `locations`' register arguments, or all of them (`undefined`: a
+   * universal thunk, whose callback reads the whole save area). */
+  function saveArgumentRegisters(
+    locations: readonly CValueLocation[] | undefined,
+  ): void {
+    const gp = new Uint8Array(8),
+      fp = new Uint8Array(8);
+    for (let index = 0; index < 8; index++) {
+      gp[index] = locations === undefined ? 1 : 0;
+      fp[index] = locations === undefined ? 1 : 0;
+    }
+    const known = locations ?? [];
+    for (let index = 0; index < known.length; index++) {
+      const location = known[index];
+      if (location === undefined || location.stackOffset >= 0) continue;
+      if (location.class === "float") fp[location.fp] = 1;
+      else gp[location.gp] = 1;
+    }
+    for (let register = 0; register < 8; register += 2) {
+      if (gp[register] === 1 || gp[register + 1] === 1)
+        emit({
+          op: "stp",
+          width: 64,
+          rt: register,
+          rt2: register + 1,
+          rn: 29,
+          offset: 64 + register * 8,
+          mode: "offset",
+        });
+      if (fp[register] === 1 || fp[register + 1] === 1)
+        emit({
+          op: "stp-d",
+          rt: register,
+          rt2: register + 1,
+          rn: 29,
+          offset: 128 + register * 8,
+        });
+    }
+  }
+  /** A direct callback's thunk (docs/native-ffi.md, "Callbacks"): like
+   * an adapter's, but it calls the TypeScript function in the record's
+   * `ordinal`th callback word itself. Parameters `views` arrive as the
+   * record views at `viewOffsets` (retargeted to C's pointer; x4..x7), the
+   * others as numbers (d0..); the number result converts exactly to the C
+   * result type. An exception (status 2) calls the record's `onThrow` with
+   * it, a null record pointer or an inexact result calls `onInvalid` with
+   * 0 or 1; either marks the record failed and returns 0 to C, as does
+   * every later entry under that record. Frame as an adapter thunk's. */
+  function emitDirectCallbackThunk(
+    signature: CSignature,
+    ordinal: number,
+    views: readonly number[],
+    viewOffsets: readonly number[],
+  ): void {
+    const classified = classifyCCall(signature, cTarget());
+    if (!classified.ok) fail("UNSUPPORTED", "callback: " + classified.error);
+    const locations: readonly CValueLocation[] = classified.ok
+      ? classified.value.arguments
+      : [];
+    const frame = 192,
+      t = callbackTransition;
+    const traps: { at: number; branch: Branch }[] = [],
+      labels: { at: number; branch: Branch; label: string }[] = [];
+    function trapBranch(branch: Branch): void {
+      traps.push({ at: instructions.length, branch });
+      emit({ ...branch, displacement: 0 });
+    }
+    function forward(branch: Branch, label: string): void {
+      labels.push({ at: instructions.length, branch, label });
+      emit({ ...branch, displacement: 0 });
+    }
+    const targets: { label: string; at: number }[] = [];
+    function place(label: string): void {
+      targets.push({ label, at: instructions.length });
+    }
+    function mov(rd: number, rn: number): void {
+      emit({
+        op: "add-imm",
+        width: 64,
+        rd,
+        rn,
+        immediate: 0,
+        shift: 0,
+        setFlags: false,
+      });
+    }
+    emit({
+      op: "stp",
+      width: 64,
+      rt: 29,
+      rt2: 30,
+      rn: "sp",
+      offset: -frame,
+      mode: "pre",
+    });
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 29,
+      rn: "sp",
+      immediate: 0,
+      shift: 0,
+      setFlags: false,
+    });
+    saveArgumentRegisters(locations);
+    importAddress(9, 17, "tint:callback-key");
+    emit({ op: "ldr", width: 64, rt: 0, rn: 9, offset: 0 });
+    importCall(host().symbolPrefix + "pthread_getspecific");
+    trapBranch({ op: "cbz", width: 64, rt: 0 });
+    emit({ op: "ldr", width: 64, rt: 11, rn: 0, offset: 0 });
+    trapBranch({ op: "cbz", width: 64, rt: 11 });
+    // Running (a leaf call inside a callback) traps; failed returns 0.
+    emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.entered });
+    emit({ op: "ubfm", width: 64, rd: 13, rn: 12, immr: 0, imms: 0 });
+    trapBranch({ op: "cbnz", width: 64, rt: 13 });
+    forward({ op: "cbnz", width: 64, rt: 12 }, "failed-return");
+    emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.thread });
+    emit({ op: "mrs-thread", rt: 13, readOnly: host().os === "darwin" });
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: "zr",
+      rn: 12,
+      rm: 13,
+      shift: "lsl",
+      amount: 0,
+      setFlags: true,
+    });
+    trapBranch({ op: "b.cond", condition: "ne" });
+    imm(12, callbackEntered.running);
+    emit({ op: "str", width: 64, rt: 12, rn: 11, offset: t.entered });
+    emit({ op: "str", width: 64, rt: 11, rn: 29, offset: 48 });
+    // Arguments: numbers into d16.. (then d0..), views into x4..x7.
+    let numbers = 0,
+      others = 0;
+    for (let index = 0; index < locations.length; index++) {
+      const location = locations[index],
+        type = signature.parameters[index];
+      if (location === undefined || type === undefined)
+        throw "callback argument invariant";
+      const viewAt = views.indexOf(index);
+      if (viewAt >= 0) {
+        const offset = viewOffsets[viewAt];
+        if (offset === undefined || location.class !== "integer")
+          throw "callback view invariant";
+        if (others >= 4)
+          fail("UNSUPPORTED", "callbacks take at most four record views");
+        emit({
+          op: "ldr",
+          width: 64,
+          rt: 14,
+          rn: 29,
+          offset:
+            location.stackOffset >= 0
+              ? frame + location.stackOffset
+              : 64 + location.gp * 8,
+        });
+        forward({ op: "cbz", width: 64, rt: 14 }, "null");
+        emit({ op: "ldr", width: 64, rt: 9, rn: 11, offset });
+        emit({
+          op: "ldr",
+          width: 64,
+          rt: 10,
+          rn: 9,
+          offset: nativeArrayOwnerOffset,
+        });
+        emit({
+          op: "str",
+          width: 64,
+          rt: 14,
+          rn: 10,
+          offset: nativeArrayDataOffset,
+        });
+        emit({
+          op: "str",
+          width: 64,
+          rt: 14,
+          rn: 9,
+          offset: nativeArrayDataOffset,
+        });
+        mov(4 + others, 9);
+        others++;
+        continue;
+      }
+      if (numbers >= 8)
+        fail("UNSUPPORTED", "callbacks take at most eight numbers");
+      const rd = 16 + numbers;
+      numbers++;
+      if (location.class === "float") {
+        const from =
+          location.stackOffset >= 0
+            ? frame + location.stackOffset
+            : 128 + location.fp * 8;
+        if (location.size === 4) {
+          emit({ op: "ldr", width: 32, rt: 14, rn: 29, offset: from });
+          emit({ op: "fmov-s-w", rd, rn: 14 });
+          emit({ op: "fcvt-d-s", rd, rn: rd });
+        } else emit({ op: "ldr-d", rt: rd, rn: 29, offset: from });
+        continue;
+      }
+      if (location.class !== "integer")
+        fail("UNSUPPORTED", "callback arguments are scalars or pointers");
+      emit({
+        op: "ldr",
+        width: 64,
+        rt: 14,
+        rn: 29,
+        offset:
+          location.stackOffset >= 0
+            ? frame + location.stackOffset
+            : 64 + location.gp * 8,
+      });
+      const scalar: CScalar =
+        type.kind === "pointer" ? "usize" : numericScalar(type);
+      const bytes = cScalarBytes(scalar),
+        signed = scalar !== "bool" && cScalarSigned(scalar, cTarget());
+      if (bytes < 8)
+        emit({
+          op: signed ? "sbfm" : "ubfm",
+          width: 64,
+          rd: 14,
+          rn: 14,
+          immr: 0,
+          imms: bytes * 8 - 1,
+        });
+      if (signed) emit({ op: "scvtf-d-x", rd, rn: 14 });
+      else emit({ op: "ucvtf-d-x", rd, rn: 14 });
+    }
+    for (let index = 0; index < numbers; index++)
+      emit({ op: "fmov-d-d", rd: index, rn: 16 + index });
+    // Call the function value with the caller's context.
+    function callRecordFunction(offset: number): void {
+      emit({ op: "ldr", width: 64, rt: 11, rn: 29, offset: 48 });
+      emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset });
+      emit({ op: "ldr", width: 64, rt: 0, rn: 11, offset: t.context });
+      emit({
+        op: "ldr",
+        width: 64,
+        rt: 1,
+        rn: 12,
+        offset: nativeFunctionEnvironmentOffset,
+      });
+      emit({
+        op: "ldr",
+        width: 64,
+        rt: 16,
+        rn: 12,
+        offset: nativeFunctionEntryOffset,
+      });
+      imm(2, 0);
+      emit({
+        op: "add-imm",
+        width: 64,
+        rd: 3,
+        rn: 29,
+        immediate: 16,
+        shift: 0,
+        setFlags: false,
+      });
+      emit({ op: "blr", rn: 16 });
+    }
+    callRecordFunction(t.callbacks + ordinal * 8);
+    emit({
+      op: "sub-imm",
+      width: 32,
+      rd: "zr",
+      rn: 0,
+      immediate: 1,
+      shift: 0,
+      setFlags: true,
+    });
+    forward({ op: "b.cond", condition: "ne" }, "abrupt");
+    // The number result, exactly in the C result type's range.
+    const result = signature.result;
+    if (result.kind === "scalar" || result.kind === "pointer") {
+      emit({ op: "ldr-d", rt: 0, rn: 29, offset: 32 });
+      const scalar: CScalar =
+        result.kind === "pointer" ? "usize" : result.scalar;
+      if (scalar === "f32") emit({ op: "fcvt-s-d", rd: 0, rn: 0 });
+      else if (scalar === "bool")
+        fail("UNSUPPORTED", "direct callbacks return numbers");
+      else if (scalar !== "f64") {
+        const bytes = cScalarBytes(scalar),
+          signed = cScalarSigned(scalar, cTarget());
+        if (bytes === 8) {
+          if (signed) {
+            emit({ op: "fcvtzs-x-d", rd: 0, rn: 0 });
+            emit({ op: "scvtf-d-x", rd: 1, rn: 0 });
+          } else {
+            emit({ op: "fcvtzu-x-d", rd: 0, rn: 0 });
+            emit({ op: "ucvtf-d-x", rd: 1, rn: 0 });
+          }
+        } else if (bytes === 4 && !signed) {
+          emit({ op: "fcvtzu-w-d", rd: 0, rn: 0 });
+          emit({ op: "ucvtf-d-w", rd: 1, rn: 0 });
+        } else {
+          emit({ op: "fcvtzs-w-d", rd: 0, rn: 0 });
+          emit({ op: "scvtf-d-w", rd: 1, rn: 0 });
+        }
+        emit({ op: "fcmp", rn: 0, rm: 1 });
+        forward({ op: "b.cond", condition: "ne" }, "range");
+        if (bytes === 8) {
+          // The saturation bounds round-trip too: reject them.
+          if (signed) imm64(9, 0xffffffff, 0x7fffffff);
+          else imm64(9, 0xffffffff, 0xffffffff);
+          emit({
+            op: "sub-reg",
+            width: 64,
+            rd: "zr",
+            rn: 0,
+            rm: 9,
+            shift: "lsl",
+            amount: 0,
+            setFlags: true,
+          });
+          forward({ op: "b.cond", condition: "eq" }, "range");
+        } else if (bytes < 4) {
+          emit({
+            op: signed ? "sbfm" : "ubfm",
+            width: 32,
+            rd: 9,
+            rn: 0,
+            immr: 0,
+            imms: bytes * 8 - 1,
+          });
+          emit({
+            op: "sub-reg",
+            width: 32,
+            rd: "zr",
+            rn: 9,
+            rm: 0,
+            shift: "lsl",
+            amount: 0,
+            setFlags: true,
+          });
+          forward({ op: "b.cond", condition: "ne" }, "range");
+        }
+      }
+    } else if (result.kind !== "void")
+      fail("UNSUPPORTED", "callback results are scalars or pointers");
+    emit({ op: "ldr", width: 64, rt: 11, rn: 29, offset: 48 });
+    emit({ op: "str", width: 64, rt: "zr", rn: 11, offset: t.entered });
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 29,
+      rt2: 30,
+      rn: "sp",
+      offset: frame,
+      mode: "post",
+    });
+    emit({ op: "ret", rn: 30 });
+    // Failures: tell the wrapper, then this record's callbacks return 0.
+    place("abrupt");
+    emit({
+      op: "sub-imm",
+      width: 32,
+      rd: "zr",
+      rn: 0,
+      immediate: 2,
+      shift: 0,
+      setFlags: true,
+    });
+    trapBranch({ op: "b.cond", condition: "ne" });
+    // The exception is a general value (two words at x3 + 16), passed by
+    // reference like any general argument.
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 4,
+      rn: 29,
+      immediate: 32,
+      shift: 0,
+      setFlags: false,
+    });
+    callRecordFunction(t.onThrow);
+    forward({ op: "b" }, "noted");
+    place("null");
+    imm(9, 0);
+    emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+    forward({ op: "b" }, "invalid");
+    place("range");
+    imm(9, 1);
+    emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+    place("invalid");
+    callRecordFunction(t.onInvalid);
+    place("noted");
+    emit({
+      op: "sub-imm",
+      width: 32,
+      rd: "zr",
+      rn: 0,
+      immediate: 1,
+      shift: 0,
+      setFlags: true,
+    });
+    trapBranch({ op: "b.cond", condition: "ne" });
+    emit({ op: "ldr", width: 64, rt: 11, rn: 29, offset: 48 });
+    imm(12, callbackEntered.failed);
+    emit({ op: "str", width: 64, rt: 12, rn: 11, offset: t.entered });
+    place("failed-return");
+    imm(0, 0);
+    emit({ op: "fmov-d-x", rd: 0, rn: 0 });
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 29,
+      rt2: 30,
+      rn: "sp",
+      offset: frame,
+      mode: "post",
+    });
+    emit({ op: "ret", rn: 30 });
+    const trap = instructions.length;
+    emit({ op: "brk", immediate: 3 });
+    for (let index = 0; index < traps.length; index++) {
+      const site = traps[index];
+      if (site === undefined) throw "direct callback trap invariant";
+      patchInstruction(site.at, {
+        ...site.branch,
+        displacement: (trap - site.at) * 4,
+      });
+    }
+    for (let index = 0; index < labels.length; index++) {
+      const site = labels[index];
+      if (site === undefined) throw "direct callback label invariant";
+      let target = -1;
+      for (let other = 0; other < targets.length; other++) {
+        const candidate = targets[other];
+        if (candidate !== undefined && candidate.label === site.label)
+          target = candidate.at;
+      }
+      if (target < 0) throw "direct callback thunk label invariant";
+      patchInstruction(site.at, {
+        ...site.branch,
+        displacement: (target - site.at) * 4,
       });
     }
   }
@@ -5773,6 +6236,8 @@ function emitModuleForms(
           callees: readonly number[],
           record: number,
           words: number[],
+          notes: readonly number[] = [],
+          views: readonly number[] = [],
         ): number {
           const t = callbackTransition;
           dataPointer(state, 14, false, callbackState.size);
@@ -5823,6 +6288,25 @@ function emitModuleForms(
               offset: t.callbacks + ordinal * 8,
             });
             words.push(record + t.callbacks + ordinal * 8);
+          }
+          // Direct callbacks: the failure notes, then their views.
+          const extras = [t.onThrow, t.onInvalid];
+          for (let index = 0; index < notes.length; index++) {
+            const note = notes[index],
+              offset = extras[index];
+            if (note === undefined || offset === undefined)
+              throw "transition note invariant";
+            rawValue(9, note);
+            emit({ op: "str", width: 64, rt: 9, rn: 13, offset });
+            words.push(record + offset);
+          }
+          for (let index = 0; index < views.length; index++) {
+            const view = views[index];
+            if (view === undefined) throw "transition view invariant";
+            const offset = t.callbacks + (callees.length + index) * 8;
+            rawValue(9, view);
+            emit({ op: "str", width: 64, rt: 9, rn: 13, offset });
+            words.push(record + offset);
           }
           emit({
             op: "str",
@@ -10103,25 +10587,56 @@ function emitModuleForms(
                     throw "c-call state invariant";
                   stateOperand = state;
                   operands = operands.slice(2);
+                  // Direct callbacks (no adapter): the failure notes and
+                  // their views follow the prototype's operands.
+                  const prototypeEnd = call.signature.parameters.length,
+                    extras = operands.slice(prototypeEnd),
+                    notes = extras.slice(0, 2),
+                    views = extras.slice(2);
+                  let count = 0;
+                  for (let index = 0; index < prototypeEnd; index++)
+                    if (call.callbacks?.[index] !== undefined) count++;
                   const callees: number[] = [];
-                  for (let index = 0; index < operands.length; index++) {
+                  let viewIndex = 0;
+                  for (let index = 0; index < prototypeEnd; index++) {
                     if (call.operands[index + 2] !== "callback") continue;
                     const prototype = call.callbacks?.[index],
                       callee = operands[index];
                     if (prototype === undefined || callee === undefined)
                       throw "c-call callback invariant";
-                    callbackThunks[index] = callbackThunk(
-                      prototype,
-                      callees.length,
-                    );
+                    const direct = call.directCallbacks?.[index];
+                    if (direct === undefined)
+                      callbackThunks[index] = callbackThunk(
+                        prototype,
+                        callees.length,
+                      );
+                    else {
+                      const offsets: number[] = [];
+                      for (let view = 0; view < direct.length; view++)
+                        offsets.push(
+                          callbackTransition.callbacks +
+                            (count + viewIndex + view) * 8,
+                        );
+                      viewIndex += direct.length;
+                      callbackThunks[index] = callbackThunk(
+                        prototype,
+                        callees.length,
+                        direct,
+                        offsets,
+                      );
+                    }
                     callees.push(callee);
                   }
+                  if (views.length !== viewIndex)
+                    throw "c-call direct callback view invariant";
                   returnAddressAt = pushTransition(
                     state,
                     dispatcher,
                     callees,
                     plan.transition,
                     callbackWords,
+                    notes,
+                    views,
                   );
                 }
                 if (indirect) {
@@ -15894,7 +16409,14 @@ function emitModuleForms(
       const thunk = callbackThunkRequests[index];
       if (thunk === undefined) throw "callback thunk invariant";
       thunkOffsets.push({ slot: index, offset: instructions.length * 4 });
-      emitCallbackThunk(thunk.signature, thunk.ordinal);
+      if (thunk.views !== undefined && thunk.signature !== undefined)
+        emitDirectCallbackThunk(
+          thunk.signature,
+          thunk.ordinal,
+          thunk.views,
+          thunk.viewOffsets,
+        );
+      else emitCallbackThunk(thunk.signature, thunk.ordinal);
     }
     const thunkEnd = instructions.length * 4;
     let codeLength = instructions.length * 4;
