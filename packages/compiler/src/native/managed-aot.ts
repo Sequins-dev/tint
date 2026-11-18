@@ -45,7 +45,7 @@ import {
   type ManagedSurfaceTypeDescription,
 } from "./managed-surfaces.ts";
 import { canonicalizeManagedSurfaceTypes } from "./managed-surface-text.ts";
-import { deriveManagedSurfacePhysicalFacts } from "./managed-directory.ts";
+import { createManagedSurfacePhysicalDeriver } from "./managed-directory.ts";
 import {
   createManagedSurfaceDirectory,
   type SerializedManagedSurfaceDirectory,
@@ -142,6 +142,10 @@ export function prepareManagedSurfaceExports(
   // Ordinary builds must not traverse and clone the whole application's types
   // merely to discover that there is no managed-surface work to do.
   if (requests.length === 0) return { ok: true, value: { module, plans: [] } };
+  const deriveFacts = createManagedSurfacePhysicalDeriver(
+    { modules, runtimes, globals, maxSpecializations },
+    requests.length > 1,
+  );
   const reject = (error: string): ManagedSurfaceAOTPreparation => ({
     ok: false,
     error,
@@ -268,12 +272,7 @@ export function prepareManagedSurfaceExports(
     }
     const canonical = canonicalizeManagedSurfaceTypes(table.value.surface);
     if (!canonical.ok) return canonical;
-    const facts = deriveManagedSurfacePhysicalFacts(canonical.value, {
-      modules,
-      runtimes,
-      globals,
-      maxSpecializations,
-    });
+    const facts = deriveFacts(canonical.value);
     if (!facts.ok) return facts;
     const directory = createManagedSurfaceDirectory(
       request.name,
