@@ -248,6 +248,8 @@ export interface CompileRequest extends ModuleRequest {
   /** The emitted code will be placed at a 4 KiB aligned address (hosted
    * images align every module), enabling two-instruction local addresses. */
   readonly pageAlignedCode?: boolean;
+  /** Emit with every far-reach form (EmissionOptions.forceFarReach). */
+  readonly forceFarReach?: boolean;
   /** Maximum instances in each application/runtime specialization pass. */
   readonly maxSpecializations?: number;
   /** Explicit capabilities for exports of declared trusted runtime modules. */
@@ -2328,7 +2330,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   // code; each fallback is a missed remark and counts in the emission pass.
   let analysisLimits = 0;
   const native = emitProgram(program.ir, request.storage, {
-    maxByteLength: 0xffffffff,
+    maxByteLength: Number.MAX_SAFE_INTEGER,
     unboundedAnalysis: true,
     analysisLimit: (analysis: CodegenAnalysis, fn: FunctionIR): void => {
       analysisLimits++;
@@ -2362,6 +2364,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       request.closedProgram && invocation >= 0 ? [invocation] : undefined,
     formHints: request.emissionFormHints,
     pageAlignedCode: request.pageAlignedCode ?? false,
+    forceFarReach: request.forceFarReach === true ? true : undefined,
   });
   const optimizedModule = program.ir.module;
   if (!native.ok) {

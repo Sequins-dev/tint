@@ -17,6 +17,8 @@ export interface Fragment {
   readonly order: number;
   readonly alignment: number;
   readonly bytes: Uint8Array;
+  /** Reserve zero-filled space after the supplied bytes. */
+  readonly byteLength?: number | undefined;
 }
 export interface SymbolDefinition {
   readonly id: string;
@@ -60,6 +62,12 @@ export interface ResolvedSymbol {
   readonly id: string;
   readonly fileOffset: number;
   readonly virtualAddress: Word64;
+}
+interface Layout {
+  readonly byteLength: number;
+  readonly write: (bytes: Uint8Array) => void;
+  readonly placements: readonly Placement[];
+  readonly symbols: readonly ResolvedSymbol[];
 }
 export interface LinkedImage {
   readonly bytes: Uint8Array;
@@ -118,6 +126,26 @@ function coordinate(
 
 /** Links one contiguous image. Input buffers are borrowed read-only for this call. */
 export function link(request: LayoutRequest): LayoutResult {
+  const layout = planLayout(request);
+  if (!layout.ok) return layout;
+  const plan = layout.value;
+  let bytes: Uint8Array;
+  try {
+    bytes = new Uint8Array(plan.byteLength);
+  } catch {
+    return fail("ALLOCATION_FAILED", "output");
+  }
+  plan.write(bytes);
+  return {
+    ok: true,
+    value: { bytes, placements: plan.placements, symbols: plan.symbols },
+  };
+}
+
+/** Resolve file and VM placement before allocating the final output. */
+export function planLayout(
+  request: LayoutRequest,
+): { readonly ok: true; readonly value: Layout } | Failure {
   if (
     !safe(request.maxByteLength) ||
     !fromParts(request.virtualBase.lo, request.virtualBase.hi).ok
@@ -152,19 +180,22 @@ export function link(request: LayoutRequest): LayoutResult {
     if (f === undefined) return fail("INVALID_INPUT", "missing fragment");
     const aligned = alignUp(size, f.alignment);
     if (!aligned.ok) return fail("OVERFLOW", f.id);
+    const length = f.byteLength ?? f.bytes.length;
+    if (!safe(length) || length < f.bytes.length)
+      return fail("INVALID_INPUT", f.id);
     if (
       aligned.value > request.maxByteLength ||
-      f.bytes.length > request.maxByteLength - aligned.value
+      length > request.maxByteLength - aligned.value
     )
       return fail("SIZE_LIMIT", f.id);
     const placement = {
       id: f.id,
       fileOffset: aligned.value,
-      byteLength: f.bytes.length,
+      byteLength: length,
     };
     placements.push(placement);
     placementMap.set(f.id, placement);
-    size = aligned.value + f.bytes.length;
+    size = aligned.value + length;
   }
   // Validate even an unreferenced image's virtual extent (last byte, not one-past).
   const last = fromSafeInteger(size === 0 ? 0 : size - 1);
@@ -264,21 +295,17 @@ export function link(request: LayoutRequest): LayoutResult {
     } else return fail("INVALID_INPUT", "fixup kind");
     patches.push({ offset: site.offset, bytes: patch });
   }
-  let bytes: Uint8Array;
-  try {
-    bytes = new Uint8Array(size);
-  } catch {
-    return fail("ALLOCATION_FAILED", "output");
+  function write(bytes: Uint8Array): void {
+    for (const f of fragments) {
+      if (f === undefined) throw "fragment invariant";
+      const p = placementMap.get(f.id);
+      if (p === undefined) throw "fragment placement invariant";
+      bytes.set(f.bytes, p.fileOffset);
+    }
+    for (const patch of patches) {
+      if (patch === undefined) throw "patch invariant";
+      bytes.set(patch.bytes, patch.offset);
+    }
   }
-  for (const f of fragments) {
-    if (f === undefined) return fail("INVALID_INPUT", "missing fragment");
-    const p = placementMap.get(f.id);
-    if (p === undefined) return fail("UNKNOWN_FRAGMENT", f.id);
-    bytes.set(f.bytes, p.fileOffset);
-  }
-  for (const patch of patches) {
-    if (patch === undefined) throw "patch invariant";
-    bytes.set(patch.bytes, patch.offset);
-  }
-  return { ok: true, value: { bytes, placements, symbols } };
+  return { ok: true, value: { byteLength: size, write, placements, symbols } };
 }

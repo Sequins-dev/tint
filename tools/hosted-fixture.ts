@@ -16,6 +16,8 @@ import { createSourceText } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
 import {
   buildMacOSProgram,
+  compileMacOSProgram,
+  linkMacOSProgram,
   type BuildRequest,
   type ImageOperationRange,
 } from "@tint/compiler/build";
@@ -41,6 +43,7 @@ import {
   type ManagedSurfaceRequest,
 } from "@tint/compiler/native";
 import { nativeFixtureTarget } from "./native-host-target.ts";
+import { writeNodeExecutable } from "./node-file-host.ts";
 import { admitUnderLldb } from "./native-admission.ts";
 /** Hosted fixtures run on this host, under LLDB. */
 const fixtureTarget = nativeFixtureTarget();
@@ -145,6 +148,7 @@ export function verifyHostedFixture(
     /** Fail instead of falling back to general semantics (benchmarks whose
      * measurements must be of typed code). */
     readonly requireTyped?: boolean;
+    readonly optimization?: BuildRequest["optimization"];
     /** Receives the general fallback when one was used (also reported on
      * stderr). */
     readonly onGeneralFallback?: (
@@ -161,6 +165,12 @@ export function verifyHostedFixture(
     /** Heap introspection (docs/native-heap-profiling.md); defaults to
      * TINT_HEAP_INTROSPECTION, else to debug symbols. */
     readonly heapIntrospection?: boolean;
+    /** Every far-reach code form (docs/large-images.md); defaults to
+     * TINT_FORCE_FAR_REACH. */
+    readonly forceFarReach?: boolean;
+    /** Verification-only gap before the compiled program. The ordinary
+     * allocator, runtime, program, startup and writers still run unchanged. */
+    readonly programPaddingBytes?: number;
   } = {
     managedBytes: 4194304,
     allocationCapacity: 65536,
@@ -288,11 +298,20 @@ export function verifyHostedFixture(
   // TINT_CODE_SIZE, TINT_DUMP_PASSES, TINT_REMARKS and TINT_OPT_PASS_LIMIT.
   const observability = observabilityOptions(),
     observation = createBuildObservation(observability);
-  const built = buildMacOSProgram({
+  const buildRequest: BuildRequest = {
     ...observation.request,
     ...request,
     target: fixtureTarget,
+    ...(options.optimization === undefined
+      ? {}
+      : { optimization: options.optimization }),
     threaded: options.threaded ?? false,
+    forceFarReach:
+      options.forceFarReach ?? process.env.TINT_FORCE_FAR_REACH === "1",
+    machOLayout:
+      process.env.TINT_FORCE_LARGE_IMAGE === "1"
+        ? { compactVMLimit: 1, signedChunkBytes: 65536 }
+        : undefined,
     allowDebugger: true,
     allowJit: options.allowJit ?? false,
     runtimes: [
@@ -379,11 +398,42 @@ export function verifyHostedFixture(
           },
         }
       : {}),
-  });
+  };
+  const padding = options.programPaddingBytes ?? 0;
+  const built =
+    padding === 0
+      ? buildMacOSProgram(buildRequest)
+      : (() => {
+          assert.ok(
+            Number.isSafeInteger(padding) &&
+              padding > 0 &&
+              padding % 4096 === 0,
+          );
+          const compiled = compileMacOSProgram(buildRequest);
+          if (!compiled.ok) return compiled;
+          const runtime = compiled.value.runtime;
+          const code = new Uint8Array(runtime.native.code.length + padding);
+          code.set(runtime.native.code);
+          return linkMacOSProgram(
+            {
+              ...compiled.value,
+              runtime: { ...runtime, native: { ...runtime.native, code } },
+            },
+            buildRequest,
+          );
+        })();
   if (!built.ok) assert.fail(JSON.stringify(built.error));
-  const directory = mkdtempSync(join(tmpdir(), "tint-hosted-" + name + "-")),
+  const directory = mkdtempSync(
+      join(
+        process.env.TINT_FIXTURE_TMPDIR ?? tmpdir(),
+        "tint-hosted-" + name + "-",
+      ),
+    ),
     path = join(directory, name);
-  writeFileSync(path, built.value, { mode: 0o755 });
+  writeNodeExecutable(path, built.value, true);
+  const imageHash = createHash("sha256");
+  for (let offset = 0; offset < built.value.length; offset += 0x4000000)
+    imageHash.update(built.value.subarray(offset, offset + 0x4000000));
   if (operationRanges !== undefined)
     writeFileSync(path + ".operations.json", JSON.stringify(operationRanges));
   observation.finish(path);
@@ -403,7 +453,7 @@ export function verifyHostedFixture(
         kind: "tint-hosted-native-build",
         version: 1,
         sourceSnapshot,
-        imageSha256: createHash("sha256").update(built.value).digest("hex"),
+        imageSha256: imageHash.digest("hex"),
         fixture: fixturePath,
         fixtureSha256: createHash("sha256").update(bytes).digest("hex"),
         generatorArguments: process.argv.slice(1),

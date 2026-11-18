@@ -10,13 +10,19 @@ import {
   type CallFrameTarget,
   type FrameDescription,
 } from "../../eh-frame.ts";
-import { link, type Fragment, type Placement } from "../../layout.ts";
+import { planLayout, type Fragment, type Placement } from "../../layout.ts";
 import type {
+  CodePlan,
   ImageAddressPatcher,
   ImageAddressReference,
 } from "@tint/abi/relocation";
 import type { UnwindRange } from "@tint/abi/unwind";
-import { sha256 } from "@tint/foundation/binary/sha256";
+import { contiguousCodeOutput } from "@tint/abi/relocation";
+import {
+  createSha256Stream,
+  updateSha256Stream,
+  finishSha256Stream,
+} from "@tint/foundation/binary/sha256-stream";
 import {
   buildEhFrameHeader,
   ehFrameHeaderSize,
@@ -99,6 +105,7 @@ export interface LinuxImageOptions {
 export interface ElfExecutableRequest {
   /** Encoded A64 instructions followed by any `textSections`. */
   readonly code: Uint8Array;
+  readonly codePlan?: CodePlan | undefined;
   /** Process entry (the ELF `e_entry`): receives the kernel's initial stack,
    * with the dynamic loader's finalizer in x0. */
   readonly entryOffset: number;
@@ -373,18 +380,26 @@ function writeDynamic(
  * non-allocated sections. Output is a pure function of the request.
  */
 export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
+  const codePlan = request.codePlan;
+  if (request.code.length !== 0 && codePlan !== undefined)
+    return { ok: false, error: "INVALID_CODE" };
   const code = request.code;
-  if (code.length === 0 || code.length % 4 !== 0)
+  const codeLength = codePlan?.byteLength ?? code.length;
+  if (
+    !uint(codeLength, Number.MAX_SAFE_INTEGER) ||
+    codeLength === 0 ||
+    codeLength % 4 !== 0
+  )
     return { ok: false, error: "INVALID_CODE" };
   if (
-    !uint(request.entryOffset, code.length - 1) ||
+    !uint(request.entryOffset, codeLength - 1) ||
     request.entryOffset % 4 !== 0
   )
     return { ok: false, error: "INVALID_ENTRY" };
   if (!uint(request.maxByteLength, Number.MAX_SAFE_INTEGER))
     return { ok: false, error: "INVALID_LIMIT" };
   const tail = request.textSections ?? [];
-  let instructionEnd = code.length;
+  let instructionEnd = codeLength;
   for (let index = tail.length - 1; index >= 0; index--) {
     const section = tail[index];
     if (
@@ -459,9 +474,9 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   for (const range of unwindRanges) {
     if (
       range === undefined ||
-      !uint(range.offset, code.length - 1) ||
+      !uint(range.offset, codeLength - 1) ||
       range.offset % 4 !== 0 ||
-      !uint(range.byteLength, code.length - range.offset) ||
+      !uint(range.byteLength, codeLength - range.offset) ||
       range.offset < unwindEnd
     )
       return { ok: false, error: "INVALID_UNWIND" };
@@ -543,9 +558,9 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   // Code starts on a 4 KiB boundary: generated code addresses its literals
   // page-relatively (ADRP), which needs offsets congruent to addresses.
   const codeAddress = alignTo(cursor, 4096);
-  const codeEnd = codeAddress + code.length;
+  const codeEnd = codeAddress + codeLength;
   const headerAddress = alignTo(codeEnd, 4);
-  const ehFrameAddress = alignTo(
+  let ehFrameAddress = alignTo(
     headerAddress + ehFrameHeaderSize(unwound.length),
     8,
   );
@@ -561,26 +576,42 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
         rule: range.rule,
       });
     }
-    const built = buildEhFrame(
-      descriptions,
-      ehFrameAddress,
-      ARM64_FRAME_TARGET,
-    );
-    // A zero-length entry terminates the section for unwinders that walk it.
-    ehFrame = new Uint8Array(built.bytes.length + 4);
-    ehFrame.set(built.bytes);
-    const entries: FrameIndexEntry[] = [];
-    for (let index = 0; index < descriptions.length; index++) {
-      const description = descriptions[index],
-        offset = built.offsets[index];
-      if (description === undefined || offset === undefined)
-        throw "ELF unwind index invariant";
-      entries.push({
-        location: description.address,
-        description: ehFrameAddress + offset,
-      });
+    let wide =
+      headerAddress - (descriptions[0]?.address ?? headerAddress) > 0x80000000;
+    while (true) {
+      ehFrameAddress = alignTo(
+        headerAddress + ehFrameHeaderSize(unwound.length, wide),
+        8,
+      );
+      const built = buildEhFrame(
+        descriptions,
+        ehFrameAddress,
+        ARM64_FRAME_TARGET,
+      );
+      // A zero-length entry terminates the section for unwinders that walk it.
+      ehFrame = new Uint8Array(built.bytes.length + 4);
+      ehFrame.set(built.bytes);
+      const entries: FrameIndexEntry[] = [];
+      for (let index = 0; index < descriptions.length; index++) {
+        const description = descriptions[index],
+          offset = built.offsets[index];
+        if (description === undefined || offset === undefined)
+          throw "ELF unwind index invariant";
+        entries.push({
+          location: description.address,
+          description: ehFrameAddress + offset,
+        });
+      }
+      ehFrameHeader = buildEhFrameHeader(
+        headerAddress,
+        ehFrameAddress,
+        entries,
+        wide,
+      );
+      if (ehFrameHeader.length === ehFrameHeaderSize(unwound.length, wide))
+        break;
+      wide = true;
     }
-    ehFrameHeader = buildEhFrameHeader(headerAddress, ehFrameAddress, entries);
   }
 
   let debugAbbrev: Uint8Array = new Uint8Array(0),
@@ -598,7 +629,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       origins: debugRequest.origins,
       globals: debugRequest.globals,
       codeAddress,
-      codeLength: code.length,
+      codeLength,
       maxByteLength: request.maxByteLength,
     });
     if (!debug.ok)
@@ -694,7 +725,13 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       alignment: 8,
       bytes: new Uint8Array(imports.length * RELA_SIZE),
     },
-    { id: "code", order: 7, alignment: 4096, bytes: code },
+    {
+      id: "code",
+      order: 7,
+      alignment: 4096,
+      bytes: code,
+      byteLength: codeLength,
+    },
     { id: "eh-frame-hdr", order: 8, alignment: 4, bytes: ehFrameHeader },
     { id: "eh-frame", order: 9, alignment: 8, bytes: ehFrame },
     // Empty without probes, so default images keep their layout.
@@ -738,7 +775,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       bytes: new Uint8Array(sectionNames.length * SECTION_HEADER_SIZE),
     },
   ];
-  const linked = link({
+  const linked = planLayout({
     fragments,
     symbols: [],
     fixups: [],
@@ -751,8 +788,19 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       error:
         linked.error.code === "SIZE_LIMIT" ? "SIZE_LIMIT" : "LAYOUT_FAILED",
     };
-  const bytes = linked.value.bytes,
-    placements = linked.value.placements;
+  let bytes: Uint8Array;
+  try {
+    bytes = new Uint8Array(linked.value.byteLength);
+  } catch {
+    return { ok: false, error: "LAYOUT_FAILED" };
+  }
+  linked.value.write(bytes);
+  if (
+    codePlan !== undefined &&
+    codePlan.write(contiguousCodeOutput(bytes, codeAddress), 0) !== undefined
+  )
+    return { ok: false, error: "INVALID_CODE" };
+  const placements = linked.value.placements;
   const at = (id: string): Placement => {
     const placement = placementOf(placements, id);
     if (placement === undefined) throw "ELF placement invariant";
@@ -1280,12 +1328,12 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
     const reference = references[index];
     if (
       reference === undefined ||
-      !uint(reference.byteLength, code.length) ||
+      !uint(reference.byteLength, codeLength) ||
       reference.byteLength === 0 ||
-      !uint(reference.alignment, code.length) ||
+      !uint(reference.alignment, codeLength) ||
       reference.alignment === 0 ||
       (reference.alignment & (reference.alignment - 1)) !== 0 ||
-      !uint(reference.offset, code.length - reference.byteLength) ||
+      !uint(reference.offset, codeLength - reference.byteLength) ||
       reference.offset % reference.alignment !== 0 ||
       patchSites.has(reference.offset)
     )
@@ -1319,11 +1367,11 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
 
   // The build ID hashes the finished image (with a zero ID) and identity.
   const encodedIdentity = new TextEncoder().encode(identifier);
-  const identity = new Uint8Array(bytes.length + encodedIdentity.length);
-  identity.set(bytes);
-  identity.set(encodedIdentity, bytes.length);
+  const identity = createSha256Stream();
+  updateSha256Stream(identity, bytes);
+  updateSha256Stream(identity, encodedIdentity);
   bytes.set(
-    sha256(identity).subarray(0, BUILD_ID_SIZE),
+    finishSha256Stream(identity).subarray(0, BUILD_ID_SIZE),
     noteAt.fileOffset + 16,
   );
 

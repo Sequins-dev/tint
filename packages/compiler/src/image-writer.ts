@@ -2,6 +2,7 @@ import type { ExecutableImageRequest } from "@tint/image/executable";
 import {
   buildExecutable,
   type MachODylibVersion,
+  type MachOLayoutOptions,
 } from "@tint/image/darwin/macho";
 import { buildElfExecutable } from "@tint/image/linux/elf";
 import type { LinuxAArch64Target, NativeTarget } from "@tint/platform/target";
@@ -20,6 +21,7 @@ export function writeExecutableImage(
   image: ExecutableImageRequest,
   identifier: string,
   foreignLibraries: readonly ForeignLibrary[],
+  machOLayout?: MachOLayoutOptions,
 ): ImageWriteResult {
   if (target.objectFormat === "elf")
     return writeElfImage(target, image, identifier);
@@ -41,6 +43,8 @@ export function writeExecutableImage(
   }
   const built = buildExecutable({
     ...image,
+    compactVMLimit: machOLayout?.compactVMLimit,
+    signedChunkBytes: machOLayout?.signedChunkBytes,
     identifier,
     minimumOS: target.minimumOS,
     sdk: target.sdk,
@@ -78,6 +82,7 @@ function writeElfImage(
   }
   const built = buildElfExecutable({
     code: image.code,
+    codePlan: image.codePlan,
     entryOffset: image.entryOffset,
     maxByteLength: image.maxByteLength,
     symbols: image.symbols,

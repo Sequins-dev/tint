@@ -289,3 +289,21 @@ test("JIT objects place code at its live address with symbols and optional DWARF
     { ok: false, error: "SIZE_LIMIT" },
   );
 });
+
+test("trace tables preserve ranges above 4 GiB", () => {
+  const offset = 0x100001000;
+  const table = buildTraceTable(
+    [{ name: "far", offset, byteLength: 8 }],
+    [{ file: "far.ts", line: 7, column: 3, offset, byteLength: 8 }],
+    4096,
+  );
+  assert.ok(table.ok);
+  assert.deepEqual(lookupTraceTable(table.value, offset + 4), {
+    name: "far",
+    file: "far.ts",
+    line: 7,
+    column: 3,
+  });
+  assert.equal(lookupTraceTable(table.value, 4096)?.name, undefined);
+  assert.equal(lookupTraceTable(table.value, offset + 8)?.name, undefined);
+});

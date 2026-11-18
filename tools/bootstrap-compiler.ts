@@ -1,4 +1,5 @@
-import { readFileSync, writeFileSync, mkdirSync, chmodSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { writeNodeExecutable } from "./node-file-host.ts";
 import { dirname, resolve } from "node:path";
 import { loadSourceGraphLoader } from "@tint/typescript/modules";
 import { expandForeignInputs } from "@tint/compiler/native";
@@ -198,8 +199,7 @@ for (const [stage, text] of dumps)
 if (!built.ok) throw Error(JSON.stringify(built.error));
 mkdirSync(dirname(output), { recursive: true });
 observation.finish(output);
-writeFileSync(output, built.value);
-chmodSync(output, 0o755);
+writeNodeExecutable(output, built.value);
 if (operationRanges !== undefined)
   writeFileSync(output + ".operations.json", JSON.stringify(operationRanges));
 report(`wrote ${output} (${built.value.length} bytes)`);

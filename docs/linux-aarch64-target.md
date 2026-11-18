@@ -278,3 +278,9 @@ Assert LLDB's reported exit status (0), not the debugger's own. All three
 generations are byte-identical ELF images; each native generation takes about
 85 s and 2.2 GB peak RSS in the container on an otherwise idle host (GNU
 `time -v`).
+
+## Large images
+
+ELF uses 64-bit layout coordinates and widens unwind fields when code
+exceeds signed 32-bit reach. See the
+[large-image contract and verifier](large-images.md#elf-and-diagnostics).

@@ -59,6 +59,67 @@ Heap snapshots (built-ins/Map) attribute the terms:
 The native self-compile (frozen v6) peaks at 2.25 GB RSS natively and
 3.75 GB under Node; its IR and input ASTs are the same two linear terms.
 
+### Single-copy link measurements
+
+Node 24.12.0, macOS arm64, main `e83a2a68d` and the single-copy link
+implementation `6dc0bd339` compiled the same captured 768-file source graph
+with `TZ=UTC`, monolithic native services, modules enabled and suite linking.
+The object selection passed all 2,252 variants on both builds and produced
+the same 173,624,927-byte executable (SHA-256
+`5ac04d05c15a7669ea65b3a6de11e66fa26f7e6217d2d9fb594c502d830e1f1f`).
+The Map selection passed all 405 variants on both builds and produced a
+matching image (SHA-256
+`8db59afca387c77c5353c5d3de26d97d1a36f1a99586f63adc5868fb07511431`).
+
+| Object suite boundary | Main heap (MiB) | Single-copy heap (MiB) | Main ArrayBuffers (MiB) | Single-copy ArrayBuffers (MiB) |
+| --------------------- | --------------: | ---------------------: | ----------------------: | -----------------------------: |
+| Before link           |             266 |                    266 |                     241 |                            241 |
+| After hosted startup  |             262 |                    265 |                     404 |                            241 |
+| Before image writer   |             264 |                    264 |                     404 |                            241 |
+| After image writer    |             264 |                    264 |                     570 |                            418 |
+
+V8 heap and ArrayBuffers were sampled after forced GC. Whole-process peak RSS
+fell from 9,095 MiB to 8,692 MiB under `/usr/bin/time -l`. Each run used
+an independently frozen Node toolchain. Pruning budget exhaustion was
+outside the probe's scope.
+
+On the frozen main compiler source, Node-hosted self-compile peak RSS was
+3,899 MiB on main and 3,898 MiB with single-copy link. Both produced the same
+compiler (SHA-256
+`fc57933b7946a3932b1a0017545daf1285e6c3e4097d5ca589307acfed3dd986`).
+
+Native stage-2 compilers built the same frozen main source under LLDB in
+three interleaved rounds under `tint-timing.lock`. Wall time and hardware
+counters were sampled from inferior entry to libc exit. All six output
+images matched the compiler hash above.
+
+| Round | Main wall (s) | Single-copy wall (s) | Main cycles (billions) | Single-copy cycles (billions) |
+| ----: | ------------: | -------------------: | ---------------------: | ----------------------------: |
+|     1 |       167.290 |              156.525 |                609.287 |                       592.056 |
+|     2 |       122.539 |              122.972 |                558.824 |                       564.188 |
+|     3 |       117.178 |              117.936 |                546.001 |                       551.242 |
+
+Median wall time rose by 0.35% and median cycles rose by 0.96%. The first
+round overlapped with other validation work and recorded a faster branch
+run. The latter two pairs recorded a small increase on the branch.
+
+A second measurement ran five interleaved rounds of the same pair of stage-2
+compilers on an otherwise idle host. All ten outputs were identical.
+
+| Round | Main wall (s) | Single-copy wall (s) | Main cycles (billions) | Single-copy cycles (billions) |
+| ----: | ------------: | -------------------: | ---------------------: | ----------------------------: |
+|     1 |        114.93 |               117.86 |                541.002 |                       550.288 |
+|     2 |        113.76 |               124.34 |                540.524 |                       574.540 |
+|     3 |        122.78 |               125.55 |                566.046 |                       571.499 |
+|     4 |        125.67 |               120.34 |                572.068 |                       556.115 |
+|     5 |        116.19 |               119.55 |                547.920 |                       556.941 |
+
+Median cycles rose by 1.5% (547.9 to 556.1 billion) and median wall time
+by 3.6%. Round 4 recorded a faster branch run. The change was accepted
+for its memory saving: build memory caps what can be built at all, while
+build time only lengthens the build. Generated code is byte-identical,
+so runtime is unaffected.
+
 ## What is global and what is per function
 
 | Data                                                                                         | Scope                    | Needed by                                          |
@@ -168,9 +229,21 @@ Deterministic: the same IR always encodes to the same bytes.
 4. **Retries.** A whole-module retry (compact calls out of reach) re-streams
    bodies from the store: spilled bodies make it re-readable, so no copy of
    the module is kept for it.
-5. **Link.** The image is composed once: the hosted layout is computed first
-   and each module's code is written at its final offset in the output, which
-   is a file-backed buffer for large images. No intermediate concatenations.
+5. **Link.** Hosted startup, services, diagnostics and the trace table
+   describe their code extents before either executable writer allocates
+   the output. The writers reserve those extents in the file layout, then
+   place each emitted module and read-only payload directly in the final
+   image. Startup and platform relocations patch the placed code before
+   hashing and signing. Large Mach-O placement maps the logical code
+   range to its signed file chunks and uses a small scratch window for
+   patches that cross a chunk boundary.
+
+The link keeps the module emission buffers and the final executable buffer.
+It removes the combined service code, hosted code, trace extension and
+unsigned Mach-O buffers. Incremental SHA-256 hashes the image prefix and
+identity data in order, so UUID and build-ID generation also avoid a copy.
+The executable result still exposes one contiguous byte array, including
+for large images. A file-backed final result remains a separate change.
 
 `BuildRequest.storage` selects the packing policy for typed program emission.
 The default, `memory`, keeps packed chunks in memory. `budget` takes a
@@ -221,9 +294,9 @@ ASTs, and prepares them when the suite program is built.
 
 ## Slices
 
-Each slice keeps images and self-build stages byte-identical and is measured
-(suite image peak RSS/heap and wall, Node-hosted engine build, native stage-2
-compile, frozen v6 cycles).
+Each slice preserves image and self-build stage identity. Measurements cover
+suite peak RSS and live heap, Node-hosted self-compile and native stage-2
+wall time and cycles on a shared frozen source graph.
 
 1. **Store and format:** `packages/ir/src/storage/` (codec, store, memory
    backend), Node and native backends, round-trip tests over the self-compile
@@ -239,9 +312,9 @@ compile, frozen v6 cycles).
 3. **Optimizer streaming:** `packages/ir/src/optimization/index.ts`
    (`rewriteFunctions`, version adoption), then whole-module passes one by
    one.
-4. **Single-copy link:** `packages/codegen/src/aarch64/startup.ts`
-   (composition only; thunk registration unchanged), `build.ts`,
-   `packages/compiler/src/image-writer.ts`, the Mach-O/ELF writers' code
-   placement (load commands, imports and fixups unchanged).
+4. **Single-copy link:** Startup and native service composition produce code
+   placement plans. `build.ts` adds the trace payload and the Mach-O and ELF
+   writers place all the code directly into the executable. Callback thunk
+   data and range registration retain their existing layout.
 5. **Input syntax ownership:** `compileMacOSProgram`, the general fallback's
    module source, Test262 suite host.

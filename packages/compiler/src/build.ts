@@ -4,11 +4,12 @@ import {
   type AArch64AddressReference,
 } from "@tint/codegen/aarch64/image-relocations";
 import { darwinAArch64Target, type NativeTarget } from "@tint/platform/target";
+import type { CodePlan } from "@tint/abi/relocation";
+import { planNativeServiceModules } from "./native/service-unit-link.ts";
 import type { PosixHostABI } from "@tint/abi/host";
 import { optimizeModule, unboundedWork } from "@tint/ir/optimization";
 import {
   compileArm64Program,
-  linkNativeServiceModules,
   type NativeServiceUnit,
   type NativeServiceBinding,
   type NativeServiceLink,
@@ -65,7 +66,7 @@ import {
 import type { ProgramFunctionDebug } from "./native/debug-functions.ts";
 import type { ModuleIR } from "@tint/ir/scalar";
 import {
-  emitHostedEntry,
+  planHostedEntry,
   type HostDiagnostics,
   type HostSignpostSite,
 } from "@tint/codegen/aarch64/startup";
@@ -80,6 +81,7 @@ import type {
   ReadOnlySection,
 } from "@tint/image/executable";
 import { writeExecutableImage } from "./image-writer.ts";
+import type { MachOLayoutOptions } from "@tint/image/darwin/macho";
 import { cSystemLibrary } from "@tint/abi/c";
 import type { BuildStorage } from "./spill-files.ts";
 export type { BuildStorage } from "./spill-files.ts";
@@ -111,6 +113,11 @@ export interface BuildRequest extends ModuleRequest {
    * frozen project sources predate it). */
   readonly target?: NativeTarget;
   readonly threaded?: boolean;
+  /** Verification of the large code model (docs/large-images.md): emit
+   * every module with all far-reach forms, which large images select
+   * automatically only where reach requires them. */
+  readonly forceFarReach?: boolean;
+  readonly machOLayout?: MachOLayoutOptions | undefined;
   /** Immutable native units prepared for the same frozen source/toolchain. */
   readonly nativeServices?: readonly {
     readonly unit: NativeServiceUnit;
@@ -405,12 +412,13 @@ export function compileMacOSProgram(
       ? lowered.value.module
       : optimizeModule(lowered.value.module, unboundedWork).module,
     {
-      maxByteLength: 0xffffffff,
+      maxByteLength: Number.MAX_SAFE_INTEGER,
       unboundedAnalysis: true,
       hostABI,
       debugSpans: request.debugSymbols === true || request.stackTraces === true,
       throwTraces: request.stackTraces === true,
       pageAlignedCode: true,
+      forceFarReach: request.forceFarReach === true ? true : undefined,
     },
   );
   if (!allocator.ok)
@@ -571,6 +579,7 @@ export function compileMacOSProgram(
   const runtime = compileArm64Program({
     hostABI,
     pageAlignedCode: true,
+    forceFarReach: request.forceFarReach === true,
     optimization: request.optimization ?? "basic",
     debugSymbols: request.debugSymbols ?? false,
     stackTraces: request.stackTraces === true,
@@ -624,6 +633,7 @@ export function compileMacOSProgram(
     hostABI,
     ...(request.storage === undefined ? {} : { storage: request.storage }),
     pageAlignedCode: true,
+    forceFarReach: request.forceFarReach === true,
     serviceImports,
     managedSurfaces: request.managedSurfaces ?? [],
     closedProgram: true,
@@ -706,12 +716,30 @@ export function linkMacOSProgram(
   compiled: CompiledMacOSProgram,
   request: BuildRequest,
 ): BuildResult {
+  const image = linkHostedImage(compiled, request);
+  if (image.ok || request.forceFarReach === true) return image;
+  if (
+    image.error.message !== "diagnostics call: OUT_OF_RANGE" &&
+    image.error.message !== "ADDRESS_OUT_OF_RANGE" &&
+    image.error.message !== "ELF image: ADDRESS_OUT_OF_RANGE"
+  )
+    return image;
+  // Final module and metadata placements can exceed a near window even
+  // when the individual modules fit their near models.
+  return buildMacOSProgram({ ...request, forceFarReach: true });
+}
+
+function linkHostedImage(
+  compiled: CompiledMacOSProgram,
+  request: BuildRequest,
+): BuildResult {
   const target = buildTarget(request),
     hostABI: PosixHostABI = target.hostABI;
   const source = compiled.allocatorSource,
     runtimeEntry = compiled.runtimeEntry,
     programEntry = compiled.programEntry;
   let programNative = compiled.program.native;
+  let programCode: CodePlan | undefined;
   if ((request.nativeServices?.length ?? 0) !== 0) {
     const services = request.nativeServices ?? [],
       hostBindings: NativeServiceBinding[] = [];
@@ -775,9 +803,10 @@ export function linkMacOSProgram(
       }
       links.push({ native: unit.native, bindings });
     }
-    const linked = linkNativeServiceModules(programNative, links, hostBindings);
+    const linked = planNativeServiceModules(programNative, links, hostBindings);
     if (!linked.ok) return failure("service-link", linked.error);
     programNative = linked.value.native;
+    programCode = linked.value.codePlan;
   }
   request.report("startup");
   let diagnostics: HostDiagnostics | undefined;
@@ -802,7 +831,7 @@ export function linkMacOSProgram(
       heapIntrospection,
     };
   }
-  const hosted = emitHostedEntry({
+  const hosted = planHostedEntry({
     diagnostics,
     threaded: request.threaded ?? false,
     abi: hostABI,
@@ -814,6 +843,8 @@ export function linkMacOSProgram(
     },
     runtime: { native: compiled.runtime.native, entry: runtimeEntry },
     program: { native: programNative, entry: programEntry },
+    programCode,
+    forceFarReach: request.forceFarReach === true,
     managedBytes: request.managedBytes,
     controlBytes: request.controlBytes,
     allocationCapacity: request.allocationCapacity,
@@ -1100,7 +1131,8 @@ export function linkMacOSProgram(
         byteLength: routine.byteLength,
       });
   }
-  let code = hosted.value.code;
+  const hostedCode = hosted.value.codePlan;
+  let traceTable: Uint8Array | undefined;
   const readOnlySections: ReadOnlySection[] = [];
   if (hostedDiagnostics !== undefined) {
     const cstring = hostedDiagnostics.cstring;
@@ -1123,19 +1155,21 @@ export function linkMacOSProgram(
           byteLength: symbol.byteLength,
         });
       }
-      const table = buildTraceTable(traced, lines, 0xffffffff - code.length);
+      const table = buildTraceTable(
+        traced,
+        lines,
+        Number.MAX_SAFE_INTEGER - hostedCode.byteLength,
+        hostedDiagnostics.wideTrace,
+      );
       if (!table.ok) return failure("image", "trace table: " + table.error);
-      if (hostedDiagnostics.tableOffset !== code.length)
+      if (hostedDiagnostics.tableOffset !== hostedCode.byteLength)
         throw "trace table placement invariant";
-      const extended = new Uint8Array(code.length + table.value.length);
-      extended.set(code);
-      extended.set(table.value, code.length);
       readOnlySections.push({
         kind: "rodata",
-        offset: code.length,
+        offset: hostedCode.byteLength,
         byteLength: table.value.length,
       });
-      code = extended;
+      traceTable = table.value;
     }
   }
   const references: AArch64AddressReference[] = [];
@@ -1146,6 +1180,7 @@ export function linkMacOSProgram(
       rd: reference.rd,
       scratch: reference.scratch,
       target: { kind: "import", name: reference.target.name },
+      far: reference.far,
     });
   }
   for (const reference of hostedDiagnostics?.dataReferences ?? []) {
@@ -1155,6 +1190,7 @@ export function linkMacOSProgram(
       rd: reference.rd,
       scratch: reference.scratch,
       target: { kind: "data", offset: reference.target },
+      far: reference.far,
     });
   }
   // The callback data (docs/native-ffi.md, "Callbacks") follows the
@@ -1173,6 +1209,7 @@ export function linkMacOSProgram(
         rd: reference.rd,
         scratch: reference.scratch,
         target: { kind: "data", offset: base + reference.target },
+        far: reference.far,
       });
     }
   }
@@ -1187,6 +1224,18 @@ export function linkMacOSProgram(
     if (symbol === undefined) throw "diagnostic symbol invariant";
     imageSymbols.push({ name: symbol.name, offset: symbol.offset });
   }
+  const table = traceTable;
+  let startupError: string | undefined;
+  const codePlan: CodePlan = {
+    byteLength: hostedCode.byteLength + (table?.length ?? 0),
+    write: (output, base) => {
+      const error = hostedCode.write(output, base);
+      startupError = error;
+      if (error === undefined && table !== undefined)
+        output.write(table, base + hostedCode.byteLength);
+      return error;
+    },
+  };
   const image = writeExecutableImage(
     target,
     {
@@ -1208,16 +1257,19 @@ export function linkMacOSProgram(
             globals: debugGlobals,
           }
         : undefined,
-      code,
+      code: new Uint8Array(0),
+      codePlan,
       entryOffset: hosted.value.processStartOffset ?? hosted.value.entryOffset,
-      maxByteLength: 0xffffffff,
+      maxByteLength: Number.MAX_SAFE_INTEGER,
       imports,
       libraries,
       ...relocations,
     },
     request.identifier,
     request.foreignLibraries ?? [],
+    request.machOLayout,
   );
+  if (startupError !== undefined) return failure("startup", startupError);
   if (!image.ok) return failure("image", image.error);
   return { ok: true, value: image.value };
 }

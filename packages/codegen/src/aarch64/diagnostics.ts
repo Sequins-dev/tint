@@ -6,6 +6,7 @@ import {
 import {
   writeInstruction,
   relativeAddress,
+  farRelativeAddress,
   type Condition,
   type Instruction,
 } from "./isa.ts";
@@ -138,6 +139,8 @@ export interface SignpostClassification {
 export interface DiagnosticsRequest {
   /** Code offset where the routine block starts (16-byte aligned). */
   readonly base: number;
+  readonly farAddresses?: boolean | undefined;
+  readonly wideTrace?: boolean | undefined;
   readonly stackTraces: boolean;
   readonly signposts: readonly SignpostSite[];
   readonly allocationSignposts: boolean;
@@ -365,7 +368,10 @@ export function emitDiagnostics(
     emit({ op: "str", width: 64, rt, rn, offset });
   }
   function window(rd: number): void {
-    const sequence = relativeAddress(rd, 17, 0);
+    const sequence =
+      request.farAddresses === true
+        ? farRelativeAddress(rd, 17, 0)
+        : relativeAddress(rd, 17, 0);
     if (!sequence.ok) throw "diagnostic window invariant";
     for (const instruction of sequence.value) {
       if (instruction === undefined)
@@ -890,12 +896,13 @@ export function emitDiagnostics(
     load32(1, 20, 8);
     load32(0, 20, 20);
     addRegister(0, 0, 20, 0);
-    imm(2, 16);
+    const rangeBytes = request.wideTrace === true ? 16 : 8;
+    imm(2, rangeBytes + 8);
     call("find");
     compare(0, "zr");
     jump("report-anonymous", "eq");
-    load32(9, 0, 8);
-    load32(1, 0, 12);
+    load32(9, 0, rangeBytes);
+    load32(1, 0, rangeBytes + 4);
     load32(10, 20, 32);
     addRegister(9, 9, 10, 0);
     addRegister(0, 9, 20, 0);
@@ -908,13 +915,13 @@ export function emitDiagnostics(
     load32(1, 20, 12);
     load32(0, 20, 24);
     addRegister(0, 0, 20, 0);
-    imm(2, 20);
+    imm(2, rangeBytes + 12);
     call("find");
     move(27, 0);
     appendText(" (");
     compare(27, "zr");
     jump("report-offset", "eq");
-    load32(9, 27, 8);
+    load32(9, 27, rangeBytes);
     load32(10, 20, 28);
     addRegister(9, 10, 9, 3);
     addRegister(9, 9, 20, 0);
@@ -925,10 +932,10 @@ export function emitDiagnostics(
     addRegister(0, 10, 20, 0);
     call("append-bytes");
     appendText(":");
-    load32(0, 27, 12);
+    load32(0, 27, rangeBytes + 4);
     call("append-decimal");
     appendText(":");
-    load32(0, 27, 16);
+    load32(0, 27, rangeBytes + 8);
     call("append-decimal");
     jump("report-located");
     label("report-offset");
@@ -1139,7 +1146,8 @@ export function emitDiagnostics(
     addRegister(6, 4, 5, 0);
     emit({ op: "ubfm", width: 64, rd: 6, rn: 6, immr: 1, imms: 63 });
     emit({ op: "madd", width: 64, rd: 7, rn: 6, rm: 2, ra: 0 });
-    load32(9, 7, 0);
+    if (request.wideTrace === true) load(9, 7, 0);
+    else load32(9, 7, 0);
     compare(9, 3);
     jump("find-upper", "hi");
     add(4, 6, 1);
@@ -1160,7 +1168,8 @@ export function emitDiagnostics(
       setFlags: false,
     });
     emit({ op: "madd", width: 64, rd: 7, rn: 4, rm: 2, ra: 0 });
-    load32(9, 7, 4);
+    if (request.wideTrace === true) load(9, 7, 8);
+    else load32(9, 7, 4);
     compare(3, 9);
     jump("find-none", "cs");
     move(0, 7);

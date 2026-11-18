@@ -1256,12 +1256,90 @@ export function patchPageAddress(
   }
   return { ok: true, value: undefined };
 }
-/** Atomically patch a four-instruction relativeAddress(rd, scratch, 0) placeholder. */
+/** Displacements a far relative address reaches: MOVZ/MOVK supply 48 bits
+ * of magnitude, beyond any user virtual address range. */
+export const farRelativeAddressLimit = 281474976710655;
+/** Position-independent address of a target beyond the ±4 GiB reach of
+ * relativeAddress (the large code model, docs/large-images.md): ADR, then a
+ * 48-bit magnitude in `scratch` (MOVZ and two MOVKs), added or subtracted.
+ * Reserves scratch and does not alter flags. */
+export function farRelativeAddress(
+  rd: number,
+  scratch: number,
+  displacement: number,
+): EncodingResult<readonly Instruction[]> {
+  if (!integer(rd, 0, 30) || !integer(scratch, 0, 30) || rd === scratch)
+    return fail("INVALID_REGISTER");
+  if (!integer(displacement, -farRelativeAddressLimit, farRelativeAddressLimit))
+    return fail("OUT_OF_RANGE");
+  const magnitude = displacement < 0 ? -displacement : displacement;
+  return {
+    ok: true,
+    value: [
+      { op: "adr", rd, displacement: 0 },
+      {
+        op: "movz",
+        width: 64,
+        rd: scratch,
+        immediate: magnitude % 65536,
+        shift: 0,
+      },
+      {
+        op: "movk",
+        width: 64,
+        rd: scratch,
+        immediate: Math.floor(magnitude / 65536) % 65536,
+        shift: 16,
+      },
+      {
+        op: "movk",
+        width: 64,
+        rd: scratch,
+        immediate: Math.floor(magnitude / 4294967296),
+        shift: 32,
+      },
+      {
+        op: displacement < 0 ? "sub-reg" : "add-reg",
+        width: 64,
+        rd,
+        rn: rd,
+        rm: scratch,
+        shift: "lsl",
+        amount: 0,
+        setFlags: false,
+      },
+    ],
+  };
+}
+/** Bytes of a relative address site: 16 for relativeAddress, 20 for
+ * farRelativeAddress. */
+export function relativeAddressByteLength(far: boolean): number {
+  return far ? 20 : 16;
+}
+function readWord(bytes: Uint8Array, at: number): number | undefined {
+  const b0 = bytes[at],
+    b1 = bytes[at + 1],
+    b2 = bytes[at + 2],
+    b3 = bytes[at + 3];
+  if (
+    b0 === undefined ||
+    b1 === undefined ||
+    b2 === undefined ||
+    b3 === undefined
+  )
+    return undefined;
+  return b0 + b1 * 256 + b2 * 65536 + b3 * 0x1000000;
+}
+/** Atomically patch a relativeAddress(rd, scratch, 0) placeholder, or a
+ * farRelativeAddress one: the site's fourth instruction (MOVK at bit 32)
+ * tells the forms apart. A near site whose target is beyond ±4 GiB is
+ * OUT_OF_RANGE; it is never truncated. */
 export function patchRelativeAddress(
   bytes: Uint8Array,
   fixup: {
     readonly offset: number;
     readonly targetOffset: number;
+    readonly siteAddress?: number | undefined;
     readonly rd: number;
     readonly scratch: number;
   },
@@ -1271,16 +1349,29 @@ export function patchRelativeAddress(
   if (fixup.offset > bytes.length - 16) return fail("OUT_OF_BOUNDS");
   if (!integer(fixup.targetOffset, 0, Number.MAX_SAFE_INTEGER))
     return fail("INVALID_OFFSET");
-  const template = relativeAddress(fixup.rd, fixup.scratch, 0);
+  const farTemplate = farRelativeAddress(fixup.rd, fixup.scratch, 0);
+  if (!farTemplate.ok) return farTemplate;
+  const farMarker = farTemplate.value[3];
+  if (farMarker === undefined) throw "far relative address invariant";
+  const marker = encode(farMarker);
+  if (!marker.ok) return marker;
+  const far =
+    fixup.offset <= bytes.length - 20 &&
+    readWord(bytes, fixup.offset + 12) === marker.value;
+  const template = far
+    ? farTemplate
+    : relativeAddress(fixup.rd, fixup.scratch, 0);
   if (!template.ok) return template;
-  const sequence = relativeAddress(
-    fixup.rd,
-    fixup.scratch,
-    fixup.targetOffset - fixup.offset,
-  );
+  const address = fixup.siteAddress ?? fixup.offset;
+  if (!integer(address, 0, Number.MAX_SAFE_INTEGER))
+    return fail("INVALID_OFFSET");
+  const displacement = fixup.targetOffset - address;
+  const sequence = far
+    ? farRelativeAddress(fixup.rd, fixup.scratch, displacement)
+    : relativeAddress(fixup.rd, fixup.scratch, displacement);
   if (!sequence.ok) return sequence;
   const words: number[] = [];
-  for (let index = 0; index < 4; index++) {
+  for (let index = 0; index < template.value.length; index++) {
     const expected = template.value[index],
       instruction = sequence.value[index];
     if (expected === undefined || instruction === undefined)
@@ -1289,20 +1380,9 @@ export function patchRelativeAddress(
       replacement = encode(instruction);
     if (!original.ok) return original;
     if (!replacement.ok) return replacement;
-    const at = fixup.offset + index * 4;
-    const b0 = bytes[at],
-      b1 = bytes[at + 1],
-      b2 = bytes[at + 2],
-      b3 = bytes[at + 3];
-    if (
-      b0 === undefined ||
-      b1 === undefined ||
-      b2 === undefined ||
-      b3 === undefined
-    )
-      return fail("OUT_OF_BOUNDS");
-    if (b0 + b1 * 256 + b2 * 65536 + b3 * 0x1000000 !== original.value)
-      return fail("PATCH_MISMATCH");
+    const current = readWord(bytes, fixup.offset + index * 4);
+    if (current === undefined) return fail("OUT_OF_BOUNDS");
+    if (current !== original.value) return fail("PATCH_MISMATCH");
     words.push(replacement.value);
   }
   for (let index = 0; index < words.length; index++) {

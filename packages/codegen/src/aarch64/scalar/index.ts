@@ -241,8 +241,10 @@ import {
   pageAddress,
   patchPageAddress,
   relativeAddress,
+  farRelativeAddress,
   float64Immediate,
   encode,
+  type EncodingResult,
   type Instruction,
   type Branch,
   type Condition,
@@ -357,6 +359,9 @@ export interface NativeImportReference {
   readonly rd: number;
   readonly scratch: number;
   readonly target: { readonly kind: "import"; readonly name: string };
+  /** A farRelativeAddress site (20 bytes) of a far-model module; absent
+   * for the 16-byte relativeAddress site. */
+  readonly far?: true | undefined;
 }
 export interface NativeSourceRange extends Span {
   readonly function: number;
@@ -385,16 +390,21 @@ export interface EmissionFormHints {
   readonly longBranches: readonly string[];
   readonly islands: readonly string[];
   readonly longAddresses: readonly string[];
+  /** Functions whose long branches use the register-indirect far form. */
+  readonly farBranches?: readonly string[] | undefined;
+  /** The far code model (EmissionOptions.farAddresses). */
+  readonly far?: boolean | undefined;
 }
-/** A BL whose target the hosted startup composition supplies: a diagnostics
+/** A call whose target the hosted startup composition supplies: a diagnostics
  * routine outside the module (see EmissionOptions.throwTraces). */
 export interface NativeStartupCall {
   readonly offset: number;
   readonly target: "trace-capture" | "jit-descriptor" | "jit-register";
+  readonly far?: true | undefined;
 }
 export interface NativeModule {
   /** Calls into hosted diagnostics routines (throwTraces and the jit-debug
-   * host operations); startup patches each BL. */
+   * host operations); startup patches each call. */
   readonly startupCalls?: readonly NativeStartupCall[] | undefined;
   /** The branch and address forms this emission settled on. */
   readonly formHints?: EmissionFormHints | undefined;
@@ -464,6 +474,8 @@ interface Fixup {
   readonly branch: Branch;
   readonly function: number;
   readonly block: number | undefined;
+  /** A register-indirect far branch: an x16 address sequence then BR. */
+  readonly far?: true | undefined;
 }
 function managed(type: string): boolean {
   return [
@@ -825,6 +837,18 @@ export interface EmissionOptions {
    * addresses out of ADR reach use ADRP+ADD (two instructions) instead of the
    * four-instruction PC-relative sequence. */
   readonly pageAlignedCode?: boolean | undefined;
+  /** The large code model (docs/large-images.md): every relocatable
+   * address, long call and import site uses the far (±2^48) sequence.
+   * Undefined selects it automatically for modules of farModuleBytes or
+   * more, or when a near form cannot reach its target; true forces it. */
+  readonly farAddresses?: boolean | undefined;
+  /** The module size from which emission switches to the far model
+   * (default farModuleBytes; tests lower it). */
+  readonly farModuleBytes?: number | undefined;
+  /** Verification of the large code model on small programs: the far
+   * model, register-indirect calls and far branches for every function,
+   * the forms a multi-GiB image selects only where reach requires them. */
+  readonly forceFarReach?: boolean | undefined;
   readonly hostABI?: PosixHostABI | undefined;
   readonly debugSpans?: boolean | undefined;
   /** Record NativeOperationRange entries (analysis tooling only). */
@@ -844,6 +868,10 @@ export interface EmissionOptions {
 }
 const compactRangeMessage: string =
   "compact branch or call target out of range";
+/** Modules from this size on use the far code model: half the ±4 GiB reach
+ * of near address sequences, so a near module and the image facts around
+ * it (other modules, import slots, data) stay within near reach. */
+export const farModuleBytes: number = 2147483648;
 /** IR instructions below which local addresses start as a single ADR. */
 const compactAddressInstructions: number = 65536;
 /** Module facts every emission attempt needs and none of the branch forms
@@ -873,6 +901,13 @@ interface BranchForms {
   readonly islands: Set<number>;
   /** Functions materializing local addresses with four instructions. */
   readonly longAddresses: Set<number>;
+  /** The far code model: relocatable addresses, long calls and import
+   * sites use farRelativeAddress (docs/large-images.md). */
+  far: boolean;
+  /** Functions whose blocks long branches reach through x16 (an address
+   * sequence and BR) because an unconditional B (±128 MiB) cannot: blocks
+   * of functions larger than 128 MiB. */
+  readonly farBranches: Set<number>;
 }
 /** Conditional branches (±1 MiB), calls (±128 MiB) and local addresses
  * (±1 MiB) are emitted in their single-instruction forms. Out-of-reach
@@ -953,7 +988,17 @@ export function emitModuleFromStore(
     longBranches: new Set(),
     longAddresses: new Set(),
     islands: new Set(),
+    far: options.farAddresses === true || options.forceFarReach === true,
+    farBranches: new Set(),
   };
+  if (options.forceFarReach === true) {
+    forms.calls = false;
+    for (const fn of module.functions)
+      if (fn !== undefined) {
+        forms.longBranches.add(fn.id);
+        forms.farBranches.add(fn.id);
+      }
+  }
   const facts: EmissionFacts = {
     verified: undefined,
     frameModule: undefined,
@@ -982,28 +1027,49 @@ export function emitModuleFromStore(
     if (!hints.calls) forms.calls = false;
     seed(hints.longBranches, forms.longBranches);
     seed(hints.islands, forms.islands);
+    seed(hints.farBranches ?? [], forms.farBranches);
+    for (const fn of forms.farBranches) forms.longBranches.add(fn);
+    if (hints.far === true && options.farAddresses !== false) forms.far = true;
     if (forms.addresses) seed(hints.longAddresses, forms.longAddresses);
   }
   // Each retry moves calls or at least one function a step towards long
   // forms (compact, islands, long), so emission terminates; larger forms only
   // grow code, so retries may cascade.
+  const farFrom = options.farModuleBytes ?? farModuleBytes;
   while (true) {
     const before =
-        forms.longBranches.size + forms.longAddresses.size + forms.islands.size,
-      calls = forms.calls;
+        forms.longBranches.size +
+        forms.longAddresses.size +
+        forms.islands.size +
+        forms.farBranches.size,
+      calls = forms.calls,
+      far = forms.far;
     const emitted = emitModuleForms(module, bodies, options, forms, facts);
-    if (emitted.ok)
+    if (emitted.ok) {
+      // A module this large re-emits in the far model, so its sites (and
+      // those the image patches later) reach anywhere in a large image.
+      if (
+        !forms.far &&
+        options.farAddresses !== false &&
+        emitted.value.code.length >= farFrom
+      ) {
+        forms.far = true;
+        continue;
+      }
       return {
         ok: true,
         value: { ...emitted.value, formHints: describeForms(module, forms) },
       };
+    }
     if (emitted.error.message !== compactRangeMessage) return emitted;
     // Defensive: a retry that moved nothing to long forms cannot succeed.
     if (
       forms.calls === calls &&
+      forms.far === far &&
       forms.longBranches.size +
         forms.longAddresses.size +
-        forms.islands.size ===
+        forms.islands.size +
+        forms.farBranches.size ===
         before
     )
       return emitted;
@@ -1019,12 +1085,14 @@ function describeForms(
       if (fn !== undefined && ids.has(fn.id)) result.push(fn.name);
     return result;
   }
-  return {
+  const hints: EmissionFormHints = {
     calls: forms.calls,
     longBranches: names(forms.longBranches),
     islands: names(forms.islands),
     longAddresses: names(forms.longAddresses),
   };
+  if (!forms.far && forms.farBranches.size === 0) return hints;
+  return { ...hints, farBranches: names(forms.farBranches), far: forms.far };
 }
 function emitModuleForms(
   module: ModuleIR,
@@ -1048,7 +1116,9 @@ function emitModuleForms(
   }
   const compactCalls = forms.calls;
   const maxByteLength =
-      options.maxByteLength === undefined ? 0xffffffff : options.maxByteLength,
+      options.maxByteLength === undefined
+        ? Number.MAX_SAFE_INTEGER
+        : options.maxByteLength,
     debugSpans = options.debugSpans ?? false,
     recordOperations = options.operationRanges ?? false,
     linearAllocation = options.linearAllocation ?? false,
@@ -1269,9 +1339,17 @@ function emitModuleForms(
   // long forms for exactly those calls and functions.
   let compactOverflow = false;
   function compactFailure(error: string, fixup: Fixup | undefined): void {
-    // An unconditional B has no longer form: report its range failure as is.
-    if (error !== "OUT_OF_RANGE" || fixup?.branch.op === "b")
-      fail("ENCODING", error);
+    if (error !== "OUT_OF_RANGE") fail("ENCODING", error);
+    // An unconditional B beyond ±128 MiB moves its target function's long
+    // branches to the register-indirect far form.
+    if (fixup !== undefined && fixup.branch.op === "b") {
+      if (forms.farBranches.has(fixup.function))
+        fail("ENCODING", "far branch invariant");
+      compactOverflow = true;
+      forms.farBranches.add(fixup.function);
+      forms.longBranches.add(fixup.function);
+      return;
+    }
     compactOverflow = true;
     if (fixup === undefined || fixup.branch.op === "bl") forms.calls = false;
     else conditionalOverflow(fixup.function);
@@ -1542,38 +1620,78 @@ function emitModuleForms(
   }
   /** Call the imported C symbol `name` through its bound slot (x16, x17). */
   function importCall(name: string): void {
-    imports.push({
-      offset: instructions.length * 4,
-      rd: 16,
-      scratch: 17,
-      target: { kind: "import", name },
-    });
-    relativePointer(16);
+    importAddress(16, 17, name);
     emit({ op: "ldr", width: 64, rt: 16, rn: 16, offset: 0 });
     emit({ op: "blr", rn: 16 });
   }
-  /** The address of import `name`'s slot in `rd` (`scratch` is clobbered). */
   /** rd = the address of callback thunk `thunk` (resolved at link time). */
   function thunkAddress(rd: number, thunk: number | undefined): void {
     if (thunk === undefined) throw "callback thunk invariant";
     importAddress(rd, 17, "tint:callback-thunk:" + String(thunk));
   }
+  /** The address of import `name`'s slot in `rd` (`scratch` is clobbered). */
   function importAddress(rd: number, scratch: number, name: string): void {
     imports.push({
       offset: instructions.length * 4,
       rd,
       scratch,
       target: { kind: "import", name },
+      far: forms.far ? true : undefined,
     });
-    const sequence = relativeAddress(rd, scratch, 0);
+    const sequence = addressSequence(rd, scratch);
     if (!sequence.ok) fail("ENCODING", sequence.error);
     for (const instruction of sequence.value) {
       if (instruction === undefined) throw "import address invariant";
       emit(instruction);
     }
   }
+  /** A relocatable PC-relative address placeholder in the module's model. */
+  function addressSequence(
+    rd: number,
+    scratch: number,
+  ): EncodingResult<readonly Instruction[]> {
+    return forms.far
+      ? farRelativeAddress(rd, scratch, 0)
+      : relativeAddress(rd, scratch, 0);
+  }
+  function startupCall(target: NativeStartupCall["target"]): void {
+    if (!forms.far) {
+      startupCalls.push({ offset: instructions.length * 4, target });
+      emit({ op: "bl", displacement: 0 });
+      return;
+    }
+    // Trace capture consumes x16/x17 and promises to preserve x9. Use the
+    // link register as the call target, and spill scratch for the window.
+    emit({
+      op: "stp",
+      width: 64,
+      rt: 9,
+      rt2: "zr",
+      rn: "sp",
+      offset: -16,
+      mode: "pre",
+    });
+    startupCalls.push({ offset: instructions.length * 4, target, far: true });
+    const sequence = farRelativeAddress(30, 9, 0);
+    if (!sequence.ok) throw "diagnostic call address invariant";
+    for (const instruction of sequence.value) {
+      if (instruction === undefined)
+        throw "diagnostic call instruction invariant";
+      emit(instruction);
+    }
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 9,
+      rt2: "zr",
+      rn: "sp",
+      offset: 16,
+      mode: "post",
+    });
+    emit({ op: "blr", rn: 30 });
+  }
   function relativePointer(rd: number): void {
-    const sequence = relativeAddress(rd, 17, 0);
+    const sequence = addressSequence(rd, 17);
     if (!sequence.ok) fail("ENCODING", sequence.error);
     for (const instruction of sequence.value) {
       if (instruction === undefined) throw "relative pointer invariant";
@@ -1593,7 +1711,7 @@ function emitModuleForms(
     ) {
       compactSites.set(instructions.length * 4, owner);
       emit({ op: "adr", rd, displacement: 0 });
-    } else if (pages && options.pageAlignedCode === true) {
+    } else if (pages && options.pageAlignedCode === true && !forms.far) {
       pageSites.add(instructions.length * 4);
       const sequence = pageAddress(rd, 0, 0);
       if (!sequence.ok) fail("ENCODING", sequence.error);
@@ -2698,6 +2816,50 @@ function emitModuleForms(
       });
     }
     const op: "bl" | "b" = branch.op === "bl" ? "bl" : "b";
+    if (op === "b" && forms.farBranches.has(targetFunction)) {
+      // Beyond B's ±128 MiB: x16 = target (x17 scratch, both reserved
+      // for call/address scratch), then BR. A conditional skip above
+      // jumps over the whole sequence.
+      const sequence = addressSequence(16, 17);
+      if (!sequence.ok) fail("ENCODING", sequence.error);
+      const skip = instructions.length - 1;
+      if (
+        skip >= 0 &&
+        (branch.op === "b.cond" || branch.op === "cbz" || branch.op === "cbnz")
+      ) {
+        const skipped = sequence.value.length + 1;
+        if (
+          branch.op === "b.cond" &&
+          branch.condition !== "al" &&
+          branch.condition !== "nv"
+        )
+          patchInstruction(skip, {
+            op: "b.cond",
+            condition: inverseCondition(branch.condition),
+            displacement: (skipped + 1) * 4,
+          });
+        else if (branch.op === "cbz" || branch.op === "cbnz")
+          patchInstruction(skip, {
+            op: branch.op === "cbz" ? "cbnz" : "cbz",
+            width: branch.width,
+            rt: branch.rt,
+            displacement: (skipped + 1) * 4,
+          });
+      }
+      fixups.push({
+        offset: instructions.length * 4,
+        branch: { op },
+        function: targetFunction,
+        block: targetBlock,
+        far: true,
+      });
+      for (const instruction of sequence.value) {
+        if (instruction === undefined) throw "far branch invariant";
+        emit(instruction);
+      }
+      emit({ op: "br", rn: 16 });
+      return;
+    }
     fixups.push({
       offset: instructions.length * 4,
       branch: { op },
@@ -2877,7 +3039,7 @@ function emitModuleForms(
     if (
       !Number.isInteger(maxByteLength) ||
       maxByteLength < 4 ||
-      maxByteLength > 0xffffffff
+      maxByteLength > Number.MAX_SAFE_INTEGER
     )
       fail("CODE_LIMIT", "invalid byte budget");
     const valid = facts.verified ?? verify(module, bodies);
@@ -5193,11 +5355,7 @@ function emitModuleForms(
           if (tag === undefined) rawLoad(16, resultOffset + 16);
           else
             emit({ op: "movz", width: 64, rd: 16, immediate: tag, shift: 0 });
-          startupCalls.push({
-            offset: instructions.length * 4,
-            target: "trace-capture",
-          });
-          emit({ op: "bl", displacement: 0 });
+          startupCall("trace-capture");
         }
         /** d8.. at calleeSaveOffset + 8i, paired while in LDP/STP reach. */
         function calleeSaves(load: boolean): void {
@@ -11310,11 +11468,7 @@ function emitModuleForms(
                 if (operation === "jit-debug-register") {
                   // The hosted __jit_debug_register_code (jitDebugInterface
                   // images), where an attached debugger loads new entries.
-                  startupCalls.push({
-                    offset: instructions.length * 4,
-                    target: "jit-register",
-                  });
-                  emit({ op: "bl", displacement: 0 });
+                  startupCall("jit-register");
                   break;
                 }
                 const resultId = op.id;
@@ -11372,16 +11526,7 @@ function emitModuleForms(
                   operation === "hosted-thread-entry" ||
                   operation === "collector-worker-entry"
                 ) {
-                  imports.push({
-                    offset: instructions.length * 4,
-                    rd: 9,
-                    scratch: 17,
-                    target: {
-                      kind: "import",
-                      name: "tint:" + operation,
-                    },
-                  });
-                  relativePointer(9);
+                  importAddress(9, 17, "tint:" + operation);
                   emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
                   floatStore(0, resultId);
                   break;
@@ -11666,11 +11811,7 @@ function emitModuleForms(
                 }
                 if (operation === "jit-debug-descriptor") {
                   // The hosted routine returns the descriptor's address in x0.
-                  startupCalls.push({
-                    offset: instructions.length * 4,
-                    target: "jit-descriptor",
-                  });
-                  emit({ op: "bl", displacement: 0 });
+                  startupCall("jit-descriptor");
                   emit({ op: "scvtf-d-x", rd: 0, rn: 0 });
                   floatStore(0, resultId);
                   break;
@@ -16718,6 +16859,15 @@ function emitModuleForms(
       }
       wordBase += count;
     }
+    /** A near address site whose target is beyond its reach moves the
+     * module to the far model (one more emission) instead of failing. */
+    function nearReach(patched: EncodingResult<undefined>): boolean {
+      if (patched.ok) return true;
+      if (patched.error !== "OUT_OF_RANGE" || forms.far) return false;
+      compactOverflow = true;
+      forms.far = true;
+      return true;
+    }
     for (let fixupIndex = 0; fixupIndex < fixups.length; fixupIndex++) {
       const fixup = fixups[fixupIndex];
       if (fixup === undefined) throw "fixup invariant";
@@ -16734,6 +16884,20 @@ function emitModuleForms(
             ? undefined
             : functionBlocks.offsets[block < 0 ? -block * 2 - 1 : block * 2];
       if (targetOffset === undefined) throw "native label invariant";
+      if (fixup.far === true) {
+        if (
+          !nearReach(
+            patchRelativeAddress(code, {
+              offset: fixup.offset,
+              targetOffset,
+              rd: 16,
+              scratch: 17,
+            }),
+          )
+        )
+          fail("ENCODING", "far branch target out of reach");
+        continue;
+      }
       const r = patchBranch(code, {
         offset: fixup.offset,
         targetOffset,
@@ -16744,12 +16908,14 @@ function emitModuleForms(
     /** Patch a helper call: a BL in compact form, otherwise an x16 address. */
     function patchCall(offset: number, targetOffset: number): boolean {
       if (!compactCalls)
-        return patchRelativeAddress(code, {
-          offset,
-          targetOffset,
-          rd: 16,
-          scratch: 17,
-        }).ok;
+        return nearReach(
+          patchRelativeAddress(code, {
+            offset,
+            targetOffset,
+            rd: 16,
+            scratch: 17,
+          }),
+        );
       const r = patchBranch(code, {
         offset,
         targetOffset,
@@ -16781,14 +16947,16 @@ function emitModuleForms(
     ): boolean {
       const owner = compactSites.get(offset);
       if (owner === undefined && pageSites.has(offset))
-        return patchPageAddress(code, { offset, targetOffset, rd }).ok;
+        return nearReach(patchPageAddress(code, { offset, targetOffset, rd }));
       if (owner === undefined)
-        return patchRelativeAddress(code, {
-          scratch: 17,
-          offset,
-          targetOffset,
-          rd,
-        }).ok;
+        return nearReach(
+          patchRelativeAddress(code, {
+            scratch: 17,
+            offset,
+            targetOffset,
+            rd,
+          }),
+        );
       const patched = patchAddress(code, { offset, targetOffset, rd });
       if (patched.ok) return true;
       if (patched.error !== "OUT_OF_RANGE") return false;
