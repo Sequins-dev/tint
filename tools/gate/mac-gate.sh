@@ -19,9 +19,9 @@ if [ ! -d "$test262/test" ]; then
   exit 1
 fi
 # A workspace module-graph test reads this path directly; mirror the old gate.
-if [ ! -e "$test262_link" ] && [ ! -L "$test262_link" ]; then
+if [ ! -e "$test262_link" ]; then
   test262=$(CDPATH= cd -- "$test262" && pwd -P)
-  ln -s "$test262" "$test262_link"
+  ln -sfn "$test262" "$test262_link"
 fi
 
 run_step build unlocked pnpm build
