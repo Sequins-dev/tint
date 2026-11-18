@@ -59,7 +59,7 @@ export {
   type BoundaryRecordUse,
   type TypedBoundaryModule,
 } from "./general-partition.ts";
-import { pruneUnusedModules } from "./module-pruning.ts";
+import { pruneUnusedModules, reachableModules } from "./module-pruning.ts";
 import type { PosixHostABI } from "@tint/abi/host";
 import {
   darwinAArch64Target,
@@ -958,10 +958,19 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
     pruneUnusedModules(modules, entry, rootExports),
     entry,
     globals,
-    {
-      evaluation: "instance",
-    },
+    { evaluation: "instance", origins: false },
   );
+  // Managed-surface layouts link only the runtimes; the application's input
+  // syntax is otherwise dead here and must not stay reachable through the
+  // surface stage (docs/compiler-memory.md, "Link").
+  const surfaceModules =
+    (request.managedSurfaces?.length ?? 0) === 0
+      ? []
+      : reachableModules(
+          modules,
+          request.runtimes.map((runtime) => runtime.module),
+        );
+  modules.length = 0;
   if (!linked.ok)
     return stageFailure("link", linked.error.message, linked.error.module);
   const retainedRuntimeExports: string[] = [];
@@ -1015,7 +1024,7 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
     normalized.value,
     linked.value,
     request.managedSurfaces ?? [],
-    modules,
+    surfaceModules,
     request.runtimes,
     retainedRuntimeModules,
     globals,
