@@ -2329,7 +2329,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   // code; each fallback is a missed remark and counts in the emission pass.
   let analysisLimits = 0;
   const native = emitProgram(program.ir, request.storage, {
-    maxByteLength: 0xffffffff,
+    maxByteLength: Number.MAX_SAFE_INTEGER,
     unboundedAnalysis: true,
     analysisLimit: (analysis: CodegenAnalysis, fn: FunctionIR): void => {
       analysisLimits++;

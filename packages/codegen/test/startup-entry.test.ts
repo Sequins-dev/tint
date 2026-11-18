@@ -328,3 +328,10 @@ test("module unwind ranges cover functions, leaf helpers and cell helpers in ord
   ]);
   assert.throws(() => unwindRanges(base, 0), /unwind rule invariant/);
 });
+
+test("forced far startup reserves full-width import windows", () => {
+  const result = emitHostedEntry({ ...request(), forceFarReach: true });
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.ok(result.value.imports.length > 0);
+  assert.ok(result.value.imports.every((reference) => reference.far === true));
+});

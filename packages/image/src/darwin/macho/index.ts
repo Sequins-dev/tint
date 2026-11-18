@@ -37,12 +37,15 @@ export interface MachODylibVersion {
 }
 /** Mach-O's own facts about an executable: the code-signing identifier,
  * the deployment target and SDK, and library version words. */
-export interface MachOImageOptions {
-  readonly identifier: string;
+export interface MachOLayoutOptions {
   /** Lower the compact VM ceiling for tests. */
   readonly compactVMLimit?: number | undefined;
   /** Page-aligned signing unit for the large layout. */
   readonly signedChunkBytes?: number | undefined;
+}
+
+export interface MachOImageOptions extends MachOLayoutOptions {
+  readonly identifier: string;
   readonly minimumOS: PlatformVersion;
   readonly sdk: PlatformVersion;
   /** One entry per `libraries` entry. */
@@ -88,8 +91,9 @@ export type MachOResult =
   | { readonly ok: false; readonly error: MachOError };
 const PAGE = 16384;
 const UINT32_MAX = 0xffffffff;
-// Leave room for the executable's slide below the arm64 shared region.
-const COMPACT_VM_LIMIT = 0x7f000000;
+// XNU can slide a 16 KiB-page arm64 image by two 32 MiB sections plus
+// almost 16 MiB. Leave 128 MiB for the slide and the main stack.
+const COMPACT_VM_LIMIT = 0x78000000;
 const LARGE_BASE_HIGH = 3;
 const CHUNK_BYTES = 0x40000000;
 
@@ -429,6 +433,9 @@ function buildLayout(
     ? unwindInfoAddress + unwind.unwindInfo.length
     : expectedCodeOffset + textCode.length;
   const dataStart = Math.ceil(textEnd / PAGE) * PAGE;
+  if (large && dataStart > UINT32_MAX)
+    return { ok: false, error: "LARGE_METADATA_LIMIT" };
+  if (!large && dataStart >= compactLimit) return buildLayout(request, 0);
   const bindings: Import[] = [];
   for (const name of imports) {
     if (name === undefined) return { ok: false, error: "INVALID_IMPORT" };
@@ -731,6 +738,8 @@ function buildLayout(
     put64(prefix, frames + 40, unwind.ehFrame.length);
     put32(prefix, frames + 48, ehFrameOffset);
     put32(prefix, frames + 52, 3);
+    // dyld's unwind-section lookup requires __TEXT,__eh_frame, even when
+    // the described PC ranges live in other executable segments.
     // S_COALESCED | S_ATTR_NO_TOC | S_ATTR_STRIP_STATIC_SYMS | S_ATTR_LIVE_SUPPORT
     put32(prefix, frames + 64, 0x6800000b);
     if (!large) {

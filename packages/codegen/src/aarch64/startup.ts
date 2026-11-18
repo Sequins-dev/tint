@@ -30,6 +30,7 @@ import {
   encode,
   writeInstruction,
   relativeAddress,
+  farRelativeAddress,
   patchRelativeAddress,
   type Instruction,
   type Condition,
@@ -90,9 +91,11 @@ export interface HostedDiagnostics {
     readonly rd: number;
     readonly scratch: number;
     readonly target: number;
+    readonly far?: true | undefined;
   }[];
   /** Code offset at which the trace table must be appended (the code's end). */
   readonly tableOffset: number;
+  readonly wideTrace: boolean;
   readonly cstring: { readonly offset: number; readonly byteLength: number };
   /** Routine names at code offsets, for symbol tables. */
   readonly routines: readonly {
@@ -116,6 +119,7 @@ export interface HostedDiagnostics {
 export interface HostRequest {
   /** Opt in to a raw pthread entry and a one-number application entry. */
   readonly threaded?: boolean;
+  readonly forceFarReach?: boolean | undefined;
   readonly allocator: {
     readonly native: NativeModule;
     readonly initialize: number;
@@ -165,7 +169,7 @@ export interface HostedCode {
           readonly scratch: number;
           readonly target: number;
           /** A 20-byte far-model site. */
-          readonly far?: true;
+          readonly far?: true | undefined;
         }[];
       }
     | undefined;
@@ -240,6 +244,11 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   const allocator = request.allocator.native,
     runtime = request.runtime.native,
     program = request.program.native;
+  const far =
+    request.forceFarReach === true ||
+    allocator.code.length + runtime.code.length + program.code.length >=
+      0x80000000;
+  const farReference: true | undefined = far ? true : undefined;
   const init = allocator.functions[request.allocator.initialize],
     allocate = allocator.functions[request.allocator.allocate],
     initialize = runtime.functions[request.runtime.entry],
@@ -370,6 +379,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       rd: number;
       scratch: number;
       target: number;
+      far?: true | undefined;
     }[] = [],
     // Sites addressing the callback key word (docs/native-ffi.md,
     // "Callbacks"), in the callback data after the diagnostic state.
@@ -378,7 +388,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       rd: number;
       scratch: number;
       target: number;
-      far?: true;
+      far?: true | undefined;
     }[] = [];
   const diagnostics = request.diagnostics;
   const labels = new Map<string, number>(),
@@ -495,7 +505,9 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     labels.set(name, instructions.length);
   }
   function pointer(register: number): void {
-    const value = relativeAddress(register, 17, 0);
+    const value = far
+      ? farRelativeAddress(register, 17, 0)
+      : relativeAddress(register, 17, 0);
     if (!value.ok) throw "host address invariant";
     for (const instruction of value.value) {
       if (instruction === undefined) throw "host address instruction invariant";
@@ -526,6 +538,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       rd: register,
       scratch: 17,
       target,
+      far: farReference,
     });
     pointer(register);
   }
@@ -541,6 +554,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       rd: 16,
       scratch: 17,
       target: { kind: "import", name: symbol },
+      far: farReference,
     });
     pointer(16);
     emit({ op: "ldr", width: 64, rt: 16, rn: 16, offset: 0 });
@@ -770,6 +784,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       rd: 0,
       scratch: 17,
       target: 0,
+      far: farReference,
     });
     pointer(0);
     imm(1, 0);
@@ -1183,6 +1198,8 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     }
     const emitted = emitDiagnostics({
       base: diagnosticsBase,
+      farAddresses: far,
+      wideTrace: far,
       stackTraces: diagnostics.stackTraces,
       signposts: sites,
       allocationSignposts: diagnostics.allocationSignposts,
@@ -1196,49 +1213,10 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     codeLength = diagnosticsBase + block.code.length;
     patchImmediate(diagnosticsLengthInstruction, 11, block.code.length);
   }
-  if (!uint(codeLength))
+  if (!Number.isSafeInteger(codeLength))
     return { ok: false, error: "host image exceeds address domain" };
   // Patch the fixed-width Number constant for the final concatenated code extent.
-  for (let index = 0; index < 4; index++) {
-    const immediate =
-      index === 0
-        ? codeLength % 65536
-        : index === 1
-          ? Math.floor(codeLength / 65536)
-          : 0;
-    if (index === 0)
-      instructions[imageLengthInstruction] = {
-        op: "movz",
-        width: 64,
-        rd: 9,
-        immediate,
-        shift: 0,
-      };
-    else if (index === 1)
-      instructions[imageLengthInstruction + index] = {
-        op: "movk",
-        width: 64,
-        rd: 9,
-        immediate,
-        shift: 16,
-      };
-    else if (index === 2)
-      instructions[imageLengthInstruction + index] = {
-        op: "movk",
-        width: 64,
-        rd: 9,
-        immediate,
-        shift: 32,
-      };
-    else
-      instructions[imageLengthInstruction + index] = {
-        op: "movk",
-        width: 64,
-        rd: 9,
-        immediate,
-        shift: 48,
-      };
-  }
+  patchImmediate(imageLengthInstruction, 9, codeLength);
   for (const fixup of branches) {
     if (fixup === undefined) throw "host branch invariant";
     const target = labels.get(fixup.label);
@@ -1250,7 +1228,12 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       instructions[fixup.offset] = { op: "b", displacement };
     else instructions[fixup.offset] = { op: "b.cond", condition, displacement };
   }
-  const code = new Uint8Array(codeLength);
+  let code: Uint8Array;
+  try {
+    code = new Uint8Array(codeLength);
+  } catch {
+    return { ok: false, error: "host image allocation failed" };
+  }
   for (let index = 0; index < instructions.length; index++) {
     const instruction = instructions[index];
     if (instruction === undefined) throw "host instruction invariant";
@@ -1373,10 +1356,17 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
           ok: false,
           error: "module requires the " + call.target + " diagnostics routine",
         };
-      const written = writeInstruction(code, base + call.offset, {
-        op: "bl",
-        displacement: diagnosticsBase + entry - (base + call.offset),
-      });
+      const at = base + call.offset;
+      const target = diagnosticsBase + entry;
+      const written =
+        call.far === true
+          ? patchRelativeAddress(code, {
+              offset: at,
+              targetOffset: target,
+              rd: 30,
+              scratch: 9,
+            })
+          : writeInstruction(code, at, { op: "bl", displacement: target - at });
       if (!written.ok)
         return { ok: false, error: "diagnostics call: " + written.error };
     }
@@ -1416,6 +1406,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
         rd: fixup.rd,
         scratch: 17,
         target: { kind: "import", name: fixup.name },
+        far: farReference,
       });
     }
     for (const fixup of block.dataReferences) {
@@ -1425,6 +1416,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
         rd: fixup.rd,
         scratch: 17,
         target: fixup.target,
+        far: farReference,
       });
     }
     // Signposted entries branch to their thunk; the thunk's stub re-executes
@@ -1521,6 +1513,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       data,
       dataReferences,
       tableOffset,
+      wideTrace: far,
       cstring: {
         offset: diagnosticsBase + block.cstringOffset,
         byteLength: block.cstringLength,

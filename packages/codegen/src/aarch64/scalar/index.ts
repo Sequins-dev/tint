@@ -361,7 +361,7 @@ export interface NativeImportReference {
   readonly target: { readonly kind: "import"; readonly name: string };
   /** A farRelativeAddress site (20 bytes) of a far-model module; absent
    * for the 16-byte relativeAddress site. */
-  readonly far?: true;
+  readonly far?: true | undefined;
 }
 export interface NativeSourceRange extends Span {
   readonly function: number;
@@ -395,15 +395,16 @@ export interface EmissionFormHints {
   /** The far code model (EmissionOptions.farAddresses). */
   readonly far?: boolean | undefined;
 }
-/** A BL whose target the hosted startup composition supplies: a diagnostics
+/** A call whose target the hosted startup composition supplies: a diagnostics
  * routine outside the module (see EmissionOptions.throwTraces). */
 export interface NativeStartupCall {
   readonly offset: number;
   readonly target: "trace-capture" | "jit-descriptor" | "jit-register";
+  readonly far?: true | undefined;
 }
 export interface NativeModule {
   /** Calls into hosted diagnostics routines (throwTraces and the jit-debug
-   * host operations); startup patches each BL. */
+   * host operations); startup patches each call. */
   readonly startupCalls?: readonly NativeStartupCall[] | undefined;
   /** The branch and address forms this emission settled on. */
   readonly formHints?: EmissionFormHints | undefined;
@@ -474,7 +475,7 @@ interface Fixup {
   readonly function: number;
   readonly block: number | undefined;
   /** A register-indirect far branch: an x16 address sequence then BR. */
-  readonly far?: true;
+  readonly far?: true | undefined;
 }
 function managed(type: string): boolean {
   return [
@@ -1114,8 +1115,7 @@ function emitModuleForms(
     return result;
   }
   const compactCalls = forms.calls;
-  const maxByteLength =
-      options.maxByteLength === undefined ? 0xffffffff : options.maxByteLength,
+  const maxByteLength = options.maxByteLength ?? Number.MAX_SAFE_INTEGER,
     debugSpans = options.debugSpans ?? false,
     recordOperations = options.operationRanges ?? false,
     linearAllocation = options.linearAllocation ?? false,
@@ -1339,7 +1339,7 @@ function emitModuleForms(
     if (error !== "OUT_OF_RANGE") fail("ENCODING", error);
     // An unconditional B beyond ±128 MiB moves its target function's long
     // branches to the register-indirect far form.
-    if (fixup?.branch.op === "b") {
+    if (fixup !== undefined && fixup.branch.op === "b") {
       if (forms.farBranches.has(fixup.function))
         fail("ENCODING", "far branch invariant");
       compactOverflow = true;
@@ -1617,39 +1617,24 @@ function emitModuleForms(
   }
   /** Call the imported C symbol `name` through its bound slot (x16, x17). */
   function importCall(name: string): void {
-    imports.push({
-      offset: instructions.length * 4,
-      rd: 16,
-      scratch: 17,
-      target: { kind: "import", name },
-    });
-    relativePointer(16);
+    importAddress(16, 17, name);
     emit({ op: "ldr", width: 64, rt: 16, rn: 16, offset: 0 });
     emit({ op: "blr", rn: 16 });
   }
-  /** The address of import `name`'s slot in `rd` (`scratch` is clobbered). */
   /** rd = the address of callback thunk `thunk` (resolved at link time). */
   function thunkAddress(rd: number, thunk: number | undefined): void {
     if (thunk === undefined) throw "callback thunk invariant";
     importAddress(rd, 17, "tint:callback-thunk:" + String(thunk));
   }
+  /** The address of import `name`'s slot in `rd` (`scratch` is clobbered). */
   function importAddress(rd: number, scratch: number, name: string): void {
-    imports.push(
-      forms.far
-        ? {
-            offset: instructions.length * 4,
-            rd,
-            scratch,
-            target: { kind: "import", name },
-            far: true as const,
-          }
-        : {
-            offset: instructions.length * 4,
-            rd,
-            scratch,
-            target: { kind: "import", name },
-          },
-    );
+    imports.push({
+      offset: instructions.length * 4,
+      rd,
+      scratch,
+      target: { kind: "import", name },
+      far: forms.far ? true : undefined,
+    });
     const sequence = addressSequence(rd, scratch);
     if (!sequence.ok) fail("ENCODING", sequence.error);
     for (const instruction of sequence.value) {
@@ -1665,6 +1650,42 @@ function emitModuleForms(
     return forms.far
       ? farRelativeAddress(rd, scratch, 0)
       : relativeAddress(rd, scratch, 0);
+  }
+  function startupCall(target: NativeStartupCall["target"]): void {
+    if (!forms.far) {
+      startupCalls.push({ offset: instructions.length * 4, target });
+      emit({ op: "bl", displacement: 0 });
+      return;
+    }
+    // Trace capture consumes x16/x17 and promises to preserve x9. Use the
+    // link register as the call target, and spill scratch for the window.
+    emit({
+      op: "stp",
+      width: 64,
+      rt: 9,
+      rt2: "zr",
+      rn: "sp",
+      offset: -16,
+      mode: "pre",
+    });
+    startupCalls.push({ offset: instructions.length * 4, target, far: true });
+    const sequence = farRelativeAddress(30, 9, 0);
+    if (!sequence.ok) throw "diagnostic call address invariant";
+    for (const instruction of sequence.value) {
+      if (instruction === undefined)
+        throw "diagnostic call instruction invariant";
+      emit(instruction);
+    }
+    emit({
+      op: "ldp",
+      width: 64,
+      rt: 9,
+      rt2: "zr",
+      rn: "sp",
+      offset: 16,
+      mode: "post",
+    });
+    emit({ op: "blr", rn: 30 });
   }
   function relativePointer(rd: number): void {
     const sequence = addressSequence(rd, 17);
@@ -3015,7 +3036,7 @@ function emitModuleForms(
     if (
       !Number.isInteger(maxByteLength) ||
       maxByteLength < 4 ||
-      maxByteLength > 0xffffffff
+      maxByteLength > Number.MAX_SAFE_INTEGER
     )
       fail("CODE_LIMIT", "invalid byte budget");
     const valid = facts.verified ?? verify(module, bodies);
@@ -5331,11 +5352,7 @@ function emitModuleForms(
           if (tag === undefined) rawLoad(16, resultOffset + 16);
           else
             emit({ op: "movz", width: 64, rd: 16, immediate: tag, shift: 0 });
-          startupCalls.push({
-            offset: instructions.length * 4,
-            target: "trace-capture",
-          });
-          emit({ op: "bl", displacement: 0 });
+          startupCall("trace-capture");
         }
         /** d8.. at calleeSaveOffset + 8i, paired while in LDP/STP reach. */
         function calleeSaves(load: boolean): void {
@@ -11448,11 +11465,7 @@ function emitModuleForms(
                 if (operation === "jit-debug-register") {
                   // The hosted __jit_debug_register_code (jitDebugInterface
                   // images), where an attached debugger loads new entries.
-                  startupCalls.push({
-                    offset: instructions.length * 4,
-                    target: "jit-register",
-                  });
-                  emit({ op: "bl", displacement: 0 });
+                  startupCall("jit-register");
                   break;
                 }
                 const resultId = op.id;
@@ -11510,16 +11523,7 @@ function emitModuleForms(
                   operation === "hosted-thread-entry" ||
                   operation === "collector-worker-entry"
                 ) {
-                  imports.push({
-                    offset: instructions.length * 4,
-                    rd: 9,
-                    scratch: 17,
-                    target: {
-                      kind: "import",
-                      name: "tint:" + operation,
-                    },
-                  });
-                  relativePointer(9);
+                  importAddress(9, 17, "tint:" + operation);
                   emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
                   floatStore(0, resultId);
                   break;
@@ -11804,11 +11808,7 @@ function emitModuleForms(
                 }
                 if (operation === "jit-debug-descriptor") {
                   // The hosted routine returns the descriptor's address in x0.
-                  startupCalls.push({
-                    offset: instructions.length * 4,
-                    target: "jit-descriptor",
-                  });
-                  emit({ op: "bl", displacement: 0 });
+                  startupCall("jit-descriptor");
                   emit({ op: "scvtf-d-x", rd: 0, rn: 0 });
                   floatStore(0, resultId);
                   break;
