@@ -130,13 +130,12 @@ No Linux feature is missing relative to macOS: a target-specific gap fails
 once, before compilation, with a message naming the target, and none is
 currently known. These limits are recorded instead:
 
-- **Kernels 6.3+** are untested here (the development kernel is 6.1). Live
-  code requests `MFD_EXEC` explicitly and falls back to a single
-  `mprotect`-flipped mapping under `vm.memfd_noexec=2`
-  ([native code loading](native-code-loading.md#linux)); the fallback is
-  exercised on 6.1 by a seccomp filter that refuses executable memory files
-  the same way, not by a real 6.3+ kernel. Under PaX MPROTECT (or SELinux
-  `deny_execmem`) with `vm.memfd_noexec=2`, live code fails explicitly.
+- **Executable-memory policy** on Debian 13 arm64 (Linux 6.12) permits
+  dual mappings with `MFD_EXEC` at `vm.memfd_noexec=0` and `=1`. Tint
+  uses a single `mprotect`-flipped mapping at `=2`.
+  Under PaX MPROTECT or SELinux `deny_execmem` with `vm.memfd_noexec=2`,
+  live code fails explicitly.
+  [Kernel verification](results/linux-real-kernel-v1.md)
 - **Collector parallelism** stays capped at six workers: on the 9-CPU
   development VM, 8 and 9 workers measured no faster than 6 (wall time only,
   on a shared VM; see
@@ -144,14 +143,12 @@ currently known. These limits are recorded instead:
   Larger, quiet Linux hosts have not been measured.
 - **Page sizes:** 4 KiB and 16 KiB kernels were run natively; 64 KiB kernels
   only under QEMU, because Apple silicon has no 64 KiB translation granule.
-- **Live USDT tracing** (`perf probe`/`perf record -e sdt_tint:*`,
-  bpftrace `usdt:` probes) has not been run: the development VM's kernel has
-  no uprobes or tracefs. `tools/linux/verify-usdt-live.ts` is ready for a
-  kernel that has them: it checks perf's and bpftrace's counts and `gc__end`
-  metrics against GDB's ([how to run it](runtime-diagnostics.md#live-tracing-check)).
-  On the development VM its static half passes (the notes, `readelf`,
-  `perf list sdt` and `bpftrace -l` agree on the 21 probes) and the probe
-  hits are verified under GDB.
+- **Live USDT tracing** requires uprobes and tracefs. On Debian 13 arm64
+  (Linux 6.12), perf and bpftrace matched GDB's probe counts and all 91
+  ordered `gc__end` records. The development container supports static
+  probe checks and GDB, and its kernel lacks uprobes and tracefs.
+  [Kernel verification](results/linux-real-kernel-v1.md)
+  [Tracer requirements](runtime-diagnostics.md#live-tracing-check)
 - **Performance counters:** the development VM exposes none, so Linux timings
   are wall time and RSS only.
 - **Test262 on Linux** is in progress; see the [dashboard](test262.md).
