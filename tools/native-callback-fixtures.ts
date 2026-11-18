@@ -203,6 +203,7 @@ int32_t call_now(int32_t (*f)(int32_t), int32_t x) { return f(x); }
 int32_t call_with_record(int32_t (*f)(const int32_t *), int32_t x) {
   return f(&x);
 }
+int32_t call_with_null(int32_t (*f)(const int32_t *)) { return f(0); }
 static void *run(void *f) {
   return (void *)(intptr_t)((int32_t (*)(int32_t))f)(7);
 }
@@ -232,6 +233,7 @@ function callbackTrapDeclarations(library: string): FixtureForeignDeclaration {
   export function call_now(f: Callback<(x: i32) => i32>, x: i32): i32;
   export function call_on_thread(f: Callback<(x: i32) => i32>): i32;
   export function call_with_record(f: Callback<(p: Ptr<Cell>) => i32>, x: i32): i32;
+  export function call_with_null(f: Callback<(p: Ptr<Cell>) => i32>): i32;
 }
 `,
     manifest: [
@@ -256,7 +258,15 @@ function callbackTrapDeclarations(library: string): FixtureForeignDeclaration {
 export function callbackTrapSource(scenario: CallbackTrapScenario): string {
   const body =
     scenario === "ok"
-      ? `return call_now((x: number): number => x + 22, 20);`
+      ? `// A null record pointer is a TypeError, rethrown after the call.
+  let threw = false;
+  try {
+    call_with_null((p: View<Cell>): number => p.v);
+  } catch (error) {
+    threw = error instanceof TypeError;
+  }
+  if (!threw) return 1;
+  return call_now((x: number): number => x + 22, 20);`
       : scenario === "leaf-later"
         ? `remember((x: number): number => x);\n  return call_saved(1);`
         : scenario === "leaf-inside"
@@ -272,7 +282,7 @@ export function callbackTrapSource(scenario: CallbackTrapScenario): string {
   if (seen !== 5 || view === undefined) return 1;
   return view.v;`;
   return `import type { View } from "tint:ffi";
-import { remember, call_saved, call_now, call_on_thread, call_with_record, type Cell } from "traps";
+import { remember, call_saved, call_now, call_on_thread, call_with_record, call_with_null, type Cell } from "traps";
 export function run(): number {
   ${body}
 }

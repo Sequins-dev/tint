@@ -319,6 +319,24 @@ function callbackResult(
 /** How many registered callbacks may exist at once: tint:ffi's
  * `registeredCallbacks` (one registered thunk per id and prototype). */
 const registeredCallbackLimit = 16;
+/** The record-view parameters of a scoped callback whose thunk calls the
+ * TypeScript function itself (numbers and record views in, a number or
+ * nothing out; docs/native-ffi.md, "Callbacks"), else undefined (it goes
+ * through an adapter). */
+function directViews(
+  callback: CCallbackDeclaration,
+): readonly number[] | undefined {
+  if (callback.resultForm !== "number" && callback.resultForm !== "void")
+    return undefined;
+  const views: number[] = [];
+  let numbers = 0;
+  for (let index = 0; index < callback.parameterForms.length; index++) {
+    if (callback.parameterForms[index] !== "number") return undefined;
+    if ((callback.parameterRecords[index] ?? "") !== "") views.push(index);
+    else numbers++;
+  }
+  return views.length <= 4 && numbers <= 8 ? views : undefined;
+}
 /** Whether a callback takes `Ptr<R>` parameters (foreign views). */
 function viewsRecords(callback: CCallbackDeclaration): boolean {
   for (const record of callback.parameterRecords)
@@ -637,6 +655,29 @@ export function expandForeignLibrary(
       if (operand === undefined) throw "foreign operand invariant";
       stateFirst.push(operand);
     }
+    // Direct callbacks: their notes and views follow the prototype's
+    // operands (not with a record result, whose buffer comes last).
+    const directs: (readonly number[] | undefined)[] = [];
+    let directCount = 0,
+      directViewCount = 0;
+    for (let index = 0; index < declaration.parameterForms.length; index++) {
+      const callback = declaration.callbacks?.[index];
+      const views =
+        mayCallback &&
+        declaration.resultForm !== "record" &&
+        declaration.parameterForms[index] === "callback" &&
+        callback !== undefined
+          ? directViews(callback)
+          : undefined;
+      directs.push(views);
+      if (views !== undefined) {
+        directCount++;
+        directViewCount += views.length;
+      }
+    }
+    if (directCount > 0)
+      for (let extra = 0; extra < 2 + directViewCount; extra++)
+        stateFirst.push("callback");
     const call: ForeignCall = lazy
       ? { ...direct, indirect: true }
       : mayCallback
@@ -645,6 +686,7 @@ export function expandForeignLibrary(
             operands: stateFirst,
             mayCallback: true,
             callbacks: callbackPrototypes(declaration),
+            ...(directCount > 0 ? { directCallbacks: directs } : {}),
           }
         : direct;
     const wrapped = lazy || mayCallback || converts(declaration);
@@ -670,9 +712,34 @@ export function expandForeignLibrary(
           (form === "number" || form === "boolean"
             ? tsType(form, type)
             : form === "callback"
-              ? adapterTsType(declaration.callbacks?.[index] ?? noCallback)
+              ? directs[index] !== undefined
+                ? callbackTsType(declaration.callbacks?.[index] ?? noCallback)
+                : adapterTsType(declaration.callbacks?.[index] ?? noCallback)
               : "Uint8Array"),
       );
+    }
+    if (directCount > 0) {
+      rawParameters.push(
+        "onThrow$: (error: unknown) => void",
+        "onInvalid$: (code: number) => void",
+      );
+      for (let index = 0; index < parameters.length; index++) {
+        const views = directs[index],
+          callback = declaration.callbacks?.[index];
+        if (views === undefined || callback === undefined) continue;
+        for (let view = 0; view < views.length; view++) {
+          const parameter = views[view] ?? 0;
+          rawParameters.push(
+            "view$" +
+              (declaration.parameterNames[index] ?? "") +
+              "$" +
+              String(parameter) +
+              ": View$<" +
+              (callback.parameterRecords[parameter] ?? "") +
+              ">",
+          );
+        }
+      }
     }
     if (declaration.resultForm === "record")
       rawParameters.push("result$: Uint8Array");
@@ -721,6 +788,22 @@ export function expandForeignLibrary(
       if (name === undefined || form === undefined || type === undefined)
         throw "foreign parameter invariant";
       const callback = declaration.callbacks?.[index];
+      if (form === "callback" && directs[index] !== undefined) {
+        if (callback === undefined) throw "foreign callback invariant";
+        // Called directly by its thunk: its record views are made once
+        // and parked after the call; failures arrive through the notes.
+        userParameters.push(name + ": " + callbackTsType(callback));
+        const views = callbackViews(
+          callback,
+          name,
+          callback.parameterNames,
+          "  ",
+        );
+        prologue.push(views.declarations.trimEnd());
+        if (views.leave !== "") rethrows.unshift(views.leave.trimEnd());
+        args.push(name);
+        continue;
+      }
       if (form === "callback") {
         if (callback === undefined) throw "foreign callback invariant";
         userParameters.push(name + ": " + callbackTsType(callback));
@@ -764,6 +847,26 @@ export function expandForeignLibrary(
         );
         args.push(name + "$bytes");
       } else args.push(name);
+    }
+    if (directCount > 0) {
+      // Direct callbacks share the call's failure: the first exception or
+      // invalid value, rethrown once C has returned.
+      prologue.push(
+        '  let failed$ = false;\n  let error$: unknown = undefined;\n  const onThrow$ = (error: unknown): void => {\n    if (failed$) return;\n    failed$ = true;\n    error$ = error;\n  };\n  const onInvalid$ = (code: number): void => {\n    if (failed$) return;\n    failed$ = true;\n    error$ = new TypeError(code === 0 ? "null C record pointer" : "callback result out of range for its C type");\n  };',
+      );
+      args.push("onThrow$", "onInvalid$");
+      for (let index = 0; index < parameters.length; index++) {
+        const views = directs[index];
+        if (views === undefined) continue;
+        for (let view = 0; view < views.length; view++)
+          args.push(
+            "view$" +
+              (declaration.parameterNames[index] ?? "") +
+              "$" +
+              String(views[view] ?? 0),
+          );
+      }
+      rethrows.push("  if (failed$) throw error$;");
     }
     const result = declaration.signature.result;
     let body: string;
