@@ -323,6 +323,32 @@ with write contracts on the shared property storage. Finite string-literal
 `Record` types keep fixed layouts where the operations permit it. The
 `node:os.networkInterfaces()` plain-object return is the integration gate.
 
+### Typed dynamic-key objects (slice 4a, C1)
+
+String index signatures and `Record<string, T>` use the program realm's
+ordinary objects. The checked type retains its index and fixed property types
+while values cross in the existing general representation. Finite
+`Record<"a" | "b", T>` values can keep their fixed layout for closed field
+access. A dynamic object and its aliases share descriptor and prototype storage
+with general code.
+
+An explicit dynamic annotation installs a property contract in that storage.
+Admission validates own data descriptors before publishing any contract, even
+for nested objects. Direct assignment and reflective definition reach the
+same descriptor check. The runtime rejects covered accessors, protects required
+fields from deletion, and invalidates cached property cells on enrollment.
+Unannotated computed literals have open storage.
+
+The typed path uses the realm's existing computed-property conversion,
+membership, deletion, enumeration and spread operations. The general host and
+typed runtime obtain the same realm through the module instance. A program with
+no dynamic usage can prune the dynamic runtime namespace before linking.
+
+C1 accepts primitive, BigInt, unknown and nested dynamic-object payloads.
+Native lists and fixed records require slice 2b list/record views or C2
+function-local realm allocation. In particular, `node:os.networkInterfaces()`
+still needs C2. See the [design and implementation status](design-4a-dynamic-key-objects.md).
+
 ### What happens to each front end
 
 - js-engine lowering becomes a library of construct lowerings callable for a
@@ -390,7 +416,8 @@ the ledger corpus reproduce the ones expressible in a single application.
 | No per-program compiler options                                                                                                                                                                                | `typed-array-index-unchecked`                                          | not yet scheduled                   |
 | C struct views (`Ptr<Interface>` member access, FFI phase 2b) are typed-only; untyped code needs a real object whose accessor properties keep `v.member`'s meaning                                             | (FFI view modules)                                                     | 2                                   |
 | Map iteration in typed code (`for (const [k, v] of map)`, `map.keys()`: only get/has/set/delete/clear are typed)                                                                                               | `map-set`                                                              | 4                                   |
-| No objects with dynamic keys in typed code: `os.networkInterfaces()` returns a Map instead of Node's plain object (API-shape deviation, FFI phase 3)                                                           | (runtime modules)                                                      | 2 (record views), 4                 |
+| (Implemented in 4a C1 for indexed objects) Typed computed keys, ordinary reads and writes, `in`, `delete`, own enumeration, `for…in` and spread                                                                                                  | `dynamic-object-*`, `explicit-dynamic-property-contract`              | 4a C1                               |
+| Native list or fixed-record payloads in dynamic objects need slice 2b list/record views. `os.networkInterfaces()` still returns a Map because its values are lists of fixed records.                                                                  | (runtime modules)                                                      | 4a C2                               |
 | No `SystemError` or plain `Error` in typed runtime code: node:os failures are TypeErrors                                                                                                                       | (runtime modules)                                                      | 4                                   |
 | `typeof` in typed code reports `"object"` for a JavaScript function received as `unknown` (the general encoding does not mark callables; found through the slice 2a boundary)                                  | `tools/verify-hosted-general-trusted-import.ts`                        | 4a                                  |
 | `for…of` elements are typed `T \| undefined` (array holes) instead of TypeScript's `T`: passing the element on or reading its properties fails (FFI phases 2 and 4)                                            | `for-of-typed-array-list`, `for-of-object-list`, `for-of-record-reads` | 4a                                  |

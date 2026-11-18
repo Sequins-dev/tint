@@ -1,8 +1,32 @@
 # Typed dynamic-key objects in slice 4a
 
-Design for coordinator review. The implementation target is ordinary realm
-objects with typed access and enforced property contracts. The scope includes
-the plain-object result of `node:os.networkInterfaces()`.
+The C1 implementation uses ordinary realm objects with typed access and
+enforced property contracts. The plain-object result of
+`node:os.networkInterfaces()` depends on C2.
+
+## C1 implementation status
+
+- String index signatures, broad string `Record`, and fixed-key `Record`
+  annotations have checked representations. Closed finite records dispatch
+  finite string-union keys through their existing fields.
+- Indexed literals, reads and writes, membership, deletion, enumeration and
+  spread use the ordinary realm operations. Own enumeration returns realm
+  arrays, including fixed two-position entry pairs.
+- Storage contracts validate existing descriptors before enrollment. The
+  general host and typed code obtain the same realm from the module instance.
+  The compiler brings the helper closures into the lexical scopes that use
+  them so the existing closure lowering supplies their state. A program whose
+  checked graph has no dynamic objects leaves the runtime namespace unlinked.
+- Mixed JavaScript callers can pass and receive typed indexed objects through
+  an identity-preserving boundary. The generated adapter uses a checked
+  projection at entry. The declaration resolver follows imported type aliases
+  and interfaces.
+
+Unannotated computed literals expose `unknown` reads while their storage is
+open. Compound writes and updates on indexed objects, realm allocation for a
+fixed record that needs ordinary enumeration, and conversions between realm
+enumeration arrays and native lists still require lowering work. Numeric and
+symbol index declarations and general tuple shapes remain outside C1.
 
 ## Current behavior
 
@@ -214,34 +238,18 @@ graph per instance.
   is an explicit boundary TypeError. Open objects and unannotated
   JavaScript retain descriptor, proxy and prototype semantics.
 
-**Nested references.** Boxing a typed native list or record as `unknown`
-does not create an Array or ordinary JS object (see
-[the value bridge](unified-pipeline.md#the-value-bridge)). Implement
-realm-backed allocation for array literals and finite structural literals
-that flow into a dynamic own property or come out of one as a realm
-reference. Seed selection at contextual literals inside the construct,
-property stores, declared return/parameter types, and actual boundary
-crossings. Propagate that requirement through aliases, call arguments and
-results, aggregate elements, and branch joins before choosing layouts;
-clone an internal specialization only when the existing specialization
-mechanism can prove disjoint allocation sites. A worklist over allocation
-sites and checked value slots can join these demands before layout planning.
-Use one realm-required bit per value flow, with edges for explicit casts and
-upcasts, container elements, calls, and captured slots. A connected join
-becomes realm-backed if any alternative requires it. Keep distinct
-representation-specific type entries for structurally identical types in
-unrelated flows. Every use of an allocation must agree. Reuse a compatible
-live record view where one already exists
-and suffices for the declared contract. Choose realm allocation at birth
-when exact ordinary field semantics matter. A pre-existing native-only
-reference with no proven promotion or live bridge requires a build
-diagnostic. A raw category-5 box or copy masquerading as the original
-would lose property behavior or identity. Generic-class, function, exotic,
-and unbridgeable foreign reference payloads can gain coverage through
-their respective value-bridge work. For `NetworkInterfaceInfo[]` the
-required path is realm arrays with realm structural entries. Typed
-`.length`, `[i]`, `.push` and `for…of` on those values use
-the realm operations and typed result projections.
+**C1 value representations.** Dynamic objects carry values whose general
+representation preserves identity. C1 admits primitives, BigInt, unknown,
+string-literal unions, nested dynamic objects and optional forms of these.
+Native lists and fixed records report `UNSUPPORTED: <type> values in
+dynamic-key objects need slice 2b list/record views`. A copy or raw box of
+a native aggregate would lose ordinary property behavior or identity.
+
+**C2 follow-up.** Function-local allocation can choose realm arrays and
+ordinary records for literals whose references only flow into dynamic
+properties. C1 has no allocation-site worklist across calls or joins.
+The Node OS consumer below needs C2 because each interface-name property
+holds an array of structural records.
 
 **Mixed modules.** General callers pass the same object as an argument to a
 typed export and receive it back directly. Add a boundary descriptor for
@@ -367,7 +375,7 @@ typed program.
    `packages/ir/test/function-store.test.ts` round-trip sample together
    with the backend handling.
 
-## Concrete consumer
+## C2 consumer
 
 `packages/native-runtime/src/node/os.ts:245–248,279–284` currently allocates
 a typed Map, gets a group by name, and sets a new array for a missing
@@ -511,12 +519,10 @@ enumeration and asserts `.size`, `.has` and `.get`
    enumeration, mutation and shadowing, prototype semantics,
    lexical capture and abrupt completion in the typed-only parity
    fixture and typed corpus.
-5. Complete realm array/structural payload propagation and dynamic
-   module boundary adapters. Gate native-only contracts and the mixed
-   JS/typed fixture with actual runtime array checks and partition
-   evidence. Exercise existing 2b record adapters as a regression.
-6. Convert `node:os` and run its platform fixture with both existing
-   allocators. Gate plain-object shape for typed and general consumers.
+5. Complete C1 dynamic module boundary adapters. Gate native-only contracts and the mixed
+   JS/typed fixture with identity and partition evidence. Exercise existing 2b record adapters as a regression.
+6. In C2, convert `node:os` and run its platform fixture with both
+   existing allocators. Gate plain-object shape for typed and general consumers.
    Update the convergence section and mark the gap removed after the
    evidence is available.
 7. Before merge, run `pnpm build`, the complete native compiler subset
