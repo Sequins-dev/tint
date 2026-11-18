@@ -91,7 +91,25 @@
           "name": "zalloc",
           "type": {
             "kind": "pointer",
-            "pointee": { "kind": "function" },
+            "pointee": {
+              "kind": "function",
+              "parameters": [
+                {
+                  "kind": "pointer",
+                  "pointee": { "kind": "void" },
+                  "constPointee": false
+                },
+                { "kind": "scalar", "scalar": "u32", "aliases": ["uInt"] },
+                { "kind": "scalar", "scalar": "u32", "aliases": ["uInt"] }
+              ],
+              "result": {
+                "kind": "pointer",
+                "pointee": { "kind": "void" },
+                "constPointee": false
+              },
+              "variadic": false,
+              "name": "alloc_func"
+            },
             "constPointee": false
           },
           "offset": 64
@@ -100,7 +118,24 @@
           "name": "zfree",
           "type": {
             "kind": "pointer",
-            "pointee": { "kind": "function" },
+            "pointee": {
+              "kind": "function",
+              "parameters": [
+                {
+                  "kind": "pointer",
+                  "pointee": { "kind": "void" },
+                  "constPointee": false
+                },
+                {
+                  "kind": "pointer",
+                  "pointee": { "kind": "void" },
+                  "constPointee": false
+                }
+              ],
+              "result": { "kind": "void" },
+              "variadic": false,
+              "name": "free_func"
+            },
             "constPointee": false
           },
           "offset": 72
