@@ -40,7 +40,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { imageSegments } from "../heap-snapshot/dump.ts";
 import {
@@ -54,6 +54,7 @@ const PROVIDER = "tint";
 /** AArch64 `nop`, the instruction at every probe site. */
 const NOP = 0xd503201f;
 const SKIPPED = 77;
+const FIXTURE_EXIT_CODE = 42;
 
 export interface StapsdtProbe {
   readonly provider: string;
@@ -174,6 +175,19 @@ interface StaticResult {
   readonly buildId: string;
 }
 
+/** perf can list a probe with or without its image and short build ID.
+ * A cache containing only the fixture makes unsuffixed names unambiguous. */
+export function perfListedProbeNames(list: string, shortId: string): string[] {
+  return [
+    ...list.matchAll(
+      /^\s*sdt_tint:(\w+)(?:@\S+\(([0-9a-f]+)\))?[^\S\n]+\[SDT event\]/gm,
+    ),
+  ]
+    .filter((match) => match[2] === undefined || match[2] === shortId)
+    .map((match) => match[1] ?? "")
+    .sort();
+}
+
 /** The image's own notes, then readelf, perf and bpftrace listings. */
 function verifyStatic(image: string, output: string): StaticResult {
   const bytes = readFileSync(image);
@@ -217,23 +231,14 @@ function verifyStatic(image: string, output: string): StaticResult {
 
   const buildId = /Build ID: ([0-9a-f]+)/.exec(readelf)?.[1];
   assert.ok(buildId !== undefined, "a GNU build ID");
-  // perf lists SDT events of binaries in its build-id cache; the entry is
-  // removed again so the shared cache keeps no stale image.
-  succeed("perf", ["buildid-cache", "--add", image]);
-  let perfList: string;
-  try {
-    perfList = succeed("perf", ["list", "sdt"]);
-  } finally {
-    run("perf", ["buildid-cache", "--remove", image]);
-  }
+  // A private cache makes unsuffixed event names unambiguous and keeps
+  // this check independent of the user's existing cache entries.
+  const cache = join(dirname(image), "perf-cache");
+  const perf = ["--buildid-dir", cache];
+  succeed("perf", [...perf, "buildid-cache", "--add", image]);
+  const perfList = succeed("perf", [...perf, "list", "sdt"]);
   writeFileSync(join(output, "perf-list-sdt.txt"), perfList);
-  const shortId = buildId.slice(0, 12);
-  const perfNames = [
-    ...perfList.matchAll(/sdt_tint:(\S+)@(\S+)\(([0-9a-f]+)\)/g),
-  ]
-    .filter((match) => match[3] === shortId)
-    .map((match) => match[1] ?? "")
-    .sort();
+  const perfNames = perfListedProbeNames(perfList, buildId.slice(0, 12));
   assert.deepEqual(perfNames, names, "perf list sdt lists the same probes");
 
   const bpftrace = succeed("bpftrace", ["-l", "usdt:" + image + ":*"], true);
@@ -279,6 +284,17 @@ function argumentValue(text: string): number {
   return Number(BigInt(text));
 }
 
+/** perf versions differ in whether they propagate the workload's status. */
+export function assertPerfRecordStatus(
+  status: number | null,
+  log: string,
+): void {
+  assert.ok(
+    status === 0 || status === FIXTURE_EXIT_CODE,
+    `perf record exited with status ${status}\n${log}`,
+  );
+}
+
 /** perf probe + perf record + perf script. */
 function tracePerf(
   image: string,
@@ -301,12 +317,19 @@ function tracePerf(
         ["probe", "-x", image, "-a", "%sdt_" + PROVIDER + ":" + name],
         true,
       );
-    log += succeed(
-      "perf",
-      ["record", "-e", "sdt_" + PROVIDER + ":*", "-o", data, "--", image],
-      true,
-    );
+    const args = [
+      "record",
+      "-e",
+      "sdt_" + PROVIDER + ":*",
+      "-o",
+      data,
+      "--",
+      image,
+    ];
+    const recording = run("perf", args, true);
+    log += recording.stdout + recording.stderr;
     writeFileSync(join(output, "perf-record.txt"), log);
+    assertPerfRecordStatus(recording.status, `perf ${args.join(" ")}\n${log}`);
   } finally {
     removeProbes();
     run("perf", ["buildid-cache", "--remove", image], true);
@@ -468,7 +491,11 @@ function main(): number {
     }
     const reference = recordProbesUnderGdb(image);
     writeFileSync(join(output, "gdb.txt"), reference.session);
-    assert.equal(reference.exitCode, 42, "the fixture exits 42 under GDB");
+    assert.equal(
+      reference.exitCode,
+      FIXTURE_EXIT_CODE,
+      "fixture exit under GDB",
+    );
     assertProbeRun(reference);
     console.log(
       `gdb: ${reference.collections.length} collections, ${Object.keys(reference.probes).length} probes hit`,

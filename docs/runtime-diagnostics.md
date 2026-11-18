@@ -183,7 +183,7 @@ node tools/linux/verify-usdt-live.ts <new-output-directory> [--image <image>] [-
    `.note.stapsdt` notes itself and checks provider `tint`, no semaphores,
    the `.stapsdt.base` address, the argument specs above, one probe per
    name and a `nop` at every site. It then checks that `readelf --notes`,
-   `perf list sdt` (through a build-id cache entry it removes again) and
+   `perf list sdt` (through an isolated build-ID cache) and
    `bpftrace -l 'usdt:<image>:*'` list the same probes.
 2. **GDB reference**: `tools/gdb/tint-probes.py` counts every probe and
    records `gc__end`'s metrics; the fixture must exit 42.
@@ -210,10 +210,14 @@ uprobes (the reason is printed and recorded), 1 on a failed check.
 `tools/usdt-live.test.ts` tests the note reader, the output parsers and the
 comparison without a kernel.
 
+On Debian 13 arm64 (Linux 6.12 with uprobes and tracefs), the full
+verifier passed. Perf and bpftrace matched GDB's counts and all 91
+ordered `gc__end` records. [Kernel verification](results/linux-real-kernel-v1.md)
+
 The development container (Debian 12, kernel 6.1 without uprobes or
 tracefs, GDB 13.1, perf 6.1, bpftrace 0.17) passes the static checks (21
-probes) and exits 77. To run it live on an aarch64 VM, such as Fedora in
-UTM:
+probes) and exits 77 when live tracing is requested. To run it live on
+an aarch64 VM:
 
 1. Use a kernel with `CONFIG_UPROBE_EVENTS=y`
    (`grep UPROBE_EVENTS /boot/config-$(uname -r)`) and 4 KiB or 16 KiB

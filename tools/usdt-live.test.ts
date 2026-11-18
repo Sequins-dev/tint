@@ -5,8 +5,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { buildElfExecutable } from "@tint/image/linux/elf";
 import {
+  assertPerfRecordStatus,
   bpftraceProbeHits,
   compareWithGdb,
+  perfListedProbeNames,
   perfProbeHits,
   stapsdtProbes,
 } from "./linux/verify-usdt-live.ts";
@@ -112,6 +114,32 @@ test("tracer counts must equal GDB's except balanced gc.worker edges", () => {
         reference,
       ),
     /gc__end metrics/,
+  );
+});
+
+test("perf lists SDT names with or without an image and build ID", () => {
+  const listing = [
+    "  sdt_tint:gc__end [SDT event]",
+    "  sdt_tint:gc_roots__begin@usdt-live(123456789abc) [SDT event]",
+    "  sdt_tint:unrelated@other-image(abcdef123456) [SDT event]",
+    "  sdt_other:gc__end [SDT event]",
+  ].join("\n");
+  assert.deepEqual(perfListedProbeNames(listing, "123456789abc"), [
+    "gc__end",
+    "gc_roots__begin",
+  ]);
+});
+
+test("perf record accepts a successful trace or the fixture's exit status", () => {
+  assertPerfRecordStatus(0, "captured");
+  assertPerfRecordStatus(42, "captured");
+  assert.throws(
+    () => assertPerfRecordStatus(1, "capture failed"),
+    /status 1\ncapture failed/,
+  );
+  assert.throws(
+    () => assertPerfRecordStatus(null, "terminated"),
+    /status null\nterminated/,
   );
 });
 
