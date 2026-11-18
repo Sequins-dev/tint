@@ -25,11 +25,14 @@ export function admit(input: unknown): unknown {
 export function admitNested(input: unknown): unknown {
   return input as Record<string, Record<string, number>>;
 }
+export function openObject(key: string): unknown {
+  return { [key]: 42 } satisfies Record<string, number>;
+}
 `),
 );
 assert.ok(typed.ok, JSON.stringify(typed));
 const caller = `
-import { make, admit, admitNested } from "./typed";
+import { make, admit, admitNested, openObject } from "./typed";
 function rejects(operation) {
   try { operation(); } catch (error) { return error instanceof TypeError; }
   return false;
@@ -52,6 +55,9 @@ export function run() {
   const fromGeneral = { key: 42 };
   if (admit(fromGeneral) !== fromGeneral) return 10;
   if (!rejects(() => { fromGeneral[0] = "bad"; }) || 0 in fromGeneral) return 11;
+  const open = openObject("answer");
+  open.answer = "allowed";
+  if (open.answer !== "allowed") return 12;
   return 42;
 }
 `;

@@ -3690,7 +3690,9 @@ export function lowerFunction(
   ): number {
     const runtime = dynamicObjects;
     if (runtime === undefined) throw "dynamic object runtime invariant";
-    switch (metadata.dynamicObject) {
+    const operation = metadata.dynamicObject;
+    if (operation === undefined) throw "dynamic object operation invariant";
+    switch (operation) {
       case "own-enumeration": {
         if (node.kind !== "call") throw "Object enumeration invariant";
         const target = ungroup(node.callee);

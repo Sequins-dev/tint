@@ -44,6 +44,13 @@ switch (process.argv[2]) {
     process.env.TINT_GENERAL_FALLBACK = "0";
     fixture.verifyHostedFixture(minimal, "dynamic-keys-minimal");
     break;
+  case "unused-index":
+    process.env.TINT_GENERAL_FALLBACK = "0";
+    fixture.verifyHostedFixture(
+      "type Unused = Record<string, number>; " + minimal,
+      "dynamic-keys-unused-index",
+    );
+    break;
   case "dictionary":
     fixture.verifyHostedFixture(dictionary, "dynamic-keys-dictionary");
     break;
@@ -62,5 +69,5 @@ switch (process.argv[2]) {
     fixture.verifyHostedFixture(writes, "dynamic-keys-general-writes");
     break;
   default:
-    throw Error("expected minimal, dictionary, mixed or writes");
+    throw Error("expected minimal, unused-index, dictionary, mixed or writes");
 }

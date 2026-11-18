@@ -31,6 +31,7 @@ import {
 import { materializeManagedRuntimeProviders } from "./managed-runtimes.ts";
 import {
   validRuntimeNamespace,
+  dynamicObjectRuntimeSource,
   type RuntimeSource,
 } from "./runtime-contracts.ts";
 import {
@@ -135,6 +136,7 @@ import {
 import {
   lowerModuleEntries,
   insertDynamicObjectRuntime,
+  usesDynamicObjectRuntime,
   type ModuleEntryOptions,
   type RecordOperation,
   type FunctionAddressBinding,
@@ -556,22 +558,30 @@ function withForeignRuntimes(request: CompileRequest): CompileRequest {
   return { ...request, runtimes };
 }
 function compileTypedWithProgramRealm(request: CompileRequest): Compilation {
-  const runtime = request.runtimes.find(
+  const explicit = request.runtimes.find(
     (source) => source?.namespace === "dynamic-object",
   );
-  if (runtime === undefined) return compileTypedProgram(request);
-  const initial = compileTypedProgram({
-    ...request,
-    runtimes: request.runtimes.filter((source) => source !== runtime),
-  });
+  const without =
+    explicit === undefined
+      ? request
+      : {
+          ...request,
+          runtimes: request.runtimes.filter((source) => source !== explicit),
+        };
+  const initial = compileTypedProgram(without);
   if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
+  const runtime = explicit ?? dynamicObjectRuntimeSource();
+  const module = runtime.module;
+  if (!requestModules(request).some((source) => source?.id === module))
+    return initial;
   const objects = "packages/js-runtime/src/objects/index.ts";
   const names: string[] = [
     "viewObjectValue",
     "viewSymbolValue",
     "viewBigIntValue",
   ];
-  const runtimes = request.runtimes.slice();
+  const runtimes = without.runtimes.slice();
+  runtimes.push(runtime);
   if (!runtimes.some((source) => source?.module === objects))
     runtimes.push({
       module: objects,
@@ -1117,9 +1127,7 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
   }
   if (
     !helpers.has("dynamic-object:create") &&
-    checked.value.types.some(
-      (type) => type?.kind === "object" && type.stringIndex !== undefined,
-    )
+    usesDynamicObjectRuntime(checked.value)
   )
     return {
       ok: false,

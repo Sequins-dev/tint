@@ -3318,7 +3318,7 @@ export function checkClosureModule(
               ? (presentType(expected, true) ?? expected)
               : expected;
           if (dynamicContext !== undefined && dynamicObject(dynamicContext)) {
-            checkDynamicLiteral(node, owner, dynamicContext);
+            checkDynamicLiteral(node, owner, dynamicContext, preserveContext);
             result = dynamicContext;
             break;
           }

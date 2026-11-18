@@ -68,6 +68,31 @@ export function hasDynamicObject(
   );
 }
 
+/** Type-only declarations cannot require an executable realm. */
+export function usesDynamicObjectRuntime(checked: CheckedClosures): boolean {
+  if (
+    !checked.types.some(
+      (type) =>
+        (type?.kind === "object" && type.stringIndex !== undefined) ||
+        (type?.kind === "array" && type.realmArray === true),
+    )
+  )
+    return false;
+  if (
+    checked.bindingTypes.some(
+      (id) => id !== undefined && hasDynamicObject(checked, id),
+    )
+  )
+    return true;
+  for (const [id, body] of checked.bodies)
+    if (hasDynamicObject(checked, body.result)) return true;
+  let used = false;
+  checked.intrinsics.forEach((intrinsic, _node) => {
+    if (intrinsic.startsWith("dynamic-object-")) used = true;
+  });
+  return used;
+}
+
 /** Encode the reachable immutable graph, registering a type before its edges
  * so recursive indexed interfaces use backreferences. The runtime interns the
  * compact string and only decodes a particular contract on its first use. */

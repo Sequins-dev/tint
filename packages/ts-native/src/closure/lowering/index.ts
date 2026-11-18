@@ -1,4 +1,7 @@
-export { insertDynamicObjectRuntime } from "./dynamic-objects.ts";
+export {
+  insertDynamicObjectRuntime,
+  usesDynamicObjectRuntime,
+} from "./dynamic-objects.ts";
 import {
   validateFunctionAddressBindings,
   bindFunctionAddress,
