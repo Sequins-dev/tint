@@ -9,6 +9,7 @@ import type {
   LineRange,
 } from "./dwarf.ts";
 import type {
+  CodePlan,
   ImageAddressReference,
   ImageAddressPatcher,
 } from "@tint/abi/relocation";
@@ -86,6 +87,8 @@ export interface ExecutableImageRequest {
   readonly addressFixups?: readonly ImageAddressReference[];
   readonly patchAddress?: ImageAddressPatcher;
   readonly code: Uint8Array;
+  /** Deferred placement. When present, code must be empty. */
+  readonly codePlan?: CodePlan | undefined;
   readonly entryOffset: number;
   readonly maxByteLength: number;
 }

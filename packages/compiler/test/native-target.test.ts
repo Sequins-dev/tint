@@ -183,3 +183,54 @@ test("the image writer dispatches on the target's object format", () => {
     { ok: false, error: "library /usr/lib/libz.1.dylib" },
   );
 });
+
+test("image writers place deferred code and patches at final offsets", () => {
+  const payload = new Uint8Array(0x18000);
+  payload.set(code);
+  // A patch window straddles the first Mach-O signing chunk.
+  payload.set([1, 2, 3, 4, 5, 6, 7, 8], 0xfffc);
+  const expectedCode = payload.slice();
+  expectedCode[0x10001] = 42;
+  const request = { entryOffset: 0, maxByteLength: 1 << 20 };
+  for (const [target, layout] of [
+    [darwinAArch64Target, undefined],
+    [
+      darwinAArch64Target,
+      { compactVMLimit: 0x10000, signedChunkBytes: 0x10000 },
+    ],
+    [linuxAArch64Target, undefined],
+  ] as const) {
+    const expected = writeExecutableImage(
+      target,
+      { ...request, code: expectedCode },
+      "tint.placement",
+      [],
+      layout,
+    );
+    const actual = writeExecutableImage(
+      target,
+      {
+        ...request,
+        code: new Uint8Array(0),
+        codePlan: {
+          byteLength: payload.length,
+          write(output, base) {
+            output.write(payload, base);
+            return output.patch(base + 0xfffc, 8, (bytes, at) => {
+              assert.equal(bytes[at], 1);
+              assert.equal(bytes[at + 7], 8);
+              bytes[at + 5] = 42;
+              return undefined;
+            });
+          },
+        },
+      },
+      "tint.placement",
+      [],
+      layout,
+    );
+    assert.equal(expected.ok, true);
+    assert.deepEqual(actual, expected);
+    assert.equal(payload[0x10001], 6);
+  }
+});

@@ -1,3 +1,4 @@
+import { contiguousCodeOutput, type CodePlan } from "@tint/abi/relocation";
 import type { NativeModule } from "@tint/codegen/aarch64/scalar";
 import {
   encode,
@@ -27,6 +28,16 @@ export interface NativeServiceLink {
   readonly native: NativeModule;
   readonly bindings: readonly NativeServiceBinding[];
 }
+type NativeServicePlanning =
+  | { readonly ok: false; readonly error: string }
+  | {
+      readonly ok: true;
+      readonly value: {
+        readonly native: NativeModule;
+        readonly offsets: readonly number[];
+        readonly codePlan: CodePlan;
+      };
+    };
 export type NativeServiceLinking =
   | { readonly ok: false; readonly error: string }
   | {
@@ -88,7 +99,29 @@ export function linkNativeServiceModules(
   units: readonly NativeServiceLink[],
   hostBindings: readonly NativeServiceBinding[] = [],
 ): NativeServiceLinking {
-  const reject = (error: string): NativeServiceLinking => ({
+  const planned = planNativeServiceModules(host, units, hostBindings);
+  if (!planned.ok) return planned;
+  const plan = planned.value.codePlan;
+  const code = new Uint8Array(plan.byteLength);
+  const error = plan.write(contiguousCodeOutput(code, 0), 0);
+  if (error !== undefined) return { ok: false, error };
+  return {
+    ok: true,
+    value: {
+      native: { ...planned.value.native, code },
+      offsets: planned.value.offsets,
+    },
+  };
+}
+
+/** Resolve declarations and placement, then write each module into its final
+ * hosted range. The returned native module carries the composed metadata. */
+export function planNativeServiceModules(
+  host: NativeModule,
+  units: readonly NativeServiceLink[],
+  hostBindings: readonly NativeServiceBinding[],
+): NativeServicePlanning {
+  const reject = (error: string): NativeServicePlanning => ({
     ok: false,
     error: "native service: " + error,
   });
@@ -251,8 +284,7 @@ export function linkNativeServiceModules(
           return reject("host descriptor bytes differ");
     }
   }
-  const code = new Uint8Array(length);
-  code.set(host.code);
+  const patches: { offset: number; bytes: Uint8Array }[] = [];
   const functions = host.functions.slice(),
     records = host.records.slice(),
     stackMaps = host.stackMaps.slice(),
@@ -271,7 +303,6 @@ export function linkNativeServiceModules(
     const native = unit.native,
       functionBase = functions.length,
       recordBase = records.length;
-    code.set(native.code, base);
     for (const reference of native.managedReferences ?? []) {
       if (reference === undefined) throw "service reference invariant";
       const imported = native.managedImports[reference.import],
@@ -289,19 +320,18 @@ export function linkNativeServiceModules(
         (ownerBase(binding) ?? -length) + target - base - reference.offset,
       );
       if (!patched.ok) return reject("relative address exceeds target range");
+      const bytes = new Uint8Array(20);
       for (let i = 0; i < 4; i++) {
         const instruction = patched.value[i];
         if (
           instruction === undefined ||
-          !writeInstruction(code, base + reference.offset + i * 4, instruction)
-            .ok
+          !writeInstruction(bytes, i * 4, instruction).ok
         )
           return reject("cannot relocate managed address");
       }
-      if (
-        !writeInstruction(code, base + reference.offset + 16, { op: "nop" }).ok
-      )
+      if (!writeInstruction(bytes, 16, { op: "nop" }).ok)
         return reject("cannot replace pointer load");
+      patches.push({ offset: base + reference.offset, bytes });
     }
     if (index === 0) continue;
     for (const fn of native.functions) {
@@ -379,7 +409,6 @@ export function linkNativeServiceModules(
         managedImports: [],
         managedReferences: [],
         functionDescriptorImport: undefined,
-        code,
         functions,
         records,
         stackMaps,
@@ -390,6 +419,23 @@ export function linkNativeServiceModules(
         sourceRanges,
       },
       offsets: offsets.slice(1),
+      codePlan: {
+        byteLength: length,
+        write: (output, base) => {
+          for (let index = 0; index < all.length; index++) {
+            const unit = all[index];
+            const offset = offsets[index];
+            if (unit === undefined || offset === undefined)
+              throw "service code placement invariant";
+            output.write(unit.native.code, base + offset);
+          }
+          for (const patch of patches) {
+            if (patch === undefined) throw "service patch invariant";
+            output.write(patch.bytes, base + patch.offset);
+          }
+          return undefined;
+        },
+      },
     },
   };
 }

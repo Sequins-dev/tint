@@ -4,11 +4,12 @@ import {
   type AArch64AddressReference,
 } from "@tint/codegen/aarch64/image-relocations";
 import { darwinAArch64Target, type NativeTarget } from "@tint/platform/target";
+import type { CodePlan } from "@tint/abi/relocation";
+import { planNativeServiceModules } from "./native/service-unit-link.ts";
 import type { PosixHostABI } from "@tint/abi/host";
 import { optimizeModule, unboundedWork } from "@tint/ir/optimization";
 import {
   compileArm64Program,
-  linkNativeServiceModules,
   type NativeServiceUnit,
   type NativeServiceBinding,
   type NativeServiceLink,
@@ -65,7 +66,7 @@ import {
 import type { ProgramFunctionDebug } from "./native/debug-functions.ts";
 import type { ModuleIR } from "@tint/ir/scalar";
 import {
-  emitHostedEntry,
+  planHostedEntry,
   type HostDiagnostics,
   type HostSignpostSite,
 } from "@tint/codegen/aarch64/startup";
@@ -738,6 +739,7 @@ function linkHostedImage(
     runtimeEntry = compiled.runtimeEntry,
     programEntry = compiled.programEntry;
   let programNative = compiled.program.native;
+  let programCode: CodePlan | undefined;
   if ((request.nativeServices?.length ?? 0) !== 0) {
     const services = request.nativeServices ?? [],
       hostBindings: NativeServiceBinding[] = [];
@@ -801,9 +803,10 @@ function linkHostedImage(
       }
       links.push({ native: unit.native, bindings });
     }
-    const linked = linkNativeServiceModules(programNative, links, hostBindings);
+    const linked = planNativeServiceModules(programNative, links, hostBindings);
     if (!linked.ok) return failure("service-link", linked.error);
     programNative = linked.value.native;
+    programCode = linked.value.codePlan;
   }
   request.report("startup");
   let diagnostics: HostDiagnostics | undefined;
@@ -828,7 +831,7 @@ function linkHostedImage(
       heapIntrospection,
     };
   }
-  const hosted = emitHostedEntry({
+  const hosted = planHostedEntry({
     diagnostics,
     threaded: request.threaded ?? false,
     abi: hostABI,
@@ -840,6 +843,7 @@ function linkHostedImage(
     },
     runtime: { native: compiled.runtime.native, entry: runtimeEntry },
     program: { native: programNative, entry: programEntry },
+    programCode,
     forceFarReach: request.forceFarReach === true,
     managedBytes: request.managedBytes,
     controlBytes: request.controlBytes,
@@ -1127,7 +1131,8 @@ function linkHostedImage(
         byteLength: routine.byteLength,
       });
   }
-  let code = hosted.value.code;
+  const hostedCode = hosted.value.codePlan;
+  let traceTable: Uint8Array | undefined;
   const readOnlySections: ReadOnlySection[] = [];
   if (hostedDiagnostics !== undefined) {
     const cstring = hostedDiagnostics.cstring;
@@ -1153,21 +1158,18 @@ function linkHostedImage(
       const table = buildTraceTable(
         traced,
         lines,
-        Number.MAX_SAFE_INTEGER - code.length,
+        Number.MAX_SAFE_INTEGER - hostedCode.byteLength,
         hostedDiagnostics.wideTrace,
       );
       if (!table.ok) return failure("image", "trace table: " + table.error);
-      if (hostedDiagnostics.tableOffset !== code.length)
+      if (hostedDiagnostics.tableOffset !== hostedCode.byteLength)
         throw "trace table placement invariant";
-      const extended = new Uint8Array(code.length + table.value.length);
-      extended.set(code);
-      extended.set(table.value, code.length);
       readOnlySections.push({
         kind: "rodata",
-        offset: code.length,
+        offset: hostedCode.byteLength,
         byteLength: table.value.length,
       });
-      code = extended;
+      traceTable = table.value;
     }
   }
   const references: AArch64AddressReference[] = [];
@@ -1222,6 +1224,18 @@ function linkHostedImage(
     if (symbol === undefined) throw "diagnostic symbol invariant";
     imageSymbols.push({ name: symbol.name, offset: symbol.offset });
   }
+  const table = traceTable;
+  let startupError: string | undefined;
+  const codePlan: CodePlan = {
+    byteLength: hostedCode.byteLength + (table?.length ?? 0),
+    write: (output, base) => {
+      const error = hostedCode.write(output, base);
+      startupError = error;
+      if (error === undefined && table !== undefined)
+        output.write(table, base + hostedCode.byteLength);
+      return error;
+    },
+  };
   const image = writeExecutableImage(
     target,
     {
@@ -1243,7 +1257,8 @@ function linkHostedImage(
             globals: debugGlobals,
           }
         : undefined,
-      code,
+      code: new Uint8Array(0),
+      codePlan,
       entryOffset: hosted.value.processStartOffset ?? hosted.value.entryOffset,
       maxByteLength: Number.MAX_SAFE_INTEGER,
       imports,
@@ -1254,6 +1269,7 @@ function linkHostedImage(
     request.foreignLibraries ?? [],
     request.machOLayout,
   );
+  if (startupError !== undefined) return failure("startup", startupError);
   if (!image.ok) return failure("image", image.error);
   return { ok: true, value: image.value };
 }

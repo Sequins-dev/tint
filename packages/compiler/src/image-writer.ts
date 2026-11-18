@@ -82,6 +82,7 @@ function writeElfImage(
   }
   const built = buildElfExecutable({
     code: image.code,
+    codePlan: image.codePlan,
     entryOffset: image.entryOffset,
     maxByteLength: image.maxByteLength,
     symbols: image.symbols,

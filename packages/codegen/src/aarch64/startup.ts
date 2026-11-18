@@ -25,6 +25,11 @@ import {
   heapDebugSampleThunkSymbol,
   heapDebugSymbol,
 } from "@tint/abi/heap-debug";
+import {
+  contiguousCodeOutput,
+  type CodeOutput,
+  type CodePlan,
+} from "@tint/abi/relocation";
 import { readUnsigned } from "@tint/foundation/binary/bytes";
 import {
   encode,
@@ -128,6 +133,7 @@ export interface HostRequest {
   };
   readonly runtime: { readonly native: NativeModule; readonly entry: number };
   readonly program: { readonly native: NativeModule; readonly entry: number };
+  readonly programCode?: CodePlan | undefined;
   readonly managedBytes: number;
   readonly controlBytes: number;
   readonly allocationCapacity: number;
@@ -140,10 +146,9 @@ export interface HostRequest {
   readonly abi: PosixHostABI;
   readonly diagnostics?: HostDiagnostics | undefined;
 }
-export interface HostedCode {
+interface HostedMetadata {
   /** Placement of allocator, runtime, and program code, in that order. */
   readonly moduleOffsets: readonly number[];
-  readonly code: Uint8Array;
   /** The hosted entry: a C `main(argc, argv)` returning the exit status. */
   readonly entryOffset: number;
   /** The image's process entry when the target's startup does not call
@@ -174,6 +179,15 @@ export interface HostedCode {
       }
     | undefined;
 }
+export interface HostedCode extends HostedMetadata {
+  readonly code: Uint8Array;
+}
+interface HostedCodePlan extends HostedMetadata {
+  readonly codePlan: CodePlan;
+}
+type HostPlanning =
+  | { readonly ok: true; readonly value: HostedCodePlan }
+  | { readonly ok: false; readonly error: string };
 export type HostEmission =
   | { readonly ok: true; readonly value: HostedCode }
   | { readonly ok: false; readonly error: string };
@@ -198,6 +212,36 @@ function align(value: number, alignment: number): number {
 /** Emits a POSIX-shaped startup adapter. Image format/signing remain separate.
  * All modules use Tint's private ABI; process entry uses the platform main ABI. */
 export function emitHostedEntry(request: HostRequest): HostEmission {
+  const planned = planHostedEntry(request);
+  if (!planned.ok) return planned;
+  const plan = planned.value.codePlan;
+  let code: Uint8Array;
+  try {
+    code = new Uint8Array(plan.byteLength);
+  } catch {
+    return { ok: false, error: "host image allocation failed" };
+  }
+  const error = plan.write(contiguousCodeOutput(code, 0), 0);
+  if (error !== undefined) return { ok: false, error };
+  const hosted = planned.value;
+  return {
+    ok: true,
+    value: {
+      code,
+      moduleOffsets: hosted.moduleOffsets,
+      entryOffset: hosted.entryOffset,
+      processStartOffset: hosted.processStartOffset,
+      workerEntryOffset: hosted.workerEntryOffset,
+      imports: hosted.imports,
+      entryUnwind: hosted.entryUnwind,
+      processStartUnwind: hosted.processStartUnwind,
+      diagnostics: hosted.diagnostics,
+      callbackData: hosted.callbackData,
+    },
+  };
+}
+
+export function planHostedEntry(request: HostRequest): HostPlanning {
   if (request.threaded === true && request.abi.threads === undefined)
     return { ok: false, error: "target has no thread lifecycle ABI" };
   for (const native of [
@@ -244,10 +288,11 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   const allocator = request.allocator.native,
     runtime = request.runtime.native,
     program = request.program.native;
+  const programCode = request.programCode;
+  const programLength = programCode?.byteLength ?? program.code.length;
   const far =
     request.forceFarReach === true ||
-    allocator.code.length + runtime.code.length + program.code.length >=
-      0x80000000;
+    allocator.code.length + runtime.code.length + programLength >= 0x80000000;
   const farReference: true | undefined = far ? true : undefined;
   const init = allocator.functions[request.allocator.initialize],
     allocate = allocator.functions[request.allocator.allocate],
@@ -1175,7 +1220,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     runtimeBase = align(prefix + allocator.code.length, 4096),
     programBase = align(runtimeBase + runtime.code.length, 4096);
   const bases = [prefix, runtimeBase, programBase];
-  let codeLength = programBase + program.code.length;
+  let codeLength = programBase + programLength;
   // Diagnostics routines follow the program; the trace table, when present,
   // is appended after them by the image composition.
   const diagnosticsBase = align(codeLength, 16);
@@ -1228,21 +1273,44 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       instructions[fixup.offset] = { op: "b", displacement };
     else instructions[fixup.offset] = { op: "b.cond", condition, displacement };
   }
-  let code: Uint8Array;
-  try {
-    code = new Uint8Array(codeLength);
-  } catch {
-    return { ok: false, error: "host image allocation failed" };
-  }
+  const startup = new Uint8Array(instructions.length * 4);
   for (let index = 0; index < instructions.length; index++) {
     const instruction = instructions[index];
     if (instruction === undefined) throw "host instruction invariant";
-    const encoded = writeInstruction(code, index * 4, instruction);
+    const encoded = writeInstruction(startup, index * 4, instruction);
     if (!encoded.ok)
       return {
         ok: false,
         error: "host instruction encoding: " + encoded.error,
       };
+  }
+  const patches: ((output: CodeOutput, base: number) => string | undefined)[] =
+    [];
+  function relative(
+    offset: number,
+    rd: number,
+    scratch: number,
+    target: number,
+    label: string,
+  ): void {
+    patches.push((output, base) => {
+      if (offset < 0 || offset > codeLength - 16)
+        return label + ": OUT_OF_BOUNDS";
+      return output.patch(
+        base + offset,
+        Math.min(20, codeLength - offset),
+        (bytes, at) => {
+          const result = patchRelativeAddress(bytes, {
+            offset: at,
+            rd,
+            scratch,
+            targetOffset: target,
+            siteAddress: offset,
+          });
+          return result.ok ? undefined : label + ": " + result.error;
+        },
+      );
+    });
   }
   const modules = [allocator, runtime, program];
   for (let index = 0; index < modules.length; index++) {
@@ -1250,7 +1318,6 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       base = bases[index];
     if (module === undefined || base === undefined)
       throw "host module invariant";
-    code.set(module.code, base);
     for (const fixup of module.imports) {
       if (fixup === undefined) throw "host import invariant";
       // Callbacks (docs/native-ffi.md, "Callbacks"): a thunk's entry is a
@@ -1265,17 +1332,13 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
         }
         if (thunkOffset < 0)
           return { ok: false, error: "unknown callback thunk " + name };
-        const patched = patchRelativeAddress(code, {
-          offset: base + fixup.offset,
-          rd: fixup.rd,
-          scratch: fixup.scratch,
-          targetOffset: base + thunkOffset,
-        });
-        if (!patched.ok)
-          return {
-            ok: false,
-            error: "callback thunk relocation: " + patched.error,
-          };
+        relative(
+          base + fixup.offset,
+          fixup.rd,
+          fixup.scratch,
+          base + thunkOffset,
+          "callback thunk relocation",
+        );
         continue;
       }
       if (name === "tint:callback-key") {
@@ -1300,17 +1363,13 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       if (fixup.target.name === "tint:collector-worker-entry") {
         if (collectorWorkerOffset === undefined)
           throw "collector worker thunk invariant";
-        const patched = patchRelativeAddress(code, {
-          offset: base + fixup.offset,
-          rd: fixup.rd,
-          scratch: fixup.scratch,
-          targetOffset: collectorWorkerOffset,
-        });
-        if (!patched.ok)
-          return {
-            ok: false,
-            error: "collector worker relocation: " + patched.error,
-          };
+        relative(
+          base + fixup.offset,
+          fixup.rd,
+          fixup.scratch,
+          collectorWorkerOffset,
+          "collector worker relocation",
+        );
         continue;
       }
       if (fixup.target.name === "tint:hosted-thread-entry") {
@@ -1319,17 +1378,13 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
             ok: false,
             error: "thread entry requires threaded hosted startup",
           };
-        const patched = patchRelativeAddress(code, {
-          offset: base + fixup.offset,
-          rd: fixup.rd,
-          scratch: fixup.scratch,
-          targetOffset: workerEntryOffset,
-        });
-        if (!patched.ok)
-          return {
-            ok: false,
-            error: "thread entry relocation: " + patched.error,
-          };
+        relative(
+          base + fixup.offset,
+          fixup.rd,
+          fixup.scratch,
+          workerEntryOffset,
+          "thread entry relocation",
+        );
         continue;
       }
       if (fixup.far === true)
@@ -1358,46 +1413,47 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
         };
       const at = base + call.offset;
       const target = diagnosticsBase + entry;
-      const written =
-        call.far === true
-          ? patchRelativeAddress(code, {
-              offset: at,
-              targetOffset: target,
-              rd: 30,
-              scratch: 9,
-            })
-          : writeInstruction(code, at, { op: "bl", displacement: target - at });
-      if (!written.ok)
-        return { ok: false, error: "diagnostics call: " + written.error };
+      if (call.far === true) relative(at, 30, 9, target, "diagnostics call");
+      else
+        patches.push((output, base) => {
+          if (at < 0 || at > codeLength - 4)
+            return "diagnostics call: OUT_OF_BOUNDS";
+          return output.patch(base + at, 4, (bytes, pos) => {
+            const written = writeInstruction(bytes, pos, {
+              op: "bl",
+              displacement: target - at,
+            });
+            return written.ok
+              ? undefined
+              : "diagnostics call: " + written.error;
+          });
+        });
     }
   }
   let hostedDiagnostics: HostedDiagnostics | undefined;
   const composed = block;
   if (composed !== undefined && diagnostics !== undefined) {
     const block = composed;
-    code.set(block.code, diagnosticsBase);
     const tableOffset = codeLength;
     for (const fixup of block.codeReferences) {
       if (fixup === undefined) throw "diagnostic reference invariant";
-      const patched = patchRelativeAddress(code, {
-        offset: diagnosticsBase + fixup.offset,
-        rd: fixup.rd,
-        scratch: 17,
-        targetOffset: fixup.target,
-      });
-      if (!patched.ok)
-        return { ok: false, error: "diagnostic address: " + patched.error };
+      relative(
+        diagnosticsBase + fixup.offset,
+        fixup.rd,
+        17,
+        fixup.target,
+        "diagnostic address",
+      );
     }
     for (const fixup of block.tableReferences) {
       if (fixup === undefined) throw "diagnostic table invariant";
-      const patched = patchRelativeAddress(code, {
-        offset: diagnosticsBase + fixup.offset,
-        rd: fixup.rd,
-        scratch: 17,
-        targetOffset: tableOffset,
-      });
-      if (!patched.ok)
-        return { ok: false, error: "diagnostic table: " + patched.error };
+      relative(
+        diagnosticsBase + fixup.offset,
+        fixup.rd,
+        17,
+        tableOffset,
+        "diagnostic table",
+      );
     }
     for (const fixup of block.imports) {
       if (fixup === undefined) throw "diagnostic import invariant";
@@ -1437,15 +1493,20 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       if (site === undefined || thunk === undefined)
         throw "signpost thunk invariant";
       const at = (bases[site.module] ?? 0) + site.offset;
-      const first = readUnsigned(code, at, 4, "little");
-      if (!first.ok || first.value !== push.value)
-        return { ok: false, error: "signposted function lacks a frame push" };
-      const written = writeInstruction(code, at, {
-        op: "b",
-        displacement: diagnosticsBase + thunk - at,
+      patches.push((output, base) => {
+        if (at < 0 || at > codeLength - 4)
+          return "signposted function lacks a frame push";
+        return output.patch(base + at, 4, (bytes, pos) => {
+          const first = readUnsigned(bytes, pos, 4, "little");
+          if (!first.ok || first.value !== push.value)
+            return "signposted function lacks a frame push";
+          const written = writeInstruction(bytes, pos, {
+            op: "b",
+            displacement: diagnosticsBase + thunk - at,
+          });
+          return written.ok ? undefined : "signpost entry: " + written.error;
+        });
       });
-      if (!written.ok)
-        return { ok: false, error: "signpost entry: " + written.error };
     }
     const heap = diagnostics.heapIntrospection === true,
       data = new Uint8Array(diagnosticDataLength(heap));
@@ -1529,14 +1590,13 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     if (fixup === undefined) throw "diagnostic routine reference invariant";
     const entry = block?.entries.get(fixup.entry);
     if (entry === undefined) throw "diagnostic routine invariant";
-    const patched = patchRelativeAddress(code, {
-      offset: fixup.offset,
-      rd: fixup.register,
-      scratch: 17,
-      targetOffset: diagnosticsBase + entry,
-    });
-    if (!patched.ok)
-      return { ok: false, error: "diagnostic routine: " + patched.error };
+    relative(
+      fixup.offset,
+      fixup.register,
+      17,
+      diagnosticsBase + entry,
+      "diagnostic routine",
+    );
   }
   for (const fixup of references) {
     if (fixup === undefined) throw "host reference invariant";
@@ -1547,19 +1607,40 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
           ? diagnosticsBase
           : bases[fixup.module];
     if (base === undefined) throw "host reference module invariant";
-    const patched = patchRelativeAddress(code, {
-      offset: fixup.offset,
-      rd: fixup.register,
-      scratch: 17,
-      targetOffset: base + fixup.target,
-    });
-    if (!patched.ok)
-      return { ok: false, error: "host relative address: " + patched.error };
+    relative(
+      fixup.offset,
+      fixup.register,
+      17,
+      base + fixup.target,
+      "host relative address",
+    );
   }
+  const codePlan: CodePlan = {
+    byteLength: codeLength,
+    write: (output, base) => {
+      output.write(startup, base);
+      output.write(allocator.code, base + prefix);
+      output.write(runtime.code, base + runtimeBase);
+      if (programCode === undefined)
+        output.write(program.code, base + programBase);
+      else {
+        const error = programCode.write(output, base + programBase);
+        if (error !== undefined) return error;
+      }
+      if (composed !== undefined)
+        output.write(composed.code, base + diagnosticsBase);
+      for (const patch of patches) {
+        if (patch === undefined) throw "host patch invariant";
+        const error = patch(output, base);
+        if (error !== undefined) return error;
+      }
+      return undefined;
+    },
+  };
   return {
     ok: true,
     value: {
-      code,
+      codePlan,
       entryOffset: 0,
       processStartOffset,
       workerEntryOffset,
