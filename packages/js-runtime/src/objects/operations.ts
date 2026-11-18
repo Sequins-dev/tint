@@ -237,7 +237,7 @@ export interface ObjectInternalMethods<Key, Value> {
   readonly isExtensible?: (object: OrdinaryObject<Key, Value>) => boolean;
   readonly preventExtensions?: (object: OrdinaryObject<Key, Value>) => boolean;
   /** The typed (native) record a record view presents (record-views.ts). */
-  readonly typedRecord?: unknown;
+  readonly typedRecord?: () => unknown;
 }
 /** Internal parameter access, never user-visible accessor functions. Callbacks
  * must not execute user code; descriptor changes can disconnect this alias. */

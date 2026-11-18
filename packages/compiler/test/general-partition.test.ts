@@ -168,3 +168,108 @@ test("trusted modules stay typed behind checked boundaries", () => {
   );
   assert.deepEqual(blocked.blocked, { module: "runtime", exports: "make" });
 });
+
+test("exported interfaces cross boundaries as record views", () => {
+  const shapes = module(
+    "shapes",
+    "export interface Point { x: number; readonly y: number; label?: string }",
+  );
+  const lib = module(
+    "lib",
+    'import type { Point } from "./shapes";\n' +
+      "export interface Segment { readonly from: Point; to?: Point; next?: Segment }\n" +
+      "interface Hidden { x: number }\n" +
+      "export interface Box<T> { value: T }\n" +
+      "export interface Shape { area(): number }\n" +
+      "export function make(x: number): Point { return { x, y: 1 }; }\n" +
+      "export function length(s: Segment, scale?: Point): number { return 0; }\n" +
+      "export function hidden(h: Hidden): number { return h.x; }\n" +
+      "export function boxed(b: Box<number>): number { return b.value; }\n" +
+      "export function shape(s: Shape): number { return 0; }",
+    [["./shapes", "shapes"]],
+  );
+  const main = module(
+    "main",
+    'import { make, length, hidden, boxed, shape } from "./lib";\nexport function run(): number { return 0; }',
+    [["./lib", "lib"]],
+  );
+  // `hidden`, `boxed` and `shape` cannot cross (a non-exported, generic or
+  // method-bearing interface), so `lib` itself becomes general.
+  const blocked = closeGeneralPartition([shapes, lib, main], new Set(["main"]));
+  assert.ok(blocked.general.some((m) => m.id === "lib"));
+  const crossing = module(
+    "main",
+    'import { make, length } from "./lib";\nexport function run(): number { return 0; }',
+    [["./lib", "lib"]],
+  );
+  const partition = closeGeneralPartition(
+    [shapes, lib, crossing],
+    new Set(["main"]),
+  );
+  assert.deepEqual(
+    partition.general.map((m) => m.id),
+    ["main"],
+  );
+  const point = "shapes\u0000Point",
+    segment = "lib\u0000Segment";
+  assert.deepEqual(partition.boundaries[0]?.exports, [
+    {
+      kind: "function",
+      name: "make",
+      local: "make",
+      parameters: [boundaryNumber],
+      records: {
+        parameters: [undefined],
+        result: { key: point, optional: false },
+      },
+    },
+    {
+      kind: "function",
+      name: "length",
+      local: "length",
+      parameters: [0, 0],
+      records: {
+        parameters: [
+          { key: segment, optional: false },
+          { key: point, optional: true },
+        ],
+        result: undefined,
+      },
+    },
+  ]);
+  assert.deepEqual(
+    partition.records?.map((record) => record.key).sort(),
+    [segment, point].sort(),
+  );
+  const segmentRecord = partition.records?.find((r) => r.key === segment);
+  assert.deepEqual(segmentRecord?.fields, [
+    {
+      name: "from",
+      readonly: true,
+      classes: 0,
+      record: { key: point, optional: false },
+    },
+    {
+      name: "to",
+      readonly: false,
+      classes: 0,
+      record: { key: point, optional: true },
+    },
+    {
+      name: "next",
+      readonly: false,
+      classes: 0,
+      record: { key: segment, optional: true },
+    },
+  ]);
+  const pointRecord = partition.records?.find((r) => r.key === point);
+  assert.deepEqual(pointRecord?.fields, [
+    { name: "x", readonly: false, classes: boundaryNumber },
+    { name: "y", readonly: true, classes: boundaryNumber },
+    {
+      name: "label",
+      readonly: false,
+      classes: boundaryString | boundaryUndefined,
+    },
+  ]);
+});

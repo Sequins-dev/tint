@@ -7,7 +7,7 @@ export { canBeHeldWeakly, type WeakStorageService } from "./weak-storage.ts";
 export {
   createRecordView,
   typedRecordOf,
-  type RecordViewField,
+  type RecordViewAccess,
 } from "./record-views.ts";
 export { installSetIntrinsics } from "./set-intrinsics.ts";
 export { installMapIntrinsics } from "./map-intrinsics.ts";

@@ -21,15 +21,15 @@ import {
 } from "./operations.ts";
 import { scriptPropertyKeyOrder, type ScriptPropertyKey } from "./symbols.ts";
 
-/** One field of a typed (native) record as a JavaScript property. `read`
- * returns the field's current value as a JavaScript value; `write` stores a
- * JavaScript value into the field, throwing a TypeError when the value is
- * outside the field's declared type (an enforced contract). */
-export interface RecordViewField {
-  readonly key: string;
-  readonly writable: boolean;
-  readonly read: () => unknown;
-  readonly write: (value: unknown) => void;
+/** How a record view reaches its record's fields, by index into `keys`:
+ * `read` returns a field's current value as a JavaScript value; `write`
+ * stores a JavaScript value into a writable field, throwing a TypeError when
+ * the value is outside the field's declared type (an enforced contract). */
+export interface RecordViewAccess {
+  readonly keys: readonly string[];
+  readonly writable: readonly boolean[];
+  readonly read: (field: number) => unknown;
+  readonly write: (field: number, value: unknown) => void;
 }
 
 /** A JavaScript object over a typed record (docs/unified-pipeline.md, the
@@ -44,30 +44,35 @@ export interface RecordViewField {
 export function createRecordView(
   prototype: OrdinaryObject<ScriptPropertyKey, unknown> | undefined,
   record: unknown,
-  fields: readonly RecordViewField[],
+  access: RecordViewAccess,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
-  const index = new Map<string, RecordViewField>();
-  for (const field of fields) {
-    if (field === undefined) throw "RECORD_VIEW_FIELD_INVARIANT";
-    if (index.has(field.key)) throw "RECORD_VIEW_DUPLICATE_FIELD";
-    index.set(field.key, field);
+  const index = new Map<string, number>();
+  for (let field = 0; field < access.keys.length; field++) {
+    const key = access.keys[field];
+    if (key === undefined) throw "RECORD_VIEW_FIELD_INVARIANT";
+    if (index.has(key)) throw "RECORD_VIEW_DUPLICATE_FIELD";
+    index.set(key, field);
   }
-  function fieldFor(key: ScriptPropertyKey): RecordViewField | undefined {
-    return typeof key === "string" ? index.get(key) : undefined;
+  function fieldFor(key: ScriptPropertyKey): number {
+    if (typeof key !== "string") return -1;
+    return index.get(key) ?? -1;
+  }
+  function writable(field: number): boolean {
+    return access.writable[field] === true;
   }
   const methods: ObjectInternalMethods<ScriptPropertyKey, unknown> = {
-    typedRecord: record,
+    typedRecord: (): unknown => record,
     getOwnProperty: (
       object: OrdinaryObject<ScriptPropertyKey, unknown>,
       key: ScriptPropertyKey,
     ): Descriptor<unknown> | undefined => {
       const field = fieldFor(key);
-      if (field === undefined)
+      if (field < 0)
         return ordinaryGetOwnProperty<ScriptPropertyKey, unknown>(object, key);
       return {
         accessor: false,
-        value: field.read(),
-        writable: field.writable,
+        value: access.read(field),
+        writable: writable(field),
         get: undefined,
         set: undefined,
         enumerable: true,
@@ -81,32 +86,33 @@ export function createRecordView(
       hooks: ObjectHooks<unknown>,
     ): PropertyDefinitionResult => {
       const field = fieldFor(key);
-      if (field === undefined)
+      if (field < 0)
         return ordinaryDefineOwnProperty<ScriptPropertyKey, unknown>(
           object,
           key,
           update,
           hooks,
         );
-      return defineField(field, update, hooks);
+      return defineField(access, field, writable(field), update, hooks);
     },
     deleteProperty: (
       object: OrdinaryObject<ScriptPropertyKey, unknown>,
       key: ScriptPropertyKey,
     ): boolean =>
-      fieldFor(key) === undefined &&
+      fieldFor(key) < 0 &&
       ordinaryDeleteProperty<ScriptPropertyKey, unknown>(object, key),
     ownKeys: (
       object: OrdinaryObject<ScriptPropertyKey, unknown>,
     ): ScriptPropertyKey[] => {
-      // Fields are created first: integer-like names lead in ascending
-      // order, other names follow in declaration order, then expandos.
+      // Fields come first: integer-like names lead in ascending order
+      // (interleaved with integer-like expandos), other names follow in
+      // declaration order, then expandos.
       const indices: string[] = [],
         names: string[] = [];
-      for (const field of fields) {
-        if (field === undefined) throw "RECORD_VIEW_FIELD_INVARIANT";
-        if (scriptPropertyKeyOrder(field.key) >= 0) indices.push(field.key);
-        else names.push(field.key);
+      for (const key of access.keys) {
+        if (key === undefined) throw "RECORD_VIEW_FIELD_INVARIANT";
+        if (scriptPropertyKeyOrder(key) >= 0) indices.push(key);
+        else names.push(key);
       }
       indices.sort(
         (a: string, b: string): number =>
@@ -118,7 +124,6 @@ export function createRecordView(
       );
       const keys: ScriptPropertyKey[] = [];
       let position = 0;
-      // Expando array indices interleave with field indices by value.
       for (const key of own) {
         if (key === undefined) throw "RECORD_VIEW_KEY_INVARIANT";
         if (scriptPropertyKeyOrder(key) < 0) break;
@@ -146,7 +151,9 @@ export function createRecordView(
  * data property with its writability, and stores a supplied value through
  * the field (a read-only field accepts only its current value). */
 function defineField(
-  field: RecordViewField,
+  access: RecordViewAccess,
+  field: number,
+  writable: boolean,
   update: DescriptorUpdate<unknown>,
   hooks: ObjectHooks<unknown>,
 ): PropertyDefinitionResult {
@@ -155,14 +162,12 @@ function defineField(
     return "rejected";
   if ((update.fields & configurableField) !== 0 && !update.configurable)
     return "rejected";
-  if (
-    (update.fields & writableField) !== 0 &&
-    update.writable !== field.writable
-  )
+  if ((update.fields & writableField) !== 0 && update.writable !== writable)
     return "rejected";
   if ((update.fields & valueField) !== 0) {
-    if (field.writable) field.write(update.value);
-    else if (!hooks.sameValue(update.value, field.read())) return "rejected";
+    if (writable) access.write(field, update.value);
+    else if (!hooks.sameValue(update.value, access.read(field)))
+      return "rejected";
   }
   return "accepted";
 }
@@ -171,5 +176,6 @@ function defineField(
 export function typedRecordOf(
   object: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): unknown {
-  return object.internalMethods?.typedRecord;
+  const recordOf = object.internalMethods?.typedRecord;
+  return recordOf === undefined ? undefined : recordOf();
 }

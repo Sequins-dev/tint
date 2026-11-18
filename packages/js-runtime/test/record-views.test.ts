@@ -22,35 +22,23 @@ const prototype = objects.createObject<Key, unknown>(undefined);
  * `readonly name: string`, plus an integer-like field. */
 function makeView() {
   const record = { count: 1, name: "a", 1: true };
-  const fields: objects.RecordViewField[] = [
-    {
-      key: "count",
-      writable: true,
-      read: () => record.count,
-      write: (value: unknown) => {
+  const keys = ["count", "name", "1"];
+  const access: objects.RecordViewAccess = {
+    keys,
+    writable: [true, false, true],
+    read: (field: number) =>
+      field === 0 ? record.count : field === 1 ? record.name : record[1],
+    write: (field: number, value: unknown) => {
+      if (field === 0) {
         if (typeof value !== "number") throw new TypeError("count: number");
         record.count = value;
-      },
-    },
-    {
-      key: "name",
-      writable: false,
-      read: () => record.name,
-      write: () => {
-        throw new Error("unreachable");
-      },
-    },
-    {
-      key: "1",
-      writable: true,
-      read: () => record[1],
-      write: (value: unknown) => {
+      } else if (field === 2) {
         if (typeof value !== "boolean") throw new TypeError("1: boolean");
         record[1] = value;
-      },
+      } else throw new Error("unreachable");
     },
-  ];
-  const view = objects.createRecordView(prototype, record, fields);
+  };
+  const view = objects.createRecordView(prototype, record, access);
   return { record, view };
 }
 const receiver = (object: objects.OrdinaryObject<Key, unknown>) => ({
