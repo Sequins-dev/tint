@@ -178,6 +178,48 @@ and [Linux diagnostics](runtime-diagnostics.md#linux-usdt-probes).
 | Conformance      | Run unchanged pinned Test262 selections against both backends under the same variant/negative-phase policy. Start with calls, abrupt completion, numeric edges, object/array behavior, then live eval and shared/atomic behavior. Store immutable per-target reports with the actual denominator, unsupported and failed variants, heartbeat/stall records and no whole-suite extrapolation.                                                        |
 | Hardware         | Before declaring production parity, run the supported baseline and a current x86-64 machine, exercise concurrency/GC and live publication, then measure native self-compile cycles and wall time and matched JS workloads.                                                                                                                                                                                                                          |
 
+## Running hosted fixtures and bootstrap images
+
+`TINT_NATIVE_TARGET` selects the hosted fixture's build target.
+`TINT_NATIVE_RUNNER` selects its executor. Darwin arm64 uses
+`darwin-local`, with LLDB admission and a stop at entry. Linux arm64 uses
+`linux-dev`, through the shared `dev` machine on macOS or directly when
+the Node host is Linux arm64. Set `TINT_BUILD_ONLY=1` to keep the image and
+its build manifest without executing the fixture.
+
+Linux x86-64 requires an explicit runner.
+
+- `x64-qemu-dev` runs QEMU user mode on the arm64 Linux `dev` machine.
+  From this checkout on macOS, install the pinned Debian glibc 2.36 sysroot
+  and QEMU with
+  `container machine run -n dev -w "$PWD" -- sh tools/setup-x64-sysroot.sh "$HOME/.t3"`.
+  The command puts the runtime files in `~/.t3/tint-x64-sysroot` and the
+  emulator in `~/.t3/tint-x64-qemu`. It downloads packages by immutable
+  Debian Snapshot file ID and verifies their SHA-256 before extraction.
+  Each launch batch verifies the three runtime files against
+  [the sysroot manifest](../tools/x64-sysroot.sha256) and records its
+  SHA-256. `TINT_X64_QEMU` can select another QEMU executable in `dev`.
+- `x64-ssh` stages one archive per batch against the Debian 13 VM and
+  executes in a temporary guest directory. Start the VM with
+  `~/.t3/vms/start-x64.sh`. The default SSH destination is
+  `tint@127.0.0.1:2223`, with key `~/.t3/vms/tint-vm-key`. OpenSSH must
+  already trust the VM host key. Set `TINT_X64_SSH_HOST`,
+  `TINT_X64_SSH_PORT`, or `TINT_X64_SSH_KEY` to override these settings.
+
+Run the two raw ELF and glibc acceptance probes on either executor with
+`TINT_X64_RUNNER_TEST=x64-qemu-dev node --test tools/native-target-runner.test.ts`
+or the same command with `x64-ssh`. The batch includes a trap, a timeout
+and a subsequent successful run to check result recovery.
+
+Keep hosted fixture execution records with `TINT_KEEP_NATIVE=1`.
+`node tools/bootstrap-compiler.ts <output> --run -- <inferior arguments>`
+opts into running the newly built compiler and writing matching build and
+execution manifests. Bootstrap arguments that name files must resolve on
+the executor. Stage the source snapshot separately when using SSH and
+retrieve any compiled output from the guest path supplied to the compiler.
+The execution records identify the executor, input image and build
+manifest, and record exit status, signal, timeout or execution-unavailable.
+
 ## Performance stance
 
 Get correct frames, calls and guards first. With fewer registers than arm64,

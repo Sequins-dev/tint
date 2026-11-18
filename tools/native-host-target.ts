@@ -13,18 +13,14 @@ export function nodeHostTarget(
   return platform === "linux" ? linuxAArch64Target : darwinAArch64Target;
 }
 
-/** The target whose images native fixtures build and run: this host's
- * (darwin-aarch64 on macOS, linux-aarch64 on Linux), or TINT_NATIVE_TARGET
- * to build images for another host (they are then only runnable with
- * TINT_BUILD_ONLY=1). */
+/** The target whose images native fixtures build, independent of the runner.
+ * Defaults to this Node host; TINT_NATIVE_TARGET selects a cross-build. */
 export function nativeFixtureTarget(): NativeTarget {
   const named = process.env.TINT_NATIVE_TARGET;
   if (named !== undefined) {
     const target = nativeTargetNamed(named);
     if (target === undefined)
-      throw Error(
-        "TINT_NATIVE_TARGET must be darwin-aarch64 or linux-aarch64: " + named,
-      );
+      throw Error("unknown TINT_NATIVE_TARGET: " + named);
     return target;
   }
   return nodeHostTarget();
