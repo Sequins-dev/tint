@@ -186,9 +186,10 @@ test("Script service generated modules use captured source bytes", () => {
     literals.includes(new TextDecoder().decode(input.bytes)),
   );
   // One captured text per Script runtime source (including the number- and
-  // string-keyed Map providers, the console provider and the SHA-256 rounds
-  // intrinsic's portable body).
-  assert.equal(texts.length, 26);
+  // string-keyed Map providers, the console provider, the SHA-256 rounds
+  // intrinsic's portable body and the typed BigInt helpers with the
+  // js-runtime BigIntValue module they share).
+  assert.equal(texts.length, 28);
   const first = texts[0]!;
   const changed = {
     ...snapshot,

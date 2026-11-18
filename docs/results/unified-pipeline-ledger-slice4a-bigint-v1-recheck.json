@@ -1,0 +1,66 @@
+{
+  "kind": "tint-unified-pipeline-ledger",
+  "version": 1,
+  "label": "slice4a-bigint-v1-recheck",
+  "recorded": "2026-11-18T17:36:38.848Z",
+  "node": "v24.12.0",
+  "sourceSnapshot": "4f9fc739ff276a3cd63f86144402afc46777e13aa34183913ef8dbd203607585",
+  "summary": {
+    "typed": {
+      "general": 2
+    },
+    "untyped": {
+      "general": 2
+    }
+  },
+  "entries": [
+    {
+      "construct": "reassignment-narrowing",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:269:275: nullish assignment requires an optional primitive local",
+      "sourceSnapshot": "4f9fc739ff276a3cd63f86144402afc46777e13aa34183913ef8dbd203607585",
+      "seconds": 63
+    },
+    {
+      "construct": "reassignment-narrowing",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:64: named functions require parameter and return annotations",
+      "sourceSnapshot": "4f9fc739ff276a3cd63f86144402afc46777e13aa34183913ef8dbd203607585",
+      "seconds": 62.9
+    },
+    {
+      "construct": "module-initializers",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: module evaluation is required for this statement",
+      "sourceSnapshot": "4f9fc739ff276a3cd63f86144402afc46777e13aa34183913ef8dbd203607585",
+      "seconds": 44.2
+    },
+    {
+      "construct": "module-initializers",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: module evaluation is required for this statement",
+      "sourceSnapshot": "4f9fc739ff276a3cd63f86144402afc46777e13aa34183913ef8dbd203607585",
+      "seconds": 43.3
+    }
+  ]
+}

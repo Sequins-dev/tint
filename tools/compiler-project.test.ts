@@ -66,6 +66,10 @@ test("runtime providers preserve stable namespaces independently of package path
       module: "packages/native-runtime/src/values/index.ts",
     },
     {
+      namespace: "bigint",
+      module: "packages/native-runtime/src/values/bigint.ts",
+    },
+    {
       namespace: "number-text",
       module: "packages/foundation/src/numeric/number-text/index.ts",
     },

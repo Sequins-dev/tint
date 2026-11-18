@@ -19,6 +19,7 @@ export type Type =
         | "undefined"
         | "null"
         | "string"
+        | "bigint"
         | "TypeError"
         | "RangeError"
         | "ArrayBuffer"
@@ -864,8 +865,8 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
   // source and only relates to unknown). Objects and functions relate to each
   // other and share a kind. Masks are cached per id: types never change.
   let kindMasks = new Uint32Array(Math.max(16, types.length));
-  const knownKind = 0x40000,
-    everyKind = 0x3ffff;
+  const knownKind = 0x80000,
+    everyKind = 0x7ffff;
   function kindBit(kind: string): number {
     switch (kind) {
       case "number":
@@ -903,6 +904,8 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         return 32768;
       case "map":
         return 65536;
+      case "bigint":
+        return 262144;
       default:
         return 131072;
     }

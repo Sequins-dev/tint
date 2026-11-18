@@ -766,6 +766,7 @@ const typedGlobals: readonly string[] = [
   "Boolean",
   "String",
   "Number",
+  "BigInt",
   "Math",
   "Map",
   "Set",

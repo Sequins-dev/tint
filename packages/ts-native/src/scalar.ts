@@ -160,6 +160,41 @@ export interface PrimitiveRuntime {
   readonly canonicalKey: number;
   readonly canonicalOptionalNumber: number;
 }
+/** Typed BigInt helpers (native-runtime/values/bigint.ts). A BigInt is a
+ * reference to js-runtime's BigIntValue record; the closure lowering
+ * validates each helper's checked signature against that record. */
+export interface BigIntRuntime {
+  /** (decimal text) => bigint, for source literals. */
+  readonly literal: number;
+  /** (bigint, bigint) => bigint, by binary operator. */
+  readonly binary: {
+    readonly "+": number;
+    readonly "-": number;
+    readonly "*": number;
+    readonly "/": number;
+    readonly "%": number;
+    readonly "**": number;
+    readonly "&": number;
+    readonly "|": number;
+    readonly "^": number;
+    readonly "<<": number;
+    readonly ">>": number;
+  };
+  readonly negate: number;
+  readonly not: number;
+  /** (bigint, bigint) => -1 | 0 | 1. */
+  readonly compare: number;
+  /** (bigint, number) => -1 | 0 | 1, or NaN when unordered. */
+  readonly compareNumber: number;
+  readonly equal: number;
+  readonly truthy: number;
+  readonly toString: number;
+  readonly toNumber: number;
+  readonly fromNumber: number;
+  readonly fromBoolean: number;
+  /** (bits, bigint, signed) => bigint: BigInt.asIntN / BigInt.asUintN. */
+  readonly asWidth: number;
+}
 export interface MapRuntimeBinding {
   readonly key: CollectionElement;
   readonly value: CollectionElement;
@@ -322,8 +357,10 @@ export function lowerFunction(
   maps?: readonly MapRuntimeBinding[],
   owned?: OwnedEnvironmentPlan,
   primitiveBindings?: PrimitiveRuntime,
+  bigIntBindings?: BigIntRuntime,
 ): FunctionIR {
-  const primitives = primitiveBindings;
+  const primitives = primitiveBindings,
+    bigints = bigIntBindings;
   const slots: ScalarType[] = fn.locals.map((l) => l.type),
     blocks: Builder[] = [];
   const receiverSlot = fn.receiver ? slots.length : undefined;
@@ -338,7 +375,9 @@ export function lowerFunction(
   // Proofs apply to SSA values and expression-result temporaries, never mutable
   // source locals. Union-valued merge slots are not inferred from a branch store.
   const undefinedValues: number[] = [],
-    undefinedSlots: number[] = [];
+    undefinedSlots: number[] = [],
+    // Slots holding BigInts (references to BigIntValue, possibly absent).
+    bigIntSlots: number[] = [];
   function block(): Builder {
     const b: Builder = {
       id: blocks.length,
@@ -1414,6 +1453,11 @@ export function lowerFunction(
   }
   function stringOperand(slot: number, node: Expression): number {
     if (slots[slot] === "string") return slot;
+    if (bigIntSlots[slot] === 1 && slots[slot] === "reference") {
+      const text = runtimeCall(bigIntRuntime().toString, [slot], node);
+      if (text === undefined) throw "BigInt string conversion invariant";
+      return text;
+    }
     if (slots[slot] === "number") {
       const target = info(node).callee;
       if (target === undefined) throw "number formatter binding invariant";
@@ -1460,6 +1504,170 @@ export function lowerFunction(
     return result;
   }
 
+  function bigIntRuntime(): BigIntRuntime {
+    if (bigints === undefined) throw "BigInt runtime invariant";
+    return bigints;
+  }
+  /** A runtime call whose reference result is a BigInt. */
+  function bigIntCall(
+    target: number,
+    args: readonly number[],
+    node: Span,
+  ): number {
+    const slot = runtimeCall(target, args, node);
+    if (slot === undefined) throw "BigInt call result invariant";
+    bigIntSlots[slot] = 1;
+    return slot;
+  }
+  /** Truthiness of a possibly absent BigInt: present and nonzero. */
+  function bigIntTruth(slot: number, node: Span): number {
+    const runtime = bigIntRuntime();
+    if (slots[slot] === "reference") {
+      const result = runtimeCall(runtime.truthy, [slot], node);
+      if (result === undefined) throw "BigInt truthiness invariant";
+      return load(result, node);
+    }
+    if (slots[slot] !== "optional-reference") throw "BigInt slot invariant";
+    const result = temporary("boolean"),
+      present = block(),
+      absent = block(),
+      merge = block(),
+      test = nextValue++;
+    emit({
+      kind: "unary",
+      operator: "truthy",
+      id: test,
+      operand: load(slot, node),
+      start: node.start,
+      end: node.end,
+    });
+    choose(test, present, absent, node);
+    current = present;
+    const presentSlot = save(load(slot, node), "reference", node);
+    const truthy = runtimeCall(runtime.truthy, [presentSlot], node);
+    if (truthy === undefined) throw "BigInt truthiness invariant";
+    store(result, load(truthy, node), node);
+    jump(merge.id, node);
+    current = absent;
+    const no = nextValue++;
+    emit({
+      kind: "constant",
+      id: no,
+      value: false,
+      start: node.start,
+      end: node.end,
+    });
+    store(result, no, node);
+    jump(merge.id, node);
+    current = merge;
+    return load(result, node);
+  }
+  /** BigInt binary operators. Comparisons are exact, also against a Number
+   * (compareNumber yields NaN for NaN, which every relation rejects);
+   * equality compares values, never references. */
+  function bigIntBinaryHelper(
+    runtime: BigIntRuntime,
+    operator: string,
+  ): number {
+    const binary = runtime.binary;
+    switch (operator) {
+      case "+":
+        return binary["+"];
+      case "-":
+        return binary["-"];
+      case "*":
+        return binary["*"];
+      case "/":
+        return binary["/"];
+      case "%":
+        return binary["%"];
+      case "**":
+        return binary["**"];
+      case "&":
+        return binary["&"];
+      case "|":
+        return binary["|"];
+      case "^":
+        return binary["^"];
+      case "<<":
+        return binary["<<"];
+      case ">>":
+        return binary[">>"];
+    }
+    throw "BigInt binary operator invariant";
+  }
+  function bigIntBinary(
+    node: Expression & { readonly kind: "binary" },
+    left: number,
+    right: number,
+  ): number | undefined {
+    const runtime = bigIntRuntime(),
+      operator = node.operator,
+      leftBigInt = bigIntSlots[left] === 1 && slots[left] === "reference",
+      rightBigInt = bigIntSlots[right] === 1 && slots[right] === "reference";
+    switch (operator) {
+      case "+":
+      case "-":
+      case "*":
+      case "/":
+      case "%":
+      case "**":
+      case "&":
+      case "|":
+      case "^":
+      case "<<":
+      case ">>":
+        if (!leftBigInt || !rightBigInt) return undefined;
+        return bigIntCall(
+          bigIntBinaryHelper(runtime, operator),
+          [left, right],
+          node,
+        );
+      case "<":
+      case ">":
+      case "<=":
+      case ">=": {
+        const zero = numberSlot(0, node);
+        if (leftBigInt && rightBigInt) {
+          const order = runtimeCall(runtime.compare, [left, right], node);
+          if (order === undefined) throw "BigInt comparison invariant";
+          return binarySlot(operator, order, zero, node);
+        }
+        if (leftBigInt && slots[right] === "number") {
+          const order = runtimeCall(runtime.compareNumber, [left, right], node);
+          if (order === undefined) throw "BigInt comparison invariant";
+          return binarySlot(operator, order, zero, node);
+        }
+        if (rightBigInt && slots[left] === "number") {
+          // n < b  ⇔  compare(b, n) > 0, and so on.
+          const order = runtimeCall(runtime.compareNumber, [right, left], node);
+          if (order === undefined) throw "BigInt comparison invariant";
+          const mirrored =
+            operator === "<"
+              ? ">"
+              : operator === ">"
+                ? "<"
+                : operator === "<="
+                  ? ">="
+                  : "<=";
+          return binarySlot(mirrored, order, zero, node);
+        }
+        return undefined;
+      }
+      case "===":
+      case "==":
+      case "!==":
+      case "!=": {
+        if (!leftBigInt || !rightBigInt) return undefined;
+        const equal = runtimeCall(runtime.equal, [left, right], node);
+        if (equal === undefined) throw "BigInt equality invariant";
+        return operator === "===" || operator === "=="
+          ? equal
+          : unarySlot("!", equal, "boolean", node);
+      }
+    }
+    return undefined;
+  }
   function value(node: Expression): number {
     const slot = expression(node);
     if (slot === undefined && info(node).never) return numberSlot(0, node);
@@ -1470,6 +1678,7 @@ export function lowerFunction(
     // A branch already tests the boolean carrier's zero/nonzero bits. Avoid
     // normalizing them into another boolean first, even for noncanonical bits.
     if (slots[slot] === "boolean") return load(slot, node);
+    if (bigIntSlots[slot] === 1) return bigIntTruth(slot, node);
     if (slots[slot] === "primitive") {
       if (primitives === undefined) throw "primitive runtime invariant";
       return primitiveCall(
@@ -3288,6 +3497,8 @@ export function lowerFunction(
     }
     if (result !== undefined && info(node).undefinedValue)
       undefinedSlots[result] = 1;
+    if (result !== undefined && info(node).bigint === true)
+      bigIntSlots[result] = 1;
     return result;
   }
   function chainExpression(node: Expression): number | undefined {
@@ -3920,6 +4131,21 @@ export function lowerFunction(
         });
         return save(id, "primitive", node);
       }
+      case "bigint": {
+        const text = nextValue++;
+        emit({
+          kind: "string-literal",
+          id: text,
+          value: node.value,
+          start: node.start,
+          end: node.end,
+        });
+        return bigIntCall(
+          bigIntRuntime().literal,
+          [save(text, "string", node)],
+          node,
+        );
+      }
       case "number":
       case "boolean": {
         const id = nextValue++;
@@ -4020,15 +4246,50 @@ export function lowerFunction(
             type = info(node.operand).type;
           if (type === "general") {
             if (operand === undefined) throw "general typeof operand invariant";
-            const id = nextValue++;
+            const record = info(node).bigIntRecord;
+            const kind = (): number => {
+              const id = nextValue++;
+              emit({
+                kind: "general-kind",
+                id,
+                value: load(operand, node),
+                start: node.start,
+                end: node.end,
+              });
+              return id;
+            };
+            if (record === undefined) return save(kind(), "string", node);
+            // General values carry BigInts as BigIntValue objects.
+            const result = temporary("string"),
+              bigint = block(),
+              other = block(),
+              merge = block(),
+              test = nextValue++;
             emit({
-              kind: "general-kind",
-              id,
+              kind: "general-record-is",
+              id: test,
               value: load(operand, node),
+              record,
               start: node.start,
               end: node.end,
             });
-            return save(id, "string", node);
+            choose(test, bigint, other, node);
+            current = bigint;
+            const name = nextValue++;
+            emit({
+              kind: "string-literal",
+              id: name,
+              value: "bigint",
+              start: node.start,
+              end: node.end,
+            });
+            store(result, name, node);
+            jump(merge.id, node);
+            current = other;
+            store(result, kind(), node);
+            jump(merge.id, node);
+            current = merge;
+            return result;
           }
           if (type === "primitive") {
             if (primitives === undefined || operand === undefined)
@@ -4087,7 +4348,9 @@ export function lowerFunction(
             current = yes;
             label(
               type === "optional-reference"
-                ? "object"
+                ? info(node.operand).bigint === true
+                  ? "bigint"
+                  : "object"
                 : type === "optional-boolean"
                   ? "boolean"
                   : type === "optional-string"
@@ -4103,13 +4366,36 @@ export function lowerFunction(
             label(
               info(node).typeofFunction
                 ? "function"
-                : type === "void"
-                  ? "undefined"
-                  : type === "number" || type === "boolean" || type === "string"
-                    ? type
-                    : "object",
+                : info(node.operand).bigint === true
+                  ? "bigint"
+                  : type === "void"
+                    ? "undefined"
+                    : type === "number" ||
+                        type === "boolean" ||
+                        type === "string"
+                      ? type
+                      : "object",
             );
           return result;
+        }
+        if (info(node.operand).bigint === true) {
+          const operand = value(node.operand);
+          if (node.operator === "!")
+            return unarySlot(
+              "!",
+              save(truth(operand, node), "boolean", node),
+              "boolean",
+              node,
+            );
+          if (node.operator === "-" || node.operator === "~")
+            return bigIntCall(
+              node.operator === "-"
+                ? bigIntRuntime().negate
+                : bigIntRuntime().not,
+              [operand],
+              node,
+            );
+          throw "BigInt unary operator invariant";
         }
         if (node.operator === "!" && info(node.operand).type === "primitive") {
           return unarySlot(
@@ -4334,6 +4620,10 @@ export function lowerFunction(
           return result;
         }
         const right = value(node.right);
+        if (bigIntSlots[left] === 1 || bigIntSlots[right] === 1) {
+          const lowered = bigIntBinary(node, left, right);
+          if (lowered !== undefined) return lowered;
+        }
         if (
           slots[left] === "general" ||
           slots[right] === "general" ||
@@ -4822,6 +5112,31 @@ export function lowerFunction(
           }
           if (input === undefined) throw "String argument invariant";
           return stringOperand(input, node);
+        }
+        if (
+          builtin === "number-from-bigint" ||
+          builtin === "bigint-identity" ||
+          builtin === "bigint-from-number" ||
+          builtin === "bigint-from-boolean"
+        ) {
+          const argument = node.arguments[0];
+          if (argument === undefined || argument.kind === "spread")
+            throw "BigInt conversion argument invariant";
+          const input = value(argument);
+          if (builtin === "bigint-identity") return input;
+          const runtime = bigIntRuntime();
+          if (builtin === "number-from-bigint") {
+            const result = runtimeCall(runtime.toNumber, [input], node);
+            if (result === undefined) throw "BigInt conversion invariant";
+            return result;
+          }
+          return bigIntCall(
+            builtin === "bigint-from-number"
+              ? runtime.fromNumber
+              : runtime.fromBoolean,
+            [input],
+            node,
+          );
         }
         if (builtin !== undefined && builtin !== "function-call") {
           const target = ungroup(node.callee);
