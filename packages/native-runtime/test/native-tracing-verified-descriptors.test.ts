@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   scanNativeObjectWithVerifiedDescriptor,
-  scanNativeRootsWithVerifiedDescriptors,
+  createVerifiedNativeRootScan,
 } from "../src/tracing/scan.ts";
 import { writeStackRoots } from "./fixtures/stack-roots.ts";
 function fixture() {
@@ -50,7 +50,7 @@ test("verified descriptors retain exact pointer and general-value scanning", () 
   ]);
   seen.length = 0;
   assert.equal(
-    scanNativeRootsWithVerifiedDescriptors(read, head, (value, slot) => {
+    createVerifiedNativeRootScan(read)(head, (value, slot) => {
       seen.push([value, slot]);
       return true;
     }),
@@ -90,11 +90,11 @@ test("verified static descriptors do not waive dynamic tags, references, read au
     "read",
   );
   assert.equal(
-    scanNativeRootsWithVerifiedDescriptors(read, head, () => true, 0),
+    createVerifiedNativeRootScan(read)(head, () => true, 0),
     "limit",
   );
   assert.equal(
-    scanNativeRootsWithVerifiedDescriptors(read, head, () => true, 1, 1),
+    createVerifiedNativeRootScan(read)(head, () => true, 1, 1),
     "limit",
   );
 });

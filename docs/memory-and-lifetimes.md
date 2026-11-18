@@ -99,17 +99,18 @@ hidden in error construction, property accessors, host callbacks, and runtime he
 
 A weak cell (marker 7, 40 bytes: a header whose flags say weak or ephemeron,
 then key and value tag/payload pairs) holds its key weakly; an ephemeron also
-holds its value exactly as long as its key. Every collector implements the same
-rule: weak slots are not traced in the strong closure; afterwards an ephemeron
+holds its value exactly as long as its key. Every moving collector implements the
+same rule: weak slots are not traced in the strong closure; afterwards an ephemeron
 whose key survived traces its value, to a fixpoint; then a dead key clears both
 pairs and a weak cell drops its value pair. Per collector:
 
 - **Copying** (Cheney): weak slots defer as they are copied; the fixpoint and
   clearing run over the copied slots.
 - **Generational, minor**: serial minors (under 4 MiB of nursery, one CPU,
-  or no room for the pool's buffer waste) follow the Cheney rules above for slots copied out of the nursery; parallel minors
-  link each copied slot into its copier's lists and run the fixpoint as
-  rounds on the collector pool
+  or no room for the pool's buffer waste) follow the Cheney rules above for
+  slots copied out of the nursery; parallel minors link each copied slot
+  into its copier's lists and run the fixpoint as rounds on the collector
+  pool
   ([parallel weak slots](parallel-gc.md#weak-slots)). Keys never change after
   creation and every survivor of a minor is promoted, so a promoted cell's
   key is old and alive for a minor; a promoted ephemeron whose value is
@@ -121,8 +122,11 @@ pairs and a weak cell drops its value pair. Per collector:
   surviving pairs. A parallel mark records each marked slot per worker and
   runs the fixpoint as pool rounds; a full list or mark stack falls back to
   the serial fixpoint over every live slot.
+- **Region** (`initializeRuntime`, non-moving mark and sweep): no weak
+  processing yet. Weak slots are traced strongly, so a weak cell's key (and an
+  ephemeron's value) lives as long as the cell and never clears.
 
-Weak cells do not change which collector paths a program takes.
+Weak cells do not change which generational collector paths a program takes.
 External storage (`tint:ffi`'s `external`) registers views through weak cells,
 so it works under every collector. Native tests: `tools/native-weak.test.ts`
 (young targets dying young, promoted targets surviving and dying in majors,

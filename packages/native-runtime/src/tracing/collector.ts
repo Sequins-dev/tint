@@ -1,5 +1,9 @@
 import { createGraphMarker, type MarkStatus } from "../graph/index.ts";
-import { scanNativeObject, scanNativeRoots, type ReadWord } from "./scan.ts";
+import {
+  createNativeRootScan,
+  scanNativeObject,
+  type ReadWord,
+} from "./scan.ts";
 export interface NativeCollector {
   readonly mark: (
     allocationCount: number,
@@ -86,6 +90,8 @@ export function createNativeCollector(
     },
   };
   const marker = createGraphMarker(graph, marks, pending);
+  // Marking runs while the managed allocator refuses requests.
+  const scanRoots = createNativeRootScan(read);
   return {
     mark: (allocationCount, rootHead, maxSteps: number = 1000000) => {
       marks.fill(0);
@@ -141,13 +147,7 @@ export function createNativeCollector(
       }
       rootCount = 0;
       rootOverflow = false;
-      const status = scanNativeRoots(
-        read,
-        rootHead,
-        saveRoot,
-        maxSteps,
-        maxSteps,
-      );
+      const status = scanRoots(rootHead, saveRoot, maxSteps, maxSteps);
       if (status !== "complete")
         return rootOverflow
           ? "capacity"

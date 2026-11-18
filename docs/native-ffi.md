@@ -385,8 +385,8 @@ heap. What remains is lifetime:
   rather than read freed or reused memory; it does. A second release, or
   `address()` of released storage, throws TypeError.
 - `external(byteLength)` also registers the view with the collector through a
-  weak cell, under every collector; sweeps (every doubling of the registry)
-  unmap storage whose view died, and external memory pressure (mapped bytes
+  weak cell; sweeps (every doubling of the registry) unmap storage whose view
+  died, and external memory pressure (mapped bytes
   above twice the level after the last forced collection, at least 64 MiB)
   forces a collection first. The storage fixture drops 512 × 1 MiB views and
   checks the mapped total stays bounded, under the generational and copying
@@ -396,9 +396,12 @@ heap. What remains is lifetime:
   Reading memory at an address (`cStringAt` and the views below) is
   `tint:ffi/unsafe`'s ([foreign memory](#foreign-memory)).
 
-Registration uses weak cells, which every collector supports
-([weak cells](memory-and-lifetimes.md#weak-cells)); a program pays for weak
-processing only once it creates one. The primitives (`adoptExternal`,
+Registration uses weak cells ([weak cells](memory-and-lifetimes.md#weak-cells)).
+The generational and copying collectors clear dead weak cells, so unreachable
+`external()` storage is unmapped; the region collector does no weak processing
+(it traces weak cells as strong), so under it `external()` storage is only
+released by an explicit `release()` or at exit. A program pays for weak
+processing only once it creates a weak cell. The primitives (`adoptExternal`,
 `externalAddress`, `retargetExternal` in `ffi/primitives.ts`) are bound by
 explicit `NativeForeignMemoryBinding`s that `foreignRuntimeBindings` supplies
 when the program loads the module, together with the weak and collection
@@ -924,12 +927,17 @@ Recorded at the Phase 2b merge; not scheduled here.
    representation, an object with accessor properties over the same bytes
    applying the same member contracts, so that `v.m` keeps its meaning there,
    with the typed lowering remaining its specialization.
-3. **Region collector root-scan trap (pre-existing).** Under the region
-   collector (`initializeRuntime`), allocation churn followed by a forced
-   collection traps (`brk #3`) in the root scan (`tracing/scan.ts`
-   `scanRoots`), with no weak cells or FFI involved; reproduced at 1ab3a67b6.
-   The weak-cell native tests therefore cover only the generational and
-   copying collectors.
+3. **Region collector root-scan trap (pre-existing; fixed).** Under the
+   region collector (`initializeRuntime`), the first collection trapped
+   (`brk #3`) in the root scan (`tracing/scan.ts` `scanRoots`): since the
+   stack-map walker replaced root frames, each scan allocated its visitor
+   closures, and the region allocator refuses requests while it collects.
+   Root scanners are now created once with their collector and scan without
+   allocating, and the region allocator also serves request size 0 (forced
+   collection); `tools/native-region-collection.test.ts` covers churn and
+   forced collections. The weak-cell native tests still cover only the
+   generational and copying collectors: the region collector traces weak
+   slots strongly (no weak processing), so weak cells never clear there.
 
 ## Phase plan
 
