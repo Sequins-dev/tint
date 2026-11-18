@@ -206,7 +206,8 @@ callback's Tint frames. The walk never reads C frames. Instead:
 
       +0 caller frame pointer, +8 return address of the may-callback call,
       +16 previous record, +24 entered, +32 thread, +40 context,
-      +48 dispatcher closure, +56 callback closures
+      +48 dispatcher closure, +56 and +64 failure notes, +72 callback
+      functions, then direct callbacks' views
 
 - When a frame returns into the transition range, the walk
   (`tracing/transitions.ts`, `transitionFrame`, called from

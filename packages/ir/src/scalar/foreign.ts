@@ -54,6 +54,26 @@ export interface ForeignCall {
   /** Per prototype operand: the C prototype of a `callback` operand (its
    * thunk's ABI), else undefined. */
   readonly callbacks?: readonly (CSignature | undefined)[] | undefined;
+  /** Per prototype operand: for a `callback` operand whose thunk calls the
+   * TypeScript function itself (no adapter), the indices of its parameters
+   * delivered as record views (possibly none); else undefined. Such calls
+   * end with the failure notes, `(error: unknown) => void` for exceptions
+   * and `(code: number) => void` for invalid values (0: a null record
+   * pointer, 1: a result outside its C type), then each direct callback's
+   * views (one Uint8Array per listed parameter, in order). */
+  readonly directCallbacks?:
+    readonly (readonly number[] | undefined)[] | undefined;
+}
+/** The operands after a may-callback call's prototype operands: the two
+ * failure notes and the direct callbacks' views (none without direct
+ * callbacks). */
+export function directCallbackExtras(call: ForeignCall): number {
+  const direct = call.directCallbacks;
+  if (direct === undefined) return 0;
+  let extras = 2;
+  for (let index = 0; index < direct.length; index++)
+    extras += direct[index]?.length ?? 0;
+  return extras;
 }
 /** A may-callback call's transition record, in its caller's outgoing frame
  * area (16-aligned): the caller's frame pointer and the call's return
@@ -74,11 +94,19 @@ export const callbackTransition = {
   thread: 32,
   context: 40,
   registered: 48,
-  callbacks: 56,
+  onThrow: 56,
+  onInvalid: 64,
+  callbacks: 72,
 };
-/** A transition record's bytes for `count` callbacks (16-aligned). */
-export function transitionBytes(count: number): number {
-  return Math.ceil((callbackTransition.callbacks + count * 8) / 16) * 16;
+/** `entered` values: no callback running, one running, or a direct
+ * callback of this call failed (later invocations return 0 at once). */
+export const callbackEntered = { idle: 0, running: 1, failed: 2 };
+/** A transition record's bytes for `count` callbacks and `views` direct
+ * callback views after them (16-aligned). */
+export function transitionBytes(count: number, views: number = 0): number {
+  return (
+    Math.ceil((callbackTransition.callbacks + (count + views) * 8) / 16) * 16
+  );
 }
 export const callbackState = { current: 0, size: 8 };
 /** The universal trampoline's call frame, a Uint8Array the runtime fills
@@ -229,18 +257,36 @@ export function foreignCallTypes(call: ForeignCall): ForeignCallTypesResult {
         ok: false,
         error: "a may-callback call takes its state and dispatcher first",
       };
-    // Each callback operand names its C prototype, and only those do.
-    const callbacks = call.callbacks ?? [];
-    for (let index = 2; index < call.operands.length; index++)
+    // Each callback operand names its C prototype, and only those do; a
+    // direct callback is a callback.
+    const callbacks = call.callbacks ?? [],
+      directs = call.directCallbacks ?? [],
+      extras = directCallbackExtras(call),
+      prototypeEnd = call.operands.length - extras;
+    if (prototypeEnd < 2)
+      return { ok: false, error: "direct callbacks need their operands" };
+    for (let index = 2; index < prototypeEnd; index++) {
       if (
         (call.operands[index] === "callback") !==
         (callbacks[index - 2] !== undefined)
       )
         return { ok: false, error: "callback operands need their prototypes" };
+      if (
+        directs[index - 2] !== undefined &&
+        callbacks[index - 2] === undefined
+      )
+        return { ok: false, error: "direct callbacks are callbacks" };
+    }
+    for (let index = prototypeEnd; index < call.operands.length; index++)
+      if (call.operands[index] !== "callback")
+        return {
+          ok: false,
+          error: "direct callback notes and views are function values",
+        };
     // The prototype checks as a leaf call with each callback as an address;
     // a callback operand is a function value.
     const operands: ForeignOperand[] = [];
-    for (let index = 2; index < call.operands.length; index++) {
+    for (let index = 2; index < prototypeEnd; index++) {
       const operand = call.operands[index];
       if (operand === undefined) throw "foreign operand invariant";
       operands.push(operand === "callback" ? "number" : operand);
@@ -260,6 +306,9 @@ export function foreignCallTypes(call: ForeignCall): ForeignCallTypesResult {
         call.operands[index + 2] === "callback" ? "reference" : parameter,
       );
     }
+    // The failure notes are function values, the views Uint8Arrays.
+    for (let index = 0; index < extras; index++)
+      parameters.push(index < 2 ? "reference" : "Uint8Array");
     return { ok: true, value: { parameters, result: direct.value.result } };
   }
   if (call.callbacks !== undefined)

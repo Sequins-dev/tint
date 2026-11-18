@@ -127,6 +127,8 @@ export {
   dynamicForeignCall,
   dynamicCallFrame,
   callbackTransition,
+  callbackEntered,
+  directCallbackExtras,
   callbackState,
   transitionBytes,
   type ForeignCall,

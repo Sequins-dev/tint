@@ -1096,11 +1096,12 @@ releaseCallback(stream.zalloc); // from tint:ffi, once C no longer calls it
   are Phase 5's (queued to the context); the collector's single-mutator
   invariant holds because a callback runs only on the thread that made the
   call, inside it.
-- _Exceptions never unwind through C._ The generated adapter catches what
-  the TypeScript function throws, records it, and returns 0 to C; later
-  calls of that callback during the same call return 0 without running.
-  After C returns, the wrapper rethrows the first recorded exception (a
-  scoped callback's, then a registered one's). Nested calls compose: an
+- _Exceptions never unwind through C._ What a callback throws is recorded
+  and C gets 0; after a failure, later invocations return 0 without
+  running (for a direct callback, every direct callback of that call; for
+  an adapter, that callback). After C returns, the wrapper rethrows the
+  first recorded exception (a registered callback's, then the call's
+  direct callbacks', then each adapter callback's). Nested calls compose: an
   exception raised two levels down is rethrown by the inner call into the
   outer callback, which records it in turn. C sees a result of 0 (zlib a
   failed allocation, qsort "equal").
@@ -1137,12 +1138,15 @@ releaseCallback(stream.zalloc); // from tint:ffi, once C no longer calls it
   **transition record** into its outgoing argument area and links it into
   the state block; after it returns it unlinks it:
 
-      +0  caller frame pointer (x29)      +32 thread (TPIDRRO_EL0 / TPIDR_EL0)
-      +8  return address of the blr       +40 context (x0 of the caller)
-      +16 previous record                 +48 dispatcher closure
-      +24 entered (a callback is running) +56 callback closures, 8 bytes each
+      +0  caller frame pointer (x29)      +40 context (x0 of the caller)
+      +8  return address of the blr       +48 dispatcher closure
+      +16 previous record                 +56 onThrow note (direct callbacks)
+      +24 entered (0 idle, 1 running,     +64 onInvalid note (direct callbacks)
+          2 a direct callback failed)     +72 callback functions, 8 bytes each,
+      +32 thread (TPIDRRO_EL0/TPIDR_EL0)      then direct callbacks' views
 
-  The record is `ceil((56 + 8n) / 16) * 16` bytes; its closure words are
+  The record is `ceil((72 + 8(n + v)) / 16) * 16` bytes for n callbacks and
+  v views; its function and view words are
   listed as references in the call's stack map, so collections inside
   callbacks update them. The call is a safepoint whose return address is
   exactly the record's return address. A function containing one saves all
@@ -1162,6 +1166,17 @@ releaseCallback(stream.zalloc); // from tint:ffi, once C no longer calls it
   everything), converts the number result to C's register and clears
   `entered`. The registry lists the thunk range with table word 1, the
   transition sentinel.
+- _Direct callbacks._ A scoped callback taking numbers and record views
+  and returning a number or nothing (qsort's comparator) has no adapter:
+  the record holds the TypeScript function itself and its views, and its
+  thunk (per prototype, position and view layout) points each view at C's
+  record (a null pointer is invalid), passes numbers in d0.. and views in
+  x4..x7, calls the function and converts the result exactly to the C type.
+  An exception (status 2) calls the record's `onThrow` note with it, an
+  invalid pointer or result calls `onInvalid` with a code; either marks the
+  record failed (`entered` 2), so the call's later invocations return 0 at
+  once, and the wrapper rethrows after C returns. Other scoped callbacks
+  (C bools) go through an adapter closure the wrapper makes per call.
 - _Registered callbacks_ call the dispatcher from the record with their id;
   the dispatcher looks the function up in `tint:ffi`'s registry.
 
@@ -1461,9 +1476,16 @@ convergence ([progressive lowering](progressive-lowering.md)), not design:
   and four per dynamic call; no callbacks for optional libraries; callbacks
   from other threads trap rather than queue (Phase 5).
 - A may-callback call with one trivial callback costs far more than a leaf
-  call (measurements): the wrapper allocates the adapter closure and its
-  captured state per call and calls through two closures. Reusing adapters
-  and inlining the wrapper are the obvious next steps.
+  call: 129.5 cycles and 648 instructions per call against 5.2 and 27
+  (counter mode, after the fold). A profile puts about 6.5% in allocation
+  and collection; most of the rest is the inlined wrapper itself
+  (callback-state and dispatcher lookups, stores into the call record, the
+  view retargets and their barriers, `to-uint32` conversions). A per-thread,
+  depth-indexed failure stack with note closures made once (branch
+  `wip/ffi-callback-failure-stack`) made it slower (151 cycles, 1027
+  instructions) and was reverted. The next attempt should start from an
+  instruction-level count of one call; single-stepping needs a much longer
+  time limit or stepping over known runtime helpers.
 
 - Narrow-integer and 64-bit arguments trap rather than throw on bad values;
   the `node:ffi` layer will throw Node's errors.
