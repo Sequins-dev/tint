@@ -4,6 +4,7 @@ import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
+import { withGateLaunch } from "./gate/lock.ts";
 import { prepareDateTimeNativeService } from "./date-time-native-service.ts";
 import { frozenNativeRunIdentity } from "./native-run-journal.ts";
 import {
@@ -523,24 +524,26 @@ export function verifyHostedFixture(
   if (process.env.TINT_BUILD_ONLY !== "1")
     try {
       for (let attempt = 0; attempt < 2; attempt++) {
-        const result = spawnSync(
-          "lldb",
-          [
-            "--no-lldbinit",
-            "--batch",
-            "-o",
-            "settings set target.disable-aslr false",
-            "-o",
-            "process launch --stop-at-entry",
-            "-o",
-            "script assert lldb.process.GetState() == lldb.eStateStopped",
-            "-o",
-            "continue",
-            "-o",
-            "script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42",
-            path,
-          ],
-          { encoding: "utf8", timeout: 60000 },
+        const result = withGateLaunch("fixture-run", () =>
+          spawnSync(
+            "lldb",
+            [
+              "--no-lldbinit",
+              "--batch",
+              "-o",
+              "settings set target.disable-aslr false",
+              "-o",
+              "process launch --stop-at-entry",
+              "-o",
+              "script assert lldb.process.GetState() == lldb.eStateStopped",
+              "-o",
+              "continue",
+              "-o",
+              "script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42",
+              path,
+            ],
+            { encoding: "utf8", timeout: 60000 },
+          ),
         );
         assert.equal(result.error, undefined);
         assert.equal(result.signal, null, result.stderr);

@@ -10,29 +10,32 @@
 // callback contract traps) never reach their fault or a Problem Report.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { withGateLaunch } from "./gate/lock.ts";
 
 /** Admit `binary` (a darwin image on a darwin host; elsewhere a no-op).
  * Throws when the admission launch itself fails, a host failure that is
  * reported as such rather than as the fixture's result. */
 export function admitUnderLldb(binary: string): void {
   if (process.platform !== "darwin") return;
-  const result = spawnSync(
-    "lldb",
-    [
-      "--no-lldbinit",
-      "--batch",
-      // The exec waits in the assessment queue; let LLDB wait with it.
-      "-o",
-      "settings set plugin.process.gdb-remote.packet-timeout 600",
-      "-o",
-      "process launch --stop-at-entry",
-      "-o",
-      "script assert lldb.process.GetState() == lldb.eStateStopped",
-      "-o",
-      "process kill",
-      binary,
-    ],
-    { encoding: "utf8" },
+  const result = withGateLaunch("fixture-admission", () =>
+    spawnSync(
+      "lldb",
+      [
+        "--no-lldbinit",
+        "--batch",
+        // The exec waits in the assessment queue; let LLDB wait with it.
+        "-o",
+        "settings set plugin.process.gdb-remote.packet-timeout 600",
+        "-o",
+        "process launch --stop-at-entry",
+        "-o",
+        "script assert lldb.process.GetState() == lldb.eStateStopped",
+        "-o",
+        "process kill",
+        binary,
+      ],
+      { encoding: "utf8" },
+    ),
   );
   assert.equal(
     result.status,

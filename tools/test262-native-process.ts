@@ -5,6 +5,7 @@ import {
   readDebuggerSessionLogs,
 } from "./native-debugger-session.ts";
 import { spawnSync } from "node:child_process";
+import { withGateLaunch } from "./gate/lock.ts";
 import {
   mkdtempSync,
   openSync,
@@ -126,6 +127,11 @@ export function admitNativeFile(
   binary: string,
   timeoutMs: number,
 ): NativeAdmission {
+  return withGateLaunch("test262-admission", () =>
+    admitUnlocked(binary, timeoutMs),
+  );
+}
+function admitUnlocked(binary: string, timeoutMs: number): NativeAdmission {
   const started = performance.now();
   const result = spawnSync(binary, [], {
     stdio: "ignore",
@@ -238,8 +244,20 @@ export function executeNativeFile(
     throw new Error("invalid native batch selector");
   if (nativeDebuggerLaunch === "process") {
     waiting?.("running");
-    return executeNativeProcess(binary, timeoutMs, selectedCase);
+    return withGateLaunch("test262-run", () =>
+      executeNativeProcess(binary, timeoutMs, selectedCase),
+    );
   }
+  return withGateLaunch("test262-debugger", () =>
+    executeNativeDebugger(binary, timeoutMs, selectedCase, waiting),
+  );
+}
+function executeNativeDebugger(
+  binary: string,
+  timeoutMs: number,
+  selectedCase?: NativeCaseSelector,
+  waiting?: (phase: string) => void,
+): ExecutionOutcome {
   const directory = mkdtempSync(join(tmpdir(), "tint-test262-"));
   const report = join(directory, "outcome.json"),
     pidFile = join(directory, "pid"),
