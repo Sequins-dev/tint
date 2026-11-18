@@ -23,6 +23,11 @@ export function writeExecutableImage(
   foreignLibraries: readonly ForeignLibrary[],
   machOLayout?: MachOLayoutOptions,
 ): ImageWriteResult {
+  if (target.arch === "x86_64")
+    return {
+      ok: false,
+      error: target.name + ": ELF image writing is not implemented yet",
+    };
   if (target.objectFormat === "elf")
     return writeElfImage(target, image, identifier);
   if ((image.probes ?? []).length > 0)
