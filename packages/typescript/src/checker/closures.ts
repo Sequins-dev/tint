@@ -1176,6 +1176,37 @@ export function checkClosureModule(
     if (b === undefined) throw "declaration invariant";
     return b;
   }
+  /** Whether an assigned value cannot be undefined. A conditional is
+   * judged by its branches: its own type joins them into the contextual
+   * (declared) type, which TypeScript does not narrow by. */
+  function assignsPresent(
+    value: Expression,
+    type: number,
+    presentAfter: number,
+  ): boolean {
+    if (system.assignable(type, presentAfter)) return true;
+    const node = ungroup(value);
+    if (node.kind !== "conditional") return false;
+    const yes = expressions.get(node.consequent),
+      no = expressions.get(node.alternate);
+    return (
+      yes !== undefined &&
+      no !== undefined &&
+      assignsPresent(node.consequent, yes, presentAfter) &&
+      assignsPresent(node.alternate, no, presentAfter)
+    );
+  }
+  function mentionsNull(id: number): boolean {
+    const type = types[id];
+    if (type?.kind === "null") return true;
+    return (
+      type?.kind === "union" &&
+      type.members.some(
+        (member: number | undefined) =>
+          member !== undefined && mentionsNull(member),
+      )
+    );
+  }
   /** Whether undefined or null is a value of the type. */
   function nullable(id: number): boolean {
     const type = types[id];
@@ -4807,12 +4838,35 @@ export function checkClosureModule(
                 : system.assignable(base, boolean)
                   ? boolean
                   : undefined;
-            if (primitive === undefined)
-              fail(
-                target,
-                "UNSUPPORTED",
-                "nullish assignment requires an optional primitive local",
-              );
+            if (primitive === undefined) {
+              // Any other `T | undefined` local: assigns when absent, and the
+              // binding is present afterwards.
+              const presentBase = presentType(declared);
+              if (presentBase === undefined || mentionsNull(declared))
+                fail(
+                  target,
+                  "UNSUPPORTED",
+                  "nullish assignment requires an optional local without null",
+                );
+              expressions.set(target, old);
+              const before = new Set(present);
+              const right = expression(node.value, owner, presentBase);
+              requireType(right, declared, node.value);
+              cell(b, { kind: "write", value: right }, target, owner);
+              const assigned = system.assignable(right, presentBase);
+              if (system.assignable(old, presentBase)) present = before;
+              else {
+                const skipped = new Set(before);
+                skipped.add(b.id);
+                present = alternateFacts(present, skipped, node);
+              }
+              if (assigned) present.add(b.id);
+              result =
+                system.assignable(old, presentBase) || assigned
+                  ? presentBase
+                  : declared;
+              break;
+            }
             const optionalPrimitive = unionSubset(
               [primitive, undefinedType],
               node,
@@ -4889,6 +4943,14 @@ export function checkClosureModule(
               fail(target, "UNSUPPORTED", "global assignment is unsupported");
             result = expression(node.value, owner, bindingTypes[b.id]);
             cell(b, { kind: "write", value: result }, target, owner);
+            // Assignment narrows, as in TypeScript: the binding is present
+            // exactly when the assigned value cannot be undefined.
+            const presentAfter = presentType(bindingTypes[b.id]);
+            if (presentAfter !== undefined) {
+              if (assignsPresent(node.value, result, presentAfter))
+                present.add(b.id);
+              else present.delete(b.id);
+            }
           } else if (target.kind === "member" || target.kind === "index") {
             const receiver = expression(target.object, owner);
             const keyType =
