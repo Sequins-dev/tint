@@ -33,6 +33,7 @@ import {
   type TargetName,
 } from "./c-bindgen/spec.ts";
 import {
+  verifyGeneralBindingImport,
   verifyGeneratedZlibAllocatorFixture,
   verifySampleFixture,
 } from "./c-bindgen-fixtures.ts";
@@ -1115,4 +1116,13 @@ test("a registered allocator runs inside the generated zlib binding's may-callba
 });
 test("a registered allocator runs inside the generated zlib binding's may-callback calls (copying, LLDB)", () => {
   verifyGeneratedZlibAllocatorFixture("initializeCopyingRuntime");
+});
+
+test("general code imports a generated binding where its exports cross a checked boundary (LLDB)", () => {
+  const { general, blocked } = verifyGeneralBindingImport();
+  assert.deepEqual(general, ["fixture"]);
+  assert.match(
+    blocked,
+    /general code uses deflate of the trusted module fixture\/zlib-generated\.d\.ts, whose types cannot cross a checked boundary/,
+  );
 });

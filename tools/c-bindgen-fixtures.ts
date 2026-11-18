@@ -334,3 +334,55 @@ export function verifyGeneratedZlibAllocatorFixture(
     },
   );
 }
+
+/** General (untyped) code importing a generated binding, a trusted module
+ * (docs/unified-pipeline.md, slice 2a): exports whose types cross a checked
+ * boundary are called natively; one taking a byte view (`Ptr`) is a named
+ * build error. Returns the general modules and the blocked build's error. */
+export function verifyGeneralBindingImport(): {
+  readonly general: readonly string[];
+  readonly blocked: string;
+} {
+  const declarations = generatedZlibDeclarations();
+  const options = {
+    managedBytes: 67108864,
+    allocationCapacity: 1048576,
+    foreignDeclarations: [declarations],
+  };
+  const general: string[] = [];
+  verifyHostedFixture(
+    `import { zlibVersion } from "zlib";
+function check() {
+  const version = zlibVersion();
+  return [typeof version === "number", version > 0].every((ok) => ok);
+}
+export function run() { return check() ? 42 : 1; }`,
+    "bindgen-general-import",
+    [["zlib", declarations.id]],
+    [],
+    [],
+    [],
+    {
+      ...options,
+      onGeneralFallback: (modules: readonly string[]) =>
+        general.push(...modules),
+    },
+  );
+  let blocked = "";
+  try {
+    verifyHostedFixture(
+      `import { deflate } from "zlib";
+function check() { return [deflate].every((f) => f !== undefined); }
+export function run() { return check() ? 42 : 1; }`,
+      "bindgen-general-import-blocked",
+      [["zlib", declarations.id]],
+      [],
+      [],
+      [],
+      options,
+    );
+  } catch (error) {
+    blocked = String(error);
+  }
+  return { general, blocked };
+}

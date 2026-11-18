@@ -881,7 +881,12 @@ has no spec.
   runs inside the generated zlib binding's may-callback calls with
   node:zlib's call pattern (gzip `deflateInit2_`, 64-byte output windows,
   `inflateInit2_` with header detection, `inflateReset`), collections inside
-  the allocator and a throwing allocator rethrown, under both collectors.
+  the allocator and a throwing allocator rethrown, under both collectors;
+  and untyped (general) code imports a generated binding as a trusted
+  module ([unified pipeline](unified-pipeline.md), slice 2a): exports whose
+  machine-level types cross a checked boundary (`zlibVersion`) are called
+  natively, and one taking a byte view (`deflate`'s `Ptr<z_stream>`) is the
+  named build error "general code uses deflate of the trusted module …".
 
 **Replacing the hand-written bindings.** The generated modules replaced
 the hand-written commoncrypto, zlib, darwin-os, linux-os, dl, libsystem and
