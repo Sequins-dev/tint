@@ -232,6 +232,8 @@ export interface CompileRequest {
   /** The emitted code will be placed at a 4 KiB aligned address (hosted
    * images align every module), enabling two-instruction local addresses. */
   readonly pageAlignedCode?: boolean;
+  /** Emit with every far-reach form (EmissionOptions.forceFarReach). */
+  readonly forceFarReach?: boolean;
   /** Maximum instances in each application/runtime specialization pass. */
   readonly maxSpecializations?: number;
   /** Explicit capabilities for exports of declared trusted runtime modules. */
@@ -2271,6 +2273,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       request.closedProgram && invocation >= 0 ? [invocation] : undefined,
     formHints: request.emissionFormHints,
     pageAlignedCode: request.pageAlignedCode ?? false,
+    forceFarReach: request.forceFarReach === true ? true : undefined,
   });
   if (!native.ok) {
     const error = native.error;

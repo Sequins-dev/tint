@@ -350,3 +350,8 @@ to module-owned immutable storage: eight-byte code-unit length followed by UTF-1
 units. Module ownership must outlive references to those literals. This original bounded slice has since been extended with managed strings, general
 thrown-value transfers, catch/rethrow and finally cleanup. Those extensions have
 native construction fixtures; the self-hosted compiler executable remains unproven.
+
+## Large images
+
+Images beyond the compact layout's reach (about 2 GiB of VM on macOS, 4 GiB of
+file) follow the code-model contract in [large-images.md](large-images.md).

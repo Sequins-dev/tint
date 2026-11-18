@@ -3,12 +3,14 @@ import type {
   ImageAddressReference,
   ImageAddressPatcher,
 } from "@tint/abi/relocation";
-import { patchRelativeAddress } from "./isa.ts";
+import { patchRelativeAddress, relativeAddressByteLength } from "./isa.ts";
 export interface AArch64AddressReference {
   readonly offset: number;
   readonly rd: number;
   readonly scratch: number;
   readonly target: ImageAddressTarget;
+  /** A farRelativeAddress site (docs/large-images.md). */
+  readonly far?: true | undefined;
 }
 /** Keeps register/encoding knowledge in the target, independent of image format. */
 export function aarch64ImageRelocations(
@@ -27,12 +29,13 @@ export function aarch64ImageRelocations(
         target.kind === "data"
           ? { kind: "data", offset: target.offset }
           : { kind: "import", name: target.name },
+      far: reference.far === true ? true : undefined,
     };
   });
   return {
     addressFixups: captured.map((reference) => ({
       offset: reference.offset,
-      byteLength: 16,
+      byteLength: relativeAddressByteLength(reference.far === true),
       alignment: 4,
       target: reference.target,
     })),

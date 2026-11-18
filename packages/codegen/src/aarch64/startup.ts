@@ -164,6 +164,8 @@ export interface HostedCode {
           readonly rd: number;
           readonly scratch: number;
           readonly target: number;
+          /** A 20-byte far-model site. */
+          readonly far?: true;
         }[];
       }
     | undefined;
@@ -376,6 +378,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       rd: number;
       scratch: number;
       target: number;
+      far?: true;
     }[] = [];
   const diagnostics = request.diagnostics;
   const labels = new Map<string, number>(),
@@ -1293,12 +1296,22 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
         continue;
       }
       if (name === "tint:callback-key") {
-        callbackKeyReferences.push({
-          offset: base + fixup.offset,
-          rd: fixup.rd,
-          scratch: fixup.scratch,
-          target: 0,
-        });
+        // A far-model module's site is the 20-byte far sequence.
+        if (fixup.far === true)
+          callbackKeyReferences.push({
+            offset: base + fixup.offset,
+            rd: fixup.rd,
+            scratch: fixup.scratch,
+            target: 0,
+            far: true,
+          });
+        else
+          callbackKeyReferences.push({
+            offset: base + fixup.offset,
+            rd: fixup.rd,
+            scratch: fixup.scratch,
+            target: 0,
+          });
         continue;
       }
       if (fixup.target.name === "tint:collector-worker-entry") {
@@ -1336,12 +1349,21 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
           };
         continue;
       }
-      imports.push({
-        offset: base + fixup.offset,
-        rd: fixup.rd,
-        scratch: fixup.scratch,
-        target: fixup.target,
-      });
+      if (fixup.far === true)
+        imports.push({
+          offset: base + fixup.offset,
+          rd: fixup.rd,
+          scratch: fixup.scratch,
+          target: fixup.target,
+          far: true,
+        });
+      else
+        imports.push({
+          offset: base + fixup.offset,
+          rd: fixup.rd,
+          scratch: fixup.scratch,
+          target: fixup.target,
+        });
     }
     for (const call of module.startupCalls ?? []) {
       if (call === undefined) throw "startup call invariant";

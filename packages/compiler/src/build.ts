@@ -106,6 +106,10 @@ export interface BuildRequest {
    * frozen project sources predate it). */
   readonly target?: NativeTarget;
   readonly threaded?: boolean;
+  /** Verification of the large code model (docs/large-images.md): emit
+   * every module with all far-reach forms, which large images select
+   * automatically only where reach requires them. */
+  readonly forceFarReach?: boolean;
   /** Immutable native units prepared for the same frozen source/toolchain. */
   readonly nativeServices?: readonly {
     readonly unit: NativeServiceUnit;
@@ -371,6 +375,7 @@ export function compileMacOSProgram(
       debugSpans: request.debugSymbols === true || request.stackTraces === true,
       throwTraces: request.stackTraces === true,
       pageAlignedCode: true,
+      forceFarReach: request.forceFarReach === true ? true : undefined,
     },
   );
   if (!allocator.ok)
@@ -542,6 +547,7 @@ export function compileMacOSProgram(
   const runtime = compileArm64Program({
     hostABI,
     pageAlignedCode: true,
+    forceFarReach: request.forceFarReach === true,
     optimization: request.optimization ?? "basic",
     debugSymbols: request.debugSymbols ?? false,
     stackTraces: request.stackTraces === true,
@@ -594,6 +600,7 @@ export function compileMacOSProgram(
   const program = compileArm64Program({
     hostABI,
     pageAlignedCode: true,
+    forceFarReach: request.forceFarReach === true,
     serviceImports,
     managedSurfaces: request.managedSurfaces ?? [],
     closedProgram: true,
@@ -1115,6 +1122,7 @@ export function linkMacOSProgram(
       rd: reference.rd,
       scratch: reference.scratch,
       target: { kind: "import", name: reference.target.name },
+      far: reference.far,
     });
   }
   for (const reference of hostedDiagnostics?.dataReferences ?? []) {
@@ -1142,6 +1150,7 @@ export function linkMacOSProgram(
         rd: reference.rd,
         scratch: reference.scratch,
         target: { kind: "data", offset: base + reference.target },
+        far: reference.far,
       });
     }
   }

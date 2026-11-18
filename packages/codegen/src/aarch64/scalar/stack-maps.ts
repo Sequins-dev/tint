@@ -158,9 +158,10 @@ const packedMapIndexLimit = 2097152;
 /** Table words (see nativeStackMapMagic): header, then the safepoints sorted
  * by return offset, then the distinct maps. A packed table has one word per
  * safepoint (map word index * 2^32 + offset); when a map index would reach
- * 2^21 words, the table is wide (nativeStackMapWideVersion): two words per
- * safepoint, the offset then the map word index. Undefined when two
- * safepoints share a return offset or an offset exceeds 32 bits. */
+ * 2^21 words or a return offset 2^32 (modules beyond 4 GiB, see
+ * docs/large-images.md), the table is wide (nativeStackMapWideVersion): two
+ * words per safepoint, the offset then the map word index. Undefined when two
+ * safepoints share a return offset or an offset is not a safe integer. */
 export function encodeStackMapTable(
   entries: readonly SafepointEntry[],
 ): number[] | undefined {
@@ -177,7 +178,7 @@ export function encodeStackMapTable(
     if (
       !Number.isInteger(entry.offset) ||
       entry.offset <= previous ||
-      entry.offset > 0xffffffff
+      entry.offset > Number.MAX_SAFE_INTEGER
     )
       return undefined;
     previous = entry.offset;
@@ -196,7 +197,9 @@ export function encodeStackMapTable(
     }
   }
   const header = nativeStackMapTableHeaderBytes / 8,
-    wide = header + sorted.length + lastMap >= packedMapIndexLimit,
+    wide =
+      header + sorted.length + lastMap >= packedMapIndexLimit ||
+      previous > 0xffffffff,
     first = header + sorted.length * (wide ? 2 : 1),
     words: number[] = [
       nativeStackMapMagic,

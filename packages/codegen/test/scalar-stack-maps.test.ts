@@ -471,3 +471,35 @@ test("tables whose maps pass the packed 2^21-word index range switch to wide ent
     nativeStackMapVersion,
   );
 });
+
+test("return offsets past 4 GiB switch to wide entries instead of truncating", () => {
+  // A module beyond 4 GiB (docs/large-images.md) has safepoints whose return
+  // offsets a packed word's low 32 bits cannot hold.
+  const map = [48, 0, 1, 16, 0],
+    far = 2 ** 32 + 40;
+  const words = encodeStackMapTable([
+    { offset: 8, map },
+    { offset: far, map },
+  ]);
+  assert.ok(words);
+  assert.deepEqual(words.slice(0, 3), [nativeStackMapMagic, 3, 2]);
+  assert.deepEqual(words.slice(3, 7), [8, 7, far, 7]);
+  const code = new Uint8Array(words.length * 8),
+    view = new DataView(code.buffer);
+  words.forEach((word, index) =>
+    view.setBigUint64(index * 8, BigInt(word), true),
+  );
+  const decoded = decodeStackMaps({
+    code,
+    stackMaps: [{ codeOffset: 16, tableOffset: 0 }],
+  });
+  assert.deepEqual(
+    decoded?.map((site) => site.offset),
+    [24, far + 16],
+  );
+  // Below 4 GiB the packed encoding is unchanged.
+  assert.deepEqual(
+    encodeStackMapTable([{ offset: 0xfffffff0, map }])?.slice(0, 2),
+    [nativeStackMapMagic, nativeStackMapVersion],
+  );
+});

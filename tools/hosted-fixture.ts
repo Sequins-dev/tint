@@ -157,6 +157,9 @@ export function verifyHostedFixture(
     /** Heap introspection (docs/native-heap-profiling.md); defaults to
      * TINT_HEAP_INTROSPECTION, else to debug symbols. */
     readonly heapIntrospection?: boolean;
+    /** Every far-reach code form (docs/large-images.md); defaults to
+     * TINT_FORCE_FAR_REACH. */
+    readonly forceFarReach?: boolean;
   } = {
     managedBytes: 4194304,
     allocationCapacity: 65536,
@@ -288,6 +291,8 @@ export function verifyHostedFixture(
     ...request,
     target: fixtureTarget,
     threaded: options.threaded ?? false,
+    forceFarReach:
+      options.forceFarReach ?? process.env.TINT_FORCE_FAR_REACH === "1",
     allowDebugger: true,
     allowJit: options.allowJit ?? false,
     runtimes: [

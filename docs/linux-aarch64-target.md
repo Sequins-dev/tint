@@ -278,3 +278,8 @@ Assert LLDB's reported exit status (0), not the debugger's own. All three
 generations are byte-identical ELF images; each native generation takes about
 85 s and 2.2 GB peak RSS in the container on an otherwise idle host (GNU
 `time -v`).
+
+## Large images
+
+Images beyond the compact layout's reach (about 2 GiB of VM on macOS, 4 GiB of
+file) follow the code-model contract in [large-images.md](large-images.md).
