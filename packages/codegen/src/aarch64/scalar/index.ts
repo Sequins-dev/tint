@@ -1115,7 +1115,10 @@ function emitModuleForms(
     return result;
   }
   const compactCalls = forms.calls;
-  const maxByteLength = options.maxByteLength ?? Number.MAX_SAFE_INTEGER,
+  const maxByteLength =
+      options.maxByteLength === undefined
+        ? Number.MAX_SAFE_INTEGER
+        : options.maxByteLength,
     debugSpans = options.debugSpans ?? false,
     recordOperations = options.operationRanges ?? false,
     linearAllocation = options.linearAllocation ?? false,

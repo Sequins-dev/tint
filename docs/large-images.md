@@ -179,6 +179,8 @@ use the Node host for multi-GiB image generation.
 
 ## Verification
 
+[Full-size execution evidence](results/large-images-v1.md).
+
 `pnpm check` exercises scaled layout thresholds, signatures, VM-relative
 patches, wide offsets and the Darwin multi-chunk GC fixture. On arm64 you can
 run the same fixture with a gap of just over 4 GiB inserted between the

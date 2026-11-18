@@ -3,6 +3,7 @@ import { buildAArch64Executable } from "../../../tools/aarch64-executable.ts";
 import { dylibProbeRequest } from "../../../tools/ffi-dylib-probe.ts";
 import {
   relativeAddress,
+  farRelativeAddress,
   writeInstruction,
   type Instruction,
 } from "@tint/codegen/aarch64/isa";
@@ -626,4 +627,68 @@ test("selects the high Mach-O layout when compact VM placement reaches its limit
   const symbol = v.getUint32(symtab + 8, true);
   assert.equal(v.getUint8(symbol + 5), 5);
   assert.equal(u64(symbol + 8), u64(last + 24));
+});
+
+test("a relocation spanning signed chunks uses contiguous virtual addresses", () => {
+  const page = 16384;
+  const site = page - 8;
+  const code = new Uint8Array(page + 16);
+  const template = farRelativeAddress(9, 17, 0);
+  assert.ok(template.ok);
+  template.value.forEach((instruction, i) =>
+    assert.ok(writeInstruction(code, site + i * 4, instruction).ok),
+  );
+  const built = buildAArch64Executable({
+    ...request(),
+    code,
+    compactVMLimit: 1,
+    signedChunkBytes: page,
+    data: new Uint8Array([42]),
+    addressFixups: [
+      {
+        offset: site,
+        rd: 9,
+        scratch: 17,
+        far: true,
+        target: { kind: "data", offset: 0 },
+      },
+    ],
+  });
+  assert.ok(built.ok);
+  const { bytes, dataFileOffset } = built.value;
+  assert.ok(dataFileOffset !== undefined);
+  const [first, second] = commands(bytes).get(0x19)!.slice(-2);
+  assert.ok(first !== undefined && second !== undefined);
+  const v = view(bytes);
+  const firstFile = Number(v.getBigUint64(first + 40, true));
+  const secondFile = Number(v.getBigUint64(second + 40, true));
+  const firstAddress = Number(v.getBigUint64(first + 24, true));
+  const displacement = 0x300000000 + dataFileOffset - (firstAddress + site);
+  const expected = farRelativeAddress(9, 17, displacement);
+  assert.ok(expected.ok);
+  const window = new Uint8Array(20);
+  expected.value.forEach((instruction, i) =>
+    assert.ok(writeInstruction(window, i * 4, instruction).ok),
+  );
+  assert.deepEqual(
+    bytes.slice(firstFile + site, firstFile + page),
+    window.slice(0, 8),
+  );
+  assert.deepEqual(bytes.slice(secondFile, secondFile + 12), window.slice(8));
+  for (const start of [firstFile, secondFile]) {
+    const signature = start + page;
+    assert.equal(v.getUint32(signature, false), 0xfade0cc0);
+    const directory = signature + v.getUint32(signature + 16, false);
+    assert.equal(v.getUint32(directory + 32, false), page);
+    const hashes = directory + v.getUint32(directory + 16, false);
+    for (let i = 0; i < page / 4096; i++) {
+      const expected = createHash("sha256")
+        .update(bytes.subarray(start + i * 4096, start + (i + 1) * 4096))
+        .digest();
+      assert.deepEqual(
+        Buffer.from(bytes.subarray(hashes + i * 32, hashes + (i + 1) * 32)),
+        expected,
+      );
+    }
+  }
 });

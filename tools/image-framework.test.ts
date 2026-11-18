@@ -64,6 +64,7 @@ test("Mach-O entry retains only image, foundation, relocation and unwind contrac
     "packages/image/src/darwin/macho/compact-unwind.ts",
     "packages/image/src/darwin/macho/index.ts",
     "packages/image/src/darwin/macho/runtime-entitlements.ts",
+    "packages/image/src/darwin/macho/signature-loader.ts",
     "packages/image/src/darwin/signature.ts",
     "packages/image/src/dwarf.ts",
     "packages/image/src/eh-frame.ts",
