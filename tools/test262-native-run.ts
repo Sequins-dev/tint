@@ -40,6 +40,8 @@ import {
   createNativeBatchBuilder,
   createNativeUnitBatchBuilder,
   type NativeBatchBuild,
+  deferNativeCase,
+  type NativeModuleInput,
   type NativeTestCase,
   nativeTestResources,
   capturedScriptEvaluation,
@@ -291,7 +293,7 @@ try {
     QueueKind,
     {
       input: ObservationInput;
-      prepared: NativeTestCase | undefined;
+      prepared: NativeTestCase<NativeModuleInput> | undefined;
       plan: ExecutionPlan;
       started: number;
       /** Selection order, which the journal preserves for resume. */
@@ -595,7 +597,7 @@ try {
       const sequence = nextSequence++;
       function enqueue(
         kind: QueueKind,
-        prepared: NativeTestCase | undefined,
+        prepared: NativeTestCase<NativeModuleInput> | undefined,
         unitCompileMs = 0,
       ) {
         const item = {
@@ -692,7 +694,11 @@ try {
               units = buildUnits.accepts(prepared.value);
               unitCompileMs = performance.now() - routeStarted;
             }
-            enqueue(units ? "units" : "program", prepared.value, unitCompileMs);
+            enqueue(
+              units ? "units" : "program",
+              deferNativeCase(prepared.value),
+              unitCompileMs,
+            );
           } else
             record(
               input,

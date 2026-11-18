@@ -41,6 +41,7 @@ import { deserialize, serialize } from "node:v8";
 import type { NativeServiceUnit } from "@tint/compiler/native";
 import {
   createScriptUnitCompiler,
+  nativeSyntaxKey,
   verifyUnitSurface,
 } from "./test262-units.ts";
 import {
@@ -48,11 +49,13 @@ import {
   projectRoots,
   runtimeSources,
 } from "@tint/compiler/cli";
+import type { SourceModuleLoader } from "@tint/typescript/modules";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import type { SyntaxVariant, TestMetadata } from "./test262.ts";
 import type { ExecutionPlan, ExecutionOutcome } from "./test262-execution.ts";
 import {
   workspaceModules,
+  workspaceModuleLoader,
   workspaceSources,
   type WorkspaceSourceSnapshot,
 } from "./workspace-sources.ts";
@@ -280,6 +283,76 @@ export function nativeVariantRoute(
   return moduleExecution && variant === "module" ? "module" : "script";
 }
 
+/** A source recipe owns only text and dependency metadata. The callback
+ * is created outside the preparation frame that owns the first parse. */
+export interface NativeModuleRecipe {
+  readonly id: string;
+  readonly dependencies: ReadonlyMap<string, string>;
+  readonly load: () => SourceModule["module"];
+  readonly syntaxKey?: string;
+}
+export type NativeModuleInput = SourceModule | NativeModuleRecipe;
+const sourceRecipes = new WeakMap<
+  SourceModule["module"],
+  NativeModuleRecipe["load"]
+>();
+
+function loweredScriptRecipe(source: string): NativeModuleRecipe["load"] {
+  return () => {
+    const bytes = new TextEncoder().encode(source);
+    const decoded = createSourceText(bytes, bytes.length);
+    if (!decoded.ok) throw Error("native Script source failed");
+    const parsed = parseScript(decoded.value);
+    if (!parsed.ok) throw Error(JSON.stringify(parsed.error));
+    const lowered = lowerScript(parsed.value, source);
+    if (!lowered.ok) throw Error(JSON.stringify(lowered.error));
+    return lowered.value;
+  };
+}
+function loweredModuleRecipe(source: string): NativeModuleRecipe["load"] {
+  return () => {
+    const parsed = parseModule(createSourceTextView(source));
+    if (!parsed.ok) throw Error(JSON.stringify(parsed.error));
+    const lowered = lowerSourceTextModule(parsed.value, source);
+    if (!lowered.ok) throw Error(JSON.stringify(lowered.error));
+    return lowered.value;
+  };
+}
+export function deferNativeModule(input: SourceModule): NativeModuleInput {
+  const load = sourceRecipes.get(input.module);
+  if (load === undefined) return input;
+  return {
+    id: input.id,
+    dependencies: input.dependencies,
+    load,
+    syntaxKey: nativeSyntaxKey(input),
+  };
+}
+export function loadNativeModule(input: NativeModuleInput): SourceModule {
+  if ("module" in input) return input;
+  return {
+    id: input.id,
+    dependencies: input.dependencies,
+    module: input.load(),
+  };
+}
+export function deferNativeCase(
+  item: NativeTestCase,
+): NativeTestCase<NativeModuleInput> {
+  return {
+    ...item,
+    scripts: item.scripts.map(deferNativeModule),
+    ...(item.modules === undefined
+      ? {}
+      : {
+          modules: item.modules.map((entry) => ({
+            ...entry,
+            module: deferNativeModule(entry.module),
+          })),
+        }),
+  };
+}
+
 export function prepareNativeScripts(
   plan: ExecutionPlan,
   variant: SyntaxVariant,
@@ -335,6 +408,7 @@ function prepareNativeScriptInputs(
       return unsupported(
         input.filename + ": Script dynamic import requires HOST-ESM M3b",
       );
+    sourceRecipes.set(lowered.value, loweredScriptRecipe(input.source));
     modules.push({
       id: "test262-script-" + index,
       module: lowered.value,
@@ -412,6 +486,7 @@ function lowerNativeModuleEntry(
         ? { earlyError: true as const }
         : {}),
     };
+  sourceRecipes.set(lowered.value, loweredModuleRecipe(text));
   return {
     ok: true,
     requests: parsed.value.imports.map((request) => request.specifier),
@@ -711,33 +786,50 @@ export function prepareNativeModuleProgram(
   };
 }
 
-export interface NativeModuleEntry {
+export interface NativeModuleEntry<T extends NativeModuleInput = SourceModule> {
   /** A native JSON/text/bytes resource factory returns a load completion. */
   readonly json?: true;
   /** Native syntax data only; never a module factory or bootstrap verdict. */
   readonly verdict?: true;
   readonly name: string;
-  readonly module: SourceModule;
+  readonly module: T;
 }
-export interface NativeTestCase {
+export interface NativeTestCase<T extends NativeModuleInput = SourceModule> {
   readonly moduleAbsent?: readonly string[];
   readonly scriptRoot?: { readonly absent: readonly string[] };
-  readonly modules?: readonly NativeModuleEntry[];
-  readonly scripts: readonly SourceModule[];
+  readonly modules?: readonly NativeModuleEntry<T>[];
+  readonly scripts: readonly T[];
   readonly asynchronous: boolean;
   readonly canSuspend?: boolean;
 }
+export function nativeHostRecipe(
+  id: string,
+  text: string,
+  dependencies: Map<string, string>,
+): NativeModuleRecipe {
+  return {
+    id,
+    dependencies,
+    load: () => {
+      const bytes = new TextEncoder().encode(text);
+      const source = createSourceText(bytes, bytes.length);
+      if (!source.ok) throw Error("native host source failed");
+      const parsed = parseModule(source.value);
+      if (!parsed.ok) throw Error(id + ": " + JSON.stringify(parsed.error));
+      return parsed.value;
+    },
+  };
+}
+
 export function parsedNativeHost(
   id: string,
   text: string,
   dependencies: Map<string, string>,
 ): SourceModule {
-  const bytes = new TextEncoder().encode(text);
-  const source = createSourceText(bytes, bytes.length);
-  if (!source.ok) throw new Error("native host source failed");
-  const parsed = parseModule(source.value);
-  if (!parsed.ok) throw new Error(JSON.stringify(parsed.error));
-  return { id, module: parsed.value, dependencies };
+  const input = nativeHostRecipe(id, text, dependencies);
+  const module = loadNativeModule(input);
+  sourceRecipes.set(module.module, input.load);
+  return module;
 }
 export function nativeTestRuntimeSource(
   scriptEvaluation?: NativeScriptEvaluation,
@@ -1291,7 +1383,7 @@ function nativeTestRuntime(
   agentProvider?: string,
   sourcePhases: boolean = false,
   assetModules: boolean = false,
-): SourceModule {
+): NativeModuleRecipe {
   const text = nativeTestRuntimeSource(
     scriptEvaluation,
     disposal,
@@ -1314,7 +1406,7 @@ function nativeTestRuntime(
     sourcePhases,
     assetModules,
   );
-  return parsedNativeHost(
+  return nativeHostRecipe(
     id,
     text,
     new Map([
@@ -1386,17 +1478,17 @@ function nativeTestRuntime(
  * setup, host capabilities and runtime source compilation share one code module;
  * selecting a case still executes in a fresh operating-system process. */
 function nativeTestHost(
-  scripts: readonly SourceModule[],
+  scripts: readonly NativeModuleInput[],
   asynchronous: boolean,
   id: string,
   runtime: string,
   canSuspend: boolean = true,
-  moduleEntries?: readonly NativeModuleEntry[],
+  moduleEntries?: readonly NativeModuleEntry<NativeModuleInput>[],
   scriptRoot?: { readonly absent: readonly string[] },
   threaded: boolean = false,
   moduleAbsent?: readonly string[],
   jsonModules: boolean = false,
-): SourceModule {
+): NativeModuleRecipe {
   const header = threaded
     ? "export function run(argument:number):number{if(argument!==0)return runNativeAgent(argument);try{"
     : "export function run():number{";
@@ -1423,7 +1515,7 @@ function nativeTestHost(
           `import {${entry.verdict === true ? "run as verdict" : "create as module"}${index}} from ${JSON.stringify(entry.module.id)};`,
       ),
     ].join("\n");
-    return parsedNativeHost(
+    return nativeHostRecipe(
       id,
       `${imports}
 import {${runner}${helpers}} from "runtime";
@@ -1447,7 +1539,7 @@ ${header}return ${runner}([${scripts.map((_, index) => "script" + index).join(",
     )
     .join("\n");
   const entries = scripts.map((module, index) => "script" + index).join(",");
-  return parsedNativeHost(
+  return nativeHostRecipe(
     id,
     `${imports}
 import {runNativeScripts${helpers}} from "runtime";
@@ -1462,7 +1554,12 @@ ${header}return runNativeScripts([${entries}],${asynchronous ? "true" : "false"}
 
 /** Compilation is shared; only the selected case runs, in a fresh process. */
 export function prepareNativeBatch(
-  cases: readonly NativeTestCase[],
+  ...args: Parameters<typeof prepareNativeBatchInputs>
+): SourceModule[] {
+  return prepareNativeBatchInputs(...args).map(loadNativeModule);
+}
+function prepareNativeBatchInputs(
+  cases: readonly NativeTestCase<NativeModuleInput>[],
   disposal: boolean = true,
   asyncDisposal: boolean = disposal,
   sharedBuffers: boolean = false,
@@ -1482,13 +1579,13 @@ export function prepareNativeBatch(
   agentProvider?: string,
   sourcePhases: boolean = false,
   assetModules: boolean = false,
-): SourceModule[] {
+): NativeModuleInput[] {
   if (cases.length === 0) throw new Error("empty native test batch");
   const scriptRoots = cases.some((item) => item.scriptRoot !== undefined);
   if (scriptRoots && !(moduleExecution && dynamicImport))
     throw Error("Script-root case requires the dynamic import host");
   const runtime = "test262-runtime";
-  const modules: SourceModule[] = [
+  const modules: NativeModuleInput[] = [
     nativeTestRuntime(
       runtime,
       disposal,
@@ -1514,7 +1611,7 @@ export function prepareNativeBatch(
     ),
   ];
   const hosts: string[] = [];
-  const shared = new Map<string, SourceModule>();
+  const shared = new Map<string, NativeModuleInput>();
   const emitted = new Set<string>();
   for (const [index, item] of cases.entries()) {
     if (item.modules !== undefined && !moduleExecution)
@@ -1537,8 +1634,12 @@ export function prepareNativeBatch(
           : item.modules?.[inputIndex - item.scripts.length];
       const key = JSON.stringify(
         moduleEntry === undefined
-          ? [script.module, [...script.dependencies]]
-          : [moduleEntry.name, script.module, [...script.dependencies]],
+          ? [nativeSyntaxKey(script), [...script.dependencies]]
+          : [
+              moduleEntry.name,
+              nativeSyntaxKey(script),
+              [...script.dependencies],
+            ],
       );
       const previous = shared.get(key);
       if (previous !== undefined) return previous;
@@ -1586,7 +1687,7 @@ export function prepareNativeBatch(
     hosts.push(id);
   }
   modules.push(
-    nativeSelectorHost(
+    nativeSelectorRecipe(
       hosts,
       "test262-host",
       agentProvider === undefined ? undefined : runtime,
@@ -1610,6 +1711,11 @@ export function nativeUnitSlotName(index: number): string {
  * called with the Script entry frame, exactly as the Script evaluator calls a
  * compiled entry, and runs through the same runNativeScripts harness. */
 export function prepareNativeUnitHost(
+  ...args: Parameters<typeof prepareNativeUnitHostInputs>
+): SourceModule[] {
+  return prepareNativeUnitHostInputs(...args).map(loadNativeModule);
+}
+function prepareNativeUnitHostInputs(
   slotCount: number,
   disposal: boolean = true,
   asyncDisposal: boolean = disposal,
@@ -1630,7 +1736,7 @@ export function prepareNativeUnitHost(
   agentProvider?: string,
   sourcePhases: boolean = false,
   assetModules: boolean = false,
-): SourceModule[] {
+): NativeModuleInput[] {
   if (!Number.isSafeInteger(slotCount) || slotCount < 1)
     throw Error("a unit host needs at least one slot");
   if (scriptEvaluation === undefined)
@@ -1664,13 +1770,13 @@ export function prepareNativeUnitHost(
       sourcePhases,
       assetModules,
     ),
-    parsedNativeHost(
+    nativeHostRecipe(
       nativeUnitSlotsModule,
       `import type {ScriptEntryFrame} from "frame";
 ${slots.map((name) => `export function ${name}(frame:ScriptEntryFrame):unknown{throw "TEST262_UNIT_SLOT_UNBOUND";}`).join("\n")}`,
       new Map([["frame", scriptEntryFrameModule]]),
     ),
-    parsedNativeHost(
+    nativeHostRecipe(
       "test262-host",
       `import {runNativeScripts${threaded ? ",runNativeAgent,finishNativeAgents" : ""}} from "runtime";
 import {bindScript,completion} from "script-host";
@@ -1732,7 +1838,14 @@ export function nativeSelectorHost(
   entry: string,
   agentRuntime?: string,
 ): SourceModule {
-  return parsedNativeHost(
+  return loadNativeModule(nativeSelectorRecipe(hosts, entry, agentRuntime));
+}
+function nativeSelectorRecipe(
+  hosts: readonly string[],
+  entry: string,
+  agentRuntime?: string,
+): NativeModuleRecipe {
+  return nativeHostRecipe(
     entry,
     `
 ${hosts.map((id, index) => `import {run as case${index}} from "${id}";`).join("\n")}
@@ -2245,6 +2358,11 @@ export function capturedScriptEvaluation(
 export function nativeScriptServiceModules(
   snapshot: WorkspaceSourceSnapshot,
 ): SourceModule[] {
+  return nativeScriptServiceInputs(snapshot).map(loadNativeModule);
+}
+function nativeScriptServiceInputs(
+  snapshot: WorkspaceSourceSnapshot,
+): NativeModuleRecipe[] {
   const runtimes = runtimeSources();
   const texts = workspaceModules(
     runtimes.map((item) => item.module),
@@ -2260,7 +2378,7 @@ export function nativeScriptServiceModules(
     };
   });
   return [
-    parsedNativeHost(
+    nativeHostRecipe(
       "test262-script-host",
       `import type {ManagedSurfaceExport} from "contracts";
 import type {ScriptCompletionRecord} from "objects";
@@ -2274,7 +2392,7 @@ export function completion(value:unknown):ScriptCompletionRecord|undefined{throw
         ["frame", scriptEntryFrameModule],
       ]),
     ),
-    parsedNativeHost(
+    nativeHostRecipe(
       "test262-script-sources",
       `import type {RuntimeSource} from "contracts";
 export const scriptRuntimeTexts:readonly {readonly id:string;readonly text:string;readonly dependencies:readonly (readonly string[])[]}[]=${JSON.stringify(texts)};
@@ -2441,12 +2559,12 @@ export function nativeBatchImageRequest(
   );
 }
 export function prepareConfiguredBatch(
-  cases: readonly NativeTestCase[],
+  cases: readonly NativeTestCase<NativeModuleInput>[],
   moduleExecution: boolean,
   config: NativeBatchConfiguration,
-): SourceModule[] {
+): NativeModuleInput[] {
   const { capabilities } = config;
-  return prepareNativeBatch(
+  return prepareNativeBatchInputs(
     cases,
     capabilities.disposal,
     capabilities.asyncDisposal,
@@ -2491,7 +2609,9 @@ export function createNativeBatchBuilder(
     serviceImage,
     config,
   );
-  return (cases: readonly NativeTestCase[]): NativeBatchBuild => {
+  return (
+    cases: readonly NativeTestCase<NativeModuleInput>[],
+  ): NativeBatchBuild => {
     const built = buildMacOSProgram(
       request(prepareConfiguredBatch(cases, moduleExecution, config)),
     );
@@ -2539,7 +2659,9 @@ function cachedUnitHost(
 /** Whether a case runs as linked Script units (see
  * createNativeUnitBatchBuilder); module and Script-root cases need their
  * whole-program host. */
-export function nativeUnitEligible(item: NativeTestCase): boolean {
+export function nativeUnitEligible(
+  item: NativeTestCase<NativeModuleInput>,
+): boolean {
   return (
     item.modules === undefined &&
     item.scriptRoot === undefined &&
@@ -2599,7 +2721,7 @@ export function createNativeUnitBatchBuilder(
   function prepareHost(): NonNullable<typeof compiledHost> {
     const { capabilities } = config;
     const base = hostRequest(
-      prepareNativeUnitHost(
+      prepareNativeUnitHostInputs(
         slotCount,
         capabilities.disposal,
         capabilities.asyncDisposal,
@@ -2640,7 +2762,7 @@ export function createNativeUnitBatchBuilder(
       options.hostCache,
       slotCount,
       () => compileMacOSProgram(request),
-      request.modules.find((item) => item.id === request.allocatorModule),
+      request.moduleLoader?.load([request.allocatorModule])[0],
     );
     if (!compiled.ok)
       throw Error("unit host compilation: " + JSON.stringify(compiled.error));
@@ -2674,12 +2796,14 @@ export function createNativeUnitBatchBuilder(
   }
   /** Whether every Script of an eligible case compiles as a unit. Unit
    * compilation is memoized, so routing a case here costs its batch nothing. */
-  function accepts(item: NativeTestCase): boolean {
+  function accepts(item: NativeTestCase<NativeModuleInput>): boolean {
     if (!nativeUnitEligible(item)) return false;
     const { compile } = preparedHost();
     return item.scripts.every((script) => compile(script).ok);
   }
-  function build(cases: readonly NativeTestCase[]): NativeBatchBuild {
+  function build(
+    cases: readonly NativeTestCase<NativeModuleInput>[],
+  ): NativeBatchBuild {
     const host = preparedHost();
     const units: NativeServiceUnit[] = [],
       indexes = new Map<NativeServiceUnit, number>(),
@@ -2783,6 +2907,43 @@ export function directEvalSiteImageContract(enabled: boolean) {
 /** The build request for a batch image of the given test modules. One factory
  * per runner: it reuses captured runtime modules and the branch forms the
  * previous build settled on. */
+/** Merge the frozen workspace graph and generated sources in link order.
+ * The service projection also works on ID-only workspace entries. */
+function nativeImageModuleLoader(
+  runtime: SourceModuleLoader,
+  generated: readonly NativeModuleInput[],
+  serviceImage:
+    import("./native-service-image.ts").NativeServiceImagePlan | undefined,
+): SourceModuleLoader {
+  const captured = [...runtime.ids.map((id) => ({ id })), ...generated];
+  const inputs = serviceImage?.transformModules(captured) ?? captured;
+  const indexes = new Map(inputs.map((input, index) => [input.id, index]));
+  return {
+    ids: inputs.map((input) => input.id),
+    load(ids) {
+      const selected =
+        ids === undefined
+          ? inputs
+          : [...new Set(ids)]
+              .map((id) => indexes.get(id))
+              .filter((index) => index !== undefined)
+              .sort((a, b) => a - b)
+              .map((index) => inputs[index]!);
+      const sources = runtime.load(
+        selected
+          .filter((input) => !("dependencies" in input))
+          .map((input) => input.id),
+      );
+      const runtimeById = new Map(sources.map((source) => [source.id, source]));
+      return selected.map((input) =>
+        "dependencies" in input
+          ? loadNativeModule(input)
+          : runtimeById.get(input.id)!,
+      );
+    },
+  };
+}
+
 function createNativeImageRequest(
   snapshot?: WorkspaceSourceSnapshot,
   sharedBuffers: boolean = false,
@@ -2802,17 +2963,17 @@ function createNativeImageRequest(
 ) {
   if (scriptEvaluation?.directEval === true && !directEvalSiteView)
     throw Error("incomplete captured direct-eval contract: site view binding");
-  let scriptModules: readonly SourceModule[] | undefined;
+  let scriptModules: readonly NativeModuleRecipe[] | undefined;
   let surface: ReturnType<typeof createScriptRuntimeRequest> | undefined;
-  let runtimeModules: readonly SourceModule[] | undefined;
+  let runtimeLoader: SourceModuleLoader | undefined;
   const storage = functionStorageFromEnvironment();
   let emissionForms: Parameters<
     typeof buildMacOSProgram
   >[0]["emissionFormHints"];
   return (
-    testModules: readonly SourceModule[],
+    testModules: readonly NativeModuleInput[],
   ): Parameters<typeof buildMacOSProgram>[0] => {
-    runtimeModules ??= workspaceModules(
+    runtimeLoader ??= workspaceModuleLoader(
       [
         ...projectRoots(),
         globalModule,
@@ -2854,23 +3015,19 @@ function createNativeImageRequest(
     );
     if (scriptEvaluation !== undefined) {
       if (snapshot === undefined) throw Error("missing Script snapshot");
-      scriptModules ??= nativeScriptServiceModules(snapshot);
+      scriptModules ??= nativeScriptServiceInputs(snapshot);
       surface ??= createScriptRuntimeRequest(
         { module: "test262-script-host", name: "bindScript" },
         true,
         snapshot,
       );
     }
-    const capturedModules: SourceModule[] = [
-      ...runtimeModules,
-      ...(scriptModules ?? []),
-      ...testModules,
-    ];
-    const modules =
-      serviceImage === undefined
-        ? capturedModules
-        : serviceImage.transformModules(capturedModules);
-    const request = projectBuildRequest(modules, () => {});
+    const moduleLoader = nativeImageModuleLoader(
+      runtimeLoader,
+      [...(scriptModules ?? []), ...testModules],
+      serviceImage,
+    );
+    const request = projectBuildRequest([], () => {}, [], moduleLoader);
     return {
       ...request,
       ...(storage === undefined ? {} : { storage }),
@@ -3248,7 +3405,7 @@ function createNativeImageBuilder(
 ) {
   const request = createNativeImageRequest(...parameters);
   return (
-    testModules: readonly SourceModule[],
+    testModules: readonly NativeModuleInput[],
   ):
     | { readonly ok: true; readonly bytes: Uint8Array }
     | { readonly ok: false; readonly outcome: ExecutionOutcome } => {

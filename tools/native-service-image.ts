@@ -5,9 +5,9 @@ import type { BuildRequest } from "@tint/compiler/build";
  * The original frozen source identity remains intact; the unit index additionally
  * pins every precompiled artifact and the frozen tooling that generated adapters. */
 export interface NativeServiceImageSource {
-  readonly transformModules: (
-    modules: readonly SourceModule[],
-  ) => SourceModule[];
+  transformModules<T extends { readonly id: string }>(
+    modules: readonly T[],
+  ): (T | SourceModule)[];
   readonly surface: NonNullable<BuildRequest["managedSurfaces"]>[number];
   readonly runtimes: BuildRequest["runtimes"];
   readonly recordBindings: NonNullable<BuildRequest["recordBindings"]>;
