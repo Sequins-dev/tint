@@ -20,3 +20,27 @@ export type ImageAddressPatcher = (
   targetOffset: number,
   siteAddress?: number,
 ) => ImageAddressPatchStatus;
+
+/** Code offsets are logical offsets within the hosted image. A destination
+ * can map them onto one contiguous range or multiple file segments. */
+export interface CodeOutput {
+  readonly write: (source: Uint8Array, offset: number) => void;
+  readonly patch: (
+    offset: number,
+    byteLength: number,
+    update: (bytes: Uint8Array, offset: number) => string | undefined,
+  ) => string | undefined;
+}
+export interface CodePlan {
+  readonly byteLength: number;
+  readonly write: (output: CodeOutput, base: number) => string | undefined;
+}
+export function contiguousCodeOutput(
+  bytes: Uint8Array,
+  codeOffset: number,
+): CodeOutput {
+  return {
+    write: (source, offset) => bytes.set(source, codeOffset + offset),
+    patch: (offset, _byteLength, update) => update(bytes, codeOffset + offset),
+  };
+}

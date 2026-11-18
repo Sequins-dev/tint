@@ -12,7 +12,21 @@ import {
   writeWord64,
 } from "@tint/foundation/binary/bytes";
 import { sha256 } from "@tint/foundation/binary/sha256";
-import { link, type Fragment, type SymbolDefinition } from "../../layout.ts";
+import {
+  createSha256Stream,
+  updateSha256Stream,
+  finishSha256Stream,
+} from "@tint/foundation/binary/sha256-stream";
+import {
+  contiguousCodeOutput,
+  type CodeOutput,
+  type ImageAddressPatcher,
+} from "@tint/abi/relocation";
+import {
+  planLayout,
+  type Fragment,
+  type SymbolDefinition,
+} from "../../layout.ts";
 import { signatureSize, signCode } from "../signature.ts";
 import { buildUnwindSections } from "./compact-unwind.ts";
 import {
@@ -107,6 +121,56 @@ interface CodeChunk {
   signatureLength: number;
 }
 
+/** Translate logical code offsets to final file offsets. Only windows
+ * crossing a signing boundary need scratch storage. */
+function chunkedCodeOutput(
+  bytes: Uint8Array,
+  chunks: readonly CodeChunk[],
+  chunkBytes: number,
+): CodeOutput {
+  function write(source: Uint8Array, offset: number): void {
+    let pos = offset;
+    const end = offset + source.length;
+    while (pos < end) {
+      const chunk = chunks[Math.floor(pos / chunkBytes)];
+      if (chunk === undefined) throw "Mach-O code placement invariant";
+      const next = Math.min(end, chunk.offset + chunk.length);
+      if (next <= pos) throw "Mach-O code extent invariant";
+      bytes.set(
+        pos === offset && next === end
+          ? source
+          : source.subarray(pos - offset, next - offset),
+        chunk.fileOffset + pos - chunk.offset,
+      );
+      pos = next;
+    }
+  }
+  return {
+    write,
+    patch: (offset, byteLength, update) => {
+      const first = chunks[Math.floor(offset / chunkBytes)];
+      if (first === undefined) throw "Mach-O patch placement invariant";
+      const end = offset + byteLength;
+      if (end <= first.offset + first.length)
+        return update(bytes, first.fileOffset + offset - first.offset);
+      const window = new Uint8Array(byteLength);
+      let pos = offset;
+      while (pos < end) {
+        const chunk = chunks[Math.floor(pos / chunkBytes)];
+        if (chunk === undefined) throw "Mach-O patch chunk invariant";
+        const next = Math.min(end, chunk.offset + chunk.length);
+        if (next <= pos) throw "Mach-O patch extent invariant";
+        const at = chunk.fileOffset + pos - chunk.offset;
+        window.set(bytes.subarray(at, at + next - pos), pos - offset);
+        pos = next;
+      }
+      const error = update(window, 0);
+      if (error === undefined) write(window, offset);
+      return error;
+    },
+  };
+}
+
 function putAddress(bytes: Uint8Array, at: number, address: number): void {
   const high = Math.floor(address / 0x100000000);
   put64(bytes, at, address - high * 0x100000000, high);
@@ -187,10 +251,19 @@ function buildLayout(
     chunkBytes % PAGE !== 0
   )
     return { ok: false, error: "INVALID_LIMIT" };
-  if (request.code.length === 0 || request.code.length % 4 !== 0)
+  const codePlan = request.codePlan;
+  if (request.code.length !== 0 && codePlan !== undefined)
+    return { ok: false, error: "INVALID_CODE" };
+  const code = request.code;
+  const codeLength = codePlan?.byteLength ?? code.length;
+  if (
+    !uint(codeLength, Number.MAX_SAFE_INTEGER) ||
+    codeLength === 0 ||
+    codeLength % 4 !== 0
+  )
     return { ok: false, error: "INVALID_CODE" };
   if (
-    !uint(request.entryOffset, request.code.length - 1) ||
+    !uint(request.entryOffset, codeLength - 1) ||
     request.entryOffset % 4 !== 0
   )
     return { ok: false, error: "INVALID_ENTRY" };
@@ -223,7 +296,7 @@ function buildLayout(
     dataSymbols = request.dataSymbols ?? [];
   const hasSymbols = codeSymbols.length + dataSymbols.length > 0;
   const tail = request.readOnlySections ?? [];
-  let instructionEnd = request.code.length;
+  let instructionEnd = codeLength;
   for (let index = tail.length - 1; index >= 0; index--) {
     const section = tail[index];
     if (
@@ -248,8 +321,8 @@ function buildLayout(
     1 + unwindSections + (hasData ? 1 : 0) + (hasDebug ? 5 : 0);
   let chunkCommands = 0;
   if (large) {
-    for (let offset = 0; offset < request.code.length; offset += chunkBytes) {
-      const length = Math.min(chunkBytes, request.code.length - offset);
+    for (let offset = 0; offset < codeLength; offset += chunkBytes) {
+      const length = Math.min(chunkBytes, codeLength - offset);
       const end = offset + length;
       let sections = offset < instructionEnd ? 1 : 0;
       for (const part of tail) {
@@ -279,9 +352,9 @@ function buildLayout(
   for (const range of unwindRanges) {
     if (
       range === undefined ||
-      !uint(range.offset, request.code.length - 1) ||
+      !uint(range.offset, codeLength - 1) ||
       range.offset % 4 !== 0 ||
-      !uint(range.byteLength, request.code.length - range.offset) ||
+      !uint(range.byteLength, codeLength - range.offset) ||
       range.offset < unwindEnd
     )
       return { ok: false, error: "INVALID_UNWIND" };
@@ -340,10 +413,11 @@ function buildLayout(
   // Code starts on a 4 KiB boundary: generated modules address their data
   // page-relatively (ADRP+ADD), which needs offsets congruent to addresses.
   const expectedCodeOffset = Math.ceil(headerSize / 4096) * 4096;
-  if (!large && expectedCodeOffset + request.code.length >= compactLimit)
+  if (!large && expectedCodeOffset + codeLength >= compactLimit)
     return buildLayout(request, 0);
   const codeAddress = largeCodeAddress ?? expectedCodeOffset;
-  const textCode = large ? signatureLoader() : request.code;
+  const textCode = large ? signatureLoader() : code;
+  const textCodeLength = large ? textCode.length : codeLength;
   const metadataLimit = Math.min(
     request.maxByteLength,
     large ? UINT32_MAX : compactLimit,
@@ -357,7 +431,7 @@ function buildLayout(
     const debug = buildDebugInfo({
       ...debugRequest,
       codeAddress: base + codeAddress,
-      codeLength: request.code.length,
+      codeLength,
       maxByteLength: Math.min(request.maxByteLength, UINT32_MAX),
     });
     if (!debug.ok)
@@ -423,7 +497,7 @@ function buildLayout(
   // Unwind sections follow the code in __TEXT: __eh_frame (its FDEs address
   // code pc-relatively, so its placement is fixed here) then __unwind_info.
   const ehFrameAddress =
-    Math.ceil((expectedCodeOffset + textCode.length) / 8) * 8;
+    Math.ceil((expectedCodeOffset + textCodeLength) / 8) * 8;
   const unwind = hasUnwind
     ? buildUnwindSections(unwindRanges, codeAddress, ehFrameAddress, large)
     : { ehFrame: new Uint8Array(0), unwindInfo: new Uint8Array(0) };
@@ -431,7 +505,7 @@ function buildLayout(
     Math.ceil((ehFrameAddress + unwind.ehFrame.length) / 4) * 4;
   const textEnd = hasUnwind
     ? unwindInfoAddress + unwind.unwindInfo.length
-    : expectedCodeOffset + textCode.length;
+    : expectedCodeOffset + textCodeLength;
   const dataStart = Math.ceil(textEnd / PAGE) * PAGE;
   if (large && dataStart > UINT32_MAX)
     return { ok: false, error: "LARGE_METADATA_LIMIT" };
@@ -468,7 +542,13 @@ function buildLayout(
     },
     // Page-aligned so code offsets agree with loaded addresses modulo 4 KiB
     // (modules use page-relative ADRP+ADD addressing).
-    { id: "code", order: 1, alignment: 4096, bytes: textCode },
+    {
+      id: "code",
+      order: 1,
+      alignment: 4096,
+      bytes: textCode,
+      byteLength: textCodeLength,
+    },
     { id: "chains", order: 12, alignment: PAGE, bytes: chains },
     { id: "symbol-table", order: 13, alignment: 8, bytes: symbolBytes },
     { id: "signature", order: 14, alignment: 16, bytes: new Uint8Array(0) },
@@ -546,7 +626,7 @@ function buildLayout(
     symbols.push({ id: "debug-loc", fragment: "debug-loc", offset: 0 });
     symbols.push({ id: "debug-ranges", fragment: "debug-ranges", offset: 0 });
   }
-  const linked = link({
+  const linked = planLayout({
     fragments,
     symbols,
     fixups: [],
@@ -618,19 +698,7 @@ function buildLayout(
     if (name === undefined) throw "Mach-O import invariant";
     importSlots.push({ name, fileOffset: dataStart + index * 8 });
   }
-  const prefix = linked.value.bytes,
-    signatureOffset = prefix.length;
-  for (let i = 0; i < dataSymbols.length; i++) {
-    const symbol = dataSymbols[i];
-    if (symbol === undefined || dataFileOffset === undefined)
-      throw "data symbol invariant";
-    put64(
-      prefix,
-      symbolOffset + (codeSymbols.length + i) * 16 + 8,
-      dataFileOffset + symbol.offset,
-      baseHigh,
-    );
-  }
+  const signatureOffset = linked.value.byteLength;
   const sigSize = signatureSize(
     signatureOffset,
     request.identifier,
@@ -659,6 +727,25 @@ function buildLayout(
     fileSize = chunk.fileOffset + chunk.vmLength + size.value;
     if (fileSize > request.maxByteLength)
       return { ok: false, error: "SIZE_LIMIT" };
+  }
+  let bytes: Uint8Array;
+  try {
+    bytes = new Uint8Array(fileSize);
+  } catch {
+    return { ok: false, error: "LAYOUT_FAILED" };
+  }
+  linked.value.write(bytes);
+  const prefix = bytes.subarray(0, signatureOffset);
+  for (let i = 0; i < dataSymbols.length; i++) {
+    const symbol = dataSymbols[i];
+    if (symbol === undefined || dataFileOffset === undefined)
+      throw "data symbol invariant";
+    put64(
+      prefix,
+      symbolOffset + (codeSymbols.length + i) * 16 + 8,
+      dataFileOffset + symbol.offset,
+      baseHigh,
+    );
   }
   if (large) {
     put64(prefix, tableOffset, chunks.length);
@@ -950,19 +1037,13 @@ function buildLayout(
   }
   if (o !== headerSize || codeOffset !== expectedCodeOffset)
     throw "Mach-O header layout invariant";
-  let bytes: Uint8Array;
-  try {
-    bytes = large ? new Uint8Array(fileSize) : prefix;
-  } catch {
-    return { ok: false, error: "LAYOUT_FAILED" };
-  }
-  for (const chunk of chunks) {
-    if (chunk === undefined) throw "Mach-O chunk invariant";
-    bytes.set(
-      request.code.subarray(chunk.offset, chunk.offset + chunk.length),
-      chunk.fileOffset,
-    );
-  }
+  const output = large
+    ? chunkedCodeOutput(bytes, chunks, chunkBytes)
+    : contiguousCodeOutput(bytes, codeOffset);
+  if (codePlan !== undefined) {
+    if (codePlan.write(output, 0) !== undefined)
+      return { ok: false, error: "INVALID_CODE" };
+  } else if (large) output.write(code, 0);
   const patchSites = new Set<number>();
   const references = request.addressFixups ?? [];
   const patch = request.patchAddress;
@@ -977,12 +1058,12 @@ function buildLayout(
     if (reference === undefined)
       return { ok: false, error: "INVALID_REFERENCE" };
     if (
-      !uint(reference.byteLength, request.code.length) ||
+      !uint(reference.byteLength, codeLength) ||
       reference.byteLength === 0 ||
-      !uint(reference.alignment, request.code.length) ||
+      !uint(reference.alignment, codeLength) ||
       reference.alignment === 0 ||
       (reference.alignment & (reference.alignment - 1)) !== 0 ||
-      !uint(reference.offset, request.code.length - reference.byteLength) ||
+      !uint(reference.offset, codeLength - reference.byteLength) ||
       reference.offset % reference.alignment !== 0 ||
       patchSites.has(reference.offset)
     )
@@ -1003,41 +1084,25 @@ function buildLayout(
     if (targetOffset === undefined)
       return { ok: false, error: "INVALID_REFERENCE" };
     if (patch === undefined) throw "image relocation patcher invariant";
-    let status: "complete" | "invalid" | "range";
-    if (large) {
-      // A relocation window can straddle two VM-adjacent chunks.
-      const window = request.code.slice(
-        reference.offset,
-        reference.offset + reference.byteLength,
-      );
-      status = patch(
-        window,
-        referenceIndex,
-        0,
-        targetOffset,
-        codeAddress + reference.offset,
-      );
-      if (status === "complete") {
-        let pos = reference.offset;
-        const end = pos + reference.byteLength;
-        while (pos < end) {
-          const chunk = chunks[Math.floor(pos / chunkBytes)];
-          if (chunk === undefined) throw "Mach-O relocation chunk invariant";
-          const next = Math.min(end, chunk.offset + chunk.length);
-          bytes.set(
-            window.subarray(pos - reference.offset, next - reference.offset),
-            chunk.fileOffset + pos - chunk.offset,
+    const applyPatch: ImageAddressPatcher = patch;
+    const destination: number = targetOffset;
+    const status = large
+      ? (output.patch(reference.offset, reference.byteLength, (window, at) => {
+          const result = applyPatch(
+            window,
+            referenceIndex,
+            at,
+            destination,
+            codeAddress + reference.offset,
           );
-          pos = next;
-        }
-      }
-    } else
-      status = patch(
-        prefix,
-        referenceIndex,
-        codeOffset + reference.offset,
-        targetOffset,
-      );
+          return result === "complete" ? undefined : result;
+        }) ?? "complete")
+      : patch(
+          prefix,
+          referenceIndex,
+          codeOffset + reference.offset,
+          targetOffset,
+        );
     if (status !== "complete")
       return {
         ok: false,
@@ -1047,9 +1112,11 @@ function buildLayout(
   }
   // Hash the finalized unsigned image with its UUID field zero, plus its identity.
   // In the large layout the chunk signatures commit to the relocated code.
-  const identity = new Uint8Array(
-    prefix.length + request.identifier.length + chunks.length * 32,
-  );
+  const identity = createSha256Stream();
+  updateSha256Stream(identity, prefix);
+  const identifier = new Uint8Array(request.identifier.length);
+  name(identifier, 0, request.identifier);
+  updateSha256Stream(identity, identifier);
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
     if (chunk === undefined) throw "Mach-O chunk invariant";
@@ -1063,14 +1130,9 @@ function buildLayout(
     if (!signed.ok || signed.value.length !== chunk.signatureLength)
       return { ok: false, error: "SIGNING_FAILED" };
     bytes.set(signed.value, end);
-    identity.set(
-      sha256(signed.value),
-      prefix.length + request.identifier.length + i * 32,
-    );
+    updateSha256Stream(identity, sha256(signed.value));
   }
-  identity.set(prefix);
-  name(identity, prefix.length, request.identifier);
-  const uuid = sha256(identity).subarray(0, 16);
+  const uuid = finishSha256Stream(identity).subarray(0, 16);
   uuid[6] = ((uuid[6] ?? 0) & 0x0f) | 0x80;
   uuid[8] = ((uuid[8] ?? 0) & 0x3f) | 0x80;
   prefix.set(uuid, uuidOffset);
@@ -1083,8 +1145,6 @@ function buildLayout(
   });
   if (!signed.ok || signed.value.length !== sigSize.value)
     return { ok: false, error: "SIGNING_FAILED" };
-  if (!large) bytes = new Uint8Array(fileSize);
-  bytes.set(prefix);
   bytes.set(signed.value, signatureOffset);
   return {
     ok: true,
