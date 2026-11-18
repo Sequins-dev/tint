@@ -1,6 +1,17 @@
 import type { FunctionIR, Block, Span } from "@tint/ir/scalar";
 
-export type RecordOperation = "test" | "view" | "descriptor" | "identity";
+export type RecordOperation =
+  | "test"
+  | "view"
+  | "descriptor"
+  | "identity"
+  /** `(record: T): unknown`: the JavaScript view held in a viewed record's
+   * hidden slot (undefined before the first crossing, or for a record of
+   * another layout). */
+  | "view-slot"
+  /** `(record: T, view: unknown): void`: store the view (ignored for a
+   * record of another layout). */
+  | "set-view-slot";
 
 /** Signature and semantic result types are validated by the source adapter. */
 export function bindRecordOperation(
@@ -9,7 +20,60 @@ export function bindRecordOperation(
   record: number,
   operation: RecordOperation,
   span: Span,
+  /** The view slot's field index (view-slot and set-view-slot). */
+  field: number = -1,
 ): FunctionIR {
+  if (operation === "view-slot" || operation === "set-view-slot") {
+    if (field < 0) throw "record view slot invariant";
+    const read = operation === "view-slot";
+    // view-slot reads into an added general slot; set-view-slot writes its
+    // second parameter. A record of another layout takes the alternate.
+    const slot = read ? fn.slots.length : 1;
+    return {
+      ...fn,
+      slots: read ? [...fn.slots, "general"] : fn.slots,
+      entry: 0,
+      blocks: [
+        {
+          id: 0,
+          instructions: [{ ...span, kind: "load", id: 0, slot: input }],
+          terminator: {
+            ...span,
+            kind: "record",
+            object: 0,
+            record,
+            field,
+            operation: read ? "read" : "write",
+            slot,
+            consequent: 1,
+            alternate: 2,
+          },
+        },
+        read
+          ? {
+              id: 1,
+              instructions: [{ ...span, kind: "load", id: 1, slot }],
+              terminator: { ...span, kind: "return", value: 1 },
+            }
+          : {
+              id: 1,
+              instructions: [],
+              terminator: { ...span, kind: "return", value: undefined },
+            },
+        read
+          ? {
+              id: 2,
+              instructions: [{ ...span, kind: "general-none", id: 2 }],
+              terminator: { ...span, kind: "return", value: 2 },
+            }
+          : {
+              id: 2,
+              instructions: [],
+              terminator: { ...span, kind: "return", value: undefined },
+            },
+      ],
+    };
+  }
   if (operation === "identity")
     return {
       ...fn,
