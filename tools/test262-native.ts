@@ -98,20 +98,36 @@ export const nativeTimeZoneData = Object.freeze({
       ? timeZoneName
       : "/usr/share/zoneinfo/" + timeZoneName,
 });
-/** Total debugger containment budget, including startup. Chosen once per run and
- * recorded with resources; never adjusted for individual tests or retried outcomes. */
-export function nativeContainmentTimeout(
+function runBudget(
   requested: string | undefined,
+  fallback: number,
+  name: string,
 ): number {
-  if (requested === undefined) return 60000;
+  if (requested === undefined) return fallback;
   const value = Number(requested);
   if (
     !/^[1-9][0-9]*$/.test(requested) ||
     !Number.isSafeInteger(value) ||
     value > 0xffffffff
   )
-    throw new RangeError("Invalid native containment timeout");
+    throw new RangeError("Invalid native " + name + " timeout");
   return value;
+}
+/** Per-variant execution containment budget, including debugger startup.
+ * Chosen once per run and recorded with resources; never adjusted for
+ * individual tests or retried outcomes. It starts after the image's launch
+ * admission, so it never pays for the host's first-launch assessment. */
+export function nativeContainmentTimeout(
+  requested: string | undefined,
+): number {
+  return runBudget(requested, 60000, "containment");
+}
+/** Budget for a staged image's first launch (see "Launch admission" in
+ * docs/test262-runner.md). macOS assesses every new executable file once, in a
+ * host-wide serial queue, before its first process runs; under concurrent
+ * builds the wait reaches minutes and is independent of the image's code. */
+export function nativeAdmissionTimeout(requested: string | undefined): number {
+  return runBudget(requested, 1800000, "admission");
 }
 /** Uniform execution budgets, recorded in reports rather than tailored to tests.
  * The copying collector reserves half the heap as evacuation space; large
@@ -156,6 +172,9 @@ export const nativeTestResources = Object.freeze({
   rootCapacity: 16384,
   stackBytes: 16777216,
   timeoutMs: nativeContainmentTimeout(process.env.TINT_TEST262_CONTAINMENT_MS),
+  admissionTimeoutMs: nativeAdmissionTimeout(
+    process.env.TINT_TEST262_ADMISSION_MS,
+  ),
   timeZoneDataBytes: 1048576,
   namedTimeZoneDatabase: {
     metadataPath: "/usr/share/zoneinfo/tzdata.zi",
@@ -2728,7 +2747,12 @@ export function createNativeUnitBatchBuilder(
     if (!built.ok) return nativeCompilationFailure(built.error);
     return { ok: true, bytes: built.value, selectors };
   }
-  return Object.assign(build, { accepts });
+  /** Compiles (or loads from the cache) the shared host now, so a caller can
+   * time it apart from routing and batch compilation. */
+  function prepare(): void {
+    preparedHost();
+  }
+  return Object.assign(build, { accepts, prepare });
 }
 /** Retain only the compiler-authorized view; historical captures add no bindings. */
 export function directEvalSiteImageContract(enabled: boolean) {

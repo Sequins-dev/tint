@@ -19,7 +19,7 @@ import {
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import type { ExecutionOutcome } from "./test262-execution.ts";
-import { nativeExitOutcome } from "./test262-native.ts";
+import { nativeExitOutcome, nativeTestResources } from "./test262-native.ts";
 
 /** Match the debugger to the Darwin debugserver shipped by the host toolchain. */
 export const nativeDebuggerExecutable =
@@ -95,7 +95,6 @@ export function nativeDebuggerOutcome(value: unknown): ExecutionOutcome {
   };
 }
 
-/** One staged executable can serve many isolated inferior processes. */
 /** A batch image's case argument: an index, or a linked-unit case descriptor
  * (digits, ':' and ',' only, so it passes unquoted through LLDB). */
 export type NativeCaseSelector = number | string;
@@ -104,15 +103,74 @@ function validCaseSelector(selector: NativeCaseSelector): boolean {
     ? Number.isSafeInteger(selector) && selector >= 0
     : /^[0-9][0-9:,]{0,4095}$/.test(selector);
 }
+/** The result of an image's first launch. */
+export type NativeAdmission =
+  | { readonly admitted: true; readonly admissionMs: number }
+  | {
+      readonly admitted: false;
+      readonly admissionMs: number;
+      readonly outcome: ExecutionOutcome;
+    };
+/** Launches a newly published image once, with no case argument, so the host
+ * admits the executable file before any case's execution budget starts.
+ * macOS assesses each new executable file on its first exec in one host-wide
+ * serial queue (about 16 ms per MiB of image plus a fixed cost, so
+ * concurrent builds can delay a launch by minutes); later launches of the
+ * same file start immediately. Without a case argument every batch host
+ * exits 99 after runtime initialization, so no test code runs. Any exit or
+ * signal means the process ran and the file is admitted; a fault during
+ * initialization recurs, and is reported, in each case's own launch.
+ * Exceeding `timeoutMs` (a host stall, not a test outcome) or failing to spawn
+ * at all is returned as the outcome of every case. */
+export function admitNativeFile(
+  binary: string,
+  timeoutMs: number,
+): NativeAdmission {
+  const started = performance.now();
+  const result = spawnSync(binary, [], {
+    stdio: "ignore",
+    timeout: timeoutMs,
+    killSignal: "SIGKILL",
+  });
+  const admissionMs = performance.now() - started;
+  if (result.error === undefined) return { admitted: true, admissionMs };
+  return {
+    admitted: false,
+    admissionMs,
+    outcome:
+      "code" in result.error && result.error.code === "ETIMEDOUT"
+        ? {
+            kind: "timeout",
+            detail:
+              "native image was not admitted: its first launch did not complete within " +
+              timeoutMs +
+              " ms; no case was executed",
+          }
+        : {
+            kind: "crash",
+            detail: "native image admission launch: " + result.error.message,
+          },
+  };
+}
+/** One staged executable can serve many isolated inferior processes. The
+ * first run (or an explicit `admit`) performs launch admission; each run's
+ * own timeout then measures only that case's launch and execution. */
 export class NativeImageRunner {
   readonly path: string;
   #directory: string;
   #timeoutMs: number;
+  #admissionTimeoutMs: number;
+  #admission: NativeAdmission | undefined;
   #closed = false;
-  constructor(bytes: Uint8Array, timeoutMs: number) {
+  constructor(
+    bytes: Uint8Array,
+    timeoutMs: number,
+    admissionTimeoutMs: number = nativeTestResources.admissionTimeoutMs,
+  ) {
     this.#directory = mkdtempSync(join(tmpdir(), "tint-test262-image-"));
     this.path = join(this.#directory, "test");
     this.#timeoutMs = timeoutMs;
+    this.#admissionTimeoutMs = admissionTimeoutMs;
     try {
       // Keep the launch path unpublished until bytes and permissions are complete.
       const staging = join(this.#directory, ".image");
@@ -130,11 +188,22 @@ export class NativeImageRunner {
       throw error;
     }
   }
+  /** Admits the image once; later calls return the first result. */
+  admit(): NativeAdmission {
+    if (this.#closed) throw new Error("native image runner is closed");
+    this.#admission ??= admitNativeFile(this.path, this.#admissionTimeoutMs);
+    return this.#admission;
+  }
   run(
     selectedCase?: NativeCaseSelector,
     waiting?: (phase: string) => void,
   ): ExecutionOutcome {
     if (this.#closed) throw new Error("native image runner is closed");
+    if (selectedCase !== undefined && !validCaseSelector(selectedCase))
+      throw new Error("invalid native batch selector");
+    if (this.#admission === undefined) waiting?.("admitting image");
+    const admission = this.admit();
+    if (!admission.admitted) return admission.outcome;
     return executeNativeFile(this.path, this.#timeoutMs, selectedCase, waiting);
   }
   close(): void {

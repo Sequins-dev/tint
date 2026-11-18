@@ -44,6 +44,15 @@ export interface NativeCompilation {
   readonly id: number;
   readonly variants: number;
   readonly compileMs: number;
+  /** A staged image's first launch, separate from every case's execution
+   * budget; absent for failed builds and in older journals. */
+  readonly admissionMs?: number;
+  /** Linked-unit batches: compiling their cases' Script units while routing
+   * them (memoized, so not part of `compileMs`). */
+  readonly unitCompileMs?: number;
+  /** The first batch after the linked-unit host was compiled or loaded from
+   * its cache records that one-time cost here. */
+  readonly hostPreparationMs?: number;
   readonly outcome: string;
   readonly kind: "syntax" | "execution";
   /** Present for batches of separately linked Script units. */
@@ -243,6 +252,9 @@ export function createNativeRunJournal(
         !Number.isInteger(item.variants) ||
         item.variants < 1 ||
         !number(item.compileMs) ||
+        [item.admissionMs, item.unitCompileMs, item.hostPreparationMs].some(
+          (value) => value !== undefined && !number(value),
+        ) ||
         typeof item.outcome !== "string" ||
         (item.kind !== "syntax" && item.kind !== "execution") ||
         (item.linking !== undefined && item.linking !== "units")
