@@ -9,6 +9,8 @@ import {
   type GeneralProgram,
   type GeneralProgramRequest,
   type NativeRecordBinding,
+  type BoundaryRecord,
+  type BoundaryRecordUse,
 } from "@tint/compiler/native";
 import { createSourceTextView } from "@tint/source/text";
 import {
@@ -201,6 +203,12 @@ function lowerGeneralProgram(
   // declared primitive type (an explicit cast); a failed check throws a
   // TypeError instead of entering typed code with an ill-typed value.
   let boundaryImports = "";
+  const hostId = fresh("$general-host:" + request.entry),
+    viewsId = fresh("$general-views:" + request.entry);
+  // Record types cross as JavaScript views (docs/unified-pipeline.md, the
+  // value bridge): one view per record, cached in the record's view slot.
+  const adapters = recordAdapters(request.records ?? []);
+  boundaryImports += adapters.imports;
   for (let k = 0; k < request.boundaries.length; k++) {
     const boundary = request.boundaries[k];
     if (boundary === undefined) throw "general boundary invariant";
@@ -226,14 +234,23 @@ function lowerGeneralProgram(
         for (let p = 0; p < item.parameters.length; p++) {
           const classes = item.parameters[p];
           if (classes === undefined) throw "general boundary invariant";
-          checks.push(checkedArgument("args[" + p + "]", classes));
+          checks.push(
+            fromGeneral(
+              "args[" + p + "]",
+              classes,
+              item.records?.parameters[p],
+              adapters.index,
+            ),
+          );
         }
         value =
           "createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver:unknown,args:readonly unknown[]):unknown=>" +
-          local +
-          "(" +
-          checks.join(",") +
-          "),realm.executionContext)";
+          toGeneral(
+            local + "(" + checks.join(",") + ")",
+            item.records?.result,
+            adapters.index,
+          ) +
+          ",realm.executionContext)";
       }
       body +=
         "setSyntheticModuleExport(module," +
@@ -258,7 +275,6 @@ function lowerGeneralProgram(
   if (entryIndex < 0)
     return { ok: false, error: "entry module is not lowered" };
   const output = options.output;
-  const hostId = fresh("$general-host:" + request.entry);
   const text = generalHostSource(
     imports,
     creates,
@@ -268,6 +284,7 @@ function lowerGeneralProgram(
     request.start,
     output !== undefined,
     generalIntrinsics(erasedModules),
+    adapters.functions,
   );
   const parsed = parseModule(createSourceTextView(text));
   if (!parsed.ok)
@@ -289,12 +306,216 @@ function lowerGeneralProgram(
     if (module !== undefined) hostDependencies.set(module.id, module.id);
   for (const boundary of request.boundaries)
     if (boundary !== undefined) hostDependencies.set(boundary.id, boundary.id);
+  for (const record of request.records ?? [])
+    if (record !== undefined)
+      hostDependencies.set(record.module, record.module);
+  if ((request.records ?? []).length !== 0)
+    hostDependencies.set("views", viewsId);
   generated.push({
     id: hostId,
     module: parsed.value,
     dependencies: hostDependencies,
   });
-  return { ok: true, value: { modules: generated, entry: hostId } };
+  const records = request.records ?? [];
+  if (records.length === 0)
+    return { ok: true, value: { modules: generated, entry: hostId } };
+  const viewsParsed = parseModule(createSourceTextView(adapters.stubs));
+  if (!viewsParsed.ok)
+    return {
+      ok: false,
+      error: "general views: " + viewsParsed.error.message,
+    };
+  const viewsDependencies = new Map<string, string>();
+  for (const record of records)
+    if (record !== undefined)
+      viewsDependencies.set(record.module, record.module);
+  generated.push({
+    id: viewsId,
+    module: viewsParsed.value,
+    dependencies: viewsDependencies,
+  });
+  const viewSlots: NativeRecordBinding[] = [];
+  for (let i = 0; i < records.length; i++) {
+    viewSlots.push({
+      module: viewsId,
+      name: "viewSlot" + i,
+      operation: "view-slot",
+    });
+    viewSlots.push({
+      module: viewsId,
+      name: "setViewSlot" + i,
+      operation: "set-view-slot",
+    });
+  }
+  return {
+    ok: true,
+    value: {
+      modules: generated,
+      entry: hostId,
+      recordBindings: viewSlots,
+      runtimes: [{ module: viewsId, namespace: "general-record-views" }],
+    },
+  };
+}
+
+/** Generated record adapters: per boundary record i, the view-slot binding
+ * stubs `viewSlot<i>`/`setViewSlot<i>` (bound by record bindings),
+ * `toGeneral<i>` (the record's cached view, created on first crossing) and
+ * `fromGeneral<i>` (a view's record, after a checked downcast; any other
+ * value is a TypeError, since the declared type is a contract). */
+function recordAdapters(records: readonly BoundaryRecord[]): {
+  readonly imports: string;
+  readonly functions: string;
+  /** The view-slot stubs: a runtime module, since record bindings bind
+   * runtime exports. */
+  readonly stubs: string;
+  readonly index: ReadonlyMap<string, number>;
+} {
+  const index = new Map<string, number>();
+  for (let i = 0; i < records.length; i++) {
+    const record = records[i];
+    if (record === undefined) throw "boundary record invariant";
+    index.set(record.key, i);
+  }
+  let imports = "",
+    functions = "",
+    stubs = "";
+  for (let i = 0; i < records.length; i++) {
+    const record = records[i];
+    if (record === undefined) throw "boundary record invariant";
+    const type = "Record" + i;
+    imports +=
+      "import type {" +
+      record.name +
+      " as " +
+      type +
+      "} from " +
+      JSON.stringify(record.module) +
+      ";\n";
+    const keys: string[] = [],
+      writable: string[] = [];
+    let reads = "",
+      writes = "";
+    for (let f = 0; f < record.fields.length; f++) {
+      const field = record.fields[f];
+      if (field === undefined) throw "boundary field invariant";
+      const access = "record." + field.name;
+      keys.push(JSON.stringify(field.name));
+      writable.push(String(!field.readonly));
+      reads +=
+        "case " + f + ":return " + toGeneral(access, field.record, index) + ";";
+      if (!field.readonly)
+        writes +=
+          "case " +
+          f +
+          ":" +
+          access +
+          "=" +
+          fromGeneral("value", field.classes, field.record, index) +
+          ";return;";
+    }
+    const fields =
+      "{keys:[" +
+      keys.join(",") +
+      "],writable:[" +
+      writable.join(",") +
+      "],read:(field:number):unknown=>{switch(field){" +
+      reads +
+      "}return undefined;},write:(field:number,value:unknown):void=>{switch(field){" +
+      writes +
+      '}throw "RECORD_VIEW_READONLY";}}';
+    stubs +=
+      "import type {" +
+      record.name +
+      " as " +
+      type +
+      "} from " +
+      JSON.stringify(record.module) +
+      ";\n" +
+      "export function viewSlot" +
+      i +
+      "(record:" +
+      type +
+      '):unknown{throw "UNBOUND_VIEW_SLOT";}\n' +
+      "export function setViewSlot" +
+      i +
+      "(record:" +
+      type +
+      ',view:unknown):void{throw "UNBOUND_VIEW_SLOT";}\n';
+    imports +=
+      "import {viewSlot" + i + ",setViewSlot" + i + '} from "views";\n';
+    functions +=
+      "function toGeneral" +
+      i +
+      "(record:" +
+      type +
+      "):unknown{\n" +
+      " const cached=viewSlot" +
+      i +
+      "(record);if(cached!==undefined)return cached;\n" +
+      " const realm=programRealm().realm;\n" +
+      " const view:unknown=createRecordView(realm.objectPrototype,record," +
+      fields +
+      ");\n" +
+      " setViewSlot" +
+      i +
+      "(record,view);return view;\n}\n" +
+      "function fromGeneral" +
+      i +
+      "(value:unknown):" +
+      type +
+      "{\n" +
+      " const realm=programRealm().realm;\n" +
+      " const object=viewObjectValue(value,realm.objectPrototype);\n" +
+      " const record=object===undefined?undefined:typedRecordOf(object);\n" +
+      " if(record===undefined)return rejectArgument(realm);\n" +
+      " try{return record as " +
+      type +
+      ";}catch(error){return rejectArgument(realm);}\n}\n";
+  }
+  return { imports, functions, stubs, index };
+}
+
+/** A typed value as a general one: records become their views. */
+function toGeneral(
+  value: string,
+  record: BoundaryRecordUse | undefined,
+  index: ReadonlyMap<string, number>,
+): string {
+  if (record === undefined) return value;
+  const i = index.get(record.key);
+  if (i === undefined) throw "boundary record index invariant";
+  return record.optional
+    ? "((r:Record" +
+        i +
+        "|undefined):unknown=>r===undefined?undefined:toGeneral" +
+        i +
+        "(r))(" +
+        value +
+        ")"
+    : "toGeneral" + i + "(" + value + ")";
+}
+
+/** A general value checked into its declared type: primitives by class,
+ * records from their views. */
+function fromGeneral(
+  value: string,
+  classes: number,
+  record: BoundaryRecordUse | undefined,
+  index: ReadonlyMap<string, number>,
+): string {
+  if (record === undefined) return checkedArgument(value, classes);
+  const i = index.get(record.key);
+  if (i === undefined) throw "boundary record index invariant";
+  return record.optional
+    ? "((a:unknown):Record" +
+        i +
+        "|undefined=>a===undefined?undefined:fromGeneral" +
+        i +
+        "(a))(" +
+        value +
+        ")"
+    : "fromGeneral" + i + "(" + value + ")";
 }
 
 /** A checked argument: the value narrowed to its declared primitive
@@ -356,6 +577,7 @@ function generalHostSource(
   start: string,
   output: boolean,
   installers: readonly string[],
+  adapters: string,
 ): string {
   let installs = "";
   for (const installer of installers) {
@@ -372,7 +594,7 @@ function generalHostSource(
     : `function emit(fd:number,text:string):void{}`;
   return `${imports}import {createGlobalEnvironment,type GlobalEnvironment} from "global";
 import {createSyntheticModule,setSyntheticModuleExport,loadRequestedModules,finishLoadingImportedModule,linkModule,evaluateModule,settledModulePromise,getModuleNamespace,type ModuleRecord,type ModuleRequest,type ModuleReferrer,type ModuleLoadPayload} from "modules";
-import {createObject,createCallableObject,createDataProperty,createErrorRealm,createScriptAgent,createSymbolRegistry,createRuntimeError,getProperty,callObjectValue,stringValue,drainScriptJobs,scriptSameValue,installGlobalProperties,${installers.join(",")},type ErrorRealm,type ScriptPropertyKey,type ObjectHooks,type OrdinaryObject} from "objects";
+import {createObject,createCallableObject,createDataProperty,createErrorRealm,createScriptAgent,createSymbolRegistry,createRuntimeError,getProperty,callObjectValue,stringValue,drainScriptJobs,scriptSameValue,installGlobalProperties,createRecordView,typedRecordOf,viewObjectValue,${installers.join(",")},type ErrorRealm,type ScriptPropertyKey,type ObjectHooks,type OrdinaryObject} from "objects";
 ${output ? 'import {write as writeOutput} from "output";' : ""}
 ${write}
 function rejectArgument(realm:ErrorRealm):never{throw createRuntimeError(realm,"type");}
@@ -399,7 +621,7 @@ ${installs} const console=createObject<ScriptPropertyKey,unknown>(realm.objectPr
  current=created;
  return created;
 }
-export function ${start}():number {
+${adapters}export function ${start}():number {
  const program=programRealm();
  const global=program.global,realm=program.realm,hooks=program.hooks,object=program.object;
  const records:(ModuleRecord|undefined)[]=[];for(let i=0;i<${count};i++)records.push(undefined);

@@ -53,6 +53,7 @@ import type {
   CheckedFunction,
   Local,
   ExpressionInfo,
+  DowncastTest,
   CViewUse,
 } from "@tint/typescript/checker";
 import type {
@@ -408,6 +409,25 @@ function lowerEntries(
       validatedTypes.value,
     );
     if (viewError !== undefined) fail(viewError);
+    // Witness types of view-slot bindings cross into JavaScript as views:
+    // their layouts hold a hidden view slot.
+    const viewed = new Set<number>();
+    for (const binding of recordTarget?.recordBindings ?? []) {
+      if (binding === undefined) fail("record binding invariant");
+      if (
+        binding.operation !== "view-slot" &&
+        binding.operation !== "set-view-slot"
+      )
+        continue;
+      const witness = bodyByFunction[binding.function]?.parameters[0];
+      const type =
+        witness === undefined
+          ? undefined
+          : checked.bindingTypes[bindingId(witness)];
+      if (type === undefined)
+        fail("view slot binding requires a record witness");
+      viewed.add(type);
+    }
     const recordContracts: RecordContracts | undefined =
       recordTarget === undefined
         ? undefined
@@ -421,6 +441,7 @@ function lowerEntries(
             recordTarget.maps ?? [],
             validatedTypes.value,
             recordTarget.recordIdentity,
+            viewed,
           );
     const constants = new Map<number, number | boolean | string>();
     if (layout === undefined) {
@@ -2479,7 +2500,54 @@ function lowerEntries(
           builtin,
           constant,
           cView: viewUse ?? viewTarget,
+          downcast: downcastOf(node),
         });
+      }
+      /** The run-time tests of a checked downcast: a category per
+       * primitive member and a record layout per object member. */
+      function downcastOf(node: Expression):
+        | {
+            readonly tests: readonly DowncastTest[];
+            readonly records: readonly number[];
+          }
+        | undefined {
+        const target = checked.downcasts?.get(node);
+        if (target === undefined) return undefined;
+        const tests: DowncastTest[] = [],
+          records: number[] = [];
+        function visit(member: number): void {
+          const type = checked.types[member];
+          if (type === undefined) fail("downcast type invariant");
+          switch (type.kind) {
+            case "union":
+              for (const inner of type.members) {
+                if (inner === undefined) fail("downcast union invariant");
+                visit(inner);
+              }
+              return;
+            case "number":
+            case "string":
+            case "boolean":
+            case "undefined":
+            case "null":
+            case "Uint8Array":
+              if (!tests.includes(type.kind)) tests.push(type.kind);
+              return;
+            case "object": {
+              const record = recordContracts?.forType(member);
+              if (record === undefined)
+                fail(
+                  "checked downcasts to object types need one record layout",
+                );
+              if (!records.includes(record)) records.push(record);
+              return;
+            }
+            default:
+              fail("checked downcast to an untestable type");
+          }
+        }
+        visit(target);
+        return { tests, records };
       }
       function stmt(input: Statement): void {
         const node = input;
@@ -2975,6 +3043,46 @@ function lowerEntries(
         fail("record binding requires a module function");
       const first = fn.parameters[0],
         second = fn.parameters[1];
+      if (
+        binding.operation === "view-slot" ||
+        binding.operation === "set-view-slot"
+      ) {
+        const read = binding.operation === "view-slot";
+        const witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
+        const record =
+          witnessType === undefined
+            ? undefined
+            : recordContracts.forType(witnessType);
+        const field =
+          record === undefined ? undefined : recordContracts.viewSlot(record);
+        if (
+          first === undefined ||
+          fn.slots[first] !== "reference" ||
+          (read
+            ? fn.parameters.length !== 1 || fn.returnType !== "general"
+            : fn.parameters.length !== 2 ||
+              second === undefined ||
+              fn.slots[second] !== "general" ||
+              fn.returnType !== "void") ||
+          record === undefined ||
+          field === undefined ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "view slot bindings take a viewed record (and, to store, an unknown view)",
+          );
+        functions[fn.id] = bindRecordOperation(
+          fn,
+          first,
+          record,
+          binding.operation,
+          { start: body.node.start, end: body.node.end },
+          field,
+        );
+        continue;
+      }
       const identity = binding.operation === "identity";
       const witness = body.parameters[identity ? 0 : 1];
       const resultView =
@@ -3216,6 +3324,7 @@ function cells(
         let type: ScalarType;
         switch (op.kind) {
           case "general-record-is":
+          case "general-is":
             type = "boolean";
             break;
           case "general-kind":
@@ -3500,6 +3609,7 @@ function cells(
           break;
         case "general-kind":
         case "general-record-is":
+        case "general-is":
         case "general-wrap":
         case "general-value":
         case "primitive-wrap":

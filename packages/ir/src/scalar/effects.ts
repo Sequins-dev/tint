@@ -21,6 +21,7 @@ export function instructionEffects(op: Instruction): number {
     case "record-has":
     case "function-environment":
     case "general-record-is":
+    case "general-is":
     case "general-record-descriptor":
     case "string-length":
     case "string-code-unit":
