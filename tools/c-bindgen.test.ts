@@ -5,7 +5,7 @@
 // shape, and a native fixture through a freshly generated binding.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import ts from "typescript";
 import type { CScalar } from "@tint/abi/c";
@@ -15,6 +15,7 @@ import {
   generatedFile,
   loadSpecs,
   readFacts,
+  semanticDifferences,
 } from "./c-bindgen.ts";
 import { emitBinding, SpecError } from "./c-bindgen/emit.ts";
 import { extractFacts, hostTarget } from "./c-bindgen/extract.ts";
@@ -31,7 +32,11 @@ import {
   type BindingSpec,
   type TargetName,
 } from "./c-bindgen/spec.ts";
-import { verifySampleFixture } from "./c-bindgen-fixtures.ts";
+import {
+  verifyGeneralBindingImport,
+  verifyGeneratedZlibAllocatorFixture,
+  verifySampleFixture,
+} from "./c-bindgen-fixtures.ts";
 
 const host = hostTarget();
 const clang =
@@ -47,6 +52,19 @@ const bindings = new URL("../packages/native-runtime/src/c/", import.meta.url);
 // Synthetic facts for emission rules (no clang needed).
 function scalar(name: CScalar, aliases: readonly string[] = []): TypeFact {
   return { kind: "scalar", scalar: name, aliases };
+}
+function functionType(
+  parameters: readonly TypeFact[],
+  result: TypeFact,
+  name?: string,
+): TypeFact & { kind: "function" } {
+  return {
+    kind: "function",
+    parameters,
+    result,
+    variadic: false,
+    ...(name === undefined ? {} : { name }),
+  };
 }
 function pointer(pointee: TypeFact, constPointee = false): TypeFact {
   return { kind: "pointer", pointee, constPointee };
@@ -209,7 +227,7 @@ test("emission is deterministic and verified against the facts' layouts", async 
 });
 
 test("unsupported shapes are reported and left out, with their dependents", async () => {
-  const callback = pointer({ kind: "function" });
+  const callback = pointer(functionType([scalar("i32")], scalar("i32")));
   const emission = await emitUnit(
     unitSpec({
       records: ["shape", "outer", { name: "hook", opaque: ["fn"] }, "hooks"],
@@ -294,8 +312,6 @@ test("unsupported shapes are reported and left out, with their dependents", asyn
   assert.deepEqual(emission.report, [
     "record shape: differs between targets beyond member types (members, packing or alignment): bind it in per-target specs",
     "record outer: member inner holds record shape by value, which is not emitted",
-    "record hooks: member fn is a function pointer (Callback<…> lands with Phase 4; list it in `opaque` to bind Address<void>)",
-    'function listen: parameter fn is a function pointer (Callback<…> lands with Phase 4; bind it `as: "Address"` to pass an opaque address)',
     "function vprint: parameter list: va_list",
     "function print: is variadic: give each call shape's argument types in `variadic` (one spec entry per shape, `variant` names them)",
   ]);
@@ -309,7 +325,222 @@ test("unsupported shapes are reported and left out, with their dependents", asyn
     /function print\$int\(format: CString, variadic0: Variadic<i32>\): i32;/,
   );
   assert.match(emission.text, /^\/\/ Not bound:$/m);
-  assert.doesNotMatch(emission.text, /interface (shape|outer|hooks)\b/);
+  assert.doesNotMatch(emission.text, /interface (shape|outer)\b/);
+  assert.deepEqual(emission.opaque, []);
+});
+
+test("function pointers become callback types, opaque only where no callback fits", async () => {
+  const allocator = functionType(
+    [pointer({ kind: "void" }), scalar("u32", ["uInt"])],
+    pointer({ kind: "void" }),
+    "alloc_func",
+  );
+  const compare = functionType(
+    [pointer({ kind: "void" }, true), pointer({ kind: "void" }, true)],
+    scalar("i32"),
+  );
+  const byValue = functionType([{ kind: "record", name: "pair" }], {
+    kind: "void",
+  });
+  const many = functionType(
+    Array.from({ length: 8 }, () => scalar("i32")),
+    { kind: "void" },
+  );
+  const parts: Partial<TargetFacts> = {
+    aliases: [{ name: "uInt", type: scalar("u32", ["uInt"]) }],
+    records: [
+      record("pair", 8, 4, [
+        { name: "a", type: scalar("i32"), offset: 0 },
+        { name: "b", type: scalar("i32"), offset: 4 },
+      ]),
+      record("hooks", 40, 8, [
+        { name: "alloc", type: pointer(allocator), offset: 0 },
+        { name: "notify", type: pointer(compare), offset: 8 },
+        { name: "raw", type: pointer(compare), offset: 16 },
+        { name: "visit", type: pointer(byValue), offset: 24 },
+        {
+          name: "variadic",
+          type: pointer({ ...compare, variadic: true }),
+          offset: 32,
+        },
+      ]),
+    ],
+    functions: [
+      {
+        name: "sort",
+        parameters: [
+          { name: "base", type: pointer({ kind: "void" }) },
+          { name: "compare", type: pointer(compare) },
+        ],
+        result: { kind: "void" },
+        variadic: false,
+      },
+      {
+        name: "install",
+        parameters: [{ name: "hook", type: pointer(allocator) }],
+        result: pointer(allocator),
+        variadic: false,
+      },
+      {
+        name: "wide",
+        parameters: [{ name: "hook", type: pointer(many) }],
+        result: scalar("i32"),
+        variadic: false,
+      },
+    ],
+  };
+  const emission = await emitUnit(
+    unitSpec({
+      aliases: ["uInt"],
+      records: ["pair", { name: "hooks", opaque: ["raw"] }],
+      functions: [
+        "sort",
+        { name: "sort", variant: "raw", parameters: { compare: "Address" } },
+        "install",
+        "wide",
+      ],
+    }),
+    parts,
+  );
+  assert.deepEqual(emission.report, []);
+  assert.deepEqual(emission.opaque, [
+    "member hooks_visit: parameter 0 passes record pair by value",
+    "member hooks_variadic: a variadic prototype",
+    "the result: a returned function pointer is an address",
+    "parameter hook: callbacks take at most seven parameters",
+  ]);
+  const text = emission.text;
+  for (const fragment of [
+    // The typedef's name, or <record>_<member>, registers C-kept callbacks.
+    /export type alloc_func = Callback<\s*\(arg0: Address<void>, arg1: uInt\) => Address<void>\s*>;/,
+    /export type hooks_notify = Callback<\s*\(arg0: Address<void>, arg1: Address<void>\) => i32\s*>;/,
+    /interface hooks \{\s*alloc: alloc_func;\s*notify: hooks_notify;\s*raw: Address<void>;\s*visit: Address<void>;\s*variadic: Address<void>;\s*\}/,
+    // A parameter's anonymous prototype is an inline, scoped callback.
+    /function sort\(\s*base: Ptr<void>,\s*compare: Callback<\(arg0: Address<void>, arg1: Address<void>\) => i32>,\s*\): void;/,
+    /function sort\$raw\(base: Ptr<void>, compare: Address<void>\): void;/,
+    /function install\(hook: alloc_func\): Address<void>;/,
+    /function wide\(hook: Address<void>\): i32;/,
+    /^\/\/ Function pointers bound as addresses:$/m,
+  ])
+    assert.match(text, fragment);
+  // The parser reads the callback types and makes their users may-callback.
+  const parsed = parseForeignDeclarations(text, cTargetOf("linux-arm64"));
+  assert.ok(parsed.ok, JSON.stringify(parsed));
+  assert.deepEqual(
+    (parsed.value.callbackTypes ?? []).map((item) => item.name),
+    ["alloc_func", "hooks_notify"],
+  );
+  const callClass = (name: string) =>
+    parsed.value.functions.find((fn) => fn.name === name)?.signature.callClass;
+  assert.equal(callClass("sort"), "may-callback");
+  assert.equal(callClass("install"), "may-callback");
+  assert.equal(callClass("sort$raw"), "leaf");
+  assert.equal(callClass("wide"), "leaf");
+  await assert.rejects(
+    emitUnit(
+      unitSpec({
+        functions: [{ name: "sort", parameters: { compare: "Ptr" } }],
+      }),
+      parts,
+    ),
+    /a function pointer is a Callback or, with `as: "Address"`, an opaque address/,
+  );
+  await assert.rejects(
+    emitUnit(unitSpec({ records: ["pair"], functions: ["pair"] }), {
+      ...parts,
+      functions: [
+        {
+          name: "pair",
+          parameters: [
+            { name: "hook", type: pointer({ ...compare, name: "pair" }) },
+          ],
+          result: { kind: "void" },
+          variadic: false,
+        },
+      ],
+    }),
+    /callback type pair collides with another declaration/,
+  );
+});
+
+test("functions handing C a record with callbacks are may-callback unless the spec says leaf", async () => {
+  const hook = pointer(functionType([scalar("i32")], scalar("i32"), "hook_t"));
+  const takes = (name: string, type: TypeFact) => ({
+    name,
+    parameters: [{ name: "it", type }],
+    result: scalar("i32"),
+    variadic: false,
+  });
+  const emission = await emitUnit(
+    unitSpec({
+      records: [
+        "stream",
+        "outer",
+        "holder",
+        "plain",
+        { name: "masked", opaque: ["fn"] },
+      ],
+      functions: [
+        "direct",
+        "nested",
+        "behind",
+        "byValue",
+        "usePlain",
+        "useMasked",
+        { name: "direct", variant: "documented", callClass: "leaf" },
+        { name: "usePlain", variant: "forced", callClass: "may-callback" },
+      ],
+    }),
+    {
+      records: [
+        record("stream", 8, 8, [{ name: "fn", type: hook, offset: 0 }]),
+        record("outer", 8, 8, [
+          {
+            name: "inner",
+            type: { kind: "record", name: "stream" },
+            offset: 0,
+          },
+        ]),
+        record("holder", 8, 8, [
+          {
+            name: "next",
+            type: pointer({ kind: "record", name: "outer" }),
+            offset: 0,
+          },
+        ]),
+        record("plain", 4, 4, [{ name: "a", type: scalar("i32"), offset: 0 }]),
+        record("masked", 8, 8, [{ name: "fn", type: hook, offset: 0 }]),
+      ],
+      functions: [
+        takes("direct", pointer({ kind: "record", name: "stream" })),
+        takes("nested", pointer({ kind: "record", name: "outer" })),
+        takes("behind", pointer({ kind: "record", name: "holder" })),
+        takes("byValue", { kind: "record", name: "outer" }),
+        takes("usePlain", pointer({ kind: "record", name: "plain" })),
+        takes("useMasked", pointer({ kind: "record", name: "masked" })),
+      ],
+    },
+  );
+  const parsed = parseForeignDeclarations(
+    emission.text,
+    cTargetOf("darwin-arm64"),
+  );
+  assert.ok(parsed.ok, JSON.stringify(parsed));
+  assert.deepEqual(
+    Object.fromEntries(
+      parsed.value.functions.map((fn) => [fn.name, fn.signature.callClass]),
+    ),
+    {
+      direct: "may-callback",
+      nested: "may-callback",
+      behind: "may-callback",
+      byValue: "may-callback",
+      usePlain: "leaf",
+      useMasked: "leaf",
+      direct$documented: "leaf",
+      usePlain$forced: "may-callback",
+    },
+  );
 });
 
 test("spec choices that contradict the C declaration fail explicitly", async () => {
@@ -505,58 +736,42 @@ test("generated modules type-check against tint:ffi", () => {
   }
 });
 
-/** Every difference between the hand-written bindings and the generated
- * ones, and why. Layouts and function signatures agree everywhere; the
- * generator keeps the headers' nested records where the hand-written
- * files flattened them to a member of equal size and offset. */
-const explainedDifferences: Readonly<
-  Record<string, Readonly<Record<string, string>>>
-> = {
-  "darwin-os darwin-arm64": {
-    "record sockaddr_in member sin_addr: u32 vs in_addr":
-      "struct in_addr {in_addr_t s_addr} (4 bytes at offset 4) flattened to its one member",
-    "record sockaddr_in member sin_zero: u8[8] vs char[8]":
-      "the header declares char sin_zero[8]; padding either way",
-    "record sockaddr_in6 member sin6_addr: u8[16] vs in6_addr":
-      "struct in6_addr (a union of byte, half and word arrays, 16 bytes at offset 8) flattened to its byte array",
-    "record in_addr: only generated": "the nested record above",
-    "record in6_addr: only generated": "the nested record above",
-    "record in6_addr___u6_addr: only generated": "in6_addr's member union",
-  },
-  "linux-os linux-arm64": {
-    "record sockaddr_in member sin_addr: u32 vs in_addr":
-      "struct in_addr {in_addr_t s_addr} flattened to its one member",
-    "record sockaddr_in6 member sin6_addr: u8[16] vs in6_addr":
-      "struct in6_addr (union __in6_u of byte, half and word arrays) flattened to its byte array",
-    "record ifaddrs member ifa_ifu: *sockaddr vs ifaddrs_ifa_ifu":
-      "glibc's ifa_ifu is a union of two struct sockaddr pointers, flattened to one pointer",
-    "record in_addr: only generated": "the nested record above",
-    "record in6_addr: only generated": "the nested record above",
-    "record in6_addr___in6_u: only generated": "in6_addr's member union",
-    "record ifaddrs_ifa_ifu: only generated": "ifaddrs' member union",
-  },
-};
+test("every tint:c binding is generated from a spec", () => {
+  // The generated modules are the bindings: no hand-written tint:c module
+  // remains beside them.
+  const modules = readdirSync(bindings)
+    .filter((file) => file.endsWith(".d.ts"))
+    .filter((file) =>
+      /^(\/\/[^\n]*\n)*declare module "tint:c\//.test(
+        readFileSync(new URL(file, bindings), "utf8"),
+      ),
+    )
+    .map((file) => file.slice(0, -".d.ts".length))
+    .sort();
+  assert.deepEqual(
+    modules,
+    specs.map((item) => item.name),
+  );
+  for (const name of modules)
+    assert.match(
+      readFileSync(new URL(`${name}.d.ts`, bindings), "utf8"),
+      new RegExp(
+        `^// Generated by tools/c-bindgen.ts from tools/c-bindgen/specs/${name}.ts; do not edit.\n`,
+      ),
+    );
+});
 
-test("generated modules declare what the hand-written bindings declare", () => {
-  for (const loaded of specs)
-    for (const target of loaded.spec.targets) {
-      const cTarget = cTargetOf(target);
-      const generated = parseForeignDeclarations(
-        readFileSync(generatedFile(loaded.name), "utf8"),
-        cTarget,
-      );
-      const written = parseForeignDeclarations(
-        readFileSync(new URL(`${loaded.name}.d.ts`, bindings), "utf8"),
-        cTarget,
-      );
-      assert.ok(generated.ok && written.ok, loaded.name);
-      const key = `${loaded.name} ${target}`;
-      assert.deepEqual(
-        bindingDifferences(written.value, generated.value, cTarget),
-        Object.keys(explainedDifferences[key] ?? {}),
-        key,
-      );
-    }
+test("bindgen check describes what a regeneration would change", () => {
+  const current = readFileSync(generatedFile("zlib"), "utf8");
+  assert.deepEqual(semanticDifferences(current, current, "linux-arm64"), []);
+  assert.deepEqual(
+    semanticDifferences(
+      current.replace("avail_in: uInt;", "avail_in: uLong;"),
+      current,
+      "darwin-arm64",
+    ),
+    ["record z_stream member avail_in: u64 vs u32"],
+  );
 });
 
 test("parity reports differing layouts, signatures and constants", () => {
@@ -605,7 +820,7 @@ test("this host's headers still produce the checked-in facts", clang, () => {
 });
 
 test(
-  "generated and hand-written bindings match clang's layouts and prototypes (oracle)",
+  "the bindings match clang's layouts and prototypes, callbacks included (oracle)",
   clang,
   () => {
     for (const loaded of specs) {
@@ -616,10 +831,7 @@ test(
           .get(host!)!
           .records.map((item) => [item.name, item.c]),
       );
-      for (const text of [
-        readFileSync(generatedFile(loaded.name), "utf8"),
-        readFileSync(new URL(`${loaded.name}.d.ts`, bindings), "utf8"),
-      ]) {
+      for (const text of [readFileSync(generatedFile(loaded.name), "utf8")]) {
         const parsed = parseForeignDeclarations(text, cTarget);
         assert.ok(parsed.ok, loaded.name);
         const checked = parsed.value.records.filter((item) =>
@@ -820,16 +1032,22 @@ test(
       "record sample_long_double: member value: long double has no binding type",
       "record sample_holder: member bits: record sample_bits: member a is a bitfield",
       "alias sample_missing_alias: typedef sample_missing_alias is not declared by the headers",
-      "record sample_hooks: member callback is a function pointer (Callback<…> lands with Phase 4; list it in `opaque` to bind Address<void>)",
       "function sample_vprint: parameter arguments: va_list",
       "function sample_print: is variadic: give each call shape's argument types in `variadic` (one spec entry per shape, `variant` names them)",
-      "function sample_lookup: the result: returns a function pointer (Callback<…> lands with Phase 4)",
-      'function sample_register: parameter callback is a function pointer (Callback<…> lands with Phase 4; bind it `as: "Address"` to pass an opaque address)',
       `constant SAMPLE_HUGE: exceeds 2^53 on ${host} (18446744073709551615)`,
       `constant SAMPLE_NEGATIVE_DEFINE: is negative on ${host} (-3); constants are non-negative literals`,
     ]);
+    assert.deepEqual(emission.opaque, [
+      "the result: a returned function pointer is an address",
+    ]);
     const text = emission.text;
     for (const fragment of [
+      // Function pointers: an anonymous member's callback type, an inline
+      // scoped callback, a returned function pointer as an address.
+      /export type sample_hooks_callback = Callback<\(arg0: i32\) => i32>;/,
+      /interface sample_hooks \{\s*callback: sample_hooks_callback;\s*\}/,
+      /sample_register\(\s*callback: Callback<\(arg0: i32\) => i32>,\s*context: Ptr<void>,\s*\): void;/,
+      /sample_lookup\(name: CString\): Address<void>;/,
       /type sample_word = u16;/,
       /export const SAMPLE_FLAG: 64;/,
       /export const SAMPLE_BIG: 0x123456789;/,
@@ -863,6 +1081,25 @@ test(
       prototypeOracle(syntheticSpec, host!, cTarget, parsed.value),
       [],
     );
+    // A callback whose prototype differs from C's function pointer.
+    const wrong = parseForeignDeclarations(
+      text.replace(
+        "callback: Callback<(arg0: i32) => i32>",
+        "callback: Callback<(arg0: i64, arg1: i32) => void>",
+      ),
+      cTarget,
+    );
+    assert.ok(wrong.ok);
+    assert.deepEqual(
+      prototypeOracle(syntheticSpec, host!, cTarget, wrong.value).map((line) =>
+        line.replace(/declared .*, C /, "C "),
+      ),
+      [
+        "function sample_register parameter callback: the callback takes 2 parameters, C passes 1",
+        "function sample_register parameter callback callback parameter 0: C i4",
+        "function sample_register parameter callback callback result: C i4",
+      ],
+    );
   },
 );
 
@@ -873,3 +1110,19 @@ test(
     await verifySampleFixture();
   },
 );
+
+test("a registered allocator runs inside the generated zlib binding's may-callback calls (generational, LLDB)", () => {
+  verifyGeneratedZlibAllocatorFixture();
+});
+test("a registered allocator runs inside the generated zlib binding's may-callback calls (copying, LLDB)", () => {
+  verifyGeneratedZlibAllocatorFixture("initializeCopyingRuntime");
+});
+
+test("general code imports a generated binding where its exports cross a checked boundary (LLDB)", () => {
+  const { general, blocked } = verifyGeneralBindingImport();
+  assert.deepEqual(general, ["fixture"]);
+  assert.match(
+    blocked,
+    /general code uses deflate of the trusted module fixture\/zlib-generated\.d\.ts, whose types cannot cross a checked boundary/,
+  );
+});

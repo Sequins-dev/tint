@@ -518,6 +518,7 @@ function functionFlows(
           // Values whose results hold no function and that store no
           // operand anywhere.
           case "general-record-is":
+          case "general-is":
           case "general-record-descriptor":
           case "function-address":
           case "record-descriptor-address":

@@ -219,11 +219,24 @@ export type HostSignpostFacility =
  * publication registers each published module through its footer. */
 export const nativeStackMapRegistryOffset = 0;
 export const nativeStackMapMagic = 0x50414d53;
+/** Packed tables: one word per safepoint (map word index * 2^32 + return
+ * offset) and maps of full words. Collectors still read them; codegen emits
+ * compact tables. */
 export const nativeStackMapVersion = 2;
-/** Wide tables (emitted only when a packed table's map index would exceed
- * 2^21 words): two words per safepoint, its return offset then its map word
- * index, instead of one packed map index * 2^32 + offset word. */
+/** Wide tables (for modules whose offsets or records exceed the compact
+ * directory's 2^32-byte and 2^23-word ranges): two words per safepoint, its
+ * return offset then its map word index, and maps of full words. */
 export const nativeStackMapWideVersion = 3;
+/** Compact tables (docs/gc-stack-maps.md, "Tables"): a directory of
+ * per-function records holding packed return offsets and a varint stream
+ * (frame section, long-lived words as safepoint runs, per-safepoint residual
+ * lists). */
+export const nativeStackMapCompactVersion = 4;
+/** Compact directory words: function start / 4 + record word index * 2^30. */
+export const nativeStackMapRecordShift = 1073741824;
+export const nativeStackMapRecordLimit = 8388608;
+/** Varint stream bytes per table word (words stay below 2^53). */
+export const nativeStackMapStreamBytes = 6;
 /** Registry: count, capacity, walk start, the walk start's save block of
  * x19..x28 (0: unknown); then entries of code start, code byte length and
  * table address (0: transparent frames). */
@@ -240,8 +253,8 @@ export const nativeStackMapRegistryEntryBytes = 24;
 export const nativeStackMapTransitionTable = 1;
 /** The thunk frame's word (x29-relative) holding its transition record. */
 export const nativeCallbackThunkTransitionOffset = 48;
-/** Table: magic, version, entry count, then one word per safepoint (two in
- * a wide table). */
+/** Table: magic, version, then the safepoint count (wide) or function
+ * count (compact), then entries (wide) or directory words (compact). */
 export const nativeStackMapTableHeaderBytes = 24;
 /** A module's last 16 bytes: this magic, then its table's byte offset. */
 export const nativeStackMapFooterMagic = 0x544f4f46;

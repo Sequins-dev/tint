@@ -63,9 +63,12 @@ export interface FunctionSpec {
    * arguments (each passed after default promotion). Required for
    * variadic functions; `[]` binds the call shape with none. */
   readonly variadic?: readonly string[];
-  /** Call class beyond leaf (Phases 4–5): the declaration parser rejects
-   * these until those phases land, so generation fails explicitly. */
-  readonly callClass?: "may-callback" | "async";
+  /** The call class. By default a function is may-callback when an
+   * argument hands C a record with callback members (directly, nested or
+   * behind a pointer), since C may call them during the call; `leaf`
+   * overrides that for functions documented never to call them. `async`
+   * is Phase 5's (the declaration parser rejects it until then). */
+  readonly callClass?: "leaf" | "may-callback" | "async";
   readonly doc?: string;
 }
 
@@ -74,8 +77,10 @@ export interface RecordSpec {
   readonly name: string;
   /** Export a `Layout<R>` constant (default true). */
   readonly layout?: boolean;
-  /** Function-pointer members bound as opaque `Address<void>` until
-   * `Callback<…>` lands (Phase 4); other function pointers skip the record. */
+  /** Function-pointer members bound as opaque `Address<void>` instead of
+   * their callback type (`type name = Callback<…>`, the typedef's name or
+   * `<record>_<member>`). Members whose prototype no callback can express
+   * are opaque anyway, and reported. */
   readonly opaque?: readonly string[];
   readonly doc?: string;
 }

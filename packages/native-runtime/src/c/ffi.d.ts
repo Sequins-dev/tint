@@ -136,4 +136,8 @@ declare module "tint:ffi" {
   /** Unregister the registered callback whose C function pointer is
    * `address` (docs/native-ffi.md, "Callbacks"). */
   export function releaseCallback(address: number): void;
+  /** Callback views (generated adapters): the guard address, and pointing
+   * a callback's view at one invocation's record or back at the guard. */
+  export function callbackGuard(): number;
+  export function retargetCallbackView(view: Uint8Array, address: number): void;
 }

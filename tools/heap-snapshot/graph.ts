@@ -439,31 +439,42 @@ export function buildGraph(dump: HeapDump): TintHeapGraph {
     currentFrame.roots.push(name(edgeName), node);
     stats.rootReferences++;
   };
+  // The walk reports exact root words, not frames: a word belongs to the
+  // frame with the smallest frame pointer at or above it (a frame's slots
+  // and its callees' save slots for its registers lie below its record).
+  const framePointers = [
+    ...new Set(meta.thread.frames.map((frame) => frame.fp)),
+  ]
+    .filter((fp) => fp > 0)
+    .sort((left, right) => left - right);
+  const frameOf = (word: number): number => {
+    let low = 0,
+      high = framePointers.length;
+    while (low < high) {
+      const middle = (low + high) >>> 1;
+      if ((framePointers[middle] ?? 0) < word) low = middle + 1;
+      else high = middle;
+    }
+    return framePointers[low] ?? 0;
+  };
+  const rootWord = (slot: number): void => {
+    const fp = frameOf(slot);
+    currentFrame = frameNamed(fp);
+    root(slot, fp === 0 ? "slot" : "fp-" + (fp - slot));
+  };
   const status = walkNativeStack(
     dump.read,
     registry,
-    (map, base, extent) => {
-      currentFrame = frameNamed(base + extent);
-      const referenceCount = dump.read(map) ?? 0;
-      for (let index = 0; index < referenceCount; index++) {
-        const offset = dump.read(map + 8 + index * 8) ?? 0;
-        root(base + offset, "sp+" + offset);
-      }
-      const generalAt = map + 8 + referenceCount * 8,
-        generalCount = dump.read(generalAt) ?? 0;
-      for (let index = 0; index < generalCount; index++) {
-        const offset = dump.read(generalAt + 8 + index * 8) ?? 0,
-          tag = dump.read(base + offset) ?? 0;
-        if (tag < 8 && ((tags >>> tag) & 1) !== 0)
-          root(base + offset + 8, "sp+" + offset);
-      }
+    (slot) => {
+      rootWord(slot);
+      return true;
+    },
+    (tagWord) => {
+      const tag = dump.read(tagWord) ?? 0;
+      if (tag < 8 && ((tags >>> tag) & 1) !== 0) rootWord(tagWord + 8);
       return true;
     },
     1000000,
-    (slot) => {
-      root(slot, "register");
-      return true;
-    },
   );
   stats.rootWalk = status;
   if (status !== "complete") throw Error("stack root walk failed: " + status);

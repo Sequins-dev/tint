@@ -1,4 +1,5 @@
 import { startNativeHeartbeat } from "./test262-native-heartbeat.ts";
+import { attributeNativeModule } from "./native-image-attribution.ts";
 import { nativeVariantSelection } from "./native-variant-selection.ts";
 import { readFileSync, writeFileSync } from "node:fs";
 import {
@@ -260,7 +261,8 @@ try {
       : undefined;
   const buildSyntax = createNativeSyntaxBatchBuilder(snapshot);
   const suiteFunctions = process.env.TINT_TEST262_SUITE_FUNCTIONS,
-    suiteImage = process.env.TINT_TEST262_SUITE_IMAGE;
+    suiteImage = process.env.TINT_TEST262_SUITE_IMAGE,
+    suiteAttribution = process.env.TINT_TEST262_SUITE_ATTRIBUTION;
   const suiteMembers: {
     readonly item: PendingItem;
     readonly member: NativeSuiteCase;
@@ -733,6 +735,16 @@ try {
               writeFileSync(suiteFunctions, JSON.stringify(functions), {
                 flag: "wx",
               }),
+        // Analysis: TINT_TEST262_SUITE_ATTRIBUTION names a new JSON file for
+        // the program module's per-function code and safepoint-map bytes.
+        suiteAttribution === undefined
+          ? undefined
+          : (compiled) =>
+              writeFileSync(
+                suiteAttribution,
+                JSON.stringify(attributeNativeModule(compiled.program.native)),
+                { flag: "wx" },
+              ),
       ),
       nextCompilation: () => batches.length,
       compilation: (compilation) => {

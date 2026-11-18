@@ -2878,3 +2878,31 @@ test("short-circuit narrowing of uncaptured mutable bindings survives calls", ()
   ])
     assert.equal(check(prefix + body).ok, false, body);
 });
+test("`as` from unknown is a checked downcast to testable types", () => {
+  const prefix = "interface P{readonly x:number}";
+  for (const body of [
+    "function f(v:unknown):number{return v as number;}",
+    "function f(v:unknown):string|undefined{return v as string|undefined;}",
+    "function f(v:unknown):Uint8Array{return v as Uint8Array;}",
+    "function f(v:unknown):P{return v as P;}",
+    "function f(v:unknown):boolean|null{return v as boolean|null;}",
+  ]) {
+    const checked = check(prefix + body);
+    assert.ok(checked.ok, body);
+    assert.equal(indexValues(checked.value.downcasts!).length, 1, body);
+  }
+  // Types without a run-time test stay rejected (lists would need a deep
+  // check, functions a signature check).
+  for (const body of [
+    "function f(v:unknown):number[]{return v as number[];}",
+    "function f(v:unknown):()=>number{return v as ()=>number;}",
+  ])
+    assert.equal(check(prefix + body).ok, false, body);
+  // A downcast is only from unknown: other narrowing assertions keep their
+  // upcast-only checking.
+  assert.equal(
+    check(prefix + "function f(v:number|string):number{return v as number;}")
+      .ok,
+    false,
+  );
+});

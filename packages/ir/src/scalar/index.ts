@@ -127,6 +127,8 @@ export {
   dynamicForeignCall,
   dynamicCallFrame,
   callbackTransition,
+  callbackEntered,
+  directCallbackExtras,
   callbackState,
   transitionBytes,
   type ForeignCall,
@@ -735,6 +737,19 @@ export function verify(module: ModuleIR): Verification {
                 op.id,
                 op.kind === "general-record-is" ? "boolean" : "number",
               );
+              break;
+            case "general-is":
+              equal(use(op.value), "general");
+              if (
+                op.type !== "undefined" &&
+                op.type !== "number" &&
+                op.type !== "boolean" &&
+                op.type !== "string" &&
+                op.type !== "null" &&
+                op.type !== "Uint8Array"
+              )
+                fail("TYPE", "general test requires a known category");
+              define(op.id, "boolean");
               break;
             case "general-null":
             case "general-none":

@@ -5,7 +5,6 @@ export {
   createVerifiedNativeRootScan,
   walkNativeStack,
   type ReadWord,
-  type VisitFrame,
   type VisitWord,
   type VisitReference,
   type NativeRootScan,
