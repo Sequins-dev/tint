@@ -144,11 +144,14 @@ currently known. These limits are recorded instead:
   Larger, quiet Linux hosts have not been measured.
 - **Page sizes:** 4 KiB and 16 KiB kernels were run natively; 64 KiB kernels
   only under QEMU, because Apple silicon has no 64 KiB translation granule.
-- **Live USDT tracing** (`perf probe sdt_*`, bpftrace) has not been exercised:
-  the development VM's kernel has no uprobes. The probe notes are verified
-  statically and under GDB.
-- **`tint-heap` debugger commands** are LLDB Python only; GDB reads the DWARF
-  and probes but has no port of them.
+- **Live USDT tracing** (`perf probe`/`perf record -e sdt_tint:*`,
+  bpftrace `usdt:` probes) has not been run: the development VM's kernel has
+  no uprobes or tracefs. `tools/linux/verify-usdt-live.ts` is ready for a
+  kernel that has them: it checks perf's and bpftrace's counts and `gc__end`
+  metrics against GDB's ([how to run it](runtime-diagnostics.md#live-tracing-check)).
+  On the development VM its static half passes (the notes, `readelf`,
+  `perf list sdt` and `bpftrace -l` agree on the 21 probes) and the probe
+  hits are verified under GDB.
 - **Performance counters:** the development VM exposes none, so Linux timings
   are wall time and RSS only.
 - **Test262 on Linux** is in progress; see the [dashboard](test262.md).
@@ -229,8 +232,9 @@ Observability uses the distribution's tools (Debian: `gdb`, `lldb`,
 `python3-lldb`, `lldb-dap-19`, `llvm`, `clang`, `linux-perf`, `time`; plus
 `bpftrace` for USDT tracing on kernels with uprobes): DWARF from Linux
 builds passes `llvm-dwarfdump --verify` and reads in GDB and LLDB
-(`tools/verify-hosted-debug-variables.ts` drives both), the heap tools and
-the DevTools bridge run unchanged ([native heap profiling](native-heap-profiling.md#linux),
+(`tools/verify-hosted-debug-variables.ts` drives both), the heap tools run
+under LLDB and GDB (`tools/verify-heap-tools.ts --debugger lldb|gdb`), the
+DevTools bridge runs unchanged ([native heap profiling](native-heap-profiling.md#linux),
 [DevTools](native-devtools.md#linux)), `perf record` call graphs convert to
 pprof and `.cpuprofile` (`tools/heap-snapshot/cli.ts perf`), and the
 benchmark tools measure with GNU time and `perf stat`, reporting cycles and
