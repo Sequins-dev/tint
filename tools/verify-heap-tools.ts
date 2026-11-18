@@ -1,6 +1,8 @@
 /** Native checks of the heap observability tools
  * (docs/native-heap-profiling.md), all on one debug build of the shared
- * fixture (tools/heap-tools-fixture.ts), each under LLDB:
+ * fixture (tools/heap-tools-fixture.ts), each under LLDB (tools/lldb/tint.py,
+ * the default) or GDB (tools/gdb/tint.py, `--debugger gdb`), the two
+ * adapters of the debugger-neutral tools/debugger/tint_heap.py:
  *
  *   descriptor   `tint-heap info` against the collector's own locals at a
  *                collection, and a complete start-bit walk of both spaces
@@ -9,13 +11,17 @@
  *   snapshot     a dump at the fixture's allocation in `inspect` (a precise
  *                safepoint): exact retained counts, retained sizes and
  *                retainers, a well-formed .heapsnapshot and pprof profile
- *   core         the same dump read back from `process save-core`
+ *   core         the same dump read back from a core file (`process
+ *                save-core`, `gcore`)
  *   allocations  a sampled allocation profile attributing the fixture's
  *                allocation volume to its known allocation site
- *   unarmed      without a tool the image still exits 42; with heap
- *                introspection off the code matches the default build
+ *   collect      a forced major collection at an allocation safepoint
+ *                (`collect-begin`/`collect-end`, the DevTools bridge's
+ *                collectGarbage): the nursery empties, the heap walks
+ *                cleanly and the program still exits 42
+ *   unarmed      without a tool the image still exits 42
  *
- *   node tools/verify-heap-tools.ts [section...]
+ *   node tools/verify-heap-tools.ts [--debugger lldb|gdb] [section...]
  */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -34,12 +40,8 @@ import {
   inspectLine,
   retainedNodes,
 } from "./heap-tools-fixture.ts";
-import {
-  allocationProfile,
-  convert,
-  lldbModule,
-  runLldb,
-} from "./heap-snapshot/cli.ts";
+import { allocationProfile, convert } from "./heap-snapshot/cli.ts";
+import { heapDebugger } from "./heap-snapshot/debuggers.ts";
 import { HeapDump } from "./heap-snapshot/dump.ts";
 import { buildGraph, reportTotals } from "./heap-snapshot/graph.ts";
 import { analyze, report } from "./profiling/analysis.ts";
@@ -47,32 +49,69 @@ import { writeHeapSnapshot } from "./profiling/heapsnapshot.ts";
 
 /** A `{value, next}` chain node: the one-word header and two words. */
 const nodeBytes = 24;
-const wanted = new Set(process.argv.slice(2));
+const argv = process.argv.slice(2);
+const debuggerAt = argv.indexOf("--debugger");
+const debug = heapDebugger(
+  debuggerAt >= 0 ? argv.splice(debuggerAt, 2)[1] : undefined,
+);
+const wanted = new Set(argv);
 const run = (section: string): boolean =>
   wanted.size === 0 || wanted.has(section);
 process.env.TINT_DEBUG_SYMBOLS = "1";
 process.env.TINT_BUILD_ONLY = "1";
 const image = buildHeapToolsFixture("heap-tools");
 const work = mkdtempSync(join(tmpdir(), "tint-heap-tools-"));
-void lldbModule;
+/** The makeChain loop: its first stop is the retained chain's construction
+ * in `run`, with allocations still to come. */
+const chainLine = 13;
 
-function lldbJson(output: string, marker: string): unknown {
-  const line = output.split("\n").find((text) => text.startsWith(marker));
-  assert.ok(line !== undefined, output);
+/** The JSON after `marker` on its occurrence-th line (0-based). */
+function markedJson(output: string, marker: string, occurrence = 0): unknown {
+  const line = output.split("\n").filter((text) => text.startsWith(marker))[
+    occurrence
+  ];
+  assert.ok(line !== undefined, marker + "\n" + output);
   return JSON.parse(line.slice(marker.length));
+}
+
+/** The JSON lines starting with prefix (`tint-heap ... --json` output). */
+function jsonLines(output: string, prefix: string): unknown[] {
+  return output
+    .split("\n")
+    .filter((text) => text.startsWith(prefix))
+    .map((text) => JSON.parse(text) as unknown);
+}
+
+/** Prints the expression's value as JSON after a marker. */
+function printJson(marker: string, expression: string): string {
+  return debug.python(
+    "import json; print('" + marker + " ' + json.dumps(" + expression + "))",
+  );
+}
+
+/** Asserts the innermost frame is at the symbol's first instruction. */
+function assertAtSymbol(name: string): string {
+  return debug.python(
+    "assert " +
+      debug.pcExpression +
+      " == " +
+      debug.symbolExpression(name) +
+      ", " +
+      debug.functionExpression,
+  );
 }
 
 /** Breakpoint at the fixture allocation in `inspect`, then the sample hook. */
 function stopInInspect(): string[] {
   return [
-    "breakpoint set --file fixture --line " + inspectLine,
-    "process launch",
-    "script assert lldb.process.GetState() == lldb.eStateStopped",
-    "breakpoint delete --force",
+    debug.breakAtLine("fixture", inspectLine),
+    debug.launch,
+    debug.python("assert " + debug.stoppedExpression),
+    debug.deleteBreakpoints,
     "tint-heap arm 1",
-    "breakpoint set --name __tint_allocation_sample",
-    "continue",
-    "script assert lldb.thread.GetFrameAtIndex(0).GetFunctionName() == '__tint_allocation_sample', lldb.thread.GetFrameAtIndex(0).GetFunctionName()",
+    debug.breakAtSymbol("__tint_allocation_sample"),
+    debug.resume,
+    assertAtSymbol("__tint_allocation_sample"),
   ];
 }
 
@@ -85,34 +124,63 @@ try {
         .split("\n")
         .findIndex((line) => line.trim() === "if (minor) {") + 1;
     assert.ok(collectLine > 0, "collector line");
-    const output = runLldb(image, [
-      `breakpoint set --file packages/native-runtime/src/generational.ts --line ${collectLine}`,
-      // The line must resolve inside the collector function (found by its
-      // symbol), never silently into a neighbour after an edit.
-      "script bp = lldb.target.GetBreakpointAtIndex(0); names = [bp.GetLocationAtIndex(i).GetAddress().GetFunction().GetName() or '' for i in range(bp.GetNumLocations())]; assert len(names) == 1 and 'native-runtime/src/generational.ts:collect ' in names[0], names",
-      "process launch",
-      "script import json, tint; d = tint.Descriptor(lldb.target, lldb.process); f = lldb.frame; print('DESCRIPTOR ' + json.dumps({'youngTop': float(f.FindVariable('youngTop').GetValue()), 'oldTop': float(f.FindVariable('oldTop').GetValue()), 'state': d.state, 'version': d.version, 'header': d.header_bytes, 'granule': d.granule, 'kinds': len(d.kinds)}))",
-      "script import json, tint; print('WALK ' + json.dumps(tint.verify_heap(lldb.debugger, tint.Descriptor(lldb.target, lldb.process), None)))",
-      "continue",
-      "continue",
-      "script import json, tint; f = lldb.frame; d = tint.Descriptor(lldb.target, lldb.process); print('SECOND ' + json.dumps({'youngTop': float(f.FindVariable('youngTop').GetValue()), 'oldTop': float(f.FindVariable('oldTop').GetValue()), 'state': d.state}))",
-      "script import json, tint; print('WALK2 ' + json.dumps(tint.verify_heap(lldb.debugger, tint.Descriptor(lldb.target, lldb.process), None)))",
-      "breakpoint delete --force",
-      "continue",
-      "script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42",
+    const inCollect = debug.python(
+      "assert 'native-runtime/src/generational.ts:collect ' in " +
+        debug.functionExpression +
+        ", " +
+        debug.functionExpression,
+    );
+    const locals = printJson(
+      "LOCALS",
+      "{'youngTop': " +
+        debug.localNumberExpression("youngTop") +
+        ", 'oldTop': " +
+        debug.localNumberExpression("oldTop") +
+        "}",
+    );
+    const output = debug.run(image, [
+      debug.breakAtLine(
+        "packages/native-runtime/src/generational.ts",
+        collectLine,
+      ),
+      ...(debug.name === "lldb"
+        ? [
+            // The line must resolve inside the collector function (found
+            // by its symbol), never silently into a neighbour after an
+            // edit. (Under GDB each stop's frame is checked instead.)
+            "script bp = lldb.target.GetBreakpointAtIndex(0); names = [bp.GetLocationAtIndex(i).GetAddress().GetFunction().GetName() or '' for i in range(bp.GetNumLocations())]; assert len(names) == 1 and 'native-runtime/src/generational.ts:collect ' in names[0], names",
+          ]
+        : []),
+      debug.launch,
+      inCollect,
+      locals,
+      "tint-heap info --json",
+      "tint-heap verify --json",
+      debug.resume,
+      debug.resume,
+      inCollect,
+      locals,
+      "tint-heap info --json",
+      "tint-heap verify --json",
+      debug.deleteBreakpoints,
+      debug.resume,
+      debug.assertExit(42),
     ]);
-    for (const [first, walkMarker] of [
-      ["DESCRIPTOR ", "WALK "],
-      ["SECOND ", "WALK2 "],
-    ] as const) {
-      const seen = lldbJson(output, first) as {
+    const descriptors = jsonLines(output, '{"descriptor"'),
+      walks = jsonLines(output, '{"old"');
+    assert.equal(descriptors.length, 2, output);
+    assert.equal(walks.length, 2, output);
+    for (const occurrence of [0, 1]) {
+      const seen = markedJson(output, "LOCALS ", occurrence) as {
         youngTop: number;
         oldTop: number;
+      };
+      const descriptor = descriptors[occurrence] as {
         state: { youngTop: number; oldTop: number; youngCapacity: number };
       };
-      assert.equal(seen.state.youngTop, seen.youngTop, "young top");
-      assert.equal(seen.state.oldTop, seen.oldTop, "old top");
-      const walk = lldbJson(output, walkMarker) as Record<
+      assert.equal(descriptor.state.youngTop, seen.youngTop, "young top");
+      assert.equal(descriptor.state.oldTop, seen.oldTop, "old top");
+      const walk = walks[occurrence] as Record<
         string,
         { objects: number; bytes: number; top?: number }
       >;
@@ -122,25 +190,40 @@ try {
       assert.equal(walk.young?.bytes, seen.youngTop, "young walk");
       assert.ok((walk.young?.objects ?? 0) > 1000);
     }
-    const first = lldbJson(output, "DESCRIPTOR ") as {
+    const first = descriptors[0] as {
       version: number;
-      header: number;
+      headerBytes: number;
       granule: number;
-      kinds: number;
     };
-    assert.deepEqual([first.version, first.header, first.granule], [2, 8, 8]);
+    assert.deepEqual(
+      [first.version, first.headerBytes, first.granule],
+      [2, 8, 8],
+    );
     console.log("descriptor: state and start-bit walks match the collector");
   }
 
   if (run("formatters")) {
-    const output = runLldb(image, [
-      "breakpoint set --file fixture --line " + inspectLine,
-      "process launch",
-      "frame variable *holder",
-      "frame variable -P 3 holder->items",
-      "frame variable -P 1 holder->names holder->numbers holder->tags",
-      "frame variable -P 2 holder->index",
-      "process kill",
+    const show =
+      debug.name === "lldb"
+        ? [
+            "frame variable *holder",
+            "frame variable -P 3 holder->items",
+            "frame variable -P 1 holder->names holder->numbers holder->tags",
+            "frame variable -P 2 holder->index",
+          ]
+        : [
+            "print *holder",
+            "print -max-depth 3 -- holder->items",
+            "print -max-depth 1 -- holder->names",
+            "print -max-depth 1 -- holder->numbers",
+            "print -max-depth 1 -- holder->tags",
+            "print -max-depth 2 -- holder->index",
+          ];
+    const output = debug.run(image, [
+      debug.breakAtLine("fixture", inspectLine),
+      debug.launch,
+      ...show,
+      debug.kill,
     ]);
     const expectations: [string, RegExp][] = [
       ["record pointer fields retyped", /items = 0x[0-9a-f]+ \{length, root\}/],
@@ -149,7 +232,8 @@ try {
         /index = 0x[0-9a-f]+ \{keys, buckets, head, tail, size, order\}/,
       ],
       ["general string", /anything = "dynamic"/],
-      ["list elements", /\[0\] = 0x[0-9a-f]+ \{x, y, label\} \{/],
+      // GDB separates a printer's summary from its children with " = ".
+      ["list elements", /\[0\] = 0x[0-9a-f]+ \{x, y, label\} (= )?\{/],
       ["nested string", /label = 0x[0-9a-f]+ "p2"/],
       ["string list", /\[1\] = 0x[0-9a-f]+ "beta"/],
       ["number list", /\[2\] = 3\.5/],
@@ -164,19 +248,11 @@ try {
   const dumpDirectory = join(work, "inspect");
   if (run("snapshot") || run("core")) {
     const core = join(work, "inspect.core");
-    runLldb(image, [
+    debug.run(image, [
       ...stopInInspect(),
       "tint-heap dump " + dumpDirectory,
-      // Linux LLDB writes a minidump holding only stacks unless asked for
-      // every region.
-      ...(run("core")
-        ? [
-            "process save-core " +
-              (process.platform === "linux" ? "--style full " : "") +
-              core,
-          ]
-        : []),
-      "process kill",
+      ...(run("core") ? [debug.saveCore(core)] : []),
+      debug.kill,
     ]);
     const dump = new HeapDump(dumpDirectory),
       graph = buildGraph(dump),
@@ -265,7 +341,11 @@ try {
     if (run("core")) {
       assert.ok(existsSync(core) && statSync(core).size > 0);
       const fromCore = join(work, "core-dump");
-      runLldb(image, ["tint-heap dump " + fromCore], ["-c", core]);
+      debug.run(
+        image,
+        ["tint-heap dump " + fromCore],
+        debug.coreArguments(core),
+      );
       const coreGraph = buildGraph(new HeapDump(fromCore));
       const coreSummary = report(
         analyze(coreGraph),
@@ -282,8 +362,8 @@ try {
 
   if (run("allocations")) {
     const samples = join(work, "allocations.jsonl");
-    const output = runLldb(image, [
-      "process launch --stop-at-entry",
+    const output = debug.run(image, [
+      debug.launchAtEntry(),
       "tint-heap sample --interval 16384 --seed 7 --out " + samples,
     ]);
     assert.match(output, /TINTHEAP samples=\d+ exit=42 /);
@@ -314,12 +394,52 @@ try {
     );
   }
 
-  if (run("unarmed")) {
-    const output = runLldb(image, [
-      "process launch",
-      "script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42",
+  if (run("collect")) {
+    // Inside makeChain (the retained chain under construction), the next
+    // allocation's slow-path thunk entry is a safepoint; a forced major
+    // collection there must keep the partial chain and every caller's
+    // roots.
+    const output = debug.run(image, [
+      debug.breakAtLine("fixture", chainLine),
+      debug.launch,
+      debug.deleteBreakpoints,
+      "tint-heap arm 1",
+      debug.breakAtSymbol("__tint_allocation_sample_thunk"),
+      debug.resume,
+      assertAtSymbol("__tint_allocation_sample_thunk"),
+      "tint-heap collect-begin",
+      debug.resume,
+      "tint-heap collect-end",
+      "tint-heap verify --json",
+      debug.deleteBreakpoints,
+      "tint-heap arm 0",
+      debug.resume,
+      debug.assertExit(42),
     ]);
-    assert.match(output, /exited with status = 42 /);
+    const collected =
+      /TINTHEAP collected status=(\d+) old=(\d+)->(\d+) young=(\d+)->(\d+)/.exec(
+        output,
+      );
+    assert.ok(collected !== null, output);
+    const [, status, , oldAfter, youngBefore, youngAfter] =
+      collected.map(Number);
+    assert.equal(status, 1, "the forced collection succeeded");
+    assert.ok((youngBefore ?? 0) > 0, "a nursery to collect");
+    assert.equal(youngAfter, 0, "a major collection empties the nursery");
+    const [walk] = jsonLines(output, '{"old"') as Record<
+      string,
+      { objects: number; bytes: number }
+    >[];
+    assert.equal(walk?.old?.bytes, oldAfter, "the old space walks cleanly");
+    assert.equal(walk?.young?.objects, 0);
+    console.log(
+      `collect: forced major at a safepoint, nursery ${youngBefore} -> 0 bytes, old ${oldAfter} bytes`,
+    );
+  }
+
+  if (run("unarmed")) {
+    const output = debug.run(image, [debug.launch, debug.assertExit(42)]);
+    assert.match(output, /exited with (status = 42 |code 052)/);
     console.log("unarmed: exits 42");
   }
 } finally {

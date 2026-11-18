@@ -66,15 +66,22 @@ export interface PosixHostABI {
          * read/execute view (the published address) and a read/write view
          * that writes go through, after a read-only header page
          * (docs/native-code-loading.md, "Linux"). No page is ever writable
-         * and executable. Writes maintain the instruction cache inline
-         * (CTR_EL0-sized DC CVAU/IC IVAU). Failure to create the views
-         * reports -errno; there is no RWX fallback. Symbols other than
-         * these (mmap, munmap, close, memmove, memcmp) are the usual libc
-         * names. */
+         * and executable. When the kernel refuses executable memory files
+         * (vm.memfd_noexec=2: EACCES) the view is a single anonymous
+         * read/execute mapping that each write makes read/write and then
+         * read/execute again. Writes maintain the instruction cache inline
+         * (CTR_EL0-sized DC CVAU/IC IVAU). Other failures report -errno;
+         * there is no RWX fallback. Symbols other than these (mmap,
+         * munmap, close, memmove, memcmp) are the usual libc names. */
         readonly kind: "linux-dual-mapping";
         /** memfd_create(name, flags) and its flags (MFD_CLOEXEC). */
         readonly memoryFileSymbol: string;
         readonly memoryFileFlags: number;
+        /** MFD_EXEC: requests an executable file explicitly (Linux 6.3+,
+         * where vm.memfd_noexec may otherwise seal it non-executable);
+         * older kernels reject it with EINVAL and the file is created
+         * without it. */
+        readonly executableFileFlag: number;
         readonly truncateSymbol: string;
         readonly protectSymbol: string;
         /** MAP_SHARED (the writable view) and MAP_PRIVATE (the executable

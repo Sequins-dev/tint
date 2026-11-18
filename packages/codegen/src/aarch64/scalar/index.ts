@@ -8529,21 +8529,6 @@ function emitModuleForms(
                   rt: 10,
                   displacement: (instructions.length - weak) * 4,
                 });
-                if (generationalBarriers) {
-                  // The generational state's weak flag (word 15): from the
-                  // first weak cell on, collections trace weak slots.
-                  rawLoad(10, contextOffset);
-                  emit({ op: "ldr", width: 64, rt: 12, rn: 10, offset: 56 });
-                  emit({ op: "cbz", width: 64, rt: 12, displacement: 12 });
-                  emit({
-                    op: "movz",
-                    width: 32,
-                    rd: 13,
-                    immediate: 1,
-                    shift: 0,
-                  });
-                  emit({ op: "str", width: 32, rt: 13, rn: 12, offset: 60 });
-                }
                 rawStore(9, value(op.id).offset + 8);
                 imm(9, 5);
                 saveRaw(9, op.id);

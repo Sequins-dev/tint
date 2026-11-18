@@ -282,18 +282,29 @@ function drain(state: CheneyState, starts: Uint32Array, from: number): number {
   return scan;
 }
 
-/** 1 live (or immortal), 0 dead or cleared; the key's reference is updated. */
-function keyAlive(state: CheneyState, slot: number): number {
+/** Whether the key of the evacuated weak slot `slot` survived an evacuation
+ * of [fromBase, fromEnd): 1 live (or outside the source window, or not a
+ * reference), 0 dead or cleared. A live key's reference is updated. Shared
+ * with the parallel evacuator, which calls it once its pool is quiescent or
+ * for slots only the calling worker touches. */
+export function evacuatedKeyAlive(
+  fromBase: number,
+  fromEnd: number,
+  slot: number,
+): number {
   const tag = read(slot + nativeWeakSlotKeyOffset);
   if (tag === 0) return 0;
   if (tag !== 3 && tag !== 5 && tag !== 6 && tag !== 7) return 1;
   const key = read(slot + nativeWeakSlotKeyPayloadOffset);
   if (key === 0) return 0;
-  if (key < state.fromBase || key >= state.fromEnd) return 1;
+  if (key < fromBase || key >= fromEnd) return 1;
   const header = read(key);
   if (header < nativeHeaderForwarded) return 0;
   write(slot + nativeWeakSlotKeyPayloadOffset, header - nativeHeaderForwarded);
   return 1;
+}
+function keyAlive(state: CheneyState, slot: number): number {
+  return evacuatedKeyAlive(state.fromBase, state.fromEnd, slot);
 }
 
 /** Traces ephemeron values whose keys survived, to a fixpoint. */
@@ -336,6 +347,27 @@ function clearPair(address: number): void {
   write(address, 0);
   write(address + 8, 0);
 }
+/** Clears the pairs of the weak slot `slot` (kind `flags`) after the final
+ * closure: a dead key clears both pairs, a weak cell drops its value pair. */
+function clearWeakPairs(slot: number, flags: number, alive: number): void {
+  if (alive === 0) {
+    clearPair(slot + nativeWeakSlotKeyOffset);
+    clearPair(slot + nativeWeakSlotValueOffset);
+  } else if (flags === nativeWeakSlotWeak)
+    clearPair(slot + nativeWeakSlotValueOffset);
+}
+/** Finishes an evacuated weak slot whose header carries no scratch flags
+ * (the parallel evacuator's slots). */
+export function finishEvacuatedWeak(
+  fromBase: number,
+  fromEnd: number,
+  slot: number,
+): void {
+  const flags = headerFlags(read(slot));
+  if (flags !== nativeWeakSlotWeak && flags !== nativeWeakSlotEphemeron)
+    throw "CHENEY_WEAK";
+  clearWeakPairs(slot, flags, evacuatedKeyAlive(fromBase, fromEnd, slot));
+}
 
 function finishWeakSlots(state: CheneyState, start: number): void {
   const toBase = state.toBase;
@@ -354,11 +386,7 @@ function finishWeakSlots(state: CheneyState, start: number): void {
         throw "CHENEY_WEAK";
       if (rawFlags !== flags)
         write(address, marker + flags * nativeHeaderFlagUnit);
-      if (keyAlive(state, address) === 0) {
-        clearPair(address + nativeWeakSlotKeyOffset);
-        clearPair(address + nativeWeakSlotValueOffset);
-      } else if (flags === nativeWeakSlotWeak)
-        clearPair(address + nativeWeakSlotValueOffset);
+      clearWeakPairs(address, flags, keyAlive(state, address));
     }
     at += cheneyExtent(address, marker, flags);
   }
@@ -485,18 +513,17 @@ export function createCheneyCollector(
  *    are rebuilt by walking the now packed prefix.
  *
  * Headers never change, so heap tools and descriptor guards are unaffected.
- * Weak slots (`weak` collections: the program created one) mark serially
- * without their key and value; after the strong closure, an ephemeron whose
- * key is live marks its value, to a fixpoint, then a dead key clears both
- * pairs and a weak cell drops its value pair (as the copying collector
- * does), and phase 4 forwards the surviving pairs. A collection must not
- * allocate: every array is caller-owned permanent storage. */
+ * Weak slots mark without their key and value; after the strong closure, an
+ * ephemeron whose key is live marks its value, to a fixpoint, then a dead
+ * key clears both pairs and a weak cell drops its value pair (as the copying
+ * collector does), and phase 4 forwards the surviving pairs. A parallel mark
+ * does all of this on the pool (see `CompactHelpers.mark`). A collection
+ * must not allocate: every array is caller-owned permanent storage. */
 export interface Compactor {
   /** Compacts [base, base + used) and returns the packed live bytes (which
    * the caller compares with its capacity). `starts` holds one start bit
    * per granule from `base`; `live` and `offsets` have at least as many
-   * words; `stack` is the mark stack. `weak` says weak slots may exist (the
-   * mark then runs serially). */
+   * words; `stack` is the mark stack. */
   readonly collect: (
     base: number,
     used: number,
@@ -505,7 +532,6 @@ export interface Compactor {
     live: Uint32Array,
     offsets: Uint32Array,
     stack: Uint32Array,
-    weak: boolean,
   ) => number;
 }
 
@@ -635,7 +661,7 @@ function closeMarks(state: CompactState): void {
 }
 /** 1 when weak slot `slot`'s key is live (marked, outside the region, or
  * not a reference), 0 when it is dead or cleared. */
-function compactKeyAlive(state: CompactState, slot: number): number {
+export function compactKeyAlive(state: CompactRegion, slot: number): number {
   const tag = read(slot + nativeWeakSlotKeyOffset);
   if (tag === 0) return 0;
   if (tag !== 3 && tag !== 5 && tag !== 6 && tag !== 7) return 1;
@@ -657,18 +683,15 @@ function markEphemeron(state: CompactState, address: number): void {
   )
     markGeneral(state, address + nativeWeakSlotValueOffset);
 }
-/** Clears the pairs of a live weak slot after the final mark. */
-function finishCompactWeak(state: CompactState, address: number): void {
+/** Clears the pairs of a live weak slot after the final mark (anything
+ * else is left alone). */
+export function finishCompactWeak(state: CompactRegion, address: number): void {
   const header = read(address);
   if (headerMarker(header) !== nativeWeakSlotMarker) return;
   const flags = headerFlags(header);
   if (flags !== nativeWeakSlotWeak && flags !== nativeWeakSlotEphemeron)
     throw "COMPACT_WEAK";
-  if (compactKeyAlive(state, address) === 0) {
-    clearPair(address + nativeWeakSlotKeyOffset);
-    clearPair(address + nativeWeakSlotValueOffset);
-  } else if (flags === nativeWeakSlotWeak)
-    clearPair(address + nativeWeakSlotValueOffset);
+  clearWeakPairs(address, flags, compactKeyAlive(state, address));
 }
 /** Calls `visit` with every live object of the region in address order. */
 function forEachLive(
@@ -836,15 +859,19 @@ function compactLive(
 
 /** Parallel phases a compactor may delegate (to the evacuator's pool): the
  * mark from the roots, which returns the marked bytes (`markOverflowed`
- * then says whether children were dropped and need a serial rescan, and
- * `markSawView` whether a view was marked), and
+ * then says whether children were dropped and need a serial rescan,
+ * `markSawView` whether a view was marked and `markWeakPending` whether
+ * weak slots still need the serial ephemeron fixpoint and clearing), and
  * phase 4 over every live object of [base, base + 256 * words). */
 export interface CompactHelpers {
-  /** Returns the marked bytes, or -1 when the pool cannot run (the
-   * compactor then marks serially). */
+  /** Marks from the roots, then (when weak slots were met and nothing
+   * overflowed) runs the ephemeron fixpoint and clears dead pairs. Returns
+   * the marked bytes, or -1 when the pool cannot run (the compactor then
+   * marks serially). */
   readonly mark: (region: CompactRegion, rootHead: number) => number;
   readonly markOverflowed: () => boolean;
   readonly markSawView: () => boolean;
+  readonly markWeakPending: () => boolean;
   readonly forward: (region: CompactRegion, words: number) => void;
 }
 export function createCompactor(
@@ -897,7 +924,7 @@ export function createCompactor(
     return true;
   };
   return {
-    collect(base, used, rootHead, starts, live, offsets, stack, weak) {
+    collect(base, used, rootHead, starts, live, offsets, stack) {
       const words = Math.ceil(used / 256);
       state.base = base;
       state.end = base + used;
@@ -911,16 +938,20 @@ export function createCompactor(
       state.sawView = false;
       state.sawWeak = false;
       live.fill(0, 0, words);
-      // 1. Mark (in parallel for large regions without weak slots).
+      // 1. Mark (in parallel for large regions).
       const delegate = used >= parallelMinimum ? helpers : undefined;
       let parallel = false;
-      if (delegate !== undefined && !weak) {
+      if (delegate !== undefined) {
         const marked = delegate.mark(state, rootHead);
         if (marked >= 0) {
           parallel = true;
           state.liveBytes = marked;
           state.overflowed = delegate.markOverflowed();
           state.sawView = delegate.markSawView();
+          // Weak slots the pool could not finish (its lists overflowed):
+          // the serial fixpoint below covers every live slot. A mark
+          // overflow leaves them to the rescan, which sets this too.
+          state.sawWeak = delegate.markWeakPending();
         }
       }
       if (

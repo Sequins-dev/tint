@@ -1,8 +1,7 @@
 /** Trusted managed weak storage. Only explicit compiler capabilities replace
  * these declarations; their names alone grant nothing. Opaque handles use unknown
  * because the physical marker-7 cell is not an ordinary TypeScript record.
- * Every collector supports them (the generational one traces weak slots once
- * the first is created). */
+ * Every collector supports them, serial and parallel. */
 export function createWeakSlot(
   key: unknown,
   value: unknown,

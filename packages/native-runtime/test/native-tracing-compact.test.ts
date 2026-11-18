@@ -68,7 +68,7 @@ function heap(stackCapacity = 1024) {
     );
   }
   const root = (index: number): number => read(stack + 16 + index * 8);
-  function collect(head: number, weak: boolean = false): number {
+  function collect(head: number): number {
     return createCompactor(region, regionBytes).collect(
       region,
       top - region,
@@ -77,7 +77,6 @@ function heap(stackCapacity = 1024) {
       new Uint32Array(regionBytes / 256),
       new Uint32Array(regionBytes / 256),
       new Uint32Array(stackCapacity),
-      weak,
     );
   }
   /** Object starts after a collection. */
@@ -243,7 +242,7 @@ test("weak slots clear dead keys and forward live ones", () => {
   const live = h.allocate(16, [leaf, 2]);
   const dropped = weakSlot(h, false, dead, 0);
   const kept = weakSlot(h, false, live, live);
-  const bytes = h.collect(h.roots([dropped, kept, live]), true);
+  const bytes = h.collect(h.roots([dropped, kept, live]));
   // The two slots and the live key survive; the dead key does not.
   assert.equal(bytes, 40 + 40 + 16);
   const movedLive = h.root(2),
@@ -275,7 +274,7 @@ test("ephemerons keep values exactly while their keys live, to a fixpoint", () =
   const second = weakSlot(h, true, middle, last);
   const first = weakSlot(h, true, key, middle);
   const orphan = weakSlot(h, true, orphanKey, orphanValue);
-  const bytes = h.collect(h.roots([first, second, orphan, key]), true);
+  const bytes = h.collect(h.roots([first, second, orphan, key]));
   assert.equal(bytes, 3 * 40 + 3 * 16, "the orphan's key and value die");
   const movedFirst = h.root(0),
     movedSecond = h.root(1),

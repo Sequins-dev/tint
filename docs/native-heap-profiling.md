@@ -37,7 +37,7 @@ All commands run from the repository root. `<image>` is a debug build, for
 example `TINT_KEEP_NATIVE=1 node tools/verify-heap-tools.ts` (the image path
 is printed) or a frozen-workload compiler `.tint-bootstrap/workload-v3/native-<label>`.
 
-### Inspect objects in LLDB
+### Inspect objects in LLDB or GDB
 
 ```text
 (lldb) command script import tools/lldb/tint.py
@@ -55,8 +55,20 @@ is printed) or a frozen-workload compiler `.tint-bootstrap/workload-v3/native-<l
 }
 ```
 
-Add the import line to `~/.lldbinit` to load the formatters in every
-session. They cover:
+GDB gets the same printers and commands from `tools/gdb/tint.py`:
+
+```text
+(gdb) source tools/gdb/tint.py
+(gdb) print *holder
+$1 = {__header = ..., items = 0xfffff4c700b0 {length, root} = {[0] = 0xfffff4c70370 {x, y, label} = {...}, ...},
+  index = 0xfffff4c70100 {keys, buckets, head, tail, size, order} = {["first"] = ..., ["second"] = ...},
+  anything = "dynamic"}
+(gdb) print -max-depth 1 -- holder->numbers
+$2 = 0xfffff4c700e0 {length, values, present} = {[0] = 1.5, [1] = 2.5, [2] = 3.5}
+```
+
+Add the import (or `source`) line to `~/.lldbinit` (or `~/.gdbinit`) to
+load the formatters in every session. They cover:
 
 - **Strings** (`string`, `string *`): the text.
 - **Opaque references** (`object *`): retyped from the object's header to
@@ -69,7 +81,8 @@ session. They cover:
 - **General values** (`general`): the value, by tag.
 
 `tint-heap info` prints the descriptor and the current heap state, and
-`tint-heap verify` walks every object.
+`tint-heap verify` walks every object. `tint-heap help` lists every command;
+they are the same in both debuggers (see [debugger adapters](#debugger-adapters)).
 
 ### Take a heap snapshot and open it in DevTools or Memlab
 
@@ -80,8 +93,8 @@ node tools/heap-snapshot/cli.ts convert /tmp/heap/after-054 \
   --report /tmp/after-054.json
 ```
 
-`capture` launches the program under LLDB and dumps the heap at the
-requested points. Each dump is a directory holding the active old and young
+`capture` launches the program under LLDB (`--debugger gdb`: GDB) and dumps
+the heap at the requested points. Each dump is a directory holding the active old and young
 spaces, the start bits, the stack, the registry and `meta.json`:
 
 | Option             | When the heap is dumped                                                                                                                                                                                                                                                   |
@@ -93,6 +106,11 @@ spaces, the start bits, the stack, the registry and `meta.json`:
 | `--before-majors`  | Before every collection that cannot be minor.                                                                                                                                                                                                                             |
 | `--pid <pid>`      | Attach and dump at the next allocation.                                                                                                                                                                                                                                   |
 | `--core <file>`    | Dump from a core file saved inside an allocation slow path, for example after `tint-heap arm 1` and a stop at `__tint_allocation_sample`, then `process save-core <file>`. A default macOS core omits image pages, which the converter reads from the executable instead. |
+
+Under GDB, save the core with `gcore <file>`. A default macOS core also
+omits pages that were never modified (such as the start bits of unused old
+space); the dump writes them as zeros and counts them in `meta.json`'s
+`absentBytes`.
 
 Every capture also writes `collections.json`, a log of every collection:
 nursery bytes, old-space bytes before and after, and whether it was major.
@@ -148,7 +166,8 @@ How the sampler works:
 - The tool arms sampling with a mean interval in bytes. Intervals are drawn
   from an exponential distribution unless `--fixed` is given.
 - At each stop in `__tint_allocation_sample`, it records the allocating
-  stack, symbolized by LLDB from DWARF, inlined frames included.
+  stack, symbolized by the debugger (LLDB, or GDB with `--debugger gdb`)
+  from DWARF, inlined frames included.
 - At the next stop, it records the object's type, read from the object's
   now-initialized header.
 
@@ -158,6 +177,7 @@ path, so each counts once. Samples carry `type` and `space` labels. The
 profile has the image mapping (path, load address, UUID), so pprofessor can
 symbolize addresses too. Expect about 3–5 ms per sample under LLDB: frozen
 v3 allocates 74.5 GiB, so a 1 MiB interval takes about 76,000 samples.
+GDB costs about the same (911 fixture samples in 1.5 s).
 
 ### See collections in Instruments (macOS)
 
@@ -282,8 +302,39 @@ Given the header word, a tool decodes any object:
 - Any other marker is a descriptor address, whose variable gives the
   structure.
 
-`tools/lldb/tint.py`'s `record_types` builds that map from the variables'
-DWARF locations, and does not read memory, so it works on cores.
+`tools/debugger/tint_heap.py`'s `record_types` builds that map from the
+variables' DWARF locations, and does not read memory, so it works on cores.
+
+## Debugger adapters
+
+The heap tools are one debugger-neutral Python module,
+`tools/debugger/tint_heap.py`: descriptor decoding, the start-bit walk, raw
+dumps, allocation sampling (batch and incremental), snapshot points, forced
+collections, the `tint-heap` command dispatcher and value decoding for
+formatters. It imports no debugger. Two thin adapters give it
+an _inferior_: memory reads and writes, symbol addresses, the image's slide,
+the `__tint_record.*` variables and named structures described from DWARF,
+threads with their frames and registers, breakpoints, watchpoints and
+synchronous resumption.
+
+- **`tools/lldb/tint.py`** adapts the SB API and registers LLDB summaries
+  and synthetic children (`command script import`). `lldb-dap` loads it for
+  the [DevTools bridge](native-devtools.md), whose `tint-heap` command
+  sequences are unchanged.
+- **`tools/gdb/tint.py`** adapts GDB's Python API (`read_memory`,
+  `parse_and_eval` for symbol addresses, `info auxv` for the PIE slide,
+  `info variables` and `lookup_global_symbol` for record variables, frame
+  `read_register` and `set var $reg` for registers, silent internal
+  breakpoints and watchpoints, stop and exit events) and registers
+  pretty-printers and a `gdb.Command` (`source tools/gdb/tint.py`). Start a
+  process stopped at its first instruction with `starti`.
+
+GDB groups an inlined frame with its physical frame by position (it has no
+CFA accessor), and prints an equals sign between a printer's summary and
+its children; otherwise both produce the same dumps, sample files and messages, and
+the Node converters (`tools/heap-snapshot`, `tools/profiling`) read them
+alike. `tools/heap-snapshot/debuggers.ts` runs either in batch mode for the
+CLI and the verifier.
 
 ## The allocation sampling hook
 
@@ -325,15 +376,18 @@ Differences:
 
 - **Cores**: Linux LLDB writes minidumps, and by default only their stacks;
   save heap-complete cores with `process save-core --style full <file>`.
-  ELF cores from GDB's `gcore` or the kernel also load
-  (`lldb <image> -c <core>`): `tint-heap info` and `verify` read them, and
-  `tint-heap dump` needs a core saved at `__tint_allocation_sample`.
+  ELF cores from GDB's `gcore` or the kernel load in both debuggers
+  (`lldb <image> -c <core>`, `gdb <image> <core>`): `tint-heap info` and
+  `verify` read them, and `tint-heap dump` needs a core saved at
+  `__tint_allocation_sample`.
 - **Probes instead of breakpoints**: `alloc__sample` is a USDT probe on the
   hook's `nop` (arguments: address, size, context), and `uprobe:<image>:__tint_allocation_sample`
   works too, on kernels with uprobes.
-- **GDB**: debug builds read in GDB as well (variables, records, strings,
-  inlined frames, unwind to `_start`); the `tint-heap` commands are LLDB
-  only. `tools/gdb/tint-probes.py` counts USDT probe hits.
+- **GDB**: `tools/gdb/tint.py` gives GDB the same formatters and
+  `tint-heap` commands, captures (`--debugger gdb`) and allocation
+  profiles; debug builds read in GDB as well (variables, records, inlined
+  frames, unwind to `_start`). `tools/gdb/tint-probes.py` counts USDT probe
+  hits.
 - **Probe design**: each interval edge is a `nop` probe site in the
   signpost routine, which dispatches to the site of the interval name in
   constant time; the probes have no semaphores, because a nop costs nothing
@@ -344,18 +398,23 @@ Differences:
 
 ## Verification
 
-- **`tools/verify-heap-tools.ts`** builds one fixture
-  (`tools/heap-tools-fixture.ts`) and checks it under LLDB:
+- **`tools/verify-heap-tools.ts [--debugger lldb|gdb]`** builds one
+  fixture (`tools/heap-tools-fixture.ts`) and checks it under LLDB (the
+  default) or GDB:
   - **Descriptor**: matches the collector's own locals at two collections;
     the start-bit walks cover exactly the young and old tops.
   - **Formatters**: their output is checked.
   - **Snapshot**: a dump at the fixture's `inspect` safepoint has exactly
-    5000 chain nodes retaining 160,000 bytes from `run`'s and `inspect`'s
+    5000 chain nodes retaining 120,000 bytes from `run`'s and `inspect`'s
     frames, and a structurally valid `.heapsnapshot` and pprof profile.
   - **Core**: a dump from `process save-core` (a full minidump on Linux)
-    equals the live one.
+    or `gcore` equals the live one.
   - **Allocations**: the sampled profile attributes more than 98% of
     samples to `makeChain` and estimates the allocation volume within 10%.
+  - **Collect**: `collect-begin`/`collect-end` (the DevTools bridge's
+    collectGarbage) force a major collection at the slow-path thunk entry
+    inside `makeChain`; the nursery empties, the old space walks cleanly
+    and the program still exits 42.
   - **Unarmed**: the image runs normally.
 - **Memlab** (`@memlab/core` 1.1, `getSnapshotFromFile`, then its
   dominator pass) loaded the fixture snapshot. Its node, edge and byte
@@ -375,6 +434,12 @@ Differences:
   covers the descriptor bytes, symbols, thunk and metrics routine, and the
   USDT probe sites; `packages/image/test/dwarf-variables.test.ts` covers
   the DWARF globals and `packages/image/test/elf.test.ts` the probe notes.
+- **GDB** (Debian 12 arm64, GDB 13.1, the development container): every
+  `verify-heap-tools.ts --debugger gdb` section passes with the same
+  numbers as LLDB (5021 reachable objects, chain retained 120,000 bytes,
+  911 samples estimating 14.2 MiB of 13.8, the core equal to the live
+  dump, a forced major emptying a 1,024-byte nursery); so do the LLDB mode
+  on Linux (LLDB 19) and macOS, and the DevTools plugin test on macOS.
 - **Linux** (Debian 13 arm64, LLDB 19, GDB 16, perf 6.12): every
   `verify-heap-tools.ts` section passes; `tools/perf-profile.test.ts`
   records the fixture with `perf record --call-graph fp` and `dwarf` and
