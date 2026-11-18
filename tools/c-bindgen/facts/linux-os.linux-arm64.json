@@ -1,0 +1,600 @@
+{
+  "spec": "linux-os",
+  "target": "linux-arm64",
+  "clang": "Debian clang version 19.1.7",
+  "aliases": [],
+  "types": [],
+  "records": [
+    {
+      "name": "passwd",
+      "c": "struct passwd",
+      "union": false,
+      "packed": false,
+      "alignment": 0,
+      "size": 48,
+      "align": 8,
+      "fields": [
+        {
+          "name": "pw_name",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": false
+          },
+          "offset": 0
+        },
+        {
+          "name": "pw_passwd",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": false
+          },
+          "offset": 8
+        },
+        {
+          "name": "pw_uid",
+          "type": { "kind": "scalar", "scalar": "u32", "aliases": ["__uid_t"] },
+          "offset": 16
+        },
+        {
+          "name": "pw_gid",
+          "type": { "kind": "scalar", "scalar": "u32", "aliases": ["__gid_t"] },
+          "offset": 20
+        },
+        {
+          "name": "pw_gecos",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": false
+          },
+          "offset": 24
+        },
+        {
+          "name": "pw_dir",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": false
+          },
+          "offset": 32
+        },
+        {
+          "name": "pw_shell",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": false
+          },
+          "offset": 40
+        }
+      ]
+    },
+    {
+      "name": "PasswdResult",
+      "c": "struct PasswdResult",
+      "union": false,
+      "packed": false,
+      "alignment": 0,
+      "size": 8,
+      "align": 8,
+      "fields": [
+        {
+          "name": "entry",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "passwd" },
+            "constPointee": false
+          },
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "name": "sockaddr",
+      "c": "struct sockaddr",
+      "union": false,
+      "packed": false,
+      "alignment": 0,
+      "size": 16,
+      "align": 2,
+      "fields": [
+        {
+          "name": "sa_family",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u16",
+            "aliases": ["sa_family_t"]
+          },
+          "offset": 0
+        },
+        {
+          "name": "sa_data",
+          "type": {
+            "kind": "array",
+            "element": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "length": 14
+          },
+          "offset": 2
+        }
+      ]
+    },
+    {
+      "name": "sockaddr_in",
+      "c": "struct sockaddr_in",
+      "union": false,
+      "packed": false,
+      "alignment": 0,
+      "size": 16,
+      "align": 4,
+      "fields": [
+        {
+          "name": "sin_family",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u16",
+            "aliases": ["sa_family_t"]
+          },
+          "offset": 0
+        },
+        {
+          "name": "sin_port",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u16",
+            "aliases": ["in_port_t", "uint16_t", "__uint16_t"]
+          },
+          "offset": 2
+        },
+        {
+          "name": "sin_addr",
+          "type": { "kind": "record", "name": "in_addr" },
+          "offset": 4
+        },
+        {
+          "name": "sin_zero",
+          "type": {
+            "kind": "array",
+            "element": { "kind": "scalar", "scalar": "u8", "aliases": [] },
+            "length": 8
+          },
+          "offset": 8
+        }
+      ]
+    },
+    {
+      "name": "in_addr",
+      "c": "struct in_addr",
+      "union": false,
+      "packed": false,
+      "alignment": 0,
+      "size": 4,
+      "align": 4,
+      "fields": [
+        {
+          "name": "s_addr",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u32",
+            "aliases": ["in_addr_t", "uint32_t", "__uint32_t"]
+          },
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "name": "sockaddr_in6",
+      "c": "struct sockaddr_in6",
+      "union": false,
+      "packed": false,
+      "alignment": 0,
+      "size": 28,
+      "align": 4,
+      "fields": [
+        {
+          "name": "sin6_family",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u16",
+            "aliases": ["sa_family_t"]
+          },
+          "offset": 0
+        },
+        {
+          "name": "sin6_port",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u16",
+            "aliases": ["in_port_t", "uint16_t", "__uint16_t"]
+          },
+          "offset": 2
+        },
+        {
+          "name": "sin6_flowinfo",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u32",
+            "aliases": ["uint32_t", "__uint32_t"]
+          },
+          "offset": 4
+        },
+        {
+          "name": "sin6_addr",
+          "type": { "kind": "record", "name": "in6_addr" },
+          "offset": 8
+        },
+        {
+          "name": "sin6_scope_id",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u32",
+            "aliases": ["uint32_t", "__uint32_t"]
+          },
+          "offset": 24
+        }
+      ]
+    },
+    {
+      "name": "in6_addr",
+      "c": "struct in6_addr",
+      "union": false,
+      "packed": false,
+      "alignment": 0,
+      "size": 16,
+      "align": 4,
+      "fields": [
+        {
+          "name": "__in6_u",
+          "type": { "kind": "record", "name": "in6_addr___in6_u" },
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "name": "in6_addr___in6_u",
+      "c": "__typeof__(((struct in6_addr *)0)->__in6_u)",
+      "union": true,
+      "packed": false,
+      "alignment": 0,
+      "size": 16,
+      "align": 4,
+      "fields": [
+        {
+          "name": "__u6_addr8",
+          "type": {
+            "kind": "array",
+            "element": {
+              "kind": "scalar",
+              "scalar": "u8",
+              "aliases": ["uint8_t", "__uint8_t"]
+            },
+            "length": 16
+          },
+          "offset": 0
+        },
+        {
+          "name": "__u6_addr16",
+          "type": {
+            "kind": "array",
+            "element": {
+              "kind": "scalar",
+              "scalar": "u16",
+              "aliases": ["uint16_t", "__uint16_t"]
+            },
+            "length": 8
+          },
+          "offset": 0
+        },
+        {
+          "name": "__u6_addr32",
+          "type": {
+            "kind": "array",
+            "element": {
+              "kind": "scalar",
+              "scalar": "u32",
+              "aliases": ["uint32_t", "__uint32_t"]
+            },
+            "length": 4
+          },
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "name": "sockaddr_ll",
+      "c": "struct sockaddr_ll",
+      "union": false,
+      "packed": false,
+      "alignment": 0,
+      "size": 20,
+      "align": 4,
+      "fields": [
+        {
+          "name": "sll_family",
+          "type": { "kind": "scalar", "scalar": "u16", "aliases": [] },
+          "offset": 0
+        },
+        {
+          "name": "sll_protocol",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u16",
+            "aliases": ["__be16", "__u16"]
+          },
+          "offset": 2
+        },
+        {
+          "name": "sll_ifindex",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+          "offset": 4
+        },
+        {
+          "name": "sll_hatype",
+          "type": { "kind": "scalar", "scalar": "u16", "aliases": [] },
+          "offset": 8
+        },
+        {
+          "name": "sll_pkttype",
+          "type": { "kind": "scalar", "scalar": "u8", "aliases": [] },
+          "offset": 10
+        },
+        {
+          "name": "sll_halen",
+          "type": { "kind": "scalar", "scalar": "u8", "aliases": [] },
+          "offset": 11
+        },
+        {
+          "name": "sll_addr",
+          "type": {
+            "kind": "array",
+            "element": { "kind": "scalar", "scalar": "u8", "aliases": [] },
+            "length": 8
+          },
+          "offset": 12
+        }
+      ]
+    },
+    {
+      "name": "ifaddrs",
+      "c": "struct ifaddrs",
+      "union": false,
+      "packed": false,
+      "alignment": 0,
+      "size": 56,
+      "align": 8,
+      "fields": [
+        {
+          "name": "ifa_next",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "ifaddrs" },
+            "constPointee": false
+          },
+          "offset": 0
+        },
+        {
+          "name": "ifa_name",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": false
+          },
+          "offset": 8
+        },
+        {
+          "name": "ifa_flags",
+          "type": { "kind": "scalar", "scalar": "u32", "aliases": [] },
+          "offset": 16
+        },
+        {
+          "name": "ifa_addr",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "sockaddr" },
+            "constPointee": false
+          },
+          "offset": 24
+        },
+        {
+          "name": "ifa_netmask",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "sockaddr" },
+            "constPointee": false
+          },
+          "offset": 32
+        },
+        {
+          "name": "ifa_ifu",
+          "type": { "kind": "record", "name": "ifaddrs_ifa_ifu" },
+          "offset": 40
+        },
+        {
+          "name": "ifa_data",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": false
+          },
+          "offset": 48
+        }
+      ]
+    },
+    {
+      "name": "ifaddrs_ifa_ifu",
+      "c": "__typeof__(((struct ifaddrs *)0)->ifa_ifu)",
+      "union": true,
+      "packed": false,
+      "alignment": 0,
+      "size": 8,
+      "align": 8,
+      "fields": [
+        {
+          "name": "ifu_broadaddr",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "sockaddr" },
+            "constPointee": false
+          },
+          "offset": 0
+        },
+        {
+          "name": "ifu_dstaddr",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "sockaddr" },
+            "constPointee": false
+          },
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "name": "InterfaceList",
+      "c": "struct InterfaceList",
+      "union": false,
+      "packed": false,
+      "alignment": 0,
+      "size": 8,
+      "align": 8,
+      "fields": [
+        {
+          "name": "head",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "ifaddrs" },
+            "constPointee": false
+          },
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "name": "LoadAverages",
+      "c": "struct LoadAverages",
+      "union": false,
+      "packed": false,
+      "alignment": 0,
+      "size": 24,
+      "align": 8,
+      "fields": [
+        {
+          "name": "values",
+          "type": {
+            "kind": "array",
+            "element": { "kind": "scalar", "scalar": "f64", "aliases": [] },
+            "length": 3
+          },
+          "offset": 0
+        }
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "geteuid",
+      "parameters": [],
+      "result": { "kind": "scalar", "scalar": "u32", "aliases": ["__uid_t"] },
+      "variadic": false
+    },
+    {
+      "name": "getpwuid_r",
+      "parameters": [
+        {
+          "name": "__uid",
+          "type": { "kind": "scalar", "scalar": "u32", "aliases": ["__uid_t"] }
+        },
+        {
+          "name": "__resultbuf",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "passwd" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "__buffer",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "__buflen",
+          "type": { "kind": "scalar", "scalar": "usize", "aliases": ["size_t"] }
+        },
+        {
+          "name": "__result",
+          "type": {
+            "kind": "pointer",
+            "pointee": {
+              "kind": "pointer",
+              "pointee": { "kind": "record", "name": "passwd" },
+              "constPointee": false
+            },
+            "constPointee": false
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "getifaddrs",
+      "parameters": [
+        {
+          "name": "__ifap",
+          "type": {
+            "kind": "pointer",
+            "pointee": {
+              "kind": "pointer",
+              "pointee": { "kind": "record", "name": "ifaddrs" },
+              "constPointee": false
+            },
+            "constPointee": false
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "freeifaddrs",
+      "parameters": [
+        {
+          "name": "__ifa",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "ifaddrs" },
+            "constPointee": false
+          }
+        }
+      ],
+      "result": { "kind": "void" },
+      "variadic": false
+    },
+    {
+      "name": "getloadavg",
+      "parameters": [
+        {
+          "name": "__loadavg",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "f64", "aliases": [] },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "__nelem",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    }
+  ],
+  "constants": [],
+  "skipped": []
+}

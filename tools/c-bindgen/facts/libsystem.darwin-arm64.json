@@ -1,0 +1,99 @@
+{
+  "spec": "libsystem",
+  "target": "darwin-arm64",
+  "clang": "Apple clang version 17.0.0",
+  "aliases": [
+    {
+      "name": "mode_t",
+      "type": {
+        "kind": "scalar",
+        "scalar": "u16",
+        "aliases": ["mode_t", "__darwin_mode_t", "__uint16_t"]
+      }
+    }
+  ],
+  "types": [],
+  "records": [],
+  "functions": [
+    {
+      "name": "getpid",
+      "parameters": [],
+      "result": {
+        "kind": "scalar",
+        "scalar": "i32",
+        "aliases": ["pid_t", "__darwin_pid_t", "__int32_t"]
+      },
+      "variadic": false
+    },
+    {
+      "name": "close",
+      "parameters": [
+        {
+          "name": "arg0",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "unlink",
+      "parameters": [
+        {
+          "name": "arg0",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": true
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "fchmod",
+      "parameters": [
+        {
+          "name": "arg0",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        },
+        {
+          "name": "arg1",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u16",
+            "aliases": ["mode_t", "__darwin_mode_t", "__uint16_t"]
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "rename",
+      "parameters": [
+        {
+          "name": "__old",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": true
+          }
+        },
+        {
+          "name": "__new",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": true
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    }
+  ],
+  "constants": [],
+  "skipped": []
+}

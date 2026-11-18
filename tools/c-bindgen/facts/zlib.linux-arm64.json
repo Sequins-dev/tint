@@ -1,0 +1,310 @@
+{
+  "spec": "zlib",
+  "target": "linux-arm64",
+  "clang": "Debian clang version 19.1.7",
+  "aliases": [
+    {
+      "name": "uInt",
+      "type": { "kind": "scalar", "scalar": "u32", "aliases": ["uInt"] }
+    },
+    {
+      "name": "uLong",
+      "type": { "kind": "scalar", "scalar": "u64", "aliases": ["uLong"] }
+    }
+  ],
+  "types": [],
+  "records": [
+    {
+      "name": "z_stream",
+      "c": "struct z_stream_s",
+      "union": false,
+      "packed": false,
+      "alignment": 0,
+      "size": 112,
+      "align": 8,
+      "fields": [
+        {
+          "name": "next_in",
+          "type": {
+            "kind": "pointer",
+            "pointee": {
+              "kind": "scalar",
+              "scalar": "u8",
+              "aliases": ["Bytef", "Byte"]
+            },
+            "constPointee": false
+          },
+          "offset": 0
+        },
+        {
+          "name": "avail_in",
+          "type": { "kind": "scalar", "scalar": "u32", "aliases": ["uInt"] },
+          "offset": 8
+        },
+        {
+          "name": "total_in",
+          "type": { "kind": "scalar", "scalar": "u64", "aliases": ["uLong"] },
+          "offset": 16
+        },
+        {
+          "name": "next_out",
+          "type": {
+            "kind": "pointer",
+            "pointee": {
+              "kind": "scalar",
+              "scalar": "u8",
+              "aliases": ["Bytef", "Byte"]
+            },
+            "constPointee": false
+          },
+          "offset": 24
+        },
+        {
+          "name": "avail_out",
+          "type": { "kind": "scalar", "scalar": "u32", "aliases": ["uInt"] },
+          "offset": 32
+        },
+        {
+          "name": "total_out",
+          "type": { "kind": "scalar", "scalar": "u64", "aliases": ["uLong"] },
+          "offset": 40
+        },
+        {
+          "name": "msg",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": false
+          },
+          "offset": 48
+        },
+        {
+          "name": "state",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "internal_state" },
+            "constPointee": false
+          },
+          "offset": 56
+        },
+        {
+          "name": "zalloc",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "function" },
+            "constPointee": false
+          },
+          "offset": 64
+        },
+        {
+          "name": "zfree",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "function" },
+            "constPointee": false
+          },
+          "offset": 72
+        },
+        {
+          "name": "opaque",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": false
+          },
+          "offset": 80
+        },
+        {
+          "name": "data_type",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+          "offset": 88
+        },
+        {
+          "name": "adler",
+          "type": { "kind": "scalar", "scalar": "u64", "aliases": ["uLong"] },
+          "offset": 96
+        },
+        {
+          "name": "reserved",
+          "type": { "kind": "scalar", "scalar": "u64", "aliases": ["uLong"] },
+          "offset": 104
+        }
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "zlibVersion",
+      "parameters": [],
+      "result": {
+        "kind": "pointer",
+        "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+        "constPointee": true
+      },
+      "variadic": false
+    },
+    {
+      "name": "deflateInit2_",
+      "parameters": [
+        {
+          "name": "strm",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "z_stream" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "level",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        },
+        {
+          "name": "method",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        },
+        {
+          "name": "windowBits",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        },
+        {
+          "name": "memLevel",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        },
+        {
+          "name": "strategy",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        },
+        {
+          "name": "version",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": true
+          }
+        },
+        {
+          "name": "stream_size",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "deflate",
+      "parameters": [
+        {
+          "name": "strm",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "z_stream" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "flush",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "deflateEnd",
+      "parameters": [
+        {
+          "name": "strm",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "z_stream" },
+            "constPointee": false
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "inflateInit2_",
+      "parameters": [
+        {
+          "name": "strm",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "z_stream" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "windowBits",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        },
+        {
+          "name": "version",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": true
+          }
+        },
+        {
+          "name": "stream_size",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "inflate",
+      "parameters": [
+        {
+          "name": "strm",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "z_stream" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "flush",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "inflateReset",
+      "parameters": [
+        {
+          "name": "strm",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "z_stream" },
+            "constPointee": false
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "inflateEnd",
+      "parameters": [
+        {
+          "name": "strm",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "z_stream" },
+            "constPointee": false
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    }
+  ],
+  "constants": [],
+  "skipped": []
+}
