@@ -15,9 +15,11 @@ import type {
  *   record pointee requires at least the record's size;
  * - `terminated-bytes`: as `bytes`, and the array must end in NUL;
  * - `record`: a struct by value, read from a Uint8Array holding at least
- *   its C image. */
+ *   its C image;
+ * - `callback`: a function value C may call during a may-callback call
+ *   (the call stores it in its transition record and passes C a thunk). */
 export type ForeignOperand =
-  "number" | "boolean" | "bytes" | "terminated-bytes" | "record";
+  "number" | "boolean" | "bytes" | "terminated-bytes" | "record" | "callback";
 /** A `record` result is written into a trailing Uint8Array operand (at
  * least the record's size) and the instruction has no SSA result. */
 export type ForeignResult = "void" | "number" | "boolean" | "record";
@@ -39,7 +41,46 @@ export interface ForeignCall {
    * the prototype's (docs/native-ffi.md, "Optional libraries"). `symbol`
    * names the C function for diagnostics. */
   readonly indirect?: true | undefined;
+  /** A may-callback call (docs/native-ffi.md, "Callbacks"): the signature's
+   * call class is `may-callback`, the first operand is the calling
+   * thread's callback state block (external storage of at least
+   * `callbackState.size` bytes), the second the registered-callback
+   * dispatcher (a function value registered thunks call with their id)
+   * and the remaining operands are the prototype's. The call pushes a transition record onto the state block
+   * for the call's duration, so C may enter Tint through callback thunks;
+   * it is a safepoint, and its caller keeps no reference in a register
+   * across it. */
+  readonly mayCallback?: true | undefined;
+  /** Per prototype operand: the C prototype of a `callback` operand (its
+   * thunk's ABI), else undefined. */
+  readonly callbacks?: readonly (CSignature | undefined)[] | undefined;
 }
+/** A may-callback call's transition record, in its caller's outgoing frame
+ * area (16-aligned): the caller's frame pointer and the call's return
+ * address (its safepoint), laid out as a frame record so the stack walk
+ * can resume there, then the previous record, whether a callback is
+ * running under it, the calling thread's identity (its thread pointer
+ * register), the caller's context, the registered-callback dispatcher,
+ * then the call's callback function values (`callbacks`, one word each).
+ * The call's stack map lists the dispatcher and callback words, so
+ * collections update them. The callback state block's first word is the
+ * innermost record (0: none). Byte offsets; the size is
+ * `transitionBytes(callback count)`. */
+export const callbackTransition = {
+  frame: 0,
+  returnAddress: 8,
+  previous: 16,
+  entered: 24,
+  thread: 32,
+  context: 40,
+  registered: 48,
+  callbacks: 56,
+};
+/** A transition record's bytes for `count` callbacks (16-aligned). */
+export function transitionBytes(count: number): number {
+  return Math.ceil((callbackTransition.callbacks + count * 8) / 16) * 16;
+}
+export const callbackState = { current: 0, size: 8 };
 /** The universal trampoline's call frame, a Uint8Array the runtime fills
  * from `classifyCCall` (docs/native-ffi.md, "Dynamic calls"). Byte offsets:
  * - `registers`: x0..x7, then `floats`: d0..d7 (a float's low 32 bits),
@@ -63,48 +104,68 @@ export const dynamicCallFrame = {
   stackBytes: 136,
   patchCount: 144,
   bases: 152,
-  patches: 224,
+  patches: 256,
   patchArray: 128,
   patchCapacity: 16,
-  stack: 608,
+  stack: 640,
   stackCapacity: 512,
-  scratch: 1120,
+  scratch: 1152,
   scratchCapacity: 512,
-  size: 1632,
+  size: 1664,
   byteOperands: 8,
+  /** Callback function values a may-callback dynamic call takes; their
+   * universal thunks' entries are bases 1 + byteOperands onward. */
+  callbackOperands: 4,
 };
 /** The universal trampoline call: operands are the callee address, the
- * frame and `dynamicCallFrame.byteOperands` borrowed byte arrays. */
-export function dynamicForeignCall(): ForeignCall {
+ * frame and `dynamicCallFrame.byteOperands` borrowed byte arrays. With
+ * `callbacks` it is a may-callback call: the callback state and
+ * dispatcher come first and `dynamicCallFrame.callbackOperands` callback
+ * function values last (each reached through a universal callback thunk,
+ * docs/native-ffi.md, "Dynamic callbacks"). */
+export function dynamicForeignCall(callbacks: boolean = false): ForeignCall {
   const pointer: CType = { kind: "pointer", pointee: { kind: "void" } };
-  const parameters: CType[] = [pointer, pointer],
-    operands: ForeignOperand[] = ["number", "bytes"];
+  const parameters: CType[] = [],
+    operands: ForeignOperand[] = [];
+  if (callbacks) {
+    parameters.push(pointer, pointer);
+    operands.push("bytes", "callback");
+  }
+  parameters.push(pointer, pointer);
+  operands.push("number", "bytes");
   for (let index = 0; index < dynamicCallFrame.byteOperands; index++) {
     parameters.push(pointer);
     operands.push("bytes");
   }
-  return {
+  if (callbacks)
+    for (let index = 0; index < dynamicCallFrame.callbackOperands; index++) {
+      parameters.push(pointer);
+      operands.push("callback");
+    }
+  const call: ForeignCall = {
     symbol: "",
     signature: {
       parameters,
       result: { kind: "void" },
       fixedParameters: parameters.length,
-      callClass: "leaf",
+      callClass: callbacks ? "may-callback" : "leaf",
       errno: "none",
     },
     operands,
     result: "void",
     dynamic: true,
   };
+  return callbacks ? { ...call, mayCallback: true } : call;
 }
 /** Whether `call` is exactly the universal trampoline's shape. */
 function dynamicShape(call: ForeignCall): boolean {
-  const expected = dynamicForeignCall();
+  const expected = dynamicForeignCall(call.mayCallback === true);
   if (
     call.symbol !== "" ||
     call.result !== "void" ||
+    call.callbacks !== undefined ||
     call.signature.result.kind !== "void" ||
-    call.signature.callClass !== "leaf" ||
+    call.signature.callClass !== expected.signature.callClass ||
     call.signature.errno !== "none" ||
     call.signature.parameters.length !== expected.signature.parameters.length ||
     call.operands.length !== expected.operands.length
@@ -145,13 +206,64 @@ export function foreignCallTypes(call: ForeignCall): ForeignCallTypesResult {
   if (call.dynamic === true) {
     if (!dynamicShape(call))
       return { ok: false, error: "malformed dynamic foreign call" };
-    const parameters: ScalarType[] = ["number"];
-    for (let index = 1; index < call.operands.length; index++)
-      parameters.push("Uint8Array");
+    const parameters: ScalarType[] = [];
+    for (let index = 0; index < call.operands.length; index++) {
+      const operand = call.operands[index];
+      parameters.push(
+        operand === "number"
+          ? "number"
+          : operand === "callback"
+            ? "reference"
+            : "Uint8Array",
+      );
+    }
     return { ok: true, value: { parameters, result: "void" } };
   }
   if (!validSymbol(call.symbol))
     return { ok: false, error: "invalid foreign symbol" };
+  if (call.mayCallback === true) {
+    if (call.indirect === true || signature.callClass !== "may-callback")
+      return { ok: false, error: "malformed may-callback call" };
+    if (call.operands[0] !== "bytes" || call.operands[1] !== "callback")
+      return {
+        ok: false,
+        error: "a may-callback call takes its state and dispatcher first",
+      };
+    // Each callback operand names its C prototype, and only those do.
+    const callbacks = call.callbacks ?? [];
+    for (let index = 2; index < call.operands.length; index++)
+      if (
+        (call.operands[index] === "callback") !==
+        (callbacks[index - 2] !== undefined)
+      )
+        return { ok: false, error: "callback operands need their prototypes" };
+    // The prototype checks as a leaf call with each callback as an address;
+    // a callback operand is a function value.
+    const operands: ForeignOperand[] = [];
+    for (let index = 2; index < call.operands.length; index++) {
+      const operand = call.operands[index];
+      if (operand === undefined) throw "foreign operand invariant";
+      operands.push(operand === "callback" ? "number" : operand);
+    }
+    const direct = foreignCallTypes({
+      symbol: call.symbol,
+      signature: { ...signature, callClass: "leaf" },
+      operands,
+      result: call.result,
+    });
+    if (!direct.ok) return direct;
+    const parameters: ScalarType[] = ["Uint8Array", "reference"];
+    for (let index = 0; index < direct.value.parameters.length; index++) {
+      const parameter = direct.value.parameters[index];
+      if (parameter === undefined) throw "foreign parameter invariant";
+      parameters.push(
+        call.operands[index + 2] === "callback" ? "reference" : parameter,
+      );
+    }
+    return { ok: true, value: { parameters, result: direct.value.result } };
+  }
+  if (call.callbacks !== undefined)
+    return { ok: false, error: "callbacks need a may-callback call" };
   if (call.indirect === true) {
     const direct = foreignCallTypes({
       symbol: call.symbol,
@@ -212,6 +324,8 @@ export function foreignCallTypes(call: ForeignCall): ForeignCallTypesResult {
           return { ok: false, error: "record operand needs a C record" };
         parameters.push("Uint8Array");
         break;
+      case "callback":
+        return { ok: false, error: "callbacks need a may-callback call" };
     }
   }
   const result = signature.result;
@@ -285,7 +399,16 @@ export function foreignCallTypes(call: ForeignCall): ForeignCallTypesResult {
  *   load of the import slot and a comparison with zero. */
 export interface ForeignMemoryAccess {
   readonly operation:
-    "load" | "store" | "fits" | "address" | "adopt" | "retarget" | "available";
+    | "load"
+    | "store"
+    | "fits"
+    | "address"
+    | "adopt"
+    | "retarget"
+    | "available"
+    | "callback-key"
+    | "callback-address"
+    | "stable";
   /** Loads and stores: the field's C scalar or pointer type (else void,
    * with offset and minimum 0). */
   readonly type: CType;
@@ -296,6 +419,10 @@ export interface ForeignMemoryAccess {
   /** Element loads and stores: bytes between elements and their count. */
   readonly stride?: number | undefined;
   readonly length?: number | undefined;
+  /** `callback-address`: the C prototype and id of a registered callback
+   * thunk, whose entry address the access yields. */
+  readonly callback?: CSignature | undefined;
+  readonly slot?: number | undefined;
 }
 export type ForeignMemoryTypesResult =
   | { readonly ok: true; readonly value: ForeignCallTypes }
@@ -304,6 +431,38 @@ export type ForeignMemoryTypesResult =
 export function foreignMemoryTypes(
   access: ForeignMemoryAccess,
 ): ForeignMemoryTypesResult {
+  // `callback-key` (docs/native-ffi.md, "Callbacks"): the address of the
+  // image's callback key word, the pthread key under which each thread's
+  // callback state block is found by thunks. `stable`: whether an array's
+  // data never moves (external storage, or a view of it such as foreign
+  // memory): what C may hold across callbacks.
+  if (access.operation === "callback-address") {
+    const slot = access.slot;
+    return access.callback !== undefined &&
+      slot !== undefined &&
+      Number.isSafeInteger(slot) &&
+      slot >= 0 &&
+      access.type.kind === "void" &&
+      access.offset === 0 &&
+      access.minimum === 0
+      ? { ok: true, value: { parameters: [], result: "number" } }
+      : { ok: false, error: "malformed callback address" };
+  }
+  if (access.callback !== undefined || access.slot !== undefined)
+    return { ok: false, error: "only callback addresses name a thunk" };
+  if (access.operation === "callback-key" || access.operation === "stable") {
+    if (
+      access.type.kind !== "void" ||
+      access.offset !== 0 ||
+      access.minimum !== 0 ||
+      access.symbol !== undefined ||
+      access.stride !== undefined
+    )
+      return { ok: false, error: "malformed callback access" };
+    return access.operation === "callback-key"
+      ? { ok: true, value: { parameters: [], result: "number" } }
+      : { ok: true, value: { parameters: ["Uint8Array"], result: "boolean" } };
+  }
   if ((access.operation === "available") !== (access.symbol !== undefined))
     return { ok: false, error: "only availability queries name a symbol" };
   const stride = access.stride,

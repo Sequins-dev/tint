@@ -1,3 +1,4 @@
+import { transitionFrame, transitionTable } from "./transitions.ts";
 import {
   nativeWeakSlotMarker,
   nativeWeakSlotByteLength,
@@ -273,7 +274,8 @@ const savedRegisterCount = 10;
 const registerMaskLimit = 1024;
 /** The safepoint map of a return address: its address, -1 for a transparent
  * range, -2 for unknown code or a missing safepoint, -3 for an unreadable
- * or -4 for a malformed table. */
+ * or -4 for a malformed table, -5 for a callback thunk (see
+ * transitions.ts). */
 function safepointMap(
   read: ReadWord,
   registry: number,
@@ -298,6 +300,7 @@ function safepointMap(
   // Unknown code: the walk cannot tell its frame layout.
   if (table < 0) return -2;
   if (table === 0) return -1;
+  if (table === transitionTable) return -5;
   if (!pointer(table)) return -4;
   const magic = read(table),
     version = read(table + 8),
@@ -438,6 +441,27 @@ export function walkNativeStack(
     if (map === -1) {
       current = caller;
       afterTransparent = true;
+      continue;
+    }
+    if (map === -5) {
+      // A callback thunk: resume at its transition record, past the C
+      // frames. Register values below it are C's, so none is known.
+      const record = transitionFrame(read, caller);
+      if (record === -1) return "read";
+      if (record < 0) return "invalid";
+      current = record;
+      afterTransparent = true;
+      savesAt = -1;
+      at19 = 0;
+      at20 = 0;
+      at21 = 0;
+      at22 = 0;
+      at23 = 0;
+      at24 = 0;
+      at25 = 0;
+      at26 = 0;
+      at27 = 0;
+      at28 = 0;
       continue;
     }
     if (map < 0) return mapStatus(map);

@@ -195,6 +195,13 @@ export type Instruction =
       readonly rn: DataRegister;
     }
   | { readonly op: "mrs-fpcr" | "msr-fpcr"; readonly rt: DataRegister }
+  /** MRS Xt, TPIDR_EL0 (Linux's thread pointer) or TPIDRRO_EL0 (Darwin's,
+   * `readOnly`): an identity of the running thread. */
+  | {
+      readonly op: "mrs-thread";
+      readonly rt: DataRegister;
+      readonly readOnly: boolean;
+    }
   /** MRS Xt, DCZID_EL0 (cache-zeroing block size and permission) and
    * DC ZVA, Xt (zero the aligned block containing Xt). */
   | { readonly op: "mrs-dczid" | "dc-zva"; readonly rt: DataRegister }
@@ -768,6 +775,11 @@ export function encode(instruction: Instruction): EncodingResult<number> {
           rn * 32 +
           rd,
       );
+    }
+    case "mrs-thread": {
+      const rt = register(i.rt, "zr");
+      if (rt < 0) return fail("INVALID_REGISTER");
+      return word((i.readOnly ? 0xd53bd060 : 0xd53bd040) + rt);
     }
     case "mrs-dczid":
     case "dc-zva": {

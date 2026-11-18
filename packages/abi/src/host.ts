@@ -226,6 +226,13 @@ export const nativeStackMapSaveBlockOffset = 24;
  * nativeStackMapRegisterShift + i when x(19 + i) holds a live reference. */
 export const nativeStackMapRegisterShift = 10;
 export const nativeStackMapRegistryEntryBytes = 24;
+/** A registry entry's table word for callback entry thunks: their frames
+ * sit between C frames and Tint, and the walk resumes at the transition
+ * record the thunk saved (docs/gc-stack-maps.md, "Transition records").
+ * 0 is a transparent range; real tables are aligned addresses. */
+export const nativeStackMapTransitionTable = 1;
+/** The thunk frame's word (x29-relative) holding its transition record. */
+export const nativeCallbackThunkTransitionOffset = 48;
 /** Table: magic, version, entry count, then one word per safepoint (two in
  * a wide table). */
 export const nativeStackMapTableHeaderBytes = 24;

@@ -104,6 +104,16 @@ test("managed linking validates descriptor roles and patches full-width pointers
     "Resolved bytes are not an AOT NativeModule",
   );
 });
+test("live code cannot carry AOT-only callback thunks", () => {
+  const linked = resolveManagedPointers(
+    { ...fixture(), callbackThunks: { offset: 0, byteLength: 0, thunks: [] } },
+    bindings,
+    read,
+    17,
+  );
+  assert.equal(linked.ok, false);
+  if (!linked.ok) assert.match(linked.error, /callback thunks/);
+});
 test("managed linking requires explicit names, roles, contracts and complete ordered signature", () => {
   for (const changed of [
     bindings.slice(0, 1),
