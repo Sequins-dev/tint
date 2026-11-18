@@ -2296,6 +2296,16 @@ export function lowerFunction(
     requireCondition(condition, "RangeError", "Invalid range", node);
   }
   /** Continue when boolean slot `condition` holds, else throw `error`. */
+  /** Records and typed arrays: present references (never undefined). */
+  function referenceSlot(type: ScalarType | undefined): boolean {
+    return (
+      type === "reference" ||
+      type === "Uint8Array" ||
+      type === "Uint16Array" ||
+      type === "Uint32Array" ||
+      type === "Float64Array"
+    );
+  }
   /** A slot of the boolean "this list read is not a hole". */
   function holeAbsent(slot: number, node: IRSpan): number {
     const type = slots[slot],
@@ -4785,8 +4795,8 @@ export function lowerFunction(
           referenceComparison =
             slots[left] === "optional-reference" ||
             slots[right] === "optional-reference" ||
-            (slots[left] === "reference" && undefinedSlots[right] === 1) ||
-            (slots[right] === "reference" && undefinedSlots[left] === 1),
+            (referenceSlot(slots[left]) && undefinedSlots[right] === 1) ||
+            (referenceSlot(slots[right]) && undefinedSlots[left] === 1),
           a = coerce(
             load(left, node.left),
             booleanComparison

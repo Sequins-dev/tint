@@ -45,6 +45,16 @@ function countUnknownAbsent(values: unknown[]): number {
   for (const value of values) if (value === undefined) count++;
   return count;
 }
+// Compiler sources guard elements explicitly; on a typed-array element (a
+// present reference) the guard is constant false.
+function totalLength(pages: Uint32Array[]): number {
+  let total = 0;
+  for (const page of pages) {
+    if (page === undefined) throw "page invariant";
+    total += page.length;
+  }
+  return total;
+}
 function throwsOnHole(action: () => void): boolean {
   try {
     action();
@@ -60,6 +70,7 @@ export function run(): number {
   if (countTrue([true, false, true]) !== 2) return 3;
   if (sumPoints([{ x: 1 }, { x: 2 }]) !== 3) return 4;
   if (describe([1, "a"]) !== "numberstring") return 5;
+  if (totalLength([new Uint32Array(2), new Uint32Array(3)]) !== 5) return 13;
   // Holes (made by growing the length) are not values of these T.
   const numbers: number[] = [1];
   numbers.length = 3;
