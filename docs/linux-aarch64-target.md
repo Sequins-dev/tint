@@ -130,9 +130,13 @@ No Linux feature is missing relative to macOS: a target-specific gap fails
 once, before compilation, with a message naming the target, and none is
 currently known. These limits are recorded instead:
 
-- **Kernels with `vm.memfd_noexec=2`** (Linux 6.3+) refuse the executable
-  memfd behind live code publication; mapping reports `-EACCES`. Untested here
-  (the development kernel is 6.1).
+- **Kernels 6.3+** are untested here (the development kernel is 6.1). Live
+  code requests `MFD_EXEC` explicitly and falls back to a single
+  `mprotect`-flipped mapping under `vm.memfd_noexec=2`
+  ([native code loading](native-code-loading.md#linux)); the fallback is
+  exercised on 6.1 by a seccomp filter that refuses executable memory files
+  the same way, not by a real 6.3+ kernel. Under PaX MPROTECT (or SELinux
+  `deny_execmem`) with `vm.memfd_noexec=2`, live code fails explicitly.
 - **Collector parallelism** reads cgroup v2 limits only (cgroup v1 is not
   consulted), and the six-thread cap was tuned on a six-core Mac and has not
   been re-measured on larger Linux machines.
@@ -153,12 +157,25 @@ The parallel collector uses at most six threads (the mutator's included,
 tuned on six performance cores), fewer when the process may use fewer CPUs:
 the minimum of the calling thread's affinity mask (`processor-count`:
 `sched_getaffinity` with a 1024-CPU mask, counted in place; cpusets and
-`taskset` restrict it) and the tightest cgroup v2 CPU bandwidth limit
-(`cpu.max` quota / period, rounded up) on the process's cgroup and its
-ancestors, read from `/proc/self/cgroup` and `/sys/fs/cgroup` when the
-runtime initializes (`native-runtime/src/processors.ts`). One CPU keeps
-collections serial. The legacy cgroup v1 hierarchy is not consulted. libuv
-(Node's `os.availableParallelism()`) bounds its count by the same two facts.
+`taskset` restrict it) and the tightest CPU bandwidth limit (quota / period,
+rounded up, at least one) on the process's cgroup and its ancestors, read
+when the runtime initializes (`native-runtime/src/processors.ts`):
+
+- cgroup v2: `cpu.max` below `/sys/fs/cgroup`, at the `0::` path of
+  `/proc/self/cgroup`.
+- cgroup v1: `cpu.cfs_quota_us` and `cpu.cfs_period_us` (a quota of `-1` is
+  no limit) of the cpu controller's cgroup (its `/proc/self/cgroup` line).
+  The controller's mount comes from `/proc/self/mountinfo` (type `cgroup`,
+  super option `cpu`), and the path is taken relative to the mount's root, so
+  a container that sees its own cgroup as the root reads the files at the
+  mount point; ancestors are read up to the mount point.
+
+A hybrid hierarchy takes the tighter of the two. One CPU keeps collections
+serial. libuv (Node's `os.availableParallelism()`) bounds its count by the same
+facts, though it reads only the process's own cgroup, not its ancestors.
+`tools/native-host-facts.test.ts` compares the native result with Node's on
+the host (cgroup v2 on the development VM) and parses v1 and hybrid hierarchies
+natively from fixture files.
 On Darwin the count is `sysconf(_SC_NPROCESSORS_ONLN)`, which leaves every
 current Mac at six workers.
 
@@ -185,7 +202,10 @@ and the window rejections), `verify-hosted-function-addresses`,
 `build-isolated-thread-fixture` (eight threads publishing concurrently) and
 `verify-hosted-jit-debug` (LLDB and GDB breakpoints, backtrace and lines in
 JIT code, including a publication into a page holding a breakpoint) run on
-Linux. The native FFI fixtures run on Linux too (only the Mach-O weak-library
+Linux, both as dual mappings and as single mappings under
+`tools/linux/refuse-executable-memfd.py` (with `TINT_EXPECT_JIT_MAPPING=single`
+for `verify-native-code`, which then requires one anonymous read/execute view
+per arena). The native FFI fixtures run on Linux too (only the Mach-O weak-library
 probe skips). The clang oracles (`packages/abi/test/c-abi-oracle.test.ts`, the
 `z_stream` header layout and the zlib deflate oracle) need `clang`,
 `libc6-dev` and `zlib1g-dev` in the container; without clang they skip with
