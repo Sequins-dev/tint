@@ -127,9 +127,14 @@ function liveAddress(view: Uint8Array): number {
 }
 export function release(view: Uint8Array): void {
   const address = liveAddress(view);
+  retargetExternal(view, callbackGuard());
+  unmapExternal(address);
+}
+/** An inaccessible address range at least maximumBytes long, reserved once:
+ * released views and idle callback views point there, so any access
+ * through them faults. */
+export function callbackGuard(): number {
   if (storage.guard === 0) {
-    // Reserved once and never accessible: every view is at most
-    // maximumBytes long, so any access through a released view faults.
     const reserved = mmap(
       0,
       maximumBytes + 1,
@@ -141,9 +146,13 @@ export function release(view: Uint8Array): void {
     if (reserved < 0) throw new RangeError("external storage guard failed");
     storage.guard = reserved;
   }
-  retargetExternal(view, storage.guard);
-  unmapExternal(address);
+  return storage.guard;
 }
+/** Callback views (docs/native-ffi.md, "Callbacks"): a generated adapter
+ * makes one foreign view per `Ptr<R>` callback parameter and points it at
+ * C's record for each invocation and at `callbackGuard()` after it with
+ * this primitive (one inline retarget, no call). */
+export { retargetExternal as retargetCallbackView };
 export function address(view: Uint8Array): number {
   return liveAddress(view);
 }

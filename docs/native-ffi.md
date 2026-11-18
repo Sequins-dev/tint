@@ -1074,6 +1074,14 @@ releaseCallback(stream.zalloc); // from tint:ffi, once C no longer calls it
 - Callbacks take at most seven parameters (eight for scoped ones), all scalars,
   bools, addresses or `Ptr<R>` record views; records by value are rejected
   explicitly. Optional libraries take no callbacks yet.
+- _Record views are C's pointer, not a copy._ A `Ptr<R>` parameter arrives as
+  one foreign `View<R>` per parameter, made once per call (per registration
+  for registered callbacks) and pointed at the record C passed for each
+  invocation, so an invocation allocates nothing. Keep the record's values,
+  not the view: while the call runs a kept view shows the record of the
+  latest invocation, and once the call returns (for registered callbacks,
+  once the invocation returns) it points at the inaccessible guard range
+  `release()` uses, so any access faults. A null pointer is a TypeError.
 
 **Mechanics.**
 
@@ -1141,7 +1149,7 @@ outer, out-of-range results; the zlib allocator round trip (registered
 allocator, an allocator exception rethrown); and the contract traps (a
 clang-built library that saves a callback and calls it from a leaf call,
 from inside a callback, and from a new thread; each must stop on `brk`
-under LLDB). `tools/native-dynamic-fixtures.ts` sorts through
+under LLDB; and a record view kept past its call, which must fault). `tools/native-dynamic-fixtures.ts` sorts through
 `setCallback` with collections inside, rethrows a dynamic callback's
 exception and refuses movable buffers. Unit tests: the transition walk
 (`native-tracing-transitions.test.ts`, including malformed records and the
