@@ -253,6 +253,10 @@ try {
   };
   heartbeat.counts(progress);
   let priorIndex = 0;
+  /** The linked-unit host's one-time compilation or cache load; journaled on
+   * the first units batch, never charged to a variant's execution. */
+  let hostPreparationMs: number | undefined,
+    hostPreparationJournaled = false;
   /** Pending variants by how their batch is built. Each queue fills to the
    * batch size on its own, so interleaved kinds do not cut batches short. */
   type QueueKind = "syntax" | "units" | "program";
@@ -266,6 +270,8 @@ try {
       /** Selection order, which the journal preserves for resume. */
       sequence: number;
       kind: QueueKind;
+      /** Time spent compiling this case's Script units while routing it. */
+      unitCompileMs: number;
     }[]
   >([
     ["syntax", []],
@@ -361,7 +367,18 @@ try {
           : ("execution" as const),
       compileMs: performance.now() - started,
       outcome: built.ok ? "compiled" : built.outcome.kind,
-      ...(group[0]!.kind === "units" ? { linking: "units" as const } : {}),
+      ...(group[0]!.kind === "units"
+        ? {
+            linking: "units" as const,
+            unitCompileMs: group.reduce(
+              (total, item) => total + item.unitCompileMs,
+              0,
+            ),
+          }
+        : {}),
+      ...(!hostPreparationJournaled && hostPreparationMs !== undefined
+        ? { hostPreparationMs }
+        : {}),
       ...(!built.ok && built.outcome.kind === "unsupported"
         ? { reason: built.outcome.reason }
         : {}),
@@ -369,6 +386,7 @@ try {
         ? { fallback: built.fallback }
         : {}),
     };
+    if ("hostPreparationMs" in compilation) hostPreparationJournaled = true;
     if (!built.ok) commitCompilation(compilation);
     return { ...built, compilation };
   }
@@ -546,9 +564,21 @@ try {
       if (checkpoint.complete)
         throw Error("completed native journal population differs");
       const sequence = nextSequence++;
-      function enqueue(kind: QueueKind, prepared: NativeTestCase | undefined) {
+      function enqueue(
+        kind: QueueKind,
+        prepared: NativeTestCase | undefined,
+        unitCompileMs = 0,
+      ) {
         const items = queue(kind);
-        items.push({ input, plan, prepared, started, sequence, kind });
+        items.push({
+          input,
+          plan,
+          prepared,
+          started,
+          sequence,
+          kind,
+          unitCompileMs,
+        });
         if (items.length === batchSize) flush(kind);
       }
       try {
@@ -608,14 +638,22 @@ try {
                 }
               : scripts;
           }
-          if (prepared.ok)
-            enqueue(
-              buildUnits !== undefined && buildUnits.accepts(prepared.value)
-                ? "units"
-                : "program",
-              prepared.value,
-            );
-          else record(input, prepared.outcome, started, sequence);
+          if (prepared.ok) {
+            let units = false,
+              unitCompileMs = 0;
+            if (buildUnits !== undefined) {
+              if (hostPreparationMs === undefined) {
+                heartbeat.phase("preparing the linked-unit host");
+                const hostStarted = performance.now();
+                buildUnits.prepare();
+                hostPreparationMs = performance.now() - hostStarted;
+              }
+              const routeStarted = performance.now();
+              units = buildUnits.accepts(prepared.value);
+              unitCompileMs = performance.now() - routeStarted;
+            }
+            enqueue(units ? "units" : "program", prepared.value, unitCompileMs);
+          } else record(input, prepared.outcome, started, sequence);
         }
       } catch (error) {
         record(input, adapterCrash(error), started, sequence);

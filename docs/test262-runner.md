@@ -114,6 +114,20 @@ single-case diagnostic run to isolate them. Reports record batch membership,
 compilation time and outcomes. Per-variant elapsed time includes queue/compilation
 waiting and is not a runtime benchmark.
 
+With `TINT_TEST262_LINKING=units`, the runtime host is compiled once per
+toolchain and each batch links its cases' separately compiled Script units
+against it (see [separate compilation](test262-separate-compilation.md)); the
+default, `program`, compiles each batch as one whole program, as do cases
+ineligible for units. Phases are timed separately and none of them counts against a variant's
+containment budget, which covers only its own launch and execution:
+
+- `compileMs`: building the batch image (for units, linking the batch).
+- `unitCompileMs`: compiling a units batch's Scripts while routing its cases
+  (memoized per Script, so not part of `compileMs`).
+- `hostPreparationMs`: on the first batch after it, the unit host's one-time
+  compilation or cache load (minutes when the cache is cold).
+- `admissionMs`: the image's [first launch](#launch-admission).
+
 The native runner emits an immediate status line on each phase transition and a
 periodic heartbeat to **stderr** (stdout remains the JSON report).
 `TINT_TEST262_HEARTBEAT_MS` defaults to `30000`; `0` disables all heartbeat

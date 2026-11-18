@@ -442,3 +442,34 @@ test("resume rejects a malformed launch admission time", () =>
       /malformed native compilation/,
     );
   }));
+
+test("compilation records retain unit and host preparation times", () =>
+  directory((path) => {
+    const compilation = {
+      id: 0,
+      variants: 2,
+      kind: "execution",
+      compileMs: 900,
+      outcome: "compiled",
+      linking: "units",
+      unitCompileMs: 8000,
+      hostPreparationMs: 420000,
+      admissionMs: 1100,
+    };
+    native
+      .createNativeRunJournal(path, header)
+      .append({ kind: "compilation", compilation });
+    const resumed = native.createNativeRunJournal(path, header, {
+      resume: true,
+    });
+    assert.deepEqual(resumed.checkpoint.batches[0], compilation);
+    native.createNativeRunJournal(join(path + "-bad"), header).append({
+      kind: "compilation",
+      compilation: { ...compilation, hostPreparationMs: Number.NaN },
+    });
+    assert.throws(
+      () =>
+        native.createNativeRunJournal(path + "-bad", header, { resume: true }),
+      /malformed native compilation/,
+    );
+  }));

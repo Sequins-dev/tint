@@ -2747,7 +2747,12 @@ export function createNativeUnitBatchBuilder(
     if (!built.ok) return nativeCompilationFailure(built.error);
     return { ok: true, bytes: built.value, selectors };
   }
-  return Object.assign(build, { accepts });
+  /** Compiles (or loads from the cache) the shared host now, so a caller can
+   * time it apart from routing and batch compilation. */
+  function prepare(): void {
+    preparedHost();
+  }
+  return Object.assign(build, { accepts, prepare });
 }
 /** Retain only the compiler-authorized view; historical captures add no bindings. */
 export function directEvalSiteImageContract(enabled: boolean) {
