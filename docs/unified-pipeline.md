@@ -183,6 +183,14 @@ slot (variable, parameter, field, element type):
   code, views or reflection needs the runtime transition of its object's
   layout (slice 4b).
 
+**Checked downcasts.** `x as T` where `x` is `unknown` is a checked downcast,
+an explicit contract like an annotation: the value is tested at run time
+against T (primitive categories, 1-byte typed arrays, the record layouts of
+object types, and unions of these); a value outside T throws a TypeError, and
+a passing value keeps its identity. Types without a run-time test yet (lists,
+functions, object types with several layouts) are rejected at compile time.
+Other `as` assertions keep their compile-time meaning (upcasts).
+
 Today's typed checker does the opposite for open slots: it treats the
 inferred type as a contract and rejects the program, which sends the module
 to the general fallback. Probed on 2026-11-17: `let y = 1; y = ...` ("value
@@ -232,11 +240,24 @@ Boxing must preserve identity, so reference values need JavaScript object
 views:
 
 - **Typed records and class instances** box to a `js-runtime` exotic object
-  whose internal methods consult compiler-emitted layout metadata (property
-  names, field offsets and encodings, read-only flags, prototype) and read and
-  write the record's own storage. Identity is per record (one view per record,
-  found through a side table or a header-reachable link), so `===`, WeakMap
-  keys and repeated crossings agree. A write to an explicitly typed field
+  (`createRecordView`) whose fields are live data properties over the
+  record's own storage: reads see the current value, writes store through a
+  checked setter, `readonly` fields refuse writes, fields cannot be deleted
+  or reconfigured, and other keys are ordinary expandos. Identity is per
+  record: a record type that crosses (the witness of a `view-slot` record
+  binding) gets one hidden optional general field, `[[view]]`, at the end of
+  its layout, holding its view after the first crossing, so `===`, WeakMap
+  keys and repeated crossings agree. It is an ordinary traced field (every
+  collector traces and forwards it, writes take the generational barrier,
+  heap descriptors and DWARF name it); record types that never cross keep
+  identical layouts and code. The slot is a strong reference: a crossing
+  record keeps its JavaScript view alive as long as the record lives. That
+  costs one view per crossed record (the view holds only the record and its
+  accessor closures) and makes repeated crossings free; if retained views
+  measurably matter, the slot can become a weak reference without changing
+  the bridge. A record of the same type but another layout (an identical
+  alias type) gets a fresh view per crossing until views carry a weak
+  side table. A write to an explicitly typed field
   checks the declared type and throws a TypeError on a foreign value. A write
   to an open field never throws: until slice 4b provides layout transitions,
   a record that can reach a view gives its open fields the general
@@ -311,7 +332,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | Classes rejected in module-instance (runtime) contexts                                                                                                                                                         | `class-basic`                                                          | 3                                   |
 | `new Error`, `.message` and untyped reads of caught values, `instanceof Uint8Array`                                                                                                                            | `errors`, `caught-error-reads`, `typed-arrays`                         | 4                                   |
 | `toLowerCase` and other unlisted String methods; `Math.pow`/`log2`/`fround`; `JSON`                                                                                                                            | `string-methods`, `math`, `json`                                       | 4                                   |
-| `x as Uint8Array` from a general value                                                                                                                                                                         | `general-value-casts`                                                  | 2 (projection), 4                   |
+| (Removed by 2b: checked downcasts) `x as Uint8Array` from a general value                                                                                                                                      | `general-value-casts`                                                  | 2 (projection), 4                   |
 | Typed-array views over another buffer                                                                                                                                                                          | `typed-array-buffer-views`                                             | 4                                   |
 | Forward reference to an unannotated module const (inferred binding treated as a contract; the runtime-stage error also lacks a location)                                                                       | `forward-inferred-const`                                               | 4 (open slots); location separately |
 | Tuple types and `implements` clauses fail to parse                                                                                                                                                             | `tuple-types`, `spread`, `iterator-protocol`                           | parser fix (both forms parse first) |
@@ -361,6 +382,24 @@ generated general host installs no direct-eval compiler, so
 `rejectUnsupportedExecution` throws. Every untyped form falls back,
 mostly because unannotated functions are rejected. Later ledgers record
 progress; compare with `--baseline`.
+
+Slice 2: general code imports trusted runtime modules (2a), and exported
+interfaces cross as views (2b): untyped code reads and writes a typed
+record's fields live, with identity, declared field types and `readonly`
+enforced, while the record's module stays typed. `x as T` from `unknown` is
+a checked downcast. On the frozen v5 workload the 2b toolchain produces a
+byte-identical image to 2a's (no type crosses there). The
+[2b ledger](results/unified-pipeline-ledger-slice2b-v1.json) (58
+constructs) has 9 typed forms on the typed path; the six FFI phase 4 gap
+constructs pass natively in both forms on the general path. Its one
+difference from baseline v2, `typed-array-index` typed moving from pass to
+`missed-type-error`, is the construct's own change in slice 1 (the read is
+`number | undefined` under noUncheckedIndexedAccess, so it must be a
+compile-time error) and appears unchanged in the slice 1 and 2a ledgers. It
+exposes a real gap: hosted builds fall back to the general path on a
+genuine type error instead of failing the build; type errors and
+unsupported constructs need distinct outcomes (slice 3, where fallback
+becomes per construct). Later ledgers should compare against slice2b-v1.
 
 Slice 1: image sizes of hosted programs, measured before and after.
 Importing one function through the `js-runtime/objects` entrypoint from a

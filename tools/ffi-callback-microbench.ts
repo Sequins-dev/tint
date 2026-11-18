@@ -15,6 +15,7 @@ import {
   type FixtureForeignDeclaration,
 } from "./hosted-fixture.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
+import { measureProcess } from "./host-tools.ts";
 
 const clock = "packages/native-runtime/src/intrinsics/clock.ts";
 const elements = Number(process.env.CALLBACK_BENCH_N ?? "100000"),
@@ -30,6 +31,7 @@ function nextKey(): number {
 }`;
 const librarySource = `#include <stdint.h>
 int32_t bench_leaf(int32_t x) { return x + 1; }
+int32_t bench_leaf0(void) { return 1; }
 int32_t bench_once(int32_t (*f)(int32_t), int32_t x) { return f(x); }
 `;
 const cSource = `#include <stdint.h>
@@ -52,17 +54,19 @@ static double now(void) {
   clock_gettime(CLOCK_MONOTONIC, &t);
   return t.tv_sec * 1e3 + t.tv_nsec / 1e6;
 }
-int main(void) {
+int main(int argc, char **argv) {
+  int sort = argc < 2; /* "fill": the baseline without sorting */
   Item *items = malloc(sizeof(Item) * ${elements});
   double elapsed = 0;
   for (int round = 0; round < ${rounds}; round++) {
     for (int i = 0; i < ${elements}; i++) items[i] = (Item){next_key(), i};
     double start = now();
-    qsort(items, ${elements}, sizeof(Item), compare);
+    if (sort) qsort(items, ${elements}, sizeof(Item), compare);
     elapsed += now() - start;
   }
-  printf("C qsort, C comparator: %.3f ms/sort, %.2f ns/compare\\n",
-         elapsed / ${rounds}, elapsed * 1e6 / compares);
+  if (sort)
+    printf("C qsort, C comparator: %.3f ms/sort, %.2f ns/compare\\ncompares %ld\\n",
+           elapsed / ${rounds}, elapsed * 1e6 / compares, compares);
   return 0;
 }
 `;
@@ -88,6 +92,7 @@ function declarations(library: string): FixtureForeignDeclaration[] {
       text: `declare module "tint:c/callback-bench" {
   import type { i32, Callback } from "tint:ffi";
   export function bench_leaf(x: i32): i32;
+  export function bench_leaf0(): i32;
   export function bench_once(f: Callback<(x: i32) => i32>, x: i32): i32;
 }
 `,
@@ -99,6 +104,7 @@ function declarations(library: string): FixtureForeignDeclaration[] {
   import type { i32, usize, Ptr, Address, Layout, Callback } from "tint:ffi";
   export interface Item { key: i32; tag: i32 }
   export const Item: Layout<Item>;
+  export function getpid(): i32;
   export function qsort(base: Ptr<Item>, count: usize, size: usize, compare: Callback<(a: Ptr<Item>, b: Ptr<Item>) => i32>): void;
   export function qsort$address(base: Ptr<Item>, count: usize, size: usize, compare: Callback<(a: Address<Item>, b: Address<Item>) => i32>): void;
 }
@@ -106,24 +112,44 @@ function declarations(library: string): FixtureForeignDeclaration[] {
     },
   ];
 }
-const tintSource = `import { monotonicMilliseconds } from "clock";
-import { allocate, address, type View } from "tint:ffi";
-import { arrayAt } from "tint:ffi/unsafe";
-import { Item, qsort, qsort$address } from "sorting";
-import { bench_leaf, bench_once } from "bench";
-${keys}
-function report(name: string, elapsed: number, count: number, unit: string): void {
-  console.log(name + " " + String(elapsed * 1000000 / count) + " ns/" + unit);
-}
-export function run(): number {
-  {
+/** The native program: `variants` selects its timed blocks (all by
+ * default); "fill" fills and checks without sorting, the baseline the
+ * counter mode subtracts. */
+function tintSource(variants: readonly string[]): string {
+  const blocks: Record<string, string> = {
+    getpid: `  {
+    let sum = 0;
+    const start = monotonicMilliseconds();
+    for (let i = 0; i < ${calls}; i++) sum += getpid();
+    report("tint leaf call getpid()", monotonicMilliseconds() - start, ${calls}, "call");
+    if (sum === 0) return 1;
+  }
+`,
+    leaf0: `  {
+    let sum = 0;
+    const start = monotonicMilliseconds();
+    for (let i = 0; i < ${calls}; i++) sum += bench_leaf0();
+    report("tint leaf call bench_leaf0()", monotonicMilliseconds() - start, ${calls}, "call");
+    if (sum === 0) return 1;
+  }
+`,
+    leaf7: `  {
+    let sum = 0;
+    const start = monotonicMilliseconds();
+    for (let i = 0; i < ${calls}; i++) sum += bench_leaf(7);
+    report("tint leaf call bench_leaf(7)", monotonicMilliseconds() - start, ${calls}, "call");
+    if (sum === 0) return 1;
+  }
+`,
+    leafi: `  {
     let sum = 0;
     const start = monotonicMilliseconds();
     for (let i = 0; i < ${calls}; i++) sum += bench_leaf(i);
-    report("tint leaf call", monotonicMilliseconds() - start, ${calls}, "call");
+    report("tint leaf call bench_leaf(i)", monotonicMilliseconds() - start, ${calls}, "call");
     if (sum === 0) return 1;
   }
-  {
+`,
+    once: `  {
     let sum = 0;
     const increment = (x: number): number => x + 1;
     const start = monotonicMilliseconds();
@@ -131,7 +157,70 @@ export function run(): number {
     report("tint may-callback call + one callback", monotonicMilliseconds() - start, ${calls}, "call");
     if (sum === 0) return 2;
   }
-  const block = allocate(Item.size * ${elements});
+`,
+    view: `  {
+    seed = 1;
+    let compares = 0, elapsed = 0;
+    for (let round = 0; round < ${rounds}; round++) {
+      fill();
+      const start = monotonicMilliseconds();
+      qsort(block, ${elements}, Item.size, (a: View<Item>, b: View<Item>): number => {
+        compares++;
+        return a.key - b.key;
+      });
+      elapsed += monotonicMilliseconds() - start;
+      if (!sorted()) return 3;
+    }
+    console.log("tint qsort, View<Item> comparator: " + String(elapsed / ${rounds}) + " ms/sort");
+    report("tint qsort, View<Item> comparator:", elapsed, compares, "compare");
+    console.log("compares " + String(compares));
+  }
+`,
+    address: `  {
+    seed = 1;
+    let compares = 0, elapsed = 0;
+    for (let round = 0; round < ${rounds}; round++) {
+      fill();
+      const start = monotonicMilliseconds();
+      qsort$address(block, ${elements}, Item.size, (a: number, b: number): number => {
+        compares++;
+        return (items[(a - base) / 8]?.key ?? 0) - (items[(b - base) / 8]?.key ?? 0);
+      });
+      elapsed += monotonicMilliseconds() - start;
+      if (!sorted()) return 4;
+    }
+    console.log("tint qsort, address comparator: " + String(elapsed / ${rounds}) + " ms/sort");
+    report("tint qsort, address comparator:", elapsed, compares, "compare");
+    console.log("compares " + String(compares));
+  }
+`,
+    fill: `  {
+    seed = 1;
+    for (let round = 0; round < ${rounds}; round++) {
+      fill();
+      if (sorted()) return 5;
+    }
+  }
+`,
+  };
+  const sorts = variants.some(
+    (name) => name === "view" || name === "address" || name === "fill",
+  );
+  let text = `import { monotonicMilliseconds } from "clock";
+import { allocate, address, type View } from "tint:ffi";
+import { arrayAt } from "tint:ffi/unsafe";
+import { Item, getpid, qsort, qsort$address } from "sorting";
+import { bench_leaf, bench_leaf0, bench_once } from "bench";
+${keys}
+function report(name: string, elapsed: number, count: number, unit: string): void {
+  console.log(name + " " + String(elapsed * 1000000 / count) + " ns/" + unit);
+}
+export function run(): number {
+`;
+  for (const name of ["getpid", "leaf0", "leaf7", "leafi", "once"])
+    if (variants.includes(name)) text += blocks[name];
+  if (sorts)
+    text += `  const block = allocate(Item.size * ${elements});
   const base = address(block);
   const items: View<Item>[] = arrayAt(Item, base, ${elements});
   function fill(): void {
@@ -148,41 +237,11 @@ export function run(): number {
       if ((items[i - 1]?.key ?? 0) > (items[i]?.key ?? 0)) return false;
     return true;
   }
-  {
-    seed = 1;
-    let compares = 0, elapsed = 0;
-    for (let round = 0; round < ${rounds}; round++) {
-      fill();
-      const start = monotonicMilliseconds();
-      qsort(block, ${elements}, Item.size, (a: View<Item>, b: View<Item>): number => {
-        compares++;
-        return a.key - b.key;
-      });
-      elapsed += monotonicMilliseconds() - start;
-      if (!sorted()) return 3;
-    }
-    console.log("tint qsort, View<Item> comparator: " + String(elapsed / ${rounds}) + " ms/sort");
-    report("tint qsort, View<Item> comparator:", elapsed, compares, "compare");
-  }
-  {
-    seed = 1;
-    let compares = 0, elapsed = 0;
-    for (let round = 0; round < ${rounds}; round++) {
-      fill();
-      const start = monotonicMilliseconds();
-      qsort$address(block, ${elements}, Item.size, (a: number, b: number): number => {
-        compares++;
-        return (items[(a - base) / 8]?.key ?? 0) - (items[(b - base) / 8]?.key ?? 0);
-      });
-      elapsed += monotonicMilliseconds() - start;
-      if (!sorted()) return 4;
-    }
-    console.log("tint qsort, address comparator: " + String(elapsed / ${rounds}) + " ms/sort");
-    report("tint qsort, address comparator:", elapsed, compares, "compare");
-  }
-  return 42;
-}
 `;
+  for (const name of ["view", "address", "fill"])
+    if (variants.includes(name)) text += blocks[name];
+  return text + "  return 42;\n}\n";
+}
 const nodeSource = `${keys.replace(": number", "")}
 const numbers = new Array(${elements}), records = new Array(${elements});
 for (const [name, array, fill, compare] of [
@@ -248,49 +307,105 @@ try {
   const [bench, sorting] = declarations(library);
   if (bench === undefined || sorting === undefined) throw Error("declarations");
   process.env.TINT_BUILD_ONLY = "1";
-  const image = verifyHostedFixture(
-    tintSource,
-    "ffi-callback-microbench",
-    [
-      ["clock", clock],
-      ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
-      ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
-      ["sorting", sorting.id],
-      ["bench", bench.id],
-    ],
-    [],
-    [],
-    [
-      {
-        module: clock,
-        namespace: "bench-clock",
-        retainedExports: ["monotonicMilliseconds"],
-      },
-    ],
-    {
-      managedBytes: 67108864,
-      allocationCapacity: 1048576,
-      hostBindings: [
+  const build = (variants: readonly string[], name: string): string =>
+    verifyHostedFixture(
+      tintSource(variants),
+      name,
+      [
+        ["clock", clock],
+        ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
+        ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
+        ["sorting", sorting.id],
+        ["bench", bench.id],
+      ],
+      [],
+      [],
+      [
         {
           module: clock,
-          name: "monotonicMilliseconds",
-          operation: "monotonic-time",
+          namespace: "bench-clock",
+          retainedExports: ["monotonicMilliseconds"],
         },
       ],
-      foreignDeclarations: [bench, sorting],
-    },
-  );
-  console.log("image " + image);
-  console.log(runNative(image));
-  const c = spawnSync(join(directory, "qsort"), [], { encoding: "utf8" });
-  assert.equal(c.status, 0, c.stderr);
-  console.log(c.stdout.trim());
-  writeFileSync(join(directory, "sort.mjs"), nodeSource);
-  const node = spawnSync(process.execPath, [join(directory, "sort.mjs")], {
-    encoding: "utf8",
-  });
-  assert.equal(node.status, 0, node.stderr);
-  console.log(node.stdout.trim());
+      {
+        managedBytes: 67108864,
+        allocationCapacity: 1048576,
+        hostBindings: [
+          {
+            module: clock,
+            name: "monotonicMilliseconds",
+            operation: "monotonic-time",
+          },
+        ],
+        foreignDeclarations: [bench, sorting],
+      },
+    );
+  if (process.env.CALLBACK_BENCH_COUNTERS === "1") {
+    // Cycles and instructions retired per compare, from whole-process
+    // counters (load-independent, unlike wall time): each sort program
+    // minus the same program filling without sorting.
+    const counters = (command: string, args: readonly string[]) => {
+      const measured = measureProcess(command, args);
+      assert.ok(
+        measured.status === 0 || measured.status === 42,
+        command + ": " + measured.stderr,
+      );
+      const compares = /compares (\d+)/.exec(measured.stdout);
+      return {
+        cycles: measured.cycles ?? NaN,
+        instructions: measured.instructions ?? NaN,
+        compares: compares === null ? 0 : Number(compares[1]),
+      };
+    };
+    const per = (
+      name: string,
+      sorted: { cycles: number; instructions: number; compares: number },
+      baseline: { cycles: number; instructions: number },
+    ) =>
+      console.log(
+        name +
+          " " +
+          ((sorted.cycles - baseline.cycles) / sorted.compares).toFixed(1) +
+          " cycles/compare, " +
+          (
+            (sorted.instructions - baseline.instructions) /
+            sorted.compares
+          ).toFixed(1) +
+          " instructions/compare",
+      );
+    const fill = counters(build(["fill"], "ffi-callback-fill"), []);
+    per(
+      "tint View<Item>",
+      counters(build(["view"], "ffi-callback-view"), []),
+      fill,
+    );
+    per(
+      "tint address",
+      counters(build(["address"], "ffi-callback-address"), []),
+      fill,
+    );
+    const qsortC = join(directory, "qsort");
+    per("C", counters(qsortC, []), counters(qsortC, ["fill"]));
+  } else {
+    const image = build(
+      ["getpid", "leaf0", "leaf7", "leafi", "once", "view", "address"],
+      "ffi-callback-microbench",
+    );
+    console.log("image " + image);
+    console.log(runNative(image));
+    const c = spawnSync(join(directory, "qsort"), [], { encoding: "utf8" });
+    assert.equal(c.status, 0, c.stderr);
+    console.log(c.stdout.trim());
+    writeFileSync(join(directory, "sort.mjs"), nodeSource);
+    const node = spawnSync(process.execPath, [join(directory, "sort.mjs")], {
+      encoding: "utf8",
+    });
+    assert.equal(node.status, 0, node.stderr);
+    console.log(node.stdout.trim());
+  }
 } finally {
-  rmSync(directory, { recursive: true, force: true });
+  // CALLBACK_BENCH_KEEP=1 keeps the C library and programs for profiling
+  // (the image's own directory is kept by TINT_KEEP_NATIVE=1).
+  if (process.env.CALLBACK_BENCH_KEEP === "1") console.log("kept " + directory);
+  else rmSync(directory, { recursive: true, force: true });
 }

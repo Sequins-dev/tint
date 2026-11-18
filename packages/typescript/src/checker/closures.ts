@@ -219,6 +219,9 @@ export interface CheckedClosures {
   readonly expressions: ReadonlyKeyIndex<Expression, number>;
   readonly chainValues: ReadonlyKeyIndex<Expression, number>;
   readonly chainReceivers: ReadonlyKeyIndex<Expression, number>;
+  /** `x as T` assertions from `unknown` to T: checked downcasts, which
+   * throw a TypeError when the value is not a T (docs/unified-pipeline.md). */
+  readonly downcasts?: ReadonlyKeyIndex<Expression, number>;
   readonly operations: readonly BindingOperation[];
 }
 export interface CheckedTypeSystem {
@@ -2638,7 +2641,32 @@ export function checkClosureModule(
   // Live results exclude only the undefined introduced by a skipped chain.
   // Ordinary undefined-valued properties remain part of the live contract.
   const chainValues = createKeyIndex<Expression, number>(syntaxHash),
-    chainReceivers = createKeyIndex<Expression, number>(syntaxHash);
+    chainReceivers = createKeyIndex<Expression, number>(syntaxHash),
+    downcasts = createKeyIndex<Expression, number>(syntaxHash);
+  /** Types a checked downcast can test at run time: primitives, 1-byte
+   * typed arrays, plain object (record) types, and unions of these. */
+  function downcastable(type: number): boolean {
+    const t = types[type];
+    if (t === undefined) return false;
+    switch (t.kind) {
+      case "number":
+      case "string":
+      case "boolean":
+      case "undefined":
+      case "null":
+      case "Uint8Array":
+        return true;
+      case "object":
+        return t.call === undefined && t.construct === undefined;
+      case "union":
+        return t.members.every(
+          (member: number | undefined) =>
+            member !== undefined && downcastable(member),
+        );
+      default:
+        return false;
+    }
+  }
   function callReceiverType(input: Expression): number {
     const target = ungroup(input);
     if (target.kind !== "member" && target.kind !== "index")
@@ -2753,6 +2781,19 @@ export function checkClosureModule(
             types[constraint]?.kind === "unknown" ? undefined : constraint,
             true,
           );
+          // `x as T` from unknown is a checked downcast (an explicit
+          // contract): the value is tested at run time and a mismatch
+          // throws a TypeError.
+          if (
+            node.assertion === "as" &&
+            types[result]?.kind === "unknown" &&
+            types[constraint]?.kind !== "unknown" &&
+            downcastable(constraint)
+          ) {
+            downcasts.set(node, constraint);
+            result = constraint;
+            break;
+          }
           requireType(
             contextualProofs.get(node.expression) ?? result,
             constraint,
@@ -5583,6 +5624,7 @@ export function checkClosureModule(
       expressions,
       chainValues,
       chainReceivers,
+      downcasts,
       operations,
       intrinsics,
       cViewUses,

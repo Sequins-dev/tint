@@ -25,6 +25,9 @@ export interface Span {
 export interface DebugOrigin {
   readonly inline?: number | undefined;
 }
+/** Categories general-is tests. */
+export type GeneralTest =
+  "undefined" | "number" | "boolean" | "string" | "null" | "Uint8Array";
 export type Instruction = Span &
   DebugOrigin &
   (
@@ -54,6 +57,15 @@ export type Instruction = Span &
         readonly kind: "general-kind";
         readonly id: number;
         readonly value: number;
+      }
+    | {
+        /** Whether a general value has a category, or (Uint8Array) is an
+         * object whose header marks 1-byte typed array elements, as
+         * general-value checks. A boolean test; never traps. */
+        readonly kind: "general-is";
+        readonly id: number;
+        readonly value: number;
+        readonly type: GeneralTest;
       }
     | {
         readonly kind: "general-equal";

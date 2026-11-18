@@ -1171,9 +1171,17 @@ test("callback parameters make may-callback calls; callback types register funct
     generated,
     /compare: \(a: View\$<Item>, b: View\$<Item>\) => number/,
   );
+  // One view per record parameter, made once per call, pointed at each
+  // invocation's record and parked at the guard once C returns.
   assert.match(
     generated,
-    /compare\(viewAt\$\(Item, a\), viewAt\$\(Item, b\)\)/,
+    /const view\$compare\$0 = viewAt\$\(Item, guard\$compare\);/,
+  );
+  assert.match(generated, /retargetCallbackView\$\(view\$compare\$0, a\);/);
+  assert.match(generated, /compare\(view\$compare\$0, view\$compare\$1\)/);
+  assert.match(
+    generated,
+    /qsort\$c\([^;]*\);\n {2}retargetCallbackView\$\(view\$compare\$0, guard\$compare\);/,
   );
   assert.match(generated, /stableBytes\$\(base\)/);
   assert.match(

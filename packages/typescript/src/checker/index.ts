@@ -42,7 +42,19 @@ export interface Local {
   readonly parameter: boolean;
   readonly span: Span;
 }
+/** A run-time category test of a general value (a checked downcast). */
+export type DowncastTest =
+  "undefined" | "number" | "boolean" | "string" | "null" | "Uint8Array";
 export interface ExpressionInfo {
+  /** A checked downcast (`x as T` from unknown): the categories it accepts
+   * and the record layouts (descriptor indices) of accepted object types;
+   * any other value throws a TypeError. */
+  readonly downcast?:
+    | {
+        readonly tests: readonly DowncastTest[];
+        readonly records: readonly number[];
+      }
+    | undefined;
   /** C views: the use of a creation call or member/element read, or the
    * write target of an assignment, compound assignment or update. */
   readonly cView?: CViewUse | undefined;

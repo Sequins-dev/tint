@@ -54,6 +54,9 @@ export {
   boundaryNull,
   boundaryUnknown,
   type BoundaryExport,
+  type BoundaryField,
+  type BoundaryRecord,
+  type BoundaryRecordUse,
   type TypedBoundaryModule,
 } from "./general-partition.ts";
 import { pruneUnusedModules } from "./module-pruning.ts";
@@ -96,6 +99,7 @@ import {
 } from "@tint/typescript/checker";
 import {
   closeGeneralPartition,
+  type BoundaryRecord,
   type TypedBoundaryModule,
 } from "./general-partition.ts";
 import {
@@ -295,6 +299,8 @@ export interface GeneralProgramRequest {
    * entries: the host imports their exports and presents them to general
    * code as synthetic modules. */
   readonly boundaries: readonly TypedBoundaryModule[];
+  /** Record types the boundaries use; they cross as JavaScript views. */
+  readonly records?: readonly BoundaryRecord[];
 }
 export type GeneralProgram =
   | {
@@ -304,6 +310,10 @@ export type GeneralProgram =
         readonly modules: readonly SourceModule[];
         /** The generated host module; it exports `start(): number`. */
         readonly entry: string;
+        /** Record bindings of generated runtime modules (record view
+         * slots), and those runtime modules. */
+        readonly recordBindings?: readonly NativeRecordBinding[];
+        readonly runtimes?: readonly RuntimeSource[];
       };
     }
   | { readonly ok: false; readonly error: string };
@@ -618,6 +628,9 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       entry: request.entry,
       start,
       boundaries: partition.boundaries,
+      ...(partition.records === undefined
+        ? {}
+        : { records: partition.records }),
     });
     if (!lowered.ok)
       return failure("general", lowered.error + " (typed: " + reason + ")");
@@ -626,10 +639,16 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       if (module !== undefined) modules.push(module);
     for (const module of lowered.value.modules)
       if (module !== undefined) modules.push(module);
+    const programBindings = recordBindings.slice(),
+      programRuntimes = runtimes.slice();
+    for (const binding of lowered.value.recordBindings ?? [])
+      if (binding !== undefined) programBindings.push(binding);
+    for (const runtime of lowered.value.runtimes ?? [])
+      if (runtime !== undefined) programRuntimes.push(runtime);
     const compiled = compileTypedProgram({
       ...request,
-      recordBindings,
-      runtimes,
+      recordBindings: programBindings,
+      runtimes: programRuntimes,
       modules,
       entry: lowered.value.entry,
       exports: [start],
