@@ -41,7 +41,8 @@ export function createEmissionStore(
       : 1048576;
   return createFunctionStore({
     policy,
-    residentBytes: 0,
+    // A budget keeps recently used bodies decoded within it; `all` keeps none.
+    residentBytes: policy === "budget" ? (budget ?? 0) : 0,
     packedBytes,
     chunkBytes,
     backend,

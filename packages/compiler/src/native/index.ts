@@ -130,6 +130,7 @@ import {
   type FunctionAddressBinding,
 } from "@tint/ts-native/closure/lowering";
 import {
+  emitModule,
   emitModuleFromStore,
   type CodegenAnalysis,
   type Emission,
@@ -2061,6 +2062,11 @@ function emitProgram(
   storage: BuildStorage | undefined,
   options: EmissionOptions,
 ): Emission {
+  // The default keeps bodies decoded in memory: packing them only pays when a
+  // budget or full spill is requested, and every emitter sweep would
+  // otherwise decode each body again.
+  if (storage === undefined || storage.policy === "memory")
+    return emitModule(program.module, options);
   const store = createEmissionStore(storage);
   try {
     packEmissionIR(program, store);
