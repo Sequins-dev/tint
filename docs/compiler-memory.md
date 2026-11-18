@@ -120,6 +120,24 @@ for its memory saving: build memory caps what can be built at all, while
 build time only lengthens the build. Generated code is byte-identical,
 so runtime is unaffected.
 
+### Link
+
+On the 2,252-variant `language/expressions/object` suite, the compiler
+omits the unused origin table and releases its input modules after linking.
+Managed surface layout gets only the reachable runtime modules.
+
+| Live heap after forced GC (MiB) | Main `eb1d822db` | Link memory `34a064ec7` |
+| ------------------------------- | ---------------: | ----------------------: |
+| Input modules before linking    |              785 |                       — |
+| Application rewritten           |            1,284 |                   1,105 |
+| Second surface layout bound     |            2,076 |                   1,621 |
+| Link returned                   |              560 |                     560 |
+
+At a 3,072 MiB old-space cap, main runs out of heap during linking.
+The link-memory build reaches the check stage, where the second instance
+preparation reaches 2,571 MiB live in the uncapped run.
+See the [probe records](results/compiler-link-memory-2026-11-19.md).
+
 ## What is global and what is per function
 
 | Data                                                                                         | Scope                    | Needed by                                          |

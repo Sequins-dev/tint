@@ -52,6 +52,8 @@ export interface LinkedProgram {
   readonly evaluationOrder?: readonly string[];
   readonly module: Module;
   readonly exports: readonly LinkedExport[];
+  /** Each linked node's original node; empty when the link was asked not to
+   * record origins (LinkOptions.origins). */
   readonly origins: ReadonlyKeyIndex<Span, SourceOrigin>;
   /** Linker-owned ranges ordered by start, disjoint including their endpoints. */
   readonly ranges: readonly SourceRange[];
@@ -114,6 +116,10 @@ interface ModuleState {
 export interface LinkOptions {
   /** Preserve runtime initializers for an explicitly instantiated closed module graph. */
   readonly evaluation?: "instance";
+  /** Record each linked node's original (default true). The table keeps every
+   * input node reachable for as long as the linked program is; compilers that
+   * locate spans through `ranges` pass false. */
+  readonly origins?: boolean;
 }
 /** Most modules one link accepts. */
 export const maxLinkedModules = 1048576;
@@ -128,7 +134,8 @@ export function linkModules(
     byId = new Map<string, SourceModule>(),
     states = new Map<string, ModuleState>(),
     order: SourceModule[] = [],
-    origins = createKeyIndex<Span, SourceOrigin>(syntaxHash);
+    origins = createKeyIndex<Span, SourceOrigin>(syntaxHash),
+    recordOrigins = options?.origins !== false;
   let error:
     { module: string; message: string; start: number; end: number } | undefined;
   function fail(module: string, node: Span, message: string): never {
@@ -490,7 +497,8 @@ export function linkModules(
           // may all share a span; give every linked copy its own index hash.
           nodeHash: nextNodeHash++,
         };
-        origins.set(result, { module: source.id, node: original });
+        if (recordOrigins)
+          origins.set(result, { module: source.id, node: original });
         return result;
       }
       let depth = 0;

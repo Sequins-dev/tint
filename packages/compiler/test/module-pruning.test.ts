@@ -3,7 +3,11 @@ import assert from "node:assert/strict";
 import { createSourceText } from "@tint/source/text";
 import { parseModule, type Statement } from "@tint/typescript/syntax";
 import type { SourceModule } from "@tint/typescript/modules/model";
-import { pruneUnusedModules } from "../src/native/module-pruning.ts";
+import { linkModules } from "@tint/ts-native/modules";
+import {
+  pruneUnusedModules,
+  reachableModules,
+} from "../src/native/module-pruning.ts";
 
 function source(
   id: string,
@@ -413,4 +417,50 @@ test("modules linked through created type-only re-exports keep their imports res
   assert.ok(reached.includes("types"));
   assert.ok(reached.includes("inner"));
   assert.ok(!reached.includes("other"));
+});
+
+test("reachable modules follow value and type-only imports from the roots", () => {
+  const modules = [
+    source("app", 'import { r } from "./r"; export const a = r;', {
+      "./r": "rt",
+    }),
+    source("rt", 'import type { T } from "./t"; export const r: T = 1;', {
+      "./t": "types",
+    }),
+    source("types", "export type T = number;"),
+    source("other", "export const o = 2;"),
+  ];
+  assert.deepEqual(
+    reachableModules(modules, ["rt"]).map((module) => module.id),
+    ["rt", "types"],
+  );
+  assert.deepEqual(
+    reachableModules(modules, ["app", "other", "app"]).map(
+      (module) => module.id,
+    ),
+    ["app", "other", "rt", "types"],
+  );
+  assert.deepEqual(reachableModules(modules, ["missing"]), []);
+});
+
+test("a link without origins produces the same program and records none", () => {
+  const modules = [
+    source("main", 'import { f } from "./lib"; export const x = f(2);', {
+      "./lib": "lib",
+    }),
+    source("lib", "export function f(v: number): number { return v + 1; }"),
+  ];
+  const recorded = linkModules(modules, "main", [], { evaluation: "instance" }),
+    unrecorded = linkModules(modules, "main", [], {
+      evaluation: "instance",
+      origins: false,
+    });
+  assert.ok(recorded.ok && unrecorded.ok);
+  assert.deepEqual(unrecorded.value.module, recorded.value.module);
+  assert.deepEqual(unrecorded.value.exports, recorded.value.exports);
+  assert.deepEqual(unrecorded.value.ranges, recorded.value.ranges);
+  let count = 0;
+  recorded.value.origins.forEach(() => count++);
+  assert.ok(count > 0);
+  unrecorded.value.origins.forEach(() => assert.fail("origin recorded"));
 });

@@ -810,3 +810,38 @@ function pureBody(
   }
   return true;
 }
+
+/** The modules reachable from `roots` through imports (value and type-only),
+ * in discovery order: what a link rooted there reads. */
+export function reachableModules(
+  modules: readonly SourceModule[],
+  roots: readonly string[],
+): SourceModule[] {
+  const byId = new Map<string, SourceModule>();
+  for (const module of modules) {
+    if (module === undefined) throw "module reachability invariant";
+    byId.set(module.id, module);
+  }
+  const seen = new Set<string>(),
+    result: SourceModule[] = [];
+  function visit(id: string): void {
+    if (seen.has(id)) return;
+    seen.add(id);
+    const module = byId.get(id);
+    if (module !== undefined) result.push(module);
+  }
+  for (const root of roots) {
+    if (root === undefined) throw "module reachability root invariant";
+    visit(root);
+  }
+  for (let index = 0; index < result.length; index++) {
+    const module = result[index];
+    if (module === undefined) throw "module reachability order invariant";
+    for (const declaration of module.module.imports) {
+      if (declaration === undefined) throw "module reachability invariant";
+      const target = module.dependencies.get(declaration.specifier);
+      if (target !== undefined) visit(target);
+    }
+  }
+  return result;
+}
