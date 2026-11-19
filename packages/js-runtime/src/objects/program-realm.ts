@@ -79,6 +79,11 @@ export function installProgramObjectIntrinsics(core: ProgramRealmCore): void {
   core.objectInstalled = true;
 }
 
+export function installProgramArrayIntrinsics(core: ProgramRealmCore): void {
+  if (core.realm.arrayConstructor !== undefined) return;
+  installArrayIntrinsics(core.object, core.realm, core.hooks);
+}
+
 export function installProgramArrayBufferIntrinsics(
   core: ProgramRealmCore,
 ): void {
@@ -119,7 +124,7 @@ export function installProgramConstructorGroup(
       installProgramTypedArrayIntrinsics(core);
       break;
     case "installArrayIntrinsics":
-      installArrayIntrinsics(object, realm, hooks);
+      installProgramArrayIntrinsics(core);
       break;
     case "installFunctionIntrinsics":
       installFunctionIntrinsics(object, realm, hooks);

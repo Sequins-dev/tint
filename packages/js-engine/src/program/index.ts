@@ -82,6 +82,7 @@ export function createGeneralLowering(
           ...objectViews,
           "objectTypeof",
           "generalValueTypeof",
+          "callGeneralValue",
           "realmErrorOperation",
         ],
       },
@@ -697,6 +698,11 @@ function generalHostSource(
     if (installer === undefined) throw "general installer invariant";
     if (installer === "installObjectIntrinsics") {
       installs += " installProgramObjectIntrinsics(core);\n";
+      continue;
+    }
+    if (installer === "installArrayIntrinsics") {
+      installs += " installProgramArrayIntrinsics(core);\n";
+      programInstallers.push("installProgramArrayIntrinsics");
       continue;
     }
     if (installer === "installArrayBufferIntrinsics") {

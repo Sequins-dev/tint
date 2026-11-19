@@ -6,6 +6,8 @@ import {
   enumerateObjectValue,
   nextEnumerableProperty,
   createDataProperty,
+  createArrayObject,
+  installProgramArrayIntrinsics,
   createObject,
   createRuntimeError,
   deleteObjectValueProperty,
@@ -62,6 +64,13 @@ function contract(text: string): ObjectShapeContract {
     switch (kind) {
       case "array":
         types.push({ kind: "array" });
+        break;
+      case "array-elements":
+        types.push({
+          kind: "array-elements",
+          element: Number(token()),
+          readonly: token() === "1",
+        });
         break;
       case "number":
         types.push({ kind: "number" });
@@ -325,6 +334,39 @@ export function invokeArrayMethod(
   if (arity > 2) args.push(third);
   const result = callObjectValue(
     callable,
+    receiver,
+    args,
+    core.realm.objectPrototype,
+  );
+  if (result.error !== "none") throw createRuntimeError(core.realm, "type");
+  return result.value;
+}
+
+export function createArray(length: number): unknown {
+  const core = programRealmCore();
+  installProgramObjectIntrinsics(core);
+  installProgramArrayIntrinsics(core);
+  return createArrayObject<ScriptPropertyKey, unknown>(
+    length,
+    core.realm.arrayPrototype,
+    core.realm.arrayHooks,
+    core.hooks,
+  );
+}
+
+export function invoke(
+  receiver: unknown,
+  callee: unknown,
+  values: unknown,
+): unknown {
+  const core = programRealmCore();
+  const length = read(values, "length");
+  if (typeof length !== "number") throw "dynamic call argument count invariant";
+  const args: unknown[] = [];
+  for (let index = 0; index < length; index++)
+    args.push(read(values, String(index)));
+  const result = callObjectValue(
+    callee,
     receiver,
     args,
     core.realm.objectPrototype,

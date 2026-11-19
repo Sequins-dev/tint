@@ -67,10 +67,17 @@ import {
   type AArch64Target,
   type NativeTarget,
 } from "@tint/platform/target";
+import {
+  emitModule as emitX64,
+  type X64Module,
+} from "@tint/codegen/x86_64/scalar";
+import type { PosixHostFacts } from "@tint/abi/host";
 import { bindingIdentifiers, rewriteModule } from "@tint/typescript/syntax";
 import {
+  optimizeModule,
   optimizeModuleVersion,
   pruneClosedModule,
+  pruneModuleReferences,
   lowerReferenceLists,
   referenceListWorkBudget,
   traceModuleReferences,
@@ -105,6 +112,7 @@ import {
   type BuildStorage,
 } from "../spill-files.ts";
 import type { FunctionStore } from "@tint/ir/storage";
+import { nativeClosureCallMessage } from "@tint/ts-native/scalar";
 import { bindModule } from "@tint/typescript/binding";
 import {
   checkClosureModule,
@@ -578,7 +586,7 @@ export function selectNativeBackend(
     ok: false,
     error: {
       stage: "emit",
-      message: target.name + ": x86_64 code generation is not implemented yet",
+      message: target.name + ": standalone native compilation requires slice 7",
     },
   };
 }
@@ -1220,6 +1228,7 @@ function checkApplication(
 function checkTypedProgram(
   request: CompileRequest,
   mixed: boolean,
+  invokeDirectly: boolean,
 ): TypedChecking {
   const linking = linkTypedProgram(request);
   if (!linking.ok) return { ok: false, error: linking.error };
@@ -1251,6 +1260,12 @@ function checkTypedProgram(
         needsDynamicRealm: true,
       },
     };
+  const callHelper = helpers.get("general-object-views:callGeneralValue");
+  let callsGeneral = false;
+  if (callHelper !== undefined)
+    checked.value.checked.intrinsics.forEach((intrinsic, _expression) => {
+      if (intrinsic === "general-call") callsGeneral = true;
+    });
   let initializerName = "",
     entryName = "";
   const start = request.start;
@@ -1285,7 +1300,9 @@ function checkTypedProgram(
       generatedRetain = materialized.value.generated.retain;
       generatedExclude = materialized.value.generated.exclude;
     }
-    const retained: string[] = retainedRuntimeExports.slice(),
+    const retained: string[] = callsGeneral
+        ? retainedRuntimeExports.slice()
+        : retainedRuntimeExports.filter((name) => name !== callHelper),
       generatedNames = new Set<string>();
     for (const name of generatedRetain) {
       if (name === undefined) throw "surface retain invariant";
@@ -1346,14 +1363,62 @@ function checkTypedProgram(
     }
     const bound = bindModule(module, globals);
     if (!bound.ok) return { ok: false, error: bound.error.message };
+    if (callsGeneral && callHelper !== undefined) {
+      // The stateless call entry uses a specialized callObject dependency.
+      // Retain its concrete function dependencies after specialization.
+      const functionNames = new Map<Span, string>();
+      for (const statement of module.statements)
+        if (statement?.kind === "function")
+          functionNames.set(statement, statement.name);
+      const dependencies = new Map<string, Set<string>>();
+      for (const reference of bound.value.references) {
+        if (reference === undefined || reference.binding === undefined)
+          continue;
+        const target = bound.value.bindings[reference.binding];
+        if (target?.kind !== "function" || target.owner !== undefined) continue;
+        let caller = bound.value.scopes[reference.scope]?.owner;
+        if (caller === undefined) continue;
+        let fn = bound.value.functions[caller];
+        while (fn !== undefined && fn.parent !== undefined) {
+          caller = fn.parent;
+          fn = bound.value.functions[caller];
+        }
+        const name = fn === undefined ? undefined : functionNames.get(fn.node);
+        if (name === undefined) continue;
+        const known = dependencies.get(name);
+        const names = known ?? new Set<string>();
+        names.add(target.name);
+        if (known === undefined) dependencies.set(name, names);
+      }
+      const pending: string[] = [callHelper],
+        seen = new Set<string>();
+      seen.add(callHelper);
+      for (let index = 0; index < pending.length; index++) {
+        const root = pending[index];
+        if (root === undefined) throw "realm call dependency invariant";
+        if (!retained.includes(root)) retained.push(root);
+        const names = dependencies.get(root);
+        if (names === undefined) continue;
+        for (const dependency of names) {
+          if (dependency === undefined || seen.has(dependency)) continue;
+          seen.add(dependency);
+          pending.push(dependency);
+        }
+      }
+    }
     const instance = prepareModuleInstance(
       module,
       bound.value,
       selected,
       retained,
+      invokeDirectly,
     );
     if (!instance.ok) return instance;
     initializerName = instance.value.initializer.name;
+    if (invokeDirectly) {
+      entryName = initializerName;
+      return { ok: true, value: instance.value.module };
+    }
     if (start !== undefined) {
       const invocation = prepareModuleInvocation(instance.value, start);
       if (!invocation.ok) return invocation;
@@ -1422,8 +1487,13 @@ function realmTypeofSourcePredicate(
 function lowerTypedProgram(
   request: CompileRequest,
   realmTypeofModules?: ReadonlySet<string>,
+  invokeDirectly: boolean = false,
 ): TypedLowering {
-  const front = checkTypedProgram(request, realmTypeofModules !== undefined);
+  const front = checkTypedProgram(
+    request,
+    realmTypeofModules !== undefined,
+    invokeDirectly,
+  );
   if (!front.ok) return { ok: false, error: front.error };
   const checkedProgram = front.value,
     nativeChecked = checkedProgram.checked,
@@ -1669,25 +1739,7 @@ function lowerTypedProgram(
       contract,
     });
   }
-  const classifier =
-    realmTypeofModules === undefined
-      ? undefined
-      : exports.find(
-          (item) =>
-            item !== undefined &&
-            item.namespace === "value" &&
-            item.name === "generalValueTypeof" &&
-            runtimeNamespacesByModule.get(item.module) ===
-              "general-object-views",
-        );
-  const classifierSource =
-    classifier === undefined
-      ? undefined
-      : runtimeSources.get(classifier.linkedName);
-  function realmErrorHelper(
-    name: string,
-    namespace: string,
-  ): number | undefined {
+  function realmHelper(name: string, namespace: string): number | undefined {
     if (realmTypeofModules === undefined) return undefined;
     const item = exports.find(
       (item) =>
@@ -1698,20 +1750,19 @@ function lowerTypedProgram(
     );
     return item === undefined ? undefined : runtimeSources.get(item.linkedName);
   }
-  const errorView = realmErrorHelper(
-    "nativeErrorReceiver",
-    "general-record-views",
+  const classifierSource = realmHelper(
+    "generalValueTypeof",
+    "general-object-views",
   );
-  const errorOperation = realmErrorHelper(
+  const callSource = realmHelper("callGeneralValue", "general-object-views");
+  const errorView = realmHelper("nativeErrorReceiver", "general-record-views");
+  const errorOperation = realmHelper(
     "realmErrorOperation",
     "general-object-views",
   );
-  const errorSlot = realmErrorHelper("getErrorView", "general-record-views");
-  const typeErrorSlot = realmErrorHelper(
-    "getTypeErrorView",
-    "general-record-views",
-  );
-  const rangeErrorSlot = realmErrorHelper(
+  const errorSlot = realmHelper("getErrorView", "general-record-views");
+  const typeErrorSlot = realmHelper("getTypeErrorView", "general-record-views");
+  const rangeErrorSlot = realmHelper(
     "getRangeErrorView",
     "general-record-views",
   );
@@ -1740,6 +1791,7 @@ function lowerTypedProgram(
               function: classifierSource,
               applies: realmTypeofSourcePredicate(ranges, realmTypeofModules),
             },
+      realmCall: callSource,
       realmErrors:
         realmTypeofModules === undefined ||
         errorView === undefined ||
@@ -1763,6 +1815,7 @@ function lowerTypedProgram(
     },
   );
   if (!lowered.ok) {
+    const nativeClosure = lowered.error.startsWith(nativeClosureCallMessage);
     let message = lowered.error,
       culprit: string | undefined;
     const marker = message.lastIndexOf("(source "),
@@ -1790,6 +1843,16 @@ function lowerTypedProgram(
             message;
       }
     }
+    if (nativeClosure)
+      return {
+        ok: false,
+        error: {
+          stage: "lower",
+          message,
+          preventsFallback: true,
+          ...(culprit === undefined ? {} : { module: culprit }),
+        },
+      };
     return stageFailure("lower", message, culprit);
   }
   const serviceImports: ManagedFunctionEntryBinding[] = [];
@@ -2404,6 +2467,60 @@ function emitProgram(
   } finally {
     store.close();
   }
+}
+
+/** Use the normal typed linker and scalar IR for a closed hosted x86-64
+ * application. The AArch64 Compilation contract carries backend-specific
+ * metadata; keep the x86-64 emitter and entry linker on their own boundary. */
+export function compileX64HostedProgram(
+  request: CompileRequest,
+  host: PosixHostFacts,
+):
+  | CompilationFailure
+  | {
+      readonly ok: true;
+      readonly native: X64Module;
+      readonly invocation: number;
+      readonly returnType: "number" | "boolean" | "void";
+    } {
+  const lowered = lowerTypedProgram(request, undefined, true);
+  if (!lowered.ok) return lowered;
+  const program = lowered.value;
+  const first = program.ir.module;
+  const returnType = first.functions[program.invocation]?.returnType;
+  if (
+    returnType !== "number" &&
+    returnType !== "boolean" &&
+    returnType !== "void"
+  )
+    return stageFailure(
+      "entry",
+      "linux-x86_64: expected a Number, Boolean or void entry",
+    );
+  const roots = [program.invocation];
+  const reachable = pruneModuleReferences(first, roots, unboundedWork);
+  const initial = reachable?.module ?? first;
+  const invocation =
+    (reachable?.functionIds[program.invocation] ?? program.invocation + 1) - 1;
+  const optimized =
+    request.optimization === "none"
+      ? initial
+      : optimizeModule(initial, unboundedWork, {
+          closedRecords: true,
+          closedCalls: true,
+          devirtualizeClosures: true,
+        }).module;
+  request.onScalarIR?.("lowered", initial);
+  request.onScalarIR?.("optimized", optimized);
+  const emitted = emitX64(optimized, host);
+  if (!emitted.ok) {
+    const message = emitted.error.message;
+    return stageFailure(
+      "emit",
+      "linux-x86_64: " + message.slice("x86-64 scalar: ".length),
+    );
+  }
+  return { ok: true, native: emitted.value, invocation, returnType };
 }
 
 function compileTypedProgram(

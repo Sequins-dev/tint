@@ -109,6 +109,35 @@ ordering and self-modifying code rules follow the
   forced far sites and synthetic signed boundaries, then verify a large ELF
   with real code/data/GOT spans before claiming large-image support.
 
+## Hosted typed subset
+
+The hosted builder accepts `linux-x86_64` for closed typed programs
+with a zero-argument entry returning Number, Boolean or void. Module
+initializers run before the direct entry call. The default x86-64 runtime
+supplies a guarded stack and a bounded, zero-filled allocation arena for
+`Uint8Array`. It uses the shared managed completion protocol. Stack
+overflow yields a Throw completion before allocating the frame. An
+uncaught Throw exits 1 and a startup mapping failure exits 71.
+
+Compiler-authorized libc leaves provide argument bytes, environment value
+copies, file I/O including stdout and stderr, monotonic and wall clocks,
+random words, and process and target facts. Startup binds
+`__libc_start_main@GLIBC_2.34` through the GOT and declares the version
+in the ELF dynamic table. The mapping and guard granule is 4 KiB.
+
+The compiler project requires a collector. A hosted x86-64 request that
+selects a collector or uses a deferred host operation reports the
+operation by name. General JavaScript, managed objects and escaping
+environments, stack maps, collection, threads, and JIT publication are
+later runtime work. SysV user FFI follows the FFI slices.
+
+Run the hosted smoke from the project root after `pnpm build`.
+
+```sh
+TINT_X64_HOSTED_RUNNER=x64-qemu-dev node --test tools/x64-hosted.test.ts
+TINT_X64_HOSTED_RUNNER=x64-ssh node --test tools/x64-hosted.test.ts
+```
+
 ## Instruction encoder
 
 Build a portable typed instruction model with explicit operand size,

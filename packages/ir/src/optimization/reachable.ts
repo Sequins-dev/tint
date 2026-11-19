@@ -2,7 +2,11 @@ import {
   referencedFunction,
   remapReferencedFunction,
 } from "../scalar/function-references.ts";
-import { traceClosedModule } from "./reachability.ts";
+import {
+  traceClosedModule,
+  traceModuleReferences,
+  type ClosedReachability,
+} from "./reachability.ts";
 import {
   type ModuleIR,
   type FunctionIR,
@@ -33,7 +37,29 @@ export function pruneClosedModule(
   foreignEntries: boolean = false,
 ): ClosedPruning | undefined {
   const traced = traceClosedModule(module, roots, maxWork, foreignEntries);
-  if (traced === undefined) return undefined;
+  return traced === undefined
+    ? undefined
+    : pruneTracedModule(module, traced, maxWork);
+}
+
+/** Prune by explicit IR references. Only a backend that rejects opaque code
+ * and descriptor access in every retained operation can use this entry. */
+export function pruneModuleReferences(
+  module: ModuleIR,
+  roots: readonly number[],
+  maxWork: number,
+): ClosedPruning | undefined {
+  const traced = traceModuleReferences(module, roots, maxWork);
+  return traced === undefined
+    ? undefined
+    : pruneTracedModule(module, traced, maxWork);
+}
+
+function pruneTracedModule(
+  module: ModuleIR,
+  traced: ClosedReachability,
+  maxWork: number,
+): ClosedPruning | undefined {
   const functions = module.functions,
     records = module.records ?? [],
     live = traced.functions,

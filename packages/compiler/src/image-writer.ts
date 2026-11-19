@@ -84,6 +84,13 @@ function writeElfImage(
       };
     needed.push(library.name);
   }
+  const startSymbol = target.hostABI.processStart?.startMainSymbol;
+  const libcVersion =
+    target.arch === "x86_64" &&
+    startSymbol !== undefined &&
+    image.imports?.includes(startSymbol) === true
+      ? { symbol: startSymbol, version: target.glibcStartVersion }
+      : undefined;
   const built = buildElfExecutable({
     code: image.code,
     codePlan: image.codePlan,
@@ -103,6 +110,7 @@ function writeElfImage(
       arch: target.arch,
       interpreter: target.interpreter,
       needed,
+      libcVersion,
       identifier,
     },
   });

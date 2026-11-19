@@ -17,6 +17,7 @@ import type {
   SwitchClause,
   TemplateExpression,
   TypeNode,
+  TypeParameter,
   VariableBinding,
 } from "./model.ts";
 
@@ -56,6 +57,20 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
     for (const value of values) {
       if (value === undefined) throw "syntax key name invariant";
       text(value);
+    }
+  }
+  function generics(values: readonly TypeParameter[] | undefined): void {
+    if (values === undefined) {
+      sink.put("u");
+      return;
+    }
+    sink.put("[");
+    sink.count(values.length);
+    for (const value of values) {
+      if (value === undefined) throw "syntax key type parameter invariant";
+      text(value.name);
+      optionalType(value.constraint);
+      optionalType(value.defaultType);
     }
   }
   function types(values: readonly TypeNode[] | undefined): void {
@@ -99,6 +114,7 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
         type(node.type);
         return;
       case "function":
+        generics(node.typeParameters);
         flag(node.async);
         parameters(node.parameters);
         type(node.returnType);
@@ -225,6 +241,7 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
         properties(node.properties);
         return;
       case "arrow":
+        generics(node.typeParameters);
         flag(node.async);
         flag(node.strict);
         parameters(node.parameters);
@@ -239,6 +256,7 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
         }
         return;
       case "function-expression":
+        generics(node.typeParameters);
         flag(node.async);
         flag(node.generator);
         optionalText(node.name);
@@ -427,7 +445,7 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
     if (decoratorsValue === undefined) sink.put("u");
     else expressions(decoratorsValue);
     optionalText(node.name);
-    names(node.typeParameters);
+    generics(node.typeParameters);
     optionalExpression(node.heritage);
     sink.put("[");
     sink.count(node.elements.length);
@@ -459,6 +477,7 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
     number(node.sourceStart);
     flag(node.async);
     flag(node.generator);
+    generics(node.typeParameters);
     parameters(node.parameters);
     optionalType(node.returnType);
     block(node.body);
@@ -550,7 +569,7 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
       case "interface":
         optionalType(node.call);
         optionalType(node.construct);
-        names(node.typeParameters);
+        generics(node.typeParameters);
         types(node.bases);
         text(node.name);
         flag(node.exported);
@@ -558,7 +577,7 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
         signatures(node.properties);
         return;
       case "type-alias":
-        names(node.typeParameters);
+        generics(node.typeParameters);
         text(node.name);
         flag(node.exported);
         type(node.type);
@@ -583,7 +602,7 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
         flag(node.async);
         flag(node.generator);
         flag(node.strict);
-        names(node.typeParameters);
+        generics(node.typeParameters);
         text(node.name);
         flag(node.exported);
         optionalType(node.receiver);

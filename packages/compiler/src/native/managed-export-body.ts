@@ -1,3 +1,4 @@
+import { typeParameterCount } from "@tint/typescript/syntax";
 import type { RuntimeEntryStub } from "./managed-runtime-entries.ts";
 import type {
   Module,
@@ -217,7 +218,7 @@ export function materializeManagedSurfaceExport(
     selected.generator ||
     selected.receiver !== undefined ||
     selected.parameters.length !== 0 ||
-    (selected.typeParameters?.length ?? 0) !== 0 ||
+    typeParameterCount(selected.typeParameters) !== 0 ||
     selected.returnType === undefined
   )
     return reject(

@@ -1,6 +1,12 @@
+import {
+  aggregatePayload,
+  planLocalRealm,
+  type LocalRealmPlan,
+} from "./local-realm.ts";
 import { numericConstant } from "./numeric-constants.ts";
 import { checkClassInitialization } from "./class-initialization.ts";
 import {
+  typeParameterCount,
   syntaxHash,
   literalPropertyName,
   isOptionalChain,
@@ -90,6 +96,7 @@ export interface BindingOperation {
 }
 export type ClosureIntrinsic =
   | "function-call"
+  | "general-call"
   | "map-new"
   | "map-get"
   | "map-has"
@@ -178,6 +185,9 @@ export type ClosureIntrinsic =
   | "array-buffer"
   | "array-byte-offset"
   | "array-byte-length"
+  | "dynamic-object-array-literal"
+  | "dynamic-object-array-push"
+  | "dynamic-object-static-call"
   | "dynamic-object-own-enumeration"
   | "dynamic-object-enroll"
   | "dynamic-object-open-literal"
@@ -286,6 +296,17 @@ export function checkClosureModule(
   module: Module,
   options: ClosureCheckOptions = {},
 ): ClosureResult {
+  return checkClosureModuleLayout(module, options);
+}
+
+function checkClosureModuleLayout(
+  module: Module,
+  options: ClosureCheckOptions,
+  realmPlan?: LocalRealmPlan,
+): ClosureResult {
+  const realmSinks = createKeyIndex<Expression, boolean>(syntaxHash);
+  const realmReads = createKeyIndex<Expression, boolean>(syntaxHash);
+  let replayRealm = false;
   // Syntax the checker synthesizes for an existing node reuses that node's
   // span; distinct hashes, above any traversal ordinal, keep each one apart
   // from the source node and from the others in syntax-keyed indexes.
@@ -477,7 +498,7 @@ export function checkClosureModule(
     try {
       switch (node.kind) {
         case "class":
-          if (node.definition.typeParameters.length !== 0)
+          if (typeParameterCount(node.definition.typeParameters) !== 0)
             fail(
               node,
               "UNSUPPORTED",
@@ -502,6 +523,15 @@ export function checkClosureModule(
                 member,
                 "UNSUPPORTED",
                 "generator suspension lowering is not implemented",
+              );
+            if (
+              member.kind !== "field" &&
+              typeParameterCount(member.typeParameters)
+            )
+              fail(
+                member,
+                "UNSUPPORTED",
+                "generic class methods require specialization",
               );
             if (member.kind === "field") {
               annotation(member, member.type);
@@ -529,7 +559,7 @@ export function checkClosureModule(
               "UNSUPPORTED",
               "generator suspension lowering is not implemented",
             );
-          if (node.typeParameters?.length)
+          if (typeParameterCount(node.typeParameters))
             fail(
               node,
               "UNSUPPORTED",
@@ -546,6 +576,12 @@ export function checkClosureModule(
           break;
         case "function-expression":
         case "arrow":
+          if (typeParameterCount(node.typeParameters))
+            fail(
+              node,
+              "UNSUPPORTED",
+              "generic function expressions require specialization",
+            );
           if (node.async)
             fail(
               node,
@@ -1309,7 +1345,11 @@ export function checkClosureModule(
     const path = new Set(seen);
     path.add(type);
     const value = types[type];
-    return value?.kind === "array" && listValueElement(value.element, path);
+    return (
+      value?.kind === "array" &&
+      value.realmArray !== true &&
+      listValueElement(value.element, path)
+    );
   }
   function listElement(type: number, node: Span): number {
     const value = types[type];
@@ -1811,8 +1851,12 @@ export function checkClosureModule(
         ? "f" + type.result + "(" + type.parameters.join(",") + ")"
         : undefined;
     if (type.kind === "never") return "n";
+    if (type.kind === "realm-callable" || type.kind === "dynamic-result")
+      return type.kind;
     if (type.kind === "array")
-      return type.readonly ? undefined : "a" + type.element;
+      return type.readonly || type.realmArray === true
+        ? undefined
+        : "a" + type.element;
     if (type.kind === "set")
       return type.readonly ? undefined : "s" + type.element;
     return undefined;
@@ -2444,6 +2488,15 @@ export function checkClosureModule(
       isErrorKind(type?.kind)
     );
   }
+  function generalFact(
+    kind: "realm-callable" | "dynamic-result",
+    node: Span,
+  ): number {
+    const known = internedType(kind);
+    return known >= 0
+      ? known
+      : appendType({ kind }, node, "invalid general value fact");
+  }
   function refineLiteralBinding(
     node: Expression,
     truth: boolean,
@@ -2467,13 +2520,35 @@ export function checkClosureModule(
       compared.kind === "unary" && compared.operator === "typeof"
         ? ungroup(compared.operand)
         : compared;
-    if (target.kind !== "identifier") return undefined;
-    const binding = references.get(target);
+    let receiver = target;
+    let property: string | undefined;
+    if (target.kind !== "identifier") {
+      if (!typeQuery || literalValue !== "function") return undefined;
+      if (target.kind === "member" && !target.optional) {
+        receiver = ungroup(target.object);
+        property = target.property;
+      } else if (target.kind === "index" && !target.optional) {
+        receiver = ungroup(target.object);
+        property = checkedPropertyName(
+          target.index,
+          types[expressions.get(target.index) ?? -1],
+        );
+      }
+      if (property === undefined) return undefined;
+    }
+    const binding = references.get(receiver);
     if (binding === undefined) return undefined;
     const declared = bindingTypes[binding.id];
     if (declared === undefined) return undefined;
+    let input = narrowedType(binding.id, declared, base);
+    if (property !== undefined) {
+      const read = system.property(input, property);
+      if (!read.ok) return undefined;
+      input = propertyFact(receiver, property, base) ?? read.value;
+    }
     const selected: number[] = [],
       seen = new Set<number>();
+    const comparison = node;
     const equal = truth === (node.operator === "===");
     function collect(id: number): boolean {
       if (seen.has(id)) return true;
@@ -2481,8 +2556,10 @@ export function checkClosureModule(
       const type = types[id];
       if (type?.kind === "union") return type.members.every(collect);
       if (typeQuery) {
-        if (type?.kind === "unknown") {
+        if (type?.kind === "unknown" || type?.kind === "dynamic-result") {
           if (!equal) selected.push(id);
+          else if (literalValue === "function")
+            selected.push(generalFact("realm-callable", comparison));
           else if (literalValue === "number") selected.push(number);
           else if (literalValue === "bigint") selected.push(bigint);
           else if (literalValue === "boolean") selected.push(boolean);
@@ -2505,7 +2582,9 @@ export function checkClosureModule(
                 type?.kind === "Float64Array" ||
                 isErrorKind(type?.kind)
               ? "object"
-              : type?.kind;
+              : type?.kind === "realm-callable"
+                ? "function"
+                : type?.kind;
         if (
           tag !== "number" &&
           tag !== "boolean" &&
@@ -2543,22 +2622,21 @@ export function checkClosureModule(
       if ((type.value === literalValue) === equal) selected.push(id);
       return true;
     }
-    if (
-      !collect(narrowedType(binding.id, declared, base)) ||
-      selected.length === 0
-    )
-      return undefined;
+    if (!collect(input) || selected.length === 0) return undefined;
+    const propertyKey = property === undefined ? undefined : factKey(property);
     const result = new Set(base);
     for (const token of result) {
       const fact = narrowed[token - graph.bindings.length];
       if (
         fact !== undefined &&
         fact.binding === binding.id &&
-        fact.property === undefined
+        fact.property === propertyKey
       )
         result.delete(token);
     }
-    result.add(narrowToken(binding.id, unionSubset(selected, node)));
+    result.add(
+      narrowToken(binding.id, unionSubset(selected, node), propertyKey),
+    );
     return result;
   }
   function refineDiscriminant(
@@ -3449,6 +3527,28 @@ export function checkClosureModule(
     }
     return args;
   }
+  function generalCall(
+    node: Expression & { readonly kind: "call" },
+    owner: number | undefined,
+  ): number {
+    if (isOptionalChain(node))
+      fail(
+        node,
+        "UNSUPPORTED",
+        "general calls through optional chains require reference lowering",
+      );
+    const unknown = primitive("unknown");
+    const list = arrayOf(unknown, node);
+    callArguments(node, owner, {
+      kind: "function",
+      parameters: [list],
+      result: unknown,
+      rest: true,
+    });
+    intrinsics.set(node, "general-call");
+    invalidateCalls();
+    return generalFact("dynamic-result", node);
+  }
   function requireForInObject(id: number, node: Span): void {
     if (!dynamicObject(presentType(id, true) ?? id))
       fail(node, "UNSUPPORTED", "typed for-in requires a dynamic-key object");
@@ -3597,12 +3697,13 @@ export function checkClosureModule(
   function propertyFact(
     receiver: Expression,
     property: string,
+    facts: Set<number> = present,
   ): number | undefined {
     const path = instancePropertyNarrowing ? stablePath(receiver) : undefined;
     const binding = path?.binding ?? references.get(ungroup(receiver));
     if (binding === undefined) return undefined;
     const key = (path?.property ?? "") + factKey(property);
-    for (const token of present) {
+    for (const token of facts) {
       const fact = narrowed[token - graph.bindings.length];
       if (
         fact !== undefined &&
@@ -3613,9 +3714,82 @@ export function checkClosureModule(
     }
     return undefined;
   }
-  function checkDynamicPayload(value: number, node: Span): void {
+  const realmTypes = new Map<number, number>();
+  const convertingRealm = new Set<number>();
+  function realmPayload(id: number, node: Span): number {
+    if (!aggregatePayload(types, id)) return id;
+    const known = realmTypes.get(id);
+    if (known !== undefined) return known;
+    if (convertingRealm.has(id))
+      fail(
+        node,
+        "UNSUPPORTED",
+        "recursive fixed realm payload types require recursive layout selection",
+        true,
+      );
+    convertingRealm.add(id);
+    const type = types[id];
+    let result = id;
+    if (type?.kind === "array") {
+      result = appendType(
+        {
+          ...type,
+          element: realmPayload(type.element, node),
+          realmArray: true,
+        },
+        node,
+        "invalid realm array type",
+      );
+    } else if (type?.kind === "object") {
+      const properties: Property[] = [];
+      for (const field of type.properties) {
+        if (field === undefined) throw "realm property invariant";
+        properties.push({ ...field, type: realmPayload(field.type, node) });
+      }
+      result = appendType(
+        { ...type, properties, realmRecord: true },
+        node,
+        "invalid realm record type",
+      );
+    } else if (type?.kind === "union") {
+      const members: number[] = [];
+      for (const member of type.members) {
+        if (member === undefined) throw "realm union invariant";
+        members.push(realmPayload(member, node));
+      }
+      result = unionSubset(members, node);
+    }
+    convertingRealm.delete(id);
+    realmTypes.set(id, result);
+    return result;
+  }
+  function dynamicPayloadType(id: number, node: Span): number {
+    return realmPlan === undefined ? id : realmPayload(id, node);
+  }
+  function readDynamicPayload(value: number, node: Expression): number {
+    if (realmPlan !== undefined) return realmPayload(value, node);
+    if (aggregatePayload(types, value)) {
+      realmReads.set(node, true);
+      replayRealm = true;
+    }
+    return value;
+  }
+  function checkDynamicPayload(value: number, node: Expression): void {
     const unsupported = unsupportedDynamicPayload(types, value);
-    if (unsupported !== undefined) fail(node, "UNSUPPORTED", unsupported, true);
+    if (unsupported === undefined) return;
+    if (realmPlan === undefined && aggregatePayload(types, value)) {
+      realmSinks.set(node, true);
+      replayRealm = true;
+      return;
+    }
+    fail(node, "UNSUPPORTED", unsupported, true);
+  }
+  function realmAggregate(id: number): boolean {
+    const type = types[id];
+    return (
+      (type?.kind === "array" && type.realmArray === true) ||
+      (type?.kind === "object" && type.realmRecord === true)
+    );
   }
   function checkDynamicLiteral(
     node: Expression & { readonly kind: "object" },
@@ -3681,12 +3855,17 @@ export function checkClosureModule(
       const value = expression(
         property.value,
         owner,
-        types[first.type]?.kind === "unknown" ? undefined : first.type,
+        dynamicPayloadType(first.type, property.value),
       );
       checkDynamicPayload(value, property.value);
       for (const field of fields) {
         if (field === undefined) throw "dynamic literal field invariant";
-        if (!system.assignable(value, field.type))
+        if (
+          !system.assignable(
+            value,
+            dynamicPayloadType(field.type, property.value),
+          )
+        )
           fail(
             property.value,
             "TYPE_MISMATCH",
@@ -3719,10 +3898,13 @@ export function checkClosureModule(
   ): number {
     const node = input;
     // unknown constrains assignability but supplies no contextual shape.
+    const selected = realmPlan?.literals.has(node) === true;
     const expected =
-      inputExpected !== undefined && types[inputExpected]?.kind === "unknown"
+      inputExpected === undefined || types[inputExpected]?.kind === "unknown"
         ? undefined
-        : inputExpected;
+        : selected
+          ? realmPayload(inputExpected, node)
+          : inputExpected;
     contextualProofs.delete(node);
     if (++depth > 256)
       fail(node, "LIMIT", "closure checking nesting limit exceeded");
@@ -4487,12 +4669,14 @@ export function checkClosureModule(
             result = number;
             break;
           }
-          if (dynamicObject(obj)) intrinsics.set(node, "dynamic-object-read");
+          if (dynamicObject(obj) || realmAggregate(obj))
+            intrinsics.set(node, "dynamic-object-read");
           const literal = literalProperty(obj, node.property, node);
           const p = system.property(obj, node.property);
           if (!p.ok) fail(node, p.error, "invalid property read");
           result = literal ?? p.value;
           result = propertyFact(receiver, node.property) ?? result;
+          if (dynamicObject(obj)) result = readDynamicPayload(result, node);
           break;
         }
         case "index": {
@@ -4534,7 +4718,10 @@ export function checkClosureModule(
               property === undefined
                 ? undefined
                 : propertyFact(node.object, property);
-            result = fact ?? dynamicRead(object, keyType, property, node);
+            result = readDynamicPayload(
+              fact ?? dynamicRead(object, keyType, property, node),
+              node,
+            );
             break;
           }
           const viewRead = viewAccess(node, object, property, keyType, false);
@@ -4569,7 +4756,10 @@ export function checkClosureModule(
             const read = system.property(object, property);
             if (!read.ok)
               fail(node, read.error, "invalid literal property read");
-            intrinsics.set(node, "record-read");
+            intrinsics.set(
+              node,
+              realmAggregate(object) ? "dynamic-object-read" : "record-read",
+            );
             result = propertyFact(node.object, property) ?? read.value;
             break;
           }
@@ -4588,7 +4778,9 @@ export function checkClosureModule(
                 );
               reads.push(read.value);
             }
-            finitePropertyKeys.set(node, finite);
+            if (realmAggregate(object))
+              intrinsics.set(node, "dynamic-object-read");
+            else finitePropertyKeys.set(node, finite);
             result = unionSubset(reads, node);
             break;
           }
@@ -4808,6 +5000,156 @@ export function checkClosureModule(
             target.kind === "member" &&
             !target.optional &&
             !node.optional &&
+            (target.property === "hasOwn" ||
+              target.property === "defineProperty")
+          ) {
+            const object = ungroup(target.object);
+            if (
+              object.kind === "identifier" &&
+              object.name === "Object" &&
+              !references.has(object)
+            ) {
+              const input = node.arguments[0],
+                key = node.arguments[1];
+              const definition = target.property === "defineProperty";
+              if (
+                input === undefined ||
+                key === undefined ||
+                node.arguments.length !== (definition ? 3 : 2)
+              )
+                fail(
+                  node,
+                  "ARITY",
+                  "typed Object method received an incorrect argument count",
+                );
+              const source = expression(input, owner);
+              if (
+                !dynamicObject(source) &&
+                !(target.property === "hasOwn" && realmAggregate(source))
+              ) {
+                if (
+                  !definition &&
+                  realmPlan === undefined &&
+                  aggregatePayload(types, source)
+                )
+                  replayRealm = true;
+                else
+                  fail(
+                    input,
+                    "UNSUPPORTED",
+                    "typed Object method requires a realm record",
+                  );
+              }
+              const keyType = expression(key, owner);
+              if (
+                !system.assignable(keyType, unionSubset([string, number], key))
+              )
+                fail(
+                  key,
+                  "TYPE_MISMATCH",
+                  "typed Object property key must be a string or number",
+                  true,
+                );
+              if (definition) {
+                const descriptor = node.arguments[2];
+                if (descriptor?.kind !== "object")
+                  fail(
+                    node,
+                    "UNSUPPORTED",
+                    "typed Object.defineProperty requires a data descriptor literal",
+                  );
+                const name = checkedPropertyName(key, types[keyType]);
+                const fields = dynamicPropertyTargets(
+                  source,
+                  keyType,
+                  name,
+                  key,
+                );
+                const field = fields[0];
+                if (field === undefined) throw "descriptor field invariant";
+                const members: Property[] = [
+                  {
+                    name: "value",
+                    type: dynamicPayloadType(field.type, descriptor),
+                    readonly: false,
+                  },
+                  {
+                    name: "writable",
+                    type: boolean,
+                    optional: true,
+                    readonly: false,
+                  },
+                  {
+                    name: "enumerable",
+                    type: boolean,
+                    optional: true,
+                    readonly: false,
+                  },
+                  {
+                    name: "configurable",
+                    type: boolean,
+                    optional: true,
+                    readonly: false,
+                  },
+                ];
+                for (const property of descriptor.properties) {
+                  if (property === undefined)
+                    throw "data descriptor property invariant";
+                  if (
+                    property.kind === "spread" ||
+                    property.accessor !== undefined ||
+                    property.keyExpression !== undefined ||
+                    property.prototypeSetter === true
+                  )
+                    fail(
+                      property,
+                      "UNSUPPORTED",
+                      "typed Object.defineProperty requires a data descriptor literal",
+                    );
+                }
+                const context = appendType(
+                  { kind: "object", properties: members },
+                  descriptor,
+                  "invalid data descriptor context",
+                );
+                const checked = expression(descriptor, owner, context);
+                checkDynamicPayload(checked, descriptor);
+                for (const property of descriptor.properties) {
+                  if (property === undefined || property.kind === "spread")
+                    throw "data descriptor invariant";
+                  if (property.name !== "value") continue;
+                  const value = expressions.get(property.value);
+                  if (value === undefined)
+                    throw "data descriptor value invariant";
+                  checkDynamicPayload(value, property.value);
+                  for (const allowed of fields) {
+                    if (allowed === undefined)
+                      throw "data descriptor target invariant";
+                    if (allowed.readonly)
+                      fail(
+                        key,
+                        "IMMUTABLE",
+                        "cannot write a readonly dynamic-key object property",
+                        true,
+                      );
+                    requireType(
+                      value,
+                      dynamicPayloadType(allowed.type, property.value),
+                      property.value,
+                    );
+                  }
+                }
+              }
+              intrinsics.set(node, "dynamic-object-static-call");
+              invalidateCalls();
+              result = definition ? source : boolean;
+              break;
+            }
+          }
+          if (
+            target.kind === "member" &&
+            !target.optional &&
+            !node.optional &&
             (target.property === "keys" ||
               target.property === "values" ||
               target.property === "entries")
@@ -4821,19 +5163,32 @@ export function checkClosureModule(
               const argument = node.arguments[0];
               if (node.arguments.length !== 1 || argument === undefined)
                 fail(node, "ARITY", "Object enumeration requires one argument");
-              const source = types[expression(argument, owner)];
+              const sourceType = expression(argument, owner);
+              const source = types[sourceType];
               const index =
                 source?.kind === "object" ? source.stringIndex : undefined;
-              if (index === undefined)
-                fail(
-                  argument,
-                  "UNSUPPORTED",
-                  "typed Object enumeration requires a dynamic-key object",
-                );
-              let element = index.type;
-              if (target.property === "keys") element = string;
+              if (
+                index === undefined &&
+                !(target.property === "keys" && realmAggregate(sourceType))
+              ) {
+                if (
+                  target.property === "keys" &&
+                  realmPlan === undefined &&
+                  aggregatePayload(types, sourceType)
+                )
+                  replayRealm = true;
+                else
+                  fail(
+                    argument,
+                    "UNSUPPORTED",
+                    "typed Object enumeration requires a dynamic-key object",
+                  );
+              }
+              let element = string;
+              if (index !== undefined && target.property !== "keys")
+                element = readDynamicPayload(index.type, node);
               if (target.property === "entries") {
-                const pair: number[] = [string, index.type];
+                const pair: number[] = [string, element];
                 element = realmArray(unionSubset(pair, node), node, pair);
               }
               result = realmArray(element, node);
@@ -5734,6 +6089,37 @@ export function checkClosureModule(
               invalidateCalls();
               break;
             }
+            const realmList = types[obj];
+            if (realmList?.kind === "array" && realmList.realmArray === true) {
+              if (target.property !== "push" || node.optional)
+                fail(
+                  target,
+                  "UNSUPPORTED",
+                  "typed realm arrays currently support only push calls",
+                  true,
+                );
+              if (realmList.readonly || realmList.tupleElements !== undefined)
+                fail(
+                  target,
+                  "IMMUTABLE",
+                  "cannot push to a readonly realm array",
+                  true,
+                );
+              const element = realmList.element;
+              for (const argument of node.arguments) {
+                if (argument === undefined)
+                  throw "realm push argument invariant";
+                requireType(
+                  expression(argument, owner, element),
+                  element,
+                  argument,
+                );
+              }
+              intrinsics.set(node, "dynamic-object-array-push");
+              invalidateCalls();
+              result = number;
+              break;
+            }
             if (
               isList(obj) &&
               (target.property === "push" || target.property === "unshift")
@@ -5810,6 +6196,13 @@ export function checkClosureModule(
             }
             const member = system.property(obj, target.property);
             if (!member.ok) fail(target, member.error, "invalid method call");
+            const memberType =
+              propertyFact(target.object, target.property) ?? member.value;
+            if (types[memberType]?.kind === "realm-callable") {
+              expression(node.callee, owner);
+              result = generalCall(node, owner);
+              break;
+            }
             if (skipped !== undefined) {
               chainReceivers.set(target, obj);
               chainValues.set(target, member.value);
@@ -5849,6 +6242,10 @@ export function checkClosureModule(
                 signature.realmLibrary +
                 " requires library overload lowering",
             );
+          if (signature?.kind === "realm-callable") {
+            result = generalCall(node, owner);
+            break;
+          }
           if (signature?.kind !== "function")
             fail(node, "TYPE_MISMATCH", "callee must have a function type");
           const args = callArguments(node, owner, signature);
@@ -5873,6 +6270,13 @@ export function checkClosureModule(
           while (target.kind === "group") target = target.expression;
           if (target.kind === "member" || target.kind === "index") {
             const object = expression(target.object, owner);
+            if (realmAggregate(object))
+              fail(
+                target,
+                "UNSUPPORTED",
+                "compound assignments and updates on realm aggregates require reference lowering",
+                true,
+              );
             if (dynamicObject(object))
               fail(
                 target,
@@ -6209,7 +6613,7 @@ export function checkClosureModule(
               result = expression(
                 node.value,
                 owner,
-                types[field.type]?.kind === "unknown" ? undefined : field.type,
+                dynamicPayloadType(field.type, node.value),
               );
               checkDynamicPayload(result, node.value);
               for (const allowed of fields) {
@@ -6222,7 +6626,12 @@ export function checkClosureModule(
                     "cannot write a readonly dynamic-key object property",
                     true,
                   );
-                if (!system.assignable(result, allowed.type))
+                if (
+                  !system.assignable(
+                    result,
+                    dynamicPayloadType(allowed.type, node.value),
+                  )
+                )
                   fail(
                     node.value,
                     "TYPE_MISMATCH",
@@ -6230,6 +6639,32 @@ export function checkClosureModule(
                     true,
                   );
               }
+              intrinsics.set(node, "dynamic-object-write");
+              invalidateCalls();
+              break;
+            }
+            const shape = types[receiver];
+            if (shape?.kind === "array" && shape.realmArray === true) {
+              if (shape.readonly || shape.tupleElements !== undefined)
+                fail(
+                  target,
+                  "IMMUTABLE",
+                  "cannot write a readonly realm array",
+                  true,
+                );
+              if (property !== "length") {
+                if (target.kind !== "index" || keyType === undefined)
+                  fail(
+                    target,
+                    "UNSUPPORTED",
+                    "realm array writes require an index or length",
+                    true,
+                  );
+                requireType(keyType, number, target.index);
+              }
+              const expected = property === "length" ? number : shape.element;
+              result = expression(node.value, owner, expected);
+              requireType(result, expected, node.value);
               intrinsics.set(node, "dynamic-object-write");
               invalidateCalls();
               break;
@@ -6264,7 +6699,9 @@ export function checkClosureModule(
                     true,
                   );
               }
-              finitePropertyKeys.set(node, finite);
+              if (realmAggregate(receiver))
+                intrinsics.set(node, "dynamic-object-write");
+              else finitePropertyKeys.set(node, finite);
               invalidateCalls();
               break;
             }
@@ -6291,7 +6728,12 @@ export function checkClosureModule(
               const checked = system.writeProperty(receiver, property, result);
               if (!checked.ok)
                 fail(target, checked.error, "invalid property assignment");
-              intrinsics.set(node, "record-write");
+              intrinsics.set(
+                node,
+                realmAggregate(receiver)
+                  ? "dynamic-object-write"
+                  : "record-write",
+              );
               invalidateCalls();
             } else {
               if (isList(receiver)) requireMutableList(receiver, target.object);
@@ -6682,6 +7124,13 @@ export function checkClosureModule(
             "expression is outside the closure checking slice",
           );
       }
+      if (selected) {
+        result = realmPayload(result, node);
+        if (node.kind === "array")
+          intrinsics.set(node, "dynamic-object-array-literal");
+        if (node.kind === "object")
+          intrinsics.set(node, "dynamic-object-open-literal");
+      }
       const skippedFacts = skipped;
       if (skippedFacts !== undefined) {
         chainValues.set(node, result);
@@ -6689,6 +7138,21 @@ export function checkClosureModule(
         if (result !== voidType && !system.assignable(undefinedType, result))
           result = unionSubset([result, undefinedType], node);
       } else chainValues.delete(node);
+      if (
+        expected !== undefined &&
+        types[result]?.kind === "dynamic-result" &&
+        !system.assignable(result, expected)
+      ) {
+        if (!downcastable(expected))
+          fail(
+            node,
+            "UNSUPPORTED",
+            "general call result requires a checked projection to its declared type",
+            true,
+          );
+        downcasts.set(node, expected);
+        result = expected;
+      }
       const literal = literals.get(ungroup(node));
       if (
         expected !== undefined &&
@@ -6830,6 +7294,9 @@ export function checkClosureModule(
               present.delete(assignedToken(b.id));
               continue;
             }
+            const annotation = bindingTypes[b.id];
+            if (annotation !== undefined && realmPlan?.bindings.has(b.id))
+              bindingTypes[b.id] = realmPayload(annotation, d);
             const expected =
                 bindingTypes[b.id] ??
                 (node.mode === "const" && d.initializer !== undefined
@@ -7299,6 +7766,21 @@ export function checkClosureModule(
     if (e !== abort) throw e;
   }
   if (error !== undefined) return { ok: false, error };
+  if (realmPlan === undefined && replayRealm)
+    return checkClosureModuleLayout(
+      module,
+      options,
+      planLocalRealm(
+        module,
+        graph,
+        types,
+        expressions,
+        references,
+        declarations,
+        realmSinks,
+        realmReads,
+      ),
+    );
   return {
     ok: true,
     value: {

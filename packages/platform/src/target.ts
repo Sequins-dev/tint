@@ -50,8 +50,7 @@ export interface LinuxAArch64Target extends AArch64TargetFacts {
   readonly interpreter: string;
 }
 
-/** Experimental Linux x86-64 output. Backend-specific C and CPU feature
- * policies will be supplied with code generation. */
+/** Linux x86-64 glibc target. Public C FFI has its own ABI policy. */
 export interface LinuxX86_64Target extends NativeTargetFacts {
   readonly name: "linux-x86_64";
   readonly os: "linux";
@@ -59,6 +58,7 @@ export interface LinuxX86_64Target extends NativeTargetFacts {
   readonly objectFormat: "elf";
   readonly hostABI: PosixHostFacts;
   readonly interpreter: string;
+  readonly glibcStartVersion: string;
 }
 
 export type AArch64Target = DarwinAArch64Target | LinuxAArch64Target;
@@ -100,6 +100,7 @@ export const linuxX86_64Target: LinuxX86_64Target = {
   memoryPageBytes: 4096,
   hostABI: linuxX86_64HostFacts(),
   interpreter: "/lib64/ld-linux-x86-64.so.2",
+  glibcStartVersion: "GLIBC_2.34",
 };
 
 /** The target a `--target` argument names, if any. */

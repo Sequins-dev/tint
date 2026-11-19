@@ -1,4 +1,9 @@
-import { syntaxHash, syntaxKey, syntaxKeyMatches } from "../syntax/index.ts";
+import {
+  typeParameterCount,
+  syntaxHash,
+  syntaxKey,
+  syntaxKeyMatches,
+} from "../syntax/index.ts";
 import {
   createKeyIndex,
   hashString,
@@ -10,6 +15,7 @@ import type {
   Statement,
   Span,
   TypeNode,
+  TypeParameter,
   PropertySignature,
   IndexSignature,
   ClassDefinition,
@@ -27,7 +33,7 @@ import {
   type TypeSystem,
   type Property,
   type StringIndex,
-  unsupportedDynamicPayload,
+  unsupportedDynamicContract,
 } from "../types/index.ts";
 export const realmOnlyTypedArrays: readonly string[] = [
   "Int8Array",
@@ -109,6 +115,13 @@ export interface ClassMemberContract {
 type TypeDeclaration = Statement & {
   readonly kind: "interface" | "type-alias" | "class";
 };
+function declarationParameters(
+  node: TypeDeclaration,
+): readonly TypeParameter[] {
+  return node.kind === "class"
+    ? node.definition.typeParameters
+    : (node.typeParameters ?? []);
+}
 export interface InterfaceError extends Span {
   readonly code:
     | "UNSUPPORTED"
@@ -197,6 +210,12 @@ export function resolveInterfaceTypes(
     redirects: number[] = [],
     pending = new Set<number>(),
     heritage: { derived: number; base: number; node: Span }[] = [],
+    constraints: {
+      argument: number;
+      bound: number;
+      name: string;
+      node: Span;
+    }[] = [],
     indexedContracts: { type: number; node: Span }[] = [],
     abort = {};
   let error: InterfaceError | undefined,
@@ -280,6 +299,44 @@ export function resolveInterfaceTypes(
     viewTypes.set(key, id);
     return id;
   }
+  function defaultArguments(
+    name: string,
+    node: Span,
+    formals: readonly TypeParameter[],
+    args: readonly number[],
+  ): readonly number[] {
+    const supplied: number[] = [];
+    const outer = parameters;
+    parameters = createStringIndex<number>();
+    try {
+      for (const formal of formals) {
+        if (formal === undefined) throw "type parameter invariant";
+        parameters.set(formal.name, -2);
+      }
+      for (let i = 0; i < formals.length; i++) {
+        const formal = formals[i];
+        if (formal === undefined) throw "type parameter invariant";
+        const explicit = args[i];
+        const defaultType = formal.defaultType;
+        let argument: number;
+        if (explicit !== undefined) argument = explicit;
+        else {
+          if (defaultType === undefined)
+            fail(
+              node,
+              "INVALID_TYPE",
+              "incorrect type argument count for " + name,
+            );
+          argument = resolve(defaultType);
+        }
+        supplied.push(argument);
+        parameters.set(formal.name, argument);
+      }
+      return supplied;
+    } finally {
+      parameters = outer;
+    }
+  }
   function named(
     name: string,
     node: Span,
@@ -287,6 +344,13 @@ export function resolveInterfaceTypes(
   ): number {
     const parameter = parameters.get(name);
     if (parameter !== undefined) {
+      if (parameter === -2)
+        fail(
+          node,
+          "INVALID_TYPE",
+          "type parameter default may only reference earlier parameters: " +
+            name,
+        );
       if (parameter < 0)
         fail(
           node,
@@ -362,19 +426,19 @@ export function resolveInterfaceTypes(
       return recordType(key, value, node);
     }
     // Linked classes have distinct outer and inner names, but one instance type.
-    let formals: readonly string[] = [];
-    if (declaration !== undefined) {
-      if (declaration.kind === "class") {
-        name = declaration.name;
-        formals = declaration.definition.typeParameters;
-      } else formals = declaration.typeParameters ?? [];
-    }
-    if (args.length !== formals.length)
+    if (declaration?.kind === "class") name = declaration.name;
+    const formals =
+      declaration === undefined ? [] : declarationParameters(declaration);
+    const effectiveArgs =
+      args.length < formals.length
+        ? defaultArguments(name, node, formals, args)
+        : args;
+    if (effectiveArgs.length !== formals.length)
       fail(node, "INVALID_TYPE", "incorrect type argument count for " + name);
     const generic = formals.length > 0;
     let key = name + ":";
-    for (let index = 0; index < args.length; index++) {
-      const argument = args[index];
+    for (let index = 0; index < effectiveArgs.length; index++) {
+      const argument = effectiveArgs[index];
       if (argument === undefined) throw "type argument invariant";
       if (index > 0) key += ",";
       key += String(argument);
@@ -409,16 +473,32 @@ export function resolveInterfaceTypes(
     parameters = createStringIndex<number>();
     for (let i = 0; i < formals.length; i++) {
       const formal = formals[i],
-        argument = args[i];
+        argument = effectiveArgs[i];
       if (formal === undefined || argument === undefined)
         throw "type argument invariant";
-      parameters.set(formal, argument);
+      parameters.set(formal.name, argument);
     }
     let id: number;
     try {
+      // Resolve the bounds with all arguments in scope. Defer assignability
+      // until recursive objects and aliases have their final type IDs.
+      for (let i = 0; i < formals.length; i++) {
+        const formal = formals[i],
+          argument = effectiveArgs[i];
+        if (formal === undefined || argument === undefined)
+          throw "type argument invariant";
+        const constraint = formal.constraint;
+        if (constraint !== undefined)
+          constraints.push({
+            argument,
+            bound: resolve(constraint),
+            name: formal.name,
+            node,
+          });
+      }
       id =
         resolvedDeclaration.kind === "class"
-          ? classType(resolvedDeclaration.definition, reserved, args)
+          ? classType(resolvedDeclaration.definition, reserved, effectiveArgs)
           : resolvedDeclaration.kind === "type-alias"
             ? resolve(resolvedDeclaration.type)
             : object(
@@ -513,10 +593,16 @@ export function resolveInterfaceTypes(
         // an unrelated outer declaration with the same name. Type IDs are nonnegative.
         for (const parameter of definition.typeParameters) {
           if (parameter === undefined) throw "class parameter invariant";
-          parameters.set(parameter, -1);
+          parameters.set(parameter.name, -1);
         }
       }
       let type: number;
+      if (member.kind !== "field" && typeParameterCount(member.typeParameters))
+        fail(
+          member,
+          "UNSUPPORTED",
+          "generic class methods require specialization",
+        );
       if (member.kind === "field") {
         if (member.accessor)
           fail(
@@ -1130,6 +1216,12 @@ export function resolveInterfaceTypes(
             : add({ kind: "union", members }, node);
         }
         case "function":
+          if (typeParameterCount(node.typeParameters))
+            fail(
+              node,
+              "UNSUPPORTED",
+              "generic signatures require specialization",
+            );
           return signature(
             node.parameters,
             resolve(node.returnType),
@@ -1230,17 +1322,23 @@ export function resolveInterfaceTypes(
             "duplicate or reserved type name: " + node.name,
           );
         const seen = new Set<string>();
-        for (const parameter of node.kind === "class"
-          ? node.definition.typeParameters
-          : (node.typeParameters ?? [])) {
+        let defaultSeen = false;
+        for (const parameter of declarationParameters(node)) {
           if (parameter === undefined) throw "missing type parameter";
-          if (seen.has(parameter))
+          if (seen.has(parameter.name))
             fail(
-              node,
+              parameter,
               "DUPLICATE_TYPE",
-              "duplicate type parameter: " + parameter,
+              "duplicate type parameter: " + parameter.name,
             );
-          seen.add(parameter);
+          if (parameter.defaultType !== undefined) defaultSeen = true;
+          else if (defaultSeen)
+            fail(
+              parameter,
+              "INVALID_TYPE",
+              "required type parameters cannot follow a default",
+            );
+          seen.add(parameter.name);
         }
         declarations.set(node.name, index);
         if (node.kind === "class") {
@@ -1310,17 +1408,14 @@ export function resolveInterfaceTypes(
       declarations.forEach((_index, name) => {
         const node = lookupDeclaration(name);
         if (node === undefined) throw "type declaration invariant";
-        if (
-          (node.kind === "class"
-            ? node.definition.typeParameters.length
-            : (node.typeParameters?.length ?? 0)) === 0
-        )
-          named(name, node);
+        if (declarationParameters(node).length === 0) named(name, node);
       });
+      // Constraint and index contract checks carry use-site spans and must run for each module.
       if (
         memo !== undefined &&
         keyed !== undefined &&
         pending.size === 0 &&
+        constraints.length === 0 &&
         indexedContracts.length === 0
       ) {
         const captured = capture(syntaxKey(keyed));
@@ -1444,7 +1539,7 @@ export function resolveInterfaceTypes(
       },
     };
   function payloadError(type: number, node: Span): InterfaceError | undefined {
-    const unsupported = unsupportedDynamicPayload(types, type);
+    const unsupported = unsupportedDynamicContract(types, type);
     return unsupported === undefined
       ? undefined
       : {
@@ -1482,6 +1577,25 @@ export function resolveInterfaceTypes(
           },
         };
     }
+  }
+  for (const constraint of constraints) {
+    if (constraint === undefined) throw "missing type argument constraint";
+    if (
+      !system.value.assignable(
+        canonical(constraint.argument),
+        canonical(constraint.bound),
+      )
+    )
+      return {
+        ok: false,
+        error: {
+          start: constraint.node.start,
+          end: constraint.node.end,
+          code: "INVALID_TYPE",
+          message:
+            "type argument does not satisfy constraint for " + constraint.name,
+        },
+      };
   }
   for (const h of heritage) {
     if (h === undefined) throw "missing heritage constraint";

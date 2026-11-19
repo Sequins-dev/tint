@@ -15,8 +15,9 @@ import type {
   CheckedFunction,
   Local,
   ExpressionInfo,
-  DowncastTest,
   NativeTypedArray,
+  CheckedDowncast,
+  RestArguments,
   Expression,
   Statement,
   Span,
@@ -107,6 +108,9 @@ function literalStrings(node: Expression): readonly Expression[] | undefined {
   }
   return node.elements;
 }
+export const nativeClosureCallMessage: string =
+  "Calling a native closure through Function requires the slice 2b closure view";
+
 export type LoweringResult =
   | { readonly ok: true; readonly value: ModuleIR }
   | { readonly ok: false; readonly error: Diagnostic };
@@ -2663,17 +2667,11 @@ export function lowerFunction(
     return result;
   }
   function checkedDowncast(
-    node: Expression & { readonly kind: "satisfies" },
-    downcast: {
-      readonly tests: readonly DowncastTest[];
-      readonly records: readonly number[];
-      readonly errors?:
-        readonly ("Error" | "TypeError" | "RangeError")[] | undefined;
-    },
+    operand: number,
+    node: Expression,
+    downcast: CheckedDowncast,
   ): number {
-    const operand = expression(node.expression);
-    if (operand === undefined) throw "downcast operand invariant";
-    if (info(node.expression).type !== "general")
+    if (slots[operand] !== "general")
       throw "downcast operand representation invariant";
     // Values are block-local: each test block reloads the operand slot.
     const accepted = block();
@@ -2739,21 +2737,11 @@ export function lowerFunction(
         current = rejected;
       }
     }
-    const message = nextValue++;
-    emit({
-      kind: "string-literal",
-      id: message,
-      value: "value does not match the asserted type",
-      start: node.start,
-      end: node.end,
-    });
-    const thrown = newNativeError("TypeError", message, undefined, node);
-    finish({
-      kind: "throw",
-      value: coerce(thrown, "general", node),
-      start: node.start,
-      end: node.end,
-    });
+    throwNativeError(
+      "TypeError",
+      "value does not match the asserted type",
+      node,
+    );
     current = accepted;
     const type = scalarType(node);
     return save(coerce(load(operand, node), type, node), type, node);
@@ -2840,6 +2828,14 @@ export function lowerFunction(
       no = block();
     choose(load(condition, node), yes, no, node);
     current = no;
+    throwNativeError(error, text, node);
+    current = yes;
+  }
+  function throwNativeError(
+    error: "TypeError" | "RangeError",
+    text: string,
+    node: IRSpan,
+  ): void {
     const message = nextValue++;
     emit({
       kind: "string-literal",
@@ -2855,7 +2851,6 @@ export function lowerFunction(
       start: node.start,
       end: node.end,
     });
-    current = yes;
   }
   // C views (docs/native-ffi.md, "C views"): each member access is one
   // c-memory load or store at a constant offset from the view's data, with
@@ -3205,6 +3200,14 @@ export function lowerFunction(
     const parameters = signatures[target]?.parameters;
     if (parameters === undefined) throw "rest signature invariant";
     supplyOmittedArguments(argumentsSlots, parameters, rest.start, node);
+    argumentsSlots.push(packCallArguments(args, rest, node));
+    return argumentsSlots;
+  }
+  function packCallArguments(
+    args: readonly Expression[],
+    rest: RestArguments,
+    node: Span,
+  ): number {
     const runtime = listRuntimeForElement(rest.element);
     const list = listValue(
       runtime,
@@ -3228,8 +3231,7 @@ export function lowerFunction(
         });
       else listCall(runtime, "push", [list, value(argument)], argument);
     }
-    argumentsSlots.push(list);
-    return argumentsSlots;
+    return list;
   }
   function invoke(
     target: number,
@@ -4120,6 +4122,13 @@ export function lowerFunction(
       current = block();
       return undefined;
     }
+    const downcast = info(node).downcast;
+    if (
+      result !== undefined &&
+      downcast !== undefined &&
+      node.kind !== "satisfies"
+    )
+      result = checkedDowncast(result, node, downcast);
     const enrollment = info(node).dynamicEnrollment;
     if (result !== undefined && enrollment !== undefined) {
       const runtime = dynamicObjects;
@@ -4265,6 +4274,28 @@ export function lowerFunction(
     if (node.kind === "member") return stringSlot(node.property, node);
     throw "dynamic object key invariant";
   }
+  function dynamicArray(
+    runtime: DynamicObjectRuntime,
+    elements: readonly Expression[],
+    node: Span,
+  ): number {
+    const array = dynamicResult(
+      runtime.createArray,
+      [numberSlot(elements.length, node)],
+      node,
+    );
+    for (let i = 0; i < elements.length; i++) {
+      const element = elements[i];
+      if (element === undefined) throw "realm array element invariant";
+      if (element.kind === "elision") continue;
+      dynamicCall(
+        runtime.define,
+        [array, stringSlot(String(i), element), value(element)],
+        element,
+      );
+    }
+    return array;
+  }
   function dynamicExpression(
     node: Expression,
     metadata: ExpressionInfo,
@@ -4274,6 +4305,40 @@ export function lowerFunction(
     const operation = metadata.dynamicObject;
     if (operation === undefined) throw "dynamic object operation invariant";
     switch (operation) {
+      case "array-literal":
+        if (node.kind !== "array") throw "realm array literal invariant";
+        return dynamicArray(runtime, node.elements, node);
+      case "array-push":
+      case "static-call": {
+        if (node.kind !== "call") throw "realm method call invariant";
+        const target = node.callee;
+        if (target.kind !== "member") throw "realm method target invariant";
+        const receiver =
+          operation === "array-push"
+            ? value(target.object)
+            : dynamicResult(runtime.objectConstructor, [], node);
+        const callee = dynamicResult(
+          runtime.read,
+          [receiver, stringSlot(target.property, node)],
+          node,
+        );
+        const args = dynamicArray(runtime, node.arguments, node);
+        const raw = dynamicResult(
+          runtime.invoke,
+          [receiver, callee, args],
+          node,
+        );
+        const schema = metadata.dynamicContract;
+        const type = metadata.type;
+        if (schema === undefined || type === "void")
+          throw "realm method result invariant";
+        const checked = dynamicResult(
+          runtime.project,
+          [raw, stringSlot(schema, node)],
+          node,
+        );
+        return save(load(checked, node), type, node);
+      }
       case "own-enumeration": {
         if (node.kind !== "call") throw "Object enumeration invariant";
         const target = ungroup(node.callee);
@@ -4419,6 +4484,64 @@ export function lowerFunction(
       default:
         throw "dynamic object operation invariant";
     }
+  }
+  function generalCall(
+    node: Expression & { readonly kind: "call" },
+    call: { readonly target: number | undefined },
+  ): number {
+    const target = ungroup(node.callee);
+    const base =
+      target.kind === "member" || target.kind === "index"
+        ? target.object
+        : undefined;
+    let receiver: number;
+    if (base === undefined) {
+      const absent = nextValue++;
+      emit({ kind: "undefined", id: absent, start: node.start, end: node.end });
+      receiver = save(absent, "optional-number", node);
+    } else {
+      receiver = value(base);
+      expressionOverrides.set(base, receiver);
+    }
+    const callee = value(node.callee);
+    if (base !== undefined) expressionOverrides.delete(base);
+    const rest = info(node).rest;
+    if (rest === undefined) throw "general call argument list invariant";
+    const argumentsList = packCallArguments(node.arguments, rest, node);
+
+    const kind = nextValue++;
+    emit({
+      kind: "general-kind",
+      id: kind,
+      value: load(callee, node),
+      start: node.start,
+      end: node.end,
+    });
+    requireCondition(
+      binarySlot(
+        "!==",
+        save(kind, "string", node),
+        stringSlot("function", node),
+        node,
+      ),
+      "TypeError",
+      nativeClosureCallMessage,
+      node,
+    );
+    const helper = call.target;
+    if (helper === undefined) {
+      // A typed-only image contains no realm callable representation.
+      throwNativeError("TypeError", "Called value is not a function", node);
+      current = block();
+      return save(
+        coerce(load(receiver, node), "general", node),
+        "general",
+        node,
+      );
+    }
+    const result = runtimeCall(helper, [callee, receiver, argumentsList], node);
+    if (result === undefined) throw "general call result invariant";
+    return result;
   }
   function nativeArrayTest(
     slot: number,
@@ -5314,7 +5437,7 @@ export function lowerFunction(
       case "satisfies": {
         const downcast = info(node).downcast;
         if (downcast === undefined) return expression(node.expression);
-        return checkedDowncast(node, downcast);
+        return checkedDowncast(value(node.expression), node, downcast);
       }
       case "group":
         return expression(node.expression);
@@ -5439,9 +5562,11 @@ export function lowerFunction(
             current = yes;
             label(
               type === "optional-reference"
-                ? info(node.operand).bigint === true
-                  ? "bigint"
-                  : "object"
+                ? info(node).typeofFunction
+                  ? "function"
+                  : info(node.operand).bigint === true
+                    ? "bigint"
+                    : "object"
                 : type === "optional-boolean"
                   ? "boolean"
                   : type === "optional-string"
@@ -6241,6 +6366,8 @@ export function lowerFunction(
         return result;
       }
       case "call": {
+        const general = metadata.generalCall;
+        if (general !== undefined) return generalCall(node, general);
         const created = info(node).cView;
         if (created !== undefined) return viewNew(node, created);
         const builtin = info(node).builtin;
@@ -9827,7 +9954,8 @@ export function lowerFunction(
     const handler = b.exception;
     return {
       id: target(b.id),
-      instructions: b.instructions,
+      // Keep the instructions without the spare capacity of the builder array.
+      instructions: b.instructions.slice(),
       terminator: mapped,
       ...(handler === undefined
         ? {}

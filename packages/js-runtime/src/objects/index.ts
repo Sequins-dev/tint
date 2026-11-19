@@ -193,6 +193,7 @@ export {
   scriptStrictEqual,
   scriptSameValue,
   callObjectValue,
+  callGeneralValue,
   getObjectValueProperty,
   readObjectValueProperty,
   getObjectValuePropertyWithReceiver,
@@ -485,6 +486,7 @@ export {
   installProgramConstructorGroup,
   installProgramArrayBufferIntrinsics,
   installProgramTypedArrayIntrinsics,
+  installProgramArrayIntrinsics,
   type ProgramRealmCore,
 } from "./program-realm.ts";
 export {

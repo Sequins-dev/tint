@@ -1,5 +1,5 @@
 import { createSourceTextView } from "@tint/source/text";
-import { parseModule } from "../syntax/index.ts";
+import { typeParameterCount, parseModule } from "../syntax/index.ts";
 import type { Statement, TypeNode } from "../syntax/index.ts";
 export type PrintedReifiedTypes =
   | { readonly ok: true; readonly value: string }
@@ -55,7 +55,7 @@ export function printReifiedTypes(
     if (
       declaration === undefined ||
       declaration.kind !== "type-alias" ||
-      (declaration.typeParameters?.length ?? 0) !== 0 ||
+      typeParameterCount(declaration.typeParameters) !== 0 ||
       !identifier(declaration.name) ||
       aliases.has(declaration.name)
     )

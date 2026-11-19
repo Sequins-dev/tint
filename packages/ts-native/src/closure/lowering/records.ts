@@ -142,7 +142,12 @@ function collectionElement(
  * absorbs other union members, including helper-generated undefined. */
 function generalType(checked: CheckedClosures, id: number): boolean {
   const type = checked.types[id];
-  if (type?.kind === "unknown") return true;
+  if (
+    type?.kind === "unknown" ||
+    type?.kind === "realm-callable" ||
+    type?.kind === "dynamic-result"
+  )
+    return true;
   if (
     type?.kind === "object" &&
     (type.realmConstructor === true ||
@@ -173,7 +178,12 @@ function generalType(checked: CheckedClosures, id: number): boolean {
         if (nested === undefined) throw "union member invariant";
         visit(nested);
       }
-    } else if (current?.kind === "unknown") unknown = true;
+    } else if (
+      current?.kind === "unknown" ||
+      current?.kind === "realm-callable" ||
+      current?.kind === "dynamic-result"
+    )
+      unknown = true;
     else if (current?.kind === "never") return;
     else if (current?.kind === "undefined") primitiveKinds.add("undefined");
     else if (
@@ -413,7 +423,12 @@ export function setElement(
 export function admitsUndefined(checked: CheckedClosures, id: number): boolean {
   const t = checked.types[id];
   if (t === undefined) return true;
-  if (t.kind === "undefined" || t.kind === "void" || t.kind === "unknown")
+  if (
+    t.kind === "undefined" ||
+    t.kind === "void" ||
+    t.kind === "unknown" ||
+    t.kind === "dynamic-result"
+  )
     return true;
   return (
     t.kind === "union" && t.members.some((m) => admitsUndefined(checked, m))
@@ -675,6 +690,8 @@ export function entryType(
   return undefined;
 }
 export interface RecordContracts extends RecordOperations {
+  /** Discard expression plans consumed by the just-lowered function. */
+  readonly clearFunctionOperations: () => void;
   readonly classes: readonly ClassRecordStorage[];
   readonly errorRecords: () => readonly number[];
   readonly errorProperty: (
@@ -1503,6 +1520,12 @@ export function createRecordContracts(
     },
     constructions,
     constructors,
+    clearFunctionOperations: () => {
+      constructions.clear();
+      constructors.clear();
+      accesses.clear();
+      spreads.clear();
+    },
     constructClass: (node, target) => {
       const receiver = checked.expressions.get(node.callee);
       if (receiver === undefined || !constructorReceiver(receiver))

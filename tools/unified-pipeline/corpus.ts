@@ -134,6 +134,42 @@ export const constructs: readonly Construct[] = [
 }`,
   },
   {
+    name: "dynamic-object-local-aggregate",
+    typed: `export function run(): number {
+  const entry: { value: number } = { value: 17 };
+  const list = [entry];
+  const groups: Record<string, { value: number }[]> = { group: list };
+  const alias = groups.group;
+  if (alias === undefined || alias !== list) return 1;
+  alias.push({ value: 25 });
+  return (alias[0]?.value ?? 0) + (list[1]?.value ?? 0);
+}`,
+    untyped: `export function run() {
+  const entry = { value: 17 };
+  const list = [entry];
+  const groups = { group: list };
+  const alias = groups.group;
+  if (!Array.isArray(alias) || alias !== list) return 1;
+  alias.push({ value: 25 });
+  return alias[0].value + list[1].value;
+}`,
+  },
+  {
+    name: "dynamic-object-own-data-definition",
+    typed: `export function run(): number {
+  const groups: Record<string, number[]> = {};
+  Object.defineProperty(groups, "__proto__", { value: [42], writable: true, enumerable: true, configurable: true });
+  const group = groups["__proto__"];
+  return Object.hasOwn(groups, "__proto__") && group !== undefined ? group[0] ?? 0 : 1;
+}`,
+    untyped: `export function run() {
+  const groups = {};
+  Object.defineProperty(groups, "__proto__", { value: [42], writable: true, enumerable: true, configurable: true });
+  const group = groups["__proto__"];
+  return Object.hasOwn(groups, "__proto__") && Object.getPrototypeOf(groups) === Object.prototype ? group[0] : 1;
+}`,
+  },
+  {
     name: "dynamic-object-in-delete",
     typed: `export function run(): number {
   const object: Record<string, number> = { key: 1 };
@@ -504,6 +540,54 @@ export function run(): number {
 export function run() {
   const closure = () => 42;
   return kind(closure) === "function" && kind({}) === "object" ? 42 : 1;
+}`,
+  },
+  {
+    name: "unknown-callable-direct",
+    typed: `function invoke(value: ((n: number) => number) | undefined): number {
+  if ("function" !== typeof value) return 0;
+  const result = value(40);
+  return result;
+}
+export function run(): number {
+  return invoke((n: number): number => n + 2) + invoke(undefined);
+}`,
+    untyped: `function invoke(value) {
+  if ("function" !== typeof value) return 0;
+  const result = value(40);
+  return result;
+}
+export function run() {
+  return invoke(n => n + 2) + invoke(undefined);
+}`,
+  },
+  {
+    name: "unknown-callable-arguments",
+    // Argument evaluation is shared with Node. A native closure reaches
+    // Tint's closure-view boundary after its argument has run.
+    typed: `function invoke(value: unknown, effect: () => number): unknown {
+  if (typeof value !== "function") return undefined;
+  return value(effect());
+}
+export function run(): number {
+  let trace = 0;
+  const fn = (n: number): number => n;
+  const effect = (): number => { trace = 42; return trace; };
+  try { return invoke(fn, effect) === 42 ? trace : 1; }
+  catch (e) {
+    return e instanceof TypeError &&
+      e.message === "Calling a native closure through Function requires the slice 2b closure view"
+      ? trace : 2;
+  }
+}`,
+    untyped: `function invoke(value, effect) {
+  if (typeof value !== "function") return undefined;
+  return value(effect());
+}
+export function run() {
+  let trace = 0;
+  const answer = invoke(n => n, () => { trace = 42; return trace; });
+  return answer === trace ? trace : 1;
 }`,
   },
   {
