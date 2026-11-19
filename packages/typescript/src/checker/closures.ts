@@ -48,6 +48,7 @@ import {
   type TypeSystem,
   type Property,
   type ObjectValue,
+  unsupportedDynamicPayload,
   type CheckedCellOperation,
   type CellOperation,
 } from "../types/index.ts";
@@ -157,6 +158,9 @@ export type ClosureIntrinsic =
   | "list-fill"
   | "array-read"
   | "array-write"
+  | "error-new"
+  | "error-is"
+  | "error-property"
   | "range-error-new"
   | "range-error-is"
   | "type-error-new"
@@ -164,6 +168,14 @@ export type ClosureIntrinsic =
   | "array-buffer"
   | "array-byte-offset"
   | "array-byte-length"
+  | "dynamic-object-own-enumeration"
+  | "dynamic-object-enroll"
+  | "dynamic-object-open-literal"
+  | "dynamic-object-literal"
+  | "dynamic-object-read"
+  | "dynamic-object-write"
+  | "dynamic-object-has"
+  | "dynamic-object-delete"
   | "array-length"
   | "string-from-code-units"
   | "string-from-code-points"
@@ -193,11 +205,18 @@ export interface ClosureBody {
   readonly parameters: readonly Parameter[];
   readonly body: Expression | BlockStatement;
   readonly result: number;
+  readonly explicitResult?: boolean;
 }
 export interface CheckedTypeFlow {
   readonly source: number;
   readonly target: number;
   readonly node: Span;
+}
+export interface RestCall {
+  /** First packed argument, relative to the arguments after any explicit receiver. */
+  readonly start: number;
+  readonly list: number;
+  readonly admitsUndefined: boolean;
 }
 export interface CheckedClosures {
   /** Resolved declaration names share IDs with this result's finite type graph. */
@@ -224,9 +243,13 @@ export interface CheckedClosures {
   readonly expressions: ReadonlyKeyIndex<Expression, number>;
   readonly chainValues: ReadonlyKeyIndex<Expression, number>;
   readonly chainReceivers: ReadonlyKeyIndex<Expression, number>;
+  readonly restCalls?: ReadonlyKeyIndex<Expression, RestCall>;
+  readonly voidResultDiscard?: boolean;
   /** `x as T` assertions from `unknown` to T: checked downcasts, which
    * throw a TypeError when the value is not a T (docs/unified-pipeline.md). */
   readonly downcasts?: ReadonlyKeyIndex<Expression, number>;
+  readonly dynamicEnrollments?: ReadonlyKeyIndex<Expression, number>;
+  readonly finitePropertyKeys?: ReadonlyKeyIndex<Expression, readonly string[]>;
   readonly operations: readonly BindingOperation[];
 }
 export interface CheckedTypeSystem {
@@ -236,6 +259,7 @@ export interface CheckedTypeSystem {
 export interface ClosureDiagnostic extends Span {
   readonly code: string;
   readonly message: string;
+  readonly preventsFallback?: boolean;
 }
 export type ClosureResult =
   | { readonly ok: true; readonly value: CheckedClosures }
@@ -268,6 +292,7 @@ export function checkClosureModule(
     "Number",
     "String",
     "BigInt",
+    "Object",
     "Math",
     "Uint8Array",
     "Uint16Array",
@@ -275,8 +300,20 @@ export function checkClosureModule(
     "Float64Array",
     "TypeError",
     "RangeError",
+    "Error",
   ]);
-  if (!bound.ok) return bound;
+  if (!bound.ok) {
+    const diagnostic = bound.error;
+    return {
+      ok: false,
+      error: {
+        start: diagnostic.start,
+        end: diagnostic.end,
+        code: diagnostic.code,
+        message: diagnostic.message,
+      },
+    };
+  }
   const graph = bound.value,
     abort = {},
     annotations: TypeNode[] = [];
@@ -291,8 +328,19 @@ export function checkClosureModule(
     literals = createKeyIndex<Expression, TypeNode>(syntaxHash);
   let error: ClosureDiagnostic | undefined,
     depth = 0;
-  function fail(node: Span, code: string, message: string): never {
-    error = { start: node.start, end: node.end, code, message };
+  function fail(
+    node: Span,
+    code: string,
+    message: string,
+    definitive: boolean = false,
+  ): never {
+    error = {
+      start: node.start,
+      end: node.end,
+      code,
+      message,
+      ...(definitive ? { preventsFallback: true } : {}),
+    };
     throw abort;
   }
   function annotation(node: Span, type: TypeNode | undefined): void {
@@ -318,12 +366,6 @@ export function checkClosureModule(
           "UNSUPPORTED",
           "typed parameter destructuring is not supported yet",
         );
-      if (p.rest)
-        fail(
-          p,
-          "UNSUPPORTED",
-          "typed rest parameter layouts are not implemented",
-        );
       if (p.initializer !== undefined) collect(p.initializer);
       annotation(
         p,
@@ -348,15 +390,26 @@ export function checkClosureModule(
       );
     }
     if (result !== undefined) annotations.push(result);
+    let signatureResult = result;
+    if (result === undefined && !named && params.some((p) => p.rest)) {
+      const provisional: TypeNode = {
+        kind: "named",
+        name: "void",
+        start: node.start,
+        end: node.end,
+        nodeHash: syntheticNodeHash(),
+      };
+      signatureResult = provisional;
+    }
     if (
       params.every((p) => p !== undefined && p.type !== undefined) &&
-      result !== undefined
+      signatureResult !== undefined
     ) {
       const type: TypeNode = {
         kind: "function",
         parameters: params,
         ...(receiver === undefined ? {} : { receiver }),
-        returnType: result,
+        returnType: signatureResult,
         start: node.start,
         end: node.end,
         nodeHash: syntheticNodeHash(),
@@ -619,6 +672,12 @@ export function checkClosureModule(
           collect(node.test);
           collect(node.body);
           break;
+        case "for-in-assignment":
+          collect(node.iterable);
+          collect(node.target);
+          collect(node.body);
+          break;
+        case "for-in":
         case "for-of": {
           if (node.await)
             fail(
@@ -791,6 +850,7 @@ export function checkClosureModule(
   const bindingTypes: number[] = [],
     expressions = createKeyIndex<Expression, number>(syntaxHash),
     operations: BindingOperation[] = [];
+  const restCalls = createKeyIndex<Expression, RestCall>(syntaxHash);
   const typeFlows: CheckedTypeFlow[] = [];
   const flowTargets = new Map<number, Set<number>>();
   function recordTypeFlow(source: number, target: number, node: Span): void {
@@ -817,6 +877,76 @@ export function checkClosureModule(
     if (targets.has(target)) return;
     targets.add(target);
     typeFlows.push({ source, target, node });
+  }
+  /** Speculative relation queries can make a void result compatible even
+   * when the value never flows to that type. Only checked value flows need a
+   * physical result-discarding witness. */
+  function requiresVoidResultDiscard(): boolean {
+    if (!system.usesVoidResultDiscard()) return false;
+    const seen = new Set<number>();
+    function pair(
+      source: number | undefined,
+      target: number | undefined,
+    ): boolean {
+      if (source === undefined) return false;
+      if (target === undefined) return false;
+      if (source === target) return false;
+      const left: number = source,
+        right: number = target;
+      const key = left * types.length + right;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      const from = types[left],
+        to = types[right];
+      if (from === undefined || to === undefined) return false;
+      if (from.kind === "union")
+        return from.members.some((member) => pair(member, right));
+      if (to.kind === "union")
+        return to.members.some(
+          (member) =>
+            member !== undefined &&
+            system.assignable(left, member) &&
+            pair(left, member),
+        );
+      if (from.kind === "function" && to.kind === "function") {
+        const kind = types[from.result]?.kind;
+        if (
+          types[to.result]?.kind === "void" &&
+          kind !== "void" &&
+          kind !== "never"
+        )
+          return true;
+        return (
+          pair(from.result, to.result) ||
+          pair(to.receiver, from.receiver) ||
+          from.parameters.some((parameter, index) =>
+            pair(to.parameters[index], parameter),
+          )
+        );
+      }
+      if (from.kind === "array" && to.kind === "array")
+        return pair(from.element, to.element);
+      if (from.kind === "object" && to.kind === "function")
+        return pair(from.call, right);
+      if (from.kind === "function" && to.kind === "object")
+        return pair(left, to.call);
+      if (from.kind !== "object" || to.kind !== "object") return false;
+      const properties = from.properties;
+      return (
+        pair(from.call, to.call) ||
+        pair(from.construct, to.construct) ||
+        to.properties.some((property) => {
+          if (property === undefined) throw "type flow property invariant";
+          const own = properties.find(
+            (candidate) => candidate?.name === property.name,
+          );
+          return pair(own?.type, property.type);
+        })
+      );
+    }
+    return typeFlows.some(
+      (flow) => flow !== undefined && pair(flow.source, flow.target),
+    );
   }
   const intrinsics = createKeyIndex<Expression, ClosureIntrinsic>(syntaxHash);
   // Validation witnesses for fresh contextual literals are separate from their
@@ -934,8 +1064,11 @@ export function checkClosureModule(
     return id;
   }
   function primitive(name: string): number {
-    const id = contracts.names.get(name);
-    if (id === undefined) throw "primitive invariant";
+    const id =
+      name === "Error"
+        ? types.findIndex((type) => type?.kind === "Error")
+        : contracts.names.get(name);
+    if (id === undefined || id < 0) throw "primitive invariant";
     return id;
   }
   const number = primitive("number"),
@@ -1253,10 +1386,19 @@ export function checkClosureModule(
       )
     );
   }
+  function dynamicObject(type: number): boolean {
+    const value = types[type];
+    return value?.kind === "object" && value.stringIndex !== undefined;
+  }
   function requireType(actual: number, expected: number, node: Span): void {
     recordTypeFlow(actual, expected, node);
     if (!system.assignable(actual, expected))
-      fail(node, "TYPE_MISMATCH", "value does not match its declared type");
+      fail(
+        node,
+        "TYPE_MISMATCH",
+        "value does not match its declared type",
+        dynamicObject(expected) || dynamicObject(actual),
+      );
   }
   // C views (c-views.ts): nominal Uint8Array types over binding records.
   const cViews = options.cViews,
@@ -1426,7 +1568,25 @@ export function checkClosureModule(
         );
     }
     const checked = system.cell({ type, mutable: b.mutable }, op);
-    if (!checked.ok) fail(node, checked.error, "invalid binding operation");
+    if (!checked.ok) {
+      if (checked.error === "TYPE_MISMATCH" && op.kind !== "read") {
+        const source = types[op.value],
+          target = types[type];
+        if (
+          source?.kind === "function" &&
+          target?.kind === "function" &&
+          (source.rest === true || target.rest === true) &&
+          ((source.rest === true) !== (target.rest === true) ||
+            source.parameters.length !== target.parameters.length)
+        )
+          fail(
+            node,
+            checked.error,
+            "rest function assignments require matching rest layouts",
+          );
+      }
+      fail(node, checked.error, "invalid binding operation");
+    }
     operations.push({
       node,
       function: owner,
@@ -1626,7 +1786,7 @@ export function checkClosureModule(
   let internedCount = 0;
   function internKey(type: Type): string | undefined {
     if (type.kind === "function")
-      return type.receiver === undefined
+      return type.receiver === undefined && type.rest !== true
         ? "f" + type.result + "(" + type.parameters.join(",") + ")"
         : undefined;
     if (type.kind === "never") return "n";
@@ -1886,6 +2046,86 @@ export function checkClosureModule(
     result.add(narrowToken(binding.id, unionSubset(selected, node)));
     return result;
   }
+  function isErrorKind(kind: string | undefined): boolean {
+    return kind === "Error" || kind === "TypeError" || kind === "RangeError";
+  }
+  function isErrorType(id: number): boolean {
+    const type = types[id];
+    if (type?.kind === "union") return type.members.every(isErrorType);
+    return isErrorKind(type?.kind);
+  }
+  function refineErrorGuard(
+    node: Expression,
+    truth: boolean,
+    base: Set<number>,
+  ): Set<number> | undefined {
+    if (node.kind !== "binary" || node.operator !== "instanceof")
+      return undefined;
+    const target = ungroup(node.right);
+    if (
+      target.kind !== "identifier" ||
+      !isErrorKind(target.name) ||
+      references.has(target)
+    )
+      return undefined;
+    const binding = references.get(ungroup(node.left));
+    if (binding === undefined) return undefined;
+    const declared = bindingTypes[binding.id];
+    if (declared === undefined) return undefined;
+    const name = target.name,
+      brand = primitive(name);
+    const selected: number[] = [];
+    function collect(id: number): void {
+      const type = types[id];
+      if (type?.kind === "union") {
+        for (const member of type.members) {
+          if (member === undefined) throw "error guard member invariant";
+          collect(member);
+        }
+      } else if (type?.kind === "unknown") selected.push(truth ? brand : id);
+      else if (isErrorKind(type?.kind)) {
+        if (name === "Error" || type?.kind === name) {
+          if (truth) selected.push(id);
+        } else if (type?.kind === "Error") selected.push(truth ? brand : id);
+        else if (!truth) selected.push(id);
+      } else if (!truth) selected.push(id);
+      else if (type?.kind === "object") selected.push(brand);
+    }
+    collect(narrowedType(binding.id, declared, base));
+    if (selected.length === 0) return undefined;
+    const result = new Set(base);
+    for (const token of result) {
+      const fact = narrowed[token - graph.bindings.length];
+      if (
+        fact !== undefined &&
+        fact.binding === binding.id &&
+        fact.property === undefined
+      )
+        result.delete(token);
+    }
+    result.add(narrowToken(binding.id, unionSubset(selected, node)));
+    return result;
+  }
+  function validInstanceofOperand(id: number): boolean {
+    const type = types[id];
+    if (type?.kind === "union")
+      return type.members.some(validInstanceofOperand);
+    return (
+      type?.kind === "unknown" ||
+      type?.kind === "never" ||
+      type?.kind === "object" ||
+      type?.kind === "array" ||
+      type?.kind === "function" ||
+      type?.kind === "map" ||
+      type?.kind === "set" ||
+      type?.kind === "ArrayBuffer" ||
+      type?.kind === "Uint8Array" ||
+      type?.kind === "Uint16Array" ||
+      type?.kind === "Uint32Array" ||
+      type?.kind === "Float64Array" ||
+      isErrorKind(type?.kind)
+    );
+  }
   function refineLiteralBinding(
     node: Expression,
     truth: boolean,
@@ -1945,8 +2185,7 @@ export function checkClosureModule(
                 type?.kind === "Uint16Array" ||
                 type?.kind === "Uint32Array" ||
                 type?.kind === "Float64Array" ||
-                type?.kind === "TypeError" ||
-                type?.kind === "RangeError"
+                isErrorKind(type?.kind)
               ? "object"
               : type?.kind;
         if (
@@ -2215,6 +2454,31 @@ export function checkClosureModule(
     if (node.kind === "unary" && node.operator === "!")
       return refine(node.operand, !truth, base, evaluated);
     if (node.kind === "binary") {
+      if (
+        truth &&
+        node.operator === "in" &&
+        intrinsics.get(node) === "dynamic-object-has"
+      ) {
+        const object = expressions.get(node.right);
+        const binding = references.get(ungroup(node.right));
+        const keyType = expressions.get(node.left);
+        const key = checkedPropertyName(
+          node.left,
+          keyType === undefined ? undefined : types[keyType],
+        );
+        if (
+          object !== undefined &&
+          binding !== undefined &&
+          key !== undefined
+        ) {
+          const targets = dynamicPropertyTargets(object, keyType, key, node);
+          const field = targets[0];
+          if (field === undefined) throw "dynamic presence field invariant";
+          const narrowed = new Set(base);
+          narrowed.add(narrowToken(binding.id, field.type, key));
+          return narrowed;
+        }
+      }
       if (node.operator === "&&")
         return truth
           ? refine(
@@ -2291,6 +2555,8 @@ export function checkClosureModule(
       for (const token of base) if (evaluated.has(token)) retained.add(token);
       return retained;
     }
+    const error = refineErrorGuard(node, truth, base);
+    if (error !== undefined) return error;
     const nullable = refineNullBinding(node, truth, base);
     if (nullable !== undefined) return nullable;
     const literal = refineLiteralBinding(node, truth, base);
@@ -2495,6 +2761,12 @@ export function checkClosureModule(
       if (type?.kind !== "function") throw "signature invariant";
       if (params.length !== type.parameters.length)
         fail(node, "ARITY", "parameter count does not match context");
+      if ((params[params.length - 1]?.rest === true) !== (type.rest === true))
+        fail(
+          node,
+          "TYPE_MISMATCH",
+          "rest parameter layout does not match context",
+        );
       const owner = functions.get(node);
       if (owner === undefined) throw "function identity invariant";
       const receiverType = type.receiver;
@@ -2556,8 +2828,14 @@ export function checkClosureModule(
       }
       let result =
         returnAnnotation === undefined ? type.result : typeOf(returnAnnotation);
-      requireType(result, type.result, node);
-      bodies.set(owner, { node, parameters: params, body, result });
+      if (type.result !== voidType) requireType(result, type.result, node);
+      bodies.set(owner, {
+        node,
+        parameters: params,
+        body,
+        result,
+        ...(returnAnnotation !== undefined ? { explicitResult: true } : {}),
+      });
       if (body.kind === "block") {
         const returns: number[] = [];
         if (inferResult) inferredReturns.set(owner, returns);
@@ -2566,9 +2844,16 @@ export function checkClosureModule(
         if (inferResult) {
           if (returns.length === 0)
             result = (completed & 1) !== 0 ? voidType : neverType(body);
+          else if (returns.every((value) => value === voidType))
+            result = voidType;
           else {
             if ((completed & 1) !== 0) returns.push(undefinedType);
-            result = unionSubset(returns, body);
+            result = unionSubset(
+              returns.map((value) =>
+                value === voidType ? undefinedType : value,
+              ),
+              body,
+            );
           }
           bodies.set(owner, { node, parameters: params, body, result });
         } else if ((completed & 1) !== 0 && result !== voidType) {
@@ -2732,7 +3017,11 @@ export function checkClosureModule(
   // Ordinary undefined-valued properties remain part of the live contract.
   const chainValues = createKeyIndex<Expression, number>(syntaxHash),
     chainReceivers = createKeyIndex<Expression, number>(syntaxHash),
-    downcasts = createKeyIndex<Expression, number>(syntaxHash);
+    downcasts = createKeyIndex<Expression, number>(syntaxHash),
+    dynamicEnrollments = createKeyIndex<Expression, number>(syntaxHash),
+    finitePropertyKeys = createKeyIndex<Expression, readonly string[]>(
+      syntaxHash,
+    );
   /** Types a checked downcast can test at run time: primitives, 1-byte
    * typed arrays, plain object (record) types, and unions of these. */
   function downcastable(type: number): boolean {
@@ -2746,6 +3035,9 @@ export function checkClosureModule(
       case "undefined":
       case "null":
       case "Uint8Array":
+      case "TypeError":
+      case "RangeError":
+      case "Error":
         return true;
       case "object":
         return t.call === undefined && t.construct === undefined;
@@ -2766,6 +3058,313 @@ export function checkClosureModule(
       chainReceivers.get(target) ?? expressions.get(target.object);
     if (receiver === undefined) throw "checked receiver invariant";
     return receiver;
+  }
+  function callArguments(
+    node: Expression & { readonly kind: "call" | "new" },
+    owner: number | undefined,
+    signature: Type & { readonly kind: "function" },
+    offset: number = 0,
+  ): number[] {
+    const start = signature.parameters.length - 1;
+    const list =
+      signature.rest === true ? signature.parameters[start] : undefined;
+    const rest = list === undefined ? undefined : types[list];
+    const element = rest?.kind === "array" ? rest.element : undefined;
+    if (list !== undefined && element !== undefined) {
+      if (!isList(list))
+        fail(
+          node,
+          "UNSUPPORTED",
+          "rest parameter requires a supported array layout",
+        );
+      restCalls.set(node, {
+        start,
+        list,
+        admitsUndefined: system.assignable(undefinedType, element),
+      });
+    }
+    const args: number[] = [];
+    for (let i = offset; i < node.arguments.length; i++) {
+      const argument = node.arguments[i];
+      if (argument === undefined) throw "call argument invariant";
+      const position = i - offset;
+      const trailing = element !== undefined && position >= start;
+      if (argument.kind !== "spread") {
+        args.push(
+          expression(
+            argument,
+            owner,
+            trailing ? element : signature.parameters[position],
+          ),
+        );
+        continue;
+      }
+      if (!trailing || element === undefined)
+        fail(
+          argument,
+          "UNSUPPORTED",
+          "spread arguments are only supported in the rest position",
+        );
+      const source = expression(
+        argument.value,
+        owner,
+        ungroup(argument.value).kind === "array" ? list : undefined,
+      );
+      const spread = types[source];
+      const supplied = isArray(source)
+        ? number
+        : spread?.kind === "array" &&
+            spread.realmArray !== true &&
+            isList(source)
+          ? spread.element
+          : undefined;
+      if (supplied === undefined)
+        fail(argument, "UNSUPPORTED", "rest spread requires a supported array");
+      recordTypeFlow(supplied, element, argument);
+      if (!system.assignable(supplied, element))
+        fail(
+          argument,
+          "TYPE_MISMATCH",
+          "rest spread element does not match rest parameter",
+        );
+      args.push(supplied);
+    }
+    return args;
+  }
+  function requireForInObject(id: number, node: Span): void {
+    if (!dynamicObject(presentType(id, true) ?? id))
+      fail(node, "UNSUPPORTED", "typed for-in requires a dynamic-key object");
+  }
+  function realmArray(
+    element: number,
+    node: Span,
+    tupleElements?: readonly number[],
+  ): number {
+    return appendType(
+      {
+        kind: "array",
+        element,
+        readonly: false,
+        realmArray: true,
+        ...(tupleElements === undefined ? {} : { tupleElements }),
+      },
+      node,
+      "invalid realm array type",
+    );
+  }
+  function finiteRecordKeys(
+    object: number,
+    keyType: number,
+  ): readonly string[] | undefined {
+    const record = types[object];
+    if (
+      record?.kind !== "object" ||
+      record.stringIndex !== undefined ||
+      types[keyType]?.kind !== "union"
+    )
+      return undefined;
+    const keys: string[] = [];
+    function collect(id: number): boolean {
+      const type = types[id];
+      if (type?.kind === "union")
+        return type.members.every(
+          (member) => member !== undefined && collect(member),
+        );
+      if (type?.kind !== "literal") return false;
+      const value = type.value;
+      if (typeof value !== "string") return false;
+      if (!keys.includes(value)) keys.push(value);
+      return true;
+    }
+    return collect(keyType) && keys.length > 0 ? keys : undefined;
+  }
+  function dynamicPropertyTargets(
+    object: number,
+    key: number | undefined,
+    name: string | undefined,
+    node: Span,
+  ): Property[] {
+    const target = types[object];
+    if (target?.kind !== "object") throw "dynamic object target invariant";
+    const index = target.stringIndex;
+    if (index === undefined) throw "dynamic object index invariant";
+    const result: Property[] = [];
+    const properties = target.properties;
+    const fallback: Property = {
+      name: "",
+      type: index.type,
+      optional: true,
+      readonly: index.readonly,
+    };
+    function add(name: string | undefined): void {
+      const field =
+        name === undefined
+          ? undefined
+          : properties.find((p) => p !== undefined && p.name === name);
+      result.push(field ?? fallback);
+    }
+    function collect(id: number): void {
+      const type = types[id];
+      if (type?.kind === "union") {
+        for (const member of type.members) {
+          if (member === undefined) throw "dynamic key invariant";
+          collect(member);
+        }
+      } else if (type?.kind === "string" || type?.kind === "number")
+        add(undefined);
+      else if (type?.kind === "literal") {
+        const value = type.value;
+        if (typeof value === "string") add(value);
+        else if (typeof value === "number") add(String(value));
+        else
+          fail(
+            node,
+            "TYPE_MISMATCH",
+            "dynamic-key object keys must be string or number",
+            true,
+          );
+      } else
+        fail(
+          node,
+          "TYPE_MISMATCH",
+          "dynamic-key object keys must be string or number",
+          true,
+        );
+    }
+    if (name !== undefined) add(name);
+    else if (key !== undefined) collect(key);
+    else throw "dynamic key invariant";
+    return result;
+  }
+  function dynamicRead(
+    object: number,
+    key: number,
+    name: string | undefined,
+    node: Span,
+  ): number {
+    const fields = dynamicPropertyTargets(object, key, name, node);
+    const readTypes: number[] = [];
+    for (const field of fields) {
+      if (field === undefined) throw "dynamic property invariant";
+      readTypes.push(field.type);
+      if (field.optional) readTypes.push(undefinedType);
+    }
+    return unionSubset(readTypes, node);
+  }
+  function propertyFact(
+    receiver: Expression,
+    property: string,
+  ): number | undefined {
+    const binding = references.get(ungroup(receiver));
+    if (binding !== undefined)
+      for (const token of present) {
+        const fact = narrowed[token - graph.bindings.length];
+        if (
+          fact !== undefined &&
+          fact.binding === binding.id &&
+          fact.property === property
+        )
+          return fact.type;
+      }
+    return undefined;
+  }
+  function checkDynamicPayload(value: number, node: Span): void {
+    const unsupported = unsupportedDynamicPayload(types, value);
+    if (unsupported !== undefined) fail(node, "UNSUPPORTED", unsupported, true);
+  }
+  function checkDynamicLiteral(
+    node: Expression & { readonly kind: "object" },
+    owner: number | undefined,
+    context: number,
+    open: boolean = false,
+  ): void {
+    const type = types[context];
+    if (type?.kind !== "object") throw "dynamic literal context invariant";
+    const own = new Set<string>();
+    for (const property of node.properties) {
+      if (property === undefined) throw "dynamic literal property invariant";
+      if (property.kind === "spread") {
+        const source = types[expression(property.value, owner)];
+        if (source?.kind === "null" || source?.kind === "undefined") continue;
+        const index = type.stringIndex;
+        const sourceIndex =
+          source?.kind === "object" ? source.stringIndex : undefined;
+        if (
+          source?.kind !== "object" ||
+          sourceIndex === undefined ||
+          index === undefined
+        )
+          fail(
+            property,
+            "UNSUPPORTED",
+            "typed dynamic spread requires a dynamic-key object source",
+          );
+        requireType(sourceIndex.type, index.type, property);
+        for (const field of source.properties) {
+          if (field === undefined) throw "dynamic spread field invariant";
+          const target = type.properties.find(
+            (entry) => entry !== undefined && entry.name === field.name,
+          );
+          requireType(field.type, target?.type ?? index.type, property);
+          if (!field.optional) own.add(field.name);
+        }
+        continue;
+      }
+      if (property.accessor !== undefined)
+        fail(
+          property,
+          "UNSUPPORTED",
+          "typed dynamic object accessors require callable views",
+        );
+      if (property.prototypeSetter === true) {
+        checkDynamicPayload(expression(property.value, owner), property.value);
+        continue;
+      }
+      const key = property.keyExpression;
+      const name = key === undefined ? property.name : undefined;
+      const keyType = key === undefined ? undefined : expression(key, owner);
+      const known =
+        key === undefined
+          ? name
+          : checkedPropertyName(
+              key,
+              keyType === undefined ? undefined : types[keyType],
+            );
+      const fields = dynamicPropertyTargets(context, keyType, known, property);
+      const first = fields[0];
+      if (first === undefined) throw "dynamic literal field invariant";
+      const value = expression(
+        property.value,
+        owner,
+        types[first.type]?.kind === "unknown" ? undefined : first.type,
+      );
+      checkDynamicPayload(value, property.value);
+      for (const field of fields) {
+        if (field === undefined) throw "dynamic literal field invariant";
+        if (!system.assignable(value, field.type))
+          fail(
+            property.value,
+            "TYPE_MISMATCH",
+            "dynamic-key object property value does not match its declared type",
+            true,
+          );
+      }
+      if (known !== undefined) own.add(known);
+    }
+    for (const field of type.properties) {
+      if (field === undefined) throw "dynamic literal field invariant";
+      if (!field.optional && !own.has(field.name))
+        fail(
+          node,
+          "PROPERTY",
+          "missing required dynamic-key object property " + field.name,
+          true,
+        );
+    }
+    intrinsics.set(
+      node,
+      open ? "dynamic-object-open-literal" : "dynamic-object-literal",
+    );
   }
   function expression(
     input: Expression,
@@ -2801,6 +3400,12 @@ export function checkClosureModule(
         return live;
       }
       switch (node.kind) {
+        case "spread":
+          return fail(
+            node,
+            "UNSUPPORTED",
+            "spread arguments are only supported in the rest position",
+          );
         case "private-in":
           return fail(
             node,
@@ -2875,6 +3480,16 @@ export function checkClosureModule(
             types[constraint]?.kind === "unknown" ? undefined : constraint,
             true,
           );
+          if (
+            node.assertion === "as" &&
+            dynamicObject(presentType(constraint, true) ?? constraint) &&
+            (types[result]?.kind === "unknown" ||
+              system.assignable(result, constraint))
+          ) {
+            intrinsics.set(node, "dynamic-object-enroll");
+            result = constraint;
+            break;
+          }
           // `x as T` from unknown is a checked downcast (an explicit
           // contract): the value is tested at run time and a mismatch
           // throws a TypeError.
@@ -3047,25 +3662,60 @@ export function checkClosureModule(
           break;
         }
         case "object": {
-          if (
-            node.properties.some(
-              (p) => p.kind !== "spread" && p.keyExpression !== undefined,
+          const contextType =
+            expected === undefined ? undefined : types[expected];
+          const dynamicContext =
+            contextType?.kind === "union" &&
+            contextType.members.some(
+              (member) => member !== undefined && dynamicObject(member),
             )
-          )
-            fail(
+              ? (presentType(expected, true) ?? expected)
+              : expected;
+          if (dynamicContext !== undefined && dynamicObject(dynamicContext)) {
+            checkDynamicLiteral(node, owner, dynamicContext, preserveContext);
+            result = dynamicContext;
+            break;
+          }
+          if (
+            expected === undefined &&
+            node.properties.some(
+              (p) =>
+                p.kind !== "spread" &&
+                (p.keyExpression !== undefined || p.prototypeSetter === true),
+            )
+          ) {
+            const unknown = appendType(
+              { kind: "unknown" },
               node,
-              "UNSUPPORTED",
-              "typed dynamic object keys require dynamic layout support",
+              "invalid dynamic object value type",
             );
+            result = appendType(
+              {
+                kind: "object",
+                properties: [],
+                stringIndex: {
+                  type: unknown,
+                  readonly: false,
+                  origin: "signature",
+                },
+              },
+              node,
+              "invalid dynamic object type",
+            );
+            checkDynamicLiteral(node, owner, result, true);
+            break;
+          }
           if (
             node.properties.some(
-              (p) => p.kind !== "spread" && p.prototypeSetter === true,
+              (p) =>
+                p.kind !== "spread" &&
+                (p.keyExpression !== undefined || p.prototypeSetter === true),
             )
           )
             fail(
               node,
               "UNSUPPORTED",
-              "typed prototype setters require prototype layout support",
+              "dynamic object literal requires an indexed object context",
             );
           if (
             node.properties.some(
@@ -3078,6 +3728,14 @@ export function checkClosureModule(
               "typed object accessors require accessor layout support",
             );
           const hasSpread = node.properties.some((p) => p.kind === "spread");
+          if (types[expected ?? -1]?.kind === "Error") {
+            // Keep the actual record shape, even when the context is Error.
+            // Its optional stack may be absent and its identity is observable.
+            const actual = expression(node, owner, undefined, preserveContext);
+            requireType(actual, primitive("Error"), node);
+            result = actual;
+            break;
+          }
           if (expected === undefined || hasSpread || preserveContext) {
             const contexts: number[] = [];
             const visited = new Set<number>();
@@ -3353,15 +4011,26 @@ export function checkClosureModule(
               "invalid receiver signature",
             );
           }
-          checkFunction(
+          const signature = types[result];
+          if (signature?.kind !== "function")
+            throw "callback signature invariant";
+          const infer =
+            node.returnType === undefined && signature.result === voidType;
+          const returned = checkFunction(
             node,
             node.parameters,
             node.returnType,
             node.body,
             result,
-            false,
+            infer,
             true,
           );
+          if (signature.result === voidType && returned !== voidType)
+            result = appendType(
+              { ...signature, result: returned },
+              node,
+              "invalid callback result signature",
+            );
           break;
         }
         case "member": {
@@ -3376,6 +4045,31 @@ export function checkClosureModule(
             break;
           }
           const obj = chainReceiver(node.object, node.optional === true);
+          if (
+            isErrorType(obj) &&
+            (node.property === "message" ||
+              node.property === "name" ||
+              node.property === "stack")
+          ) {
+            intrinsics.set(node, "error-property");
+            result =
+              node.property === "stack"
+                ? unionSubset([string, undefinedType], node)
+                : string;
+            break;
+          }
+          const objectType = types[obj];
+          if (objectType?.kind === "array" && objectType.realmArray === true) {
+            if (node.property !== "length")
+              fail(
+                node,
+                "UNSUPPORTED",
+                "realm array member requires typed array method lowering",
+              );
+            intrinsics.set(node, "dynamic-object-read");
+            result = number;
+            break;
+          }
           const viewRead = viewAccess(
             node,
             obj,
@@ -3424,29 +4118,44 @@ export function checkClosureModule(
             result = number;
             break;
           }
+          if (dynamicObject(obj)) intrinsics.set(node, "dynamic-object-read");
           const literal = literalProperty(obj, node.property, node);
           const p = system.property(obj, node.property);
           if (!p.ok) fail(node, p.error, "invalid property read");
           result = literal ?? p.value;
-          const binding = references.get(receiver);
-          if (binding !== undefined)
-            for (const token of present) {
-              const fact = narrowed[token - graph.bindings.length];
-              if (
-                fact !== undefined &&
-                fact.binding === binding.id &&
-                fact.property === node.property
-              ) {
-                result = fact.type;
-                break;
-              }
-            }
+          result = propertyFact(receiver, node.property) ?? result;
           break;
         }
         case "index": {
           const object = chainReceiver(node.object, node.optional === true);
           const keyType = expression(node.index, owner),
             property = checkedPropertyName(node.index, types[keyType]);
+          const objectType = types[object];
+          if (objectType?.kind === "array" && objectType.realmArray === true) {
+            intrinsics.set(node, "dynamic-object-read");
+            if (property === "length") result = number;
+            else {
+              requireType(keyType, number, node.index);
+              const tuple = objectType.tupleElements;
+              if (tuple !== undefined && property !== undefined) {
+                const position = tuple[Number(property)];
+                if (position === undefined)
+                  fail(node, "PROPERTY", "tuple position does not exist", true);
+                result = position;
+              } else
+                result = unionSubset([objectType.element, undefinedType], node);
+            }
+            break;
+          }
+          if (dynamicObject(object)) {
+            intrinsics.set(node, "dynamic-object-read");
+            const fact =
+              property === undefined
+                ? undefined
+                : propertyFact(node.object, property);
+            result = fact ?? dynamicRead(object, keyType, property, node);
+            break;
+          }
           const viewRead = viewAccess(node, object, property, keyType, false);
           if (viewRead !== undefined) {
             result = viewUseType(viewRead, node);
@@ -3483,6 +4192,25 @@ export function checkClosureModule(
             result = read.value;
             break;
           }
+          const finite = finiteRecordKeys(object, keyType);
+          if (finite !== undefined) {
+            const reads: number[] = [];
+            for (const name of finite) {
+              if (name === undefined) throw "finite record key invariant";
+              const read = system.property(object, name);
+              if (!read.ok)
+                fail(
+                  node,
+                  read.error,
+                  "invalid finite record property read",
+                  true,
+                );
+              reads.push(read.value);
+            }
+            finitePropertyKeys.set(node, finite);
+            result = unionSubset(reads, node);
+            break;
+          }
           if (!isList(object)) requireArray(object, node.object);
           requireType(keyType, number, node.index);
           intrinsics.set(node, isList(object) ? "list-read" : "array-read");
@@ -3493,24 +4221,27 @@ export function checkClosureModule(
           const target = ungroup(node.callee);
           if (
             target.kind === "identifier" &&
-            (target.name === "TypeError" || target.name === "RangeError") &&
+            isErrorKind(target.name) &&
             !references.has(target)
           ) {
             if (node.arguments.length > 1)
               fail(
                 node,
-                "ARITY",
-                "native errors accept at most one message in this slice",
+                "UNSUPPORTED",
+                "Error options (cause) require the realm Error constructor",
               );
             for (const argument of node.arguments) {
               if (argument === undefined) throw "error argument invariant";
-              requireType(expression(argument, owner), string, argument);
+              const messageType = unionSubset([string, undefinedType], node);
+              requireType(expression(argument, owner), messageType, argument);
             }
             intrinsics.set(
               node,
               target.name === "TypeError"
                 ? "type-error-new"
-                : "range-error-new",
+                : target.name === "RangeError"
+                  ? "range-error-new"
+                  : "error-new",
             );
             result = primitive(target.name);
             break;
@@ -3618,9 +4349,7 @@ export function checkClosureModule(
                 "TYPE_MISMATCH",
                 "callee must have a construct signature",
               );
-            const args = node.arguments.map((argument, index) =>
-              expression(argument, owner, signature.parameters[index]),
-            );
+            const args = callArguments(node, owner, signature);
             const constructed = system.construct(callee, args);
             if (!constructed.ok)
               fail(node, constructed.error, "invalid construction");
@@ -3666,9 +4395,7 @@ export function checkClosureModule(
                 "TYPE_MISMATCH",
                 "callee must have a function type",
               );
-            const args = node.arguments.map((a, i) =>
-              expression(a, owner, signature.parameters[i]),
-            );
+            const args = callArguments(node, owner, signature);
             const checked = system.call(
               callee,
               args,
@@ -3681,6 +4408,44 @@ export function checkClosureModule(
             break;
           }
           const target = ungroup(node.callee);
+          if (
+            target.kind === "member" &&
+            !target.optional &&
+            !node.optional &&
+            (target.property === "keys" ||
+              target.property === "values" ||
+              target.property === "entries")
+          ) {
+            const object = ungroup(target.object);
+            if (
+              object.kind === "identifier" &&
+              object.name === "Object" &&
+              !references.has(object)
+            ) {
+              const argument = node.arguments[0];
+              if (node.arguments.length !== 1 || argument === undefined)
+                fail(node, "ARITY", "Object enumeration requires one argument");
+              const source = types[expression(argument, owner)];
+              const index =
+                source?.kind === "object" ? source.stringIndex : undefined;
+              if (index === undefined)
+                fail(
+                  argument,
+                  "UNSUPPORTED",
+                  "typed Object enumeration requires a dynamic-key object",
+                );
+              let element = index.type;
+              if (target.property === "keys") element = string;
+              if (target.property === "entries") {
+                const pair: number[] = [string, index.type];
+                element = realmArray(unionSubset(pair, node), node, pair);
+              }
+              result = realmArray(element, node);
+              intrinsics.set(node, "dynamic-object-own-enumeration");
+              invalidateCalls();
+              break;
+            }
+          }
           // `R.view(bytes)` with R a binding Layout constant: a view of R
           // over `bytes` (which must hold R's size, else RangeError).
           const layout =
@@ -3929,12 +4694,7 @@ export function checkClosureModule(
                 suppliedReceiver === undefined
                   ? undefinedType
                   : expression(suppliedReceiver, owner, map.receiver);
-              const args: number[] = [];
-              for (let i = 1; i < node.arguments.length; i++) {
-                const argument = node.arguments[i];
-                if (argument === undefined) throw "call argument invariant";
-                args.push(expression(argument, owner, map.parameters[i - 1]));
-              }
+              const args = callArguments(node, owner, map, 1);
               const called = system.call(obj, args, receiver);
               if (!called.ok)
                 fail(node, called.error, "invalid explicit receiver call");
@@ -4646,9 +5406,7 @@ export function checkClosureModule(
             const signature = types[member.value];
             if (signature?.kind !== "function")
               fail(target, "TYPE_MISMATCH", "property must have function type");
-            const args = node.arguments.map((a, i) =>
-              expression(a, owner, signature.parameters[i]),
-            );
+            const args = callArguments(node, owner, signature);
             const checked = system.call(member.value, args, obj);
             if (!checked.ok) fail(node, checked.error, "invalid call");
             invalidateCalls();
@@ -4659,9 +5417,7 @@ export function checkClosureModule(
             signature = types[callee];
           if (signature?.kind !== "function")
             fail(node, "TYPE_MISMATCH", "callee must have a function type");
-          const args = node.arguments.map((a, i) =>
-            expression(a, owner, signature.parameters[i]),
-          );
+          const args = callArguments(node, owner, signature);
           const checked = system.call(
             callee,
             args,
@@ -4683,6 +5439,13 @@ export function checkClosureModule(
           while (target.kind === "group") target = target.expression;
           if (target.kind === "member" || target.kind === "index") {
             const object = expression(target.object, owner);
+            if (dynamicObject(object))
+              fail(
+                target,
+                "UNSUPPORTED",
+                "compound assignments and updates on dynamic-key objects require reference lowering",
+                true,
+              );
             const keyType =
               target.kind === "index"
                 ? expression(target.index, owner)
@@ -4957,7 +5720,8 @@ export function checkClosureModule(
             const b = references.get(target);
             if (b === undefined)
               fail(target, "UNSUPPORTED", "global assignment is unsupported");
-            result = expression(node.value, owner, bindingTypes[b.id]);
+            const targetType = bindingTypes[b.id];
+            result = expression(node.value, owner, targetType);
             cell(b, { kind: "write", value: result }, target, owner);
             // Assignment narrows, as in TypeScript: the binding is present
             // exactly when the assigned value cannot be undefined.
@@ -4967,6 +5731,12 @@ export function checkClosureModule(
                 present.add(b.id);
               else present.delete(b.id);
             }
+            if (
+              targetType !== undefined &&
+              declared.has(b.node) &&
+              dynamicObject(presentType(targetType, true) ?? targetType)
+            )
+              dynamicEnrollments.set(node.value, targetType);
           } else if (target.kind === "member" || target.kind === "index") {
             const receiver = expression(target.object, owner);
             const keyType =
@@ -4980,6 +5750,43 @@ export function checkClosureModule(
                     target.index,
                     keyType === undefined ? undefined : types[keyType],
                   );
+            if (dynamicObject(receiver)) {
+              const fields = dynamicPropertyTargets(
+                receiver,
+                keyType,
+                property,
+                target,
+              );
+              const field = fields[0];
+              if (field === undefined) throw "dynamic write field invariant";
+              result = expression(
+                node.value,
+                owner,
+                types[field.type]?.kind === "unknown" ? undefined : field.type,
+              );
+              checkDynamicPayload(result, node.value);
+              for (const allowed of fields) {
+                if (allowed === undefined)
+                  throw "dynamic write field invariant";
+                if (allowed.readonly)
+                  fail(
+                    target,
+                    "IMMUTABLE",
+                    "cannot write a readonly dynamic-key object property",
+                    true,
+                  );
+                if (!system.assignable(result, allowed.type))
+                  fail(
+                    node.value,
+                    "TYPE_MISMATCH",
+                    "dynamic-key object property value does not match its declared type",
+                    true,
+                  );
+              }
+              intrinsics.set(node, "dynamic-object-write");
+              invalidateCalls();
+              break;
+            }
             const viewWrite = viewAccess(
               target,
               receiver,
@@ -4991,6 +5798,27 @@ export function checkClosureModule(
               const member = viewUseType(viewWrite, target);
               result = expression(node.value, owner, member);
               requireType(result, member, node.value);
+              break;
+            }
+            const finite =
+              target.kind === "index" && keyType !== undefined
+                ? finiteRecordKeys(receiver, keyType)
+                : undefined;
+            if (finite !== undefined) {
+              result = expression(node.value, owner);
+              for (const name of finite) {
+                if (name === undefined) throw "finite record key invariant";
+                const write = system.writeProperty(receiver, name, result);
+                if (!write.ok)
+                  fail(
+                    target,
+                    write.error,
+                    "invalid finite record property write",
+                    true,
+                  );
+              }
+              finitePropertyKeys.set(node, finite);
+              invalidateCalls();
               break;
             }
             if (isList(receiver) && property === "length") {
@@ -5038,11 +5866,21 @@ export function checkClosureModule(
           break;
         }
         case "binary": {
+          if (node.operator === "in") {
+            const key = expression(node.left, owner);
+            const object = expression(node.right, owner);
+            if (!dynamicObject(object))
+              fail(node, "UNSUPPORTED", "in requires a realm-backed object");
+            dynamicPropertyTargets(object, key, undefined, node.left);
+            intrinsics.set(node, "dynamic-object-has");
+            result = boolean;
+            break;
+          }
           if (node.operator === "instanceof") {
             const target = ungroup(node.right);
             if (
               target.kind !== "identifier" ||
-              (target.name !== "TypeError" && target.name !== "RangeError") ||
+              !isErrorKind(target.name) ||
               references.has(target)
             )
               fail(
@@ -5051,15 +5889,19 @@ export function checkClosureModule(
                 "instanceof requires an unshadowed supported error constructor in this slice",
               );
             const operand = expression(node.left, owner);
-            if (operand === voidType)
+            if (!validInstanceofOperand(operand))
               fail(
                 node.left,
                 "TYPE_MISMATCH",
-                "void is not an instanceof operand",
+                "instanceof requires an object or unknown operand",
               );
             intrinsics.set(
               node,
-              target.name === "TypeError" ? "type-error-is" : "range-error-is",
+              target.name === "TypeError"
+                ? "type-error-is"
+                : target.name === "RangeError"
+                  ? "range-error-is"
+                  : "error-is",
             );
             result = boolean;
             break;
@@ -5250,6 +6092,52 @@ export function checkClosureModule(
           break;
         }
         case "unary": {
+          if (node.operator === "delete") {
+            const target = ungroup(node.operand);
+            if (target.kind === "member" || target.kind === "index") {
+              const object = chainReceiver(
+                target.object,
+                target.optional === true,
+              );
+              if (dynamicObject(object)) {
+                const key =
+                  target.kind === "index"
+                    ? expression(target.index, owner)
+                    : undefined;
+                const name =
+                  target.kind === "member"
+                    ? target.property
+                    : key === undefined
+                      ? undefined
+                      : checkedPropertyName(target.index, types[key]);
+                const fields = dynamicPropertyTargets(
+                  object,
+                  key,
+                  name,
+                  target,
+                );
+                const field = fields[0];
+                if (field === undefined) throw "dynamic delete field invariant";
+                if (fields.some((allowed) => allowed?.readonly === true))
+                  fail(
+                    target,
+                    "IMMUTABLE",
+                    "cannot delete a readonly dynamic-key object property",
+                    true,
+                  );
+                if (fields.length === 1 && !field.optional)
+                  fail(
+                    target,
+                    "PROPERTY",
+                    "cannot delete a required dynamic-key object property",
+                    true,
+                  );
+                intrinsics.set(node, "dynamic-object-delete");
+                result = boolean;
+                break;
+              }
+            }
+          }
           const value = expression(node.operand, owner);
           if (
             value === voidType &&
@@ -5563,7 +6451,16 @@ export function checkClosureModule(
               result,
               node,
             );
-          else inferred.push(actual === voidType ? undefinedType : actual);
+          else {
+            const absent = node.expression === undefined || actual === voidType;
+            inferred.push(
+              absent && result === voidType
+                ? voidType
+                : actual === voidType
+                  ? undefinedType
+                  : actual,
+            );
+          }
           return types[actual]?.kind === "never" ? throwCompletion : 2;
         }
         case "throw":
@@ -5696,6 +6593,90 @@ export function checkClosureModule(
             present = new Set(definiteEntry);
             return loopCompletion(body, false, unconditionalTest(node.test));
           }
+        }
+        case "for-in-assignment": {
+          const iterable = expression(node.iterable, owner);
+          requireForInObject(iterable, node.iterable);
+          const definiteEntry = stableFacts();
+          present = new Set(definiteEntry);
+          const target = ungroup(node.target);
+          if (target.kind === "identifier") {
+            const binding = references.get(target);
+            if (binding === undefined)
+              fail(
+                target,
+                "UNSUPPORTED",
+                "for-in requires a local assignment target",
+              );
+            expressions.set(
+              target,
+              cell(binding, { kind: "write", value: string }, target, owner),
+            );
+          } else if (target.kind === "member" || target.kind === "index") {
+            const object = expression(target.object, owner);
+            if (!dynamicObject(object))
+              fail(
+                target,
+                "UNSUPPORTED",
+                "for-in property assignment requires a dynamic-key object",
+              );
+            const keyType =
+              target.kind === "index"
+                ? expression(target.index, owner)
+                : undefined;
+            const name =
+              target.kind === "member"
+                ? target.property
+                : keyType === undefined
+                  ? undefined
+                  : checkedPropertyName(target.index, types[keyType]);
+            const fields = dynamicPropertyTargets(
+              object,
+              keyType,
+              name,
+              target,
+            );
+            for (const field of fields) {
+              if (field === undefined) throw "for-in target field invariant";
+              if (field.readonly)
+                fail(
+                  target,
+                  "IMMUTABLE",
+                  "cannot write a readonly dynamic-key object property",
+                  true,
+                );
+              requireType(string, field.type, target);
+            }
+            invalidateCalls();
+          } else
+            fail(
+              target,
+              "UNSUPPORTED",
+              "for-in requires a local or dynamic property assignment target",
+            );
+          const body = loopBody(node.body, owner, result);
+          present = new Set(definiteEntry);
+          return loopCompletion(body, false);
+        }
+        case "for-in": {
+          const iterable = expression(node.iterable, owner);
+          requireForInObject(iterable, node.iterable);
+          const definiteEntry = stableFacts();
+          present = new Set(definiteEntry);
+          const binding = node.binding;
+          if (
+            binding.kind === "array-binding" ||
+            binding.kind === "object-binding"
+          )
+            fail(
+              binding,
+              "UNSUPPORTED",
+              "for-in binding patterns are not supported",
+            );
+          initializeIteration(binding, string, owner, node.mode === "var");
+          const body = loopBody(node.body, owner, result);
+          present = new Set(definiteEntry);
+          return loopCompletion(body, false);
         }
         case "for-of": {
           if (node.await)
@@ -5856,7 +6837,11 @@ export function checkClosureModule(
       expressions,
       chainValues,
       chainReceivers,
+      restCalls,
+      voidResultDiscard: requiresVoidResultDiscard(),
       downcasts,
+      dynamicEnrollments,
+      finitePropertyKeys,
       operations,
       intrinsics,
       cViewUses,

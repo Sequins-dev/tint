@@ -15,6 +15,7 @@ import type {
   TypeNode,
   TypeParameter,
   TypeMembers,
+  IndexSignature,
   Parameter,
   Binding,
   VariableBinding,
@@ -643,6 +644,12 @@ function parseSource(
     const body = index + after + (arrow ? 1 : 0);
     return tokenAt(body).value === "{" && directiveStrict(body + 1);
   }
+  function rejectTupleRest(annotation: TypeNode | undefined): void {
+    let target = annotation;
+    while (target?.kind === "group") target = target.type;
+    if (target?.kind === "tuple")
+      fail("tuple types are not supported", "SYNTAX_ERROR", target);
+  }
   function parameters(
     requireTypes: boolean = false,
     allowReceiver: boolean = true,
@@ -682,6 +689,7 @@ function parseSource(
           throw "parameter pattern invariant";
         if (requireTypes && pattern.type === undefined)
           fail("function type parameter requires annotation");
+        if (rest) rejectTupleRest(pattern.type);
         if (rest && pattern.initializer !== undefined)
           fail("rest parameter cannot have an initializer");
         for (const identifier of bindingIdentifiers(pattern)) {
@@ -720,6 +728,7 @@ function parseSource(
       names.add(p.value);
       const optional = eat("?"),
         annotation = eat(":") ? type() : undefined;
+      if (rest) rejectTupleRest(annotation);
       if (rest && (optional || at("=")))
         fail(
           "rest parameter cannot be optional or have an initializer",
@@ -1028,7 +1037,8 @@ function parseSource(
   }
   function propertiesBody(): TypeMembers {
     const properties: PropertySignature[] = [];
-    let callSignature: TypeNode | undefined,
+    let indexSignature: IndexSignature | undefined,
+      callSignature: TypeNode | undefined,
       constructSignature: TypeNode | undefined;
     while (!at("}")) {
       const start = current().start;
@@ -1068,6 +1078,31 @@ function parseSource(
         !at("<", 1)
           ? (take(), true)
           : false;
+      if (at("[") && current(1).kind === "identifier" && at(":", 2)) {
+        if (indexSignature !== undefined)
+          fail(
+            "multiple index signatures are not implemented",
+            "UNSUPPORTED_SYNTAX",
+          );
+        expect("[");
+        const parameter = name();
+        expect(":");
+        const keyType = type();
+        expect("]");
+        expect(":");
+        const valueType = type();
+        indexSignature = {
+          name: parameter.value,
+          keyType,
+          valueType,
+          readonly,
+          start,
+          end: end(),
+        };
+        if (!eat(";") && !eat(",") && !at("}") && !current().lineBreakBefore)
+          fail("expected property separator");
+        continue;
+      }
       const key = propertyName();
       const optional = eat("?");
       const method = at("(") || at("<");
@@ -1100,6 +1135,7 @@ function parseSource(
     expect("}");
     return {
       properties,
+      ...(indexSignature === undefined ? {} : { indexSignature }),
       ...(callSignature === undefined ? {} : { call: callSignature }),
       ...(constructSignature === undefined
         ? {}
@@ -1145,6 +1181,14 @@ function parseSource(
                     ? Number(token.value.split("_").join(""))
                     : token.value === "true";
             node = { kind: "literal", value, start: token.start, end: end() };
+          } else if (eat("[")) {
+            const elements: TypeNode[] = [];
+            while (!at("]")) {
+              elements.push(type());
+              if (!eat(",")) break;
+            }
+            expect("]");
+            node = { kind: "tuple", elements, start: token.start, end: end() };
           } else if (eat("{"))
             node = {
               kind: "object",
@@ -1222,8 +1266,8 @@ function parseSource(
             }
           }
           if (readonly) {
-            if (node.kind !== "array")
-              fail("readonly type modifier requires an array");
+            if (node.kind !== "array" && node.kind !== "tuple")
+              fail("readonly type modifier requires an array or tuple");
             node = { ...node, readonly: true, start: readonlyStart };
           }
           parts.push(node);

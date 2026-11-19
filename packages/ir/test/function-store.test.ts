@@ -77,6 +77,15 @@ const instructions: Instruction[] = [
   },
   {
     kind: "call-indirect",
+    discardResult: true,
+    id: undefined,
+    target: 1,
+    callee: 2,
+    arguments: [4],
+    ...span,
+  },
+  {
+    kind: "call-indirect",
     receiver: 7,
     id: 9,
     target: 1,
@@ -156,6 +165,8 @@ const instructions: Instruction[] = [
   { kind: "constant", id: 1, value: 5e-324, ...span },
   { kind: "constant", id: 1, value: Number.MAX_SAFE_INTEGER, ...span },
   { kind: "error-new", error: "TypeError", id: 1, message: 2, ...span },
+  { kind: "error-new", error: "Error", id: 1, message: 2, ...span },
+  { kind: "error-message", id: 1, value: 2, ...span },
   { kind: "error-is", error: "RangeError", id: 1, value: 2, ...span },
   {
     kind: "host-call",
@@ -328,6 +339,7 @@ const instructionKinds: { readonly [K in Instruction["kind"]]: true } = {
   "closure-environment": true,
   constant: true,
   "error-is": true,
+  "error-message": true,
   "error-new": true,
   "function-address": true,
   "function-environment": true,

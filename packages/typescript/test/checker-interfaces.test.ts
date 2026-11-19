@@ -483,3 +483,17 @@ test("defaults cannot refer to later parameters or precede required parameters",
     assert.equal(result.error.code, "INVALID_TYPE");
   }
 });
+
+test("defaulted constraints and string index contracts coexist", () => {
+  const declaration =
+    "interface Lookup<T extends number = number> { readonly [key: string]: T } ";
+  const result = resolve(declaration + "type Defaulted = Lookup;");
+  assert.ok(result.ok, JSON.stringify(result));
+  const type = result.value.types[result.value.names.get("Defaulted")!];
+  assert.ok(type?.kind === "object");
+  assert.equal(type.stringIndex?.type, result.value.names.get("number"));
+
+  const invalid = resolve(declaration + "type Invalid = Lookup<string>;");
+  assert.equal(invalid.ok, false);
+  assert.match(invalid.error.message, /does not satisfy constraint/);
+});

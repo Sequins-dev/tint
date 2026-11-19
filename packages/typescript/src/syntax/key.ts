@@ -7,6 +7,7 @@ import type {
   ExportDeclaration,
   Expression,
   ImportDeclaration,
+  IndexSignature,
   Module,
   ObjectBinding,
   ObjectProperty,
@@ -100,6 +101,7 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
         literal(node.value);
         return;
       case "object":
+        indexSignature(node.indexSignature);
         signatures(node.properties);
         optionalType(node.call);
         optionalType(node.construct);
@@ -118,6 +120,10 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
         type(node.returnType);
         optionalType(node.receiver);
         return;
+      case "tuple":
+        types(node.elements);
+        flag(node.readonly);
+        return;
       case "array":
         type(node.element);
         flag(node.readonly);
@@ -127,6 +133,15 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
         types(node.members);
         return;
     }
+  }
+  function indexSignature(index: IndexSignature | undefined): void {
+    const signature = index;
+    if (signature === undefined) return;
+    sink.put("index-signature");
+    text(signature.name);
+    flag(signature.readonly);
+    type(signature.keyType);
+    type(signature.valueType);
   }
   function literal(value: string | number | boolean): void {
     if (typeof value === "string") {
@@ -552,6 +567,7 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
         types(node.bases);
         text(node.name);
         flag(node.exported);
+        indexSignature(node.indexSignature);
         signatures(node.properties);
         return;
       case "type-alias":

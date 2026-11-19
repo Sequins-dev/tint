@@ -17,6 +17,7 @@ import type {
   TypeNode,
   TypeParameter,
   PropertySignature,
+  IndexSignature,
   ClassDefinition,
   ClassElement,
   Parameter,
@@ -27,6 +28,8 @@ import {
   type Type,
   type TypeSystem,
   type Property,
+  type StringIndex,
+  unsupportedDynamicPayload,
 } from "../types/index.ts";
 export interface InterfaceTypes {
   readonly names: ReadonlyKeyIndex<string, number>;
@@ -66,6 +69,7 @@ export interface InterfaceError extends Span {
     | "INVALID_TYPE"
     | "LIMIT";
   readonly message: string;
+  readonly preventsFallback?: boolean;
 }
 export type InterfaceResult =
   | { readonly ok: true; readonly value: InterfaceTypes }
@@ -124,6 +128,7 @@ export function resolveInterfaceTypes(
     { kind: "TypeError" },
     { kind: "RangeError" },
     { kind: "bigint" },
+    { kind: "Error" },
   ];
   const literals = createKeyIndex<string | number | boolean, number>(
     (value) => {
@@ -150,6 +155,7 @@ export function resolveInterfaceTypes(
       name: string;
       node: Span;
     }[] = [],
+    indexedContracts: { type: number; node: Span }[] = [],
     abort = {};
   let error: InterfaceError | undefined,
     depth = 0;
@@ -294,6 +300,18 @@ export function resolveInterfaceTypes(
         fail(node, "INVALID_TYPE", "type parameter does not accept arguments");
       return parameter;
     }
+    if (
+      (name === "Array" || name === "ReadonlyArray") &&
+      !declarations.has(name)
+    ) {
+      const element = args[0];
+      if (args.length !== 1 || element === undefined)
+        fail(node, "INVALID_TYPE", "Array requires one element type");
+      return add(
+        { kind: "array", element, readonly: name === "ReadonlyArray" },
+        node,
+      );
+    }
     if ((name === "Map" || name === "ReadonlyMap") && !declarations.has(name)) {
       const key = args[0],
         value = args[1];
@@ -316,6 +334,13 @@ export function resolveInterfaceTypes(
       return known >= 0 ? known : add({ kind: "set", element, readonly }, node);
     }
     const declaration = lookupDeclaration(name);
+    if (name === "Record" && declaration === undefined) {
+      const key = args[0],
+        value = args[1];
+      if (args.length !== 2 || key === undefined || value === undefined)
+        fail(node, "INVALID_TYPE", "Record requires key and value types");
+      return recordType(key, value, node);
+    }
     // Linked classes have distinct outer and inner names, but one instance type.
     if (declaration?.kind === "class") name = declaration.name;
     const formals =
@@ -392,6 +417,8 @@ export function resolveInterfaceTypes(
                 resolvedDeclaration.bases,
                 resolvedDeclaration.call,
                 resolvedDeclaration.construct,
+                resolvedDeclaration.indexSignature,
+                true,
               );
     } finally {
       parameters = outer;
@@ -553,14 +580,9 @@ export function resolveInterfaceTypes(
     node: Span,
   ): number {
     let minimumArguments = 0,
-      seenOptional = false;
+      seenOptional = false,
+      rest = false;
     const parameterTypes = parameters.map((p, i): number => {
-      if (p.rest)
-        fail(
-          p,
-          "UNSUPPORTED",
-          "rest function type layouts are not implemented",
-        );
       const annotation = p.type;
       if (annotation === undefined)
         return fail(
@@ -569,6 +591,13 @@ export function resolveInterfaceTypes(
           "function type parameter requires annotation",
         );
       const value = resolve(annotation);
+      if (p.rest) {
+        const array = types[canonical(value)];
+        if (array?.kind !== "array" || array.realmArray === true)
+          fail(p, "INVALID_TYPE", "rest parameter requires an array type");
+        rest = true;
+        return value;
+      }
       if (p.optional || p.initializer !== undefined) {
         if (p.optional) seenOptional = true;
         const absent = add({ kind: "undefined" }, p);
@@ -588,11 +617,68 @@ export function resolveInterfaceTypes(
         kind: "function",
         parameters: parameterTypes,
         minimumArguments,
+        ...(rest ? { rest: true } : {}),
         result,
         ...(receiver === undefined ? {} : { receiver }),
       },
       node,
     );
+  }
+  function indexedObject(type: Type, node: Span): number {
+    const id = add(type, node);
+    if (type.kind === "object") {
+      const index = type.stringIndex;
+      if (index !== undefined) {
+        indexedContracts.push({ type: id, node });
+        if (index.type !== 2)
+          add({ kind: "union", members: [index.type, 2] }, node);
+      }
+    }
+    return id;
+  }
+  function recordType(key: number, value: number, node: Span): number {
+    const resolvedKey = types[canonical(key)];
+    const properties: Property[] = [];
+    if (resolvedKey?.kind === "string") {
+      return indexedObject(
+        {
+          kind: "object",
+          properties,
+          stringIndex: { type: value, readonly: false, origin: "record" },
+        },
+        node,
+      );
+    }
+    const seen = new Set<string>();
+    function collect(id: number): void {
+      const member = types[canonical(id)];
+      if (member?.kind === "never") return;
+      if (member?.kind === "union") {
+        for (const item of member.members) {
+          if (item === undefined) throw "Record key invariant";
+          collect(item);
+        }
+        return;
+      }
+      if (member?.kind !== "literal")
+        fail(
+          node,
+          "UNSUPPORTED",
+          "Record keys require string or finite string literal types",
+        );
+      const name = member.value;
+      if (typeof name !== "string")
+        fail(
+          node,
+          "UNSUPPORTED",
+          "Record keys require string or finite string literal types",
+        );
+      if (seen.has(name)) return;
+      seen.add(name);
+      properties.push({ name, type: value, readonly: false });
+    }
+    collect(key);
+    return add({ kind: "object", properties }, node);
   }
   function object(
     properties: readonly PropertySignature[],
@@ -600,12 +686,15 @@ export function resolveInterfaceTypes(
     bases: readonly TypeNode[] = [],
     callSyntax: TypeNode | undefined = undefined,
     constructSyntax: TypeNode | undefined = undefined,
+    indexSyntax: IndexSignature | undefined = undefined,
+    interfaceDeclaration: boolean = false,
   ): number {
     const fields: Property[] = [],
       baseIds: number[] = [],
       own = new Set<string>();
     let callSignature: number | undefined,
-      constructSignature: number | undefined;
+      constructSignature: number | undefined,
+      stringIndex: StringIndex | undefined;
     for (const base of bases) {
       if (base === undefined) throw "missing interface base";
       const id = canonical(resolve(base)),
@@ -621,6 +710,21 @@ export function resolveInterfaceTypes(
       baseIds.push(id);
       if (callSignature === undefined) callSignature = type.call;
       if (constructSignature === undefined) constructSignature = type.construct;
+      const inherited = type.stringIndex;
+      const previous = stringIndex;
+      if (inherited !== undefined) {
+        if (
+          previous !== undefined &&
+          (canonical(previous.type) !== canonical(inherited.type) ||
+            previous.readonly !== inherited.readonly)
+        )
+          fail(
+            base,
+            "INVALID_TYPE",
+            "incompatible inherited string index signatures",
+          );
+        stringIndex = inherited;
+      }
       for (const field of type.properties) {
         if (field === undefined) throw "missing inherited property";
         if (!fields.some((p) => p !== undefined && p.name === field.name))
@@ -649,10 +753,27 @@ export function resolveInterfaceTypes(
     if (callSyntax !== undefined) callSignature = resolve(callSyntax);
     if (constructSyntax !== undefined)
       constructSignature = resolve(constructSyntax);
-    const id = add(
+    const signature = indexSyntax;
+    if (signature !== undefined) {
+      if (canonical(resolve(signature.keyType)) !== 3)
+        fail(
+          signature,
+          "UNSUPPORTED",
+          "only string index signatures are implemented",
+        );
+      stringIndex = {
+        type: resolve(signature.valueType),
+        readonly: signature.readonly,
+        origin: "signature",
+      };
+    }
+    const index = stringIndex;
+    const id = indexedObject(
       {
         kind: "object",
         properties: fields,
+        ...(interfaceDeclaration ? { interfaceDeclaration: true } : {}),
+        ...(index === undefined ? {} : { stringIndex: index }),
         ...(callSignature === undefined ? {} : { call: callSignature }),
         ...(constructSignature === undefined
           ? {}
@@ -709,6 +830,8 @@ export function resolveInterfaceTypes(
       if (members.length === 1 && first !== undefined) return first;
       return add({ kind: "union", members }, node);
     }
+    if (a?.kind === "unknown") return right;
+    if (b?.kind === "unknown") return left;
     if (a?.kind === "never" || b?.kind === "never")
       return add({ kind: "never" }, node);
     if (a?.kind === "literal" && b?.kind === "literal")
@@ -764,10 +887,29 @@ export function resolveInterfaceTypes(
       );
     const callSignature = leftCall ?? rightCall,
       constructSignature = leftConstruct ?? rightConstruct;
-    return add(
+    const aIndex = a.stringIndex,
+      bIndex = b.stringIndex;
+    const index: StringIndex | undefined =
+      aIndex === undefined
+        ? bIndex
+        : bIndex === undefined
+          ? aIndex
+          : {
+              type: intersect(aIndex.type, bIndex.type, node, level + 1),
+              readonly: aIndex.readonly && bIndex.readonly,
+              origin:
+                aIndex.origin === "signature" || bIndex.origin === "signature"
+                  ? "signature"
+                  : "record",
+            };
+    return indexedObject(
       {
         kind: "object",
         properties,
+        ...(index === undefined ? {} : { stringIndex: index }),
+        ...(a.interfaceDeclaration === true || b.interfaceDeclaration === true
+          ? { interfaceDeclaration: true }
+          : {}),
         ...(callSignature === undefined ? {} : { call: callSignature }),
         ...(constructSignature === undefined
           ? {}
@@ -818,8 +960,19 @@ export function resolveInterfaceTypes(
       objectType?.kind === "array" &&
       (indexType?.kind === "number" ||
         (indexType?.kind === "literal" && typeof indexType.value === "number"))
-    )
+    ) {
+      const tuple = objectType.tupleElements;
+      if (tuple !== undefined && indexType.kind === "literal") {
+        const key = indexType.value;
+        if (typeof key === "number") {
+          const position = tuple[key];
+          if (position === undefined)
+            fail(node, "INVALID_TYPE", "tuple position does not exist");
+          return position;
+        }
+      }
       return objectType.element;
+    }
     if (
       objectType?.kind === "object" &&
       indexType?.kind === "literal" &&
@@ -836,15 +989,25 @@ export function resolveInterfaceTypes(
       const property = objectType.properties.find(
         (p) => p !== undefined && p.name === propertyName,
       );
-      if (property === undefined)
+      if (property === undefined) {
+        const index = objectType.stringIndex;
+        if (index !== undefined) return index.type;
         fail(
           node,
           "INVALID_TYPE",
           "indexed access property does not exist: " + propertyName,
         );
+      }
       return property.optional && canonical(property.type) !== 2
         ? add({ kind: "union", members: [property.type, 2] }, node)
         : property.type;
+    }
+    if (
+      objectType?.kind === "object" &&
+      (indexType?.kind === "string" || indexType?.kind === "number")
+    ) {
+      const index = objectType.stringIndex;
+      if (index !== undefined) return index.type;
     }
     fail(
       node,
@@ -865,7 +1028,14 @@ export function resolveInterfaceTypes(
             : add({ kind: "literal", value: node.value }, node);
         }
         case "object":
-          return object(node.properties, node, [], node.call, node.construct);
+          return object(
+            node.properties,
+            node,
+            [],
+            node.call,
+            node.construct,
+            node.indexSignature,
+          );
         case "named": {
           const args = node.arguments;
           if (views !== undefined && node.name === views.viewType)
@@ -880,15 +1050,52 @@ export function resolveInterfaceTypes(
           return resolve(node.type);
         case "indexed-access":
           return indexed(resolve(node.object), resolve(node.index), node);
-        case "array":
+        case "tuple": {
+          const key = node.elements[0],
+            value = node.elements[1];
+          if (
+            node.elements.length !== 2 ||
+            key === undefined ||
+            value === undefined ||
+            canonical(resolve(key)) !== 3
+          )
+            fail(
+              node,
+              "UNSUPPORTED",
+              "only [string, T] entry tuple types are implemented",
+            );
+          const valueType = resolve(value);
+          const tupleElements: number[] = [3, valueType];
+          const element =
+            canonical(valueType) === 3
+              ? 3
+              : add({ kind: "union", members: tupleElements }, node);
           return add(
             {
               kind: "array",
-              element: resolve(node.element),
+              realmArray: true,
+              tupleElements,
+              element,
               readonly: node.readonly === true,
             },
             node,
           );
+        }
+        case "array": {
+          const element = resolve(node.element);
+          const entry = types[canonical(element)];
+          return add(
+            {
+              kind: "array",
+              element,
+              readonly: node.readonly === true,
+              ...(entry?.kind === "array" && entry.tupleElements !== undefined
+                ? { realmArray: true }
+                : {}),
+            },
+            node,
+          );
+        }
         case "intersection": {
           const first = node.members[0];
           if (first === undefined)
@@ -1009,7 +1216,10 @@ export function resolveInterfaceTypes(
         node.kind === "type-alias" ||
         node.kind === "class"
       ) {
-        if (names.has(node.name) || declarations.has(node.name))
+        if (
+          (node.name !== "Error" && names.has(node.name)) ||
+          declarations.has(node.name)
+        )
           fail(
             node,
             "DUPLICATE_TYPE",
@@ -1038,7 +1248,10 @@ export function resolveInterfaceTypes(
         if (node.kind === "class") {
           const inner = node.definition.name;
           if (inner !== undefined && inner !== node.name) {
-            if (names.has(inner) || declarations.has(inner))
+            if (
+              (inner !== "Error" && names.has(inner)) ||
+              declarations.has(inner)
+            )
               fail(
                 node,
                 "DUPLICATE_TYPE",
@@ -1049,6 +1262,9 @@ export function resolveInterfaceTypes(
         }
       }
     }
+    // A local declaration can shadow the Error type. The constructor and
+    // instanceof still resolve the native kind through the value namespace.
+    if (declarations.has("Error")) names.delete("Error");
     // Bind the optional cache: the native subset narrows locals, not
     // parameters, before property access.
     // Views resolve through the registry, which the syntax key omits.
@@ -1098,12 +1314,13 @@ export function resolveInterfaceTypes(
         if (node === undefined) throw "type declaration invariant";
         if (declarationParameters(node).length === 0) named(name, node);
       });
-      // Constraint checks carry use-site spans and must run for each module.
+      // Constraint and index contract checks carry use-site spans and must run for each module.
       if (
         memo !== undefined &&
         keyed !== undefined &&
         pending.size === 0 &&
-        constraints.length === 0
+        constraints.length === 0 &&
+        indexedContracts.length === 0
       ) {
         const captured = capture(syntaxKey(keyed));
         if (memo.snapshots.length < cachedSnapshots)
@@ -1169,7 +1386,13 @@ export function resolveInterfaceTypes(
       t.kind === "map"
         ? { ...t, key: canonical(t.key), value: canonical(t.value) }
         : t.kind === "array" || t.kind === "set"
-          ? { ...t, element: canonical(t.element) }
+          ? {
+              ...t,
+              element: canonical(t.element),
+              ...(t.tupleElements === undefined
+                ? {}
+                : { tupleElements: t.tupleElements.map(canonical) }),
+            }
           : t.kind === "object"
             ? {
                 ...t,
@@ -1177,6 +1400,14 @@ export function resolveInterfaceTypes(
                 ...(t.construct === undefined
                   ? {}
                   : { construct: canonical(t.construct) }),
+                ...(t.stringIndex === undefined
+                  ? {}
+                  : {
+                      stringIndex: {
+                        ...t.stringIndex,
+                        type: canonical(t.stringIndex.type),
+                      },
+                    }),
                 properties: t.properties.map((p) => ({
                   ...p,
                   type: canonical(p.type),
@@ -1208,6 +1439,46 @@ export function resolveInterfaceTypes(
         message: "invalid resolved type table",
       },
     };
+  function payloadError(type: number, node: Span): InterfaceError | undefined {
+    const unsupported = unsupportedDynamicPayload(types, type);
+    return unsupported === undefined
+      ? undefined
+      : {
+          start: node.start,
+          end: node.end,
+          code: "UNSUPPORTED",
+          message: unsupported,
+          preventsFallback: true,
+        };
+  }
+  for (const entry of indexedContracts) {
+    if (entry === undefined) throw "indexed contract invariant";
+    const type = types[canonical(entry.type)];
+    if (type?.kind !== "object") throw "indexed object invariant";
+    const index = type.stringIndex;
+    if (index === undefined) throw "string index invariant";
+    const indexError = payloadError(index.type, entry.node);
+    if (indexError !== undefined) return { ok: false, error: indexError };
+    for (const p of type.properties) {
+      if (p === undefined) throw "indexed field invariant";
+      const fieldError = payloadError(p.type, entry.node);
+      if (fieldError !== undefined) return { ok: false, error: fieldError };
+      if (!system.value.assignable(p.type, index.type))
+        return {
+          ok: false,
+          error: {
+            start: entry.node.start,
+            end: entry.node.end,
+            code: "INVALID_TYPE",
+            preventsFallback: true,
+            message:
+              "property " +
+              p.name +
+              " is incompatible with the string index signature",
+          },
+        };
+    }
+  }
   for (const constraint of constraints) {
     if (constraint === undefined) throw "missing type argument constraint";
     if (

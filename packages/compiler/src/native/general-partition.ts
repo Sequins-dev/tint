@@ -1,3 +1,7 @@
+import {
+  describeDynamicBoundary,
+  type DynamicBoundaryType,
+} from "./dynamic-boundaries.ts";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import {
   typeParameterCount,
@@ -63,6 +67,7 @@ export interface BoundaryField {
 /** A record type use; optional uses also accept undefined. */
 export interface BoundaryRecordUse {
   readonly key: string;
+  readonly dynamic?: DynamicBoundaryType;
   readonly optional: boolean;
 }
 
@@ -82,6 +87,7 @@ export function createBoundaryRecords(
   const table = new Map<string, BoundaryRecord>(),
     order: string[] = [],
     failed = new Set<string>();
+  let dynamicSerial = 0;
   function declared(
     module: SourceModule,
     name: string,
@@ -120,6 +126,16 @@ export function createBoundaryRecords(
     type: TypeNode | undefined,
   ): BoundaryRecordUse | undefined {
     if (type === undefined) return undefined;
+    const dynamic = describeDynamicBoundary(
+      modules,
+      module,
+      type,
+      "__tint_dynamic_boundary_" + String(dynamicSerial),
+    );
+    if (dynamic !== undefined) {
+      dynamicSerial++;
+      return { key: "", optional: false, dynamic };
+    }
     if (type.kind === "group") return resolve(module, type.type);
     if (type.kind === "union") {
       let use: BoundaryRecordUse | undefined,
@@ -149,6 +165,7 @@ export function createBoundaryRecords(
     if (
       statement.call !== undefined ||
       statement.construct !== undefined ||
+      statement.indexSignature !== undefined ||
       typeParameterCount(statement.typeParameters) !== 0 ||
       (statement.bases?.length ?? 0) !== 0
     ) {
@@ -199,7 +216,7 @@ export function createBoundaryRecords(
     },
   ): BoundaryField | undefined {
     const use = resolve(module, property.type);
-    if (use === undefined) return undefined;
+    if (use === undefined || use.dynamic !== undefined) return undefined;
     return {
       name,
       readonly: property.readonly,
@@ -335,7 +352,7 @@ export function boundaryExport(
           resolved === undefined
             ? undefined
             : {
-                key: resolved.key,
+                ...resolved,
                 optional:
                   resolved.optional ||
                   parameter.optional === true ||
@@ -369,7 +386,11 @@ export function boundaryExport(
         (initializer.kind === "number" ||
           initializer.kind === "string" ||
           initializer.kind === "boolean");
-      if (primitiveClasses(declaration.type) !== 0 || literal)
+      if (
+        primitiveClasses(declaration.type) !== 0 ||
+        literal ||
+        records?.resolve(module, declaration.type)?.dynamic !== undefined
+      )
         return { kind: "constant", name: exported, local };
     }
   }
@@ -411,6 +432,7 @@ export function closeGeneralPartition(
   seed: ReadonlySet<string>,
   /** Trusted runtime modules general code imports: typed boundaries only. */
   trusted: readonly SourceModule[] = [],
+  typeSources: readonly SourceModule[] = [],
 ): GeneralPartition {
   const byId = new Map<string, SourceModule>();
   for (const module of application)
@@ -422,7 +444,11 @@ export function closeGeneralPartition(
       trustedIds.add(module.id);
     }
   let blocked: { module: string; exports: string } | undefined = undefined;
-  const records = createBoundaryRecords(byId);
+  const typeModules = new Map<string, SourceModule>();
+  for (const [name, module] of byId) typeModules.set(name, module);
+  for (const module of typeSources)
+    if (module !== undefined) typeModules.set(module.id, module);
+  const records = createBoundaryRecords(typeModules);
   const general = new Set<string>(seed);
   for (let changed = true; changed;) {
     changed = false;

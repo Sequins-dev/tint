@@ -5,6 +5,7 @@ import { createSourceTextView } from "@tint/source/text";
 import {
   parseModule,
   parseScript,
+  rewriteModule,
   syntaxKey,
   syntaxKeyHash,
   syntaxKeyMatches,
@@ -292,4 +293,22 @@ test("type parameter bounds and defaults contribute to syntax keys", () => {
   const base = key("T extends number = 1");
   assert.notEqual(base, key("T extends number = 2"));
   assert.notEqual(base, key("T extends string = 1"));
+});
+
+test("index signatures participate in syntax keys and type rewriting", () => {
+  const declaration =
+    "interface Names<T> { readonly [name: string]: T; count: number }";
+  const module = parsedModule(declaration);
+  assert.ok(assertComplete(module, 20) > 0);
+  const mapped = rewriteModule(module, {
+    type(node) {
+      return node.kind === "named" && node.name === "T"
+        ? { ...node, name: "boolean" }
+        : node;
+    },
+  });
+  assert.equal(
+    syntaxKey(mapped),
+    syntaxKey(parsedModule(declaration.replace(": T", ": boolean"))),
+  );
 });

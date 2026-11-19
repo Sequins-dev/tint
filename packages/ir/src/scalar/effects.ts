@@ -26,6 +26,7 @@ export function instructionEffects(op: Instruction): number {
     case "string-length":
     case "string-code-unit":
     case "string-starts-with":
+    case "error-message":
     case "error-is":
     case "reference-vector-length":
     case "reference-vector-is":

@@ -10,6 +10,7 @@ import type {
   VariableBinding,
   TypeNode,
   TypeParameter,
+  IndexSignature,
   ClassDefinition,
   ClassElement,
 } from "./model.ts";
@@ -37,6 +38,13 @@ export interface SyntaxRewrite {
 export function rewriteModule(module: Module, rewrite: SyntaxRewrite): Module {
   let depth = 0,
     nextHash = 0;
+  function indexSignature(index: IndexSignature): IndexSignature {
+    return {
+      ...index,
+      keyType: type(index.keyType),
+      valueType: type(index.valueType),
+    };
+  }
   function enter(): void {
     if (++depth > 256) throw "syntax rewrite nesting limit exceeded";
   }
@@ -66,6 +74,9 @@ export function rewriteModule(module: Module, rewrite: SyntaxRewrite): Module {
             index: type(node.index),
           };
           break;
+        case "tuple":
+          mapped = { ...node, elements: node.elements.map(type) };
+          break;
         case "array":
           mapped = { ...node, element: type(node.element) };
           break;
@@ -76,6 +87,9 @@ export function rewriteModule(module: Module, rewrite: SyntaxRewrite): Module {
         case "object":
           mapped = {
             ...node,
+            ...(node.indexSignature === undefined
+              ? {}
+              : { indexSignature: indexSignature(node.indexSignature) }),
             ...(node.call === undefined ? {} : { call: type(node.call) }),
             ...(node.construct === undefined
               ? {}
@@ -567,6 +581,9 @@ export function rewriteModule(module: Module, rewrite: SyntaxRewrite): Module {
             mapped = {
               ...node,
               ...generics(node),
+              ...(node.indexSignature === undefined
+                ? {}
+                : { indexSignature: indexSignature(node.indexSignature) }),
               ...(node.call === undefined ? {} : { call: type(node.call) }),
               ...(node.construct === undefined
                 ? {}
