@@ -23,7 +23,7 @@ import {
   type TypeSystem,
   type Property,
   type StringIndex,
-  unsupportedDynamicPayload,
+  unsupportedDynamicContract,
 } from "../types/index.ts";
 export interface InterfaceTypes {
   readonly names: ReadonlyKeyIndex<string, number>;
@@ -1345,7 +1345,7 @@ export function resolveInterfaceTypes(
       },
     };
   function payloadError(type: number, node: Span): InterfaceError | undefined {
-    const unsupported = unsupportedDynamicPayload(types, type);
+    const unsupported = unsupportedDynamicContract(types, type);
     return unsupported === undefined
       ? undefined
       : {
