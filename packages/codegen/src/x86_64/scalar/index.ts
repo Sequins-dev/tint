@@ -58,6 +58,7 @@ import {
 import {
   emitSysVCall,
   emitSysVDynamicCall,
+  emitSysVMemory,
   sysVDynamicStackBytes,
   type CallSite,
   sysVOutgoingBytes,
@@ -186,11 +187,14 @@ export function emitModule(
   const constants: Word64[] = [];
   const external = new Map<string, ImageAddressTarget>();
   const imports = new Set<string>();
-  function foreign(symbol: string): void {
+  function importSlot(symbol: string): Memory<64> {
     imports.add(symbol);
     const key = "import:" + symbol;
     external.set(key, { kind: "import", name: symbol });
-    emit({ op: "call", target: rip(key) });
+    return rip(key);
+  }
+  function foreign(symbol: string): void {
+    emit({ op: "call", target: importSlot(symbol) });
   }
 
   const argumentsByFunction: Argument[][] = [];
@@ -501,6 +505,40 @@ export function emitModule(
 
     function instruction(op: Instruction, block: Block): void {
       switch (op.kind) {
+        case "c-memory": {
+          const abi = host,
+            access = op.access;
+          if (
+            access.operation === "callback-key" ||
+            access.operation === "callback-address"
+          )
+            return fail(
+              "UNSUPPORTED",
+              "C callbacks are not supported on linux-x86_64",
+            );
+          if (abi === undefined)
+            return fail(
+              "UNSUPPORTED",
+              "C memory requires the hosted x86-64 target",
+            );
+          const prefix = abi.symbolPrefix,
+            args = op.arguments;
+          const type = emitSysVMemory({
+            emit,
+            access,
+            argument: (index) => {
+              const arg = args[index];
+              if (arg === undefined) throw "SysV C memory argument invariant";
+              return frame(home(arg));
+            },
+            importSlot: (symbol) => importSlot(prefix + symbol),
+            constant,
+            site: fnLabel + ":c-memory:" + String(machine.length),
+            trap: trapLabel,
+          });
+          if (op.id !== undefined && type !== "void") define(op.id, type);
+          return;
+        }
         case "c-call": {
           const abi = host;
           const layout = plans.get(op);

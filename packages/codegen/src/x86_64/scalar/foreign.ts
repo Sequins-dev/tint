@@ -10,10 +10,18 @@ import {
 import {
   nativeArrayDataOffset,
   nativeArrayLengthOffset,
+  nativeArrayOwnerOffset,
+  nativeHeaderFlagUnit,
+  nativeHeaderFlagsShift,
   type PosixHostFacts,
 } from "@tint/abi/host";
-import { dynamicCallFrame, type ForeignCall } from "@tint/ir/scalar";
-import type { Memory } from "../isa.ts";
+import {
+  dynamicCallFrame,
+  type ForeignCall,
+  type ForeignMemoryAccess,
+  type ScalarType,
+} from "@tint/ir/scalar";
+import type { Gpr, Memory, Xmm } from "../isa.ts";
 import { branch } from "./host.ts";
 import {
   bits,
@@ -27,6 +35,8 @@ import {
   xmm,
   type Emit,
 } from "./machine.ts";
+
+import { floatBits } from "./numbers.ts";
 
 const rax = gpr(0),
   rcx = gpr(1),
@@ -60,17 +70,20 @@ export function sysVOutgoingBytes(layout: CCallLayout): number {
   return used + callAlignment(layout) - 16;
 }
 
-export interface CallSite {
+interface IntegerSite {
   readonly emit: Emit;
+  readonly constant: (value: number) => Memory<64>;
+  readonly site: string;
+  readonly trap: string;
+}
+
+export interface CallSite extends IntegerSite {
   readonly abi: PosixHostFacts;
   readonly prototype: ForeignCall;
   readonly argument: (index: number) => Memory<64>;
   readonly call: (symbol: string) => void;
   readonly staging: (offset: number) => Memory<64>;
   readonly stack: Memory<64>;
-  readonly constant: (value: number) => Memory<64>;
-  readonly site: string;
-  readonly trap: string;
 }
 
 function indexed(
@@ -102,15 +115,15 @@ function byteData(
 
 /** Conversion leaves the exact raw integer in RAX. */
 function toInteger(
-  request: CallSite,
+  request: IntegerSite,
   input: Memory<64>,
   width: number,
   signed: boolean,
   site: string,
+  trap: string = request.trap,
 ): void {
   const emit = request.emit,
-    constant = request.constant,
-    trap = request.trap;
+    constant = request.constant;
   emit({ op: "movsd", dst: x0, src: input });
   if (!signed) {
     emit({ op: "ucomisd", dst: x0, src: constant(0) });
@@ -146,6 +159,15 @@ function toInteger(
   }
 }
 
+function float32Bits(emit: Emit, dst: Gpr<32>, src: Xmm): void {
+  const move: {
+    readonly op: "movd";
+    readonly dst: Gpr<32>;
+    readonly src: Xmm;
+  } = { op: "movd", dst, src };
+  emit(move);
+}
+
 function checkedSignedConversion(emit: Emit, trap: string): void {
   emit({ op: "cvttsd2si", dst: rax, src: x0 });
   emit({ op: "cvtsi2sd", dst: x1, src: rax });
@@ -155,7 +177,11 @@ function checkedSignedConversion(emit: Emit, trap: string): void {
 }
 
 /** Return the C integer as binary64 bits in RAX, trapping on precision loss. */
-function fromInteger(request: CallSite, width: number, signed: boolean): void {
+function fromInteger(
+  request: IntegerSite,
+  width: number,
+  signed: boolean,
+): void {
   const emit = request.emit,
     trap = request.trap,
     site = request.site;
@@ -204,7 +230,7 @@ function fromInteger(request: CallSite, width: number, signed: boolean): void {
     branch(emit, "ne", trap);
     emit({ op: "label", name: done });
   }
-  emit({ op: "movq", dst: rax, src: x0 });
+  floatBits(emit, rax, x0);
 }
 
 function readPart(emit: Emit, source: Memory<64>, bytes: number): void {
@@ -337,8 +363,8 @@ export function emitSysVCall(request: CallSite, layout: CCallLayout): void {
       const promoted = location.variadic ? cPromoteVariadic(type) : type;
       if (promoted.kind === "scalar" && promoted.scalar === "f64") {
         emit({ op: "cvtss2sd", dst: x0, src: x0 });
-        emit({ op: "movq", dst: rax, src: x0 });
-      } else emit({ op: "movd", dst: eax, src: x0 });
+        floatBits(emit, rax, x0);
+      } else float32Bits(emit, eax, x0);
     } else if (type.kind === "scalar" && type.scalar === "f64")
       emit({ op: "mov", dst: rax, src: source });
     else {
@@ -388,8 +414,7 @@ export function emitSysVCall(request: CallSite, layout: CCallLayout): void {
       if (parts === undefined) throw "SysV result parts invariant";
       for (const part of parts) {
         if (part === undefined) throw "SysV result part invariant";
-        if (part.bank === "sse")
-          emit({ op: "movq", dst: r10, src: xmm(part.register) });
+        if (part.bank === "sse") floatBits(emit, r10, xmm(part.register));
         else
           emit({ op: "mov", dst: r10, src: part.register === 0 ? rax : rdx });
         storePart(emit, mem(11, part.offset), part.bytes);
@@ -409,7 +434,7 @@ export function emitSysVCall(request: CallSite, layout: CCallLayout): void {
     (type.scalar === "f32" || type.scalar === "f64")
   ) {
     if (type.scalar === "f32") emit({ op: "cvtss2sd", dst: x0, src: x0 });
-    emit({ op: "movq", dst: rax, src: x0 });
+    floatBits(emit, rax, x0);
     return;
   }
   const scalar: CScalar = type.kind === "scalar" ? type.scalar : "usize";
@@ -553,4 +578,165 @@ export function emitSysVDynamicCall(request: CallSite): void {
   emit({ op: "mov", dst: mem(11, 8), src: rdx });
   emit({ op: "movsd", dst: mem(11, layout.floats), src: x0 });
   emit({ op: "movsd", dst: mem(11, layout.floats + 8), src: x1 });
+}
+
+export interface MemorySite extends IntegerSite {
+  readonly access: ForeignMemoryAccess;
+  readonly argument: (index: number) => Memory<64>;
+  readonly importSlot: (symbol: string) => Memory<64>;
+}
+
+function headerFlags(emit: Emit, base: number): void {
+  emit({ op: "mov", dst: r10, src: mem(base, 0) });
+  emit({ op: "shr", dst: r10, count: nativeHeaderFlagsShift });
+  emit({ op: "and", dst: r10, src: imm(7) });
+}
+
+/** Leaf C memory operations. The argument homes are read before publishing
+ * the RAX result. Only the shared typed-array header and data are accessed. */
+export function emitSysVMemory(request: MemorySite): ScalarType | "void" {
+  const emit = request.emit,
+    access = request.access,
+    arg = request.argument;
+  const site = request.site,
+    trap = request.trap;
+  const operation = access.operation;
+  if (operation === "available") {
+    emit({
+      op: "cmp",
+      dst: request.importSlot(access.symbol ?? ""),
+      src: imm(0),
+    });
+    setBoolean(emit, "ne", 0);
+    return "boolean";
+  }
+
+  const type = access.type;
+  const scalar: CScalar = type.kind === "scalar" ? type.scalar : "usize";
+  const size = cScalarBytes(scalar);
+  const signed = cScalarSigned(scalar, linuxX86_64CTarget);
+  if (operation === "fits") {
+    const invalid = site + ":out-of-range",
+      done = site + ":fits";
+    toInteger(request, arg(0), size, signed, site, invalid);
+    emit({ op: "mov", dst: eax, src: imm(1) });
+    emit({ op: "jmp", target: label(done) });
+    emit({ op: "label", name: invalid });
+    emit({ op: "xor", dst: eax, src: eax });
+    emit({ op: "label", name: done });
+    return "boolean";
+  }
+
+  if (operation === "adopt" || operation === "retarget") {
+    toInteger(request, arg(1), 8, false, site + ":address");
+    emit({ op: "mov", dst: rdx, src: rax });
+    if (operation === "adopt") {
+      toInteger(request, arg(2), 4, false, site + ":length");
+      emit({ op: "mov", dst: r11, src: arg(0) });
+      emit({ op: "cmp", dst: mem(11, 0), src: imm(2) });
+      branch(emit, "ne", trap);
+      emit({ op: "cmp", dst: mem(11, nativeArrayLengthOffset), src: imm(0) });
+      branch(emit, "ne", trap);
+      emit({
+        op: "mov",
+        dst: r10,
+        src: bits(2, nativeHeaderFlagUnit / 4294967296),
+      });
+      emit({ op: "mov", dst: mem(11, 0), src: r10 });
+      emit({ op: "mov", dst: mem(11, nativeArrayLengthOffset), src: rax });
+      emit({ op: "mov", dst: mem(11, nativeArrayDataOffset), src: rdx });
+      emit({ op: "mov", dst: rax, src: r11 });
+      return "Uint8Array";
+    }
+    emit({ op: "mov", dst: r11, src: arg(0) });
+    headerFlags(emit, 11);
+    const borrowed = site + ":borrowed";
+    emit({ op: "cmp", dst: r10, src: imm(1) });
+    branch(emit, "e", borrowed);
+    emit({ op: "cmp", dst: r10, src: imm(2) });
+    branch(emit, "ne", trap);
+    emit({ op: "mov", dst: rcx, src: mem(11, nativeArrayOwnerOffset) });
+    headerFlags(emit, 1);
+    emit({ op: "cmp", dst: r10, src: imm(1) });
+    branch(emit, "ne", trap);
+    emit({ op: "mov", dst: mem(1, nativeArrayDataOffset), src: rdx });
+    emit({ op: "label", name: borrowed });
+    emit({ op: "mov", dst: mem(11, nativeArrayDataOffset), src: rdx });
+    return "void";
+  }
+
+  if (operation === "address" || operation === "stable") {
+    emit({ op: "mov", dst: r11, src: arg(0) });
+    headerFlags(emit, 11);
+    if (operation === "address") {
+      emit({ op: "mov", dst: rax, src: imm(-1) });
+      emit({ op: "cmp", dst: r10, src: imm(1) });
+      emit({
+        op: "cmovcc",
+        cc: "e",
+        dst: rax,
+        src: mem(11, nativeArrayDataOffset),
+      });
+      fromInteger(request, 8, true);
+      return "number";
+    }
+    const ownedOrBorrowed = site + ":stable";
+    emit({ op: "cmp", dst: r10, src: imm(2) });
+    branch(emit, "ne", ownedOrBorrowed);
+    emit({ op: "mov", dst: r11, src: mem(11, nativeArrayOwnerOffset) });
+    headerFlags(emit, 11);
+    emit({ op: "label", name: ownedOrBorrowed });
+    emit({ op: "cmp", dst: r10, src: imm(1) });
+    setBoolean(emit, "e", 0);
+    return "boolean";
+  }
+  if (operation !== "load" && operation !== "store")
+    throw "SysV C memory operation invariant";
+
+  // The checked view lowering proves the member index and extent before
+  // the instruction, and performs the integer fits check for stores.
+  const stride = access.stride;
+  if (operation === "store") {
+    const value = arg(stride === undefined ? 1 : 2);
+    if (scalar === "bool" || scalar === "f64")
+      emit({ op: "mov", dst: rax, src: value });
+    else if (scalar === "f32") {
+      emit({ op: "cvtsd2ss", dst: x0, src: value });
+      float32Bits(emit, eax, x0);
+    } else toInteger(request, value, size, signed, site);
+  }
+  byteData(emit, arg(0), 0, trap);
+  if (stride !== undefined) {
+    emit({ op: "cvttsd2si", dst: rcx, src: arg(1) });
+    emit({ op: "imul-imm", dst: rcx, src: rcx, immediate: imm(stride) });
+    emit({ op: "add", dst: r11, src: rcx });
+  }
+  const field = mem(11, access.offset);
+  if (operation === "store") {
+    if (size === 8) emit({ op: "mov", dst: field, src: rax });
+    else if (size === 4)
+      emit({ op: "mov", dst: { ...field, width: 32 }, src: eax });
+    else if (size === 2)
+      emit({
+        op: "mov",
+        dst: { ...field, width: 16 },
+        src: { kind: "gpr", index: 0, width: 16 },
+      });
+    else emit({ op: "mov", dst: { ...field, width: 8 }, src: byte(0) });
+    return "void";
+  }
+  if (scalar === "f32") {
+    emit({ op: "cvtss2sd", dst: x0, src: { ...field, width: 32 } });
+    floatBits(emit, rax, x0);
+  } else if (scalar === "f64") emit({ op: "mov", dst: rax, src: field });
+  else {
+    readPart(emit, field, size);
+    if (scalar === "bool") {
+      emit({ op: "test", dst: eax, src: eax });
+      setBoolean(emit, "ne", 0);
+      return "boolean";
+    }
+    fromInteger(request, size, signed);
+  }
+  return "number";
 }
