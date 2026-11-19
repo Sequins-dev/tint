@@ -1,4 +1,5 @@
 import { test } from "node:test";
+import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import { buildDebugInfo } from "@tint/image/dwarf";
 import {
@@ -54,6 +55,10 @@ test("writes an AArch64 PIE header with 64 KiB-aligned load segments", () => {
   assert.ok(result.ok);
   const bytes = result.value.bytes,
     elf = readElf(bytes);
+  assert.equal(
+    createHash("sha256").update(bytes).digest("hex"),
+    "792146ac2b070b381977550adc90e3eed760a706e31f549e601f86baa416dde8",
+  );
   assert.deepEqual(
     [...bytes.subarray(0, 8)],
     [0x7f, 0x45, 0x4c, 0x46, 2, 1, 1, 0],

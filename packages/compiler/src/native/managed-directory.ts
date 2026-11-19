@@ -10,12 +10,17 @@ import {
 import { bindModule } from "@tint/typescript/binding";
 import { checkClosureModule } from "@tint/typescript/checker";
 import type { SourceModule } from "@tint/typescript/modules/model";
-import type { ImportDeclaration, Statement } from "@tint/typescript/syntax";
+import type {
+  ImportDeclaration,
+  Module,
+  Statement,
+} from "@tint/typescript/syntax";
 import {
   linkModules,
   prepareNativeGlobals,
   specializeModule,
   type NativeConstructor,
+  type LinkedExport,
 } from "@tint/ts-native/modules";
 import { prepareCollectionRuntimes } from "@tint/ts-native/runtime";
 import { lowerModuleEntries } from "@tint/ts-native/closure/lowering";
@@ -61,12 +66,205 @@ export interface ManagedSurfaceLayoutFacts extends ManagedSurfacePhysicalFacts {
 export type ManagedSurfacePhysicalDerivation =
   | { readonly ok: true; readonly value: ManagedSurfaceLayoutFacts }
   | { readonly ok: false; readonly error: string };
+interface SharedLayoutRuntime {
+  readonly module: Module;
+  readonly exports: readonly LinkedExport[];
+  readonly slot: number;
+  readonly offset: number;
+}
+function layoutEntry(
+  id: string,
+  roots: readonly string[],
+  typeOnly?: string,
+): SourceModule {
+  const imports: ImportDeclaration[] = [];
+  const dependencies = new Map<string, string>();
+  for (const root of roots) {
+    if (root === undefined) throw "surface root invariant";
+    imports.push({
+      start: 0,
+      end: 0,
+      specifier: root,
+      specifierSpan: { start: 0, end: 0 },
+      bindings: [],
+      typeOnly: root === typeOnly,
+    });
+    dependencies.set(root, root);
+  }
+  return {
+    id,
+    module: {
+      start: 0,
+      end: 0,
+      imports,
+      statements: imports.map((declaration) => ({
+        start: 0,
+        end: 0,
+        kind: "import",
+        declaration,
+      })),
+    },
+    dependencies,
+  };
+}
+type LayoutLink =
+  | { readonly ok: false; readonly error: string }
+  | {
+      readonly ok: true;
+      readonly module: Module;
+      readonly exports: readonly LinkedExport[];
+    };
+function linkLayout(
+  modules: readonly SourceModule[],
+  layout: SourceModule,
+  entry: SourceModule,
+  globals: readonly string[],
+  shared: SharedLayoutRuntime[],
+  shareRuntime: boolean,
+): LayoutLink {
+  function link(
+    inputs: readonly SourceModule[],
+    root: SourceModule,
+  ): LayoutLink {
+    const result = linkModules(inputs, root.id, globals, {
+      evaluation: "instance",
+      origins: false,
+    });
+    return result.ok
+      ? { ok: true, module: result.value.module, exports: result.value.exports }
+      : { ok: false, error: result.error.message };
+  }
+  function layoutInputs(source: SourceModule): SourceModule[] {
+    const inputs = modules.slice();
+    inputs.push(source);
+    inputs.push(entry);
+    return inputs;
+  }
+  if (!shareRuntime) return link(layoutInputs(layout), entry);
+  let runtime = shared[0];
+  if (runtime === undefined) {
+    // The marker reserves the same module ordinal and span as the real
+    // layout. Its position also accounts for type-only runtime dependencies,
+    // which the linker emits before any evaluated declarations.
+    const name = "$tint$layout_slot";
+    const marker: Statement = {
+      kind: "type-alias",
+      name,
+      type: { kind: "named", name: "number", start: 0, end: 0 },
+      exported: true,
+      start: 0,
+      end: 0,
+    };
+    for (const source of modules) {
+      if (source === undefined) throw "surface module invariant";
+      for (const [_specifier, dependency] of source.dependencies)
+        if (dependency === layout.id || dependency === entry.id)
+          return link(layoutInputs(layout), entry);
+    }
+    const template = linkModules(
+      layoutInputs({
+        ...layout,
+        module: { ...layout.module, statements: [marker] },
+      }),
+      entry.id,
+      globals,
+      { evaluation: "instance", origins: false },
+    );
+    if (!template.ok) return link(layoutInputs(layout), entry);
+    const program = template.value;
+    const exported = program.exports.find(
+      (item) =>
+        item !== undefined && item.module === layout.id && item.name === name,
+    );
+    const range = program.ranges.find(
+      (item) => item !== undefined && item.module === layout.id,
+    );
+    const slot = program.module.statements.findIndex(
+      (statement) =>
+        statement !== undefined &&
+        statement.kind === "type-alias" &&
+        statement.name === exported?.linkedName,
+    );
+    if (range === undefined || slot < 0) throw "surface layout slot invariant";
+    const templateRuntime: SharedLayoutRuntime = {
+      module: program.module,
+      exports: program.exports.filter((item) => item !== exported),
+      slot,
+      offset: range.offset,
+    };
+    shared.push(templateRuntime);
+    runtime = templateRuntime;
+  }
+  const roots = [layout.id],
+    inputs = [layout];
+  let padding: string | undefined = undefined;
+  if (runtime.offset > 0) {
+    padding = entry.id + "$padding";
+    roots.push(padding);
+    inputs.push({
+      id: padding,
+      module: {
+        start: 0,
+        end: runtime.offset - 1,
+        imports: [],
+        statements: [],
+      },
+      dependencies: new Map<string, string>(),
+    });
+  }
+  const root = layoutEntry(entry.id, roots, padding);
+  inputs.push(root);
+  const surface = link(inputs, root);
+  if (!surface.ok) return surface;
+  const runtimeModule = runtime.module,
+    runtimeStatements = runtimeModule.statements,
+    slot = runtime.slot,
+    statements = runtimeStatements.slice(0, slot);
+  const exports = runtime.exports.slice();
+  for (const statement of surface.module.statements) {
+    if (statement === undefined) throw "surface statement invariant";
+    statements.push(statement);
+  }
+  for (let index = slot + 1; index < runtimeStatements.length; index++) {
+    const statement = runtimeStatements[index];
+    if (statement === undefined) throw "layout runtime statement invariant";
+    statements.push(statement);
+  }
+  for (const item of surface.exports) {
+    if (item === undefined) throw "surface export invariant";
+    exports.push(item);
+  }
+  return {
+    ok: true,
+    module: { ...runtimeModule, statements },
+    exports,
+  };
+}
+/** Reuse the runtime link for independently checked and lowered surfaces. */
+export function createManagedSurfacePhysicalDeriver(
+  runtime: ManagedSurfaceLayoutRuntime,
+  shareRuntime: boolean = true,
+): (
+  surface: ManagedSurfaceTypeDescription,
+) => ManagedSurfacePhysicalDerivation {
+  const shared: SharedLayoutRuntime[] = [];
+  return (surface) =>
+    deriveSurfacePhysicalFacts(surface, runtime, shared, shareRuntime);
+}
 /** Lower an inert metadata program through the real collection/runtime pipeline.
  * No helper body is copied from the application, no IR is pruned or emitted,
  * and no program initialization runs. Facts describe every reified alias. */
 export function deriveManagedSurfacePhysicalFacts(
   surface: ManagedSurfaceTypeDescription,
   runtime: ManagedSurfaceLayoutRuntime,
+): ManagedSurfacePhysicalDerivation {
+  return deriveSurfacePhysicalFacts(surface, runtime, [], false);
+}
+function deriveSurfacePhysicalFacts(
+  surface: ManagedSurfaceTypeDescription,
+  runtime: ManagedSurfaceLayoutRuntime,
+  shared: SharedLayoutRuntime[],
+  shareRuntime: boolean,
 ): ManagedSurfacePhysicalDerivation {
   const failure = (
     stage: string,
@@ -114,18 +312,18 @@ export function deriveManagedSurfacePhysicalFacts(
       identityNames.has(statement.name)
     )
       statements.push(statement);
-  const modules = runtime.modules.slice();
+  const modules = runtime.modules;
   let layout = "$tint$surface-layout",
     entry = "$tint$surface-layout-entry";
   while (modules.some((module) => module !== undefined && module.id === layout))
     layout += "$";
   while (modules.some((module) => module !== undefined && module.id === entry))
     entry += "$";
-  modules.push({
+  const layoutSource: SourceModule = {
     id: layout,
     module: { start: 0, end: 0, imports: [], statements },
     dependencies: new Map<string, string>(),
-  });
+  };
   const namespaces = new Map<string, string>(),
     providers = new Set<string>(),
     roots = [layout];
@@ -143,42 +341,18 @@ export function deriveManagedSurfacePhysicalFacts(
     providers.add(source.namespace);
     roots.push(source.module);
   }
-  const imports: ImportDeclaration[] = [],
-    dependencies = new Map<string, string>();
-  for (const root of roots) {
-    if (root === undefined) throw "surface root invariant";
-    imports.push({
-      start: 0,
-      end: 0,
-      specifier: root,
-      specifierSpan: { start: 0, end: 0 },
-      bindings: [],
-      typeOnly: false,
-    });
-    dependencies.set(root, root);
-  }
-  modules.push({
-    id: entry,
-    module: {
-      start: 0,
-      end: 0,
-      imports,
-      statements: imports.map((declaration) => ({
-        start: 0,
-        end: 0,
-        kind: "import",
-        declaration,
-      })),
-    },
-    dependencies,
-  });
-  const linked = linkModules(modules, entry, runtime.globals, {
-    evaluation: "instance",
-  });
-  if (!linked.ok) return failure("link", linked.error.message);
-  const linkedProgram = linked.value;
+  const linkedProgram = linkLayout(
+    modules,
+    layoutSource,
+    layoutEntry(entry, roots),
+    runtime.globals,
+    shared,
+    shareRuntime,
+  );
+  if (!linkedProgram.ok) return failure("link", linkedProgram.error);
+  const linkedExports = linkedProgram.exports;
   const helpers = new Map<string, string>();
-  for (const exported of linkedProgram.exports) {
+  for (const exported of linkedExports) {
     if (exported === undefined) throw "surface export invariant";
     const namespace = namespaces.get(exported.module);
     if (namespace !== undefined && exported.namespace === "value")
@@ -211,7 +385,7 @@ export function deriveManagedSurfacePhysicalFacts(
     [];
   for (const anchor of anchors.value.anchors) {
     if (anchor === undefined) throw "surface runtime subject invariant";
-    const exported = linkedProgram.exports.find(
+    const exported = linkedExports.find(
       (item) =>
         item !== undefined &&
         item.module === layout &&
@@ -263,7 +437,7 @@ export function deriveManagedSurfacePhysicalFacts(
     if (fn !== undefined) sources.set(binding.name, fn.id);
   }
   function source(name: string): number | undefined {
-    const exported = linkedProgram.exports.find(
+    const exported = linkedExports.find(
       (item) =>
         item !== undefined &&
         item.module === layout &&

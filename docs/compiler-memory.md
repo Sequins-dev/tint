@@ -149,6 +149,15 @@ The second instance preparation drops from 2,571 to 1,967 MiB of live heap
 on matched source input. The check stage still returns about 1,100 MiB.
 See the [check-stage probes and snapshot](results/compiler-check-memory-2026-11-19.md).
 
+### Managed surface layouts
+
+A build with multiple managed surfaces links the runtime closure once and
+links each surface's layout declarations independently. Each surface still
+checks and lowers its own combined program. On the same frozen object-suite
+input, one runtime closure link replaces two, layouts peak at 1,623 MiB
+live instead of 1,625 MiB, and the 2,252-variant image is unchanged.
+See the [layout and heap-cap probes](results/compiler-surface-layout-memory-2026-11-19.md).
+
 ## What is global and what is per function
 
 | Data                                                                                         | Scope                    | Needed by                                          |
