@@ -162,13 +162,13 @@ See the [layout and heap-cap probes](results/compiler-surface-layout-memory-2026
 
 Lowering retains only the used elements of finalized instruction arrays and
 releases each function's record expression plans after emitting its body.
-After the on-demand realm source discovery change, the matched object-suite
-runs measured 2,910 MiB and 2,590 MiB live at the last function body. The
-smallest successful tested old-space cap fell from 3,040 MiB to 2,912 MiB, with
+After local realm allocation landed, the matched object-suite runs measured
+2,916 MiB and 2,595 MiB live at the last function body. The smallest
+successful tested old-space cap fell from 3,008 MiB to 2,912 MiB, with
 byte-identical images. The candidate exhausts heap during checking at
 2,880 MiB.
-See the [current lowering measurements](results/compiler-lowering-memory-realm-source-2026-11-20.md)
-and the [previous mixed Error views measurements](results/compiler-lowering-memory-mixed-error-2026-11-19.md).
+See the [current lowering measurements](results/compiler-lowering-memory-local-realm-2026-11-20.md)
+and the [previous source discovery measurements](results/compiler-lowering-memory-realm-source-2026-11-20.md).
 
 ## What is global and what is per function
 
