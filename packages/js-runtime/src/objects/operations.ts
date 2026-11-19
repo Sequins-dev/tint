@@ -26,6 +26,7 @@ import type { DataViewData } from "./data-view.ts";
 import type { ByteStorage } from "../bytes/index.ts";
 import type { SharedBlockStorage } from "../bytes/shared.ts";
 import type { ErrorRealm } from "./errors.ts";
+import type { ObjectShapeContract } from "./property-contracts.ts";
 import type { RegExpData } from "./regexp-data.ts";
 import type { PromiseRecord } from "../promises/index.ts";
 import type { ScriptExecutionContext } from "./jobs.ts";
@@ -62,6 +63,15 @@ export interface NativeAwaitOperation<Value> {
     rejected: (error: Value) => void,
   ) => void;
 }
+export interface PropertyWriteContract<Key, Value> {
+  readonly schemas: readonly ObjectShapeContract[];
+  readonly beforeDefine: (
+    key: Key,
+    descriptor: Descriptor<Value>,
+    writesValue: boolean,
+  ) => void;
+  readonly canDelete: (key: Key) => boolean;
+}
 /** Internal object state with optional runtime capabilities. Keys must be canonical;
  * values and callable handles belong to the embedding runtime. Mutate through this module. */
 export interface OrdinaryObject<Key, Value> {
@@ -73,6 +83,7 @@ export interface OrdinaryObject<Key, Value> {
    * replaced. Only an in-place [[Value]] write to a writable data descriptor
    * leaves it unchanged, so a cached descriptor stays the live cell. */
   internalPropertyEpoch: number;
+  internalPropertyContract: PropertyWriteContract<Key, Value> | undefined;
   internalPrivateElements: PrivateElement<Value>[] | undefined;
   /** Internal [[Call]], never a named/inherited JavaScript property. */
   readonly internalCall: ObjectCall<Value> | undefined;
@@ -297,6 +308,29 @@ export function createObject<Key, Value>(
     undefined,
   );
 }
+/** Packed arrays and mapped arguments have separate storage write paths. */
+export function acceptsPropertyContract<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+): boolean {
+  return (
+    object.internalMethods === undefined &&
+    object.internalDataAliases === undefined &&
+    object.internalCall === undefined &&
+    object.internalConstruct === undefined &&
+    !object.internalArgumentsData &&
+    !object.internalArrayData
+  );
+}
+/** Publish a previously validated contract and invalidate any direct cell. */
+export function attachPropertyContract<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  contract: PropertyWriteContract<Key, Value>,
+): void {
+  if (!acceptsPropertyContract<Key, Value>(object))
+    throw "PROPERTY_CONTRACT_OBJECT_INVARIANT";
+  object.internalPropertyContract = contract;
+  object.internalPropertyEpoch++;
+}
 export function createAliasedObject<Key, Value>(
   prototype: OrdinaryObject<Key, Value> | undefined,
 ): OrdinaryObject<Key, Value> {
@@ -391,6 +425,7 @@ function allocateObject<Key, Value>(
     internalImmutablePrototype: false,
     properties: new Map<Key, Descriptor<Value>>(),
     internalPropertyEpoch: 0,
+    internalPropertyContract: undefined,
     internalCall,
     internalTailDispatch: undefined,
     internalInitialName: undefined,
@@ -553,8 +588,9 @@ export function ordinaryDefineOwnProperty<Key, Value>(
       fields: update.fields | valueField,
       value: alias.get(),
     };
+  const current = ordinaryGetOwnProperty<Key, Value>(object, key);
   const result = applyDescriptor<Value>(
-    ordinaryGetOwnProperty<Key, Value>(object, key),
+    current,
     object.extensible,
     applied,
     hooks.undefinedValue,
@@ -563,6 +599,13 @@ export function ordinaryDefineOwnProperty<Key, Value>(
   const descriptor = result.descriptor;
   if (result.status === "accepted") {
     if (descriptor === undefined) throw "ACCEPTED_DESCRIPTOR_INVARIANT";
+    const contract = object.internalPropertyContract;
+    if (contract !== undefined)
+      contract.beforeDefine(
+        key,
+        descriptor,
+        current === undefined || (update.fields & valueField) !== 0,
+      );
     object.properties.set(key, descriptor);
     object.internalPropertyEpoch++;
     if (aliases !== undefined && alias !== undefined) {
@@ -667,6 +710,8 @@ export function ordinaryDeleteProperty<Key, Value>(
   const descriptor = object.properties.get(key);
   if (descriptor === undefined) return true;
   if (!descriptor.configurable) return false;
+  const contract = object.internalPropertyContract;
+  if (contract !== undefined && !contract.canDelete(key)) return false;
   object.properties.delete(key);
   object.internalPropertyEpoch++;
   const aliases = object.internalDataAliases;
@@ -773,7 +818,8 @@ export function refreshPropertyCell<Key, Value>(
 ): Descriptor<Value> | undefined {
   if (
     object.internalMethods !== undefined ||
-    object.internalDataAliases !== undefined
+    object.internalDataAliases !== undefined ||
+    object.internalPropertyContract !== undefined
   )
     return undefined;
   const descriptor = object.properties.get(key);
@@ -896,6 +942,7 @@ export function setProperty<Key, Value>(
         cursor === object &&
         receiver.object === object &&
         object.internalMethods === undefined &&
+        object.internalPropertyContract === undefined &&
         (aliases === undefined || !aliases.has(key))
       ) {
         // The stored descriptor is this object's own cell (no alias built a

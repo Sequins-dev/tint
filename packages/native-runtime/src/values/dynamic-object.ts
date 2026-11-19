@@ -1,0 +1,273 @@
+import {
+  beginObjectPropertyContract,
+  callObjectValue,
+  isArrayValue,
+  copyObjectProperties,
+  enumerateObjectValue,
+  nextEnumerableProperty,
+  createDataProperty,
+  createObject,
+  createRuntimeError,
+  deleteObjectValueProperty,
+  finishObjectPropertyContract,
+  installProgramObjectIntrinsics,
+  objectValueHasProperty,
+  programRealmCore,
+  projectPropertyContract,
+  propertyKeyValue,
+  readObjectValueProperty,
+  setObjectLiteralPrototype,
+  setObjectValueProperty,
+  viewObjectValue,
+  type ContractField,
+  type ObjectShapeContract,
+  type OrdinaryObject,
+  type ProgramRealmCore,
+  type PropertyEnumeration,
+  type PropertyValueRule,
+  type ScriptPropertyKey,
+} from "@tint/js-runtime/objects";
+
+type ObjectRecord = OrdinaryObject<ScriptPropertyKey, unknown>;
+let cachedContracts: Map<string, ObjectShapeContract> | undefined = undefined;
+
+function contractCache(): Map<string, ObjectShapeContract> {
+  const existing = cachedContracts;
+  if (existing !== undefined) return existing;
+  const created = new Map<string, ObjectShapeContract>();
+  cachedContracts = created;
+  return created;
+}
+
+function contract(text: string): ObjectShapeContract {
+  const contracts = contractCache();
+  const known = contracts.get(text);
+  if (known !== undefined) return known;
+  let cursor = 0;
+  function token(): string {
+    const separator = text.indexOf(":", cursor);
+    if (separator < 0) throw "DYNAMIC_CONTRACT_TOKEN_INVARIANT";
+    const length = Number(text.slice(cursor, separator));
+    cursor = separator + 1 + length;
+    return text.slice(separator + 1, cursor);
+  }
+  const types: PropertyValueRule[] = [];
+  const count = Number(token());
+  for (let index = 0; index < count; index++) {
+    const kind = token();
+    switch (kind) {
+      case "array":
+        types.push({ kind: "array" });
+        break;
+      case "number":
+        types.push({ kind: "number" });
+        break;
+      case "string":
+        types.push({ kind: "string" });
+        break;
+      case "boolean":
+        types.push({ kind: "boolean" });
+        break;
+      case "null":
+        types.push({ kind: "null" });
+        break;
+      case "undefined":
+        types.push({ kind: "undefined" });
+        break;
+      case "bigint":
+        types.push({ kind: "bigint" });
+        break;
+      case "unknown":
+        types.push({ kind: "unknown" });
+        break;
+      case "never":
+        types.push({ kind: "never" });
+        break;
+      case "string-literal":
+        types.push({ kind: "literal", value: token() });
+        break;
+      case "number-literal":
+        types.push({ kind: "literal", value: Number(token()) });
+        break;
+      case "boolean-literal":
+        types.push({ kind: "literal", value: token() === "true" });
+        break;
+      case "object": {
+        const stringIndex = Number(token());
+        const readonlyIndex = token() === "1";
+        const fields: ContractField[] = [];
+        const length = Number(token());
+        for (let position = 0; position < length; position++)
+          fields.push({
+            name: token(),
+            value: Number(token()),
+            required: token() === "1",
+            readonly: token() === "1",
+          });
+        types.push({ kind: "object", stringIndex, readonlyIndex, fields });
+        break;
+      }
+      case "union": {
+        const members: number[] = [];
+        const length = Number(token());
+        for (let position = 0; position < length; position++)
+          members.push(Number(token()));
+        types.push({ kind: "union", members });
+        break;
+      }
+      default:
+        throw "DYNAMIC_CONTRACT_RULE_INVARIANT";
+    }
+  }
+  const schema: ObjectShapeContract = { types, root: 0 };
+  contracts.set(text, schema);
+  return schema;
+}
+
+function requireObject(value: unknown, core: ProgramRealmCore): ObjectRecord {
+  const object = viewObjectValue(value, core.realm.objectPrototype);
+  if (object === undefined) throw createRuntimeError(core.realm, "type");
+  return object;
+}
+function requireKey(value: unknown, core: ProgramRealmCore): ScriptPropertyKey {
+  const key = propertyKeyValue(value, core.hooks, core.realm);
+  if (key.error !== "none") throw createRuntimeError(core.realm, "type");
+  return key.value;
+}
+
+export function create(schema: string): unknown {
+  const core = programRealmCore();
+  installProgramObjectIntrinsics(core);
+  const object = createObject<ScriptPropertyKey, unknown>(
+    core.realm.objectPrototype,
+  );
+  if (schema !== "")
+    beginObjectPropertyContract(object, contract(schema), core.realm);
+  return object;
+}
+export function finish(value: unknown, schema: string): void {
+  if (schema === "") return;
+  const core = programRealmCore();
+  finishObjectPropertyContract(
+    requireObject(value, core),
+    contract(schema),
+    core.realm,
+  );
+}
+export function enroll(value: unknown, schema: string): unknown {
+  const core = programRealmCore();
+  return projectPropertyContract(value, contract(schema), core.realm, true);
+}
+export function convertKey(value: unknown): unknown {
+  return requireKey(value, programRealmCore());
+}
+export function define(base: unknown, key: unknown, value: unknown): void {
+  const core = programRealmCore();
+  const object = requireObject(base, core);
+  if (
+    !createDataProperty<ScriptPropertyKey, unknown>(
+      object,
+      requireKey(key, core),
+      value,
+      core.hooks,
+    )
+  )
+    throw createRuntimeError(core.realm, "type");
+}
+export function setPrototype(base: unknown, value: unknown): void {
+  const core = programRealmCore();
+  setObjectLiteralPrototype(requireObject(base, core), value);
+}
+export function read(base: unknown, key: unknown): unknown {
+  const core = programRealmCore();
+  return readObjectValueProperty(
+    base,
+    requireKey(key, core),
+    core.hooks,
+    core.realm,
+  );
+}
+export function project(value: unknown, schema: string): unknown {
+  const core = programRealmCore();
+  return projectPropertyContract(value, contract(schema), core.realm);
+}
+export function write(base: unknown, key: unknown, value: unknown): void {
+  const core = programRealmCore();
+  if (
+    setObjectValueProperty(
+      base,
+      requireKey(key, core),
+      value,
+      true,
+      core.hooks,
+      core.realm,
+    ) !== "none"
+  )
+    throw createRuntimeError(core.realm, "type");
+}
+export function has(key: unknown, base: unknown): boolean {
+  const core = programRealmCore();
+  const result = objectValueHasProperty(key, base, core.hooks, core.realm);
+  if (result.error !== "none") throw createRuntimeError(core.realm, "type");
+  return result.value;
+}
+export function remove(base: unknown, key: unknown): boolean {
+  const core = programRealmCore();
+  const result = deleteObjectValueProperty(
+    base,
+    requireKey(key, core),
+    true,
+    core.realm.objectPrototype,
+  );
+  if (result.error !== "none") throw createRuntimeError(core.realm, "type");
+  return result.value;
+}
+
+export function spread(base: unknown, source: unknown): void {
+  const core = programRealmCore();
+  copyObjectProperties(
+    requireObject(base, core),
+    source,
+    [],
+    core.hooks,
+    core.realm,
+  );
+}
+export function enumerate(
+  value: unknown,
+): PropertyEnumeration<ScriptPropertyKey, unknown> {
+  const core = programRealmCore();
+  const enumeration = enumerateObjectValue(value, core.hooks, core.realm);
+  if (enumeration.error !== "none")
+    throw createRuntimeError(core.realm, "type");
+  return enumeration.value;
+}
+export function advance(
+  enumeration: PropertyEnumeration<ScriptPropertyKey, unknown>,
+): string | undefined {
+  const key = nextEnumerableProperty<ScriptPropertyKey, unknown>(enumeration);
+  return typeof key === "string" ? key : undefined;
+}
+
+export function objectConstructor(): unknown {
+  const core = programRealmCore();
+  installProgramObjectIntrinsics(core);
+  return readObjectValueProperty(core.object, "Object", core.hooks, core.realm);
+}
+export function invokeEnumeration(
+  receiver: unknown,
+  callee: unknown,
+  input: unknown,
+): unknown {
+  const core = programRealmCore();
+  const args: unknown[] = [input];
+  const result = callObjectValue(
+    callee,
+    receiver,
+    args,
+    core.realm.objectPrototype,
+  );
+  if (result.error !== "none" || !isArrayValue(result.value, core.realm))
+    throw createRuntimeError(core.realm, "type");
+  return result.value;
+}

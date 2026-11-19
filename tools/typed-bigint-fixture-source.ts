@@ -2,7 +2,17 @@
 // 42 when every check holds, else the number of the first failing check.
 // tools/build-typed-bigint-fixture.ts runs it natively on the typed path;
 // tools/typed-bigint-fixture.test.ts runs the same source under Node.
-export const typedBigIntSource = `// Message checks wait for instanceof narrowing of caught values (slice 4a).
+export const typedBigIntSource = `function rangeMessage(action: () => bigint): string {
+  try {
+    action();
+  } catch (error) {
+    if (error instanceof RangeError) return error.message;
+    throw error;
+  }
+  return "";
+}
+// Node reports "undefined must be positive" for the negative exponent.
+// Check that case by RangeError kind only.
 function throwsRange(action: () => bigint): boolean {
   try {
     action();
@@ -75,12 +85,13 @@ export function run(): number {
   if (String(-123n) !== "-123" || "x" + 10n !== "x10" || 10n + "y" !== "10y")
     return 22;
   if (\`\${big}\` !== "18446744073709551615") return 23;
-  // RangeErrors.
-  if (!throwsRange(() => 1n / 0n)) return 24;
-  if (!throwsRange(() => 1n % 0n)) return 25;
+  // RangeError messages are checked where the Node reference agrees.
+  if (rangeMessage(() => 1n / 0n) !== "Division by zero") return 24;
+  if (rangeMessage(() => 1n % 0n) !== "Division by zero") return 25;
   if (!throwsRange(() => 2n ** -1n)) return 26;
-  if (!throwsRange(() => BigInt(1.5))) return 27;
-  if (!throwsRange(() => 1n << 2000000000n)) return 28;
+  if (rangeMessage(() => BigInt(1.5)) !==
+      "The number 1.5 cannot be converted to a BigInt because it is not an integer") return 27;
+  if (rangeMessage(() => 1n << 2000000000n) !== "Maximum BigInt size exceeded") return 28;
   // A possibly absent BigInt.
   const present = first([5n]),
     absent = first([]);

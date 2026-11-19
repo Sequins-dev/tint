@@ -74,29 +74,19 @@ export function run(): number {
   // Holes (made by growing the length) are not values of these T.
   const numbers: number[] = [1];
   numbers.length = 3;
-  if (!throwsOnHole(() => {
-      sumNumbers(numbers);
-    })) return 6;
+  if (!throwsOnHole(() => sumNumbers(numbers))) return 6;
   const strings: string[] = ["a"];
   strings.length = 2;
-  if (!throwsOnHole(() => {
-      joinStrings(strings);
-    })) return 7;
+  if (!throwsOnHole(() => joinStrings(strings))) return 7;
   const flags: boolean[] = [true];
   flags.length = 2;
-  if (!throwsOnHole(() => {
-      countTrue(flags);
-    })) return 8;
+  if (!throwsOnHole(() => countTrue(flags))) return 8;
   const points: Point[] = [{ x: 1 }];
   points.length = 2;
-  if (!throwsOnHole(() => {
-      sumPoints(points);
-    })) return 9;
+  if (!throwsOnHole(() => sumPoints(points))) return 9;
   const mixed: (number | string)[] = [1];
   mixed.length = 2;
-  if (!throwsOnHole(() => {
-      describe(mixed);
-    })) return 10;
+  if (!throwsOnHole(() => describe(mixed))) return 10;
   // Element types that admit undefined bind it for a hole.
   const optional: (number | undefined)[] = [1];
   optional.length = 3;

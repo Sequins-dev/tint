@@ -2674,31 +2674,55 @@ test("typed object accessors require explicit layout support", () => {
   assert.match(result.error.message, /accessor layout/);
 });
 
-test("typed prototype setters require explicit prototype layout support", () => {
+test("prototype setters reject a fixed-record context", () => {
   const result = check(
     "function f():{x:number}{return {__proto__:null,x:42};}",
   );
   assert.ok(!result.ok);
   assert.equal(result.error.code, "UNSUPPORTED");
-  assert.match(result.error.message, /prototype layout/);
+  assert.match(result.error.message, /requires an indexed object context/);
 });
 
-test("typed dynamic computed object keys require explicit layout support", () => {
+test("a broad computed key does not establish fixed required fields", () => {
   const result = check("function f(key:string):{x:number}{return {[key]:42};}");
   assert.ok(!result.ok);
   assert.equal(result.error.code, "UNSUPPORTED");
-  assert.match(result.error.message, /dynamic layout/);
+  assert.match(result.error.message, /requires an indexed object context/);
 });
 
-test("typed rest signatures remain explicit unsupported layouts", () => {
-  for (const text of [
-    "function f(...r:number[]):number{return 42;}",
-    "let f:(...r:number[])=>number;",
-  ]) {
-    const result = check(text);
-    assert.equal(result.ok, false, text);
-    if (!result.ok) assert.equal(result.error.code, "UNSUPPORTED");
-  }
+test("typed rest rejects a scalar annotation and the parser rejects tuples", () => {
+  const scalar = check("function f(...r:number):number{return 42;}");
+  assert.ok(!scalar.ok);
+  assert.equal(scalar.error.code, "INVALID_TYPE");
+  assert.equal(scalar.error.message, "rest parameter requires an array type");
+  const input = new TextEncoder().encode(
+    "function f(...r:readonly [number]):number{return 42;}",
+  );
+  const source = createSourceText(input, input.length);
+  assert.ok(source.ok);
+  const parsed = parseModule(source.value);
+  assert.ok(!parsed.ok);
+  assert.equal(parsed.error.message, "tuple types are not supported");
+});
+
+test("typed rest rejects realm arrays in the native packed-list ABI", () => {
+  const alias = check(`
+    type Entry = [string, number];
+    function take(...entry: Entry): number { return entry[1]; }
+  `);
+  assert.ok(!alias.ok);
+  assert.equal(alias.error.code, "INVALID_TYPE");
+  assert.equal(alias.error.message, "rest parameter requires an array type");
+
+  const spread = check(`
+    function take(...values: number[]): number { return values.length; }
+    function count(values: Record<string, number>): number {
+      return take(...Object.values(values));
+    }
+  `);
+  assert.ok(!spread.ok);
+  assert.equal(spread.error.code, "UNSUPPORTED");
+  assert.equal(spread.error.message, "rest spread requires a supported array");
 });
 
 test("typed templates accept fixed primitive inputs and reject unresolved object coercion", () => {
@@ -2907,4 +2931,326 @@ test("`as` from unknown is a checked downcast to testable types", () => {
       .ok,
     false,
   );
+});
+
+test("native Error constructors and guards expose TypeScript error members", () => {
+  for (const source of [
+    'function f(): Error { return new Error("message"); }',
+    'function f(): Error { return { name: "Custom", message: "text" }; }',
+    'function f(): string { try { throw new RangeError("range"); } catch (e) { if (!(e instanceof RangeError)) throw e; return e.message; } }',
+    "function f(e: Error | string): string { if (e instanceof Error) return e.name; return e; }",
+    "function f(e: Error): string | undefined { return e.stack; }",
+    'function f(e: unknown): string { if (e instanceof Error && e.message === "a") return e.name; return ""; }',
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify(result));
+  }
+
+  for (const source of [
+    "function f(): boolean { return 42 instanceof Error; }",
+    "function f(): Error { return new Error(1); }",
+    "function f(e: Error): string { return e.code; }",
+    'function f(): Error { return { name: "Custom", message: 1 }; }',
+  ])
+    assert.equal(check(source).ok, false, source);
+
+  const cause = check(
+    'function f(): Error { return new Error("x", {cause: 42}); }',
+  );
+  assert.equal(cause.ok, false);
+  assert.match(
+    JSON.stringify(cause),
+    /Error options \(cause\) require the realm Error constructor/,
+  );
+});
+
+test("typed rest checks minimum arity, contextual elements and trailing spreads", () => {
+  const result = check(`
+    function count(head: number = 2, ...xs: readonly { value: number }[]): number {
+      return head + xs.length;
+    }
+    function run(): number {
+      const fn: (head?: number, ...xs: Array<{ value: number }>) => number = count;
+      return fn() + fn(1, { value: 3 }) + fn(1, ...[{ value: 4 }]);
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("typed rest rejects mismatched elements and incompatible calling conventions", () => {
+  const declaration =
+    "function f(x: number, ...xs: number[]): number { return x + xs.length; }";
+  for (const [body, code, message] of [
+    ["return f();", "ARITY", /invalid call/],
+    ['return f(1, "bad");', "TYPE_MISMATCH", /invalid call/],
+    [
+      'const bad: string[] = ["bad"]; return f(1, ...bad);',
+      "TYPE_MISMATCH",
+      /rest spread/,
+    ],
+    ["return f(...[1]);", "UNSUPPORTED", /spread.*rest position/],
+    ["return fixed(...[1]);", "UNSUPPORTED", /spread.*rest position/],
+    [
+      "const x: (x: number, xs: number[]) => number = f; return 0;",
+      "TYPE_MISMATCH",
+      /matching rest layouts/,
+    ],
+  ] as const) {
+    const result = check(
+      declaration +
+        "function fixed(x: number): number { return x; } function run(): number {" +
+        body +
+        "}",
+    );
+    assert.ok(!result.ok, body);
+    assert.equal(result.error.code, code, JSON.stringify(result));
+    assert.match(result.error.message, message);
+  }
+});
+
+test("a void callback context preserves inferred value returns", () => {
+  const result = check(`
+    function named(): number { return 42; }
+    function run(cb: () => void): void { cb(); }
+    function main(): void {
+      const cb: () => void = () => 42;
+      run(cb);
+      run(named);
+      run(() => { return 42; });
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.equal(result.value.voidResultDiscard, true);
+  assert.ok(!check("function explicitlyVoid(): void { return 42; }").ok);
+});
+
+test("ordinary void callbacks keep exact call witnesses", () => {
+  const absent = check(`
+    function invoke(cb: () => void): void { cb(); }
+    function main(): void { invoke(() => { return; }); }
+  `);
+  assert.ok(absent.ok);
+  assert.equal(absent.value.voidResultDiscard, false);
+
+  const alternative = check(`
+    function keep(value: string): string { return value; }
+    function main(): void {
+      const value: ((x: number) => void) | ((x: string) => string) = keep;
+    }
+  `);
+  assert.ok(alternative.ok);
+  assert.equal(alternative.value.voidResultDiscard, false);
+});
+
+test("resolves string index signatures and finite Record annotations", () => {
+  const result = check(`
+    interface Indexed { readonly [key: string]: number; count: number }
+    type ByName = Record<string, number>;
+    type Pair = Record<"first" | "second", number>;
+    function read(indexed: Indexed, byName: ByName, pair: Pair): Indexed[string] {
+      return indexed.count + pair.first + pair.second;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("requires every key of a finite Record", () => {
+  const result = check(`
+    function make(): Record<"first" | "second", number> { return {first: 1}; }
+  `);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.notEqual(result.error.code, "INVALID_TYPE");
+});
+
+test("respects a local declaration named Record", () => {
+  const result = check(`
+    type Record<T> = { value: T };
+    function read(record: Record<number>): number { return record.value; }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("checks fixed index-signature fields with exact optionality", () => {
+  assert.ok(
+    check(`
+    interface Base { [key: string]: string }
+    interface Derived extends Base { name: "ok" }
+    function read(value: Derived): "ok" { return value.name; }
+  `).ok,
+  );
+  assert.ok(check("type Good = { [key: string]: number; item?: number };").ok);
+  for (const type of ["item: string", "item?: number | undefined"]) {
+    const result = check(`type Bad = { [key: string]: number; ${type} };`);
+    assert.equal(result.ok, false);
+    if (!result.ok)
+      assert.match(result.error.message, /incompatible with the string index/);
+  }
+});
+
+test("string index reads include undefined except for declared required fields", () => {
+  const declarations = "type D = { [key: string]: number; count: number };";
+  assert.ok(
+    check(
+      declarations +
+        "function read(d: D): number { return d.count + (d.missing ?? 0); }",
+    ).ok,
+  );
+  const result = check(
+    declarations + "function read(d: D): number { return d.missing; }",
+  );
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.error.code, "TYPE_MISMATCH");
+});
+
+test("only structural sources with compatible fields imply a string index", () => {
+  const result = check(`
+    type Alias = { count: number };
+    function convert(value: Alias): Record<string, number> { return value; }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+  const interfaceSource = check(`
+    interface Fixed { count: number }
+    function convert(value: Fixed): Record<string, number> { return value; }
+  `);
+  assert.equal(interfaceSource.ok, false);
+  if (!interfaceSource.ok)
+    assert.equal(interfaceSource.error.code, "TYPE_MISMATCH");
+});
+
+test("checks dynamic names and writes using the declared index type", () => {
+  const definition = "interface D { [key: string]: number; count: 42 }";
+  const result = check(
+    definition +
+      `
+    function update(key: string, n: number): number {
+      const value: D = { count: 42, [key]: 1 };
+      value[key] = n;
+      value[2] = n;
+      return (value[key] ?? 0) + value["count"];
+    }
+  `,
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  for (const statement of [
+    "value[key] = undefined;",
+    'value[key] = "bad";',
+    "value[false] = 1;",
+    'value["count"] = 5;',
+  ]) {
+    const rejected = check(
+      definition + `function f(value: D, key: string): void { ${statement} }`,
+    );
+    assert.equal(rejected.ok, false, statement);
+    if (!rejected.ok) assert.equal(rejected.error.preventsFallback, true);
+  }
+});
+
+test("readonly index signatures reject indexed writes", () => {
+  const result = check(`
+    function f(value: { readonly [key: string]: number }, key: string): void {
+      value[key] = 5;
+    }
+  `);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.error.code, "IMMUTABLE");
+});
+
+test("C1 reports native list and record payloads before general fallback", () => {
+  for (const payload of ["number[]", "{ count: number }"]) {
+    const result = check(`type D = Record<string, ${payload}>;`);
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.error.code, "UNSUPPORTED");
+      assert.equal(result.error.preventsFallback, true);
+      assert.match(
+        result.error.message,
+        /values in dynamic-key objects need slice 2b list\/record views/,
+      );
+    }
+  }
+});
+
+test("for-in binds a string key without asserting an indexed value is present", () => {
+  const result = check(`
+    function total(value: Record<string, number>): number {
+      let total: number = 0;
+      for (const key in value) total += value[key] ?? 0;
+      let key: string = "";
+      for (key in value) { if (key === "skip") continue; total += 1; }
+      return total;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("Object enumeration preserves index value and entry position types", () => {
+  const result = check(`
+    function read(dict: Record<string, number>): number {
+      const keys = Object.keys(dict);
+      const values = Object.values(dict);
+      const entries: [string, number][] = Object.entries(dict);
+      const entry = entries[0];
+      if (entry === undefined) return 0;
+      const key: string = entry[0];
+      const value: number = entry[1];
+      return key === keys[0] ? (values[0] ?? 0) + value : 0;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("unannotated computed literals keep open storage", () => {
+  const result = check(`
+    function f(key: string): unknown {
+      const object = { [key]: 1 };
+      object[key] = "open";
+      return object[key];
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("known native aggregate values do not box into a dynamic property", () => {
+  const result = check(`
+    function f(value: number[]): void {
+      const object: Record<string, unknown> = {};
+      object.value = value;
+    }
+  `);
+  assert.equal(result.ok, false);
+  if (!result.ok)
+    assert.match(
+      result.error.message,
+      /native list values in dynamic-key objects need slice 2b/,
+    );
+});
+
+test("finite Record keys select the declared fixed fields", () => {
+  assert.ok(
+    check(`
+    type Pair = Record<"a" | "b", number>;
+    function read(value: Pair, key: "a" | "b"): number {
+      value[key] = 42;
+      return value[key];
+    }
+  `).ok,
+  );
+  assert.equal(
+    check(`
+    function read(value: Record<"a" | "b", number>, key: string): number {
+      return value[key];
+    }
+  `).ok,
+    false,
+  );
+});
+
+test("literal presence narrows a dynamic property read", () => {
+  const result = check(`
+    function read(value: Record<string, number>): number {
+      if ("key" in value) return value["key"] + value.key;
+      return 0;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
 });

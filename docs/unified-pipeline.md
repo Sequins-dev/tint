@@ -38,7 +38,7 @@ The typed checker (`typescript/src/checker/closures.ts`, `index.ts`,
 closed set of built-in globals (`undefined`, `NaN`, `Infinity`, `Array`,
 `Boolean`, `String`, `Number`, `Math`, `Map`, `Set`, four typed-array kinds,
 `ArrayBuffer`, `DataView`, `TextEncoder`, `TextDecoder`, `TypeError`,
-`RangeError`, `console`) whose implementations are native-runtime strict
+`RangeError`, `Error`, `console`) whose implementations are native-runtime strict
 builtins. There is no `Error`, `Object`, `Reflect`, `Symbol`, `Promise`, `JSON`
 or `RegExp` in the typed world; that is where gaps such as `new Error`,
 `.message` on a caught value, `instanceof Uint8Array` and `toLowerCase` come
@@ -128,7 +128,7 @@ The consequences:
    ts-native lowering replaces the general form. A specialization exists only
    where it is equivalent to the general form under the proven facts.
 4. **Representation follows facts, contracts and speculation.** A value whose
-   type the typed world cannot model (`Error`, `Promise`, a class with features
+   type the typed world cannot model (`Promise`, a class with features
    the record planner cannot lay out, `any`, a union the encodings cannot hold)
    gets the general representation, and operations on it are general. This
    replaces checker rejections: "unsupported type" becomes "general
@@ -278,6 +278,25 @@ The bridge is also what lets general code import typed, trusted runtime and
 FFI modules: their exports cross as boxed values with typed adapters instead
 of being refused.
 
+### Native errors and narrowing (slice 4a)
+
+The typed path accepts the `Error` annotation and allocates a plain Error
+descriptor only when constructing one. `instanceof Error` accepts all three
+native kinds. Subtype checks still test the specific descriptor. Successful
+guards narrow caught values without changing storage, and false branches
+filter known union alternatives while retaining unrepresentable complements
+such as unknown minus Error.
+
+A native record with string `name` and `message` and an optional string
+`stack` can satisfy a structural `Error` contract while preserving its
+identity. Only native errors pass the native `instanceof` test.
+
+Native `message` defaults to the empty string, `name` uses the intrinsic
+kind, and `stack` is undefined. The native constructor diagnoses Error
+options, whose getters and cause semantics belong to the realm constructor.
+The [error view design](design-4a-narrowing-errors.md#native-errors-and-their-realm-views)
+tracks realm-side structural contracts and error identity across mixed boundaries.
+
 ### Typed BigInt (slice 4a)
 
 A typed `bigint` is a reference to js-runtime's `BigIntValue` record, the
@@ -335,6 +354,65 @@ on realm values across a trusted import.
 See the [slice 4a design](design-4a-narrowing-errors.md) for callable
 narrowing and the remaining slice 2b closure and typed-array projections.
 
+### Typed rest parameters and void callbacks (slice 4a)
+
+A rest signature stores one final array parameter and a rest flag. The minimum
+arity counts only the required leading parameters. The checker contextually
+checks each trailing argument against the array element type. A spread can
+supply elements once the call reaches the rest position, using a typed list or
+supported numeric typed array. Lowering evaluates the callee and leading
+arguments, then appends each trailing value or spread element to a fresh list
+in source order. Direct and indirect calls use the same packed ABI. Defaults
+still run in the callee when a leading argument is omitted or undefined.
+
+Rest and fixed signatures cannot be assigned to each other, and two rest
+signatures must have the same parameter count. Those calls would otherwise
+disagree about which argument holds the packed array. Tuple rest remains
+outside the typed rest calling convention. Spreading a hole into a rest list whose
+element contract excludes undefined throws a TypeError, following the typed
+list iteration contract.
+
+A value-returning function can satisfy a void callback signature. An
+unannotated contextual callback retains its inferred result, and a
+void-typed indirect call reads only the completion status from the common
+completion buffer. When checking finds a value flow into a void signature,
+lowering marks those calls in IR. The marks let a local void witness accept
+a local identity with the same physical parameter layout in addition to its
+exact signature identity. The function
+object and callee ABI stay unchanged. Managed signature contracts at service
+boundaries still require exact identities.
+
+The native fixtures and their Node references share the source in
+`tools/typed-rest-void-fixture-source.ts`.
+
+### Typed dynamic-key objects (slice 4a, C1)
+
+String index signatures and `Record<string, T>` use the program realm's
+ordinary objects. The checked type retains its index and fixed property types
+while values cross in the existing general representation. Finite
+`Record<"a" | "b", T>` values can keep their fixed layout for closed field
+access. A dynamic object and its aliases share descriptor and prototype storage
+with general code.
+
+An explicit dynamic annotation installs a property contract in that storage.
+Admission validates own data descriptors before publishing any contract, even
+for nested objects. Direct assignment and reflective definition reach the
+same descriptor check. The runtime rejects covered accessors, protects required
+fields from deletion, and invalidates cached property cells on enrollment.
+Unannotated computed literals have open storage.
+
+The typed path uses the realm's existing computed-property conversion,
+membership, deletion, enumeration and spread operations. The general host and
+typed runtime obtain the same realm through the module instance. A program with
+no dynamic usage can prune the dynamic runtime namespace before linking.
+
+C1 accepts primitive, BigInt, unknown and nested dynamic-object payloads.
+Native lists and fixed records require slice 2b list/record views or C2
+function-local realm allocation. In particular, `node:os.networkInterfaces()`
+still needs C2. See the [design and implementation status](design-4a-dynamic-key-objects.md).
+The [C1 gap ledger](results/unified-pipeline-ledger-slice4a-dynamic-objects-c1-final-gate.json)
+records 130 variants and compares them with the slice 4a BigInt baseline.
+
 ### What happens to each front end
 
 - js-engine lowering becomes a library of construct lowerings callable for a
@@ -383,36 +461,44 @@ FFI phase 1 marks its workarounds `KNOWN DEFECT` (see the known-defects table
 in `docs/native-ffi.md`); each is removed when its slice lands. Constructs in
 the ledger corpus reproduce the ones expressible in a single application.
 
-| Gap                                                                                                                                                                                                            | Ledger construct                                                         | Removed by                          |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ----------------------------------- |
-| (Removed by 2a) General code cannot import trusted runtime/FFI modules                                                                                                                                         | (needs runtime modules)                                                  | 2                                   |
-| Classes rejected in module-instance (runtime) contexts                                                                                                                                                         | `class-basic`                                                            | 3                                   |
-| `new Error`, `.message` and untyped reads of caught values, `instanceof Uint8Array`                                                                                                                            | `errors`, `caught-error-reads`, `typed-arrays`                           | 4                                   |
-| `toLowerCase` and other unlisted String methods; `Math.pow`/`log2`/`fround`; `JSON`                                                                                                                            | `string-methods`, `math`, `json`                                         | 4                                   |
-| (Removed by 2b: checked downcasts) `x as Uint8Array` from a general value                                                                                                                                      | `general-value-casts`                                                    | 2 (projection), 4                   |
-| Typed-array views over another buffer                                                                                                                                                                          | `typed-array-buffer-views`                                               | 4                                   |
-| Forward reference to an unannotated module const (inferred binding treated as a contract; the runtime-stage error also lacks a location)                                                                       | `forward-inferred-const`                                                 | 4 (open slots); location separately |
-| Tuple types and `implements` clauses fail to parse                                                                                                                                                             | `tuple-types`, `spread`, `iterator-protocol`                             | parser fix (both forms parse first) |
-| Nested type declarations; ternary over union discriminants in an object literal                                                                                                                                | `nested-type-declarations`, `union-object-ternary`                       | 5                                   |
-| `for (const x of list)` followed by a property read of `x` (in runtime modules)                                                                                                                                | `for-of-record-reads`                                                    | 5                                   |
-| (Removed by 4a: typed BigInt) Typed BigInt values (blocks FFI pointer/u64 values crossing into general code as BigInt)                                                                                         | `bigint`                                                                 | 4                                   |
-| Node API errors without `code`/`errno` (no plain `Error` in typed runtime code: zlib, crypto)                                                                                                                  | (runtime modules)                                                        | 4                                   |
-| Top-level statements in typed modules ("module statement is outside the declaration checking slice")                                                                                                           | `module-statements`                                                      | 5                                   |
-| A compile-time type error (`noUncheckedIndexedAccess`) becomes a general fallback instead of a diagnostic                                                                                                      | `typed-array-index`                                                      | 4                                   |
-| No per-program compiler options                                                                                                                                                                                | `typed-array-index-unchecked`                                            | not yet scheduled                   |
-| C struct views (`Ptr<Interface>` member access, FFI phase 2b) are typed-only; untyped code needs a real object whose accessor properties keep `v.member`'s meaning                                             | (FFI view modules)                                                       | 2                                   |
-| Map iteration in typed code (`for (const [k, v] of map)`, `map.keys()`: only get/has/set/delete/clear are typed)                                                                                               | `map-set`                                                                | 4                                   |
-| No objects with dynamic keys in typed code: `os.networkInterfaces()` returns a Map instead of Node's plain object (API-shape deviation, FFI phase 3)                                                           | (runtime modules)                                                        | 2 (record views), 4                 |
-| No `SystemError` or plain `Error` in typed runtime code: node:os failures are TypeErrors                                                                                                                       | (runtime modules)                                                        | 4                                   |
-| (Removed by 4a: callable classification) Typed `typeof` on realm callables received as `unknown`                                                                                                               | `unknown-typeof-callable`, `tools/build-mixed-general-typeof-fixture.ts` | 4a                                  |
-| Calling a native closure through a narrowed `Function` requires the slice 2b closure view. The dynamic call path itself is pending.                                                                            | (mixed callable fixture planned)                                         | 2b, 4a                              |
-| Passing a realm typed array narrowed by `instanceof` to a native typed-array parameter requires the slice 2b buffer view. The narrowing itself is pending.                                                     | (mixed typed-array fixture planned)                                      | 2b, 4a                              |
-| `for…of` elements are typed `T \| undefined` (array holes) instead of TypeScript's `T`: passing the element on or reading its properties fails (FFI phases 2 and 4)                                            | `for-of-typed-array-list`, `for-of-object-list`, `for-of-record-reads`   | 4a                                  |
-| Assignment does not narrow a `let` to the assigned type (`x = x === undefined ? v : x`); `??=` only on optional primitives (FFI phase 4)                                                                       | `reassignment-narrowing`                                                 | 4a                                  |
-| Module-level loops and non-literal initializers ("module evaluation is required for this statement"; `tint:ffi` runtime module, FFI phase 4)                                                                   | `module-initializers`, `module-statements`                               | 5                                   |
-| An empty array literal without a type needs a contextual type (TypeScript infers an evolving array)                                                                                                            | `evolving-empty-array`                                                   | 4                                   |
-| Discriminant narrowing of a parameter whose discriminant is not `readonly` (`shape.kind === "square" ? shape.size : …`)                                                                                        | `discriminant-narrowing`                                                 | 4                                   |
-| General-path gap: the general host installs no WeakMap/WeakSet, WeakRef, FinalizationRegistry, Atomics, Intl or Temporal, so untyped code cannot use them (weak storage depends on the collector's weak cells) | `weak-collections`                                                       | 1c (with the GC owner)              |
+| Gap                                                                                                                                                                                                                                                                                         | Ledger construct                                                                                                | Removed by                               |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| (Removed by 2a) General code cannot import trusted runtime/FFI modules                                                                                                                                                                                                                      | (needs runtime modules)                                                                                         | 2                                        |
+| Classes rejected in module-instance (runtime) contexts                                                                                                                                                                                                                                      | `class-basic`                                                                                                   | 3                                        |
+| (Removed by 4a: native errors) `new Error` and guarded reads of caught native errors                                                                                                                                                                                                        | `errors`, `caught-error-reads`, `native-error-flow`                                                             | 4a                                       |
+| Typed `instanceof Uint8Array`                                                                                                                                                                                                                                                               | `typed-arrays`                                                                                                  | 4a                                       |
+| Mixed native Error views and realm-side structural Error contracts                                                                                                                                                                                                                          | (mixed trusted boundary)                                                                                        | 4a                                       |
+| Native Error options and stack capture                                                                                                                                                                                                                                                      | `Error options (cause) require the realm Error constructor`. Native `stack` is undefined.                       | Realm constructor / native stack capture |
+| `toLowerCase` and other unlisted String methods; `Math.pow`/`log2`/`fround`; `JSON`                                                                                                                                                                                                         | `string-methods`, `math`, `json`                                                                                | 4                                        |
+| (Removed by 2b: checked downcasts) `x as Uint8Array` from a general value                                                                                                                                                                                                                   | `general-value-casts`                                                                                           | 2 (projection), 4                        |
+| Typed-array views over another buffer                                                                                                                                                                                                                                                       | `typed-array-buffer-views`                                                                                      | 4                                        |
+| Forward reference to an unannotated module const (inferred binding treated as a contract; the runtime-stage error also lacks a location)                                                                                                                                                    | `forward-inferred-const`                                                                                        | 4 (open slots); location separately      |
+| (Removed by 4a) Typed rest parameters and spreads in the rest position                                                                                                                                                                                                                      | `rest-default-parameters`, `rest-spread`                                                                        | 4a                                       |
+| (Removed by 4a) Value-returning functions rejected in void callback slots                                                                                                                                                                                                                   | `void-callbacks`                                                                                                | 4a                                       |
+| Reading the result of a call through a void-typed callback, as in `const r: unknown = cb()`, `return cb()` from an `unknown` function, `[cb()]`, or `cb() === undefined`, fails at build time. TypeScript accepts these expressions and JavaScript yields the callee's actual return value. | `invalid binding operation`, `value does not match its declared type`, `void result cannot be a binary operand` | Not yet scheduled                        |
+| Tuple annotations parse. Typed lowering supports `[string, T]` entry pairs. Other tuple shapes need lowering, and `implements` clauses still fail to parse.                                                                                                                                 | `tuple-types`, `spread`, `iterator-protocol`                                                                    | tuple lowering, parser fix               |
+| Nested type declarations; ternary over union discriminants in an object literal                                                                                                                                                                                                             | `nested-type-declarations`, `union-object-ternary`                                                              | 5                                        |
+| `for (const x of list)` followed by a property read of `x` (in runtime modules)                                                                                                                                                                                                             | `for-of-record-reads`                                                                                           | 5                                        |
+| (Removed by 4a: typed BigInt) Typed BigInt values (blocks FFI pointer/u64 values crossing into general code as BigInt)                                                                                                                                                                      | `bigint`                                                                                                        | 4                                        |
+| Node API errors without `code`/`errno` (zlib, crypto)                                                                                                                                                                                                                                       | (runtime modules)                                                                                               | 4                                        |
+| Top-level statements in typed modules ("module statement is outside the declaration checking slice")                                                                                                                                                                                        | `module-statements`                                                                                             | 5                                        |
+| A compile-time type error (`noUncheckedIndexedAccess`) becomes a general fallback instead of a diagnostic                                                                                                                                                                                   | `typed-array-index`                                                                                             | 4                                        |
+| No per-program compiler options                                                                                                                                                                                                                                                             | `typed-array-index-unchecked`                                                                                   | not yet scheduled                        |
+| C struct views (`Ptr<Interface>` member access, FFI phase 2b) are typed-only; untyped code needs a real object whose accessor properties keep `v.member`'s meaning                                                                                                                          | (FFI view modules)                                                                                              | 2                                        |
+| Map iteration in typed code (`for (const [k, v] of map)`, `map.keys()`: only get/has/set/delete/clear are typed)                                                                                                                                                                            | `map-set`                                                                                                       | 4                                        |
+| (Implemented in 4a C1 for indexed objects) Typed computed keys, ordinary reads and writes, `in`, `delete`, own enumeration, `for…in` and spread                                                                                                                                             | `dynamic-object-*`, `explicit-dynamic-property-contract`                                                        | 4a C1                                    |
+| Indexed spread requires a contextual indexed result and indexed sources. Open computed literals expose `unknown` reads pending guarded inference.                                                                                                                                           | (typed indexed object lowering)                                                                                 | 4a follow-up                             |
+| Native list or fixed-record payloads in dynamic objects need slice 2b list/record views. `os.networkInterfaces()` still returns a Map because its values are lists of fixed records.                                                                                                        | (runtime modules)                                                                                               | 4a C2                                    |
+| No `SystemError` in typed runtime code: node:os failures are TypeErrors                                                                                                                                                                                                                     | (runtime modules)                                                                                               | 4                                        |
+| (Removed by 4a: callable classification) Typed `typeof` on realm callables received as `unknown`                                                                                                                                                                                            | `unknown-typeof-callable`, `tools/build-mixed-general-typeof-fixture.ts`                                        | 4a                                       |
+| Calling a native closure through a narrowed `Function` requires the slice 2b closure view. The dynamic call path itself is pending.                                                                                                                                                         | (mixed callable fixture planned)                                                                                | 2b, 4a                                   |
+| Passing a realm typed array narrowed by `instanceof` to a native typed-array parameter requires the slice 2b buffer view. The narrowing itself is pending.                                                                                                                                  | (mixed typed-array fixture planned)                                                                             | 2b, 4a                                   |
+| `for…of` elements are typed `T \| undefined` (array holes) instead of TypeScript's `T`: passing the element on or reading its properties fails (FFI phases 2 and 4)                                                                                                                         | `for-of-typed-array-list`, `for-of-object-list`, `for-of-record-reads`                                          | 4a                                       |
+| Assignment does not narrow a `let` to the assigned type (`x = x === undefined ? v : x`); `??=` only on optional primitives (FFI phase 4)                                                                                                                                                    | `reassignment-narrowing`                                                                                        | 4a                                       |
+| Module-level loops and non-literal initializers ("module evaluation is required for this statement"; `tint:ffi` runtime module, FFI phase 4)                                                                                                                                                | `module-initializers`, `module-statements`                                                                      | 5                                        |
+| An empty array literal without a type needs a contextual type (TypeScript infers an evolving array)                                                                                                                                                                                         | `evolving-empty-array`                                                                                          | 4                                        |
+| Discriminant narrowing of a parameter whose discriminant is not `readonly` (`shape.kind === "square" ? shape.size : …`)                                                                                                                                                                     | `discriminant-narrowing`                                                                                        | 4                                        |
+| General-path gap: the general host installs no WeakMap/WeakSet, WeakRef, FinalizationRegistry, Atomics, Intl or Temporal, so untyped code cannot use them (weak storage depends on the collector's weak cells)                                                                              | `weak-collections`                                                                                              | 1c (with the GC owner)                   |
 
 Indexed reads follow TypeScript under the program's compiler options
 (coordinator decision, 2026-11-17). With `noUncheckedIndexedAccess`, which
@@ -473,8 +559,7 @@ adds `for…of` element typing (elements are `T`; a hole read as a `T`
 excluding undefined throws a TypeError) and assignment narrowing with `??=`
 on optional records: 14 typed forms stay typed (the three `for-of-*` gap
 constructs and `reassignment-narrowing` moved), no regressions against the
-BigInt ledger. A `() => number` function is not yet accepted where
-`() => void` is expected (TypeScript accepts it). The
+BigInt ledger. The
 [classifier ledger](results/unified-pipeline-ledger-slice4a-callable-classifier-v1.json)
 (59 constructs) adds mixed callable classification: both new
 `unknown-typeof-callable` forms pass, with the typed form staying typed. The
@@ -482,6 +567,11 @@ full run kept 18 first-launch LLDB attach failures as observed; the
 [serial recheck](results/unified-pipeline-ledger-slice4a-callable-classifier-v1-recheck.json)
 has zero regressions against the BigInt baseline (both `weak-collections`
 forms still fail at execution, as before).
+
+The [4a rest and void callback ledger](results/unified-pipeline-ledger-slice4a-rest-void-v4.json)
+covers 60 constructs with no regressions against the for-of ledger.
+`rest-default-parameters` moved to the typed path. The new `rest-spread`
+and `void-callbacks` forms also stay typed, bringing the typed-path count to 17. Both untyped forms pass through the general path.
 
 Slice 1: image sizes of hosted programs, measured before and after.
 Importing one function through the `js-runtime/objects` entrypoint from a

@@ -117,3 +117,55 @@ test("declaration serialization rejects executable statements and invalid genera
   };
   assert.equal(reify.printReifiedTypes([invalid]).ok, false);
 });
+
+test("reifies string index signatures and Record origins", () => {
+  const r = roundtrip(
+    [
+      { kind: "number" },
+      {
+        kind: "object",
+        properties: [],
+        stringIndex: { type: 0, readonly: true, origin: "signature" },
+      },
+      {
+        kind: "object",
+        properties: [],
+        stringIndex: { type: 0, readonly: false, origin: "record" },
+      },
+    ],
+    [1, 2],
+  );
+  for (const [i, origin] of ["signature", "record"].entries()) {
+    const type = r.resolved.types[r.resolved.annotations.get(r.roots[i]!)!];
+    assert.ok(type?.kind === "object");
+    assert.equal(type.stringIndex?.origin, origin);
+    assert.equal(type.stringIndex?.readonly, i === 0);
+  }
+});
+
+test("reifies fixed entry pairs and preserves their positions", () => {
+  const r = roundtrip(
+    [
+      { kind: "string" },
+      { kind: "number" },
+      { kind: "union", members: [0, 1] },
+      {
+        kind: "array",
+        realmArray: true,
+        tupleElements: [0, 1],
+        element: 2,
+        readonly: false,
+      },
+      { kind: "array", realmArray: true, element: 3, readonly: false },
+    ],
+    [4],
+  );
+  const outer = r.resolved.types[r.resolved.annotations.get(r.roots[0]!)!];
+  assert.ok(outer?.kind === "array" && outer.realmArray === true);
+  const pair = r.resolved.types[outer.element];
+  assert.ok(pair?.kind === "array" && pair.realmArray === true);
+  assert.deepEqual(
+    pair.tupleElements?.map((id) => r.resolved.types[id]?.kind),
+    ["string", "number"],
+  );
+});
