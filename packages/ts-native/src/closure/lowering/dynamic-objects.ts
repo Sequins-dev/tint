@@ -13,6 +13,8 @@ import type { CheckedClosures } from "@tint/typescript/checker";
 
 export interface DynamicObjectRuntime {
   readonly create: number;
+  readonly createArray: number;
+  readonly invoke: number;
   readonly finish: number;
   readonly enroll: number;
   readonly convertKey: number;
@@ -35,6 +37,8 @@ export function dynamicObjectRuntime(
 ): DynamicObjectRuntime {
   return {
     create: resolve("create"),
+    createArray: resolve("createArray"),
+    invoke: resolve("invoke"),
     finish: resolve("finish"),
     enroll: resolve("enroll"),
     convertKey: resolve("convertKey"),
@@ -58,7 +62,8 @@ export function hasDynamicObject(
   id: number,
 ): boolean {
   const type = checked.types[id];
-  if (type?.kind === "object") return type.stringIndex !== undefined;
+  if (type?.kind === "object")
+    return type.stringIndex !== undefined || type.realmRecord === true;
   if (type?.kind === "array") return type.realmArray === true;
   return (
     type?.kind === "union" &&
@@ -73,7 +78,8 @@ export function usesDynamicObjectRuntime(checked: CheckedClosures): boolean {
   if (
     !checked.types.some(
       (type) =>
-        (type?.kind === "object" && type.stringIndex !== undefined) ||
+        (type?.kind === "object" &&
+          (type.stringIndex !== undefined || type.realmRecord === true)) ||
         (type?.kind === "array" && type.realmArray === true),
     )
   )
@@ -152,15 +158,18 @@ export function encodeDynamicContract(
         }
         break;
       case "array":
-        if (type.realmArray !== true) throw "native array contract invariant";
-        emit("array");
+        if (type.tupleElements !== undefined) emit("array");
+        else {
+          emit("array-elements");
+          emit(reference(type.element));
+          emit(type.readonly ? "1" : "0");
+        }
         break;
       case "object": {
         const index = type.stringIndex;
-        if (index === undefined) throw "dynamic contract object invariant";
         emit("object");
-        emit(reference(index.type));
-        emit(index.readonly ? "1" : "0");
+        emit(index === undefined ? "-1" : reference(index.type));
+        emit(index?.readonly === true ? "1" : "0");
         emit(String(type.properties.length));
         for (const field of type.properties) {
           if (field === undefined) throw "dynamic contract field invariant";
@@ -232,7 +241,12 @@ export function insertDynamicObjectRuntime(
         );
       case "named": {
         const name = checked.typeNames.get(node.name);
-        if (name !== undefined) return hasDynamicObject(checked, name);
+        if (name !== undefined) {
+          const type = checked.types[name];
+          return type?.kind !== "object"
+            ? hasDynamicObject(checked, name)
+            : type.stringIndex !== undefined;
+        }
         const key = node.arguments?.[0];
         return (
           node.name === "Record" &&

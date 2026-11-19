@@ -35,6 +35,8 @@ export function dynamicObjectRuntimeSource(): RuntimeSource {
     namespace: "dynamic-object",
     retainedExports: [
       "create",
+      "createArray",
+      "invoke",
       "finish",
       "enroll",
       "convertKey",

@@ -3155,19 +3155,90 @@ test("readonly index signatures reject indexed writes", () => {
   if (!result.ok) assert.equal(result.error.code, "IMMUTABLE");
 });
 
-test("C1 reports native list and record payloads before general fallback", () => {
-  for (const payload of ["number[]", "{ count: number }"]) {
-    const result = check(`type D = Record<string, ${payload}>;`);
-    assert.equal(result.ok, false);
+test("selects realm allocations through local aliases and array insertion", () => {
+  const result = check(`
+    interface Entry { count: number; tag?: string }
+    function make(key: string): Record<string, Entry[]> {
+      const entry: Entry = { count: 40 };
+      const entries: Entry[] = [entry];
+      const alias = entries;
+      const result: Record<string, Entry[]> = { [key]: alias };
+      alias.push({ count: 2 });
+      entry.tag = "ready";
+      return result;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+  const entries = result.value.bindings.bindings.find(
+    (b) => b.name === "entries",
+  );
+  assert.ok(entries);
+  const type = result.value.types[result.value.bindingTypes[entries.id] ?? -1];
+  assert.equal(type?.kind, "array");
+  if (type?.kind === "array") assert.equal(type.realmArray, true);
+});
+
+test("keeps native payloads with unmodeled escapes or joins", () => {
+  for (const [setup, value, kind] of [
+    ["const list = [42]; consume(list);", "list", "native list"],
+    [
+      "const record = { count: 42 }; const holder = { record };",
+      "record",
+      "native record",
+    ],
+    ["const list = flag ? [1] : [2];", "list", "native list"],
+    ["let list = [1]; list = [2];", "list", "native list"],
+    [
+      "const list = [42]; function escape(): number[] { return list; }",
+      "list",
+      "native list",
+    ],
+  ]) {
+    const result = check(`
+      function consume(xs: number[]): void {}
+      function f(flag: boolean): void {
+        ${setup}
+        const object: Record<string, unknown> = { payload: ${value} };
+      }
+    `);
+    assert.equal(result.ok, false, setup);
     if (!result.ok) {
-      assert.equal(result.error.code, "UNSUPPORTED");
       assert.equal(result.error.preventsFallback, true);
-      assert.match(
+      assert.equal(
         result.error.message,
-        /values in dynamic-key objects need slice 2b list\/record views/,
+        "UNSUPPORTED: " +
+          kind +
+          " values in dynamic-key objects need slice 2b list/record views",
       );
     }
   }
+});
+
+test("ordinary Object reflection remains eligible for general fallback", () => {
+  for (const call of [
+    'Object.defineProperty(value, "answer", { value: 42 });',
+    'Object.hasOwn(value, "answer");',
+  ]) {
+    const result = check(`function f(): number {
+      const value = { answer: 42 };
+      ${call}
+      return value.answer;
+    }`);
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(
+        result.error.message,
+        "typed Object method requires a realm record",
+      );
+      assert.equal(result.error.preventsFallback, undefined);
+    }
+  }
+  const accepted = check(`
+    function own(value: Record<string, number>, key: string | number): boolean {
+      return Object.hasOwn(value, key);
+    }
+  `);
+  assert.ok(accepted.ok, JSON.stringify(accepted));
 });
 
 test("for-in binds a string key without asserting an indexed value is present", () => {

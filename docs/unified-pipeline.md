@@ -461,6 +461,36 @@ resolves a fresh graph with the dynamic-object provider as a root. The same
 realm helpers and record views then take part in the typed retry. An ordinary
 import can still reach any of those sources through its dependencies.
 
+### Function-local realm allocation (slice 4a, C2)
+
+Array and data-record literals stored in dynamic-key objects can begin life as
+realm values. The checker follows the literals through single-initializer local
+bindings, alias reads, indexed access, identity comparisons and insertion into
+a realm array. It changes a component's representation only when a dynamic
+storage operation demands it and every use is modeled. Native list and record
+parameters, captured or reassigned bindings, calls that consume a native
+aggregate, and joins without a proof retain their native layouts. Storing one
+of those native values still reports
+`UNSUPPORTED: native list values in dynamic-key objects need slice 2b list/record views`
+or the corresponding `native record` diagnostic.
+
+Selected literals allocate in the shared realm and keep identity when obtained
+through either a local alias or a property read. Typed indexing, length,
+`push`, and record field access use realm operations. Typed `push` gets the
+live method from the receiver before evaluating its arguments. Written array
+element and record field types use the C1 storage contract. When an Array
+enrolls, the runtime validates its existing own indices before transferring
+its packed contents to descriptor storage, where subsequent writes use the
+same guard as ordinary objects. An inferred literal remains open unless it
+enters explicitly contracted storage.
+
+The `node:os` consumer uses `Object.hasOwn` to group entries and
+`Object.defineProperty` with data descriptors for the first entry of each
+interface. Its result has the realm Object prototype, real Arrays for groups,
+and own enumerable, writable, configurable group properties. IPv6 entries
+add an own `scopeid` field. Synthetic `__proto__` and `constructor` names
+produce normal groups.
+
 ### What happens to each front end
 
 - js-engine lowering becomes a library of construct lowerings callable for a
@@ -536,7 +566,8 @@ the ledger corpus reproduce the ones expressible in a single application.
 | Map iteration in typed code (`for (const [k, v] of map)`, `map.keys()`: only get/has/set/delete/clear are typed)                                                                                                                                                                            | `map-set`                                                                                                       | 4                                        |
 | (Implemented in 4a C1 for indexed objects) Typed computed keys, ordinary reads and writes, `in`, `delete`, own enumeration, `for…in` and spread                                                                                                                                             | `dynamic-object-*`, `explicit-dynamic-property-contract`                                                        | 4a C1                                    |
 | Indexed spread requires a contextual indexed result and indexed sources. Open computed literals expose `unknown` reads pending guarded inference.                                                                                                                                           | (typed indexed object lowering)                                                                                 | 4a follow-up                             |
-| Native list or fixed-record payloads in dynamic objects need slice 2b list/record views. `os.networkInterfaces()` still returns a Map because its values are lists of fixed records.                                                                                                        | (runtime modules)                                                                                               | 4a C2                                    |
+| (Implemented in 4a C2 for function-local allocations) Realm lists and records stored in dynamic-key objects. Escaping native aggregates still require slice 2b views. | `dynamic-object-local-aggregate`, `dynamic-object-own-data-definition` | 4a C2, 2b |
+| Typed realm arrays support indexing, length and `push`. Other methods and iteration need realm lowering. Compound assignments and updates on realm aggregates need reference lowering. Recursive fixed payload types need recursive layout selection. | (realm aggregate lowering) | 4 follow-up |
 | No `SystemError` in typed runtime code: node:os failures are TypeErrors                                                                                                                                                                                                                     | (runtime modules)                                                                                               | 4                                        |
 | (Removed by 4a: callable classification) Typed `typeof` on realm callables received as `unknown`                                                                                                                                                                                            | `unknown-typeof-callable`, `tools/build-mixed-general-typeof-fixture.ts`                                        | 4a                                       |
 | (Removed by 4a B4) Direct calls of realm values narrowed by `typeof` to `Function`                                                                                                                                                                                                          | `unknown-callable-direct`, `unknown-callable-arguments`                                                         | 4a B4                                    |
