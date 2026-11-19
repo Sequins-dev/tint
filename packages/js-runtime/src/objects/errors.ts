@@ -42,7 +42,8 @@ import {
   type ObjectHooks,
   type ObjectExecutionContext,
 } from "./operations.ts";
-import { viewObjectValue } from "./values.ts";
+import { viewObjectValue, viewTypeofObject } from "./values.ts";
+import { instanceOfValue } from "./functions.ts";
 import { viewBigIntValue } from "./bigints.ts";
 import { createArrayObject, type ArrayObjectHooks } from "./arrays.ts";
 import { scriptPropertyKeyOrder } from "./symbols.ts";
@@ -689,6 +690,99 @@ export function createRuntimeError(
     realm.agent,
     realm.constructors.get(kind)?.internalInitialName ?? "Error",
   );
+}
+
+/** Dispatch through an adapter-supplied operation without reaching program
+ * instance state from a retained helper. */
+export function realmErrorOperation(
+  value: unknown,
+  operation: string,
+): unknown {
+  const access = viewTypeofObject(value)?.internalTypedErrorAccess;
+  return access === undefined ? undefined : access(operation);
+}
+
+function attachTypedErrorAccess(
+  object: OrdinaryObject<ScriptPropertyKey, unknown>,
+  value: unknown,
+  identity: unknown,
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+): void {
+  function get(key: string): unknown {
+    return getProperty<ScriptPropertyKey, unknown>(object, key, value, hooks);
+  }
+  object.internalTypedErrorAccess = (operation: string): unknown => {
+    switch (operation) {
+      case "identity":
+        return identity;
+      case "attached":
+        return true;
+      case "contract": {
+        if (
+          typeof get("name") !== "string" ||
+          typeof get("message") !== "string"
+        )
+          return false;
+        if (!hasProperty<ScriptPropertyKey, unknown>(object, "stack"))
+          return true;
+        const stack = get("stack");
+        return stack === undefined || typeof stack === "string";
+      }
+      case "message":
+      case "name":
+      case "stack": {
+        const result = get(operation);
+        if (
+          typeof result === "string" ||
+          (operation === "stack" && result === undefined)
+        )
+          return result;
+        throw createRuntimeError(realm, "type");
+      }
+      default: {
+        const kind =
+          operation === "TypeError"
+            ? "type"
+            : operation === "RangeError"
+              ? "range"
+              : "error";
+        const constructor = realm.constructors.get(kind);
+        const result = instanceOfValue(value, constructor, hooks, realm);
+        if (result.error !== "none") throw createRuntimeError(realm, "type");
+        return result.value;
+      }
+    }
+  };
+}
+
+/** Enroll a realm argument in the typed error bridge, preserving identity. */
+export function prepareRealmErrorArgument(
+  value: unknown,
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+): unknown {
+  const object = viewObjectValue(value, realm.objectPrototype);
+  if (object === undefined) return value;
+  const access = object.internalTypedErrorAccess;
+  if (access !== undefined) return access("identity");
+  attachTypedErrorAccess(object, value, value, realm, hooks);
+  return value;
+}
+
+export function createNativeErrorView(
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+  kind: string,
+  message: string,
+  hasMessage: boolean,
+  native: unknown,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const object = createRuntimeError(realm, kind);
+  if (hasMessage)
+    builtinProperty(object, "message", message, true, true, hooks);
+  attachTypedErrorAccess(object, object, native, realm, hooks);
+  return object;
 }
 /** Resource cleanup uses intrinsic failure objects, without invoking a mutable
  * global SuppressedError constructor or performing message coercion. */

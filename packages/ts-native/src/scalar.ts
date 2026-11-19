@@ -357,6 +357,15 @@ export interface OwnedEnvironmentPlan {
   readonly constructors: ReadonlyMap<number, OwnedConstructor>;
 }
 /** Emit one function against explicit call signatures. Verify the composed module before use. */
+export interface RealmErrorRuntime {
+  readonly view: number;
+  readonly operation: number;
+  readonly error: number;
+  readonly typeError: number;
+  readonly rangeError: number;
+  readonly applies: (span: IRSpan) => boolean;
+}
+
 export function lowerFunction(
   fn: CheckedFunction,
   signatures: readonly FunctionSignature[],
@@ -369,9 +378,11 @@ export function lowerFunction(
   bigIntBindings?: BigIntRuntime,
   dynamicObjects?: DynamicObjectRuntime,
   dynamicSignatures: readonly number[] = [],
+  realmErrorBindings?: RealmErrorRuntime,
 ): FunctionIR {
   const primitives = primitiveBindings,
-    bigints = bigIntBindings;
+    bigints = bigIntBindings,
+    realmErrors = realmErrorBindings;
   const slots: ScalarType[] = fn.locals.map((l) => l.type),
     blocks: Builder[] = [];
   const receiverSlot = fn.receiver ? slots.length : undefined;
@@ -1748,6 +1759,17 @@ export function lowerFunction(
     if (test.kind === "boolean") jump(test.value ? yes.id : no.id, test);
     else choose(truth(value(test), test), yes, no, test);
   }
+  function booleanSlot(flag: boolean, node: IRSpan): number {
+    const id = nextValue++;
+    emit({
+      kind: "constant",
+      id,
+      value: flag,
+      start: node.start,
+      end: node.end,
+    });
+    return save(id, "boolean", node);
+  }
   function numberSlot(n: number, node: IRSpan): number {
     const id = nextValue++;
     emit({
@@ -2239,6 +2261,40 @@ export function lowerFunction(
     error: "Error" | "RangeError" | "TypeError",
     node: IRSpan,
   ): number {
+    const layouts = realmErrors;
+    if (layouts !== undefined) {
+      if (error === "TypeError")
+        return errorRecordTest(value, layouts.typeError, node);
+      if (error === "RangeError")
+        return errorRecordTest(value, layouts.rangeError, node);
+      const candidates: number[] = [
+        layouts.error,
+        layouts.typeError,
+        layouts.rangeError,
+      ];
+      const operand = save(value, "general", node);
+      const yes = block(),
+        done = block(),
+        result = temporary("boolean");
+      for (const record of candidates) {
+        if (record === undefined) throw "mixed error layout invariant";
+        const next = block();
+        choose(
+          errorRecordTest(load(operand, node), record, node),
+          yes,
+          next,
+          node,
+        );
+        current = next;
+      }
+      store(result, load(booleanSlot(false, node), node), node);
+      jump(done.id, node);
+      current = yes;
+      store(result, load(booleanSlot(true, node), node), node);
+      jump(done.id, node);
+      current = done;
+      return load(result, node);
+    }
     const id = nextValue++;
     emit({
       kind: "error-is",
@@ -2250,6 +2306,130 @@ export function lowerFunction(
     });
     return id;
   }
+  function errorRecordTest(
+    value: number,
+    record: number,
+    node: IRSpan,
+  ): number {
+    const id = nextValue++;
+    emit({
+      kind: "general-record-is",
+      id,
+      value,
+      record,
+      start: node.start,
+      end: node.end,
+    });
+    return id;
+  }
+  function newNativeError(
+    error: "Error" | "RangeError" | "TypeError",
+    message: number,
+    present: number | undefined,
+    node: IRSpan,
+  ): number {
+    const layouts = realmErrors;
+    if (layouts !== undefined) {
+      const record =
+        error === "TypeError"
+          ? layouts.typeError
+          : error === "RangeError"
+            ? layouts.rangeError
+            : layouts.error;
+      const flag = load(present ?? booleanSlot(true, node), node);
+      const args: (number | undefined)[] = [message, flag, undefined];
+      const id = nextValue++;
+      emit({
+        kind: "record-new",
+        id,
+        record,
+        arguments: args,
+        start: node.start,
+        end: node.end,
+      });
+      return id;
+    }
+    const id = nextValue++;
+    emit({
+      kind: "error-new",
+      id,
+      error,
+      message,
+      start: node.start,
+      end: node.end,
+    });
+    return id;
+  }
+  function realmErrorOperation(
+    operand: number,
+    operation: string,
+    node: Span,
+  ): number {
+    const runtime = realmErrors;
+    if (runtime === undefined) throw "error realm operation invariant";
+    const target = runtime.operation;
+    const args: number[] = [operand, errorString(operation, node)];
+    const result = runtimeCall(target, args, node);
+    if (result === undefined) throw "error realm result invariant";
+    return result;
+  }
+  function exposedError(operand: number, node: Span): number {
+    const runtime = realmErrors;
+    if (runtime === undefined) throw "error realm view invariant";
+    const result = runtimeCall(runtime.view, [operand], node);
+    if (result === undefined) throw "error view result invariant";
+    return result;
+  }
+  function mayCarryError(slot: number): boolean {
+    const type = slots[slot];
+    return (
+      type === "general" ||
+      type === "reference" ||
+      type === "optional-reference"
+    );
+  }
+  function errorInstanceOf(
+    operand: number,
+    error: "Error" | "RangeError" | "TypeError",
+    node: Span,
+  ): number {
+    if (realmErrors === undefined)
+      return save(
+        nativeErrorTest(
+          coerce(load(operand, node), "general", node),
+          error,
+          node,
+        ),
+        "boolean",
+        node,
+      );
+    const result = temporary("boolean");
+    const answer = realmErrorOperation(
+      exposedError(operand, node),
+      error,
+      node,
+    );
+    const semantic = block(),
+      native = block(),
+      done = block();
+    choose(nonNullish(answer, node), semantic, native, node);
+    current = semantic;
+    store(result, coerce(load(answer, node), "boolean", node), node);
+    jump(done.id, node);
+    current = native;
+    store(
+      result,
+      nativeErrorTest(
+        coerce(load(operand, node), "general", node),
+        error,
+        node,
+      ),
+      node,
+    );
+    jump(done.id, node);
+    current = done;
+    return result;
+  }
   function errorString(text: string, node: IRSpan): number {
     const id = nextValue++;
     emit({
@@ -2260,6 +2440,94 @@ export function lowerFunction(
       end: node.end,
     });
     return save(id, "string", node);
+  }
+  function nativeOrStructuralErrorProperty(
+    node: Expression & { readonly kind: "member" },
+    operand: number,
+  ): number {
+    const access = records?.accesses.get(node);
+    if (access === undefined || access.choices.length === 0) {
+      if (realmErrors !== undefined) {
+        const receiver = coerce(load(operand, node), "general", node);
+        const native = nativeErrorTest(receiver, "Error", node);
+        requireCondition(
+          save(native, "boolean", node),
+          "TypeError",
+          "Error property access requires a native error or a realm view",
+          node,
+        );
+      }
+      return nativeErrorProperty(operand, node.property, node);
+    }
+    const result = temporary(access.type);
+    const native = block(),
+      structural = block(),
+      done = block();
+    const receiver = coerce(load(operand, node), "general", node);
+    choose(nativeErrorTest(receiver, "Error", node), native, structural, node);
+    current = native;
+    store(
+      result,
+      load(nativeErrorProperty(operand, node.property, node), node),
+      node,
+    );
+    jump(done.id, node);
+    current = structural;
+    recordAccess(
+      operand,
+      result,
+      "read",
+      access,
+      node,
+      node.property !== "stack"
+        ? undefined
+        : (): void => {
+            const id = nextValue++;
+            emit({
+              kind: "string-none",
+              id,
+              start: node.start,
+              end: node.end,
+            });
+            store(result, id, node);
+          },
+    );
+    jump(done.id, node);
+    current = done;
+    return result;
+  }
+  function errorProperty(
+    node: Expression & { readonly kind: "member" },
+  ): number {
+    const operand = value(node.object);
+    if (realmErrors === undefined)
+      return nativeOrStructuralErrorProperty(node, operand);
+    const exposed = exposedError(operand, node);
+    const type: ScalarType =
+      node.property === "stack" ? "optional-string" : "string";
+    const result = temporary(type);
+    const semantic = block(),
+      native = block(),
+      done = block();
+    choose(
+      truth(realmErrorOperation(exposed, "attached", node), node),
+      semantic,
+      native,
+      node,
+    );
+    current = semantic;
+    const read = realmErrorOperation(exposed, node.property, node);
+    store(result, coerce(load(read, node), type, node), node);
+    jump(done.id, node);
+    current = native;
+    store(
+      result,
+      load(nativeOrStructuralErrorProperty(node, operand), node),
+      node,
+    );
+    jump(done.id, node);
+    current = done;
+    return result;
   }
   function nativeErrorProperty(
     operand: number,
@@ -2307,16 +2575,34 @@ export function lowerFunction(
     current = done;
     return result;
   }
-  function errorMessage(argument: Expression | undefined, node: Span): number {
-    if (argument === undefined) return errorString("", node);
+  function errorMessage(
+    argument: Expression | undefined,
+    node: Span,
+    presence?: number,
+  ): number {
+    if (argument === undefined) {
+      if (presence !== undefined)
+        store(presence, load(booleanSlot(false, node), node), node);
+      return errorString("", node);
+    }
     const input = value(argument);
-    if (slots[input] === "string") return input;
-    if (undefinedSlots[input] === 1) return errorString("", node);
+    if (slots[input] === "string") {
+      if (presence !== undefined)
+        store(presence, load(booleanSlot(true, node), node), node);
+      return input;
+    }
+    if (undefinedSlots[input] === 1) {
+      if (presence !== undefined)
+        store(presence, load(booleanSlot(false, node), node), node);
+      return errorString("", node);
+    }
     const result = temporary("string");
     const yes = block(),
       no = block(),
       done = block();
-    choose(nonNullish(input, node), yes, no, node);
+    const presentTest = nonNullish(input, node);
+    if (presence !== undefined) store(presence, presentTest, node);
+    choose(presentTest, yes, no, node);
     current = yes;
     const present = load(input, node),
       unwrapped = nextValue++;
@@ -2375,7 +2661,25 @@ export function lowerFunction(
       current = next;
     }
     const errors = downcast.errors;
-    if (errors !== undefined)
+    if (errors !== undefined) {
+      const rejected = realmErrors === undefined ? undefined : block();
+      if (rejected !== undefined) {
+        const receiver = exposedError(operand, node);
+        const attached = truth(
+          realmErrorOperation(receiver, "attached", node),
+          node,
+        );
+        const semantic = block(),
+          native = block();
+        choose(attached, semantic, native, node);
+        current = semantic;
+        const contract = truth(
+          realmErrorOperation(receiver, "contract", node),
+          node,
+        );
+        choose(contract, accepted, rejected, node);
+        current = native;
+      }
       for (const error of errors) {
         if (error === undefined) throw "downcast error invariant";
         const matches = nativeErrorTest(load(operand, node), error, node);
@@ -2383,6 +2687,11 @@ export function lowerFunction(
         choose(matches, accepted, next, node);
         current = next;
       }
+      if (rejected !== undefined) {
+        jump(rejected.id, node);
+        current = rejected;
+      }
+    }
     const message = nextValue++;
     emit({
       kind: "string-literal",
@@ -2391,15 +2700,7 @@ export function lowerFunction(
       start: node.start,
       end: node.end,
     });
-    const thrown = nextValue++;
-    emit({
-      kind: "error-new",
-      error: "TypeError",
-      id: thrown,
-      message,
-      start: node.start,
-      end: node.end,
-    });
+    const thrown = newNativeError("TypeError", message, undefined, node);
     finish({
       kind: "throw",
       value: coerce(thrown, "general", node),
@@ -2500,15 +2801,7 @@ export function lowerFunction(
       start: node.start,
       end: node.end,
     });
-    const thrown = nextValue++;
-    emit({
-      kind: "error-new",
-      error,
-      id: thrown,
-      message,
-      start: node.start,
-      end: node.end,
-    });
+    const thrown = newNativeError(error, message, undefined, node);
     finish({
       kind: "throw",
       value: coerce(thrown, "general", node),
@@ -4170,16 +4463,23 @@ export function lowerFunction(
                 ? "Error"
                 : "TypeError";
           const argument = node.arguments[0];
-          const message = errorMessage(argument, node);
-          const id = nextValue++;
-          emit({
-            kind: "error-new",
-            error: kind,
-            id,
-            message: load(message, node),
-            start: node.start,
-            end: node.end,
-          });
+          const presence =
+            realmErrors === undefined ? undefined : temporary("boolean");
+          const message = errorMessage(argument, node, presence);
+          // Preserve the typed-only value numbering of error-new and its operand.
+          if (realmErrors === undefined) {
+            const id = nextValue++;
+            emit({
+              kind: "error-new",
+              error: kind,
+              id,
+              message: load(message, node),
+              start: node.start,
+              end: node.end,
+            });
+            return save(id, "reference", node);
+          }
+          const id = newNativeError(kind, load(message, node), presence, node);
           return save(id, "reference", node);
         }
 
@@ -4331,17 +4631,6 @@ export function lowerFunction(
           }
           entries.push({ slot, present, logical, carrier });
         }
-        function booleanSlot(flag: boolean): number {
-          const id = nextValue++;
-          emit({
-            kind: "constant",
-            id,
-            value: flag,
-            start: node.start,
-            end: node.end,
-          });
-          return save(id, "boolean", node);
-        }
         function optionalType(type: ScalarType): ScalarType {
           if (type === "general") return "general";
           if (type === "number" || type === "optional-number")
@@ -4472,7 +4761,7 @@ export function lowerFunction(
             }
             store(result, item, node);
             if (present !== undefined)
-              store(present, load(booleanSlot(true), node), node);
+              store(present, load(booleanSlot(true, node), node), node);
             jump(done.id, node);
             if (next === undefined) {
               definite = true;
@@ -4484,7 +4773,7 @@ export function lowerFunction(
             if (field.optional) {
               store(result, load(absent(field.type), node), node);
               if (present !== undefined)
-                store(present, load(booleanSlot(false), node), node);
+                store(present, load(booleanSlot(false, node), node), node);
               jump(done.id, node);
             } else finish({ kind: "trap", start: node.start, end: node.end });
           }
@@ -5018,53 +5307,7 @@ export function lowerFunction(
         return save(id, "optional-number", node);
       }
       case "member": {
-        if (info(node).builtin === "error-property") {
-          const operand = value(node.object);
-          const access = records?.accesses.get(node);
-          if (access === undefined || access.choices.length === 0)
-            return nativeErrorProperty(operand, node.property, node);
-          const result = temporary(access.type);
-          const native = block(),
-            structural = block(),
-            done = block();
-          const receiver = coerce(load(operand, node), "general", node);
-          choose(
-            nativeErrorTest(receiver, "Error", node),
-            native,
-            structural,
-            node,
-          );
-          current = native;
-          store(
-            result,
-            load(nativeErrorProperty(operand, node.property, node), node),
-            node,
-          );
-          jump(done.id, node);
-          current = structural;
-          recordAccess(
-            operand,
-            result,
-            "read",
-            access,
-            node,
-            node.property !== "stack"
-              ? undefined
-              : (): void => {
-                  const id = nextValue++;
-                  emit({
-                    kind: "string-none",
-                    id,
-                    start: node.start,
-                    end: node.end,
-                  });
-                  store(result, id, node);
-                },
-          );
-          jump(done.id, node);
-          current = done;
-          return result;
-        }
+        if (info(node).builtin === "error-property") return errorProperty(node);
         const memberView = info(node).cView;
         if (memberView !== undefined) return viewRead(node, memberView);
         if (info(node).undefinedValue) {
@@ -5129,8 +5372,7 @@ export function lowerFunction(
               : builtin === "error-is"
                 ? "Error"
                 : "TypeError";
-          const operand = coerce(load(value(node.left), node), "general", node);
-          return save(nativeErrorTest(operand, kind, node), "boolean", node);
+          return errorInstanceOf(value(node.left), kind, node);
         }
 
         if (node.operator === ",") {
@@ -5167,6 +5409,20 @@ export function lowerFunction(
           const lowered = bigIntBinary(node, left, right);
           if (lowered !== undefined) return lowered;
         }
+        const errorContext = realmErrors;
+        if (
+          errorContext !== undefined &&
+          (node.operator === "===" || node.operator === "!==") &&
+          mayCarryError(left) &&
+          mayCarryError(right) &&
+          errorContext.applies(node)
+        )
+          return binarySlot(
+            node.operator,
+            exposedError(left, node),
+            exposedError(right, node),
+            node,
+          );
         if (
           slots[left] === "general" ||
           slots[right] === "general" ||

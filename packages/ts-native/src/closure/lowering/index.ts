@@ -93,6 +93,7 @@ import {
   type MapRuntimeBinding,
   type PrimitiveRuntime,
   type BigIntRuntime,
+  type RealmErrorRuntime,
 } from "../../scalar.ts";
 import {
   verify,
@@ -141,9 +142,18 @@ interface RealmTypeof {
   readonly function: number;
   readonly applies: (span: IRSpan) => boolean;
 }
+interface RealmErrorSources {
+  readonly view: number;
+  readonly operation: number;
+  readonly error: number;
+  readonly typeError: number;
+  readonly rangeError: number;
+  readonly applies: (span: IRSpan) => boolean;
+}
 
 export interface ModuleEntryOptions {
   readonly realmTypeof?: RealmTypeof | undefined;
+  readonly realmErrors?: RealmErrorSources | undefined;
   /** Caller-selected top-level managed functions supplied by the linker. Their
    * checked ABI is lowered, but their bodies and child closures are not. */
   readonly importedFunctions?: readonly number[];
@@ -270,6 +280,7 @@ export function lowerModuleEntries(
     bigints: options?.bigints,
     bigIntRepresentation: options?.bigIntRepresentation,
     realmTypeof: options?.realmTypeof,
+    realmErrors: options?.realmErrors,
     recordBindings: options?.recordBindings,
     recordTypes: options?.recordTypes,
     recordIdentity: options?.recordIdentity,
@@ -302,6 +313,7 @@ function lowerEntries(
     bigints?: BigIntRuntime | undefined;
     bigIntRepresentation?: number | undefined;
     realmTypeof?: RealmTypeof | undefined;
+    realmErrors?: RealmErrorSources | undefined;
     recordBindings?: readonly RecordBinding[] | undefined;
     recordTypes?: boolean | undefined;
     recordIdentity?: RecordIdentityResolver | undefined;
@@ -892,6 +904,57 @@ function lowerEntries(
       };
     }
     const realmTypeof = recordTarget?.realmTypeof;
+    const realmErrorSources = recordTarget?.realmErrors;
+    function errorViewHelper(
+      source: number,
+      params: readonly ScalarType[],
+    ): number {
+      const target = targetIds[source];
+      const signature = target === undefined ? undefined : signatures[target];
+      if (
+        target === undefined ||
+        signature?.returnType !== "general" ||
+        signature.parameters.length !== params.length ||
+        params.some((type, index) => type !== signature.parameters[index]) ||
+        checked.bindings.functions[source]?.parent !== undefined ||
+        checked.bindings.functions[source]?.captures.length !== 0
+      )
+        fail("invalid mixed native error helper signature");
+      return target;
+    }
+    function errorRecord(source: number): number {
+      const contracts = recordContracts;
+      if (contracts === undefined) fail("missing mixed native error layouts");
+      const witness = bodyByFunction[source]?.parameters[0];
+      const type = checked.bindingTypes[bindingId(witness)];
+      const record = type === undefined ? undefined : contracts.forType(type);
+      if (record === undefined || contracts.viewSlot(record) !== 2)
+        fail("native error layout requires a traced view slot");
+      const fields = contracts.records[record]?.fields;
+      const message = fields?.[0];
+      if (
+        message === undefined ||
+        message.type !== "string" ||
+        message.offset !== recordHeaderBytes ||
+        fields?.[1]?.type !== "boolean"
+      )
+        fail("native error layout requires a message and presence flag");
+      return record;
+    }
+    const realmErrors: RealmErrorRuntime | undefined =
+      realmErrorSources === undefined
+        ? undefined
+        : {
+            view: errorViewHelper(realmErrorSources.view, ["general"]),
+            operation: errorViewHelper(realmErrorSources.operation, [
+              "general",
+              "string",
+            ]),
+            error: errorRecord(realmErrorSources.error),
+            typeError: errorRecord(realmErrorSources.typeError),
+            rangeError: errorRecord(realmErrorSources.rangeError),
+            applies: realmErrorSources.applies,
+          };
     function realmTypeofTarget(span: IRSpan): number | undefined {
       if (realmTypeof === undefined || !realmTypeof.applies(span))
         return undefined;
@@ -3458,6 +3521,7 @@ function lowerEntries(
         bigints,
         dynamicObjects,
         dynamicSignatures,
+        realmErrors,
       );
       recordContracts?.clearFunctionOperations();
       // Debug builds name the slots holding this function's own parameters
