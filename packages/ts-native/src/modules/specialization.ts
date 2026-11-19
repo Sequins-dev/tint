@@ -141,6 +141,8 @@ export function specializeModule(
             "]"
           );
         case "function":
+          if (typeParameterCount(t.typeParameters) !== 0)
+            return fail(t, "generic signatures require specialization");
           return (
             "f" +
             (t.receiver === undefined ? "" : "this[" + key(t.receiver) + "]") +
