@@ -1,3 +1,4 @@
+import { typeParameterCount } from "@tint/typescript/syntax";
 import {
   checkClosureModule,
   type CheckedClosures,
@@ -473,7 +474,7 @@ export function prepareManagedSurfaceTypes(
         ok: false,
         error: "missing managed surface helper: " + request.local,
       };
-    if ((declaration.typeParameters?.length ?? 0) === 0) {
+    if (typeParameterCount(declaration.typeParameters) === 0) {
       if (request.typeArguments.length !== 0)
         return {
           ok: false,
@@ -643,7 +644,7 @@ export function createManagedSurfaceWitnessFactory(
     if (
       declaration === undefined ||
       declaration.kind !== "type-alias" ||
-      (declaration.typeParameters?.length ?? 0) !== 0
+      typeParameterCount(declaration.typeParameters) !== 0
     )
       return reject("surface witnesses require concrete reified aliases");
     aliases.set(declaration.name, declaration.type);

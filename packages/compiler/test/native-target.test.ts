@@ -260,10 +260,16 @@ test("an explicit x86-64 target reaches the native backend dispatch", () => {
     ok: false,
     error: {
       stage: "emit",
-      message: "linux-x86_64: x86_64 code generation is not implemented yet",
+      message: "linux-x86_64: standalone native compilation requires slice 7",
     },
   };
-  assert.deepEqual(buildMacOSProgram({ ...request(), target }), expected);
+  assert.deepEqual(buildMacOSProgram({ ...request(), target }), {
+    ok: false,
+    error: {
+      stage: "memory-policy",
+      message: "linux-x86_64: invalid hosted mapping or stack size",
+    },
+  });
   assert.deepEqual(
     compileNativeProgram(
       { modules: [], entry: "main", exports: [], runtimes: [] },

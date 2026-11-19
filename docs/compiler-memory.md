@@ -158,6 +158,18 @@ input, one runtime closure link replaces two, layouts peak at 1,623 MiB
 live instead of 1,625 MiB, and the 2,252-variant image is unchanged.
 See the [layout and heap-cap probes](results/compiler-surface-layout-memory-2026-11-19.md).
 
+### Lowering
+
+Lowering retains only the used elements of finalized instruction arrays and
+releases each function's record expression plans after emitting its body.
+After local realm allocation landed, the matched object-suite runs measured
+2,916 MiB and 2,595 MiB live at the last function body. The smallest
+successful tested old-space cap fell from 3,008 MiB to 2,912 MiB, with
+byte-identical images. The candidate exhausts heap during checking at
+2,880 MiB.
+See the [current lowering measurements](results/compiler-lowering-memory-local-realm-2026-11-20.md)
+and the [previous source discovery measurements](results/compiler-lowering-memory-realm-source-2026-11-20.md).
+
 ## What is global and what is per function
 
 | Data                                                                                         | Scope                    | Needed by                                          |

@@ -1,4 +1,5 @@
 import {
+  typeParameterCount,
   bindingIdentifiers,
   rewriteModule,
   type Module,
@@ -84,7 +85,7 @@ export function createManagedSurfaceAnchors(
     if (
       declaration === undefined ||
       declaration.kind !== "type-alias" ||
-      (declaration.typeParameters?.length ?? 0) !== 0
+      typeParameterCount(declaration.typeParameters) !== 0
     )
       return failure("surface anchors require concrete reified aliases");
     if (names.has(declaration.name))

@@ -419,3 +419,81 @@ test("type canonicalization does not probe a numeric map for each resolved alias
     `canonicalization used ${numericProbes} numeric map operations`,
   );
 });
+
+test("named generic types fill trailing defaults in parameter scope", () => {
+  const result = resolve(
+    "interface Pair<T extends number, U extends T = T> { value: U } " +
+      "type Defaulted = Pair<1>; type Explicit = Pair<1, 1>;",
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  const id = result.value.names.get("Defaulted");
+  assert.ok(id !== undefined);
+  assert.equal(id, result.value.names.get("Explicit"));
+  const value = result.value.system.property(id, "value");
+  assert.ok(value.ok);
+  assert.deepEqual(result.value.types[value.value], {
+    kind: "literal",
+    value: 1,
+  });
+});
+
+test("named generic types check actual and defaulted arguments against constraints", () => {
+  for (const application of ["Pair<string>", "Pair<1, 2>", "Pair<1>"]) {
+    const result = resolve(
+      "type Pair<T extends number, U extends T = 2> = U; " +
+        `type Result = ${application};`,
+    );
+    assert.equal(result.ok, false, application);
+    assert.equal(result.error.code, "INVALID_TYPE");
+    assert.match(result.error.message, /does not satisfy constraint/);
+  }
+});
+
+test("generic call and construct contracts fail explicitly in the typed checker", () => {
+  for (const signature of ["", "new "]) {
+    const result = resolve(
+      `interface Generic { ${signature}<T extends number = number>(value: T): T }`,
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.error.code, "UNSUPPORTED");
+    assert.match(result.error.message, /generic signatures/);
+  }
+});
+
+test("a structural recursive bound is checked after aliases and interfaces resolve", () => {
+  const declarations =
+    "interface Node<T> { next: T } interface Tree extends Node<Tree> {} " +
+    "type Wrapped<T extends Node<T>> = T; ";
+  const valid = resolve(declarations + "type Result = Wrapped<Tree>;");
+  assert.ok(valid.ok, JSON.stringify(valid));
+  assert.equal(valid.value.names.get("Tree"), valid.value.names.get("Result"));
+  const invalid = resolve(declarations + "type Result = Wrapped<number>;");
+  assert.equal(invalid.ok, false);
+  assert.match(invalid.error.message, /does not satisfy constraint/);
+});
+
+test("defaults cannot refer to later parameters or precede required parameters", () => {
+  for (const text of [
+    "type Bad<T = number, U> = T;",
+    "type U = number; type Bad<T = U, U = number> = T; type Result = Bad;",
+    "type Bad<T = T> = T; type Result = Bad;",
+  ]) {
+    const result = resolve(text);
+    assert.equal(result.ok, false, text);
+    assert.equal(result.error.code, "INVALID_TYPE");
+  }
+});
+
+test("defaulted constraints and string index contracts coexist", () => {
+  const declaration =
+    "interface Lookup<T extends number = number> { readonly [key: string]: T } ";
+  const result = resolve(declaration + "type Defaulted = Lookup;");
+  assert.ok(result.ok, JSON.stringify(result));
+  const type = result.value.types[result.value.names.get("Defaulted")!];
+  assert.ok(type?.kind === "object");
+  assert.equal(type.stringIndex?.type, result.value.names.get("number"));
+
+  const invalid = resolve(declaration + "type Invalid = Lookup<string>;");
+  assert.equal(invalid.ok, false);
+  assert.match(invalid.error.message, /does not satisfy constraint/);
+});

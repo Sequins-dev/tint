@@ -17,6 +17,7 @@ import type {
   Statement,
   Expression,
   TypeNode,
+  TypeParameter,
   Span,
   Parameter,
   Binding,
@@ -513,15 +514,49 @@ export function linkModules(
         return name;
       }
       function parameterSet(
-        parameters: readonly string[] | undefined,
+        parameters: readonly TypeParameter[] | undefined,
+        outer?: ReadonlySet<string>,
       ): Set<string> {
         const result = new Set<string>();
+        if (outer !== undefined) for (const name of outer) result.add(name);
         if (parameters !== undefined)
           for (const parameter of parameters) {
             if (parameter === undefined) throw "missing type parameter";
-            result.add(parameter);
+            result.add(parameter.name);
           }
         return result;
+      }
+      function typeParameters(
+        values: readonly TypeParameter[],
+        scope: ReadonlySet<string>,
+      ): readonly TypeParameter[] {
+        return values.map((value) =>
+          mark<TypeParameter>(
+            {
+              ...value,
+              constraint:
+                value.constraint === undefined
+                  ? undefined
+                  : type(value.constraint, scope),
+              defaultType:
+                value.defaultType === undefined
+                  ? undefined
+                  : type(value.defaultType, scope),
+            },
+            value,
+          ),
+        );
+      }
+      function generics(
+        node: {
+          readonly typeParameters?: readonly TypeParameter[] | undefined;
+        },
+        scope: ReadonlySet<string>,
+      ): { typeParameters?: readonly TypeParameter[] } {
+        const values = node.typeParameters;
+        return values === undefined
+          ? {}
+          : { typeParameters: typeParameters(values, scope) };
       }
       function property(
         node: PropertySignature,
@@ -670,20 +705,26 @@ export function linkModules(
                 },
                 node,
               );
-            case "function":
+            case "function": {
+              const scope =
+                node.typeParameters === undefined
+                  ? parameters
+                  : parameterSet(node.typeParameters, parameters);
               return mark<TypeNode>(
                 {
                   ...node,
+                  ...generics(node, scope),
                   parameters: node.parameters.map((p) =>
-                    parameter(p, parameters, false),
+                    parameter(p, scope, false),
                   ),
-                  returnType: type(node.returnType, parameters),
+                  returnType: type(node.returnType, scope),
                   ...(node.receiver === undefined
                     ? {}
-                    : { receiver: type(node.receiver, parameters) }),
+                    : { receiver: type(node.receiver, scope) }),
                 },
                 node,
               );
+            }
           }
         } finally {
           depth--;
@@ -711,7 +752,7 @@ export function linkModules(
         }
         for (const parameter of node.typeParameters) {
           if (parameter === undefined) throw "class type parameter invariant";
-          noParameters.add(parameter);
+          noParameters.add(parameter.name);
         }
         try {
           return mark<ClassDefinition>(
@@ -723,6 +764,7 @@ export function linkModules(
                   : node.sourceStart + offset,
               decorators: node.decorators?.map(expression),
               name,
+              typeParameters: typeParameters(node.typeParameters, noParameters),
               heritage:
                 node.heritage === undefined
                   ? undefined
@@ -734,43 +776,51 @@ export function linkModules(
                     element,
                   );
                 const key = expression(element.key);
-                return element.kind === "field"
-                  ? mark<ClassElement>(
-                      {
-                        ...element,
-                        decorators: element.decorators?.map(expression),
-                        key,
-                        type:
-                          element.type === undefined
-                            ? undefined
-                            : type(element.type, noParameters),
-                        initializer:
-                          element.initializer === undefined
-                            ? undefined
-                            : expression(element.initializer),
-                      },
-                      element,
-                    )
-                  : mark<ClassElement>(
-                      {
-                        ...element,
-                        sourceStart:
-                          element.sourceStart === undefined
-                            ? undefined
-                            : element.sourceStart + offset,
-                        decorators: element.decorators?.map(expression),
-                        key,
-                        parameters: element.parameters.map((p) =>
-                          parameter(p, noParameters, true),
-                        ),
-                        returnType:
-                          element.returnType === undefined
-                            ? undefined
-                            : type(element.returnType, noParameters),
-                        body: block(element.body),
-                      },
-                      element,
-                    );
+                if (element.kind === "field")
+                  return mark<ClassElement>(
+                    {
+                      ...element,
+                      decorators: element.decorators?.map(expression),
+                      key,
+                      type:
+                        element.type === undefined
+                          ? undefined
+                          : type(element.type, noParameters),
+                      initializer:
+                        element.initializer === undefined
+                          ? undefined
+                          : expression(element.initializer),
+                    },
+                    element,
+                  );
+                const previous = noParameters;
+                if (element.typeParameters !== undefined)
+                  noParameters = parameterSet(element.typeParameters, previous);
+                try {
+                  return mark<ClassElement>(
+                    {
+                      ...element,
+                      ...generics(element, noParameters),
+                      sourceStart:
+                        element.sourceStart === undefined
+                          ? undefined
+                          : element.sourceStart + offset,
+                      decorators: element.decorators?.map(expression),
+                      key,
+                      parameters: element.parameters.map((p) =>
+                        parameter(p, noParameters, true),
+                      ),
+                      returnType:
+                        element.returnType === undefined
+                          ? undefined
+                          : type(element.returnType, noParameters),
+                      body: block(element.body),
+                    },
+                    element,
+                  );
+                } finally {
+                  noParameters = previous;
+                }
               }),
             },
             node,
@@ -891,38 +941,52 @@ export function linkModules(
               );
             case "function-expression":
             case "arrow": {
-              const originalBody = node.body;
-              const body =
-                originalBody.kind === "block"
-                  ? block(originalBody)
-                  : expression(originalBody);
-              const parameters = node.parameters.map((p) =>
-                parameter(p, noParameters, true),
-              );
-              const returnType =
-                node.returnType === undefined
-                  ? undefined
-                  : type(node.returnType, noParameters);
-              if (node.kind === "function-expression") {
-                if (body.kind !== "block")
-                  throw "function expression body invariant";
+              const previous = noParameters;
+              if (node.typeParameters !== undefined)
+                noParameters = parameterSet(node.typeParameters, previous);
+              try {
+                const originalBody = node.body;
+                const body =
+                  originalBody.kind === "block"
+                    ? block(originalBody)
+                    : expression(originalBody);
+                const parameters = node.parameters.map((p) =>
+                  parameter(p, noParameters, true),
+                );
+                const returnType =
+                  node.returnType === undefined
+                    ? undefined
+                    : type(node.returnType, noParameters);
+                if (node.kind === "function-expression") {
+                  if (body.kind !== "block")
+                    throw "function expression body invariant";
+                  return mark<Expression>(
+                    {
+                      ...node,
+                      ...generics(node, noParameters),
+                      parameters,
+                      returnType,
+                      body,
+                      ...(node.receiver === undefined
+                        ? {}
+                        : { receiver: type(node.receiver, noParameters) }),
+                    },
+                    node,
+                  );
+                }
                 return mark<Expression>(
                   {
                     ...node,
+                    ...generics(node, noParameters),
                     parameters,
                     returnType,
                     body,
-                    ...(node.receiver === undefined
-                      ? {}
-                      : { receiver: type(node.receiver, noParameters) }),
                   },
                   node,
                 );
+              } finally {
+                noParameters = previous;
               }
-              return mark<Expression>(
-                { ...node, parameters, returnType, body },
-                node,
-              );
             }
             case "satisfies":
               return mark<Expression>(
@@ -1192,6 +1256,7 @@ export function linkModules(
                   name,
                   exported: false,
                   properties,
+                  ...generics(node, params),
                   ...(node.indexSignature === undefined
                     ? {}
                     : {
@@ -1227,12 +1292,14 @@ export function linkModules(
                   node,
                   "nested type declarations are not supported",
                 );
+              const params = parameterSet(node.typeParameters);
               return mark<Statement>(
                 {
                   ...node,
                   name,
                   exported: false,
-                  type: type(node.type, parameterSet(node.typeParameters)),
+                  ...generics(node, params),
+                  type: type(node.type, params),
                 },
                 node,
               );
@@ -1251,6 +1318,7 @@ export function linkModules(
                         : node.sourceStart + offset,
                     name: renamed(node),
                     exported: false,
+                    ...generics(node, noParameters),
                     parameters: node.parameters.map((p) =>
                       parameter(p, noParameters, true),
                     ),

@@ -236,3 +236,30 @@ test("local specialization output assigns fresh hashes after generated declarati
   const checked = checkClosureModule(result.value.module);
   assert.ok(checked.ok, JSON.stringify(checked));
 });
+
+test("specialization rejects unchecked function constraints and defaults", () => {
+  for (const parameter of ["T extends string", "T = number"]) {
+    const result = prepare(
+      `function id<${parameter}>(value: T): T { return value; }
+       function run(): number { return id<number>(1); }`,
+    );
+    assert.equal(result.ok, false, parameter);
+    assert.match(result.error.message, /require checked specialization/);
+  }
+});
+
+test("a generic callable argument cannot reuse a non-generic specialization", () => {
+  const result = prepare(`
+    function id<T>(value: T): T { return value; }
+    function answer(): number { return 42; }
+    function run(): number {
+      id<() => number>(answer);
+      return id< <U = number>() => number >(answer)();
+    }
+  `);
+  assert.equal(result.ok, false);
+  assert.match(
+    result.error.message,
+    /generic signatures require specialization/,
+  );
+});

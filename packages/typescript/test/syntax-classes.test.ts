@@ -34,7 +34,10 @@ test("class syntax preserves methods, fields, computed keys, heritage and defini
   if (declaration?.kind !== "class") return;
   assert.equal(declaration.definition.name, "C");
   assert.equal(declaration.definition.elements.length, 3);
-  assert.deepEqual(declaration.definition.typeParameters, ["T"]);
+  assert.deepEqual(
+    declaration.definition.typeParameters.map((p) => p.name),
+    ["T"],
+  );
   assert.ok(declaration.exported);
 });
 test("class grammar rejects invalid constructors, static prototype and abrupt method context", () => {

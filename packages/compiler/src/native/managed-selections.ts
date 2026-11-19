@@ -1,3 +1,4 @@
+import { typeParameterCount } from "@tint/typescript/syntax";
 import type { LinkedProgram } from "@tint/ts-native/modules";
 import type { BoundModule } from "@tint/typescript/binding";
 import { checkClosureModule } from "@tint/typescript/checker";
@@ -100,7 +101,7 @@ export function resolveManagedSurfaceSelections(
     if (declaration === undefined || declaration.kind === "function")
       return reject("missing surface type export: " + selection.name);
     if (
-      (declaration.typeParameters?.length ?? 0) !==
+      typeParameterCount(declaration.typeParameters) !==
       selection.typeArguments.length
     )
       return reject("surface type argument count: " + selection.name);
@@ -132,7 +133,7 @@ export function resolveManagedSurfaceSelections(
         "surface value export must be a top-level function: " + selection.name,
       );
     if (
-      (declaration.typeParameters?.length ?? 0) !==
+      typeParameterCount(declaration.typeParameters) !==
       selection.typeArguments.length
     )
       return reject("surface value argument count: " + selection.name);
@@ -175,7 +176,7 @@ export function resolveManagedSurfaceSelections(
             ok: false,
             error: "missing surface type argument export: " + argument.name,
           };
-        if ((declaration.typeParameters?.length ?? 0) !== 0)
+        if (typeParameterCount(declaration.typeParameters) !== 0)
           return {
             ok: false,
             error:

@@ -676,6 +676,8 @@ export function entryType(
   return undefined;
 }
 export interface RecordContracts extends RecordOperations {
+  /** Discard expression plans consumed by the just-lowered function. */
+  readonly clearFunctionOperations: () => void;
   readonly classes: readonly ClassRecordStorage[];
   readonly errorRecords: () => readonly number[];
   readonly errorProperty: (
@@ -1504,6 +1506,12 @@ export function createRecordContracts(
     },
     constructions,
     constructors,
+    clearFunctionOperations: () => {
+      constructions.clear();
+      constructors.clear();
+      accesses.clear();
+      spreads.clear();
+    },
     constructClass: (node, target) => {
       const receiver = checked.expressions.get(node.callee);
       if (receiver === undefined || !constructorReceiver(receiver))
