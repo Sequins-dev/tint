@@ -11,15 +11,13 @@ import { join } from "node:path";
 
 const sleep = new Int32Array(new SharedArrayBuffer(4));
 
-function acquire(file: string, wait: boolean): number | undefined {
+function tryAcquire(file: string): number | undefined {
   const fd = openSync(file, "a");
   let acquired = false;
   try {
-    const result = spawnSync(
-      "/usr/bin/lockf",
-      ["-s", ...(wait ? [] : ["-t", "0"]), "3"],
-      { stdio: ["ignore", "ignore", "inherit", fd] },
-    );
+    const result = spawnSync("/usr/bin/lockf", ["-s", "-t", "0", "3"], {
+      stdio: ["ignore", "ignore", "inherit", fd],
+    });
     if (result.error !== undefined) throw result.error;
     if (result.status === 75) return undefined;
     if (result.status !== 0)
@@ -46,7 +44,7 @@ export function withGateLock<T>(
   if (files.length === 0) throw Error("No gate locks configured");
   for (;;) {
     for (const file of files) {
-      const fd = acquire(file, files.length === 1);
+      const fd = tryAcquire(file);
       if (fd === undefined) continue;
       const startedAt = Date.now();
       const start = performance.now();
@@ -62,8 +60,8 @@ export function withGateLock<T>(
           );
       }
     }
-    // The kernel blocks for a single lock. A semaphore probes for any slot,
-    // then sleeps so waiting for one occupied slot cannot strand a free one.
+    // Darwin's descriptor-mode lockf can spin when asked to block.
+    // Probe once per slot and sleep while every slot is occupied.
     Atomics.wait(sleep, 0, 0, 250);
   }
 }
