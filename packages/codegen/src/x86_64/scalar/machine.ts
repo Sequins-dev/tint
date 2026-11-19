@@ -1,3 +1,4 @@
+import { nativeHostedContextByteLength } from "@tint/abi/host";
 import type {
   ImageAddressPatcher,
   ImageAddressReference,
@@ -21,6 +22,12 @@ export const resultPayload = 16;
 export const normal = 1;
 export const thrown = 2;
 
+export const argumentCountOffset = 40;
+export const argumentsOffset = 48;
+export const heapCursorOffset = nativeHostedContextByteLength;
+export const heapEndOffset = heapCursorOffset + 8;
+export const contextBytes = heapEndOffset + 8;
+
 export type Emit = (instruction: Instruction) => void;
 
 export function gpr(index: number): Gpr<64> {
@@ -37,6 +44,13 @@ export function xmm(index: number): Xmm {
 }
 export function mem(base: number, disp: number): Memory<64> {
   return { kind: "mem", width: 64, address: { kind: "base", base, disp } };
+}
+export function rip(name: string): Memory<64> {
+  return {
+    kind: "mem",
+    width: 64,
+    address: { kind: "rip", disp: label(name) },
+  };
 }
 export function label(name: string): LabelReference {
   return { kind: "label", label: name };

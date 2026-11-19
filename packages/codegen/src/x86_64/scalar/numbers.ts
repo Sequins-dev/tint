@@ -25,7 +25,7 @@ const x3 = xmm(3);
 const toWordLabel = "number-to-word";
 const remainderLabel = "number-remainder";
 
-function floatBits(emit: Emit, dst: Gpr<64>, src: Xmm): void {
+export function floatBits(emit: Emit, dst: Gpr<64>, src: Xmm): void {
   const insn: {
     readonly op: "movq";
     readonly dst: Gpr<64>;
@@ -69,6 +69,7 @@ interface NumberEmission {
     left: Memory<64>,
     right: Memory<64>,
   ) => boolean;
+  readonly toWord: (src: Memory<64>) => void;
   readonly helpers: () => void;
 }
 
@@ -298,7 +299,7 @@ export function createNumberEmission(emit: Emit): NumberEmission {
     if (needsWord) emitToWord(emit);
     if (needsRemainder) emitRemainder(emit);
   }
-  return { unary, binary, helpers };
+  return { unary, binary, toWord, helpers };
 }
 
 /** Truncate binary64 and return the low 32 bits, without a trapping conversion.
