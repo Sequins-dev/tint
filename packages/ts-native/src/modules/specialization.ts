@@ -1,4 +1,4 @@
-import { syntaxHash } from "@tint/typescript/syntax";
+import { typeParameterCount, syntaxHash } from "@tint/typescript/syntax";
 import {
   createKeyIndex,
   createStringIndex,
@@ -9,6 +9,7 @@ import {
   type Statement,
   type Expression,
   type TypeNode,
+  type TypeParameters,
   type Span,
   type BlockStatement,
 } from "@tint/typescript/syntax";
@@ -153,6 +154,8 @@ export function specializeModule(
           );
         }
         case "function":
+          if (typeParameterCount(t.typeParameters) !== 0)
+            return fail(t, "generic signatures require specialization");
           return (
             "f" +
             (t.receiver === undefined ? "" : "this[" + key(t.receiver) + "]") +
@@ -182,7 +185,20 @@ export function specializeModule(
     const template = templates.get(id);
     if (template === undefined)
       return fail(node, "type arguments require a direct generic function");
-    if (args.length !== template.typeParameters?.length)
+    const parameters: TypeParameters | undefined = template.typeParameters;
+    if (parameters === undefined) throw "specialization parameter invariant";
+    for (const parameter of parameters) {
+      if (parameter === undefined) throw "missing type parameter";
+      if (
+        parameter.constraint !== undefined ||
+        parameter.defaultType !== undefined
+      )
+        return fail(
+          node,
+          "constrained or defaulted generic functions require checked specialization",
+        );
+    }
+    if (args.length !== parameters.length)
       return fail(node, "generic type argument count mismatch");
     const identity = String(id) + ":" + args.map(key).join(";");
     const existing = keys.get(identity);
@@ -216,7 +232,7 @@ export function specializeModule(
         descend: (node) =>
           node === root ||
           node.kind !== "function" ||
-          !node.typeParameters?.length,
+          !typeParameterCount(node.typeParameters),
         expression: (mapped, original) => {
           if (original.kind === "call") {
             let callee = original.callee;
@@ -233,7 +249,7 @@ export function specializeModule(
         descend: (node) =>
           node === root ||
           node.kind !== "function" ||
-          !node.typeParameters?.length,
+          !typeParameterCount(node.typeParameters),
         type: (mapped, _original) => {
           if (mapped.kind !== "named") return mapped;
           const replacement = substitutions.get(mapped.name);
@@ -246,7 +262,7 @@ export function specializeModule(
           if (
             original !== root &&
             original.kind === "function" &&
-            original.typeParameters?.length
+            typeParameterCount(original.typeParameters)
           )
             return { kind: "empty", start: original.start, end: original.end };
           if (
@@ -325,13 +341,14 @@ export function specializeModule(
       for (const node of nodes) {
         if (node === undefined) throw "template statement invariant";
         if (node.kind !== "function") continue;
-        const parameters = node.typeParameters;
+        const parameters: TypeParameters | undefined = node.typeParameters;
         if (parameters === undefined || parameters.length === 0) continue;
         const unique = new Set<string>();
         for (const parameter of parameters) {
           if (parameter === undefined) throw "missing type parameter";
-          if (unique.has(parameter)) fail(node, "duplicate type parameter");
-          unique.add(parameter);
+          if (unique.has(parameter.name))
+            fail(node, "duplicate type parameter");
+          unique.add(parameter.name);
         }
         const binding = bound.bindings.find(
           (b) => b !== undefined && b.node === node && b.kind === "function",
@@ -397,7 +414,7 @@ export function specializeModule(
       module.statements.filter(
         (s) =>
           s !== undefined &&
-          (s.kind !== "function" || !s.typeParameters?.length),
+          (s.kind !== "function" || !typeParameterCount(s.typeParameters)),
       ),
       new Map<string, TypeNode>(),
     );
@@ -405,16 +422,17 @@ export function specializeModule(
       const instance = instances[i];
       if (instance === undefined)
         fail(module, "specialization queue invariant");
-      const parameters = instance.source.typeParameters;
+      const parameters: TypeParameters | undefined =
+        instance.source.typeParameters;
       if (parameters === undefined)
         fail(instance.source, "specialization parameter invariant");
       const substitutions = new Map<string, TypeNode>();
       for (let index = 0; index < parameters.length; index++) {
-        const name = parameters[index],
+        const parameter = parameters[index],
           argument = instance.arguments[index];
-        if (name === undefined || argument === undefined)
+        if (parameter === undefined || argument === undefined)
           fail(instance.source, "specialization argument invariant");
-        substitutions.set(name, argument);
+        substitutions.set(parameter.name, argument);
       }
       const rewritten = rewrite(
         [instance.source],

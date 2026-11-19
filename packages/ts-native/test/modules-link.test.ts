@@ -81,7 +81,10 @@ test("type imports and generic parameter shadowing retain separate namespaces", 
     (s) => s.kind === "type-alias" && s.type.kind === "object",
   );
   assert.ok(alias?.kind === "type-alias" && alias.type.kind === "object");
-  assert.deepEqual(alias.typeParameters, ["V"]);
+  assert.deepEqual(
+    alias.typeParameters?.map((p) => p.name),
+    ["V"],
+  );
   assert.equal(alias.type.properties[0]?.type.kind, "named");
   if (alias.type.properties[0]?.type.kind === "named")
     assert.equal(alias.type.properties[0].type.name, "V");
@@ -786,4 +789,41 @@ test("linked copies receive fresh graph hashes when generated source hashes coll
   assert.equal(JSON.stringify(sources), before);
   const checked = checkClosureModule(linked.value.module);
   assert.ok(checked.ok, JSON.stringify(checked));
+});
+
+test("generic bounds and defaults link imports and preserve local parameter scope", () => {
+  const main = input(
+    "main",
+    'import type {Base, T} from "dep"; ' +
+      "export interface Box<T extends Base = Base, U extends T = T> { value: U } " +
+      "type Outer = T;",
+    [["dep", "dep"]],
+  );
+  const dep = input(
+    "dep",
+    "export interface Base { code: number } export type T = string;",
+  );
+  const linked = linkModules([main, dep], "main", []);
+  assert.ok(linked.ok, JSON.stringify(linked));
+  const box = linked.value.module.statements.find(
+    (node) => node.kind === "interface" && node.typeParameters?.length === 2,
+  );
+  assert.ok(box?.kind === "interface");
+  const [first, second] = box.typeParameters ?? [];
+  const base = linked.value.exports.find(
+    (entry) => entry.module === "dep" && entry.name === "Base",
+  );
+  assert.ok(base);
+  assert.ok(
+    first?.constraint?.kind === "named" && first.defaultType?.kind === "named",
+  );
+  assert.equal(first.constraint.name, base.linkedName);
+  assert.equal(first.defaultType.name, base.linkedName);
+  assert.ok(
+    second?.constraint?.kind === "named" &&
+      second.defaultType?.kind === "named",
+  );
+  assert.equal(second.constraint.name, "T");
+  assert.equal(second.defaultType.name, "T");
+  assert.equal(locateSource(linked.value, first.constraint)?.module, "main");
 });

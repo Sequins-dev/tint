@@ -10,6 +10,7 @@ import {
 } from "./managed-runtimes.ts";
 import type { RuntimeBindingContext } from "@tint/ts-native/runtime";
 import {
+  typeParameterCount,
   rewriteModule,
   type Module,
   type Statement,
@@ -210,7 +211,7 @@ export function prepareManagedSurfaceExports(
       declaration.generator ||
       declaration.receiver !== undefined ||
       declaration.parameters.length !== 0 ||
-      (declaration.typeParameters?.length ?? 0) !== 0 ||
+      typeParameterCount(declaration.typeParameters) !== 0 ||
       declaration.returnType === undefined
     )
       return reject(
@@ -437,7 +438,7 @@ export function materializeManagedSurfaceExports(
         target.kind !== "function" ||
         target.async ||
         target.generator ||
-        (target.typeParameters?.length ?? 0) !== 0 ||
+        typeParameterCount(target.typeParameters) !== 0 ||
         target.returnType === undefined
       )
         return {
