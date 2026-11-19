@@ -7,6 +7,12 @@ import {
   type CLibraryManifestEntry,
   type CTarget,
 } from "@tint/abi/c";
+import {
+  indirectCallClass,
+  indirectCallTargets,
+  type ModuleIR,
+  type Span,
+} from "@tint/ir/scalar";
 import type { ImportMapping } from "@tint/source/resolver";
 import { createSourceTextView } from "@tint/source/text";
 import type { SourceInput } from "@tint/typescript/modules";
@@ -213,6 +219,142 @@ function located(
     message
   );
 }
+const x64Callbacks: string =
+  "C callbacks are not supported on linux-x86_64 (needs F2)";
+const x64ManagedSuffix: string =
+  " is not yet supported on linux-x86_64 (needs managed emission from x64 slice 7a–7b)";
+const x64DynamicFFI: string = "packages/native-runtime/src/ffi/dynamic.ts:";
+
+/** Diagnose public wrappers by linked identity. Raw leaf stubs have their
+ * own identities, so aggregate images and the C trampoline stay available
+ * even when their managed wrappers are unavailable. */
+export function x64ForeignDiagnostic(
+  reachable: ModuleIR,
+  optimized: ModuleIR,
+  names: ReadonlyMap<string, string>,
+  libraries: readonly ForeignLibrary[],
+  sourceModule: (span: Span) => string | undefined,
+): string | undefined {
+  const used = new Set<string>();
+  const calls = indirectCallTargets(reachable, true, Infinity);
+  const runtime = foreignRuntimeModules.index + ":";
+  const unsafe = foreignRuntimeModules.unsafe + ":";
+  function recordCallee(target: number): void {
+    const callee = reachable.functions[target];
+    if (callee === undefined) throw "reachable FFI call invariant";
+    const sourceName = names.get(callee.name);
+    if (sourceName !== undefined) used.add(sourceName);
+  }
+  for (const fn of reachable.functions) {
+    if (fn === undefined) throw "reachable FFI function invariant";
+    const name = names.get(fn.name) ?? "";
+    // Module instances retain support functions even if the application
+    // uses only one export. Report the boundary the caller actually uses.
+    if (
+      name.startsWith(x64DynamicFFI) ||
+      name.startsWith(runtime) ||
+      name.startsWith(unsafe)
+    )
+      continue;
+    for (const block of fn.blocks) {
+      if (block === undefined) throw "reachable FFI block invariant";
+      for (const op of block.instructions) {
+        if (op === undefined) throw "reachable FFI instruction invariant";
+        if (op.kind === "call") recordCallee(op.target);
+        if (op.kind !== "call-indirect" || calls === undefined) continue;
+        // The witness identifies a calling convention, not the callee.
+        const targets =
+          calls.classes[indirectCallClass(calls, fn.id, block.id, op)];
+        if (targets === undefined) continue;
+        for (const target of targets) {
+          if (target === undefined) throw "indirect FFI call invariant";
+          recordCallee(target);
+        }
+      }
+    }
+  }
+  if (
+    used.has(x64DynamicFFI + "setCallback") ||
+    used.has(runtime + "registerCallback") ||
+    used.has(runtime + "noteCallback") ||
+    used.has(runtime + "releaseCallback") ||
+    used.has(runtime + "callbackState") ||
+    used.has(runtime + "callbackDispatcher") ||
+    used.has(runtime + "rethrowCallbackFailure")
+  )
+    return x64Callbacks;
+  if (used.has(x64DynamicFFI + "foreignFunction"))
+    return "foreignFunction" + x64ManagedSuffix;
+
+  const layouts = new Set<string>();
+  for (const library of libraries) {
+    if (library === undefined) throw "foreign library invariant";
+    const prefix = library.id + ":";
+    if (library.declaration.layouts.length > 0) layouts.add(library.id);
+    for (const fn of library.declaration.functions) {
+      if (fn === undefined) throw "foreign declaration invariant";
+      if (!used.has(prefix + fn.name)) continue;
+      if (fn.signature.callClass === "may-callback") return x64Callbacks;
+      if (library.image.optional)
+        return "Optional C library loading" + x64ManagedSuffix;
+      if (fn.resultForm === "record")
+        return "C record-by-value results are not yet supported on linux-x86_64 (needs x64 slice 7a-3)";
+      if (fn.parameterForms.includes("record"))
+        return "C record-by-value arguments are not yet supported on linux-x86_64 (needs x64 slice 7a-3)";
+      if (fn.parameterForms.includes("string"))
+        return "CString conversion" + x64ManagedSuffix + "; use CStringBytes";
+    }
+    if (library.image.optional)
+      for (const query of library.declaration.availability) {
+        if (query === undefined) throw "foreign availability invariant";
+        if (used.has(prefix + query.name))
+          return "Optional C library loading" + x64ManagedSuffix;
+      }
+  }
+
+  if (
+    used.has(x64DynamicFFI + "openLibrary") ||
+    used.has(x64DynamicFFI + "openProgram") ||
+    used.has(x64DynamicFFI + "findSymbol") ||
+    used.has(x64DynamicFFI + "closeLibrary") ||
+    used.has(x64DynamicFFI + "optionalSymbol")
+  )
+    return "Dynamic C library loading" + x64ManagedSuffix;
+  for (const name of used) {
+    if (name === undefined) throw "foreign source name invariant";
+    if (name.startsWith(x64DynamicFFI))
+      return "foreignFunction" + x64ManagedSuffix;
+    if (name.startsWith(unsafe))
+      return "Foreign memory view creation" + x64ManagedSuffix;
+    if (name.startsWith(runtime))
+      return "Managed FFI storage" + x64ManagedSuffix;
+  }
+
+  for (const fn of optimized.functions) {
+    if (fn === undefined) throw "reachable FFI function invariant";
+    for (const block of fn.blocks) {
+      if (block === undefined) throw "reachable FFI block invariant";
+      for (const op of block.instructions) {
+        if (op === undefined) throw "reachable FFI instruction invariant";
+        if (op.kind === "c-call" && op.call.mayCallback === true)
+          return x64Callbacks;
+        if (
+          op.kind === "c-memory" &&
+          (op.access.operation === "callback-key" ||
+            op.access.operation === "callback-address")
+        )
+          return x64Callbacks;
+        if (op.kind === "record-new" && layouts.size !== 0) {
+          const id = sourceModule(op);
+          if (id !== undefined && layouts.has(id))
+            return "C Layout view creation" + x64ManagedSuffix;
+        }
+      }
+    }
+  }
+  return undefined;
+}
+
 /** Parse and expand one binding declaration module. */
 export function prepareForeignLibrary(
   id: string,
@@ -246,7 +388,7 @@ export function prepareForeignLibrary(
   )
     return {
       ok: false,
-      error: id + ": C callbacks are not supported on linux-x86_64",
+      error: id + ": " + x64Callbacks,
     };
   for (const fn of parsed.value.functions) {
     if (fn === undefined) throw "foreign library function invariant";

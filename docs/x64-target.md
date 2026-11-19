@@ -129,10 +129,13 @@ The compiler project requires a collector. A hosted x86-64 request that
 selects a collector or uses a deferred host operation reports the
 operation by name. General JavaScript, managed objects and escaping
 environments, stack maps, collection, threads, and JIT publication are
-later runtime work. The [SysV leaf adapter](native-ffi.md#linux-x86-64)
-supports static C stubs and the dynamic call-frame trampoline. Managed FFI
-wrappers and the public dynamic runtime depend on the corresponding
-slice 7 operations. Callback signatures remain deferred to F2.
+later runtime work. [FFI F1 part 1](native-ffi.md#linux-x86-64) supports
+static C imports of scalars, pointers and CStringBytes. The leaf adapter
+also supports raw C record images and the compiler-authorized call-frame
+trampoline. F1 part 2 enables managed record-by-value wrappers after 7a-3
+and the public dynamic API, optional libraries and other managed FFI
+helpers as 7a–7b land. Builds diagnose these deferred paths before
+emission. F2 owns callbacks and thunks.
 
 Run the hosted smoke from the project root after `pnpm build`.
 
@@ -311,7 +314,8 @@ updates with their owning slices.
 | 11. Live publishing               | x86 code-memory leaves and adapters, compiler managed JIT/linking, runtime registry, engine tests and ELF JIT registration.                                                                                                             | 1,200–2,400 | 7, 9, 10   | In-image compilation and generated-code execution, code-range map registration/GC, W^X policies and ptrace breakpoint copying on guest kernel, same-target entries and cross-context rejection.                            |
 | 12. Native fixed point            | Bootstrap catalog and closure, x86 lowering gaps for the compiler, frozen self-build tools and reports.                                                                                                                                 | 800–2,500   | 7–9        | Native arm64 cross-build runs on x86-64, and x86-64 makes identical stage 2 and stage 3 images. Publish manifest and hashes. Debug variant uses slice 10.                                                                  |
 | 13. Test262 and support gate      | `tools/test262-native-run.ts` and runner adapters, target docs and immutable reports.                                                                                                                                                   | 450–900     | 8, 10–12   | Pinned equivalent AOT and live selections with complete terminal records, glibc floor and kernel tests, verified arm64 regressions and baseline x86 hardware validation before supported status.                           |
-| F1. SysV C calls and layout       | **FFI/convergence**. `abi/src/c/*`, compiler foreign bindings, x86 call adapter, native runtime `c`, `ffi`, `node` and FFI fixture tools.                                                                                               | 900–1,800   | 2, 5, 6    | C oracle fixtures for scalar, variadic and mixed aggregate classification, sret, exact layout/padding and by-value copies, plus dynamic and static import coverage.                                                        |
+| F1 part 1. SysV C leaf calls and layout | **FFI/convergence**. SysV classification and layouts, static leaf imports, raw aggregate stubs, leaf C memory operations and the C call-frame trampoline. | — | 2, 5, 6 | C oracle fixtures for scalars, variadics, mixed aggregates, sret, layout/padding and by-value copies. Verify static imports and the trusted trampoline under QEMU. Diagnose deferred FFI paths before emission. |
+| F1 part 2. Managed FFI wrappers | **FFI/convergence**. Record-by-value argument and result wrappers after 7a-3. Public `foreignFunction`, runtime library loading, string conversion and managed FFI views/storage as their emission becomes available in 7a–7b. | — | F1 part 1, 7a–7b | Public static and dynamic bindings pass the C oracle. |
 | F2. C callbacks and thunks        | **FFI/convergence**. Same ownership plus x86 thunk rows, managed transitions and scanner integration.                                                                                                                                   | 900–1,800   | F1, 7, 10  | ABI preservation across may-callback, moving GC across foreign frames, failure/throw policy, nesting and stale-entry rejection.                                                                                            |
 
 Slices 1–4 can start in parallel on distinct files, with catalog and

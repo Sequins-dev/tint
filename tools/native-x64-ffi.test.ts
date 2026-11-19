@@ -63,15 +63,17 @@ test(
 );
 
 test(
-  "SysV foreignFunction invokes a dynamic scalar binding",
+  "SysV diagnoses public foreignFunction before emission",
   {
     skip: !x64,
-    todo: "the shared dynamic runtime requires slice 7 managed emission",
   },
   () => {
     process.env.TINT_GENERAL_FALLBACK = "0";
-    verifyHostedFixture(
-      `import { openProgram, findSymbol, foreignFunction, setNumber, invoke, resultNumber } from "tint:ffi/unsafe";
+    assertForeignDiagnostic(
+      "foreignFunction is not yet supported on linux-x86_64 (needs managed emission from x64 slice 7a–7b)",
+      () =>
+        verifyHostedFixture(
+          `import { openProgram, findSymbol, foreignFunction, setNumber, invoke, resultNumber } from "tint:ffi/unsafe";
     export function run(): number {
       const handle = openProgram();
       const fn = foreignFunction(findSymbol(handle, "difftime"), {
@@ -81,8 +83,9 @@ test(
       setNumber(fn, 0, 84); setNumber(fn, 1, 42); invoke(fn);
       return resultNumber(fn);
     }`,
-      "sysv-dynamic",
-      [["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"]],
+          "sysv-dynamic",
+          [["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"]],
+        ),
     );
   },
 );
@@ -454,7 +457,10 @@ test(
             ],
           },
         ),
-      /C callbacks are not supported on linux-x86_64/,
+      {
+        message:
+          "sysv-callback.d.ts: C callbacks are not supported on linux-x86_64 (needs F2)",
+      },
     );
   },
 );
@@ -670,3 +676,148 @@ test(
     });
   },
 );
+
+function assertForeignDiagnostic(message: string, build: () => string): void {
+  assert.throws(build, {
+    message: JSON.stringify({ stage: "foreign", message }),
+  });
+}
+
+for (const scenario of [
+  {
+    name: "record result",
+    declaration:
+      "export interface Result { quot: i64; rem: i64; } export function ldiv(n: i64, d: i64): Result;",
+    run: 'import { ldiv } from "tint:c/sysv"; export function run(): number { return ldiv(85, 2).quot; }',
+    message:
+      "C record-by-value results are not yet supported on linux-x86_64 (needs x64 slice 7a-3)",
+  },
+  {
+    name: "record argument",
+    declaration:
+      "export interface Pair { a: i32; b: i32; } export function inspect(pair: Pair): i32;",
+    run: 'import { inspect } from "tint:c/sysv"; export function run(): number { return inspect({ a: 19, b: 23 }); }',
+    message:
+      "C record-by-value arguments are not yet supported on linux-x86_64 (needs x64 slice 7a-3)",
+  },
+  {
+    name: "CString conversion",
+    declaration: "export function strlen(value: CString): i64;",
+    run: 'import { strlen } from "tint:c/sysv"; export function run(): number { return strlen("abc"); }',
+    message:
+      "CString conversion is not yet supported on linux-x86_64 (needs managed emission from x64 slice 7a–7b); use CStringBytes",
+  },
+  {
+    name: "C layout view",
+    declaration:
+      "export interface Pair { a: i32; b: i32; } export const Pair: Layout<Pair>;",
+    run: 'import { Pair } from "tint:c/sysv"; export function run(): number { return Pair.view(new Uint8Array(8)).a; }',
+    message:
+      "C Layout view creation is not yet supported on linux-x86_64 (needs managed emission from x64 slice 7a–7b)",
+  },
+  {
+    name: "optional C library",
+    declaration: "export function getpid(): i32;",
+    run: 'import { getpid } from "tint:c/sysv"; export function run(): number { return getpid(); }',
+    optional: true,
+    message:
+      "Optional C library loading is not yet supported on linux-x86_64 (needs managed emission from x64 slice 7a–7b)",
+  },
+  {
+    name: "optional C symbol availability",
+    declaration:
+      'export function getpid(): i32; export function hasGetpid(): Available<"getpid">;',
+    run: 'import { hasGetpid as available } from "tint:c/sysv"; export function run(): boolean { return available(); }',
+    optional: true,
+    message:
+      "Optional C library loading is not yet supported on linux-x86_64 (needs managed emission from x64 slice 7a–7b)",
+  },
+]) {
+  test(
+    "SysV diagnoses " + scenario.name + " before emission",
+    { skip: !x64 },
+    () => {
+      assertForeignDiagnostic(scenario.message, () =>
+        verifyHostedFixture(
+          scenario.run,
+          "sysv-diagnostic",
+          [["tint:c/sysv", "sysv.d.ts"]],
+          [],
+          [],
+          [],
+          {
+            managedBytes: 4194304,
+            allocationCapacity: 65536,
+            requireTyped: true,
+            foreignDeclarations: [
+              {
+                id: "sysv.d.ts",
+                text:
+                  'declare module "tint:c/sysv" { import type { i32, i64, CString, Layout, Available } from "tint:ffi"; ' +
+                  scenario.declaration +
+                  " }",
+                manifest: [
+                  {
+                    module: "tint:c/sysv",
+                    linux: {
+                      name: "libc.so.6",
+                      optional: scenario.optional ?? false,
+                      currentVersion: 0,
+                      compatibilityVersion: 0,
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ),
+      );
+    },
+  );
+}
+
+for (const [name, expression, specifier, file, diagnostic] of [
+  [
+    "openProgram",
+    "openProgram().low",
+    "tint:ffi/unsafe",
+    "unsafe",
+    "Dynamic C library loading",
+  ],
+  [
+    "bytesAt",
+    "bytesAt(4096, 1).length",
+    "tint:ffi/unsafe",
+    "unsafe",
+    "Foreign memory view creation",
+  ],
+  [
+    "allocate",
+    "allocate(8).length",
+    "tint:ffi",
+    "index",
+    "Managed FFI storage",
+  ],
+  [
+    "callbackState",
+    "callbackState().length",
+    "tint:ffi",
+    "index",
+    "C callbacks",
+  ],
+] as const) {
+  test("SysV diagnoses " + name + " before emission", { skip: !x64 }, () => {
+    const message =
+      diagnostic === "C callbacks"
+        ? "C callbacks are not supported on linux-x86_64 (needs F2)"
+        : diagnostic +
+          " is not yet supported on linux-x86_64 (needs managed emission from x64 slice 7a–7b)";
+    assertForeignDiagnostic(message, () =>
+      verifyHostedFixture(
+        `import { ${name} } from "${specifier}"; export function run(): number { return ${expression}; }`,
+        "sysv-runtime-diagnostic",
+        [[specifier, "packages/native-runtime/src/ffi/" + file + ".ts"]],
+      ),
+    );
+  });
+}
