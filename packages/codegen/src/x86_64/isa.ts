@@ -848,7 +848,7 @@ export function encode(instructions: readonly Instruction[]): Uint8Array {
  * final image placement. Both use the actual end of the encoded instruction. */
 export function encodeLayout(
   instructions: readonly Instruction[],
-  externalLabels?: ReadonlyMap<string, unknown>,
+  isExternal?: (label: string) => boolean,
 ): EncodedLayout {
   const out: Encoding = { bytes: [], fixups: [] };
   const labels = new Map<string, number>();
@@ -872,7 +872,7 @@ export function encodeLayout(
     if (fixup === undefined) throw "rel32 fixup invariant";
     const target = labels.get(fixup.ref.label);
     if (target === undefined) {
-      if (externalLabels?.has(fixup.ref.label) !== true)
+      if (isExternal?.(fixup.ref.label) !== true)
         invalid("undefined label: " + fixup.ref.label);
       externalFixups.push(fixup);
       continue;

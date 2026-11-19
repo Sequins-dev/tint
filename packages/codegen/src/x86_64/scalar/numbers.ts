@@ -62,24 +62,28 @@ function compare(emit: Emit, cc: Condition, ordered: boolean): void {
   emit({ op: "movzx", dst: eax, src: byte(0) });
 }
 
-export class NumberEmission {
-  private needsWord: boolean = false;
-  private needsRemainder: boolean = false;
-  private nextLabel: number = 0;
+interface NumberEmission {
+  readonly unary: (operator: string, src: Memory<64>) => boolean;
+  readonly binary: (
+    operator: string,
+    left: Memory<64>,
+    right: Memory<64>,
+  ) => boolean;
+  readonly helpers: () => void;
+}
 
-  private readonly emit: Emit;
-  constructor(emit: Emit) {
-    this.emit = emit;
+export function createNumberEmission(emit: Emit): NumberEmission {
+  let needsWord = false,
+    needsRemainder = false,
+    nextLabel = 0;
+
+  function toWord(src: Memory<64>): void {
+    needsWord = true;
+    emit({ op: "mov", dst: rax, src });
+    emit({ op: "call", target: label(toWordLabel) });
   }
 
-  private toWord(src: Memory<64>): void {
-    this.needsWord = true;
-    this.emit({ op: "mov", dst: rax, src });
-    this.emit({ op: "call", target: label(toWordLabel) });
-  }
-
-  unary(operator: string, src: Memory<64>): boolean {
-    const emit = this.emit;
+  function unary(operator: string, src: Memory<64>): boolean {
     switch (operator) {
       case "+":
       case "uint32": // The IR producer promises an exact uint32 already.
@@ -91,7 +95,7 @@ export class NumberEmission {
         emit({ op: "xor", dst: rax, src: rdx });
         return true;
       case "~":
-        this.toWord(src);
+        toWord(src);
         emit({ op: "not", dst: eax });
         emit({ op: "cvtsi2sd", dst: x0, src: eax });
         break;
@@ -110,7 +114,7 @@ export class NumberEmission {
       case "ceil":
       case "trunc":
       case "is-integer":
-        this.round(operator, src);
+        round(operator, src);
         return true;
       default:
         return false;
@@ -119,9 +123,8 @@ export class NumberEmission {
     return true;
   }
 
-  private round(operator: string, src: Memory<64>): void {
-    const emit = this.emit;
-    const prefix = "round:" + String(this.nextLabel++);
+  function round(operator: string, src: Memory<64>): void {
+    const prefix = "round:" + String(nextLabel++);
     const large = prefix + ":large";
     const done = prefix + ":done";
     const save = prefix + ":save";
@@ -162,8 +165,11 @@ export class NumberEmission {
     emit({ op: "label", name: done });
   }
 
-  binary(operator: string, left: Memory<64>, right: Memory<64>): boolean {
-    const emit = this.emit;
+  function binary(
+    operator: string,
+    left: Memory<64>,
+    right: Memory<64>,
+  ): boolean {
     switch (operator) {
       case "&":
       case "|":
@@ -172,7 +178,7 @@ export class NumberEmission {
       case ">>":
       case ">>>":
       case "imul":
-        this.wordBinary(operator, left, right);
+        wordBinary(operator, left, right);
         return true;
       case "===":
       case "==":
@@ -223,14 +229,14 @@ export class NumberEmission {
         );
         break;
       case "%":
-        this.needsRemainder = true;
+        needsRemainder = true;
         emit({ op: "movsd", dst: x0, src: left });
         emit({ op: "movsd", dst: x1, src: right });
         emit({ op: "call", target: label(remainderLabel) });
         break;
       case "min":
       case "max":
-        this.minMax(operator, left, right);
+        minMax(operator, left, right);
         return true;
       default:
         return false;
@@ -239,9 +245,8 @@ export class NumberEmission {
     return true;
   }
 
-  private minMax(operator: string, left: Memory<64>, right: Memory<64>): void {
-    const emit = this.emit;
-    const prefix = "minmax:" + String(this.nextLabel++);
+  function minMax(operator: string, left: Memory<64>, right: Memory<64>): void {
+    const prefix = "minmax:" + String(nextLabel++);
     const unordered = prefix + ":unordered";
     const distinct = prefix + ":distinct";
     const done = prefix + ":done";
@@ -264,15 +269,14 @@ export class NumberEmission {
     emit({ op: "label", name: done });
   }
 
-  private wordBinary(
+  function wordBinary(
     operator: string,
     left: Memory<64>,
     right: Memory<64>,
   ): void {
-    const emit = this.emit;
-    this.toWord(left);
+    toWord(left);
     emit({ op: "mov", dst: word(10), src: eax });
-    this.toWord(right);
+    toWord(right);
     if (operator === "<<" || operator === ">>" || operator === ">>>") {
       emit({ op: "mov", dst: ecx, src: eax });
       const dst = word(10);
@@ -290,10 +294,11 @@ export class NumberEmission {
     floatBits(emit, rax, x0);
   }
 
-  helpers(): void {
-    if (this.needsWord) emitToWord(this.emit);
-    if (this.needsRemainder) emitRemainder(this.emit);
+  function helpers(): void {
+    if (needsWord) emitToWord(emit);
+    if (needsRemainder) emitRemainder(emit);
   }
+  return { unary, binary, helpers };
 }
 
 /** Truncate binary64 and return the low 32 bits, without a trapping conversion.

@@ -58,8 +58,7 @@ export function appendExitEntry(
   instructions.push({ op: "syscall" });
   instructions.push({ op: "ud2" });
 
-  const external = new Map<string, number>();
-  external.set("entry", target);
+  const external = (name: string): boolean => name === "entry";
   const stub = encodeLayout(instructions, external);
   const base = body.length;
   const code = new Uint8Array(base + stub.bytes.length);

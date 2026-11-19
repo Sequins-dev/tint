@@ -338,7 +338,7 @@ function gotImportImage(): Uint8Array {
     { op: "mov", dst: eax, src: { kind: "imm32", value: 60 } },
     { op: "syscall" },
   ];
-  const encoded = encodeLayout(instructions, external);
+  const encoded = encodeLayout(instructions, (name) => external.has(name));
   const image = buildElfExecutable({
     code: encoded.bytes,
     entryOffset: 0,
@@ -370,7 +370,7 @@ test("external RIP fixups use the complete instruction length and check signed r
         src: { kind: "imm32", value: 42 },
       },
     ],
-    external,
+    (name) => external.has(name),
   );
   const { addressFixups, patchAddress } = imageRelocations(
     encoded.externalFixups,

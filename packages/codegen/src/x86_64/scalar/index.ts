@@ -34,7 +34,7 @@ import {
   type Emit,
   type ImageRelocations,
 } from "./machine.ts";
-import { NumberEmission } from "./numbers.ts";
+import { createNumberEmission } from "./numbers.ts";
 
 export { imageRelocations } from "./machine.ts";
 export { appendExitEntry } from "./exit-entry.ts";
@@ -148,7 +148,7 @@ export function emitModule(module: ModuleIR): X64Emission {
   const emit: Emit = (insn) => {
     machine.push(insn);
   };
-  const numbers = new NumberEmission(emit);
+  const numbers = createNumberEmission(emit);
   const constants: Word64[] = [];
   const external = new Map<string, ImageAddressTarget>();
   const argumentsByFunction: Argument[][] = [];
@@ -541,7 +541,7 @@ export function emitModule(module: ModuleIR): X64Emission {
     numbers.helpers();
     emit({ op: "label", name: trapLabel });
     emit({ op: "ud2" });
-    const encoded = encodeLayout(machine, external);
+    const encoded = encodeLayout(machine, (name) => external.has(name));
     const functions: X64Function[] = [];
     for (const fn of module.functions) {
       if (fn === undefined) throw "function invariant";
@@ -558,7 +558,13 @@ export function emitModule(module: ModuleIR): X64Emission {
     const relocations = imageRelocations(encoded.externalFixups, external);
     return {
       ok: true,
-      value: { code: encoded.bytes, data, functions, ...relocations },
+      value: {
+        code: encoded.bytes,
+        data,
+        functions,
+        addressFixups: relocations.addressFixups,
+        patchAddress: relocations.patchAddress,
+      },
     };
   } catch (caught) {
     return {
