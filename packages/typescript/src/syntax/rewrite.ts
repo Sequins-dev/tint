@@ -9,6 +9,7 @@ import type {
   Binding,
   VariableBinding,
   TypeNode,
+  TypeParameter,
   ClassDefinition,
   ClassElement,
 } from "./model.ts";
@@ -88,6 +89,7 @@ export function rewriteModule(module: Module, rewrite: SyntaxRewrite): Module {
         case "function":
           mapped = {
             ...node,
+            ...generics(node),
             parameters: node.parameters.map(parameter),
             returnType: type(node.returnType),
             ...(node.receiver === undefined
@@ -102,6 +104,28 @@ export function rewriteModule(module: Module, rewrite: SyntaxRewrite): Module {
     } finally {
       depth--;
     }
+  }
+  function typeParameters(
+    values: readonly TypeParameter[],
+  ): readonly TypeParameter[] {
+    if (rewrite.type === undefined && !rewrite.hashes) return values;
+    return values.map((value) => ({
+      ...value,
+      constraint:
+        value.constraint === undefined ? undefined : type(value.constraint),
+      defaultType:
+        value.defaultType === undefined ? undefined : type(value.defaultType),
+    }));
+  }
+  function generics(node: {
+    readonly typeParameters?: readonly TypeParameter[] | undefined;
+  }): {
+    typeParameters?: readonly TypeParameter[];
+  } {
+    const values = node.typeParameters;
+    return values === undefined
+      ? {}
+      : { typeParameters: typeParameters(values) };
   }
   function parameter(p: Parameter): Parameter {
     if (p.kind === "pattern-parameter") {
@@ -174,6 +198,7 @@ export function rewriteModule(module: Module, rewrite: SyntaxRewrite): Module {
   function classDefinition(node: ClassDefinition): ClassDefinition {
     return {
       ...node,
+      typeParameters: typeParameters(node.typeParameters),
       decorators: node.decorators?.map(expression),
       heritage:
         node.heritage === undefined ? undefined : expression(node.heritage),
@@ -186,6 +211,7 @@ export function rewriteModule(module: Module, rewrite: SyntaxRewrite): Module {
               ...element,
               decorators: element.decorators?.map(expression),
               key,
+              ...generics(element),
               parameters: element.parameters.map(parameter),
               returnType:
                 element.returnType === undefined
@@ -298,6 +324,7 @@ export function rewriteModule(module: Module, rewrite: SyntaxRewrite): Module {
           if (node.kind === "function-expression") {
             mapped = {
               ...node,
+              ...generics(node),
               parameters,
               returnType,
               ...(node.receiver === undefined
@@ -309,6 +336,7 @@ export function rewriteModule(module: Module, rewrite: SyntaxRewrite): Module {
             const body = node.body;
             mapped = {
               ...node,
+              ...generics(node),
               parameters,
               returnType,
               body: body.kind === "block" ? block(body) : expression(body),
@@ -438,6 +466,7 @@ export function rewriteModule(module: Module, rewrite: SyntaxRewrite): Module {
         case "function":
           mapped = {
             ...node,
+            ...generics(node),
             parameters: node.parameters.map(parameter),
             returnType:
               node.returnType === undefined ? undefined : type(node.returnType),
@@ -537,6 +566,7 @@ export function rewriteModule(module: Module, rewrite: SyntaxRewrite): Module {
           if (rewrite.type !== undefined || rewrite.hashes)
             mapped = {
               ...node,
+              ...generics(node),
               ...(node.call === undefined ? {} : { call: type(node.call) }),
               ...(node.construct === undefined
                 ? {}
@@ -552,7 +582,7 @@ export function rewriteModule(module: Module, rewrite: SyntaxRewrite): Module {
           break;
         case "type-alias":
           if (rewrite.type !== undefined || rewrite.hashes)
-            mapped = { ...node, type: type(node.type) };
+            mapped = { ...node, ...generics(node), type: type(node.type) };
           break;
         case "export":
         case "import":

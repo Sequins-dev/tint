@@ -1,5 +1,6 @@
 import type { SourceModule } from "@tint/typescript/modules/model";
 import {
+  typeParameterCount,
   typeOnlyDeclarations,
   type Parameter,
   type Statement,
@@ -148,7 +149,7 @@ export function createBoundaryRecords(
     if (
       statement.call !== undefined ||
       statement.construct !== undefined ||
-      (statement.typeParameters?.length ?? 0) !== 0 ||
+      typeParameterCount(statement.typeParameters) !== 0 ||
       (statement.bases?.length ?? 0) !== 0
     ) {
       failed.add(key);
@@ -311,8 +312,7 @@ export function boundaryExport(
   if (found === undefined) return undefined;
   if (found.kind === "function") {
     if (found.async === true || found.generator === true) return undefined;
-    if (found.typeParameters !== undefined && found.typeParameters.length !== 0)
-      return undefined;
+    if (typeParameterCount(found.typeParameters) !== 0) return undefined;
     const result = primitiveClasses(found.returnType);
     const resultRecord =
       result === 0 ? records?.resolve(module, found.returnType) : undefined;

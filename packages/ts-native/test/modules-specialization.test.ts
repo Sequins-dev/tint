@@ -236,3 +236,14 @@ test("local specialization output assigns fresh hashes after generated declarati
   const checked = checkClosureModule(result.value.module);
   assert.ok(checked.ok, JSON.stringify(checked));
 });
+
+test("specialization rejects unchecked function constraints and defaults", () => {
+  for (const parameter of ["T extends string", "T = number"]) {
+    const result = prepare(
+      `function id<${parameter}>(value: T): T { return value; }
+       function run(): number { return id<number>(1); }`,
+    );
+    assert.equal(result.ok, false, parameter);
+    assert.match(result.error.message, /require checked specialization/);
+  }
+});

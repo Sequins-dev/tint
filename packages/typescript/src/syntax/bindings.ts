@@ -4,6 +4,7 @@ import type {
   Expression,
   Parameter,
   IdentifierParameter,
+  TypeParameters,
 } from "./model.ts";
 
 export function parameterIdentifiers(
@@ -97,4 +98,11 @@ export function expectedArgumentCount(
     length++;
   }
   return length;
+}
+
+// A generic list has the same contract in declaration, expression and type syntax.
+export function typeParameterCount(
+  parameters: TypeParameters | undefined,
+): number {
+  return parameters === undefined ? 0 : parameters.length;
 }

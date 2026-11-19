@@ -1,7 +1,7 @@
 import { numericConstant } from "./numeric-constants.ts";
 export { numericConstant } from "./numeric-constants.ts";
 import type { CViewUse } from "./c-views.ts";
-import { syntaxHash } from "../syntax/index.ts";
+import { typeParameterCount, syntaxHash } from "../syntax/index.ts";
 import {
   createKeyIndex,
   type ReadonlyKeyIndex,
@@ -337,7 +337,7 @@ export function checkModule(module: Module): CheckResult {
           "UNSUPPORTED",
           "generator suspension lowering is not implemented",
         );
-      if (node.typeParameters?.length)
+      if (typeParameterCount(node.typeParameters))
         fail(node, "UNSUPPORTED", "generic functions require specialization");
       bindingName(node.name, node);
       if (signatures.has(node.name))

@@ -1,6 +1,7 @@
 import { numericConstant } from "./numeric-constants.ts";
 import { checkClassInitialization } from "./class-initialization.ts";
 import {
+  typeParameterCount,
   syntaxHash,
   literalPropertyName,
   isOptionalChain,
@@ -411,7 +412,7 @@ export function checkClosureModule(
     try {
       switch (node.kind) {
         case "class":
-          if (node.definition.typeParameters.length !== 0)
+          if (typeParameterCount(node.definition.typeParameters) !== 0)
             fail(
               node,
               "UNSUPPORTED",
@@ -436,6 +437,15 @@ export function checkClosureModule(
                 member,
                 "UNSUPPORTED",
                 "generator suspension lowering is not implemented",
+              );
+            if (
+              member.kind !== "field" &&
+              typeParameterCount(member.typeParameters)
+            )
+              fail(
+                member,
+                "UNSUPPORTED",
+                "generic class methods require specialization",
               );
             if (member.kind === "field") {
               annotation(member, member.type);
@@ -463,7 +473,7 @@ export function checkClosureModule(
               "UNSUPPORTED",
               "generator suspension lowering is not implemented",
             );
-          if (node.typeParameters?.length)
+          if (typeParameterCount(node.typeParameters))
             fail(
               node,
               "UNSUPPORTED",
@@ -480,6 +490,12 @@ export function checkClosureModule(
           break;
         case "function-expression":
         case "arrow":
+          if (typeParameterCount(node.typeParameters))
+            fail(
+              node,
+              "UNSUPPORTED",
+              "generic function expressions require specialization",
+            );
           if (node.async)
             fail(
               node,
