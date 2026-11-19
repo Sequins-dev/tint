@@ -103,3 +103,18 @@ long oracle_borrow(unsigned char *bytes, long increment) {
   bytes[0] += increment;
   return bytes[0];
 }
+
+typedef struct __attribute__((packed)) {
+  signed char small;
+  short medium;
+  int large;
+} SignedFields;
+
+void oracle_seed_signed_fields(SignedFields *value) {
+  *value = (SignedFields){-128, -32768, (-2147483647 - 1)};
+}
+
+int oracle_check_signed_fields(const SignedFields *value) {
+  return value->small == -17 && value->medium == -23456 &&
+         value->large == -1234567890;
+}

@@ -1,15 +1,21 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import test from "node:test";
-import { cLayout } from "@tint/abi/c";
+import { cLayout, cPointer, cScalar, cVoid, type CScalar } from "@tint/abi/c";
 import { linuxX86_64CTarget } from "@tint/abi/c/sysv";
+import { emitModule } from "@tint/codegen/x86_64/scalar";
+import { appendHostedEntry } from "@tint/codegen/x86_64/startup";
+import { buildElfExecutable } from "@tint/image/linux/elf";
+import type { Block, ForeignCall, Instruction } from "@tint/ir/scalar";
+import { linuxX86_64Target } from "@tint/platform/target";
 import { parseForeignDeclarations } from "@tint/compiler/native";
 import { createSourceText } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
 
 const x64 = process.env.TINT_NATIVE_TARGET === "linux-x86_64";
 
@@ -165,7 +171,10 @@ function withOracle(check: (library: string) => void): void {
     assert.equal(built.status, 0, built.error?.message ?? built.stderr);
     check(library);
   } finally {
-    if (process.env.TINT_BUILD_ONLY !== "1")
+    if (
+      process.env.TINT_BUILD_ONLY !== "1" &&
+      process.env.TINT_KEEP_NATIVE !== "1"
+    )
       rmSync(directory, { recursive: true, force: true });
   }
 }
@@ -447,5 +456,217 @@ test(
         ),
       /C callbacks are not supported on linux-x86_64/,
     );
+  },
+);
+
+test(
+  "SysV signed C view fields round trip against the C oracle",
+  { skip: !x64 },
+  () => {
+    // Exercise the verified view IR directly. The source-level Layout object
+    // still needs slice 7's managed record emission.
+    const span = { start: 0, end: 0 };
+    const fields = [
+      { scalar: "i8", offset: 0, seed: -128, write: -17 },
+      { scalar: "i16", offset: 1, seed: -32768, write: -23456 },
+      { scalar: "i32", offset: 3, seed: -2147483648, write: -1234567890 },
+    ] satisfies {
+      scalar: CScalar;
+      offset: number;
+      seed: number;
+      write: number;
+    }[];
+    const blocks: Block[] = [];
+    let instructions: Instruction[] = [];
+    let next = 0;
+    function constant(value: number): number {
+      const id = next++;
+      instructions.push({ ...span, kind: "constant", id, value });
+      return id;
+    }
+    function check(actual: number, expected: number, failure: number): void {
+      const rhs = constant(expected);
+      const id = next++;
+      instructions.push({
+        ...span,
+        kind: "binary",
+        id,
+        operator: "===",
+        left: actual,
+        right: rhs,
+      });
+      requireCheck(id, failure);
+    }
+    function requireCheck(condition: number, failure: number): void {
+      const current = blocks.length;
+      blocks.push({
+        id: current,
+        instructions,
+        terminator: {
+          ...span,
+          kind: "branch",
+          condition,
+          consequent: current + 2,
+          alternate: current + 1,
+        },
+      });
+      instructions = [];
+      const status = constant(failure);
+      blocks.push({
+        id: current + 1,
+        instructions,
+        terminator: { ...span, kind: "return", value: status },
+      });
+      instructions = [];
+    }
+    const minimum = 7;
+    const length = constant(minimum);
+    const array = next++;
+    instructions.push({
+      ...span,
+      kind: "array-new",
+      id: array,
+      type: "Uint8Array",
+      length,
+    });
+    instructions.push({ ...span, kind: "store", slot: 0, value: array });
+    function arrayValue(): number {
+      const id = next++;
+      instructions.push({ ...span, kind: "load", slot: 0, id });
+      return id;
+    }
+    function oracle(
+      symbol: string,
+      result: ForeignCall["result"],
+    ): number | undefined {
+      const call: ForeignCall = {
+        symbol,
+        operands: ["bytes"],
+        result,
+        signature: {
+          parameters: [cPointer(cVoid())],
+          result: result === "void" ? cVoid() : cScalar("i32"),
+          fixedParameters: 1,
+          callClass: "leaf",
+          errno: "none",
+        },
+      };
+      const borrowed = arrayValue();
+      const id = result === "void" ? undefined : next++;
+      instructions.push({
+        ...span,
+        kind: "c-call",
+        call,
+        arguments: [borrowed],
+        id,
+      });
+      return id;
+    }
+    oracle("oracle_seed_signed_fields", "void");
+    for (const [index, field] of fields.entries()) {
+      const access = {
+        type: cScalar(field.scalar),
+        offset: field.offset,
+        minimum,
+      };
+      const read = () => {
+        const borrowed = arrayValue();
+        const id = next++;
+        instructions.push({
+          ...span,
+          kind: "c-memory",
+          access: { ...access, operation: "load" },
+          arguments: [borrowed],
+          id,
+        });
+        return id;
+      };
+      check(read(), field.seed, 10 + index);
+      const value = constant(field.write);
+      const fits = next++;
+      instructions.push({
+        ...span,
+        kind: "c-memory",
+        access: { operation: "fits", type: access.type, offset: 0, minimum: 0 },
+        arguments: [value],
+        id: fits,
+      });
+      requireCheck(fits, 20 + index);
+      const borrowed = arrayValue();
+      const stored = constant(field.write);
+      instructions.push({
+        ...span,
+        kind: "c-memory",
+        access: { ...access, operation: "store" },
+        arguments: [borrowed, stored],
+        id: undefined,
+      });
+      check(read(), field.write, 30 + index);
+    }
+    const verified = oracle("oracle_check_signed_fields", "number");
+    assert.ok(verified !== undefined);
+    check(verified, 1, 40);
+    const status = constant(42);
+    blocks.push({
+      id: blocks.length,
+      instructions,
+      terminator: { ...span, kind: "return", value: status },
+    });
+
+    const target = linuxX86_64Target;
+    const emitted = emitModule(
+      {
+        functions: [
+          {
+            id: 0,
+            name: "signed_fields",
+            exported: true,
+            parameters: [],
+            slots: ["Uint8Array"],
+            returnType: "number",
+            entry: 0,
+            blocks,
+          },
+        ],
+      },
+      target.hostABI,
+    );
+    assert.ok(emitted.ok, JSON.stringify(emitted));
+    const image = appendHostedEntry({
+      native: emitted.value,
+      host: target.hostABI,
+      invocation: emitted.value.functions[0]!.offset,
+      returnType: "number",
+      stackBytes: 1048576,
+      managedBytes: 4096,
+      pageBytes: target.memoryPageBytes,
+    });
+    withOracle((library) => {
+      const built = buildElfExecutable({
+        ...image,
+        linux: {
+          arch: target.arch,
+          interpreter: target.interpreter,
+          needed: [library],
+          libcVersion: {
+            symbol: "__libc_start_main",
+            version: target.glibcStartVersion,
+          },
+          identifier: "tint.sysv.signed-fields",
+        },
+      });
+      assert.ok(built.ok, JSON.stringify(built));
+      const path = join(dirname(library), "signed-fields");
+      writeFileSync(path, built.value.bytes, { mode: 0o755 });
+      console.log(path);
+      if (process.env.TINT_BUILD_ONLY === "1") return;
+      const artifact = nativeArtifact(target.name, path);
+      const results = runNativeBatch([{ artifact }, { artifact }]);
+      for (const result of results)
+        assert.ok(
+          result.kind === "exited" && result.status === 42,
+          JSON.stringify(result),
+        );
+    });
   },
 );

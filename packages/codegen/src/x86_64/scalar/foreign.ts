@@ -180,11 +180,12 @@ function fromInteger(
   request: IntegerSite,
   width: number,
   signed: boolean,
+  extended: boolean = false,
 ): void {
   const emit = request.emit,
     trap = request.trap,
     site = request.site;
-  if (width < 8) {
+  if (width < 8 && !extended) {
     const shift = (8 - width) * 8;
     emit({ op: "shl", dst: rax, count: shift });
     if (signed) emit({ op: "sar", dst: rax, count: shift });
@@ -729,13 +730,21 @@ export function emitSysVMemory(request: MemorySite): ScalarType | "void" {
     floatBits(emit, rax, x0);
   } else if (scalar === "f64") emit({ op: "mov", dst: rax, src: field });
   else {
-    readPart(emit, field, size);
+    if (size === 8) emit({ op: "mov", dst: rax, src: field });
+    else if (size === 4 && !signed)
+      emit({ op: "mov", dst: eax, src: { ...field, width: 32 } });
+    else {
+      const width: 8 | 16 | 32 = size === 1 ? 8 : size === 2 ? 16 : 32;
+      const src: Memory<8 | 16 | 32> = { ...field, width };
+      if (signed) emit({ op: "movsx", dst: rax, src });
+      else emit({ op: "movzx", dst: eax, src });
+    }
     if (scalar === "bool") {
       emit({ op: "test", dst: eax, src: eax });
       setBoolean(emit, "ne", 0);
       return "boolean";
     }
-    fromInteger(request, size, signed);
+    fromInteger(request, size, signed, true);
   }
   return "number";
 }
