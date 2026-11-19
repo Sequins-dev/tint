@@ -10,6 +10,7 @@ import {
   cVoid,
   darwinArm64CTarget,
   linuxArm64CTarget,
+  linuxX86_64CTarget,
   type CField,
   type CScalar,
   type CSignature,
@@ -230,6 +231,7 @@ test("Apple arm64 passes variadic arguments on the stack in 8-byte slots", () =>
   const linux = classifyCCall(
     signature([cPointer(s("u8")), s("i32"), s("f64")], s("i32"), 1),
     linuxArm64CTarget,
+    linuxX86_64CTarget,
   );
   assert.ok(linux.ok);
   assert.deepEqual(
@@ -347,4 +349,30 @@ test("layout descriptors report the shared layout as data", () => {
       ],
     },
   });
+});
+
+test("SysV splits mixed eightbytes and rolls back a composite when either bank is full", () => {
+  const sysv = linuxX86_64CTarget;
+  const mixed = record("mixed", [
+    ["i", s("i64")],
+    ["f", s("f64")],
+  ]);
+  const params = [...Array<CType>(6).fill(s("i64")), mixed, s("f64")];
+  const plan = classifyCCall(signature(params, mixed, 6), sysv);
+  assert.ok(plan.ok);
+  assert.equal(plan.value.arguments[6]?.stackOffset, 0);
+  assert.equal(plan.value.arguments[7]?.fp, 0);
+  assert.equal(plan.value.stackBytes, 16);
+  assert.equal(plan.value.result.gp, 0);
+  assert.equal(plan.value.result.fp, 0);
+});
+
+test("SysV large records travel on the stack and sret takes the first integer register", () => {
+  const sysv = linuxX86_64CTarget;
+  const large = record("large", [["words", array(s("i64"), 3)]]);
+  const plan = classifyCCall(signature([s("i64"), large], large), sysv);
+  assert.ok(plan.ok);
+  assert.equal(plan.value.arguments[0]?.gp, 1);
+  assert.equal(plan.value.arguments[1]?.stackBytes, 24);
+  assert.equal(plan.value.result.gp, 0);
 });

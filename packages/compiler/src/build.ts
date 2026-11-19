@@ -326,15 +326,6 @@ function buildX64HostedProgram(
       target.name + ": emission and optimization reports are unavailable",
     );
   if (
-    (request.foreignBindings?.length ?? 0) !== 0 ||
-    (request.foreignMemoryBindings?.length ?? 0) !== 0 ||
-    (request.foreignLibraries?.length ?? 0) !== 0
-  )
-    return failure(
-      "target",
-      target.name + ": user FFI requires SysV foreign bindings",
-    );
-  if (
     (request.nativeServices?.length ?? 0) !== 0 ||
     (request.serviceSlots?.length ?? 0) !== 0 ||
     (request.managedSurfaces?.length ?? 0) !== 0
@@ -371,6 +362,9 @@ function buildX64HostedProgram(
       exports: [request.start],
       runtimes: request.runtimes,
       hostBindings: request.hostBindings,
+      foreignBindings: request.foreignBindings ?? [],
+      foreignMemoryBindings: request.foreignMemoryBindings ?? [],
+      foreignLibraries: request.foreignLibraries ?? [],
       recordBindings: request.recordBindings ?? [],
       closedProgram: true,
       optimization: request.optimization ?? "basic",
@@ -397,7 +391,15 @@ function buildX64HostedProgram(
       managedBytes,
       pageBytes,
     });
+    const foreignLibraries = request.foreignLibraries ?? [];
+    const libraries = foreignImageLibraries(
+      foreignLibraries,
+      image.imports,
+      target.hostABI.symbolPrefix,
+    );
+    if (typeof libraries === "string") return failure("image", libraries);
     const executable: ExecutableImageRequest = {
+      libraries,
       code: image.code,
       entryOffset: image.entryOffset,
       maxByteLength: image.maxByteLength,
@@ -407,7 +409,6 @@ function buildX64HostedProgram(
       addressFixups: image.addressFixups,
       patchAddress: image.patchAddress,
     };
-    const foreignLibraries: ForeignLibrary[] = [];
     const written = writeExecutableImage(
       target,
       executable,

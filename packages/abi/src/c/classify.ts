@@ -25,7 +25,15 @@ import {
  *   (arguments), or written through the X8 result address (results). */
 export type CPassingClass =
   "void" | "integer" | "float" | "composite" | "hfa" | "indirect";
+/** A SysV aggregate eightbyte carried in one integer or SSE register. */
+export interface CRegisterPart {
+  readonly offset: number;
+  readonly bytes: number;
+  readonly bank: "integer" | "sse";
+  readonly register: number;
+}
 export interface CValueLocation {
+  readonly parts?: readonly CRegisterPart[] | undefined;
   readonly class: CPassingClass;
   /** The value's C size in bytes (the record size for composites). */
   readonly size: number;
@@ -50,6 +58,9 @@ export interface CCallLayout {
   readonly result: CValueLocation;
   /** Outgoing stack argument bytes, rounded up to 16. */
   readonly stackBytes: number;
+  /** SysV: maximum alignment of the stack area and the vector count in AL. */
+  readonly stackAlignment?: number | undefined;
+  readonly vectorRegisters?: number | undefined;
   /** Per-argument layouts of composite arguments (for copies). */
   readonly argumentLayouts: readonly CLayout[];
 }
@@ -141,7 +152,8 @@ function shape(type: CType, target: CTarget, result: boolean): ShapeResult {
       },
     };
   }
-  const width = cHomogeneousFloatWidth(type, target);
+  const width =
+    target.name === "linux-x86_64" ? 0 : cHomogeneousFloatWidth(type, target);
   if (width !== 0)
     return {
       ok: true,
@@ -179,6 +191,7 @@ export function classifyCCall(
     signature.fixedParameters > signature.parameters.length
   )
     return { ok: false, error: "invalid fixed parameter count" };
+  if (target.name === "linux-x86_64") return classifySysV(signature, target);
   let ngrn = 0,
     nsrn = 0,
     nsaa = 0;
@@ -396,6 +409,172 @@ export function classifyCCall(
       arguments: locations,
       result,
       stackBytes: roundUp(nsaa, 16),
+      argumentLayouts: layouts,
+    },
+  };
+}
+
+/** Merge the scalar leaves of a SysV record into its eightbytes. At this
+ * point the layout has been validated, and no vector or x87 scalar types are
+ * admitted by the binding type system. INTEGER takes precedence over SSE. */
+function mergeEightbytes(
+  type: CType,
+  target: CTarget,
+  offset: number,
+  classes: string[],
+): boolean {
+  const layout = cLayout(type, target);
+  if (!layout.ok || offset % layout.value.alignment !== 0) return false;
+  if (type.kind === "record") {
+    for (let index = 0; index < type.fields.length; index++) {
+      const field = type.fields[index];
+      const memberOffset = layout.value.offsets[index];
+      if (field === undefined || memberOffset === undefined)
+        throw "SysV field layout invariant";
+      if (!mergeEightbytes(field.type, target, offset + memberOffset, classes))
+        return false;
+    }
+    return true;
+  }
+  if (type.kind === "array") {
+    const stride = layout.value.size / type.length;
+    for (let index = 0; index < type.length; index++)
+      if (
+        !mergeEightbytes(type.element, target, offset + index * stride, classes)
+      )
+        return false;
+    return true;
+  }
+  const word = Math.floor(offset / 8);
+  if (type.kind !== "scalar" || !cScalarFloat(type.scalar))
+    classes[word] = "integer";
+  else if (classes[word] !== "integer") classes[word] = "sse";
+  return true;
+}
+
+function sysVParts(
+  type: CType,
+  size: number,
+  target: CTarget,
+): readonly string[] | undefined {
+  if (size > 16) return undefined;
+  const classes: string[] = ["none", "none"];
+  return mergeEightbytes(type, target, 0, classes) ? classes : undefined;
+}
+
+function sysVRegisters(
+  base: CValueLocation,
+  classes: readonly string[],
+  gp: number,
+  fp: number,
+): CValueLocation {
+  const parts: CRegisterPart[] = [];
+  let firstGP = -1,
+    firstFP = -1;
+  for (let word = 0; word < classes.length; word++) {
+    const kind = classes[word];
+    const offset = word * 8;
+    const bytes = Math.min(base.size - offset, 8);
+    if (kind === "integer") {
+      if (firstGP < 0) firstGP = gp;
+      parts.push({ offset, bytes, bank: "integer", register: gp++ });
+    } else if (kind === "sse") {
+      if (firstFP < 0) firstFP = fp;
+      parts.push({ offset, bytes, bank: "sse", register: fp++ });
+    }
+  }
+  return {
+    ...base,
+    gp: firstGP,
+    fp: firstFP,
+    registers: parts.length,
+    parts: base.class === "composite" ? parts : undefined,
+  };
+}
+
+function classifySysV(
+  signature: CSignature,
+  target: CTarget,
+): CCallLayoutResult {
+  if (signature.callClass === "may-callback")
+    return {
+      ok: false,
+      error: "C callbacks are not supported on linux-x86_64",
+    };
+  const returned = shape(signature.result, target, true);
+  if (!returned.ok) return { ok: false, error: "result: " + returned.error };
+  const ret = returned.value;
+  const resultBase = {
+    ...location(ret.passing, ret.layout.size, ret.layout.alignment),
+    memberBytes: ret.memberBytes,
+    extend: ret.extend,
+  };
+  const resultClasses =
+    ret.passing === "void"
+      ? []
+      : sysVParts(signature.result, ret.layout.size, target);
+  const result: CValueLocation =
+    resultClasses === undefined
+      ? { ...resultBase, class: "indirect", gp: 0, registers: 1 }
+      : sysVRegisters(resultBase, resultClasses, 0, 0);
+  let gp = result.class === "indirect" ? 1 : 0,
+    fp = 0,
+    stack = 0,
+    alignment = 16;
+  const args: CValueLocation[] = [],
+    layouts: CLayout[] = [];
+  for (let index = 0; index < signature.parameters.length; index++) {
+    const parameter = signature.parameters[index];
+    if (parameter === undefined) throw "C parameter invariant";
+    const variadic = index >= signature.fixedParameters;
+    const type = variadic ? cPromoteVariadic(parameter) : parameter;
+    const shaped = shape(type, target, false);
+    if (!shaped.ok)
+      return {
+        ok: false,
+        error: "parameter " + String(index) + ": " + shaped.error,
+      };
+    const value = shaped.value,
+      layout = value.layout;
+    layouts.push(layout);
+    const passing: CPassingClass = value.passing === "indirect" ? "composite" : value.passing;
+    const base: CValueLocation = {
+      ...location(passing, layout.size, layout.alignment),
+      memberBytes: value.memberBytes,
+      extend: value.extend,
+      variadic,
+    };
+    const classes = sysVParts(type, layout.size, target);
+    if (classes !== undefined) {
+      let integerWords = 0,
+        vectorWords = 0;
+      for (const kind of classes) {
+        if (kind === "integer") integerWords++;
+        if (kind === "sse") vectorWords++;
+      }
+      if (gp + integerWords <= 6 && fp + vectorWords <= 8) {
+        args.push(sysVRegisters(base, classes, gp, fp));
+        gp += integerWords;
+        fp += vectorWords;
+        continue;
+      }
+    }
+    // A failed aggregate assignment leaves both banks available to later
+    // arguments. MEMORY arguments are copied by value to the outgoing area.
+    alignment = Math.max(alignment, layout.alignment);
+    stack = roundUp(stack, Math.max(8, layout.alignment));
+    const bytes = roundUp(layout.size, 8);
+    args.push({ ...base, stackOffset: stack, stackBytes: bytes });
+    stack += bytes;
+  }
+  return {
+    ok: true,
+    value: {
+      arguments: args,
+      result,
+      stackBytes: roundUp(stack, 16),
+      stackAlignment: alignment,
+      vectorRegisters: fp,
       argumentLayouts: layouts,
     },
   };

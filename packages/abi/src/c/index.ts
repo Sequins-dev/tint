@@ -1,6 +1,7 @@
 export {
   darwinArm64CTarget,
   linuxArm64CTarget,
+  linuxX86_64CTarget,
   cVoid,
   cScalar,
   cPointer,
@@ -25,6 +26,7 @@ export {
 export {
   classifyCCall,
   type CPassingClass,
+  type CRegisterPart,
   type CValueLocation,
   type CCallLayout,
   type CCallLayoutResult,

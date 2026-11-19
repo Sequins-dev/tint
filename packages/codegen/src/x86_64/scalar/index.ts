@@ -1,4 +1,9 @@
 import {
+  classifyCCall,
+  linuxX86_64CTarget,
+  type CCallLayout,
+} from "@tint/abi/c";
+import {
   nativeArrayDataOffset,
   nativeArrayInlineOffset,
   nativeArrayLengthOffset,
@@ -50,6 +55,14 @@ import {
   type Emit,
   type ImageRelocations,
 } from "./machine.ts";
+import {
+  emitSysVCall,
+  emitSysVDynamicCall,
+  sysVDynamicStackBytes,
+  type CallSite,
+  sysVOutgoingBytes,
+  sysVStagingBytes,
+} from "./foreign.ts";
 import { branch, emitHostCall, exactInteger } from "./host.ts";
 import { createNumberEmission, floatBits } from "./numbers.ts";
 
@@ -207,6 +220,8 @@ export function emitModule(
     const callResult = savedResult - resultBytes;
     let depth = -callResult;
     let outgoing = 0;
+    let needsForeign = false;
+    const plans = new Map<Instruction, CCallLayout>();
     for (const type of fn.slots) {
       if (type === undefined) throw "slot layout invariant";
       depth += scalarByteLength(type);
@@ -223,6 +238,23 @@ export function emitModule(
           depth += 16;
           homes.set(id, -depth);
         }
+        if (op.kind === "c-call") {
+          if (op.call.mayCallback === true)
+            fail(
+              "UNSUPPORTED",
+              "C callbacks are not supported on linux-x86_64",
+            );
+          const layout = classifyCCall(op.call.signature, linuxX86_64CTarget);
+          if (!layout.ok) fail("UNSUPPORTED", layout.error);
+          plans.set(op, layout.value);
+          outgoing = Math.max(
+            outgoing,
+            op.call.dynamic === true
+              ? sysVDynamicStackBytes
+              : sysVOutgoingBytes(layout.value),
+          );
+          needsForeign = true;
+        }
         if (op.kind === "call") {
           const args = argumentsByFunction[op.target];
           if (args === undefined) throw "call layout invariant";
@@ -232,7 +264,10 @@ export function emitModule(
         }
       }
     }
-    const frameBytes = align16(depth + outgoing);
+    const staging = -(depth + sysVStagingBytes);
+    const frameBytes = align16(
+      depth + (needsForeign ? sysVStagingBytes : 0) + outgoing,
+    );
     if (
       frameBytes + (host === undefined ? 0 : nativeCStackReserveBytes + 8) >=
       0x80000000
@@ -466,6 +501,39 @@ export function emitModule(
 
     function instruction(op: Instruction, block: Block): void {
       switch (op.kind) {
+        case "c-call": {
+          const abi = host;
+          const layout = plans.get(op);
+          if (
+            abi === undefined ||
+            layout === undefined ||
+            op.call.dynamic === true
+          )
+            return fail("UNSUPPORTED", "unsupported SysV C call");
+          const args = op.arguments;
+          const site: CallSite = {
+            emit,
+            abi,
+            prototype: op.call,
+            argument: (index) => {
+              const arg = args[index];
+              if (arg === undefined) throw "SysV C argument invariant";
+              return frame(home(arg));
+            },
+            call: foreign,
+            staging: (offset) => frame(staging + offset),
+            stack: frame(-frameBytes),
+            constant,
+            site: fnLabel + ":c:" + String(machine.length),
+            trap: trapLabel,
+          };
+          if (op.call.dynamic === true) emitSysVDynamicCall(site);
+          else emitSysVCall(site, layout);
+          const id = op.id;
+          if (id !== undefined)
+            define(id, op.call.result === "boolean" ? "boolean" : "number");
+          return;
+        }
         case "host-call": {
           const args = op.arguments;
           const id = op.id;

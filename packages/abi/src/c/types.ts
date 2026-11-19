@@ -98,6 +98,15 @@ export const linuxArm64CTarget: CTarget = {
   alignedPairs: "even",
   compositeAlignment: "members",
 };
+export const linuxX86_64CTarget: CTarget = {
+  name: "linux-x86_64",
+  charSigned: true,
+  variadicArguments: "registers",
+  stackPacking: "slots",
+  narrowExtension: "caller",
+  alignedPairs: "any",
+  compositeAlignment: "declared",
+};
 export function cVoid(): CType {
   return { kind: "void" };
 }

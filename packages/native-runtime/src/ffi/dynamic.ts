@@ -22,6 +22,8 @@ import {
   classifyCCall,
   darwinArm64CTarget,
   linuxArm64CTarget,
+  linuxX86_64CTarget,
+  cPromoteVariadic,
   type CCallLayout,
   type CSignature,
   type CTarget,
@@ -112,6 +114,7 @@ const callbackFrames: Uint8Array[] = [];
 const callbackNesting = { depth: 0 };
 
 function cTarget(): CTarget {
+  if (TARGET_AAPCS64 === 2) return linuxX86_64CTarget;
   return TARGET_AAPCS64 === 1 ? linuxArm64CTarget : darwinArm64CTarget;
 }
 function exactAddress(value: number, what: string): number {
@@ -161,6 +164,7 @@ export function foreignFunction(
   if (layout.result.class === "indirect") {
     resultCopy = scratch;
     scratch += Math.ceil(layout.result.size / 16) * 16;
+    if (TARGET_AAPCS64 === 2) scratch += layout.result.alignment - 1;
   }
   if (scratch > scratchCapacity)
     throw new RangeError("records too large for a dynamic call");
@@ -295,6 +299,16 @@ export function setNumber(
     scalar = scalarOf(type);
   if (scalar === "bool") throw new TypeError("C bool takes a boolean");
   setCell(fn, scalar, value);
+  if (TARGET_AAPCS64 === 2 && argumentLocation(fn, index).variadic) {
+    const promoted = cPromoteVariadic(type);
+    if (promoted.kind === "scalar" && promoted.scalar !== scalar) {
+      const rounded = cellValue(Cell.view(fn.cell), scalar);
+      setCell(fn, promoted.scalar, rounded);
+      placeScalar(fn, index, promoted.scalar);
+      fn.assigned[index] = true;
+      return;
+    }
+  }
   if (scalar === "address") fn.bytes[index] = noBytes;
   placeScalar(fn, index, scalar);
   fn.assigned[index] = true;
@@ -360,7 +374,17 @@ export function setRecord(
   if (type.kind !== "record") throw new TypeError("not a C record parameter");
   if (image.length < location.size)
     throw new RangeError("a C record image needs " + location.size + " bytes");
-  if (location.class === "indirect") {
+  const parts = location.parts;
+  if (TARGET_AAPCS64 === 2 && parts !== undefined) {
+    for (const part of parts) {
+      if (part === undefined) throw "SysV argument part invariant";
+      const offset =
+        (part.bank === "integer" ? 0 : frameFloats) + part.register * 8;
+      clearWord(fn, offset);
+      for (let at = 0; at < part.bytes; at++)
+        fn.frame[offset + at] = image[part.offset + at] ?? 0;
+    }
+  } else if (location.class === "indirect") {
     const copy = frameScratch + (fn.copies[index] ?? 0);
     for (let at = 0; at < location.size; at++)
       fn.frame[copy + at] = image[at] ?? 0;
@@ -395,6 +419,8 @@ export function setCallback(
   signature: CSignature,
   callback: DynamicCallback,
 ): void {
+  if (TARGET_AAPCS64 === 2)
+    throw new TypeError("C callbacks are not supported on linux-x86_64");
   if (parameter(fn, index).kind !== "pointer")
     throw new TypeError("not a C pointer parameter");
   const classified = classifyCCall(signature, cTarget());
@@ -513,7 +539,16 @@ export function invoke(fn: ForeignFunction): void {
       patch(wordOffset(location), slot + 1, 0);
     } else if (copy >= 0) patch(wordOffset(location), 0, frameScratch + copy);
   }
-  if (fn.resultCopy >= 0) patch(frameIndirect, 0, frameScratch + fn.resultCopy);
+  if (TARGET_AAPCS64 === 2) {
+    const stackAlignment = frame.x[6], resultAlignment = frame.x[7];
+    if (stackAlignment === undefined || resultAlignment === undefined)
+      throw "SysV frame metadata invariant";
+    stackAlignment.u = fn.layout.stackAlignment ?? 16;
+    resultAlignment.u = fn.resultCopy < 0 ? 0 : fn.layout.result.alignment;
+    frame.x8.u = fn.layout.vectorRegisters ?? 0;
+    if (fn.resultCopy >= 0) patch(0, 0, frameScratch + fn.resultCopy);
+  } else if (fn.resultCopy >= 0)
+    patch(frameIndirect, 0, frameScratch + fn.resultCopy);
   // Callbacks: a may-callback trampoline, each callback's argument word
   // patched with its universal thunk's entry (bases after the bytes).
   const callees: ((frame: number) => number)[] = [];
@@ -684,8 +719,24 @@ export function resultRecord(fn: ForeignFunction, into: Uint8Array): void {
     throw new TypeError("not a C record result");
   if (into.length < result.size)
     throw new RangeError("a C record result needs " + result.size + " bytes");
-  if (result.class === "indirect") {
-    const from = frameScratch + fn.resultCopy;
+  const parts = result.parts;
+  if (TARGET_AAPCS64 === 2 && parts !== undefined) {
+    // NO_CLASS bytes are padding rather than a returned register.
+    for (let at = 0; at < result.size; at++) into[at] = 0;
+    for (const part of parts) {
+      if (part === undefined) throw "SysV result part invariant";
+      const offset =
+        (part.bank === "integer" ? 0 : frameFloats) + part.register * 8;
+      for (let at = 0; at < part.bytes; at++)
+        into[part.offset + at] = resultByte(fn, offset + at);
+    }
+  } else if (result.class === "indirect") {
+    let from = frameScratch + fn.resultCopy;
+    if (TARGET_AAPCS64 === 2) {
+      const aligned = DynamicFrame.view(fn.frame).x[7];
+      if (aligned === undefined) throw "SysV result metadata invariant";
+      from = aligned.u;
+    }
     for (let at = 0; at < result.size; at++)
       into[at] = fn.frame[from + at] ?? 0;
   } else if (result.class === "hfa") {

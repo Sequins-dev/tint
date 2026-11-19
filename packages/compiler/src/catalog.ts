@@ -207,6 +207,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/x86_64/scalar/foreign.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/x86_64/scalar/host.ts",
       packageId: "codegen",
     },

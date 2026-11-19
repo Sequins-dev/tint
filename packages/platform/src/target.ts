@@ -2,6 +2,7 @@ import type { PosixHostABI, PosixHostFacts } from "@tint/abi/host";
 import {
   darwinArm64CTarget,
   linuxArm64CTarget,
+  linuxX86_64CTarget,
   type CTarget,
 } from "@tint/abi/c";
 import { darwinHostABI } from "./darwin/host-abi.ts";
@@ -18,6 +19,7 @@ export interface PlatformVersion {
  * "Separate the dimensions"). The compiler's execution host is a separate
  * input: a build may target an OS other than the one it runs on. */
 interface NativeTargetFacts {
+  readonly c: CTarget;
   /** Alignment of executable image segments in the file and in memory. */
   readonly segmentAlignment: number;
   /** Granularity of the hosted startup's mappings and guard pages: a
@@ -27,7 +29,6 @@ interface NativeTargetFacts {
 
 interface AArch64TargetFacts extends NativeTargetFacts {
   readonly arch: "aarch64";
-  readonly c: CTarget;
 }
 
 export interface DarwinAArch64Target extends AArch64TargetFacts {
@@ -98,6 +99,7 @@ export const linuxX86_64Target: LinuxX86_64Target = {
   objectFormat: "elf",
   segmentAlignment: 4096,
   memoryPageBytes: 4096,
+  c: linuxX86_64CTarget,
   hostABI: linuxX86_64HostFacts(),
   interpreter: "/lib64/ld-linux-x86-64.so.2",
   glibcStartVersion: "GLIBC_2.34",

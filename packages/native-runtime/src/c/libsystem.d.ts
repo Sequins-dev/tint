@@ -11,7 +11,11 @@ declare module "tint:c/libsystem" {
     CStringBytes,
     OrErrno,
   } from "tint:ffi";
-  type mode_t = ByTarget<{ "darwin-arm64": u16; "linux-arm64": u32 }>;
+  type mode_t = ByTarget<{
+    "darwin-arm64": u16;
+    "linux-arm64": u32;
+    "linux-x86_64": u32;
+  }>;
   export function getpid(): i32;
   export function close(fd: i32): OrErrno<i32>;
   export function unlink(path: CStringBytes): OrErrno<i32>;

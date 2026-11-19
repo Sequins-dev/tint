@@ -2422,7 +2422,11 @@ export function compileX64HostedProgram(
       readonly invocation: number;
       readonly returnType: "number" | "boolean" | "void";
     } {
-  const lowered = lowerTypedProgram(request, undefined, true);
+  const lowered = lowerTypedProgram(
+    withForeignRuntimes(request),
+    undefined,
+    true,
+  );
   if (!lowered.ok) return lowered;
   const program = lowered.value;
   const first = program.ir.module;

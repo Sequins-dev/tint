@@ -21,6 +21,7 @@ declare module "tint:c/memory" {
   export const MAP_ANONYMOUS: ByTarget<{
     "darwin-arm64": 0x1000;
     "linux-arm64": 32;
+    "linux-x86_64": 32;
   }>;
   export function getpagesize(): i32;
   /** The mapping's address, or -errno (MAP_FAILED). */
