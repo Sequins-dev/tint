@@ -1,5 +1,11 @@
 import { isIDStart, isIDContinue } from "@tint/foundation/unicode/identifiers";
 import { createScanner } from "@tint/foundation/text/text-scanner";
+import {
+  appendString,
+  createStringBuilder,
+  finishString,
+  type StringBuilder,
+} from "@tint/foundation/text/string-builder";
 import type { SourceTextView } from "@tint/source/text";
 import type { Result, Token, Diagnostic } from "./model.ts";
 function line(c: number): boolean {
@@ -233,28 +239,53 @@ export function createTokenScanner(
     legacyEscape: boolean;
   } {
     const quote = continuation ? 96 : s.peekCode(),
-      begin = s.offset();
+      begin = s.offset(),
+      text = source.text;
     s.advance();
-    let value = "";
+    let parts: StringBuilder | undefined;
     let invalidEscape = false;
     let legacyEscape = false;
     while (!s.done()) {
+      // Ordinary text can be sliced once. Native concatenation copies both
+      // operands, so appending one code unit at a time grows quadratically.
+      const start = s.offset();
+      let end = start;
+      while (end < text.length) {
+        const code = text.charCodeAt(end);
+        if (
+          code === quote ||
+          code === 92 ||
+          code === 13 ||
+          (quote === 96
+            ? code === 36 && text.charCodeAt(end + 1) === 123
+            : code === 10)
+        )
+          break;
+        end++;
+      }
+      s.advance(end - start);
+      if (end === text.length) break;
+      const raw = text.slice(start, end);
       const c = s.peekCode();
       s.advance();
-      if (c === quote)
-        return { value, substitution: false, invalidEscape, legacyEscape };
-      if (quote === 96 && c === 36 && s.peekCode() === 123) {
-        s.advance();
-        return { value, substitution: true, invalidEscape, legacyEscape };
+      if (c === quote || (quote === 96 && c === 36)) {
+        const substitution = c !== quote;
+        if (substitution) s.advance();
+        const builder = parts;
+        let value = raw;
+        if (builder !== undefined) {
+          appendString(builder, raw);
+          value = finishString(builder);
+        }
+        return { value, substitution, invalidEscape, legacyEscape };
       }
+      const builder = parts ?? createStringBuilder();
+      parts = builder;
+      appendString(builder, raw);
       if (c === 10 || c === 13) {
         if (quote !== 96) fail("unterminated string", begin);
         if (c === 13 && s.peekCode() === 10) s.advance();
-        value += "\n";
-        continue;
-      }
-      if (c !== 92) {
-        value += String.fromCharCode(c);
+        appendString(builder, "\n");
         continue;
       }
       if (s.done()) fail("unterminated escape", begin);
@@ -266,11 +297,11 @@ export function createTokenScanner(
       }
       try {
         if (escaped === 120) {
-          value += String.fromCharCode(hex(2));
+          appendString(builder, String.fromCharCode(hex(2)));
           continue;
         }
         if (escaped === 117) {
-          value += String.fromCodePoint(unicodePoint(begin));
+          appendString(builder, String.fromCodePoint(unicodePoint(begin)));
           continue;
         }
         if (escaped >= 48 && escaped <= 57) {
@@ -279,7 +310,8 @@ export function createTokenScanner(
           if (legacy && quote === 96)
             fail("legacy numeric escape in template", begin);
           if (legacy) legacyEscape = true;
-          if (escaped >= 56) value += String.fromCharCode(escaped);
+          if (escaped >= 56)
+            appendString(builder, String.fromCharCode(escaped));
           else {
             let code = escaped - 48;
             const limit = escaped <= 51 ? 2 : 1;
@@ -291,7 +323,7 @@ export function createTokenScanner(
               code = code * 8 + s.peekCode() - 48;
               s.advance();
             }
-            value += String.fromCharCode(code);
+            appendString(builder, String.fromCharCode(code));
           }
           continue;
         }
@@ -301,13 +333,13 @@ export function createTokenScanner(
         invalidEscape = true;
         continue;
       }
-      if (escaped === 110) value += "\n";
-      else if (escaped === 114) value += "\r";
-      else if (escaped === 116) value += "\t";
-      else if (escaped === 98) value += "\b";
-      else if (escaped === 102) value += "\f";
-      else if (escaped === 118) value += "\v";
-      else value += String.fromCharCode(escaped);
+      if (escaped === 110) appendString(builder, "\n");
+      else if (escaped === 114) appendString(builder, "\r");
+      else if (escaped === 116) appendString(builder, "\t");
+      else if (escaped === 98) appendString(builder, "\b");
+      else if (escaped === 102) appendString(builder, "\f");
+      else if (escaped === 118) appendString(builder, "\v");
+      else appendString(builder, String.fromCharCode(escaped));
     }
     return fail("unterminated string", begin);
   }

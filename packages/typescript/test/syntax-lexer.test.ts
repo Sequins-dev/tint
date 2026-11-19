@@ -46,6 +46,21 @@ test("strings decode standard escapes and line continuation without evaluating c
   assert.equal(r.ok, true);
   assert.equal(r.value[0]?.value, "a\nAB🙂z");
 });
+test("quoted tokens preserve long raw runs and cook escapes and template line endings", () => {
+  const raw = "β🙂a".repeat(32768);
+  const text = '"' + raw + "\\n\\\r\n" + raw + '"';
+  const quoted = scan(source(text));
+  assert.ok(quoted.ok);
+  assert.equal(quoted.value[0]?.value, raw + "\n" + raw);
+  assert.equal(quoted.value[0]?.end, text.length);
+
+  const template = scan(source("`" + raw + "\r\n\$x${1}\\u0041`"));
+  assert.ok(template.ok);
+  assert.equal(template.value[0]?.value, raw + "\n$x");
+  assert.equal(template.value[0]?.kind, "template-head");
+  assert.equal(template.value[2]?.value, "A");
+  assert.equal(template.value[2]?.kind, "template-tail");
+});
 test("malformed and unsupported lexical forms fail without partial token output", () => {
   for (const text of [
     "/*",
@@ -104,9 +119,12 @@ test("Unicode whitespace after numbers and decimal conditional arms match TypeSc
 });
 
 test("invalid lexical syntax has no unsupported-feature classification", () => {
-  const invalid = scan(source('"unterminated'));
+  const text = '"unterminated';
+  const invalid = scan(source(text));
   assert.ok(!invalid.ok);
   assert.equal(invalid.error.feature, undefined);
+  assert.equal(invalid.error.start, 0);
+  assert.equal(invalid.error.end, text.length);
 });
 
 test("ASCII Unicode escapes decode identifier names without becoming keyword tokens", () => {
