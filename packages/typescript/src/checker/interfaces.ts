@@ -25,6 +25,66 @@ import {
   type StringIndex,
   unsupportedDynamicPayload,
 } from "../types/index.ts";
+export const realmOnlyTypedArrays: readonly string[] = [
+  "Int8Array",
+  "Uint8ClampedArray",
+  "Int16Array",
+  "Int32Array",
+  "Float16Array",
+  "Float32Array",
+  "BigInt64Array",
+  "BigUint64Array",
+];
+export function withRealmTypedArrayGlobals(
+  globals: readonly string[],
+): string[] {
+  const result = globals.slice();
+  for (const name of realmOnlyTypedArrays) {
+    if (name === undefined) throw "realm typed-array name invariant";
+    result.push(name);
+  }
+  return result;
+}
+/** Realm constructors that have an instance representation in the typed checker. */
+export function realmConstructorInstance(name: string): string | undefined {
+  switch (name) {
+    case "Error":
+    case "TypeError":
+    case "RangeError":
+    case "ArrayBuffer":
+    case "Uint8Array":
+    case "Uint16Array":
+    case "Uint32Array":
+    case "Float64Array":
+      return name;
+    default:
+      return realmOnlyTypedArrays.includes(name) ? name : undefined;
+  }
+}
+
+export function realmArrayInstance(name: string, brand: number): Type {
+  return {
+    kind: "object",
+    realmTypedArray: name,
+    properties: [{ name: "@@toStringTag", type: brand, readonly: true }],
+  };
+}
+export function realmConstructorType(
+  instance: number,
+  signature: number,
+  callable: boolean,
+): Type {
+  const properties: Property[] = [
+    { name: "prototype", type: instance, readonly: true },
+  ];
+  return {
+    kind: "object",
+    properties,
+    construct: signature,
+    ...(callable ? { call: signature } : {}),
+    realmConstructor: true,
+  };
+}
 export interface InterfaceTypes {
   readonly names: ReadonlyKeyIndex<string, number>;
   readonly types: readonly Type[];
@@ -305,6 +365,40 @@ export function resolveInterfaceTypes(
       names.set(name, id);
       return id;
     }
+    if (declaration === undefined && realmOnlyTypedArrays.includes(name)) {
+      const brand = add({ kind: "literal", value: name }, node);
+      const id = add(realmArrayInstance(name, brand), node);
+      names.set(name, id);
+      return id;
+    }
+    if (declaration === undefined && name.endsWith("Constructor")) {
+      const instanceName = realmConstructorInstance(name.slice(0, -11));
+      if (instanceName !== undefined) {
+        // The built-in value keeps its intrinsic instance type when a source
+        // type declaration shadows that name.
+        const instance = realmOnlyTypedArrays.includes(instanceName)
+          ? named(instanceName, node)
+          : types.findIndex((type) => type?.kind === instanceName);
+        if (instance < 0) throw "realm constructor instance invariant";
+        const error =
+          instanceName === "Error" ||
+          instanceName === "TypeError" ||
+          instanceName === "RangeError";
+        const argument = error ? 3 : 0;
+        const signature = add(
+          {
+            kind: "function",
+            parameters: [argument],
+            minimumArguments: 0,
+            result: instance,
+          },
+          node,
+        );
+        const id = add(realmConstructorType(instance, signature, error), node);
+        names.set(name, id);
+        return id;
+      }
+    }
     if (declaration === undefined)
       fail(node, "UNKNOWN_TYPE", "unknown type: " + name);
     const resolvedDeclaration = declaration;
@@ -492,6 +586,7 @@ export function resolveInterfaceTypes(
     result: number,
     receiver: number | undefined,
     node: Span,
+    instancePredicate?: number,
   ): number {
     let minimumArguments = 0,
       seenOptional = false,
@@ -533,6 +628,7 @@ export function resolveInterfaceTypes(
         minimumArguments,
         ...(rest ? { rest: true } : {}),
         result,
+        ...(instancePredicate === undefined ? {} : { instancePredicate }),
         ...(receiver === undefined ? {} : { receiver }),
       },
       node,
@@ -651,7 +747,8 @@ export function resolveInterfaceTypes(
         fail(p, "INVALID_TYPE", "duplicate property: " + p.name);
       own.add(p.name);
       const field: Property = {
-          name: p.name,
+          name: p.hasInstanceSymbol === true ? "@@hasInstance" : p.name,
+          ...(p.hasInstanceSymbol === true ? { hasInstanceSymbol: true } : {}),
           type: resolve(p.type),
           readonly: p.readonly,
           ...(p.optional ? { optional: true } : {}),
@@ -1042,6 +1139,9 @@ export function resolveInterfaceTypes(
             resolve(node.returnType),
             node.receiver === undefined ? undefined : resolve(node.receiver),
             node,
+            node.instancePredicate === undefined
+              ? undefined
+              : resolve(node.instancePredicate),
           );
       }
       throw "unhandled type syntax";
@@ -1323,6 +1423,9 @@ export function resolveInterfaceTypes(
                   ...t,
                   parameters: t.parameters.map(canonical),
                   result: canonical(t.result),
+                  ...(t.instancePredicate === undefined
+                    ? {}
+                    : { instancePredicate: canonical(t.instancePredicate) }),
                   ...(t.receiver === undefined
                     ? {}
                     : { receiver: canonical(t.receiver) }),

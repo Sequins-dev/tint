@@ -104,6 +104,9 @@ export function rewriteModule(module: Module, rewrite: SyntaxRewrite): Module {
             ...node,
             parameters: node.parameters.map(parameter),
             returnType: type(node.returnType),
+            ...(node.instancePredicate === undefined
+              ? {}
+              : { instancePredicate: type(node.instancePredicate) }),
             ...(node.receiver === undefined
               ? {}
               : { receiver: type(node.receiver) }),

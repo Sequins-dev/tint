@@ -3254,3 +3254,73 @@ test("literal presence narrows a dynamic property read", () => {
   `);
   assert.ok(result.ok, JSON.stringify(result));
 });
+
+test("instanceof uses the checked constructor type through aliases and stable properties", () => {
+  for (const source of [
+    "function f(x: unknown): string { const C = Error; if (x instanceof C) return x.message; return ''; }",
+    "function f(x: unknown, C: ErrorConstructor): string { const box = { C }; if (x instanceof box.C) return x.message; return ''; }",
+    "function f(box: { value: unknown }): number { if (box.value instanceof Uint8Array) return box.value[0] ?? 0; return 0; }",
+    "function f(x: unknown, Error: Uint8ArrayConstructor): number { if (x instanceof Error) return x.length; return 0; }",
+    "function f(x: unknown, C: { [Symbol.hasInstance](x: unknown): x is string }): string { if (x instanceof C) return x; return ''; }",
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify(result));
+  }
+});
+
+test("instanceof rejects primitive left operands and invalid right operands", () => {
+  for (const condition of [
+    "42 instanceof Error",
+    "value instanceof 42",
+    "value instanceof {}",
+  ]) {
+    assert.equal(
+      check("function f(value: unknown): boolean { return " + condition + "; }")
+        .ok,
+      false,
+    );
+  }
+});
+
+test("instanceof flow follows stable paths and excludes matching union constituents", () => {
+  for (const source of [
+    "function f(box: { child: { value: unknown } }): number { if (box.child.value instanceof Uint16Array) return box.child['value'].length; return 0; }",
+    "function f(x: Error | string): string { const C = Error; if (x instanceof C) return x.message; return x; }",
+    "function f(x: unknown): number { if (x instanceof Int16Array) { x[0] = -12; return x[0] ?? 0; } return 0; }",
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify(result));
+  }
+  assert.equal(
+    check(
+      "function f(box: { value: unknown }): number { if (box.value instanceof Uint8Array) { box.value = 0; return box.value.length; } return 0; }",
+    ).ok,
+    false,
+  );
+});
+
+test("instanceof recognizes the well-known symbol independently of string keys", () => {
+  const result = check(
+    'function f(x: unknown, C: { "@@hasInstance": (x:unknown)=>boolean }): boolean { return x instanceof C; }',
+  );
+  assert.equal(result.ok, false);
+});
+
+test("instanceof does not exclude structurally compatible records from the false branch", () => {
+  const result = check(
+    "interface ErrorLike { name: string; message: string } " +
+      "function f(x: ErrorLike | string): string { if (x instanceof Error) return x.message; return x; }",
+  );
+  assert.equal(result.ok, false);
+});
+
+test("a declared hasInstance hook must accept an operand and return boolean", () => {
+  for (const method of ["(): boolean", "(x: unknown): number"]) {
+    const result = check(
+      "function f(x: unknown, C: { [Symbol.hasInstance]" +
+        method +
+        " }): boolean { return x instanceof C; }",
+    );
+    assert.equal(result.ok, false);
+  }
+});

@@ -143,6 +143,18 @@ function collectionElement(
 function generalType(checked: CheckedClosures, id: number): boolean {
   const type = checked.types[id];
   if (type?.kind === "unknown") return true;
+  if (
+    type?.kind === "object" &&
+    (type.realmConstructor === true || type.realmTypedArray !== undefined)
+  )
+    return true;
+  if (
+    type?.kind === "Uint8Array" ||
+    type?.kind === "Uint16Array" ||
+    type?.kind === "Uint32Array" ||
+    type?.kind === "Float64Array"
+  )
+    return type.arrayFlow === true;
   if (type?.kind !== "union") return false;
   const visited = new Set<number>(),
     primitiveKinds = new Set<string>();

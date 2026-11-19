@@ -103,6 +103,11 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
         parameters(node.parameters);
         type(node.returnType);
         optionalType(node.receiver);
+        const predicate = node.instancePredicate;
+        if (predicate !== undefined) {
+          sink.put("instance-predicate");
+          type(predicate);
+        }
         return;
       case "tuple":
         types(node.elements);
@@ -140,6 +145,7 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
     for (const value of values) {
       if (value === undefined) throw "syntax key signature invariant";
       flag(value.computed);
+      if (value.hasInstanceSymbol === true) sink.put("well-known:hasInstance");
       flag(value.method);
       flag(value.optional);
       text(value.name);

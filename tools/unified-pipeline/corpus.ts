@@ -1024,6 +1024,42 @@ export function run() {
 }`,
   },
   {
+    name: "unknown-realm-instanceof",
+    typed: `function read(value: unknown): string {
+  const constructors = { current: Error };
+  if (value instanceof constructors.current) return value.message;
+  return "other";
+}
+export function run(): number {
+  return read(new RangeError("ready")) === "ready" && read(1) === "other" ? 42 : 1;
+}`,
+    untyped: `function read(value) {
+  const constructors = { current: Error };
+  if (value instanceof constructors.current) return value.message;
+  return "other";
+}
+export function run() {
+  return read(new RangeError("ready")) === "ready" && read(1) === "other" ? 42 : 1;
+}`,
+  },
+  {
+    name: "unknown-typed-array-instanceof",
+    typed: `function read(value: unknown): number {
+  if (!(value instanceof Uint8Array)) return 1;
+  const alias = value;
+  value.fill(42);
+  return alias[0] ?? 0;
+}
+export function run(): number { return read(new Uint8Array(1)); }`,
+    untyped: `function read(value) {
+  if (!(value instanceof Uint8Array)) return 1;
+  const alias = value;
+  value.fill(42);
+  return alias[0] ?? 0;
+}
+export function run() { return read(new Uint8Array(1)); }`,
+  },
+  {
     name: "native-error-flow",
     typed: `function describe(value: Error | string): string {
   if (!(value instanceof Error)) return value;

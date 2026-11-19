@@ -82,6 +82,7 @@ export type TypeNode = Span &
         readonly async?: boolean | undefined;
         readonly parameters: readonly Parameter[];
         readonly returnType: TypeNode;
+        readonly instancePredicate?: TypeNode;
         readonly receiver?: TypeNode;
       }
     | {
@@ -263,6 +264,7 @@ export interface ObjectAssignment extends Span {
   readonly value: Expression;
 }
 export interface PropertySignature extends Span {
+  readonly hasInstanceSymbol?: boolean;
   readonly computed?: boolean;
   readonly method?: boolean;
   readonly optional?: boolean;

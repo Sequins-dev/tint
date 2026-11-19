@@ -453,15 +453,17 @@ export function ordinaryHasInstance(
   constructor: unknown,
   hooks: ObjectHooks<unknown>,
   realm: ErrorRealm,
+  nativePrototype?: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): { readonly error: "none" | "type"; readonly value: boolean } {
   const fn = viewObjectValue(constructor, realm.objectPrototype);
   if (fn === undefined || fn.internalCall === undefined)
     return { error: "none", value: false };
   const boundTarget = fn.internalBoundTarget;
   if (boundTarget !== undefined)
-    return instanceOfValue(value, boundTarget, hooks, realm);
+    return instanceOfValue(value, boundTarget, hooks, realm, nativePrototype);
   const object = viewObjectValue(value, realm.objectPrototype);
-  if (object === undefined) return { error: "none", value: false };
+  const base = object ?? nativePrototype;
+  if (base === undefined) return { error: "none", value: false };
   const prototypeValue = getProperty<ScriptPropertyKey, unknown>(
     fn,
     "prototype",
@@ -472,7 +474,9 @@ export function ordinaryHasInstance(
   if (prototype === undefined) return { error: "type", value: false };
   return {
     error: "none",
-    value: hasPrototype<ScriptPropertyKey, unknown>(object, prototype),
+    value:
+      (object === undefined && base === prototype) ||
+      hasPrototype<ScriptPropertyKey, unknown>(base, prototype),
   };
 }
 
@@ -482,6 +486,7 @@ export function instanceOfValue(
   constructor: unknown,
   hooks: ObjectHooks<unknown>,
   realm: ErrorRealm,
+  nativePrototype?: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): { readonly error: "none" | "type"; readonly value: boolean } {
   const object = viewObjectValue(constructor, realm.objectPrototype);
   if (object === undefined) return { error: "type", value: false };
@@ -492,6 +497,17 @@ export function instanceOfValue(
     hooks,
   );
   if (method !== undefined && method !== null) {
+    if (
+      nativePrototype !== undefined &&
+      method === realm.ordinaryHasInstanceMethod
+    )
+      return ordinaryHasInstance(
+        value,
+        constructor,
+        hooks,
+        realm,
+        nativePrototype,
+      );
     const callable = viewObjectValue(method, realm.objectPrototype);
     const result = callObject<ScriptPropertyKey, unknown>(
       callable,
@@ -506,7 +522,7 @@ export function instanceOfValue(
     };
   }
   if (object.internalCall === undefined) return { error: "type", value: false };
-  return ordinaryHasInstance(value, constructor, hooks, realm);
+  return ordinaryHasInstance(value, constructor, hooks, realm, nativePrototype);
 }
 
 /** Source text is compiler-supplied metadata, never obtained from JS properties. */

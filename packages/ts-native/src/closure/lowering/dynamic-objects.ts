@@ -9,7 +9,10 @@ import {
   type Span,
   type Statement,
 } from "@tint/typescript/syntax";
-import type { CheckedClosures } from "@tint/typescript/checker";
+import type {
+  CheckedClosures,
+  NativeTypedArray,
+} from "@tint/typescript/checker";
 
 export interface DynamicObjectRuntime {
   readonly create: number;
@@ -51,6 +54,66 @@ export function dynamicObjectRuntime(
     objectConstructor: resolve("objectConstructor"),
     invokeEnumeration: resolve("invokeEnumeration"),
   };
+}
+
+export const realmInstanceofHelpers: readonly string[] = [
+  "realmGlobal",
+  "realmInstanceOf",
+  "invokeArrayMethod",
+];
+
+/** The receiver's checked brand is independent of its physical carrier. */
+export function arrayFlowReceiver(
+  checked: CheckedClosures,
+  node: Expression,
+  intrinsic: string | undefined,
+): NativeTypedArray | "realm" | undefined {
+  if (
+    intrinsic === undefined ||
+    !intrinsic.startsWith("array-") ||
+    intrinsic === "array-instanceof"
+  )
+    return undefined;
+  let target = node;
+  if (node.kind === "call") target = node.callee;
+  if (
+    node.kind === "assignment" ||
+    node.kind === "compound" ||
+    node.kind === "update"
+  )
+    target = node.target;
+  while (target.kind === "group" || target.kind === "satisfies")
+    target = target.expression;
+  if (target.kind !== "member" && target.kind !== "index") return undefined;
+  const receiver = checked.types[checked.expressions.get(target.object) ?? -1];
+  if (receiver?.kind === "object")
+    return receiver.realmTypedArray === undefined ? undefined : "realm";
+  if (receiver === undefined) return undefined;
+  switch (receiver.kind) {
+    case "Uint8Array":
+    case "Uint16Array":
+    case "Uint32Array":
+    case "Float64Array":
+      return receiver.arrayFlow === true ? receiver.kind : undefined;
+    default:
+      return undefined;
+  }
+}
+export function usesRealmInstanceof(
+  checked: CheckedClosures,
+  arrayGuards: boolean,
+): boolean {
+  let used = false;
+  checked.intrinsics.forEach((intrinsic, node) => {
+    if (
+      intrinsic === "realm-global" ||
+      intrinsic === "realm-instanceof" ||
+      (arrayGuards && intrinsic === "array-instanceof") ||
+      arrayFlowReceiver(checked, node, intrinsic) === "realm"
+    )
+      used = true;
+  });
+  return used;
 }
 
 export function hasDynamicObject(
@@ -184,10 +247,19 @@ export function insertDynamicObjectRuntime(
   module: Module,
   checked: CheckedClosures,
   helpers: ReadonlyMap<string, string>,
+  realmInstanceof: boolean,
 ): Module {
   const uses: Span[] = [];
   checked.intrinsics.forEach((intrinsic, node) => {
-    if (intrinsic.startsWith("dynamic-object-")) uses.push(node);
+    if (
+      intrinsic.startsWith("dynamic-object-") ||
+      (realmInstanceof &&
+        (intrinsic === "realm-global" ||
+          intrinsic === "realm-instanceof" ||
+          intrinsic === "array-instanceof" ||
+          arrayFlowReceiver(checked, node, intrinsic) !== undefined))
+    )
+      uses.push(node);
   });
   rewriteModule(module, {
     statement: (node, original) => {
@@ -242,7 +314,7 @@ export function insertDynamicObjectRuntime(
   }
   function aliasesAt(scope: Span): Statement {
     const declarations: Binding[] = [];
-    dynamicObjectRuntime((name) => {
+    function alias(name: string): number {
       const linked = helpers.get("dynamic-object:" + name);
       if (linked === undefined) throw "dynamic object helper invariant";
       declarations.push({
@@ -258,7 +330,13 @@ export function insertDynamicObjectRuntime(
         end: scope.start,
       });
       return 0;
-    });
+    }
+    dynamicObjectRuntime(alias);
+    if (realmInstanceof)
+      for (const name of realmInstanceofHelpers) {
+        if (name === undefined) throw "realm instanceof helper invariant";
+        alias(name);
+      }
     return {
       kind: "variable",
       mode: "const",

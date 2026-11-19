@@ -11,6 +11,11 @@ import {
   deleteObjectValueProperty,
   finishObjectPropertyContract,
   installProgramObjectIntrinsics,
+  installProgramArrayBufferIntrinsics,
+  installProgramTypedArrayIntrinsics,
+  installErrorIntrinsics,
+  instanceOfValue,
+  hasProperty,
   objectValueHasProperty,
   programRealmCore,
   projectPropertyContract,
@@ -269,5 +274,66 @@ export function invokeEnumeration(
   );
   if (result.error !== "none" || !isArrayValue(result.value, core.realm))
     throw createRuntimeError(core.realm, "type");
+  return result.value;
+}
+
+/** Evaluate a typed source's realm global as an ordinary property lookup. */
+export function realmGlobal(name: string): unknown {
+  const core = programRealmCore();
+  if (name === "Error" || name === "RangeError" || name === "TypeError") {
+    if (!core.realm.constructors.has("error"))
+      installErrorIntrinsics(core.object, core.realm, core.hooks);
+  } else if (name === "ArrayBuffer") installProgramArrayBufferIntrinsics(core);
+  else installProgramTypedArrayIntrinsics(core);
+  if (!hasProperty<ScriptPropertyKey, unknown>(core.object, name))
+    throw createRuntimeError(core.realm, "reference");
+  return readObjectValueProperty(core.object, name, core.hooks, core.realm);
+}
+export function realmInstanceOf(
+  value: unknown,
+  constructor: unknown,
+  nativeKind: string,
+): boolean {
+  const core = programRealmCore();
+  let prototype: ObjectRecord | undefined;
+  if (nativeKind === "Error") prototype = core.realm.prototypes.get("error");
+  else if (nativeKind === "TypeError")
+    prototype = core.realm.prototypes.get("type");
+  else if (nativeKind === "RangeError")
+    prototype = core.realm.prototypes.get("range");
+  else if (nativeKind !== "") {
+    installProgramTypedArrayIntrinsics(core);
+    prototype = core.realm.typedArrayPrototypes.get(nativeKind.slice(0, -5));
+  }
+  const result = instanceOfValue(
+    value,
+    constructor,
+    core.hooks,
+    core.realm,
+    prototype,
+  );
+  if (result.error !== "none") throw createRuntimeError(core.realm, "type");
+  return result.value;
+}
+export function invokeArrayMethod(
+  receiver: unknown,
+  callable: unknown,
+  arity: number,
+  first: unknown,
+  second: unknown,
+  third: unknown,
+): unknown {
+  const core = programRealmCore();
+  const args: unknown[] = [];
+  if (arity > 0) args.push(first);
+  if (arity > 1) args.push(second);
+  if (arity > 2) args.push(third);
+  const result = callObjectValue(
+    callable,
+    receiver,
+    args,
+    core.realm.objectPrototype,
+  );
+  if (result.error !== "none") throw createRuntimeError(core.realm, "type");
   return result.value;
 }
