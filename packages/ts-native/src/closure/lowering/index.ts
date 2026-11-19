@@ -1815,6 +1815,19 @@ function lowerEntries(
             nativeClosures.has(referenceBindings.get(node) ?? -1))
         );
       }
+      function nativeCallableType(id: number): boolean {
+        const type = checked.types[id];
+        if (type?.kind === "function") return true;
+        if (type?.kind !== "union") return false;
+        let callable = false;
+        for (const member of type.members) {
+          if (member === undefined) throw "callable union member invariant";
+          if (checked.types[member]?.kind === "undefined") continue;
+          if (!nativeCallableType(member)) return false;
+          callable = true;
+        }
+        return callable;
+      }
       function stringExpression(node: Expression): boolean {
         if (node.kind === "group") return stringExpression(node.expression);
         if (node.kind === "string") return true;
@@ -3017,8 +3030,7 @@ function lowerEntries(
           typeofFunction:
             node.kind === "unary" &&
             node.operator === "typeof" &&
-            checked.types[checked.expressions.get(node.operand) ?? -1]?.kind ===
-              "function",
+            nativeCallableType(checked.expressions.get(node.operand) ?? -1),
           setElement: element,
           listElement:
             checkedType === undefined

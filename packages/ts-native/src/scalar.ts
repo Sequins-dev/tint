@@ -5189,9 +5189,11 @@ export function lowerFunction(
             current = yes;
             label(
               type === "optional-reference"
-                ? info(node.operand).bigint === true
-                  ? "bigint"
-                  : "object"
+                ? info(node).typeofFunction
+                  ? "function"
+                  : info(node.operand).bigint === true
+                    ? "bigint"
+                    : "object"
                 : type === "optional-boolean"
                   ? "boolean"
                   : type === "optional-string"
