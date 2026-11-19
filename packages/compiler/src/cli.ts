@@ -7,10 +7,7 @@ import type { ModuleIR } from "@tint/ir/scalar";
 import { nativeHostTarget, targetFileHost } from "@tint/platform/host";
 import { readFile, publishFile } from "@tint/platform/files/service";
 import { writeAll } from "@tint/platform/io/sync";
-import {
-  loadSourceGraphLoader,
-  type SourceInput,
-} from "@tint/typescript/modules";
+import type { SourceInput } from "@tint/typescript/modules";
 import {
   argumentCount,
   argumentByteLength,
@@ -24,11 +21,12 @@ import {
   type PassReport,
 } from "@tint/ir/optimization";
 import { projectFiles, projectMappings } from "./catalog.ts";
-import { projectRoots, compilerBuildRequest } from "./project.ts";
+import { compilerBuildRequest, loadCompilerSourceGraph } from "./project.ts";
 import { expandForeignInputs } from "./native/foreign/index.ts";
 import { compilerUsage, parseCompilerArguments } from "./cli-arguments.ts";
 export {
   projectRoots,
+  loadCompilerSourceGraph,
   projectModuleLoader,
   projectBuildRequest,
   compilerBuildRequest,
@@ -103,11 +101,7 @@ export function main(): number {
       if (mapping === undefined) throw "foreign mapping invariant";
       mappings.push(mapping);
     }
-    const graph = loadSourceGraphLoader(
-      foreign.value.inputs,
-      mappings,
-      projectRoots(),
-    );
+    const graph = loadCompilerSourceGraph(foreign.value.inputs, mappings);
     if (!graph.ok) {
       report("source graph: " + graph.error.message);
       return 1;

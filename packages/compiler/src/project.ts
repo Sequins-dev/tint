@@ -1,10 +1,15 @@
 import type { BuildRequest } from "./build.ts";
 import {
+  loadSourceGraph,
+  loadSourceGraphLoader,
   requestModules,
+  type LoadSourceGraphLoaderResult,
   type ModuleRequest,
+  type SourceInput,
   type SourceModuleLoader,
 } from "@tint/typescript/modules";
 import type { SourceModule } from "@tint/typescript/modules/model";
+import type { ImportMapping } from "@tint/source/resolver";
 import type {
   RuntimeSource,
   NativeHostBinding,
@@ -96,6 +101,32 @@ export function projectRoots(): string[] {
     roots.push(source.module);
   }
   return roots;
+}
+/** Ordinary imports can reach the realm. Otherwise the checker must demand it. */
+export function loadCompilerSourceGraph(
+  inputs: readonly SourceInput[],
+  mappings: readonly ImportMapping[],
+): LoadSourceGraphLoaderResult {
+  const roots = projectRoots();
+  const initial = loadSourceGraphLoader(
+    inputs,
+    mappings,
+    roots.filter((root) => root !== dynamicObjectRuntimeModule),
+  );
+  if (!initial.ok) return initial;
+  const loader = initial.value;
+  return {
+    ok: true,
+    value: {
+      ids: loader.ids,
+      load: loader.load,
+      loadWithRoot: (root) =>
+        root === dynamicObjectRuntimeModule &&
+        inputs.some((input) => input?.id === root)
+          ? loadSourceGraph(inputs, mappings, roots)
+          : undefined,
+    },
+  };
 }
 /** File operations whose leaf C calls `tint:c/libsystem` declares
  * (docs/native-ffi.md): bound as c-calls when the binding module is
