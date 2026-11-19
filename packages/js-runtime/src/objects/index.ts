@@ -193,6 +193,7 @@ export {
   scriptStrictEqual,
   scriptSameValue,
   callObjectValue,
+  callGeneralValue,
   getObjectValueProperty,
   readObjectValueProperty,
   getObjectValuePropertyWithReceiver,

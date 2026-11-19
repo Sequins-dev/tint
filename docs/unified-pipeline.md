@@ -294,6 +294,7 @@ identity. Only native errors pass the native `instanceof` test.
 Native `message` defaults to the empty string, `name` uses the intrinsic
 kind, and `stack` is undefined. The native constructor diagnoses Error
 options, whose getters and cause semantics belong to the realm constructor.
+
 ### Mixed native error views (slice 4a, B3)
 
 Mixed images with typed boundaries use explicit record layouts for all three
@@ -370,6 +371,23 @@ on realm values across a trusted import.
 
 See the [slice 4a design](design-4a-narrowing-errors.md) for callable
 narrowing and the remaining slice 2b closure and typed-array projections.
+
+### General direct calls (slice 4a, B4)
+
+A `typeof value === "function"` guard on `unknown` supplies a callable flow
+fact with general storage. The fact accepts arbitrary arguments and keeps a
+general result, which an annotated consumer checks through the existing
+downcast path. A guarded concrete signature keeps its parameter and result
+contracts. Reassignment and calls use the existing flow invalidation.
+
+After evaluating the callee and arguments, a mixed call dispatches through
+the realm's ordinary `[[Call]]` implementation. A direct value call supplies
+`undefined` as its receiver. A property call supplies the evaluated reference
+base. The realm handles classes and delivers returned and thrown objects with
+their original identity. Native closures dynamically passed as `Function`
+still require the slice 2b view. Lowering diagnoses a known native closure.
+When its representation is only known at run time, the call throws a
+`TypeError` after evaluating its arguments.
 
 ### Typed rest parameters and void callbacks (slice 4a)
 
@@ -484,7 +502,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | Classes rejected in module-instance (runtime) contexts                                                                                                                                                                                                                                      | `class-basic`                                                                                                   | 3                                        |
 | (Removed by 4a: native errors) `new Error` and guarded reads of caught native errors                                                                                                                                                                                                        | `errors`, `caught-error-reads`, `native-error-flow`                                                             | 4a                                       |
 | Typed `instanceof Uint8Array`                                                                                                                                                                                                                                                               | `typed-arrays`                                                                                                  | 4a                                       |
-| `stack` of a native error exposed to realm code names the frames at first exposure, not at creation (creation-site capture is deferred to native stack capture; needs allocation-time frame capture without realm access) | `exposed-native-error` | Native stack capture |
+| `stack` of a native error exposed to realm code names the frames at first exposure, not at creation (creation-site capture is deferred to native stack capture; needs allocation-time frame capture without realm access)                                                                   | `exposed-native-error`                                                                                          | Native stack capture                     |
 | Native Error options and stack capture                                                                                                                                                                                                                                                      | `Error options (cause) require the realm Error constructor`. Native `stack` is undefined.                       | Realm constructor / native stack capture |
 | `toLowerCase` and other unlisted String methods; `Math.pow`/`log2`/`fround`; `JSON`                                                                                                                                                                                                         | `string-methods`, `math`, `json`                                                                                | 4                                        |
 | (Removed by 2b: checked downcasts) `x as Uint8Array` from a general value                                                                                                                                                                                                                   | `general-value-casts`                                                                                           | 2 (projection), 4                        |
@@ -508,7 +526,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | Native list or fixed-record payloads in dynamic objects need slice 2b list/record views. `os.networkInterfaces()` still returns a Map because its values are lists of fixed records.                                                                                                        | (runtime modules)                                                                                               | 4a C2                                    |
 | No `SystemError` in typed runtime code: node:os failures are TypeErrors                                                                                                                                                                                                                     | (runtime modules)                                                                                               | 4                                        |
 | (Removed by 4a: callable classification) Typed `typeof` on realm callables received as `unknown`                                                                                                                                                                                            | `unknown-typeof-callable`, `tools/build-mixed-general-typeof-fixture.ts`                                        | 4a                                       |
-| Calling a native closure through a narrowed `Function` requires the slice 2b closure view. The dynamic call path itself is pending.                                                                                                                                                         | (mixed callable fixture planned)                                                                                | 2b, 4a                                   |
+| Calling a native closure through a narrowed `Function` requires the slice 2b closure view.                                                                                                                                                                                                  | `tools/build-typed-general-call-contracts-fixture.ts`                                                           | 2b, 4a                                   |
 | Passing a realm typed array narrowed by `instanceof` to a native typed-array parameter requires the slice 2b buffer view. The narrowing itself is pending.                                                                                                                                  | (mixed typed-array fixture planned)                                                                             | 2b, 4a                                   |
 | `for…of` elements are typed `T \| undefined` (array holes) instead of TypeScript's `T`: passing the element on or reading its properties fails (FFI phases 2 and 4)                                                                                                                         | `for-of-typed-array-list`, `for-of-object-list`, `for-of-record-reads`                                          | 4a                                       |
 | Assignment does not narrow a `let` to the assigned type (`x = x === undefined ? v : x`); `??=` only on optional primitives (FFI phase 4)                                                                                                                                                    | `reassignment-narrowing`                                                                                        | 4a                                       |

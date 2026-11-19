@@ -3254,3 +3254,45 @@ test("literal presence narrows a dynamic property read", () => {
   `);
   assert.ok(result.ok, JSON.stringify(result));
 });
+
+test("typeof guards admit general calls and checked result consumption", () => {
+  for (const body of [
+    'if (typeof x === "function") return x(1, "extra"); return "";',
+    'if ("function" !== typeof x) return ""; const result: string = x(); return result;',
+    'if (!(typeof x === "function")) return ""; let result: string = ""; result = x(); return result;',
+    'if (typeof x === "function" && x()) return "yes"; return "";',
+    'if (typeof x !== "function" || !x()) return ""; return x();',
+    'if (typeof x === "function") { const result = x(); return result; } return "";',
+  ]) {
+    const result = check("function f(x: unknown): string {" + body + "}");
+    assert.ok(result.ok, JSON.stringify(result));
+  }
+  assert.ok(
+    check(`function f(x: { readonly call: unknown }): unknown {
+    if (typeof x.call === "function") return (x.call)(42);
+    return undefined;
+  }`).ok,
+  );
+});
+
+test("callable facts retain concrete signatures and obey invalidation", () => {
+  const concrete =
+    "function f(x: ((n: number) => string) | undefined): string {";
+  assert.ok(
+    check(concrete + 'if (typeof x === "function") return x(1); return ""; }')
+      .ok,
+  );
+  for (const source of [
+    concrete + 'if (typeof x === "function") return x("bad"); return ""; }',
+    "function f(x: unknown): unknown { return x(); }",
+    'function f(x: unknown): unknown { if (typeof x !== "function") return x(); return 0; }',
+    'function f(x: unknown): unknown { if (typeof x === "function") { x = 1; return x(); } return 0; }',
+    'function f(x: unknown): unknown { const reset = (): void => { x = 1; }; if (typeof x === "function") { reset(); return x(); } return 0; }',
+    'function f(x: unknown): unknown { if (typeof x === "function") { const g: (n: number) => string = x; return g; } return 0; }',
+    'function f(x: unknown): unknown { if (typeof x === "function") return new x(); return 0; }',
+  ]) {
+    const result = check(source);
+    assert.ok(!result.ok, source);
+    assert.equal(result.error.code, "TYPE_MISMATCH", JSON.stringify(result));
+  }
+});

@@ -127,6 +127,10 @@ export function encodeDynamicContract(
       case "undefined":
       case "null":
       case "bigint":
+      case "realm-callable":
+      case "dynamic-result":
+        emit("unknown");
+        break;
       case "unknown":
       case "never":
         emit(type.kind);
