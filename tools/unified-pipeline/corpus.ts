@@ -388,6 +388,27 @@ export function run() {
     }`,
   },
   {
+    name: "destructuring-realm",
+    typed: `export const { answer } = { answer: 42 };
+function head([glyph]: string): string | undefined { return glyph; }
+export function run(): number {
+  try {
+    throw { value: answer };
+  } catch ({ value }: any) {
+    return head("😀x") === "😀" && value === 42 ? 42 : 1;
+  }
+}`,
+    untyped: `export const { answer } = { answer: 42 };
+function head([glyph]) { return glyph; }
+export function run() {
+  try {
+    throw { value: answer };
+  } catch ({ value }) {
+    return head("😀x") === "😀" && value === 42 ? 42 : 1;
+  }
+}`,
+  },
+  {
     name: "spread",
     typed: `function sum3(a: number, b: number, c: number): number { return a + b + c; }
 export function run(): number {

@@ -3764,8 +3764,12 @@ function checkClosureModuleLayout(
             break;
           }
           const target = types[constraint];
-          if (node.assertion === "as" && types[result]?.kind === "unknown" &&
-              target?.kind === "object" && target.iteratorElement !== undefined) {
+          if (
+            node.assertion === "as" &&
+            types[result]?.kind === "unknown" &&
+            target?.kind === "object" &&
+            target.iteratorElement !== undefined
+          ) {
             result = constraint;
             break;
           }
@@ -6951,7 +6955,11 @@ function checkClosureModuleLayout(
     if (known !== undefined) return known;
     const writable = new Set<number>();
     for (const reference of graph.references)
-      if (reference !== undefined && reference.binding !== undefined && reference.access !== "read")
+      if (
+        reference !== undefined &&
+        reference.binding !== undefined &&
+        reference.access !== "read"
+      )
         writable.add(reference.binding);
     writablePatternCandidates = writable;
     return writable;
@@ -7055,13 +7063,6 @@ function checkClosureModuleLayout(
       action: "object" | "iterator" | "skip" | "close",
       source: Expression,
     ): void {
-      if (input === undefined && site !== pattern)
-        fail(
-          site,
-          "UNSUPPORTED",
-          "realm binding parameters require runtime aliases in the parameter prologue",
-          true,
-        );
       needsBindingRealm = true;
       bindingRealm.set(site, true);
       steps.push({
@@ -7219,16 +7220,25 @@ function checkClosureModuleLayout(
         const shape = types[type];
         const list =
           isList(type) && shape?.kind === "array" && shape.realmArray !== true;
-        const iteratorElement = shape?.kind === "object" ? shape.iteratorElement : undefined;
+        const iteratorElement =
+          shape?.kind === "object" ? shape.iteratorElement : undefined;
         const realm =
-          general || iteratorElement !== undefined ||
+          general ||
+          iteratorElement !== undefined ||
           (shape?.kind === "array" && shape.realmArray === true) ||
           system.assignable(type, string);
         if (realm) {
-          const elementType = general
+          const rawElementType = general
             ? type
-            : (iteratorElement ?? (shape?.kind === "array" ? shape.element : string));
-          const readType = system.assignable(undefinedType, elementType) ? elementType : unionSubset([elementType, undefinedType], pattern);
+            : (iteratorElement ??
+              (shape?.kind === "array" ? shape.element : string));
+          const elementType = realmPayload(rawElementType, pattern);
+          const unsupported = unsupportedDynamicPayload(types, elementType);
+          if (unsupported !== undefined)
+            fail(pattern, "UNSUPPORTED", unsupported, true);
+          const readType = system.assignable(undefinedType, elementType)
+            ? elementType
+            : unionSubset([elementType, undefinedType], pattern);
           realmAction("iterator", source);
           for (const element of pattern.elements) {
             if (element === undefined) realmAction("skip", source);
@@ -7312,6 +7322,8 @@ function checkClosureModuleLayout(
     project(pattern, root, type);
     bindingInitializations.set(site, { input, root, steps });
   }
+  let patternedThrow = false;
+  let patternedThrowOwner: number | undefined;
   function statement(
     input: Statement,
     owner: number | undefined,
@@ -7425,7 +7437,18 @@ function checkClosureModuleLayout(
           const handler = node.handler;
           const finalizer = node.finalizer;
           const invariant = stableFacts(definiteEntry, true);
+          const priorPattern = patternedThrow;
+          const priorOwner = patternedThrowOwner;
+          if (handler !== undefined) {
+            const caught = handler.binding;
+            patternedThrow =
+              caught?.kind === "object-binding" ||
+              caught?.kind === "array-binding";
+            patternedThrowOwner = owner;
+          }
           let pending = statement(node.body, owner, result);
+          patternedThrow = priorPattern;
+          patternedThrowOwner = priorOwner;
           let normal = assignedFacts();
           if (handler !== undefined) {
             present = new Set(definiteEntry);
@@ -7509,9 +7532,13 @@ function checkClosureModuleLayout(
           }
           return types[actual]?.kind === "never" ? throwCompletion : 2;
         }
-        case "throw":
-          expression(node.expression, owner);
+        case "throw": {
+          const value = node.expression;
+          const type = expression(value, owner);
+          if (patternedThrow && patternedThrowOwner === owner)
+            checkDynamicPayload(type, value);
           return throwCompletion;
+        }
         case "expression":
           // A never result cannot continue normally; it may throw or diverge.
           return types[expression(node.expression, owner)]?.kind === "never"

@@ -3458,6 +3458,19 @@ function lowerEntries(
         if (p.kind === "pattern-parameter") bindingPlan(p);
       }
       stmt(block);
+      let bindingPrologue: Statement | undefined;
+      if (
+        parameters.some(
+          (parameter) =>
+            parameter !== undefined &&
+            checked.bindingRealm?.has(parameter) === true,
+        )
+      ) {
+        const first = block.kind === "block" ? block.statements[0] : undefined;
+        if (first?.kind !== "variable" || !dynamicAliases.has("bindingObject"))
+          fail("realm binding parameter helper prologue is missing");
+        bindingPrologue = first;
+      }
       if (block.kind === "block")
         block = {
           ...block,
@@ -3529,6 +3542,7 @@ function lowerEntries(
         expressions,
         declarations,
         bindingInitializations: checked.bindingInitializations,
+        bindingPrologue,
         bindingIterationLocals,
       };
       const incoming = ownedFunctions.get(sourceId);

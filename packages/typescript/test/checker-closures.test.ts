@@ -3428,3 +3428,37 @@ test("inferred union leaves can change type while annotated leaves retain their 
     false,
   );
 });
+
+test("realm iterator pattern parameters can initialize before later defaults", () => {
+  const result = check(`
+    function read([first = 20]: Iterable<number>, second: number = first): number {
+      return first + second;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("realm iterator values retain realm record layouts", () => {
+  const result = check(`
+    function read(input: Iterable<{ value: number }>): number {
+      const [entry] = input;
+      if (entry === undefined) return 0;
+      const { value } = entry;
+      return value;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+  const checked = result.value;
+  const entry = checked.bindings.bindings.find(
+    (binding) => binding.name === "entry",
+  );
+  assert.ok(entry);
+  const type = checked.types[checked.bindingTypes[entry.id] ?? -1];
+  assert.ok(type?.kind === "union");
+  assert.ok(
+    type.members.some((member) => {
+      const variant = checked.types[member];
+      return variant?.kind === "object" && variant.realmRecord === true;
+    }),
+  );
+});

@@ -217,6 +217,7 @@ export interface ExpressionInfo {
   readonly callee: number | undefined;
 }
 export interface CheckedFunction {
+  readonly bindingPrologue?: Statement | undefined;
   /** This function reads its own incoming receiver, separately from parameters. */
   readonly receiver?: boolean;
   /** Typed local used to initialize an owned lexical receiver cell. */

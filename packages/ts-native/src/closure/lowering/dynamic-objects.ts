@@ -279,7 +279,7 @@ export function insertDynamicObjectRuntime(
         return false;
     }
   }
-  function aliasesAt(scope: Span, moduleScope: boolean = false): Statement {
+  function aliasesAt(scope: Span, includePatterns: boolean = false): Statement {
     const declarations: Binding[] = [];
     dynamicObjectRuntime(
       (name) => {
@@ -304,8 +304,7 @@ export function insertDynamicObjectRuntime(
           site !== undefined &&
           site.start >= scope.start &&
           site.end <= scope.end,
-      ) ||
-        (moduleScope && patterns.length !== 0),
+      ) || includePatterns,
     );
     return {
       kind: "variable",
@@ -320,7 +319,19 @@ export function insertDynamicObjectRuntime(
     body: Statement,
     parameters: readonly Parameter[],
   ): BlockStatement {
-    const statements: Statement[] = [aliasesAt(body)];
+    // Rewriting creates new parameter nodes, while the checker indexes the
+    // original (possibly specialized) syntax. Runtime selection uses spans.
+    const realmParameters = parameters.some(
+      (parameter) =>
+        parameter !== undefined &&
+        patterns.some(
+          (site) =>
+            site !== undefined &&
+            site.start >= parameter.start &&
+            site.end <= parameter.end,
+        ),
+    );
+    const statements: Statement[] = [aliasesAt(body, realmParameters)];
     for (const parameter of parameters) {
       if (parameter === undefined || parameter.kind === "pattern-parameter")
         continue;
@@ -399,7 +410,8 @@ export function insertDynamicObjectRuntime(
     for (let index = 0; index < rewritten.statements.length; index++) {
       const item = rewritten.statements[index];
       if (item === undefined) throw "dynamic module statement invariant";
-      if (index === first) statements.push(aliasesAt(item, true));
+      if (index === first)
+        statements.push(aliasesAt(item, patterns.length !== 0));
       statements.push(item);
     }
     return { ...rewritten, statements };

@@ -8988,6 +8988,7 @@ export function lowerFunction(
         hoistFunctions(node);
         for (const child of node.statements) {
           if (child === undefined) throw "block statement invariant";
+          if (child === fn.bindingPrologue) continue;
           statement(child, loop);
           createSunkFunctions(child);
         }
@@ -9700,6 +9701,8 @@ export function lowerFunction(
     );
     cellAccess(receiverLocal, "initialize", fn.node);
   }
+  const bindingPrologue = fn.bindingPrologue;
+  if (bindingPrologue !== undefined) statement(bindingPrologue, undefined);
   for (let i = 0; i < fn.node.parameters.length; i++) {
     const p = fn.node.parameters[i],
       input = parameters[i];

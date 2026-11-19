@@ -153,7 +153,7 @@ export function run() {
 `;
 
 export const typedRealmBindingPatternsSource = `
-import { sourceObject, checkRest, readOrder, sourceIterator, closeCount, lockedTarget } from "./providers.ts";
+import { sourceObject, checkRest, readOrder, sourceIterator, closeCount, lockedTarget, importedLeaf } from "./providers.ts";
 export const { answer } = { answer: 42 };
 export const [firstExport, secondExport] = [20, 22];
 function defaults({ a = {} } = {}): number { return answer; }
@@ -162,6 +162,14 @@ function defaultList(input: { xs?: number[] }): number {
   return xs.length;
 }
 function raised(): number { throw "default"; }
+function parameter([first = 20]: Iterable<number>, second: number = first): number {
+  return first + second;
+}
+function readInferred(input: { value: number | string }): boolean {
+  let { value } = input;
+  value = true;
+  return value;
+}
 export function run(): number {
   if (defaults() !== 42 || firstExport + secondExport !== 42 || defaultList({}) !== 0) return 1;
   const { direct = 42 } = {};
@@ -200,6 +208,11 @@ export function run(): number {
   }
   const [glyph, ...rest] = "😀x";
   if (glyph !== "😀" || rest.length !== 1 || rest[0] !== "x") return 13;
+  if (parameter(sourceIterator(false) as Iterable<number>) !== 40 || closeCount() !== 1) return 14;
+  if (!readInferred({ value: 5 }) || importedLeaf !== 42) return 15;
+  try { throw { value: 42 }; } catch ({ value }: any) {
+    if (value !== 42) return 16;
+  }
   return 42;
 }
 `;
@@ -208,6 +221,7 @@ export function run(): number {
 // JavaScript objects while the Tint provider constructs the corresponding realm
 // records directly, without routing the consumer through general lowering.
 export const nodeBindingPatternProviders = `
+export const { importedLeaf } = { importedLeaf: 42 };
 const symbol = Symbol("included");
 let reads = "", closes = 0;
 export function sourceObject() {
@@ -249,6 +263,7 @@ import {
   ordinaryOwnKeys, scriptPropertyKeyOrder, readObjectValueProperty,
   createSymbolValue, wellKnownSymbol, type ScriptPropertyKey, type SymbolValue
 } from "@tint/js-runtime/objects";
+export const { importedLeaf } = { importedLeaf: 42 };
 let reads: string = "";
 let closes: number = 0;
 const symbol: SymbolValue = createSymbolValue("included");
