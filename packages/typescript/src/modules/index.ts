@@ -25,6 +25,9 @@ export type SourcePosition = (
 export interface SourceModuleLoader {
   readonly ids: readonly string[];
   load(ids?: readonly string[]): readonly SourceModule[];
+  /** Resolve the whole graph with a deferred root without changing this loader.
+   * Returns undefined if the requested root is unavailable. */
+  readonly loadWithRoot?: (root: string) => LoadResult | undefined;
 }
 
 export interface SourceModuleText {
