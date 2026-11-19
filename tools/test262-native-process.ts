@@ -5,6 +5,7 @@ import {
   readDebuggerSessionLogs,
 } from "./native-debugger-session.ts";
 import { spawnSync } from "node:child_process";
+import { gateLaunch } from "./gate/lock.ts";
 import {
   mkdtempSync,
   openSync,
@@ -126,6 +127,15 @@ export function admitNativeFile(
   binary: string,
   timeoutMs: number,
 ): NativeAdmission {
+  if (process.env.TINT_GATE_LAUNCH_LOCK)
+    return gateLaunch<NativeAdmission>(
+      "test262-admission",
+      import.meta.filename,
+      ["admit", binary, String(timeoutMs)],
+    );
+  return admitUnlocked(binary, timeoutMs);
+}
+function admitUnlocked(binary: string, timeoutMs: number): NativeAdmission {
   const started = performance.now();
   const result = spawnSync(binary, [], {
     stdio: "ignore",
@@ -236,10 +246,29 @@ export function executeNativeFile(
 ): ExecutionOutcome {
   if (selectedCase !== undefined && !validCaseSelector(selectedCase))
     throw new Error("invalid native batch selector");
+  if (process.env.TINT_GATE_LAUNCH_LOCK) {
+    const label =
+      nativeDebuggerLaunch === "process" ? "test262-run" : "test262-debugger";
+    waiting?.("waiting for the exclusive gate launch");
+    return gateLaunch<ExecutionOutcome>(label, import.meta.filename, [
+      "execute",
+      binary,
+      String(timeoutMs),
+      JSON.stringify(selectedCase ?? null),
+    ]);
+  }
   if (nativeDebuggerLaunch === "process") {
     waiting?.("running");
     return executeNativeProcess(binary, timeoutMs, selectedCase);
   }
+  return executeNativeDebugger(binary, timeoutMs, selectedCase, waiting);
+}
+function executeNativeDebugger(
+  binary: string,
+  timeoutMs: number,
+  selectedCase?: NativeCaseSelector,
+  waiting?: (phase: string) => void,
+): ExecutionOutcome {
   const directory = mkdtempSync(join(tmpdir(), "tint-test262-"));
   const report = join(directory, "outcome.json"),
     pidFile = join(directory, "pid"),
@@ -393,3 +422,20 @@ export function executeNativeProcess(
 
 /** Append evidence as it arrives; absence of a completion record means incomplete. */
 export { createNativeRunJournal } from "./native-run-journal.ts";
+
+if (import.meta.main) {
+  const [mode, binary, timeout, selector] = process.argv.slice(2);
+  if (!binary || !timeout || (mode !== "admit" && mode !== "execute"))
+    throw Error("Expected a native gate launch command");
+  const timeoutMs = Number(timeout);
+  delete process.env.TINT_GATE_LAUNCH_LOCK;
+  const result =
+    mode === "admit"
+      ? admitNativeFile(binary, timeoutMs)
+      : executeNativeFile(
+          binary,
+          timeoutMs,
+          JSON.parse(selector ?? "null") ?? undefined,
+        );
+  console.log(JSON.stringify(result));
+}
