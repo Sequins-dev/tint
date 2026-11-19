@@ -2,6 +2,22 @@ export const typedRealmInstanceofSource = `
 let order: number = 0;
 function left(value: unknown): unknown { order = order * 10 + 1; return value; }
 function right(): ErrorConstructor { order = order * 10 + 2; return Error; }
+export function dateTime(value: unknown): number {
+  if (value instanceof Date) return value.getTime();
+  return -1;
+}
+export function mapSize(value: unknown): number {
+  if (value instanceof Map) return value.size;
+  return -1;
+}
+function matches(value: unknown, constructor: RegExpConstructor): boolean {
+  return value instanceof constructor && value.test("tint") && value.source === "t.nt";
+}
+export function pattern(value: unknown): boolean {
+  const C: RegExpConstructor = RegExp;
+  return matches(value, C);
+}
+export function promise(value: unknown): boolean { return value instanceof Promise; }
 export function ordered(value: unknown): boolean {
   order = 0;
   const matched = left(value) instanceof right();
@@ -55,8 +71,14 @@ export function brand(value: unknown): boolean {
 `;
 
 export const realmInstanceofDriverSource = `
-import { ordered, aliasError, shadow, eligible, arrayUses, detached, brand, realmOnly } from "./trusted.ts";
+import { ordered, aliasError, shadow, eligible, arrayUses, detached, brand, realmOnly, dateTime, mapSize, pattern, promise } from "./trusted.ts";
 export function run(): number {
+  class DerivedDate extends Date {}
+  if (dateTime(new Date(42)) !== 42 || dateTime({}) !== -1) return 20;
+  if (dateTime(new DerivedDate(43)) !== 43) return 21;
+  if (mapSize(new Map([[1, "a"]])) !== 1 || mapSize(new Set()) !== -1) return 22;
+  if (!pattern(/t.nt/) || pattern("tint")) return 23;
+  if (!promise(Promise.resolve(1)) || promise({ then() {} })) return 24;
   if (!ordered(new Error("ordered"))) return 7;
   if (aliasError(new RangeError("message")) !== "message") return 8;
   const array = new Uint8Array(2);

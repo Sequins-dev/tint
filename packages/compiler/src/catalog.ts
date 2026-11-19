@@ -2991,6 +2991,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "typescript",
     },
     {
+      id: "packages/typescript/src/binding/realm-library.ts",
+      packageId: "typescript",
+    },
+    {
       id: "packages/typescript/src/binding/script.ts",
       packageId: "typescript",
     },

@@ -322,6 +322,13 @@ carry that signature. A guard updates facts for the original binding or
 stable property path without changing its declared storage. The false branch
 keeps values whose type may still occur outside the checked instance type.
 
+The constructor table is generated from the workspace's pinned TypeScript
+`lib.esnext.d.ts` and its transitive declarations. It records the realm
+installer, library call and construct overloads, instance type and members.
+Typed global reads and the general host share installation state, so later
+reads see the current global binding. Library-backed instances use realm
+Get and Call when the typed bridge can represent the library signature.
+
 In realm-capable code, constructor reads use the shared global object and
 the predicate uses the same `instanceOfValue` operation as general code.
 The operation orders both operands and the hook lookup, uses actual
@@ -548,6 +555,8 @@ the ledger corpus reproduce the ones expressible in a single application.
 | No `SystemError` in typed runtime code: node:os failures are TypeErrors                                                                                                                                                                                                                     | (runtime modules)                                                                                               | 4                                        |
 | (Removed by 4a: callable classification) Typed `typeof` on realm callables received as `unknown`                                                                                                                                                                                            | `unknown-typeof-callable`, `tools/build-mixed-general-typeof-fixture.ts`                                        | 4a                                       |
 | Calling a native closure through a narrowed `Function` requires the slice 2b closure view. The dynamic call path itself is pending.                                                                                                                                                         | (mixed callable fixture planned)                                                                                | 2b, 4a                                   |
+| Realm library member signatures with callbacks or non-scalar results, including `Promise.then`, `Map.get`, `RegExp.exec` and `Uint8Array.prototype`, require additional bridge lowering. Realm property writes, index signatures, optional chains and direct calls or construction through library constructor aliases also require separate lowering. | `build-typed-realm-instanceof-fixture.ts` and checker diagnostics | 4 |
+| WeakMap and WeakSet constructors are installed. Constructing their instances requires the realm's weak-storage service. | `weak-collections` | 2b, 4 |
 | Passing a realm typed array narrowed by `instanceof` to a native typed-array parameter requires the slice 2b buffer view. Matching native storage passes without a copy.                                                                                                                                  | `build-realm-array-native-projection-failure-fixture.ts`                                                                             | 2b, 4a                                   |
 | `for…of` elements are typed `T \| undefined` (array holes) instead of TypeScript's `T`: passing the element on or reading its properties fails (FFI phases 2 and 4)                                                                                                                         | `for-of-typed-array-list`, `for-of-object-list`, `for-of-record-reads`                                          | 4a                                       |
 | Assignment does not narrow a `let` to the assigned type (`x = x === undefined ? v : x`); `??=` only on optional primitives (FFI phase 4)                                                                                                                                                    | `reassignment-narrowing`                                                                                        | 4a                                       |

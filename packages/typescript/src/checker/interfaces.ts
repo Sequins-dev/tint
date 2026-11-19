@@ -16,6 +16,10 @@ import type {
   ClassElement,
   Parameter,
 } from "../syntax/index.ts";
+import {
+  realmLibrary,
+  type RealmLibraryConstructor,
+} from "../binding/realm-library.ts";
 import type { CViewRegistry } from "./c-views.ts";
 import {
   createTypeSystem,
@@ -35,13 +39,11 @@ export const realmOnlyTypedArrays: readonly string[] = [
   "BigInt64Array",
   "BigUint64Array",
 ];
-export function withRealmTypedArrayGlobals(
-  globals: readonly string[],
-): string[] {
+export function withRealmGlobals(globals: readonly string[]): string[] {
   const result = globals.slice();
-  for (const name of realmOnlyTypedArrays) {
-    if (name === undefined) throw "realm typed-array name invariant";
-    result.push(name);
+  for (const entry of realmLibrary) {
+    if (entry === undefined) throw "realm library constructor invariant";
+    if (!result.includes(entry.name)) result.push(entry.name);
   }
   return result;
 }
@@ -69,22 +71,21 @@ export function realmArrayInstance(name: string, brand: number): Type {
     properties: [{ name: "@@toStringTag", type: brand, readonly: true }],
   };
 }
-export function realmConstructorType(
-  instance: number,
-  signature: number,
-  callable: boolean,
+/** Keep library-backed values in the general carrier. String members are
+ * resolved from the library at their use site, without creating a record. */
+export function realmLibraryType(
+  entry: RealmLibraryConstructor,
+  constructor: boolean,
 ): Type {
-  const properties: Property[] = [
-    { name: "prototype", type: instance, readonly: true },
-  ];
+  const name = constructor ? entry.constructorType : entry.instanceName;
   return {
     kind: "object",
-    properties,
-    construct: signature,
-    ...(callable ? { call: signature } : {}),
-    realmConstructor: true,
+    realmLibrary: entry.name,
+    realmConstructor: constructor,
+    properties: [{ name: "\0" + name, type: 0, readonly: true }],
   };
 }
+
 export interface InterfaceTypes {
   readonly names: ReadonlyKeyIndex<string, number>;
   readonly types: readonly Type[];
@@ -296,6 +297,29 @@ export function resolveInterfaceTypes(
         fail(node, "INVALID_TYPE", "type parameter does not accept arguments");
       return parameter;
     }
+    if (!declarations.has(name) && !names.has(name)) {
+      const entry = realmLibrary.find(
+        (candidate) =>
+          candidate !== undefined &&
+          (candidate.constructorType === name ||
+            candidate.instanceName === name),
+      );
+      if (
+        entry !== undefined &&
+        args.length === 0 &&
+        (name === entry.constructorType ||
+          realmConstructorInstance(entry.name) === undefined) &&
+        (name === entry.constructorType ||
+          (name !== "Array" && name !== "Map" && name !== "Set"))
+      ) {
+        const id = add(
+          realmLibraryType(entry, name === entry.constructorType),
+          node,
+        );
+        names.set(name, id);
+        return id;
+      }
+    }
     if (
       (name === "Array" || name === "ReadonlyArray") &&
       !declarations.has(name)
@@ -370,34 +394,6 @@ export function resolveInterfaceTypes(
       const id = add(realmArrayInstance(name, brand), node);
       names.set(name, id);
       return id;
-    }
-    if (declaration === undefined && name.endsWith("Constructor")) {
-      const instanceName = realmConstructorInstance(name.slice(0, -11));
-      if (instanceName !== undefined) {
-        // The built-in value keeps its intrinsic instance type when a source
-        // type declaration shadows that name.
-        const instance = realmOnlyTypedArrays.includes(instanceName)
-          ? named(instanceName, node)
-          : types.findIndex((type) => type?.kind === instanceName);
-        if (instance < 0) throw "realm constructor instance invariant";
-        const error =
-          instanceName === "Error" ||
-          instanceName === "TypeError" ||
-          instanceName === "RangeError";
-        const argument = error ? 3 : 0;
-        const signature = add(
-          {
-            kind: "function",
-            parameters: [argument],
-            minimumArguments: 0,
-            result: instance,
-          },
-          node,
-        );
-        const id = add(realmConstructorType(instance, signature, error), node);
-        names.set(name, id);
-        return id;
-      }
     }
     if (declaration === undefined)
       fail(node, "UNKNOWN_TYPE", "unknown type: " + name);

@@ -3324,3 +3324,48 @@ test("a declared hasInstance hook must accept an operand and return boolean", ()
     assert.equal(result.ok, false);
   }
 });
+
+test("installed library constructors narrow through direct and annotated aliases", () => {
+  for (const source of [
+    "function f(x: unknown): number { if (x instanceof Date) return x.getTime(); return 0; }",
+    "function f(x: unknown, C: DateConstructor): number { if (x instanceof C) return x.getTime(); return 0; }",
+    "function f(x: unknown): number { const C: RegExpConstructor = RegExp; if (x instanceof C) return x.source.length; return 0; }",
+    "function f(x: unknown): number { if (x instanceof Map) return x.size; return 0; }",
+    "function f(x: unknown): boolean { return x instanceof Promise || x instanceof WeakMap || x instanceof WeakSet || x instanceof DataView; }",
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify(result));
+  }
+});
+
+test("library narrowing keeps the non-instance constituent in the false branch", () => {
+  const result = check(
+    "function f(x: Date | string): string { if (x instanceof Date) return x.toISOString(); return x; }",
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("library constructor and member diagnostics identify the missing support", () => {
+  for (const [source, message] of [
+    [
+      "function f(x: unknown): boolean { return x instanceof FinalizationRegistry; }",
+      "Program realm does not install the library global FinalizationRegistry",
+    ],
+    [
+      "function f(x: unknown): boolean { return x instanceof MadeUpConstructor; }",
+      "No pinned TypeScript library value named MadeUpConstructor",
+    ],
+    [
+      "function f(x: unknown): void { if (x instanceof RegExp) x.exec('a'); }",
+      "Realm method RegExp.exec requires unsupported library signature lowering",
+    ],
+    [
+      "function f(): number { return Uint8Array.prototype.length; }",
+      "Realm property Uint8Array.prototype has no supported library representation",
+    ],
+  ]) {
+    assert.ok(source);
+    const result = check(source);
+    assert.equal(result.ok ? undefined : result.error.message, message);
+  }
+});

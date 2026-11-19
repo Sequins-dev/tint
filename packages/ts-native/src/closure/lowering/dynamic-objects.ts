@@ -106,6 +106,7 @@ export function usesRealmInstanceof(
   let used = false;
   checked.intrinsics.forEach((intrinsic, node) => {
     if (
+      intrinsic.startsWith("realm-library-") ||
       intrinsic === "realm-global" ||
       intrinsic === "realm-instanceof" ||
       (arrayGuards && intrinsic === "array-instanceof") ||
@@ -254,7 +255,8 @@ export function insertDynamicObjectRuntime(
     if (
       intrinsic.startsWith("dynamic-object-") ||
       (realmInstanceof &&
-        (intrinsic === "realm-global" ||
+        (intrinsic.startsWith("realm-library-") ||
+          intrinsic === "realm-global" ||
           intrinsic === "realm-instanceof" ||
           intrinsic === "array-instanceof" ||
           arrayFlowReceiver(checked, node, intrinsic) !== undefined))

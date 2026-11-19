@@ -482,6 +482,7 @@ export {
 export {
   programRealmCore,
   installProgramObjectIntrinsics,
+  installProgramConstructorGroup,
   installProgramArrayBufferIntrinsics,
   installProgramTypedArrayIntrinsics,
   type ProgramRealmCore,

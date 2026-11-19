@@ -108,7 +108,7 @@ import type { FunctionStore } from "@tint/ir/storage";
 import { bindModule } from "@tint/typescript/binding";
 import {
   checkClosureModule,
-  withRealmTypedArrayGlobals,
+  withRealmGlobals,
   type CheckedClosures,
 } from "@tint/typescript/checker";
 import {
@@ -921,8 +921,7 @@ const baseTypedGlobals: readonly string[] = [
   "Error",
   "console",
 ];
-const typedGlobals: readonly string[] =
-  withRealmTypedArrayGlobals(baseTypedGlobals);
+const typedGlobals: readonly string[] = withRealmGlobals(baseTypedGlobals);
 /** Links the program and prepares its globals and managed surfaces. */
 function linkTypedProgram(request: CompileRequest): TypedLinking {
   const globals = typedGlobals;

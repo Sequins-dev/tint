@@ -715,6 +715,8 @@ function generalHostSource(
       installer +
       "(object,realm,hooks" +
       (installerArguments.get(installer) ?? "") +
+      ");\n core.installed.add(" +
+      JSON.stringify(installer) +
       ");\n";
   }
   const write = output

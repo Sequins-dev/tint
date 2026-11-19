@@ -4458,7 +4458,10 @@ export function lowerFunction(
     if (global === undefined || instance === undefined) return test;
     const constructor = dynamicResult(
       global,
-      [stringSlot(kind, node.right)],
+      [
+        stringSlot(kind, node.right),
+        stringSlot("installTypedArrayIntrinsics", node.right),
+      ],
       node.right,
     );
     return callRealmInstanceOf(instance, operand, constructor, node);
@@ -4514,6 +4517,70 @@ export function lowerFunction(
     current = done;
     return dynamicResult(instance, [left, constructor, kind], node);
   }
+  function libraryMemberResult(
+    valueSlot: number,
+    type: ScalarType,
+    node: Expression,
+    runtime: DynamicObjectRuntime,
+  ): number {
+    const schema = info(node).dynamicContract;
+    const checked =
+      schema === undefined
+        ? valueSlot
+        : dynamicResult(
+            runtime.project,
+            [valueSlot, stringSlot(schema, node)],
+            node,
+          );
+    return save(load(checked, node), type, node);
+  }
+  function realmMemberOperation(
+    runtime: DynamicObjectRuntime,
+    invokeMethod: number,
+    target: Expression,
+    node: Expression,
+    object: number,
+  ): number | undefined {
+    const operation = node,
+      resultType = info(node).type;
+    const key = dynamicKey(target);
+    if (operation.kind === "call") {
+      const callable = dynamicResult(runtime.read, [object, key], node);
+      const args = operation.arguments.map(value);
+      const missing = nextValue++;
+      emit({
+        kind: "general-none",
+        id: missing,
+        start: node.start,
+        end: node.end,
+      });
+      const absent = save(missing, "general", node);
+      const output = dynamicResult(
+        invokeMethod,
+        [
+          object,
+          callable,
+          numberSlot(args.length, node),
+          args[0] ?? absent,
+          args[1] ?? absent,
+          args[2] ?? absent,
+        ],
+        node,
+      );
+      return resultType === "void"
+        ? undefined
+        : libraryMemberResult(output, resultType, node, runtime);
+    } else if (operation.kind === "assignment") {
+      const assigned = value(operation.value);
+      dynamicCall(runtime.write, [object, key, assigned], node);
+      return assigned;
+    } else {
+      const output = dynamicResult(runtime.read, [object, key], node);
+      return resultType === "void"
+        ? undefined
+        : libraryMemberResult(output, resultType, node, runtime);
+    }
+  }
   function arrayFlowOperation(
     node: Expression,
     kind: NativeTypedArray | "realm",
@@ -4543,55 +4610,10 @@ export function lowerFunction(
     }
     const runtime = dynamicObjects;
     const invokeMethod = metadata.arrayMethod;
-    function semantic(
-      runtime: DynamicObjectRuntime,
-      invokeMethod: number,
-      target: Expression,
-    ): number | undefined {
-      const operation = node,
-        resultType = metadata.type;
-      const key = dynamicKey(target);
-      if (operation.kind === "call") {
-        const callable = dynamicResult(runtime.read, [object, key], node);
-        const args = operation.arguments.map(value);
-        const missing = nextValue++;
-        emit({
-          kind: "general-none",
-          id: missing,
-          start: node.start,
-          end: node.end,
-        });
-        const absent = save(missing, "general", node);
-        const output = dynamicResult(
-          invokeMethod,
-          [
-            object,
-            callable,
-            numberSlot(args.length, node),
-            args[0] ?? absent,
-            args[1] ?? absent,
-            args[2] ?? absent,
-          ],
-          node,
-        );
-        return resultType === "void"
-          ? undefined
-          : save(load(output, node), resultType, node);
-      } else if (operation.kind === "assignment") {
-        const assigned = value(operation.value);
-        dynamicCall(runtime.write, [object, key, assigned], node);
-        return assigned;
-      } else {
-        const output = dynamicResult(runtime.read, [object, key], node);
-        return resultType === "void"
-          ? undefined
-          : save(load(output, node), resultType, node);
-      }
-    }
     if (kind === "realm") {
       if (runtime === undefined || invokeMethod === undefined)
         throw "Realm typed-array operation requires the program realm";
-      return semantic(runtime, invokeMethod, target);
+      return realmMemberOperation(runtime, invokeMethod, target, node, object);
     }
     const condition = nativeArrayTest(object, kind, node);
     if (runtime === undefined || invokeMethod === undefined) {
@@ -4615,7 +4637,13 @@ export function lowerFunction(
       store(result, load(fastResult, node), node);
     jump(done.id, node);
     current = realm;
-    const realmResult = semantic(runtime, invokeMethod, target);
+    const realmResult = realmMemberOperation(
+      runtime,
+      invokeMethod,
+      target,
+      node,
+      object,
+    );
     if (result !== undefined && realmResult !== undefined)
       store(result, load(realmResult, node), node);
     jump(done.id, node);
@@ -4623,6 +4651,22 @@ export function lowerFunction(
     return result;
   }
   function expressionValue(node: Expression): number | undefined {
+    const metadata = info(node);
+    if (metadata.realmMember === true) {
+      const target = node.kind === "call" ? ungroup(node.callee) : node;
+      if (target.kind !== "member") throw "realm library member invariant";
+      const runtime = dynamicObjects,
+        method = metadata.arrayMethod;
+      if (runtime === undefined || method === undefined)
+        throw "realm library requires the program realm";
+      return realmMemberOperation(
+        runtime,
+        method,
+        target,
+        node,
+        value(target.object),
+      );
+    }
     const array = info(node).arrayReceiver;
     return array === undefined
       ? expressionCore(node)
@@ -5207,7 +5251,14 @@ export function lowerFunction(
       case "identifier": {
         const global = info(node).realmGlobal;
         if (global !== undefined)
-          return dynamicResult(global, [stringSlot(node.name, node)], node);
+          return dynamicResult(
+            global,
+            [
+              stringSlot(node.name, node),
+              stringSlot(info(node).realmInstaller ?? "", node),
+            ],
+            node,
+          );
         const local = info(node).local;
         if (local === undefined) {
           const id = nextValue++;
@@ -5652,7 +5703,10 @@ export function lowerFunction(
           if (global !== undefined && instance !== undefined) {
             const constructor = dynamicResult(
               global,
-              [stringSlot(kind, node.right)],
+              [
+                stringSlot(kind, node.right),
+                stringSlot("installErrorIntrinsics", node.right),
+              ],
               node.right,
             );
             return callRealmInstanceOf(instance, left, constructor, node);

@@ -69,6 +69,7 @@ export type Type =
       readonly call?: number;
       readonly construct?: number;
       readonly realmConstructor?: boolean;
+      readonly realmLibrary?: string;
       readonly realmTypedArray?: string;
     }
   | {
@@ -1559,6 +1560,9 @@ function copyType(
         ...(t.call === undefined ? {} : { call: t.call }),
         ...(t.construct === undefined ? {} : { construct: t.construct }),
         ...(t.realmConstructor === true ? { realmConstructor: true } : {}),
+        ...(t.realmLibrary === undefined
+          ? {}
+          : { realmLibrary: t.realmLibrary }),
         ...(t.realmTypedArray === undefined
           ? {}
           : { realmTypedArray: t.realmTypedArray }),

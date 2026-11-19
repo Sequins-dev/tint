@@ -36,7 +36,11 @@ import {
 import type { RecordOperation } from "./record-bindings.ts";
 import { bindRecordOperation } from "./record-bindings.ts";
 import { incompatibleRepresentationView } from "./representation-views.ts";
-import { checkedPropertyName, numericConstant } from "@tint/typescript/checker";
+import {
+  checkedPropertyName,
+  numericConstant,
+  realmLibraryConstructor,
+} from "@tint/typescript/checker";
 import { syntaxHash } from "@tint/typescript/syntax";
 import type { Binding as BoundBinding } from "@tint/typescript/binding";
 import { createKeyIndex } from "@tint/foundation/collections/key-index";
@@ -1880,6 +1884,8 @@ function lowerEntries(
         let dynamicObject: ExpressionInfo["dynamicObject"];
         let dynamicContract: string | undefined;
         let realmGlobal: number | undefined;
+        let realmInstaller: string | undefined;
+        let realmMember = false;
         let realmInstanceOf: number | undefined;
         let arrayInstance: ExpressionInfo["arrayInstance"];
         const dynamicIntrinsic = checked.intrinsics.get(node);
@@ -2005,6 +2011,9 @@ function lowerEntries(
                 dynamicIntrinsic === "realm-global"
               ) {
                 realmGlobal = dynamicAliases.get("realmGlobal");
+                realmInstaller = realmLibraryConstructor(node.name)?.installer;
+                if (realmInstaller === undefined)
+                  fail("missing realm installer");
                 if (realmGlobal === undefined)
                   fail("realm global requires the program realm");
                 break;
@@ -2080,6 +2089,11 @@ function lowerEntries(
               expr(node.index);
               break;
             case "member":
+              if (dynamicIntrinsic === "realm-library-read") {
+                realmMember = true;
+                expr(node.object);
+                break;
+              }
               if (dynamicIntrinsic === "dynamic-object-read") {
                 if (dynamicObjects === undefined || checkedType === undefined)
                   fail("dynamic-key object read requires the program realm");
@@ -2492,6 +2506,16 @@ function lowerEntries(
             }
             case "call": {
               const intrinsic = checked.intrinsics.get(node);
+              if (intrinsic === "realm-library-call") {
+                let member = node.callee;
+                while (member.kind === "group") member = member.expression;
+                if (member.kind !== "member")
+                  fail("realm library method invariant");
+                realmMember = true;
+                expr(member.object);
+                exprArguments(node.arguments);
+                break;
+              }
               if (intrinsic === "dynamic-object-own-enumeration") {
                 if (dynamicObjects === undefined)
                   fail("Object enumeration requires the program realm");
@@ -2952,6 +2976,13 @@ function lowerEntries(
                 receiver.listElement,
             });
         }
+        if (
+          realmMember &&
+          type !== "void" &&
+          type !== "general" &&
+          checkedType !== undefined
+        )
+          dynamicContract = encodeDynamicContract(checked, checkedType);
         const arrayReceiver = arrayFlowReceiver(
           checked,
           node,
@@ -2995,6 +3026,8 @@ function lowerEntries(
           dynamicObject,
           dynamicContract,
           realmGlobal,
+          realmInstaller,
+          realmMember: realmMember ? true : undefined,
           realmInstanceOf,
           arrayInstance,
           arrayReceiver,

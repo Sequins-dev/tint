@@ -11,9 +11,8 @@ import {
   deleteObjectValueProperty,
   finishObjectPropertyContract,
   installProgramObjectIntrinsics,
-  installProgramArrayBufferIntrinsics,
+  installProgramConstructorGroup,
   installProgramTypedArrayIntrinsics,
-  installErrorIntrinsics,
   instanceOfValue,
   hasProperty,
   objectValueHasProperty,
@@ -278,13 +277,9 @@ export function invokeEnumeration(
 }
 
 /** Evaluate a typed source's realm global as an ordinary property lookup. */
-export function realmGlobal(name: string): unknown {
+export function realmGlobal(name: string, installer: string): unknown {
   const core = programRealmCore();
-  if (name === "Error" || name === "RangeError" || name === "TypeError") {
-    if (!core.realm.constructors.has("error"))
-      installErrorIntrinsics(core.object, core.realm, core.hooks);
-  } else if (name === "ArrayBuffer") installProgramArrayBufferIntrinsics(core);
-  else installProgramTypedArrayIntrinsics(core);
+  installProgramConstructorGroup(core, installer);
   if (!hasProperty<ScriptPropertyKey, unknown>(core.object, name))
     throw createRuntimeError(core.realm, "reference");
   return readObjectValueProperty(core.object, name, core.hooks, core.realm);

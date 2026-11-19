@@ -145,7 +145,9 @@ function generalType(checked: CheckedClosures, id: number): boolean {
   if (type?.kind === "unknown") return true;
   if (
     type?.kind === "object" &&
-    (type.realmConstructor === true || type.realmTypedArray !== undefined)
+    (type.realmConstructor === true ||
+      type.realmTypedArray !== undefined ||
+      type.realmLibrary !== undefined)
   )
     return true;
   if (

@@ -51,12 +51,13 @@ import {
   type CheckedCellOperation,
   type CellOperation,
 } from "../types/index.ts";
+import { realmLibraryConstructor } from "../binding/realm-library.ts";
 import {
   realmArrayInstance,
   realmConstructorInstance,
-  realmConstructorType,
   realmOnlyTypedArrays,
-  withRealmTypedArrayGlobals,
+  withRealmGlobals,
+  realmLibraryType,
   resolveInterfaceTypes,
   type ClassContract,
   type InterfaceResolutionCache,
@@ -163,6 +164,8 @@ export type ClosureIntrinsic =
   | "array-read"
   | "array-write"
   | "error-new"
+  | "realm-library-read"
+  | "realm-library-call"
   | "realm-global"
   | "realm-instanceof"
   | "array-instanceof"
@@ -310,7 +313,7 @@ export function checkClosureModule(
     "RangeError",
     "Error",
   ];
-  const bound = bindModule(module, withRealmTypedArrayGlobals(nativeGlobals));
+  const bound = bindModule(module, withRealmGlobals(nativeGlobals));
   if (!bound.ok) {
     const diagnostic = bound.error;
     return {
@@ -2116,6 +2119,24 @@ export function checkClosureModule(
         (baseType?.kind === "object" && baseType.properties.length === 0)
       )
         return false;
+      const sourceType = types[id];
+      if (
+        sourceType?.kind === "object" &&
+        sourceType.realmConstructor !== true
+      ) {
+        const name = sourceType.realmLibrary;
+        if (name !== undefined) {
+          if (
+            baseType?.kind === "object" &&
+            baseType.realmConstructor !== true &&
+            baseType.realmLibrary === name
+          )
+            return true;
+          const entry = realmLibraryConstructor(name);
+          if (baseKind === "Error" && entry?.bases.includes("Error") === true)
+            return true;
+        }
+      }
       // Structural compatibility does not establish prototype derivation.
       if (!truth && kind === "object") return false;
       return system.assignable(id, base);
@@ -2177,44 +2198,143 @@ export function checkClosureModule(
     return result;
   }
   const globalConstructors = createStringIndex<number>();
+  const libraryInstances = createStringIndex<number>();
+  function libraryInstance(name: string, node: Span): number {
+    const entry = realmLibraryConstructor(name);
+    if (entry === undefined) throw "missing realm library constructor";
+    const known = libraryInstances.get(name);
+    if (known !== undefined) return known;
+    const named = contracts.names.get(entry.instanceName);
+    const namedType = named === undefined ? undefined : types[named];
+    if (
+      named !== undefined &&
+      namedType?.kind === "object" &&
+      namedType.realmLibrary === name
+    )
+      return named;
+    let instance = realmLibraryType(entry, false);
+    if (realmOnlyTypedArrays.includes(name)) {
+      const brand = appendType(
+        { kind: "literal", value: name },
+        node,
+        "invalid typed-array brand",
+      );
+      instance = realmArrayInstance(name, brand);
+    } else if (
+      name !== "ArrayBuffer" &&
+      realmConstructorInstance(name) !== undefined
+    ) {
+      return primitive(name);
+    }
+    const id = appendType(instance, node, "invalid library instance type");
+    libraryInstances.set(name, id);
+    return id;
+  }
+  function libraryRead(type: Type, name: string, node: Span): number {
+    if (type.kind !== "object") throw "realm library object invariant";
+    const entry = realmLibraryConstructor(type.realmLibrary ?? "");
+    if (entry === undefined) throw "realm library type invariant";
+    if (
+      type.realmConstructor === true &&
+      name === "prototype" &&
+      entry.prototype
+    ) {
+      const instance = libraryInstance(entry.name, node);
+      if (types[instance]?.kind === "object") return instance;
+    }
+    if (type.realmConstructor !== true) {
+      for (const member of entry.members) {
+        if (member === undefined) throw "realm library member invariant";
+        const fields = member.split("|");
+        if (fields[0] !== name) continue;
+        const result = fields[1];
+        if (result !== undefined && result !== "") return primitive(result);
+        break;
+      }
+    }
+    return fail(
+      node,
+      "UNSUPPORTED",
+      "Realm property " +
+        entry.name +
+        "." +
+        name +
+        " has no supported library representation",
+      type.realmConstructor !== true,
+    );
+  }
+  function libraryCall(
+    type: Type,
+    name: string,
+    args: readonly Expression[],
+    owner: number | undefined,
+    node: Span,
+  ): number {
+    if (type.kind !== "object") throw "realm library object invariant";
+    const entry = realmLibraryConstructor(type.realmLibrary ?? "");
+    if (entry === undefined) throw "realm library type invariant";
+    if (type.realmConstructor !== true) {
+      for (const member of entry.members) {
+        if (member === undefined) throw "realm library method invariant";
+        const fields = member.split("|");
+        if (fields[0] !== name) continue;
+        if (fields.length <= 2) break;
+        const actual: number[] = [];
+        for (const arg of args) {
+          if (arg === undefined) throw "realm method argument invariant";
+          actual.push(expression(arg, owner));
+        }
+        for (let i = 2; i < fields.length; i++) {
+          const signature = fields[i];
+          if (signature === undefined)
+            throw "realm library signature invariant";
+          const parts = signature.split(",");
+          if (parts.length !== args.length + 1) continue;
+          let matches = true;
+          for (let j = 0; j < args.length; j++) {
+            const value = actual[j],
+              expected = parts[j];
+            if (
+              value === undefined ||
+              expected === undefined ||
+              !system.assignable(value, primitive(expected))
+            )
+              matches = false;
+          }
+          const result = parts[parts.length - 1];
+          if (matches && result !== undefined) return primitive(result);
+        }
+        return fail(
+          node,
+          "TYPE_MISMATCH",
+          "No pinned library overload matches " + entry.name + "." + name,
+          true,
+        );
+      }
+    }
+    return fail(
+      node,
+      "UNSUPPORTED",
+      "Realm method " +
+        entry.name +
+        "." +
+        name +
+        " requires unsupported library signature lowering",
+      type.realmConstructor !== true,
+    );
+  }
   function globalConstructor(name: string, node: Span): number | undefined {
-    const instanceName = realmConstructorInstance(name);
-    if (instanceName === undefined) return undefined;
     const known = globalConstructors.get(name);
     if (known !== undefined) return known;
-    const instance = realmOnlyTypedArrays.includes(instanceName)
-      ? (contracts.names.get(instanceName) ??
-        appendType(
-          realmArrayInstance(
-            instanceName,
-            appendType(
-              { kind: "literal", value: instanceName },
-              node,
-              "invalid typed-array brand",
-            ),
-          ),
-          node,
-          "invalid realm typed-array instance",
-        ))
-      : primitive(instanceName);
-    const error = isErrorKind(instanceName);
-    const signature = appendType(
-      {
-        kind: "function",
-        parameters: [error ? string : number],
-        minimumArguments: 0,
-        result: instance,
-      },
+    const entry = realmLibraryConstructor(name);
+    if (entry === undefined) return undefined;
+    const id = appendType(
+      realmLibraryType(entry, true),
       node,
-      "invalid realm constructor signature",
+      "invalid library constructor type",
     );
-    const constructor = appendType(
-      realmConstructorType(instance, signature, error),
-      node,
-      "invalid realm constructor type",
-    );
-    globalConstructors.set(name, constructor);
-    return constructor;
+    globalConstructors.set(name, id);
+    return id;
   }
   function instanceofCandidate(
     ctor: number,
@@ -2235,6 +2355,13 @@ export function checkClosureModule(
       return complete ? unionSubset(candidates, node) : undefined;
     }
     if (type?.kind === "object") {
+      const library = type.realmLibrary;
+      if (library !== undefined && type.realmConstructor === true) {
+        const entry = realmLibraryConstructor(library);
+        if (entry === undefined) throw "missing library signature";
+        if (entry.construct.length !== 0 || entry.call.length !== 0)
+          return libraryInstance(library, node);
+      }
       const hook = type.properties.find(
         (property) =>
           property !== undefined &&
@@ -4271,6 +4398,22 @@ export function checkClosureModule(
             break;
           }
           const obj = chainReceiver(node.object, node.optional === true);
+          const library = types[obj];
+          if (
+            library?.kind === "object" &&
+            library.realmLibrary !== undefined
+          ) {
+            if (node.optional === true || skipped !== undefined)
+              fail(
+                node,
+                "UNSUPPORTED",
+                "Optional realm library property access requires optional chain lowering",
+                true,
+              );
+            intrinsics.set(node, "realm-library-read");
+            result = libraryRead(library, node.property, node);
+            break;
+          }
           if (
             isErrorType(obj) &&
             (node.property === "message" ||
@@ -4357,6 +4500,18 @@ export function checkClosureModule(
           const keyType = expression(node.index, owner),
             property = checkedPropertyName(node.index, types[keyType]);
           const objectType = types[object];
+          if (
+            objectType?.kind === "object" &&
+            objectType.realmLibrary !== undefined
+          )
+            fail(
+              node,
+              "UNSUPPORTED",
+              "Realm indexed read on " +
+                objectType.realmLibrary +
+                " requires library index lowering",
+              true,
+            );
           if (objectType?.kind === "array" && objectType.realmArray === true) {
             intrinsics.set(node, "dynamic-object-read");
             if (property === "length") result = number;
@@ -4569,6 +4724,17 @@ export function checkClosureModule(
               );
             const callee = expression(node.callee, owner);
             const contract = types[callee];
+            if (
+              contract?.kind === "object" &&
+              contract.realmLibrary !== undefined
+            )
+              fail(
+                node,
+                "UNSUPPORTED",
+                "Realm constructor " +
+                  contract.realmLibrary +
+                  " requires library overload lowering",
+              );
             const construct =
               contract?.kind === "object" ? contract.construct : undefined;
             const signature =
@@ -4918,6 +5084,29 @@ export function checkClosureModule(
                 ? chainReceiver(target.object, target.optional === true)
                 : expression(target.object, owner);
             const map = types[obj];
+            if (map?.kind === "object" && map.realmLibrary !== undefined) {
+              if (
+                node.optional === true ||
+                target.optional === true ||
+                skipped !== undefined
+              )
+                fail(
+                  node,
+                  "UNSUPPORTED",
+                  "Optional realm library method calls require optional chain lowering",
+                  true,
+                );
+              result = libraryCall(
+                map,
+                target.property,
+                node.arguments,
+                owner,
+                node,
+              );
+              intrinsics.set(node, "realm-library-call");
+              invalidateCalls();
+              break;
+            }
             if (map?.kind === "function" && target.property === "call") {
               const suppliedReceiver = node.arguments[0];
               const receiver =
@@ -5649,6 +5838,17 @@ export function checkClosureModule(
           }
           const callee = expression(node.callee, owner),
             signature = types[callee];
+          if (
+            signature?.kind === "object" &&
+            signature.realmLibrary !== undefined
+          )
+            fail(
+              node,
+              "UNSUPPORTED",
+              "Realm callable " +
+                signature.realmLibrary +
+                " requires library overload lowering",
+            );
           if (signature?.kind !== "function")
             fail(node, "TYPE_MISMATCH", "callee must have a function type");
           const args = callArguments(node, owner, signature);
@@ -5973,6 +6173,19 @@ export function checkClosureModule(
               dynamicEnrollments.set(node.value, targetType);
           } else if (target.kind === "member" || target.kind === "index") {
             const receiver = expression(target.object, owner);
+            const receiverType = types[receiver];
+            if (
+              receiverType?.kind === "object" &&
+              receiverType.realmLibrary !== undefined
+            )
+              fail(
+                target,
+                "UNSUPPORTED",
+                "Realm property write on " +
+                  receiverType.realmLibrary +
+                  " requires library mutability lowering",
+                true,
+              );
             const keyType =
               target.kind === "index"
                 ? expression(target.index, owner)
