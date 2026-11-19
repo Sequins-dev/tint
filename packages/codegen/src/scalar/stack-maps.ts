@@ -11,6 +11,18 @@ import {
   nativeStackMapRegisterShift,
 } from "@tint/abi/host";
 
+/** The root-head binding's own frame is popped before its caller walks. */
+export function rootHeadBinding(fn: FunctionIR): boolean {
+  const block = fn.blocks.length === 1 ? fn.blocks[0] : undefined;
+  if (block === undefined) return false;
+  let reads = false;
+  for (const op of block.instructions) {
+    if (op?.kind === "host-call" && op.operation === "root-head") reads = true;
+    else if (op?.kind !== "load") return false;
+  }
+  return reads;
+}
+
 /** A call site at which the collector may walk this frame: the instruction
  * at `index` of `block` (the terminator when index is the instruction count). */
 export interface SafepointSite {
@@ -33,6 +45,7 @@ export function safepointLiveSlots(
   liveIn: readonly (readonly number[] | undefined)[],
   tracked: Uint8Array,
   sites: readonly SafepointSite[],
+  preciseExceptionTransfers: boolean = false,
 ): (readonly number[])[] {
   const count = fn.slots.length,
     results: (readonly number[])[] = [],
@@ -126,6 +139,7 @@ export function safepointLiveSlots(
           if (
             slot !== undefined &&
             tracked[slot] === 1 &&
+            !(preciseExceptionTransfers && slot === handler?.slot) &&
             stamps[slot] !== stamp
           ) {
             stamps[slot] = stamp;
@@ -511,7 +525,9 @@ export function encodeStackMapTable(
 }
 
 /** The wide table of `sorted` safepoints (see encodeStackMapTable). */
-function encodeWideStackMapTable(sorted: readonly SafepointEntry[]): number[] {
+export function encodeWideStackMapTable(
+  sorted: readonly SafepointEntry[],
+): number[] {
   const mapIndices = new Map<string, number>(),
     maps: number[] = [],
     /** Each safepoint's map, as a word offset into `maps`. */

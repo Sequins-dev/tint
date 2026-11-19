@@ -170,6 +170,104 @@ const native = {
   skip:
     runner === undefined && "set TINT_X64_HOSTED_RUNNER for x86-64 execution",
 };
+
+test(
+  "x86-64 hosted stack maps locate and update actual suspended roots",
+  native,
+  () => {
+    const built = build(
+      `
+    import { rootHead, readWord, writeWord } from "memory";
+
+    function word(address: number): number {
+      return readWord(address, 8, 0);
+    }
+    function mapFor(registry: number, pc: number): number {
+      if (word(registry) !== 1) return 0;
+      const start = word(registry + 32);
+      const length = word(registry + 40);
+      const table = word(registry + 48);
+      if (pc < start || pc >= start + length ||
+          word(table) !== 1346456915 || word(table + 8) !== 3) return 0;
+      const count = word(table + 16);
+      for (let i = 0; i < count; i++) {
+        const entry = table + 24 + i * 16;
+        if (word(entry) === pc - start)
+          return table + word(entry + 8) * 8;
+      }
+      return 0;
+    }
+    function scan(): number {
+      // This fixture relocates one byte array to an already allocated copy.
+      // The hook walks the two suspended callers using their real frame chain.
+      const registry = rootHead();
+      if (registry === 0 || word(registry + 24) !== 0) return 1;
+      const start = word(registry + 16);
+      const relay = word(start);
+      const outer = word(relay);
+      const relayPc = word(start + 8);
+      const outerPc = word(relay + 8);
+      const relayMap = mapFor(registry, relayPc);
+      const outerMap = mapFor(registry, outerPc);
+      if (relayMap === 0 || outerMap === 0) return 2;
+      if (mapFor(registry, outerPc + 1) !== 0) return 8;
+      if (relay - word(relayMap) !== start + 16 ||
+          outer - word(outerMap) !== relay + 16) return 9;
+      let entry = word(outer);
+      for (let i = 0; i < 4 && word(entry) !== 0; i++) entry = word(entry);
+      if (word(entry) !== 0) return 10;
+      if (word(relayMap + 8) !== 1 || word(outerMap + 8) !== 3) return 3;
+      const relayRoot = relay - word(relayMap) + word(relayMap + 16);
+      const from = word(relayRoot);
+      let to = 0;
+      for (let i = 0; i < 3; i++) {
+        const slot = outer - word(outerMap) + word(outerMap + 16 + i * 8);
+        const object = word(slot);
+        if (object !== from) to = object;
+      }
+      if (to === 0 || word(to) !== 2) return 4;
+      if (writeWord(relayRoot, 8, 0, to) !== 0) return 5;
+      for (let i = 0; i < 3; i++) {
+        const slot = outer - word(outerMap) + word(outerMap + 16 + i * 8);
+        if (word(slot) === from && writeWord(slot, 8, 0, to) !== 0) return 6;
+      }
+      return 0;
+    }
+    function relay(before: Uint8Array): number {
+      const status = scan();
+      if (status !== 0) return status + 100;
+      return before[0] ?? 0;
+    }
+    export function run(): number {
+      const before = new Uint8Array(1), after = new Uint8Array(1);
+      before[0] = 19;
+      after[0] = 42;
+      const status = relay(before);
+      if (status !== 42) return status;
+      return (before[0] ?? 0) === (after[0] ?? 0) ? 42 : 7;
+    }
+    `,
+      {
+        memory: {
+          text: `
+          export function rootHead(): number { return 0; }
+          export function readWord(base: number, length: number, offset: number): number { return -1; }
+          export function writeWord(base: number, length: number, offset: number, value: number): number { return -1; }
+        `,
+          bindings: {
+            rootHead: "root-head",
+            readWord: "memory-read-word",
+            writeWord: "memory-write-word",
+          },
+        },
+      },
+      { optimization: "none" },
+    );
+    assert.ok(built.ok, JSON.stringify(built));
+    assert.equal(run(built.value).status, 42);
+  },
+);
+
 function run(image: Uint8Array, args: (name: string) => string[] = () => []) {
   const directory = mkdtempSync(join(tmpdir(), "tint-x64-hosted-"));
   try {

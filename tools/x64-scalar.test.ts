@@ -10,10 +10,18 @@ import {
   type ModuleIR,
   type ScalarType,
 } from "@tint/ir/scalar";
-import { emitModule } from "@tint/codegen/aarch64/scalar";
+import { decodeStackMaps, emitModule } from "@tint/codegen/aarch64/scalar";
+import {
+  nativeStackMapWideVersion,
+  nativeStackMapTransitionTable,
+} from "@tint/abi/host";
+import { createNativeRootScan } from "@tint/native-runtime/tracing";
 import type { ImageAddressTarget } from "@tint/abi/relocation";
 import { encodeLayout, type Instruction } from "@tint/codegen/x86_64/isa";
-import { imageRelocations } from "@tint/codegen/x86_64/scalar";
+import {
+  emitModule as emitX64Module,
+  imageRelocations,
+} from "@tint/codegen/x86_64/scalar";
 import { buildElfExecutable } from "@tint/image/linux/elf";
 import {
   darwinAArch64Target,
@@ -448,6 +456,153 @@ test("ARM scalar dispatch preserves bytes and metadata on both output targets", 
       emission: emitModule(module, { hostABI: target.hostABI }),
     });
   }
+});
+
+test("x86-64 byte-PC maps relocate live homes across managed and transition frames", () => {
+  const entry = new Fixture(0, ["Uint8Array", "general", "Uint8Array"]);
+  const relay = new Fixture(1, ["Uint8Array", "general"]);
+  const leaf = new Fixture(2);
+  function keepAcrossCall(f: Fixture, target: number, args: number[]) {
+    const array = f.ir.load(0);
+    const value = f.call(target, args);
+    const length = f.ir.next();
+    f.ir.emit({ ...span, kind: "array-length", id: length, array });
+    const number = f.unboxNumber(f.ir.load(1));
+    return f.finish(f.binary("+", value, f.binary("+", length, number)));
+  }
+  const emitted = emitX64Module(
+    {
+      functions: [
+        keepAcrossCall(entry, 1, [entry.ir.load(0), entry.ir.load(1)]),
+        keepAcrossCall(relay, 2, []),
+        leaf.finish(leaf.constant(0)),
+      ],
+    },
+    linuxX86_64Target.hostABI,
+  );
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  const native = emitted.value;
+  const table = native.stackMaps[0];
+  assert.ok(table);
+  const code = Buffer.from(native.code);
+  assert.equal(
+    code.readBigUInt64LE(table.tableOffset + 8),
+    BigInt(nativeStackMapWideVersion),
+  );
+  const maps = decodeStackMaps(native);
+  assert.equal(maps?.length, 2);
+  const [outer, inner] = maps ?? [];
+  assert.ok(outer && inner);
+  assert.ok([outer, inner].some((map) => map.offset % 4 !== 0));
+  for (const [map, roots] of [
+    [outer, 2],
+    [inner, 1],
+  ] as const) {
+    assert.equal(code[map.offset - 5], 0xe8);
+    assert.equal(map.references.length, roots);
+    assert.equal(map.generals.length, roots);
+    assert.deepEqual(map.registers, []);
+    assert.deepEqual(map.saves, []);
+  }
+  const memory = new Map<number, number>();
+  const load = (address: number) => memory.get(address);
+  const scan = createNativeRootScan(load);
+  const codeBase = 0x10000,
+    registry = 0x20000,
+    thunk = 0x30000;
+  const start = 0x40000,
+    transition = 0x40100;
+  const outerFrame = 0x42000,
+    entryFrame = 0x43000;
+  const innerFrame = outerFrame - outer.frameBytes - 16;
+  function words(address: number, values: number[]) {
+    values.forEach((value, index) => memory.set(address + index * 8, value));
+  }
+  for (let offset = table.tableOffset; offset < code.length; offset += 8)
+    memory.set(codeBase + offset, Number(code.readBigUInt64LE(offset)));
+  words(registry, [
+    2,
+    2,
+    start,
+    0,
+    codeBase,
+    table.tableOffset,
+    codeBase + table.tableOffset,
+    thunk,
+    16,
+    nativeStackMapTransitionTable,
+  ]);
+  words(start, [transition, thunk + 5]);
+  words(transition, [innerFrame]);
+  memory.set(transition + 48, transition + 64);
+  words(transition + 64, [innerFrame, codeBase + inner.offset]);
+  words(innerFrame, [outerFrame, codeBase + outer.offset]);
+  words(outerFrame, [entryFrame, 0]);
+  words(entryFrame, [0]);
+  const roots = new Map<number, number>();
+  for (const [fp, map] of [
+    [innerFrame, inner],
+    [outerFrame, outer],
+  ] as const) {
+    const base = fp - map.frameBytes;
+    for (const offset of map.references) {
+      const ref = base + offset;
+      words(ref, [0x50000]);
+      roots.set(ref, 0x50010);
+    }
+    for (const offset of map.generals) {
+      const tag = base + offset;
+      words(tag, [5, 0x50008]);
+      roots.set(tag + 8, 0x50018);
+    }
+  }
+  assert.equal(
+    scan(registry, (address, slot) => {
+      memory.set(slot, address + 16);
+      return true;
+    }),
+    "complete",
+  );
+  for (const [slot, expected] of roots) assert.equal(load(slot), expected);
+  memory.set(innerFrame + 8, codeBase + outer.offset + 1);
+  assert.equal(
+    scan(registry, () => true),
+    "invalid",
+  );
+});
+
+test("x86-64 marks the thrown tag as a root only after the transfer", () => {
+  const module = completion(true);
+  const entry = module.functions[0]!;
+  const handler = entry.blocks[1]!;
+  const collect = createFunctionBuilder(3, "collect", [], "void");
+  collect.end({ ...span, kind: "return" });
+  const compiled = emitX64Module(
+    {
+      functions: [
+        {
+          ...entry,
+          blocks: [
+            entry.blocks[0]!,
+            {
+              ...handler,
+              instructions: [
+                { ...span, kind: "call", target: 3, arguments: [] },
+                ...handler.instructions,
+              ],
+            },
+          ],
+        },
+        ...module.functions.slice(1),
+        collect.finish(),
+      ],
+    },
+    linuxX86_64Target.hostABI,
+  );
+  assert.ok(compiled.ok, JSON.stringify(compiled));
+  const [before, after] = decodeStackMaps(compiled.value) ?? [];
+  assert.deepEqual(before?.generals, []);
+  assert.equal(after?.generals.length, 1);
 });
 
 test("unsupported operations identify the operation and its source location", () => {
