@@ -186,6 +186,9 @@ export {
 export {
   viewObjectValue,
   objectValueTypeof,
+  objectTypeof,
+  generalValueTypeof,
+  viewTypeofObject,
   scriptBoolean,
   scriptStrictEqual,
   scriptSameValue,

@@ -1,0 +1,231 @@
+{
+  "kind": "tint-unified-pipeline-ledger",
+  "version": 1,
+  "label": "slice4a-callable-classifier-v1-recheck",
+  "recorded": "2026-11-18T21:04:29.362Z",
+  "node": "v24.12.0",
+  "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+  "summary": {
+    "typed": {
+      "general": 6,
+      "typed": 2,
+      "run-failed": 1
+    },
+    "untyped": {
+      "general": 8,
+      "run-failed": 1
+    }
+  },
+  "entries": [
+    {
+      "construct": "for-of-record-reads",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:162:169: invalid property read",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 109.7
+    },
+    {
+      "construct": "for-of-record-reads",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:111: named functions require parameter and return annotations",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 52.3
+    },
+    {
+      "construct": "bigint",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 11.3
+    },
+    {
+      "construct": "bigint",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:48: named functions require parameter and return annotations",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 39.8
+    },
+    {
+      "construct": "module-statements",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: module evaluation is required for this statement",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 41.2
+    },
+    {
+      "construct": "module-statements",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: module evaluation is required for this statement",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 39.9
+    },
+    {
+      "construct": "weak-collections",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: WeakMap",
+      "error": "age: false,\n  code: 'ERR_ASSERTION',\n  actual: '(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-weak-collections-typed-TJHS6x/construct-weak-collections-typed\"\\n' +\n    \"Current executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-weak-collections-typed-TJHS6x/construct-weak-collections-typed' (arm64).\\n\" +\n    '(lldb) settings set target.disable-aslr false\\n' +\n    '(lldb) process launch --stop-at-entry\\n' +\n    \"Process 32160 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-weak-collections-typed-TJHS6x/construct-weak-collections-typed' (arm64)\\n\" +\n    '(lldb) script assert lldb.process.GetState() == lldb.eStateStopped\\n' +\n    '(lldb) continue\\n' +\n    'Process 32160 resuming\\n' +\n    'Process 32160 exited with status = 70 (0x00000046)\\n' +\n    '(lldb) script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42\\n' +\n    'Traceback (most recent call last):\\n' +\n    '  File \"<input>\", line 1, in <module>\\n' +\n    'AssertionError\\n',\n  expected: /exited with status = 42 /,\n  operator: 'match',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 50.1
+    },
+    {
+      "construct": "weak-collections",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: WeakMap",
+      "error": "  code: 'ERR_ASSERTION',\n  actual: '(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-weak-collections-untyped-mG6S6n/construct-weak-collections-untyped\"\\n' +\n    \"Current executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-weak-collections-untyped-mG6S6n/construct-weak-collections-untyped' (arm64).\\n\" +\n    '(lldb) settings set target.disable-aslr false\\n' +\n    '(lldb) process launch --stop-at-entry\\n' +\n    \"Process 45385 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-weak-collections-untyped-mG6S6n/construct-weak-collections-untyped' (arm64)\\n\" +\n    '(lldb) script assert lldb.process.GetState() == lldb.eStateStopped\\n' +\n    '(lldb) continue\\n' +\n    'Process 45385 resuming\\n' +\n    'Process 45385 exited with status = 70 (0x00000046)\\n' +\n    '(lldb) script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42\\n' +\n    'Traceback (most recent call last):\\n' +\n    '  File \"<input>\", line 1, in <module>\\n' +\n    'AssertionError\\n',\n  expected: /exited with status = 42 /,\n  operator: 'match',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 192.7
+    },
+    {
+      "construct": "narrowing-across-calls",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 30.1
+    },
+    {
+      "construct": "narrowing-across-calls",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:110: named functions require parameter and return annotations",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 140.3
+    },
+    {
+      "construct": "for-of-typed-array-list",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:306:316: invalid call",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 157.4
+    },
+    {
+      "construct": "for-of-typed-array-list",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:121: named functions require parameter and return annotations",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 323.1
+    },
+    {
+      "construct": "for-of-object-list",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:133:143: invalid property read",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 44.2
+    },
+    {
+      "construct": "for-of-object-list",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:170: named functions require parameter and return annotations",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 54.3
+    },
+    {
+      "construct": "reassignment-narrowing",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:269:275: nullish assignment requires an optional primitive local",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 48.4
+    },
+    {
+      "construct": "reassignment-narrowing",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:64: named functions require parameter and return annotations",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 64.3
+    },
+    {
+      "construct": "module-initializers",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: module evaluation is required for this statement",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 53
+    },
+    {
+      "construct": "module-initializers",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: module evaluation is required for this statement",
+      "sourceSnapshot": "a10103e5b20894bd040d5c54beed98352751e133c24f919ea90a995d9ca3c808",
+      "seconds": 40.6
+    }
+  ]
+}
