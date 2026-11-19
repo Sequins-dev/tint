@@ -5,6 +5,7 @@ gate_head=$(git rev-parse HEAD)
 mkdir -p .tint-bootstrap
 gate_output=$(mktemp -d "$gate_root/.tint-bootstrap/gate.XXXXXXXX")
 unset TINT_GATE_LAUNCH_LOCK
+export TINT_GATE_EVIDENCE="$gate_output"
 export TINT_GATE_LOCK_TIMING="$gate_output/locks.tsv"
 gate_started=$(date +%s)
 gate_status() {
@@ -12,6 +13,9 @@ gate_status() {
   sum=0
   if [ -f "$TINT_GATE_LOCK_TIMING" ]; then
     sum=$(awk -F '\t' -v lock="${TINT_GATE_EXCLUSIVE_LOCK:-}" '$2 == lock { sum += $4 } END { print sum + 0 }' "$TINT_GATE_LOCK_TIMING")
+  fi
+  if [ -s "$gate_output/stalls.tsv" ]; then
+    awk -F '\t' '{ printf "STALL step=%s timeout-seconds=%s pid=%s report=%s\n", $1, $2, $3, $4 }' "$gate_output/stalls.tsv"
   fi
   printf 'gate-exit=%s wall-seconds=%s exclusive-lock-ms=%s evidence=%s\n' \
     "$gate_exit" "$(( $(date +%s) - gate_started ))" "$sum" "$gate_output"
@@ -30,11 +34,22 @@ run_step() {
 run_step_logged() {
   step_name=$1 step_resource=$2 step_log=$3 step_stderr=$4
   shift 4
+  step_started=$(date +%s)
   printf '%s start %s resource=%s log=%s\n' "$(date -u +%FT%TZ)" "$step_name" "$step_resource" "$step_log"
   case "$step_resource" in
     unlocked) ;;
     memory) set -- node tools/gate/lock.ts memory "$step_name" "$@" ;;
-    exclusive) set -- sh tools/gate/exclusive-step.sh "$step_name" "$@" ;;
+    exclusive)
+      set -- env TINT_GATE_STEP_TIMEOUT="${gate_step_timeout:?}" \
+        sh tools/gate/exclusive-step.sh "$step_name" "$@"
+      ;;
+    watchdog|memory-watchdog)
+      set -- node tools/gate/lock.ts watchdog "$step_name" "$@"
+      if [ "$step_resource" = memory-watchdog ]; then
+        set -- node tools/gate/lock.ts memory "$step_name" "$@"
+      fi
+      set -- env TINT_GATE_STEP_TIMEOUT="${gate_step_timeout:?}" "$@"
+      ;;
     *) return 2 ;;
   esac
   # A single descriptor preserves output order when stdout and stderr share a log.
@@ -44,7 +59,9 @@ run_step_logged() {
   else
     "$@" >"$step_log" 2>"$step_stderr" || step_exit=$?
   fi
-  printf '%s finish %s exit=%s\n' "$(date -u +%FT%TZ)" "$step_name" "$step_exit"
+  if [ -s "$gate_output/stalls.tsv" ]; then step_exit=124; fi
+  printf '%s finish %s exit=%s wall-seconds=%s\n' \
+    "$(date -u +%FT%TZ)" "$step_name" "$step_exit" "$(( $(date +%s) - step_started ))"
   if [ "$step_exit" -ne 0 ]; then
     tail -n 25 "$step_stderr" >&2
   fi
@@ -62,14 +79,20 @@ bootstrap() {
   echo bootstrap=0
 }
 
+stage_step() {
+  gate_step_timeout=${TINT_GATE_STAGE_TIMEOUT:-1800} run_step "$@"
+}
+
 stage_lldb() {
   stage_resource=$1 stage_input=$2 stage_output=$3
-  run_step "$stage_output" "$stage_resource" env TZ=UTC sh -c '
+  TINT_GATE_INFERIOR_PID_FILE="$gate_output/$stage_output.pid" \
+    stage_step "$stage_output" "$stage_resource" env TZ=UTC sh -c '
     cd "$1" || exit
     exec lldb --no-lldbinit --batch \
       -o "settings set target.disable-aslr false" \
       -o "process launch --stop-at-entry -- source $3" \
       -o "script assert lldb.process.GetState() == lldb.eStateStopped" \
+      -o "script import os; open(os.environ[\"TINT_GATE_INFERIOR_PID_FILE\"], \"w\").write(str(lldb.process.GetProcessID()))" \
       -o continue \
       -o "script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 0" \
       "./$2"
