@@ -389,6 +389,10 @@ still require the slice 2b view. Lowering diagnoses a known native closure.
 When its representation is only known at run time, the call throws a
 `TypeError` after evaluating its arguments.
 
+The [B4 ledger](results/unified-pipeline-ledger-slice4a-b4-v5.json) covers 72
+constructs. Both new typed forms stay typed, both untyped forms pass, and
+all 140 forms shared with the B3 ledger retain their paths and outcomes.
+
 ### Typed rest parameters and void callbacks (slice 4a)
 
 A rest signature stores one final array parameter and a rest flag. The minimum
@@ -526,6 +530,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | Native list or fixed-record payloads in dynamic objects need slice 2b list/record views. `os.networkInterfaces()` still returns a Map because its values are lists of fixed records.                                                                                                        | (runtime modules)                                                                                               | 4a C2                                    |
 | No `SystemError` in typed runtime code: node:os failures are TypeErrors                                                                                                                                                                                                                     | (runtime modules)                                                                                               | 4                                        |
 | (Removed by 4a: callable classification) Typed `typeof` on realm callables received as `unknown`                                                                                                                                                                                            | `unknown-typeof-callable`, `tools/build-mixed-general-typeof-fixture.ts`                                        | 4a                                       |
+| (Removed by 4a B4) Direct calls of realm values narrowed by `typeof` to `Function`                                                                                                                                                                                                          | `unknown-callable-direct`, `unknown-callable-arguments`                                                         | 4a B4                                    |
 | Calling a native closure through a narrowed `Function` requires the slice 2b closure view.                                                                                                                                                                                                  | `tools/build-typed-general-call-contracts-fixture.ts`                                                           | 2b, 4a                                   |
 | Passing a realm typed array narrowed by `instanceof` to a native typed-array parameter requires the slice 2b buffer view. The narrowing itself is pending.                                                                                                                                  | (mixed typed-array fixture planned)                                                                             | 2b, 4a                                   |
 | `for…of` elements are typed `T \| undefined` (array holes) instead of TypeScript's `T`: passing the element on or reading its properties fails (FFI phases 2 and 4)                                                                                                                         | `for-of-typed-array-list`, `for-of-object-list`, `for-of-record-reads`                                          | 4a                                       |
