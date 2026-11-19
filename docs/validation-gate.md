@@ -14,6 +14,13 @@ usual bootstrap directory. On the Linux dev machine run
 checkouts for parallel gates so each build can update its own TypeScript
 output. Run the gate on a fixed source tree.
 
+At most two full macOS gates are admitted at a time. Additional gates wait
+for an admission slot before building or running tests. The total wall
+budget is 3,600 seconds (`TINT_GATE_BUDGET`, in seconds), including admission
+and lock waits. When it expires the gate exits with status 124 and reports
+the active step or the admission wait. If the gate has started writing
+evidence, it also records the timeout in `budget.tsv`.
+
 The macOS gate runs ordinary builds and checks without locks. Its memory
 semaphore uses `TINT_GATE_MEMORY_SLOTS` slots (default three) shared across
 checkouts in `~/.t3/tint-gate-memory`. Use the same count for all gates on
@@ -25,8 +32,12 @@ exclusive pathname and memory slot inodes survive release. Use `-k` for
 manual acquisitions and keep those lock files in place.
 
 The gate runs all native-launch and timing-sensitive test files in one
-exclusively locked batch with the usual Node test concurrency. This keeps fixture
-builds and debugger sessions together and queues one waiter per gate.
+exclusively locked batch. The gate bounds Node test file concurrency because
+concurrent LLDB and debugserver launches can overwhelm macOS admission even
+while the batch holds the exclusive lock. Set `TINT_GATE_NATIVE_CONCURRENCY`
+to override the default of two workers for the locked batch or standalone
+`pnpm check:exclusive`. The macOS gate prints the effective limit and records
+it in `check-native-concurrency.txt` alongside `locks.tsv`.
 Separating those builds from their launches is future work. Test262 units
 and program smoke runs build their images under the semaphore and acquire
 the exclusive lock for admission and execution.

@@ -34,16 +34,44 @@ export function classifiedCheckTests(files = checkTestFiles()) {
   return { concurrent, exclusive, memory, native };
 }
 
-if (import.meta.main) {
+export function nativeTestConcurrency(value: string | undefined): string {
+  const concurrency = value ?? "2";
+  if (
+    !/^[1-9][0-9]*$/.test(concurrency) ||
+    !Number.isSafeInteger(Number(concurrency))
+  ) {
+    throw Error("TINT_GATE_NATIVE_CONCURRENCY must be a positive integer");
+  }
+  return concurrency;
+}
+
+export function checkTestArguments(
+  group: string | undefined,
+  concurrency = process.env.TINT_GATE_NATIVE_CONCURRENCY,
+): string[] {
   const tests = classifiedCheckTests();
-  const group = process.argv[2];
   if (group === undefined || !Object.hasOwn(tests, group))
     throw Error("Expected check test group: " + Object.keys(tests).join(", "));
   const files = tests[group as keyof typeof tests];
   if (files.length === 0) throw Error("Empty check test group: " + group);
-  const run = spawnSync(process.execPath, ["--test", ...files], {
-    stdio: "inherit",
-  });
-  if (run.error !== undefined) throw run.error;
-  process.exitCode = run.status ?? 1;
+  const args = ["--test"];
+  if (group === "native" || group === "exclusive") {
+    args.push("--test-concurrency=" + nativeTestConcurrency(concurrency));
+  }
+  return [...args, ...files];
+}
+
+if (import.meta.main) {
+  const group = process.argv[2];
+  if (group === "native-concurrency") {
+    console.log(
+      nativeTestConcurrency(process.env.TINT_GATE_NATIVE_CONCURRENCY),
+    );
+  } else {
+    const run = spawnSync(process.execPath, checkTestArguments(group), {
+      stdio: "inherit",
+    });
+    if (run.error !== undefined) throw run.error;
+    process.exitCode = run.status ?? 1;
+  }
 }

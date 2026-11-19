@@ -177,3 +177,62 @@ test(
     }
   },
 );
+
+test(
+  "the macOS gate budget includes admission wait and names the step that overruns",
+  { skip: process.platform !== "darwin" },
+  () => {
+    const directory = mkdtempSync(join(tmpdir(), "tint-gate-budget-"));
+    try {
+      const tool = fileURLToPath(new URL("./gate/lock.ts", import.meta.url));
+      const run = () =>
+        spawnSync(
+          process.execPath,
+          [
+            tool,
+            "mac-budget",
+            "mac-gate",
+            "sh",
+            "-c",
+            "echo '2026-01-01T00:00:00Z start check-native resource=exclusive log=test'; exec sleep 30",
+          ],
+          {
+            encoding: "utf8",
+            env: {
+              ...process.env,
+              TINT_GATE_BUDGET: "1",
+              TINT_GATE_ADMISSION_DIRECTORY: directory,
+            },
+            timeout: 5000,
+          },
+        );
+      const active = run();
+      assert.equal(active.status, 124, active.stderr);
+      assert.match(active.stderr, /BUDGET.*check-native/);
+      withGateLock([join(directory, "slot-1.lock")], "outer", undefined, () =>
+        withGateLock(
+          [join(directory, "slot-2.lock")],
+          "inner",
+          undefined,
+          () => {
+            const queued = run();
+            assert.equal(queued.status, 124, queued.stderr);
+            assert.match(queued.stderr, /BUDGET.*admission/);
+            assert.equal(queued.stdout, "");
+          },
+        ),
+      );
+      const available = spawnSync(
+        process.execPath,
+        [tool, "mac-budget", "mac-gate", "true"],
+        {
+          env: { ...process.env, TINT_GATE_ADMISSION_DIRECTORY: directory },
+          timeout: 5000,
+        },
+      );
+      assert.equal(available.status, 0);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  },
+);

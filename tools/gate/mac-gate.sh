@@ -5,10 +5,16 @@ if [ "$(uname -s)/$(uname -m)" != Darwin/arm64 ]; then
   exit 1
 fi
 gate_tools=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ "${1:-}" != --admitted ]; then
+  exec node "$gate_tools/lock.ts" mac-budget mac-gate sh "$0" --admitted
+fi
 . "$gate_tools/common.sh"
 
 export TINT_GATE_EXCLUSIVE_LOCK="${TINT_GATE_EXCLUSIVE_LOCK:-$HOME/.t3/tint-gate.lock}"
 export TINT_GATE_MEMORY_DIRECTORY="${TINT_GATE_MEMORY_DIRECTORY:-$HOME/.t3/tint-gate-memory}"
+TINT_GATE_NATIVE_CONCURRENCY=$(node tools/check-test-files.ts native-concurrency)
+export TINT_GATE_NATIVE_CONCURRENCY
+printf "check-native-concurrency=%s\n" "$TINT_GATE_NATIVE_CONCURRENCY" | tee "$gate_output/check-native-concurrency.txt"
 test262_link="$gate_root/.tint-bootstrap/test262"
 test262=${TINT_GATE_TEST262:-$test262_link}
 if [ ! -d "$test262/test" ] && [ -z "${TINT_GATE_TEST262:-}" ]; then
