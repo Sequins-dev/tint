@@ -285,7 +285,15 @@ export function verifyHostedFixture(
     serviceImage === undefined
       ? capturedModules
       : serviceImage.transformModules(capturedModules);
-  const request = projectBuildRequest(modules, () => {}, foreignLibraries);
+  const { runtimeEntry: defaultRuntimeEntry, ...request } = projectBuildRequest(
+    modules,
+    () => {},
+    foreignLibraries,
+  );
+  const runtimeEntry =
+    fixtureTarget.arch === "x86_64"
+      ? options.runtimeEntry
+      : (options.runtimeEntry ?? defaultRuntimeEntry ?? "initializeRuntime");
   // The tint:ffi runtime's capabilities when the program loads it.
   const ffi = foreignRuntimeBindings(
     new Set(modules.map((module) => module.id)),
@@ -347,10 +355,7 @@ export function verifyHostedFixture(
       ...(options.foreignBindings ?? []),
     ],
     runtimeModule: options.runtimeModule ?? request.runtimeModule,
-    runtimeEntry:
-      fixtureTarget.arch === "x86_64"
-        ? options.runtimeEntry
-        : (options.runtimeEntry ?? request.runtimeEntry ?? "initializeRuntime"),
+    ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
     entry: "fixture",
     start: "run",
     ...(general === undefined
