@@ -203,6 +203,22 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/x86_64/scalar/exit-entry.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/x86_64/scalar/index.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/x86_64/scalar/machine.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/x86_64/scalar/numbers.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/compiler/src/build.ts",
       packageId: "compiler",
     },
@@ -360,6 +376,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/compiler/src/native/runtime-contracts.ts",
+      packageId: "compiler",
+    },
+    {
+      id: "packages/compiler/src/native/scalar.ts",
       packageId: "compiler",
     },
     {
@@ -3466,6 +3486,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "compiler",
+      specifier: "@tint/codegen/x86_64/scalar",
+      target: "packages/codegen/src/x86_64/scalar/index.ts",
+    },
+    {
+      packageId: "compiler",
       specifier: "@tint/foundation/binary/bytes",
       target: "packages/foundation/src/binary/bytes.ts",
     },
@@ -4513,6 +4538,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-engine",
       specifier: "@tint/compiler/native",
       target: "packages/compiler/src/native/index.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/compiler/native/scalar",
+      target: "packages/compiler/src/native/scalar.ts",
     },
     {
       packageId: "js-engine",
