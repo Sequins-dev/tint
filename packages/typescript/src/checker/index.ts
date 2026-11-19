@@ -1,5 +1,6 @@
 import { numericConstant } from "./numeric-constants.ts";
 export { numericConstant } from "./numeric-constants.ts";
+import type { BindingInitialization } from "./closures.ts";
 import type { CViewUse } from "./c-views.ts";
 import { syntaxHash } from "../syntax/index.ts";
 import {
@@ -228,6 +229,9 @@ export interface CheckedFunction {
   readonly locals: readonly Local[];
   readonly expressions: ReadonlyKeyIndex<Expression, ExpressionInfo>;
   readonly declarations: ReadonlyKeyIndex<Binding | Parameter, Local>;
+  readonly bindingIterationLocals?: ReadonlyKeyIndex<Span, Local>;
+  readonly bindingInitializations?:
+    ReadonlyKeyIndex<Span, BindingInitialization> | undefined;
 }
 export interface CheckedModule {
   readonly functions: readonly CheckedFunction[];
@@ -1468,6 +1472,8 @@ export {
 export { checkClosureModule, checkedPropertyName } from "./closures.ts";
 export type {
   ClosureBody,
+  BindingInitialization,
+  BindingInitializationStep,
   BindingOperation,
   ClosureIntrinsic,
   CheckedClosures,

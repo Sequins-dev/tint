@@ -363,6 +363,31 @@ export function run() {
 }`,
   },
   {
+    name: "destructuring-entry-points",
+    typed: `function read({ value = 20 }: { value?: number }): number {
+      return value;
+    }
+    export function run(): number {
+      let a: number = 2, b: number = 20;
+      [a, b] = [b, a];
+      const rows: { value: number }[] = [{ value: b }, { value: a }];
+      let total: number = read({});
+      for (const { value } of rows) total += value;
+      return total === 42 ? 42 : 1;
+    }`,
+    untyped: `function read({ value = 20 }) {
+      return value;
+    }
+    export function run() {
+      let a = 2, b = 20;
+      [a, b] = [b, a];
+      const rows = [{ value: b }, { value: a }];
+      let total = read({});
+      for (const { value } of rows) total += value;
+      return total === 42 ? 42 : 1;
+    }`,
+  },
+  {
     name: "spread",
     typed: `function sum3(a: number, b: number, c: number): number { return a + b + c; }
 export function run(): number {

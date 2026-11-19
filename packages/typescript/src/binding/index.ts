@@ -345,6 +345,14 @@ function bindProgram(
       }
       fail(node, "DUPLICATE_NAME", `duplicate value binding: ${name}`);
     }
+    s.names.set(name, registerBinding(s, name, kind, node));
+  }
+  function registerBinding(
+    s: ScopeState,
+    name: string,
+    kind: Binding["kind"],
+    node: Span,
+  ): number {
     const id = bindings.length;
     bindings.push({
       id,
@@ -356,7 +364,7 @@ function bindProgram(
       captured: false,
       node,
     });
-    s.names.set(name, id);
+    return id;
   }
   function predeclare(nodes: readonly Statement[], s: ScopeState): void {
     for (const input of nodes) {
@@ -655,6 +663,8 @@ function bindProgram(
       parameters.every((p) => isSimpleParameter(p));
     for (const parameter of parameters) {
       if (parameter === undefined) throw "parameter invariant";
+      if (!javascript && parameter.kind === "pattern-parameter")
+        registerBinding(s, "", "parameter", parameter);
       for (const p of parameterIdentifiers(parameter)) {
         if (p === undefined) throw "parameter identifier invariant";
         const existing = s.names.get(p.name);
@@ -1169,34 +1179,6 @@ function bindProgram(
               else declare(loop, element.name, node.mode, element);
             }
           expr(node.iterable, loop);
-          if (iterationBinding.kind === "array-binding") {
-            if (!javascript && iterationBinding.rest !== undefined)
-              fail(
-                iterationBinding.rest,
-                "UNSUPPORTED",
-                "typed array iteration rest is not implemented",
-              );
-            for (const element of iterationBinding.elements) {
-              if (element === undefined) continue;
-              if (
-                !javascript &&
-                (element.kind === "object-binding" ||
-                  element.kind === "array-binding")
-              )
-                fail(
-                  element,
-                  "UNSUPPORTED",
-                  "typed nested iteration bindings are not implemented",
-                );
-              if (element.initializer === undefined) continue;
-              if (!javascript)
-                fail(
-                  element,
-                  "UNSUPPORTED",
-                  "typed array iteration defaults are not implemented",
-                );
-            }
-          }
           visitBindingExpressions(iterationBinding, (expression) =>
             expr(expression, loop),
           );

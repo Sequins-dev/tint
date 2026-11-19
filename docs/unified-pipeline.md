@@ -469,6 +469,36 @@ and own enumerable, writable, configurable group properties. IPv6 entries
 add an own `scopeid` field. Synthetic `__proto__` and `constructor` names
 produce normal groups.
 
+### Native binding patterns (slice 4a)
+
+The closure checker projects the input's property and element types into an
+ordered binding plan. Local declarations, parameters, and typed `for…of`
+heads initialize the same checked leaf slots. Assignment plans reuse normal
+assignment lowering, including reference evaluation before the projected
+value and default. The assignment expression yields the original input.
+Parameter patterns run at their position in the prologue, so subsequent
+parameter defaults can refer to the initialized bindings.
+
+Fixed-record reads reuse native member and index access. Rest uses the
+record spread planner and requires known own enumerable fields. Native
+lists and numeric typed arrays step their indexed storage because these
+representations expose no custom iterator. The plan remembers exhaustion
+across defaults, skips elisions, and creates a fresh list for array rest.
+Defaults test only for `undefined`. An indexed read which can go past the
+end includes `undefined` in its checked type.
+
+Remaining gaps include catch patterns, top-level declaration patterns,
+custom iterators and typed accessors, and rest from realm objects.
+Computed rest requires a statically known exclusion key for a native
+record. Inferred leaves still use the existing fixed-type local checker,
+pending guarded open slots. A possibly nullish input receives a strict
+checker diagnostic. Checked downcasts from `unknown` reject nullish values
+at runtime before the pattern is entered.
+
+The typed hosted fixture and the Node references live in
+`tools/typed-binding-patterns-fixture-source.ts`. The realm reference
+covers getter, catch, and iterator behavior through the general path.
+
 ### What happens to each front end
 
 - js-engine lowering becomes a library of construct lowerings callable for a
@@ -532,6 +562,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | (Removed by 4a) Typed rest parameters and spreads in the rest position                                                                                                                                                                                                                      | `rest-default-parameters`, `rest-spread`                                                                        | 4a                                       |
 | (Removed by 4a) Value-returning functions rejected in void callback slots                                                                                                                                                                                                                   | `void-callbacks`                                                                                                | 4a                                       |
 | Reading the result of a call through a void-typed callback, as in `const r: unknown = cb()`, `return cb()` from an `unknown` function, `[cb()]`, or `cb() === undefined`, fails at build time. TypeScript accepts these expressions and JavaScript yields the callee's actual return value. | `invalid binding operation`, `value does not match its declared type`, `void result cannot be a binary operand` | Not yet scheduled                        |
+| Local binding declarations, parameters, native `for…of` heads and assignments project native records and lists. Catch and module patterns, realm rest, and user iterators still need typed lowering. | `destructuring`, `destructuring-entry-points` | 4a, follow-up |
 | Tuple annotations parse. Typed lowering supports `[string, T]` entry pairs. Other tuple shapes need lowering, and `implements` clauses still fail to parse.                                                                                                                                 | `tuple-types`, `spread`, `iterator-protocol`                                                                    | tuple lowering, parser fix               |
 | Nested type declarations; ternary over union discriminants in an object literal                                                                                                                                                                                                             | `nested-type-declarations`, `union-object-ternary`                                                              | 5                                        |
 | `for (const x of list)` followed by a property read of `x` (in runtime modules)                                                                                                                                                                                                             | `for-of-record-reads`                                                                                           | 5                                        |

@@ -1,3 +1,7 @@
+import type {
+  BindingInitialization,
+  BindingInitializationStep,
+} from "@tint/typescript/checker";
 import type { DynamicObjectRuntime } from "./closure/lowering/dynamic-objects.ts";
 import { syntaxHash } from "@tint/typescript/syntax";
 import {
@@ -1383,6 +1387,7 @@ export function lowerFunction(
     return slot;
   }
   const expressionOverrides = createKeyIndex<Expression, number>(syntaxHash);
+  const patternReads = createKeyIndex<Expression, () => number>(syntaxHash);
   const informationOverrides = createKeyIndex<Expression, ExpressionInfo>(
     syntaxHash,
   );
@@ -1403,6 +1408,7 @@ export function lowerFunction(
     node: Span,
     visit: (item: number, typed: boolean) => void,
     evaluated?: number,
+    start: number = 0,
   ): void {
     const source = evaluated ?? value(input);
     if (info(input).setElement !== undefined) {
@@ -1426,7 +1432,7 @@ export function lowerFunction(
       current = exit;
       return;
     }
-    const index = numberSlot(0, node),
+    const index = numberSlot(start, node),
       sourceList =
         slots[source] === "reference" ? listRuntime(input) : undefined;
     const head = block(),
@@ -4054,6 +4060,8 @@ export function lowerFunction(
   function expression(node: Expression): number | undefined {
     const known = expressionOverrides.get(node);
     if (known !== undefined) return known;
+    const patternRead = patternReads.get(node);
+    if (patternRead !== undefined) return patternRead();
     let result =
       info(node).chainType === undefined
         ? expressionValue(node)
@@ -5822,6 +5830,9 @@ export function lowerFunction(
         return node.kind === "update" && !node.prefix ? old : updated;
       }
       case "assignment": {
+        const plan = fn.bindingInitializations?.get(node);
+        if (plan !== undefined)
+          return initializeBindingPlan(plan, value(node.value));
         const target = ungroup(node.target);
         const finite = records?.finiteAccesses?.get(node);
         if (finite !== undefined) {
@@ -8636,6 +8647,181 @@ export function lowerFunction(
     }
     return { head, exit };
   }
+  function initializeBindingPlan(
+    plan: BindingInitialization,
+    source: number,
+  ): number {
+    const input = save(
+      load(source, plan.root),
+      scalarType(plan.root),
+      plan.root,
+    );
+    expressionOverrides.set(plan.root, input);
+    const exhausted = createKeyIndex<Expression, number>(syntaxHash);
+    for (const step of plan.steps) {
+      if (step === undefined) throw "binding step invariant";
+      const currentStep = step;
+      function readStep(): number {
+        const array = currentStep.array;
+        if (array === undefined)
+          return bindingDefault(value(currentStep.read), currentStep, false);
+        const node = currentStep.read;
+        const source = value(array.source);
+        const runtime =
+          slots[source] === "reference" ? listRuntime(array.source) : undefined;
+        if (array.inBounds) {
+          if (runtime === undefined) throw "fixed binding position invariant";
+          const position = numberSlot(array.position, node);
+          const item = listValue(runtime, "read", [source, position], node);
+          return bindingDefault(item, currentStep, true);
+        }
+        // Once the native iterator reaches its end, subsequent defaults can
+        // grow the list but cannot restart iteration. Elisions have no read.
+        let done = exhausted.get(array.source);
+        if (done === undefined) {
+          done = booleanSlot(false, node);
+          exhausted.set(array.source, done);
+        }
+        const active = block(),
+          after = block();
+        if (array.rest) {
+          const target = listRuntime(node);
+          const rest = listValue(target, "create", [numberSlot(0, node)], node);
+          choose(load(done, node), after, active, node);
+          current = active;
+          arrayValues(
+            array.source,
+            node,
+            (item, _typed) => listCall(target, "push", [rest, item], node),
+            source,
+            array.position,
+          );
+          jump(after.id, node);
+          current = after;
+          return bindingDefault(rest, currentStep, false);
+        }
+        const absent = nextValue++;
+        emit({
+          kind: "undefined",
+          id: absent,
+          start: node.start,
+          end: node.end,
+        });
+        const read = save(absent, scalarType(node), node);
+        choose(load(done, node), after, active, node);
+        current = active;
+        const position = numberSlot(array.position, node);
+        const length =
+          runtime === undefined
+            ? arrayLength(source, node)
+            : listValue(runtime, "length", [source], node);
+        store(done, load(binarySlot(">=", position, length, node), node), node);
+        const item = block();
+        choose(load(done, node), after, item, node);
+        current = item;
+        if (runtime !== undefined)
+          store(
+            read,
+            load(listValue(runtime, "read", [source, position], node), node),
+            node,
+          );
+        else {
+          const id = nextValue++;
+          emit({
+            kind: "array-read",
+            id,
+            array: load(source, node),
+            index: load(position, node),
+            start: node.start,
+            end: node.end,
+          });
+          store(read, id, node);
+        }
+        jump(after.id, node);
+        current = after;
+        return bindingDefault(read, currentStep, false);
+      }
+      const assignment = step.assignment;
+      if (assignment !== undefined) {
+        const key = step.computedKey;
+        if (key !== undefined) {
+          const result = value(key);
+          expressionOverrides.set(
+            key,
+            save(load(result, key), scalarType(key), key),
+          );
+        }
+        // Normal assignment captures its reference before requesting the
+        // RHS. Supply the projection/default at that point.
+        patternReads.set(step.target, readStep);
+        expression(assignment);
+        patternReads.delete(step.target);
+        if (key !== undefined) expressionOverrides.delete(key);
+        continue;
+      }
+      const item = readStep();
+      const binding = step.binding;
+      if (binding === undefined) expressionOverrides.set(step.target, item);
+      else {
+        const local = fn.declarations.get(binding);
+        if (local === undefined) throw "binding pattern local invariant";
+        writeLocal(local.id, load(item, binding), binding);
+      }
+    }
+    expressionOverrides.delete(plan.root);
+    for (const step of plan.steps)
+      if (step !== undefined) expressionOverrides.delete(step.target);
+    return input;
+  }
+  function bindingDefault(
+    read: number,
+    step: BindingInitializationStep,
+    inBounds: boolean,
+  ): number {
+    const initializer = step.initializer;
+    const type = scalarType(step.target);
+    if (initializer === undefined)
+      return inBounds
+        ? save(bindingPayload(read, type, step.target), type, step.target)
+        : read;
+    if (undefinedSlots[read] === 1) return value(initializer);
+    const item = temporary(type);
+    const defined = block(),
+      absent = block(),
+      done = block();
+    choose(
+      load(holeAbsent(read, step.read), step.read),
+      defined,
+      absent,
+      step.read,
+    );
+    current = defined;
+    store(item, bindingPayload(read, type, step.target), step.target);
+    jump(done.id, step.target);
+    current = absent;
+    store(item, load(value(initializer), initializer), step.target);
+    jump(done.id, step.target);
+    current = done;
+    return item;
+  }
+  function bindingPayload(
+    read: number,
+    target: ScalarType,
+    node: Span,
+  ): number {
+    const source = slots[read];
+    const payload = load(read, node);
+    if (
+      (source === "optional-number" && target === "number") ||
+      (source === "optional-string" && target === "string") ||
+      (source === "optional-reference" && target === "reference")
+    ) {
+      const id = nextValue++;
+      emitUnwrap(id, payload, target, node);
+      return id;
+    }
+    return payload;
+  }
   function statement(
     input: Statement,
     loop: LoopTarget | undefined,
@@ -8683,8 +8869,14 @@ export function lowerFunction(
       case "variable":
         for (const d of node.declarations) {
           if (d === undefined) throw "declaration invariant";
-          if (d.kind === "object-binding" || d.kind === "array-binding")
-            throw "unchecked binding pattern";
+          if (d.kind === "object-binding" || d.kind === "array-binding") {
+            const plan = fn.bindingInitializations?.get(d);
+            const input = plan?.input;
+            if (plan === undefined || input === undefined)
+              throw "unchecked binding pattern";
+            initializeBindingPlan(plan, value(input));
+            continue;
+          }
           const local = fn.declarations.get(d);
           if (local === undefined) throw "binding invariant";
           const initializer = d.initializer;
@@ -9004,9 +9196,8 @@ export function lowerFunction(
       }
       case "for-of": {
         const binding = node.binding;
-        if (binding.kind === "object-binding")
-          throw "unchecked iteration pattern";
-        if (binding.kind === "array-binding") {
+        const pattern = fn.bindingInitializations?.get(binding);
+        if (binding.kind === "array-binding" && pattern === undefined) {
           const runtime = mapRuntime(node.iterable).iterator;
           if (runtime === undefined) throw "map iterator runtime invariant";
           allocateCells(node);
@@ -9062,6 +9253,14 @@ export function lowerFunction(
           current = exit;
           break;
         }
+        const local =
+          pattern === undefined
+            ? binding.kind === "object-binding" ||
+              binding.kind === "array-binding"
+              ? undefined
+              : fn.declarations.get(binding)
+            : fn.bindingIterationLocals?.get(binding);
+        if (local === undefined) throw "iteration binding invariant";
         allocateCells(node);
         if (info(node.iterable).setElement !== undefined) {
           const runtime = setRuntime(node.iterable).iterator;
@@ -9069,8 +9268,6 @@ export function lowerFunction(
           const receiver = value(node.iterable),
             cursor = runtimeCall(runtime.create, [receiver], node);
           if (cursor === undefined) throw "set cursor result invariant";
-          const local = fn.declarations.get(binding);
-          if (local === undefined) throw "set iteration binding invariant";
           const head = block(),
             body = block(),
             exit = block();
@@ -9089,6 +9286,7 @@ export function lowerFunction(
             node.mode === "var" ? "write" : "initialize",
             binding,
           );
+          if (pattern !== undefined) initializeBindingPlan(pattern, local.id);
           statement(node.body, iterationTarget(head.id, exit.id, named));
           if (current !== undefined) jump(head.id, node);
           current = exit;
@@ -9097,9 +9295,7 @@ export function lowerFunction(
         if (scalarType(node.iterable) === "string") {
           const string = value(node.iterable),
             index = numberSlot(0, node),
-            local = fn.declarations.get(binding),
             lengthId = nextValue++;
-          if (local === undefined) throw "string iteration binding invariant";
           emit({
             kind: "string-length",
             id: lengthId,
@@ -9147,6 +9343,7 @@ export function lowerFunction(
             node.mode === "var" ? "write" : "initialize",
             binding,
           );
+          if (pattern !== undefined) initializeBindingPlan(pattern, local.id);
           statement(node.body, iterationTarget(update.id, exit.id, named));
           if (current !== undefined) jump(update.id, node);
           current = update;
@@ -9156,9 +9353,7 @@ export function lowerFunction(
           break;
         }
         const array = value(node.iterable),
-          index = numberSlot(0, node),
-          local = fn.declarations.get(binding);
-        if (local === undefined) throw "iteration binding invariant";
+          index = numberSlot(0, node);
         const head = block(),
           body = block(),
           update = block(),
@@ -9223,6 +9418,7 @@ export function lowerFunction(
           node.mode === "var" ? "write" : "initialize",
           binding,
         );
+        if (pattern !== undefined) initializeBindingPlan(pattern, local.id);
         statement(node.body, iterationTarget(update.id, exit.id, named));
         if (current !== undefined) jump(update.id, node);
         current = update;
@@ -9368,6 +9564,8 @@ export function lowerFunction(
     const initializer = p.initializer;
     if (initializer === undefined) {
       cellAccess(input, "initialize", p);
+      const pattern = fn.bindingInitializations?.get(p);
+      if (pattern !== undefined) initializeBindingPlan(pattern, input);
       continue;
     }
     const local = fn.declarations.get(p);
@@ -9428,6 +9626,8 @@ export function lowerFunction(
     jump(merge.id, p);
     current = merge;
     cellAccess(local.id, "initialize", p);
+    const pattern = fn.bindingInitializations?.get(p);
+    if (pattern !== undefined) initializeBindingPlan(pattern, local.id);
   }
   for (const local of fn.locals) {
     if (local === undefined) throw "local invariant";

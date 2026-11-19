@@ -3325,3 +3325,61 @@ test("literal presence narrows a dynamic property read", () => {
   `);
   assert.ok(result.ok, JSON.stringify(result));
 });
+
+test("object binding declarations project annotated property types", () => {
+  const result =
+    check(`function f(input: { nested: { count: number }; label?: string }): number {
+    const { nested: { count: total }, label = "default" } = input;
+    return label.length + total;
+  }`);
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.equal(
+    check(`function f(input: { count: number }): number {
+      const { missing } = input;
+      return missing;
+    }`).ok,
+    false,
+  );
+});
+
+test("binding patterns check native array elements, defaults, and rest", () => {
+  const result = check(`function f(values: (number | undefined)[]): number {
+    const [first = 0, , ...rest] = values;
+    return first + (rest[0] ?? 0);
+  }`);
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.equal(
+    check("function f(values: number): void { const [x] = values; }").ok,
+    false,
+  );
+});
+
+test("patterns in parameters and for-of heads use their input types", () => {
+  const result = check(`
+    function project({ n = 20 }: { n?: number }, twice: number = n + n): number { return twice; }
+    function f(items: { x: number }[]): number {
+      const pick: (item: { x: number }) => number = ({ x }) => x;
+      let total = 0;
+      for (const { x } of items) { total += pick({ x }); }
+      return total + project({});
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("destructuring assignments preserve their source type and check target writes", () => {
+  const result = check(`
+    function f(): number {
+      let a: number = 1, b: number = 2;
+      [a, b] = [b, a];
+      const result = ({ a } = { a: 42 });
+      return result.a;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+  for (const source of [
+    'function f(): void { let a: number = 0; ({ a } = { a: "wrong" }); }',
+    "function f(xs: number[]): void { let a: number = 0; [a] = xs; }",
+  ])
+    assert.equal(check(source).ok, false);
+});
