@@ -35,6 +35,12 @@ interface IndexState<K, V> {
 // Mixed hashes never take this value (see `index`), so it marks deletion.
 const removedHash = 0xffffffff;
 const initialSlots = 16;
+/** Murmur3 finalizer for power-of-two bucket selection. */
+function mixUint32(value: number): number {
+  let mixed = Math.imul(value ^ (value >>> 16), 0x85ebca6b);
+  mixed = Math.imul(mixed ^ (mixed >>> 13), 0xc2b2ae35);
+  return (mixed ^ (mixed >>> 16)) >>> 0;
+}
 /** Pure, stable key operations. Equivalent keys must have identical hashes. */
 export interface KeyEquivalence<K> {
   readonly hash: (key: K) => number;
@@ -65,12 +71,7 @@ export function createKeyIndex<K, V>(
     const value = hash(key);
     if (!Number.isInteger(value) || value < 0 || value > 0xffffffff)
       throw "INVALID_KEY_HASH";
-    // Mix small or patterned hashes before selecting power-of-two buckets
-    // (the Murmur3 finalizer): one multiply and fold left sequential and
-    // span-derived keys clustered under linear probing.
-    let mixed = Math.imul(value ^ (value >>> 16), 0x85ebca6b);
-    mixed = Math.imul(mixed ^ (mixed >>> 13), 0xc2b2ae35);
-    mixed = (mixed ^ (mixed >>> 16)) >>> 0;
+    const mixed = mixUint32(value);
     // Reserve the deletion marker; only probe order depends on the fold.
     return mixed === removedHash ? 0 : mixed;
   }
@@ -255,9 +256,10 @@ export interface NumberIndex {
  * high half by an exact multiply by 2^-32, not a division). Only the probe
  * order depends on it; interned IDs follow insertion order. */
 function numberHash(key: number): number {
-  const mixed =
-    (key >>> 0) ^ (Math.floor(key * 2.3283064365386963e-10) * 65599);
-  return (mixed ^ (mixed >>> 16)) >>> 0;
+  const low = key >>> 0;
+  if (key === low) return mixUint32(low);
+  const high = Math.floor(key * 2.3283064365386963e-10);
+  return mixUint32(low ^ mixUint32(high));
 }
 interface NumberIndexState {
   keys: Float64Array;
