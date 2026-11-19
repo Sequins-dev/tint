@@ -609,8 +609,28 @@ function compileTypedWithProgramRealm(
   if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
   const runtime = explicit ?? dynamicObjectRuntimeSource();
   const module = runtime.module;
-  if (!requestModules(request).some((source) => source?.id === module))
-    return initial;
+  const loader = request.moduleLoader;
+  let expandedRequest = request;
+  if (loader === undefined) {
+    if (!request.modules.some((source) => source?.id === module))
+      return initial;
+  } else if (!loader.ids.includes(module)) {
+    const loadWithRoot = loader.loadWithRoot;
+    const expanded =
+      loadWithRoot === undefined ? undefined : loadWithRoot(module);
+    if (expanded === undefined) return initial;
+    if (!expanded.ok)
+      return stageFailure(
+        expanded.error.stage,
+        expanded.error.message,
+        expanded.error.module,
+      );
+    expandedRequest = {
+      ...request,
+      modules: expanded.value,
+      moduleLoader: undefined,
+    };
+  }
   const objects = "packages/js-runtime/src/objects/index.ts";
   const names: string[] = [
     "viewObjectValue",
@@ -636,7 +656,7 @@ function compileTypedWithProgramRealm(
       bindings.push({ module: objects, name, operation: "view" });
   }
   return compileTypedProgram(
-    { ...request, runtimes, recordBindings: bindings },
+    { ...expandedRequest, runtimes, recordBindings: bindings },
     realmTypeofModules,
   );
 }

@@ -413,6 +413,15 @@ still needs C2. See the [design and implementation status](design-4a-dynamic-key
 The [C1 gap ledger](results/unified-pipeline-ledger-slice4a-dynamic-objects-c1-final-gate.json)
 records 130 variants and compares them with the slice 4a BigInt baseline.
 
+#### Source discovery for the compiler's own build
+
+The native CLI and Node bootstrap start with the compiler's ordinary project
+roots. Successful typed compilation uses that graph alone. When the checker
+reports that typed operations require the program realm, the source loader
+resolves a fresh graph with the dynamic-object provider as a root. The same
+realm helpers and record views then take part in the typed retry. An ordinary
+import can still reach any of those sources through its dependencies.
+
 ### What happens to each front end
 
 - js-engine lowering becomes a library of construct lowerings callable for a
