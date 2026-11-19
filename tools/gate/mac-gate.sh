@@ -50,7 +50,15 @@ run_check_step() {
 }
 run_check_step check-concurrent unlocked env -u TZ pnpm check:concurrent
 run_check_step check-memory memory env -u TZ node tools/check-test-files.ts memory
-gate_step_timeout=${TINT_GATE_NATIVE_TIMEOUT:-1800} run_check_step check-native exclusive env -u TZ node tools/check-test-files.ts native
+native_status=0
+native_images="$gate_output/native-images.jsonl"
+gate_step_timeout=${TINT_GATE_NATIVE_TIMEOUT:-1800} run_step check-native watchdog env -u TZ \
+  TINT_GATE_NATIVE_IMAGES="$native_images" node tools/check-test-files.ts native || native_status=$?
+node tools/gate/native-fixture.ts "$native_images"
+if [ "$native_status" -ne 0 ]; then
+  echo "check=$native_status"
+  exit "$native_status"
+fi
 awk '/^ℹ pass / { pass += $3 } /^ℹ fail / { fail += $3 } END { printf "check=0 ℹ pass %d ℹ fail %d\n", pass, fail }' \
   "$gate_output"/check-*.log
 storage_tests

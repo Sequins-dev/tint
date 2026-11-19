@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { withGateLock } from "./gate/lock.ts";
+import * as fixturePhases from "./gate/native-fixture.ts";
+const { buildNativeFixture, beginNativeFixtureExecution } = fixturePhases;
 
 test(
   "a gate lock spans execution and releases on failure",
@@ -236,3 +238,85 @@ test(
     }
   },
 );
+
+test("fixture preparation releases its memory slot before admission and records phases", () => {
+  if (process.platform !== "darwin") return;
+  const directory = mkdtempSync(join(tmpdir(), "tint-fixture-phases-"));
+  try {
+    const slot = join(directory, "slot-1.lock");
+    const exclusive = join(directory, "native.lock");
+    const image = join(directory, "image");
+    const evidence = join(directory, "native-images.jsonl");
+    const probe = (file: string) =>
+      spawnSync("/usr/bin/lockf", ["-ks", "-t", "0", file, "true"]).status;
+    const env = {
+      TINT_GATE_NATIVE_IMAGES: evidence,
+      TINT_GATE_MEMORY_DIRECTORY: directory,
+      TINT_GATE_MEMORY_SLOTS: "1",
+      TINT_GATE_EXCLUSIVE_LOCK: exclusive,
+    };
+    assert.equal(
+      buildNativeFixture(
+        "fixture",
+        () => {
+          assert.equal(probe(slot), 75);
+          assert.equal(probe(exclusive), 0);
+          writeFileSync(image, "image");
+          return image;
+        },
+        env,
+      ),
+      image,
+    );
+    for (let i = 0; i < 2; i++) {
+      const release = beginNativeFixtureExecution(
+        image,
+        () => {
+          assert.equal(probe(slot), 0);
+          assert.equal(probe(exclusive), 75);
+        },
+        env,
+      );
+      assert.equal(probe(exclusive), 75);
+      release();
+    }
+    assert.equal(probe(exclusive), 0);
+    const rows = readFileSync(evidence, "utf8")
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
+    assert.deepEqual(
+      rows
+        .filter((row) => !row.phase.endsWith("-start"))
+        .map((row) => row.phase),
+      [
+        "build",
+        "lock-wait",
+        "admission",
+        "execution",
+        "lock-wait",
+        "execution",
+      ],
+    );
+    assert.ok(
+      rows
+        .filter((row) => row.phase !== "build-start")
+        .every(
+          (row) => row.path === image && row.bytes === 5 && row.elapsedMs >= 0,
+        ),
+    );
+    assert.equal(rows.filter((row) => row.phase === "build-start").length, 1);
+    const result = spawnSync(
+      process.execPath,
+      [
+        fileURLToPath(new URL("./gate/native-fixture.ts", import.meta.url)),
+        evidence,
+      ],
+      { encoding: "utf8" },
+    );
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /built=1 admitted=1 launch-attempted=1/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});

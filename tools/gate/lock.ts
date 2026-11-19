@@ -44,12 +44,11 @@ function tryAcquire(file: string): number | undefined {
   }
 }
 
-export function withGateLock<T>(
+export function acquireGateLock(
   files: readonly string[],
   label: string,
   timing: string | undefined,
-  run: (fd: number) => T,
-): T {
+): { fd: number; release: () => void } {
   if (files.length === 0) throw Error("No gate locks configured");
   for (;;) {
     for (const file of files) {
@@ -57,21 +56,47 @@ export function withGateLock<T>(
       if (fd === undefined) continue;
       const startedAt = Date.now();
       const start = performance.now();
-      try {
-        return run(fd);
-      } finally {
-        const elapsed = Math.round(performance.now() - start);
-        closeSync(fd);
-        if (timing)
-          appendFileSync(
-            timing,
-            [label, file, startedAt, elapsed].join("\t") + "\n",
-          );
-      }
+      return {
+        fd,
+        release() {
+          const elapsed = Math.round(performance.now() - start);
+          closeSync(fd);
+          if (timing)
+            appendFileSync(
+              timing,
+              [label, file, startedAt, elapsed].join("\t") + "\n",
+            );
+        },
+      };
     }
     // Probe once per memory slot and sleep while every slot is occupied.
     Atomics.wait(sleep, 0, 0, 250);
   }
+}
+
+export function withGateLock<T>(
+  files: readonly string[],
+  label: string,
+  timing: string | undefined,
+  run: (fd: number) => T,
+): T {
+  const lock = acquireGateLock(files, label, timing);
+  try {
+    return run(lock.fd);
+  } finally {
+    lock.release();
+  }
+}
+
+export function gateMemorySlots(env: NodeJS.ProcessEnv): string[] {
+  const directory = env.TINT_GATE_MEMORY_DIRECTORY;
+  const count = env.TINT_GATE_MEMORY_SLOTS ?? "3";
+  if (!directory || !/^[1-9][0-9]?$/.test(count))
+    throw Error("Expected a gate memory directory and 1–99 slots");
+  mkdirSync(directory, { recursive: true });
+  return Array.from({ length: Number(count) }, (_, i) =>
+    join(directory, "slot-" + (i + 1) + ".lock"),
+  );
 }
 
 export function gateLaunch<T>(label: string, tool: string, args: string[]): T {
@@ -201,16 +226,11 @@ if (import.meta.main) {
         );
     }
   } else if (resource === "memory") {
-    const directory = process.env.TINT_GATE_MEMORY_DIRECTORY;
-    const count = process.env.TINT_GATE_MEMORY_SLOTS ?? "3";
-    if (!directory || !/^[1-9][0-9]?$/.test(count))
-      throw Error("Expected a gate memory directory and 1–99 slots");
-    mkdirSync(directory, { recursive: true });
-    const files = Array.from({ length: Number(count) }, (_, i) =>
-      join(directory, "slot-" + (i + 1) + ".lock"),
-    );
-    process.exitCode = withGateLock(files, label, timing, (fd) =>
-      runGateCommand(command, args, fd),
+    process.exitCode = withGateLock(
+      gateMemorySlots(process.env),
+      label,
+      timing,
+      (fd) => runGateCommand(command, args, fd),
     );
   } else {
     throw Error("Unknown gate resource: " + resource);

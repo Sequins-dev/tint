@@ -31,30 +31,32 @@ callers. The gate uses `/usr/bin/lockf -k` for every acquisition so the
 exclusive pathname and memory slot inodes survive release. Use `-k` for
 manual acquisitions and keep those lock files in place.
 
-The gate runs all native-launch and timing-sensitive test files in one
-exclusively locked batch. The gate bounds Node test file concurrency because
-concurrent LLDB and debugserver launches can overwhelm macOS admission even
-while the batch holds the exclusive lock. Set `TINT_GATE_NATIVE_CONCURRENCY`
-to override the default of two workers for the locked batch or standalone
+The gate bounds native test file concurrency to limit simultaneous fixture
+builds and contention for LLDB admission. Set `TINT_GATE_NATIVE_CONCURRENCY`
+to override the default of two workers for the native batch or standalone
 `pnpm check:exclusive`. The macOS gate prints the effective limit and records
-it in `check-native-concurrency.txt` alongside `locks.tsv`.
-Separating those builds from their launches is future work. Test262 units
-and program smoke runs build their images under the semaphore and acquire
-the exclusive lock for admission and execution.
+it in `check-native-concurrency.txt`. Fixture builds use the memory semaphore
+and release the slot before taking the exclusive lock for admission and
+execution. `native-images.jsonl` records path, bytes, build time, memory and
+exclusive waits, admission and execution. Phase start records survive a
+cancelled batch. The gate prints distinct built, admitted and launch-attempted
+path counts. Hosted callers can set `TINT_BUILD_ONLY=defer-admission` to
+produce an image without LLDB admission. `TINT_BUILD_ONLY=1` still admits
+Darwin images before returning. Test262 smokes also separate building from
+admission and execution.
 
 Each macOS native bootstrap stage takes the exclusive lock for its LLDB
 invocation. LLDB attaches and debugserver launches can fail under concurrent
-load, so these invocations are serialized with the native test batch and
+load, so these invocations are serialized with native fixture launches and
 other exclusive steps. Node bootstrap and toolchain freezes use a memory
 slot, and byte comparisons run unlocked.
 
-The watchdog starts when a step begins running, after any resource wait.
+The watchdog starts when a step begins running. For the native batch it
+includes the fixture-specific memory and launch waits within that step.
 Defaults are 1,800 seconds per bootstrap stage (`TINT_GATE_STAGE_TIMEOUT`),
 1,800 seconds for the native test batch (`TINT_GATE_NATIVE_TIMEOUT`), and
 600 seconds per Test262 admission or execution launch (`TINT_GATE_SMOKE_TIMEOUT`).
-In a reference run, the gate held the
-exclusive lock for 252 seconds for the batch and at most 2.2 seconds per smoke
-launch. The smoke deadline allows for contention in the host's first-launch
+The smoke deadline allows for contention in the host's first-launch
 admission queue. Both unlocked Linux native bootstrap stages use the stage
 timeout as well.
 

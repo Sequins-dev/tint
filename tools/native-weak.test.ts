@@ -1,3 +1,5 @@
+import { nativeFixtureBuildOnlyMode } from "./gate/native-fixture.ts";
+import { runDarwinFixture } from "./native-admission.ts";
 // Weak cells under every collector (docs/memory-and-lifetimes.md, "Weak
 // cells"): weak references and ephemerons whose targets die young, survive
 // minor collections (promoted), die old or stay reachable, and ephemeron
@@ -395,10 +397,12 @@ function functionHits(
     "breakpoint list",
     image,
   );
-  const result = spawnSync("lldb", args, {
-    encoding: "utf8",
-    timeout: 600000,
-  });
+  const result = runDarwinFixture(image, () =>
+    spawnSync("lldb", args, {
+      encoding: "utf8",
+      timeout: 600000,
+    }),
+  );
   assert.equal(result.error, undefined);
   assert.equal(result.status, 0, result.stdout + result.stderr);
   assert.match(result.stdout, /exited with status = 42 /, result.stdout);
@@ -445,7 +449,7 @@ test("weak slots, chains and cycles across parallel workers", () => {
     build: process.env.TINT_BUILD_ONLY,
     debug: process.env.TINT_DEBUG_SYMBOLS,
   };
-  process.env.TINT_BUILD_ONLY = "1";
+  process.env.TINT_BUILD_ONLY = nativeFixtureBuildOnlyMode();
   process.env.TINT_DEBUG_SYMBOLS = "1";
   let image: string;
   try {
