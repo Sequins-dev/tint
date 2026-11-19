@@ -1,4 +1,5 @@
 import { test } from "node:test";
+import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -71,6 +72,10 @@ test("ELF JIT objects are relocated in place: live .text, relative symbols, abso
   assert.ok(built.ok);
   const bytes = built.value,
     v = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  assert.equal(
+    createHash("sha256").update(bytes).digest("hex"),
+    "f77384e392315fa75566a5b4d1f5e557714cde0578a187b5a55d308eb851e768",
+  );
   assert.deepEqual(
     Array.from(bytes.subarray(0, 7)),
     [0x7f, 0x45, 0x4c, 0x46, 2, 1, 1],

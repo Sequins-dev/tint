@@ -51,6 +51,8 @@ import {
   tableBytes,
   validName,
   writeElfHeader,
+  elfMachine,
+  type ElfArchitecture,
   writeSectionHeader,
   writeSymbol,
   type SectionHeader,
@@ -90,7 +92,9 @@ export interface ElfDebugRequest {
 /** Linux/glibc-specific image options; everything else in the request is
  * format-neutral. */
 export interface LinuxImageOptions {
-  /** PT_INTERP path; defaults to glibc's `/lib/ld-linux-aarch64.so.1`. */
+  /** AArch64 by default. Independently selects the ELF machine and layout. */
+  readonly arch?: ElfArchitecture | undefined;
+  /** PT_INTERP override; defaults to the architecture's glibc loader. */
   readonly interpreter?: string | undefined;
   /** DT_NEEDED sonames loaded after `libc.so.6`, in order. Every import is
    * resolved through the global lookup scope (ELF has no two-level
@@ -103,11 +107,10 @@ export interface LinuxImageOptions {
   readonly identifier?: string | undefined;
 }
 export interface ElfExecutableRequest {
-  /** Encoded A64 instructions followed by any `textSections`. */
+  /** Encoded target instructions followed by any `textSections`. */
   readonly code: Uint8Array;
   readonly codePlan?: CodePlan | undefined;
-  /** Process entry (the ELF `e_entry`): receives the kernel's initial stack,
-   * with the dynamic loader's finalizer in x0. */
+  /** Process entry (the ELF `e_entry`), following the target startup ABI. */
   readonly entryOffset: number;
   readonly maxByteLength: number;
   readonly symbols?: readonly ElfCodeSymbol[] | undefined;
@@ -120,7 +123,7 @@ export interface ElfExecutableRequest {
   /** Writable data, placed after the import slots. */
   readonly data?: Uint8Array | undefined;
   /** Imported symbol names, verbatim (no platform mangling is applied). Each
-   * gets one 8-byte GOT slot bound by R_AARCH64_GLOB_DAT at load. */
+   * gets one 8-byte GOT slot bound by the machine's GLOB_DAT relocation at load. */
   readonly imports?: readonly string[] | undefined;
   readonly addressFixups?: readonly ImageAddressReference[] | undefined;
   /** Patches each fixup. `siteOffset` is the site's file offset and
@@ -154,6 +157,7 @@ export type ElfError =
   | "INVALID_LIMIT"
   | "INVALID_SYMBOL"
   | "INVALID_UNWIND"
+  | "UNSUPPORTED_UNWIND"
   | "INVALID_IMPORT"
   | "INVALID_LIBRARY"
   | "INVALID_REFERENCE"
@@ -166,11 +170,7 @@ export type ElfResult =
   | { readonly ok: true; readonly value: ElfExecutable }
   | { readonly ok: false; readonly error: ElfError };
 
-const DEFAULT_INTERPRETER = "/lib/ld-linux-aarch64.so.1";
 const LIBC = "libc.so.6";
-/** Largest supported kernel page: PT_LOAD alignment that lets one image run
- * on 4 KiB, 16 KiB and 64 KiB page kernels. */
-const SEGMENT_ALIGNMENT = 65536;
 const RELA_SIZE = 24,
   DYNAMIC_SIZE = 16,
   BUILD_ID_SIZE = 20,
@@ -213,7 +213,6 @@ const DF_BIND_NOW = 8,
 const STB_WEAK = 2,
   STT_NOTYPE = 0,
   STT_OBJECT = 1;
-const R_AARCH64_GLOB_DAT = 1025;
 const NT_GNU_BUILD_ID = 3;
 /** SystemTap SDT probe notes: owner "stapsdt", type 3 (version 3). */
 const NT_STAPSDT = 3;
@@ -371,15 +370,20 @@ function writeDynamic(
 }
 
 /**
- * A glibc-linked AArch64 Linux PIE (ET_DYN) holding supplied
+ * A glibc-linked Linux PIE (ET_DYN) holding supplied
  * position-independent code. One R+X segment carries the headers, dynamic
  * linking tables, code, read-only tail sections and unwind tables at
  * addresses equal to their file offsets; one R+W segment holds `.dynamic`,
  * the GOT (import slots, RELRO after BIND_NOW relocation) and `data`. Both
- * are aligned for 64 KiB pages. Symbols, DWARF and section headers follow as
+ * use the machine's segment alignment. Symbols, DWARF and section headers follow as
  * non-allocated sections. Output is a pure function of the request.
  */
 export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
+  const options = request.linux,
+    arch: ElfArchitecture = options?.arch ?? "aarch64",
+    machine = elfMachine(arch),
+    instructionAlignment = machine.instructionAlignment,
+    segmentAlignment = machine.segmentAlignment;
   const codePlan = request.codePlan;
   if (request.code.length !== 0 && codePlan !== undefined)
     return { ok: false, error: "INVALID_CODE" };
@@ -388,12 +392,12 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   if (
     !uint(codeLength, Number.MAX_SAFE_INTEGER) ||
     codeLength === 0 ||
-    codeLength % 4 !== 0
+    codeLength % instructionAlignment !== 0
   )
     return { ok: false, error: "INVALID_CODE" };
   if (
     !uint(request.entryOffset, codeLength - 1) ||
-    request.entryOffset % 4 !== 0
+    request.entryOffset % instructionAlignment !== 0
   )
     return { ok: false, error: "INVALID_ENTRY" };
   if (!uint(request.maxByteLength, Number.MAX_SAFE_INTEGER))
@@ -412,18 +416,21 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       return { ok: false, error: "INVALID_CODE" };
     instructionEnd = section.offset;
   }
-  if (instructionEnd <= request.entryOffset || instructionEnd % 4 !== 0)
+  if (
+    instructionEnd <= request.entryOffset ||
+    instructionEnd % instructionAlignment !== 0
+  )
     return { ok: false, error: "INVALID_CODE" };
 
   // Constants, not reassigned locals: the native compiler (which links
   // this writer) rejects reassigning an array-typed local from an optional.
-  const options = request.linux,
-    chosenInterpreter = options === undefined ? undefined : options.interpreter,
+  const chosenInterpreter =
+      options === undefined ? undefined : options.interpreter,
     chosenIdentifier = options === undefined ? undefined : options.identifier,
     chosenNeeded = options === undefined ? undefined : options.needed,
     chosenWeak = options === undefined ? undefined : options.weakImports;
   const interpreter =
-      chosenInterpreter === undefined ? DEFAULT_INTERPRETER : chosenInterpreter,
+      chosenInterpreter === undefined ? machine.interpreter : chosenInterpreter,
     identifier = chosenIdentifier === undefined ? "" : chosenIdentifier;
   const none: readonly string[] = [];
   const neededInput = chosenNeeded === undefined ? none : chosenNeeded,
@@ -462,20 +469,23 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       symbol === undefined ||
       !validName(symbol.name) ||
       (isCode
-        ? !uint(symbol.offset, instructionEnd - 1) || symbol.offset % 4 !== 0
+        ? !uint(symbol.offset, instructionEnd - 1) ||
+          symbol.offset % instructionAlignment !== 0
         : !uint(symbol.offset, data.length - 1))
     )
       return { ok: false, error: "INVALID_SYMBOL" };
   }
 
   const unwindRanges = request.unwind ?? [];
+  if (arch === "x86_64" && unwindRanges.length > 0)
+    return { ok: false, error: "UNSUPPORTED_UNWIND" };
   let unwindEnd = 0;
   const unwound: UnwindRange[] = [];
   for (const range of unwindRanges) {
     if (
       range === undefined ||
       !uint(range.offset, codeLength - 1) ||
-      range.offset % 4 !== 0 ||
+      range.offset % instructionAlignment !== 0 ||
       !uint(range.byteLength, codeLength - range.offset) ||
       range.offset < unwindEnd
     )
@@ -490,8 +500,8 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   for (const probe of probes) {
     if (
       probe === undefined ||
-      !uint(probe.offset, instructionEnd - 4) ||
-      probe.offset % 4 !== 0 ||
+      !uint(probe.offset, instructionEnd - instructionAlignment) ||
+      probe.offset % instructionAlignment !== 0 ||
       !validProbeText(probe.provider, true) ||
       !validProbeText(probe.name, true) ||
       !validProbeText(probe.arguments, false)
@@ -555,9 +565,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   cursor = alignTo(cursor, 8) + dynamicSymbols.length;
   cursor += dynstr.length;
   if (hasRelocations) cursor = alignTo(cursor, 8) + imports.length * RELA_SIZE;
-  // Code starts on a 4 KiB boundary: generated code addresses its literals
-  // page-relatively (ADRP), which needs offsets congruent to addresses.
-  const codeAddress = alignTo(cursor, 4096);
+  const codeAddress = alignTo(cursor, machine.codeAlignment);
   const codeEnd = codeAddress + codeLength;
   const headerAddress = alignTo(codeEnd, 4);
   let ehFrameAddress = alignTo(
@@ -728,7 +736,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
     {
       id: "code",
       order: 7,
-      alignment: 4096,
+      alignment: machine.codeAlignment,
       bytes: code,
       byteLength: codeLength,
     },
@@ -834,7 +842,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
 
   // The R+X segment maps file offsets [0, textEnd) at the same addresses.
   // The R+W segment follows in the file without padding; its addresses start
-  // on the next 64 KiB boundary, congruent to its file offsets.
+  // in the next aligned segment, congruent to its file offsets.
   const textEnd = hasProbes
     ? stapsdtBaseAt.fileOffset + 1
     : hasUnwind
@@ -850,8 +858,8 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
     );
   const writableOffset = dynamicAt.fileOffset;
   const writableBias =
-    alignTo(textEnd, SEGMENT_ALIGNMENT) -
-    Math.floor(writableOffset / SEGMENT_ALIGNMENT) * SEGMENT_ALIGNMENT;
+    alignTo(textEnd, segmentAlignment) -
+    Math.floor(writableOffset / segmentAlignment) * segmentAlignment;
   const writableEnd = dataAt.fileOffset + data.length;
   const dynamicAddress = dynamicAt.fileOffset + writableBias,
     gotAddress = gotAt.fileOffset + writableBias,
@@ -868,7 +876,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
     });
     const rela = relaAt.fileOffset + index * RELA_SIZE;
     put64(bytes, rela, gotAddress + index * 8);
-    put32(bytes, rela + 8, R_AARCH64_GLOB_DAT);
+    put32(bytes, rela + 8, machine.globalDataRelocation);
     put32(bytes, rela + 12, index + 1);
     put64(bytes, rela + 16, 0);
   }
@@ -1023,7 +1031,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
     codeAddress,
     0,
     0,
-    4096,
+    machine.codeAlignment,
     0,
   );
   for (const item of tail) {
@@ -1238,7 +1246,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       address: 0,
       fileSize: textEnd,
       memorySize: textEnd,
-      alignment: SEGMENT_ALIGNMENT,
+      alignment: segmentAlignment,
     },
     {
       type: PT_LOAD,
@@ -1247,7 +1255,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       address: writableOffset + writableBias,
       fileSize: writableEnd - writableOffset,
       memorySize: writableEnd - writableOffset,
-      alignment: SEGMENT_ALIGNMENT,
+      alignment: segmentAlignment,
     },
     {
       type: PT_DYNAMIC,
@@ -1311,6 +1319,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   }
 
   writeElfHeader(bytes, {
+    machine: machine.id,
     type: ET_DYN,
     entry: codeAddress + request.entryOffset,
     programHeaderCount,
