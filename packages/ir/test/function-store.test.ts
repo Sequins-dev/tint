@@ -50,6 +50,7 @@ const instructions: Instruction[] = [
   { kind: "general-kind", id: 1, value: 2, ...span },
   { kind: "general-is", id: 1, value: 2, type: "undefined", ...span },
   { kind: "general-is", id: 1, value: 2, type: "Uint8Array", ...span },
+  { kind: "general-is", id: 1, value: 2, type: "object", ...span },
   { kind: "general-equal", id: 1, left: 2, right: 3, ...span },
   { kind: "general-none", id: 1, ...span },
   { kind: "general-null", id: 1, ...span, inline: 0 },

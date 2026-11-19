@@ -151,9 +151,16 @@ interface RealmErrorSources {
   readonly applies: (span: IRSpan) => boolean;
 }
 
+interface NodeErrorTypes {
+  readonly coded?: number | undefined;
+  readonly range?: number | undefined;
+  readonly system?: number | undefined;
+  readonly info?: number | undefined;
+}
 export interface ModuleEntryOptions {
   readonly realmTypeof?: RealmTypeof | undefined;
   readonly realmErrors?: RealmErrorSources | undefined;
+  readonly nodeErrorTypes?: NodeErrorTypes | undefined;
   /** Caller-selected top-level managed functions supplied by the linker. Their
    * checked ABI is lowered, but their bodies and child closures are not. */
   readonly importedFunctions?: readonly number[];
@@ -281,6 +288,7 @@ export function lowerModuleEntries(
     bigIntRepresentation: options?.bigIntRepresentation,
     realmTypeof: options?.realmTypeof,
     realmErrors: options?.realmErrors,
+    nodeErrorTypes: options?.nodeErrorTypes,
     recordBindings: options?.recordBindings,
     recordTypes: options?.recordTypes,
     recordIdentity: options?.recordIdentity,
@@ -314,6 +322,7 @@ function lowerEntries(
     bigIntRepresentation?: number | undefined;
     realmTypeof?: RealmTypeof | undefined;
     realmErrors?: RealmErrorSources | undefined;
+    nodeErrorTypes?: NodeErrorTypes | undefined;
     recordBindings?: readonly RecordBinding[] | undefined;
     recordTypes?: boolean | undefined;
     recordIdentity?: RecordIdentityResolver | undefined;
@@ -477,6 +486,16 @@ function lowerEntries(
         fail("view slot binding requires a record witness");
       viewed.add(type);
     }
+    const nodeErrorTypes = recordTarget?.nodeErrorTypes;
+    const branded =
+      nodeErrorTypes === undefined ? undefined : new Set<number>();
+    if (nodeErrorTypes !== undefined && branded !== undefined)
+      for (const type of [
+        nodeErrorTypes.coded,
+        nodeErrorTypes.range,
+        nodeErrorTypes.system,
+      ])
+        if (type !== undefined) branded.add(type);
     const recordContracts: RecordContracts | undefined =
       recordTarget === undefined
         ? undefined
@@ -491,6 +510,7 @@ function lowerEntries(
             validatedTypes.value,
             recordTarget.recordIdentity,
             viewed,
+            branded,
           );
     const constants = new Map<number, number | boolean | string>();
     if (layout === undefined) {
@@ -954,6 +974,18 @@ function lowerEntries(
             typeError: errorRecord(realmErrorSources.typeError),
             rangeError: errorRecord(realmErrorSources.rangeError),
             applies: realmErrorSources.applies,
+          };
+    function nodeErrorRecord(type: number | undefined): number | undefined {
+      return type === undefined ? undefined : recordContracts?.forType(type);
+    }
+    const nodeErrors =
+      nodeErrorTypes === undefined
+        ? undefined
+        : {
+            coded: nodeErrorRecord(nodeErrorTypes.coded),
+            range: nodeErrorRecord(nodeErrorTypes.range),
+            system: nodeErrorRecord(nodeErrorTypes.system),
+            info: nodeErrorRecord(nodeErrorTypes.info),
           };
     function realmTypeofTarget(span: IRSpan): number | undefined {
       if (realmTypeof === undefined || !realmTypeof.applies(span))
@@ -1822,14 +1854,17 @@ function lowerEntries(
         const chain = checked.chainValues.get(node);
         const receiverContract = checked.chainReceivers.get(node);
         const checkedType = checked.expressions.get(node);
+        const dynamicIntrinsic = checked.intrinsics.get(node);
         const type: SourceScalarType | "void" =
-          checkedType !== undefined &&
-          (checked.types[checkedType]?.kind === "void" ||
-            checked.types[checkedType]?.kind === "never")
-            ? "void"
-            : layout === undefined && stringExpression(node)
-              ? "string"
-              : scalar(checkedType);
+          dynamicIntrinsic === "flow-property-read-boxed"
+            ? "general"
+            : checkedType !== undefined &&
+                (checked.types[checkedType]?.kind === "void" ||
+                  checked.types[checkedType]?.kind === "never")
+              ? "void"
+              : layout === undefined && stringExpression(node)
+                ? "string"
+                : scalar(checkedType);
         let callee: number | undefined;
         let functionTarget: number | undefined;
         let indirect = false;
@@ -1877,7 +1912,24 @@ function lowerEntries(
         let viewTarget: CViewUse | undefined;
         let dynamicObject: ExpressionInfo["dynamicObject"];
         let dynamicContract: string | undefined;
-        const dynamicIntrinsic = checked.intrinsics.get(node);
+        let propertyKey: string | undefined;
+        function planProperty(
+          receiver: Expression,
+          key: string | undefined,
+        ): void {
+          if (
+            key === undefined ||
+            type === "void" ||
+            recordContracts === undefined
+          )
+            fail("literal property operation requires record lowering");
+          propertyKey = key;
+          const receiverType =
+            receiverContract ?? checked.expressions.get(receiver);
+          if (receiverType === undefined)
+            fail("literal property receiver invariant");
+          recordContracts.planProperty(node, receiverType, key, type);
+        }
         if (viewUse !== undefined) {
           if (node.kind === "member") expr(node.object);
           else if (node.kind === "index") {
@@ -2016,6 +2068,22 @@ function lowerEntries(
                 );
               break;
             case "index":
+              if (
+                dynamicIntrinsic === "flow-property-read" ||
+                dynamicIntrinsic === "flow-property-read-boxed"
+              ) {
+                builtin = dynamicIntrinsic;
+                planProperty(
+                  node.object,
+                  checkedPropertyName(
+                    node.index,
+                    checked.types[checked.expressions.get(node.index) ?? -1],
+                  ),
+                );
+                expr(node.object);
+                expr(node.index);
+                break;
+              }
               if (finiteAccess(node, node.object, type, false)) {
                 expr(node.object);
                 expr(node.index);
@@ -2066,6 +2134,15 @@ function lowerEntries(
               expr(node.index);
               break;
             case "member":
+              if (
+                dynamicIntrinsic === "flow-property-read" ||
+                dynamicIntrinsic === "flow-property-read-boxed"
+              ) {
+                builtin = dynamicIntrinsic;
+                planProperty(node.object, node.property);
+                expr(node.object);
+                break;
+              }
               if (dynamicIntrinsic === "dynamic-object-read") {
                 if (dynamicObjects === undefined || checkedType === undefined)
                   fail("dynamic-key object read requires the program realm");
@@ -2186,6 +2263,19 @@ function lowerEntries(
               expr(node.operand);
               break;
             case "binary": {
+              if (dynamicIntrinsic === "literal-property-has") {
+                builtin = dynamicIntrinsic;
+                planProperty(
+                  node.right,
+                  checkedPropertyName(
+                    node.left,
+                    checked.types[checked.expressions.get(node.left) ?? -1],
+                  ),
+                );
+                expr(node.left);
+                expr(node.right);
+                break;
+              }
               if (dynamicIntrinsic === "dynamic-object-has") {
                 if (dynamicObjects === undefined)
                   fail(
@@ -2922,6 +3012,7 @@ function lowerEntries(
         if (restCall !== undefined && restElement === undefined)
           fail("rest parameter requires a supported list runtime");
         expressions.set(node, {
+          ...(propertyKey === undefined ? {} : { propertyKey }),
           rest:
             restCall === undefined || restElement === undefined
               ? undefined
@@ -2955,7 +3046,10 @@ function lowerEntries(
             bigIntType(checked, checkedType) !== undefined,
           realmTypeof,
           bigIntRecord:
-            generalTypeof && realmTypeof === undefined
+            (generalTypeof && realmTypeof === undefined) ||
+            (dynamicIntrinsic === "flow-property-read" &&
+              checkedType !== undefined &&
+              bigIntType(checked, checkedType) !== undefined)
               ? bigIntRecord()
               : undefined,
           typeofFunction:
@@ -3522,6 +3616,7 @@ function lowerEntries(
         dynamicObjects,
         dynamicSignatures,
         realmErrors,
+        nodeErrors,
       );
       // Debug builds name the slots holding this function's own parameters
       // and locals. Captured and environment-owned bindings live in cells.

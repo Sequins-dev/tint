@@ -230,6 +230,8 @@ export {
   installErrorIntrinsics,
   createRuntimeError,
   createNativeErrorView,
+  createNativeCodedErrorView,
+  createNativeSystemErrorView,
   prepareRealmErrorArgument,
   realmErrorOperation,
   rejectUnsupportedExecution,

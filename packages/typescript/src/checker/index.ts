@@ -55,6 +55,7 @@ export interface ExpressionInfo {
     | "enroll"
     | "own-enumeration"
     | undefined;
+  readonly propertyKey?: string | undefined;
   readonly dynamicContract?: string | undefined;
   readonly dynamicEnrollment?: string | undefined;
   /** A checked downcast (`x as T` from unknown): the categories it accepts
@@ -167,6 +168,9 @@ export interface ExpressionInfo {
     | "error-new"
     | "error-is"
     | "error-property"
+    | "literal-property-has"
+    | "flow-property-read"
+    | "flow-property-read-boxed"
     | "range-error-new"
     | "range-error-is"
     | "type-error-new"

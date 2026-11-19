@@ -300,6 +300,7 @@ const generalTests: readonly GeneralTest[] = [
   "string",
   "null",
   "Uint8Array",
+  "object",
 ];
 export function encodeInstruction(
   writer: ByteWriter,

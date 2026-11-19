@@ -6,15 +6,13 @@
  * module for its target; importing one on the other target fails at
  * resolution (its binding module has no image there).
  *
- * KNOWN DEFECT (typed-pipeline gaps, docs/native-ffi.md#known-defects):
- * Node throws a SystemError (`ERR_SYSTEM_ERROR`) when libuv fails; the
- * typed pipeline constructs only TypeError and RangeError, so these are
- * TypeErrors with Node's messages.
  * KNOWN DEFECT (API shape, removed by the typed/untyped convergence):
  * typed code has no objects with dynamic keys, so `networkInterfaces`
  * returns a Map from interface name to the same arrays Node's plain object
  * holds. `userInfo` takes no options (Node's `encoding` option re-encodes
  * each string). */
+
+import { systemError, type NativeSystemError } from "./errors.ts";
 
 /** `os.userInfo()`'s result, in Node's property order. */
 export interface UserInfo {
@@ -46,20 +44,235 @@ export const interfaceUp = 0x1,
 export const familyUnknown = 0,
   familyIPv4 = 4,
   familyIPv6 = 6;
-export function systemError(
-  call: string,
-  code: string,
-  text: string,
-): TypeError {
-  return new TypeError(
-    "A system error occurred: " +
-      call +
-      " returned " +
-      code +
-      " (" +
-      text +
-      ")",
-  );
+/** libuv's Unix status translation negates positive POSIX errno values.
+ * Use the target's errno numbers and libuv's locale-independent descriptions
+ * (Node 24.12.0 getSystemErrorMap on Darwin and Linux). */
+export function passwdError(status: number, linux: boolean): NativeSystemError {
+  const call = "uv_os_get_passwd";
+  const errno = status === 0 ? 2 : status;
+  if (errno === (linux ? 0 : 79))
+    return systemError(
+      call,
+      -errno,
+      "EFTYPE",
+      "inappropriate file type or format",
+    );
+  if (errno === (linux ? 64 : 0))
+    return systemError(call, -errno, "ENONET", "machine is not on the network");
+  if (errno === (linux ? 121 : 0))
+    return systemError(call, -errno, "EREMOTEIO", "remote I/O error");
+  if (errno === (linux ? 49 : 0))
+    return systemError(call, -errno, "EUNATCH", "protocol driver not attached");
+  if (errno === 1)
+    return systemError(call, -errno, "EPERM", "operation not permitted");
+  if (errno === 2)
+    return systemError(call, -errno, "ENOENT", "no such file or directory");
+  if (errno === 3) return systemError(call, -errno, "ESRCH", "no such process");
+  if (errno === 4)
+    return systemError(call, -errno, "EINTR", "interrupted system call");
+  if (errno === 5) return systemError(call, -errno, "EIO", "i/o error");
+  if (errno === 6)
+    return systemError(call, -errno, "ENXIO", "no such device or address");
+  if (errno === 7)
+    return systemError(call, -errno, "E2BIG", "argument list too long");
+  if (errno === 8)
+    return systemError(call, -errno, "ENOEXEC", "exec format error");
+  if (errno === 9)
+    return systemError(call, -errno, "EBADF", "bad file descriptor");
+  if (errno === (linux ? 11 : 35))
+    return systemError(
+      call,
+      -errno,
+      "EAGAIN",
+      "resource temporarily unavailable",
+    );
+  if (errno === 12)
+    return systemError(call, -errno, "ENOMEM", "not enough memory");
+  if (errno === 13)
+    return systemError(call, -errno, "EACCES", "permission denied");
+  if (errno === 14)
+    return systemError(
+      call,
+      -errno,
+      "EFAULT",
+      "bad address in system call argument",
+    );
+  if (errno === 16)
+    return systemError(call, -errno, "EBUSY", "resource busy or locked");
+  if (errno === 17)
+    return systemError(call, -errno, "EEXIST", "file already exists");
+  if (errno === 18)
+    return systemError(
+      call,
+      -errno,
+      "EXDEV",
+      "cross-device link not permitted",
+    );
+  if (errno === 19)
+    return systemError(call, -errno, "ENODEV", "no such device");
+  if (errno === 20)
+    return systemError(call, -errno, "ENOTDIR", "not a directory");
+  if (errno === 21)
+    return systemError(
+      call,
+      -errno,
+      "EISDIR",
+      "illegal operation on a directory",
+    );
+  if (errno === 22)
+    return systemError(call, -errno, "EINVAL", "invalid argument");
+  if (errno === 23)
+    return systemError(call, -errno, "ENFILE", "file table overflow");
+  if (errno === 24)
+    return systemError(call, -errno, "EMFILE", "too many open files");
+  if (errno === 25)
+    return systemError(
+      call,
+      -errno,
+      "ENOTTY",
+      "inappropriate ioctl for device",
+    );
+  if (errno === 26)
+    return systemError(call, -errno, "ETXTBSY", "text file is busy");
+  if (errno === 27) return systemError(call, -errno, "EFBIG", "file too large");
+  if (errno === 28)
+    return systemError(call, -errno, "ENOSPC", "no space left on device");
+  if (errno === 29) return systemError(call, -errno, "ESPIPE", "invalid seek");
+  if (errno === 30)
+    return systemError(call, -errno, "EROFS", "read-only file system");
+  if (errno === 31)
+    return systemError(call, -errno, "EMLINK", "too many links");
+  if (errno === 32) return systemError(call, -errno, "EPIPE", "broken pipe");
+  if (errno === 34)
+    return systemError(call, -errno, "ERANGE", "result too large");
+  if (errno === (linux ? 36 : 63))
+    return systemError(call, -errno, "ENAMETOOLONG", "name too long");
+  if (errno === (linux ? 114 : 37))
+    return systemError(
+      call,
+      -errno,
+      "EALREADY",
+      "connection already in progress",
+    );
+  if (errno === (linux ? 38 : 78))
+    return systemError(call, -errno, "ENOSYS", "function not implemented");
+  if (errno === (linux ? 88 : 38))
+    return systemError(
+      call,
+      -errno,
+      "ENOTSOCK",
+      "socket operation on non-socket",
+    );
+  if (errno === (linux ? 89 : 39))
+    return systemError(
+      call,
+      -errno,
+      "EDESTADDRREQ",
+      "destination address required",
+    );
+  if (errno === (linux ? 39 : 66))
+    return systemError(call, -errno, "ENOTEMPTY", "directory not empty");
+  if (errno === (linux ? 40 : 62))
+    return systemError(
+      call,
+      -errno,
+      "ELOOP",
+      "too many symbolic links encountered",
+    );
+  if (errno === (linux ? 90 : 40))
+    return systemError(call, -errno, "EMSGSIZE", "message too long");
+  if (errno === (linux ? 91 : 41))
+    return systemError(
+      call,
+      -errno,
+      "EPROTOTYPE",
+      "protocol wrong type for socket",
+    );
+  if (errno === (linux ? 92 : 42))
+    return systemError(call, -errno, "ENOPROTOOPT", "protocol not available");
+  if (errno === (linux ? 93 : 43))
+    return systemError(
+      call,
+      -errno,
+      "EPROTONOSUPPORT",
+      "protocol not supported",
+    );
+  if (errno === (linux ? 94 : 44))
+    return systemError(
+      call,
+      -errno,
+      "ESOCKTNOSUPPORT",
+      "socket type not supported",
+    );
+  if (errno === (linux ? 95 : 45))
+    return systemError(
+      call,
+      -errno,
+      "ENOTSUP",
+      "operation not supported on socket",
+    );
+  if (errno === (linux ? 97 : 47))
+    return systemError(
+      call,
+      -errno,
+      "EAFNOSUPPORT",
+      "address family not supported",
+    );
+  if (errno === (linux ? 98 : 48))
+    return systemError(call, -errno, "EADDRINUSE", "address already in use");
+  if (errno === (linux ? 99 : 49))
+    return systemError(call, -errno, "EADDRNOTAVAIL", "address not available");
+  if (errno === (linux ? 100 : 50))
+    return systemError(call, -errno, "ENETDOWN", "network is down");
+  if (errno === (linux ? 101 : 51))
+    return systemError(call, -errno, "ENETUNREACH", "network is unreachable");
+  if (errno === (linux ? 103 : 53))
+    return systemError(
+      call,
+      -errno,
+      "ECONNABORTED",
+      "software caused connection abort",
+    );
+  if (errno === (linux ? 104 : 54))
+    return systemError(call, -errno, "ECONNRESET", "connection reset by peer");
+  if (errno === (linux ? 105 : 55))
+    return systemError(call, -errno, "ENOBUFS", "no buffer space available");
+  if (errno === (linux ? 106 : 56))
+    return systemError(call, -errno, "EISCONN", "socket is already connected");
+  if (errno === (linux ? 107 : 57))
+    return systemError(call, -errno, "ENOTCONN", "socket is not connected");
+  if (errno === (linux ? 108 : 58))
+    return systemError(
+      call,
+      -errno,
+      "ESHUTDOWN",
+      "cannot send after transport endpoint shutdown",
+    );
+  if (errno === (linux ? 110 : 60))
+    return systemError(call, -errno, "ETIMEDOUT", "connection timed out");
+  if (errno === (linux ? 111 : 61))
+    return systemError(call, -errno, "ECONNREFUSED", "connection refused");
+  if (errno === (linux ? 61 : 96))
+    return systemError(call, -errno, "ENODATA", "no data available");
+  if (errno === (linux ? 112 : 64))
+    return systemError(call, -errno, "EHOSTDOWN", "host is down");
+  if (errno === (linux ? 113 : 65))
+    return systemError(call, -errno, "EHOSTUNREACH", "host is unreachable");
+  if (errno === (linux ? 71 : 100))
+    return systemError(call, -errno, "EPROTO", "protocol error");
+  if (errno === (linux ? 75 : 84))
+    return systemError(
+      call,
+      -errno,
+      "EOVERFLOW",
+      "value too large for defined data type",
+    );
+  if (errno === (linux ? 84 : 92))
+    return systemError(call, -errno, "EILSEQ", "illegal byte sequence");
+  if (errno === (linux ? 125 : 89))
+    return systemError(call, -errno, "ECANCELED", "operation canceled");
+  const unknown = "Unknown system error " + String(-errno);
+  return systemError(call, -errno, unknown, unknown);
 }
 const hexDigits = "0123456789abcdef";
 function hex(value: number): string {

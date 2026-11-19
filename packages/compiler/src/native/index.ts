@@ -1712,6 +1712,21 @@ function lowerTypedProgram(
       "record-binding",
       "incomplete mixed native error views",
     );
+  function nodeErrorType(name: string): number | undefined {
+    const declaration = exports.find(
+      (item) =>
+        item !== undefined &&
+        item.module === "packages/native-runtime/src/node/errors.ts" &&
+        item.namespace === "type" &&
+        item.name === name,
+    );
+    return declaration === undefined
+      ? undefined
+      : nativeChecked.typeNames.get(declaration.linkedName);
+  }
+  const codedError = nodeErrorType("NativeCodedError");
+  const codedRange = nodeErrorType("NativeCodedRangeError");
+  const systemError = nodeErrorType("NativeSystemError");
   const lowered = lowerModuleEntries(
     nativeChecked,
     entries,
@@ -1741,6 +1756,17 @@ function lowerTypedProgram(
               typeError: typeErrorSlot,
               rangeError: rangeErrorSlot,
               applies: realmTypeofSourcePredicate(ranges, realmTypeofModules),
+            },
+      nodeErrorTypes:
+        codedError === undefined &&
+        codedRange === undefined &&
+        systemError === undefined
+          ? undefined
+          : {
+              coded: codedError,
+              range: codedRange,
+              system: systemError,
+              info: nodeErrorType("SystemErrorInfo"),
             },
       recordBindings,
       functionAddressBindings,

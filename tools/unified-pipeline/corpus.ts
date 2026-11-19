@@ -1070,6 +1070,31 @@ export function run() {
 }`,
   },
   {
+    name: "coded-error-guard",
+    typed: `function code(error: unknown): string {
+  if (error instanceof Error && "code" in error && typeof error.code === "string") {
+    const code: string = error.code;
+    return code;
+  }
+  return "";
+}
+export function run(): number {
+  const coded: { name: string; message: string; code: string } = { name: "Example", message: "test", code: "E_TEST" };
+  return code(new Error("missing")) === "" && code(coded) === "" && code(1) === "" ? 42 : 1;
+}`,
+    untyped: `function code(error) {
+  if (error instanceof Error && "code" in error && typeof error.code === "string") {
+    const code = error.code;
+    return code;
+  }
+  return "";
+}
+export function run() {
+  const coded = { name: "Example", message: "test", code: "E_TEST" };
+  return code(new Error("missing")) === "" && code(coded) === "" && code(1) === "" ? 42 : 1;
+}`,
+  },
+  {
     name: "tuple-types",
     typed: `function pair(n: number): [number, string] { return [n, "ab"]; }
 export function run(): number {

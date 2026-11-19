@@ -771,7 +771,8 @@ export function verify(
                 op.type !== "boolean" &&
                 op.type !== "string" &&
                 op.type !== "null" &&
-                op.type !== "Uint8Array"
+                op.type !== "Uint8Array" &&
+                op.type !== "object"
               )
                 fail("TYPE", "general test requires a known category");
               define(op.id, "boolean");

@@ -29,7 +29,13 @@ export interface DebugOrigin {
 }
 /** Categories general-is tests. */
 export type GeneralTest =
-  "undefined" | "number" | "boolean" | "string" | "null" | "Uint8Array";
+  | "undefined"
+  | "number"
+  | "boolean"
+  | "string"
+  | "null"
+  | "Uint8Array"
+  | "object";
 export type Instruction = Span &
   DebugOrigin &
   (

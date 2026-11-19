@@ -3254,3 +3254,56 @@ test("literal presence narrows a dynamic property read", () => {
   `);
   assert.ok(result.ok, JSON.stringify(result));
 });
+
+test("literal in introduces an unknown property on a narrowed Error", () => {
+  const accepted = check(`function code(e: unknown): string {
+    if (e instanceof Error && "code" in e && typeof e.code === "string") {
+      const code: string = e.code;
+      return code;
+    }
+    return "";
+  }`);
+  assert.ok(accepted.ok, JSON.stringify(accepted));
+  assert.equal(
+    check(`function code(e: Error): string {
+    if ("code" in e) return e.code;
+    return "";
+  }`).ok,
+    false,
+  );
+  assert.equal(
+    check(`function code(e: Error): unknown {
+    if (!("code" in e)) return e.code;
+    return undefined;
+  }`).ok,
+    false,
+  );
+  assert.equal(
+    check('function has(e: string): boolean { return "code" in e; }').ok,
+    false,
+  );
+  assert.ok(
+    check(`function value(o: { value: number }): number {
+    if ("value" in o) return o.value;
+    return 0;
+  }`).ok,
+  );
+  assert.ok(
+    check(`function errno(e: Error): number {
+    if ("errno" in e && e.errno === -5) return e.errno;
+    return 0;
+  }`).ok,
+  );
+});
+
+test("a checked property fact can cross a call on an uncaptured Error", () => {
+  const accepted = check(`function touch(e: Error): void {}
+function code(e: Error): string {
+  if ("code" in e && typeof e["code"] === "string") {
+    touch(e);
+    return e.code;
+  }
+  return "";
+}`);
+  assert.ok(accepted.ok, JSON.stringify(accepted));
+});

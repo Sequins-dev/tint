@@ -160,6 +160,9 @@ export type ClosureIntrinsic =
   | "error-new"
   | "error-is"
   | "error-property"
+  | "literal-property-has"
+  | "flow-property-read"
+  | "flow-property-read-boxed"
   | "range-error-new"
   | "range-error-is"
   | "type-error-new"
@@ -948,7 +951,12 @@ export function checkClosureModule(
   // that a later call must remove. Branch refinements use fresh set identities.
   let callSafeFacts: Set<number> | undefined;
   const pendingParameters = new Set<number>();
-  const narrowed: { binding: number; type: number; property?: string }[] = [],
+  const narrowed: {
+      binding: number;
+      type: number;
+      property?: string;
+      checkedRead?: boolean;
+    }[] = [],
     narrowKeys = createStringIndex<number>();
   // Interned tokens outlive branch snapshots. This index limits queries and
   // invalidation by binding; each snapshot still decides active membership.
@@ -996,13 +1004,16 @@ export function checkClosureModule(
     binding: number,
     type: number,
     property?: string,
+    checkedRead?: boolean,
   ): number {
     const key =
         String(binding) +
         ":" +
         String(type) +
         ":" +
-        (property === undefined ? "object" : "field:" + property),
+        (property === undefined
+          ? "object"
+          : (checkedRead === true ? "checked-field:" : "field:") + property),
       known = narrowKeys.get(key);
     if (known !== undefined) return known;
     const token = graph.bindings.length + narrowed.length;
@@ -1014,6 +1025,7 @@ export function checkClosureModule(
       binding,
       type,
       ...(property === undefined ? {} : { property }),
+      ...(checkedRead === true ? { checkedRead } : {}),
     });
     return token;
   }
@@ -1165,7 +1177,7 @@ export function checkClosureModule(
       const fact = narrowed[token - graph.bindings.length];
       if (fact !== undefined) {
         if (
-          fact.property === undefined &&
+          (fact.property === undefined || fact.checkedRead === true) &&
           (graph.bindings[fact.binding]?.mutable === false ||
             (!immutableOnly &&
               graph.bindings[fact.binding]?.captured === false))
@@ -2310,6 +2322,87 @@ export function checkClosureModule(
     }
     return result;
   }
+  function membershipObject(id: number): boolean {
+    const type = types[id];
+    if (type?.kind === "union") return type.members.every(membershipObject);
+    return type?.kind === "object" || isErrorKind(type?.kind);
+  }
+  function unknownType(node: Span): number {
+    const id = types.findIndex((type) => type?.kind === "unknown");
+    return id >= 0
+      ? id
+      : appendType({ kind: "unknown" }, node, "invalid unknown property type");
+  }
+  function withPropertyFact(
+    base: Set<number>,
+    binding: number,
+    property: string,
+    type: number,
+    checkedRead: boolean,
+  ): Set<number> {
+    const result = new Set(base);
+    for (const token of narrowingTokens.get(binding) ?? []) {
+      if (token === undefined) throw "property fact invariant";
+      if (narrowed[token - graph.bindings.length]?.property === property)
+        result.delete(token);
+    }
+    result.add(narrowToken(binding, type, property, checkedRead));
+    return result;
+  }
+  function refineIntroducedProperty(
+    node: Expression,
+    truth: boolean,
+    base: Set<number>,
+  ): Set<number> | undefined {
+    if (
+      node.kind !== "binary" ||
+      (node.operator !== "===" && node.operator !== "!==")
+    )
+      return undefined;
+    if (truth !== (node.operator === "===")) return undefined;
+    const left = literals.get(ungroup(node.left));
+    const literal = left ?? literals.get(ungroup(node.right));
+    if (literal?.kind !== "literal") return undefined;
+    const compared = ungroup(left === undefined ? node.left : node.right);
+    const query = compared.kind === "unary" && compared.operator === "typeof";
+    const target =
+      query && compared.kind === "unary" ? ungroup(compared.operand) : compared;
+    if (target.kind !== "member" && target.kind !== "index") return undefined;
+    const read = intrinsics.get(target);
+    if (read !== "flow-property-read" && read !== "flow-property-read-boxed")
+      return undefined;
+    const binding = references.get(ungroup(target.object));
+    const property =
+      target.kind === "member"
+        ? target.property
+        : checkedPropertyName(
+            target.index,
+            types[expressions.get(target.index) ?? -1],
+          );
+    if (
+      binding === undefined ||
+      property === undefined ||
+      propertyFact(target.object, property, base) === undefined
+    )
+      return undefined;
+    const value = literal.value;
+    const selected = query
+      ? value === "string"
+        ? string
+        : value === "number"
+          ? number
+          : value === "boolean"
+            ? boolean
+            : value === "bigint"
+              ? bigint
+              : value === "undefined"
+                ? undefinedType
+                : undefined
+      : typeOf(literal);
+    return selected === undefined
+      ? undefined
+      : withPropertyFact(base, binding.id, property, selected, true);
+  }
   function refineField(
     node: Expression,
     truth: boolean,
@@ -2463,6 +2556,34 @@ export function checkClosureModule(
           return narrowed;
         }
       }
+      if (
+        truth &&
+        node.operator === "in" &&
+        intrinsics.get(node) === "literal-property-has"
+      ) {
+        const binding = references.get(ungroup(node.right));
+        const object = expressions.get(node.right);
+        const key = checkedPropertyName(
+          node.left,
+          types[expressions.get(node.left) ?? -1],
+        );
+        if (
+          binding !== undefined &&
+          object !== undefined &&
+          key !== undefined
+        ) {
+          const property = system.property(object, key);
+          const existing = propertyFact(node.right, key, base);
+          if (existing === undefined)
+            return withPropertyFact(
+              base,
+              binding.id,
+              key,
+              property.ok ? property.value : unknownType(node),
+              !property.ok,
+            );
+        }
+      }
       if (node.operator === "&&")
         return truth
           ? refine(
@@ -2547,6 +2668,8 @@ export function checkClosureModule(
     if (literal !== undefined) return literal;
     const tagged = refineDiscriminant(node, truth, base);
     if (tagged !== undefined) return tagged;
+    const introduced = refineIntroducedProperty(node, truth, base);
+    if (introduced !== undefined) return introduced;
     const field = refineField(node, truth, base);
     if (field !== undefined) return field;
     // Delegated refinements produce their own result. Copy only when this
@@ -2629,7 +2752,7 @@ export function checkClosureModule(
         // when this view and its binding are readonly. Declared discriminant
         // variants remain stable for const bindings under strict assignment.
         if (
-          fact.property !== undefined ||
+          (fact.property !== undefined && fact.checkedRead !== true) ||
           (graph.bindings[fact.binding]?.mutable !== false &&
             graph.bindings[fact.binding]?.captured !== false)
         )
@@ -3238,10 +3361,12 @@ export function checkClosureModule(
   function propertyFact(
     receiver: Expression,
     property: string,
+    facts: Set<number> = present,
   ): number | undefined {
     const binding = references.get(ungroup(receiver));
     if (binding !== undefined)
-      for (const token of present) {
+      for (const token of narrowingTokens.get(binding.id) ?? []) {
+        if (token === undefined || !facts.has(token)) continue;
         const fact = narrowed[token - graph.bindings.length];
         if (
           fact !== undefined &&
@@ -4105,9 +4230,18 @@ export function checkClosureModule(
           if (dynamicObject(obj)) intrinsics.set(node, "dynamic-object-read");
           const literal = literalProperty(obj, node.property, node);
           const p = system.property(obj, node.property);
-          if (!p.ok) fail(node, p.error, "invalid property read");
-          result = literal ?? p.value;
-          result = propertyFact(receiver, node.property) ?? result;
+          const fact = propertyFact(receiver, node.property);
+          if (!p.ok) {
+            if (fact === undefined)
+              fail(node, p.error, "invalid property read");
+            intrinsics.set(
+              node,
+              types[inputExpected ?? -1]?.kind === "unknown"
+                ? "flow-property-read-boxed"
+                : "flow-property-read",
+            );
+            result = fact;
+          } else result = fact ?? literal ?? p.value;
           break;
         }
         case "index": {
@@ -4139,6 +4273,19 @@ export function checkClosureModule(
                 : propertyFact(node.object, property);
             result = fact ?? dynamicRead(object, keyType, property, node);
             break;
+          }
+          if (property !== undefined && !system.property(object, property).ok) {
+            const fact = propertyFact(node.object, property);
+            if (fact !== undefined) {
+              intrinsics.set(
+                node,
+                types[inputExpected ?? -1]?.kind === "unknown"
+                  ? "flow-property-read-boxed"
+                  : "flow-property-read",
+              );
+              result = fact;
+              break;
+            }
           }
           const viewRead = viewAccess(node, object, property, keyType, false);
           if (viewRead !== undefined) {
@@ -5853,10 +6000,24 @@ export function checkClosureModule(
           if (node.operator === "in") {
             const key = expression(node.left, owner);
             const object = expression(node.right, owner);
-            if (!dynamicObject(object))
-              fail(node, "UNSUPPORTED", "in requires a realm-backed object");
-            dynamicPropertyTargets(object, key, undefined, node.left);
-            intrinsics.set(node, "dynamic-object-has");
+            if (dynamicObject(object)) {
+              dynamicPropertyTargets(object, key, undefined, node.left);
+              intrinsics.set(node, "dynamic-object-has");
+            } else {
+              if (!membershipObject(object))
+                fail(
+                  node.right,
+                  "TYPE_MISMATCH",
+                  "in requires a known object operand",
+                );
+              if (checkedPropertyName(node.left, types[key]) === undefined)
+                fail(
+                  node.left,
+                  "UNSUPPORTED",
+                  "native in requires a literal property key",
+                );
+              intrinsics.set(node, "literal-property-has");
+            }
             result = boolean;
             break;
           }

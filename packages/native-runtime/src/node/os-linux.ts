@@ -42,7 +42,7 @@ import {
   interrupted,
   outOfRange,
   shapeInterfaces,
-  systemError,
+  passwdError,
   type InterfaceAddress,
   type NetworkInterfaceInfo,
   type UserInfo,
@@ -68,15 +68,9 @@ export function userInfo(): UserInfo {
       do status = getpwuid_r(uid, record, slot + PasswdResult.size, size, slot);
       while (status === interrupted);
       if (status === outOfRange) continue;
-      if (status !== 0)
-        throw systemError("uv_os_get_passwd", "E" + String(status), "errno");
+      if (status !== 0) throw passwdError(status, true);
       const found = viewAt(PasswdResult, slot).entry;
-      if (found === 0)
-        throw systemError(
-          "uv_os_get_passwd",
-          "ENOENT",
-          "no such file or directory",
-        );
+      if (found === 0) throw passwdError(0, true);
       const entry = viewAt(passwd, found);
       return {
         uid: entry.pw_uid,
@@ -118,7 +112,9 @@ function sockaddrCopy(at: number): Uint8Array {
 function interfaceAddresses(): InterfaceAddress[] {
   const head = InterfaceList.view(new Uint8Array(InterfaceList.size));
   if (getifaddrs(head) !== 0)
-    throw systemError("uv_interface_addresses", "EIO", "i/o error");
+    throw new TypeError(
+      "A system error occurred: uv_interface_addresses returned EIO (i/o error)",
+    );
   const list = head.head,
     addresses: InterfaceAddress[] = [];
   try {

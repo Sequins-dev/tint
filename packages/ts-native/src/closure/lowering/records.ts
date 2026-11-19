@@ -668,6 +668,12 @@ export interface RecordContracts extends RecordOperations {
     name: string,
     type: ScalarType,
   ) => void;
+  readonly planProperty: (
+    node: Expression,
+    receiver: number,
+    name: string,
+    type: ScalarType,
+  ) => void;
   readonly forType: (type: number) => number | undefined;
   /** The hidden field of a viewed record layout that holds the record's
    * JavaScript view (the value bridge), or undefined. */
@@ -721,6 +727,7 @@ export function createRecordContracts(
    * record keeps one JavaScript identity (docs/unified-pipeline.md). Other
    * layouts are unchanged. */
   viewed: ReadonlySet<number> = new Set<number>(),
+  distinct?: ReadonlySet<number>,
 ): RecordContracts {
   if (target.pointerSize !== 8 || target.wordSize !== 8)
     fail("record IR currently requires a 64-bit target");
@@ -771,10 +778,15 @@ export function createRecordContracts(
       name
     );
   }
+  // Native error brands belong to their factory layouts even when another
+  // record has exactly the same public fields and storage.
+  const distinctLayouts =
+    distinct === undefined ? undefined : new Set<number>();
   function sharedLayout(wanted: string): number {
     // Index records added since the last lookup; a record with cell state
     // or a missing field name can never be shared.
     for (; indexedLayouts < records.length; indexedLayouts++) {
+      if (distinctLayouts?.has(indexedLayouts) === true) continue;
       const record = records[indexedLayouts],
         recordNames = names[indexedLayouts];
       if (record === undefined || recordNames === undefined) continue;
@@ -1181,13 +1193,15 @@ export function createRecordContracts(
         throw "record field invariant";
       wanted += layoutFieldKey(field.type, field.mutable, field.optional, name);
     }
-    const duplicate = sharedLayout(wanted);
+    const distinctLayout = distinct?.has(id) === true;
+    const duplicate = distinctLayout ? -1 : sharedLayout(wanted);
     if (duplicate >= 0) {
       byType[id] = duplicate;
       return duplicate;
     }
     const result = records.length;
     if (identity !== undefined) identities[result] = key;
+    if (distinctLayout) distinctLayouts?.add(result);
     records.push(planRecordLayout(fields, layout, fail));
     names.push(fieldNames);
     if (viewed.has(id)) viewSlots[result] = fields.length - 1;
@@ -1454,6 +1468,41 @@ export function createRecordContracts(
           (info.type === "string" || info.type === "optional-string")
         )
           choices.push({ record: descriptor, field, type: info.type });
+      }
+      accesses.set(node, { type, choices });
+    },
+    planProperty: (node, receiver, name, type) => {
+      const candidates = compatibleShapes(receiver);
+      const choices: RecordAccessChoice[] = [];
+      const seen = new Set<number>();
+      function property(record: number): RecordAccessChoice | undefined {
+        const field = names[record]?.indexOf(name) ?? -1;
+        const info = records[record]?.fields[field];
+        if (info === undefined) return undefined;
+        const prototype = prototypes[record];
+        const inherited =
+          prototype === undefined ? undefined : property(prototype.record);
+        if (inherited === undefined || prototype === undefined)
+          return { record, field, type: info.type };
+        return {
+          record,
+          field,
+          type: info.type,
+          prototype: {
+            field: prototype.field,
+            access: { type: inherited.type, choices: [inherited] },
+          },
+        };
+      }
+      for (const candidate of candidates) {
+        if (candidate === undefined)
+          throw "record membership candidate invariant";
+        for (const descriptor of shapesForType(candidate)) {
+          if (descriptor === undefined || seen.has(descriptor)) continue;
+          seen.add(descriptor);
+          const choice = property(descriptor);
+          if (choice !== undefined) choices.push(choice);
+        }
       }
       accesses.set(node, { type, choices });
     },

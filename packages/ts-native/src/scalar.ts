@@ -366,6 +366,13 @@ export interface RealmErrorRuntime {
   readonly applies: (span: IRSpan) => boolean;
 }
 
+export interface NodeErrorRecords {
+  readonly coded?: number | undefined;
+  readonly range?: number | undefined;
+  readonly system?: number | undefined;
+  readonly info?: number | undefined;
+}
+
 export function lowerFunction(
   fn: CheckedFunction,
   signatures: readonly FunctionSignature[],
@@ -379,6 +386,7 @@ export function lowerFunction(
   dynamicObjects?: DynamicObjectRuntime,
   dynamicSignatures: readonly number[] = [],
   realmErrorBindings?: RealmErrorRuntime,
+  nodeErrors?: NodeErrorRecords,
 ): FunctionIR {
   const primitives = primitiveBindings,
     bigints = bigIntBindings,
@@ -2261,6 +2269,40 @@ export function lowerFunction(
     error: "Error" | "RangeError" | "TypeError",
     node: IRSpan,
   ): number {
+    if (nodeErrors === undefined || error === "TypeError")
+      return intrinsicErrorTest(value, error, node);
+    const candidates: (number | undefined)[] =
+      error === "RangeError"
+        ? [nodeErrors.range]
+        : [nodeErrors.coded, nodeErrors.range, nodeErrors.system];
+    const operand = save(value, "general", node);
+    const yes = block(),
+      done = block(),
+      result = temporary("boolean");
+    for (const record of candidates) {
+      if (record === undefined) continue;
+      const next = block();
+      choose(
+        errorRecordTest(load(operand, node), record, node),
+        yes,
+        next,
+        node,
+      );
+      current = next;
+    }
+    store(result, intrinsicErrorTest(load(operand, node), error, node), node);
+    jump(done.id, node);
+    current = yes;
+    store(result, load(booleanSlot(true, node), node), node);
+    jump(done.id, node);
+    current = done;
+    return load(result, node);
+  }
+  function intrinsicErrorTest(
+    value: number,
+    error: "Error" | "RangeError" | "TypeError",
+    node: IRSpan,
+  ): number {
     const layouts = realmErrors;
     if (layouts !== undefined) {
       if (error === "TypeError")
@@ -2570,10 +2612,297 @@ export function lowerFunction(
       jump(done.id, node);
       current = no;
     }
+    const system = nodeErrors?.system;
+    if (system !== undefined) {
+      const yes = block(),
+        no = block();
+      choose(
+        errorRecordTest(
+          coerce(load(operand, node), "general", node),
+          system,
+          node,
+        ),
+        yes,
+        no,
+        node,
+      );
+      current = yes;
+      store(result, load(errorString("SystemError", node), node), node);
+      jump(done.id, node);
+      current = no;
+    }
     store(result, load(errorString("Error", node), node), node);
     jump(done.id, node);
     current = done;
     return result;
+  }
+  function rawPropertyField(
+    object: number,
+    record: number,
+    field: number,
+    type: ScalarType,
+    node: Span,
+  ): number {
+    const slot = temporary(type),
+      read = block(),
+      wrong = block();
+    finish({
+      kind: "record",
+      object,
+      record,
+      field,
+      operation: "read",
+      slot,
+      consequent: read.id,
+      alternate: wrong.id,
+      start: node.start,
+      end: node.end,
+    });
+    current = wrong;
+    finish({ kind: "trap", start: node.start, end: node.end });
+    current = read;
+    return slot;
+  }
+  function fieldPresent(
+    object: number,
+    record: number,
+    field: number,
+    node: Span,
+  ): number {
+    const id = nextValue++;
+    emit({
+      kind: "record-has",
+      id,
+      object,
+      record,
+      field,
+      start: node.start,
+      end: node.end,
+    });
+    return id;
+  }
+  function nativeProperty(
+    operand: number,
+    property: string,
+    membership: boolean,
+    node: Expression,
+  ): number {
+    const type: ScalarType = membership ? "boolean" : "general";
+    const result = temporary(type),
+      done = block();
+    const general = save(
+      coerce(load(operand, node), "general", node),
+      "general",
+      node,
+    );
+    const reference = (): number =>
+      coerce(load(general, node), "reference", node);
+    function answer(raw: number): void {
+      store(result, load(raw, node), node);
+      jump(done.id, node);
+    }
+    function chooseRecord(record: number): Builder {
+      const yes = block(),
+        next = block();
+      choose(
+        errorRecordTest(load(general, node), record, node),
+        yes,
+        next,
+        node,
+      );
+      current = yes;
+      return next;
+    }
+    const coded = nodeErrors?.coded,
+      range = nodeErrors?.range,
+      system = nodeErrors?.system;
+    if (property === "code") {
+      for (const record of [coded, range, system]) {
+        if (record === undefined) continue;
+        const next = chooseRecord(record);
+        answer(
+          membership
+            ? booleanSlot(true, node)
+            : rawPropertyField(reference(), record, 1, "string", node),
+        );
+        current = next;
+      }
+    }
+    if (property === "errno" && coded !== undefined) {
+      const next = chooseRecord(coded);
+      answer(
+        membership
+          ? save(fieldPresent(reference(), coded, 2, node), "boolean", node)
+          : rawPropertyField(reference(), coded, 2, "optional-number", node),
+      );
+      current = next;
+    }
+    const details = nodeErrors?.info;
+    if (
+      system !== undefined &&
+      details !== undefined &&
+      (property === "info" || property === "errno" || property === "syscall")
+    ) {
+      const next = chooseRecord(system);
+      if (membership) answer(booleanSlot(true, node));
+      else {
+        const context = rawPropertyField(
+          reference(),
+          system,
+          2,
+          "reference",
+          node,
+        );
+        answer(
+          property === "info"
+            ? context
+            : rawPropertyField(
+                load(context, node),
+                details,
+                property === "errno" ? 0 : 3,
+                property === "errno" ? "number" : "string",
+                node,
+              ),
+        );
+      }
+      current = next;
+    }
+    for (const field of records?.accesses.get(node)?.choices ?? []) {
+      if (field === undefined) throw "literal property layout invariant";
+      const next = chooseRecord(field.record);
+      function readField(receiver: number, field: RecordAccessChoice): void {
+        const inherited = field.prototype;
+        const present = fieldPresent(
+          load(receiver, node),
+          field.record,
+          field.field,
+          node,
+        );
+        const own = block(),
+          absent = block();
+        choose(present, own, absent, node);
+        current = own;
+        answer(
+          membership
+            ? booleanSlot(true, node)
+            : rawPropertyField(
+                load(receiver, node),
+                field.record,
+                field.field,
+                field.type,
+                node,
+              ),
+        );
+        current = absent;
+        if (inherited === undefined) jump(next.id, node);
+        else {
+          const prototype = rawPropertyField(
+            load(receiver, node),
+            field.record,
+            inherited.field,
+            "reference",
+            node,
+          );
+          const parentField = inherited.access.choices[0];
+          if (parentField === undefined)
+            throw "literal property prototype invariant";
+          readField(prototype, parentField);
+        }
+      }
+      readField(save(reference(), "reference", node), field);
+      current = next;
+    }
+    if (membership && (property === "name" || property === "message"))
+      answer(
+        save(
+          nativeErrorTest(load(general, node), "Error", node),
+          "boolean",
+          node,
+        ),
+      );
+    else if (membership) answer(booleanSlot(false, node));
+    else {
+      const id = nextValue++;
+      emit({ kind: "general-none", id, start: node.start, end: node.end });
+      answer(save(id, "general", node));
+    }
+    current = done;
+    return result;
+  }
+  function literalPropertyOperation(
+    operand: number,
+    property: string,
+    membership: boolean,
+    node: Expression,
+  ): number {
+    if (realmErrors === undefined)
+      return nativeProperty(operand, property, membership, node);
+    const exposed = exposedError(operand, node);
+    const result = temporary(membership ? "boolean" : "general");
+    const semantic = block(),
+      native = block(),
+      done = block();
+    choose(
+      truth(realmErrorOperation(exposed, "attached", node), node),
+      semantic,
+      native,
+      node,
+    );
+    current = semantic;
+    const value = realmErrorOperation(
+      exposed,
+      (membership ? "has:" : "get:") + property,
+      node,
+    );
+    store(result, load(value, node), node);
+    jump(done.id, node);
+    current = native;
+    store(
+      result,
+      load(nativeProperty(operand, property, membership, node), node),
+      node,
+    );
+    jump(done.id, node);
+    current = done;
+    return result;
+  }
+  function flowPropertyRead(
+    node: Expression & { readonly kind: "member" | "index" },
+  ): number {
+    const object = value(node.object);
+    if (node.kind === "index") value(node.index);
+    const key = info(node).propertyKey;
+    if (key === undefined) throw "flow property key invariant";
+    const raw = literalPropertyOperation(object, key, false, node);
+    const type = scalarType(node);
+    if (type === "general") return raw;
+    const bigintRecord = info(node).bigIntRecord;
+    let matches: number;
+    if (type === "reference" && bigintRecord !== undefined)
+      matches = errorRecordTest(load(raw, node), bigintRecord, node);
+    else {
+      let test: DowncastTest;
+      if (info(node).undefinedValue === true) test = "undefined";
+      else if (type === "string" || type === "number" || type === "boolean")
+        test = type;
+      else throw "flow property read requires a testable narrowed type";
+      matches = nextValue++;
+      emit({
+        kind: "general-is",
+        id: matches,
+        value: load(raw, node),
+        type: test,
+        start: node.start,
+        end: node.end,
+      });
+    }
+    requireCondition(
+      save(matches, "boolean", node),
+      "TypeError",
+      "Property " + key + " no longer matches its narrowed type",
+      node,
+    );
+    return save(coerce(load(raw, node), type, node), type, node);
   }
   function errorMessage(
     argument: Expression | undefined,
@@ -5192,6 +5521,12 @@ export function lowerFunction(
         return save(id, scalarType(node), node);
       }
       case "index": {
+        const operation = info(node).builtin;
+        if (
+          operation === "flow-property-read" ||
+          operation === "flow-property-read-boxed"
+        )
+          return flowPropertyRead(node);
         const indexView = info(node).cView;
         if (indexView !== undefined) return viewRead(node, indexView);
         const reference = propertyReference(
@@ -5307,7 +5642,13 @@ export function lowerFunction(
         return save(id, "optional-number", node);
       }
       case "member": {
-        if (info(node).builtin === "error-property") return errorProperty(node);
+        const builtin = info(node).builtin;
+        if (
+          builtin === "flow-property-read" ||
+          builtin === "flow-property-read-boxed"
+        )
+          return flowPropertyRead(node);
+        if (builtin === "error-property") return errorProperty(node);
         const memberView = info(node).cView;
         if (memberView !== undefined) return viewRead(node, memberView);
         if (info(node).undefinedValue) {
@@ -5361,6 +5702,33 @@ export function lowerFunction(
       }
       case "binary": {
         const builtin = info(node).builtin;
+        if (builtin === "literal-property-has") {
+          value(node.left);
+          const object = value(node.right);
+          const property = info(node).propertyKey;
+          if (property === undefined) throw "literal property key invariant";
+          const receiver = save(
+            coerce(load(object, node), "general", node),
+            "general",
+            node,
+          );
+          const valid = nextValue++;
+          emit({
+            kind: "general-is",
+            id: valid,
+            value: load(receiver, node),
+            type: "object",
+            start: node.start,
+            end: node.end,
+          });
+          requireCondition(
+            save(valid, "boolean", node),
+            "TypeError",
+            "in requires an object operand",
+            node,
+          );
+          return literalPropertyOperation(receiver, property, true, node);
+        }
         if (
           builtin === "type-error-is" ||
           builtin === "range-error-is" ||
