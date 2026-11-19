@@ -272,3 +272,21 @@ test("an explicit x86-64 target reaches the native backend dispatch", () => {
     expected,
   );
 });
+
+test("the ELF image writer preserves the selected x86-64 machine", () => {
+  const target = nativeTargetNamed("linux-x86_64");
+  assert.ok(target);
+  const image = writeExecutableImage(
+    target,
+    {
+      // mov edi, 42; mov eax, SYS_exit; syscall
+      code: Uint8Array.of(0xbf, 42, 0, 0, 0, 0xb8, 60, 0, 0, 0, 0x0f, 0x05),
+      entryOffset: 0,
+      maxByteLength: 1 << 20,
+    },
+    "tint.x64",
+    [],
+  );
+  assert.ok(image.ok, JSON.stringify(!image.ok && image.error));
+  assert.equal(new DataView(image.value.buffer).getUint16(18, true), 62);
+});

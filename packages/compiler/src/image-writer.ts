@@ -5,7 +5,11 @@ import {
   type MachOLayoutOptions,
 } from "@tint/image/darwin/macho";
 import { buildElfExecutable } from "@tint/image/linux/elf";
-import type { LinuxAArch64Target, NativeTarget } from "@tint/platform/target";
+import type {
+  LinuxAArch64Target,
+  LinuxX86_64Target,
+  NativeTarget,
+} from "@tint/platform/target";
 import type { ForeignLibrary } from "./native/index.ts";
 
 export type ImageWriteResult =
@@ -23,11 +27,6 @@ export function writeExecutableImage(
   foreignLibraries: readonly ForeignLibrary[],
   machOLayout?: MachOLayoutOptions,
 ): ImageWriteResult {
-  if (target.arch === "x86_64")
-    return {
-      ok: false,
-      error: target.name + ": ELF image writing is not implemented yet",
-    };
   if (target.objectFormat === "elf")
     return writeElfImage(target, image, identifier);
   if ((image.probes ?? []).length > 0)
@@ -66,7 +65,7 @@ export function writeExecutableImage(
  * silently bound to zero. Entitlement requests have
  * no ELF counterpart: debuggers attach under the usual ptrace policy. */
 function writeElfImage(
-  target: LinuxAArch64Target,
+  target: LinuxAArch64Target | LinuxX86_64Target,
   image: ExecutableImageRequest,
   identifier: string,
 ): ImageWriteResult {
@@ -100,7 +99,12 @@ function writeElfImage(
     patchAddress: image.patchAddress,
     debug: image.debug,
     probes: image.probes,
-    linux: { interpreter: target.interpreter, needed, identifier },
+    linux: {
+      arch: target.arch,
+      interpreter: target.interpreter,
+      needed,
+      identifier,
+    },
   });
   if (!built.ok) return { ok: false, error: "ELF image: " + built.error };
   return { ok: true, value: built.value.bytes };
