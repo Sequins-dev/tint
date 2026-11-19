@@ -211,9 +211,10 @@ function generalValueType(
   }
   throw "packed IR general value type";
 }
-function errorName(code: number): "TypeError" | "RangeError" {
+function errorName(code: number): "Error" | "TypeError" | "RangeError" {
   if (code === 0) return "TypeError";
   if (code === 1) return "RangeError";
+  if (code === 2) return "Error";
   throw "packed IR error name";
 }
 function cellOperation(code: number): "initialize" | "read" | "write" {
@@ -538,10 +539,18 @@ export function encodeInstruction(
       else writeNumber(writer, value);
       return true;
     }
+    case "error-message":
+      writePrefix(writer, 81, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.value);
+      return true;
     case "error-new":
     case "error-is":
       writePrefix(writer, op.kind === "error-new" ? 42 : 43, op, 0);
-      writeByte(writer, op.error === "TypeError" ? 0 : 1);
+      writeByte(
+        writer,
+        op.error === "TypeError" ? 0 : op.error === "RangeError" ? 1 : 2,
+      );
       writeSigned(writer, op.id);
       writeSigned(writer, op.kind === "error-new" ? op.message : op.value);
       return true;
@@ -1233,6 +1242,11 @@ export function decodeInstruction(
         right = readSigned(reader);
       if (operator === undefined) throw "packed IR operator";
       return { kind: "binary", id, operator, left, right, ...span };
+    }
+    case 81: {
+      const id = readSigned(reader),
+        value = readSigned(reader);
+      return { kind: "error-message", id, value, ...span };
     }
     case 80: {
       const id = readSigned(reader),

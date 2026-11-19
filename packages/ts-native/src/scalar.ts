@@ -420,6 +420,7 @@ export function lowerFunction(
       case "boolean-present":
         type = "boolean";
         break;
+      case "error-message":
       case "general-kind":
       case "string-literal":
       case "string-from-code-units":
@@ -2222,11 +2223,108 @@ export function lowerFunction(
   /** `x as T` from a general value: one test per accepted category and
    * record layout; a value passing none throws a TypeError (an explicit
    * contract), and a passing value converts to T's representation. */
+  function nativeErrorTest(
+    value: number,
+    error: "Error" | "RangeError" | "TypeError",
+    node: IRSpan,
+  ): number {
+    const id = nextValue++;
+    emit({
+      kind: "error-is",
+      error,
+      id,
+      value,
+      start: node.start,
+      end: node.end,
+    });
+    return id;
+  }
+  function errorString(text: string, node: IRSpan): number {
+    const id = nextValue++;
+    emit({
+      kind: "string-literal",
+      id,
+      value: text,
+      start: node.start,
+      end: node.end,
+    });
+    return save(id, "string", node);
+  }
+  function nativeErrorProperty(
+    operand: number,
+    property: string,
+    node: Span,
+  ): number {
+    if (property === "name") return errorName(operand, node);
+    if (property === "stack") {
+      const id = nextValue++;
+      emit({ kind: "string-none", id, start: node.start, end: node.end });
+      return save(id, "optional-string", node);
+    }
+    const input = load(operand, node),
+      id = nextValue++;
+    emit({
+      kind: "error-message",
+      id,
+      value: input,
+      start: node.start,
+      end: node.end,
+    });
+    return save(id, "string", node);
+  }
+  function errorName(operand: number, node: IRSpan): number {
+    const result = temporary("string");
+    const done = block();
+    const kinds: ("TypeError" | "RangeError")[] = ["TypeError", "RangeError"];
+    for (const kind of kinds) {
+      if (kind === undefined) throw "error kind invariant";
+      const matches = nativeErrorTest(
+        coerce(load(operand, node), "general", node),
+        kind,
+        node,
+      );
+      const yes = block(),
+        no = block();
+      choose(matches, yes, no, node);
+      current = yes;
+      store(result, load(errorString(kind, node), node), node);
+      jump(done.id, node);
+      current = no;
+    }
+    store(result, load(errorString("Error", node), node), node);
+    jump(done.id, node);
+    current = done;
+    return result;
+  }
+  function errorMessage(argument: Expression | undefined, node: Span): number {
+    if (argument === undefined) return errorString("", node);
+    const input = value(argument);
+    if (slots[input] === "string") return input;
+    if (undefinedSlots[input] === 1) return errorString("", node);
+    const result = temporary("string");
+    const yes = block(),
+      no = block(),
+      done = block();
+    choose(nonNullish(input, node), yes, no, node);
+    current = yes;
+    const present = load(input, node),
+      unwrapped = nextValue++;
+    emitUnwrap(unwrapped, present, "string", node);
+    store(result, unwrapped, node);
+    jump(done.id, node);
+    current = no;
+    store(result, load(errorString("", node), node), node);
+    jump(done.id, node);
+    current = done;
+    return result;
+  }
   function checkedDowncast(
     node: Expression & { readonly kind: "satisfies" },
     downcast: {
       readonly tests: readonly DowncastTest[];
       readonly records: readonly number[];
+      readonly errors?:
+        readonly ("Error" | "TypeError" | "RangeError")[] | undefined;
     },
   ): number {
     const operand = expression(node.expression);
@@ -2265,6 +2363,15 @@ export function lowerFunction(
       choose(id, accepted, next, node);
       current = next;
     }
+    const errors = downcast.errors;
+    if (errors !== undefined)
+      for (const error of errors) {
+        if (error === undefined) throw "downcast error invariant";
+        const matches = nativeErrorTest(load(operand, node), error, node);
+        const next = block();
+        choose(matches, accepted, next, node);
+        current = next;
+      }
     const message = nextValue++;
     emit({
       kind: "string-literal",
@@ -2780,6 +2887,7 @@ export function lowerFunction(
     operation: "read" | "write",
     access: RecordAccess,
     node: Span,
+    otherwise?: () => void,
   ): void {
     if (access.choices.length === 0) throw "record dispatch invariant";
     if (access.functionEnvironment === true) {
@@ -2941,7 +3049,12 @@ export function lowerFunction(
       }
       current = next;
     }
-    finish({ kind: "trap", start: node.start, end: node.end });
+    if (otherwise === undefined)
+      finish({ kind: "trap", start: node.start, end: node.end });
+    else {
+      otherwise();
+      jump(merge.id, node);
+    }
     current = merge;
   }
   function mapRuntime(node: Expression): MapRuntime {
@@ -3743,28 +3856,22 @@ export function lowerFunction(
         }
         if (
           info(node).builtin === "type-error-new" ||
-          info(node).builtin === "range-error-new"
+          info(node).builtin === "range-error-new" ||
+          info(node).builtin === "error-new"
         ) {
+          const builtin = info(node).builtin;
+          const kind: "Error" | "TypeError" | "RangeError" =
+            builtin === "range-error-new"
+              ? "RangeError"
+              : builtin === "error-new"
+                ? "Error"
+                : "TypeError";
           const argument = node.arguments[0];
-          let message: number;
-          if (argument === undefined) {
-            const id = nextValue++;
-            emit({
-              kind: "string-literal",
-              id,
-              value: "",
-              start: node.start,
-              end: node.end,
-            });
-            message = save(id, "string", node);
-          } else message = value(argument);
+          const message = errorMessage(argument, node);
           const id = nextValue++;
           emit({
             kind: "error-new",
-            error:
-              info(node).builtin === "range-error-new"
-                ? "RangeError"
-                : "TypeError",
+            error: kind,
             id,
             message: load(message, node),
             start: node.start,
@@ -4593,6 +4700,53 @@ export function lowerFunction(
         return save(id, "optional-number", node);
       }
       case "member": {
+        if (info(node).builtin === "error-property") {
+          const operand = value(node.object);
+          const access = records?.accesses.get(node);
+          if (access === undefined || access.choices.length === 0)
+            return nativeErrorProperty(operand, node.property, node);
+          const result = temporary(access.type);
+          const native = block(),
+            structural = block(),
+            done = block();
+          const receiver = coerce(load(operand, node), "general", node);
+          choose(
+            nativeErrorTest(receiver, "Error", node),
+            native,
+            structural,
+            node,
+          );
+          current = native;
+          store(
+            result,
+            load(nativeErrorProperty(operand, node.property, node), node),
+            node,
+          );
+          jump(done.id, node);
+          current = structural;
+          recordAccess(
+            operand,
+            result,
+            "read",
+            access,
+            node,
+            node.property !== "stack"
+              ? undefined
+              : (): void => {
+                  const id = nextValue++;
+                  emit({
+                    kind: "string-none",
+                    id,
+                    start: node.start,
+                    end: node.end,
+                  });
+                  store(result, id, node);
+                },
+          );
+          jump(done.id, node);
+          current = done;
+          return result;
+        }
         const memberView = info(node).cView;
         if (memberView !== undefined) return viewRead(node, memberView);
         if (info(node).undefinedValue) {
@@ -4645,24 +4799,20 @@ export function lowerFunction(
         );
       }
       case "binary": {
+        const builtin = info(node).builtin;
         if (
-          info(node).builtin === "type-error-is" ||
-          info(node).builtin === "range-error-is"
+          builtin === "type-error-is" ||
+          builtin === "range-error-is" ||
+          builtin === "error-is"
         ) {
-          const operand = coerce(load(value(node.left), node), "general", node),
-            id = nextValue++;
-          emit({
-            kind: "error-is",
-            error:
-              info(node).builtin === "range-error-is"
-                ? "RangeError"
-                : "TypeError",
-            id,
-            value: operand,
-            start: node.start,
-            end: node.end,
-          });
-          return save(id, "boolean", node);
+          const kind: "Error" | "RangeError" | "TypeError" =
+            builtin === "range-error-is"
+              ? "RangeError"
+              : builtin === "error-is"
+                ? "Error"
+                : "TypeError";
+          const operand = coerce(load(value(node.left), node), "general", node);
+          return save(nativeErrorTest(operand, kind, node), "boolean", node);
         }
 
         if (node.operator === ",") {

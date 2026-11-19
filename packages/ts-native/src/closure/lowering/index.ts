@@ -1923,6 +1923,20 @@ function lowerEntries(
                 break;
               }
               const metadata = checked.intrinsics.get(node);
+              if (metadata === "error-property") {
+                builtin = metadata;
+                if (recordContracts !== undefined) {
+                  const propertyType =
+                    node.property === "stack" ? "optional-string" : "string";
+                  recordContracts.errorProperty(
+                    node,
+                    node.property,
+                    propertyType,
+                  );
+                }
+                expr(node.object);
+                break;
+              }
               if (
                 metadata === "array-buffer" ||
                 metadata === "array-byte-offset" ||
@@ -1953,14 +1967,13 @@ function lowerEntries(
               expr(node.operand);
               break;
             case "binary": {
+              const intrinsic = checked.intrinsics.get(node);
               if (
-                checked.intrinsics.get(node) === "type-error-is" ||
-                checked.intrinsics.get(node) === "range-error-is"
+                intrinsic === "type-error-is" ||
+                intrinsic === "range-error-is" ||
+                intrinsic === "error-is"
               ) {
-                builtin =
-                  checked.intrinsics.get(node) === "type-error-is"
-                    ? "type-error-is"
-                    : "range-error-is";
+                builtin = intrinsic;
                 expr(node.left);
                 break;
               }
@@ -2146,15 +2159,14 @@ function lowerEntries(
               if (node.kind !== "update") expr(node.value);
               break;
             }
-            case "new":
+            case "new": {
+              const intrinsic = checked.intrinsics.get(node);
               if (
-                checked.intrinsics.get(node) === "type-error-new" ||
-                checked.intrinsics.get(node) === "range-error-new"
+                intrinsic === "type-error-new" ||
+                intrinsic === "range-error-new" ||
+                intrinsic === "error-new"
               ) {
-                builtin =
-                  checked.intrinsics.get(node) === "type-error-new"
-                    ? "type-error-new"
-                    : "range-error-new";
+                builtin = intrinsic;
                 exprArguments(node.arguments);
                 break;
               }
@@ -2180,6 +2192,7 @@ function lowerEntries(
               builtin = "array-new";
               exprArguments(node.arguments);
               break;
+            }
             case "call": {
               const intrinsic = checked.intrinsics.get(node);
               if (intrinsic === "string-convert") {
@@ -2697,12 +2710,15 @@ function lowerEntries(
         | {
             readonly tests: readonly DowncastTest[];
             readonly records: readonly number[];
+            readonly errors?:
+              readonly ("Error" | "TypeError" | "RangeError")[] | undefined;
           }
         | undefined {
         const target = checked.downcasts?.get(node);
         if (target === undefined) return undefined;
         const tests: DowncastTest[] = [],
-          records: number[] = [];
+          records: number[] = [],
+          errors: ("Error" | "TypeError" | "RangeError")[] = [];
         function visit(member: number): void {
           const type = checked.types[member];
           if (type === undefined) fail("downcast type invariant");
@@ -2712,6 +2728,17 @@ function lowerEntries(
                 if (inner === undefined) fail("downcast union invariant");
                 visit(inner);
               }
+              return;
+            case "Error":
+              for (const record of recordContracts?.errorRecords() ?? []) {
+                if (record === undefined) throw "Error record invariant";
+                if (!records.includes(record)) records.push(record);
+              }
+              if (!errors.includes("Error")) errors.push("Error");
+              return;
+            case "RangeError":
+            case "TypeError":
+              if (!errors.includes(type.kind)) errors.push(type.kind);
               return;
             case "number":
             case "string":
@@ -2742,7 +2769,7 @@ function lowerEntries(
           }
         }
         visit(target);
-        return { tests, records };
+        return { tests, records, errors };
       }
       function stmt(input: Statement): void {
         const node = input;
@@ -3539,6 +3566,7 @@ function cells(
           case "general-is":
             type = "boolean";
             break;
+          case "error-message":
           case "general-kind":
             type = "string";
             break;
@@ -3712,6 +3740,7 @@ function cells(
           if (valueId === undefined) throw "definition invariant";
           transformed = { ...op, id: valueId, message: reload(op.message, op) };
           break;
+        case "error-message":
         case "error-is":
           if (valueId === undefined) throw "definition invariant";
           transformed = { ...op, id: valueId, value: reload(op.value, op) };

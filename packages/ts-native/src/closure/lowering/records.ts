@@ -178,6 +178,9 @@ function generalType(checked: CheckedClosures, id: number): boolean {
     )
       reference = true;
     else if (
+      current?.kind === "Error" ||
+      current?.kind === "TypeError" ||
+      current?.kind === "RangeError" ||
       current?.kind === "function" ||
       current?.kind === "array" ||
       current?.kind === "map" ||
@@ -513,6 +516,7 @@ export function entryType(
   setElements: readonly CollectionElement[] = [],
   mapTypes: readonly MapEncoding[] = [],
 ): ScalarType | undefined {
+  if (checked.types[id]?.kind === "Error") return "reference";
   if (checked.types[id]?.kind === "RangeError") return "reference";
   if (checked.types[id]?.kind === "TypeError") return "reference";
   if (checked.types[id]?.kind === "ArrayBuffer") return "reference";
@@ -655,6 +659,12 @@ export function entryType(
 }
 export interface RecordContracts extends RecordOperations {
   readonly classes: readonly ClassRecordStorage[];
+  readonly errorRecords: () => readonly number[];
+  readonly errorProperty: (
+    node: Expression,
+    name: string,
+    type: ScalarType,
+  ) => void;
   readonly forType: (type: number) => number | undefined;
   /** The hidden field of a viewed record layout that holds the record's
    * JavaScript view (the value bridge), or undefined. */
@@ -1400,9 +1410,42 @@ export function createRecordContracts(
       prototypeField: planned.prototypeField,
     });
   }
+  let structuralErrors: readonly number[] | undefined;
+  function errorRecords(): readonly number[] {
+    if (structuralErrors !== undefined) return structuralErrors;
+    const errorType = checked.typeNames.get("Error");
+    if (errorType === undefined) throw "Error type invariant";
+    const descriptors: number[] = [];
+    indexObjects();
+    for (const id of objectIds) {
+      if (id === undefined) throw "Error shape invariant";
+      if (!relations.assignable(id, errorType)) continue;
+      for (const descriptor of shapesForType(id)) {
+        if (descriptor === undefined) throw "Error record invariant";
+        if (!descriptors.includes(descriptor)) descriptors.push(descriptor);
+      }
+    }
+    structuralErrors = descriptors;
+    return descriptors;
+  }
   return {
     classes,
     records,
+    errorRecords,
+    errorProperty: (node, name, type) => {
+      const choices: RecordAccessChoice[] = [];
+      for (const descriptor of errorRecords()) {
+        if (descriptor === undefined) throw "Error record invariant";
+        const field = names[descriptor]?.indexOf(name) ?? -1;
+        const info = records[descriptor]?.fields[field];
+        if (
+          info !== undefined &&
+          (info.type === "string" || info.type === "optional-string")
+        )
+          choices.push({ record: descriptor, field, type: info.type });
+      }
+      accesses.set(node, { type, choices });
+    },
     forType: record,
     viewSlot: (record: number): number | undefined => viewSlots[record],
     plannedRecord: (type) => {

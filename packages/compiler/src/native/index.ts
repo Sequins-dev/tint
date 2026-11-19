@@ -837,6 +837,7 @@ const typedGlobals: readonly string[] = [
   "TextDecoder",
   "TypeError",
   "RangeError",
+  "Error",
   "console",
 ];
 /** Links the program and prepares its globals and managed surfaces. */

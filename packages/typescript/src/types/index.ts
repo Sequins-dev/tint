@@ -22,6 +22,7 @@ export type Type =
         | "bigint"
         | "TypeError"
         | "RangeError"
+        | "Error"
         | "ArrayBuffer"
         | "Uint8Array"
         | "Uint16Array"
@@ -277,6 +278,41 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     return answer;
   }
   const discriminants = createDiscriminantIndex(types);
+  function errorStringMember(id: number, optional: boolean): boolean {
+    const type = types[id];
+    if (type?.kind === "union")
+      return type.members.every((member) =>
+        errorStringMember(member, optional),
+      );
+    return (
+      type?.kind === "string" ||
+      (type?.kind === "literal" && typeof type.value === "string") ||
+      (optional && type?.kind === "undefined")
+    );
+  }
+  function errorContract(source: Type): boolean {
+    if (source.kind === "RangeError" || source.kind === "TypeError")
+      return true;
+    if (source.kind !== "object") return false;
+    const name = source.properties.find(
+      (field) => field !== undefined && field.name === "name",
+    );
+    const message = source.properties.find(
+      (field) => field !== undefined && field.name === "message",
+    );
+    const stack = source.properties.find(
+      (field) => field !== undefined && field.name === "stack",
+    );
+    return (
+      name !== undefined &&
+      !name.optional &&
+      errorStringMember(name.type, false) &&
+      message !== undefined &&
+      !message.optional &&
+      errorStringMember(message.type, false) &&
+      (stack === undefined || errorStringMember(stack.type, true))
+    );
+  }
   function assignable(actual: number, expected: number): boolean {
     return valid(actual) && valid(expected) && relates(actual, expected);
   }
@@ -314,6 +350,8 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     // source, alternatives can therefore be queried independently and stop at
     // the first success, without creating a coinductive work graph for them.
     {
+      if (targetType.kind === "Error" && scalar.kind !== "never")
+        return cacheRelation(cache, actual, expected, errorContract(scalar));
       if (targetType.kind === "unknown")
         return cacheRelation(cache, actual, expected, scalar.kind !== "void");
       if (targetType.kind === "union") {
@@ -402,6 +440,8 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
       target = types[b];
     if (source === undefined || target === undefined) return undefined;
     if (!exact && source.kind === "never") return true;
+    if (!exact && target.kind === "Error" && source.kind !== "union")
+      return source.kind === "Error" || errorContract(source);
     if (!exact && target.kind === "unknown") return source.kind !== "void";
     if (source.kind === "union") {
       if (exact) return undefined;
@@ -879,6 +919,8 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         return 8;
       case "string":
         return 16;
+      case "Error":
+        return 8288;
       case "TypeError":
         return 32;
       case "RangeError":

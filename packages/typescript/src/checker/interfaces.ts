@@ -111,6 +111,7 @@ export function resolveInterfaceTypes(
     { kind: "TypeError" },
     { kind: "RangeError" },
     { kind: "bigint" },
+    { kind: "Error" },
   ];
   const literals = createKeyIndex<string | number | boolean, number>(
     (value) => {

@@ -3102,7 +3102,8 @@ function emitModuleForms(
     const vectorShapes: (number | undefined)[] = [];
     const writeShapes: (ListWriteShape | undefined)[] = [];
     let hasFunctionOperations = false,
-      hasTypeErrors = false;
+      hasTypeErrors = false,
+      hasPlainErrors = false;
     for (const header of module.functions) {
       if (header === undefined) throw "feature function invariant";
       const fn = bodies.get(header.id);
@@ -3112,7 +3113,13 @@ function emitModuleForms(
         writeShapes.push(listWriteShape(fn));
         if (rootHeadBinding(fn)) rootHeadBindings[fn.id] = 1;
         for (const block of fn.blocks) {
-          if (!scanWitnesses && hasFunctionOperations && hasTypeErrors) break;
+          if (
+            !scanWitnesses &&
+            hasFunctionOperations &&
+            hasTypeErrors &&
+            hasPlainErrors
+          )
+            break;
           if (block === undefined) throw "feature block invariant";
           for (const op of block.instructions) {
             if (op === undefined) throw "feature instruction invariant";
@@ -3131,8 +3138,11 @@ function emitModuleForms(
                   op.operation === "native-value-function-signature"))
             )
               hasFunctionOperations = true;
-            else if (op.kind === "error-new" || op.kind === "error-is")
+            else if (op.kind === "error-new" || op.kind === "error-is") {
               hasTypeErrors = true;
+              if (op.kind === "error-new" && op.error === "Error")
+                hasPlainErrors = true;
+            }
           }
         }
       } finally {
@@ -3405,7 +3415,7 @@ function emitModuleForms(
       });
     const typeErrorRecord = recordLayouts.length;
     if (hasTypeErrors)
-      for (let i = 0; i < 2; i++)
+      for (let i = 0; i < (hasPlainErrors ? 3 : 2); i++)
         recordLayouts.push({
           byteLength: recordHeaderBytes + 8,
           fields: [
@@ -4639,6 +4649,7 @@ function emitModuleForms(
                 id = op.id;
                 type = op.type;
                 break;
+              case "error-message":
               case "general-kind":
               case "string-literal":
               case "string-from-code-units":
@@ -8949,13 +8960,30 @@ function emitModuleForms(
                 saveRaw(9, op.id);
                 break;
               }
+              case "error-message": {
+                rawValue(9, op.value);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 9,
+                  rn: 9,
+                  offset: recordHeaderBytes,
+                });
+                saveRaw(9, op.id);
+                break;
+              }
               case "error-new": {
                 allocate(
                   () => {},
                   (rd) => imm(rd, recordHeaderBytes + 8),
                 );
                 descriptorPointer(
-                  typeErrorRecord + (op.error === "RangeError" ? 1 : 0),
+                  typeErrorRecord +
+                    (op.error === "RangeError"
+                      ? 1
+                      : op.error === "Error"
+                        ? 2
+                        : 0),
                 );
                 emit({ op: "str", width: 64, rt: 11, rn: 9, offset: 0 });
                 rawValue(10, op.message);
@@ -8998,6 +9026,24 @@ function emitModuleForms(
                   setFlags: true,
                 });
                 emit({ op: "cset", rd: 9, condition: "eq" });
+                if (op.error === "Error") {
+                  const count = hasPlainErrors ? 3 : 2;
+                  for (let i = 1; i < count; i++) {
+                    descriptorPointer(typeErrorRecord + i);
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 10,
+                      rm: 11,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    emit({ op: "cset", rd: 12, condition: "eq" });
+                    emit({ op: "orr-reg", width: 64, rd: 9, rn: 9, rm: 12 });
+                  }
+                }
                 const doneBranch = instructions.length;
                 emit({ op: "b", displacement: 0 });
                 const no = instructions.length;

@@ -1076,16 +1076,28 @@ export function verify(
               break;
             }
             case "error-new":
-              if (op.error !== "TypeError" && op.error !== "RangeError")
+              if (
+                op.error !== "TypeError" &&
+                op.error !== "RangeError" &&
+                op.error !== "Error"
+              )
                 fail("TYPE", "invalid error brand");
               equal(use(op.message), "string");
               define(op.id, "reference");
               break;
             case "error-is":
-              if (op.error !== "TypeError" && op.error !== "RangeError")
+              if (
+                op.error !== "TypeError" &&
+                op.error !== "RangeError" &&
+                op.error !== "Error"
+              )
                 fail("TYPE", "invalid error brand");
               equal(use(op.value), "general");
               define(op.id, "boolean");
+              break;
+            case "error-message":
+              equal(use(op.value), "reference");
+              define(op.id, "string");
               break;
             case "host-call": {
               const parameters = hostParameters(op.operation);
