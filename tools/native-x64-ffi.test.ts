@@ -701,6 +701,14 @@ for (const scenario of [
       "C record-by-value arguments are not yet supported on linux-x86_64 (needs x64 slice 7a-3)",
   },
   {
+    name: "record wrapper used as a function value",
+    declaration:
+      "export interface Result { quot: i64; rem: i64; } export function ldiv(n: i64, d: i64): Result;",
+    run: 'import { ldiv } from "tint:c/sysv"; export function run(): number { const divide = ldiv; return 42; }',
+    message:
+      "C record-by-value results are not yet supported on linux-x86_64 (needs x64 slice 7a-3)",
+  },
+  {
     name: "CString conversion",
     declaration: "export function strlen(value: CString): i64;",
     run: 'import { strlen } from "tint:c/sysv"; export function run(): number { return strlen("abc"); }',
@@ -778,6 +786,13 @@ for (const scenario of [
 
 for (const [name, expression, specifier, file, diagnostic] of [
   [
+    "foreignFunction",
+    "foreignFunction === undefined ? 1 : 42",
+    "tint:ffi/unsafe",
+    "unsafe",
+    "foreignFunction",
+  ],
+  [
     "openProgram",
     "openProgram().low",
     "tint:ffi/unsafe",
@@ -790,6 +805,13 @@ for (const [name, expression, specifier, file, diagnostic] of [
     "tint:ffi/unsafe",
     "unsafe",
     "Foreign memory view creation",
+  ],
+  [
+    "cStringAt",
+    "cStringAt(4096).length",
+    "tint:ffi/unsafe",
+    "unsafe",
+    "Foreign C string reading",
   ],
   [
     "allocate",

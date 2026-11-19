@@ -286,29 +286,48 @@ export function x64ForeignDiagnostic(
   if (used.has(x64DynamicFFI + "foreignFunction"))
     return "foreignFunction" + x64ManagedSuffix;
 
+  // A wrapper can also survive as a first-class value without a call site.
+  const retained = new Set<string>();
+  for (const fn of optimized.functions) {
+    if (fn === undefined) throw "reachable FFI function invariant";
+    const name = names.get(fn.name);
+    if (name !== undefined) retained.add(name);
+  }
+  let retainedWrapper: string | undefined;
   const layouts = new Set<string>();
+  const optional = "Optional C library loading" + x64ManagedSuffix;
   for (const library of libraries) {
     if (library === undefined) throw "foreign library invariant";
     const prefix = library.id + ":";
     if (library.declaration.layouts.length > 0) layouts.add(library.id);
     for (const fn of library.declaration.functions) {
       if (fn === undefined) throw "foreign declaration invariant";
-      if (!used.has(prefix + fn.name)) continue;
-      if (fn.signature.callClass === "may-callback") return x64Callbacks;
-      if (library.image.optional)
-        return "Optional C library loading" + x64ManagedSuffix;
-      if (fn.resultForm === "record")
-        return "C record-by-value results are not yet supported on linux-x86_64 (needs x64 slice 7a-3)";
-      if (fn.parameterForms.includes("record"))
-        return "C record-by-value arguments are not yet supported on linux-x86_64 (needs x64 slice 7a-3)";
-      if (fn.parameterForms.includes("string"))
-        return "CString conversion" + x64ManagedSuffix + "; use CStringBytes";
+      const name = prefix + fn.name;
+      const called = used.has(name);
+      if (!called && !retained.has(name)) continue;
+      let diagnostic: string | undefined;
+      if (fn.signature.callClass === "may-callback") diagnostic = x64Callbacks;
+      else if (library.image.optional) diagnostic = optional;
+      else if (fn.resultForm === "record")
+        diagnostic =
+          "C record-by-value results are not yet supported on linux-x86_64 (needs x64 slice 7a-3)";
+      else if (fn.parameterForms.includes("record"))
+        diagnostic =
+          "C record-by-value arguments are not yet supported on linux-x86_64 (needs x64 slice 7a-3)";
+      else if (fn.parameterForms.includes("string"))
+        diagnostic =
+          "CString conversion" + x64ManagedSuffix + "; use CStringBytes";
+      if (diagnostic === undefined) continue;
+      if (called) return diagnostic;
+      if (retainedWrapper === undefined) retainedWrapper = diagnostic;
     }
     if (library.image.optional)
       for (const query of library.declaration.availability) {
         if (query === undefined) throw "foreign availability invariant";
-        if (used.has(prefix + query.name))
-          return "Optional C library loading" + x64ManagedSuffix;
+        const name = prefix + query.name;
+        if (used.has(name)) return optional;
+        if (retainedWrapper === undefined && retained.has(name))
+          retainedWrapper = optional;
       }
   }
 
@@ -320,6 +339,8 @@ export function x64ForeignDiagnostic(
     used.has(x64DynamicFFI + "optionalSymbol")
   )
     return "Dynamic C library loading" + x64ManagedSuffix;
+  if (used.has(unsafe + "cStringAt"))
+    return "Foreign C string reading" + x64ManagedSuffix;
   for (const name of used) {
     if (name === undefined) throw "foreign source name invariant";
     if (name.startsWith(x64DynamicFFI))
@@ -329,6 +350,11 @@ export function x64ForeignDiagnostic(
     if (name.startsWith(runtime))
       return "Managed FFI storage" + x64ManagedSuffix;
   }
+  // The dynamic runtime retains its own C wrappers for the platform loader.
+  // A retained public factory is the boundary before those wrappers.
+  if (retained.has(x64DynamicFFI + "foreignFunction"))
+    return "foreignFunction" + x64ManagedSuffix;
+  if (retainedWrapper !== undefined) return retainedWrapper;
 
   for (const fn of optimized.functions) {
     if (fn === undefined) throw "reachable FFI function invariant";

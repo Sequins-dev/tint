@@ -325,8 +325,9 @@ emission:
   and results, including wrappers such as `ldiv`.
 - F1 part 2 needs managed emission from x64 slices 7a–7b for the public
   `foreignFunction` API, run-time library and symbol loading (including
-  optional libraries), `CString` string conversion, and managed FFI
-  creation of layout views, foreign memory views and storage.
+  optional libraries), `CString` string conversion, `cStringAt` string
+  reads, and managed FFI creation of layout views, foreign memory views
+  and storage.
 - C callback signatures and callback runtime operations need F2.
 
 ## The `c-call` instruction
