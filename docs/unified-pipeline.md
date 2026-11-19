@@ -493,11 +493,18 @@ Computed rest requires a statically known exclusion key for a native
 record. Inferred leaves still use the existing fixed-type local checker,
 pending guarded open slots. A possibly nullish input receives a strict
 checker diagnostic. Checked downcasts from `unknown` reject nullish values
-at runtime before the pattern is entered.
+at runtime before the pattern is entered. TypeScript accepts defaults in
+`const { x = 5 } = {}` and `const [x = 5] = []` by supplying a contextual
+type from the pattern. Tint currently requires the input to provide that
+type. Rest from native lists can retain `undefined` in its element type to
+represent consumed holes.
 
 The typed hosted fixture and the Node references live in
 `tools/typed-binding-patterns-fixture-source.ts`. The realm reference
 covers getter, catch, and iterator behavior through the general path.
+The [binding patterns ledger](results/unified-pipeline-ledger-slice4a-typed-binding-patterns-v4.json)
+records 146 forms. The typed `destructuring` construct now stays typed, and
+both forms of `destructuring-entry-points` pass.
 
 ### What happens to each front end
 
