@@ -44,14 +44,14 @@ run_check_step() {
 }
 run_check_step check-concurrent unlocked env -u TZ pnpm check:concurrent
 run_check_step check-memory memory env -u TZ node tools/check-test-files.ts memory
-run_check_step check-native exclusive env -u TZ node tools/check-test-files.ts native
+gate_step_timeout=${TINT_GATE_NATIVE_TIMEOUT:-1800} run_check_step check-native exclusive env -u TZ node tools/check-test-files.ts native
 awk '/^ℹ pass / { pass += $3 } /^ℹ fail / { fail += $3 } END { printf "check=0 ℹ pass %d ℹ fail %d\n", pass, fail }' \
   "$gate_output"/check-*.log
 storage_tests
 
 bootstrap memory
-stage_lldb exclusive stage1 stage2
-stage_lldb exclusive stage2 stage3
+stage_lldb memory-watchdog stage1 stage2
+stage_lldb memory-watchdog stage2 stage3
 run_step compare unlocked cmp "$gate_output/stage2" "$gate_output/stage3"
 echo STAGE2_EQ_STAGE3
 run_step stage-hashes unlocked shasum -a 256 "$gate_output/stage1" "$gate_output/stage2" "$gate_output/stage3"
@@ -68,6 +68,7 @@ for linking in units program; do
   smoke_status=0
   run_step_logged "smoke-$linking" memory "$smoke_json" "$smoke_err" env TZ=UTC \
     TINT_TEST262_LINKING="$linking" NODE_OPTIONS=--max-old-space-size=16000 \
+    TINT_GATE_STEP_TIMEOUT="${TINT_GATE_SMOKE_TIMEOUT:-600}" \
     TINT_GATE_LAUNCH_LOCK="$TINT_GATE_EXCLUSIVE_LOCK" \
     node "$gate_output/toolchain/tools/test262-native-run.ts" "$test262" \
     language/expressions/object/11.1.5-0-1.js 128 || smoke_status=$?
