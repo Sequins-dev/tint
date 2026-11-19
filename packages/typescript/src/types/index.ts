@@ -60,6 +60,7 @@ export type Type =
       readonly kind: "object";
       readonly properties: readonly Property[];
       readonly stringIndex?: StringIndex;
+      readonly realmRecord?: boolean;
       /** An interface without an index does not imply one from its fields. */
       readonly interfaceDeclaration?: boolean;
       /** Function-signature IDs for independent internal call/construct capabilities. */
@@ -504,6 +505,8 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     exact: boolean,
   ): boolean | undefined {
     if (source.kind !== "object" || target.kind !== "object") return undefined;
+    if ((source.realmRecord === true) !== (target.realmRecord === true))
+      return false;
     const sourceIndex = source.stringIndex,
       targetIndex = target.stringIndex,
       indexed = sourceIndex !== undefined || targetIndex !== undefined;
@@ -1538,6 +1541,7 @@ function copyType(
       refs = objectRefs;
       copy = {
         kind: t.kind,
+        ...(t.realmRecord === true ? { realmRecord: true } : {}),
         ...(t.interfaceDeclaration === true
           ? { interfaceDeclaration: true }
           : {}),
@@ -1653,8 +1657,12 @@ export function unsupportedDynamicPayload(
     case "never":
     case "literal":
       return undefined;
+    case "array":
+      if (type.realmArray === true) return undefined;
+      break;
     case "object":
-      if (type.stringIndex !== undefined) return undefined;
+      if (type.stringIndex !== undefined || type.realmRecord === true)
+        return undefined;
       break;
     case "union":
       for (const member of type.members) {
@@ -1675,4 +1683,43 @@ export function unsupportedDynamicPayload(
     name +
     " values in dynamic-key objects need slice 2b list/record views"
   );
+}
+
+/** Declared indexed values may describe realm arrays and data records, even
+ * though the same annotation outside indexed storage still uses native layout. */
+export function unsupportedDynamicContract(
+  types: readonly Type[],
+  id: number,
+  seen: Set<number> = new Set<number>(),
+): string | undefined {
+  if (seen.has(id)) return undefined;
+  seen.add(id);
+  const type = types[id];
+  if (type?.kind === "array") {
+    return unsupportedDynamicContract(types, type.element, seen);
+  }
+  if (
+    type?.kind === "object" &&
+    type.call === undefined &&
+    type.construct === undefined
+  ) {
+    for (const field of type.properties) {
+      if (field === undefined) throw "dynamic contract field invariant";
+      const unsupported = unsupportedDynamicContract(types, field.type, seen);
+      if (unsupported !== undefined) return unsupported;
+    }
+    const index = type.stringIndex;
+    return index === undefined
+      ? undefined
+      : unsupportedDynamicContract(types, index.type, seen);
+  }
+  if (type?.kind === "union") {
+    for (const member of type.members) {
+      if (member === undefined) throw "dynamic contract union invariant";
+      const unsupported = unsupportedDynamicContract(types, member, seen);
+      if (unsupported !== undefined) return unsupported;
+    }
+    return undefined;
+  }
+  return unsupportedDynamicPayload(types, id);
 }

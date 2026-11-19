@@ -123,7 +123,7 @@ type Encodable =
   | { readonly op: "call" | "jmp"; readonly target: Relative | Rm<64> }
   | { readonly op: "push"; readonly src: Rm<64> | SmallImmediate }
   | { readonly op: "pop"; readonly dst: Rm<64> }
-  | { readonly op: "ret" | "nop" | "cdq" | "cqo" }
+  | { readonly op: "ret" | "nop" | "cdq" | "cqo" | "ud2" | "syscall" }
   | { readonly op: "movsd"; readonly dst: XmmRm<64>; readonly src: XmmRm<64> }
   | {
       readonly op: ScalarDouble;
@@ -162,15 +162,15 @@ export type Instruction =
 type Register = Gpr<IntegerWidth> | Xmm;
 type RmOperand = Register | Memory<IntegerWidth | 128>;
 type FieldWidth = 1 | 2 | 4;
-type Fixup = {
+export interface NearFixup {
   readonly ref: LabelReference;
   readonly fieldOffset: number;
   nextOffset: number;
-};
+}
 
 interface Encoding {
   readonly bytes: number[];
-  readonly fixups: Fixup[];
+  readonly fixups: NearFixup[];
 }
 
 function invalid(message: string): never {
@@ -732,6 +732,10 @@ function emit(out: Encoding, insn: Encodable): void {
     case "ret":
       bytes.push(0xc3);
       return;
+    case "ud2":
+    case "syscall":
+      bytes.push(0x0f, insn.op === "ud2" ? 0x0b : 0x05);
+      return;
     case "nop":
       bytes.push(0x90);
       return;
@@ -830,7 +834,22 @@ function emit(out: Encoding, insn: Encodable): void {
 
 /** Encode a block with byte-position labels. Near transfers and symbolic RIP
  * operands retain their full rel32 fields regardless of target distance. */
+export interface EncodedLayout {
+  readonly bytes: Uint8Array;
+  readonly labels: ReadonlyMap<string, number>;
+  readonly externalFixups: readonly NearFixup[];
+}
+
 export function encode(instructions: readonly Instruction[]): Uint8Array {
+  return encodeLayout(instructions).bytes;
+}
+
+/** Resolve local labels immediately and report authorized external sites for
+ * final image placement. Both use the actual end of the encoded instruction. */
+export function encodeLayout(
+  instructions: readonly Instruction[],
+  isExternal?: (label: string) => boolean,
+): EncodedLayout {
   const out: Encoding = { bytes: [], fixups: [] };
   const labels = new Map<string, number>();
   for (const insn of instructions) {
@@ -848,9 +867,16 @@ export function encode(instructions: readonly Instruction[]): Uint8Array {
   const bytes = new Uint8Array(out.bytes.length);
   let offset = 0;
   for (const byte of out.bytes) bytes[offset++] = byte;
+  const externalFixups: NearFixup[] = [];
   for (const fixup of out.fixups) {
+    if (fixup === undefined) throw "rel32 fixup invariant";
     const target = labels.get(fixup.ref.label);
-    if (target === undefined) invalid("undefined label: " + fixup.ref.label);
+    if (target === undefined) {
+      if (isExternal?.(fixup.ref.label) !== true)
+        invalid("undefined label: " + fixup.ref.label);
+      externalFixups.push(fixup);
+      continue;
+    }
     writeRel32(
       bytes,
       fixup.fieldOffset,
@@ -859,5 +885,5 @@ export function encode(instructions: readonly Instruction[]): Uint8Array {
       fixup.ref.addend ?? 0,
     );
   }
-  return bytes;
+  return { bytes, labels, externalFixups };
 }

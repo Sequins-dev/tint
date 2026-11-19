@@ -6,7 +6,7 @@ import { verifyHostedFixture } from "./hosted-fixture.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
 
 /** The node:os module of the fixture target (os-darwin.ts or os-linux.ts). */
-const osModule =
+export const osModule =
   "packages/native-runtime/src/node/os-" +
   (nativeFixtureTarget().os === "darwin" ? "darwin" : "linux") +
   ".ts";
@@ -35,19 +35,12 @@ export function nodeOsText(): string {
           entry.mac,
           String(entry.internal),
           entry.cidr ?? "null",
-          "scopeid" in entry ? String(entry.scopeid) : "none",
+          Object.hasOwn(entry, "scopeid") ? String(entry.scopeid) : "none",
+          Object.keys(entry).join(","),
         ].join("|"),
       );
   }
   return lines.join("\n");
-}
-/** The interface names of a rendering (lines without `|`, after the
- * user line). */
-function interfaceNames(text: string): string[] {
-  return text
-    .split("\n")
-    .slice(1)
-    .filter((line) => !line.includes("|"));
 }
 function literal(text: string): string {
   return JSON.stringify(text);
@@ -55,29 +48,27 @@ function literal(text: string): string {
 export function osFixtureSource(expected: string = nodeOsText()): string {
   const load = os.loadavg()[2] ?? 0;
   return `import { userInfo, networkInterfaces, loadavg } from "node:os";
-const names: string[] = ${JSON.stringify(interfaceNames(expected))};
 function render(): string {
   const user = userInfo();
   const lines: string[] = [
     String(user.uid) + "|" + String(user.gid) + "|" + user.username + "|" + user.homedir + "|" + (user.shell ?? "null"),
   ];
-  // KNOWN DEFECT (docs/native-ffi.md#known-defects): this pins today's
-  // shape, a Map where Node returns a plain object keyed by interface
-  // name; it is not the correct API and changes with the typed/untyped
-  // convergence. Typed code cannot iterate a Map yet either, so walk Node's
-  // names in Node's order and check the count.
   const interfaces = networkInterfaces();
-  if (interfaces.size !== names.length) return "interface count " + String(interfaces.size);
+  const names = Object.keys(interfaces);
+  if (Object.hasOwn(interfaces, "") || interfaces[""] !== undefined) return "unexpected empty interface name";
   for (let n = 0; n < names.length; n++) {
     const name = names[n] ?? "";
-    if (!interfaces.has(name)) return "missing " + name;
+    const entries = interfaces[name];
+    if (entries === undefined || !Object.hasOwn(interfaces, name)) return "missing " + name;
     lines.push(name);
-    const entries = interfaces.get(name) ?? [];
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
-      if (entry === undefined) continue;
+      if (entry === undefined) return "missing entry " + name;
+      const fields = Object.keys(entry);
+      let fieldOrder: string = "";
+      for (let f = 0; f < fields.length; f++) fieldOrder += (f === 0 ? "" : ",") + (fields[f] ?? "");
       const scopeid = entry.scopeid;
-      lines.push(entry.address + "|" + entry.netmask + "|" + entry.family + "|" + entry.mac + "|" + String(entry.internal) + "|" + (entry.cidr ?? "null") + "|" + (scopeid === undefined ? "none" : String(scopeid)));
+      lines.push(entry.address + "|" + entry.netmask + "|" + entry.family + "|" + entry.mac + "|" + String(entry.internal) + "|" + (entry.cidr ?? "null") + "|" + (scopeid === undefined ? "none" : String(scopeid)) + "|" + fieldOrder);
     }
   }
   return lines.join("\\n");
@@ -136,6 +127,7 @@ export function verifyOsFixture(
         [],
         {
           ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
+          requireTyped: true,
           managedBytes: 4194304,
           allocationCapacity: 65536,
         },

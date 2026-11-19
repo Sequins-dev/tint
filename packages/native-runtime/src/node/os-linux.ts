@@ -157,8 +157,8 @@ function interfaceAddresses(): InterfaceAddress[] {
   }
   return addresses;
 }
-/** `os.networkInterfaces()` (a Map: see os.ts's known defect). */
-export function networkInterfaces(): Map<string, NetworkInterfaceInfo[]> {
+/** `os.networkInterfaces()`. */
+export function networkInterfaces(): Record<string, NetworkInterfaceInfo[]> {
   return shapeInterfaces(interfaceAddresses());
 }
 /** `os.loadavg()`: the 1, 5 and 15 minute load averages from
