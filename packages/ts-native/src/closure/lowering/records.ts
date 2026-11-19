@@ -1424,8 +1424,8 @@ export function createRecordContracts(
   let structuralErrors: readonly number[] | undefined;
   function errorRecords(): readonly number[] {
     if (structuralErrors !== undefined) return structuralErrors;
-    const errorType = checked.typeNames.get("Error");
-    if (errorType === undefined) throw "Error type invariant";
+    const errorType = checked.types.findIndex((type) => type?.kind === "Error");
+    if (errorType < 0) throw "Error type invariant";
     const descriptors: number[] = [];
     indexObjects();
     for (const id of objectIds) {

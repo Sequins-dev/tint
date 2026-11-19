@@ -1048,8 +1048,11 @@ export function checkClosureModule(
     return id;
   }
   function primitive(name: string): number {
-    const id = contracts.names.get(name);
-    if (id === undefined) throw "primitive invariant";
+    const id =
+      name === "Error"
+        ? types.findIndex((type) => type?.kind === "Error")
+        : contracts.names.get(name);
+    if (id === undefined || id < 0) throw "primitive invariant";
     return id;
   }
   const number = primitive("number"),

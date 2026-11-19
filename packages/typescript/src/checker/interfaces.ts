@@ -1124,7 +1124,10 @@ export function resolveInterfaceTypes(
         node.kind === "type-alias" ||
         node.kind === "class"
       ) {
-        if (names.has(node.name) || declarations.has(node.name))
+        if (
+          (node.name !== "Error" && names.has(node.name)) ||
+          declarations.has(node.name)
+        )
           fail(
             node,
             "DUPLICATE_TYPE",
@@ -1147,7 +1150,10 @@ export function resolveInterfaceTypes(
         if (node.kind === "class") {
           const inner = node.definition.name;
           if (inner !== undefined && inner !== node.name) {
-            if (names.has(inner) || declarations.has(inner))
+            if (
+              (inner !== "Error" && names.has(inner)) ||
+              declarations.has(inner)
+            )
               fail(
                 node,
                 "DUPLICATE_TYPE",
@@ -1158,6 +1164,9 @@ export function resolveInterfaceTypes(
         }
       }
     }
+    // A local declaration can shadow the Error type. The constructor and
+    // instanceof still resolve the native kind through the value namespace.
+    if (declarations.has("Error")) names.delete("Error");
     // Bind the optional cache: the native subset narrows locals, not
     // parameters, before property access.
     // Views resolve through the registry, which the syntax key omits.

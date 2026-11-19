@@ -220,6 +220,19 @@ test("finite string contracts retain values across records and literal guards", 
   assert.ok(r.ok, JSON.stringify(r));
   assert.ok(verify(r.value.module).ok);
 });
+test("a local Error type coexists with the native Error constructor", () => {
+  const r = lower(`
+    type Error = "BAD";
+    function alias(): Error { return "BAD"; }
+    function read(value: unknown): string {
+      if (value instanceof Error) return value.message;
+      return alias();
+    }
+    function create(): string { return read(new Error("native")); }
+  `);
+  assert.ok(r.ok, JSON.stringify(r));
+  assert.ok(verify(r.value.module).ok);
+});
 test("finite strings never silently acquire numeric comparison semantics", () => {
   const r = lower('function invalid(e:"BAD"):boolean{return e===1;}');
   assert.equal(r.ok, false);
