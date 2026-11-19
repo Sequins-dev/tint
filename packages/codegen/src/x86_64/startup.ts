@@ -1,4 +1,10 @@
-import { nativeStackLimitOffset, type PosixHostFacts } from "@tint/abi/host";
+import {
+  nativeStackLimitOffset,
+  nativeStackMapRegistryEntryBytes,
+  nativeStackMapRegistryHeaderBytes,
+  nativeStackMapRegistryOffset,
+  type PosixHostFacts,
+} from "@tint/abi/host";
 import type {
   ImageAddressPatcher,
   ImageAddressReference,
@@ -66,8 +72,13 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   const processStart = host.processStart;
   if (processStart === undefined) throw "glibc startup policy required";
   const stackEnd = pageBytes + stackBytes;
-  const heapStart = stackEnd + pageBytes;
+  const registryStart = stackEnd + pageBytes;
+  const registryBytes =
+    nativeStackMapRegistryHeaderBytes +
+    native.stackMaps.length * nativeStackMapRegistryEntryBytes;
+  const heapStart = registryStart + Math.ceil(registryBytes / 16) * 16;
   const mappingBytes = heapStart + managedBytes;
+  if (mappingBytes > 0x7fffffff) throw "invalid hosted mapping size";
   const rsp = gpr(4),
     rbp = gpr(5),
     rax = gpr(0);
@@ -115,6 +126,7 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   emit({ op: "push", src: r13 });
   emit({ op: "sub", dst: rsp, src: imm(contextBytes + 16) });
   emit({ op: "mov", dst: r12, src: rsp });
+  emit({ op: "mov", dst: mem(12, contextBytes + 8), src: rbp });
   for (let offset = 0; offset < contextBytes; offset += 8)
     emit({ op: "mov", dst: mem(12, offset), src: imm(0) });
   emit({
@@ -150,11 +162,38 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   }
   emit({ op: "lea", dst: rax, src: mem(13, pageBytes) });
   emit({ op: "mov", dst: mem(12, nativeStackLimitOffset), src: rax });
+
+  const local = new Map<string, number>();
+  local.set("invoke", request.invocation);
+  emit({ op: "lea", dst: rax, src: mem(13, registryStart) });
+  emit({ op: "mov", dst: mem(12, nativeStackMapRegistryOffset), src: rax });
+  emit({ op: "mov", dst: mem(0, 0), src: imm(native.stackMaps.length) });
+  emit({ op: "mov", dst: mem(0, 8), src: imm(native.stackMaps.length) });
+  for (let index = 0; index < native.stackMaps.length; index++) {
+    const table = native.stackMaps[index];
+    if (table === undefined) throw "stack map registry entry invariant";
+    const codeName = "stack-maps-code:" + String(index);
+    const tableName = "stack-maps-table:" + String(index);
+    local.set(codeName, table.codeOffset);
+    local.set(tableName, table.tableOffset);
+    const entry =
+      nativeStackMapRegistryHeaderBytes +
+      index * nativeStackMapRegistryEntryBytes;
+    emit({ op: "lea", dst: gpr(11), src: rip(codeName) });
+    emit({ op: "mov", dst: mem(0, entry), src: gpr(11) });
+    emit({ op: "mov", dst: mem(0, entry + 8), src: imm(table.codeLength) });
+    emit({ op: "lea", dst: gpr(11), src: rip(tableName) });
+    emit({ op: "mov", dst: mem(0, entry + 16), src: gpr(11) });
+  }
+
   emit({ op: "lea", dst: rax, src: mem(13, heapStart) });
   emit({ op: "mov", dst: mem(12, heapCursorOffset), src: rax });
   emit({ op: "lea", dst: rax, src: mem(13, mappingBytes) });
   emit({ op: "mov", dst: mem(12, heapEndOffset), src: rax });
-  emit({ op: "lea", dst: rsp, src: mem(13, stackEnd - resultBytes) });
+  // A zero frame link on the managed stack terminates the walk. Keep the
+  // system frame separately because it is outside the managed stack region.
+  emit({ op: "lea", dst: rbp, src: mem(13, stackEnd - 16) });
+  emit({ op: "lea", dst: rsp, src: mem(5, -resultBytes) });
 
   emit({ op: "mov", dst: rdi, src: r12 });
   emit({ op: "xor", dst: esi, src: esi });
@@ -190,6 +229,7 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   emit({ op: "label", name: "mapping-failed" });
   emit({ op: "mov", dst: eax, src: imm(71) });
   emit({ op: "label", name: "return" });
+  emit({ op: "mov", dst: rbp, src: mem(12, contextBytes + 8) });
   emit({ op: "lea", dst: rsp, src: mem(5, -16) });
   emit({ op: "pop", dst: r13 });
   emit({ op: "pop", dst: r12 });
@@ -198,7 +238,7 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
 
   const stub = encodeLayout(
     machine,
-    (name) => name === "invoke" || imports.has(name),
+    (name) => local.has(name) || imports.has(name),
   );
   const base = native.code.length;
   const code = new Uint8Array(base + stub.bytes.length);
@@ -208,12 +248,13 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   for (const fixup of stub.externalFixups) {
     if (fixup === undefined) throw "startup fixup invariant";
     const name = fixup.ref.label;
-    if (name === "initialize" || name === "invoke")
+    const offset = local.get(name);
+    if (offset !== undefined)
       writeRel32(
         code,
         base + fixup.fieldOffset,
         base + fixup.nextOffset,
-        request.invocation,
+        offset,
       );
     else
       external.push({

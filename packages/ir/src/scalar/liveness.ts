@@ -20,6 +20,7 @@ function analyzeSlots(
   trackedSlots: readonly number[] | undefined,
   mode: "live" | "dead" | "entry",
   preciseReads: boolean = false,
+  preciseExceptionTransfers: boolean = false,
 ): SlotLiveness | undefined {
   const liveResult = mode !== "dead";
   // Guarded reads (record, record-cell and cell terminators reading into
@@ -274,6 +275,16 @@ function analyzeSlots(
         const source = predecessors[at] ?? 0;
         if (live[source] === stamp) continue;
         if (exceptional[at] !== 1 && defined[source] === stamp) continue;
+        // A throw creates the transfer value. The old slot can be live
+        // along a normal edge to the same block, so keep that edge.
+        if (
+          preciseExceptionTransfers &&
+          exceptional[at] === 1 &&
+          fn.blocks[source]?.exception?.slot === slot &&
+          first[source] !== block + 1 &&
+          second[source] !== block + 1
+        )
+          continue;
         if (writing[at] === 1 && consequentWrites[source] === stamp) continue;
         live[source] = stamp;
         queue[tail++] = source;
@@ -354,8 +365,16 @@ export function analyzeLiveSlotsPrecisely(
   fn: FunctionIR,
   maxWork: number,
   trackedSlots?: readonly number[],
+  preciseExceptionTransfers: boolean = false,
 ): SlotLiveness | undefined {
-  return analyzeSlots(fn, maxWork, trackedSlots, "live", true);
+  return analyzeSlots(
+    fn,
+    maxWork,
+    trackedSlots,
+    "live",
+    true,
+    preciseExceptionTransfers,
+  );
 }
 /** The tracked slots live into the function's entry block (all of them
  * when tracked is omitted), without the per-block table. */

@@ -137,6 +137,10 @@ export function encodeDynamicContract(
       case "never":
         emit(type.kind);
         break;
+      case "realm-callable":
+      case "dynamic-result":
+        emit("unknown");
+        break;
       case "literal": {
         const value = type.value;
         emit(typeof value + "-literal");
