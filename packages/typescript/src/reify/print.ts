@@ -146,6 +146,24 @@ export function printReifiedTypes(
     }
     if (node.kind === "object") {
       const parts: string[] = [];
+      const index = node.indexSignature;
+      if (index !== undefined) {
+        if (!identifier(index.name))
+          return reject("invalid generated index parameter");
+        const key = render(index.keyType, depth + 1),
+          value = render(index.valueType, depth + 1);
+        if (key === undefined || value === undefined) return undefined;
+        parts.push(
+          (index.readonly ? "readonly " : "") +
+            "[" +
+            index.name +
+            ":" +
+            key +
+            "]:" +
+            value +
+            ";",
+        );
+      }
       for (const property of node.properties) {
         if (property === undefined) return reject("missing type property");
         const value = render(property.type, depth + 1);
@@ -172,6 +190,17 @@ export function printReifiedTypes(
         parts.push((i === 1 ? "new " : "") + args + ":" + result + ";");
       }
       return "{" + parts.join("") + "}";
+    }
+    if (node.kind === "tuple") {
+      const parts: string[] = [];
+      for (const element of node.elements) {
+        if (element === undefined)
+          return reject("missing reified tuple element");
+        const value = render(element, depth + 1);
+        if (value === undefined) return undefined;
+        parts.push(value);
+      }
+      return (node.readonly ? "readonly " : "") + "[" + parts.join(",") + "]";
     }
     if (node.kind === "array") {
       const element = render(node.element, depth + 1);

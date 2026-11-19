@@ -175,9 +175,12 @@ export function createManagedTypeContractIndex(
       case "function":
         if (
           b.kind !== "function" ||
+          (a.rest === true) !== (b.rest === true) ||
           a.parameters.length !== b.parameters.length ||
-          (a.minimumArguments ?? a.parameters.length) !==
-            (b.minimumArguments ?? b.parameters.length)
+          (a.minimumArguments ??
+            a.parameters.length - (a.rest === true ? 1 : 0)) !==
+            (b.minimumArguments ??
+              b.parameters.length - (b.rest === true ? 1 : 0))
         )
           return true;
         // Root step 1, then the receiver edge 2.
@@ -305,9 +308,12 @@ export function createManagedTypeContractIndex(
         case "function":
           if (
             b.kind !== "function" ||
+            (a.rest === true) !== (b.rest === true) ||
             a.parameters.length !== b.parameters.length ||
-            (a.minimumArguments ?? a.parameters.length) !==
-              (b.minimumArguments ?? b.parameters.length) ||
+            (a.minimumArguments ??
+              a.parameters.length - (a.rest === true ? 1 : 0)) !==
+              (b.minimumArguments ??
+                b.parameters.length - (b.rest === true ? 1 : 0)) ||
             !edge(a.receiver, b.receiver) ||
             !edge(a.result, b.result)
           )

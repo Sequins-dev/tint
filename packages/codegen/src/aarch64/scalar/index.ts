@@ -3092,6 +3092,7 @@ function emitModuleForms(
     } else module = prepared;
     const managedABI = options.managedABI;
     const witnesses = new Uint8Array(module.functions.length);
+    const addressTaken = new Uint8Array(module.functions.length);
     const scanWitnesses =
       managedABI?.signatures.some(
         (binding) => binding?.witness !== undefined,
@@ -3102,7 +3103,9 @@ function emitModuleForms(
     const vectorShapes: (number | undefined)[] = [];
     const writeShapes: (ListWriteShape | undefined)[] = [];
     let hasFunctionOperations = false,
-      hasTypeErrors = false;
+      hasResultDiscard = false,
+      hasTypeErrors = false,
+      hasPlainErrors = false;
     for (const header of module.functions) {
       if (header === undefined) throw "feature function invariant";
       const fn = bodies.get(header.id);
@@ -3112,12 +3115,15 @@ function emitModuleForms(
         writeShapes.push(listWriteShape(fn));
         if (rootHeadBinding(fn)) rootHeadBindings[fn.id] = 1;
         for (const block of fn.blocks) {
-          if (!scanWitnesses && hasFunctionOperations && hasTypeErrors) break;
           if (block === undefined) throw "feature block invariant";
           for (const op of block.instructions) {
             if (op === undefined) throw "feature instruction invariant";
+            if (op.kind === "function-new" || op.kind === "function-address")
+              addressTaken[op.target] = 1;
             if (op.kind === "function-new" || op.kind === "call-indirect") {
               hasFunctionOperations = true;
+              if (op.kind === "call-indirect" && op.discardResult === true)
+                hasResultDiscard = true;
               if (scanWitnesses)
                 witnesses[op.target] =
                   (witnesses[op.target] ?? 0) |
@@ -3131,8 +3137,11 @@ function emitModuleForms(
                   op.operation === "native-value-function-signature"))
             )
               hasFunctionOperations = true;
-            else if (op.kind === "error-new" || op.kind === "error-is")
+            else if (op.kind === "error-new" || op.kind === "error-is") {
               hasTypeErrors = true;
+              if (op.kind === "error-new" && op.error === "Error")
+                hasPlainErrors = true;
+            }
           }
         }
       } finally {
@@ -3405,7 +3414,7 @@ function emitModuleForms(
       });
     const typeErrorRecord = recordLayouts.length;
     if (hasTypeErrors)
-      for (let i = 0; i < 2; i++)
+      for (let i = 0; i < (hasPlainErrors ? 3 : 2); i++)
         recordLayouts.push({
           byteLength: recordHeaderBytes + 8,
           fields: [
@@ -3423,21 +3432,41 @@ function emitModuleForms(
     const localGroups = localSignatures.groups;
     const signatureIds = new Uint32Array(module.functions.length);
     const signatureKeys = createStringIndex<number>();
+    const discardResultTargets = createStringIndex<number[]>();
+    const parameterKeys: string[] = [];
+    const seenDiscardSignatures = new Set<number>();
     for (const f of module.functions) {
       if (f === undefined) throw "function invariant";
-      let key: string = f.returnType + ":";
+      let parameters = ":";
       for (const slot of f.parameters) {
         if (slot === undefined) throw "parameter invariant";
         const type = f.slots[slot];
         if (type === undefined) throw "parameter type invariant";
-        key += type + ":";
+        parameters += type + ":";
       }
+      parameterKeys.push(parameters);
+      const key = f.returnType + parameters;
       const prior = signatureKeys.get(key);
       const first = prior ?? f.id + 1;
       if (prior === undefined) signatureKeys.set(key, first);
       const group = localSignatures.byFunction[f.id] ?? 0;
       signatureIds[f.id] =
         group === 0 ? first : module.functions.length + group;
+      // Managed identities also encode semantic contracts. Keep their
+      // exact-pointer checks at service-unit boundaries.
+      if (
+        hasResultDiscard &&
+        f.returnType !== "void" &&
+        addressTaken[f.id] === 1 &&
+        group === 0 &&
+        !signatureImports.has(f.id) &&
+        !seenDiscardSignatures.has(first)
+      ) {
+        seenDiscardSignatures.add(first);
+        const targets = discardResultTargets.get(parameters);
+        if (targets === undefined) discardResultTargets.set(parameters, [f.id]);
+        else targets.push(f.id);
+      }
     }
     const stableLayouts = stableRecordLayouts(module, bodies),
       // Intraprocedural descriptor proofs need descriptor stability only.
@@ -4639,6 +4668,7 @@ function emitModuleForms(
                 id = op.id;
                 type = op.type;
                 break;
+              case "error-message":
               case "general-kind":
               case "string-literal":
               case "string-from-code-units":
@@ -8949,13 +8979,30 @@ function emitModuleForms(
                 saveRaw(9, op.id);
                 break;
               }
+              case "error-message": {
+                rawValue(9, op.value);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 9,
+                  rn: 9,
+                  offset: recordHeaderBytes,
+                });
+                saveRaw(9, op.id);
+                break;
+              }
               case "error-new": {
                 allocate(
                   () => {},
                   (rd) => imm(rd, recordHeaderBytes + 8),
                 );
                 descriptorPointer(
-                  typeErrorRecord + (op.error === "RangeError" ? 1 : 0),
+                  typeErrorRecord +
+                    (op.error === "RangeError"
+                      ? 1
+                      : op.error === "Error"
+                        ? 2
+                        : 0),
                 );
                 emit({ op: "str", width: 64, rt: 11, rn: 9, offset: 0 });
                 rawValue(10, op.message);
@@ -8998,6 +9045,24 @@ function emitModuleForms(
                   setFlags: true,
                 });
                 emit({ op: "cset", rd: 9, condition: "eq" });
+                if (op.error === "Error") {
+                  const count = hasPlainErrors ? 3 : 2;
+                  for (let i = 1; i < count; i++) {
+                    descriptorPointer(typeErrorRecord + i);
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 10,
+                      rm: 11,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    emit({ op: "cset", rd: 12, condition: "eq" });
+                    emit({ op: "orr-reg", width: 64, rd: 9, rn: 9, rm: 12 });
+                  }
+                }
                 const doneBranch = instructions.length;
                 emit({ op: "b", displacement: 0 });
                 const no = instructions.length;
@@ -15490,6 +15555,12 @@ function emitModuleForms(
                     offset: nativeFunctionSignatureOffset,
                   });
                   functionSignaturePointer(11, op.target);
+                  const alternate =
+                    op.discardResult === true &&
+                    !signatureImports.has(op.target) &&
+                    (localSignatures.byFunction[op.target] ?? 0) === 0
+                      ? discardResultTargets.get(parameterKeys[op.target] ?? "")
+                      : undefined;
                   emit({
                     op: "sub-reg",
                     width: 64,
@@ -15500,7 +15571,40 @@ function emitModuleForms(
                     amount: 0,
                     setFlags: true,
                   });
-                  trapIf({ op: "b.cond", condition: "ne" });
+                  if (alternate === undefined)
+                    trapIf({ op: "b.cond", condition: "ne" });
+                  else {
+                    // The callee writes its normal result into the same
+                    // completion buffer. A void call consumes only the status.
+                    const matching: number[] = [];
+                    for (const candidate of alternate) {
+                      if (candidate === undefined)
+                        throw "discarded result signature invariant";
+                      matching.push(instructions.length);
+                      emit({ op: "b.cond", condition: "eq", displacement: 0 });
+                      functionSignaturePointer(11, candidate);
+                      emit({
+                        op: "sub-reg",
+                        width: 64,
+                        rd: "zr",
+                        rn: 10,
+                        rm: 11,
+                        shift: "lsl",
+                        amount: 0,
+                        setFlags: true,
+                      });
+                    }
+                    trapIf({ op: "b.cond", condition: "ne" });
+                    for (const match of matching) {
+                      if (match === undefined)
+                        throw "discarded result branch invariant";
+                      patchInstruction(match, {
+                        op: "b.cond",
+                        condition: "eq",
+                        displacement: (instructions.length - match) * 4,
+                      });
+                    }
+                  }
                   emit({
                     op: "ldr",
                     width: 64,

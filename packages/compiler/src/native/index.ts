@@ -31,6 +31,7 @@ import {
 import { materializeManagedRuntimeProviders } from "./managed-runtimes.ts";
 import {
   validRuntimeNamespace,
+  dynamicObjectRuntimeSource,
   type RuntimeSource,
 } from "./runtime-contracts.ts";
 import {
@@ -140,6 +141,8 @@ import {
 } from "@tint/ts-native/runtime";
 import {
   lowerModuleEntries,
+  insertDynamicObjectRuntime,
+  usesDynamicObjectRuntime,
   type ModuleEntryOptions,
   type RecordOperation,
   type FunctionAddressBinding,
@@ -400,12 +403,7 @@ export type Compilation =
   | { readonly ok: true; readonly value: CompiledProgram }
   | {
       readonly ok: false;
-      readonly error: {
-        readonly stage: string;
-        readonly message: string;
-        /** The module the failure is attributed to, when known. */
-        readonly module?: string;
-      };
+      readonly error: CompilationError;
     };
 function failure(stage: string, message: string, module?: string): Compilation {
   return {
@@ -417,7 +415,11 @@ function failure(stage: string, message: string, module?: string): Compilation {
 interface CompilationError {
   readonly stage: string;
   readonly message: string;
+  /** The module the failure is attributed to, when known. */
   readonly module?: string;
+  readonly diagnostic?: string;
+  readonly preventsFallback?: boolean;
+  readonly needsDynamicRealm?: boolean;
 }
 /** A compiler-issued identity that foreign code binds by contract. */
 interface IdentityPlan {
@@ -589,11 +591,65 @@ export function compileNativeProgram(
   return compileArm64Program({ ...request, hostABI: backend.target.hostABI });
 }
 
+function compileTypedWithProgramRealm(
+  request: CompileRequest,
+  realmTypeofModules?: ReadonlySet<string>,
+): Compilation {
+  const explicit = request.runtimes.find(
+    (source) => source?.namespace === "dynamic-object",
+  );
+  const without =
+    explicit === undefined
+      ? request
+      : {
+          ...request,
+          runtimes: request.runtimes.filter((source) => source !== explicit),
+        };
+  const initial = compileTypedProgram(without, realmTypeofModules);
+  if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
+  const runtime = explicit ?? dynamicObjectRuntimeSource();
+  const module = runtime.module;
+  if (!requestModules(request).some((source) => source?.id === module))
+    return initial;
+  const objects = "packages/js-runtime/src/objects/index.ts";
+  const names: string[] = [
+    "viewObjectValue",
+    "viewSymbolValue",
+    "viewBigIntValue",
+  ];
+  const runtimes = without.runtimes.slice();
+  runtimes.push(runtime);
+  if (!runtimes.some((source) => source?.module === objects))
+    runtimes.push({
+      module: objects,
+      namespace: "dynamic-object-views",
+      retainedExports: names,
+    });
+  const bindings = (request.recordBindings ?? []).slice();
+  for (const name of names) {
+    if (name === undefined) throw "dynamic realm binding invariant";
+    if (
+      !bindings.some(
+        (binding) => binding?.module === objects && binding.name === name,
+      )
+    )
+      bindings.push({ module: objects, name, operation: "view" });
+  }
+  return compileTypedProgram(
+    { ...request, runtimes, recordBindings: bindings },
+    realmTypeofModules,
+  );
+}
 export function compileArm64Program(original: CompileRequest): Compilation {
   const request = withForeignRuntimes(original);
-  const typed = compileTypedProgram(request);
+  const typed = compileTypedWithProgramRealm(request);
   const lowering = request.generalLowering;
-  if (typed.ok || lowering === undefined) return typed;
+  if (
+    typed.ok ||
+    lowering === undefined ||
+    typed.error.preventsFallback === true
+  )
+    return typed;
   if (request.requireTyped === true)
     return failure(
       typed.error.stage,
@@ -685,6 +741,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       application.value,
       seed,
       application.trusted,
+      available,
     );
     if (partition.blocked !== undefined)
       return failure(
@@ -722,7 +779,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       if (binding !== undefined) programBindings.push(binding);
     for (const runtime of lowered.value.runtimes ?? [])
       if (runtime !== undefined) programRuntimes.push(runtime);
-    const compiled = compileTypedProgram(
+    const compiled = compileTypedWithProgramRealm(
       {
         ...request,
         recordBindings: programBindings,
@@ -745,6 +802,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
           general: { modules: generalIds, reason },
         },
       };
+    if (compiled.error.preventsFallback === true) return compiled;
     if (seed.size === applicationIds.size)
       return failure(
         "general " + compiled.error.stage,
@@ -820,6 +878,7 @@ const typedGlobals: readonly string[] = [
   "NaN",
   "Infinity",
   "Array",
+  "Object",
   "Boolean",
   "String",
   "Number",
@@ -837,6 +896,7 @@ const typedGlobals: readonly string[] = [
   "TextDecoder",
   "TypeError",
   "RangeError",
+  "Error",
   "console",
 ];
 /** Links the program and prepares its globals and managed surfaces. */
@@ -883,7 +943,8 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
       );
     runtimeNamespacesByModule.set(runtime.module, runtime.namespace);
     providersByNamespace.set(runtime.namespace, runtime.module);
-    roots.push(runtime.module);
+    if (runtime.namespace === "dynamic-object") roots.unshift(runtime.module);
+    else roots.push(runtime.module);
   }
   // Runtime implementation dependencies must remain callable before the
   // application module instance exists. This does not grant host capabilities.
@@ -1015,7 +1076,10 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
           "runtime",
           "retained runtime export is missing: " + name,
         );
-      if (!retainedRuntimeExports.includes(selected.linkedName))
+      if (
+        runtime.namespace !== "dynamic-object" &&
+        !retainedRuntimeExports.includes(selected.linkedName)
+      )
         retainedRuntimeExports.push(selected.linkedName);
     }
   }
@@ -1106,8 +1170,7 @@ function checkApplication(
   });
   if (!checked.ok) {
     const location = locateSourceRange(linkedProgram.ranges, checked.error);
-    return stageFailure(
-      "check",
+    const message =
       (location === undefined
         ? ""
         : location.module +
@@ -1115,9 +1178,18 @@ function checkApplication(
           String(location.start) +
           ":" +
           String(location.end) +
-          ": ") + checked.error.message,
-      location?.module,
-    );
+          ": ") + checked.error.message;
+    return {
+      ok: false,
+      error: {
+        stage: "check",
+        message,
+        ...(location === undefined ? {} : { module: location.module }),
+        ...(checked.error.preventsFallback === true
+          ? { diagnostic: checked.error.code, preventsFallback: true }
+          : {}),
+      },
+    };
   }
   return { ok: true, value: { checked: checked.value } };
 }
@@ -1137,6 +1209,19 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
     surfacePlans = linkedProgram.surfacePlans;
   const checked = checkApplication(linkedProgram, request);
   if (!checked.ok) return { ok: false, error: checked.error };
+  if (
+    !helpers.has("dynamic-object:create") &&
+    usesDynamicObjectRuntime(checked.value.checked)
+  )
+    return {
+      ok: false,
+      error: {
+        stage: "lower",
+        message:
+          "UNSUPPORTED: dynamic-key objects require the program realm runtime",
+        needsDynamicRealm: true,
+      },
+    };
   let initializerName = "",
     entryName = "";
   const start = request.start;
@@ -1248,8 +1333,11 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
     }
     return { ok: true, value: instance.value.module };
   };
+  const instanceSource = helpers.has("dynamic-object:create")
+    ? insertDynamicObjectRuntime(application, checked.value.checked, helpers)
+    : application;
   const prepared = prepareObservedCollectionRuntimes(
-    application,
+    instanceSource,
     checked.value,
     helpers,
     globals,

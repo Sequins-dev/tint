@@ -46,6 +46,17 @@ export interface Local {
 export type DowncastTest =
   "undefined" | "number" | "boolean" | "string" | "null" | "Uint8Array";
 export interface ExpressionInfo {
+  readonly dynamicObject?:
+    | "literal"
+    | "read"
+    | "write"
+    | "has"
+    | "delete"
+    | "enroll"
+    | "own-enumeration"
+    | undefined;
+  readonly dynamicContract?: string | undefined;
+  readonly dynamicEnrollment?: string | undefined;
   /** A checked downcast (`x as T` from unknown): the categories it accepts
    * and the record layouts (descriptor indices) of accepted object types;
    * any other value throws a TypeError. */
@@ -53,6 +64,8 @@ export interface ExpressionInfo {
     | {
         readonly tests: readonly DowncastTest[];
         readonly records: readonly number[];
+        readonly errors?:
+          readonly ("Error" | "TypeError" | "RangeError")[] | undefined;
       }
     | undefined;
   /** C views: the use of a creation call or member/element read, or the
@@ -63,6 +76,7 @@ export interface ExpressionInfo {
   readonly never?: boolean;
   readonly functionTarget?: number | undefined;
   readonly indirect?: boolean | undefined;
+  readonly discardCallResult?: boolean | undefined;
   readonly typeofFunction?: boolean | undefined;
   /** The value is a BigInt (a reference to js-runtime's BigIntValue record),
    * possibly absent (`bigint | undefined`); operations on it call the
@@ -75,6 +89,14 @@ export interface ExpressionInfo {
   /** A list iterated by for-of whose element type excludes undefined: a
    * hole throws a TypeError instead of binding undefined. */
   readonly holeCheck?: boolean | undefined;
+  /** A fresh list packed after the leading arguments of a typed call. */
+  readonly rest?:
+    | {
+        readonly start: number;
+        readonly element: "number" | "string" | number;
+        readonly admitsUndefined: boolean;
+      }
+    | undefined;
   readonly listElement?: "number" | "string" | number | undefined;
   readonly mapKey?: "number" | "string" | number | undefined;
   readonly mapValue?: "number" | "string" | number | undefined;
@@ -142,6 +164,9 @@ export interface ExpressionInfo {
     | "array-set"
     | "array-subarray"
     | "array-slice"
+    | "error-new"
+    | "error-is"
+    | "error-property"
     | "range-error-new"
     | "range-error-is"
     | "type-error-new"

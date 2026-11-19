@@ -483,7 +483,7 @@ test("an unproven header read after observable work stays in the loop", () => {
  * the function value f (slot 5) through witness 1, a no-op. Function 2
  * reads a cell (its environment); `touching` gives it the witness's signature, otherwise a
  * number result. Function 3 passes both functions to sum. */
-function indirectSum(touching: boolean): ModuleIR {
+function indirectSum(touching: boolean, discardResult = false): ModuleIR {
   const base = headerRead("trap", false),
     main = base.functions[0]!,
     blocks = main.blocks.slice(),
@@ -495,6 +495,7 @@ function indirectSum(touching: boolean): ModuleIR {
       { kind: "load", id: 25, slot: 5, start: 0, end: 0 },
       {
         kind: "call-indirect",
+        ...(discardResult ? { discardResult: true } : {}),
         id: undefined,
         target: 1,
         callee: 25,
@@ -634,4 +635,14 @@ test("indirect calls block cell promotion only when a target may access cells", 
       message.endsWith("indirect call accessing cells"),
     ),
   );
+});
+
+test("discarding a result still includes value-returning closures in call effects", () => {
+  const result = promoteLoopCells(
+    indirectSum(false, true),
+    1000000,
+    undefined,
+    true,
+  );
+  assert.equal(result?.promoted, 0);
 });

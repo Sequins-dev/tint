@@ -5,6 +5,7 @@ import { createSourceTextView } from "@tint/source/text";
 import {
   parseModule,
   parseScript,
+  rewriteModule,
   syntaxKey,
   syntaxKeyHash,
   syntaxKeyMatches,
@@ -284,4 +285,22 @@ test("syntax keys of every token count match the streamed token encoding", () =>
     if (previous !== undefined) assert.notEqual(key, previous);
     previous = key;
   }
+});
+
+test("index signatures participate in syntax keys and type rewriting", () => {
+  const declaration =
+    "interface Names<T> { readonly [name: string]: T; count: number }";
+  const module = parsedModule(declaration);
+  assert.ok(assertComplete(module, 20) > 0);
+  const mapped = rewriteModule(module, {
+    type(node) {
+      return node.kind === "named" && node.name === "T"
+        ? { ...node, name: "boolean" }
+        : node;
+    },
+  });
+  assert.equal(
+    syntaxKey(mapped),
+    syntaxKey(parsedModule(declaration.replace(": T", ": boolean"))),
+  );
 });
