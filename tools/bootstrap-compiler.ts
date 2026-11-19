@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { writeNodeExecutable } from "./node-file-host.ts";
 import { dirname, resolve } from "node:path";
@@ -7,6 +8,7 @@ import {
   selectNativeBackend,
 } from "@tint/compiler/native";
 import { nativeTargetNamed } from "@tint/platform/target";
+import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
 import { nodeHostTarget } from "./native-host-target.ts";
 import { functionStorageFromEnvironment } from "./emission-storage.ts";
 import {
@@ -21,10 +23,18 @@ import {
   createBuildObservation,
   observabilityOptions,
 } from "./observability/build-observer.ts";
-const output = resolve(process.argv[2] ?? ".tint-bootstrap/stage1");
-const snapshotFlag = process.argv.indexOf("--snapshot");
+const separator = process.argv.indexOf("--", 2);
+const bootstrapArgv =
+  separator < 0 ? process.argv : process.argv.slice(0, separator);
+const inferiorArguments =
+  separator < 0 ? [] : process.argv.slice(separator + 1);
+const run = bootstrapArgv.includes("--run");
+if (separator >= 0 && !run)
+  throw Error("-- requires --run for inferior arguments");
+const output = resolve(bootstrapArgv[2] ?? ".tint-bootstrap/stage1");
+const snapshotFlag = bootstrapArgv.indexOf("--snapshot");
 const snapshotArgument =
-  snapshotFlag < 0 ? undefined : process.argv[snapshotFlag + 1];
+  snapshotFlag < 0 ? undefined : bootstrapArgv[snapshotFlag + 1];
 if (
   snapshotFlag >= 0 &&
   (snapshotArgument === undefined || snapshotArgument.startsWith("--"))
@@ -32,8 +42,8 @@ if (
   throw Error("--snapshot requires a new source directory");
 const snapshot =
   snapshotArgument === undefined ? undefined : resolve(snapshotArgument);
-const heapFlag = process.argv.indexOf("--managed-bytes");
-const heapArgument = heapFlag < 0 ? undefined : process.argv[heapFlag + 1];
+const heapFlag = bootstrapArgv.indexOf("--managed-bytes");
+const heapArgument = heapFlag < 0 ? undefined : bootstrapArgv[heapFlag + 1];
 const managedBytes =
   heapArgument === undefined ? undefined : Number(heapArgument);
 if (
@@ -47,9 +57,9 @@ if (
   throw Error(
     "--managed-bytes requires a positive, 16-byte-aligned uint32 extent",
   );
-const capacityFlag = process.argv.indexOf("--allocation-capacity");
+const capacityFlag = bootstrapArgv.indexOf("--allocation-capacity");
 const capacityArgument =
-  capacityFlag < 0 ? undefined : process.argv[capacityFlag + 1];
+  capacityFlag < 0 ? undefined : bootstrapArgv[capacityFlag + 1];
 const allocationCapacity =
   capacityArgument === undefined ? undefined : Number(capacityArgument);
 if (
@@ -61,21 +71,21 @@ if (
 )
   throw Error("--allocation-capacity requires a positive uint32 count");
 // The compiler image runs on the target it is built for: default to Node's.
-const targetFlag = process.argv.indexOf("--target");
+const targetFlag = bootstrapArgv.indexOf("--target");
 const selectedTarget =
   targetFlag < 0
     ? nodeHostTarget()
-    : nativeTargetNamed(process.argv[targetFlag + 1] ?? "");
+    : nativeTargetNamed(bootstrapArgv[targetFlag + 1] ?? "");
 if (selectedTarget === undefined)
   throw Error(
-    "--target requires darwin-aarch64, linux-aarch64 or linux-x86_64",
+    "unknown or missing --target: " + (bootstrapArgv[targetFlag + 1] ?? ""),
   );
 const backend = selectNativeBackend(selectedTarget);
 if (!backend.ok)
   throw Error(backend.error.stage + ": " + backend.error.message);
 const target = backend.target;
-const rootFlag = process.argv.indexOf("--source-root");
-const rootArgument = rootFlag < 0 ? undefined : process.argv[rootFlag + 1];
+const rootFlag = bootstrapArgv.indexOf("--source-root");
+const rootArgument = rootFlag < 0 ? undefined : bootstrapArgv[rootFlag + 1];
 if (
   rootFlag >= 0 &&
   (rootArgument === undefined || rootArgument.startsWith("--"))
@@ -159,7 +169,7 @@ const request = createRequest();
 // --code-size, TINT_PASS_STATS, TINT_CODE_SIZE, TINT_DUMP_PASSES,
 // TINT_REMARKS and TINT_OPT_PASS_LIMIT write <output>.* reports.
 const observation = createBuildObservation(
-  observabilityOptions(process.env, process.argv),
+  observabilityOptions(process.env, bootstrapArgv),
 );
 // --operation-ranges writes <output>.operations.json (tools/op-cost).
 let operationRanges: readonly ImageOperationRange[] | undefined;
@@ -177,18 +187,18 @@ const built = buildMacOSProgram({
   requireTyped: true,
   managedBytes: managedBytes ?? request.managedBytes,
   allocationCapacity: allocationCapacity ?? request.allocationCapacity,
-  debugSymbols: process.argv.includes("--debug-symbols"),
+  debugSymbols: bootstrapArgv.includes("--debug-symbols"),
   // --signposts: os_signpost GC and allocation intervals
   // (docs/runtime-diagnostics.md).
-  ...(process.argv.includes("--signposts") ? { signposts: true } : {}),
+  ...(bootstrapArgv.includes("--signposts") ? { signposts: true } : {}),
   // Debug builds include heap introspection (docs/native-heap-profiling.md);
   // --no-heap-introspection keeps their code identical to default builds.
-  ...(process.argv.includes("--no-heap-introspection")
+  ...(bootstrapArgv.includes("--no-heap-introspection")
     ? { heapIntrospection: false }
     : {}),
   debugDirectory: snapshot ?? sourceRoot,
   ...observation.request,
-  ...(process.argv.includes("--operation-ranges")
+  ...(bootstrapArgv.includes("--operation-ranges")
     ? {
         onOperationRanges: (ranges: readonly ImageOperationRange[]) => {
           operationRanges = ranges;
@@ -212,3 +222,39 @@ writeNodeExecutable(output, built.value);
 if (operationRanges !== undefined)
   writeFileSync(output + ".operations.json", JSON.stringify(operationRanges));
 report(`wrote ${output} (${built.value.length} bytes)`);
+if (run && process.env.TINT_BUILD_ONLY !== "1") {
+  const manifest = output + ".manifest.json";
+  writeFileSync(
+    manifest,
+    JSON.stringify(
+      {
+        kind: "tint-bootstrap-native-build",
+        version: 1,
+        target: target.name,
+        imageSha256: createHash("sha256").update(built.value).digest("hex"),
+        sourceRoot,
+        snapshot,
+        sources: inputs.map(({ id, bytes }) => ({
+          id,
+          sha256: createHash("sha256").update(bytes).digest("hex"),
+        })),
+        arguments: bootstrapArgv.slice(2),
+      },
+      null,
+      2,
+    ) + "\n",
+  );
+  const artifact = nativeArtifact(target.name, output, manifest);
+  const [result] = runNativeBatch([
+    { artifact, args: inferiorArguments, timeoutMs: 600000 },
+  ]);
+  if (result === undefined)
+    throw Error("bootstrap runner returned no observation");
+  writeFileSync(output + ".run.json", JSON.stringify(result, null, 2) + "\n");
+  process.stdout.write(result.stdout);
+  process.stderr.write(result.stderr);
+  if (result.kind === "execution-unavailable")
+    throw Error("execution unavailable: " + result.reason);
+  if (result.kind !== "exited" || result.status !== 0)
+    throw Error("bootstrap execution failed: see " + output + ".run.json");
+}

@@ -14,7 +14,7 @@ import { spawnSync } from "node:child_process";
 /** Admit `binary` (a darwin image on a darwin host; elsewhere a no-op).
  * Throws when the admission launch itself fails, a host failure that is
  * reported as such rather than as the fixture's result. */
-export function admitUnderLldb(binary: string): void {
+export function admitUnderLldb(binary: string, env = process.env): void {
   if (process.platform !== "darwin") return;
   const result = spawnSync(
     "lldb",
@@ -32,8 +32,9 @@ export function admitUnderLldb(binary: string): void {
       "process kill",
       binary,
     ],
-    { encoding: "utf8" },
+    { env, encoding: "utf8" },
   );
+  if (result.error !== undefined) throw result.error;
   assert.equal(
     result.status,
     0,
