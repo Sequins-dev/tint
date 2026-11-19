@@ -44,8 +44,15 @@ export interface Token extends Span {
   readonly value: string;
   readonly lineBreakBefore: boolean;
 }
+export interface IndexSignature extends Span {
+  readonly name: string;
+  readonly keyType: TypeNode;
+  readonly valueType: TypeNode;
+  readonly readonly: boolean;
+}
 export interface TypeMembers {
   readonly properties: readonly PropertySignature[];
+  readonly indexSignature?: IndexSignature;
   readonly call?: TypeNode;
   readonly construct?: TypeNode;
 }
@@ -60,6 +67,7 @@ export type TypeNode = Span &
     | {
         readonly kind: "object";
         readonly properties: readonly PropertySignature[];
+        readonly indexSignature?: IndexSignature;
         readonly call?: TypeNode;
         readonly construct?: TypeNode;
       }
@@ -75,6 +83,11 @@ export type TypeNode = Span &
         readonly parameters: readonly Parameter[];
         readonly returnType: TypeNode;
         readonly receiver?: TypeNode;
+      }
+    | {
+        readonly kind: "tuple";
+        readonly elements: readonly TypeNode[];
+        readonly readonly?: boolean;
       }
     | {
         readonly kind: "array";
@@ -374,6 +387,7 @@ export type Statement = Span &
     | { readonly kind: "block"; readonly statements: readonly Statement[] }
     | {
         readonly kind: "interface";
+        readonly indexSignature?: IndexSignature;
         readonly call?: TypeNode;
         readonly construct?: TypeNode;
         readonly typeParameters?: readonly string[];

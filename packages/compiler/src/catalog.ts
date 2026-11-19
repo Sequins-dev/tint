@@ -251,6 +251,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "compiler",
     },
     {
+      id: "packages/compiler/src/native/dynamic-boundaries.ts",
+      packageId: "compiler",
+    },
+    {
       id: "packages/compiler/src/native/foreign/declarations.ts",
       packageId: "compiler",
     },
@@ -2091,6 +2095,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/program-realm.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/promise-capability.ts",
       packageId: "js-runtime",
     },
@@ -2104,6 +2112,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-runtime/src/objects/promises.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/property-contracts.ts",
       packageId: "js-runtime",
     },
     {
@@ -2815,6 +2827,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/values/dynamic-object.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/values/index.ts",
       packageId: "native-runtime",
     },
@@ -2888,6 +2904,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ts-native/src/closure/lowering/class-records.ts",
+      packageId: "ts-native",
+    },
+    {
+      id: "packages/ts-native/src/closure/lowering/dynamic-objects.ts",
       packageId: "ts-native",
     },
     {

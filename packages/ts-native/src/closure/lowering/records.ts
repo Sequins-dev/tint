@@ -14,6 +14,7 @@ import {
 } from "@tint/ir/scalar";
 import type {
   RecordAccess,
+  FiniteRecordAccess,
   RecordAccessChoice,
   RecordOperations,
   RecordConstruction,
@@ -32,6 +33,7 @@ import {
   type TargetDataLayout,
 } from "@tint/foundation/layout";
 import { scalarType } from "./planning.ts";
+import { hasDynamicObject } from "./dynamic-objects.ts";
 
 export function stringType(checked: CheckedClosures, id: number): boolean {
   const t = checked.types[id];
@@ -178,6 +180,9 @@ function generalType(checked: CheckedClosures, id: number): boolean {
     )
       reference = true;
     else if (
+      current?.kind === "Error" ||
+      current?.kind === "TypeError" ||
+      current?.kind === "RangeError" ||
       current?.kind === "function" ||
       current?.kind === "array" ||
       current?.kind === "map" ||
@@ -513,13 +518,15 @@ export function entryType(
   setElements: readonly CollectionElement[] = [],
   mapTypes: readonly MapEncoding[] = [],
 ): ScalarType | undefined {
+  if (checked.types[id]?.kind === "Error") return "reference";
   if (checked.types[id]?.kind === "RangeError") return "reference";
   if (checked.types[id]?.kind === "TypeError") return "reference";
   if (checked.types[id]?.kind === "ArrayBuffer") return "reference";
   const bigint = bigIntType(checked, id);
   if (bigint !== undefined) return bigint;
   if (checked.types[id]?.kind === "null") return "primitive";
-  if (generalType(checked, id)) return "general";
+  if (generalType(checked, id) || hasDynamicObject(checked, id))
+    return "general";
   if (stringType(checked, id)) return "string";
   if (referenceType(checked, id, "string") === "optional-string")
     return "optional-string";
@@ -655,6 +662,12 @@ export function entryType(
 }
 export interface RecordContracts extends RecordOperations {
   readonly classes: readonly ClassRecordStorage[];
+  readonly errorRecords: () => readonly number[];
+  readonly errorProperty: (
+    node: Expression,
+    name: string,
+    type: ScalarType,
+  ) => void;
   readonly forType: (type: number) => number | undefined;
   /** The hidden field of a viewed record layout that holds the record's
    * JavaScript view (the value bridge), or undefined. */
@@ -671,6 +684,10 @@ export interface RecordContracts extends RecordOperations {
     target: number,
   ) => void;
   readonly construct: (node: Expression & { readonly kind: "object" }) => void;
+  readonly addFiniteAccess: (
+    node: Expression,
+    cases: readonly FiniteRecordAccess[],
+  ) => void;
   readonly access: (
     node: Expression,
     receiver: Expression,
@@ -1050,6 +1067,9 @@ export function createRecordContracts(
       syntaxHash,
     ),
     accesses = createKeyIndex<Expression, RecordAccess>(syntaxHash),
+    finiteAccesses = createKeyIndex<Expression, readonly FiniteRecordAccess[]>(
+      syntaxHash,
+    ),
     constructors = createKeyIndex<Expression, ConstructorCall>(syntaxHash);
   const spreads = new Map<
     Expression,
@@ -1058,7 +1078,8 @@ export function createRecordContracts(
   function record(id: number): number | undefined {
     const known = byType[id];
     if (known !== undefined) return known;
-    if (unsupported[id] === 1) return undefined;
+    if (unsupported[id] === 1 || hasDynamicObject(checked, id))
+      return undefined;
     const t = checked.types[id];
     if (t?.kind === "union") {
       unsupported[id] = 1;
@@ -1400,9 +1421,42 @@ export function createRecordContracts(
       prototypeField: planned.prototypeField,
     });
   }
+  let structuralErrors: readonly number[] | undefined;
+  function errorRecords(): readonly number[] {
+    if (structuralErrors !== undefined) return structuralErrors;
+    const errorType = checked.types.findIndex((type) => type?.kind === "Error");
+    if (errorType < 0) throw "Error type invariant";
+    const descriptors: number[] = [];
+    indexObjects();
+    for (const id of objectIds) {
+      if (id === undefined) throw "Error shape invariant";
+      if (!relations.assignable(id, errorType)) continue;
+      for (const descriptor of shapesForType(id)) {
+        if (descriptor === undefined) throw "Error record invariant";
+        if (!descriptors.includes(descriptor)) descriptors.push(descriptor);
+      }
+    }
+    structuralErrors = descriptors;
+    return descriptors;
+  }
   return {
     classes,
     records,
+    errorRecords,
+    errorProperty: (node, name, type) => {
+      const choices: RecordAccessChoice[] = [];
+      for (const descriptor of errorRecords()) {
+        if (descriptor === undefined) throw "Error record invariant";
+        const field = names[descriptor]?.indexOf(name) ?? -1;
+        const info = records[descriptor]?.fields[field];
+        if (
+          info !== undefined &&
+          (info.type === "string" || info.type === "optional-string")
+        )
+          choices.push({ record: descriptor, field, type: info.type });
+      }
+      accesses.set(node, { type, choices });
+    },
     forType: record,
     viewSlot: (record: number): number | undefined => viewSlots[record],
     plannedRecord: (type) => {
@@ -1457,6 +1511,10 @@ export function createRecordContracts(
       });
     },
     accesses,
+    finiteAccesses,
+    addFiniteAccess: (node, cases): void => {
+      finiteAccesses.set(node, cases);
+    },
     spreads,
     construct: (node) => {
       const type = checked.expressions.get(node);

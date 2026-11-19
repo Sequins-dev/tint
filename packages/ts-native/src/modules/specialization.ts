@@ -109,14 +109,26 @@ export function specializeModule(
           return key(t.type);
         case "indexed-access":
           return "i[" + key(t.object) + "," + key(t.index) + "]";
+        case "tuple":
+          return (
+            (t.readonly ? "rt[" : "t[") + t.elements.map(key).join(",") + "]"
+          );
         case "array":
           return (t.readonly ? "ra" : "a") + key(t.element);
         case "union":
         case "intersection":
           return t.kind + "[" + t.members.map(key).join(",") + "]";
-        case "object":
+        case "object": {
+          const index = t.indexSignature;
           return (
             "o[" +
+            (index === undefined
+              ? ""
+              : (index.readonly ? "ri:" : "i:") +
+                key(index.keyType) +
+                ":" +
+                key(index.valueType) +
+                ";") +
             (t.call === undefined ? "" : "call:" + key(t.call) + ";") +
             (t.construct === undefined
               ? ""
@@ -139,6 +151,7 @@ export function specializeModule(
               .join(",") +
             "]"
           );
+        }
         case "function":
           return (
             "f" +
