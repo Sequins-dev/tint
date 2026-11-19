@@ -21,6 +21,8 @@ import {
   stringTable,
   tableBytes,
   writeElfHeader,
+  elfMachine,
+  type ElfArchitecture,
   writeSectionHeader,
   writeSymbol,
   type SectionHeader,
@@ -30,13 +32,17 @@ function align(value: number, alignment: number): number {
   return Math.ceil(value / alignment) * alignment;
 }
 
-/** The AArch64 ELF form of a JIT object (see ../../jit-object.ts), read by
+/** The ELF form of a JIT object (see ../../jit-object.ts), read by
  * GDB and by LLDB on Linux: a relocatable object (`ET_REL`) already
  * relocated in place, the shape LLVM's JITs register. `.text` carries the
  * code's live address in `sh_addr`; function symbols are section-relative
  * (`ET_REL` symbol values); DWARF addresses are absolute, so the object
  * needs no relocations. */
-export function buildElfJitObject(request: JitObjectRequest): JitObjectResult {
+export function buildElfJitObject(
+  request: JitObjectRequest,
+  arch: ElfArchitecture = "aarch64",
+): JitObjectResult {
+  const machine = elfMachine(arch);
   const parts = jitObjectParts(request);
   if (!parts.ok) return { ok: false, error: parts.error };
   const code = request.code,
@@ -133,7 +139,7 @@ export function buildElfJitObject(request: JitObjectRequest): JitObjectResult {
       size: code.length,
       link: 0,
       info: 0,
-      alignment: 4,
+      alignment: machine.instructionAlignment,
       entrySize: 0,
     },
   ];
@@ -205,6 +211,7 @@ export function buildElfJitObject(request: JitObjectRequest): JitObjectResult {
     );
   }
   writeElfHeader(bytes, {
+    machine: machine.id,
     type: ET_REL,
     entry: 0,
     programHeaderCount: 0,
