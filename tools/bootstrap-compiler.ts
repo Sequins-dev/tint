@@ -99,7 +99,10 @@ const project: Pick<
   "projectFiles" | "projectMappings" | "projectRoots" | "projectBuildRequest"
 > &
   Partial<
-    Pick<typeof currentProject, "compilerBuildRequest" | "projectModuleLoader">
+    Pick<
+      typeof currentProject,
+      "compilerBuildRequest" | "projectModuleLoader" | "loadCompilerSourceGraph"
+    >
   > =
   rootArgument === undefined
     ? currentProject
@@ -118,7 +121,9 @@ const project: Pick<
           Partial<
             Pick<
               typeof currentProject,
-              "compilerBuildRequest" | "projectModuleLoader"
+              | "compilerBuildRequest"
+              | "projectModuleLoader"
+              | "loadCompilerSourceGraph"
             >
           >),
       };
@@ -148,11 +153,15 @@ report("parse");
 const foreign = expandForeignInputs(inputs, target.c);
 if (!foreign.ok) throw Error(foreign.error);
 const libraries = foreign.value.libraries;
-const graph = loadSourceGraphLoader(
-  foreign.value.inputs,
-  [...project.projectMappings(), ...foreign.value.mappings],
-  project.projectRoots(),
-);
+const mappings = [...project.projectMappings(), ...foreign.value.mappings];
+const graph =
+  project.loadCompilerSourceGraph === undefined
+    ? loadSourceGraphLoader(
+        foreign.value.inputs,
+        mappings,
+        project.projectRoots(),
+      )
+    : project.loadCompilerSourceGraph(foreign.value.inputs, mappings);
 if (!graph.ok) throw Error(JSON.stringify(graph.error));
 const loader = graph.value;
 // Older frozen projects accept parsed modules when selecting their bindings.
