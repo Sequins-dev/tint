@@ -89,6 +89,107 @@ export const constructs: readonly Construct[] = [
 }`,
   },
   {
+    name: "explicit-dynamic-property-contract",
+    node: { typed: 1 },
+    typed: `export function run(): number {
+  const object: Record<string, number> = { answer: 42 };
+  const alias: Record<string, unknown> = object;
+  let rejected: boolean = false;
+  try { alias.answer = "bad"; } catch (error) { rejected = true; }
+  return rejected && object.answer === 42 ? 42 : 1;
+}`,
+    untyped: `export function run() {
+  const object = { answer: 42 };
+  const alias = object;
+  alias.answer = "open";
+  return object.answer === "open" ? 42 : 1;
+}`,
+  },
+  {
+    name: "dynamic-object-literal",
+    typed: `export function run(): number {
+  const key: string = "computed";
+  const object: Record<string, number> = { [key]: 42 };
+  return object.computed ?? 0;
+}`,
+    untyped: `export function run() {
+  const key = "computed";
+  const object = { [key]: 42 };
+  return object.computed ?? 0;
+}`,
+  },
+  {
+    name: "dynamic-object-index",
+    typed: `export function run(): number {
+  const object: { [key: string]: number } = {};
+  const key: string = "answer";
+  object[key] = 42;
+  return object[key] ?? 0;
+}`,
+    untyped: `export function run() {
+  const object = {};
+  const key = "answer";
+  object[key] = 42;
+  return object[key] ?? 0;
+}`,
+  },
+  {
+    name: "dynamic-object-in-delete",
+    typed: `export function run(): number {
+  const object: Record<string, number> = { key: 1 };
+  const name: string = "key";
+  return (name in object) && delete object[name] && !(name in object) ? 42 : 1;
+}`,
+    untyped: `export function run() {
+  const object = { key: 1 };
+  const name = "key";
+  return (name in object) && delete object[name] && !(name in object) ? 42 : 1;
+}`,
+  },
+  {
+    name: "dynamic-object-own-enumeration",
+    typed: `export function run(): number {
+  const object: Record<string, number> = { b: 42, 2: 7 };
+  const entry = Object.entries(object)[1];
+  return Object.keys(object)[0] === "2" && Object.values(object)[0] === 7 &&
+    entry !== undefined && entry[0] === "b" ? entry[1] : 1;
+}`,
+    untyped: `export function run() {
+  const object = { b: 42, 2: 7 };
+  const entry = Object.entries(object)[1];
+  return Object.keys(object)[0] === "2" && Object.values(object)[0] === 7 &&
+    entry !== undefined && entry[0] === "b" ? entry[1] : 1;
+}`,
+  },
+  {
+    name: "dynamic-object-for-in",
+    typed: `export function run(): number {
+  const object: Record<string, number> = { b: 2, 3: 7 };
+  let keys: string = "";
+  for (const key in object) keys += key;
+  return keys === "3b" ? 42 : 1;
+}`,
+    untyped: `export function run() {
+  const object = { b: 2, 3: 7 };
+  let keys = "";
+  for (const key in object) keys += key;
+  return keys === "3b" ? 42 : 1;
+}`,
+  },
+  {
+    name: "dynamic-object-spread",
+    typed: `export function run(): number {
+  const first: Record<string, number> = { answer: 1 };
+  const result: Record<string, number> = { ...first, answer: 42 };
+  return result.answer ?? 0;
+}`,
+    untyped: `export function run() {
+  const first = { answer: 1 };
+  const result = { ...first, answer: 42 };
+  return result.answer ?? 0;
+}`,
+  },
+  {
     name: "object-records",
     typed: `interface Point { x: number; y: number; label: string }
 function move(p: Point, dx: number): Point { return { x: p.x + dx, y: p.y, label: p.label }; }

@@ -52,6 +52,10 @@ export function collectRuntimeRequirements(
     if (type === undefined) throw "checked type invariant";
     switch (type.kind) {
       case "array": {
+        if (type.realmArray === true) {
+          add(type.element);
+          break;
+        }
         const element = arrayElement(checked, id);
         if (element === undefined)
           unsupported.push({ type: id, kind: "array" });

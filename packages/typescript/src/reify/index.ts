@@ -3,6 +3,7 @@ import type {
   TypeNode,
   Statement,
   PropertySignature,
+  IndexSignature,
   Parameter,
 } from "../syntax/index.ts";
 export type ReifiedTypes =
@@ -68,6 +69,24 @@ export function reifyTypes(
     outputRoots.push(reference(root));
   }
   const declarations: Statement[] = [];
+  function signature(type: number, readonly: boolean): IndexSignature {
+    const keyType: TypeNode = {
+      kind: "named",
+      name: "string",
+      start: 0,
+      end: 0,
+      nodeHash: nextNodeHash++,
+    };
+    return {
+      name: "key",
+      keyType,
+      valueType: reference(type),
+      readonly,
+      start: 0,
+      end: 0,
+      nodeHash: nextNodeHash++,
+    };
+  }
   for (let index = 0; index < pending.length; index++) {
     const id = pending[index];
     if (id === undefined) throw "pending type invariant";
@@ -86,7 +105,19 @@ export function reifyTypes(
           nodeHash: nextNodeHash++,
         };
         break;
-      case "array":
+      case "array": {
+        const tuple = type.tupleElements;
+        if (tuple !== undefined) {
+          syntax = {
+            kind: "tuple",
+            elements: tuple.map(reference),
+            readonly: type.readonly,
+            start: 0,
+            end: 0,
+            nodeHash: nextNodeHash++,
+          };
+          break;
+        }
         syntax = {
           kind: "array",
           element: reference(type.element),
@@ -96,6 +127,7 @@ export function reifyTypes(
           nodeHash: nextNodeHash++,
         };
         break;
+      }
       case "set":
         syntax = {
           kind: "named",
@@ -132,6 +164,31 @@ export function reifyTypes(
         break;
       }
       case "object": {
+        const index = type.stringIndex;
+        if (
+          index?.origin === "record" &&
+          type.properties.length === 0 &&
+          !index.readonly &&
+          type.call === undefined &&
+          type.construct === undefined
+        ) {
+          const key: TypeNode = {
+            kind: "named",
+            name: "string",
+            start: 0,
+            end: 0,
+            nodeHash: nextNodeHash++,
+          };
+          syntax = {
+            kind: "named",
+            name: "Record",
+            arguments: [key, reference(index.type)],
+            start: 0,
+            end: 0,
+            nodeHash: nextNodeHash++,
+          };
+          break;
+        }
         const properties: PropertySignature[] = [];
         for (const property of type.properties) {
           if (property === undefined) throw "validated property invariant";
@@ -150,6 +207,9 @@ export function reifyTypes(
         syntax = {
           kind: "object",
           properties,
+          ...(index === undefined
+            ? {}
+            : { indexSignature: signature(index.type, index.readonly) }),
           ...(type.call === undefined ? {} : { call: reference(type.call) }),
           ...(type.construct === undefined
             ? {}

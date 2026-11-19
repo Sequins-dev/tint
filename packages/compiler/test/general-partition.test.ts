@@ -10,6 +10,7 @@ import {
   boundaryUndefined,
   boundaryUnknown,
   closeGeneralPartition,
+  createBoundaryRecords,
 } from "../src/native/general-partition.ts";
 
 function module(
@@ -272,4 +273,39 @@ test("exported interfaces cross boundaries as record views", () => {
       classes: boundaryString | boundaryUndefined,
     },
   ]);
+});
+
+test("dynamic boundaries resolve imported aliases without a record view", () => {
+  const types = module(
+    "types",
+    `export interface Counters { [key: string]: number; count: number }
+export type MapOfCounters = Record<string, Counters>;`,
+  );
+  const lib = module(
+    "lib",
+    `import type { Counters, MapOfCounters } from "./types";
+export function identity(value: Counters | undefined): Counters | undefined { return value; }
+export function make(): MapOfCounters { return {}; }`,
+    [["./types", "types"]],
+  );
+  const records = createBoundaryRecords(
+    new Map([
+      ["types", types],
+      ["lib", lib],
+    ]),
+  );
+  const identity = boundaryExport(lib, "identity", records);
+  assert.ok(identity?.kind === "function");
+  const use = identity.records?.parameters[0]?.dynamic;
+  assert.ok(use);
+  assert.match(use.declarations, /\[key:string\]:number/);
+  assert.match(use.declarations, /undefined/);
+  assert.ok(identity.records?.result?.dynamic);
+  const make = boundaryExport(lib, "make", records);
+  assert.ok(make?.kind === "function");
+  assert.match(
+    make.records?.result?.dynamic?.declarations ?? "",
+    /Record<string,/,
+  );
+  assert.deepEqual(records.records(), []);
 });

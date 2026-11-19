@@ -14,6 +14,7 @@ import {
 } from "@tint/ir/scalar";
 import type {
   RecordAccess,
+  FiniteRecordAccess,
   RecordAccessChoice,
   RecordOperations,
   RecordConstruction,
@@ -32,6 +33,7 @@ import {
   type TargetDataLayout,
 } from "@tint/foundation/layout";
 import { scalarType } from "./planning.ts";
+import { hasDynamicObject } from "./dynamic-objects.ts";
 
 export function stringType(checked: CheckedClosures, id: number): boolean {
   const t = checked.types[id];
@@ -523,7 +525,8 @@ export function entryType(
   const bigint = bigIntType(checked, id);
   if (bigint !== undefined) return bigint;
   if (checked.types[id]?.kind === "null") return "primitive";
-  if (generalType(checked, id)) return "general";
+  if (generalType(checked, id) || hasDynamicObject(checked, id))
+    return "general";
   if (stringType(checked, id)) return "string";
   if (referenceType(checked, id, "string") === "optional-string")
     return "optional-string";
@@ -681,6 +684,10 @@ export interface RecordContracts extends RecordOperations {
     target: number,
   ) => void;
   readonly construct: (node: Expression & { readonly kind: "object" }) => void;
+  readonly addFiniteAccess: (
+    node: Expression,
+    cases: readonly FiniteRecordAccess[],
+  ) => void;
   readonly access: (
     node: Expression,
     receiver: Expression,
@@ -1060,6 +1067,9 @@ export function createRecordContracts(
       syntaxHash,
     ),
     accesses = createKeyIndex<Expression, RecordAccess>(syntaxHash),
+    finiteAccesses = createKeyIndex<Expression, readonly FiniteRecordAccess[]>(
+      syntaxHash,
+    ),
     constructors = createKeyIndex<Expression, ConstructorCall>(syntaxHash);
   const spreads = new Map<
     Expression,
@@ -1068,7 +1078,8 @@ export function createRecordContracts(
   function record(id: number): number | undefined {
     const known = byType[id];
     if (known !== undefined) return known;
-    if (unsupported[id] === 1) return undefined;
+    if (unsupported[id] === 1 || hasDynamicObject(checked, id))
+      return undefined;
     const t = checked.types[id];
     if (t?.kind === "union") {
       unsupported[id] = 1;
@@ -1500,6 +1511,10 @@ export function createRecordContracts(
       });
     },
     accesses,
+    finiteAccesses,
+    addFiniteAccess: (node, cases): void => {
+      finiteAccesses.set(node, cases);
+    },
     spreads,
     construct: (node) => {
       const type = checked.expressions.get(node);

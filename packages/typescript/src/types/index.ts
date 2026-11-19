@@ -11,6 +11,11 @@ export interface Property {
   readonly type: number;
   readonly readonly: boolean;
 }
+export interface StringIndex {
+  readonly type: number;
+  readonly readonly: boolean;
+  readonly origin: "signature" | "record";
+}
 export type Type =
   | {
       readonly kind:
@@ -40,6 +45,8 @@ export type Type =
   | {
       readonly kind: "array" | "set";
       readonly element: number;
+      readonly realmArray?: boolean;
+      readonly tupleElements?: readonly number[];
       readonly readonly: boolean;
     }
   | {
@@ -52,6 +59,9 @@ export type Type =
   | {
       readonly kind: "object";
       readonly properties: readonly Property[];
+      readonly stringIndex?: StringIndex;
+      /** An interface without an index does not imply one from its fields. */
+      readonly interfaceDeclaration?: boolean;
       /** Function-signature IDs for independent internal call/construct capabilities. */
       readonly call?: number;
       readonly construct?: number;
@@ -494,12 +504,31 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     exact: boolean,
   ): boolean | undefined {
     if (source.kind !== "object" || target.kind !== "object") return undefined;
+    const sourceIndex = source.stringIndex,
+      targetIndex = target.stringIndex,
+      indexed = sourceIndex !== undefined || targetIndex !== undefined;
+    if (exact && (sourceIndex === undefined) !== (targetIndex === undefined))
+      return false;
+    if (
+      exact &&
+      sourceIndex !== undefined &&
+      targetIndex !== undefined &&
+      sourceIndex.readonly !== targetIndex.readonly
+    )
+      return false;
+    if (
+      targetIndex !== undefined &&
+      sourceIndex === undefined &&
+      source.interfaceDeclaration === true
+    )
+      return false;
     if (exact && source.properties.length !== target.properties.length)
       return false;
     const calls = signaturePresence(source.call, target.call, exact),
       constructs = signaturePresence(source.construct, target.construct, exact);
     if (calls === false || constructs === false) return false;
-    let known = calls === true && constructs === true;
+    let known =
+      calls === true && constructs === true && targetIndex === undefined;
     for (const property of target.properties) {
       if (property === undefined) throw "property invariant";
       let matched = false;
@@ -508,7 +537,7 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         if (candidate.name !== property.name) continue;
         if (
           (candidate.optional === true && property.optional !== true) ||
-          ((exact || !property.readonly) &&
+          ((exact || (!indexed && !property.readonly)) &&
             ((candidate.optional === true) !== (property.optional === true) ||
               candidate.readonly !== property.readonly))
         )
@@ -517,14 +546,15 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         const proof = scalarRelation(
           candidate.type,
           property.type,
-          exact || !property.readonly,
+          exact || (!indexed && !property.readonly),
         );
         if (proof === false) return false;
         if (proof === undefined) known = false;
         matched = true;
         break;
       }
-      if (!matched) return false;
+      if (!matched && (exact || !indexed || property.optional !== true))
+        return false;
     }
     return known ? true : undefined;
   }
@@ -705,6 +735,34 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         (source.kind === "array" || source.kind === "set") &&
         target.kind === source.kind
       ) {
+        if ((source.realmArray === true) !== (target.realmArray === true)) {
+          nodeValues[i] = 0;
+          continue;
+        }
+        const sourceTuple = source.tupleElements,
+          targetTuple = target.tupleElements;
+        if (targetTuple !== undefined) {
+          if (
+            sourceTuple === undefined ||
+            sourceTuple.length !== targetTuple.length
+          ) {
+            nodeValues[i] = 0;
+            continue;
+          }
+          for (let j = 0; j < targetTuple.length; j++) {
+            const left = sourceTuple[j],
+              right = targetTuple[j];
+            if (left === undefined || right === undefined)
+              throw "tuple position invariant";
+            dependency(
+              beginClause(i),
+              pair(left, right, exact || !target.readonly),
+            );
+          }
+        } else if (exact && sourceTuple !== undefined) {
+          nodeValues[i] = 0;
+          continue;
+        }
         if (!(
           (!exact && !source.readonly) ||
           source.readonly === target.readonly
@@ -736,7 +794,10 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         const sourceCall = source.call,
           targetCall = target.call,
           sourceConstruct = source.construct,
-          targetConstruct = target.construct;
+          targetConstruct = target.construct,
+          sourceIndex = source.stringIndex,
+          targetIndex = target.stringIndex,
+          indexed = sourceIndex !== undefined || targetIndex !== undefined;
         if (sourceCall !== undefined && targetCall !== undefined)
           dependency(beginClause(i), pair(sourceCall, targetCall, exact));
         if (sourceConstruct !== undefined && targetConstruct !== undefined)
@@ -744,19 +805,32 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
             beginClause(i),
             pair(sourceConstruct, targetConstruct, exact),
           );
+        if (targetIndex !== undefined) {
+          if (sourceIndex !== undefined)
+            dependency(
+              beginClause(i),
+              pair(sourceIndex.type, targetIndex.type, exact),
+            );
+          if (!exact)
+            for (const p of source.properties) {
+              if (p === undefined) throw "property invariant";
+              dependency(beginClause(i), pair(p.type, targetIndex.type, false));
+            }
+        }
         for (const p of target.properties) {
           if (p === undefined) throw "property invariant";
           const q = findProperty(source.properties, p.name);
-          if (q === undefined) throw "proved property invariant";
-          dependency(
-            beginClause(i),
-            pair(q.type, p.type, exact || !p.readonly),
-          );
+          if (q !== undefined)
+            dependency(
+              beginClause(i),
+              pair(q.type, p.type, exact || (!indexed && !p.readonly)),
+            );
         }
       } else if (source.kind === "function" && target.kind === "object") {
         const targetCall = target.call;
         if (
           target.properties.length !== 0 ||
+          target.stringIndex !== undefined ||
           target.construct !== undefined ||
           (exact && targetCall === undefined)
         )
@@ -768,7 +842,9 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         if (
           sourceCall === undefined ||
           (exact &&
-            (source.properties.length !== 0 || source.construct !== undefined))
+            (source.properties.length !== 0 ||
+              source.construct !== undefined ||
+              source.stringIndex !== undefined))
         )
           nodeValues[i] = 0;
         else dependency(beginClause(i), pair(sourceCall, b, exact));
@@ -1022,6 +1098,7 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
       t.kind === "function" ||
       (t.kind === "object" &&
         t.properties.length === 0 &&
+        t.stringIndex === undefined &&
         t.construct === undefined)
     ) {
       const signature = t.kind === "function" ? t : types[t.call ?? -1];
@@ -1036,6 +1113,12 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
           (t.call === undefined ? 0 : 1) +
           (t.construct === undefined ? 0 : 2),
       );
+      const index = t.stringIndex;
+      if (index !== undefined) {
+        shape = mixShape(shape, index.readonly ? 2 : 1);
+        if (depth > 0)
+          shape = mixShape(shape, exactShape(index.type, depth - 1));
+      }
       if (depth > 0) {
         let fields = 0;
         for (const property of t.properties) {
@@ -1174,9 +1257,10 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
       if (t?.kind === "union") return t.members.every(collect);
       if (t?.kind !== "object") return false;
       const field = findProperty(t.properties, name);
-      if (field === undefined) return false;
-      fields.push(field.type);
-      if (field.optional) {
+      const value = field?.type ?? t.stringIndex?.type;
+      if (value === undefined) return false;
+      fields.push(value);
+      if (field === undefined || field.optional) {
         const undefinedType = firstUndefinedType();
         if (undefinedType < 0) return false;
         fields.push(undefinedType);
@@ -1208,7 +1292,7 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     if (!valid(value)) return { ok: false, error: "INVALID_TYPE" };
     const t = types[object];
     if (t?.kind !== "object") return { ok: false, error: "TYPE_MISMATCH" };
-    const p = findProperty(t.properties, name);
+    const p = findProperty(t.properties, name) ?? t.stringIndex;
     if (p === undefined) throw "property invariant";
     if (p.readonly) return { ok: false, error: "IMMUTABLE" };
     return relates(value, p.type)
@@ -1231,11 +1315,11 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
       names.add(p.name);
       if (!valid(p.type)) return { ok: false, error: "INVALID_TYPE" };
       const field = findProperty(t.properties, p.name);
-      if (field === undefined) return { ok: false, error: "PROPERTY" };
-      if (p.optional === true && field.optional !== true)
+      const type = field?.type ?? t.stringIndex?.type;
+      if (type === undefined) return { ok: false, error: "PROPERTY" };
+      if (field !== undefined && p.optional === true && field.optional !== true)
         return { ok: false, error: "PROPERTY" };
-      if (!relates(p.type, field.type))
-        return { ok: false, error: "TYPE_MISMATCH" };
+      if (!relates(p.type, type)) return { ok: false, error: "TYPE_MISMATCH" };
     }
     return t.properties.every((p) => p.optional || names.has(p.name))
       ? { ok: true, value: target }
@@ -1397,10 +1481,27 @@ function copyType(
       };
       break;
     case "set":
-    case "array":
-      refs = [t.element];
-      copy = { kind: t.kind, element: t.element, readonly: t.readonly };
+    case "array": {
+      const arrayRefs = [t.element];
+      const tuple = t.tupleElements;
+      if (tuple !== undefined) {
+        if (t.kind !== "array" || t.realmArray !== true)
+          return { ok: false, error: "INVALID_TYPE" };
+        for (const member of tuple) {
+          if (member === undefined) return { ok: false, error: "INVALID_TYPE" };
+          arrayRefs.push(member);
+        }
+      }
+      refs = arrayRefs;
+      copy = {
+        kind: t.kind,
+        element: t.element,
+        readonly: t.readonly,
+        ...(t.realmArray === true ? { realmArray: true } : {}),
+        ...(tuple === undefined ? {} : { tupleElements: tuple.slice() }),
+      };
       break;
+    }
     case "object": {
       // Duplicate names: pairwise for ordinary objects (a Set promotes to a
       // hashed index past eight members, on every appended object type).
@@ -1421,6 +1522,8 @@ function copyType(
         else names.add(p.name);
       }
       const objectRefs = t.properties.map((p) => p.type);
+      const index = t.stringIndex;
+      if (index !== undefined) objectRefs.push(index.type);
       for (const signature of [t.call, t.construct]) {
         if (signature === undefined) continue;
         if (input[signature]?.kind !== "function")
@@ -1435,6 +1538,18 @@ function copyType(
       refs = objectRefs;
       copy = {
         kind: t.kind,
+        ...(t.interfaceDeclaration === true
+          ? { interfaceDeclaration: true }
+          : {}),
+        ...(index === undefined
+          ? {}
+          : {
+              stringIndex: {
+                type: index.type,
+                readonly: index.readonly,
+                origin: index.origin,
+              },
+            }),
         ...(t.call === undefined ? {} : { call: t.call }),
         ...(t.construct === undefined ? {} : { construct: t.construct }),
         properties: t.properties.map((p) => ({
@@ -1517,4 +1632,47 @@ function copyType(
     )
       return { ok: false, error: "INVALID_TYPE" };
   return { ok: true, value: { type: copy, refs } };
+}
+
+/** C1 uses the general value's existing payload representation. Native
+ * aggregate references require a live view or realm-backed allocation. */
+export function unsupportedDynamicPayload(
+  types: readonly Type[],
+  id: number,
+): string | undefined {
+  const type = types[id];
+  if (type === undefined) throw "dynamic property type invariant";
+  switch (type.kind) {
+    case "number":
+    case "string":
+    case "boolean":
+    case "bigint":
+    case "null":
+    case "undefined":
+    case "unknown":
+    case "never":
+    case "literal":
+      return undefined;
+    case "object":
+      if (type.stringIndex !== undefined) return undefined;
+      break;
+    case "union":
+      for (const member of type.members) {
+        if (member === undefined) throw "dynamic property member invariant";
+        const unsupported = unsupportedDynamicPayload(types, member);
+        if (unsupported !== undefined) return unsupported;
+      }
+      return undefined;
+  }
+  const name =
+    type.kind === "object"
+      ? "native record"
+      : type.kind === "array"
+        ? "native list"
+        : type.kind;
+  return (
+    "UNSUPPORTED: " +
+    name +
+    " values in dynamic-key objects need slice 2b list/record views"
+  );
 }

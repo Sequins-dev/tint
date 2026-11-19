@@ -368,21 +368,24 @@ test("Script surface instantiations match the real linked export namespaces and 
   // Number- and string-keyed Maps resolve through key-specialized providers
   // (number-key-map, string-key-map): one more anchor. Maps chain entries
   // from a bucket list, one more list class with eight operations.
-  assert.equal(census.value.anchors.length, 118);
-  assert.equal(census.value.collections.length, 52);
+  // Ordinary-object property contracts add four list anchors for schemas,
+  // rules, fields and union member IDs. The member IDs reuse the number-list
+  // provider. The other three providers add eight operations each.
+  assert.equal(census.value.anchors.length, 122);
+  assert.equal(census.value.collections.length, 55);
   assert.deepEqual(
     ["list", "set", "map"].map(
       (kind) =>
         census.value.collections.filter((row) => row.kind === kind).length,
     ),
-    [44, 2, 6],
+    [47, 2, 6],
   );
   assert.equal(
     census.value.collections.reduce(
       (sum, row) => sum + row.operations.length,
       0,
     ),
-    438,
+    462,
   );
 
   assert.ok(
@@ -410,9 +413,8 @@ test("Script surface instantiations match the real linked export namespaces and 
     globals,
   });
   assert.ok(facts.ok, JSON.stringify(facts));
-  // The Map bucket list adds one provider with eight operations, all with
-  // physical signatures already present.
-  assert.equal(facts.value.runtimes.length, 54);
+  // Map buckets and object contract lists reuse existing physical signatures.
+  assert.equal(facts.value.runtimes.length, 57);
   assert.equal(
     new Set(
       facts.value.runtimes.flatMap((provider) =>
@@ -424,10 +426,11 @@ test("Script surface instantiations match the real linked export namespaces and 
     43,
   );
 
-  assert.equal(
-    facts.value.runtimes.reduce((sum, row) => sum + row.operations.length, 0),
-    461,
+  const operationCount = facts.value.runtimes.reduce(
+    (sum, row) => sum + row.operations.length,
+    0,
   );
+  assert.equal(operationCount, 485);
   assert.ok(
     facts.value.runtimes.every((row) =>
       row.operations.every((operation) => operation.returnType !== undefined),
@@ -610,20 +613,20 @@ test("Script surface instantiations match the real linked export namespaces and 
         collections.value,
       );
       if (!names.ok) return names;
-      // The Map bucket list adds one provider and eight distinct targets.
-      assert.equal(names.value.providers.length, 54);
-      assert.equal(names.value.targets.length, 413);
+      // Each new object-contract provider has eight distinct targets.
+      assert.equal(names.value.providers.length, facts.value.runtimes.length);
+      assert.equal(names.value.targets.length, 437);
       const exported = prepareManagedRuntimeEntries(
         names.value,
         facts.value.runtimes,
         "$ScriptRuntime",
       );
       assert.ok(exported.ok, JSON.stringify(exported));
-      assert.equal(exported.value.slots.length, 461);
-      assert.equal(exported.value.stubs.declarations.length, 456);
+      assert.equal(exported.value.slots.length, operationCount);
+      assert.equal(exported.value.stubs.declarations.length, 480);
       assert.equal(
         new Set(exported.value.slots.map((slot) => slot.entry)).size,
-        413,
+        names.value.targets.length,
       );
       assert.equal(
         new Set(exported.value.slots.map((slot) => slot.signature)).size,
@@ -635,7 +638,7 @@ test("Script surface instantiations match the real linked export namespaces and 
           (sum, provider) => sum + provider.targets.length,
           0,
         ),
-        461,
+        operationCount,
       );
       assert.deepEqual(
         names.value.providers.slice(-2).map((provider) => provider.key.kind),
@@ -681,10 +684,9 @@ test("Script surface instantiations match the real linked export namespaces and 
   assert.equal(collectionOperations.length, census.value.anchors.length);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,
-    46,
+    49,
   );
-  // The Map bucket list's eight operations (see the census above).
-  assert.equal(new Set(collectionOperations.flat()).size, 390);
+  assert.equal(new Set(collectionOperations.flat()).size, 414);
   for (const name of new Set(collectionOperations.flat()))
     assert.ok(
       prepared.value.checked.module.statements.some(
