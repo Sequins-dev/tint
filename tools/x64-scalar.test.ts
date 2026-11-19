@@ -1,0 +1,532 @@
+import assert from "node:assert/strict";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { test } from "node:test";
+import {
+  createFunctionBuilder,
+  type FunctionBuilder,
+  type FunctionIR,
+  type ModuleIR,
+  type ScalarType,
+} from "@tint/ir/scalar";
+import { emitModule } from "@tint/codegen/aarch64/scalar";
+import type { ImageAddressTarget } from "@tint/abi/relocation";
+import { encodeLayout, type Instruction } from "@tint/codegen/x86_64/isa";
+import { imageRelocations } from "@tint/codegen/x86_64/scalar";
+import { buildElfExecutable } from "@tint/image/linux/elf";
+import {
+  darwinAArch64Target,
+  linuxAArch64Target,
+  linuxX86_64Target,
+} from "@tint/platform/target";
+import {
+  buildFreestandingScalarProgram,
+  compileScalarModule,
+} from "@tint/compiler/native/scalar";
+import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
+
+const span = { start: 0, end: 0 };
+class Fixture {
+  readonly ir: FunctionBuilder;
+  constructor(id = 0, types: readonly ScalarType[] = []) {
+    this.ir = createFunctionBuilder(id, "fixture" + id, types, "number");
+  }
+  constant(value: number | boolean): number {
+    const id = this.ir.next();
+    this.ir.emit({ ...span, kind: "constant", id, value });
+    return id;
+  }
+  unary(operator: string, operand: number): number {
+    const id = this.ir.next();
+    this.ir.emit({ ...span, kind: "unary", id, operator, operand });
+    return id;
+  }
+  binary(operator: string, left: number, right: number): number {
+    const id = this.ir.next();
+    this.ir.emit({ ...span, kind: "binary", id, operator, left, right });
+    return id;
+  }
+  wrap(value: number): number {
+    const id = this.ir.next();
+    this.ir.emit({ ...span, kind: "general-wrap", id, value });
+    return id;
+  }
+  unboxNumber(value: number): number {
+    const id = this.ir.next();
+    this.ir.emit({ ...span, kind: "general-value", type: "number", id, value });
+    return id;
+  }
+  call(target: number, args: number[]): number {
+    const id = this.ir.next();
+    this.ir.emit({ ...span, kind: "call", target, id, arguments: args });
+    return id;
+  }
+  branch(condition: number, consequent: number, alternate: number): void {
+    this.ir.end({ ...span, kind: "branch", condition, consequent, alternate });
+  }
+  finish(value: number): FunctionIR {
+    this.ir.end({ ...span, kind: "return", value });
+    return this.ir.finish();
+  }
+  check(checks: number[]): FunctionIR {
+    let passed = this.constant(0);
+    for (const check of checks)
+      passed = this.binary("+", passed, this.unary("boolean-number", check));
+    const success = this.ir.block();
+    const failure = this.ir.block();
+    this.branch(
+      this.binary("===", passed, this.constant(checks.length)),
+      success,
+      failure,
+    );
+    this.ir.at(success);
+    this.ir.end({ ...span, kind: "return", value: this.constant(42) });
+    this.ir.at(failure);
+    // Checks are accumulated in the entry. Give each group its own image.
+    return this.finish(this.constant(1));
+  }
+}
+
+function pressure(): ModuleIR {
+  const main = new Fixture();
+  const helper = new Fixture(1, ["number"]);
+  const live = Array.from({ length: 48 }, (_, i) => main.constant(i + 1));
+  const result = main.call(1, [main.constant(7)]);
+  const sum = live.reduce((a, b) => main.binary("+", a, b), result);
+  return {
+    functions: [
+      main.check([main.binary("===", sum, main.constant(1183))]),
+      helper.finish(helper.ir.load(0)),
+    ],
+  };
+}
+
+function overflow(): ModuleIR {
+  const types: ScalarType[] = ["general", "number", "boolean", "general"];
+  types.push(
+    ...Array<ScalarType>(8).fill("number"),
+    "boolean",
+    "number",
+    "boolean",
+  );
+  const values = [
+    31,
+    19,
+    false,
+    37,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    23,
+    false,
+    29,
+    true,
+  ];
+  const main = new Fixture();
+  const helper = new Fixture(1, types);
+  return {
+    functions: [
+      main.finish(
+        main.call(
+          1,
+          values.map((value, i) => {
+            const id = main.constant(value);
+            return types[i] === "general" ? main.wrap(id) : id;
+          }),
+        ),
+      ),
+      helper.check(
+        values.map((value, i) => {
+          const id = helper.ir.load(i);
+          return helper.binary(
+            "===",
+            types[i] === "general" ? helper.unboxNumber(id) : id,
+            helper.constant(value),
+          );
+        }),
+      ),
+    ],
+  };
+}
+
+function numbers(): ModuleIR {
+  const f = new Fixture();
+  const checks: number[] = [];
+  for (const [operator, left, right, expected] of [
+    ["+", 0.25, 0.5, 0.75],
+    ["-", 3.5, 1.25, 2.25],
+    ["*", -0.5, 2, -1],
+    ["/", 1, -0, -Infinity],
+    ["/", -2147483648, -1, 2147483648],
+    ["/", 1, 0, Infinity],
+    ["%", -2147483648, -1, -0],
+    ["%", 1, 0, NaN],
+    ["%", Infinity, 2, NaN],
+    ["%", 3, Infinity, 3],
+    ["%", Number.MAX_VALUE, 7, Number.MAX_VALUE % 7],
+    ["%", Number.MIN_VALUE * 7, Number.MIN_VALUE * 3, Number.MIN_VALUE],
+    ["min", -0, 0, -0],
+    ["min", 1, NaN, NaN],
+    ["max", -0, 0, 0],
+    ["max", NaN, 1, NaN],
+  ] as const) {
+    const value = f.binary(operator, f.constant(left), f.constant(right));
+    if (Number.isNaN(expected)) checks.push(f.binary("!==", value, value));
+    else if (expected === 0)
+      checks.push(
+        f.binary(
+          "===",
+          f.binary("/", f.constant(1), value),
+          f.constant(1 / expected),
+        ),
+      );
+    else checks.push(f.binary("===", value, f.constant(expected)));
+  }
+  for (const [operator, input, expected] of [
+    ["-", 0, -0],
+    ["sqrt", -0, -0],
+    ["sqrt", 9, 3],
+    ["ceil", -0.5, -0],
+    ["ceil", 0.25, 1],
+    ["ceil", Infinity, Infinity],
+    ["trunc", -0.5, -0],
+    ["trunc", -2.75, -2],
+    ["trunc", -(2 ** 60), -(2 ** 60)],
+    ["is-integer", Infinity, false],
+    ["is-integer", NaN, false],
+    ["is-integer", 0.5, false],
+    ["is-integer", 2 ** 60, true],
+    ["is-integer", -0, true],
+    ["!", NaN, true],
+    ["!", -0, true],
+    ["truthy", Infinity, true],
+  ] as const) {
+    const value = f.unary(operator, f.constant(input));
+    checks.push(
+      Object.is(expected, -0)
+        ? f.binary(
+            "===",
+            f.binary("/", f.constant(1), value),
+            f.constant(-Infinity),
+          )
+        : f.binary("===", value, f.constant(expected)),
+    );
+  }
+  for (const operator of ["===", "==", "<", "<=", ">", ">="])
+    checks.push(
+      f.unary("!", f.binary(operator, f.constant(NaN), f.constant(1))),
+    );
+  for (const operator of ["!==", "!="])
+    checks.push(f.binary(operator, f.constant(1), f.constant(NaN)));
+  checks.push(f.binary("===", f.constant(-0), f.constant(0)));
+  return { functions: [f.check(checks)] };
+}
+
+function words(): ModuleIR {
+  const f = new Fixture();
+  const checks: number[] = [];
+  for (const [operator, left, right, expected] of [
+    ["imul", 0x7fffffff, 2, -2],
+    ["imul", -2147483648, -1, -2147483648],
+    ["imul", 0xffffffff, 0, 0],
+    ["imul", 2 ** 83 + 2 ** 31, 1, -2147483648],
+    ["imul", 2 ** 84, 1, 0],
+    ["|", -(2 ** 63 + 2048), 0, -2048],
+    ["|", -123.9, 0, -123],
+    ["|", NaN, 7, 7],
+    ["&", Infinity, -1, 0],
+    ["^", -1, 0x80000000, 0x7fffffff],
+    ["<<", 1, 63, -2147483648],
+    [">>", 0x80000000, 63, -1],
+    [">>>", -1, 0, 0xffffffff],
+  ] as const) {
+    checks.push(
+      f.binary(
+        "===",
+        f.binary(operator, f.constant(left), f.constant(right)),
+        f.constant(expected),
+      ),
+    );
+  }
+  checks.push(f.binary("===", f.unary("~", f.constant(-0)), f.constant(-1)));
+  return { functions: [f.check(checks)] };
+}
+
+function completion(caught: boolean): ModuleIR {
+  const entry = new Fixture();
+  const relay = new Fixture(1);
+  const thrower = new Fixture(2);
+  const value = thrower.constant(42);
+  const boxed = thrower.wrap(value);
+  thrower.ir.end({ ...span, kind: "throw", value: boxed });
+  if (!caught)
+    return {
+      functions: [
+        entry.finish(entry.call(1, [])),
+        relay.finish(relay.call(2, [])),
+        thrower.ir.finish(),
+      ],
+    };
+  const exception = entry.ir.slot("general");
+  const handler = entry.ir.block();
+  entry.ir.end({ ...span, kind: "return", value: entry.call(1, []) });
+  entry.ir.at(handler);
+  const fn = entry.finish(entry.unboxNumber(entry.ir.load(exception)));
+  return {
+    functions: [
+      {
+        ...fn,
+        blocks: [
+          { ...fn.blocks[0]!, exception: { target: handler, slot: exception } },
+          fn.blocks[1]!,
+        ],
+      },
+      relay.finish(relay.call(2, [])),
+      thrower.ir.finish(),
+    ],
+  };
+}
+
+function switchAndLoop(): ModuleIR {
+  const f = new Fixture();
+  const slot = f.ir.slot("number");
+  const loop = f.ir.block();
+  const secondCase = f.ir.block();
+  const fallback = f.ir.block();
+  const hit = f.ir.block();
+  f.ir.save(slot, f.constant(0));
+  f.ir.end({ ...span, kind: "jump", target: loop });
+  // Scalar IR represents a lowered switch as a chain of conditional branches.
+  f.ir.at(loop);
+  f.branch(f.binary("===", f.ir.load(slot), f.constant(1)), hit, secondCase);
+  f.ir.at(secondCase);
+  f.branch(f.binary("===", f.ir.load(slot), f.constant(0)), fallback, hit);
+  f.ir.at(fallback);
+  f.ir.save(slot, f.binary("+", f.ir.load(slot), f.constant(1)));
+  f.ir.end({ ...span, kind: "jump", target: loop });
+  f.ir.at(hit);
+  return {
+    functions: [f.finish(f.binary("+", f.ir.load(slot), f.constant(41)))],
+  };
+}
+
+function gotImportImage(): Uint8Array {
+  const eax = { kind: "gpr", width: 32, index: 0 } as const;
+  const edi = { kind: "gpr", width: 32, index: 7 } as const;
+  const external = new Map<string, ImageAddressTarget>([
+    ["pid", { kind: "import", name: "getpid" }],
+  ]);
+  const instructions: Instruction[] = [
+    {
+      op: "call",
+      target: {
+        kind: "mem",
+        width: 64,
+        address: { kind: "rip", disp: { kind: "label", label: "pid" } },
+      },
+    },
+    { op: "mov", dst: edi, src: { kind: "imm32", value: 1 } },
+    { op: "test", dst: eax, src: eax },
+    { op: "jcc", cc: "le", target: { kind: "label", label: "exit" } },
+    { op: "mov", dst: edi, src: { kind: "imm32", value: 42 } },
+    { op: "label", name: "exit" },
+    { op: "mov", dst: eax, src: { kind: "imm32", value: 60 } },
+    { op: "syscall" },
+  ];
+  const encoded = encodeLayout(instructions, external);
+  const image = buildElfExecutable({
+    code: encoded.bytes,
+    entryOffset: 0,
+    maxByteLength: 1 << 20,
+    linux: { arch: "x86_64" },
+    imports: ["getpid"],
+    ...imageRelocations(encoded.externalFixups, external),
+  });
+  assert.ok(image.ok, JSON.stringify(!image.ok && image.error));
+  return image.value.bytes;
+}
+
+test("external RIP fixups use the complete instruction length and check signed reach", () => {
+  const external = new Map<string, ImageAddressTarget>([
+    ["data", { kind: "data", offset: 0 }],
+  ]);
+  const encoded = encodeLayout(
+    [
+      {
+        op: "mov",
+        dst: {
+          kind: "mem",
+          width: 32,
+          address: {
+            kind: "rip",
+            disp: { kind: "label", label: "data", addend: 2 },
+          },
+        },
+        src: { kind: "imm32", value: 42 },
+      },
+    ],
+    external,
+  );
+  const { addressFixups, patchAddress } = imageRelocations(
+    encoded.externalFixups,
+    external,
+  );
+  const field = addressFixups[0]!.offset;
+  const site = 0x100000000;
+  const next = site + encoded.bytes.length - field;
+  const view = new DataView(encoded.bytes.buffer);
+  assert.equal(
+    patchAddress(encoded.bytes, 0, field, next - 2 - 0x80000000, site),
+    "complete",
+  );
+  assert.equal(view.getInt32(field, true), -0x80000000);
+  assert.equal(
+    patchAddress(encoded.bytes, 0, field, next - 2 + 0x7fffffff, site),
+    "complete",
+  );
+  assert.equal(view.getInt32(field, true), 0x7fffffff);
+  assert.equal(
+    patchAddress(encoded.bytes, 0, field, next - 2 + 0x80000000, site),
+    "range",
+  );
+  assert.equal(
+    patchAddress(encoded.bytes, 0, field, next - 2 - 0x80000001, site),
+    "range",
+  );
+  assert.equal(view.getInt32(encoded.bytes.length - 4, true), 42);
+});
+
+const fixtures = [
+  {
+    name: "call and live values across a branch",
+    module: pressure(),
+    status: 42,
+  },
+  { name: "mixed overflow arguments", module: overflow(), status: 42 },
+  {
+    name: "lowered switch and backward branch",
+    module: switchAndLoop(),
+    status: 42,
+  },
+  { name: "binary64 and unordered comparisons", module: numbers(), status: 42 },
+  { name: "ToInt32 and wrapping arithmetic", module: words(), status: 42 },
+  {
+    name: "caught completion across two calls",
+    module: completion(true),
+    status: 42,
+  },
+  {
+    name: "uncaught completion across two calls",
+    module: completion(false),
+    status: 1,
+  },
+];
+
+test("freestanding scalar dispatch emits x86-64 ELF images", () => {
+  for (const fixture of fixtures) {
+    const image = buildFreestandingScalarProgram(
+      fixture.module,
+      0,
+      linuxX86_64Target,
+    );
+    assert.ok(image.ok, fixture.name + " " + JSON.stringify(image));
+    assert.equal(new DataView(image.value.buffer).getUint16(18, true), 62);
+  }
+});
+
+test("ARM scalar dispatch preserves bytes and metadata on both output targets", () => {
+  const module = pressure();
+  for (const target of [darwinAArch64Target, linuxAArch64Target]) {
+    const emission = compileScalarModule(module, target);
+    assert.deepEqual(emission, {
+      arch: "aarch64",
+      emission: emitModule(module, { hostABI: target.hostABI }),
+    });
+  }
+});
+
+test("unsupported operations identify the operation and its source location", () => {
+  const fn = new Fixture();
+  const id = fn.ir.next();
+  fn.ir.emit({
+    kind: "string-literal",
+    value: "unsupported",
+    id,
+    start: 2,
+    end: 5,
+  });
+  const result = compileScalarModule(
+    { functions: [fn.finish(fn.constant(0))] },
+    linuxX86_64Target,
+  );
+  assert.deepEqual(result, {
+    arch: "x86_64",
+    emission: {
+      ok: false,
+      error: {
+        code: "UNSUPPORTED",
+        message: "x86-64 scalar: unsupported instruction string-literal",
+        function: 0,
+        block: 0,
+        span: { start: 2, end: 5 },
+      },
+    },
+  });
+});
+
+const runnerFixtures = [
+  ...fixtures.map(({ name, module, status }) => ({
+    name,
+    status,
+    bytes: () => {
+      const image = buildFreestandingScalarProgram(
+        module,
+        0,
+        linuxX86_64Target,
+      );
+      assert.ok(image.ok, JSON.stringify(image));
+      return image.value;
+    },
+  })),
+  { name: "RIP-relative GOT import", status: 42, bytes: gotImportImage },
+];
+
+const runner = process.env.TINT_X64_SCALAR_RUNNER;
+test(
+  "x86-64 runner executes freestanding scalar fixtures",
+  {
+    skip: runner !== "x64-qemu-dev" && runner !== "x64-ssh",
+  },
+  (t) => {
+    const directory = mkdtempSync(join(tmpdir(), "tint-x64-scalar-"));
+    t.after(() => rmSync(directory, { recursive: true, force: true }));
+    const artifacts = runnerFixtures.map(({ bytes }, i) => {
+      const path = join(directory, String(i));
+      writeFileSync(path, bytes(), { mode: 0o755 });
+      return nativeArtifact("linux-x86_64", path);
+    });
+    const results = runNativeBatch(
+      artifacts.map((artifact) => ({ artifact, timeoutMs: 5000 })),
+      { ...process.env, TINT_NATIVE_RUNNER: runner },
+    );
+    for (const [i, result] of results.entries()) {
+      const fixture = runnerFixtures[i]!;
+      assert.equal(result.executor?.runner, runner, JSON.stringify(result));
+      assert.equal(
+        result.kind,
+        "exited",
+        fixture.name + " " + JSON.stringify(result),
+      );
+      if (result.kind === "exited")
+        assert.equal(result.status, fixture.status, fixture.name);
+      assert.equal(result.stdout, "", fixture.name);
+    }
+    assert.equal(results.length, runnerFixtures.length);
+    console.log(JSON.stringify(results));
+  },
+);

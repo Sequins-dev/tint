@@ -1,0 +1,104 @@
+import type {
+  ImageAddressPatcher,
+  ImageAddressReference,
+  ImageAddressTarget,
+} from "@tint/abi/relocation";
+import { writeSigned } from "@tint/foundation/binary/bytes";
+import type {
+  Condition,
+  Gpr,
+  Immediate,
+  Instruction,
+  LabelReference,
+  Memory,
+  NearFixup,
+  Xmm,
+} from "../isa.ts";
+
+// The managed result holds a 16-byte header and up to two payload words.
+export const resultBytes = 32;
+export const resultPayload = 16;
+export const normal = 1;
+export const thrown = 2;
+
+export type Emit = (instruction: Instruction) => void;
+
+export function gpr(index: number): Gpr<64> {
+  return { kind: "gpr", width: 64, index };
+}
+export function word(index: number): Gpr<32> {
+  return { kind: "gpr", width: 32, index };
+}
+export function byte(index: number): Gpr<8> {
+  return { kind: "gpr", width: 8, index };
+}
+export function xmm(index: number): Xmm {
+  return { kind: "xmm", index };
+}
+export function mem(base: number, disp: number): Memory<64> {
+  return { kind: "mem", width: 64, address: { kind: "base", base, disp } };
+}
+export function label(name: string): LabelReference {
+  return { kind: "label", label: name };
+}
+export function imm(value: number): {
+  readonly kind: "imm32";
+  readonly value: number;
+} {
+  return { kind: "imm32", value };
+}
+export function bits(lo: number, hi: number): Immediate {
+  return { kind: "imm64", value: { lo, hi } };
+}
+export function setBoolean(emit: Emit, cc: Condition, reg: number): void {
+  emit({ op: "setcc", cc, dst: byte(reg) });
+  emit({ op: "movzx", dst: word(reg), src: byte(reg) });
+}
+
+export interface ImageRelocations {
+  readonly addressFixups: readonly ImageAddressReference[];
+  readonly patchAddress: ImageAddressPatcher;
+}
+
+/** ELF data and GOT windows are four-byte fields. Keep the distance to the
+ * instruction end separately so the same patcher works with trailing bytes. */
+export function imageRelocations(
+  fixups: readonly NearFixup[],
+  external: ReadonlyMap<string, ImageAddressTarget>,
+): ImageRelocations {
+  const addressFixups: ImageAddressReference[] = [];
+  for (const fixup of fixups) {
+    if (fixup === undefined) throw "rel32 fixup invariant";
+    const target = external.get(fixup.ref.label);
+    if (target === undefined) throw "rel32 symbol invariant";
+    addressFixups.push({
+      offset: fixup.fieldOffset,
+      byteLength: 4,
+      alignment: 1,
+      target,
+    });
+  }
+  const patchAddress: ImageAddressPatcher = (
+    bytes,
+    index,
+    siteOffset,
+    targetOffset,
+    siteAddress,
+  ) => {
+    const fixup = fixups[index];
+    if (fixup === undefined) return "invalid";
+    const next =
+      (siteAddress ?? siteOffset) + fixup.nextOffset - fixup.fieldOffset;
+    const distance = targetOffset - next + (fixup.ref.addend ?? 0);
+    if (
+      !Number.isSafeInteger(distance) ||
+      distance < -0x80000000 ||
+      distance > 0x7fffffff
+    )
+      return "range";
+    return writeSigned(bytes, siteOffset, 4, distance, "little").ok
+      ? "complete"
+      : "invalid";
+  };
+  return { addressFixups, patchAddress };
+}
