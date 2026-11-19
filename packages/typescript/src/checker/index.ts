@@ -45,6 +45,17 @@ export interface Local {
 /** A run-time category test of a general value (a checked downcast). */
 export type DowncastTest =
   "undefined" | "number" | "boolean" | "string" | "null" | "Uint8Array";
+export interface CheckedDowncast {
+  readonly tests: readonly DowncastTest[];
+  readonly records: readonly number[];
+  readonly errors?:
+    readonly ("Error" | "TypeError" | "RangeError")[] | undefined;
+}
+export interface RestArguments {
+  readonly start: number;
+  readonly element: "number" | "string" | number;
+  readonly admitsUndefined: boolean;
+}
 export interface ExpressionInfo {
   readonly dynamicObject?:
     | "literal"
@@ -63,14 +74,7 @@ export interface ExpressionInfo {
   /** A checked downcast (`x as T` from unknown): the categories it accepts
    * and the record layouts (descriptor indices) of accepted object types;
    * any other value throws a TypeError. */
-  readonly downcast?:
-    | {
-        readonly tests: readonly DowncastTest[];
-        readonly records: readonly number[];
-        readonly errors?:
-          readonly ("Error" | "TypeError" | "RangeError")[] | undefined;
-      }
-    | undefined;
+  readonly downcast?: CheckedDowncast | undefined;
   /** C views: the use of a creation call or member/element read, or the
    * write target of an assignment, compound assignment or update. */
   readonly cView?: CViewUse | undefined;
@@ -89,17 +93,12 @@ export interface ExpressionInfo {
    * descriptor marks a BigInt (general values carry BigInts as objects). */
   readonly bigIntRecord?: number | undefined;
   readonly realmTypeof?: number | undefined;
+  readonly generalCall?: { readonly target: number | undefined } | undefined;
   /** A list iterated by for-of whose element type excludes undefined: a
    * hole throws a TypeError instead of binding undefined. */
   readonly holeCheck?: boolean | undefined;
   /** A fresh list packed after the leading arguments of a typed call. */
-  readonly rest?:
-    | {
-        readonly start: number;
-        readonly element: "number" | "string" | number;
-        readonly admitsUndefined: boolean;
-      }
-    | undefined;
+  readonly rest?: RestArguments | undefined;
   readonly listElement?: "number" | "string" | number | undefined;
   readonly mapKey?: "number" | "string" | number | undefined;
   readonly mapValue?: "number" | "string" | number | undefined;

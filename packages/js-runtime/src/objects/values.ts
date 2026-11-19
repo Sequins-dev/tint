@@ -162,6 +162,21 @@ export function callObjectValue(
   );
 }
 
+/** Calls from typed source already carry a receiver and an evaluated list. */
+export function callGeneralValue(
+  value: unknown,
+  receiver: unknown,
+  arguments_: readonly unknown[],
+): unknown {
+  const object = viewTypeofObject(value);
+  if (object === undefined)
+    throw new TypeError("Called value is not a function");
+  const result = callObjectValue(value, receiver, arguments_, object);
+  if (result.error !== "none")
+    throw new TypeError("Called value is not a function");
+  return result.value;
+}
+
 /** Box the lookup base, preserving the original receiver for accessors. */
 export function getObjectValueProperty(
   value: unknown,
