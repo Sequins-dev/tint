@@ -31,6 +31,7 @@ function closedWorldHostOperation(operation: string): boolean {
     case "argument-count":
     case "argument-length":
     case "argument-copy":
+    case "environment-copy":
     case "context-domain":
     case "stack-overflow-is":
     case "engine-range-error":
@@ -42,6 +43,7 @@ function closedWorldHostOperation(operation: string): boolean {
     case "processor-count":
     case "cpu-sha256":
     case "target-os":
+    case "target-architecture":
     case "jit-debug-descriptor":
     case "jit-debug-register":
       return true;

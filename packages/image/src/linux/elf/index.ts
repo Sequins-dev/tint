@@ -28,7 +28,7 @@ import {
   ehFrameHeaderSize,
   type FrameIndexEntry,
 } from "./eh-frame-header.ts";
-import { sysvHashTable } from "./sysv-hash.ts";
+import { elfHash, sysvHashTable } from "./sysv-hash.ts";
 import {
   ELF_HEADER_SIZE,
   ET_DYN,
@@ -103,6 +103,13 @@ export interface LinuxImageOptions {
   /** Imports bound as STB_WEAK: when no loaded object defines one, its slot
    * resolves to 0 instead of failing the launch. */
   readonly weakImports?: readonly string[] | undefined;
+  /** Explicit libc symbol binding and loader-enforced glibc version floor. */
+  readonly libcVersion?:
+    | {
+        readonly symbol: string;
+        readonly version: string;
+      }
+    | undefined;
   /** Optional identity mixed into the `.note.gnu.build-id` hash. */
   readonly identifier?: string | undefined;
 }
@@ -190,7 +197,9 @@ const SHT_RELA = 4,
   SHT_HASH = 5,
   SHT_DYNAMIC = 6,
   SHT_NOTE = 7,
-  SHT_DYNSYM = 11;
+  SHT_DYNSYM = 11,
+  SHT_GNU_VERNEED = 0x6ffffffe,
+  SHT_GNU_VERSYM = 0x6fffffff;
 const SHF_WRITE = 1,
   SHF_MERGE = 0x10,
   SHF_STRINGS = 0x20;
@@ -206,7 +215,10 @@ const DT_NULL = 0,
   DT_SYMENT = 11,
   DT_DEBUG = 21,
   DT_FLAGS = 30,
-  DT_FLAGS_1 = 0x6ffffffb;
+  DT_VERSYM = 0x6ffffff0,
+  DT_FLAGS_1 = 0x6ffffffb,
+  DT_VERNEED = 0x6ffffffe,
+  DT_VERNEEDNUM = 0x6fffffff;
 const DF_BIND_NOW = 8,
   DF_1_NOW = 1,
   DF_1_PIE = 0x08000000;
@@ -536,6 +548,35 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       0,
     );
   }
+  const libcVersion = options?.libcVersion;
+  const versions = new Uint8Array(
+    libcVersion === undefined ? 0 : (imports.length + 1) * 2,
+  );
+  const requirements = new Uint8Array(libcVersion === undefined ? 0 : 32);
+  if (libcVersion !== undefined) {
+    const index = importIndex.get(libcVersion.symbol);
+    if (
+      index === undefined ||
+      weak.has(libcVersion.symbol) ||
+      !validName(libcVersion.version)
+    )
+      return { ok: false, error: "INVALID_IMPORT" };
+    for (let i = 0; i < imports.length; i++)
+      put16(versions, (i + 1) * 2, i === index ? 2 : 1);
+    // Elf64_Verneed followed by one Elf64_Vernaux. Indices 0 and 1
+    // are reserved for local and unversioned global symbols.
+    put16(requirements, 0, 1);
+    put16(requirements, 2, 1);
+    put32(requirements, 4, intern(dynamicStrings, LIBC));
+    put32(requirements, 8, 16);
+    put32(
+      requirements,
+      16,
+      elfHash(new TextEncoder().encode(libcVersion.version)),
+    );
+    put16(requirements, 22, 2);
+    put32(requirements, 24, intern(dynamicStrings, libcVersion.version));
+  }
   const dynstr = tableBytes(dynamicStrings);
   const hashWords = sysvHashTable(importNames);
   const hash = new Uint8Array(hashWords.length * 4);
@@ -553,7 +594,12 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   note[14] = 0x55;
   // NEEDED..., HASH, STRTAB, SYMTAB, STRSZ, SYMENT, [RELA, RELASZ, RELAENT],
   // DEBUG, FLAGS, FLAGS_1, NULL.
-  const dynamicCount = needed.length + 5 + (hasRelocations ? 3 : 0) + 4;
+  const dynamicCount =
+    needed.length +
+    5 +
+    (hasRelocations ? 3 : 0) +
+    (libcVersion === undefined ? 0 : 3) +
+    4;
   const programHeaderCount = 8 + (hasUnwind ? 1 : 0);
   const headerSize = ELF_HEADER_SIZE + programHeaderCount * PROGRAM_HEADER_SIZE;
 
@@ -564,6 +610,10 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   cursor = alignTo(cursor, 4) + hash.length;
   cursor = alignTo(cursor, 8) + dynamicSymbols.length;
   cursor += dynstr.length;
+  if (libcVersion !== undefined) {
+    cursor = alignTo(cursor, 4) + requirements.length;
+    cursor = alignTo(cursor, 2) + versions.length;
+  }
   if (hasRelocations) cursor = alignTo(cursor, 8) + imports.length * RELA_SIZE;
   const codeAddress = alignTo(cursor, machine.codeAlignment);
   const codeEnd = codeAddress + codeLength;
@@ -679,6 +729,8 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
     ".dynsym",
     ".dynstr",
   ];
+  if (libcVersion !== undefined)
+    sectionNames.push(".gnu.version_r", ".gnu.version");
   if (hasRelocations) sectionNames.push(".rela.dyn");
   sectionNames.push(".text");
   for (const section of tail) {
@@ -783,6 +835,21 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       bytes: new Uint8Array(sectionNames.length * SECTION_HEADER_SIZE),
     },
   ];
+  if (libcVersion !== undefined) {
+    // Ties in layout order sort by fragment id, ahead of "rela".
+    fragments.push({
+      id: "gnu-verneed",
+      order: 6,
+      alignment: 4,
+      bytes: requirements,
+    });
+    fragments.push({
+      id: "gnu-versym",
+      order: 6,
+      alignment: 2,
+      bytes: versions,
+    });
+  }
   const linked = planLayout({
     fragments,
     symbols: [],
@@ -901,6 +968,11 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
     dynamicEntry(DT_RELASZ, relaAt.byteLength);
     dynamicEntry(DT_RELAENT, RELA_SIZE);
   }
+  if (libcVersion !== undefined) {
+    dynamicEntry(DT_VERSYM, at("gnu-versym").fileOffset);
+    dynamicEntry(DT_VERNEED, at("gnu-verneed").fileOffset);
+    dynamicEntry(DT_VERNEEDNUM, 1);
+  }
   dynamicEntry(DT_DEBUG, 0);
   dynamicEntry(DT_FLAGS, DF_BIND_NOW);
   dynamicEntry(DT_FLAGS_1, DF_1_NOW + DF_1_PIE);
@@ -1011,6 +1083,32 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
     1,
     0,
   );
+  if (libcVersion !== undefined) {
+    const verneed = at("gnu-verneed"),
+      versym = at("gnu-versym");
+    addSection(
+      ".gnu.version_r",
+      SHT_GNU_VERNEED,
+      SHF_ALLOC,
+      verneed,
+      verneed.fileOffset,
+      dynstrIndex,
+      1,
+      4,
+      0,
+    );
+    addSection(
+      ".gnu.version",
+      SHT_GNU_VERSYM,
+      SHF_ALLOC,
+      versym,
+      versym.fileOffset,
+      dynsymIndex,
+      0,
+      2,
+      2,
+    );
+  }
   if (hasRelocations)
     addSection(
       ".rela.dyn",

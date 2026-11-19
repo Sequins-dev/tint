@@ -67,10 +67,17 @@ import {
   type AArch64Target,
   type NativeTarget,
 } from "@tint/platform/target";
+import {
+  emitModule as emitX64,
+  type X64Module,
+} from "@tint/codegen/x86_64/scalar";
+import type { PosixHostFacts } from "@tint/abi/host";
 import { bindingIdentifiers, rewriteModule } from "@tint/typescript/syntax";
 import {
+  optimizeModule,
   optimizeModuleVersion,
   pruneClosedModule,
+  pruneModuleReferences,
   lowerReferenceLists,
   referenceListWorkBudget,
   traceModuleReferences,
@@ -576,7 +583,7 @@ export function selectNativeBackend(
     ok: false,
     error: {
       stage: "emit",
-      message: target.name + ": x86_64 code generation is not implemented yet",
+      message: target.name + ": standalone native compilation requires slice 7",
     },
   };
 }
@@ -1214,7 +1221,10 @@ function checkApplication(
   return { ok: true, value: { checked: checked.value } };
 }
 /** Specializes and checks the linked program; returns what lowering needs. */
-function checkTypedProgram(request: CompileRequest): TypedChecking {
+function checkTypedProgram(
+  request: CompileRequest,
+  invokeDirectly: boolean,
+): TypedChecking {
   const linking = linkTypedProgram(request);
   if (!linking.ok) return { ok: false, error: linking.error };
   const linkedProgram = linking.value,
@@ -1342,9 +1352,14 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
       bound.value,
       selected,
       retained,
+      invokeDirectly,
     );
     if (!instance.ok) return instance;
     initializerName = instance.value.initializer.name;
+    if (invokeDirectly) {
+      entryName = initializerName;
+      return { ok: true, value: instance.value.module };
+    }
     if (start !== undefined) {
       const invocation = prepareModuleInvocation(instance.value, start);
       if (!invocation.ok) return invocation;
@@ -1408,8 +1423,9 @@ function realmTypeofSourcePredicate(
 function lowerTypedProgram(
   request: CompileRequest,
   realmTypeofModules?: ReadonlySet<string>,
+  invokeDirectly: boolean = false,
 ): TypedLowering {
-  const front = checkTypedProgram(request);
+  const front = checkTypedProgram(request, invokeDirectly);
   if (!front.ok) return { ok: false, error: front.error };
   const checkedProgram = front.value,
     nativeChecked = checkedProgram.checked,
@@ -2390,6 +2406,60 @@ function emitProgram(
   } finally {
     store.close();
   }
+}
+
+/** Use the normal typed linker and scalar IR for a closed hosted x86-64
+ * application. The AArch64 Compilation contract carries backend-specific
+ * metadata; keep the x86-64 emitter and entry linker on their own boundary. */
+export function compileX64HostedProgram(
+  request: CompileRequest,
+  host: PosixHostFacts,
+):
+  | CompilationFailure
+  | {
+      readonly ok: true;
+      readonly native: X64Module;
+      readonly invocation: number;
+      readonly returnType: "number" | "boolean" | "void";
+    } {
+  const lowered = lowerTypedProgram(request, undefined, true);
+  if (!lowered.ok) return lowered;
+  const program = lowered.value;
+  const first = program.ir.module;
+  const returnType = first.functions[program.invocation]?.returnType;
+  if (
+    returnType !== "number" &&
+    returnType !== "boolean" &&
+    returnType !== "void"
+  )
+    return stageFailure(
+      "entry",
+      "linux-x86_64: expected a Number, Boolean or void entry",
+    );
+  const roots = [program.invocation];
+  const reachable = pruneModuleReferences(first, roots, unboundedWork);
+  const initial = reachable?.module ?? first;
+  const invocation =
+    (reachable?.functionIds[program.invocation] ?? program.invocation + 1) - 1;
+  const optimized =
+    request.optimization === "none"
+      ? initial
+      : optimizeModule(initial, unboundedWork, {
+          closedRecords: true,
+          closedCalls: true,
+          devirtualizeClosures: true,
+        }).module;
+  request.onScalarIR?.("lowered", initial);
+  request.onScalarIR?.("optimized", optimized);
+  const emitted = emitX64(optimized, host);
+  if (!emitted.ok) {
+    const message = emitted.error.message;
+    return stageFailure(
+      "emit",
+      "linux-x86_64: " + message.slice("x86-64 scalar: ".length),
+    );
+  }
+  return { ok: true, native: emitted.value, invocation, returnType };
 }
 
 function compileTypedProgram(

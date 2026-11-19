@@ -15,3 +15,17 @@ export function copyArgument(index: number, destination: Uint8Array): number {
 export function targetOperatingSystem(): number {
   throw "HOST_UNAVAILABLE";
 }
+
+/** Compile-time architecture code (nativeTargetArch* in @tint/abi/host). */
+export function targetArchitecture(): number {
+  throw "HOST_UNAVAILABLE";
+}
+/** Copy an environment value as bytes, excluding its trailing NUL. The key
+ * is a NUL-terminated UTF-8 byte array. Missing keys or short buffers return
+ * -1 without touching the destination. */
+export function copyEnvironment(
+  key: Uint8Array,
+  destination: Uint8Array,
+): number {
+  throw "HOST_UNAVAILABLE";
+}
