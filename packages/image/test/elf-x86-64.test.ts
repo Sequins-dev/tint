@@ -61,13 +61,7 @@ function executableRequest(): ElfExecutableRequest {
     linux: { arch: "x86_64" },
     code,
     entryOffset,
-    symbols: [
-      {
-        name: "_start",
-        offset: entryOffset,
-        byteLength: code.length - entryOffset,
-      },
-    ],
+    symbols: [{ name: "_start", offset: entryOffset }],
     maxByteLength: 1 << 20,
     data: new TextEncoder().encode("hi\n"),
     imports: ["write"],
