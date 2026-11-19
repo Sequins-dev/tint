@@ -389,9 +389,10 @@ still require the slice 2b view. Lowering diagnoses a known native closure.
 When its representation is only known at run time, the call throws a
 `TypeError` after evaluating its arguments.
 
-The [B4 ledger](results/unified-pipeline-ledger-slice4a-b4-v5.json) covers 72
-constructs. Both new typed forms stay typed, both untyped forms pass, and
-all 140 forms shared with the B3 ledger retain their paths and outcomes.
+The [B4 ledger](results/unified-pipeline-ledger-slice4a-b4-main-34187f4a8-dev-lldb-v1.json)
+covers 74 constructs. Both new typed forms stay typed, both untyped forms
+pass, and all 144 forms shared with the C2 and B3 baseline retain their paths
+and outcomes.
 
 ### Typed rest parameters and void callbacks (slice 4a)
 
@@ -566,8 +567,8 @@ the ledger corpus reproduce the ones expressible in a single application.
 | Map iteration in typed code (`for (const [k, v] of map)`, `map.keys()`: only get/has/set/delete/clear are typed)                                                                                                                                                                            | `map-set`                                                                                                       | 4                                        |
 | (Implemented in 4a C1 for indexed objects) Typed computed keys, ordinary reads and writes, `in`, `delete`, own enumeration, `for…in` and spread                                                                                                                                             | `dynamic-object-*`, `explicit-dynamic-property-contract`                                                        | 4a C1                                    |
 | Indexed spread requires a contextual indexed result and indexed sources. Open computed literals expose `unknown` reads pending guarded inference.                                                                                                                                           | (typed indexed object lowering)                                                                                 | 4a follow-up                             |
-| (Implemented in 4a C2 for function-local allocations) Realm lists and records stored in dynamic-key objects. Escaping native aggregates still require slice 2b views. | `dynamic-object-local-aggregate`, `dynamic-object-own-data-definition` | 4a C2, 2b |
-| Typed realm arrays support indexing, length and `push`. Other methods and iteration need realm lowering. Compound assignments and updates on realm aggregates need reference lowering. Recursive fixed payload types need recursive layout selection. | (realm aggregate lowering) | 4 follow-up |
+| (Implemented in 4a C2 for function-local allocations) Realm lists and records stored in dynamic-key objects. Escaping native aggregates still require slice 2b views.                                                                                                                       | `dynamic-object-local-aggregate`, `dynamic-object-own-data-definition`                                          | 4a C2, 2b                                |
+| Typed realm arrays support indexing, length and `push`. Other methods and iteration need realm lowering. Compound assignments and updates on realm aggregates need reference lowering. Recursive fixed payload types need recursive layout selection.                                       | (realm aggregate lowering)                                                                                      | 4 follow-up                              |
 | No `SystemError` in typed runtime code: node:os failures are TypeErrors                                                                                                                                                                                                                     | (runtime modules)                                                                                               | 4                                        |
 | (Removed by 4a: callable classification) Typed `typeof` on realm callables received as `unknown`                                                                                                                                                                                            | `unknown-typeof-callable`, `tools/build-mixed-general-typeof-fixture.ts`                                        | 4a                                       |
 | (Removed by 4a B4) Direct calls of realm values narrowed by `typeof` to `Function`                                                                                                                                                                                                          | `unknown-callable-direct`, `unknown-callable-arguments`                                                         | 4a B4                                    |
