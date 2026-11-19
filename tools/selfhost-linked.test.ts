@@ -288,6 +288,31 @@ test("complete native compiler pipeline passes checking after specialization", (
   assert.equal(report.selfHosted, false);
 });
 
+test("compiler source discovery defers the dynamic-object runtime and its locale tables", async () => {
+  const { loadCompilerSourceGraph } = await import("@tint/compiler/cli");
+  const { workspaceSources } = await import("./workspace-sources.ts");
+  const { inputs, mappings } = workspaceSources();
+  const runtime = "packages/native-runtime/src/values/dynamic-object.ts";
+  const currency = "packages/js-runtime/src/objects/currency-name-data.ts";
+  // A parse failure is observable only when the compiler asks for the realm.
+  const broken = inputs.map((input) =>
+    input.id === runtime
+      ? { ...input, bytes: new TextEncoder().encode("export function {") }
+      : input,
+  );
+  const graph = loadCompilerSourceGraph(broken, mappings);
+  assert.ok(graph.ok, JSON.stringify(graph));
+  assert.ok(!graph.value.ids.includes(runtime));
+  assert.ok(!graph.value.ids.includes(currency));
+  const demanded = graph.value.loadWithRoot?.(runtime);
+  assert.equal(demanded?.ok, false);
+  if (demanded?.ok === false) {
+    assert.equal(demanded.error.stage, "parse");
+    assert.equal(demanded.error.module, runtime);
+  }
+  assert.ok(!graph.value.ids.includes(runtime));
+});
+
 test("linked native audit prepares collection templates and emits bytes module", () => {
   const run = spawnSync(
     process.execPath,
