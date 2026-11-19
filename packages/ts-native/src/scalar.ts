@@ -9530,7 +9530,8 @@ export function lowerFunction(
     const handler = b.exception;
     return {
       id: target(b.id),
-      instructions: b.instructions,
+      // Keep the instructions without the spare capacity of the builder array.
+      instructions: b.instructions.slice(),
       terminator: mapped,
       ...(handler === undefined
         ? {}
