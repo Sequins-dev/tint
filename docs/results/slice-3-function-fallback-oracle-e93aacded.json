@@ -1,0 +1,98 @@
+{
+  "revision": "e93aacded1d63f65d974a0146af0551c4e6e8d3c",
+  "snapshot": "15a28d7bebd8b8d8691c61034ae3766af43b000f6c361774a4d050e839ef8a57",
+  "node": "v24.12.0",
+  "typescript": "6.0.3",
+  "target": "darwin-aarch64",
+  "retry": [
+    "probe-index-unproven",
+    "probe-decorator-primitive-signature",
+    "probe-inheritance-override"
+  ],
+  "only": [
+    "probe-index-unproven",
+    "probe-decorator-primitive-signature",
+    "probe-inheritance-override"
+  ],
+  "entries": [
+    {
+      "construct": "probe-index-unproven",
+      "sourceBytes": 118,
+      "parseMilliseconds": 0.13241599999992104,
+      "typescript": [
+        {
+          "code": 2322,
+          "file": "entry.ts",
+          "start": 75,
+          "message": "Type 'number | undefined' is not assignable to type 'number'.\n  Type 'undefined' is not assignable to type 'number'."
+        }
+      ],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:75:99: invalid binding operation",
+          "module": "fixture"
+        }
+      },
+      "retry": {
+        "ok": true,
+        "programCodeBytes": 23037648,
+        "general": {
+          "modules": [
+            "fixture"
+          ],
+          "reason": "check: fixture:75:99: invalid binding operation"
+        }
+      }
+    },
+    {
+      "construct": "probe-decorator-primitive-signature",
+      "sourceBytes": 162,
+      "parseMilliseconds": 0.7299579999998969,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:57:100: typed decorators require dynamic class replacement contracts",
+          "module": "fixture"
+        }
+      },
+      "retry": {
+        "ok": true,
+        "programCodeBytes": 22735192,
+        "general": {
+          "modules": [
+            "fixture"
+          ],
+          "reason": "check: fixture:57:100: typed decorators require dynamic class replacement contracts"
+        }
+      }
+    },
+    {
+      "construct": "probe-inheritance-override",
+      "sourceBytes": 452,
+      "parseMilliseconds": 0.6543329999985872,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:85:152: class accessor contracts require separate read and write checking",
+          "module": "fixture"
+        }
+      },
+      "retry": {
+        "ok": true,
+        "programCodeBytes": 22804864,
+        "general": {
+          "modules": [
+            "fixture"
+          ],
+          "reason": "check: fixture:85:152: class accessor contracts require separate read and write checking"
+        }
+      }
+    }
+  ]
+}
