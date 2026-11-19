@@ -114,6 +114,7 @@ import {
   nativeStackMapRegistryOffset,
   nativeStackMapSaveBlockOffset,
   nativeStackMapRegisterShift,
+  nativeTargetArchAArch64,
   nativeTargetOSDarwin,
   nativeTargetOSLinux,
   type PosixHostABI,
@@ -11878,6 +11879,14 @@ function emitModuleForms(
                   // The hosted routine returns the descriptor's address in x0.
                   startupCall("jit-descriptor");
                   emit({ op: "scvtf-d-x", rd: 0, rn: 0 });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (operation === "environment-copy")
+                  fail("UNSUPPORTED", "host operation environment-copy");
+                if (operation === "target-architecture") {
+                  imm(9, nativeTargetArchAArch64);
+                  emit({ op: "scvtf-d-w", rd: 0, rn: 9 });
                   floatStore(0, resultId);
                   break;
                 }

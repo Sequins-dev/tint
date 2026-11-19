@@ -32,7 +32,11 @@ export {
   type ReferenceListAlias,
   type ReferenceListRewrite,
 } from "./reference-lists.ts";
-export { pruneClosedModule, type ClosedPruning } from "./reachable.ts";
+export {
+  pruneModuleReferences,
+  pruneClosedModule,
+  type ClosedPruning,
+} from "./reachable.ts";
 import {
   instructionMayThrow,
   stableDescriptors,

@@ -207,6 +207,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/x86_64/scalar/host.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/x86_64/scalar/index.ts",
       packageId: "codegen",
     },
@@ -216,6 +220,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/codegen/src/x86_64/scalar/numbers.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/x86_64/startup.ts",
       packageId: "codegen",
     },
     {
@@ -3488,6 +3496,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/codegen/x86_64/scalar",
       target: "packages/codegen/src/x86_64/scalar/index.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/codegen/x86_64/startup",
+      target: "packages/codegen/src/x86_64/startup.ts",
     },
     {
       packageId: "compiler",

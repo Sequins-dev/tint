@@ -3,10 +3,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { writeNodeExecutable } from "./node-file-host.ts";
 import { dirname, resolve } from "node:path";
 import { loadSourceGraphLoader } from "@tint/typescript/modules";
-import {
-  expandForeignInputs,
-  selectNativeBackend,
-} from "@tint/compiler/native";
+import { expandForeignInputs } from "@tint/compiler/native";
 import { nativeTargetNamed } from "@tint/platform/target";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
 import { nodeHostTarget } from "./native-host-target.ts";
@@ -80,10 +77,7 @@ if (selectedTarget === undefined)
   throw Error(
     "unknown or missing --target: " + (bootstrapArgv[targetFlag + 1] ?? ""),
   );
-const backend = selectNativeBackend(selectedTarget);
-if (!backend.ok)
-  throw Error(backend.error.stage + ": " + backend.error.message);
-const target = backend.target;
+const target = selectedTarget;
 const rootFlag = bootstrapArgv.indexOf("--source-root");
 const rootArgument = rootFlag < 0 ? undefined : bootstrapArgv[rootFlag + 1];
 if (
@@ -150,7 +144,10 @@ if (snapshot !== undefined) {
 report("parse");
 // C binding declarations become generated modules, as the native CLI loads
 // them (docs/native-ffi.md); frozen roots that predate them have none.
-const foreign = expandForeignInputs(inputs, target.c);
+const foreign =
+  target.arch === "aarch64"
+    ? expandForeignInputs(inputs, target.c)
+    : { ok: true as const, value: { inputs, mappings: [], libraries: [] } };
 if (!foreign.ok) throw Error(foreign.error);
 const libraries = foreign.value.libraries;
 const mappings = [...project.projectMappings(), ...foreign.value.mappings];
