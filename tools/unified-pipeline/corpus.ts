@@ -264,6 +264,44 @@ export function run() {
 }`,
   },
   {
+    name: "rest-spread",
+    typed: `function total(head: number, ...xs: number[]): number {
+  const sum = head + (xs[0] ?? 0) + (xs[1] ?? 0);
+  xs[0] = 0;
+  return sum;
+}
+export function run(): number {
+  const xs: number[] = [20, 21];
+  return total(1, ...xs) === 42 && xs[0] === 20 ? 42 : 1;
+}`,
+    untyped: `function total(head, ...xs) {
+  const sum = head + (xs[0] ?? 0) + (xs[1] ?? 0);
+  xs[0] = 0;
+  return sum;
+}
+export function run() {
+  const xs = [20, 21];
+  return total(1, ...xs) === 42 && xs[0] === 20 ? 42 : 1;
+}`,
+  },
+  {
+    name: "void-callbacks",
+    typed: `function invoke(action: () => void): void { action(); }
+export function run(): number {
+  let result = 0;
+  const action: () => void = () => (result = 42);
+  invoke(action);
+  return result;
+}`,
+    untyped: `function invoke(action) { action(); }
+export function run() {
+  let result = 0;
+  const action = () => (result = 42);
+  invoke(action);
+  return result;
+}`,
+  },
+  {
     name: "generators",
     typed: `function* range(start: number, end: number): Generator<number> {
   for (let i = start; i < end; i++) yield i;

@@ -162,11 +162,18 @@ export function reifyTypes(
       }
       case "function": {
         const parameters: Parameter[] = [];
-        const minimum = type.minimumArguments ?? type.parameters.length;
+        const minimum =
+          type.minimumArguments ??
+          type.parameters.length - (type.rest === true ? 1 : 0);
         for (let i = 0; i < type.parameters.length; i++) {
           const parameter = type.parameters[i];
           if (parameter === undefined) throw "validated parameter invariant";
-          if (i >= minimum && !acceptsUndefined(parameter, new Set<number>()))
+          const rest = type.rest === true && i === type.parameters.length - 1;
+          if (
+            !rest &&
+            i >= minimum &&
+            !acceptsUndefined(parameter, new Set<number>())
+          )
             return {
               ok: false,
               error: "optional parameter excludes undefined",
@@ -174,7 +181,8 @@ export function reifyTypes(
           parameters.push({
             name: "p" + String(i),
             type: reference(parameter),
-            optional: i >= minimum,
+            optional: !rest && i >= minimum,
+            ...(rest ? { rest: true } : {}),
             initializer: undefined,
             start: 0,
             end: 0,

@@ -60,6 +60,8 @@ export type Type =
       readonly kind: "function";
       readonly parameters: readonly number[];
       readonly minimumArguments?: number;
+      /** The last parameter is the array collecting trailing call arguments. */
+      readonly rest?: boolean;
       /** Required receiver type; absent means the function does not constrain its receiver. */
       readonly receiver?: number;
       readonly result: number;
@@ -96,6 +98,8 @@ export interface TypeSystem {
   /** Append a copied type referring only to existing IDs; failures preserve the graph. */
   readonly append: (type: Type) => Result<number>;
   readonly assignable: (actual: number, expected: number) => boolean;
+  /** Whether any relation considered ignoring a physically returned result. */
+  readonly usesVoidResultDiscard: () => boolean;
   /** Kind set of a type as a bit mask: assignable(a, b) implies that
    * kindMask(a) is a subset of kindMask(b). Unions hold their members' kinds,
    * literals their value's kind, never none, and unknown every kind; objects
@@ -612,6 +616,7 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
       nodeValues[owner] = 0;
     }
   }
+  let voidResultDiscard = false;
   function solveRelation(actual: number, expected: number): boolean {
     // AND-of-OR dependencies converge from true to the greatest fixed point.
     relationIds.clear();
@@ -769,9 +774,13 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         else dependency(beginClause(i), pair(sourceCall, b, exact));
       } else if (source.kind === "function" && target.kind === "function") {
         const sourceMinimum =
-            source.minimumArguments ?? source.parameters.length,
-          targetMinimum = target.minimumArguments ?? target.parameters.length;
+            source.minimumArguments ??
+            source.parameters.length - (source.rest === true ? 1 : 0),
+          targetMinimum =
+            target.minimumArguments ??
+            target.parameters.length - (target.rest === true ? 1 : 0);
         if (
+          (source.rest === true) !== (target.rest === true) ||
           source.parameters.length !== target.parameters.length ||
           !(exact
             ? sourceMinimum === targetMinimum
@@ -802,7 +811,12 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
             throw "function relation invariant";
           dependency(beginClause(i), pair(q, p, exact));
         }
-        dependency(beginClause(i), pair(source.result, target.result, exact));
+        if (exact || types[target.result]?.kind !== "void")
+          dependency(beginClause(i), pair(source.result, target.result, exact));
+        else {
+          const result = types[source.result]?.kind;
+          if (result !== "void" && result !== "never") voidResultDiscard = true;
+        }
       } else
         nodeValues[i] =
           source.kind !== "union" &&
@@ -1009,9 +1023,13 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
       (t.kind === "object" &&
         t.properties.length === 0 &&
         t.construct === undefined)
-    )
-      shape = 0x63616c6c;
-    else if (t.kind === "object") {
+    ) {
+      const signature = t.kind === "function" ? t : types[t.call ?? -1];
+      shape =
+        signature?.kind === "function" && signature.rest === true
+          ? 0x72657374
+          : 0x63616c6c;
+    } else if (t.kind === "object") {
       shape = mixShape(
         0x6f626a,
         t.properties.length * 4 +
@@ -1268,12 +1286,18 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     )
       return { ok: false, error: "TYPE_MISMATCH" };
     if (
-      arguments_.length > t.parameters.length ||
-      arguments_.length < (t.minimumArguments ?? t.parameters.length)
+      (t.rest !== true && arguments_.length > t.parameters.length) ||
+      arguments_.length <
+        (t.minimumArguments ?? t.parameters.length - (t.rest === true ? 1 : 0))
     )
       return { ok: false, error: "ARITY" };
+    const restStart = t.parameters.length - 1;
+    const rest = types[t.parameters[restStart] ?? -1];
     for (let i = 0; i < arguments_.length; i++) {
-      const p = t.parameters[i],
+      const p =
+          t.rest === true && i >= restStart && rest?.kind === "array"
+            ? rest.element
+            : t.parameters[i],
         a = arguments_[i];
       if (p === undefined || a === undefined) throw "call arity invariant";
       if (!relates(a, p)) return { ok: false, error: "TYPE_MISMATCH" };
@@ -1310,6 +1334,7 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     value: {
       append,
       assignable,
+      usesVoidResultDiscard: () => voidResultDiscard,
       kindMask: (id: number): number =>
         valid(id) ? kindMask(canonicalIds[id] ?? id) : 0x3ffff,
       exactShape: (id: number): number =>
@@ -1426,7 +1451,12 @@ function copyType(
         t.minimumArguments !== undefined &&
         (!Number.isInteger(t.minimumArguments) ||
           t.minimumArguments < 0 ||
-          t.minimumArguments > t.parameters.length)
+          t.minimumArguments > t.parameters.length - (t.rest === true ? 1 : 0))
+      )
+        return { ok: false, error: "INVALID_TYPE" };
+      if (
+        t.rest === true &&
+        input[t.parameters[t.parameters.length - 1] ?? -1]?.kind !== "array"
       )
         return { ok: false, error: "INVALID_TYPE" };
       const parameters: number[] = [],
@@ -1447,6 +1477,7 @@ function copyType(
           ? {}
           : { minimumArguments: t.minimumArguments }),
         ...(t.receiver === undefined ? {} : { receiver: t.receiver }),
+        ...(t.rest === true ? { rest: true } : {}),
         result: t.result,
       };
       break;

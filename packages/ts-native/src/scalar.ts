@@ -2816,16 +2816,13 @@ export function lowerFunction(
     jump(head.id, node);
     current = done;
   }
-  function invoke(
-    target: number,
+  function supplyOmittedArguments(
     argumentsSlots: number[],
-    calleeSlot: number | undefined,
-    receiver: number | undefined,
-    node: Expression,
-  ): number | undefined {
-    const parameters = signatures[target]?.parameters;
-    if (parameters === undefined) throw "call signature invariant";
-    while (argumentsSlots.length < parameters.length) {
+    parameters: readonly ScalarType[],
+    limit: number,
+    node: Span,
+  ): void {
+    while (argumentsSlots.length < limit) {
       if (
         ![
           "optional-number",
@@ -2845,6 +2842,54 @@ export function lowerFunction(
       });
       argumentsSlots.push(save(missing, "optional-number", node));
     }
+  }
+  function callArguments(
+    args: readonly Expression[],
+    target: number,
+    node: Expression,
+  ): number[] {
+    const rest = info(node).rest;
+    if (rest === undefined) return args.map(value);
+    const argumentsSlots = args.slice(0, rest.start).map(value);
+    const parameters = signatures[target]?.parameters;
+    if (parameters === undefined) throw "rest signature invariant";
+    supplyOmittedArguments(argumentsSlots, parameters, rest.start, node);
+    const runtime = listRuntimeForElement(rest.element);
+    const list = listValue(
+      runtime,
+      "create",
+      [numberSlot(Math.max(0, args.length - rest.start), node)],
+      node,
+    );
+    for (let index = rest.start; index < args.length; index++) {
+      const argument = args[index];
+      if (argument === undefined) throw "rest argument invariant";
+      if (argument.kind === "spread")
+        arrayValues(argument.value, argument, (item, typed) => {
+          if (!typed && !rest.admitsUndefined)
+            requireCondition(
+              holeAbsent(item, argument),
+              "TypeError",
+              "array hole is not a value of the declared element type",
+              argument,
+            );
+          listCall(runtime, "push", [list, item], argument);
+        });
+      else listCall(runtime, "push", [list, value(argument)], argument);
+    }
+    argumentsSlots.push(list);
+    return argumentsSlots;
+  }
+  function invoke(
+    target: number,
+    argumentsSlots: number[],
+    calleeSlot: number | undefined,
+    receiver: number | undefined,
+    node: Expression,
+  ): number | undefined {
+    const parameters = signatures[target]?.parameters;
+    if (parameters === undefined) throw "call signature invariant";
+    supplyOmittedArguments(argumentsSlots, parameters, parameters.length, node);
     const type = info(node).type,
       id = type === "void" ? undefined : nextValue++;
     const prepared = argumentsSlots.map((slot, i) => {
@@ -2873,6 +2918,9 @@ export function lowerFunction(
       emit({
         kind: "call-indirect",
         ...call,
+        ...(info(node).discardCallResult === true
+          ? { discardResult: true }
+          : {}),
         callee: operation.callee,
         arguments: operation.arguments,
       });
@@ -3083,7 +3131,11 @@ export function lowerFunction(
     return runtime;
   }
   function listRuntime(node: Expression): ListRuntime {
-    const element = info(node).listElement;
+    return listRuntimeForElement(info(node).listElement);
+  }
+  function listRuntimeForElement(
+    element: CollectionElement | undefined,
+  ): ListRuntime {
     const runtime = (
       lists === undefined
         ? undefined
@@ -3843,7 +3895,11 @@ export function lowerFunction(
           const constructor = value(node.callee);
           // Preserve the callee while argument evaluation can rebind its source.
           // Internal entry validation happens only after argument side effects.
-          const argumentsSlots = node.arguments.map(value);
+          const argumentsSlots = callArguments(
+            node.arguments,
+            construction.target,
+            node,
+          );
           const entry = temporary("reference");
           recordAccess(constructor, entry, "read", construction.entry, node);
           return invoke(
@@ -7949,10 +8005,15 @@ export function lowerFunction(
         const args = explicitReceiver
           ? node.arguments.slice(1)
           : node.arguments;
-        const argumentsSlots = args.map(value);
         const target = info(node).callee;
         if (target === undefined) throw "call invariant";
-        return invoke(target, argumentsSlots, calleeSlot, receiver, node);
+        return invoke(
+          target,
+          callArguments(args, target, node),
+          calleeSlot,
+          receiver,
+          node,
+        );
       }
       default:
         throw "unsupported checked expression invariant";

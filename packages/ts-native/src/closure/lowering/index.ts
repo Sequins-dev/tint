@@ -1670,7 +1670,7 @@ function lowerEntries(
       function exprArguments(args: readonly Expression[]): void {
         for (const argument of args) {
           if (argument === undefined) fail("argument expression invariant");
-          expr(argument);
+          expr(argument.kind === "spread" ? argument.value : argument);
         }
       }
       function expr(input: Expression): void {
@@ -2653,7 +2653,22 @@ function lowerEntries(
           node.operator === "typeof" &&
           scalar(checked.expressions.get(node.operand)) === "general";
         const realmTypeof = generalTypeof ? realmTypeofTarget(node) : undefined;
+        const restCall = checked.restCalls?.get(node);
+        const restElement =
+          restCall === undefined
+            ? undefined
+            : representations.arrayElement(restCall.list);
+        if (restCall !== undefined && restElement === undefined)
+          fail("rest parameter requires a supported list runtime");
         expressions.set(node, {
+          rest:
+            restCall === undefined || restElement === undefined
+              ? undefined
+              : {
+                  start: restCall.start,
+                  element: restElement,
+                  admitsUndefined: restCall.admitsUndefined,
+                },
           chainType:
             chain === undefined
               ? undefined
@@ -2669,6 +2684,8 @@ function lowerEntries(
             checked.types[checkedType]?.kind === "never",
           functionTarget,
           indirect,
+          discardCallResult:
+            indirect && type === "void" && checked.voidResultDiscard === true,
           bigint:
             checkedType !== undefined &&
             bigIntType(checked, checkedType) !== undefined,

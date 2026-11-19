@@ -65,6 +65,7 @@ export interface ExpressionInfo {
   readonly never?: boolean;
   readonly functionTarget?: number | undefined;
   readonly indirect?: boolean | undefined;
+  readonly discardCallResult?: boolean | undefined;
   readonly typeofFunction?: boolean | undefined;
   /** The value is a BigInt (a reference to js-runtime's BigIntValue record),
    * possibly absent (`bigint | undefined`); operations on it call the
@@ -77,6 +78,14 @@ export interface ExpressionInfo {
   /** A list iterated by for-of whose element type excludes undefined: a
    * hole throws a TypeError instead of binding undefined. */
   readonly holeCheck?: boolean | undefined;
+  /** A fresh list packed after the leading arguments of a typed call. */
+  readonly rest?:
+    | {
+        readonly start: number;
+        readonly element: "number" | "string" | number;
+        readonly admitsUndefined: boolean;
+      }
+    | undefined;
   readonly listElement?: "number" | "string" | number | undefined;
   readonly mapKey?: "number" | "string" | number | undefined;
   readonly mapValue?: "number" | "string" | number | undefined;

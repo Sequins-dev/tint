@@ -354,6 +354,37 @@ on realm values across a trusted import.
 See the [slice 4a design](design-4a-narrowing-errors.md) for callable
 narrowing and the remaining slice 2b closure and typed-array projections.
 
+### Typed rest parameters and void callbacks (slice 4a)
+
+A rest signature stores one final array parameter and a rest flag. The minimum
+arity counts only the required leading parameters. The checker contextually
+checks each trailing argument against the array element type. A spread can
+supply elements once the call reaches the rest position, using a typed list or
+supported numeric typed array. Lowering evaluates the callee and leading
+arguments, then appends each trailing value or spread element to a fresh list
+in source order. Direct and indirect calls use the same packed ABI. Defaults
+still run in the callee when a leading argument is omitted or undefined.
+
+Rest and fixed signatures cannot be assigned to each other, and two rest
+signatures must have the same parameter count. Those calls would otherwise
+disagree about which argument holds the packed array. Tuple rest remains
+outside the parser's type subset. Spreading a hole into a rest list whose
+element contract excludes undefined throws a TypeError, following the typed
+list iteration contract.
+
+A value-returning function can satisfy a void callback signature. An
+unannotated contextual callback retains its inferred result, and a
+void-typed indirect call reads only the completion status from the common
+completion buffer. When checking finds a value flow into a void signature,
+lowering marks those calls in IR. The marks let a local void witness accept
+a local identity with the same physical parameter layout in addition to its
+exact signature identity. The function
+object and callee ABI stay unchanged. Managed signature contracts at service
+boundaries still require exact identities.
+
+The native fixtures and their Node references share the source in
+`tools/typed-rest-void-fixture-source.ts`.
+
 ### What happens to each front end
 
 - js-engine lowering becomes a library of construct lowerings callable for a
@@ -414,6 +445,8 @@ the ledger corpus reproduce the ones expressible in a single application.
 | (Removed by 2b: checked downcasts) `x as Uint8Array` from a general value                                                                                                                                      | `general-value-casts`                                                    | 2 (projection), 4                   |
 | Typed-array views over another buffer                                                                                                                                                                          | `typed-array-buffer-views`                                               | 4                                   |
 | Forward reference to an unannotated module const (inferred binding treated as a contract; the runtime-stage error also lacks a location)                                                                       | `forward-inferred-const`                                                 | 4 (open slots); location separately |
+| (Removed by 4a) Typed rest parameters and spreads in the rest position                                                                                                                                         | `rest-default-parameters`, `rest-spread`                                 | 4a                                  |
+| (Removed by 4a) Value-returning functions rejected in void callback slots                                                                                                                                      | `void-callbacks`                                                         | 4a                                  |
 | Tuple types and `implements` clauses fail to parse                                                                                                                                                             | `tuple-types`, `spread`, `iterator-protocol`                             | parser fix (both forms parse first) |
 | Nested type declarations; ternary over union discriminants in an object literal                                                                                                                                | `nested-type-declarations`, `union-object-ternary`                       | 5                                   |
 | `for (const x of list)` followed by a property read of `x` (in runtime modules)                                                                                                                                | `for-of-record-reads`                                                    | 5                                   |
@@ -495,8 +528,7 @@ adds `for…of` element typing (elements are `T`; a hole read as a `T`
 excluding undefined throws a TypeError) and assignment narrowing with `??=`
 on optional records: 14 typed forms stay typed (the three `for-of-*` gap
 constructs and `reassignment-narrowing` moved), no regressions against the
-BigInt ledger. A `() => number` function is not yet accepted where
-`() => void` is expected (TypeScript accepts it). The
+BigInt ledger. The
 [classifier ledger](results/unified-pipeline-ledger-slice4a-callable-classifier-v1.json)
 (59 constructs) adds mixed callable classification: both new
 `unknown-typeof-callable` forms pass, with the typed form staying typed. The
@@ -504,6 +536,11 @@ full run kept 18 first-launch LLDB attach failures as observed; the
 [serial recheck](results/unified-pipeline-ledger-slice4a-callable-classifier-v1-recheck.json)
 has zero regressions against the BigInt baseline (both `weak-collections`
 forms still fail at execution, as before).
+
+The [4a rest and void callback ledger](results/unified-pipeline-ledger-slice4a-rest-void-v4.json)
+covers 60 constructs with no regressions against the for-of ledger.
+`rest-default-parameters` moved to the typed path. The new `rest-spread`
+and `void-callbacks` forms also stay typed, bringing the typed-path count to 17. Both untyped forms pass through the general path.
 
 Slice 1: image sizes of hosted programs, measured before and after.
 Importing one function through the `js-runtime/objects` entrypoint from a

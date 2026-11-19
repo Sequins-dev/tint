@@ -2690,15 +2690,19 @@ test("typed dynamic computed object keys require explicit layout support", () =>
   assert.match(result.error.message, /dynamic layout/);
 });
 
-test("typed rest signatures remain explicit unsupported layouts", () => {
-  for (const text of [
-    "function f(...r:number[]):number{return 42;}",
-    "let f:(...r:number[])=>number;",
-  ]) {
-    const result = check(text);
-    assert.equal(result.ok, false, text);
-    if (!result.ok) assert.equal(result.error.code, "UNSUPPORTED");
-  }
+test("typed rest rejects a scalar annotation and the parser rejects tuples", () => {
+  const scalar = check("function f(...r:number):number{return 42;}");
+  assert.ok(!scalar.ok);
+  assert.equal(scalar.error.code, "INVALID_TYPE");
+  assert.equal(scalar.error.message, "rest parameter requires an array type");
+  const input = new TextEncoder().encode(
+    "function f(...r:readonly [number]):number{return 42;}",
+  );
+  const source = createSourceText(input, input.length);
+  assert.ok(source.ok);
+  const parsed = parseModule(source.value);
+  assert.ok(!parsed.ok);
+  assert.equal(parsed.error.message, "tuple types are not supported");
 });
 
 test("typed templates accept fixed primitive inputs and reject unresolved object coercion", () => {
@@ -2938,4 +2942,82 @@ test("native Error constructors and guards expose TypeScript error members", () 
     JSON.stringify(cause),
     /Error options \(cause\) require the realm Error constructor/,
   );
+});
+
+test("typed rest checks minimum arity, contextual elements and trailing spreads", () => {
+  const result = check(`
+    function count(head: number = 2, ...xs: readonly { value: number }[]): number {
+      return head + xs.length;
+    }
+    function run(): number {
+      const fn: (head?: number, ...xs: Array<{ value: number }>) => number = count;
+      return fn() + fn(1, { value: 3 }) + fn(1, ...[{ value: 4 }]);
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("typed rest rejects mismatched elements and incompatible calling conventions", () => {
+  const declaration =
+    "function f(x: number, ...xs: number[]): number { return x + xs.length; }";
+  for (const [body, code, message] of [
+    ["return f();", "ARITY", /invalid call/],
+    ['return f(1, "bad");', "TYPE_MISMATCH", /invalid call/],
+    [
+      'const bad: string[] = ["bad"]; return f(1, ...bad);',
+      "TYPE_MISMATCH",
+      /rest spread/,
+    ],
+    ["return f(...[1]);", "UNSUPPORTED", /spread.*rest position/],
+    ["return fixed(...[1]);", "UNSUPPORTED", /spread.*rest position/],
+    [
+      "const x: (x: number, xs: number[]) => number = f; return 0;",
+      "TYPE_MISMATCH",
+      /matching rest layouts/,
+    ],
+  ] as const) {
+    const result = check(
+      declaration +
+        "function fixed(x: number): number { return x; } function run(): number {" +
+        body +
+        "}",
+    );
+    assert.ok(!result.ok, body);
+    assert.equal(result.error.code, code, JSON.stringify(result));
+    assert.match(result.error.message, message);
+  }
+});
+
+test("a void callback context preserves inferred value returns", () => {
+  const result = check(`
+    function named(): number { return 42; }
+    function run(cb: () => void): void { cb(); }
+    function main(): void {
+      const cb: () => void = () => 42;
+      run(cb);
+      run(named);
+      run(() => { return 42; });
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.equal(result.value.voidResultDiscard, true);
+  assert.ok(!check("function explicitlyVoid(): void { return 42; }").ok);
+});
+
+test("ordinary void callbacks keep exact call witnesses", () => {
+  const absent = check(`
+    function invoke(cb: () => void): void { cb(); }
+    function main(): void { invoke(() => { return; }); }
+  `);
+  assert.ok(absent.ok);
+  assert.equal(absent.value.voidResultDiscard, false);
+
+  const alternative = check(`
+    function keep(value: string): string { return value; }
+    function main(): void {
+      const value: ((x: number) => void) | ((x: string) => string) = keep;
+    }
+  `);
+  assert.ok(alternative.ok);
+  assert.equal(alternative.value.voidResultDiscard, false);
 });

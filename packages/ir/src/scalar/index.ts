@@ -1421,6 +1421,12 @@ export function verify(
               }
               const returnType = target.returnType,
                 resultId = op.id;
+              if (
+                op.kind === "call-indirect" &&
+                op.discardResult &&
+                returnType !== "void"
+              )
+                fail("TYPE", "discarded call result requires a void witness");
               if (returnType === "void") {
                 if (resultId !== undefined)
                   fail("TYPE", "void call defines no value");

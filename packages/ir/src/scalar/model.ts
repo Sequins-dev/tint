@@ -124,6 +124,9 @@ export type Instruction = Span &
       }
     | {
         readonly kind: "call-indirect";
+        /** A void call may consume just completion status from a matching
+         * parameter ABI, even when the callee physically returns a value. */
+        readonly discardResult?: boolean;
         readonly receiver?: number;
         readonly id: number | undefined;
         readonly target: number;

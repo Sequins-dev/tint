@@ -77,6 +77,15 @@ const instructions: Instruction[] = [
   },
   {
     kind: "call-indirect",
+    discardResult: true,
+    id: undefined,
+    target: 1,
+    callee: 2,
+    arguments: [4],
+    ...span,
+  },
+  {
+    kind: "call-indirect",
     receiver: 7,
     id: 9,
     target: 1,
