@@ -82,6 +82,7 @@ export function createGeneralLowering(
           ...objectViews,
           "objectTypeof",
           "generalValueTypeof",
+          "callGeneralValue",
           "realmErrorOperation",
         ],
       },

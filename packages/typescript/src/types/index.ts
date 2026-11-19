@@ -35,6 +35,8 @@ export type Type =
         | "Float64Array"
         | "void"
         | "unknown"
+        | "realm-callable"
+        | "dynamic-result"
         | "never";
       /** Uint8Array only: a C view (checker/c-views.ts) of the record or
        * fixed array with this key. Views are nominal: a view relates to
@@ -367,7 +369,7 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     {
       if (targetType.kind === "Error" && scalar.kind !== "never")
         return cacheRelation(cache, actual, expected, errorContract(scalar));
-      if (targetType.kind === "unknown")
+      if (targetType.kind === "unknown" || targetType.kind === "dynamic-result")
         return cacheRelation(cache, actual, expected, scalar.kind !== "void");
       if (targetType.kind === "union") {
         let answer = false;
@@ -457,7 +459,11 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     if (!exact && source.kind === "never") return true;
     if (!exact && target.kind === "Error" && source.kind !== "union")
       return source.kind === "Error" || errorContract(source);
-    if (!exact && target.kind === "unknown") return source.kind !== "void";
+    if (
+      !exact &&
+      (target.kind === "unknown" || target.kind === "dynamic-result")
+    )
+      return source.kind !== "void";
     if (source.kind === "union") {
       if (exact) return undefined;
       let known = true;
@@ -684,7 +690,10 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         continue;
       }
       if (!exact && source.kind === "never") continue;
-      else if (!exact && target.kind === "unknown")
+      else if (
+        !exact &&
+        (target.kind === "unknown" || target.kind === "dynamic-result")
+      )
         nodeValues[i] = source.kind !== "void" ? 1 : 0;
       else if (!exact && source.kind === "union") {
         for (const member of source.members) {
@@ -1032,6 +1041,7 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         return 4096;
       case "object":
       case "function":
+      case "realm-callable":
         return 8192;
       case "array":
         return 16384;
@@ -1062,7 +1072,8 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         mask = mask | kindMask(member);
       }
     else if (t.kind === "literal") mask = kindBit(typeof t.value);
-    else if (t.kind === "unknown") mask = everyKind;
+    else if (t.kind === "unknown" || t.kind === "dynamic-result")
+      mask = everyKind;
     else if (t.kind !== "never") mask = kindBit(t.kind);
     kindMasks[id] = mask | knownKind;
     return mask;
