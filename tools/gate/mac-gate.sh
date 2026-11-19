@@ -50,8 +50,8 @@ awk '/^ℹ pass / { pass += $3 } /^ℹ fail / { fail += $3 } END { printf "check
 storage_tests
 
 bootstrap memory
-stage_lldb memory-watchdog stage1 stage2
-stage_lldb memory-watchdog stage2 stage3
+stage_lldb exclusive stage1 stage2
+stage_lldb exclusive stage2 stage3
 run_step compare unlocked cmp "$gate_output/stage2" "$gate_output/stage3"
 echo STAGE2_EQ_STAGE3
 run_step stage-hashes unlocked shasum -a 256 "$gate_output/stage1" "$gate_output/stage2" "$gate_output/stage3"
