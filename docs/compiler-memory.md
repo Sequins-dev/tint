@@ -162,12 +162,13 @@ See the [layout and heap-cap probes](results/compiler-surface-layout-memory-2026
 
 Lowering retains only the used elements of finalized instruction arrays and
 releases each function's record expression plans after emitting its body.
-After the slice 4a integration, the matched object-suite runs measured
-2,906 MiB and 2,586 MiB live at the last function body. The byte-identical
-image builds at a 2,912 MiB old-space cap and the 2,880 MiB run exhausts
-heap during checking.
-See the [integrated lowering measurements](results/compiler-lowering-memory-integrated-2026-11-19.md)
-and the [earlier trials](results/compiler-lowering-memory-2026-11-19.md).
+After the self-compile fixes, the matched object-suite runs measured
+2,908 MiB and 2,588 MiB live at the last function body. The smallest
+successful tested old-space cap fell from 3,072 MiB to 2,912 MiB, with
+byte-identical images. The candidate exhausts heap during checking at
+2,880 MiB.
+See the [current lowering measurements](results/compiler-lowering-memory-number-index-2026-11-19.md)
+and the [slice 4a measurements](results/compiler-lowering-memory-integrated-2026-11-19.md).
 
 ## What is global and what is per function
 
