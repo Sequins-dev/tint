@@ -1,13 +1,19 @@
 import {
   acceptsPropertyContract,
   attachPropertyContract,
+  getOwnProperty,
+  ownKeys,
   type OrdinaryObject,
 } from "./operations.ts";
 import type { Descriptor } from "../descriptors/index.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import { isArrayValue, viewObjectValue } from "./values.ts";
 import { viewBigIntValue } from "./bigints.ts";
-import { viewSymbolValue, type ScriptPropertyKey } from "./symbols.ts";
+import {
+  scriptPropertyKeyOrder,
+  viewSymbolValue,
+  type ScriptPropertyKey,
+} from "./symbols.ts";
 
 export interface ContractField {
   readonly name: string;
@@ -23,6 +29,11 @@ export interface IndexedObjectRule {
 }
 export type PropertyValueRule =
   | IndexedObjectRule
+  | {
+      readonly kind: "array-elements";
+      readonly element: number;
+      readonly readonly: boolean;
+    }
   | { readonly kind: "union"; readonly members: readonly number[] }
   | { readonly kind: "literal"; readonly value: string | number | boolean }
   | {
@@ -62,11 +73,6 @@ function fieldFor(
     if (field.name === key) return field;
   }
   return undefined;
-}
-function shape(schema: ObjectShapeContract): IndexedObjectRule {
-  const rule = schema.types[schema.root];
-  if (rule?.kind !== "object") throw "PROPERTY_CONTRACT_ROOT_INVARIANT";
-  return rule;
 }
 function sameSchema(
   left: ObjectShapeContract,
@@ -109,12 +115,32 @@ function validateObject(
     if (item === undefined) throw "PROPERTY_CONTRACT_ENROLLMENT_INVARIANT";
     if (item.object === object && sameSchema(item.schema, schema)) return true;
   }
-  const rule = shape(schema);
-  if (!requiredFieldsPresent(object, rule)) return false;
-  pending.push({ object, schema });
-  for (const [key, descriptor] of object.properties) {
-    if (!validateDescriptor(key, descriptor, schema, pending, realm, false))
+  const rule = schema.types[schema.root];
+  if (rule?.kind === "object") {
+    if (object.internalArrayData || !requiredFieldsPresent(object, rule))
       return false;
+  } else if (rule?.kind !== "array-elements" || !object.internalArrayData)
+    return false;
+  pending.push({ object, schema });
+  if (object.internalArrayElements !== undefined) {
+    for (const key of ownKeys<ScriptPropertyKey, unknown>(
+      object,
+      scriptPropertyKeyOrder,
+    )) {
+      if (key === undefined) throw "array contract key invariant";
+      const descriptor = getOwnProperty<ScriptPropertyKey, unknown>(
+        object,
+        key,
+      );
+      if (descriptor === undefined) throw "array contract descriptor invariant";
+      if (!validateDescriptor(key, descriptor, schema, pending, realm, false))
+        return false;
+    }
+  } else {
+    for (const [key, descriptor] of object.properties) {
+      if (!validateDescriptor(key, descriptor, schema, pending, realm, false))
+        return false;
+    }
   }
   return true;
 }
@@ -152,6 +178,7 @@ function validateValue(
       return typeof value === rule.kind;
     case "bigint":
       return viewBigIntValue(value) !== undefined;
+    case "array-elements":
     case "object": {
       const object = viewObjectValue(value, realm.objectPrototype);
       return (
@@ -180,21 +207,39 @@ function validateDescriptor(
   modifyingValue: boolean,
 ): boolean {
   if (typeof key !== "string") return true;
-  const rule = shape(schema);
+  const rule = schema.types[schema.root];
+  if (rule?.kind === "array-elements") {
+    if (scriptPropertyKeyOrder(key) < 0)
+      return key !== "length" || !rule.readonly || !modifyingValue;
+    return (
+      !descriptor.accessor &&
+      (!modifyingValue || !rule.readonly) &&
+      validateValue(
+        descriptor.value,
+        schema.types,
+        rule.element,
+        pending,
+        realm,
+      )
+    );
+  }
+  if (rule?.kind !== "object") throw "PROPERTY_CONTRACT_ROOT_INVARIANT";
   const field = fieldFor(rule, key);
+  if (rule.stringIndex < 0 && field === undefined) return true;
   if (
     descriptor.accessor ||
     (modifyingValue && (rule.readonlyIndex || field?.readonly === true))
   )
     return false;
   return (
-    validateValue(
-      descriptor.value,
-      schema.types,
-      rule.stringIndex,
-      pending,
-      realm,
-    ) &&
+    (rule.stringIndex < 0 ||
+      validateValue(
+        descriptor.value,
+        schema.types,
+        rule.stringIndex,
+        pending,
+        realm,
+      )) &&
     (field === undefined ||
       validateValue(
         descriptor.value,
@@ -235,7 +280,12 @@ function publish(
       if (typeof key !== "string") return true;
       for (const schema of schemas) {
         if (schema === undefined) throw "PROPERTY_CONTRACT_SCHEMA_INVARIANT";
-        const rule = shape(schema);
+        const rule = schema.types[schema.root];
+        if (rule?.kind === "array-elements") {
+          if (rule.readonly && scriptPropertyKeyOrder(key) >= 0) return false;
+          continue;
+        }
+        if (rule?.kind !== "object") throw "PROPERTY_CONTRACT_ROOT_INVARIANT";
         const field = fieldFor(rule, key);
         if (
           rule.readonlyIndex ||
@@ -283,7 +333,9 @@ export function finishObjectPropertyContract(
   schema: ObjectShapeContract,
   realm: ErrorRealm,
 ): void {
-  if (!requiredFieldsPresent(object, shape(schema))) reject(realm);
+  const rule = schema.types[schema.root];
+  if (rule?.kind === "object" && !requiredFieldsPresent(object, rule))
+    reject(realm);
   publish(object, [schema], realm, false);
 }
 /** Validate the live result of a property read without enrolling its receiver. */

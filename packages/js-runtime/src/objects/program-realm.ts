@@ -7,6 +7,7 @@ import { createErrorRealm, type ErrorRealm } from "./errors.ts";
 import { callObjectValue, scriptSameValue } from "./values.ts";
 import { createSymbolRegistry, type ScriptPropertyKey } from "./symbols.ts";
 import { createScriptAgent } from "./jobs.ts";
+import { installArrayIntrinsics } from "./array-intrinsics.ts";
 import { installObjectIntrinsics } from "./object-intrinsics.ts";
 
 export interface ProgramRealmCore {
@@ -51,4 +52,9 @@ export function installProgramObjectIntrinsics(core: ProgramRealmCore): void {
   if (core.objectInstalled) return;
   installObjectIntrinsics(core.object, core.realm, core.hooks);
   core.objectInstalled = true;
+}
+
+export function installProgramArrayIntrinsics(core: ProgramRealmCore): void {
+  if (core.realm.arrayConstructor !== undefined) return;
+  installArrayIntrinsics(core.object, core.realm, core.hooks);
 }

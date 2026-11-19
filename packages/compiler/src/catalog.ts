@@ -3019,6 +3019,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "typescript",
     },
     {
+      id: "packages/typescript/src/checker/local-realm.ts",
+      packageId: "typescript",
+    },
+    {
       id: "packages/typescript/src/checker/numeric-constants.ts",
       packageId: "typescript",
     },

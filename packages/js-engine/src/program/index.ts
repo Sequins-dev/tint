@@ -698,6 +698,10 @@ function generalHostSource(
       installs += " installProgramObjectIntrinsics(core);\n";
       continue;
     }
+    if (installer === "installArrayIntrinsics") {
+      installs += " installProgramArrayIntrinsics(core);\n";
+      continue;
+    }
     installs +=
       " " +
       installer +
@@ -710,7 +714,7 @@ function generalHostSource(
     : `function emit(fd:number,text:string):void{}`;
   return `${imports}import {createGlobalEnvironment,type GlobalEnvironment} from "global";
 import {createSyntheticModule,setSyntheticModuleExport,loadRequestedModules,finishLoadingImportedModule,linkModule,evaluateModule,settledModulePromise,getModuleNamespace,type ModuleRecord,type ModuleRequest,type ModuleReferrer,type ModuleLoadPayload} from "modules";
-import {createObject,createCallableObject,createDataProperty,programRealmCore,installProgramObjectIntrinsics,createRuntimeError,getProperty,callObjectValue,stringValue,drainScriptJobs,installGlobalProperties,createRecordView,typedRecordOf,viewObjectValue,${installers.filter((name) => name !== "installObjectIntrinsics").join(",")},type ErrorRealm,type ScriptPropertyKey,type ObjectHooks,type OrdinaryObject} from "objects";
+import {createObject,createCallableObject,createDataProperty,programRealmCore,installProgramObjectIntrinsics,installProgramArrayIntrinsics,createRuntimeError,getProperty,callObjectValue,stringValue,drainScriptJobs,installGlobalProperties,createRecordView,typedRecordOf,viewObjectValue,${installers.filter((name) => name !== "installObjectIntrinsics" && name !== "installArrayIntrinsics").join(",")},type ErrorRealm,type ScriptPropertyKey,type ObjectHooks,type OrdinaryObject} from "objects";
 ${output ? 'import {write as writeOutput} from "output";' : ""}
 ${write}
 function rejectArgument(realm:ErrorRealm):never{throw createRuntimeError(realm,"type");}
