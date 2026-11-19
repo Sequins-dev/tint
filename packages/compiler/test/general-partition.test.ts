@@ -309,3 +309,29 @@ export function make(): MapOfCounters { return {}; }`,
   );
   assert.deepEqual(records.records(), []);
 });
+
+test("intrinsic error boundaries preserve optionality and respect local type names", () => {
+  const lib = module(
+    "lib",
+    `export function accept(value: Error | undefined): TypeError { return new TypeError(); }`,
+  );
+  const shadow = module(
+    "shadow",
+    `type Error = number[];
+export function accept(value: Error): number { return value.length; }`,
+  );
+  const records = createBoundaryRecords(
+    new Map([
+      ["lib", lib],
+      ["shadow", shadow],
+    ]),
+  );
+  const accept = boundaryExport(lib, "accept", records);
+  assert.ok(accept?.kind === "function");
+  assert.deepEqual(accept.records, {
+    parameters: [{ key: "", optional: true, error: "Error" }],
+    result: { key: "", optional: false, error: "TypeError" },
+  });
+  assert.equal(boundaryExport(shadow, "accept", records), undefined);
+  assert.deepEqual(records.records(), []);
+});

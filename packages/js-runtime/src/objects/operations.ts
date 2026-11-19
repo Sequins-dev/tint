@@ -103,6 +103,8 @@ export interface OrdinaryObject<Key, Value> {
   internalErrorData: boolean;
   /** Creation-time logical stack, independent of the public stack property. */
   internalErrorStack: string | undefined;
+  /** Typed error operations supplied by a mixed-program boundary adapter. */
+  internalTypedErrorAccess: ((operation: string) => unknown) | undefined;
   internalDisposableStack: DisposalStack<Value> | undefined;
   internalAsyncDisposableStack: DisposalStack<Value> | undefined;
   internalTemporalPlainYearMonth: GregorianDate | undefined;
@@ -437,6 +439,7 @@ function allocateObject<Key, Value>(
     internalExecutionContext,
     internalErrorData: false,
     internalErrorStack: undefined,
+    internalTypedErrorAccess: undefined,
     internalDisposableStack: undefined,
     internalAsyncDisposableStack: undefined,
     internalTemporalPlainYearMonth: undefined,

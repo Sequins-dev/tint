@@ -68,6 +68,7 @@ export interface BoundaryField {
 export interface BoundaryRecordUse {
   readonly key: string;
   readonly dynamic?: DynamicBoundaryType;
+  readonly error?: "Error" | "TypeError" | "RangeError";
   readonly optional: boolean;
 }
 
@@ -150,13 +151,35 @@ export function createBoundaryRecords(
         use = resolve(module, member);
         if (use === undefined) return undefined;
       }
-      return use === undefined ? undefined : { key: use.key, optional };
+      if (use === undefined) return undefined;
+      const error = use.error;
+      return error === undefined
+        ? { key: use.key, optional }
+        : { key: use.key, optional, error };
     }
     if (type.kind !== "named") return undefined;
     if (type.arguments !== undefined && type.arguments.length !== 0)
       return undefined;
     const found = declared(module, type.name, 0);
-    if (found === undefined) return undefined;
+    if (found === undefined) {
+      const name = type.name;
+      if (name !== "Error" && name !== "TypeError" && name !== "RangeError")
+        return undefined;
+      for (const statement of module.module.statements) {
+        if (
+          (statement?.kind === "interface" ||
+            statement?.kind === "type-alias" ||
+            statement?.kind === "class") &&
+          statement.name === name
+        )
+          return undefined;
+      }
+      for (const declaration of module.module.imports) {
+        if (declaration?.bindings.some((binding) => binding?.local === name))
+          return undefined;
+      }
+      return { key: "", optional: false, error: name };
+    }
     const statement = found.statement;
     if (statement.kind !== "interface") return undefined;
     const key = found.module.id + "\u0000" + statement.name;
@@ -389,7 +412,8 @@ export function boundaryExport(
       if (
         primitiveClasses(declaration.type) !== 0 ||
         literal ||
-        records?.resolve(module, declaration.type)?.dynamic !== undefined
+        records?.resolve(module, declaration.type)?.dynamic !== undefined ||
+        records?.resolve(module, declaration.type)?.error !== undefined
       )
         return { kind: "constant", name: exported, local };
     }
