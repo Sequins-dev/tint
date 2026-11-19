@@ -684,14 +684,12 @@ test). The native fixture (`tools/native-os-fixtures.ts`) compares every
 field of every address with Node on the same machine, three times with
 collections in between, under both collectors, on macOS and on Linux (the
 `dev` machine: `lo` and `eth0` with its MAC); `loadavg` is checked for shape
-and against Node's 15-minute average. Deviations, all
-[known defects](#known-defects) the typed/untyped convergence removes:
-`networkInterfaces()` returns a `Map` from interface name to Node's arrays
-instead of Node's plain object, an API-shape deviation forced by typed code
-having no objects with dynamic keys (the fixture pins today's shape and says
-so; it does not assert it as correct); libuv failures are TypeErrors with
-Node's messages rather than SystemErrors; `userInfo` takes no `encoding`
-option.
+and against Node's 15-minute average. `networkInterfaces()` returns a plain
+object whose own enumerable, writable, configurable properties hold Arrays.
+The fixture enumerates the result and checks each entry's own field order,
+including the IPv6-only `scopeid`. Synthetic `__proto__` and `constructor`
+names form ordinary own groups. Libuv failures still throw TypeErrors with
+Node's messages, and `userInfo` supports the default encoding.
 
 **Targets.** Each binding has an image on its own target only, so a
 target's reader fails explicitly on the other: the build stops at
@@ -1251,11 +1249,9 @@ needs them; each names today's failure.
 3. **Objects with dynamic keys.** `dlopen(path, definitions)` returns
    `{ lib, functions }` where `functions` has one property per
    user-defined name (`lib.functions.strlen(...)`), and `definitions` is a
-   user object whose keys are read by enumeration. Today typed code has no
-   index signatures or `Map` iteration (the `networkInterfaces` known
-   defect). Needed: create an object with computed own properties whose
-   values are functions, enumerate a received object's own string keys in
-   order, and read a property by computed key.
+   user object whose keys are read by enumeration. Typed index signatures
+   support computed keys and own enumeration. Function-valued properties
+   still need callable views at the typed boundary.
 4. **Union arguments and their narrowing.** Each `node:ffi` argument may be
    `number | bigint | boolean | string | null | undefined | Buffer |
 TypedArray | DataView | ArrayBuffer` depending on the declared type, and
@@ -1473,7 +1469,6 @@ convergence ([progressive lowering](progressive-lowering.md)), not design:
 | A `let` narrowed from `T \| undefined` and reassigned in the narrowing branch loses its type (`expected an supported numeric typed array` on a later method call)                                                                            | `const x = list[i] ?? fallback` (`ffi/dynamic.ts` callback frames)                                                                                                                                                                                                                                                |
 | `tint:ffi` (a retained runtime module) rejects top-level loops and non-literal module initializers                                                                                                                                           | object-literal module state initialized lazily (`callbacks`, `registry$` in `ffi/index.ts`)                                                                                                                                                                                                                       |
 | KNOWN DEFECT (safety, not a pipeline gap): a callback's `Ptr<R>` view kept past its invocation faults on access, a crash reachable from safe TypeScript                                                                                      | the proper fix is a compile-time escape check rejecting stores of a callback-parameter view anywhere that outlives the invocation (outer variables, fields, returned values, escaping closures); until then the view is parked at the guard so the failure is a deterministic fault, never a read of freed memory |
-| No objects with dynamic keys (index signatures); no iteration of a `Map` (`for-of`, `keys()`: `invalid method call`, `typescript/src/checker/closures.ts:3697` handles only get/has/set/delete/clear)                                        | KNOWN DEFECT (API shape): `node:os` `networkInterfaces()` returns a `Map` where Node returns a plain object keyed by interface name; the convergence removes it. Its fixture pins the current shape and walks Node's names (`node/os.ts`, `tools/native-os-fixtures.ts`)                                          |
 | No plain `Error`/`SystemError` construction                                                                                                                                                                                                  | `node:os` failures are TypeErrors with Node's messages (`node/os.ts`)                                                                                                                                                                                                                                             |
 | Compiler sources: no tuple types, `JSON`, `Math.pow`, nested type declarations; forward references to unannotated module consts fail the native bootstrap; a ternary choosing opcodes of different ISA union members fails contextual typing | interface instead of tuple, string concatenation, constants, module-level `Operand`, annotated helper texts (`foreign/*.ts`); `integerToFloat`/`floatToInteger`/`narrowLoad`/`narrowStore` helpers (codegen `c-call` lowering)                                                                                    |
 
