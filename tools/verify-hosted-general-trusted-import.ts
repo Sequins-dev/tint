@@ -31,9 +31,7 @@ function check() {
     identity(undefined) === undefined,
     kind(object) === "object",
     kind("s") === "string",
-    // kind(() => 1) is "function" in JavaScript, but typed "typeof" on an
-    // unknown object cannot tell callables apart yet (slice 4a, see the
-    // gap table in docs/unified-pipeline.md).
+    kind(() => 1) === "function",
     kind(null) === "object",
     twice(21) === 42,
   ];
