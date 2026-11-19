@@ -488,6 +488,12 @@ on optional records: 14 typed forms stay typed (the three `for-of-*` gap
 constructs and `reassignment-narrowing` moved), no regressions against the
 BigInt ledger.
 
+The [4a rest and void callback ledger](results/unified-pipeline-ledger-slice4a-rest-void-v4.json)
+covers 60 constructs with no regressions against the for-of ledger.
+`rest-default-parameters` moved to the typed path. The new `rest-spread`
+and `void-callbacks` forms also stay typed, bringing the typed-path count to
+17. Both untyped forms pass through the general path.
+
 Slice 1: image sizes of hosted programs, measured before and after.
 Importing one function through the `js-runtime/objects` entrypoint from a
 typed program took 33.9 MB (2.2 MB when importing the defining module
