@@ -48,6 +48,9 @@ export type DowncastTest =
 export interface ExpressionInfo {
   readonly dynamicObject?:
     | "literal"
+    | "array-literal"
+    | "array-push"
+    | "static-call"
     | "read"
     | "write"
     | "has"
