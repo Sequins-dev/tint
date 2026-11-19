@@ -335,6 +335,19 @@ export function run() {
 }`,
   },
   {
+    name: "unknown-typeof-callable",
+    typed: `function kind(value: unknown): string { return typeof value; }
+export function run(): number {
+  const closure = (): number => 42;
+  return kind(closure) === "function" && kind({}) === "object" ? 42 : 1;
+}`,
+    untyped: `function kind(value) { return typeof value; }
+export function run() {
+  const closure = () => 42;
+  return kind(closure) === "function" && kind({}) === "object" ? 42 : 1;
+}`,
+  },
+  {
     name: "unknown-narrowing",
     typed: `function describe(value: unknown): string {
   if (typeof value === "number") return "n" + value.toFixed(1);

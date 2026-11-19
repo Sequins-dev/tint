@@ -15,7 +15,7 @@ import {
   type ObjectHooks,
   type OrdinaryObject,
 } from "./operations.ts";
-import { callObject, isCallableObject } from "./call.ts";
+import { callObject } from "./call.ts";
 import { toObjectValue } from "./boxing.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import {
@@ -94,16 +94,36 @@ export function isArrayValue(value: unknown, realm: ErrorRealm): boolean {
   return false;
 }
 
+/** The classifier needs only a descriptor, even before a realm is created. */
+export function viewTypeofObject(
+  value: unknown,
+): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
+  throw "UNBOUND_TYPEOF_OBJECT_VIEW";
+}
+
+export function objectTypeof(
+  value: unknown,
+  object: OrdinaryObject<ScriptPropertyKey, unknown> | undefined,
+): string {
+  if (viewSymbolValue(value) !== undefined) return "symbol";
+  if (viewBigIntValue(value) !== undefined) return "bigint";
+  if (object !== undefined && object.internalIsHTMLDDA) return "undefined";
+  if (object !== undefined && object.internalCall !== undefined)
+    return "function";
+  // Runtime internals use raw typeof. In particular this fallback recognizes
+  // primitives and native closures without recursing through this classifier.
+  return typeof value;
+}
+
 export function objectValueTypeof(
   value: unknown,
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): string {
-  if (viewSymbolValue(value) !== undefined) return "symbol";
-  if (viewBigIntValue(value) !== undefined) return "bigint";
-  const object = viewObjectValue(value, witness);
-  if (object !== undefined && object.internalIsHTMLDDA) return "undefined";
-  if (isCallableObject<ScriptPropertyKey, unknown>(object)) return "function";
-  return typeof value;
+  return objectTypeof(value, viewObjectValue(value, witness));
+}
+
+export function generalValueTypeof(value: unknown): string {
+  return objectTypeof(value, viewTypeofObject(value));
 }
 
 export function scriptBoolean(

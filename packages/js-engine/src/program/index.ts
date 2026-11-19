@@ -54,7 +54,12 @@ export function createGeneralLowering(
     runtime.environmentRecords,
   ];
   if (options.output !== undefined) runtimeModules.push(options.output.module);
-  const objectViews = ["viewObjectValue", "viewSymbolValue", "viewBigIntValue"],
+  const objectViews = [
+      "viewObjectValue",
+      "viewSymbolValue",
+      "viewBigIntValue",
+      "viewTypeofObject",
+    ],
     referrerViews = ["viewModuleRecord", "viewScriptRecord"];
   const recordBindings: NativeRecordBinding[] = [];
   for (const name of objectViews)
@@ -73,7 +78,7 @@ export function createGeneralLowering(
       {
         module: runtime.objects,
         namespace: "general-object-views",
-        retainedExports: objectViews,
+        retainedExports: [...objectViews, "objectTypeof", "generalValueTypeof"],
       },
     ],
     lower: (request: GeneralProgramRequest): GeneralProgram =>
