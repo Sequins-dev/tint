@@ -527,8 +527,8 @@ export function run() {
   },
   {
     name: "unknown-callable-arguments",
-    // The typed form reaches the native closure view boundary. The
-    // argument runs before the native exception and before the JS call.
+    // Argument evaluation is shared with Node. A native closure reaches
+    // Tint's closure-view boundary after its argument has run.
     typed: `function invoke(value: unknown, effect: () => number): unknown {
   if (typeof value !== "function") return undefined;
   return value(effect());
@@ -537,7 +537,7 @@ export function run(): number {
   let trace = 0;
   const fn = (n: number): number => n;
   const effect = (): number => { trace = 42; return trace; };
-  try { invoke(fn, effect); return 1; }
+  try { return invoke(fn, effect) === 42 ? trace : 1; }
   catch (e) {
     return e instanceof TypeError &&
       e.message === "Calling a native closure through Function requires the slice 2b closure view"
