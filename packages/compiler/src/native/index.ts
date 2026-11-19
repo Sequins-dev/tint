@@ -98,7 +98,6 @@ import {
   functionHeader,
 } from "@tint/ir/scalar";
 import {
-  automaticPackingSize,
   createEmissionStore,
   emissionStorage,
   type BuildStorage,
@@ -508,16 +507,7 @@ type TypedChecking =
   | { readonly ok: true; readonly value: CheckedTypedProgram }
   | CompilationFailure;
 type TypedLowering =
-  | {
-      readonly ok: true;
-      readonly value: TypedProgram;
-      readonly packed?: PackedLowering;
-    }
-  | CompilationFailure;
-interface PackedLowering {
-  readonly bodies: FunctionStore;
-  readonly headers: readonly FunctionIR[];
-}
+  { readonly ok: true; readonly value: TypedProgram } | CompilationFailure;
 /** Pure closed-program compilation. Source loading and executable packaging
  * are host concerns. Application code the typed pipeline rejects compiles
  * with general JavaScript semantics when the request provides a general
@@ -1532,7 +1522,6 @@ function lowerTypedProgram(request: CompileRequest): TypedLowering {
       functionAddressBindings,
       importedFunctions: serviceSources.map((source) => source.function),
       debug: request.debugSymbols ?? false,
-      packBodiesAfter: automaticPackingSize,
     },
   );
   if (!lowered.ok) {
@@ -1565,8 +1554,6 @@ function lowerTypedProgram(request: CompileRequest): TypedLowering {
     }
     return stageFailure("lower", message, culprit);
   }
-  const bodies = lowered.value.bodies,
-    module = lowered.value.module;
   const serviceImports: ManagedFunctionEntryBinding[] = [];
   for (const source of serviceSources) {
     if (source === undefined) throw "service source invariant";
@@ -1622,8 +1609,7 @@ function lowerTypedProgram(request: CompileRequest): TypedLowering {
         // The witness that addresses this record keeps it through pruning.
         if (fn !== undefined) surfaceRecordWitnesses.push(fn.id);
         let record: number | undefined = undefined;
-        const body = fn === undefined ? undefined : readLoweredBody(fn, bodies);
-        for (const block of body?.blocks ?? []) {
+        for (const block of fn?.blocks ?? []) {
           if (block === undefined) throw "surface identity block invariant";
           for (const op of block.instructions) {
             if (op === undefined)
@@ -1922,19 +1908,7 @@ function lowerTypedProgram(request: CompileRequest): TypedLowering {
     hostIdentities,
   );
   if (!authority.ok) return stageFailure("surface", authority.error);
-  let bindingModule = module;
-  if (bodies !== undefined && hostIdentities.length !== 0) {
-    // Binders replace these bodies and may preserve their debug metadata.
-    const functions = module.functions.slice();
-    for (const binding of hostIdentities) {
-      if (binding === undefined) throw "host identity invariant";
-      const fn = functions[binding.function];
-      if (fn !== undefined)
-        functions[binding.function] = readLoweredBody(fn, bodies);
-    }
-    bindingModule = { ...module, functions };
-  }
-  const hostBound = bindHostOperations(bindingModule, hostBindings);
+  const hostBound = bindHostOperations(lowered.value.module, hostBindings);
   if (!hostBound.ok) return stageFailure("host", hostBound.error);
   const hosted = bindForeignCalls(hostBound.value, foreignBindings);
   if (!hosted.ok) return stageFailure("host", hosted.error);
@@ -2054,9 +2028,6 @@ function lowerTypedProgram(request: CompileRequest): TypedLowering {
   }
   return {
     ok: true,
-    ...(bodies === undefined
-      ? {}
-      : { packed: { bodies, headers: module.functions } }),
     value: {
       ir: { module: weak.value },
       ranges,
@@ -2071,38 +2042,6 @@ function lowerTypedProgram(request: CompileRequest): TypedLowering {
       referenceLists,
     },
   };
-}
-function readLoweredBody(
-  fn: FunctionIR,
-  bodies: FunctionStore | undefined,
-): FunctionIR {
-  if (bodies === undefined) return fn;
-  const body = bodies.get(fn.id);
-  bodies.release(fn.id);
-  return body;
-}
-/** Optimization still expects a decoded module. Rebuild it only after
- * lowering returns and its checker state and planning indexes can die. */
-function materializeLoweredProgram(request: CompileRequest): TypedLowering {
-  const lowered = lowerTypedProgram(request);
-  if (!lowered.ok || lowered.packed === undefined) return lowered;
-  const program = lowered.value,
-    module = program.ir.module,
-    packed = lowered.packed,
-    functions: FunctionIR[] = [];
-  try {
-    for (const fn of module.functions) {
-      if (fn === undefined) throw "lowered function invariant";
-      // Host, foreign and weak binding already replaced their own bodies.
-      functions.push(
-        packed.headers[fn.id] === fn ? readLoweredBody(fn, packed.bodies) : fn,
-      );
-    }
-    program.ir.module = { ...module, functions };
-    return { ok: true, value: program };
-  } finally {
-    packed.bodies.close();
-  }
 }
 /** Lowers dense reference lists (bundled SparseList semantics) in the
  * program's IR. A separate frame keeps the pre-lowering IR collectable. */
@@ -2231,7 +2170,7 @@ function emitProgram(
 
 function compileTypedProgram(request: CompileRequest): Compilation {
   // Only the lowered IR and compact source facts outlive the front end.
-  const lowered = materializeLoweredProgram(request);
+  const lowered = lowerTypedProgram(request);
   if (!lowered.ok) return { ok: false, error: lowered.error };
   const program = lowered.value,
     ranges = program.ranges,
