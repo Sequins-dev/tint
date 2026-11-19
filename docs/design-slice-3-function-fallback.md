@@ -102,7 +102,7 @@ be valid. The same code on a write against an inferred
 variable or contextual parameter can be advisory. An implicit-any diagnostic
 from an intentionally unchecked module follows that module's checking policy.
 
-For the initial hosted slice, pass a Node-hosted pinned TypeScript validation
+For the initial hosted slice, pass a Node-hosted TypeScript 6.0.3 validation
 provider from the composition root and test the decision against the workspace
 compiler. Use project declarations for Tint host modules and explicitly
 unchecked dependency inputs. Cache the **verdict and compact type facts**
@@ -112,11 +112,13 @@ initializers, imports and fallback bodies. The first unsupported function
 must never conceal an independent type error. For builds that enable the
 new hosted route, validate before selecting any representation, including
 a successful typed attempt and the legacy module retry. Opt-in typed-only
-and self-build requests retain their existing path. Later CLI/live
-enablement needs equivalent original-source validation from Tint's portable checker
-or another approved composition provider. The pinned checker remains the
-differential oracle. The compiler core has no dependency on Node or the npm
-TypeScript implementation.
+and self-build requests retain their existing path. With validation enabled,
+fail every genuine source error under the approved profile, including errors
+in previously accepted inputs. Record each transition to source error with
+its diagnostic in the ledger. Fix oracle and profile mistakes as bugs.
+Slice 6 delivers validation for CLI and live compilation through Tint's
+portable checker, with pinned tsc as the differential oracle in tests.
+The compiler core has no dependency on Node or npm TypeScript.
 
 The existing error code and `preventsFallback` cannot decide admission.
 For example, the flag covers both incompatible string-index properties and
@@ -236,14 +238,19 @@ assertion. Pin those decisions against representative TypeScript diagnostics.
   initialization and genuine result contracts, using existing bridge and
   descriptor machinery where applicable. A failed write leaves storage
   unchanged. Aliases, reflection and eval route through the same checks.
-  Apply result enforcement at the semantic production point (for example
-  an explicitly constrained async fulfillment or generator yield where the
-  declared contract requires it), during the original completion protocol.
-  Preserve the original Promise/iterator identity, thenable ordering,
-  rejection timing and `finally`. Stage these crossings only once the
-  corresponding contract checks are expressible. A generic or structural
-  reference without a faithful runtime check needs explicit admission
-  rules before fallback can erase it.
+  For an annotated `Promise<T>` result, check the fulfillment value as part
+  of promise resolution. A mismatch rejects the returned promise with
+  a TypeError and produces no synchronous throw. For `Generator<Y, R, N>`,
+  check `Y` at the yield and throw any TypeError inside the generator at
+  that point, with normal abrupt-completion semantics. Check `R` at
+  completion and the `next` argument at resumption when `N` is annotated.
+  Preserve Promise/iterator identity, thenable ordering and `finally`.
+  Admit each reference kind when its runtime contract and identity bridge
+  are supported.
+- **Decorated or replaced members.** Typed callers go through the adapter
+  and check arguments and results against the declared signature of the
+  member, even when the decorator installs a different callable. Field
+  and accessor storage contracts apply to writes from every path.
 - **Receiver and construction.** A call supplies the actual ECMAScript receiver.
   The object's own call logic handles strictness, bound receivers, proxy
   traps and lexical arrow state. A construct passes the original `new.target`
@@ -301,7 +308,8 @@ typed owner lacks a faithful carrier for this context, select the enclosing
 function or class with that capability. Avoid global name lookup for such
 captures.
 
-Direct eval uses the existing `createDirectEvaluator` and exact caller-site
+Land nested fallback for the other constructs first. Direct eval remains
+blocked on host composition. Once enabled, it uses the existing `createDirectEvaluator` and exact caller-site
 metadata from the general engine. Install it only with the necessary
 executable-code host capability. Include eval-visible outer bindings even when
 the source has no static reference to them. Extend the existing environment
@@ -387,15 +395,18 @@ and final exited-42 assertions under the project gate policy. Use Node
 references for ECMAScript semantics and pinned TypeScript references for
 source validity. Give Tint-only contract checks a separate native fixture.
 Keep both typed and untyped corpus forms and record whether a mixed result
-uses any legacy module fallback.
+uses any legacy module fallback. Start step 1 immediately after slice 4a
+B4–B6 land. It closes the demonstrated correctness hole where the module
+retry emits code for a program with a genuine TS2322 error.
 
 | Step | Independent fixture/check | Expected ledger change |
 | --- | --- | --- |
-| 1. Source validation and structured capability taxonomy | Check paired annotated/open assignment, invalid call after a generator, invalid return inside a fallback unit, strict early errors, valid realm update currently vetoed, unsupported parser and unknown host import. Assert original spans and zero general lowering on a source error. | Add a genuinely unproven indexed read as a source-error case. The current `typed-array-index` is valid under the pinned oracle, so record its typed specialization gap. `typed-array-index-checked` stays typed. Existing mixed admissions remain at module granularity. Record any strict-profile changes before enabling validation globally. |
-| 2. Source replay and unit accounting, initially without finer admission | Compare legacy fallback using owned syntax against replay from a deliberately emptied AST cache. Use multi-unit/module, Unicode offsets, type-only re-exports, source-map/manifest and snapshot-mismatch fixtures. Probe forced store policies. | Same outcomes and executable bytes when using the same legacy strategy. New report fields show replay and owner IDs. |
-| 3. Top-level ordinary functions and bidirectional calls | Put a general helper containing `arguments` and var hoisting beside a typed numeric kernel. Verify nested same-module calls in both directions, hoisting before evaluation, exact receiver/arity, identity through import/re-export, default side effects, throws and contracts. Include one import cycle and shadowed globals. | `arguments-object`, selected `regexp`/valid local capability cases move to mixed when all crossing types are supported. `var-hoisting` remains typed. Add a fixture that proves mixed typed siblings instead of inferring this from the single-function corpus. |
-| 4. Top-level classes and suspended functions | General class with inheritance, accessors, private and static elements, decorators and typed siblings. Assert class TDZ, constructor/heritage/decorator order, `new.target`, reflection, failed initialization and instance/constructor identity. Pair generator/async returns with caller-visible iteration, job ordering and abrupt completion. Gate the class and suspension capabilities separately. | `class-basic`, `class-inheritance` with the override modifier, `class-private-static`, `generators` and `async-await` move to mixed where their consumers have usable general representations. Add decorator ordering and Promise/iterator crossings. Typed array/record/callable reference gaps remain explicit prerequisites. |
-| 5. Nested functions, closure bridge and eval | Escaped and sibling closures share actual typed and open cells across calls, GC, recursion and per-iteration scopes. Assert uninitialized bindings, shadowing, lexical receiver/arguments/`new.target`, exception identity and no partial writes. Enable direct eval separately with host capability and the bridged environment. | Add nested read/write/throw/identity cases. `explicit-binding-contract` passes when eval has the host and cell guards. `explicit-field-contract` passes when the relevant reference write is guarded and all edges are admitted. Retain any existing blocked cases with precise reasons. |
+| 1. Source validation and structured capability taxonomy | Check paired annotated/open assignment, the invalid assignment after a generator, invalid return inside a fallback unit, strict early errors, valid realm update currently vetoed, unsupported parser and unknown host import. Assert original spans and zero general lowering on a source error. | Add a genuinely unproven indexed read as a source-error case. The current `typed-array-index` is valid under the pinned oracle, so record its typed specialization gap. `typed-array-index-checked` stays typed. Existing mixed admissions remain at module granularity. Record every change to source error and its diagnostic. Fix mistakes in the oracle or profile mapping. |
+| 2. Source replay and unit accounting, initially without finer admission | Compare legacy fallback using owned syntax against replay from a deliberately emptied AST cache. Use multi-unit/module, Unicode offsets, type-only re-exports, source-map/manifest and snapshot-mismatch fixtures. Probe forced store policies. Compare peak RSS on the same graph and wall time on the dense fallback stress graph against the owned-syntax path. | Same outcomes and executable bytes when using the same legacy strategy. New report fields show replay and owner IDs. |
+| 3. Top-level ordinary functions and bidirectional calls | Put a general helper containing `arguments` and var hoisting beside a typed numeric kernel. Verify nested same-module calls in both directions, hoisting before evaluation, exact receiver/arity, identity through import/re-export, default side effects, throws and contracts. Include one import cycle and shadowed globals. Gate small fixed arity against same-shape general→general calls and start with existing identity-safe representations. | `arguments-object`, selected `regexp`/valid local capability cases move to mixed when all crossing types are supported. `var-hoisting` remains typed. Add a fixture that proves mixed typed siblings instead of inferring this from the single-function corpus. |
+| 4. Top-level classes and suspended functions | General class with inheritance, accessors, private and static elements, decorators and typed siblings. Assert class TDZ, constructor/heritage/decorator order, `new.target`, reflection, failed initialization and instance/constructor identity. Assert argument and result contracts for replaced methods and write contracts for decorated fields/accessors. Exercise asynchronous TypeError rejection without a synchronous throw, and generator checks at yield, return and resumption. Gate class and suspension capabilities separately. | `class-basic`, `class-inheritance` with the override modifier, `class-private-static`, `generators` and `async-await` move to mixed where their consumers have usable general representations. Add decorator ordering and Promise/iterator crossings. Typed array/record/callable reference gaps remain explicit prerequisites. |
+| 5. Nested functions and closure bridge | Escaped and sibling closures share actual typed and open cells across calls, GC, recursion and per-iteration scopes. Assert uninitialized bindings, shadowing, lexical receiver/arguments/`new.target`, exception identity and no partial writes. | Add nested read/write/throw/identity cases. `explicit-field-contract` passes when the relevant reference write is guarded and all edges are admitted. Record `explicit-binding-contract` as blocked on eval host composition. |
+| Follow-up. Direct eval after host composition | Provide explicit capability for the general evaluator. Verify dynamic reads and writes through bridged environments, shadowing and contract failures. | `explicit-binding-contract` passes once the evaluator and cell guards are admitted. |
 
 A milestone is eligible to land with its specified capability independently
 enabled and checked. Report `typed`, `mixed` with per-unit details, legacy
@@ -404,7 +415,8 @@ The current checker-stage-only test for expected type errors must use the
 structured classification. Compare to the latest ledger on the same corpus
 population, preserving native failures as observed. `requireTyped` and
 `TINT_GENERAL_FALLBACK=0` must reject every mixed application admission.
-Keep self-build typed until slice 7 and CLI composition under slice 6.
+Keep self-build typed until slice 7. Slice 6 composes CLI and live validation
+using Tint's portable checker and retains pinned tsc for differential tests.
 
 ## Risks and measurements
 
@@ -414,18 +426,20 @@ Keep self-build typed until slice 7 and CLI composition under slice 6.
   callable/reference views, cold wrapper/view creation, and throws. Measure
   wall time, cycles, adapter calls, allocations and retention. Use identical
   inputs and native harness, interleaved locked timings and a separate cold
-  startup run. For common small arities prefer a shared helper or a proven
-  allocation-free entry where the engine ABI permits. Deduplicate adapter
-  code by compatible direction, physical signature, contracts and completion
+  startup run. Each direction at fixed small arity must use no more cycles
+  than a general→general call of the same shape on the same harness.
+  Primitive fixed-arity crossings must allocate zero objects. Deduplicate
+  adapter code by compatible direction, signature, contract and completion
   shape. Preserve a per-identity environment and per-instance caches.
 - **Image growth.** Measure complete executable, native program code, cold
   realm installers, per-unit helper and adapter code, debug/relocation
   payload and startup separately. Compare one fallback, many fallbacks with
-  shared signatures, and the equivalent whole-module fallback. Existing
-  convergence evidence put the general host in the tens of MB. One isolated
-  fallback may initially pull a similar realm footprint. Keep installer
-  dependencies visible and coordinate with fine-grained slice 1c.
-- **Typed-only identity.** A successful original typed request must take
+  shared signatures, and today's whole-module fallback of the same module.
+  Gate one fallback unit on executable bytes and cold startup, each at or
+  below the whole-module baseline. Report absolute numbers and coordinate
+  realm-installer granularity with slice 1c.
+- **Typed-only identity.** Byte identity is a hard gate. A successful
+  original typed request must take
   the exact existing code generation path, preserving root set, check/specialization
   order, function/type IDs, layouts, realm absence where previously absent,
   optimizer ordering and image/debug bytes. Allocate mixed planning state on
@@ -440,25 +454,48 @@ Keep self-build typed until slice 7 and CLI composition under slice 6.
   time and RSS, retained syntax after front-end stages, cache hit rates,
   largest module and retained views/cells. Exercise a frozen compiler
   snapshot, sparse mixed graphs, a dense fallback stress graph and a
-  representative Test262 suite image on matching toolchains. Test
+  representative Test262 suite image on matching toolchains. Gate replay
+  peak RSS at or below today's owned-syntax path on the same graph. Allow
+  at most 10% extra compile wall time on the dense fallback stress graph. Test
   identity/aliasing and moving GC through nested suspension, and preserve
   failed native launch observations independently of program outcomes.
 
-## Coordinator decisions
+## Decisions (2026-11-20)
 
-1. Approve the first hosted validation provider and how Tint's open-slot and
-   unchecked-dependency profile maps to pinned TypeScript diagnostics.
-   Before expanding to CLI/live, choose the delivery point for equivalent
-   portable validation and agree on handling pre-existing accepted inputs.
-2. Confirm bridge prerequisites and ownership. For initial mixed support,
-   admit the existing identity-safe representations and add each reference
-   kind with its own evidence. Confirm expected runtime contract behavior
-   for annotated async/generator payloads and decorated/replaced members.
-3. Choose the host milestone for direct eval. Reuse the general engine's
-   evaluator with explicit capability, or land other nested fallback first
-   and track eval as blocked by host composition. Coordinate any changes to
-   resource loading, collector/layout, image or service ABI with their owners.
-4. Set acceptable cold image/startup growth and hot crossing budgets from the
-   matched probes. Set a replay budget alongside input-syntax ownership,
-   using current matched RSS profiles. Typed-only output identity remains
-   a hard gate.
+1. **Validation.** The initial hosted route receives a Node-hosted TypeScript
+   6.0.3 provider from the composition root. The compiler core remains
+   independent of Node and npm TypeScript. The open-slot profile mapping and
+   structured diagnostic taxonomy above are approved. When validation is
+   enabled, genuine type errors confirmed under the profile fail the build,
+   including errors in previously accepted inputs. Record every transition
+   to source error with its diagnostic. Oracle and profile mistakes are bugs.
+   In slice 6, Tint's portable checker supplies CLI and live validation.
+   Pinned tsc remains the differential oracle in tests.
+2. **Bridge.** The convergence thread owns the prerequisites. Admit existing
+   identity-safe representations first, then add each reference kind with
+   its own evidence. Check annotated async fulfillment values and reject
+   the returned promise with a TypeError on mismatch, without throwing
+   synchronously. For an annotated generator, check `Y` at the yield,
+   `R` at completion and `N` when a `next` argument resumes the generator.
+   A yield mismatch throws inside the generator at the yield and follows
+   normal abrupt completion. Typed calls to decorated or replaced members
+   use the adapter to check arguments and results against the declared
+   signature. Field and accessor storage contracts apply to writes from
+   every path.
+3. **Direct eval.** Land other nested fallback first and track eval as
+   blocked on host composition. Once the host supplies explicit capability,
+   reuse the general engine's evaluator. Coordinate resource loading,
+   collector, image and service-ABI changes with the other coordinator thread.
+4. **Budgets.** Typed-only output must be byte-identical. One fallback unit
+   must cost at most today's whole-module fallback of the same module in
+   image size and cold startup. Deduplicate adapter code by signature and
+   contract shape, report absolute measurements and coordinate installer
+   granularity with slice 1c. Fixed small-arity crossings in both directions
+   must use no more cycles than same-shape general-to-general calls on the
+   same harness. Primitive fixed-arity crossings must allocate zero objects.
+   Replay peak RSS must stay at or below today's owned-syntax path on the
+   same graph, with at most 10% extra compile wall time on the dense fallback
+   stress graph.
+5. **Priority.** Start source validation and taxonomy immediately after
+   slice 4a B4–B6 land. This is the first implementation step because it
+   prevents genuine type errors from building through the module retry.
