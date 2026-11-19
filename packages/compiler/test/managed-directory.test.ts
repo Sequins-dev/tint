@@ -4,6 +4,7 @@ import { createSourceTextView } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
 import { checkClosureModule } from "@tint/typescript/checker";
 import * as compiler from "../src/native/index.ts";
+import { createManagedSurfacePhysicalDeriver } from "../src/native/managed-directory.ts";
 function surface(text: string, names: readonly string[]) {
   const parsed = parseModule(createSourceTextView(text));
   assert.ok(parsed.ok, JSON.stringify(parsed));
@@ -79,4 +80,43 @@ test("surface layout preparation reports missing collection providers and invali
   });
   assert.equal(invalid.ok, false);
   if (!invalid.ok) assert.match(invalid.error, /namespace/);
+});
+test("shared runtime links preserve independent surface layouts with type-only dependencies", () => {
+  const first = surface(
+    "interface Cell{readonly value:number;}function keep(value:Cell):Cell{return value;}",
+    ["keep"],
+  );
+  const second = surface(
+    "interface Cell{readonly value:string;readonly present?:boolean;}function keep(value:Cell):Cell{return value;}",
+    ["keep"],
+  );
+  const types = parseModule(createSourceTextView("export type Weight=number;"));
+  const provider = parseModule(
+    createSourceTextView(
+      'import type {Weight} from "types";export function weight(n:Weight):Weight{return n;}',
+    ),
+  );
+  assert.ok(types.ok && provider.ok);
+  const runtime = {
+    modules: [
+      {
+        id: "types",
+        module: types.value,
+        dependencies: new Map<string, string>(),
+      },
+      {
+        id: "provider",
+        module: provider.value,
+        dependencies: new Map([["types", "types"]]),
+      },
+    ],
+    runtimes: [{ module: "provider", namespace: "provider" }],
+    globals: ["undefined"],
+  };
+  const derive = createManagedSurfacePhysicalDeriver(runtime);
+  for (const value of [first, second, first]) {
+    const direct = compiler.deriveManagedSurfacePhysicalFacts(value, runtime);
+    assert.ok(direct.ok, JSON.stringify(direct));
+    assert.deepEqual(derive(value), direct);
+  }
 });
