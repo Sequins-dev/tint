@@ -4,6 +4,7 @@ import {
 } from "@tint/foundation/collections/key-index";
 import type { BoundModule } from "@tint/typescript/binding";
 import {
+  typeParameterCount,
   rewriteModule,
   syntaxHash,
   type Module,
@@ -77,7 +78,7 @@ export function prepareModuleInstance(
           retainedStatements.push(statement);
           break;
         }
-        if ((statement.typeParameters?.length ?? 0) !== 0)
+        if (typeParameterCount(statement.typeParameters) !== 0)
           return {
             ok: false,
             error: "module instance requires specialized functions",

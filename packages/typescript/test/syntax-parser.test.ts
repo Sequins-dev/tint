@@ -175,11 +175,29 @@ test("generic type brackets split only in type context, retaining spans and shif
   assert.equal(expression.operator, ">>");
   const c = r.value.statements[4];
   assert.ok(c?.kind === "interface");
-  assert.deepEqual(c.typeParameters, ["T"]);
+  assert.deepEqual(
+    c.typeParameters?.map((p) => p.name),
+    ["T"],
+  );
+  for (const text of ["type A<T extends number>=T;", "type A<T=number>=T;"]) {
+    const parsed = parse(text);
+    assert.ok(parsed.ok, JSON.stringify(parsed));
+    const alias = parsed.value.statements[0];
+    assert.ok(alias?.kind === "type-alias");
+    const parameter = alias.typeParameters?.[0];
+    assert.ok(parameter);
+    assert.equal(text.slice(parameter.start, parameter.end), text.slice(7, -4));
+    const annotation = parameter.constraint ?? parameter.defaultType;
+    assert.ok(annotation);
+    assert.equal(text.slice(annotation.start, annotation.end), "number");
+  }
   for (const invalid of [
     "type A<> = number;",
-    "type A<T extends number>=T;",
-    "type A<T=number>=T;",
+    "type A<T extends >=T;",
+    "type A<T =>=T;",
+    "const f = <T = number>x => x;",
+    "class C { constructor<T = number>() {} }",
+    "const x = { get value<T = number>() { return 1; } };",
   ])
     assert.ok(!parse(invalid).ok, invalid);
 });
@@ -303,7 +321,10 @@ test("explicit generic functions and call type arguments retain syntax contracts
   const fn = r.value.statements[0];
   assert.equal(fn?.kind, "function");
   if (fn?.kind !== "function") return;
-  assert.deepEqual(fn.typeParameters, ["T"]);
+  assert.deepEqual(
+    fn.typeParameters?.map((p) => p.name),
+    ["T"],
+  );
   const nested = parse(
     "function f():void { consume<Box<Pair<number,string>>>(value); const comparison = a < b > c; }",
   );
@@ -827,4 +848,39 @@ test("generic return types can directly precede arrow tokens", () => {
     assert.equal(expression.end, source.length - 1);
   }
   assert.equal(parse("const f=():Box<number>= >value;").ok, false);
+});
+
+test("type parameter constraints and defaults survive parsing and rewriting", () => {
+  const generic =
+    "<T extends Box<Box<number>> = Box<Box<number>>, U extends T = T,>";
+  for (const text of [
+    `export interface I${generic} { value: U }`,
+    `type A${generic} = U;`,
+    `class C${generic} {}`,
+    `const C = class ${generic} {};`,
+    `function f${generic}(value: U): U { return value; }`,
+    `const f = function ${generic}(value: U): U { return value; };`,
+    `const f = ${generic}(value: U): U => value;`,
+    `const f = async ${generic}(value: U) => { return value; };`,
+    `class C { m${generic}(value: U): U { return value; } }`,
+    `const o = { m${generic}(value: U): U { return value; } };`,
+    `interface I { m${generic}(value: U): U }`,
+    `interface I { ${generic}(value: U): U }`,
+    `interface I { new ${generic}(value: U): U }`,
+    `type F = ${generic}(value: U) => U;`,
+    `type C = new ${generic}(value: U) => U;`,
+  ]) {
+    const parsed = parse(text);
+    assert.equal(parsed.ok, true, `${text}: ${JSON.stringify(parsed)}`);
+    assert.deepEqual(rewriteModule(parsed.value, {}), parsed.value);
+    const seen: string[] = [];
+    rewriteModule(parsed.value, {
+      type(mapped) {
+        if (mapped.kind === "named") seen.push(mapped.name);
+        return mapped;
+      },
+    });
+    assert.equal(seen.filter((name) => name === "Box").length, 4, text);
+    assert.equal(seen.filter((name) => name === "T").length, 2, text);
+  }
 });

@@ -1,6 +1,7 @@
 import { resolveInterfaceTypes } from "@tint/typescript/checker";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import { printReifiedTypes } from "@tint/typescript/reify";
+import { typeParameterCount } from "@tint/typescript/syntax";
 import type { Module, Statement, TypeNode } from "@tint/typescript/syntax";
 
 export interface DynamicBoundaryType {
@@ -148,7 +149,7 @@ export function describeDynamicBoundary(
         if (
           (definition.kind !== "interface" &&
             definition.kind !== "type-alias") ||
-          (definition.typeParameters?.length ?? 0) !== 0
+          typeParameterCount(definition.typeParameters) !== 0
         )
           throw abort;
         const key = found.module.id + "\u0000" + definition.name;

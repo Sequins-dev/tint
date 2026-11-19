@@ -1,4 +1,5 @@
 import {
+  typeParameterCount,
   rewriteModule,
   type Module,
   type Statement,
@@ -49,7 +50,7 @@ export function adaptManagedSurfaceEntry(
     selected.async ||
     selected.generator ||
     selected.receiver !== undefined ||
-    (selected.typeParameters?.length ?? 0) !== 0
+    typeParameterCount(selected.typeParameters) !== 0
   )
     return reject(
       "managed entry requires a synchronous concrete annotated function",
