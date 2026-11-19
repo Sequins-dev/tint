@@ -126,18 +126,12 @@ export function frameStackMaps(
     }
     references.sort((left, right) => left - right);
     generals.sort((left, right) => left - right);
-    maps.push({
-      label: site.label,
-      functionLabel,
-      map: [
-        frameBytes,
-        references.length,
-        ...references,
-        generals.length,
-        ...generals,
-        0,
-      ],
-    });
+    const map = [frameBytes, references.length];
+    for (const offset of references) if (offset !== undefined) map.push(offset);
+    map.push(generals.length);
+    for (const offset of generals) if (offset !== undefined) map.push(offset);
+    map.push(0);
+    maps.push({ label: site.label, functionLabel, map });
   }
   return maps;
 }
