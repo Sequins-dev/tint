@@ -25,7 +25,10 @@ for (const [name, source] of [
     try {
       const file = join(directory, "fixture.ts");
       writeFileSync(file, source);
-      writeFileSync(join(directory, "providers.ts"), nodeBindingPatternProviders);
+      writeFileSync(
+        join(directory, "providers.ts"),
+        nodeBindingPatternProviders,
+      );
       const loaded = (await import(pathToFileURL(file).href)) as {
         run(): number;
       };

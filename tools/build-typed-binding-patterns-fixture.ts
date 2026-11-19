@@ -24,11 +24,18 @@ assert.ok(provider.ok, JSON.stringify(provider));
 const objects = "packages/js-runtime/src/objects/index.ts";
 console.log(
   verifyHostedFixture(
-    typedRealmBindingPatternsSource, "typed-realm-binding-patterns-v1",
-    [["./providers.ts", "fixture:binding-providers"], ["@tint/js-runtime/objects", objects]],
-    [{
-      id: "fixture:binding-providers", module: provider.value,
-      dependencies: new Map([["@tint/js-runtime/objects", objects]]),
-    }],
+    typedRealmBindingPatternsSource,
+    "typed-realm-binding-patterns-v1",
+    [
+      ["./providers.ts", "fixture:binding-providers"],
+      ["@tint/js-runtime/objects", objects],
+    ],
+    [
+      {
+        id: "fixture:binding-providers",
+        module: provider.value,
+        dependencies: new Map([["@tint/js-runtime/objects", objects]]),
+      },
+    ],
   ),
 );
