@@ -1,9 +1,15 @@
 import { nativeStackLimitOffset, type PosixHostFacts } from "@tint/abi/host";
 import type {
   ImageAddressPatcher,
+  ImageAddressReference,
   ImageAddressTarget,
 } from "@tint/abi/relocation";
-import { encodeLayout, writeRel32, type Instruction } from "./isa.ts";
+import {
+  encodeLayout,
+  writeRel32,
+  type Instruction,
+  type NearFixup,
+} from "./isa.ts";
 import type { X64Module } from "./scalar/index.ts";
 import {
   argumentCountOffset,
@@ -22,6 +28,7 @@ import {
   resultPayload,
   rip,
   word,
+  type ImageRelocations,
 } from "./scalar/machine.ts";
 
 interface HostedEntry {
@@ -34,9 +41,23 @@ interface HostedEntry {
   readonly pageBytes: number;
 }
 
+interface ImageSymbol {
+  readonly name: string;
+  readonly offset: number;
+}
+
+interface HostedImage extends ImageRelocations {
+  readonly code: Uint8Array;
+  readonly data: Uint8Array;
+  readonly entryOffset: number;
+  readonly maxByteLength: number;
+  readonly imports: readonly string[];
+  readonly symbols: readonly ImageSymbol[];
+}
+
 /** One process-local, non-collecting runtime. The guarded stack and zero-filled
  * allocation arena share a mapping, released after the managed entry returns. */
-export function appendHostedEntry(request: HostedEntry) {
+export function appendHostedEntry(request: HostedEntry): HostedImage {
   const native = request.native,
     host = request.host,
     stackBytes = request.stackBytes,
@@ -61,11 +82,13 @@ export function appendHostedEntry(request: HostedEntry) {
     r13 = gpr(13);
   const machine: Instruction[] = [];
   const imports = new Map<string, ImageAddressTarget>();
+  const importNames = native.imports.slice();
   const emit = (insn: Instruction): void => {
     machine.push(insn);
   };
   function call(symbol: string): void {
     imports.set(symbol, { kind: "import", name: symbol });
+    if (!importNames.includes(symbol)) importNames.push(symbol);
     emit({ op: "call", target: rip(symbol) });
   }
 
@@ -181,7 +204,7 @@ export function appendHostedEntry(request: HostedEntry) {
   const code = new Uint8Array(base + stub.bytes.length);
   code.set(native.code);
   code.set(stub.bytes, base);
-  const external = [];
+  const external: NearFixup[] = [];
   for (const fixup of stub.externalFixups) {
     if (fixup === undefined) throw "startup fixup invariant";
     const name = fixup.ref.label;
@@ -217,28 +240,28 @@ export function appendHostedEntry(request: HostedEntry) {
           target,
           address,
         );
-  const symbols = new Set(native.imports);
-  for (const symbol of imports.keys()) {
-    if (symbol === undefined) throw "import symbol invariant";
-    symbols.add(symbol);
-  }
   const main = stub.labels.get("main");
   if (main === undefined) throw "startup label invariant";
+  const symbols: ImageSymbol[] = [];
+  for (const fn of native.functions) {
+    if (fn === undefined) throw "program symbol invariant";
+    symbols.push({ name: fn.name, offset: fn.offset });
+  }
+  symbols.push({ name: "_start", offset: base });
+  symbols.push({ name: "main", offset: base + main });
+  const addressFixups: ImageAddressReference[] = native.addressFixups.slice();
+  for (const reference of relocations.addressFixups) {
+    if (reference === undefined) throw "startup address fixup invariant";
+    addressFixups.push(reference);
+  }
   return {
     code,
     entryOffset: base,
     data: native.data,
     maxByteLength: Number.MAX_SAFE_INTEGER,
-    imports: [...symbols],
-    symbols: [
-      ...native.functions.map((fn) => {
-        if (fn === undefined) throw "program symbol invariant";
-        return { name: fn.name, offset: fn.offset };
-      }),
-      { name: "_start", offset: base },
-      { name: "main", offset: base + main },
-    ],
-    addressFixups: [...native.addressFixups, ...relocations.addressFixups],
+    imports: importNames,
+    symbols,
+    addressFixups,
     patchAddress,
   };
 }

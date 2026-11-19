@@ -83,6 +83,7 @@ import type { Module, Statement } from "@tint/typescript/syntax";
 import { unwindRanges } from "@tint/codegen/aarch64/unwind";
 import type { UnwindRange } from "@tint/abi/unwind";
 import type {
+  ExecutableImageRequest,
   ImageLibrary,
   ImageSymbol,
   ReadOnlySection,
@@ -360,6 +361,7 @@ function buildX64HostedProgram(
     );
 
   request.report("program");
+  const reportIR = request.onScalarIR;
   const compiled = compileX64HostedProgram(
     {
       modules: request.modules,
@@ -372,12 +374,10 @@ function buildX64HostedProgram(
       recordBindings: request.recordBindings ?? [],
       closedProgram: true,
       optimization: request.optimization ?? "basic",
-      ...(request.maxSpecializations === undefined
-        ? {}
-        : { maxSpecializations: request.maxSpecializations }),
-      ...(request.onScalarIR === undefined
-        ? {}
-        : { onScalarIR: request.onScalarIR }),
+      maxSpecializations: request.maxSpecializations ?? 4096,
+      onScalarIR: (stage, module) => {
+        if (reportIR !== undefined) reportIR(stage, module);
+      },
     },
     target.hostABI,
   );
@@ -397,7 +397,23 @@ function buildX64HostedProgram(
       managedBytes,
       pageBytes,
     });
-    const written = writeExecutableImage(target, image, request.identifier, []);
+    const executable: ExecutableImageRequest = {
+      code: image.code,
+      entryOffset: image.entryOffset,
+      maxByteLength: image.maxByteLength,
+      data: image.data,
+      symbols: image.symbols,
+      imports: image.imports,
+      addressFixups: image.addressFixups,
+      patchAddress: image.patchAddress,
+    };
+    const foreignLibraries: ForeignLibrary[] = [];
+    const written = writeExecutableImage(
+      target,
+      executable,
+      request.identifier,
+      foreignLibraries,
+    );
     if (!written.ok) return failure("image", written.error);
     return written;
   } catch (caught) {
@@ -1409,7 +1425,8 @@ function linkHostedImage(
       maxByteLength: Number.MAX_SAFE_INTEGER,
       imports,
       libraries,
-      ...relocations,
+      addressFixups: relocations.addressFixups,
+      patchAddress: relocations.patchAddress,
     },
     request.identifier,
     request.foreignLibraries ?? [],
