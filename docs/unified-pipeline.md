@@ -294,6 +294,7 @@ identity. Only native errors pass the native `instanceof` test.
 Native `message` defaults to the empty string, `name` uses the intrinsic
 kind, and `stack` is undefined. The native constructor diagnoses Error
 options, whose getters and cause semantics belong to the realm constructor.
+
 ### Mixed native error views (slice 4a, B3)
 
 Mixed images with typed boundaries use explicit record layouts for all three
@@ -313,6 +314,34 @@ contracts check the realm object's members in order at the boundary.
 The view's stack is captured at first exposure. Native-only construction
 keeps the private native descriptors and an undefined stack. See the
 [error view design](design-4a-narrowing-errors.md#native-errors-and-their-realm-views).
+
+### Coded Node errors and literal-key guards (slice 4a, B6)
+
+A literal-key `in` test on a known object can introduce a property of type
+`unknown` on the true branch. Primitive `typeof` and value comparisons
+refine that fact. Each property read executes in source order, including
+when a getter or proxy returns a different value on a repeated read.
+A read consumed as a narrowed scalar checks the actual value. An explicitly
+`unknown` result preserves the general value. A local snapshot such as
+`const code = e.code` gives later uses a stable binding.
+
+Native crypto and zlib failures use dedicated records for coded Error and
+RangeError. The zlib status is carried in `errno` and translated to its
+`Z_*` code. The native SystemError record used by `os.userInfo` stores
+platform details in `info` and reads `errno` and `syscall` from that record.
+These native failures do not require a realm.
+
+On first exposure, B3's traced slot caches a branded realm view with
+Node's public own descriptors in producer order. The SystemError prototype
+is shared within the realm. Its `errno` and `syscall` accessors reference
+the same writable details object returned by its read-only `info` property.
+Subsequent membership checks and reads use ordinary realm HasProperty and
+Get, including inherited properties and proxy traps.
+
+The focused evidence is `coded-error-guard`,
+`tools/build-typed-node-errors-fixture.ts` and its Node 24.12.0 reference.
+The typed profile requires a literal key for fixed-layout objects. Typed
+dynamic keys remain available on realm-backed indexed objects.
 
 ### Typed BigInt (slice 4a)
 
@@ -493,7 +522,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | Classes rejected in module-instance (runtime) contexts                                                                                                                                                                                                                                      | `class-basic`                                                                                                   | 3                                        |
 | (Removed by 4a: native errors) `new Error` and guarded reads of caught native errors                                                                                                                                                                                                        | `errors`, `caught-error-reads`, `native-error-flow`                                                             | 4a                                       |
 | Typed `instanceof Uint8Array`                                                                                                                                                                                                                                                               | `typed-arrays`                                                                                                  | 4a                                       |
-| `stack` of a native error exposed to realm code names the frames at first exposure, not at creation (creation-site capture is deferred to native stack capture; needs allocation-time frame capture without realm access) | `exposed-native-error` | Native stack capture |
+| `stack` of a native error exposed to realm code names the frames at first exposure, not at creation (creation-site capture is deferred to native stack capture; needs allocation-time frame capture without realm access)                                                                   | `exposed-native-error`                                                                                          | Native stack capture                     |
 | Native Error options and stack capture                                                                                                                                                                                                                                                      | `Error options (cause) require the realm Error constructor`. Native `stack` is undefined.                       | Realm constructor / native stack capture |
 | `toLowerCase` and other unlisted String methods; `Math.pow`/`log2`/`fround`; `JSON`                                                                                                                                                                                                         | `string-methods`, `math`, `json`                                                                                | 4                                        |
 | (Removed by 2b: checked downcasts) `x as Uint8Array` from a general value                                                                                                                                                                                                                   | `general-value-casts`                                                                                           | 2 (projection), 4                        |
@@ -506,7 +535,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | Nested type declarations; ternary over union discriminants in an object literal                                                                                                                                                                                                             | `nested-type-declarations`, `union-object-ternary`                                                              | 5                                        |
 | `for (const x of list)` followed by a property read of `x` (in runtime modules)                                                                                                                                                                                                             | `for-of-record-reads`                                                                                           | 5                                        |
 | (Removed by 4a: typed BigInt) Typed BigInt values (blocks FFI pointer/u64 values crossing into general code as BigInt)                                                                                                                                                                      | `bigint`                                                                                                        | 4                                        |
-| Node API errors without `code`/`errno` (zlib, crypto)                                                                                                                                                                                                                                       | (runtime modules)                                                                                               | 4                                        |
+| (Removed by 4a B6) Node API errors without `code` or `errno` (zlib, crypto)                                                                                                                                                                                                                 | (runtime modules)                                                                                               | 4                                        |
 | Top-level statements in typed modules ("module statement is outside the declaration checking slice")                                                                                                                                                                                        | `module-statements`                                                                                             | 5                                        |
 | A compile-time type error (`noUncheckedIndexedAccess`) becomes a general fallback instead of a diagnostic                                                                                                                                                                                   | `typed-array-index`                                                                                             | 4                                        |
 | No per-program compiler options                                                                                                                                                                                                                                                             | `typed-array-index-unchecked`                                                                                   | not yet scheduled                        |
@@ -515,7 +544,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | (Implemented in 4a C1 for indexed objects) Typed computed keys, ordinary reads and writes, `in`, `delete`, own enumeration, `for…in` and spread                                                                                                                                             | `dynamic-object-*`, `explicit-dynamic-property-contract`                                                        | 4a C1                                    |
 | Indexed spread requires a contextual indexed result and indexed sources. Open computed literals expose `unknown` reads pending guarded inference.                                                                                                                                           | (typed indexed object lowering)                                                                                 | 4a follow-up                             |
 | Native list or fixed-record payloads in dynamic objects need slice 2b list/record views. `os.networkInterfaces()` still returns a Map because its values are lists of fixed records.                                                                                                        | (runtime modules)                                                                                               | 4a C2                                    |
-| No `SystemError` in typed runtime code: node:os failures are TypeErrors                                                                                                                                                                                                                     | (runtime modules)                                                                                               | 4                                        |
+| (Removed by 4a B6) `os.userInfo` failures without SystemError                                                                                                                                                                                                                               | (runtime modules)                                                                                               | 4                                        |
 | (Removed by 4a: callable classification) Typed `typeof` on realm callables received as `unknown`                                                                                                                                                                                            | `unknown-typeof-callable`, `tools/build-mixed-general-typeof-fixture.ts`                                        | 4a                                       |
 | Calling a native closure through a narrowed `Function` requires the slice 2b closure view. The dynamic call path itself is pending.                                                                                                                                                         | (mixed callable fixture planned)                                                                                | 2b, 4a                                   |
 | Passing a realm typed array narrowed by `instanceof` to a native typed-array parameter requires the slice 2b buffer view. The narrowing itself is pending.                                                                                                                                  | (mixed typed-array fixture planned)                                                                             | 2b, 4a                                   |

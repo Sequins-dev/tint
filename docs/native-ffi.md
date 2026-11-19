@@ -462,9 +462,9 @@ nominally. `View<R>` from `tint:ffi` names the type:
 import { allocate, address, type View } from "tint:ffi";
 import { cStringAt } from "tint:ffi/unsafe";
 import { z_stream, deflate } from "tint:c/zlib";
-function failure(stream: View<z_stream>, fallback: string): TypeError {
+function streamMessage(stream: View<z_stream>, fallback: string): string {
   const message = stream.msg;                  // Address<char>: a number
-  return new TypeError(message === 0 ? fallback : cStringAt(message));
+  return message === 0 ? fallback : cStringAt(message);
 }
 const block = allocate(z_stream.size + 4096),
   stream = z_stream.view(block);
@@ -689,9 +689,13 @@ and against Node's 15-minute average. Deviations, all
 `networkInterfaces()` returns a `Map` from interface name to Node's arrays
 instead of Node's plain object, an API-shape deviation forced by typed code
 having no objects with dynamic keys (the fixture pins today's shape and says
-so; it does not assert it as correct); libuv failures are TypeErrors with
-Node's messages rather than SystemErrors; `userInfo` takes no `encoding`
-option.
+so; it does not assert it as correct). The interface-address failure still
+uses the existing EIO fallback. `userInfo` takes no `encoding` option.
+Passwd lookup failures produce a SystemError with code `ERR_SYSTEM_ERROR`.
+Both adapters translate the returned POSIX status to libuv's errno, code and
+message. A successful call with no passwd entry maps to ENOENT.
+`tools/build-typed-node-errors-fixture.ts` injects EINTR, ERANGE, EACCES
+and an absent entry to check retries, buffer growth and SystemError fields.
 
 **Targets.** Each binding has an image on its own target only, so a
 target's reader fails explicitly on the other: the build stops at
@@ -1315,15 +1319,16 @@ surface needs algorithms Tint does not implement (HMAC, ciphers, key
 derivation); the CommonCrypto binding stays as the FFI's record and
 microbenchmark example. `digest()` returns the bytes (Node returns a Buffer),
 `digest("hex" | "base64" | "base64url")` text; digesting twice or updating
-after a digest throws "Digest already called". The native test compares 14
-vectors with Node's digests (empty input, block boundaries 55/56/63/64/65,
+after a digest throws an Error with code `ERR_CRYPTO_HASH_FINALIZED` and
+message "Digest already called". Unrecognized algorithms throw an uncoded
+Error. The native test compares 14 vectors with Node's digests (empty input, block boundaries 55/56/63/64/65,
 multi-update across strings and bytes, non-ASCII and lone surrogates, 1 MiB +
 13 bytes) with allocation churn forcing collections between updates.
 
-Deviations (see [Known defects](#known-defects)): the errors are `TypeError`s
-with Node's messages, and `Hash` is a closure-backed object rather than a class.
-Narrowing `string | Uint8Array` needed a typed-pipeline fix: `general-value` now
-extracts a `Uint8Array` (object tag plus header marker check).
+`Hash` uses a closure-backed object. For a fresh hash, unsupported digest
+encodings still throw a TypeError in Tint. Node returns a Buffer for an
+unrecognized encoding. `general-value` narrows `string | Uint8Array` by
+checking the object tag and the typed-array header marker.
 
 ## Zero-copy records (assessment, not built)
 
@@ -1461,10 +1466,9 @@ convergence ([progressive lowering](progressive-lowering.md)), not design:
 | Gap in the typed pipeline                                                                                                                                                                                                                    | Workaround (site)                                                                                                                                                                                                                                                                                                 |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Untyped (general) code cannot import trusted runtime modules, so untyped code cannot call bindings                                                                                                                                           | none; bindings are typed-only today (`compileArm64Program` general partition)                                                                                                                                                                                                                                     |
-| No plain `Error` construction                                                                                                                                                                                                                | `TypeError` with Node's messages (`native-runtime/src/node/crypto.ts`, `node/zlib.ts`; zlib errors also lack Node's `code`/`errno`)                                                                                                                                                                               |
 | Classes rejected in this module context                                                                                                                                                                                                      | closure-backed `Hash` object (`crypto.ts`)                                                                                                                                                                                                                                                                        |
 | No `String.prototype.toLowerCase`                                                                                                                                                                                                            | `sameAsciiLetters` (`crypto.ts`)                                                                                                                                                                                                                                                                                  |
-| No reading `.message` of a caught error; no `instanceof Uint8Array`                                                                                                                                                                          | the native test checks only `instanceof TypeError` (`tools/native-ffi-fixtures.ts`)                                                                                                                                                                                                                               |
+| Unsupported digest encodings on a fresh hash                                                                                                                                                                                                 | Tint throws TypeError for an unrecognized encoding. Node returns a Buffer (`crypto.ts`).                                                                                                                                                                                                                          |
 | No `Math.pow`, `Math.log2`, `Math.fround`; no typed-array views over a buffer                                                                                                                                                                | arithmetic binary32/binary64 codecs in generated record wrappers; precomputed `fround` literals in the fixture (`compiler/src/native/foreign/expansion.ts`)                                                                                                                                                       |
 | Narrowing `string \| Uint8Array` did not lower                                                                                                                                                                                               | fixed: `general-value` extracts a checked `Uint8Array`                                                                                                                                                                                                                                                            |
 | No typed BigInt values (`typed BigInt values are not implemented`, stage link)                                                                                                                                                               | `Address<T>` and 64-bit integers are exact numbers (or trap); BigInt at general boundaries waits for typed BigInt and for general code calling bindings                                                                                                                                                           |
@@ -1474,7 +1478,6 @@ convergence ([progressive lowering](progressive-lowering.md)), not design:
 | `tint:ffi` (a retained runtime module) rejects top-level loops and non-literal module initializers                                                                                                                                           | object-literal module state initialized lazily (`callbacks`, `registry$` in `ffi/index.ts`)                                                                                                                                                                                                                       |
 | KNOWN DEFECT (safety, not a pipeline gap): a callback's `Ptr<R>` view kept past its invocation faults on access, a crash reachable from safe TypeScript                                                                                      | the proper fix is a compile-time escape check rejecting stores of a callback-parameter view anywhere that outlives the invocation (outer variables, fields, returned values, escaping closures); until then the view is parked at the guard so the failure is a deterministic fault, never a read of freed memory |
 | No objects with dynamic keys (index signatures); no iteration of a `Map` (`for-of`, `keys()`: `invalid method call`, `typescript/src/checker/closures.ts:3697` handles only get/has/set/delete/clear)                                        | KNOWN DEFECT (API shape): `node:os` `networkInterfaces()` returns a `Map` where Node returns a plain object keyed by interface name; the convergence removes it. Its fixture pins the current shape and walks Node's names (`node/os.ts`, `tools/native-os-fixtures.ts`)                                          |
-| No plain `Error`/`SystemError` construction                                                                                                                                                                                                  | `node:os` failures are TypeErrors with Node's messages (`node/os.ts`)                                                                                                                                                                                                                                             |
 | Compiler sources: no tuple types, `JSON`, `Math.pow`, nested type declarations; forward references to unannotated module consts fail the native bootstrap; a ternary choosing opcodes of different ISA union members fails contextual typing | interface instead of tuple, string concatenation, constants, module-level `Operand`, annotated helper texts (`foreign/*.ts`); `integerToFloat`/`floatToInteger`/`narrowLoad`/`narrowStore` helpers (codegen `c-call` lowering)                                                                                    |
 
 ## Open items (FFI scope)

@@ -110,22 +110,28 @@ ${cases}
   const abc = new Uint8Array(5);
   abc[1] = 97; abc[2] = 98; abc[3] = 99;
   if (createHash("sha256").update(abc.subarray(1, 4)).digest("hex") !== ${JSON.stringify(abcHex)}) return 95;
-  // Chaining returns the same hash; digesting twice or updating after a
-  // digest throws "Digest already called". KNOWN DEFECT: Node throws Error
-  // and the message is not checked, because typed code cannot construct
-  // Error or read a caught error's message (docs/native-ffi.md).
+  // Chaining returns the same hash. A finalized hash throws a coded Error
+  // from either entry point.
   const hash = createHash("sha256");
   if (hash.update("a") !== hash) return 91;
   hash.digest("hex");
-  let twice = "";
-  try { hash.digest("hex"); } catch (error) { if (error instanceof TypeError) twice = "thrown"; }
-  if (twice !== "thrown") return 92;
-  let after = "";
-  try { hash.update("b"); } catch (error) { if (error instanceof TypeError) after = "thrown"; }
-  if (after !== "thrown") return 93;
-  let unsupported = "";
-  try { createHash("md4"); } catch (error) { if (error instanceof TypeError) unsupported = "thrown"; }
-  if (unsupported !== "thrown") return 94;
+  function finalized(error: unknown): boolean {
+    if (!(error instanceof Error) || error instanceof TypeError ||
+        error.message !== "Digest already called") return false;
+    return "code" in error && error.code === "ERR_CRYPTO_HASH_FINALIZED";
+  }
+  let twice = false;
+  try { hash.digest("hex"); } catch (error) { twice = finalized(error); }
+  if (!twice) return 92;
+  let after = false;
+  try { hash.update("b"); } catch (error) { after = finalized(error); }
+  if (!after) return 93;
+  let unsupported = false;
+  try { createHash("tint-unknown-digest"); } catch (error) {
+    unsupported = error instanceof Error && !(error instanceof TypeError) &&
+      error.message === "Digest method not supported" && !("code" in error);
+  }
+  if (!unsupported) return 94;
   return 42;
 }
 `;
