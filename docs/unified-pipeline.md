@@ -294,8 +294,25 @@ identity. Only native errors pass the native `instanceof` test.
 Native `message` defaults to the empty string, `name` uses the intrinsic
 kind, and `stack` is undefined. The native constructor diagnoses Error
 options, whose getters and cause semantics belong to the realm constructor.
-The [error view design](design-4a-narrowing-errors.md#native-errors-and-their-realm-views)
-tracks realm-side structural contracts and error identity across mixed boundaries.
+### Mixed native error views (slice 4a, B3)
+
+Mixed images with typed boundaries use explicit record layouts for all three
+native error kinds. The layouts carry a message, a presence flag and the
+traced slice 2b `[[view]]` field. The generated host publishes an ordinary
+error on first exposure, using the program realm's intrinsic prototype and
+error brand. An omitted or undefined message inherits the prototype's
+empty message. An explicit string, including the empty string, is an own
+non-enumerable property.
+
+The boundary reuses the cached view on returns, thrown values and record
+fields. A reciprocal identity lets a view round-trip through a typed
+argument. Typed property reads and intrinsic error predicates on a view
+dispatch through realm operations supplied by the adapter. Structural Error
+contracts check the realm object's members in order at the boundary.
+
+The view's stack is captured at first exposure. Native-only construction
+keeps the private native descriptors and an undefined stack. See the
+[error view design](design-4a-narrowing-errors.md#native-errors-and-their-realm-views).
 
 ### Typed BigInt (slice 4a)
 
@@ -497,7 +514,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | Classes rejected in module-instance (runtime) contexts                                                                                                                                                                                                                                      | `class-basic`                                                                                                   | 3                                        |
 | (Removed by 4a: native errors) `new Error` and guarded reads of caught native errors                                                                                                                                                                                                        | `errors`, `caught-error-reads`, `native-error-flow`                                                             | 4a                                       |
 | Typed `instanceof Uint8Array`                                                                                                                                                                                                                                                               | `typed-arrays`                                                                                                  | 4a                                       |
-| Mixed native Error views and realm-side structural Error contracts                                                                                                                                                                                                                          | (mixed trusted boundary)                                                                                        | 4a                                       |
+| `stack` of a native error exposed to realm code names the frames at first exposure, not at creation (creation-site capture is deferred to native stack capture; needs allocation-time frame capture without realm access) | `exposed-native-error` | Native stack capture |
 | Native Error options and stack capture                                                                                                                                                                                                                                                      | `Error options (cause) require the realm Error constructor`. Native `stack` is undefined.                       | Realm constructor / native stack capture |
 | `toLowerCase` and other unlisted String methods; `Math.pow`/`log2`/`fround`; `JSON`                                                                                                                                                                                                         | `string-methods`, `math`, `json`                                                                                | 4                                        |
 | (Removed by 2b: checked downcasts) `x as Uint8Array` from a general value                                                                                                                                                                                                                   | `general-value-casts`                                                                                           | 2 (projection), 4                        |

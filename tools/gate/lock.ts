@@ -10,6 +10,8 @@ import {
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { runWithWatchdog } from "./watchdog.ts";
+
 const sleep = new Int32Array(new SharedArrayBuffer(4));
 
 function tryAcquire(file: string): number | undefined {
@@ -103,11 +105,13 @@ if (import.meta.main) {
   if (!resource || !label || !command)
     throw Error("Expected resource, label and command");
   const timing = process.env.TINT_GATE_LOCK_TIMING;
-  if (resource === "timed") {
+  if (resource === "watchdog") {
+    process.exitCode = await runWithWatchdog(label, command, args);
+  } else if (resource === "timed") {
     const startedAt = Date.now();
     const start = performance.now();
     try {
-      process.exitCode = runGateCommand(command, args);
+      process.exitCode = await runWithWatchdog(label, command, args);
     } finally {
       if (timing)
         appendFileSync(

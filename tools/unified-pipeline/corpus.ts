@@ -16,7 +16,7 @@ export interface Construct {
   readonly name: string;
   readonly typed: string;
   readonly untyped: string;
-  /** Plain JavaScript modules the forms import as "./<file>". */
+  /** Source modules the forms import as "./<file>". */
   readonly helpers?: Readonly<Record<string, string>>;
   /** Node's result where Tint's semantics intentionally differ from
    * type-erased execution (enforced annotations); otherwise 42. */
@@ -507,6 +507,26 @@ export function run() {
   finally { cleaned = true; }
   const range = new RangeError("r");
   return caught === "boom" && cleaned && range instanceof Error && range.name === "RangeError" ? 42 : 1;
+}`,
+  },
+  {
+    name: "exposed-native-error",
+    helpers: {
+      "error-factory.ts": `const shared = new TypeError("shared");
+export function make(): TypeError { return shared; }`,
+    },
+    typed: `import { make } from "./error-factory.ts";
+export function run(): number {
+  const error: Error = make();
+  return error === make() && error instanceof TypeError &&
+    error.message === "shared" ? 42 : 1;
+}`,
+    untyped: `import { make } from "./error-factory.ts";
+export function run() {
+  const error = make();
+  return error === make() && Object.getPrototypeOf(error) === TypeError.prototype &&
+    Object.prototype.toString.call(error) === "[object Error]" &&
+    error.message === "shared" ? 42 : 1;
 }`,
   },
   {

@@ -25,20 +25,37 @@ exclusive pathname and memory slot inodes survive release. Use `-k` for
 manual acquisitions and keep those lock files in place.
 
 The gate runs all native-launch and timing-sensitive test files in one
-locked batch with the usual Node test concurrency. This keeps fixture
+exclusively locked batch with the usual Node test concurrency. This keeps fixture
 builds and debugger sessions together and queues one waiter per gate.
 Separating those builds from their launches is future work. Test262 units
 and program smoke runs build their images under the semaphore and acquire
-the exclusive lock for admission and execution. Each native bootstrap
-stage takes the exclusive lock for its own LLDB invocation. That invocation
-produces the next stage's image. Toolchain freezes and byte comparisons run
-outside the exclusive lock.
+the exclusive lock for admission and execution. Each macOS native bootstrap
+stage takes a memory slot for its LLDB invocation. These self-builds check
+byte identity and can overlap across checkouts. Toolchain freezes use a
+memory slot, and byte comparisons run unlocked.
+
+The watchdog starts when a step begins running, after any resource wait.
+Defaults are 1,800 seconds per bootstrap stage (`TINT_GATE_STAGE_TIMEOUT`),
+1,800 seconds for the native test batch (`TINT_GATE_NATIVE_TIMEOUT`), and
+600 seconds per Test262 admission or execution launch (`TINT_GATE_SMOKE_TIMEOUT`).
+Recent macOS bootstrap stages took 583–627 seconds. A reference run held the
+exclusive lock for 252 seconds for the batch and at most 2.2 seconds per smoke
+launch. The smoke deadline allows for contention in the host's first-launch
+admission queue. Both unlocked Linux native bootstrap stages use the stage
+timeout as well.
+
+On macOS the watchdog attempts a five-second process sample before killing the
+stalled command tree, including the debugger and inferior. The sample itself
+has a bounded deadline. A timeout releases the held resource, fails the gate,
+and records the step in `stalls.tsv`, `stall-<step>.txt`, and the final summary.
 
 Each gate creates a fresh `.tint-bootstrap/gate.*` evidence directory and
-prints its path, commit, timestamped step results, and wall time. On macOS
+prints its path, commit, and timestamped step results with wall time including
+queue time. On macOS
 the final line reports total exclusive lock hold in milliseconds, excluding
 queue time. `locks.tsv` records the step, lock path, UTC epoch acquisition
-time in milliseconds, and hold duration. The logs include exit statuses,
+time in milliseconds, and hold duration excluding queue time. Use the
+`stage2` and `stage3` memory-slot rows to revisit the bootstrap timeout. The logs include exit statuses,
 self-build SHA-256s and both Test262 reports. The gate stops on the first
 failed step.
 
@@ -49,11 +66,11 @@ moving, or changing a test. Read the test and follow the helper it calls.
 Direct process operations, debugger helpers, wall-clock deadlines, native
 publication, and full compilation passes determine which resource it needs.
 
-| Group | Evidence to look for |
-| --- | --- |
-| `concurrent` | In-process assertions, isolated temporary files, byte emission without executing the image, and bounded work with no wall-clock deadline. Untimed Node reference commands and static inspection tools can also run here. |
-| `memory` | Full workspace or managed/JIT compilation and large fixtures without timed execution, such as `selfhost-linked` and `managed-jit-entry`. |
-| `native` | Native image execution, LLDB/GDB, signal and deadline tests, or fixtures that combine native builds and execution. Examples include `native-process-launch`, `native-ffi`, `runtime-diagnostics`, and the DevTools tests. |
+| Group        | Evidence to look for                                                                                                                                                                                                      |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `concurrent` | In-process assertions, isolated temporary files, byte emission without executing the image, and bounded work with no wall-clock deadline. Untimed Node reference commands and static inspection tools can also run here.  |
+| `memory`     | Full workspace or managed/JIT compilation and large fixtures without timed execution, such as `selfhost-linked` and `managed-jit-entry`.                                                                                  |
+| `native`     | Native image execution, LLDB/GDB, signal and deadline tests, or fixtures that combine native builds and execution. Examples include `native-process-launch`, `native-ffi`, `runtime-diagnostics`, and the DevTools tests. |
 
 The test selector uses the same two globs as the original workspace gate
 and rejects missing, duplicate, or unclassified entries before running
