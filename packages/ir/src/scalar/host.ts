@@ -24,6 +24,7 @@ export type HostOperation =
   | "argument-count"
   | "argument-length"
   | "argument-copy"
+  | "environment-copy"
   | "native-function-descriptor"
   | "native-function-signature"
   | "native-value-function-descriptor"
@@ -87,6 +88,7 @@ export type HostOperation =
    * nativeTargetOS* code (@tint/abi/host) fixed by code generation from the
    * build target's host ABI. Reads nothing at run time. */
   | "target-os"
+  | "target-architecture"
   /** Sequentially consistent raw-word atomics over a caller-authorized window,
    * with the memory-read-word bounds contract: (address, byteLength, offset,
    * ...). Each returns the word observed before the operation (0 for the
@@ -176,6 +178,8 @@ export function hostParameters(
       return ["number"];
     case "argument-copy":
       return ["number", "Uint8Array"];
+    case "environment-copy":
+      return ["Uint8Array", "Uint8Array"];
     case "argument-count":
     case "jit-debug-descriptor":
     case "jit-debug-register":
@@ -184,6 +188,7 @@ export function hostParameters(
     case "processor-count":
     case "cpu-sha256":
     case "target-os":
+    case "target-architecture":
     case "monotonic-time":
     case "wall-clock-time":
     case "random-word":

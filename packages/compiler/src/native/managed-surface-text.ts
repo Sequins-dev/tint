@@ -1,5 +1,6 @@
 import { createSourceTextView } from "@tint/source/text";
 import {
+  typeParameterCount,
   parseModule,
   rewriteModule,
   type Statement,
@@ -258,7 +259,7 @@ export function canonicalizeManagedSurfaceTypes(
     if (
       declaration === undefined ||
       declaration.kind !== "type-alias" ||
-      (declaration.typeParameters?.length ?? 0) !== 0
+      typeParameterCount(declaration.typeParameters) !== 0
     )
       return {
         ok: false,

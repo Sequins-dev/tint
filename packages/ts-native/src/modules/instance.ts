@@ -4,6 +4,7 @@ import {
 } from "@tint/foundation/collections/key-index";
 import type { BoundModule } from "@tint/typescript/binding";
 import {
+  typeParameterCount,
   rewriteModule,
   bindingIdentifiers,
   syntaxHash,
@@ -36,6 +37,7 @@ export function prepareModuleInstance(
   bound: BoundModule,
   exports: readonly ModuleInstanceExport[],
   retained: readonly string[] = [],
+  invokeDirectly: boolean = false,
 ): ModuleInstanceResult {
   if (module.imports.length !== 0)
     return { ok: false, error: "module instance requires resolved imports" };
@@ -46,6 +48,11 @@ export function prepareModuleInstance(
     return {
       ok: false,
       error: "module instance requires distinct selected function exports",
+    };
+  if (invokeDirectly && exports.length !== 1)
+    return {
+      ok: false,
+      error: "direct module entry requires one selected export",
     };
   const keep = createStringIndex<number>();
   for (const name of retained) {
@@ -72,7 +79,7 @@ export function prepareModuleInstance(
           retainedStatements.push(statement);
           break;
         }
-        if ((statement.typeParameters?.length ?? 0) !== 0)
+        if (typeParameterCount(statement.typeParameters) !== 0)
           return {
             ok: false,
             error: "module instance requires specialized functions",
@@ -181,6 +188,8 @@ export function prepareModuleInstance(
   while (names.has(name)) name += "_";
   const properties: PropertySignature[] = [],
     values: ObjectProperty[] = [];
+  let directReturn: TypeNode | undefined;
+  let directCall: Expression | undefined;
   for (const selected of exports) {
     if (selected === undefined) throw "missing selected export";
     const name = selected.name,
@@ -216,6 +225,38 @@ export function prepareModuleInstance(
           "module function exports require parameter and return annotations",
       };
     const returnType = fn.returnType;
+    if (invokeDirectly) {
+      let receiver = false;
+      rewriteModule(
+        { ...module, statements: [fn] },
+        {
+          expression: (node, _original) => {
+            if (node.kind === "this") receiver = true;
+            return node;
+          },
+        },
+      );
+      if (fn.parameters.length !== 0 || receiver)
+        return {
+          ok: false,
+          error:
+            "direct module entry requires a zero-argument export without a receiver",
+        };
+      directReturn = returnType;
+      directCall = {
+        kind: "call",
+        callee: {
+          kind: "identifier",
+          name: local,
+          start: module.end,
+          end: module.end,
+        },
+        arguments: [],
+        start: module.end,
+        end: module.end,
+      };
+      break;
+    }
     const type: TypeNode = {
       kind: "function",
       parameters: fn.parameters.map((p) => ({
@@ -245,7 +286,7 @@ export function prepareModuleInstance(
   }
   body.push({
     kind: "return",
-    expression: {
+    expression: directCall ?? {
       kind: "object",
       properties: values,
       start: module.end,
@@ -259,7 +300,7 @@ export function prepareModuleInstance(
     name,
     exported: true,
     parameters: [],
-    returnType: {
+    returnType: directReturn ?? {
       kind: "object",
       properties,
       start: module.start,

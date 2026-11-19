@@ -3644,6 +3644,7 @@ function lowerEntries(
         dynamicSignatures,
         realmErrors,
       );
+      recordContracts?.clearFunctionOperations();
       // Debug builds name the slots holding this function's own parameters
       // and locals. Captured and environment-owned bindings live in cells.
       let original = lowered;

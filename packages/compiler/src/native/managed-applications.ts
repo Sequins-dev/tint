@@ -6,6 +6,7 @@ import {
   type Expression,
   type Module,
   type TypeNode,
+  type TypeParameter,
   type Statement,
   type Span,
 } from "@tint/typescript/syntax";
@@ -100,7 +101,7 @@ export function normalizeManagedSurfaceApplications(
     },
     statement: (mapped, original) => {
       const names = new Set<string>();
-      let parameters: readonly string[] = [];
+      let parameters: readonly TypeParameter[] = [];
       if (
         original.kind === "function" ||
         original.kind === "interface" ||
@@ -109,9 +110,12 @@ export function normalizeManagedSurfaceApplications(
         parameters = original.typeParameters ?? [];
       else if (original.kind === "class")
         parameters = original.definition.typeParameters;
-      for (const name of parameters) {
-        if (name !== undefined && imports.get(name)?.type === true)
-          names.add(name);
+      for (const parameter of parameters) {
+        if (
+          parameter !== undefined &&
+          imports.get(parameter.name)?.type === true
+        )
+          names.add(parameter.name);
       }
       if (original.kind === "block")
         for (const child of original.statements) {

@@ -1,3 +1,4 @@
+import { typeParameterCount } from "@tint/typescript/syntax";
 import type { CheckedClosures } from "@tint/typescript/checker";
 import type { Statement } from "@tint/typescript/syntax";
 import type { FunctionIR, Span } from "@tint/ir/scalar";
@@ -67,10 +68,10 @@ export function validateFunctionAddressBindings(
     if (
       stub.async === true ||
       stub.generator === true ||
-      (stub.typeParameters?.length ?? 0) > 0 ||
+      typeParameterCount(stub.typeParameters) > 0 ||
       target.async === true ||
       target.generator === true ||
-      (target.typeParameters?.length ?? 0) > 0
+      typeParameterCount(target.typeParameters) > 0
     )
       return "function address binding requires synchronous nongeneric functions";
     const body = checked.bodies.get(binding.function);
