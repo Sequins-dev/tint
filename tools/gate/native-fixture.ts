@@ -13,6 +13,7 @@ function record(
     failed?: boolean;
     memoryWaitMs?: number;
   },
+  worker = Number(process.env.TINT_GATE_NATIVE_WORKER_PID) || undefined,
 ) {
   const elapsedMs = performance.now() - started;
   appendFileSync(
@@ -21,6 +22,7 @@ function record(
       phase,
       elapsedMs,
       pid: process.pid,
+      worker,
       endedAt: Date.now(),
       ...fields,
     }) + "\n",
@@ -93,16 +95,17 @@ export function beginNativeFixtureExecution(
     throw Error("Native fixture execution requires TINT_GATE_EXCLUSIVE_LOCK");
   const path = resolve(image);
   const stat = statSync(path);
+  const worker = Number(env.TINT_GATE_NATIVE_WORKER_PID) || undefined;
   const fields = { path, bytes: stat.size };
   const queued = performance.now();
-  record(output, "lock-wait-start", queued, fields);
+  record(output, "lock-wait-start", queued, fields, worker);
   const lock = acquireGateLock(
     [file],
     "fixture-launch",
     env.TINT_GATE_LOCK_TIMING,
   );
   try {
-    record(output, "lock-wait", queued, fields);
+    record(output, "lock-wait", queued, fields, worker);
     const previous = admitted.get(path);
     if (
       admit &&
@@ -113,7 +116,7 @@ export function beginNativeFixtureExecution(
       )
     ) {
       const started = performance.now();
-      record(output, "admission-start", started, fields);
+      record(output, "admission-start", started, fields, worker);
       try {
         admit();
         admitted.set(path, {
@@ -121,9 +124,15 @@ export function beginNativeFixtureExecution(
           ino: stat.ino,
           ctimeMs: stat.ctimeMs,
         });
-        record(output, "admission", started, fields);
+        record(output, "admission", started, fields, worker);
       } catch (error) {
-        record(output, "admission", started, { ...fields, failed: true });
+        record(
+          output,
+          "admission",
+          started,
+          { ...fields, failed: true },
+          worker,
+        );
         throw error;
       }
     }
@@ -137,7 +146,7 @@ export function beginNativeFixtureExecution(
   }
   const started = performance.now();
   try {
-    record(output, "execution-start", started, fields);
+    record(output, "execution-start", started, fields, worker);
   } catch (error) {
     lock.release();
     throw error;
@@ -147,7 +156,7 @@ export function beginNativeFixtureExecution(
     if (released) return;
     released = true;
     try {
-      record(output, "execution", started, fields);
+      record(output, "execution", started, fields, worker);
     } finally {
       lock.release();
     }

@@ -2,6 +2,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { appendFileSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { createInterface } from "node:readline";
+import { nativeBatchWaiting } from "./native-batch-clock.ts";
 
 interface ProcessEntry {
   pid: number;
@@ -154,8 +155,13 @@ export async function runWithWatchdog(
   if (!/^[a-zA-Z0-9_-]+$/.test(label))
     throw Error("Invalid gate step: " + label);
 
+  const journal = process.env.TINT_GATE_NATIVE_IMAGES;
   return runWithDeadline(command, args, seconds, {
     onTimeout: (pid) => diagnoseStall(pid, label, seconds, evidence),
+    waiting:
+      label === "check-native" && journal
+        ? nativeBatchWaiting(journal)
+        : undefined,
   });
 }
 
@@ -163,13 +169,14 @@ interface DeadlineHandlers {
   onTimeout: (pid: number) => void;
   onInterrupt?: (pid: number) => void;
   onLine?: (line: string) => void;
+  waiting?: (() => boolean) | undefined;
 }
 
 export function runWithDeadline(
   command: string,
   args: string[],
   seconds: number,
-  { onTimeout, onInterrupt, onLine }: DeadlineHandlers,
+  { onTimeout, onInterrupt, onLine, waiting }: DeadlineHandlers,
 ): Promise<number> {
   const child = spawn(command, args, {
     detached: true,
@@ -193,9 +200,41 @@ export function runWithDeadline(
     }
     const interrupt = () => stop(130, onInterrupt!);
     const terminate = () => stop(143, onInterrupt!);
-    const timer = setTimeout(() => stop(124, onTimeout), seconds * 1000);
+    const budgetMs = seconds * 1000;
+    let tick = performance.now();
+    let activeMs = 0;
+    let waitingMs = 0;
+    let paused = false;
+    let finished = false;
+    function account() {
+      const now = performance.now();
+      if (paused) waitingMs += now - tick;
+      else activeMs += now - tick;
+      tick = now;
+    }
+    const timer = waiting
+      ? setInterval(() => {
+          account();
+          try {
+            paused = waiting();
+          } catch (error) {
+            console.error("Could not read native fixture wait status:", error);
+            stop(1, killGateProcess);
+            return;
+          }
+          if (activeMs >= budgetMs) stop(124, onTimeout);
+        }, 100)
+      : setTimeout(() => stop(124, onTimeout), budgetMs);
     function clearDeadline() {
+      if (finished) return;
+      finished = true;
       clearTimeout(timer);
+      if (waiting) {
+        account();
+        console.log(
+          `native-batch active-ms=${Math.round(activeMs)} all-workers-wait-ms=${Math.round(waitingMs)}`,
+        );
+      }
       if (onInterrupt) {
         process.off("SIGINT", interrupt);
         process.off("SIGTERM", terminate);

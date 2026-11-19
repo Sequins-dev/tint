@@ -68,7 +68,13 @@ if (import.meta.main) {
       nativeTestConcurrency(process.env.TINT_GATE_NATIVE_CONCURRENCY),
     );
   } else {
-    const run = spawnSync(process.execPath, checkTestArguments(group), {
+    const args = checkTestArguments(group);
+    if (group === "native" && process.env.TINT_GATE_NATIVE_IMAGES) {
+      args.unshift(
+        "--import=" + new URL("./gate/native-worker.ts", import.meta.url).href,
+      );
+    }
+    const run = spawnSync(process.execPath, args, {
       stdio: "inherit",
     });
     if (run.error !== undefined) throw run.error;

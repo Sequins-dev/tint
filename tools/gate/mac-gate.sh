@@ -52,8 +52,8 @@ run_check_step check-concurrent unlocked env -u TZ pnpm check:concurrent
 run_check_step check-memory memory env -u TZ node tools/check-test-files.ts memory
 native_status=0
 native_images="$gate_output/native-images.jsonl"
-gate_step_timeout=${TINT_GATE_NATIVE_TIMEOUT:-1800} run_step check-native watchdog env -u TZ \
-  TINT_GATE_NATIVE_IMAGES="$native_images" node tools/check-test-files.ts native || native_status=$?
+TINT_GATE_NATIVE_IMAGES="$native_images" gate_step_timeout=${TINT_GATE_NATIVE_TIMEOUT:-1800} \
+  run_step check-native watchdog env -u TZ node tools/check-test-files.ts native || native_status=$?
 node tools/gate/native-fixture.ts "$native_images"
 if [ "$native_status" -ne 0 ]; then
   echo "check=$native_status"

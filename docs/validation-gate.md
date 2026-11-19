@@ -51,8 +51,12 @@ load, so these invocations are serialized with native fixture launches and
 other exclusive steps. Node bootstrap and toolchain freezes use a memory
 slot, and byte comparisons run unlocked.
 
-The watchdog starts when a step begins running. For the native batch it
-includes the fixture-specific memory and launch waits within that step.
+The watchdog starts when a step begins running. The native batch watchdog
+pauses while every active test file worker waits for the exclusive lock.
+Build, admission and execution continue to count against its deadline.
+The batch logs active time and all-worker queue time (wall time), and the
+per-image journal logs individual lock waits. The full gate wall budget
+continues through those waits.
 Defaults are 1,800 seconds per bootstrap stage (`TINT_GATE_STAGE_TIMEOUT`),
 1,800 seconds for the native test batch (`TINT_GATE_NATIVE_TIMEOUT`), and
 600 seconds per Test262 admission or execution launch (`TINT_GATE_SMOKE_TIMEOUT`).

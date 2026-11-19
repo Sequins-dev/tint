@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { withGateLock } from "./gate/lock.ts";
 import * as fixturePhases from "./gate/native-fixture.ts";
+import { nativeBatchWaiting } from "./gate/native-batch-clock.ts";
 const { buildNativeFixture, beginNativeFixtureExecution } = fixturePhases;
 
 test(
@@ -316,6 +317,100 @@ test("fixture preparation releases its memory slot before admission and records 
     );
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /built=1 admitted=1 launch-attempted=1/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test(
+  "the native watchdog excludes a held launch lock from its active budget",
+  {
+    skip: process.platform !== "darwin",
+  },
+  () => {
+    const directory = mkdtempSync(join(tmpdir(), "tint-native-watchdog-"));
+    try {
+      const lock = join(directory, "native.lock");
+      const journal = join(directory, "native-images.jsonl");
+      const image = join(directory, "image");
+      writeFileSync(image, "fixture");
+      const result = spawnSync(
+        "sh",
+        [
+          "-eu",
+          "-c",
+          `
+      /usr/bin/lockf -k "$1" sh -c 'touch "$1"; sleep 2.5' holder "$2" &
+      until [ -f "$2" ]; do sleep 0.01; done
+      exec "$3" "$4" watchdog check-native "$3" --import="$6" --input-type=module -e "$5"
+    `,
+          "fixture",
+          lock,
+          join(directory, "ready"),
+          process.execPath,
+          fileURLToPath(new URL("./gate/lock.ts", import.meta.url)),
+          `
+      import { beginNativeFixtureExecution } from ${JSON.stringify(new URL("./gate/native-fixture.ts", import.meta.url).href)};
+      const release = beginNativeFixtureExecution(${JSON.stringify(image)}, () => {});
+      release();
+      console.log("fixture completed");
+    `,
+          new URL("./gate/native-worker.ts", import.meta.url).href,
+        ],
+        {
+          encoding: "utf8",
+          timeout: 15000,
+          env: {
+            ...process.env,
+            TINT_GATE_STEP_TIMEOUT: "1",
+            TINT_GATE_EVIDENCE: directory,
+            TINT_GATE_NATIVE_IMAGES: journal,
+            TINT_GATE_EXCLUSIVE_LOCK: lock,
+          },
+        },
+      );
+      assert.equal(result.status, 0, result.stderr);
+      assert.match(result.stdout, /fixture completed/);
+      assert.match(result.stdout, /all-workers-wait-ms=[1-9][0-9]{3}/);
+      assert.ok(
+        readFileSync(journal, "utf8")
+          .split("\n")
+          .filter(Boolean)
+          .map((line) => JSON.parse(line))
+          .some((row) => row.phase === "lock-wait" && row.elapsedMs > 1000),
+      );
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  },
+);
+
+test("a lock waiter does not pause the watchdog while another worker is active", () => {
+  const directory = mkdtempSync(join(tmpdir(), "tint-native-clock-"));
+  try {
+    const journal = join(directory, "native-images.jsonl");
+    const waiting = nativeBatchWaiting(journal);
+    assert.equal(waiting(), false);
+    const events: object[] = [];
+    const record = (phase: string, worker: number) => {
+      events.push({ phase, worker });
+      writeFileSync(
+        journal,
+        events.map((event) => JSON.stringify(event)).join("\n") + "\n",
+      );
+    };
+    record("worker-start", 1);
+    record("worker-start", 2);
+    record("lock-wait-start", 1);
+    assert.equal(waiting(), false);
+    record("lock-wait-start", 2);
+    assert.equal(waiting(), true);
+    record("lock-wait", 1);
+    assert.equal(waiting(), false);
+    record("worker-end", 1);
+    assert.equal(waiting(), true);
+    record("worker-end", 2);
+    assert.equal(waiting(), false);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
