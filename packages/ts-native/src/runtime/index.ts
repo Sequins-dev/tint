@@ -104,6 +104,11 @@ export type RuntimeModuleTransform = (
 export type RuntimeTypeEquivalenceFactory = (
   types: readonly Type[],
 ) => (left: number, right: number) => boolean;
+/** The checked graph for the current collection pass. Replaced on retry so
+ * an earlier graph can die before specializing and checking the next one. */
+export interface CollectionRuntimeObservation {
+  checked: CheckedClosures;
+}
 /** Templates are linked alongside the source; helpers maps namespace:export to its linked name. */
 export function prepareCollectionRuntimes(
   module: Module,
@@ -119,12 +124,35 @@ export function prepareCollectionRuntimes(
    * contract (managed surfaces and service imports key them by element). */
   eraseRecordLists: boolean = false,
 ): RuntimePreparation {
-  let observed = checked;
+  return prepareObservedCollectionRuntimes(
+    module,
+    { checked },
+    helpers,
+    globals,
+    transform,
+    maxSpecializations,
+    equivalence,
+    interfaceCache,
+    eraseRecordLists,
+  );
+}
+/** Prepare collection helpers, taking ownership of the observed graph. */
+export function prepareObservedCollectionRuntimes(
+  module: Module,
+  observation: CollectionRuntimeObservation,
+  helpers: ReadonlyMap<string, string>,
+  globals: readonly string[],
+  transform: RuntimeModuleTransform | undefined,
+  maxSpecializations: number,
+  equivalence: RuntimeTypeEquivalenceFactory | undefined,
+  interfaceCache: InterfaceResolutionCache | undefined,
+  eraseRecordLists: boolean,
+): RuntimePreparation {
   const consulted: RuntimeBindingSubject[] = [];
   while (true) {
     const result = prepareCollectionPass(
       module,
-      observed,
+      observation.checked,
       helpers,
       globals,
       transform,
@@ -137,7 +165,7 @@ export function prepareCollectionRuntimes(
     );
     if (result.ok || result.retry === undefined) return result;
     const next = result.retry;
-    const before = collectRuntimeRequirements(observed),
+    const before = collectRuntimeRequirements(observation.checked),
       after = collectRuntimeRequirements(next);
     const previousCount =
         before.lists.length +
@@ -156,7 +184,7 @@ export function prepareCollectionRuntimes(
         ok: false,
         error: "runtime requirements did not converge: " + result.error,
       };
-    observed = next;
+    observation.checked = next;
   }
 }
 // SparseList helpers only move their elements (no equality, typeof or
