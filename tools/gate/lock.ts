@@ -16,7 +16,7 @@ function tryAcquire(file: string): number | undefined {
   const fd = openSync(file, "a");
   let acquired = false;
   try {
-    const result = spawnSync("/usr/bin/lockf", ["-s", "-t", "0", "3"], {
+    const result = spawnSync("/usr/bin/lockf", ["-k", "-s", "-t", "0", "3"], {
       stdio: ["ignore", "ignore", "inherit", fd],
     });
     if (result.error !== undefined) throw result.error;

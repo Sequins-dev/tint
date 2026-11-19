@@ -20,7 +20,9 @@ checkouts in `~/.t3/tint-gate-memory`. Use the same count for all gates on
 the host. Node bootstrap, frozen toolchain preparation, and heavy test
 builds use this semaphore. An occupied semaphore waits between probes.
 The exclusive lock at `~/.t3/tint-gate.lock` is shared with legacy gate
-callers. Leave its pathname in place when using `lockf`.
+callers. The gate uses `/usr/bin/lockf -k` for every acquisition so the
+exclusive pathname and memory slot inodes survive release. Use `-k` for
+manual acquisitions and keep those lock files in place.
 
 The gate runs all native-launch and timing-sensitive test files in one
 locked batch with the usual Node test concurrency. This keeps fixture

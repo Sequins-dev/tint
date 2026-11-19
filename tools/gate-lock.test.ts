@@ -34,3 +34,16 @@ test(
     }
   },
 );
+
+test("all gate acquisitions keep their lock files", () => {
+  const exclusive = readFileSync(
+    new URL("./gate/exclusive-step.sh", import.meta.url),
+    "utf8",
+  );
+  const semaphore = readFileSync(
+    new URL("./gate/lock.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(exclusive, /^exec \/usr\/bin\/lockf -k\s/m);
+  assert.match(semaphore, /spawnSync\(\s*"\/usr\/bin\/lockf",\s*\["-k",/);
+});
