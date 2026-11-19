@@ -122,26 +122,38 @@ test(
   },
 );
 
+test("macOS bootstrap stages use the exclusive lock", () => {
+  const gate = readFileSync(
+    new URL("./gate/mac-gate.sh", import.meta.url),
+    "utf8",
+  );
+  assert.match(gate, /^stage_lldb exclusive stage1 stage2$/m);
+  assert.match(gate, /^stage_lldb exclusive stage2 stage3$/m);
+  assert.match(gate, /^bootstrap memory$/m);
+  assert.match(gate, /^run_step freeze memory /m);
+  assert.match(gate, /^run_step compare unlocked /m);
+});
+
 test(
-  "a watched bootstrap stage records its memory slot and duration",
+  "a watched bootstrap stage records its exclusive lock and duration",
   {
     skip: process.platform !== "darwin",
   },
   () => {
-    const memory = mkdtempSync(join(tmpdir(), "tint-gate-stage-"));
+    const directory = mkdtempSync(join(tmpdir(), "tint-gate-stage-"));
+    const lock = join(directory, "exclusive.lock");
     try {
       const result = spawnSync(
         "sh",
         [
           "-eu",
           "-c",
-          ". tools/gate/common.sh; stage_step stage2 memory-watchdog true",
+          ". tools/gate/common.sh; stage_step stage2 exclusive true",
         ],
         {
           env: {
             ...process.env,
-            TINT_GATE_MEMORY_DIRECTORY: memory,
-            TINT_GATE_MEMORY_SLOTS: "1",
+            TINT_GATE_EXCLUSIVE_LOCK: lock,
           },
           encoding: "utf8",
         },
@@ -154,17 +166,14 @@ test(
         const timing = readFileSync(join(evidence, "locks.tsv"), "utf8")
           .trim()
           .split("\t");
-        assert.deepEqual(timing.slice(0, 2), [
-          "stage2",
-          join(memory, "slot-1.lock"),
-        ]);
+        assert.deepEqual(timing.slice(0, 2), ["stage2", lock]);
         assert.match(timing[2]!, /^\d+$/);
         assert.match(timing[3]!, /^\d+$/);
       } finally {
         rmSync(evidence, { recursive: true, force: true });
       }
     } finally {
-      rmSync(memory, { recursive: true, force: true });
+      rmSync(directory, { recursive: true, force: true });
     }
   },
 );
