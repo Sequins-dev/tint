@@ -23,6 +23,7 @@ import type {
   VariableBinding,
   ObjectBinding,
   PropertySignature,
+  IndexSignature,
   BlockStatement,
   ObjectProperty,
   CatchClause,
@@ -573,6 +574,19 @@ export function linkModules(
           node,
         );
       }
+      function indexSignature(
+        node: IndexSignature,
+        parameters: ReadonlySet<string>,
+      ): IndexSignature {
+        return mark<IndexSignature>(
+          {
+            ...node,
+            keyType: type(node.keyType, parameters),
+            valueType: type(node.valueType, parameters),
+          },
+          node,
+        );
+      }
       function type(node: TypeNode, parameters: ReadonlySet<string>): TypeNode {
         enter(node);
         try {
@@ -605,6 +619,14 @@ export function linkModules(
                 },
                 node,
               );
+            case "tuple":
+              return mark<TypeNode>(
+                {
+                  ...node,
+                  elements: node.elements.map((part) => type(part, parameters)),
+                },
+                node,
+              );
             case "array":
               return mark<TypeNode>(
                 { ...node, element: type(node.element, parameters) },
@@ -628,6 +650,14 @@ export function linkModules(
               return mark<TypeNode>(
                 {
                   ...node,
+                  ...(node.indexSignature === undefined
+                    ? {}
+                    : {
+                        indexSignature: indexSignature(
+                          node.indexSignature,
+                          parameters,
+                        ),
+                      }),
                   ...(node.call === undefined
                     ? {}
                     : { call: type(node.call, parameters) }),
@@ -1162,6 +1192,14 @@ export function linkModules(
                   name,
                   exported: false,
                   properties,
+                  ...(node.indexSignature === undefined
+                    ? {}
+                    : {
+                        indexSignature: indexSignature(
+                          node.indexSignature,
+                          params,
+                        ),
+                      }),
                   ...(node.bases === undefined
                     ? {}
                     : { bases: node.bases.map((b) => type(b, params)) }),

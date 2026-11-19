@@ -11,6 +11,7 @@ import type {
   NativeForeignBinding,
   ForeignLibrary,
 } from "./native/index.ts";
+import { dynamicObjectRuntimeModule } from "./native/runtime-contracts.ts";
 import { foreignDeclaration } from "./native/foreign/index.ts";
 /** Capability of the project request constructor for frozen bootstraps. */
 export const projectModuleLoader: boolean = true;
@@ -88,6 +89,7 @@ export function projectRoots(): string[] {
     "packages/compiler/src/cli.ts",
     "packages/native-runtime/src/index.ts",
     "packages/native-runtime/src/allocators/region/index.ts",
+    dynamicObjectRuntimeModule,
   ];
   for (const source of runtimeSources()) {
     if (source === undefined) throw "runtime root invariant";

@@ -1,5 +1,7 @@
 import type { HostOperation } from "./host.ts";
 import type { ForeignCall, ForeignMemoryAccess } from "./foreign.ts";
+export type NativeErrorKind = "Error" | "TypeError" | "RangeError";
+
 export type ScalarType =
   | "general"
   | "optional-boolean"
@@ -122,6 +124,9 @@ export type Instruction = Span &
       }
     | {
         readonly kind: "call-indirect";
+        /** A void call may consume just completion status from a matching
+         * parameter ABI, even when the callee physically returns a value. */
+        readonly discardResult?: boolean;
         readonly receiver?: number;
         readonly id: number | undefined;
         readonly target: number;
@@ -236,13 +241,18 @@ export type Instruction = Span &
       }
     | {
         readonly kind: "error-new";
-        readonly error: "TypeError" | "RangeError";
+        readonly error: NativeErrorKind;
         readonly id: number;
         readonly message: number;
       }
     | {
         readonly kind: "error-is";
-        readonly error: "TypeError" | "RangeError";
+        readonly error: NativeErrorKind;
+        readonly id: number;
+        readonly value: number;
+      }
+    | {
+        readonly kind: "error-message";
         readonly id: number;
         readonly value: number;
       }

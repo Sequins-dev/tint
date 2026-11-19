@@ -24,3 +24,32 @@ export function validRuntimeNamespace(namespace: string): boolean {
   }
   return true;
 }
+
+export const dynamicObjectRuntimeModule =
+  "packages/native-runtime/src/values/dynamic-object.ts";
+
+/** This provider uses module instance state and is demanded by the AOT checker. */
+export function dynamicObjectRuntimeSource(): RuntimeSource {
+  return {
+    module: dynamicObjectRuntimeModule,
+    namespace: "dynamic-object",
+    retainedExports: [
+      "create",
+      "finish",
+      "enroll",
+      "convertKey",
+      "define",
+      "setPrototype",
+      "read",
+      "project",
+      "write",
+      "has",
+      "remove",
+      "spread",
+      "enumerate",
+      "advance",
+      "objectConstructor",
+      "invokeEnumeration",
+    ],
+  };
+}

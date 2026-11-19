@@ -89,6 +89,107 @@ export const constructs: readonly Construct[] = [
 }`,
   },
   {
+    name: "explicit-dynamic-property-contract",
+    node: { typed: 1 },
+    typed: `export function run(): number {
+  const object: Record<string, number> = { answer: 42 };
+  const alias: Record<string, unknown> = object;
+  let rejected: boolean = false;
+  try { alias.answer = "bad"; } catch (error) { rejected = true; }
+  return rejected && object.answer === 42 ? 42 : 1;
+}`,
+    untyped: `export function run() {
+  const object = { answer: 42 };
+  const alias = object;
+  alias.answer = "open";
+  return object.answer === "open" ? 42 : 1;
+}`,
+  },
+  {
+    name: "dynamic-object-literal",
+    typed: `export function run(): number {
+  const key: string = "computed";
+  const object: Record<string, number> = { [key]: 42 };
+  return object.computed ?? 0;
+}`,
+    untyped: `export function run() {
+  const key = "computed";
+  const object = { [key]: 42 };
+  return object.computed ?? 0;
+}`,
+  },
+  {
+    name: "dynamic-object-index",
+    typed: `export function run(): number {
+  const object: { [key: string]: number } = {};
+  const key: string = "answer";
+  object[key] = 42;
+  return object[key] ?? 0;
+}`,
+    untyped: `export function run() {
+  const object = {};
+  const key = "answer";
+  object[key] = 42;
+  return object[key] ?? 0;
+}`,
+  },
+  {
+    name: "dynamic-object-in-delete",
+    typed: `export function run(): number {
+  const object: Record<string, number> = { key: 1 };
+  const name: string = "key";
+  return (name in object) && delete object[name] && !(name in object) ? 42 : 1;
+}`,
+    untyped: `export function run() {
+  const object = { key: 1 };
+  const name = "key";
+  return (name in object) && delete object[name] && !(name in object) ? 42 : 1;
+}`,
+  },
+  {
+    name: "dynamic-object-own-enumeration",
+    typed: `export function run(): number {
+  const object: Record<string, number> = { b: 42, 2: 7 };
+  const entry = Object.entries(object)[1];
+  return Object.keys(object)[0] === "2" && Object.values(object)[0] === 7 &&
+    entry !== undefined && entry[0] === "b" ? entry[1] : 1;
+}`,
+    untyped: `export function run() {
+  const object = { b: 42, 2: 7 };
+  const entry = Object.entries(object)[1];
+  return Object.keys(object)[0] === "2" && Object.values(object)[0] === 7 &&
+    entry !== undefined && entry[0] === "b" ? entry[1] : 1;
+}`,
+  },
+  {
+    name: "dynamic-object-for-in",
+    typed: `export function run(): number {
+  const object: Record<string, number> = { b: 2, 3: 7 };
+  let keys: string = "";
+  for (const key in object) keys += key;
+  return keys === "3b" ? 42 : 1;
+}`,
+    untyped: `export function run() {
+  const object = { b: 2, 3: 7 };
+  let keys = "";
+  for (const key in object) keys += key;
+  return keys === "3b" ? 42 : 1;
+}`,
+  },
+  {
+    name: "dynamic-object-spread",
+    typed: `export function run(): number {
+  const first: Record<string, number> = { answer: 1 };
+  const result: Record<string, number> = { ...first, answer: 42 };
+  return result.answer ?? 0;
+}`,
+    untyped: `export function run() {
+  const first = { answer: 1 };
+  const result = { ...first, answer: 42 };
+  return result.answer ?? 0;
+}`,
+  },
+  {
     name: "object-records",
     typed: `interface Point { x: number; y: number; label: string }
 function move(p: Point, dx: number): Point { return { x: p.x + dx, y: p.y, label: p.label }; }
@@ -261,6 +362,44 @@ export function run(): number {
 }
 export function run() {
   return total(undefined, 1, 2) === 6 && total(3) === 0 && total(1, 40, 2) === 42 ? 42 : 1;
+}`,
+  },
+  {
+    name: "rest-spread",
+    typed: `function total(head: number, ...xs: number[]): number {
+  const sum = head + (xs[0] ?? 0) + (xs[1] ?? 0);
+  xs[0] = 0;
+  return sum;
+}
+export function run(): number {
+  const xs: number[] = [20, 21];
+  return total(1, ...xs) === 42 && xs[0] === 20 ? 42 : 1;
+}`,
+    untyped: `function total(head, ...xs) {
+  const sum = head + (xs[0] ?? 0) + (xs[1] ?? 0);
+  xs[0] = 0;
+  return sum;
+}
+export function run() {
+  const xs = [20, 21];
+  return total(1, ...xs) === 42 && xs[0] === 20 ? 42 : 1;
+}`,
+  },
+  {
+    name: "void-callbacks",
+    typed: `function invoke(action: () => void): void { action(); }
+export function run(): number {
+  let result = 0;
+  const action: () => void = () => (result = 42);
+  invoke(action);
+  return result;
+}`,
+    untyped: `function invoke(action) { action(); }
+export function run() {
+  let result = 0;
+  const action = () => (result = 42);
+  invoke(action);
+  return result;
 }`,
   },
   {
@@ -862,6 +1001,29 @@ export function run() {
   const raw = new Uint8Array(floats.buffer);
   const high = new Uint32Array(raw.buffer, 4, 1);
   return raw.length === 8 && raw[7] === 0x3f && raw[6] === 0xf0 && high[0] === 0x3ff00000 ? 42 : 1;
+}`,
+  },
+  {
+    name: "native-error-flow",
+    typed: `function describe(value: Error | string): string {
+  if (!(value instanceof Error)) return value;
+  if (value instanceof TypeError) return value.name;
+  return value.message;
+}
+export function run(): number {
+  return describe("other") === "other" && describe(new Error()) === "" &&
+      describe(new TypeError("message")) === "TypeError" &&
+      describe(new RangeError("range")) === "range" ? 42 : 1;
+}`,
+    untyped: `function describe(value) {
+  if (!(value instanceof Error)) return value;
+  if (value instanceof TypeError) return value.name;
+  return value.message;
+}
+export function run() {
+  return describe("other") === "other" && describe(new Error()) === "" &&
+      describe(new TypeError("message")) === "TypeError" &&
+      describe(new RangeError("range")) === "range" ? 42 : 1;
 }`,
   },
   {

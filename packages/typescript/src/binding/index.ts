@@ -1147,7 +1147,7 @@ function bindProgram(
           break;
         case "for-of-assignment":
         case "for-in-assignment":
-          if (!javascript)
+          if (!javascript && node.kind === "for-of-assignment")
             fail(
               node,
               "UNSUPPORTED",
@@ -1159,12 +1159,6 @@ function bindProgram(
           break;
         case "for-in":
         case "for-of": {
-          if (node.kind === "for-in" && !javascript)
-            fail(
-              node,
-              "UNSUPPORTED",
-              "typed for-in lowering is not implemented",
-            );
           if (!javascript && node.disposal !== undefined)
             fail(node, "UNSUPPORTED", "resource disposal is not implemented");
           const loop = scope(s, "for", node, s.owner);

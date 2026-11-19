@@ -1,3 +1,7 @@
+export {
+  insertDynamicObjectRuntime,
+  usesDynamicObjectRuntime,
+} from "./dynamic-objects.ts";
 import {
   validateFunctionAddressBindings,
   bindFunctionAddress,
@@ -20,6 +24,13 @@ export {
   type ClassFieldInitialization,
 } from "./class-construction.ts";
 export type { RecordOperation } from "./record-bindings.ts";
+import {
+  encodeDynamicContract,
+  hasDynamicObject,
+  dynamicObjectRuntime,
+  dynamicRuntimeAliasPrefix,
+  type DynamicObjectRuntime,
+} from "./dynamic-objects.ts";
 import type { RecordOperation } from "./record-bindings.ts";
 import { bindRecordOperation } from "./record-bindings.ts";
 import { incompatibleRepresentationView } from "./representation-views.ts";
@@ -75,6 +86,7 @@ import {
   type OwnedHoistedFunction,
   type OwnedCell,
   type OwnedConstructor,
+  type FiniteRecordAccess,
   type ListRuntimeBinding,
   type CollectionElement,
   type SetRuntimeBinding,
@@ -1578,6 +1590,8 @@ function lowerEntries(
         continue;
       }
       const sourceBody = body.body;
+      const explicitResult =
+        body.explicitResult === true ? body.result : undefined;
       const returnType: SourceScalarType | "void" = initializing
           ? "boolean"
           : checked.types[body.result]?.kind === "void" ||
@@ -1658,6 +1672,44 @@ function lowerEntries(
         if (local === undefined) throw "parameter adapter invariant";
         declarations.set(p, local);
       }
+      const dynamicAliases = new Map<string, number>();
+      const dynamicSignatures: number[] = [];
+      for (const binding of selected) {
+        if (binding === undefined) fail("entry binding invariant");
+        if (!binding.name.startsWith(dynamicRuntimeAliasPrefix)) continue;
+        const local = localByBinding.get(binding.id);
+        const typeId = checked.bindingTypes[binding.id];
+        const signature =
+          typeId === undefined ? undefined : checked.types[typeId];
+        if (
+          local === undefined ||
+          local.type !== "reference" ||
+          signature?.kind !== "function"
+        )
+          fail("dynamic-object runtime requires a typed function");
+        const result: SourceScalarType | "void" =
+          checked.types[signature.result]?.kind === "void"
+            ? "void"
+            : scalar(signature.result);
+        dynamicSignatures[local.id] = callbackSignature(
+          signature.parameters.map(scalar),
+          result,
+          typeId,
+        );
+        dynamicAliases.set(
+          binding.name.slice(dynamicRuntimeAliasPrefix.length),
+          local.id,
+        );
+      }
+      const dynamicObjects: DynamicObjectRuntime | undefined =
+        dynamicAliases.size === 0
+          ? undefined
+          : dynamicObjectRuntime((name) => {
+              const local = dynamicAliases.get(name);
+              if (local === undefined)
+                fail("missing dynamic-object runtime helper: " + name);
+              return local;
+            });
       const expressions = createKeyIndex<Expression, ExpressionInfo>(
         syntaxHash,
       );
@@ -1670,8 +1722,37 @@ function lowerEntries(
       function exprArguments(args: readonly Expression[]): void {
         for (const argument of args) {
           if (argument === undefined) fail("argument expression invariant");
-          expr(argument);
+          expr(argument.kind === "spread" ? argument.value : argument);
         }
+      }
+      function finiteAccess(
+        node: Expression,
+        receiver: Expression,
+        type: SourceScalarType | "void",
+        write: boolean,
+      ): boolean {
+        const keys = checked.finitePropertyKeys?.get(node);
+        if (keys === undefined) return false;
+        const contracts = recordContracts;
+        if (contracts === undefined || type === "void")
+          fail("finite property access requires native record lowering");
+        const cases: FiniteRecordAccess[] = [];
+        for (const key of keys) {
+          if (key === undefined) fail("finite property key invariant");
+          const access: Expression = {
+            kind: "member",
+            object: receiver,
+            property: key,
+            start: node.start,
+            end: node.end,
+          };
+          contracts.access(access, receiver, key, type, write);
+          const plan = contracts.accesses.get(access);
+          if (plan === undefined) fail("finite property access invariant");
+          cases.push({ key, access: plan });
+        }
+        contracts.addFiniteAccess(node, cases);
+        return true;
       }
       function expr(input: Expression): void {
         const node = input;
@@ -1731,6 +1812,9 @@ function lowerEntries(
         // creation, member and element access itself.
         const viewUse = checked.cViewUses.get(node);
         let viewTarget: CViewUse | undefined;
+        let dynamicObject: ExpressionInfo["dynamicObject"];
+        let dynamicContract: string | undefined;
+        const dynamicIntrinsic = checked.intrinsics.get(node);
         if (viewUse !== undefined) {
           if (node.kind === "member") expr(node.object);
           else if (node.kind === "index") {
@@ -1778,6 +1862,27 @@ function lowerEntries(
               break;
             }
             case "object":
+              if (
+                dynamicIntrinsic === "dynamic-object-literal" ||
+                dynamicIntrinsic === "dynamic-object-open-literal"
+              ) {
+                if (dynamicObjects === undefined || checkedType === undefined)
+                  fail("dynamic-key object literal requires the program realm");
+                dynamicObject = "literal";
+                if (dynamicIntrinsic === "dynamic-object-literal")
+                  dynamicContract = encodeDynamicContract(checked, checkedType);
+                for (const property of node.properties) {
+                  if (property === undefined)
+                    fail("dynamic object property invariant");
+                  if (
+                    property.kind !== "spread" &&
+                    property.keyExpression !== undefined
+                  )
+                    expr(property.keyExpression);
+                  expr(property.value);
+                }
+                break;
+              }
               if (recordContracts === undefined)
                 fail("object construction requires record lowering");
               recordContracts.construct(node);
@@ -1848,6 +1953,23 @@ function lowerEntries(
                 );
               break;
             case "index":
+              if (finiteAccess(node, node.object, type, false)) {
+                expr(node.object);
+                expr(node.index);
+                break;
+              }
+              if (dynamicIntrinsic === "dynamic-object-read") {
+                if (dynamicObjects === undefined || checkedType === undefined)
+                  fail("dynamic-key object read requires the program realm");
+                dynamicObject = "read";
+                dynamicContract = encodeDynamicContract(
+                  checked,
+                  chain ?? checkedType,
+                );
+                expr(node.object);
+                expr(node.index);
+                break;
+              }
               if (checked.intrinsics.get(node) === "list-length")
                 builtin = "list-length";
               else if (checked.intrinsics.get(node) === "string-length")
@@ -1881,6 +2003,17 @@ function lowerEntries(
               expr(node.index);
               break;
             case "member":
+              if (dynamicIntrinsic === "dynamic-object-read") {
+                if (dynamicObjects === undefined || checkedType === undefined)
+                  fail("dynamic-key object read requires the program realm");
+                dynamicObject = "read";
+                dynamicContract = encodeDynamicContract(
+                  checked,
+                  chain ?? checkedType,
+                );
+                expr(node.object);
+                break;
+              }
               if (
                 checkedType !== undefined &&
                 checked.types[checkedType]?.kind === "undefined"
@@ -1923,6 +2056,20 @@ function lowerEntries(
                 break;
               }
               const metadata = checked.intrinsics.get(node);
+              if (metadata === "error-property") {
+                builtin = metadata;
+                if (recordContracts !== undefined) {
+                  const propertyType =
+                    node.property === "stack" ? "optional-string" : "string";
+                  recordContracts.errorProperty(
+                    node,
+                    node.property,
+                    propertyType,
+                  );
+                }
+                expr(node.object);
+                break;
+              }
               if (
                 metadata === "array-buffer" ||
                 metadata === "array-byte-offset" ||
@@ -1946,21 +2093,53 @@ function lowerEntries(
               expr(node.object);
               break;
             case "satisfies":
+              if (dynamicIntrinsic === "dynamic-object-enroll") {
+                if (dynamicObjects === undefined || checkedType === undefined)
+                  fail(
+                    "dynamic-key object enrollment requires the program realm",
+                  );
+                dynamicObject = "enroll";
+                dynamicContract = encodeDynamicContract(checked, checkedType);
+              }
+              expr(node.expression);
+              break;
             case "group":
               expr(node.expression);
               break;
             case "unary":
+              if (dynamicIntrinsic === "dynamic-object-delete") {
+                if (dynamicObjects === undefined)
+                  fail("dynamic-key object delete requires the program realm");
+                let target = node.operand;
+                while (target.kind === "group" || target.kind === "satisfies")
+                  target = target.expression;
+                if (target.kind !== "member" && target.kind !== "index")
+                  fail("dynamic delete target invariant");
+                dynamicObject = "delete";
+                expr(target.object);
+                if (target.kind === "index") expr(target.index);
+                break;
+              }
               expr(node.operand);
               break;
             case "binary": {
+              if (dynamicIntrinsic === "dynamic-object-has") {
+                if (dynamicObjects === undefined)
+                  fail(
+                    "dynamic-key object membership requires the program realm",
+                  );
+                dynamicObject = "has";
+                expr(node.left);
+                expr(node.right);
+                break;
+              }
+              const intrinsic = dynamicIntrinsic;
               if (
-                checked.intrinsics.get(node) === "type-error-is" ||
-                checked.intrinsics.get(node) === "range-error-is"
+                intrinsic === "type-error-is" ||
+                intrinsic === "range-error-is" ||
+                intrinsic === "error-is"
               ) {
-                builtin =
-                  checked.intrinsics.get(node) === "type-error-is"
-                    ? "type-error-is"
-                    : "range-error-is";
+                builtin = intrinsic;
                 expr(node.left);
                 break;
               }
@@ -2070,6 +2249,31 @@ function lowerEntries(
               while (target.kind === "group" || target.kind === "satisfies")
                 target = target.expression;
               if (
+                target.kind === "index" &&
+                node.kind === "assignment" &&
+                finiteAccess(node, target.object, type, true)
+              ) {
+                expr(target.object);
+                expr(target.index);
+                expr(node.value);
+                break;
+              }
+              if (
+                dynamicIntrinsic === "dynamic-object-write" &&
+                node.kind === "assignment"
+              ) {
+                if (
+                  dynamicObjects === undefined ||
+                  (target.kind !== "member" && target.kind !== "index")
+                )
+                  fail("dynamic-key object write requires the program realm");
+                dynamicObject = "write";
+                expr(target.object);
+                if (target.kind === "index") expr(target.index);
+                expr(node.value);
+                break;
+              }
+              if (
                 (target.kind === "member" || target.kind === "index") &&
                 checked.cViewUses.has(target)
               ) {
@@ -2146,15 +2350,14 @@ function lowerEntries(
               if (node.kind !== "update") expr(node.value);
               break;
             }
-            case "new":
+            case "new": {
+              const intrinsic = checked.intrinsics.get(node);
               if (
-                checked.intrinsics.get(node) === "type-error-new" ||
-                checked.intrinsics.get(node) === "range-error-new"
+                intrinsic === "type-error-new" ||
+                intrinsic === "range-error-new" ||
+                intrinsic === "error-new"
               ) {
-                builtin =
-                  checked.intrinsics.get(node) === "type-error-new"
-                    ? "type-error-new"
-                    : "range-error-new";
+                builtin = intrinsic;
                 exprArguments(node.arguments);
                 break;
               }
@@ -2180,8 +2383,16 @@ function lowerEntries(
               builtin = "array-new";
               exprArguments(node.arguments);
               break;
+            }
             case "call": {
               const intrinsic = checked.intrinsics.get(node);
+              if (intrinsic === "dynamic-object-own-enumeration") {
+                if (dynamicObjects === undefined)
+                  fail("Object enumeration requires the program realm");
+                dynamicObject = "own-enumeration";
+                exprArguments(node.arguments);
+                break;
+              }
               if (intrinsic === "string-convert") {
                 builtin = "string-convert";
                 const argument = node.arguments[0];
@@ -2640,7 +2851,25 @@ function lowerEntries(
           node.operator === "typeof" &&
           scalar(checked.expressions.get(node.operand)) === "general";
         const realmTypeof = generalTypeof ? realmTypeofTarget(node) : undefined;
+        const restCall = checked.restCalls?.get(node);
+        const restElement =
+          restCall === undefined
+            ? undefined
+            : representations.arrayElement(restCall.list);
+        if (restCall !== undefined && restElement === undefined)
+          fail("rest parameter requires a supported list runtime");
         expressions.set(node, {
+          rest:
+            restCall === undefined || restElement === undefined
+              ? undefined
+              : {
+                  start: restCall.start,
+                  element: restElement,
+                  admitsUndefined: restCall.admitsUndefined,
+                },
+          dynamicObject,
+          dynamicContract,
+          dynamicEnrollment: enrollment(checked.dynamicEnrollments?.get(node)),
           chainType:
             chain === undefined
               ? undefined
@@ -2656,6 +2885,8 @@ function lowerEntries(
             checked.types[checkedType]?.kind === "never",
           functionTarget,
           indirect,
+          discardCallResult:
+            indirect && type === "void" && checked.voidResultDiscard === true,
           bigint:
             checkedType !== undefined &&
             bigIntType(checked, checkedType) !== undefined,
@@ -2691,18 +2922,39 @@ function lowerEntries(
           downcast: downcastOf(node),
         });
       }
+      function enrollment(type: number | undefined): string | undefined {
+        const id = type;
+        if (id === undefined || !hasDynamicObject(checked, id))
+          return undefined;
+        if (dynamicObjects === undefined)
+          fail("dynamic contract requires the program realm");
+        return encodeDynamicContract(checked, id);
+      }
+      function enrollExpression(
+        node: Expression,
+        type: number | undefined,
+      ): void {
+        const schema = enrollment(type);
+        if (schema === undefined) return;
+        const entry = expressions.get(node);
+        if (entry === undefined) fail("dynamic contract expression invariant");
+        expressions.set(node, { ...entry, dynamicEnrollment: schema });
+      }
       /** The run-time tests of a checked downcast: a category per
        * primitive member and a record layout per object member. */
       function downcastOf(node: Expression):
         | {
             readonly tests: readonly DowncastTest[];
             readonly records: readonly number[];
+            readonly errors?:
+              readonly ("Error" | "TypeError" | "RangeError")[] | undefined;
           }
         | undefined {
         const target = checked.downcasts?.get(node);
         if (target === undefined) return undefined;
         const tests: DowncastTest[] = [],
-          records: number[] = [];
+          records: number[] = [],
+          errors: ("Error" | "TypeError" | "RangeError")[] = [];
         function visit(member: number): void {
           const type = checked.types[member];
           if (type === undefined) fail("downcast type invariant");
@@ -2712,6 +2964,17 @@ function lowerEntries(
                 if (inner === undefined) fail("downcast union invariant");
                 visit(inner);
               }
+              return;
+            case "Error":
+              for (const record of recordContracts?.errorRecords() ?? []) {
+                if (record === undefined) throw "Error record invariant";
+                if (!records.includes(record)) records.push(record);
+              }
+              if (!errors.includes("Error")) errors.push("Error");
+              return;
+            case "RangeError":
+            case "TypeError":
+              if (!errors.includes(type.kind)) errors.push(type.kind);
               return;
             case "number":
             case "string":
@@ -2742,7 +3005,7 @@ function lowerEntries(
           }
         }
         visit(target);
-        return { tests, records };
+        return { tests, records, errors };
       }
       function stmt(input: Statement): void {
         const node = input;
@@ -2761,7 +3024,15 @@ function lowerEntries(
               const local = localByNode.get(d);
               if (local === undefined) fail("missing entry local");
               declarations.set(d, local);
-              if (d.initializer !== undefined) expr(d.initializer);
+              const initializer = d.initializer;
+              if (initializer !== undefined) {
+                expr(initializer);
+                if (d.type !== undefined)
+                  enrollExpression(
+                    initializer,
+                    checked.bindingTypes[bindingId(d)],
+                  );
+              }
             }
             break;
           case "function": {
@@ -2789,10 +3060,13 @@ function lowerEntries(
           case "throw":
             if (node.expression.kind !== "string") expr(node.expression);
             break;
-          case "return":
-            if (node.expression === undefined) break;
-            expr(node.expression);
+          case "return": {
+            const result = node.expression;
+            if (result === undefined) break;
+            expr(result);
+            enrollExpression(result, explicitResult);
             break;
+          }
           case "expression":
             expr(node.expression);
             break;
@@ -2860,6 +3134,33 @@ function lowerEntries(
             expr(node.test);
             stmt(node.body);
             break;
+          case "for-in":
+          case "for-in-assignment": {
+            if (dynamicObjects === undefined)
+              fail("for-in requires the program realm");
+            expr(node.iterable);
+            if (node.kind === "for-in") {
+              const binding = node.binding;
+              if (
+                binding.kind === "array-binding" ||
+                binding.kind === "object-binding"
+              )
+                fail("unchecked for-in binding pattern");
+              const local = localByNode.get(binding);
+              if (local === undefined) fail("missing for-in binding");
+              declarations.set(binding, local);
+            } else if (node.kind === "for-in-assignment") {
+              let target = node.target;
+              while (target.kind === "group" || target.kind === "satisfies")
+                target = target.expression;
+              if (target.kind === "member" || target.kind === "index") {
+                expr(target.object);
+                if (target.kind === "index") expr(target.index);
+              } else expr(target);
+            }
+            stmt(node.body);
+            break;
+          }
           case "for-of": {
             const iterationBinding = node.binding;
             if (iterationBinding.kind === "object-binding")
@@ -3155,6 +3456,8 @@ function lowerEntries(
         owned,
         primitives,
         bigints,
+        dynamicObjects,
+        dynamicSignatures,
       );
       recordContracts?.clearFunctionOperations();
       // Debug builds name the slots holding this function's own parameters
@@ -3540,6 +3843,7 @@ function cells(
           case "general-is":
             type = "boolean";
             break;
+          case "error-message":
           case "general-kind":
             type = "string";
             break;
@@ -3713,6 +4017,7 @@ function cells(
           if (valueId === undefined) throw "definition invariant";
           transformed = { ...op, id: valueId, message: reload(op.message, op) };
           break;
+        case "error-message":
         case "error-is":
           if (valueId === undefined) throw "definition invariant";
           transformed = { ...op, id: valueId, value: reload(op.value, op) };
@@ -4072,6 +4377,8 @@ export function lowerClosureFactory(
       case "do-while":
       case "while":
       case "for-of":
+      case "for-in":
+      case "for-in-assignment":
       case "for":
         return earlyReturn(node.body);
       default:
@@ -4161,6 +4468,8 @@ export function lowerClosureFactory(
       case "while":
         return { ...node, body: project(node.body) };
       case "for-of":
+      case "for-in":
+      case "for-in-assignment":
         return { ...node, body: project(node.body) };
       case "for":
         return { ...node, body: project(node.body) };

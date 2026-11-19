@@ -24,8 +24,17 @@ function fingerprint(type: Type): number {
       );
     }
     case "array":
-    case "set":
-      return mix(mix(hash, type.element), type.readonly ? 1 : 0);
+    case "set": {
+      hash = mix(mix(hash, type.element), type.readonly ? 1 : 0);
+      if (type.realmArray === true) hash = mix(hash, 1);
+      const tuple = type.tupleElements;
+      if (tuple !== undefined)
+        for (const member of tuple) {
+          if (member === undefined) throw "tuple identity invariant";
+          hash = mix(hash, member);
+        }
+      return hash;
+    }
     case "map":
       return mix(mix(mix(hash, type.key), type.value), type.readonly ? 1 : 0);
     case "union":
@@ -34,11 +43,18 @@ function fingerprint(type: Type): number {
         hash = mix(hash, member);
       }
       return hash;
-    case "object":
+    case "object": {
       hash = mix(
         mix(hash, type.call === undefined ? 0 : type.call + 1),
         type.construct === undefined ? 0 : type.construct + 1,
       );
+      const index = type.stringIndex;
+      if (index !== undefined)
+        hash = mix(
+          mix(hash, index.type),
+          (index.readonly ? 2 : 0) + (index.origin === "record" ? 1 : 0),
+        );
+      if (type.interfaceDeclaration === true) hash = mix(hash, 1);
       for (const property of type.properties) {
         if (property === undefined) throw "type identity property invariant";
         hash = mix(
@@ -47,12 +63,15 @@ function fingerprint(type: Type): number {
         );
       }
       return hash;
+    }
     case "function":
       hash = mix(hash, type.receiver === undefined ? 0 : type.receiver + 1);
       hash = mix(
         mix(hash, type.result),
-        type.minimumArguments ?? type.parameters.length,
+        type.minimumArguments ??
+          type.parameters.length - (type.rest === true ? 1 : 0),
       );
+      if (type.rest === true) hash = mix(hash, 1);
       for (const parameter of type.parameters) {
         if (parameter === undefined) throw "type identity parameter invariant";
         hash = mix(hash, parameter);
@@ -66,6 +85,15 @@ function fingerprint(type: Type): number {
       return hash;
   }
 }
+function sameTuple(
+  left: readonly number[] | undefined,
+  right: readonly number[] | undefined,
+): boolean {
+  const a = left,
+    b = right;
+  if (a === undefined || b === undefined) return a === b;
+  return a.length === b.length && a.every((id, index) => id === b[index]);
+}
 function same(left: Type, right: Type): boolean {
   if (left.kind !== right.kind) return false;
   switch (left.kind) {
@@ -76,7 +104,9 @@ function same(left: Type, right: Type): boolean {
       return (
         (right.kind === "array" || right.kind === "set") &&
         left.element === right.element &&
-        left.readonly === right.readonly
+        left.readonly === right.readonly &&
+        (left.realmArray === true) === (right.realmArray === true) &&
+        sameTuple(left.tupleElements, right.tupleElements)
       );
     case "map":
       return (
@@ -97,6 +127,11 @@ function same(left: Type, right: Type): boolean {
     case "object":
       if (
         right.kind !== "object" ||
+        (left.interfaceDeclaration === true) !==
+          (right.interfaceDeclaration === true) ||
+        left.stringIndex?.type !== right.stringIndex?.type ||
+        left.stringIndex?.readonly !== right.stringIndex?.readonly ||
+        left.stringIndex?.origin !== right.stringIndex?.origin ||
         left.call !== right.call ||
         left.construct !== right.construct ||
         left.properties.length !== right.properties.length
@@ -120,10 +155,13 @@ function same(left: Type, right: Type): boolean {
       if (
         right.kind !== "function" ||
         left.result !== right.result ||
+        (left.rest === true) !== (right.rest === true) ||
         left.receiver !== right.receiver ||
         left.parameters.length !== right.parameters.length ||
-        (left.minimumArguments ?? left.parameters.length) !==
-          (right.minimumArguments ?? right.parameters.length)
+        (left.minimumArguments ??
+          left.parameters.length - (left.rest === true ? 1 : 0)) !==
+          (right.minimumArguments ??
+            right.parameters.length - (right.rest === true ? 1 : 0))
       )
         return false;
       for (let i = 0; i < left.parameters.length; i++)

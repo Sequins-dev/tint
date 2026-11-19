@@ -1713,3 +1713,42 @@ test("duplicate property names are invalid in small and wide object types", () =
     }
   }
 });
+
+test("rest is part of function identity and void targets discard the result", () => {
+  const array: Type = { kind: "array", element: 0, readonly: false };
+  const fixed: Type = {
+    kind: "function",
+    parameters: [2],
+    minimumArguments: 0,
+    result: 0,
+  };
+  const rest: Type = { ...fixed, rest: true };
+  const graph = createTypeSystem([
+    { kind: "number" },
+    { kind: "void" },
+    array,
+    fixed,
+    rest,
+    { ...rest, result: 1 },
+    { kind: "object", properties: [], call: 4 },
+  ]);
+  assert.ok(graph.ok);
+  const t = graph.value;
+  assert.deepEqual(t.call(4, []), { ok: true, value: 0 });
+  assert.deepEqual(t.call(4, [0, 0]), { ok: true, value: 0 });
+  assert.deepEqual(t.call(4, [2]), { ok: false, error: "TYPE_MISMATCH" });
+  assert.ok(t.assignable(4, 5));
+  assert.ok(!t.assignable(5, 4));
+  assert.ok(!t.assignable(3, 4));
+  assert.ok(!t.assignable(4, 3));
+  assert.notEqual(t.exactShape(3), t.exactShape(4));
+  assert.equal(t.exactShape(4), t.exactShape(6));
+  assert.deepEqual(t.append({ ...rest, parameters: [0] }), {
+    ok: false,
+    error: "INVALID_TYPE",
+  });
+  assert.deepEqual(t.append({ ...rest, minimumArguments: 1 }), {
+    ok: false,
+    error: "INVALID_TYPE",
+  });
+});
