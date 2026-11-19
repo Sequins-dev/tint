@@ -654,6 +654,8 @@ export function entryType(
   return undefined;
 }
 export interface RecordContracts extends RecordOperations {
+  /** Discard expression plans consumed by the just-lowered function. */
+  readonly clearFunctionOperations: () => void;
   readonly classes: readonly ClassRecordStorage[];
   readonly forType: (type: number) => number | undefined;
   /** The hidden field of a viewed record layout that holds the record's
@@ -1435,6 +1437,12 @@ export function createRecordContracts(
     },
     constructions,
     constructors,
+    clearFunctionOperations: () => {
+      constructions.clear();
+      constructors.clear();
+      accesses.clear();
+      spreads.clear();
+    },
     constructClass: (node, target) => {
       const receiver = checked.expressions.get(node.callee);
       if (receiver === undefined || !constructorReceiver(receiver))
