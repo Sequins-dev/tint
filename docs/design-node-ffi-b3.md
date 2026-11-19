@@ -10,10 +10,10 @@ conversion, object identity, resource lifetime and errors. See
 Node **24.12.0 has no built-in FFI module**. A local probe reported
 `isBuiltin("node:ffi") === false` and `ERR_UNKNOWN_BUILTIN_MODULE` on require.
 That pin remains Tint's build host. FFI first shipped in Node **26.1.0**.
-Propose targeting **26.13.1** (source commit
-`e9c277643b0249c50f6e6de5413be8a88ea11b6a`) and retaining **26.10.0**
-(`151845ab90d3926ceb36eedf1eade09619c3adc9`, the existing local reference)
-for shared behavioral checks. Node supports the built-in under the `node:`
+The exact semantic baseline is **26.13.1** (source commit
+`e9c277643b0249c50f6e6de5413be8a88ea11b6a`). **26.10.0**
+(`151845ab90d3926ceb36eedf1eade09619c3adc9`) is the secondary oracle for
+shared assertions only. Node supports the built-in under the `node:`
 scheme in FFI-enabled builds, enables it by default, emits an experimental
 warning at load, and can disable it with `--no-experimental-ffi`. Under its
 Permission Model FFI is gated by `--allow-ffi` and denied operations use
@@ -83,7 +83,7 @@ environment's lifetime.
   enumerable and configurable BigInt property. Writes affect reflection
   and leave the call target intact. Node's optimized wrappers expose the
   signature arity as `.length`, while the raw generic invoker has length 0.
-  Treat call-path-dependent reflection as a version/platform test point.
+  Tint follows the generic invoker and exposes length 0.
 - `lib.close()` and `lib[Symbol.dispose]()` are idempotent. Closing
   invalidates wrappers and callbacks, clears the caches and prevents
   further lookup. Calls through retained wrappers and operations requiring
@@ -143,8 +143,8 @@ a parameter, signature conflict, arity and invalid converted argument values
 take `ERR_INVALID_ARG_VALUE` (TypeError for both codes). Preserve source
 message labels and indices. Node's fast, shared-buffer and generic paths
 can prioritize closed-state and argument errors differently on the same
-invalid call. Use the generic order for Tint and record conflicts with the
-pinned oracle.
+invalid call. Tint follows the generic order, which checks closed state
+before arity and argument conversion.
 [Calls and invalid values](https://github.com/nodejs/node/blob/v26.13.1/test/ffi/test-ffi-calls.js)
 · [Void parameters](https://github.com/nodejs/node/blob/v26.13.1/test/ffi/test-ffi-void-parameter.js)
 · [String storage](https://github.com/nodejs/node/blob/v26.13.1/test/ffi/test-ffi-invoke-string-storage.js)
@@ -246,8 +246,8 @@ methods have the usual closed-state and argument type checks. Node can
 report `ERR_FFI_CALL_FAILED` for closure allocation failure or, in the
 newer release, `ERR_RX_MEMORY_NOT_SUPPORTED` for unavailable executable
 memory. Its latter error also applies to eligible fast-call wrappers when
-executable allocation fails. Tint's AOT path has no executable allocation
-step to fail.
+executable allocation fails. Tint's outbound AOT call path has no
+executable allocation step to fail.
 [Callback implementation](https://github.com/nodejs/node/blob/v26.13.1/src/node_ffi.cc)
 · [Callback return marshaling](https://github.com/nodejs/node/blob/v26.13.1/src/ffi/types.cc)
 · [Callback tests](https://github.com/nodejs/node/blob/v26.13.1/test/ffi/test-ffi-callbacks.js)
@@ -371,9 +371,10 @@ applies its own written contract. Likewise, a public callable's writable
    foreign deleter, including through slices or views. For raw exports use
    the byte window and the Buffer encoding subsystem. Inputs may alias
    foreign memory, so use a copy primitive with defined overlap behavior.
-5. Implement registered callbacks as an AOT per-slot **frame** thunk pool,
-   reusing the registered dispatcher, transition record and universal
-   callback frame mechanics. A runtime prototype describes how to decode
+5. Implement runtime-signature callback registration with allocation that
+   can grow with demand. Reuse the registered dispatcher, transition
+   record and universal callback frame mechanics. Allocation failure is
+   explicit. A runtime prototype describes how to decode
    saved registers and stack slots through the shared ABI classifier, invoke
    the original realm callable via B4, and write raw result words. Current
    `setCallback` is scoped to one call, accepts a Number-only adapter and
@@ -393,13 +394,14 @@ applies its own written contract. Likewise, a public callable's writable
    the owner thread from C outside a Tint transition still requires a
    host transition contract, even though Node permits same-thread native
    callers. The may-callback path needs stable backing throughout C
-   execution. Allocate/promote
-   backing stores through the storage owner, with all live aliases
-   following that owner, or implement a collector-supported lifetime
-   borrow. A call-local shadow buffer changes aliasing. Raw
-   `getRawPointer` needs stability beyond a call and cannot be based on a
-   short-lived borrow. Re-check effective range before native entry and
-   retain the storage across callbacks. Retention is distinct from the
+   execution. When an address escapes through `getRawPointer` or through
+   lending in a may-callback call, retarget storage through its owner to
+   stable external backing. The owner and all views retain their identity
+   and share the retargeted bytes. Default allocations use the current
+   policy. Stop and coordinate with the collector-owning thread if the
+   transition requires collector or stack-map changes. Recheck the
+   effective range before native entry and retain the storage across
+   callbacks. Retention is distinct from the
    caller's obligation to avoid resize or detach while C runs.
 
 ### Gap disposition
@@ -408,17 +410,18 @@ applies its own written contract. Likewise, a public callable's writable
 | --- | --- |
 | Trusted general imports | On main. Exercise mixed-link capabilities through `compiler/src/native/index.ts` and the existing trusted export thunk. Resolver registration and typed-only realm installation are b3 integration work. |
 | Typed BigInt and rest | On main. Verify packing/unpacking on the typed path and use rest for actual arity where it crosses the checked bridge. A realm call hook already receives the full argument list. Expose ordinary positional calls, including omitted vs explicit undefined. No FFI-specific rest ABI. |
-| C1/C2 and callable views | **First.** C1/C2 provide realm dictionaries and mixed allocations, but a typed closure in a function-valued property cannot yet be exported as a usable identity-preserving callable. B4 invokes a narrowed realm callable and preserves the receiver. Native closure projection is a separate slice 2b dependency. Complete slice 2b in the checker, `ts-native`/compiler bridge and `js-runtime/src/objects`: canonical callable projection at property reads/writes and trusted exports, ordinary property descriptors, invocation and returned/abrupt completions, including rest. For b3 create FFI callables directly in the realm through that shared callable entry, so a native closure exists only in its internal call hook. If realm-created callables satisfy both typed and JS consumers without native-closure projection, the remaining arbitrary native closure crossing can stay a diagnosed slice 2b limit. Prove this with a typed function-valued property fixture before adapter work. |
-| General object semantics under typed code | **First.** Verify C1/C2 can express own enumerable string enumeration with proxy descriptor checks, separate presence/get operations, indexed array reads and subclass/brand/receiver handling through shared realm operations. Add narrow trusted accessors/constructor and method hooks where the typed checker cannot yet express these. `DynamicLibrary`, disposal, getters, freezing and nonconstructible wrappers require ordinary descriptors. A closure-backed public record would break the API. |
-| B5 and byte ranges | **First for buffer lending.** B5 supplies typed realm narrowing and native `Uint8Array` recognition. `instanceof` on its own is insufficient for an internal-slot check. Complete slice 2b range projection in `js-runtime/src/objects` / `bytes` and the typed bridge, including generic ArrayBufferView (`DataView` and non-byte typed arrays), shared backing, byte offsets and byte lengths, detached/empty distinction and writes through existing aliases. Conversion uses internal slots and has no observable `.buffer`, `.byteOffset` or `.byteLength` reads. Preserve the attached, zero-offset/zero-length case for an out-of-bounds view. |
-| Non-moving bytes and escaping addresses | **First for callbacks with lent bytes and for `getRawPointer`.** Prefer stable realm backing through the existing external byte storage/weak ownership and retargeting through the storage owner. Native typed in-heap arrays also need stable backing or an identity-preserving projection before raw export. A moving collector invalidates untracked addresses into its heap. Evaluate blast radius before changing default allocations. Movable storage in a may-callback invocation can be rejected before native entry as an interim Tint limit. |
-| Buffer and ArrayBuffer results | **First for memory API parity.** Supply/reuse actual Node Buffer identity (`Buffer.isBuffer`, prototype and encodings) and a realm ArrayBuffer adoption hook for foreign backing. Existing `node:zlib`/crypto Uint8Array results are insufficient. Put general byte ownership in the shared runtime and Buffer semantics in the Node layer. |
-| B6 and error taxonomy | **First.** Reuse the B6 coded Error/RangeError factories in `native-runtime/src/node/errors.ts`. Add a coded TypeError factory and matching realm view, with tests for name, code, message and crossing identity. Check property descriptors and formatting against Node's JS and native error creation paths. Normalize narrow loader phases to coded Error without swallowing getter/proxy errors. |
+| C1/C2 and callable views | **Prerequisite 1a, convergence.** Complete slice 2b in the checker, `ts-native`/compiler bridge and `js-runtime/src/objects`. Project callable values canonically across property reads/writes and trusted exports, preserving descriptors, rest arguments, return values and abrupt completions. B4 supplies realm calls with the receiver. Create FFI callables directly in the realm through the shared callable entry. Gate on a typed function-valued property fixture that proves identity and calls across both pipelines. |
+| General object semantics under typed code | **Verify in 1a.** Exercise own enumerable string keys with proxy descriptor checks, separate presence/get operations, indexed array reads and subclass/brand/receiver handling through shared realm operations. Use the same descriptors for getters, disposal, freezing and nonconstructible wrappers. |
+| B5 and byte ranges | **Prerequisite 1b, convergence.** Complete slice 2b in `js-runtime/src/objects`, `bytes` and the typed bridge. Project generic ArrayBufferView through internal slots, including DataView, non-byte typed arrays, shared backing, byte offsets and byte lengths. Distinguish detached and live empty stores, preserve the attached zero-offset/zero-length case for an out-of-bounds view, and verify writes through existing aliases. |
+| Non-moving bytes and escaping addresses | **Required for b3.** When an address escapes through `getRawPointer` or a may-callback loan, retarget through the storage owner to external stable backing. Preserve owner and view identities, aliasing and the current default allocation policy. Support initially movable storage in may-callback calls. If the transition needs collector or stack-map changes, stop and coordinate with the collector-owning thread. |
+| Buffer and ArrayBuffer results | **Prerequisite 1c, convergence.** Supply Node Buffer identity, prototype and encodings, and an ArrayBuffer adoption hook for foreign backing. Keep general byte ownership in the shared runtime and Buffer semantics in the Node layer. |
+| B6 and error taxonomy | **Prerequisite 1d, convergence.** Reuse B6 coded Error and RangeError factories in `native-runtime/src/node/errors.ts`. Add the coded TypeError factory and its realm view. Gate on name, code, message, descriptors and crossing identity. Normalize loader failures while preserving user getter and proxy exceptions. |
 | Exact loader and raw memory operations | **First where used.** Provide word-preserving dlsym output and address/span ops in the FFI primitives and native foreign binding plumbing. Today's numerical code-address path is exact for current arm64 user VAs but rejects high words. Use the existing ABI/cell representation and byte patching machinery before introducing other address representations. Capture loader error text at the failing operation. |
-| Dynamic capacity | **Diagnosed limit if approved.** Today `foreignFunction` reserves a byte slot for every pointer parameter (8 total), has a 512-byte outgoing stack cap and 16 patches. Separate raw pointer arguments from actual borrow slots and diagnose true capacity limits before invoking C. Full parity for larger shapes needs the shared trampoline and frame layout to grow. Node supports larger arities through its generic path. Keep this limit out of the descriptor vocabulary. |
-| Registered callbacks and teardown | **First for callback parity.** Existing registered thunks are static-prototype and scoped dynamic thunks have four positions. Add runtime-signature registration, exact callback frames, Node abort policy, owner/slot teardown, safe weak handling and invocation roots to `native-runtime/src/ffi` and `compiler/src/native/foreign` with the current ABI classifier. Retain a diagnosed finite-pool exhaustion limit if approved. Region GC currently traces weak slots strongly. Report weak callback/wrapper/finalization gaps on that collector until weak processing is available. |
-| Host integration | **Diagnosed until supplied.** `getCurrentEventLoop` requires an actual per-context libuv loop with Node-compatible lifetime. VFS image loading, worker termination, Node permission/flag/warning and CommonJS integration depend on corresponding host facilities. If missing, report unavailable operations at the build/embedding boundary where identifiable and controlled Tint-specific runtime diagnostics when discovered dynamically. A missing host feature cannot be represented as a null pointer, a fake event loop or a successful no-op. Keep exact API claims conditional on these facilities. |
-| Same-thread callback entry outside a Tint transition | **Diagnosed limit if approved.** Active FFI calls provide a rooted transition. Other host entry points that can invoke a retained callback must establish an equivalent transition before execution. Until then the existing no-transition trap is the defined Tint limit. |
+| Dynamic capacity | **Required for b3.** Grow the shared trampoline and frame layout to support Node generic-path arities. Separate raw pointer arguments from byte borrow slots. Remove the current eight-pointer, 512-byte stack and 16-patch capacities as b3 limits. |
+| Registered callbacks and teardown | **Required for b3.** Implement runtime-signature registration without a fixed finite pool. Reuse the ABI classifier for exact callback frames. Implement the Node abort policy, owner teardown and invocation roots in `native-runtime/src/ffi` and `compiler/src/native/foreign`. Report actual allocation failure explicitly. |
+| Host integration | **Accepted diagnosed limit.** Provide an explicit diagnostic for each unavailable capability: `getCurrentEventLoop`/libuv, VFS loading, worker termination, permissions, flags, warnings and CommonJS. Report at the build or embedding boundary where possible and at runtime when discovered dynamically. Give every capability a fixture that asserts its exact diagnostic. |
+| Region collector weak processing | **Accepted diagnosed limit until the collector processes weak slots.** Weak callback, wrapper and finalization behavior is unavailable on this collector. Use region fixtures to assert the exact diagnostic for each affected behavior. |
+| Same-thread callback entry outside a Tint transition | **Accepted diagnosed limit until async FFI and an event loop exist.** Keep the transition guard and report the no-transition failure explicitly. A native fixture must establish same-thread entry without a transition and assert the exact diagnostic before any managed callback executes. |
 
 ## Tests and implementation order
 
@@ -445,15 +448,30 @@ continuation. Preserve first failures. Exercise generational and copying
 collectors with forced collection in and around calls, plus region where
 its capabilities suffice.
 
-1. **Prove the boundary.** After B4–B6 integrate, land realm callable,
-   own-key/descriptor and coded TypeError work as independently testable
-   convergence changes. Add typed/general fixture twins for callable
-   properties, identity, inherited signature reads, trap/getter ordering,
-   receiver, classes and abrupt completion. Add checker cases and
-   typed/untyped corpus constructs where appropriate.
+1. **Land the convergence prerequisites.** Start after B4–B6 integrate.
+   Land these on four independently gated branches owned by the
+   convergence thread.
+
+   - **1a. Callable projection.** Prove the shared callable entry and
+     typed function-valued properties with typed/general fixture twins.
+     Cover identity, receiver, classes, rest and abrupt completion.
+     Verify the realm's own-key and descriptor operations, inherited
+     signature reads and trap/getter ordering.
+   - **1b. Byte-range projection.** Gate internal-slot projection for
+     generic ArrayBufferView, offsets, detached versus live empty
+     stores, and in-place writes.
+   - **1c. Buffer and ArrayBuffer.** Gate Buffer branding and encodings
+     and ArrayBuffer adoption over foreign storage.
+   - **1d. Coded TypeError.** Gate the factory and realm view across
+     typed and general code.
+
+   Add checker cases and typed/untyped corpus constructs where appropriate.
 2. **Land scalar dynamic binding.** Add exact-word loader and binding-plan
    support, prototype parsing, branded library/callables and snapshot
-   identity. Gate on target `char`, `bool` as uint8, signed limits, f32,
+   identity. Grow the trampoline and frame layout for Node's generic
+   arities. Test calls beyond the existing stack limit and beyond eight
+   raw pointer parameters. Assert generic-path error precedence and
+   wrapper `.length === 0`. Gate on target `char`, `bool` as uint8, signed limits, f32,
    floating edge values, stack-spilled calls, raw pointer and 64-bit
    round trips, UTF-8 argument temporaries, argument errors, recursive
    definition getters, failed batch cleanup and unload/close/using.
@@ -465,25 +483,31 @@ its capabilities suffice.
    probes, multi-string calls and failure followed by retry at the same
    wrapper. Force GC before entry and after return. Verify pointer identity
    against a stable oracle and that cached bindings release borrowed roots.
+   Exercise borrow counts beyond the old slot and patch limits.
 4. **Land raw memory.** Gate unaligned scalar reads/writes of all widths,
    exact BigInt/address bounds, pre-dereference errors, null/empty cases,
    encoding and invalid UTF-8, byte-for-byte range exports and untouched
    trailing bytes. Test Buffer/ArrayBuffer branding, copy independence,
    writable foreign aliasing and no free on collection. Gate exported
    pointers that survive moving collections as long as their backing is
-   live. Inspect allocation-limit failures before any native reads.
+   live. Verify that the storage-owner transition preserves existing
+   aliases and their identities. Inspect allocation failures before any
+   native reads.
 5. **Land callback registration and transitions.** Gate default and explicit
    signatures, exact wide values and spilled C parameters, registration
    ownership/ref/unref, callback reachable through a raw pointer stored
    earlier, reentrancy through the same wrapper and through other
-   libraries, GC while lending overlapping bytes, cleanup and task
-   restrictions. Test bad returns, throws, promises and cross-thread entry
+   libraries, and GC while lending initially movable, overlapping bytes.
+   Verify registration growth beyond the existing pool, allocation
+   failure, teardown and roots. Test bad returns, throws, promises and cross-thread entry
    in separate LLDB runs. Verify the original Tint dynamic callback
    throw/rethrow fixtures keep their behavior.
 6. **Gate the installed surface and record gaps.** Check module/default and
    named export identity, disposal, class descriptors and weak lifetime
-   behavior. Exercise the selected host capabilities and document any
-   approved limits. Classify new tests in `tools/check-test-files.json`.
+   behavior. Add fixtures asserting the exact diagnostic for each accepted
+   limit in the gap table. Assert the compile/embedding diagnostic or
+   runtime error as appropriate, and inspect the inferior for the
+   no-transition failure. Classify new tests in `tools/check-test-files.json`.
    Subsequent implementation uses the repository's macOS/Linux gates,
    native self-build and smoke evidence as required by the slice brief.
    Static-definition recognition (FFI b4) can lower the ABI call behind the
@@ -499,7 +523,9 @@ configured reference that cannot run and propagate unexpected probe or
 fixture failures. Log exact version, platform, flags and build features,
 including the sandbox behavior for zero-copy. Run shared assertions on
 26.10.0 and release-specific assertions only against their matching
-oracle. Keep Tint expectations pinned to the selected target. Native
+oracle. Keep Tint expectations pinned to the 26.13.1 generic path.
+Fixtures with path-dependent assertions must exercise Node's generic
+path when comparing with the reference. Native
 coverage runs independently of Node reference availability. Keep Tint-only
 contract tests separate from the shared JS fixture.
 
@@ -514,19 +540,42 @@ Record the upstream SHA, population and target matrix, and account for
 every test file, upstream skip, unsupported host capability, compile or
 runtime failure, signal and timeout. Preserve expected abort as a distinct
 outcome. Keep Node oracle results and Tint native results separate.
-Fast API/shared-buffer/RX tests that assert Node implementation details
-stay visible in the population with a reason, even if a semantic check
-also passes under Tint.
+Keep Fast API, shared-buffer and executable-memory assertions visible in
+the population. Report fast-path-only assertions as Node implementation
+details outside Tint's generic-path baseline, including path-specific
+error precedence and wrapper length.
 
-## Coordinator decisions
+## Decisions (2026-11-20)
 
-- Confirm 26.13.1 as the exact semantic baseline and 26.10.0 as a secondary
-  oracle. Decide whether generic-path error ordering and wrapper length
-  are acceptable where Node exposes path-dependent results.
-- Assign slice 2b callable and byte-range work, including the Buffer
-  dependency. Decide whether stable backing becomes shared storage policy
-  or is introduced by an identity-preserving storage-owner transition.
-- Confirm the b3 completion boundary for callbacks, finite dynamic capacities,
-  region weak processing, and Node-host features. Approve each staged
-  limitation explicitly or require its prerequisite before claiming full
-  API parity.
+1. Node 26.13.1 is the exact semantic baseline. Use 26.10.0 only for
+   shared assertions. Match Node's generic path wherever behavior varies
+   by call path, including error ordering and wrapper length. Fixtures
+   assert generic-path behavior. b5 records fast-path-only assertions as
+   Node implementation details.
+2. The convergence thread owns four prerequisite branches after B4–B6
+   land. In order, they cover slice 2b callable projection and its typed
+   property proof, slice 2b byte-range projection, Buffer identity and
+   ArrayBuffer adoption, and coded TypeError with its realm view. FFI
+   creates its callables in the realm through the shared callable entry.
+3. Retarget storage through its owner to stable external backing when
+   exporting a raw address or lending bytes in a may-callback call.
+   Preserve identity and the current default allocation policy. If
+   collector or stack-map changes are needed, stop and coordinate with
+   the collector-owning thread.
+4. b3 completion requires lending initially movable bytes in may-callback
+   calls, dynamic calls at Node's generic-path arities, and
+   runtime-signature callback registration with teardown and roots.
+   Separate raw pointer arguments from borrow slots and grow the
+   trampoline and frame layout. Registration grows with demand. Actual
+   allocation failure is reported explicitly.
+5. Accepted limits are Node host integration (`getCurrentEventLoop`/libuv,
+   VFS loading, worker termination, permissions, flags, warnings and
+   CommonJS), weak callback, wrapper and finalization behavior on the
+   region collector until it processes weak slots, and same-thread
+   callback entry outside a Tint transition until async FFI and an event
+   loop exist. Each has a gap row and requires a fixture asserting the
+   exact diagnostic. Report unsupported behavior explicitly without
+   returning a sentinel, substituting a fake facility or silently
+   succeeding.
+6. Follow implementation steps 1–6, with step 1 split into the four
+   prerequisite branches above.
