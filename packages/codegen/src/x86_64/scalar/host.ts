@@ -1,6 +1,8 @@
 import {
   nativeArrayDataOffset,
   nativeArrayLengthOffset,
+  nativeStackMapRegistryOffset,
+  nativeStackMapSaveBlockOffset,
   nativeTargetOSLinux,
   nativeTargetArchX86_64,
   type PosixHostFacts,
@@ -10,6 +12,7 @@ import type { Condition, Gpr, Memory } from "../isa.ts";
 import {
   argumentCountOffset,
   argumentsOffset,
+  bits,
   gpr,
   imm,
   label,
@@ -60,6 +63,7 @@ interface HostCall {
   readonly scratch: Memory<64>;
   readonly scratchNext: Memory<64>;
   readonly context: Memory<64>;
+  readonly ownRootHead: boolean;
   readonly constant: (value: number) => Memory<64>;
   readonly site: string;
   readonly trap: string;
@@ -120,6 +124,71 @@ export function emitHostCall(request: HostCall): boolean {
   }
 
   switch (operation) {
+    case "root-head": {
+      const done = site + ":root-head";
+      emit({ op: "mov", dst: rax, src: context });
+      emit({ op: "mov", dst: rax, src: mem(0, nativeStackMapRegistryOffset) });
+      emit({ op: "test", dst: rax, src: rax });
+      branch(emit, "e", done);
+      // The walk visits callers of this frame. When the binding has its
+      // own frame, that frame is gone by the time its caller starts a walk.
+      emit({
+        op: "mov",
+        dst: r10,
+        src: request.ownRootHead ? mem(5, 0) : gpr(5),
+      });
+      emit({ op: "mov", dst: mem(0, 16), src: r10 });
+      emit({
+        op: "mov",
+        dst: mem(0, nativeStackMapSaveBlockOffset),
+        src: imm(0),
+      });
+      emit({ op: "label", name: done });
+      numberResult(rax);
+      return true;
+    }
+    case "memory-read-word":
+    case "memory-write-word": {
+      const invalid = site + ":word-invalid";
+      const done = site + ":word-done";
+      const length = gpr(8);
+      const offset = gpr(9);
+      const write = operation === "memory-write-word";
+      emit({ op: "mov", dst: r11, src: bits(0xffffffff, 0x1fffff) });
+      const args = [r10, length, offset, rdi];
+      for (let index = 0; index < (write ? 4 : 3); index++) {
+        const dst = args[index];
+        if (dst === undefined) throw "memory word argument invariant";
+        exactInteger(emit, argument(index), dst, invalid);
+        emit({ op: "cmp", dst, src: r11 });
+        branch(emit, "a", invalid);
+      }
+      emit({ op: "test", dst: r10, src: r10 });
+      branch(emit, "e", invalid);
+      emit({ op: "sub", dst: length, src: imm(8) });
+      branch(emit, "b", invalid);
+      emit({ op: "cmp", dst: offset, src: length });
+      branch(emit, "a", invalid);
+      emit({ op: "add", dst: r10, src: offset });
+      emit({ op: "cmp", dst: r10, src: r11 });
+      branch(emit, "a", invalid);
+      emit({ op: "test", dst: r10, src: imm(7) });
+      branch(emit, "ne", invalid);
+      if (write) {
+        emit({ op: "mov", dst: mem(10, 0), src: rdi });
+        emit({ op: "xor", dst: eax, src: eax });
+      } else {
+        emit({ op: "mov", dst: rax, src: mem(10, 0) });
+        emit({ op: "cmp", dst: rax, src: r11 });
+        branch(emit, "a", invalid);
+      }
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: invalid });
+      emit({ op: "mov", dst: rax, src: imm(-1) });
+      emit({ op: "label", name: done });
+      numberResult(rax);
+      return true;
+    }
     case "target-os":
     case "target-architecture":
     case "memory-page-bytes":
