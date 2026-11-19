@@ -65,6 +65,8 @@ export function expandForeignSnapshot(captured: WorkspaceSourceSnapshot): {
 } {
   const cached = foreignSnapshots.get(captured);
   if (cached !== undefined) return cached;
+  if (fixtureTarget.arch === "x86_64")
+    return { snapshot: captured, libraries: [] };
   const expanded = expandForeignInputs(captured.inputs, fixtureTarget.c);
   if (!expanded.ok) throw Error(expanded.error);
   const result = {
@@ -198,6 +200,8 @@ export function verifyHostedFixture(
   /** Runtime modules the generated binding modules import. */
   const dependencyIds: string[] = [];
   for (const declaration of options.foreignDeclarations ?? []) {
+    if (fixtureTarget.arch === "x86_64")
+      assert.fail("linux-x86_64: user FFI requires SysV foreign bindings");
     const prepared = prepareForeignLibrary(
       declaration.id,
       declaration.text,
@@ -344,7 +348,9 @@ export function verifyHostedFixture(
     ],
     runtimeModule: options.runtimeModule ?? request.runtimeModule,
     runtimeEntry:
-      options.runtimeEntry ?? request.runtimeEntry ?? "initializeRuntime",
+      fixtureTarget.arch === "x86_64"
+        ? options.runtimeEntry
+        : (options.runtimeEntry ?? request.runtimeEntry ?? "initializeRuntime"),
     entry: "fixture",
     start: "run",
     ...(general === undefined

@@ -1,8 +1,5 @@
 import { buildMacOSProgram, type BuildRequest } from "./build.ts";
-import {
-  selectNativeBackend,
-  type ProgramOptimizationObserver,
-} from "./native/index.ts";
+import { type ProgramOptimizationObserver } from "./native/index.ts";
 import type { ModuleIR } from "@tint/ir/scalar";
 import { nativeHostTarget, targetFileHost } from "@tint/platform/host";
 import { readFile, publishFile } from "@tint/platform/files/service";
@@ -65,14 +62,15 @@ export function main(): number {
       report(compilerUsage);
       return 64;
     }
-    const backend = selectNativeBackend(parsed.target);
-    if (!backend.ok) {
-      report(backend.error.stage + ": " + backend.error.message);
-      return 1;
-    }
     const root = parsed.root,
       output = parsed.output,
-      buildTarget = backend.target;
+      buildTarget = parsed.target;
+    if (buildTarget.arch === "x86_64") {
+      report(
+        "target: linux-x86_64: unsupported operation initializeGenerationalRuntime (requires slice 7)",
+      );
+      return 1;
+    }
     report("sources");
     const inputs: SourceInput[] = [];
     for (const file of projectFiles()) {

@@ -204,6 +204,11 @@ export function projectBuildRequest(
       operation: "cpu-sha256",
     },
     { module: process, name: "targetOperatingSystem", operation: "target-os" },
+    {
+      module: process,
+      name: "targetArchitecture",
+      operation: "target-architecture",
+    },
   ];
   const selected = requestModules(sourceRequest, [
     fs,
