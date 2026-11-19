@@ -1,5 +1,12 @@
 import {
   beginObjectPropertyContract,
+  binaryObjectValueOperationOrThrow,
+  unaryObjectValueOperationOrThrow,
+  stringValueOrThrow,
+  scriptStrictEqual,
+  looselyEqual,
+  objectPropertyKeyOrThrow,
+  throwIfRuntimeError,
   callObjectValue,
   isArrayValue,
   copyObjectProperties,
@@ -182,10 +189,44 @@ export function read(base: unknown, key: unknown): unknown {
   const core = programRealmCore();
   return readObjectValueProperty(
     base,
-    requireKey(key, core),
+    objectPropertyKeyOrThrow(base, key, core.hooks, core.realm),
     core.hooks,
     core.realm,
   );
+}
+export function speculativeBinary(
+  operator: string,
+  left: unknown,
+  right: unknown,
+): unknown {
+  if (operator === "===" || operator === "!==")
+    return scriptStrictEqual(left, right) === (operator === "===");
+  const core = programRealmCore();
+  if (operator === "==" || operator === "!=") {
+    const result = looselyEqual(left, right, core.hooks, core.realm);
+    throwIfRuntimeError(core.realm, result.error);
+    return result.value === (operator === "==");
+  }
+  return binaryObjectValueOperationOrThrow(
+    operator,
+    left,
+    right,
+    core.hooks,
+    core.realm,
+  );
+}
+export function speculativeUnary(operator: string, value: unknown): unknown {
+  const core = programRealmCore();
+  return unaryObjectValueOperationOrThrow(
+    operator,
+    value,
+    core.hooks,
+    core.realm,
+  );
+}
+export function speculativeString(value: unknown): string {
+  const core = programRealmCore();
+  return stringValueOrThrow(value, core.hooks, core.realm);
 }
 export function project(value: unknown, schema: string): unknown {
   const core = programRealmCore();

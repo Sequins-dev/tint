@@ -50,6 +50,9 @@ export function dynamicObjectRuntimeSource(): RuntimeSource {
       "advance",
       "objectConstructor",
       "invokeEnumeration",
+      "speculativeBinary",
+      "speculativeString",
+      "speculativeUnary",
     ],
   };
 }

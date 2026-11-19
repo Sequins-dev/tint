@@ -1,5 +1,6 @@
 import {
   rewriteModule,
+  syntaxHash,
   type Binding,
   type BlockStatement,
   type Expression,
@@ -9,6 +10,7 @@ import {
   type Span,
   type Statement,
 } from "@tint/typescript/syntax";
+import { createKeyIndex } from "@tint/foundation/collections/key-index";
 import type { CheckedClosures } from "@tint/typescript/checker";
 
 export interface DynamicObjectRuntime {
@@ -28,6 +30,9 @@ export interface DynamicObjectRuntime {
   readonly advance: number;
   readonly objectConstructor: number;
   readonly invokeEnumeration: number;
+  readonly speculativeBinary?: number | undefined;
+  readonly speculativeString?: number | undefined;
+  readonly speculativeUnary?: number | undefined;
 }
 
 export function dynamicObjectRuntime(
@@ -68,8 +73,154 @@ export function hasDynamicObject(
   );
 }
 
+function flowRead(checked: CheckedClosures, node: Expression): boolean {
+  const intrinsic = checked.intrinsics.get(node);
+  return (
+    intrinsic === "flow-property-read" ||
+    intrinsic === "flow-property-read-boxed"
+  );
+}
+function hasFlowReads(checked: CheckedClosures): boolean {
+  let found = false;
+  checked.intrinsics.forEach((intrinsic, _node) => {
+    if (
+      intrinsic === "flow-property-read" ||
+      intrinsic === "flow-property-read-boxed"
+    )
+      found = true;
+  });
+  return found;
+}
+
+interface FlowPropertyStorage {
+  readonly values: ReadonlySet<Expression>;
+  readonly bindings: ReadonlySet<number>;
+}
+
+/** A refined property still produces a general value when an accessor can
+ * change its result. Follow that storage through open local slots. The checked
+ * type graph remains intact for assignability and written contracts. */
+export function planFlowPropertyStorage(
+  checked: CheckedClosures,
+): FlowPropertyStorage | undefined {
+  if (!hasFlowReads(checked)) return undefined;
+  const values = new Set<Expression>(),
+    bindings = new Set<number>(),
+    inferred = new Set<number>(),
+    declarations = createKeyIndex<Span, number>(syntaxHash),
+    references = createKeyIndex<Expression, number>(syntaxHash);
+  for (const binding of checked.bindings.bindings)
+    if (binding !== undefined) declarations.set(binding.node, binding.id);
+  for (const reference of checked.bindings.references)
+    if (reference !== undefined && reference.binding !== undefined)
+      references.set(reference.node, reference.binding);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    rewriteModule(checked.module, {
+      statement: (mapped, original) => {
+        if (original.kind === "variable")
+          for (const declaration of original.declarations) {
+            if (
+              declaration === undefined ||
+              declaration.type !== undefined ||
+              declaration.kind === "object-binding" ||
+              declaration.kind === "array-binding"
+            )
+              continue;
+            const id = declarations.get(declaration);
+            if (id === undefined) continue;
+            if (!inferred.has(id)) {
+              inferred.add(id);
+              changed = true;
+            }
+            if (
+              declaration.initializer !== undefined &&
+              values.has(declaration.initializer) &&
+              !bindings.has(id)
+            ) {
+              bindings.add(id);
+              changed = true;
+            }
+          }
+        return mapped;
+      },
+      expression: (mapped, original) => {
+        if (values.has(original)) return mapped;
+        let boxed = flowRead(checked, original);
+        switch (original.kind) {
+          case "identifier": {
+            const id = references.get(original);
+            boxed = id !== undefined && bindings.has(id);
+            break;
+          }
+          case "group":
+            boxed = values.has(original.expression);
+            break;
+          case "satisfies":
+            boxed =
+              checked.downcasts?.get(original) === undefined &&
+              values.has(original.expression);
+            break;
+          case "conditional":
+            boxed =
+              values.has(original.consequent) || values.has(original.alternate);
+            break;
+          case "member":
+          case "index":
+            boxed = boxed || values.has(original.object);
+            break;
+          case "binary":
+            if (original.operator === ",") boxed = values.has(original.right);
+            else
+              boxed =
+                ![
+                  "===",
+                  "!==",
+                  "==",
+                  "!=",
+                  "<",
+                  "<=",
+                  ">",
+                  ">=",
+                  "in",
+                  "instanceof",
+                ].includes(original.operator) &&
+                (values.has(original.left) || values.has(original.right));
+            break;
+          case "unary":
+            boxed =
+              ["+", "-", "~"].includes(original.operator) &&
+              values.has(original.operand);
+            break;
+          case "assignment": {
+            if (!values.has(original.value)) break;
+            const id = references.get(original.target);
+            boxed = id !== undefined && inferred.has(id);
+            if (id !== undefined && boxed && !bindings.has(id)) {
+              bindings.add(id);
+              changed = true;
+            }
+            break;
+          }
+        }
+        if (boxed) {
+          values.add(original);
+          changed = true;
+        }
+        return mapped;
+      },
+    });
+  }
+  return { values, bindings };
+}
+
 /** Type-only declarations cannot require an executable realm. */
-export function usesDynamicObjectRuntime(checked: CheckedClosures): boolean {
+export function usesDynamicObjectRuntime(
+  checked: CheckedClosures,
+  speculativeFlow?: boolean,
+): boolean {
+  if (speculativeFlow === true && hasFlowReads(checked)) return true;
   if (
     !checked.types.some(
       (type) =>
@@ -184,11 +335,20 @@ export function insertDynamicObjectRuntime(
   module: Module,
   checked: CheckedClosures,
   helpers: ReadonlyMap<string, string>,
+  speculativeFlow?: boolean,
 ): Module {
   const uses: Span[] = [];
   checked.intrinsics.forEach((intrinsic, node) => {
     if (intrinsic.startsWith("dynamic-object-")) uses.push(node);
   });
+  const flow =
+    speculativeFlow === true ? planFlowPropertyStorage(checked) : undefined;
+  const flowUses: Span[] = [];
+  if (flow !== undefined)
+    for (const use of flow.values) {
+      flowUses.push(use);
+      uses.push(use);
+    }
   rewriteModule(module, {
     statement: (node, original) => {
       if (original.kind === "for-in" || original.kind === "for-in-assignment")
@@ -242,7 +402,7 @@ export function insertDynamicObjectRuntime(
   }
   function aliasesAt(scope: Span): Statement {
     const declarations: Binding[] = [];
-    dynamicObjectRuntime((name) => {
+    function alias(name: string): number {
       const linked = helpers.get("dynamic-object:" + name);
       if (linked === undefined) throw "dynamic object helper invariant";
       declarations.push({
@@ -258,7 +418,18 @@ export function insertDynamicObjectRuntime(
         end: scope.start,
       });
       return 0;
-    });
+    }
+    dynamicObjectRuntime(alias);
+    if (
+      flowUses.some(
+        (use) =>
+          use !== undefined && use.start >= scope.start && use.end <= scope.end,
+      )
+    ) {
+      alias("speculativeBinary");
+      alias("speculativeString");
+      alias("speculativeUnary");
+    }
     return {
       kind: "variable",
       mode: "const",

@@ -6,6 +6,7 @@ import { verifyHostedFixture } from "./hosted-fixture.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
 import {
   mixedNodeErrorsSource,
+  nativeNodeErrorContractsSource,
   typedNodeErrorProducers,
   typedNodeErrorsSource,
 } from "./typed-node-errors-fixture-source.ts";
@@ -19,7 +20,9 @@ const nodeDependencies: [string, string][] = [
 ];
 const heap = { managedBytes: 67108864, allocationCapacity: 1048576 };
 const form = process.argv[2];
-assert.ok(form === undefined || ["typed", "mixed", "os"].includes(form));
+assert.ok(
+  form === undefined || ["typed", "mixed", "contracts", "os"].includes(form),
+);
 process.env.TINT_GENERAL_FALLBACK = "0";
 if (form === undefined || form === "typed")
   console.log(
@@ -78,10 +81,15 @@ function mixed(
 if (form === undefined || form === "mixed")
   mixed(
     "mixed-node-errors",
-    mixedNodeErrorsSource.replace(
-      "checkContract = false",
-      "checkContract = true",
-    ),
+    mixedNodeErrorsSource,
+    typedNodeErrorProducers,
+    nodeDependencies,
+  );
+
+if (form === undefined || form === "contracts")
+  mixed(
+    "native-node-error-contracts",
+    nativeNodeErrorContractsSource,
     typedNodeErrorProducers,
     nodeDependencies,
   );

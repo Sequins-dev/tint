@@ -46,6 +46,7 @@ export interface Local {
 export type DowncastTest =
   "undefined" | "number" | "boolean" | "string" | "null" | "Uint8Array";
 export interface ExpressionInfo {
+  readonly speculative?: boolean;
   readonly dynamicObject?:
     | "literal"
     | "read"
@@ -171,6 +172,7 @@ export interface ExpressionInfo {
     | "literal-property-has"
     | "flow-property-read"
     | "flow-property-read-boxed"
+    | "speculative-property-read"
     | "range-error-new"
     | "range-error-is"
     | "type-error-new"

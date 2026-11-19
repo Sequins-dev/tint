@@ -321,9 +321,11 @@ A literal-key `in` test on a known object can introduce a property of type
 `unknown` on the true branch. Primitive `typeof` and value comparisons
 refine that fact. Each property read executes in source order, including
 when a getter or proxy returns a different value on a repeated read.
-A read consumed as a narrowed scalar checks the actual value. An explicitly
-`unknown` result preserves the general value. A local snapshot such as
-`const code = e.code` gives later uses a stable binding.
+In mixed code, an uncertain read and inferred locals that receive it keep
+the general representation. Property reads, operators and template
+conversions use the program realm when they consume those values. A local
+snapshot such as `const code = e.code` keeps the value from that one read.
+A written slot or parameter checks the value at the contract boundary.
 
 Native crypto and zlib failures use dedicated records for coded Error and
 RangeError. The zlib status is carried in `errno` and translated to its

@@ -404,6 +404,8 @@ export function lowerFunction(
   const valueTypes: (ScalarType | undefined)[] = [];
   // Proofs apply to SSA values and expression-result temporaries, never mutable
   // source locals. Union-valued merge slots are not inferred from a branch store.
+  const speculativeSlots: number[] = [],
+    speculativeValues: number[] = [];
   const undefinedValues: number[] = [],
     undefinedSlots: number[] = [],
     // Slots holding BigInts (references to BigIntValue, possibly absent).
@@ -642,6 +644,16 @@ export function lowerFunction(
     node: IRSpan,
   ): number {
     const sourceType = valueTypes[id];
+    if (
+      sourceType === "general" &&
+      speculativeValues[id] === 1 &&
+      type !== undefined &&
+      type !== "general"
+    ) {
+      const input = save(id, "general", node);
+      requireSpeculativeContract(input, type, node);
+      id = load(input, node);
+    }
     if (sourceType === "general" && type === "primitive") {
       if (primitives === undefined) throw "primitive runtime invariant";
       const source = save(id, "general", node);
@@ -1177,6 +1189,7 @@ export function lowerFunction(
     const id = nextValue++;
     emit({ kind: "load", id, slot, start: node.start, end: node.end });
     if (undefinedSlots[slot] === 1) undefinedValues[id] = 1;
+    if (speculativeSlots[slot] === 1) speculativeValues[id] = 1;
     return id;
   }
   function store(slot: number, value: number, node: IRSpan): void {
@@ -1484,6 +1497,12 @@ export function lowerFunction(
   }
   function stringOperand(slot: number, node: Expression): number {
     if (slots[slot] === "string") return slot;
+    if (speculativeSlots[slot] === 1) {
+      const helper = dynamicObjects?.speculativeString;
+      if (helper === undefined)
+        throw "speculative string requires the program realm";
+      return dynamicResult(helper, [slot], node);
+    }
     if (bigIntSlots[slot] === 1 && slots[slot] === "reference") {
       const text = runtimeCall(bigIntRuntime().toString, [slot], node);
       if (text === undefined) throw "BigInt string conversion invariant";
@@ -2865,6 +2884,106 @@ export function lowerFunction(
     jump(done.id, node);
     current = done;
     return result;
+  }
+  /** A speculative carrier reaching typed storage crosses a checked contract.
+   * Open locals and expressions have general slots, so they never project here. */
+  function requireSpeculativeContract(
+    input: number,
+    type: ScalarType,
+    node: IRSpan,
+  ): void {
+    const tests: DowncastTest[] = [];
+    switch (type) {
+      case "number":
+        tests.push("number");
+        break;
+      case "string":
+        tests.push("string");
+        break;
+      case "boolean":
+        tests.push("boolean");
+        break;
+      case "Uint8Array":
+        tests.push("Uint8Array");
+        break;
+      case "optional-number":
+        tests.push("undefined", "number");
+        break;
+      case "optional-string":
+        tests.push("undefined", "string");
+        break;
+      case "optional-boolean":
+        tests.push("undefined", "boolean");
+        break;
+      case "primitive":
+        tests.push("undefined", "null", "string", "number", "boolean");
+        break;
+      default:
+        throw "speculative value requires a testable written contract";
+    }
+    const accepted = block();
+    for (const type of tests) {
+      if (type === undefined) throw "speculative contract category invariant";
+      const id = nextValue++,
+        rejected = block();
+      emit({
+        kind: "general-is",
+        id,
+        value: load(input, node),
+        type,
+        start: node.start,
+        end: node.end,
+      });
+      choose(id, accepted, rejected, node);
+      current = rejected;
+    }
+    requireCondition(
+      booleanSlot(false, node),
+      "TypeError",
+      "value does not match its declared type",
+      node,
+    );
+    jump(accepted.id, node);
+    current = accepted;
+  }
+  function speculativePropertyRead(
+    node: Expression & { readonly kind: "member" | "index" },
+  ): number {
+    const runtime = dynamicObjects;
+    if (runtime === undefined)
+      throw "speculative property read requires the program realm";
+    return dynamicResult(
+      runtime.read,
+      [value(node.object), dynamicKey(node)],
+      node,
+    );
+  }
+  function speculativeBinaryOperation(
+    node: Expression & { readonly kind: "binary" },
+    left: number,
+    right: number,
+  ): number {
+    const helper = dynamicObjects?.speculativeBinary;
+    if (helper === undefined)
+      throw "speculative binary operation requires the program realm";
+    const identity =
+      node.operator === "===" ||
+      node.operator === "!==" ||
+      node.operator === "==" ||
+      node.operator === "!=";
+    const result = dynamicResult(
+      helper,
+      [
+        stringSlot(node.operator, node),
+        identity && mayCarryError(left) ? exposedError(left, node) : left,
+        identity && mayCarryError(right) ? exposedError(right, node) : right,
+      ],
+      node,
+    );
+    const type = scalarType(node);
+    return type === "general"
+      ? result
+      : save(coerce(load(result, node), type, node), type, node);
   }
   function flowPropertyRead(
     node: Expression & { readonly kind: "member" | "index" },
@@ -4408,6 +4527,8 @@ export function lowerFunction(
       undefinedSlots[result] = 1;
     if (result !== undefined && info(node).bigint === true)
       bigIntSlots[result] = 1;
+    if (result !== undefined && info(node).speculative === true)
+      speculativeSlots[result] = 1;
     return result;
   }
   function chainExpression(node: Expression): number | undefined {
@@ -5481,6 +5602,16 @@ export function lowerFunction(
             );
           return result;
         }
+        if (info(node).speculative === true) {
+          const helper = dynamicObjects?.speculativeUnary;
+          if (helper === undefined)
+            throw "speculative unary operation requires the program realm";
+          return dynamicResult(
+            helper,
+            [stringSlot(node.operator, node), value(node.operand)],
+            node,
+          );
+        }
         if (info(node.operand).bigint === true) {
           const operand = value(node.operand);
           if (node.operator === "!")
@@ -5522,6 +5653,8 @@ export function lowerFunction(
       }
       case "index": {
         const operation = info(node).builtin;
+        if (operation === "speculative-property-read")
+          return speculativePropertyRead(node);
         if (
           operation === "flow-property-read" ||
           operation === "flow-property-read-boxed"
@@ -5643,6 +5776,8 @@ export function lowerFunction(
       }
       case "member": {
         const builtin = info(node).builtin;
+        if (builtin === "speculative-property-read")
+          return speculativePropertyRead(node);
         if (
           builtin === "flow-property-read" ||
           builtin === "flow-property-read-boxed"
@@ -5773,6 +5908,8 @@ export function lowerFunction(
           return result;
         }
         const right = value(node.right);
+        if (speculativeSlots[left] === 1 || speculativeSlots[right] === 1)
+          return speculativeBinaryOperation(node, left, right);
         if (bigIntSlots[left] === 1 || bigIntSlots[right] === 1) {
           const lowered = bigIntBinary(node, left, right);
           if (lowered !== undefined) return lowered;

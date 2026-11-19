@@ -81,12 +81,42 @@ export function typedCode(value: unknown): string {
   }
   return "";
 }
+function takesString(code: string): string { return code; }
+export function contractArgument(value: unknown): string {
+  if (value instanceof Error && "code" in value && typeof value.code === "string") {
+    const code = value.code;
+    return takesString(code);
+  }
+  return "";
+}
+export function codeLength(value: unknown): unknown {
+  if (value instanceof Error && "code" in value && typeof value.code === "string")
+    return value.code.length;
+  return null;
+}
+export function codeConcat(value: unknown): unknown {
+  if (value instanceof Error && "code" in value && typeof value.code === "string") {
+    const code = value.code;
+    return code + "x";
+  }
+  return null;
+}
+export function codeEquals(value: unknown): boolean {
+  if (value instanceof Error && "code" in value && typeof value.code === "string")
+    return value.code === "ENOENT";
+  return true;
+}
+export function codeTemplate(value: unknown): string {
+  if (value instanceof Error && "code" in value && typeof value.code === "string")
+    return \`\${value.code}\`;
+  return "";
+}
 `;
 
 export const mixedNodeErrorsSource = `
 import {
   digest, unsupported, truncated, invalid, missingDictionary, invalidRange, outputLimit,
-  caughtCode, typedCode, echo,
+  caughtCode, codeLength, codeConcat, codeEquals, codeTemplate, echo,
 } from "./producers.ts";
 
 function capture(call) {
@@ -107,7 +137,7 @@ function shape(error, prototype, fields, codeFirst = false) {
   }
   return typeof error.stack === "string";
 }
-export function run(checkContract = false) {
+export function run() {
   if (!shape(capture(unsupported), Error.prototype, {})) return 1;
   if (!shape(capture(digest), Error.prototype, {code: "ERR_CRYPTO_HASH_FINALIZED"})) return 2;
   if (!shape(capture(truncated), Error.prototype, {errno: -5, code: "Z_BUF_ERROR"})) return 3;
@@ -123,11 +153,6 @@ export function run(checkContract = false) {
     get(target, key) { log.push("get:" + key); return ++reads === 1 ? "first" : 17; },
   });
   if (caughtCode(proxy) !== 17 || log.join(",") !== "has:code,get:code,get:code") return 8;
-  reads = 0;
-  if (checkContract) {
-    try { typedCode(proxy); return 9; }
-    catch (thrown) { if (!(thrown instanceof TypeError)) return 9; }
-  }
   const marker = {};
   const rejects = new Proxy(error, { has() { throw marker; } });
   try { caughtCode(rejects); return 10; } catch (thrown) { if (thrown !== marker) return 10; }
@@ -139,6 +164,43 @@ export function run(checkContract = false) {
   realmError.code = "E_REALM";
   if (caughtCode(realmError) !== "E_REALM") return 13;
   if (echo(error) !== error) return 14;
+  let count = 0;
+  const changing = new Error("changing");
+  Object.defineProperty(changing, "code", {
+    get() { return ++count % 2 === 1 ? "ENOENT" : 42; },
+  });
+  if (codeLength(changing) !== undefined || count !== 2) return 15;
+  if (codeConcat(changing) !== "42x" || count !== 4) return 16;
+  if (codeEquals(changing) !== false || count !== 6) return 17;
+  if (codeTemplate(changing) !== "42" || count !== 8) return 18;
+  const replacement = { length: 7, [Symbol.toPrimitive](hint) { return hint; } };
+  const objectCode = new Error("object");
+  let objectReads = 0;
+  Object.defineProperty(objectCode, "code", {
+    get() { return ++objectReads % 2 === 1 ? "ENOENT" : replacement; },
+  });
+  if (codeLength(objectCode) !== 7 || objectReads !== 2) return 19;
+  if (codeConcat(objectCode) !== "defaultx" || objectReads !== 4) return 20;
+  if (codeTemplate(objectCode) !== "string" || objectReads !== 6) return 21;
+  return 42;
+}
+`;
+
+// Only Tint executes these checks. Its written slot and parameter contracts
+// reject the getter's second value even though JavaScript would accept it.
+export const nativeNodeErrorContractsSource = `
+import { typedCode, contractArgument } from "./producers.ts";
+
+export function run() {
+  let reads = 0;
+  const changing = new Error("changing");
+  Object.defineProperty(changing, "code", {
+    get() { return ++reads % 2 === 1 ? "ENOENT" : 42; },
+  });
+  try { typedCode(changing); return 1; }
+  catch (thrown) { if (!(thrown instanceof TypeError) || reads !== 2) return 1; }
+  try { contractArgument(changing); return 2; }
+  catch (thrown) { if (!(thrown instanceof TypeError) || reads !== 4) return 2; }
   return 42;
 }
 `;

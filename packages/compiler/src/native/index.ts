@@ -1214,7 +1214,10 @@ function checkApplication(
   return { ok: true, value: { checked: checked.value } };
 }
 /** Specializes and checks the linked program; returns what lowering needs. */
-function checkTypedProgram(request: CompileRequest): TypedChecking {
+function checkTypedProgram(
+  request: CompileRequest,
+  speculativeFlow: boolean,
+): TypedChecking {
   const linking = linkTypedProgram(request);
   if (!linking.ok) return { ok: false, error: linking.error };
   const linkedProgram = linking.value,
@@ -1231,7 +1234,7 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
   if (!checked.ok) return { ok: false, error: checked.error };
   if (
     !helpers.has("dynamic-object:create") &&
-    usesDynamicObjectRuntime(checked.value.checked)
+    usesDynamicObjectRuntime(checked.value.checked, speculativeFlow)
   )
     return {
       ok: false,
@@ -1354,7 +1357,12 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
     return { ok: true, value: instance.value.module };
   };
   const instanceSource = helpers.has("dynamic-object:create")
-    ? insertDynamicObjectRuntime(application, checked.value.checked, helpers)
+    ? insertDynamicObjectRuntime(
+        application,
+        checked.value.checked,
+        helpers,
+        speculativeFlow,
+      )
     : application;
   const prepared = prepareObservedCollectionRuntimes(
     instanceSource,
@@ -1409,7 +1417,7 @@ function lowerTypedProgram(
   request: CompileRequest,
   realmTypeofModules?: ReadonlySet<string>,
 ): TypedLowering {
-  const front = checkTypedProgram(request);
+  const front = checkTypedProgram(request, realmTypeofModules !== undefined);
   if (!front.ok) return { ok: false, error: front.error };
   const checkedProgram = front.value,
     nativeChecked = checkedProgram.checked,

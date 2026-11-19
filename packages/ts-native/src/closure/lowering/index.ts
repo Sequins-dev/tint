@@ -28,6 +28,7 @@ import {
   encodeDynamicContract,
   hasDynamicObject,
   dynamicObjectRuntime,
+  planFlowPropertyStorage,
   dynamicRuntimeAliasPrefix,
   type DynamicObjectRuntime,
 } from "./dynamic-objects.ts";
@@ -987,6 +988,13 @@ function lowerEntries(
             system: nodeErrorRecord(nodeErrorTypes.system),
             info: nodeErrorRecord(nodeErrorTypes.info),
           };
+    const flowStorage =
+      realmErrors === undefined ? undefined : planFlowPropertyStorage(checked);
+    function bindingScalar(binding: number): SourceScalarType {
+      return flowStorage?.bindings.has(binding) === true
+        ? "general"
+        : scalar(checked.bindingTypes[binding]);
+    }
     function realmTypeofTarget(span: IRSpan): number | undefined {
       if (realmTypeof === undefined || !realmTypeof.applies(span))
         return undefined;
@@ -1555,7 +1563,7 @@ function lowerEntries(
           scope?.kind !== "for"
         )
           fail("unsupported owned capture scope");
-        const type = scalar(checked.bindingTypes[binding.id]);
+        const type = bindingScalar(binding.id);
         // Environment fields below occupy one word. Keep wider carriers in
         // cells; traced pointers retain their ordinary descriptor field type.
         if (valueCaptures[binding.id] === 1 && scalarByteLength(type) !== 8)
@@ -1727,7 +1735,7 @@ function lowerEntries(
         const local: Local = {
           id: locals.length,
           name: b.name,
-          type: scalar(checked.bindingTypes[b.id]),
+          type: bindingScalar(b.id),
           mutable: b.mutable,
           parameter: b.kind === "parameter" || b.owner !== sourceId,
           hoisted: b.kind === "var",
@@ -1799,12 +1807,17 @@ function lowerEntries(
       const dynamicObjects: DynamicObjectRuntime | undefined =
         dynamicAliases.size === 0
           ? undefined
-          : dynamicObjectRuntime((name) => {
-              const local = dynamicAliases.get(name);
-              if (local === undefined)
-                fail("missing dynamic-object runtime helper: " + name);
-              return local;
-            });
+          : {
+              ...dynamicObjectRuntime((name) => {
+                const local = dynamicAliases.get(name);
+                if (local === undefined)
+                  fail("missing dynamic-object runtime helper: " + name);
+                return local;
+              }),
+              speculativeBinary: dynamicAliases.get("speculativeBinary"),
+              speculativeString: dynamicAliases.get("speculativeString"),
+              speculativeUnary: dynamicAliases.get("speculativeUnary"),
+            };
       const expressions = createKeyIndex<Expression, ExpressionInfo>(
         syntaxHash,
       );
@@ -1855,8 +1868,9 @@ function lowerEntries(
         const receiverContract = checked.chainReceivers.get(node);
         const checkedType = checked.expressions.get(node);
         const dynamicIntrinsic = checked.intrinsics.get(node);
+        const speculative = flowStorage?.values.has(node) === true;
         const type: SourceScalarType | "void" =
-          dynamicIntrinsic === "flow-property-read-boxed"
+          speculative || dynamicIntrinsic === "flow-property-read-boxed"
             ? "general"
             : checkedType !== undefined &&
                 (checked.types[checkedType]?.kind === "void" ||
@@ -2068,6 +2082,12 @@ function lowerEntries(
                 );
               break;
             case "index":
+              if (flowStorage?.values.has(node.object) === true) {
+                builtin = "speculative-property-read";
+                expr(node.object);
+                expr(node.index);
+                break;
+              }
               if (
                 dynamicIntrinsic === "flow-property-read" ||
                 dynamicIntrinsic === "flow-property-read-boxed"
@@ -2134,6 +2154,12 @@ function lowerEntries(
               expr(node.index);
               break;
             case "member":
+              if (flowStorage?.values.has(node.object) === true) {
+                builtin = "speculative-property-read";
+                expr(node.object);
+
+                break;
+              }
               if (
                 dynamicIntrinsic === "flow-property-read" ||
                 dynamicIntrinsic === "flow-property-read-boxed"
@@ -3002,7 +3028,8 @@ function lowerEntries(
         const generalTypeof =
           node.kind === "unary" &&
           node.operator === "typeof" &&
-          scalar(checked.expressions.get(node.operand)) === "general";
+          (flowStorage?.values.has(node.operand) === true ||
+            scalar(checked.expressions.get(node.operand)) === "general");
         const realmTypeof = generalTypeof ? realmTypeofTarget(node) : undefined;
         const restCall = checked.restCalls?.get(node);
         const restElement =
@@ -3041,7 +3068,9 @@ function lowerEntries(
           indirect,
           discardCallResult:
             indirect && type === "void" && checked.voidResultDiscard === true,
+          speculative,
           bigint:
+            !speculative &&
             checkedType !== undefined &&
             bigIntType(checked, checkedType) !== undefined,
           realmTypeof,
@@ -3065,9 +3094,11 @@ function lowerEntries(
           mapKey: key,
           mapValue,
           nullValue:
+            !speculative &&
             checkedType !== undefined &&
             checked.types[checkedType]?.kind === "null",
           undefinedValue:
+            !speculative &&
             checkedType !== undefined &&
             checked.types[checkedType]?.kind === "undefined",
           type,
