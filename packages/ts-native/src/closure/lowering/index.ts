@@ -1835,6 +1835,21 @@ function lowerEntries(
               break;
             }
             case "array": {
+              if (dynamicIntrinsic === "dynamic-object-array-literal") {
+                if (dynamicObjects === undefined)
+                  fail("realm array literal requires the program realm");
+                dynamicObject = "array-literal";
+                for (const element of node.elements) {
+                  if (element === undefined)
+                    fail("realm array element invariant");
+                  if (element.kind === "spread")
+                    fail(
+                      "realm array literals with spread require iterable lowering",
+                    );
+                  if (element.kind !== "elision") expr(element);
+                }
+                break;
+              }
               const literalElement =
                 checkedType === undefined
                   ? undefined
@@ -2386,6 +2401,27 @@ function lowerEntries(
             }
             case "call": {
               const intrinsic = checked.intrinsics.get(node);
+              if (
+                intrinsic === "dynamic-object-array-push" ||
+                intrinsic === "dynamic-object-static-call"
+              ) {
+                const target = node.callee;
+                if (
+                  dynamicObjects === undefined ||
+                  checkedType === undefined ||
+                  target.kind !== "member"
+                )
+                  fail("realm method call requires the program realm");
+                dynamicObject =
+                  intrinsic === "dynamic-object-array-push"
+                    ? "array-push"
+                    : "static-call";
+                dynamicContract = encodeDynamicContract(checked, checkedType);
+                if (intrinsic === "dynamic-object-array-push")
+                  expr(target.object);
+                exprArguments(node.arguments);
+                break;
+              }
               if (intrinsic === "dynamic-object-own-enumeration") {
                 if (dynamicObjects === undefined)
                   fail("Object enumeration requires the program realm");

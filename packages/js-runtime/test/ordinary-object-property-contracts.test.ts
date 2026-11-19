@@ -7,6 +7,7 @@ import {
 } from "@tint/js-runtime/descriptors";
 import * as operations from "../src/objects/operations.ts";
 
+import { createArrayObject } from "../src/objects/arrays.ts";
 import { createErrorRealm } from "../src/objects/errors.ts";
 import {
   enrollObjectPropertyContract,
@@ -176,4 +177,62 @@ test("typed shapes conjoin fixed and index rules and reject an accessor at admis
   assert.equal(operations.deleteProperty(object, "mode"), false);
   assert.ok(operations.createDataProperty(object, "another", "open", hooks));
   assert.equal(operations.deleteProperty(object, "another"), true);
+});
+
+test("array contracts validate existing packed elements and guard later writes", () => {
+  const prototype = operations.createObject<ScriptPropertyKey, unknown>(
+    undefined,
+  );
+  const realm = createErrorRealm(prototype, hooks);
+  const isRealmTypeError = (error: unknown) =>
+    typeof error === "object" &&
+    error !== null &&
+    "prototype" in error &&
+    error.prototype === realm.prototypes.get("type");
+
+  const schema: ObjectShapeContract = {
+    root: 1,
+    types: [
+      { kind: "number" },
+      { kind: "array-elements", element: 0, readonly: false },
+    ],
+  };
+  const array = createArrayObject(
+    0,
+    realm.arrayPrototype,
+    realm.arrayHooks,
+    hooks,
+  );
+  operations.createDataProperty(array, "0", 7, hooks);
+  operations.createDataProperty(array, "1", "bad", hooks);
+  assert.throws(
+    () => enrollObjectPropertyContract(array, schema, realm),
+    isRealmTypeError,
+  );
+  assert.equal(array.internalPropertyContract, undefined);
+  assert.ok(array.internalArrayElements);
+  operations.createDataProperty(array, "1", 8, hooks);
+  enrollObjectPropertyContract(array, schema, realm);
+  assert.throws(
+    () =>
+      operations.setProperty(
+        array,
+        "0",
+        false,
+        { object: array, value: array },
+        hooks,
+      ),
+    isRealmTypeError,
+  );
+  assert.throws(
+    () => operations.createDataProperty(array, "2", "bad", hooks),
+    isRealmTypeError,
+  );
+  assert.equal(operations.getOwnProperty(array, "length")?.value, 2);
+  assert.equal(operations.getOwnProperty(array, "0")?.value, 7);
+  assert.equal(operations.getOwnProperty(array, "2"), undefined);
+  assert.ok(operations.createDataProperty(array, "2", 42, hooks));
+  assert.ok(operations.deleteProperty(array, "2"));
+  assert.equal(operations.getOwnProperty(array, "length")?.value, 3);
+  assert.ok(operations.createDataProperty(array, "metadata", "open", hooks));
 });

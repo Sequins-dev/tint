@@ -134,6 +134,42 @@ export const constructs: readonly Construct[] = [
 }`,
   },
   {
+    name: "dynamic-object-local-aggregate",
+    typed: `export function run(): number {
+  const entry: { value: number } = { value: 17 };
+  const list = [entry];
+  const groups: Record<string, { value: number }[]> = { group: list };
+  const alias = groups.group;
+  if (alias === undefined || alias !== list) return 1;
+  alias.push({ value: 25 });
+  return (alias[0]?.value ?? 0) + (list[1]?.value ?? 0);
+}`,
+    untyped: `export function run() {
+  const entry = { value: 17 };
+  const list = [entry];
+  const groups = { group: list };
+  const alias = groups.group;
+  if (!Array.isArray(alias) || alias !== list) return 1;
+  alias.push({ value: 25 });
+  return alias[0].value + list[1].value;
+}`,
+  },
+  {
+    name: "dynamic-object-own-data-definition",
+    typed: `export function run(): number {
+  const groups: Record<string, number[]> = {};
+  Object.defineProperty(groups, "__proto__", { value: [42], writable: true, enumerable: true, configurable: true });
+  const group = groups["__proto__"];
+  return Object.hasOwn(groups, "__proto__") && group !== undefined ? group[0] ?? 0 : 1;
+}`,
+    untyped: `export function run() {
+  const groups = {};
+  Object.defineProperty(groups, "__proto__", { value: [42], writable: true, enumerable: true, configurable: true });
+  const group = groups["__proto__"];
+  return Object.hasOwn(groups, "__proto__") && Object.getPrototypeOf(groups) === Object.prototype ? group[0] : 1;
+}`,
+  },
+  {
     name: "dynamic-object-in-delete",
     typed: `export function run(): number {
   const object: Record<string, number> = { key: 1 };

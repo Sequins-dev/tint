@@ -3917,6 +3917,28 @@ export function lowerFunction(
     if (node.kind === "member") return stringSlot(node.property, node);
     throw "dynamic object key invariant";
   }
+  function dynamicArray(
+    runtime: DynamicObjectRuntime,
+    elements: readonly Expression[],
+    node: Span,
+  ): number {
+    const array = dynamicResult(
+      runtime.createArray,
+      [numberSlot(elements.length, node)],
+      node,
+    );
+    for (let i = 0; i < elements.length; i++) {
+      const element = elements[i];
+      if (element === undefined) throw "realm array element invariant";
+      if (element.kind === "elision") continue;
+      dynamicCall(
+        runtime.define,
+        [array, stringSlot(String(i), element), value(element)],
+        element,
+      );
+    }
+    return array;
+  }
   function dynamicExpression(
     node: Expression,
     metadata: ExpressionInfo,
@@ -3926,6 +3948,40 @@ export function lowerFunction(
     const operation = metadata.dynamicObject;
     if (operation === undefined) throw "dynamic object operation invariant";
     switch (operation) {
+      case "array-literal":
+        if (node.kind !== "array") throw "realm array literal invariant";
+        return dynamicArray(runtime, node.elements, node);
+      case "array-push":
+      case "static-call": {
+        if (node.kind !== "call") throw "realm method call invariant";
+        const target = node.callee;
+        if (target.kind !== "member") throw "realm method target invariant";
+        const receiver =
+          operation === "array-push"
+            ? value(target.object)
+            : dynamicResult(runtime.objectConstructor, [], node);
+        const callee = dynamicResult(
+          runtime.read,
+          [receiver, stringSlot(target.property, node)],
+          node,
+        );
+        const args = dynamicArray(runtime, node.arguments, node);
+        const raw = dynamicResult(
+          runtime.invoke,
+          [receiver, callee, args],
+          node,
+        );
+        const schema = metadata.dynamicContract;
+        const type = metadata.type;
+        if (schema === undefined || type === "void")
+          throw "realm method result invariant";
+        const checked = dynamicResult(
+          runtime.project,
+          [raw, stringSlot(schema, node)],
+          node,
+        );
+        return save(load(checked, node), type, node);
+      }
       case "own-enumeration": {
         if (node.kind !== "call") throw "Object enumeration invariant";
         const target = ungroup(node.callee);
