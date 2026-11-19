@@ -1670,6 +1670,48 @@ function lowerTypedProgram(
     classifier === undefined
       ? undefined
       : runtimeSources.get(classifier.linkedName);
+  function realmErrorHelper(
+    name: string,
+    namespace: string,
+  ): number | undefined {
+    if (realmTypeofModules === undefined) return undefined;
+    const item = exports.find(
+      (item) =>
+        item !== undefined &&
+        item.namespace === "value" &&
+        item.name === name &&
+        runtimeNamespacesByModule.get(item.module) === namespace,
+    );
+    return item === undefined ? undefined : runtimeSources.get(item.linkedName);
+  }
+  const errorView = realmErrorHelper(
+    "nativeErrorReceiver",
+    "general-record-views",
+  );
+  const errorOperation = realmErrorHelper(
+    "realmErrorOperation",
+    "general-object-views",
+  );
+  const errorSlot = realmErrorHelper("getErrorView", "general-record-views");
+  const typeErrorSlot = realmErrorHelper(
+    "getTypeErrorView",
+    "general-record-views",
+  );
+  const rangeErrorSlot = realmErrorHelper(
+    "getRangeErrorView",
+    "general-record-views",
+  );
+  if (
+    errorView !== undefined &&
+    (errorOperation === undefined ||
+      errorSlot === undefined ||
+      typeErrorSlot === undefined ||
+      rangeErrorSlot === undefined)
+  )
+    return stageFailure(
+      "record-binding",
+      "incomplete mixed native error views",
+    );
   const lowered = lowerModuleEntries(
     nativeChecked,
     entries,
@@ -1682,6 +1724,22 @@ function lowerTypedProgram(
           ? undefined
           : {
               function: classifierSource,
+              applies: realmTypeofSourcePredicate(ranges, realmTypeofModules),
+            },
+      realmErrors:
+        realmTypeofModules === undefined ||
+        errorView === undefined ||
+        errorOperation === undefined ||
+        errorSlot === undefined ||
+        typeErrorSlot === undefined ||
+        rangeErrorSlot === undefined
+          ? undefined
+          : {
+              view: errorView,
+              operation: errorOperation,
+              error: errorSlot,
+              typeError: typeErrorSlot,
+              rangeError: rangeErrorSlot,
               applies: realmTypeofSourcePredicate(ranges, realmTypeofModules),
             },
       recordBindings,
