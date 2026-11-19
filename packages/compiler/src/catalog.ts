@@ -199,6 +199,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/x86_64/isa.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/compiler/src/build.ts",
       packageId: "compiler",
     },
@@ -3430,6 +3434,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/codegen/aarch64/unwind",
       target: "packages/codegen/src/aarch64/unwind.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/codegen/x86_64/isa",
+      target: "packages/codegen/src/x86_64/isa.ts",
     },
     {
       packageId: "compiler",
