@@ -133,7 +133,8 @@ import {
 } from "@tint/typescript/modules";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import {
-  prepareCollectionRuntimes,
+  prepareObservedCollectionRuntimes,
+  type CollectionRuntimeObservation,
   type RuntimeModuleTransform,
 } from "@tint/ts-native/runtime";
 import {
@@ -1060,6 +1061,42 @@ function specializeApplication(
     return stageFailure("specialize", specialized.error.message);
   return { ok: true, value: specialized.value.module };
 }
+/** Owns the first specialization and checker result until collection
+ * preparation takes over. The caller keeps only the replaceable observation. */
+function checkApplication(
+  linkedProgram: LinkedTypedProgram,
+  request: CompileRequest,
+):
+  | { readonly ok: true; readonly value: CollectionRuntimeObservation }
+  | CompilationFailure {
+  const specialized = specializeApplication(
+    linkedProgram.application,
+    request.maxSpecializations ?? 8192,
+  );
+  if (!specialized.ok) return { ok: false, error: specialized.error };
+  const checked = checkClosureModule(specialized.value, {
+    cViews: foreignViewRegistry(
+      request.foreignLibraries ?? [],
+      linkedProgram.exports,
+    ),
+  });
+  if (!checked.ok) {
+    const location = locateSourceRange(linkedProgram.ranges, checked.error);
+    return stageFailure(
+      "check",
+      (location === undefined
+        ? ""
+        : location.module +
+          ":" +
+          String(location.start) +
+          ":" +
+          String(location.end) +
+          ": ") + checked.error.message,
+      location?.module,
+    );
+  }
+  return { ok: true, value: { checked: checked.value } };
+}
 /** Specializes and checks the linked program; returns what lowering needs. */
 function checkTypedProgram(request: CompileRequest): TypedChecking {
   const linking = linkTypedProgram(request);
@@ -1074,29 +1111,8 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
     retainedRuntimeExports = linkedProgram.retainedRuntimeExports,
     retainedRuntimeModules = linkedProgram.retainedRuntimeModules,
     surfacePlans = linkedProgram.surfacePlans;
-  const specialized = specializeApplication(
-    application,
-    request.maxSpecializations ?? 8192,
-  );
-  if (!specialized.ok) return { ok: false, error: specialized.error };
-  const checked = checkClosureModule(specialized.value, {
-    cViews: foreignViewRegistry(request.foreignLibraries ?? [], exports),
-  });
-  if (!checked.ok) {
-    const location = locateSourceRange(ranges, checked.error);
-    return stageFailure(
-      "check",
-      (location === undefined
-        ? ""
-        : location.module +
-          ":" +
-          String(location.start) +
-          ":" +
-          String(location.end) +
-          ": ") + checked.error.message,
-      location?.module,
-    );
-  }
+  const checked = checkApplication(linkedProgram, request);
+  if (!checked.ok) return { ok: false, error: checked.error };
   let initializerName = "",
     entryName = "";
   const start = request.start;
@@ -1208,7 +1224,7 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
     }
     return { ok: true, value: instance.value.module };
   };
-  const prepared = prepareCollectionRuntimes(
+  const prepared = prepareObservedCollectionRuntimes(
     application,
     checked.value,
     helpers,
