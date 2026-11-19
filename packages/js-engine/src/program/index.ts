@@ -78,7 +78,12 @@ export function createGeneralLowering(
       {
         module: runtime.objects,
         namespace: "general-object-views",
-        retainedExports: [...objectViews, "objectTypeof", "generalValueTypeof"],
+        retainedExports: [
+          ...objectViews,
+          "objectTypeof",
+          "generalValueTypeof",
+          "realmErrorOperation",
+        ],
       },
     ],
     lower: (request: GeneralProgramRequest): GeneralProgram =>
@@ -213,7 +218,8 @@ function lowerGeneralProgram(
   // Record types cross as JavaScript views (docs/unified-pipeline.md, the
   // value bridge): one view per record, cached in the record's view slot.
   const adapters = recordAdapters(request.records ?? []);
-  boundaryImports += adapters.imports;
+  const errors = errorAdapters(request.boundaries.length !== 0);
+  boundaryImports += adapters.imports + errors.imports;
   const dynamicDeclarations = new Set<string>();
   for (let k = 0; k < request.boundaries.length; k++) {
     const boundary = request.boundaries[k];
@@ -234,7 +240,7 @@ function lowerGeneralProgram(
         JSON.stringify(boundary.id) +
         ";\n";
       exportNames.push(item.name);
-      let value = local;
+      let value = "toRealmError(" + local + ")";
       if (item.kind === "function") {
         const checks: string[] = [];
         for (let p = 0; p < item.parameters.length; p++) {
@@ -248,13 +254,13 @@ function lowerGeneralProgram(
           );
         }
         value =
-          "createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver:unknown,args:readonly unknown[]):unknown=>" +
+          "createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver:unknown,args:readonly unknown[]):unknown=>{try{return " +
           toGeneral(
             local + "(" + checks.join(",") + ")",
             item.records?.result,
             adapters.index,
           ) +
-          ",realm.executionContext)";
+          ";}catch(error){throw toRealmError(error);}},realm.executionContext)";
       }
       body +=
         "setSyntheticModuleExport(module," +
@@ -290,7 +296,7 @@ function lowerGeneralProgram(
     request.start,
     output !== undefined,
     generalIntrinsics(erasedModules),
-    adapters.functions,
+    adapters.functions + errors.functions,
   );
   const parsed = parseModule(createSourceTextView(text));
   if (!parsed.ok)
@@ -315,7 +321,7 @@ function lowerGeneralProgram(
   for (const record of request.records ?? [])
     if (record !== undefined)
       hostDependencies.set(record.module, record.module);
-  if ((request.records ?? []).length !== 0)
+  if ((request.records ?? []).length !== 0 || errors.stubs !== "")
     hostDependencies.set("views", viewsId);
   generated.push({
     id: hostId,
@@ -323,9 +329,11 @@ function lowerGeneralProgram(
     dependencies: hostDependencies,
   });
   const records = request.records ?? [];
-  if (records.length === 0)
+  if (records.length === 0 && errors.stubs === "")
     return { ok: true, value: { modules: generated, entry: hostId } };
-  const viewsParsed = parseModule(createSourceTextView(adapters.stubs));
+  const viewsParsed = parseModule(
+    createSourceTextView(adapters.stubs + errors.stubs),
+  );
   if (!viewsParsed.ok)
     return {
       ok: false,
@@ -340,7 +348,11 @@ function lowerGeneralProgram(
     module: viewsParsed.value,
     dependencies: viewsDependencies,
   });
-  const viewSlots: NativeRecordBinding[] = [];
+  const viewSlots: NativeRecordBinding[] = errors.bindings.map((binding) => ({
+    module: viewsId,
+    name: binding.name,
+    operation: binding.operation,
+  }));
   for (let i = 0; i < records.length; i++) {
     viewSlots.push({
       module: viewsId,
@@ -353,14 +365,81 @@ function lowerGeneralProgram(
       operation: "set-view-slot",
     });
   }
+  const retainedExports = viewSlots.map((binding) => binding.name);
+  if (errors.stubs !== "") retainedExports.push("nativeErrorReceiver");
   return {
     ok: true,
     value: {
       modules: generated,
       entry: hostId,
       recordBindings: viewSlots,
-      runtimes: [{ module: viewsId, namespace: "general-record-views" }],
+      runtimes: [
+        { module: viewsId, namespace: "general-record-views", retainedExports },
+      ],
     },
+  };
+}
+
+/** The retained stubs see only native layout identities and traced slots.
+ * Publication lives in the host, where the shared realm is available. */
+function errorAdapters(enabled: boolean): {
+  imports: string;
+  functions: string;
+  stubs: string;
+  bindings: Pick<NativeRecordBinding, "name" | "operation">[];
+} {
+  const bindings: Pick<NativeRecordBinding, "name" | "operation">[] = [];
+  if (!enabled) return { imports: "", functions: "", stubs: "", bindings };
+  const imports: string[] = [];
+  let stubs = "",
+    lookup = "",
+    publish = "";
+  for (const [kind, intrinsic] of [
+    ["Error", "error"],
+    ["TypeError", "type"],
+    ["RangeError", "range"],
+  ]) {
+    const layout = "Native" + kind;
+    const project = "project" + kind,
+      get = "get" + kind + "View",
+      set = "set" + kind + "View";
+    // The flag's name partitions otherwise identical physical layouts.
+    const flag = "has" + kind + "Message";
+    imports.push(project, get, set);
+    stubs += `export interface ${layout} { readonly message: string; readonly ${flag}: boolean }
+export function ${project}(value:unknown):${layout}|undefined { throw "UNBOUND_ERROR_PROJECTION"; }
+export function ${get}(error:${layout}):unknown { throw "UNBOUND_ERROR_VIEW_SLOT"; }
+export function ${set}(error:${layout}, view:unknown):void { throw "UNBOUND_ERROR_VIEW_SLOT"; }
+`;
+    bindings.push(
+      { name: project, operation: "view" },
+      { name: get, operation: "view-slot" },
+      { name: set, operation: "set-view-slot" },
+    );
+    lookup += `{const native=${project}(value);if(native!==undefined){
+ const cached=${get}(native);return cached===undefined?value:cached;
+ }}\n`;
+    publish += `{const native=${project}(value);if(native!==undefined){
+ const cached=${get}(native);if(cached!==undefined)return cached;
+ const program=programRealm();
+ const view:unknown=createNativeErrorView(program.realm,program.hooks,${JSON.stringify(intrinsic)},native.message,native.${flag},value);
+ ${set}(native,view);return view;
+ }}\n`;
+  }
+  stubs += `export function nativeErrorReceiver(value:unknown):unknown {
+${lookup}return value;
+}\n`;
+  return {
+    imports: `import {${imports.join(",")}} from "views";\nimport {createNativeErrorView,prepareRealmErrorArgument} from "objects";\n`,
+    functions: `function toRealmError(value:unknown):unknown {
+${publish}return value;
+}
+function fromRealmError(value:unknown):unknown {
+ const program=programRealm();
+ return prepareRealmErrorArgument(value,program.realm,program.hooks);
+}\n`,
+    stubs,
+    bindings,
   };
 }
 
@@ -488,7 +567,12 @@ function toGeneral(
   record: BoundaryRecordUse | undefined,
   index: ReadonlyMap<string, number>,
 ): string {
-  if (record === undefined || record.dynamic !== undefined) return value;
+  if (
+    record?.error !== undefined ||
+    record === undefined ||
+    record.dynamic !== undefined
+  )
+    return "toRealmError(" + value + ")";
   const i = index.get(record.key);
   if (i === undefined) throw "boundary record index invariant";
   return record.optional
@@ -510,7 +594,19 @@ function fromGeneral(
   record: BoundaryRecordUse | undefined,
   index: ReadonlyMap<string, number>,
 ): string {
-  if (record === undefined) return checkedArgument(value, classes);
+  if (record === undefined)
+    return (classes & boundaryUnknown) !== 0
+      ? "fromRealmError(" + value + ")"
+      : checkedArgument(value, classes);
+  if (record.error !== undefined)
+    return (
+      "(fromRealmError(" +
+      value +
+      ") as " +
+      record.error +
+      (record.optional ? "|undefined" : "") +
+      ")"
+    );
   const dynamic = record.dynamic;
   if (dynamic !== undefined)
     return (
