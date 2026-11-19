@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { spawnSync } from "node:child_process";
 import { prepareDateTimeNativeService } from "./date-time-native-service.ts";
 import { frozenNativeRunIdentity } from "./native-run-journal.ts";
 import {
@@ -45,7 +44,8 @@ import {
 import { nativeFixtureTarget } from "./native-host-target.ts";
 import { writeNodeExecutable } from "./node-file-host.ts";
 import { admitUnderLldb } from "./native-admission.ts";
-/** Hosted fixtures run on this host, under LLDB. */
+import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
+/** Build target and execution runner are selected independently. */
 const fixtureTarget = nativeFixtureTarget();
 import type { CLibraryManifestEntry } from "@tint/abi/c";
 import type { WorkspaceSourceSnapshot } from "./workspace-sources.ts";
@@ -111,8 +111,8 @@ export function workspaceGeneralLowering(): GeneralLowering | undefined {
   return generalLowering;
 }
 
-/** Build through the full hosted pipeline; always contain native failures in
- * LLDB. Returns the image path (kept only with TINT_BUILD_ONLY=1 or
+/** Build through the full hosted pipeline and run through the target runner.
+ * Returns the image path (kept only with TINT_BUILD_ONLY=1 or
  * TINT_KEEP_NATIVE=1). */
 export function verifyHostedFixture(
   text: string,
@@ -451,6 +451,7 @@ export function verifyHostedFixture(
       {
         kind: "tint-hosted-native-build",
         version: 1,
+        target: fixtureTarget.name,
         sourceSnapshot,
         imageSha256: imageHash.digest("hex"),
         fixture: fixturePath,
@@ -517,35 +518,28 @@ export function verifyHostedFixture(
     { flag: "wx" },
   );
   console.log(path);
-  // Admitted once, untimed and stopped at entry, before any run (the
-  // caller's too when TINT_BUILD_ONLY is set): native-admission.ts.
-  if (fixtureTarget.os === "darwin") admitUnderLldb(path);
-  if (process.env.TINT_BUILD_ONLY !== "1")
+  if (process.env.TINT_BUILD_ONLY === "1") {
+    // Admit build-only Darwin images before callers launch their own LLDB.
+    if (fixtureTarget.os === "darwin") admitUnderLldb(path);
+  } else
     try {
-      for (let attempt = 0; attempt < 2; attempt++) {
-        const result = spawnSync(
-          "lldb",
-          [
-            "--no-lldbinit",
-            "--batch",
-            "-o",
-            "settings set target.disable-aslr false",
-            "-o",
-            "process launch --stop-at-entry",
-            "-o",
-            "script assert lldb.process.GetState() == lldb.eStateStopped",
-            "-o",
-            "continue",
-            "-o",
-            "script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42",
-            path,
-          ],
-          { encoding: "utf8", timeout: 60000 },
+      const artifact = nativeArtifact(
+        fixtureTarget.name,
+        path,
+        path + ".manifest.json",
+      );
+      const results = runNativeBatch([{ artifact }, { artifact }]);
+      writeFileSync(
+        path + ".run.json",
+        JSON.stringify(results, null, 2) + "\n",
+      );
+      for (const result of results) {
+        if (result.kind === "execution-unavailable")
+          throw Error("execution unavailable: " + result.reason);
+        assert.ok(
+          result.kind === "exited" && result.status === 42,
+          JSON.stringify(result),
         );
-        assert.equal(result.error, undefined);
-        assert.equal(result.signal, null, result.stderr);
-        assert.equal(result.status, 0, result.stderr);
-        assert.match(result.stdout, /exited with status = 42 /, result.stdout);
       }
       console.log("Verified native " + name + " twice.");
     } finally {
