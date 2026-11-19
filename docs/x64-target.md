@@ -129,7 +129,10 @@ The compiler project requires a collector. A hosted x86-64 request that
 selects a collector or uses a deferred host operation reports the
 operation by name. General JavaScript, managed objects and escaping
 environments, stack maps, collection, threads, and JIT publication are
-later runtime work. SysV user FFI follows the FFI slices.
+later runtime work. The [SysV leaf adapter](native-ffi.md#linux-x86-64)
+supports static C stubs and the dynamic call-frame trampoline. Managed FFI
+wrappers and the public dynamic runtime depend on the corresponding
+slice 7 operations. Callback signatures remain deferred to F2.
 
 Run the hosted smoke from the project root after `pnpm build`.
 

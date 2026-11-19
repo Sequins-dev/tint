@@ -74,7 +74,7 @@ export function cLibraryImage(
       if (entry.module !== module) continue;
       return target.name === "darwin-arm64"
         ? entry.darwin
-        : target.name === "linux-arm64" || target.name === "linux-x86_64"
+        : target.name === "linux-arm64"
           ? entry.linux
           : undefined;
     }

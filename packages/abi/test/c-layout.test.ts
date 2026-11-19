@@ -10,12 +10,12 @@ import {
   cVoid,
   darwinArm64CTarget,
   linuxArm64CTarget,
-  linuxX86_64CTarget,
   type CField,
   type CScalar,
   type CSignature,
   type CType,
 } from "../src/c/index.ts";
+import { classifySysVCCall, linuxX86_64CTarget } from "../src/c/sysv.ts";
 
 function record(
   name: string,
@@ -231,7 +231,6 @@ test("Apple arm64 passes variadic arguments on the stack in 8-byte slots", () =>
   const linux = classifyCCall(
     signature([cPointer(s("u8")), s("i32"), s("f64")], s("i32"), 1),
     linuxArm64CTarget,
-    linuxX86_64CTarget,
   );
   assert.ok(linux.ok);
   assert.deepEqual(
@@ -358,7 +357,7 @@ test("SysV splits mixed eightbytes and rolls back a composite when either bank i
     ["f", s("f64")],
   ]);
   const params = [...Array<CType>(6).fill(s("i64")), mixed, s("f64")];
-  const plan = classifyCCall(signature(params, mixed, 6), sysv);
+  const plan = classifySysVCCall(signature(params, mixed, 6), sysv);
   assert.ok(plan.ok);
   assert.equal(plan.value.arguments[6]?.stackOffset, 0);
   assert.equal(plan.value.arguments[7]?.fp, 0);
@@ -370,7 +369,7 @@ test("SysV splits mixed eightbytes and rolls back a composite when either bank i
 test("SysV large records travel on the stack and sret takes the first integer register", () => {
   const sysv = linuxX86_64CTarget;
   const large = record("large", [["words", array(s("i64"), 3)]]);
-  const plan = classifyCCall(signature([s("i64"), large], large), sysv);
+  const plan = classifySysVCCall(signature([s("i64"), large], large), sysv);
   assert.ok(plan.ok);
   assert.equal(plan.value.arguments[0]?.gp, 1);
   assert.equal(plan.value.arguments[1]?.stackBytes, 24);

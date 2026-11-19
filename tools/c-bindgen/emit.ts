@@ -475,9 +475,9 @@ export async function emitBinding(
   factsByTarget: ReadonlyMap<TargetName, TargetFacts>,
   options: EmitOptions,
 ): Promise<Emission> {
-  const targets = options.targets ?? spec.targets;
+  const requested = options.targets ?? spec.targets;
   const facts = new Map<TargetName, TargetFacts>();
-  for (const target of targets) {
+  for (const target of requested) {
     if (!spec.targets.includes(target))
       throw new SpecError(`${spec.library} does not target ${target}`);
     const item = factsByTarget.get(target);
@@ -487,6 +487,30 @@ export async function emitBinding(
       );
     facts.set(target, item);
   }
+  const sysV = options.targets === undefined ? spec.linuxX86_64 : undefined;
+  if (sysV !== undefined) {
+    const linux = facts.get("linux-arm64");
+    if (linux === undefined)
+      throw new SpecError(
+        `${spec.library} needs linux-arm64 facts for shared x86-64 declarations`,
+      );
+    const constants = sysV.constants ?? {};
+    for (const key of Object.keys(constants))
+      if (!linux.constants.some(({ name }) => name === key))
+        throw new SpecError(
+          `${spec.library} has no constant ${key} to override`,
+        );
+    facts.set("linux-x86_64", {
+      ...linux,
+      target: "linux-x86_64",
+      clang: "shared Linux LP64 declarations",
+      constants: linux.constants.map((constant) => ({
+        name: constant.name,
+        value: constants[constant.name] ?? constant.value,
+      })),
+    });
+  }
+  const targets = [...facts.keys()];
   const report: string[] = [];
   const skip = (name: string, reason: string, on?: readonly TargetName[]) => {
     const where =

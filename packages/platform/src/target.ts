@@ -2,9 +2,9 @@ import type { PosixHostABI, PosixHostFacts } from "@tint/abi/host";
 import {
   darwinArm64CTarget,
   linuxArm64CTarget,
-  linuxX86_64CTarget,
   type CTarget,
 } from "@tint/abi/c";
+import { linuxX86_64CTarget } from "@tint/abi/c/sysv";
 import { darwinHostABI } from "./darwin/host-abi.ts";
 import { linuxHostABI, linuxX86_64HostFacts } from "./linux/host-abi.ts";
 

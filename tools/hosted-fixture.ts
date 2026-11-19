@@ -35,6 +35,7 @@ import {
   prepareForeignLibrary,
   type ForeignLibrary,
   type NativeForeignBinding,
+  type NativeForeignMemoryBinding,
   type NativeHostBinding,
   type NativeRecordBinding,
   type NativeWeakBinding,
@@ -131,6 +132,7 @@ export function verifyHostedFixture(
     /** Fixture-local binding declarations and explicit c-call bindings. */
     readonly foreignDeclarations?: readonly FixtureForeignDeclaration[];
     readonly foreignBindings?: readonly NativeForeignBinding[];
+    readonly foreignMemoryBindings?: readonly NativeForeignMemoryBinding[];
     readonly weakBindings?: readonly NativeWeakBinding[];
     readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
     readonly nativeServices?: BuildRequest["nativeServices"];
@@ -293,6 +295,7 @@ export function verifyHostedFixture(
   // The tint:ffi runtime's capabilities when the program loads it.
   const ffi = foreignRuntimeBindings(
     new Set(modules.map((module) => module.id)),
+    fixtureTarget.c,
   );
   const nativeServices = [
     ...(options.nativeServices ?? []),
@@ -335,7 +338,10 @@ export function verifyHostedFixture(
       ...(options.weakBindings ?? []),
       ...(fixtureTarget.arch === "x86_64" ? [] : ffi.weakBindings),
     ],
-    foreignMemoryBindings: ffi.memoryBindings,
+    foreignMemoryBindings: [
+      ...ffi.memoryBindings,
+      ...(options.foreignMemoryBindings ?? []),
+    ],
     managedSurfaces: [
       ...(options.managedSurfaces ?? []),
       ...(serviceImage === undefined ? [] : [serviceImage.surface]),

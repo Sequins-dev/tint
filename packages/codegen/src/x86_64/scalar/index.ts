@@ -1,8 +1,8 @@
 import {
-  classifyCCall,
+  classifySysVCCall as classifyCCall,
   linuxX86_64CTarget,
-  type CCallLayout,
-} from "@tint/abi/c";
+  type SysVCallLayout as CCallLayout,
+} from "@tint/abi/c/sysv";
 import {
   nativeArrayDataOffset,
   nativeArrayInlineOffset,
@@ -542,11 +542,7 @@ export function emitModule(
         case "c-call": {
           const abi = host;
           const layout = plans.get(op);
-          if (
-            abi === undefined ||
-            layout === undefined ||
-            op.call.dynamic === true
-          )
+          if (abi === undefined || layout === undefined)
             return fail("UNSUPPORTED", "unsupported SysV C call");
           const args = op.arguments;
           const site: CallSite = {

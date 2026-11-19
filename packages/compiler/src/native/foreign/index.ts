@@ -1,5 +1,6 @@
 import {
   cLibraryImage,
+  linuxArm64CTarget,
   type CFunctionDeclaration,
   type CLibraryDeclaration,
   type CLibraryImage,
@@ -84,7 +85,10 @@ export const foreignRuntimeModules = {
  * its primitives and the weak-storage and collection intrinsics its
  * collector-registered storage (`external`) uses. Weak cells work under
  * every collector, and only a created one makes collections trace them. */
-export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
+export function foreignRuntimeBindings(
+  loaded: ReadonlySet<string>,
+  target?: CTarget,
+): {
   readonly runtimes: readonly { module: string; namespace: string }[];
   readonly memoryBindings: readonly NativeForeignMemoryBinding[];
   readonly weakBindings: readonly {
@@ -106,37 +110,49 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
       weakBindings: [],
       hostBindings: [],
     };
+  const bindings: NativeForeignMemoryBinding[] = [
+    {
+      module: modules.primitives,
+      name: "externalAddress",
+      operation: "address",
+    },
+    { module: modules.primitives, name: "adoptExternal", operation: "adopt" },
+    {
+      module: modules.primitives,
+      name: "retargetExternal",
+      operation: "retarget",
+    },
+    { module: modules.primitives, name: "callForeign", operation: "call" },
+    {
+      module: modules.primitives,
+      name: "callForeignCallbacks",
+      operation: "call-callbacks",
+    },
+    { module: modules.primitives, name: "stableBytes", operation: "stable" },
+    {
+      module: modules.primitives,
+      name: "callbackKey",
+      operation: "callback-key",
+    },
+  ];
+  // Callback capabilities are reserved for F2, including in a program
+  // whose leaf uses load the shared runtime module.
+  const memoryBindings =
+    target?.name === "linux-x86_64"
+      ? bindings.filter(
+          (binding) =>
+            binding !== undefined &&
+            binding.operation !== "callback-key" &&
+            binding.operation !== "call-callbacks",
+        )
+      : bindings;
   return {
     runtimes: [
       { module: modules.primitives, namespace: "ffi" },
       { module: modules.weak, namespace: "ffi-weak" },
       { module: modules.memory, namespace: "ffi-memory" },
     ],
-    memoryBindings: [
-      {
-        module: modules.primitives,
-        name: "externalAddress",
-        operation: "address",
-      },
-      { module: modules.primitives, name: "adoptExternal", operation: "adopt" },
-      {
-        module: modules.primitives,
-        name: "retargetExternal",
-        operation: "retarget",
-      },
-      { module: modules.primitives, name: "callForeign", operation: "call" },
-      {
-        module: modules.primitives,
-        name: "callForeignCallbacks",
-        operation: "call-callbacks",
-      },
-      { module: modules.primitives, name: "stableBytes", operation: "stable" },
-      {
-        module: modules.primitives,
-        name: "callbackKey",
-        operation: "callback-key",
-      },
-    ],
+    memoryBindings,
     weakBindings: [
       { module: modules.weak, name: "createWeakSlot", operation: "new" },
       { module: modules.weak, name: "weakSlotKey", operation: "key" },
@@ -158,7 +174,16 @@ export function linkedForeignLibrary(
   target: CTarget,
   additional: readonly CLibraryManifestEntry[] = [],
 ): CLibraryImage | undefined {
-  return cLibraryImage(module, target, additional);
+  if (target.name !== "linux-x86_64")
+    return cLibraryImage(module, target, additional);
+  // The built-in zlib binding describes allocator callbacks. An explicit
+  // manifest entry can still provide a leaf-only declaration for libz.
+  if (
+    module === "tint:c/zlib" &&
+    !additional.some((entry) => entry?.module === module)
+  )
+    return undefined;
+  return cLibraryImage(module, linuxArm64CTarget, additional);
 }
 export type ForeignLibraryResult =
   | {
@@ -211,6 +236,17 @@ export function prepareForeignLibrary(
         parsed.value.module +
         " is not in the C library manifest for " +
         target.name,
+    };
+  if (
+    target.name === "linux-x86_64" &&
+    ((parsed.value.callbackTypes?.length ?? 0) !== 0 ||
+      parsed.value.functions.some(
+        (fn) => fn?.signature.callClass === "may-callback",
+      ))
+  )
+    return {
+      ok: false,
+      error: id + ": C callbacks are not supported on linux-x86_64",
     };
   for (const fn of parsed.value.functions) {
     if (fn === undefined) throw "foreign library function invariant";

@@ -3,10 +3,9 @@ import {
   cPromoteVariadic,
   cScalarBytes,
   cScalarSigned,
-  linuxX86_64CTarget,
-  type CCallLayout,
   type CScalar,
 } from "@tint/abi/c";
+import { linuxX86_64CTarget, type SysVCallLayout } from "@tint/abi/c/sysv";
 import {
   nativeArrayDataOffset,
   nativeArrayLengthOffset,
@@ -53,16 +52,16 @@ export const sysVStagingBytes = 128;
 function align(value: number, alignment: number): number {
   return Math.ceil(value / alignment) * alignment;
 }
-function resultOffset(layout: CCallLayout): number {
+function resultOffset(layout: SysVCallLayout): number {
   return align(layout.stackBytes, layout.result.alignment);
 }
-function callAlignment(layout: CCallLayout): number {
+function callAlignment(layout: SysVCallLayout): number {
   return Math.max(
-    layout.stackAlignment ?? 16,
+    layout.stackAlignment,
     layout.result.class === "indirect" ? layout.result.alignment : 16,
   );
 }
-export function sysVOutgoingBytes(layout: CCallLayout): number {
+export function sysVOutgoingBytes(layout: SysVCallLayout): number {
   const used =
     layout.result.class === "indirect"
       ? resultOffset(layout) + layout.result.size
@@ -289,7 +288,7 @@ function loadRegisters(emit: Emit, from: (offset: number) => Memory<64>): void {
 }
 
 /** Leaf-only C call through the existing IR and import-slot machinery. */
-export function emitSysVCall(request: CallSite, layout: CCallLayout): void {
+export function emitSysVCall(request: CallSite, layout: SysVCallLayout): void {
   const emit = request.emit,
     prototype = request.prototype,
     argument = request.argument,
@@ -352,7 +351,7 @@ export function emitSysVCall(request: CallSite, layout: CCallLayout): void {
         emit({
           op: "cmp",
           dst: { ...indexed(11, 10, -1, 1), width: 8 },
-          src: imm(0),
+          src: { kind: "imm8", value: 0 },
         });
         branch(emit, "ne", trap);
       }
@@ -392,7 +391,7 @@ export function emitSysVCall(request: CallSite, layout: CCallLayout): void {
     emit({ op: "mov", dst: staging(0), src: rax });
   }
   loadRegisters(emit, staging);
-  emit({ op: "mov", dst: eax, src: imm(layout.vectorRegisters ?? 0) });
+  emit({ op: "mov", dst: eax, src: imm(layout.vectorRegisters) });
   if (extra === 0) request.call(request.abi.symbolPrefix + prototype.symbol);
   else emit({ op: "call", target: staging(48) });
 
