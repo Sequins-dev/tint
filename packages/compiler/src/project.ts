@@ -114,12 +114,12 @@ export function loadCompilerSourceGraph(
     roots.filter((root) => root !== dynamicObjectRuntimeModule),
   );
   if (!initial.ok) return initial;
-  const { ids, load } = initial.value;
+  const loader = initial.value;
   return {
     ok: true,
     value: {
-      ids,
-      load,
+      ids: loader.ids,
+      load: loader.load,
       loadWithRoot: (root) =>
         root === dynamicObjectRuntimeModule &&
         inputs.some((input) => input?.id === root)
