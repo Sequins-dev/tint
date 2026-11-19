@@ -158,6 +158,15 @@ input, one runtime closure link replaces two, layouts peak at 1,623 MiB
 live instead of 1,625 MiB, and the 2,252-variant image is unchanged.
 See the [layout and heap-cap probes](results/compiler-surface-layout-memory-2026-11-19.md).
 
+### Lowering
+
+Lowering retains only the used elements of finalized instruction arrays and
+releases each function's record expression plans after emitting its body.
+On the matched object-suite input, live heap before IR verification fell
+from 2,972 to 2,658 MiB. The byte-identical suite image builds at a 2,944 MiB
+old-space cap and the 2,912 MiB run exhausts heap late in lowering.
+See the [lowering probes and heap-cap results](results/compiler-lowering-memory-2026-11-19.md).
+
 ## What is global and what is per function
 
 | Data                                                                                         | Scope                    | Needed by                                          |
