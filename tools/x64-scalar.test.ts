@@ -576,7 +576,7 @@ test("x86-64 marks the thrown tag as a root only after the transfer", () => {
   const entry = module.functions[0]!;
   const handler = entry.blocks[1]!;
   const collect = createFunctionBuilder(3, "collect", [], "void");
-  collect.end({ ...span, kind: "return" });
+  collect.end({ ...span, kind: "return", value: undefined });
   const compiled = emitX64Module(
     {
       functions: [
@@ -587,7 +587,13 @@ test("x86-64 marks the thrown tag as a root only after the transfer", () => {
             {
               ...handler,
               instructions: [
-                { ...span, kind: "call", target: 3, arguments: [] },
+                {
+                  ...span,
+                  kind: "call",
+                  id: undefined,
+                  target: 3,
+                  arguments: [],
+                },
                 ...handler.instructions,
               ],
             },
