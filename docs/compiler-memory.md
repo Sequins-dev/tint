@@ -138,6 +138,17 @@ The link-memory build reaches the check stage, where the second instance
 preparation reaches 2,571 MiB live in the uncapped run.
 See the [probe records](results/compiler-link-memory-2026-11-19.md).
 
+### Check
+
+The object suite retries collection preparation after its first instantiated
+graph exposes more collection requirements. The original checked graph and
+its specialized syntax can be released when that retry starts. The check now
+hands off a replaceable observation from a short-lived frame.
+
+The second instance preparation drops from 2,571 to 1,967 MiB of live heap
+on matched source input. The check stage still returns about 1,100 MiB.
+See the [check-stage probes and snapshot](results/compiler-check-memory-2026-11-19.md).
+
 ## What is global and what is per function
 
 | Data                                                                                         | Scope                    | Needed by                                          |
