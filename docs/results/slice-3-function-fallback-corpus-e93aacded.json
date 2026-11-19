@@ -1,0 +1,1305 @@
+{
+  "revision": "e93aacded1d63f65d974a0146af0551c4e6e8d3c",
+  "snapshot": "15a28d7bebd8b8d8691c61034ae3766af43b000f6c361774a4d050e839ef8a57",
+  "node": "v24.12.0",
+  "typescript": "6.0.3",
+  "target": "darwin-aarch64",
+  "retry": [
+    "generators",
+    "async-await",
+    "class-inheritance",
+    "var-hoisting",
+    "arguments-object",
+    "typed-array-index",
+    "probe-decorated-class",
+    "probe-direct-eval",
+    "probe-error-after-generator"
+  ],
+  "entries": [
+    {
+      "construct": "numeric-loop",
+      "sourceBytes": 237,
+      "parseMilliseconds": 0.21024999999985994,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 1936
+      }
+    },
+    {
+      "construct": "string-methods",
+      "sourceBytes": 325,
+      "parseMilliseconds": 0.21325000000001637,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:87:103: invalid method call",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "array-callbacks",
+      "sourceBytes": 307,
+      "parseMilliseconds": 0.21374999999989086,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:180:193: invalid method call",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "explicit-dynamic-property-contract",
+      "sourceBytes": 291,
+      "parseMilliseconds": 0.13504199999988487,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 6928376
+      }
+    },
+    {
+      "construct": "dynamic-object-literal",
+      "sourceBytes": 154,
+      "parseMilliseconds": 0.15695799999957671,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 6927896
+      }
+    },
+    {
+      "construct": "dynamic-object-index",
+      "sourceBytes": 160,
+      "parseMilliseconds": 0.15737499999522697,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 6927584
+      }
+    },
+    {
+      "construct": "dynamic-object-local-aggregate",
+      "sourceBytes": 349,
+      "parseMilliseconds": 0.27995799999916926,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 6932400
+      }
+    },
+    {
+      "construct": "dynamic-object-own-data-definition",
+      "sourceBytes": 322,
+      "parseMilliseconds": 0.2745839999988675,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 6931720
+      }
+    },
+    {
+      "construct": "dynamic-object-in-delete",
+      "sourceBytes": 196,
+      "parseMilliseconds": 0.24737500000628643,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 6927368
+      }
+    },
+    {
+      "construct": "dynamic-object-own-enumeration",
+      "sourceBytes": 271,
+      "parseMilliseconds": 0.2299580000108108,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 6931176
+      }
+    },
+    {
+      "construct": "dynamic-object-for-in",
+      "sourceBytes": 189,
+      "parseMilliseconds": 0.18795800000953022,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 6927984
+      }
+    },
+    {
+      "construct": "dynamic-object-spread",
+      "sourceBytes": 184,
+      "parseMilliseconds": 0.23162500001490116,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 6928480
+      }
+    },
+    {
+      "construct": "object-records",
+      "sourceBytes": 342,
+      "parseMilliseconds": 0.3810839999932796,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 2528
+      }
+    },
+    {
+      "construct": "closures",
+      "sourceBytes": 260,
+      "parseMilliseconds": 0.15470800001639873,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 3104
+      }
+    },
+    {
+      "construct": "class-basic",
+      "sourceBytes": 410,
+      "parseMilliseconds": 0.48508300000685267,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "runtime",
+          "message": "module instance classes require scoped contract and construction lowering"
+        }
+      }
+    },
+    {
+      "construct": "class-inheritance",
+      "sourceBytes": 443,
+      "parseMilliseconds": 0.29258300000219606,
+      "typescript": [
+        {
+          "code": 4114,
+          "file": "entry.ts",
+          "start": 243,
+          "message": "This member must have an 'override' modifier because it overrides a member in the base class 'Shape'."
+        }
+      ],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:85:152: class accessor contracts require separate read and write checking",
+          "module": "fixture"
+        }
+      },
+      "retry": {
+        "ok": true,
+        "programCodeBytes": 22804864,
+        "general": {
+          "modules": [
+            "fixture"
+          ],
+          "reason": "check: fixture:85:152: class accessor contracts require separate read and write checking"
+        }
+      }
+    },
+    {
+      "construct": "class-private-static",
+      "sourceBytes": 342,
+      "parseMilliseconds": 0.4697079999896232,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:68:95: typed class static blocks require initialization lowering",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "destructuring",
+      "sourceBytes": 371,
+      "parseMilliseconds": 0.43575000000419095,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:40:144: typed binding patterns are not implemented",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "spread",
+      "sourceBytes": 370,
+      "parseMilliseconds": 0.25266699999338016,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:196:220: only [string, T] entry tuple types are implemented",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "rest-default-parameters",
+      "sourceBytes": 273,
+      "parseMilliseconds": 0.20329199999105185,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 10936
+      }
+    },
+    {
+      "construct": "rest-spread",
+      "sourceBytes": 259,
+      "parseMilliseconds": 0.2465000000083819,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 11112
+      }
+    },
+    {
+      "construct": "void-callbacks",
+      "sourceBytes": 192,
+      "parseMilliseconds": 0.16199999998207204,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 3176
+      }
+    },
+    {
+      "construct": "generators",
+      "sourceBytes": 355,
+      "parseMilliseconds": 0.26941700000315905,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:0:111: generator suspension lowering is not implemented",
+          "module": "fixture"
+        }
+      },
+      "retry": {
+        "ok": true,
+        "programCodeBytes": 22813312,
+        "general": {
+          "modules": [
+            "fixture"
+          ],
+          "reason": "check: fixture:0:111: generator suspension lowering is not implemented"
+        }
+      }
+    },
+    {
+      "construct": "async-await",
+      "sourceBytes": 352,
+      "parseMilliseconds": 0.33854100000462495,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "link",
+          "message": "unknown value name: Promise",
+          "module": "fixture"
+        }
+      },
+      "retry": {
+        "ok": true,
+        "programCodeBytes": 22896048,
+        "general": {
+          "modules": [
+            "fixture"
+          ],
+          "reason": "link: unknown value name: Promise"
+        }
+      }
+    },
+    {
+      "construct": "errors",
+      "sourceBytes": 411,
+      "parseMilliseconds": 0.3552499999932479,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 3120
+      }
+    },
+    {
+      "construct": "exposed-native-error",
+      "sourceBytes": 207,
+      "parseMilliseconds": 0.06774999998742715,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 2840
+      }
+    },
+    {
+      "construct": "unknown-typeof-callable",
+      "sourceBytes": 205,
+      "parseMilliseconds": 0.1290840000147,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 2888
+      }
+    },
+    {
+      "construct": "unknown-narrowing",
+      "sourceBytes": 363,
+      "parseMilliseconds": 0.15145900001516566,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:90:103: invalid method call",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "map-set",
+      "sourceBytes": 383,
+      "parseMilliseconds": 0.19245900001260452,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:186:215: value does not match its declared type",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "typed-arrays",
+      "sourceBytes": 399,
+      "parseMilliseconds": 0.1764590000093449,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:146:154: unknown value name: DataView",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "math",
+      "sourceBytes": 208,
+      "parseMilliseconds": 0.11566700000548735,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:41:45: unsupported global",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "json",
+      "sourceBytes": 272,
+      "parseMilliseconds": 0.13075000001117587,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "link",
+          "message": "unknown value name: JSON",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "optional-chaining",
+      "sourceBytes": 312,
+      "parseMilliseconds": 0.13237499998649582,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 2696
+      }
+    },
+    {
+      "construct": "labels-switch",
+      "sourceBytes": 449,
+      "parseMilliseconds": 0.23858400000608526,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 3264
+      }
+    },
+    {
+      "construct": "var-hoisting",
+      "sourceBytes": 219,
+      "parseMilliseconds": 0.1329169999808073,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 1536
+      },
+      "retry": {
+        "ok": true,
+        "programCodeBytes": 1536
+      }
+    },
+    {
+      "construct": "iterator-protocol",
+      "sourceBytes": 415,
+      "parseMilliseconds": 0.07404200002201833,
+      "typescript": [],
+      "parseError": {
+        "code": "SYNTAX_ERROR",
+        "message": "expected {",
+        "start": 16,
+        "end": 26,
+        "position": {
+          "line": 1,
+          "column": 17
+        }
+      }
+    },
+    {
+      "construct": "accessors-object-literal",
+      "sourceBytes": 304,
+      "parseMilliseconds": 0.15837499999906868,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:64:208: typed object accessors require accessor layout support",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "regexp",
+      "sourceBytes": 234,
+      "parseMilliseconds": 0.581583999999566,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "link",
+          "message": "typed RegExp values are not implemented",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "enums",
+      "sourceBytes": 170,
+      "parseMilliseconds": 0.25745800000731833,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:0:40: object, array and arrow expressions need a contextual or explicit type",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "arguments-object",
+      "sourceBytes": 164,
+      "parseMilliseconds": 0.09224999998696148,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "link",
+          "message": "unknown value name: arguments",
+          "module": "fixture"
+        }
+      },
+      "retry": {
+        "ok": true,
+        "programCodeBytes": 22713648,
+        "general": {
+          "modules": [
+            "fixture"
+          ],
+          "reason": "link: unknown value name: arguments"
+        }
+      }
+    },
+    {
+      "construct": "tagged-templates",
+      "sourceBytes": 210,
+      "parseMilliseconds": 0.25270899999304675,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:22:42: unknown type: TemplateStringsArray",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "object-reflection",
+      "sourceBytes": 302,
+      "parseMilliseconds": 0.17608299999847077,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "link",
+          "message": "unknown value name: Reflect",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "generic-functions",
+      "sourceBytes": 440,
+      "parseMilliseconds": 0.24820800000452437,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "specialize",
+          "message": "generic calls require explicit type arguments"
+        }
+      }
+    },
+    {
+      "construct": "open-variable",
+      "sourceBytes": 455,
+      "parseMilliseconds": 0.23020799999358132,
+      "typescript": [
+        {
+          "code": 2322,
+          "file": "entry.ts",
+          "start": 129,
+          "message": "Type 'string' is not assignable to type 'number'."
+        },
+        {
+          "code": 2322,
+          "file": "entry.ts",
+          "start": 213,
+          "message": "Type 'unknown' is not assignable to type 'number'."
+        },
+        {
+          "code": 2322,
+          "file": "entry.ts",
+          "start": 270,
+          "message": "Type 'undefined' is not assignable to type 'number'."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 22,
+          "message": "Parameter 'target' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 30,
+          "message": "Parameter 'key' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 35,
+          "message": "Parameter 'value' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 88,
+          "message": "Parameter 'fn' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 92,
+          "message": "Parameter 'value' implicitly has an 'any' type."
+        }
+      ],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+          "module": "construct-helper:untyped.ts"
+        }
+      }
+    },
+    {
+      "construct": "open-object-literal-field",
+      "sourceBytes": 472,
+      "parseMilliseconds": 0.15100000001257285,
+      "typescript": [
+        {
+          "code": 2322,
+          "file": "entry.ts",
+          "start": 145,
+          "message": "Type 'string' is not assignable to type 'number'."
+        },
+        {
+          "code": 2352,
+          "file": "entry.ts",
+          "start": 260,
+          "message": "Conversion of type 'number' to type '{ n: number; }' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 22,
+          "message": "Parameter 'target' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 30,
+          "message": "Parameter 'key' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 35,
+          "message": "Parameter 'value' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 88,
+          "message": "Parameter 'fn' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 92,
+          "message": "Parameter 'value' implicitly has an 'any' type."
+        }
+      ],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "link",
+          "message": "unknown value name: Reflect",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "open-class-field",
+      "sourceBytes": 642,
+      "parseMilliseconds": 0.2040419999975711,
+      "typescript": [
+        {
+          "code": 2339,
+          "file": "entry.ts",
+          "start": 112,
+          "message": "Property 'extra' does not exist on type 'Cell'."
+        },
+        {
+          "code": 2322,
+          "file": "entry.ts",
+          "start": 158,
+          "message": "Type 'unknown' is not assignable to type 'number'."
+        },
+        {
+          "code": 2322,
+          "file": "entry.ts",
+          "start": 409,
+          "message": "Type 'undefined' is not assignable to type 'number'."
+        },
+        {
+          "code": 2322,
+          "file": "entry.ts",
+          "start": 467,
+          "message": "Type 'string' is not assignable to type 'number'."
+        },
+        {
+          "code": 2367,
+          "file": "entry.ts",
+          "start": 581,
+          "message": "This comparison appears to be unintentional because the types 'number' and 'string' have no overlap."
+        },
+        {
+          "code": 2339,
+          "file": "entry.ts",
+          "start": 612,
+          "message": "Property 'extra' does not exist on type 'Cell'."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 22,
+          "message": "Parameter 'target' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 30,
+          "message": "Parameter 'key' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 35,
+          "message": "Parameter 'value' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 88,
+          "message": "Parameter 'fn' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 92,
+          "message": "Parameter 'value' implicitly has an 'any' type."
+        }
+      ],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+          "module": "construct-helper:untyped.ts"
+        }
+      }
+    },
+    {
+      "construct": "open-array-elements",
+      "sourceBytes": 295,
+      "parseMilliseconds": 0.09912500000791624,
+      "typescript": [
+        {
+          "code": 2345,
+          "file": "entry.ts",
+          "start": 107,
+          "message": "Argument of type 'string' is not assignable to parameter of type 'number'."
+        },
+        {
+          "code": 2322,
+          "file": "entry.ts",
+          "start": 148,
+          "message": "Type 'undefined' is not assignable to type 'number'."
+        },
+        {
+          "code": 2367,
+          "file": "entry.ts",
+          "start": 263,
+          "message": "This comparison appears to be unintentional because the types 'number | undefined' and 'string' have no overlap."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 22,
+          "message": "Parameter 'target' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 30,
+          "message": "Parameter 'key' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 35,
+          "message": "Parameter 'value' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 88,
+          "message": "Parameter 'fn' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 92,
+          "message": "Parameter 'value' implicitly has an 'any' type."
+        }
+      ],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+          "module": "construct-helper:untyped.ts"
+        }
+      }
+    },
+    {
+      "construct": "open-callback-parameter",
+      "sourceBytes": 194,
+      "parseMilliseconds": 0.10454099997878075,
+      "typescript": [
+        {
+          "code": 2322,
+          "file": "entry.ts",
+          "start": 108,
+          "message": "Type 'string' is not assignable to type 'number'."
+        }
+      ],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:108:113: invalid binding operation",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "explicit-field-contract",
+      "sourceBytes": 536,
+      "parseMilliseconds": 0.16400000001885928,
+      "typescript": [
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 22,
+          "message": "Parameter 'target' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 30,
+          "message": "Parameter 'key' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 35,
+          "message": "Parameter 'value' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 88,
+          "message": "Parameter 'fn' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 92,
+          "message": "Parameter 'value' implicitly has an 'any' type."
+        }
+      ],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+          "module": "construct-helper:untyped.ts"
+        }
+      }
+    },
+    {
+      "construct": "explicit-binding-contract",
+      "sourceBytes": 426,
+      "parseMilliseconds": 0.09545799999614246,
+      "typescript": [
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 22,
+          "message": "Parameter 'target' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 30,
+          "message": "Parameter 'key' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 35,
+          "message": "Parameter 'value' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 88,
+          "message": "Parameter 'fn' implicitly has an 'any' type."
+        },
+        {
+          "code": 7006,
+          "file": "untyped.ts",
+          "start": 92,
+          "message": "Parameter 'value' implicitly has an 'any' type."
+        }
+      ],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "link",
+          "message": "unknown value name: eval",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "general-value-casts",
+      "sourceBytes": 324,
+      "parseMilliseconds": 0.11979100000462495,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 3760
+      }
+    },
+    {
+      "construct": "typed-array-buffer-views",
+      "sourceBytes": 268,
+      "parseMilliseconds": 0.11212499998509884,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:101:114: value does not match its declared type",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "native-error-flow",
+      "sourceBytes": 406,
+      "parseMilliseconds": 0.11533400000189431,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 3472
+      }
+    },
+    {
+      "construct": "caught-error-reads",
+      "sourceBytes": 459,
+      "parseMilliseconds": 0.15137499998672865,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 4168
+      }
+    },
+    {
+      "construct": "tuple-types",
+      "sourceBytes": 183,
+      "parseMilliseconds": 0.10400000002118759,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:26:42: only [string, T] entry tuple types are implemented",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "nested-type-declarations",
+      "sourceBytes": 247,
+      "parseMilliseconds": 0.10933300000033341,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "link",
+          "message": "nested type declarations are not supported",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "forward-inferred-const",
+      "sourceBytes": 143,
+      "parseMilliseconds": 0.07941700000083074,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "runtime",
+          "message": "forward or recursive inferred bindings require an annotation"
+        }
+      }
+    },
+    {
+      "construct": "union-object-ternary",
+      "sourceBytes": 338,
+      "parseMilliseconds": 0.11566700000548735,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:281:318: expected an unambiguous object type",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "typed-array-index",
+      "sourceBytes": 204,
+      "parseMilliseconds": 0.08216700001503341,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:92:116: invalid binding operation",
+          "module": "fixture"
+        }
+      },
+      "retry": {
+        "ok": true,
+        "programCodeBytes": 23039904,
+        "general": {
+          "modules": [
+            "fixture"
+          ],
+          "reason": "check: fixture:92:116: invalid binding operation"
+        }
+      }
+    },
+    {
+      "construct": "typed-array-index-checked",
+      "sourceBytes": 209,
+      "parseMilliseconds": 0.31066700001247227,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 2224
+      }
+    },
+    {
+      "construct": "typed-array-index-unchecked",
+      "sourceBytes": 204,
+      "parseMilliseconds": 0.1645839999546297,
+      "typescript": [],
+      "unsupportedOption": "noUncheckedIndexedAccess=false"
+    },
+    {
+      "construct": "for-of-record-reads",
+      "sourceBytes": 296,
+      "parseMilliseconds": 0.16108300001360476,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 16528
+      }
+    },
+    {
+      "construct": "bigint",
+      "sourceBytes": 229,
+      "parseMilliseconds": 0.33079199999338016,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 40840
+      }
+    },
+    {
+      "construct": "module-statements",
+      "sourceBytes": 170,
+      "parseMilliseconds": 0.11395800003083423,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "link",
+          "message": "module evaluation is required for this statement",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "weak-collections",
+      "sourceBytes": 244,
+      "parseMilliseconds": 0.1588750000228174,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "link",
+          "message": "unknown value name: WeakMap",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "narrowing-across-calls",
+      "sourceBytes": 341,
+      "parseMilliseconds": 0.1505829999805428,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 43984
+      }
+    },
+    {
+      "construct": "for-of-typed-array-list",
+      "sourceBytes": 351,
+      "parseMilliseconds": 0.1873749999795109,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 24072
+      }
+    },
+    {
+      "construct": "for-of-object-list",
+      "sourceBytes": 178,
+      "parseMilliseconds": 0.1215000000083819,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 16176
+      }
+    },
+    {
+      "construct": "reassignment-narrowing",
+      "sourceBytes": 348,
+      "parseMilliseconds": 0.19991700001992285,
+      "typescript": [],
+      "typed": {
+        "ok": true,
+        "programCodeBytes": 2328
+      }
+    },
+    {
+      "construct": "module-initializers",
+      "sourceBytes": 277,
+      "parseMilliseconds": 0.186959000013303,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "link",
+          "message": "module evaluation is required for this statement",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "evolving-empty-array",
+      "sourceBytes": 141,
+      "parseMilliseconds": 0.12125000002561137,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:45:47: object, array and arrow expressions need a contextual or explicit type",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "discriminant-narrowing",
+      "sourceBytes": 299,
+      "parseMilliseconds": 0.1587500000023283,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:159:169: invalid property read",
+          "module": "fixture"
+        }
+      }
+    },
+    {
+      "construct": "probe-decorated-class",
+      "sourceBytes": 183,
+      "parseMilliseconds": 0.08258300001034513,
+      "typescript": [],
+      "parseError": {
+        "code": "UNSUPPORTED_SYNTAX",
+        "message": "unsupported type syntax",
+        "start": 21,
+        "end": 27,
+        "position": {
+          "line": 1,
+          "column": 22
+        }
+      }
+    },
+    {
+      "construct": "probe-direct-eval",
+      "sourceBytes": 73,
+      "parseMilliseconds": 0.0699579999782145,
+      "typescript": [],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "link",
+          "message": "unknown value name: eval",
+          "module": "fixture"
+        }
+      },
+      "retry": {
+        "ok": true,
+        "programCodeBytes": 23802048,
+        "general": {
+          "modules": [
+            "fixture"
+          ],
+          "reason": "link: unknown value name: eval"
+        }
+      }
+    },
+    {
+      "construct": "probe-error-after-generator",
+      "sourceBytes": 135,
+      "parseMilliseconds": 0.14712500001769513,
+      "typescript": [
+        {
+          "code": 2322,
+          "file": "entry.ts",
+          "start": 103,
+          "message": "Type 'string' is not assignable to type 'number'."
+        }
+      ],
+      "typed": {
+        "ok": false,
+        "diagnostic": {
+          "stage": "check",
+          "message": "fixture:0:64: generator suspension lowering is not implemented",
+          "module": "fixture"
+        }
+      },
+      "retry": {
+        "ok": true,
+        "programCodeBytes": 22724176,
+        "general": {
+          "modules": [
+            "fixture"
+          ],
+          "reason": "check: fixture:0:64: generator suspension lowering is not implemented"
+        }
+      }
+    }
+  ]
+}
