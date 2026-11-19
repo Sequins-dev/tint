@@ -31,9 +31,12 @@ run_step_logged() {
   step_name=$1 step_resource=$2 step_log=$3 step_stderr=$4
   shift 4
   printf '%s start %s resource=%s log=%s\n' "$(date -u +%FT%TZ)" "$step_name" "$step_resource" "$step_log"
-  if [ "$step_resource" != unlocked ]; then
-    set -- node tools/gate/lock.ts "$step_resource" "$step_name" "$@"
-  fi
+  case "$step_resource" in
+    unlocked) ;;
+    memory) set -- node tools/gate/lock.ts memory "$step_name" "$@" ;;
+    exclusive) set -- sh tools/gate/exclusive-step.sh "$step_name" "$@" ;;
+    *) return 2 ;;
+  esac
   # A single descriptor preserves output order when stdout and stderr share a log.
   step_exit=0
   if [ "$step_log" = "$step_stderr" ]; then

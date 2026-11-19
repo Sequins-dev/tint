@@ -8,6 +8,7 @@ import {
   statSync,
 } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const sleep = new Int32Array(new SharedArrayBuffer(4));
 
@@ -60,52 +61,78 @@ export function withGateLock<T>(
           );
       }
     }
-    // Darwin's descriptor-mode lockf can spin when asked to block.
-    // Probe once per slot and sleep while every slot is occupied.
+    // Probe once per memory slot and sleep while every slot is occupied.
     Atomics.wait(sleep, 0, 0, 250);
   }
 }
 
-export function withGateLaunch<T>(label: string, run: () => T): T {
-  const file = process.env.TINT_GATE_LAUNCH_LOCK;
-  return file
-    ? withGateLock([file], label, process.env.TINT_GATE_LOCK_TIMING, run)
-    : run();
+export function gateLaunch<T>(label: string, tool: string, args: string[]): T {
+  const script = fileURLToPath(new URL("./exclusive-step.sh", import.meta.url));
+  const result = spawnSync(
+    "sh",
+    [script, label, process.execPath, tool, ...args],
+    {
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        TINT_GATE_EXCLUSIVE_LOCK: process.env.TINT_GATE_LAUNCH_LOCK,
+      },
+      stdio: ["ignore", "pipe", "inherit"],
+    },
+  );
+  if (result.error !== undefined) throw result.error;
+  if (result.status !== 0)
+    throw Error(
+      "Exclusive native launch failed: " + (result.signal ?? result.status),
+    );
+  return JSON.parse(result.stdout) as T;
+}
+
+function runGateCommand(command: string, args: string[], fd?: number): number {
+  const result = spawnSync(command, args, {
+    stdio: ["inherit", "inherit", "inherit", ...(fd === undefined ? [] : [fd])],
+  });
+  if (result.error !== undefined) throw result.error;
+  if (result.signal !== null)
+    console.error(command, "terminated by", result.signal);
+  return result.status ?? 1;
 }
 
 if (import.meta.main) {
   const [resource, label, command, ...args] = process.argv.slice(2);
   if (!resource || !label || !command)
     throw Error("Expected resource, label and command");
-  let files: string[];
-  if (resource === "exclusive") {
-    const file = process.env.TINT_GATE_EXCLUSIVE_LOCK;
-    if (!file) throw Error("Missing exclusive gate lock path");
-    files = [file];
+  const timing = process.env.TINT_GATE_LOCK_TIMING;
+  if (resource === "timed") {
+    const startedAt = Date.now();
+    const start = performance.now();
+    try {
+      process.exitCode = runGateCommand(command, args);
+    } finally {
+      if (timing)
+        appendFileSync(
+          timing,
+          [
+            label,
+            process.env.TINT_GATE_EXCLUSIVE_LOCK,
+            startedAt,
+            Math.round(performance.now() - start),
+          ].join("\t") + "\n",
+        );
+    }
   } else if (resource === "memory") {
     const directory = process.env.TINT_GATE_MEMORY_DIRECTORY;
     const count = process.env.TINT_GATE_MEMORY_SLOTS ?? "3";
     if (!directory || !/^[1-9][0-9]?$/.test(count))
       throw Error("Expected a gate memory directory and 1–99 slots");
     mkdirSync(directory, { recursive: true });
-    files = Array.from({ length: Number(count) }, (_, i) =>
+    const files = Array.from({ length: Number(count) }, (_, i) =>
       join(directory, "slot-" + (i + 1) + ".lock"),
+    );
+    process.exitCode = withGateLock(files, label, timing, (fd) =>
+      runGateCommand(command, args, fd),
     );
   } else {
     throw Error("Unknown gate resource: " + resource);
   }
-  process.exitCode = withGateLock(
-    files,
-    label,
-    process.env.TINT_GATE_LOCK_TIMING,
-    (fd) => {
-      const result = spawnSync(command, args, {
-        stdio: ["inherit", "inherit", "inherit", fd],
-      });
-      if (result.error !== undefined) throw result.error;
-      if (result.signal !== null)
-        console.error(command, "terminated by", result.signal);
-      return result.status ?? 1;
-    },
-  );
 }
