@@ -1,5 +1,12 @@
 import {
   beginObjectPropertyContract,
+  requireObjectCoercible,
+  getScriptIterator,
+  stepScriptIterator,
+  skipScriptIterator,
+  collectScriptIterator,
+  closeScriptIterator,
+  type ScriptIterator,
   callObjectValue,
   isArrayValue,
   copyObjectProperties,
@@ -312,4 +319,51 @@ export function invoke(
   );
   if (result.error !== "none") throw createRuntimeError(core.realm, "type");
   return result.value;
+}
+
+export function bindingObject(source: unknown): void {
+  requireObjectCoercible(source, programRealmCore().realm);
+}
+export function bindingIterator(source: unknown): ScriptIterator {
+  const core = programRealmCore();
+  installProgramArrayIntrinsics(core);
+  return getScriptIterator(source, core.realm, core.hooks);
+}
+export function bindingNext(iterator: ScriptIterator): unknown {
+  return stepScriptIterator(iterator).value;
+}
+export function bindingSkip(iterator: ScriptIterator): void {
+  skipScriptIterator(iterator);
+}
+export function bindingTail(iterator: ScriptIterator): unknown {
+  const core = programRealmCore();
+  return collectScriptIterator(iterator, core.realm, core.hooks);
+}
+export function bindingClose(
+  iterator: ScriptIterator,
+  throwing: boolean,
+): void {
+  closeScriptIterator(iterator, throwing);
+}
+export function bindingRest(
+  source: unknown,
+  keys: unknown,
+  count: number,
+): unknown {
+  const core = programRealmCore();
+  const excluded: ScriptPropertyKey[] = [];
+  for (let i = 0; i < count; i++) {
+    const key = readObjectValueProperty(
+      keys,
+      String(i),
+      core.hooks,
+      core.realm,
+    );
+    excluded.push(requireKey(key, core));
+  }
+  const result = createObject<ScriptPropertyKey, unknown>(
+    core.realm.objectPrototype,
+  );
+  copyObjectProperties(result, source, excluded, core.hooks, core.realm);
+  return result;
 }

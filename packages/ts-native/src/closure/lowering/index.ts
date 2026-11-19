@@ -1773,7 +1773,7 @@ function lowerEntries(
               if (local === undefined)
                 fail("missing dynamic-object runtime helper: " + name);
               return local;
-            });
+            }, dynamicAliases.has("bindingObject"));
       const expressions = createKeyIndex<Expression, ExpressionInfo>(
         syntaxHash,
       );
@@ -3123,6 +3123,16 @@ function lowerEntries(
         for (const step of plan.steps) {
           if (step === undefined) fail("binding step invariant");
           expr(step.read);
+          if (step.array?.realm === true) {
+            const type = checked.expressions.get(step.read);
+            const metadata = expressions.get(step.read);
+            if (type === undefined || metadata === undefined)
+              fail("realm iterator projection invariant");
+            expressions.set(step.read, {
+              ...metadata,
+              dynamicContract: encodeDynamicContract(checked, type),
+            });
+          }
           if (step.initializer !== undefined) expr(step.initializer);
           expr(step.target);
           if (step.assignment !== undefined) expr(step.assignment);
@@ -3244,10 +3254,12 @@ function lowerEntries(
                   binding.kind === "object-binding" ||
                   binding.kind === "array-binding"
                 )
-                  fail("unchecked catch pattern");
-                const local = localByNode.get(binding);
-                if (local === undefined) fail("missing catch local");
-                declarations.set(binding, local);
+                  bindingPlan(binding);
+                else {
+                  const local = localByNode.get(binding);
+                  if (local === undefined) fail("missing catch local");
+                  declarations.set(binding, local);
+                }
               }
               stmt(handler.body);
             }

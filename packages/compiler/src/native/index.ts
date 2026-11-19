@@ -420,6 +420,7 @@ interface CompilationError {
   readonly diagnostic?: string;
   readonly preventsFallback?: boolean;
   readonly needsDynamicRealm?: boolean;
+  readonly needsBindingRealm?: boolean;
 }
 /** A compiler-issued identity that foreign code binds by contract. */
 interface IdentityPlan {
@@ -607,7 +608,10 @@ function compileTypedWithProgramRealm(
         };
   const initial = compileTypedProgram(without, realmTypeofModules);
   if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
-  const runtime = explicit ?? dynamicObjectRuntimeSource();
+  const runtime =
+    initial.error.needsBindingRealm === true
+      ? dynamicObjectRuntimeSource(true)
+      : (explicit ?? dynamicObjectRuntimeSource());
   const module = runtime.module;
   const loader = request.moduleLoader;
   let expandedRequest = request;
@@ -1240,6 +1244,9 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
         message:
           "UNSUPPORTED: dynamic-key objects require the program realm runtime",
         needsDynamicRealm: true,
+        ...(checked.value.checked.needsBindingRealm === true
+          ? { needsBindingRealm: true }
+          : {}),
       },
     };
   let initializerName = "",

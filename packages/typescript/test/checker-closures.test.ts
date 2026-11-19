@@ -3383,3 +3383,48 @@ test("destructuring assignments preserve their source type and check target writ
   ])
     assert.equal(check(source).ok, false);
 });
+
+test("module binding patterns publish leaf types to following declarations", () => {
+  const result = check(`
+    export const { value: answer }: { value: number } = { value: 42 };
+    export function run(): number { return answer; }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("binding defaults contextually type empty property and parameter literals", () => {
+  for (const source of [
+    "function f(o: { xs?: number[] }): number { const { xs = [] }: { xs?: number[] } = o; return xs.length; }",
+    "function f({ a = {} } = {}): number { return 42; }",
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify(result));
+  }
+});
+
+test("catch patterns with an any annotation project general values", () => {
+  const result = check(`
+    function f(value: unknown): number {
+      try { throw value; } catch ({ n }: any) { return n as number; }
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("inferred union leaves can change type while annotated leaves retain their contract", () => {
+  const source = `function f(input: { value: number | string }): boolean {
+    let { value } = input;
+    value = true;
+    return value;
+  }`;
+  assert.ok(check(source).ok);
+  assert.equal(
+    check(
+      source.replace(
+        "let { value }",
+        "let { value }: { value: number | string }",
+      ),
+    ).ok,
+    false,
+  );
+});

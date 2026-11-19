@@ -6,6 +6,8 @@ import { pathToFileURL } from "node:url";
 import test from "node:test";
 import {
   realmBindingPatternsSource,
+  nodeBindingPatternProviders,
+  typedRealmBindingPatternsSource,
   typedBindingPatternsSource,
 } from "./typed-binding-patterns-fixture-source.ts";
 
@@ -14,6 +16,7 @@ import {
 for (const [name, source] of [
   ["typed binding patterns", typedBindingPatternsSource],
   ["realm binding patterns", realmBindingPatternsSource],
+  ["typed realm binding patterns", typedRealmBindingPatternsSource],
 ] as const)
   test(name + " fixture source holds under Node", async () => {
     const directory = mkdtempSync(
@@ -22,6 +25,7 @@ for (const [name, source] of [
     try {
       const file = join(directory, "fixture.ts");
       writeFileSync(file, source);
+      writeFileSync(join(directory, "providers.ts"), nodeBindingPatternProviders);
       const loaded = (await import(pathToFileURL(file).href)) as {
         run(): number;
       };

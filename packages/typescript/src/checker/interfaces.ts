@@ -248,6 +248,12 @@ export function resolveInterfaceTypes(
         node,
       );
     }
+    if (name === "Iterable" && !declarations.has(name)) {
+      const element = args[0];
+      if (args.length !== 1 || element === undefined)
+        fail(node, "INVALID_TYPE", "Iterable requires one element type");
+      return add({ kind: "object", properties: [], realmRecord: true, iteratorElement: element }, node);
+    }
     if ((name === "Map" || name === "ReadonlyMap") && !declarations.has(name)) {
       const key = args[0],
         value = args[1];

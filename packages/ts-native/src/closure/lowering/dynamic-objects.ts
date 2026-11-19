@@ -30,10 +30,18 @@ export interface DynamicObjectRuntime {
   readonly advance: number;
   readonly objectConstructor: number;
   readonly invokeEnumeration: number;
+  readonly bindingObject?: number;
+  readonly bindingIterator?: number;
+  readonly bindingNext?: number;
+  readonly bindingSkip?: number;
+  readonly bindingTail?: number;
+  readonly bindingClose?: number;
+  readonly bindingRest?: number;
 }
 
 export function dynamicObjectRuntime(
   resolve: (name: string) => number,
+  patterns: boolean = false,
 ): DynamicObjectRuntime {
   return {
     create: resolve("create"),
@@ -54,6 +62,17 @@ export function dynamicObjectRuntime(
     advance: resolve("advance"),
     objectConstructor: resolve("objectConstructor"),
     invokeEnumeration: resolve("invokeEnumeration"),
+    ...(patterns
+      ? {
+          bindingObject: resolve("bindingObject"),
+          bindingIterator: resolve("bindingIterator"),
+          bindingNext: resolve("bindingNext"),
+          bindingSkip: resolve("bindingSkip"),
+          bindingTail: resolve("bindingTail"),
+          bindingClose: resolve("bindingClose"),
+          bindingRest: resolve("bindingRest"),
+        }
+      : {}),
   };
 }
 
@@ -75,6 +94,7 @@ export function hasDynamicObject(
 
 /** Type-only declarations cannot require an executable realm. */
 export function usesDynamicObjectRuntime(checked: CheckedClosures): boolean {
+  if (checked.needsBindingRealm === true) return true;
   if (
     !checked.types.some(
       (type) =>
@@ -195,6 +215,11 @@ export function insertDynamicObjectRuntime(
   helpers: ReadonlyMap<string, string>,
 ): Module {
   const uses: Span[] = [];
+  const patterns: Span[] = [];
+  checked.bindingRealm?.forEach((_value, site) => {
+    patterns.push(site);
+    uses.push(site);
+  });
   checked.intrinsics.forEach((intrinsic, node) => {
     if (intrinsic.startsWith("dynamic-object-")) uses.push(node);
   });
@@ -254,25 +279,34 @@ export function insertDynamicObjectRuntime(
         return false;
     }
   }
-  function aliasesAt(scope: Span): Statement {
+  function aliasesAt(scope: Span, moduleScope: boolean = false): Statement {
     const declarations: Binding[] = [];
-    dynamicObjectRuntime((name) => {
-      const linked = helpers.get("dynamic-object:" + name);
-      if (linked === undefined) throw "dynamic object helper invariant";
-      declarations.push({
-        name: dynamicRuntimeAliasPrefix + name,
-        type: undefined,
-        initializer: {
-          kind: "identifier",
-          name: linked,
+    dynamicObjectRuntime(
+      (name) => {
+        const linked = helpers.get("dynamic-object:" + name);
+        if (linked === undefined) throw "dynamic object helper invariant";
+        declarations.push({
+          name: dynamicRuntimeAliasPrefix + name,
+          type: undefined,
+          initializer: {
+            kind: "identifier",
+            name: linked,
+            start: scope.start,
+            end: scope.start,
+          },
           start: scope.start,
           end: scope.start,
-        },
-        start: scope.start,
-        end: scope.start,
-      });
-      return 0;
-    });
+        });
+        return 0;
+      },
+      patterns.some(
+        (site) =>
+          site !== undefined &&
+          site.start >= scope.start &&
+          site.end <= scope.end,
+      ) ||
+        (moduleScope && patterns.length !== 0),
+    );
     return {
       kind: "variable",
       mode: "const",
@@ -365,7 +399,7 @@ export function insertDynamicObjectRuntime(
     for (let index = 0; index < rewritten.statements.length; index++) {
       const item = rewritten.statements[index];
       if (item === undefined) throw "dynamic module statement invariant";
-      if (index === first) statements.push(aliasesAt(item));
+      if (index === first) statements.push(aliasesAt(item, true));
       statements.push(item);
     }
     return { ...rewritten, statements };

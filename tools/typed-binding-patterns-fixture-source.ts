@@ -151,3 +151,174 @@ export function run() {
   return 42;
 }
 `;
+
+export const typedRealmBindingPatternsSource = `
+import { sourceObject, checkRest, readOrder, sourceIterator, closeCount, lockedTarget } from "./providers.ts";
+export const { answer } = { answer: 42 };
+export const [firstExport, secondExport] = [20, 22];
+function defaults({ a = {} } = {}): number { return answer; }
+function defaultList(input: { xs?: number[] }): number {
+  const { xs = [] }: { xs?: number[] } = input;
+  return xs.length;
+}
+function raised(): number { throw "default"; }
+export function run(): number {
+  if (defaults() !== 42 || firstExport + secondExport !== 42 || defaultList({}) !== 0) return 1;
+  const { direct = 42 } = {};
+  const [empty = 42] = [];
+  if (direct !== 42 || empty !== 42) return 2;
+  try {
+    throw sourceObject();
+  } catch ({ x = 10, y, ...rest }: any) {
+    if (x !== 10 || y !== 20 || readOrder() !== "xyz" || !checkRest(rest)) return 3;
+  }
+  const [, head = 42] = sourceIterator(false) as Iterable<number | undefined>;
+  if (head !== 42 || closeCount() !== 1) return 4;
+  try {
+    const [value = raised()] = sourceIterator(true) as Iterable<number | undefined>;
+    return 5;
+  } catch (error) {
+    if (error !== "default" || closeCount() !== 1) return 6;
+  }
+  try {
+    try { throw sourceIterator(true); } catch ([{ value }]: any) { return 7; }
+  } catch (error) {
+    if (error === "close" || closeCount() !== 1) return 8;
+  }
+  try {
+    const target = lockedTarget() as Record<string, unknown>;
+    [target.newProperty] = sourceIterator(true) as Iterable<unknown>;
+    return 9;
+  } catch (error) {
+    if (error === "close" || closeCount() !== 1) return 10;
+  }
+  try {
+    const [] = sourceIterator(true) as Iterable<number>;
+    return 11;
+  } catch (error) {
+    if (error !== "close" || closeCount() !== 1) return 12;
+  }
+  const [glyph, ...rest] = "😀x";
+  if (glyph !== "😀" || rest.length !== 1 || rest[0] !== "x") return 13;
+  return 42;
+}
+`;
+
+// These fixtures share the same consumer. The Node provider constructs native
+// JavaScript objects while the Tint provider constructs the corresponding realm
+// records directly, without routing the consumer through general lowering.
+export const nodeBindingPatternProviders = `
+const symbol = Symbol("included");
+let reads = "", closes = 0;
+export function sourceObject() {
+  reads = "";
+  const object = {
+    get x() { reads += "x"; return undefined; },
+    get y() { reads += "y"; return 20; },
+    get z() { reads += "z"; return 30; },
+    2: 2, 1: 1, [symbol]: 40,
+  };
+  Object.defineProperty(object, "hidden", { value: 100 });
+  return object;
+}
+export function readOrder() { return reads; }
+export function checkRest(value) {
+  const keys = Reflect.ownKeys(value);
+  return keys.length === 4 && keys[0] === "1" && keys[1] === "2" &&
+    keys[2] === "z" && keys[3] === symbol && value.z === 30 && value[symbol] === 40;
+}
+export function sourceIterator(throwClose) {
+  closes = 0;
+  return {
+    [Symbol.iterator]() {
+      return {
+        next() { return { done: false, value: undefined }; },
+        return() { closes++; if (throwClose) throw "close"; return {}; }
+      };
+    }
+  };
+}
+export function closeCount() { return closes; }
+export function lockedTarget() { return Object.preventExtensions({}); }
+`;
+
+export const tintBindingPatternProviders = `
+import {
+  programRealmCore, createObject, createCallableObject, createAccessorProperty,
+  createDataProperty, defineOwnProperty, preventExtensions, viewObjectValue,
+  ordinaryOwnKeys, scriptPropertyKeyOrder, readObjectValueProperty,
+  createSymbolValue, wellKnownSymbol, type ScriptPropertyKey, type SymbolValue
+} from "@tint/js-runtime/objects";
+let reads: string = "";
+let closes: number = 0;
+const symbol: SymbolValue = createSymbolValue("included");
+function readX(_receiver: unknown, _arguments: readonly unknown[]): unknown {
+  reads += "x";
+  return undefined;
+}
+function readY(_receiver: unknown, _arguments: readonly unknown[]): unknown {
+  reads += "y";
+  return 20;
+}
+function readZ(_receiver: unknown, _arguments: readonly unknown[]): unknown {
+  reads += "z";
+  return 30;
+}
+export function sourceObject(): unknown {
+  reads = "";
+  const core = programRealmCore();
+  const object = createObject<ScriptPropertyKey, unknown>(core.realm.objectPrototype);
+  const prototype = core.realm.functionPrototype;
+  createAccessorProperty<ScriptPropertyKey, unknown>(object, "x", createCallableObject<ScriptPropertyKey, unknown>(prototype, readX), false, core.hooks);
+  createAccessorProperty<ScriptPropertyKey, unknown>(object, "y", createCallableObject<ScriptPropertyKey, unknown>(prototype, readY), false, core.hooks);
+  createAccessorProperty<ScriptPropertyKey, unknown>(object, "z", createCallableObject<ScriptPropertyKey, unknown>(prototype, readZ), false, core.hooks);
+  createDataProperty<ScriptPropertyKey, unknown>(object, "2", 2, core.hooks);
+  createDataProperty<ScriptPropertyKey, unknown>(object, "1", 1, core.hooks);
+  createDataProperty<ScriptPropertyKey, unknown>(object, symbol, 40, core.hooks);
+  defineOwnProperty<ScriptPropertyKey, unknown>(object, "hidden", {
+    fields: 51, value: 100, writable: false, enumerable: false,
+    configurable: false, get: undefined, set: undefined,
+  }, core.hooks);
+  return object;
+}
+export function readOrder(): string { return reads; }
+export function checkRest(value: unknown): boolean {
+  const core = programRealmCore();
+  const object = viewObjectValue(value, core.realm.objectPrototype);
+  if (object === undefined) return false;
+  const keys = ordinaryOwnKeys<ScriptPropertyKey, unknown>(object, scriptPropertyKeyOrder);
+  return keys.length === 4 && keys[0] === "1" && keys[1] === "2" &&
+    keys[2] === "z" && keys[3] === symbol &&
+    readObjectValueProperty(value, "z", core.hooks, core.realm) === 30 &&
+    readObjectValueProperty(value, symbol, core.hooks, core.realm) === 40;
+}
+export function sourceIterator(throwClose: boolean): unknown {
+  closes = 0;
+  const core = programRealmCore();
+  const prototype = core.realm.functionPrototype;
+  const next = createCallableObject<ScriptPropertyKey, unknown>(prototype, (_receiver, _arguments): unknown => {
+    const result = createObject<ScriptPropertyKey, unknown>(core.realm.objectPrototype);
+    createDataProperty<ScriptPropertyKey, unknown>(result, "done", false, core.hooks);
+    return result;
+  });
+  const close = createCallableObject<ScriptPropertyKey, unknown>(prototype, (_receiver, _arguments): unknown => {
+    closes++;
+    if (throwClose) throw "close";
+    return createObject<ScriptPropertyKey, unknown>(core.realm.objectPrototype);
+  });
+  const iterator = createObject<ScriptPropertyKey, unknown>(core.realm.objectPrototype);
+  createDataProperty<ScriptPropertyKey, unknown>(iterator, "next", next, core.hooks);
+  createDataProperty<ScriptPropertyKey, unknown>(iterator, "return", close, core.hooks);
+  const iterable = createObject<ScriptPropertyKey, unknown>(core.realm.objectPrototype);
+  const method = createCallableObject<ScriptPropertyKey, unknown>(prototype, (_receiver, _arguments): unknown => iterator);
+  createDataProperty<ScriptPropertyKey, unknown>(iterable, wellKnownSymbol(core.realm.symbolRegistry, "iterator"), method, core.hooks);
+  return iterable;
+}
+export function closeCount(): number { return closes; }
+export function lockedTarget(): unknown {
+  const core = programRealmCore();
+  const result = createObject<ScriptPropertyKey, unknown>(core.realm.objectPrototype);
+  preventExtensions<ScriptPropertyKey, unknown>(result);
+  return result;
+}
+`;

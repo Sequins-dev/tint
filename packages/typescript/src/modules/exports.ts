@@ -1,3 +1,4 @@
+import { bindingIdentifiers } from "../syntax/index.ts";
 import type { BoundModule } from "../binding/index.ts";
 import type {
   Module,
@@ -121,24 +122,18 @@ export function describeModuleExportDeclaration(
   } else if (statement.kind === "variable") {
     for (const declaration of statement.declarations) {
       if (declaration === undefined) throw "missing declaration";
-      if (
-        declaration.kind === "object-binding" ||
-        declaration.kind === "array-binding"
-      )
-        fail(
-          state.source.id,
-          declaration,
-          "typed binding patterns are not implemented",
-        );
-      const identity = state.values.get(declaration.name);
-      if (identity === undefined) throw "constant name invariant";
-      if (statement.exported)
-        state.exports.push({
-          module: state.source.id,
-          name: declaration.name,
-          namespace: "value",
-          identity,
-        });
+      for (const leaf of bindingIdentifiers(declaration)) {
+        if (leaf === undefined) throw "export binding invariant";
+        const identity = state.values.get(leaf.name);
+        if (identity === undefined) throw "constant name invariant";
+        if (statement.exported)
+          state.exports.push({
+            module: state.source.id,
+            name: leaf.name,
+            namespace: "value",
+            identity,
+          });
+      }
     }
   }
 }

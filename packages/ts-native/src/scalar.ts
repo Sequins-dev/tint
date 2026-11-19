@@ -8657,14 +8657,119 @@ export function lowerFunction(
       plan.root,
     );
     expressionOverrides.set(plan.root, input);
+    const realm = dynamicObjects;
+    const iterators = createKeyIndex<Expression, number>(syntaxHash);
+    const exclusions = createKeyIndex<Expression, number>(syntaxHash);
+    const counts = createKeyIndex<Expression, number>(syntaxHash);
+    const cleanup: {
+      readonly cursor: number;
+      readonly caught: Builder;
+      readonly error: number;
+      readonly previous:
+        { readonly target: number; readonly slot: number } | undefined;
+    }[] = [];
     const exhausted = createKeyIndex<Expression, number>(syntaxHash);
     for (const step of plan.steps) {
       if (step === undefined) throw "binding step invariant";
+      const action = step.realmAction;
+      if (action !== undefined) {
+        if (realm === undefined) throw "binding realm runtime invariant";
+        const source = step.read;
+        if (action === "object") {
+          const target = realm.bindingObject;
+          if (target === undefined) throw "binding object helper invariant";
+          dynamicCall(target, [value(source)], source);
+        } else if (action === "iterator") {
+          const target = realm.bindingIterator;
+          if (target === undefined) throw "binding iterator helper invariant";
+          const cursor = dynamicResult(target, [value(source)], source);
+          iterators.set(source, cursor);
+          const caught = block(),
+            body = block();
+          const error = temporary("general");
+          cleanup.push({ cursor, caught, error, previous: exception });
+          jump(body.id, source);
+          current = body;
+          exception = { target: caught.id, slot: error };
+        } else if (action === "skip") {
+          const target = realm.bindingSkip;
+          const cursor = iterators.get(source);
+          if (target === undefined || cursor === undefined)
+            throw "binding iterator elision invariant";
+          dynamicCall(target, [cursor], source);
+        } else {
+          const target = realm.bindingClose;
+          const frame = cleanup.pop();
+          if (target === undefined || frame === undefined)
+            throw "binding iterator close invariant";
+          const normal = block();
+          jump(normal.id, source);
+          exception = frame.previous;
+          current = frame.caught;
+          dynamicCall(
+            target,
+            [frame.cursor, booleanSlot(true, source)],
+            source,
+          );
+          finish({
+            kind: "throw",
+            value: load(frame.error, source),
+            start: source.start,
+            end: source.end,
+          });
+          current = normal;
+          dynamicCall(
+            target,
+            [frame.cursor, booleanSlot(false, source)],
+            source,
+          );
+          iterators.delete(source);
+        }
+        continue;
+      }
       const currentStep = step;
       function readStep(): number {
         const array = currentStep.array;
+        const rest = currentStep.realmRest;
+        if (rest !== undefined) {
+          if (realm === undefined) throw "binding rest runtime invariant";
+          const target = realm.bindingRest;
+          if (target === undefined) throw "binding rest helper invariant";
+          const keys =
+            exclusions.get(rest) ??
+            dynamicResult(realm.createArray, [numberSlot(0, rest)], rest);
+          return dynamicResult(
+            target,
+            [value(rest), keys, numberSlot(counts.get(rest) ?? 0, rest)],
+            rest,
+          );
+        }
         if (array === undefined)
           return bindingDefault(value(currentStep.read), currentStep, false);
+        if (array.realm === true) {
+          if (realm === undefined) throw "binding iterator runtime invariant";
+          const target = array.rest ? realm.bindingTail : realm.bindingNext;
+          const cursor = iterators.get(array.source),
+            node = currentStep.read;
+          const schema = info(node).dynamicContract;
+          if (
+            target === undefined ||
+            cursor === undefined ||
+            schema === undefined
+          )
+            throw "binding iterator read invariant";
+          const raw = dynamicResult(target, [cursor], node);
+          const checked = dynamicResult(
+            realm.project,
+            [raw, stringSlot(schema, node)],
+            node,
+          );
+          return bindingDefault(
+            save(load(checked, node), scalarType(node), node),
+            currentStep,
+            false,
+          );
+        }
         const node = currentStep.read;
         const source = value(array.source);
         const runtime =
@@ -8742,24 +8847,55 @@ export function lowerFunction(
         return bindingDefault(read, currentStep, false);
       }
       const assignment = step.assignment;
+      const key = step.computedKey;
+      const object = step.realmObject;
+      const realmRead = info(step.read).dynamicObject === "read";
+      let keySlot: number | undefined;
+      if (
+        key !== undefined &&
+        (assignment !== undefined || object !== undefined)
+      ) {
+        const slot = value(key);
+        if (realmRead) {
+          if (realm === undefined)
+            throw "binding property key runtime invariant";
+          keySlot = dynamicResult(realm.convertKey, [slot], key);
+        } else keySlot = save(load(slot, key), scalarType(key), key);
+        expressionOverrides.set(key, keySlot);
+      }
+      if (object !== undefined) {
+        if (realm === undefined) throw "binding key list runtime invariant";
+        const source = step.read;
+        const excluded =
+          keySlot ??
+          (source.kind === "member"
+            ? stringSlot(source.property, source)
+            : undefined);
+        if (excluded === undefined) throw "binding excluded key invariant";
+        const keys =
+          exclusions.get(object) ??
+          dynamicResult(realm.createArray, [numberSlot(0, source)], source);
+        exclusions.set(object, keys);
+        const count = counts.get(object) ?? 0;
+        dynamicCall(
+          realm.define,
+          [keys, stringSlot(String(count), source), excluded],
+          source,
+        );
+        counts.set(object, count + 1);
+      }
       if (assignment !== undefined) {
-        const key = step.computedKey;
-        if (key !== undefined) {
-          const result = value(key);
-          expressionOverrides.set(
-            key,
-            save(load(result, key), scalarType(key), key),
-          );
-        }
-        // Normal assignment captures its reference before requesting the
-        // RHS. Supply the projection/default at that point.
+        // Normal assignment captures its reference before requesting the RHS.
         patternReads.set(step.target, readStep);
         expression(assignment);
         patternReads.delete(step.target);
-        if (key !== undefined) expressionOverrides.delete(key);
+        if (keySlot !== undefined && key !== undefined)
+          expressionOverrides.delete(key);
         continue;
       }
       const item = readStep();
+      if (keySlot !== undefined && key !== undefined)
+        expressionOverrides.delete(key);
       const binding = step.binding;
       if (binding === undefined) expressionOverrides.set(step.target, item);
       else {
@@ -8826,6 +8962,7 @@ export function lowerFunction(
     input: Statement,
     loop: LoopTarget | undefined,
     named: readonly LabelTarget[] = [],
+    cellsAllocated: boolean = false,
   ): void {
     const node = input;
     if (current === undefined) return;
@@ -8847,7 +8984,7 @@ export function lowerFunction(
         break;
       }
       case "block":
-        allocateCells(node);
+        if (!cellsAllocated) allocateCells(node);
         hoistFunctions(node);
         for (const child of node.statements) {
           if (child === undefined) throw "block statement invariant";
@@ -8914,15 +9051,17 @@ export function lowerFunction(
         const pending =
           cleanup === undefined ? undefined : temporary("general");
         const binding = handler?.binding;
+        const pattern =
+          binding === undefined
+            ? undefined
+            : fn.bindingInitializations?.get(binding);
         let local: Local | undefined;
-        if (binding !== undefined) {
-          if (
-            binding.kind === "object-binding" ||
-            binding.kind === "array-binding"
-          )
-            throw "unchecked catch pattern";
+        if (
+          binding !== undefined &&
+          binding.kind !== "object-binding" &&
+          binding.kind !== "array-binding"
+        )
           local = fn.declarations.get(binding);
-        }
         const caughtSlot =
           local === undefined ? temporary("general") : local.id;
         const cleanupException =
@@ -8948,7 +9087,11 @@ export function lowerFunction(
           exception = cleanupException;
           current = caught;
           if (local !== undefined) cellAccess(local.id, "initialize", handler);
-          statement(handler.body, loop);
+          if (pattern !== undefined) {
+            allocateCells(handler.body);
+            initializeBindingPlan(pattern, caughtSlot);
+          }
+          statement(handler.body, loop, [], pattern !== undefined);
           if (current !== undefined) jump(merge.id, node);
         } else
           caught.terminator = {
