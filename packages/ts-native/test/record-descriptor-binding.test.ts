@@ -199,3 +199,59 @@ test("instance-free source identity requires a concrete optional witness and exp
   ])
     assert.equal(lower(signature).ok, false, signature);
 });
+
+test("packed module entries preserve both ordinary and replaced function bodies", async () => {
+  const { createSourceTextView } = await import("@tint/source/text");
+  const { parseModule } = await import("@tint/typescript/syntax");
+  const { checkClosureModule } = await import("@tint/typescript/checker");
+  const { lowerModuleEntries } =
+    await import("@tint/ts-native/closure/lowering");
+  const parsed = parseModule(
+    createSourceTextView(`
+      interface Box { value: number; }
+      function identity(witness: Box | undefined): number { throw "UNBOUND"; }
+      function caller(): number { return identity(undefined); }
+    `),
+  );
+  assert.ok(parsed.ok, JSON.stringify(parsed));
+  const checked = checkClosureModule(parsed.value);
+  assert.ok(checked.ok, JSON.stringify(checked));
+  const target = {
+    pointerSize: 8,
+    wordSize: 8,
+    allocationAlignment: 16,
+    frameAlignment: 16,
+    maxAlignment: 16,
+  } as const;
+  const options = {
+    debug: true,
+    recordBindings: [{ function: 0, operation: "identity" as const }],
+  };
+  const decoded = lowerModuleEntries(
+    checked.value,
+    [0, 1],
+    target,
+    4096,
+    options,
+  );
+  assert.ok(decoded.ok, JSON.stringify(decoded));
+  const packed = lowerModuleEntries(checked.value, [0, 1], target, 4096, {
+    ...options,
+    packBodiesAfter: 2,
+  });
+  assert.ok(packed.ok, JSON.stringify(packed));
+  const store = packed.value.bodies;
+  assert.ok(store, "the function bodies should be stored separately");
+  try {
+    assert.ok(verify(packed.value.module, store).ok);
+    for (const header of packed.value.module.functions) {
+      assert.deepEqual(header.blocks, []);
+      const body: FunctionIR = store.get(header.id);
+      const original: FunctionIR | undefined =
+        decoded.value.module.functions[header.id];
+      assert.deepEqual(body, original);
+    }
+  } finally {
+    store.close();
+  }
+});

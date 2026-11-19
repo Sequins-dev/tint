@@ -84,6 +84,7 @@ import {
 } from "../../scalar.ts";
 import {
   verify,
+  functionHeader,
   instructionResult,
   type ModuleIR,
   type FunctionIR,
@@ -99,11 +100,15 @@ import {
   recordHeaderBytes,
   recordAllocationAlignment,
 } from "@tint/ir/scalar";
+import { createFunctionStore, type FunctionStore } from "@tint/ir/storage";
 export type Result =
   | {
       readonly ok: true;
       readonly value: {
         readonly module: ModuleIR;
+        /** If present, the module contains headers and this store owns the
+         * verified bodies. The caller closes the store when done. */
+        readonly bodies?: FunctionStore;
         /** Native function index to checked source function ID; excludes witnesses. */
         readonly entries: readonly number[];
         readonly recordTypes: readonly (number | undefined)[] | undefined;
@@ -151,6 +156,9 @@ export interface ModuleEntryOptions {
   readonly maps?: readonly MapRuntimeBinding[];
   /** Attach source-debugging metadata (slot names, record names) to the IR. */
   readonly debug?: boolean;
+  /** Pack bodies once the cumulative count of instructions plus blocks
+   * exceeds this threshold. Omit to return a fully decoded module. */
+  readonly packBodiesAfter?: number;
 }
 export interface RecordBinding {
   readonly function: number;
@@ -258,6 +266,7 @@ export function lowerModuleEntries(
     importedFunctions: options?.importedFunctions,
     functionAddressBindings: options?.functionAddressBindings,
     debug: options?.debug,
+    packBodiesAfter: options?.packBodiesAfter,
     ...(numberToString === undefined ? {} : { numberToString }),
     ...(numberFromString === undefined ? {} : { numberFromString }),
   });
@@ -289,6 +298,7 @@ function lowerEntries(
     importedFunctions?: readonly number[] | undefined;
     functionAddressBindings?: readonly FunctionAddressBinding[] | undefined;
     debug?: boolean | undefined;
+    packBodiesAfter?: number | undefined;
   },
 ): Result {
   const recordTarget = recordOptions,
@@ -305,6 +315,52 @@ function lowerEntries(
     functions: FunctionIR[] = [],
     seen = new Uint8Array(checked.bindings.functions.length);
   let error = "";
+  const packAfter = recordOptions?.packBodiesAfter;
+  let bodies: FunctionStore | undefined,
+    irSize = 0;
+  function putFunction(fn: FunctionIR): void {
+    const store = bodies;
+    if (store === undefined) {
+      functions[fn.id] = fn;
+      return;
+    }
+    store.put(fn);
+    store.release(fn.id);
+    functions[fn.id] = functionHeader(fn);
+  }
+  function appendFunction(fn: FunctionIR): void {
+    if (bodies === undefined && packAfter !== undefined) {
+      for (const block of fn.blocks) {
+        if (block === undefined) throw "lowered block invariant";
+        irSize += 1 + block.instructions.length;
+      }
+      if (irSize > packAfter) {
+        bodies = createFunctionStore({
+          policy: "memory",
+          residentBytes: 0,
+          packedBytes: Number.MAX_SAFE_INTEGER,
+          chunkBytes: 1048576,
+          backend: undefined,
+        });
+        // Replace each body as it is packed so earlier ones can be collected
+        // during the transition too.
+        for (let id = 0; id < functions.length; id++) {
+          const prior = functions[id];
+          if (prior === undefined) throw "lowered function invariant";
+          putFunction(prior);
+        }
+      }
+    }
+    putFunction(fn);
+  }
+  function readFunction(id: number): FunctionIR | undefined {
+    const store = bodies;
+    if (store === undefined || functions[id] === undefined)
+      return functions[id];
+    const fn = store.get(id);
+    store.release(id);
+    return fn;
+  }
   function fail(message: string): never {
     error = message;
     throw abort;
@@ -1531,7 +1587,7 @@ function lowerEntries(
           entry: 0,
           blocks: [],
         };
-        functions.push(
+        appendFunction(
           imported.has(sourceId)
             ? { ...declaration, import: true }
             : {
@@ -3168,7 +3224,7 @@ function lowerEntries(
           initialized.set(slot, locals[slot]?.span);
         initialization = initialized;
       }
-      functions.push(
+      appendFunction(
         environment === undefined
           ? original
           : cells(
@@ -3185,7 +3241,7 @@ function lowerEntries(
     for (let id = entries.length; id < signatures.length; id++) {
       const signature = signatures[id];
       if (signature === undefined) throw "callback signature invariant";
-      functions.push({
+      appendFunction({
         id,
         name: "$callback$" + String(id),
         exported: false,
@@ -3214,7 +3270,7 @@ function lowerEntries(
       const target = targetIds[source];
       const body = bodyByFunction[source];
       const bound = checked.bindings.functions[source];
-      const fn = target === undefined ? undefined : functions[target];
+      const fn = target === undefined ? undefined : readFunction(target);
       if (
         fn === undefined ||
         body === undefined ||
@@ -3255,13 +3311,15 @@ function lowerEntries(
           fail(
             "view slot bindings take a viewed record (and, to store, an unknown view)",
           );
-        functions[fn.id] = bindRecordOperation(
-          fn,
-          first,
-          record,
-          binding.operation,
-          { start: body.node.start, end: body.node.end },
-          field,
+        putFunction(
+          bindRecordOperation(
+            fn,
+            first,
+            record,
+            binding.operation,
+            { start: body.node.start, end: body.node.end },
+            field,
+          ),
         );
         continue;
       }
@@ -3369,19 +3427,18 @@ function lowerEntries(
         if (!absent || !present)
           fail("record view requires the witness type or undefined");
       }
-      functions[fn.id] = bindRecordOperation(
-        fn,
-        first,
-        record,
-        binding.operation,
-        { start: body.node.start, end: body.node.end },
+      putFunction(
+        bindRecordOperation(fn, first, record, binding.operation, {
+          start: body.node.start,
+          end: body.node.end,
+        }),
       );
     }
     for (const binding of recordTarget?.functionAddressBindings ?? []) {
       if (binding === undefined) throw "function address binding invariant";
       const stubId = targetIds[binding.function],
         targetId = targetIds[binding.target];
-      const stub = stubId === undefined ? undefined : functions[stubId],
+      const stub = stubId === undefined ? undefined : readFunction(stubId),
         target = targetId === undefined ? undefined : functions[targetId];
       const body = bodyByFunction[binding.function];
       if (stub === undefined || target === undefined || body === undefined)
@@ -3402,10 +3459,12 @@ function lowerEntries(
         target.receiverSlot !== undefined
       )
         fail("function address binding target must be environment-free");
-      functions[stub.id] = bindFunctionAddress(stub, target.id, binding.part, {
-        start: body.node.start,
-        end: body.node.end,
-      });
+      putFunction(
+        bindFunctionAddress(stub, target.id, binding.part, {
+          start: body.node.start,
+          end: body.node.end,
+        }),
+      );
     }
     const module: ModuleIR =
         recordContracts === undefined
@@ -3422,7 +3481,7 @@ function lowerEntries(
                     })
                   : recordContracts.records,
             },
-      valid = verify(module);
+      valid = verify(module, bodies);
     if (!valid.ok) {
       const block = valid.error.block,
         instruction = valid.error.instruction;
@@ -3430,7 +3489,7 @@ function lowerEntries(
       const source = checked.bindings.functions.find(
         (f) => f !== undefined && f.id === original,
       )?.node;
-      const invalidFunction = functions[valid.error.function];
+      const invalidFunction = readFunction(valid.error.function);
       const invalidBlock =
         invalidFunction === undefined
           ? undefined
@@ -3468,6 +3527,7 @@ function lowerEntries(
       ok: true,
       value: {
         module,
+        ...(bodies === undefined ? {} : { bodies }),
         entries: resultEntries,
         signatureTypes: semanticWitnesses,
         recordTypes:
@@ -3477,6 +3537,7 @@ function lowerEntries(
       },
     };
   } catch (e) {
+    bodies?.close();
     if (e !== abort) throw e;
   }
   return { ok: false, error };
