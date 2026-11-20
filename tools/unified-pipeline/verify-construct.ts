@@ -52,6 +52,8 @@ const validateSource =
           ...sources,
         ],
         construct.options,
+        (advisory) =>
+          console.error("SOURCE_ADVISORY " + JSON.stringify(advisory)),
       )
     : undefined;
 verifyHostedFixture(
@@ -64,7 +66,18 @@ verifyHostedFixture(
   {
     managedBytes: 67108864,
     allocationCapacity: 1048576,
-    ...(validateSource === undefined ? {} : { validateSource }),
+    ...(validateSource === undefined
+      ? {}
+      : {
+          validateSource: (entry: string) => {
+            const diagnostics = validateSource(entry);
+            for (const diagnostic of diagnostics)
+              console.error("SOURCE_DIAGNOSTIC " + JSON.stringify(diagnostic));
+            return diagnostics;
+          },
+        }),
+    onFallbackTrigger: (trigger) =>
+      console.error("FALLBACK_TRIGGER " + JSON.stringify(trigger)),
     ...(replay ? { replaySources: sources } : {}),
     ...(functionFallback ? { functionFallback } : {}),
   },

@@ -112,8 +112,7 @@ import {
   type BuildStorage,
 } from "../spill-files.ts";
 import type { FunctionStore } from "@tint/ir/storage";
-import { nativeClosureCallMessage } from "@tint/ts-native/scalar";
-import { bindModule } from "@tint/typescript/binding";
+import { bindModule, type BindingFallback } from "@tint/typescript/binding";
 import {
   checkClosureModule,
   withRealmGlobals,
@@ -135,8 +134,10 @@ import {
   prepareNativeGlobals,
   type NativeConstructor,
   type ModuleInstanceExport,
+  type ModuleInstanceFallback,
   type LinkedExport,
   type SourceRange,
+  type SpecializationCapability,
 } from "@tint/ts-native/modules";
 import {
   appendSourceModules,
@@ -349,9 +350,19 @@ export interface GeneralProgramRequest {
   readonly sourceValidated?: boolean;
 }
 export interface FallbackTrigger {
-  readonly phase: "link" | "check";
+  readonly phase: "link" | "check" | "specialize" | "runtime" | "lower";
   readonly code: string;
-  readonly capability: ClosureFallback["capability"] | "arguments-object";
+  readonly capability:
+    | ClosureFallback["capability"]
+    | BindingFallback["capability"]
+    | SpecializationCapability
+    | ModuleInstanceFallback["capability"]
+    | "native-callable-view";
+  readonly location: {
+    readonly module: string;
+    readonly start: number;
+    readonly end: number;
+  };
   readonly owner: {
     readonly kind: ClosureFallback["ownerKind"];
     readonly module: string;
@@ -761,6 +772,8 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       typed.error.message + " (typed compilation required)",
       typed.error.module,
     );
+  if (validateSource !== undefined && typed.error.fallback === undefined)
+    return typed;
   const reason = typed.error.stage + ": " + typed.error.message;
   const start = request.start;
   if (start === undefined)
@@ -790,6 +803,12 @@ export function compileArm64Program(original: CompileRequest): Compilation {
   const applicationIds = new Set<string>();
   for (const module of application.value)
     if (module !== undefined) applicationIds.add(module.id);
+  const owner = typed.error.fallback?.owner;
+  if (
+    validateSource !== undefined &&
+    (owner === undefined || !applicationIds.has(owner.module))
+  )
+    return typed;
   // The general runtime's representation views and retained exports join
   // the request's, without duplicates.
   const recordBindings: NativeRecordBinding[] = [],
@@ -877,7 +896,10 @@ export function compileArm64Program(original: CompileRequest): Compilation {
           if (source === undefined || source.module.imports.length !== 0)
             continue;
           const bound = bindModule(source.module, typedGlobals);
-          if (!bound.ok && bound.error.implicitArgumentsOwner !== undefined) {
+          if (
+            !bound.ok &&
+            bound.error.fallback?.capability === "arguments-object"
+          ) {
             seed.add(boundary.id);
             grew = true;
           }
@@ -967,6 +989,15 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       };
     }
     if (compiled.error.preventsFallback === true) return compiled;
+    if (validateSource !== undefined) {
+      const trigger = compiled.error.fallback;
+      if (
+        trigger === undefined ||
+        !applicationIds.has(trigger.owner.module) ||
+        seed.has(trigger.owner.module)
+      )
+        return compiled;
+    }
     if (seed.size === applicationIds.size)
       return failure(
         "general " + compiled.error.stage,
@@ -1243,8 +1274,8 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
   modules.length = 0;
   if (!linked.ok) {
     const diagnostic = linked.error;
-    const owner = diagnostic.implicitArgumentsOwner;
-    if (owner === undefined)
+    const fallback = diagnostic.fallback;
+    if (fallback === undefined)
       return stageFailure("link", diagnostic.message, diagnostic.module);
     return {
       ok: false,
@@ -1254,13 +1285,18 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
         module: diagnostic.module,
         fallback: {
           phase: "link",
-          code: "UNKNOWN_NAME",
-          capability: "arguments-object",
-          owner: {
-            kind: "function",
+          code: diagnostic.code ?? "UNSUPPORTED",
+          capability: fallback.capability,
+          location: {
             module: diagnostic.module,
-            start: owner.start,
-            end: owner.end,
+            start: diagnostic.start,
+            end: diagnostic.end,
+          },
+          owner: {
+            kind: fallback.ownerKind,
+            module: diagnostic.module,
+            start: fallback.owner.start,
+            end: fallback.owner.end,
           },
         },
       },
@@ -1346,14 +1382,44 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
 function specializeApplication(
   application: Module,
   maxSpecializations: number,
+  ranges: readonly SourceRange[],
 ): { readonly ok: true; readonly value: Module } | CompilationFailure {
   const bound = bindModule(application, typedGlobals);
   if (!bound.ok) return stageFailure("bind", bound.error.message);
   const specialized = specializeModule(application, bound.value, {
     maxSpecializations,
   });
-  if (!specialized.ok)
-    return stageFailure("specialize", specialized.error.message);
+  if (!specialized.ok) {
+    const diagnostic = specialized.error;
+    const fallback = diagnostic.fallback;
+    const location = locateSourceRange(ranges, diagnostic);
+    const owner =
+      fallback === undefined
+        ? undefined
+        : locateSourceRange(ranges, fallback.owner);
+    if (fallback === undefined || location === undefined || owner === undefined)
+      return stageFailure("specialize", diagnostic.message, location?.module);
+    return {
+      ok: false,
+      error: {
+        stage: "specialize",
+        message: diagnostic.message,
+        module: owner.module,
+        fallback: {
+          phase: "specialize",
+          code: "UNSUPPORTED",
+          capability: fallback.capability,
+          location,
+          owner: {
+            kind: fallback.ownerKind,
+            module: owner.module,
+            start: owner.start,
+            end: owner.end,
+          },
+        },
+      },
+    };
+  }
   return { ok: true, value: specialized.value.module };
 }
 /** Checks the first specialization and prepares the source for instantiation.
@@ -1377,6 +1443,7 @@ function checkApplication(
   const specialized = specializeApplication(
     linkedProgram.application,
     request.maxSpecializations ?? 8192,
+    linkedProgram.ranges,
   );
   if (!specialized.ok) return { ok: false, error: specialized.error };
   const checked = checkClosureModule(specialized.value, {
@@ -1402,12 +1469,13 @@ function checkApplication(
         ? undefined
         : locateSourceRange(linkedProgram.ranges, fallback.owner);
     const trigger: FallbackTrigger | undefined =
-      fallback === undefined || owner === undefined
+      fallback === undefined || location === undefined || owner === undefined
         ? undefined
         : {
             phase: "check",
             code: checked.error.code,
             capability: fallback.capability,
+            location,
             owner: {
               kind: fallback.ownerKind,
               module: owner.module,
@@ -1530,6 +1598,7 @@ function checkTypedProgram(
   const start = request.start;
   let surfaceFunctions: readonly (readonly string[])[] = [];
   let surfaceRuntimes: readonly ManagedSurfaceRuntimeExports[] = [];
+  let instanceFallback: ModuleInstanceFallback | undefined;
   const transform: RuntimeModuleTransform = (inputModule, context) => {
     let generatedRetain: readonly string[] = [],
       generatedExclude: readonly string[] = [];
@@ -1672,7 +1741,10 @@ function checkTypedProgram(
       retained,
       invokeDirectly,
     );
-    if (!instance.ok) return instance;
+    if (!instance.ok) {
+      instanceFallback = instance.fallback;
+      return { ok: false, error: instance.error };
+    }
     initializerName = instance.value.initializer.name;
     if (invokeDirectly) {
       entryName = initializerName;
@@ -1707,7 +1779,35 @@ function checkTypedProgram(
     (request.managedSurfaces?.length ?? 0) === 0 &&
       (request.serviceImports?.length ?? 0) === 0,
   );
-  if (!prepared.ok) return stageFailure("runtime", prepared.error);
+  if (!prepared.ok) {
+    const fallback = instanceFallback;
+    if (fallback !== undefined) {
+      const location = locateSourceRange(ranges, fallback.location);
+      const owner = locateSourceRange(ranges, fallback.owner);
+      if (location !== undefined && owner !== undefined)
+        return {
+          ok: false,
+          error: {
+            stage: "runtime",
+            message: prepared.error,
+            module: location.module,
+            fallback: {
+              phase: "runtime",
+              code: "UNSUPPORTED",
+              capability: fallback.capability,
+              location,
+              owner: {
+                kind: fallback.ownerKind,
+                module: owner.module,
+                start: owner.start,
+                end: owner.end,
+              },
+            },
+          },
+        };
+    }
+    return stageFailure("runtime", prepared.error);
+  }
   return {
     ok: true,
     value: {
@@ -2080,7 +2180,48 @@ function lowerTypedProgram(
     },
   );
   if (!lowered.ok) {
-    const nativeClosure = lowered.error.startsWith(nativeClosureCallMessage);
+    const fallback = lowered.fallback;
+    if (fallback !== undefined) {
+      const location = locateSourceRange(ranges, fallback.location);
+      const owner = locateSourceRange(ranges, fallback.owner);
+      if (location !== undefined && owner !== undefined)
+        return {
+          ok: false,
+          error: {
+            stage: "lower",
+            message:
+              location.module +
+              ":" +
+              String(location.start) +
+              ":" +
+              String(location.end) +
+              ": " +
+              lowered.error,
+            module: location.module,
+            preventsFallback: true,
+            fallback: {
+              phase: "lower",
+              code: "UNSUPPORTED",
+              capability: fallback.capability,
+              location,
+              owner: {
+                kind: "function",
+                module: owner.module,
+                start: owner.start,
+                end: owner.end,
+              },
+            },
+          },
+        };
+      return {
+        ok: false,
+        error: {
+          stage: "lower",
+          message: lowered.error,
+          preventsFallback: true,
+        },
+      };
+    }
     let message = lowered.error,
       culprit: string | undefined;
     const marker = message.lastIndexOf("(source "),
@@ -2108,16 +2249,6 @@ function lowerTypedProgram(
             message;
       }
     }
-    if (nativeClosure)
-      return {
-        ok: false,
-        error: {
-          stage: "lower",
-          message,
-          preventsFallback: true,
-          ...(culprit === undefined ? {} : { module: culprit }),
-        },
-      };
     return stageFailure("lower", message, culprit);
   }
   const serviceImports: ManagedFunctionEntryBinding[] = [];

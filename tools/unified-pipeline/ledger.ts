@@ -14,7 +14,12 @@ import { spawn } from "node:child_process";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { constructs } from "./corpus.ts";
-import type { GeneralFallbackFunction } from "@tint/compiler/native";
+import type {
+  FallbackTrigger,
+  GeneralFallbackFunction,
+  SourceDiagnostic,
+} from "@tint/compiler/native";
+import type { SourceAdvisory } from "../source-validation.ts";
 
 type Form = "typed" | "untyped";
 interface Entry {
@@ -33,6 +38,9 @@ interface Entry {
     | "unsupported";
   readonly generalModules?: readonly string[];
   readonly fallbackFunctions?: readonly GeneralFallbackFunction[];
+  readonly fallbackTriggers?: readonly FallbackTrigger[];
+  readonly sourceDiagnostics?: readonly SourceDiagnostic[];
+  readonly sourceAdvisories?: readonly SourceAdvisory[];
   readonly reason?: string;
   readonly error?: string;
   readonly sourceSnapshot?: string;
@@ -131,13 +139,45 @@ function verify(construct: string, form: Form): Promise<Entry> {
       const assertion = /AssertionError \[ERR_ASSERTION\]: (\{.*\})\n/.exec(
         stderr,
       )?.[1];
+      const compilerError =
+        assertion?.startsWith('{"stage":') !== true
+          ? undefined
+          : (JSON.parse(assertion) as {
+              stage: string;
+              sourceDiagnostics?: readonly SourceDiagnostic[];
+              fallback?: FallbackTrigger;
+            });
+      const fallbackTriggers: FallbackTrigger[] = [];
+      const sourceDiagnostics: SourceDiagnostic[] = [];
+      const sourceAdvisories: SourceAdvisory[] = [];
+      for (const line of stderr.split("\n")) {
+        if (line.startsWith("SOURCE_DIAGNOSTIC "))
+          sourceDiagnostics.push(
+            JSON.parse(
+              line.slice("SOURCE_DIAGNOSTIC ".length),
+            ) as SourceDiagnostic,
+          );
+        if (line.startsWith("FALLBACK_TRIGGER "))
+          fallbackTriggers.push(
+            JSON.parse(
+              line.slice("FALLBACK_TRIGGER ".length),
+            ) as FallbackTrigger,
+          );
+        if (line.startsWith("SOURCE_ADVISORY "))
+          sourceAdvisories.push(
+            JSON.parse(line.slice("SOURCE_ADVISORY ".length)) as SourceAdvisory,
+          );
+      }
+      if (compilerError?.fallback !== undefined)
+        fallbackTriggers.push(compilerError.fallback);
       const expectedTypeError =
         form === "typed"
           ? constructs.find((item) => item.name === construct)?.typedError
           : undefined;
       const sourceDiagnostic =
         image === undefined && assertion !== undefined
-          ? /^.*"stage":"source".*?: (TS\d+): /.exec(assertion)?.[1]
+          ? (sourceDiagnostics[0]?.code ??
+            compilerError?.sourceDiagnostics?.[0]?.code)
           : undefined;
       const rejected =
         expectedTypeError !== undefined &&
@@ -181,6 +221,9 @@ function verify(construct: string, form: Form): Promise<Entry> {
         ...(sourceSnapshot === undefined ? {} : { sourceSnapshot }),
         ...(sourceReplay === undefined ? {} : { sourceReplay }),
         ...(fallbackFunctions === undefined ? {} : { fallbackFunctions }),
+        ...(fallbackTriggers.length === 0 ? {} : { fallbackTriggers }),
+        ...(sourceAdvisories.length === 0 ? {} : { sourceAdvisories }),
+        ...(sourceDiagnostics.length === 0 ? {} : { sourceDiagnostics }),
         seconds,
       });
     });

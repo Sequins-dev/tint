@@ -174,6 +174,7 @@ test("a generator fallback carries its original function owner and capability", 
     phase: "check",
     code: "UNSUPPORTED",
     capability: "generator-suspension",
+    location: { module: "main", start: 0, end: generatorText.indexOf("\n") },
     owner: {
       module: "main",
       kind: "function",
@@ -252,6 +253,11 @@ export function run(): number { return size(); }`;
     phase: "link",
     code: "UNKNOWN_NAME",
     capability: "arguments-object",
+    location: {
+      module: "main",
+      start: text.indexOf("arguments"),
+      end: text.indexOf("arguments") + "arguments".length,
+    },
     owner: {
       module: "main",
       kind: "function",
@@ -293,4 +299,129 @@ test("replay closes known arguments capabilities before generating a retry", () 
     ["main", "first", "second"],
   );
   assert.deepEqual(requests[0]?.boundaries, []);
+});
+
+test("validated source cannot turn an unclassified compiler rejection into fallback", () => {
+  const { lowering, requests } = recordingLowering();
+  const result = compileArm64Program({
+    ...generatorProgram({ ...lowering, validateSource: () => [] }),
+    modules: [
+      source(
+        "main",
+        "export function run(): number { return unknownGlobal(); }",
+      ),
+    ],
+  });
+  assert.equal(requests.length, 0);
+  assert.ok(!result.ok);
+  assert.equal(result.error.stage, "link");
+  assert.match(result.error.message, /unknown value name: unknownGlobal/);
+});
+
+test("validated source can retry an explicitly classified capability", () => {
+  const { lowering, requests } = recordingLowering();
+  compileArm64Program(
+    generatorProgram({ ...lowering, validateSource: () => [] }),
+  );
+  assert.equal(requests[0]?.trigger?.capability, "generator-suspension");
+});
+
+test("RegExp binding identifies the function that needs realm literals", () => {
+  const { lowering, requests } = recordingLowering();
+  const text =
+    'export function run(): number { return /tint/.test("tint") ? 42 : 1; }';
+  compileArm64Program({
+    ...generatorProgram({ ...lowering, validateSource: () => [] }),
+    modules: [source("main", text)],
+  });
+  assert.deepEqual(requests[0]?.trigger, {
+    phase: "link",
+    code: "UNSUPPORTED",
+    capability: "regexp-literal",
+    location: {
+      module: "main",
+      start: text.indexOf("/tint/"),
+      end: text.indexOf("/tint/") + "/tint/".length,
+    },
+    owner: { kind: "function", module: "main", start: 0, end: text.length },
+  });
+});
+
+test("inferred generic calls report a specialization capability with a source owner", () => {
+  const { lowering, requests } = recordingLowering();
+  const text =
+    "function same<T>(value: T): T { return value; }\nexport function run(): number { return same(42); }";
+  compileArm64Program({
+    ...generatorProgram({ ...lowering, validateSource: () => [] }),
+    modules: [source("main", text)],
+  });
+  assert.deepEqual(requests[0]?.trigger, {
+    phase: "specialize",
+    code: "UNSUPPORTED",
+    capability: "generic-inference",
+    location: {
+      module: "main",
+      start: text.indexOf("same(42)"),
+      end: text.indexOf("same(42)") + "same(42)".length,
+    },
+    owner: {
+      kind: "function",
+      module: "main",
+      start: text.indexOf("export"),
+      end: text.length,
+    },
+  });
+});
+
+test("class heritage fallback is owned by the whole class", () => {
+  const { lowering, requests } = recordingLowering();
+  const text =
+    "class Base {}\nclass Derived extends Base {}\nexport function run(): number { return 42; }";
+  compileArm64Program({
+    ...generatorProgram({ ...lowering, validateSource: () => [] }),
+    modules: [source("main", text)],
+  });
+  assert.equal(requests[0]?.trigger?.capability, "class-heritage");
+  assert.equal(requests[0]?.trigger?.owner.kind, "class");
+  const owner = requests[0]?.trigger?.owner;
+  assert.equal(
+    text.slice(owner?.start, owner?.end),
+    "class Derived extends Base {}",
+  );
+});
+
+test("module instance preparation reports the class declaration as a unit", () => {
+  const { lowering, requests } = recordingLowering();
+  const text =
+    "class Clazz { value: number = 42; }\nexport function run(): number { return new Clazz().value; }";
+  compileArm64Program({
+    ...generatorProgram({ ...lowering, validateSource: () => [] }),
+    modules: [source("main", text)],
+  });
+  const trigger = requests[0]?.trigger;
+  assert.equal(trigger?.phase, "runtime");
+  assert.equal(trigger?.capability, "module-class-construction");
+  assert.equal(trigger?.owner.kind, "class");
+  assert.equal(
+    text.slice(trigger?.owner.start, trigger?.owner.end),
+    "class Clazz { value: number = 42; }",
+  );
+});
+
+test("a typed binder restriction inside a method is owned by the class", () => {
+  const { lowering, requests } = recordingLowering();
+  const text =
+    "class Clazz { count(): number { return arguments.length; } }\nexport function run(): number { return new Clazz().count(); }";
+  compileArm64Program({
+    ...generatorProgram({ ...lowering, validateSource: () => [] }),
+    modules: [source("main", text)],
+  });
+  const trigger = requests[0]?.trigger;
+  assert.equal(trigger?.phase, "link");
+  assert.equal(trigger?.capability, "arguments-object");
+  assert.equal(trigger?.owner.kind, "class");
+  assert.equal(
+    text.slice(trigger?.owner.start, trigger?.owner.end),
+    text.split("\n")[0],
+  );
 });

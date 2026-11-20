@@ -33,7 +33,11 @@ import type {
   ClassDefinition,
   ClassElement,
 } from "@tint/typescript/syntax";
-import { bindModule, type BoundModule } from "@tint/typescript/binding";
+import {
+  bindModule,
+  type BoundModule,
+  type BindingFallback,
+} from "@tint/typescript/binding";
 export interface LinkedExport {
   readonly module: string;
   readonly name: string;
@@ -105,7 +109,8 @@ export type LinkResult =
 interface LinkDiagnostic extends Span {
   readonly module: string;
   readonly message: string;
-  readonly implicitArgumentsOwner?: Span;
+  readonly fallback?: BindingFallback;
+  readonly code?: string;
 }
 interface ModuleState {
   readonly source: SourceModule;
@@ -180,15 +185,16 @@ export function linkModules(
       const bound = bindModule(source.module, globals);
       if (!bound.ok) {
         const diagnostic = bound.error;
-        const owner = diagnostic.implicitArgumentsOwner;
-        if (owner === undefined)
+        const fallback = diagnostic.fallback;
+        if (fallback === undefined)
           fail(source.id, diagnostic, diagnostic.message);
         const located: LinkDiagnostic = {
           module: source.id,
           message: diagnostic.message,
           start: diagnostic.start,
           end: diagnostic.end,
-          implicitArgumentsOwner: owner,
+          fallback,
+          code: diagnostic.code,
         };
         error = located;
         throw abort;
@@ -1552,6 +1558,7 @@ export {
   specializeModule,
   type FunctionSpecialization,
   type SpecializationResult,
+  type SpecializationCapability,
   type SpecializationOptions,
 } from "./specialization.ts";
 
@@ -1559,6 +1566,7 @@ export {
   prepareModuleInstance,
   type ModuleInstance,
   type ModuleInstanceResult,
+  type ModuleInstanceFallback,
   type ModuleInstanceExport,
 } from "./instance.ts";
 export {

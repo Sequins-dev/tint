@@ -168,6 +168,9 @@ function buildHostedFixture(
     /** Replay fixtures and these helper modules from captured source text. */
     readonly replaySources?: readonly SourceModuleText[];
     readonly optimization?: BuildRequest["optimization"];
+    readonly onFallbackTrigger?: (
+      trigger: NonNullable<Parameters<GeneralLowering["lower"]>[0]["trigger"]>,
+    ) => void;
     /** Receives the general fallback when one was used (also reported on
      * stderr). */
     readonly onGeneralFallback?: (
@@ -452,9 +455,11 @@ function buildHostedFixture(
             ...(options.validateSource === undefined
               ? {}
               : { validateSource: options.validateSource }),
-            ...(functionFallback
+            ...(functionFallback || options.onFallbackTrigger !== undefined
               ? {
                   lower: (request: Parameters<GeneralLowering["lower"]>[0]) => {
+                    if (request.trigger !== undefined)
+                      options.onFallbackTrigger?.(request.trigger);
                     const lowered = general.lower(request);
                     fallbackFunctions = lowered.ok
                       ? lowered.value.functions

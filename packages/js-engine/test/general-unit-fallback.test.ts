@@ -37,6 +37,7 @@ function lower(text: string, sourceValidated = true) {
       phase: "link",
       code: "UNKNOWN_NAME",
       capability: "arguments-object",
+      location: { module: "main", start: owner.start, end: owner.end },
       owner: {
         kind: "function",
         module: "main",

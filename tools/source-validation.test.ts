@@ -106,3 +106,90 @@ test("rejects an unresolved host import and strict binding early errors", () => 
     /duplicate|already|redeclar/i,
   );
 });
+
+test("inferred field and list writes are advisory while written types stay binding", () => {
+  const text = `
+class Fields { open = 1; closed: number = 1; }
+const fields = new Fields();
+fields.open = "advisory";
+fields.closed = "error";
+const literal = { open: 1 };
+literal.open = "advisory";
+const closed: { open: number } = { open: 1 };
+closed.open = "error";
+const list = [1];
+list[0] = "advisory";
+const annotated: number[] = [1];
+annotated[0] = "error";
+`;
+  assert.deepEqual(
+    createHostedSourceValidator([{ id: "main", text }])("main").map(
+      ({ code, start, end }) => [code, text.slice(start, end)],
+    ),
+    [
+      ["TS2322", "fields.closed"],
+      ["TS2322", "closed.open"],
+      ["TS2322", "annotated[0]"],
+    ],
+  );
+});
+
+test("the inferred element type alone does not restrict push or strict equality", () => {
+  const text = `
+const open = [1];
+open.push("two");
+const result = open[1] === "two";
+const fixed: number[] = [1];
+fixed.push("two");
+const bad = fixed[1] === "two";
+`;
+  assert.deepEqual(
+    createHostedSourceValidator([{ id: "main", text }])("main").map(
+      ({ code, start, end }) => [code, text.slice(start, end)],
+    ),
+    [
+      ["TS2345", '"two"'],
+      ["TS2367", 'fixed[1] === "two"'],
+    ],
+  );
+});
+
+test("constructor writes establish open fields without masking missing members", () => {
+  const text = `
+class Fields {
+  constructor() { this.open = 1; }
+  method() { return this.other; }
+}
+const fields = new Fields();
+fields.open = "advisory";
+const value = fields.open;
+const typo = fields.missing;
+const unrelated = {};
+const missing = unrelated.open;
+`;
+  assert.deepEqual(
+    createHostedSourceValidator([{ id: "main", text }])("main").map(
+      ({ code, start, end }) => [code, text.slice(start, end)],
+    ),
+    [
+      ["TS2339", "other"],
+      ["TS2339", "missing"],
+      ["TS2339", "open"],
+    ],
+  );
+});
+
+test("an open source can be checked against a new type while a closed assertion remains disjoint", () => {
+  const text = `
+const open = { value: 1 };
+const fixed: { value: number } = { value: 1 };
+const fromOpen = open.value as { n: number };
+const fromFixed = fixed.value as { n: number };
+`;
+  assert.deepEqual(
+    createHostedSourceValidator([{ id: "main", text }])("main").map(
+      ({ code, start, end }) => [code, text.slice(start, end)],
+    ),
+    [["TS2352", "fixed.value as { n: number }"]],
+  );
+});

@@ -27,6 +27,20 @@ export interface SpecializationOptions {
     readonly arguments: readonly TypeNode[];
   }[];
 }
+export type SpecializationCapability =
+  | "generic-inference"
+  | "indirect-generic-call"
+  | "generic-function-value"
+  | "generic-constraints";
+export interface SpecializationError extends Span {
+  readonly message: string;
+  readonly fallback?: SpecializationFallback;
+}
+interface SpecializationFallback {
+  readonly capability: SpecializationCapability;
+  readonly owner: Span;
+  readonly ownerKind: "module" | "function";
+}
 export type SpecializationResult =
   | {
       readonly ok: true;
@@ -38,11 +52,7 @@ export type SpecializationResult =
     }
   | {
       readonly ok: false;
-      readonly error: {
-        readonly message: string;
-        readonly start: number;
-        readonly end: number;
-      };
+      readonly error: SpecializationError;
     };
 /** Specialize explicit direct generic calls in a bound, import-free module. Rebind and check the output. */
 export function specializeModule(
@@ -78,9 +88,33 @@ export function specializeModule(
   const localGenerated = createKeyIndex<BlockStatement, Statement[]>(
     syntaxHash,
   );
-  let failure = { message: "", start: 0, end: 0 };
+  let failure: SpecializationError = { message: "", start: 0, end: 0 };
   function fail(node: Span, message: string): never {
     failure = { message, start: node.start, end: node.end };
+    throw abort;
+  }
+  function unsupported(
+    node: Span,
+    message: string,
+    capability: SpecializationCapability,
+  ): never {
+    let owner: Span | undefined;
+    for (const frame of bound.functions)
+      if (
+        frame !== undefined &&
+        frame.node.start <= node.start &&
+        frame.node.end >= node.end &&
+        (owner === undefined ||
+          frame.node.end - frame.node.start < owner.end - owner.start)
+      )
+        owner = frame.node;
+    const frame = owner ?? node;
+    const location: Span = { start: frame.start, end: frame.end };
+    const fallback: SpecializationFallback =
+      owner === undefined
+        ? { capability, owner: location, ownerKind: "module" }
+        : { capability, owner: location, ownerKind: "function" };
+    failure = { message, start: node.start, end: node.end, fallback };
     throw abort;
   }
   let keyDepth = 0;
@@ -184,7 +218,11 @@ export function specializeModule(
   ): string {
     const template = templates.get(id);
     if (template === undefined)
-      return fail(node, "type arguments require a direct generic function");
+      return unsupported(
+        node,
+        "type arguments require a direct generic function",
+        "indirect-generic-call",
+      );
     const parameters: TypeParameters | undefined = template.typeParameters;
     if (parameters === undefined) throw "specialization parameter invariant";
     for (const parameter of parameters) {
@@ -193,9 +231,10 @@ export function specializeModule(
         parameter.constraint !== undefined ||
         parameter.defaultType !== undefined
       )
-        return fail(
+        return unsupported(
           node,
           "constrained or defaulted generic functions require checked specialization",
+          "generic-constraints",
         );
     }
     if (args.length !== parameters.length)
@@ -286,9 +325,10 @@ export function specializeModule(
               templates.has(binding) &&
               !allowed.has(original)
             )
-              fail(
+              unsupported(
                 original,
                 "generic function values require specialization at a direct call",
+                "generic-function-value",
               );
           }
           if (original.kind !== "call" || mapped.kind !== "call")
@@ -303,15 +343,20 @@ export function specializeModule(
             binding === undefined ? undefined : templates.get(binding);
           if (template === undefined) {
             if (mapped.typeArguments?.length)
-              fail(
+              unsupported(
                 original,
                 "type arguments require a direct generic function",
+                "indirect-generic-call",
               );
             return mapped;
           }
           const typeArguments = mapped.typeArguments;
           if (typeArguments === undefined || typeArguments.length === 0)
-            fail(original, "generic calls require explicit type arguments");
+            unsupported(
+              original,
+              "generic calls require explicit type arguments",
+              "generic-inference",
+            );
           if (binding === undefined)
             fail(original, "specialization binding invariant");
           const name = instantiate(binding, typeArguments, original);
