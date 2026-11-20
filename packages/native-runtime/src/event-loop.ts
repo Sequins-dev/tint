@@ -252,9 +252,12 @@ export function createEventLoop(host: EventLoopHost): EventLoop {
   function alive(): boolean {
     return refs > 0 || hasReady();
   }
-  function run(entry: Entry): void {
+  function enter(): void {
     if (running) throw "EVENT_LOOP_REENTRANCY";
     running = true;
+  }
+  function run(entry: Entry): void {
+    enter();
     try {
       checkpoint(entry);
       if (alive() && timers.length > 0) runTimers();
@@ -313,7 +316,14 @@ export function createEventLoop(host: EventLoopHost): EventLoop {
     setInterval: (callback, delay): EventLoopHandle =>
       scheduleTimer(callback, delay, true),
     clearInterval: clearTimeout,
-    checkpoint,
+    checkpoint: (entry): void => {
+      enter();
+      try {
+        checkpoint(entry);
+      } finally {
+        running = false;
+      }
+    },
     run,
   };
 }

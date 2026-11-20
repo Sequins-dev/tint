@@ -192,3 +192,17 @@ test("a throwing callback is consumed and an aborted pass preserves subsequent w
   loop.run("callback");
   assert.equal(calls, 1);
 });
+
+test("the entry checkpoint defers host turns until the current job has finished", () => {
+  const { loop, microtask } = fixture();
+  let calls = 0;
+  loop.setImmediate(() => calls++);
+  microtask(() => {
+    assert.throws(() => loop.run("callback"), /EVENT_LOOP_REENTRANCY/);
+    assert.equal(calls, 0);
+  });
+  loop.checkpoint("microtask");
+  assert.equal(calls, 0);
+  loop.run("callback");
+  assert.equal(calls, 1);
+});
