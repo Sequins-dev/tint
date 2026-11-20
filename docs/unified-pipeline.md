@@ -802,9 +802,12 @@ corpus forms. It requires successful source validation. A function that
 observes only `arguments.length` can lower through the general engine
 while its numeric callers and callees stay typed. Admission is limited to
 a single module of top-level functions, a private declaration with direct
-calls, and a numeric return expression. It accepts nullary calls or a
-numeric rest signature. The general body reads the count captured at entry
-even when a typed callee re-enters with a different count. The adapter
+calls, and a numeric return expression. It accepts up to two required
+numeric parameters or one numeric rest parameter. The general body reads
+the count captured at entry even when a typed callee re-enters with a
+different count. Calls to immutable typed functions proved to complete
+with primitive values use a direct checked entry. Other calls use the
+existing callable and Error views. The adapter
 checks the numeric result and propagates thrown values across the same
 program realm. Observable replacement and escaping references retain
 the whole-module path.
@@ -813,6 +816,8 @@ The [Linux function fallback probes](results/slice3-function-fallback-focused.md
 cover both call directions, a reentrant call and a primitive throw. The
 single-unit `arguments-object` image was smaller than its matched
 whole-module image. Startup and call-cycle budgets still need evidence.
+The [fixed numeric call probes](results/slice3-fixed-numeric-calls.md)
+also passed on `dev` and came in 11,088 bytes below the whole-module image.
 
 ## Status
 

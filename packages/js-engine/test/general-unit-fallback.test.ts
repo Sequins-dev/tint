@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createSourceTextView } from "@tint/source/text";
+import { bindJavaScriptModule } from "@tint/typescript/binding";
 import { parseModule } from "@tint/typescript/syntax";
 import { createGeneralLowering } from "../src/program/index.ts";
 
@@ -113,4 +114,30 @@ test("a reentrant call can select a branch using the captured argument count", (
 function read(...values: number[]): number { return arguments.length === 0 ? 17 : kernel() + arguments.length; }
 export function run(): number { return read(1, 2, 3); }`);
   assert.equal(mixed.functions?.[0]?.name, "read");
+});
+
+test("numeric arguments cross in both call directions", () => {
+  const mixed =
+    lower(`function kernel(left: number, right: number): number { return left * 10 + right; }
+function read(value: number): number { return kernel(value, arguments.length) + 1; }
+export function run(): number { return read(4); }`);
+  assert.equal(mixed.functions?.[0]?.name, "read");
+  assert.equal(mixed.runtimes, undefined);
+  const host = mixed.modules.find(({ id }) => id === mixed.entry);
+  const call = host?.module.statements.find(
+    (statement) =>
+      statement.kind === "function" && statement.name === "$tintCallUnit",
+  );
+  assert.ok(call?.kind === "function");
+  assert.equal(call.parameters.length, 1);
+  assert.equal(call.parameters[0]?.type?.kind, "named");
+  assert.ok(host);
+  const bound = bindJavaScriptModule(host.module);
+  assert.ok(bound.ok);
+  assert.equal(
+    bound.value.references.some(({ global }) => global === "toRealmError"),
+    false,
+  );
+  const general = mixed.modules.find(({ id }) => id === "$general:main");
+  assert.equal(general?.dependencies.get("$typed:main"), "$typed:main");
 });

@@ -75,6 +75,10 @@ export type ScriptLoweringResult =
 export interface ScriptLoweringOptions {
   readonly runtimeCompiled?: boolean;
 }
+/** Immutable numeric imports proved by the hosted function planner. */
+export interface NumericCallSite extends Span {
+  readonly target: string;
+}
 
 /** Runtime-compiled entries read the global environment's fields (hooks,
  * object witness, lexical record, this value; fixed per realm) from
@@ -268,8 +272,17 @@ export function lowerScript(
 export function lowerSourceTextModule(
   module: Module,
   sourceText?: string,
+  numericCalls?: readonly NumericCallSite[],
 ): ScriptLoweringResult {
-  return lowerScriptEntry(module, sourceText, "module");
+  return lowerScriptEntry(
+    module,
+    sourceText,
+    "module",
+    0,
+    undefined,
+    false,
+    numericCalls,
+  );
 }
 /** Indirect eval uses fresh lexical storage and eval declaration admission. */
 export function lowerEvalScript(
@@ -322,6 +335,7 @@ function lowerScriptEntry(
   directFlags: number = 0,
   directContext: EvalBindingContext | undefined = undefined,
   compactResults: boolean = false,
+  numericCalls?: readonly NumericCallSite[],
 ): ScriptLoweringResult {
   const bound =
     entryKind === "module"
@@ -329,19 +343,23 @@ function lowerScriptEntry(
       : directContext === undefined
         ? bindScript(script)
         : bindEvalScript(script, directContext);
-  if (!bound.ok)
+  if (!bound.ok) {
+    const diagnostic = bound.error;
     return {
       ok: false,
       error: {
-        ...bound.error,
+        start: diagnostic.start,
+        end: diagnostic.end,
+        message: diagnostic.message,
         code:
-          bound.error.code === "LIMIT"
+          diagnostic.code === "LIMIT"
             ? "LIMIT"
-            : bound.error.code === "UNSUPPORTED"
+            : diagnostic.code === "UNSUPPORTED"
               ? "UNSUPPORTED"
               : "EARLY_ERROR",
       },
     };
+  }
   const moduleDeclarations =
     entryKind === "module" ? collectModuleDeclarations(script) : undefined;
   const declarations = moduleDeclarations ?? collectScriptDeclarations(script);
@@ -689,6 +707,17 @@ function lowerScriptEntry(
       arguments: args,
       typeArguments: instantiation(name),
     };
+  }
+  function numericCallAt(span: Span): NumericCallSite | undefined {
+    if (numericCalls === undefined) return undefined;
+    for (const site of numericCalls)
+      if (
+        site !== undefined &&
+        site.start === span.start &&
+        site.end === span.end
+      )
+        return site;
+    return undefined;
   }
   function expression(value: Expression): void {
     statements.push({ ...at(value), kind: "expression", expression: value });
@@ -1662,7 +1691,8 @@ function lowerScriptEntry(
     if (!raw && !suspending)
       for (const candidate of collectTailCalls(body, { strict: codeStrict })) {
         if (candidate === undefined) throw "TAIL_POSITION_CALL_INVARIANT";
-        localTailEnds.set(candidate.start, candidate.end);
+        if (numericCallAt(candidate) === undefined)
+          localTailEnds.set(candidate.start, candidate.end);
       }
     const tailEnabled = localTailEnds.size !== 0;
     if (tailEnabled) usesTailCalls = true;
@@ -3711,6 +3741,22 @@ function lowerScriptEntry(
         );
       }
       case "call": {
+        const numeric = numericCallAt(node);
+        if (numeric !== undefined) {
+          const checked: Expression[] = [];
+          for (const argument of node.arguments) {
+            if (argument === undefined) throw "numeric argument invariant";
+            const evaluated = temporary(value(argument), true);
+            checked.push({
+              ...at(argument),
+              kind: "satisfies",
+              assertion: "as",
+              type: named("number"),
+              expression: evaluated,
+            });
+          }
+          return runtimeCall(numeric.target, checked, node);
+        }
         let target = node.callee;
         while (target.kind === "group") target = target.expression;
         if (target.kind === "super") {

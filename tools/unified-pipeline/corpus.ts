@@ -980,6 +980,15 @@ function read() { return kernel() + arguments.length; }
 export function run() { try { read(); return 1; } catch (error) { return error === 7 ? 42 : 2; } }`,
   },
   {
+    name: "arguments-function-fallback-numeric",
+    typed: `function kernel(left: number, right: number): number { return left * 10 + right; }
+function read(value: number): number { return kernel(value, arguments.length) + 1; }
+export function run(): number { return read(4); }`,
+    untyped: `function kernel(left, right) { return left * 10 + right; }
+function read(value) { return kernel(value, arguments.length) + 1; }
+export function run() { return read(4); }`,
+  },
+  {
     name: "tagged-templates",
     typed: `function tag(strings: TemplateStringsArray, ...values: number[]): string {
   return strings.raw.join("|") + values.join(",");

@@ -172,7 +172,11 @@ function lowerGeneralProgram(
         return typeNames(target)?.has(name) ?? false;
       },
     });
-    const lowered = lowerSourceTextModule(erased);
+    const lowered = lowerSourceTextModule(
+      erased,
+      undefined,
+      mixed?.numericCalls,
+    );
     if (!lowered.ok)
       return {
         ok: false,
@@ -187,10 +191,27 @@ function lowerGeneralProgram(
       };
     installers.addModule(erased);
     const id = fresh("$general:" + source.id);
+    const numericImports = mixed?.numericImports;
+    const dependencies =
+      numericImports === undefined
+        ? runtimeDependencies
+        : new Map(runtimeDependencies);
+    if (mixed !== undefined && numericImports !== undefined)
+      dependencies.set(mixed.typed.id, mixed.typed.id);
     generated.push({
       id,
-      module: lowered.value,
-      dependencies: runtimeDependencies,
+      module:
+        numericImports === undefined
+          ? lowered.value
+          : {
+              ...lowered.value,
+              imports: [...numericImports.imports, ...lowered.value.imports],
+              statements: [
+                ...numericImports.statements,
+                ...lowered.value.statements,
+              ],
+            },
+      dependencies,
       ...(source.sourcePosition === undefined
         ? {}
         : { sourcePosition: source.sourcePosition }),
@@ -811,15 +832,37 @@ function generalHostSource(
   const write = output
     ? `function emit(fd:number,text:string):void{const bytes=new TextEncoder().encode(text);let offset=0;while(offset<bytes.length){const written=writeOutput(fd,bytes.subarray(offset));if(written<=0)return;offset+=written;}}`
     : `function emit(fd:number,text:string):void{}`;
+  const argumentNames = Array.from(
+    { length: mixed?.arity ?? 0 },
+    (_, index) => "arg" + index,
+  );
+  const argumentsSource =
+    mixed?.rest === true
+      ? "const mixedArguments:unknown[]=[undefined];"
+      : argumentNames.length === 0
+        ? "const mixedArguments:readonly unknown[]=[];"
+        : "const mixedArguments:unknown[]=[" +
+          argumentNames.map(() => "undefined").join(",") +
+          "];";
+  const signature =
+    mixed?.rest === true
+      ? "...values:number[]"
+      : argumentNames.map((name) => name + ":number").join(",");
+  const captureArguments =
+    mixed?.rest === true
+      ? "mixedArguments[0]=values.length;"
+      : argumentNames
+          .map((name, index) => "mixedArguments[" + index + "]=" + name + ";")
+          .join("");
   const mixedAdapter =
     mixed === undefined
       ? ""
       : `
 let mixedCallable:unknown=undefined;
-${mixed.rest ? "const mixedArguments:unknown[]=[undefined];" : "const mixedArguments:readonly unknown[]=[];"}
-export function $tintCallUnit(${mixed.rest ? "...values:number[]" : ""}):number {
+${argumentsSource}
+export function $tintCallUnit(${signature}):number {
  const program=programRealm();
- ${mixed.rest ? "mixedArguments[0]=values.length;" : ""}
+ ${captureArguments}
  const value=callObjectValue(mixedCallable,undefined,mixedArguments,program.object).value;
  if(typeof value!=="number")rejectArgument(program.realm);
  return value;

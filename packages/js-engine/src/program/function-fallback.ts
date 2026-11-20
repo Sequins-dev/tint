@@ -1,6 +1,7 @@
-import type {
-  GeneralProgramRequest,
-  TypedBoundaryModule,
+import {
+  boundaryNumber,
+  type GeneralProgramRequest,
+  type TypedBoundaryModule,
 } from "@tint/compiler/native";
 import { createSourceTextView } from "@tint/source/text";
 import { bindJavaScriptModule } from "@tint/typescript/binding";
@@ -16,6 +17,7 @@ import {
   type TypeNode,
 } from "@tint/typescript/syntax";
 import type { SourceModule } from "@tint/typescript/modules/model";
+import type { NumericCallSite } from "../lowering/index.ts";
 
 type FunctionDeclaration = Extract<Statement, { kind: "function" }>;
 
@@ -25,6 +27,9 @@ export interface FunctionFallbackPlan {
   readonly boundary: TypedBoundaryModule;
   readonly name: string;
   readonly rest: boolean;
+  readonly arity: number;
+  readonly numericCalls: readonly NumericCallSite[];
+  readonly numericImports: Module | undefined;
 }
 
 function numberType(type: TypeNode | undefined): boolean {
@@ -45,8 +50,71 @@ function ordinaryNumber(statement: FunctionDeclaration): boolean {
   );
 }
 
+function fixedNumericParameters(
+  statement: FunctionDeclaration,
+): readonly string[] | undefined {
+  if (statement.parameters.length > 2) return undefined;
+  const names: string[] = [];
+  for (const parameter of statement.parameters) {
+    if (
+      parameter.kind === "pattern-parameter" ||
+      parameter.rest === true ||
+      parameter.optional === true ||
+      parameter.initializer !== undefined ||
+      !numberType(parameter.type)
+    )
+      return undefined;
+    names.push(parameter.name);
+  }
+  return names;
+}
+
+function numericOperator(operator: string): boolean {
+  return (
+    operator === "+" ||
+    operator === "-" ||
+    operator === "*" ||
+    operator === "/" ||
+    operator === "%"
+  );
+}
+
+/** With checked numeric inputs, these operations produce a primitive
+ * completion and cannot construct an Error object. */
+function primitiveCompletion(
+  fn: FunctionDeclaration,
+  parameters: readonly string[],
+): boolean {
+  const body = fn.body;
+  if (body.kind !== "block" || body.statements.length !== 1) return false;
+  const statement = body.statements[0];
+  function numeric(value: Expression): boolean {
+    switch (value.kind) {
+      case "number":
+        return true;
+      case "identifier":
+        return parameters.includes(value.name);
+      case "group":
+        return numeric(value.expression);
+      case "binary":
+        return (
+          numericOperator(value.operator) &&
+          numeric(value.left) &&
+          numeric(value.right)
+        );
+      default:
+        return false;
+    }
+  }
+  return (
+    (statement?.kind === "return" || statement?.kind === "throw") &&
+    statement.expression !== undefined &&
+    numeric(statement.expression)
+  );
+}
+
 /** Admit a closed, private arguments-observing function whose callers can only
- * make direct calls. Nullary or numeric-rest calls use numeric result contracts.
+ * make direct calls. Fixed numeric and numeric-rest calls check the result.
  * Other owners still use the enclosing module's original fallback. */
 export function planFunctionFallback(
   request: GeneralProgramRequest,
@@ -86,7 +154,9 @@ export function planFunctionFallback(
     !ordinaryNumber(entry)
   )
     return undefined;
-  const rest = selected.parameters.length !== 0;
+  const fixed = fixedNumericParameters(selected);
+  const rest = fixed === undefined;
+  const arity = fixed?.length ?? 0;
   if (rest) {
     const parameter = selected.parameters[0];
     if (
@@ -123,7 +193,9 @@ export function planFunctionFallback(
         source.kind === "call" &&
         source.optional !== true &&
         source.callee.kind === "identifier" &&
-        (rest || source.arguments.length === 0)
+        (rest ||
+          (source.arguments.length === arity &&
+            source.arguments.every((argument) => argument.kind !== "spread")))
       )
         directCalls.add(source.callee.start);
       return mapped;
@@ -136,21 +208,24 @@ export function planFunctionFallback(
     )
       return undefined;
 
-  const callees = new Set<string>();
+  const callees = new Map<
+    string,
+    { parameters: readonly string[]; target: string }
+  >();
+  const numericCalls: NumericCallSite[] = [];
   let observesArguments = false;
+  let needsErrorViews = false;
   function supported(expression: Expression): boolean {
     switch (expression.kind) {
       case "number":
         return true;
+      case "identifier":
+        return fixed?.includes(expression.name) === true;
       case "group":
         return supported(expression.expression);
       case "binary":
         return (
-          (expression.operator === "+" ||
-            expression.operator === "-" ||
-            expression.operator === "*" ||
-            expression.operator === "/" ||
-            expression.operator === "%") &&
+          numericOperator(expression.operator) &&
           supported(expression.left) &&
           supported(expression.right)
         );
@@ -185,20 +260,34 @@ export function planFunctionFallback(
       case "call": {
         if (
           expression.optional === true ||
-          expression.arguments.length !== 0 ||
           expression.callee.kind !== "identifier"
         )
           return false;
         const name = expression.callee.name;
+        if (fixed?.includes(name) === true) return false;
         const callee = declarations.find((fn) => fn.name === name);
         if (
           callee === undefined ||
           callee === selected ||
-          callee.parameters.length !== 0 ||
           !ordinaryNumber(callee)
         )
           return false;
-        callees.add(name);
+        const parameters = fixedNumericParameters(callee);
+        if (
+          parameters === undefined ||
+          parameters.length !== expression.arguments.length ||
+          !expression.arguments.every(supported)
+        )
+          return false;
+        const target =
+          callees.get(name)?.target ?? "$tintNumeric" + callees.size;
+        callees.set(name, { parameters, target });
+        numericCalls.push({
+          target,
+          start: expression.start,
+          end: expression.end,
+        });
+        if (!primitiveCompletion(callee, parameters)) needsErrorViews = true;
         return true;
       }
       default:
@@ -227,14 +316,26 @@ export function planFunctionFallback(
       ";",
   );
   const generalImport = parseImport(
-    callees.size === 0
+    callees.size === 0 || !needsErrorViews
       ? ""
       : "import {" +
-          [...callees].join(",") +
+          [...callees.keys()].join(",") +
           "} from " +
           JSON.stringify(typedId) +
           ";",
   );
+  const numericImports =
+    callees.size !== 0 && !needsErrorViews
+      ? parseImport(
+          "import {" +
+            [...callees]
+              .map(([name, callee]) => name + " as " + callee.target)
+              .join(",") +
+            "} from " +
+            JSON.stringify(typedId) +
+            ";",
+        )
+      : undefined;
   // This path only admits reads of arguments.length. Bind the count before
   // executing code that could re-enter the host adapter.
   let countName = "$tintArgumentCount";
@@ -251,7 +352,11 @@ export function planFunctionFallback(
       imports: generalImport.imports,
       statements: [
         ...generalImport.statements,
-        { ...selected, exported: true, parameters: rest ? [count] : [] },
+        {
+          ...selected,
+          exported: true,
+          parameters: rest ? [count] : selected.parameters,
+        },
       ],
     },
     {
@@ -269,8 +374,8 @@ export function planFunctionFallback(
               }
             : {
                 kind: "number",
-                value: 0,
-                raw: "0",
+                value: arity,
+                raw: String(arity),
                 start: mapped.start,
                 end: mapped.end,
               }
@@ -280,10 +385,15 @@ export function planFunctionFallback(
   return {
     name: selected.name,
     rest,
+    arity,
+    numericCalls: numericImports === undefined ? [] : numericCalls,
+    numericImports,
     general: {
       ...original,
       dependencies:
-        callees.size === 0 ? new Map() : new Map([[typedId, typedId]]),
+        generalImport.imports.length === 0
+          ? new Map()
+          : new Map([[typedId, typedId]]),
       module: general,
     },
     typed: {
@@ -305,12 +415,15 @@ export function planFunctionFallback(
     },
     boundary: {
       id: typedId,
-      exports: [...callees].map((name) => ({
-        name,
-        local: name,
-        kind: "function",
-        parameters: [],
-      })),
+      exports:
+        numericImports !== undefined
+          ? []
+          : [...callees].map(([name, callee]) => ({
+              name,
+              local: name,
+              kind: "function",
+              parameters: callee.parameters.map(() => boundaryNumber),
+            })),
     },
   };
 }
