@@ -2152,7 +2152,7 @@ export function emitModule(
         case "weak-slot-clear":
           weakGuard(op.cell);
           for (
-            let offset = nativeWeakSlotKeyOffset;
+            let offset: number = nativeWeakSlotKeyOffset;
             offset < nativeWeakSlotByteLength;
             offset += 8
           )

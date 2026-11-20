@@ -1,4 +1,4 @@
-import { serialCollectorModule } from "./project.ts";
+import { serialCollectorModule } from "./native/runtime-contracts.ts";
 import { nativeTargetLayout } from "./native/target-layout.ts";
 import {
   aarch64ImageRelocations,
