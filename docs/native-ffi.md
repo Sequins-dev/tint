@@ -1267,8 +1267,9 @@ Uint8Array`, missing today) and reading a typed array's or DataView's
    buffer today).
 5. **Errors with codes.** Node's validation errors are `TypeError`/
    `RangeError` with `code` (`ERR_INVALID_ARG_VALUE`, `ERR_INVALID_ARG_TYPE`)
-   and its loader errors plain `Error`s; typed code cannot construct a plain
-   `Error` or attach `code` today.
+   and the loader and symbol lookup throw `Error` with `ERR_FFI_CALL_FAILED`.
+   Tint's dynamic loader uses the same error shape, with the platform's
+   `dlerror` detail.
 6. **Rest arguments and variadic function values.** Each bound function is
    a JavaScript function taking its arguments positionally and checking
    their count (`lib.functions.f(a, b)`): the adapter returns closures that
