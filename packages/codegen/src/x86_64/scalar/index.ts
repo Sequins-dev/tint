@@ -2,6 +2,12 @@ import {
   nativeArrayDataOffset,
   nativeArrayInlineOffset,
   nativeArrayLengthOffset,
+  nativeArrayOwnerOffset,
+  nativeArrayViewByteLength,
+  nativeHeaderFlagsShift,
+  nativeHeaderFlagUnit,
+  nativeStringDataOffset,
+  nativeStringLengthOffset,
   nativeCStackReserveBytes,
   nativeStackMapFooterMagic,
   nativeStackLimitOffset,
@@ -9,7 +15,11 @@ import {
   type PosixHostFacts,
 } from "@tint/abi/host";
 import type { ImageAddressTarget } from "@tint/abi/relocation";
-import { encodeFloat64, writeWord64 } from "@tint/foundation/binary/bytes";
+import {
+  encodeFloat64,
+  writeUnsigned,
+  writeWord64,
+} from "@tint/foundation/binary/bytes";
 import type { Word64 } from "@tint/foundation/binary/word64";
 import {
   instructionResult,
@@ -27,7 +37,10 @@ import {
 } from "@tint/ir/scalar";
 import {
   encodeLayout,
+  writeRel32,
+  type NearFixup,
   type Instruction as MachineInstruction,
+  type Address,
   type Memory,
 } from "../isa.ts";
 import {
@@ -108,6 +121,17 @@ const result = gpr(1);
 const scratch = gpr(11);
 const trapLabel = "trap";
 
+type ElementBytes = 1 | 2 | 4 | 8;
+function arrayWidth(type: ScalarType): ElementBytes {
+  if (type === "Uint8Array") return 1;
+  if (type === "Uint16Array") return 2;
+  if (type === "Uint32Array") return 4;
+  if (type === "Float64Array") return 8;
+  throw "typed array width invariant";
+}
+function arrayMarker(width: ElementBytes): number {
+  return width === 8 ? 5 : width === 4 ? 4 : width === 2 ? 3 : 2;
+}
 function align16(bytes: number): number {
   return Math.ceil(bytes / 16) * 16;
 }
@@ -184,6 +208,20 @@ export function emitModule(
   };
   const numbers = createNumberEmission(emit);
   const constants: Word64[] = [];
+  const strings = new Map<
+    string,
+    { readonly value: string; readonly offset: number }
+  >();
+  let stringBytes = 0;
+  function literal(value: string): Memory<64> {
+    const name = "literal:" + value;
+    if (!strings.has(name)) {
+      strings.set(name, { value, offset: stringBytes });
+      stringBytes +=
+        Math.ceil((nativeStringDataOffset + value.length * 2) / 8) * 8;
+    }
+    return rip(name);
+  }
   const external = new Map<string, ImageAddressTarget>();
   const imports = new Set<string>();
   function foreign(symbol: string): void {
@@ -368,17 +406,9 @@ export function emitModule(
       emit({ op: "cvtsi2sd", dst: x0, src: rax });
       floatBits(emit, rax, x0);
     }
-    // A zero-filled mmap arena means every fresh byte is already zero. Never
-    // publish the new cursor until the entire aligned allocation fits.
-    function allocateBytes(id: number, length: number, block: Block): void {
-      exactInteger(emit, frame(home(length)), r10, trapLabel);
-      emit({
-        op: "mov",
-        dst: word(11),
-        src: imm(0xffffffff - nativeArrayInlineOffset - 7),
-      });
-      emit({ op: "cmp", dst: r10, src: scratch });
-      branch(emit, "a", trapLabel);
+    // The bounded runtime owns a fresh zero-filled arena. A future collector
+    // can use the same allocation boundary, before constructor publication.
+    function allocate(block: Block, site: string, denied: string): void {
       emit({ op: "mov", dst: rdx, src: frame(savedContext) });
       emit({ op: "mov", dst: rax, src: mem(2, heapCursorOffset) });
       emit({
@@ -387,18 +417,13 @@ export function emitModule(
         src: {
           kind: "mem",
           width: 64,
-          address: {
-            kind: "base",
-            base: 0,
-            index: 10,
-            disp: nativeArrayInlineOffset + 7,
-          },
+          address: { kind: "base", base: 0, index: 10, disp: 0 },
         },
       });
-      emit({ op: "and", dst: scratch, src: imm(-8) });
-      const fits = fnLabel + ":allocation:" + String(id);
+      const fits = site + ":fits";
       emit({ op: "cmp", dst: scratch, src: mem(2, heapEndOffset) });
       branch(emit, "be", fits);
+      emit({ op: "label", name: denied });
       emit({ op: "mov", dst: frame(callResult), src: imm(0) });
       emit({
         op: "mov",
@@ -412,13 +437,121 @@ export function emitModule(
       raise(block, callResult);
       emit({ op: "label", name: fits });
       emit({ op: "mov", dst: mem(2, heapCursorOffset), src: scratch });
-      emit({ op: "mov", dst: mem(0, 0), src: imm(2) }); // Uint8Array marker
-      emit({ op: "mov", dst: mem(0, nativeArrayLengthOffset), src: r10 });
+    }
+
+    function ownedArray(
+      op: {
+        readonly id: number;
+        readonly type: ScalarType;
+        readonly length: number;
+      },
+      block: Block,
+    ): void {
+      const site = fnLabel + ":array:" + String(op.id);
+      const denied = site + ":invalid";
+      const width = arrayWidth(op.type);
+      exactInteger(emit, frame(home(op.length)), r9, denied);
+      emit({
+        op: "mov",
+        dst: word(11),
+        src: imm(
+          Math.floor((0xffffffff - nativeArrayInlineOffset - 7) / width),
+        ),
+      });
+      emit({ op: "cmp", dst: r9, src: scratch });
+      branch(emit, "a", denied);
+      emit({
+        op: "lea",
+        dst: r10,
+        src: {
+          kind: "mem",
+          width: 64,
+          address: {
+            kind: "base",
+            index: 9,
+            scale: width,
+            disp: nativeArrayInlineOffset + 7,
+          },
+        },
+      });
+      emit({ op: "and", dst: r10, src: imm(-8) });
+      allocate(block, site, denied);
+      emit({ op: "mov", dst: mem(0, 0), src: imm(arrayMarker(width)) });
+      emit({ op: "mov", dst: mem(0, nativeArrayLengthOffset), src: r9 });
       emit({ op: "lea", dst: r10, src: mem(0, nativeArrayInlineOffset) });
       emit({ op: "mov", dst: mem(0, nativeArrayDataOffset), src: r10 });
-      define(id, "Uint8Array");
+      define(op.id, op.type);
     }
-    function byteElement(
+
+    function arrayView(
+      op: {
+        readonly id: number;
+        readonly array: number;
+        readonly begin: number;
+        readonly length: number;
+      },
+      block: Block,
+    ): void {
+      const site = fnLabel + ":view:" + String(op.id);
+      const denied = site + ":invalid";
+      const type = typeOf(op.array);
+      const width = arrayWidth(type);
+      const length = gpr(8);
+      exactInteger(emit, frame(home(op.begin)), r9, trapLabel);
+      exactInteger(emit, frame(home(op.length)), length, trapLabel);
+      emit({ op: "mov", dst: rdx, src: frame(home(op.array)) });
+      emit({ op: "mov", dst: scratch, src: mem(2, nativeArrayLengthOffset) });
+      emit({ op: "sub", dst: scratch, src: r9 });
+      branch(emit, "b", trapLabel);
+      emit({ op: "cmp", dst: length, src: scratch });
+      branch(emit, "a", trapLabel);
+      emit({ op: "mov", dst: r10, src: imm(nativeArrayViewByteLength) });
+      allocate(block, site, denied);
+      emit({ op: "mov", dst: rdx, src: frame(home(op.array)) });
+      emit({
+        op: "mov",
+        dst: scratch,
+        src: bits(arrayMarker(width), 2 * (nativeHeaderFlagUnit / 4294967296)),
+      });
+      emit({ op: "mov", dst: mem(0, 0), src: scratch });
+      emit({ op: "mov", dst: mem(0, nativeArrayLengthOffset), src: length });
+      emit({ op: "mov", dst: scratch, src: mem(2, nativeArrayDataOffset) });
+      emit({
+        op: "lea",
+        dst: r10,
+        src: {
+          kind: "mem",
+          width: 64,
+          address: { kind: "base", base: 11, index: 9, scale: width, disp: 0 },
+        },
+      });
+      emit({ op: "mov", dst: mem(0, nativeArrayDataOffset), src: r10 });
+      emit({ op: "mov", dst: mem(0, nativeArrayOwnerOffset), src: rdx });
+      emit({
+        op: "mov",
+        dst: mem(0, nativeArrayViewByteLength - 8),
+        src: imm(0),
+      });
+      define(op.id, type);
+    }
+
+    function arrayOwner(array: number, site: string): void {
+      // Walk the view chain until the owned or borrowed backing array.
+      emit({ op: "mov", dst: rax, src: frame(home(array)) });
+      const loop = site + ":owner";
+      const done = loop + ":done";
+      emit({ op: "label", name: loop });
+      emit({ op: "mov", dst: r10, src: mem(0, 0) });
+      emit({ op: "shr", dst: r10, count: nativeHeaderFlagsShift });
+      emit({ op: "and", dst: r10, src: imm(7) });
+      emit({ op: "cmp", dst: r10, src: imm(2) });
+      branch(emit, "ne", done);
+      emit({ op: "mov", dst: rax, src: mem(0, nativeArrayOwnerOffset) });
+      emit({ op: "jmp", target: label(loop) });
+      emit({ op: "label", name: done });
+    }
+
+    function arrayElement(
       op:
         | {
             readonly kind: "array-valid" | "array-read" | "array-element";
@@ -443,24 +576,84 @@ export function emitModule(
         emit({ op: "cmp", dst: r9, src: mem(11, nativeArrayLengthOffset) });
         branch(emit, "ae", invalid);
       }
+      const width = arrayWidth(typeOf(op.array));
+      const store = op.kind === "array-write" || op.kind === "array-store";
       if (op.kind === "array-write" || op.kind === "array-store") {
-        // ToUint32 uses RAX/RDX/R10/R11. The index is in R9; reload the
-        // array afterwards and keep only the low byte of the converted value.
-        numbers.toWord(frame(home(op.value)));
-        emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+        if (width === 8)
+          emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
+        else {
+          // ToUint32 preserves R9 but clobbers the array register.
+          numbers.toWord(frame(home(op.value)));
+          emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+        }
       }
-      const element: Memory<8> = {
-        kind: "mem",
-        width: 8,
-        address: { kind: "base", base: 11, index: 9, disp: 0 },
+      const address: Address = {
+        kind: "base",
+        base: 11,
+        index: 9,
+        scale: width,
+        disp: 0,
       };
       if (op.kind === "array-valid") emit({ op: "mov", dst: eax, src: imm(1) });
       else {
         emit({ op: "mov", dst: scratch, src: mem(11, nativeArrayDataOffset) });
-        if (op.kind === "array-write" || op.kind === "array-store")
-          emit({ op: "mov", dst: element, src: byte(0) });
-        else {
-          emit({ op: "movzx", dst: eax, src: element });
+        if (store) {
+          if (width === 1)
+            emit({
+              op: "mov",
+              dst: { kind: "mem", width: 8, address },
+              src: byte(0),
+            });
+          else if (width === 2)
+            emit({
+              op: "mov",
+              dst: { kind: "mem", width: 16, address },
+              src: { kind: "gpr", width: 16, index: 0 },
+            });
+          else if (width === 4)
+            emit({
+              op: "mov",
+              dst: { kind: "mem", width: 32, address },
+              src: eax,
+            });
+          else
+            emit({
+              op: "mov",
+              dst: { kind: "mem", width: 64, address },
+              src: rax,
+            });
+        } else if (width === 8) {
+          emit({
+            op: "movsd",
+            dst: x0,
+            src: { kind: "mem", width: 64, address },
+          });
+          floatBits(emit, rax, x0);
+          // A stored NaN may have the same payload as optional-number absence.
+          if (op.kind === "array-read") {
+            emit({ op: "ucomisd", dst: x0, src: x0 });
+            branch(emit, "np", done);
+            emit({ op: "mov", dst: rax, src: bits(0, 0x7ff80000) });
+          }
+        } else {
+          if (width === 1)
+            emit({
+              op: "movzx",
+              dst: eax,
+              src: { kind: "mem", width: 8, address },
+            });
+          else if (width === 2)
+            emit({
+              op: "movzx",
+              dst: eax,
+              src: { kind: "mem", width: 16, address },
+            });
+          else
+            emit({
+              op: "mov",
+              dst: eax,
+              src: { kind: "mem", width: 32, address },
+            });
           numberBits();
         }
       }
@@ -485,6 +678,155 @@ export function emitModule(
               ? "number"
               : "boolean",
         );
+    }
+
+    function arrayCopy(
+      op: {
+        readonly id: number;
+        readonly array: number;
+        readonly source: number;
+        readonly offset: number;
+      },
+      symbol: string,
+    ): void {
+      const width = arrayWidth(typeOf(op.array));
+      const invalid = fnLabel + ":copy:" + String(op.id);
+      const done = invalid + ":done";
+      exactInteger(emit, frame(home(op.offset)), r9, invalid);
+      const destination = gpr(7),
+        source = gpr(6);
+      emit({ op: "mov", dst: destination, src: frame(home(op.array)) });
+      emit({ op: "mov", dst: source, src: frame(home(op.source)) });
+      emit({ op: "mov", dst: rax, src: mem(7, nativeArrayLengthOffset) });
+      emit({ op: "sub", dst: rax, src: r9 });
+      branch(emit, "b", invalid);
+      emit({ op: "mov", dst: rdx, src: mem(6, nativeArrayLengthOffset) });
+      emit({ op: "cmp", dst: rdx, src: rax });
+      branch(emit, "a", invalid);
+      emit({ op: "mov", dst: destination, src: mem(7, nativeArrayDataOffset) });
+      emit({ op: "mov", dst: source, src: mem(6, nativeArrayDataOffset) });
+      emit({
+        op: "lea",
+        dst: destination,
+        src: {
+          kind: "mem",
+          width: 64,
+          address: { kind: "base", base: 7, index: 9, scale: width, disp: 0 },
+        },
+      });
+      emit({
+        op: "lea",
+        dst: rdx,
+        src: {
+          kind: "mem",
+          width: 64,
+          address: { kind: "base", index: 2, scale: width, disp: 0 },
+        },
+      });
+      foreign(symbol);
+      emit({ op: "mov", dst: eax, src: imm(1) });
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: invalid });
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "label", name: done });
+      define(op.id, "boolean");
+    }
+
+    // RDI/RSI hold the two string bases (RDI may already be advanced by a
+    // code-unit offset), RDX the equal-length comparison extent in units.
+    function compareUnits(symbol: string, equal: boolean): void {
+      emit({ op: "lea", dst: gpr(7), src: mem(7, nativeStringDataOffset) });
+      emit({ op: "lea", dst: gpr(6), src: mem(6, nativeStringDataOffset) });
+      emit({ op: "shl", dst: rdx, count: 1 });
+      foreign(symbol);
+      emit({ op: "test", dst: eax, src: eax });
+      setBoolean(emit, equal ? "e" : "ne", 0);
+    }
+
+    function stringEqual(
+      left: Memory<64>,
+      right: Memory<64>,
+      equal: boolean,
+      site: string,
+      symbol: string,
+    ): void {
+      const same = site + ":same";
+      const different = site + ":different";
+      const done = site + ":done";
+      const a = gpr(7),
+        b = gpr(6);
+      emit({ op: "mov", dst: a, src: left });
+      emit({ op: "mov", dst: b, src: right });
+      emit({ op: "cmp", dst: a, src: b });
+      branch(emit, "e", same);
+      emit({ op: "test", dst: a, src: a });
+      branch(emit, "e", different);
+      emit({ op: "test", dst: b, src: b });
+      branch(emit, "e", different);
+      emit({ op: "mov", dst: rdx, src: mem(7, nativeStringLengthOffset) });
+      emit({ op: "cmp", dst: rdx, src: mem(6, nativeStringLengthOffset) });
+      branch(emit, "ne", different);
+      compareUnits(symbol, equal);
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: same });
+      emit({ op: "mov", dst: eax, src: imm(equal ? 1 : 0) });
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: different });
+      emit({ op: "mov", dst: eax, src: imm(equal ? 0 : 1) });
+      emit({ op: "label", name: done });
+    }
+
+    function stringPrefix(
+      op: {
+        readonly id: number;
+        readonly string: number;
+        readonly search: number;
+        readonly position: number;
+      },
+      symbol: string,
+    ): void {
+      const site = fnLabel + ":prefix:" + String(op.id);
+      const clamped = site + ":clamped";
+      const absent = site + ":absent";
+      const done = site + ":done";
+      const a = gpr(7),
+        b = gpr(6),
+        x1 = xmm(1);
+      emit({ op: "mov", dst: a, src: frame(home(op.string)) });
+      emit({ op: "mov", dst: b, src: frame(home(op.search)) });
+      emit({ op: "mov", dst: r10, src: mem(7, nativeStringLengthOffset) });
+      emit({ op: "movsd", dst: x0, src: frame(home(op.position)) });
+      emit({ op: "xor", dst: word(9), src: word(9) });
+      emit({ op: "xorpd", dst: x1, src: x1 });
+      emit({ op: "ucomisd", dst: x0, src: x1 });
+      // NaN and negative inputs clamp to zero. Positive overflow clamps to
+      // the length before the integer conversion.
+      branch(emit, "be", clamped);
+      emit({ op: "mov", dst: r9, src: r10 });
+      emit({ op: "cvtsi2sd", dst: x1, src: r10 });
+      emit({ op: "ucomisd", dst: x0, src: x1 });
+      branch(emit, "ae", clamped);
+      emit({ op: "cvttsd2si", dst: r9, src: x0 });
+      emit({ op: "label", name: clamped });
+      emit({ op: "sub", dst: r10, src: r9 });
+      emit({ op: "mov", dst: rdx, src: mem(6, nativeStringLengthOffset) });
+      emit({ op: "cmp", dst: rdx, src: r10 });
+      branch(emit, "a", absent);
+      emit({
+        op: "lea",
+        dst: a,
+        src: {
+          kind: "mem",
+          width: 64,
+          address: { kind: "base", base: 7, index: 9, scale: 2, disp: 0 },
+        },
+      });
+      compareUnits(symbol, true);
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: absent });
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "label", name: done });
+      define(op.id, "boolean");
     }
 
     function instruction(op: Instruction, block: Block, index: number): void {
@@ -525,25 +867,146 @@ export function emitModule(
           return;
         }
         case "array-new":
-          if (host === undefined || op.type !== "Uint8Array") break;
-          allocateBytes(op.id, op.length, block);
+          if (host === undefined) break;
+          ownedArray(op, block);
+          return;
+        case "array-subarray":
+          if (host === undefined) break;
+          arrayView(op, block);
           return;
         case "array-length":
         case "array-byte-length":
-          if (host === undefined || typeOf(op.array) !== "Uint8Array") break;
+          if (host === undefined) break;
           emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
           emit({ op: "mov", dst: rax, src: mem(11, nativeArrayLengthOffset) });
+          if (op.kind === "array-byte-length") {
+            const width = arrayWidth(typeOf(op.array));
+            if (width > 1)
+              emit({
+                op: "shl",
+                dst: rax,
+                count: width === 2 ? 1 : width === 4 ? 2 : 3,
+              });
+          }
           numberBits();
           define(op.id, "number");
+          return;
+        case "array-buffer":
+        case "array-byte-offset":
+          if (host === undefined) break;
+          arrayOwner(op.array, fnLabel + ":array-owner:" + String(op.id));
+          if (op.kind === "array-buffer") define(op.id, "reference");
+          else {
+            emit({ op: "mov", dst: r10, src: mem(0, nativeArrayDataOffset) });
+            emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+            emit({ op: "mov", dst: rax, src: mem(11, nativeArrayDataOffset) });
+            emit({ op: "sub", dst: rax, src: r10 });
+            numberBits();
+            define(op.id, "number");
+          }
           return;
         case "array-valid":
         case "array-read":
         case "array-element":
         case "array-write":
         case "array-store":
-          if (host === undefined || typeOf(op.array) !== "Uint8Array") break;
-          byteElement(op);
+          if (host === undefined) break;
+          arrayElement(op);
           return;
+        case "array-copy":
+          if (host === undefined) break;
+          arrayCopy(op, host.symbolPrefix + "memmove");
+          return;
+        case "string-none":
+          emit({ op: "xor", dst: eax, src: eax });
+          define(op.id, "optional-string");
+          return;
+        case "string-wrap":
+        case "string-value":
+        case "string-present":
+          emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
+          if (op.kind === "string-present") {
+            emit({ op: "test", dst: rax, src: rax });
+            setBoolean(emit, "ne", 0);
+          }
+          define(
+            op.id,
+            op.kind === "string-present"
+              ? "boolean"
+              : op.kind === "string-wrap"
+                ? "optional-string"
+                : "string",
+          );
+          return;
+        case "string-starts-with":
+          if (host === undefined) break;
+          stringPrefix(op, host.symbolPrefix + "memcmp");
+          return;
+        case "string-literal":
+          if (host === undefined) break;
+          emit({ op: "lea", dst: rax, src: literal(op.value) });
+          define(op.id, "string");
+          return;
+        case "string-length":
+          if (host === undefined) break;
+          emit({ op: "mov", dst: scratch, src: frame(home(op.string)) });
+          emit({ op: "mov", dst: rax, src: mem(11, nativeStringLengthOffset) });
+          numberBits();
+          define(op.id, "number");
+          return;
+        case "string-code-unit": {
+          if (host === undefined) break;
+          const site = fnLabel + ":code-unit:" + String(op.id);
+          const ordered = site + ":ordered";
+          const ready = site + ":ready";
+          const invalid = site + ":invalid";
+          const done = site + ":done";
+          emit({ op: "movsd", dst: x0, src: frame(home(op.index)) });
+          if (op.inBounds !== true) {
+            // ToIntegerOrInfinity converts NaN to zero and truncates toward zero.
+            emit({ op: "ucomisd", dst: x0, src: x0 });
+            branch(emit, "np", ordered);
+            emit({ op: "xor", dst: word(9), src: word(9) });
+            emit({ op: "jmp", target: label(ready) });
+            emit({ op: "label", name: ordered });
+          }
+          emit({ op: "cvttsd2si", dst: r9, src: x0 });
+          emit({ op: "label", name: ready });
+          emit({ op: "mov", dst: scratch, src: frame(home(op.string)) });
+          if (op.inBounds !== true) {
+            // The indefinite integer for overflow and Infinity is unsigned out of range.
+            emit({
+              op: "cmp",
+              dst: r9,
+              src: mem(11, nativeStringLengthOffset),
+            });
+            branch(emit, "ae", invalid);
+          }
+          emit({
+            op: "movzx",
+            dst: eax,
+            src: {
+              kind: "mem",
+              width: 16,
+              address: {
+                kind: "base",
+                base: 11,
+                index: 9,
+                scale: 2,
+                disp: nativeStringDataOffset,
+              },
+            },
+          });
+          numberBits();
+          if (op.inBounds !== true) {
+            emit({ op: "jmp", target: label(done) });
+            emit({ op: "label", name: invalid });
+            emit({ op: "mov", dst: rax, src: bits(0, 0x7ff80000) });
+            emit({ op: "label", name: done });
+          }
+          define(op.id, "number");
+          return;
+        }
         case "undefined":
           emit({ op: "mov", dst: rax, src: absent });
           define(op.id, "optional-number");
@@ -622,18 +1085,41 @@ export function emitModule(
           return;
         case "general-wrap": {
           const type = typeOf(op.value);
-          if (type !== "number" && type !== "boolean") break;
+          if (
+            type !== "number" &&
+            type !== "boolean" &&
+            type !== "string" &&
+            type !== "Uint8Array"
+          )
+            break;
           copy(emit, frame(home(op.value)), frame(home(op.id) + 8));
-          emit({ op: "mov", dst: eax, src: imm(type === "number" ? 1 : 2) });
+          emit({
+            op: "mov",
+            dst: eax,
+            src: imm(
+              type === "number"
+                ? 1
+                : type === "boolean"
+                  ? 2
+                  : type === "string"
+                    ? 3
+                    : 5,
+            ),
+          });
           define(op.id, "general");
           return;
         }
         case "general-value":
-          if (op.type !== "number" && op.type !== "boolean") break;
+          if (
+            op.type !== "number" &&
+            op.type !== "boolean" &&
+            op.type !== "string"
+          )
+            break;
           emit({
             op: "cmp",
             dst: frame(home(op.value)),
-            src: imm(op.type === "number" ? 1 : 2),
+            src: imm(op.type === "number" ? 1 : op.type === "boolean" ? 2 : 3),
           });
           emit({ op: "jcc", cc: "ne", target: label(trapLabel) });
           emit({ op: "mov", dst: rax, src: frame(home(op.value) + 8) });
@@ -674,7 +1160,25 @@ export function emitModule(
             right = frame(home(op.right));
           const equal = op.operator === "===" || op.operator === "==";
           const unequal = op.operator === "!==" || op.operator === "!=";
-          if (type === "boolean" && (equal || unequal)) {
+          if (
+            host !== undefined &&
+            (type === "string" || type === "optional-string") &&
+            (equal || unequal)
+          ) {
+            stringEqual(
+              left,
+              right,
+              equal,
+              fnLabel + ":string-equal:" + String(op.id),
+              host.symbolPrefix + "memcmp",
+            );
+          } else if (
+            (type === "boolean" ||
+              type === "Uint8Array" ||
+              type === "reference" ||
+              type === "optional-reference") &&
+            (equal || unequal)
+          ) {
             emit({ op: "mov", dst: rax, src: left });
             emit({ op: "cmp", dst: rax, src: right });
             setBoolean(emit, equal ? "e" : "ne", 0);
@@ -708,6 +1212,13 @@ export function emitModule(
           else publish(normal, home(id), scalarByteLength(typeOf(id)));
           return;
         }
+        case "throw-literal":
+          if (host === undefined) break;
+          emit({ op: "lea", dst: rax, src: literal(op.value) });
+          emit({ op: "mov", dst: frame(callResult), src: imm(3) });
+          emit({ op: "mov", dst: frame(callResult + 8), src: rax });
+          raise(block, callResult);
+          return;
         case "throw":
           raise(block, home(op.value));
           return;
@@ -858,7 +1369,10 @@ export function emitModule(
     numbers.helpers();
     emit({ op: "label", name: trapLabel });
     emit({ op: "ud2" });
-    const encoded = encodeLayout(machine, (name) => external.has(name));
+    const encoded = encodeLayout(
+      machine,
+      (name) => external.has(name) || strings.has(name),
+    );
     const functions: X64Function[] = [];
     for (const fn of module.functions) {
       if (fn === undefined) throw "function invariant";
@@ -866,7 +1380,51 @@ export function emitModule(
       if (offset === undefined) throw "function label invariant";
       functions.push({ id: fn.id, name: fn.name, offset });
     }
+    const stringBase = Math.ceil(encoded.bytes.length / 8) * 8;
     let code = encoded.bytes;
+    if (stringBytes !== 0) {
+      code = new Uint8Array(stringBase + stringBytes);
+      code.set(encoded.bytes);
+      for (const [, item] of strings) {
+        if (item === undefined) throw "x86-64 literal invariant";
+        const start = stringBase + item.offset;
+        code[start] = 1;
+        if (
+          !writeUnsigned(
+            code,
+            start + nativeStringLengthOffset,
+            4,
+            item.value.length,
+            "little",
+          ).ok
+        )
+          throw "x86-64 literal length invariant";
+        for (let i = 0; i < item.value.length; i++)
+          if (
+            !writeUnsigned(
+              code,
+              start + nativeStringDataOffset + i * 2,
+              2,
+              item.value.charCodeAt(i),
+              "little",
+            ).ok
+          )
+            throw "x86-64 literal unit invariant";
+      }
+    }
+    const imageFixups: NearFixup[] = [];
+    for (const fixup of encoded.externalFixups) {
+      if (fixup === undefined) throw "x86-64 fixup invariant";
+      const item = strings.get(fixup.ref.label);
+      if (item === undefined) imageFixups.push(fixup);
+      else
+        writeRel32(
+          code,
+          fixup.fieldOffset,
+          fixup.nextOffset,
+          stringBase + item.offset,
+        );
+    }
     const stackMaps: X64Module["stackMaps"][number][] = [];
     if (host !== undefined) {
       const tableOffset = Math.ceil(code.length / 8) * 8;
@@ -899,7 +1457,11 @@ export function emitModule(
         )
           throw "x86-64 stack map word invariant";
       }
-      stackMaps.push({ codeOffset: 0, codeLength: code.length, tableOffset });
+      stackMaps.push({
+        codeOffset: 0,
+        codeLength: encoded.bytes.length,
+        tableOffset,
+      });
       code = moduleCode;
     }
     const data = new Uint8Array(constants.length * 8);
@@ -908,7 +1470,7 @@ export function emitModule(
       if (bits === undefined || !writeWord64(data, i * 8, bits, "little").ok)
         throw "binary64 data invariant";
     }
-    const relocations = imageRelocations(encoded.externalFixups, external);
+    const relocations = imageRelocations(imageFixups, external);
     return {
       ok: true,
       value: {
