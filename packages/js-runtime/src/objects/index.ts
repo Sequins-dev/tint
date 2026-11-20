@@ -500,3 +500,8 @@ export {
   type ObjectShapeContract,
   type PropertyValueRule,
 } from "./property-contracts.ts";
+export {
+  deserializeWorkerValue,
+  serializeWorkerValue,
+  type WorkerCloneAttachments,
+} from "./structured-clone.ts";
