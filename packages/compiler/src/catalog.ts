@@ -2907,6 +2907,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/worker-lifecycle.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/platform/src/c/darwin-reactor.d.ts",
       packageId: "platform",
     },
@@ -3980,6 +3984,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/native-runtime/values",
       target: "packages/native-runtime/src/values/index.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/native-runtime/workers",
+      target: "packages/native-runtime/src/worker-lifecycle.ts",
     },
     {
       packageId: "compiler",
@@ -5875,6 +5884,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "platform",
       specifier: "@tint/native-runtime/values",
       target: "packages/native-runtime/src/values/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/native-runtime/workers",
+      target: "packages/native-runtime/src/worker-lifecycle.ts",
     },
     {
       packageId: "ts-native",

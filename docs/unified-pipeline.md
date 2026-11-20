@@ -672,6 +672,9 @@ argument identifies a raw record. After managed teardown, the startup thunk
 publishes the status and wakes the owner's nonblocking pipe. The
 [worker exit fixture](../tools/build-worker-exit-fixture.ts) launches a detached
 isolate from the same image and observes completion without joining it.
+The [native lifecycle](../packages/native-runtime/src/worker-lifecycle.ts)
+uses that record for exit and error delivery, and holds the owner alive
+through its referenced pipe watcher.
 
 ### What happens to each front end
 
