@@ -21,6 +21,24 @@ import { tmpdir } from "node:os";
 import { writeNodeBytes } from "./node-file-host.ts";
 import type { ExecutionOutcome } from "./test262-execution.ts";
 import { nativeExitOutcome, nativeTestResources } from "./test262-native.ts";
+import type { NativeResult } from "./native-target-runner.ts";
+
+export function nativeTransportOutcome(result: NativeResult): ExecutionOutcome {
+  switch (result.kind) {
+    case "exited":
+      return nativeExitOutcome(result.status);
+    case "timed-out":
+      return { kind: "timeout", detail: "native timeout after launch" };
+    case "signaled":
+      return {
+        kind: "crash",
+        detail: "native process terminated by " + result.signal,
+      };
+    case "execution-unavailable":
+    case "runner-error":
+      return { kind: "crash", detail: "launch: " + result.reason };
+  }
+}
 
 /** Match the debugger to the Darwin debugserver shipped by the host toolchain. */
 export const nativeDebuggerExecutable =

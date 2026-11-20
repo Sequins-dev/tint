@@ -1,7 +1,7 @@
 # Linux x86-64 target design
 
-The first x86-64 target is `linux-x86_64`, a proposed name for the 64-bit
-System V ABI, ELF PIE and glibc combination. Tint emits and links the native
+The first x86-64 target is `linux-x86_64`. It uses the 64-bit System V ABI,
+ELF PIE and glibc. Tint emits and links the native
 image directly. The same scalar IR, runtime contracts and x86-64 backend serve
 strict and live code, including runtime compilation. Build host, output target
 and execution runner are independent. This plan follows the
@@ -278,6 +278,8 @@ its build manifest without executing the fixture.
 
 Linux x86-64 requires an explicit runner.
 
+- `x64-local` launches the image on a Linux x86-64 host and records each
+  inferior's exit, signal, or timeout.
 - `x64-qemu-dev` runs QEMU user mode on the arm64 Linux `dev` machine.
   From this checkout on macOS, install the pinned Debian glibc 2.36 sysroot
   and QEMU with
@@ -295,9 +297,9 @@ Linux x86-64 requires an explicit runner.
   already trust the VM host key. Set `TINT_X64_SSH_HOST`,
   `TINT_X64_SSH_PORT`, or `TINT_X64_SSH_KEY` to override these settings.
 
-Run the two raw ELF and glibc acceptance probes on either executor with
+Run the raw ELF and glibc acceptance probes with
 `TINT_X64_RUNNER_TEST=x64-qemu-dev node --test tools/native-target-runner.test.ts`
-or the same command with `x64-ssh`. The batch includes a trap, a timeout
+or select `x64-ssh` or `x64-local`. The batch includes a trap, a timeout
 and a subsequent successful run to check result recovery.
 
 Keep hosted fixture execution records with `TINT_KEEP_NATIVE=1`.
@@ -308,6 +310,33 @@ the executor. Stage the source snapshot separately when using SSH and
 retrieve any compiled output from the guest path supplied to the compiler.
 The execution records identify the executor, input image and build
 manifest, and record exit status, signal, timeout or execution-unavailable.
+
+### Conformance and release status
+
+The initial matched Test262 selection passed all 22 variants on Darwin
+arm64, Linux x86-64 under user-mode QEMU, and the Debian x86-64 VM. It
+covers calls, abrupt completion, numeric behavior, arrays, parser rejection,
+direct eval, `$262.evalScript`, the `Function` constructor, and shared
+atomics and agent waiting. The complete journals record the pinned
+revision, exact source and harness hashes, and frozen Node toolchain.
+[Conformance report](results/x64-test262-v1.json).
+
+Run the selection with `tools/test262-native-run.ts` using
+`TINT_NATIVE_TARGET=linux-x86_64`, one of the x86-64 runners above, and
+`TINT_TEST262_VARIANTS=docs/results/x64-test262-selection-v1.json`. Use
+root selection `.` and program linking. For a matched Darwin run, set
+`TINT_TEST262_NATIVE_SERVICES=monolithic` on both targets. The x86-64
+adapter builds with the generational collector and stages one ELF per
+batch. It records each case separately.
+
+The glibc 2.34 loader check on the x86-64 guest exercised executable
+publication, a moving collector with live code, and selected Test262 cases
+for shared atomics, agent waiting, `Function` and direct eval.
+[Loader results](results/x64-glibc-2.34-v1.json).
+
+The supported status still requires the baseline and current physical
+x86-64 hardware runs, including concurrency, collection, live publishing
+and the compiler and JavaScript timing comparisons.
 
 ## Performance stance
 

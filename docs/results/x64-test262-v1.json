@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "test262Revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "sourceSnapshot": {
+    "sha256": "50abd1e0f259ea04b80b23cfc68a97976b2be5bd5db1d8ec01cc9c0b5de10cc2",
+    "files": 795
+  },
+  "frozenToolchainSha256": "f652aca074e89f566266f4bb12d79e9b19348f480b2c37a0c49bc646e9da80f1",
+  "variantSubsetSha256": "a29c4824e1b69e20fe56fdbbbb1402e6341d052c40efda8d10cb100ac198036e",
+  "harnessAndVariantsSha256": "07fafa5018e94a92628b8eebb37b89c5972ecad35971957db4c798551238eea5",
+  "nodeVersion": "v24.12.0",
+  "timeZone": "UTC",
+  "linking": "program",
+  "nativeServices": "monolithic",
+  "selection": "x64-test262-selection-v1.json",
+  "selectionFileSha256": "568be75f0462397ccbc5503b10f59a62bf143f6245256f53784f26f9c1f8f31c",
+  "variants": 22,
+  "results": [
+    {
+      "target": "darwin-arm64",
+      "collector": "copying",
+      "startedAt": "2026-11-20T07:31:57.887Z",
+      "completedAt": "2026-11-20T07:38:05.033Z",
+      "journal": "x64-test262-v1-darwin-arm64.jsonl.gz",
+      "journalSha256": "79099445cc42c2da7644492381230db1c9715f6ed653f4ae640521af12252e7c",
+      "stderr": "x64-test262-v1-darwin-arm64.stderr.log.gz",
+      "stderrSha256": "6c1470c7a81d49bd33c14acf66a4c980168ef21540ce9e7ced9fe2f332b02a77",
+      "totals": {
+        "total": 22,
+        "passed": 22,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "compiledImages": []
+    },
+    {
+      "target": "linux-x86_64-user-qemu",
+      "collector": "generational",
+      "startedAt": "2026-11-20T07:32:15.274Z",
+      "completedAt": "2026-11-20T07:41:49.119Z",
+      "journal": "x64-test262-v1-linux-x86_64-user-qemu.jsonl.gz",
+      "journalSha256": "6cfe0d29d06e92d1a9cfb9ead9ec11b7e95bd37845babe38d8910291d2c5884d",
+      "stderr": "x64-test262-v1-linux-x86_64-user-qemu.stderr.log.gz",
+      "stderrSha256": "a423fe8eeb3cc9b55d9d5da69b51ae2d7126098a19622ed1eccd67e5a7ed6381",
+      "totals": {
+        "total": 22,
+        "passed": 22,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "compiledImages": [
+        {
+          "imageSha256": "8211d404c11b18da51de67712baed3870302057e080ed804adf6ca1e1f2cd17c",
+          "executor": {
+            "runner": "x64-qemu-dev",
+            "identity": "dev Linux 6.1.176 aarch64 | qemu-x86_64 version 7.2.22 (Debian 1:7.2+dfsg-7+deb12u18+b3)",
+            "sysrootSha256": "5f1a0b72daa20e4c22d0ae92bb62da23c308e7caa33dc5525073a69d59688e92"
+          }
+        },
+        {
+          "imageSha256": "ba3434222cb79662f1a497d456e378e440fc914f204cc7597ad09cc0dda628b9",
+          "executor": {
+            "runner": "x64-qemu-dev",
+            "identity": "dev Linux 6.1.176 aarch64 | qemu-x86_64 version 7.2.22 (Debian 1:7.2+dfsg-7+deb12u18+b3)",
+            "sysrootSha256": "5f1a0b72daa20e4c22d0ae92bb62da23c308e7caa33dc5525073a69d59688e92"
+          }
+        }
+      ]
+    },
+    {
+      "target": "linux-x86_64-debian-vm",
+      "collector": "generational",
+      "startedAt": "2026-11-20T07:32:15.274Z",
+      "completedAt": "2026-11-20T07:43:55.078Z",
+      "journal": "x64-test262-v1-linux-x86_64-debian-vm.jsonl.gz",
+      "journalSha256": "4bff9db03842106c150794422a5edab2f022b09385e62bfa7a33b56cc75d4b94",
+      "stderr": "x64-test262-v1-linux-x86_64-debian-vm.stderr.log.gz",
+      "stderrSha256": "dc280914262c8d1ac0f2f047ccf32da14f1a33604c9c09027e5ec7f9826d134a",
+      "totals": {
+        "total": 22,
+        "passed": 22,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "compiledImages": [
+        {
+          "imageSha256": "8211d404c11b18da51de67712baed3870302057e080ed804adf6ca1e1f2cd17c",
+          "executor": {
+            "runner": "x64-ssh",
+            "identity": "tint@127.0.0.1:2223 Linux 6.12.117+deb13-cloud-amd64 x86_64"
+          }
+        },
+        {
+          "imageSha256": "ba3434222cb79662f1a497d456e378e440fc914f204cc7597ad09cc0dda628b9",
+          "executor": {
+            "runner": "x64-ssh",
+            "identity": "tint@127.0.0.1:2223 Linux 6.12.117+deb13-cloud-amd64 x86_64"
+          }
+        }
+      ]
+    }
+  ]
+}

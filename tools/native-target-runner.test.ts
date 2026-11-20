@@ -95,7 +95,24 @@ test("unreachable SSH transport reports execution unavailable", (t) => {
   assert.match(JSON.stringify(result), /x64-ssh/);
 });
 
-for (const runner of ["x64-qemu-dev", "x64-ssh"] satisfies NativeRunnerName[]) {
+test("the local x86-64 runner rejects hosts with another execution ABI", (t) => {
+  if (process.platform === "linux" && process.arch === "x64") {
+    t.skip("this host implements the runner's ABI");
+    return;
+  }
+  const { exit42 } = probes(t);
+  const [result] = runNativeBatch([{ artifact: exit42 }], {
+    TINT_NATIVE_RUNNER: "x64-local",
+  });
+  assert.equal(result?.kind, "execution-unavailable");
+  assert.match(JSON.stringify(result), /x64-local requires Linux x86-64/);
+});
+
+for (const runner of [
+  "x64-local",
+  "x64-qemu-dev",
+  "x64-ssh",
+] satisfies NativeRunnerName[]) {
   test(
     `${runner} executes a batch of x86-64 probes`,
     {
@@ -105,7 +122,9 @@ for (const runner of ["x64-qemu-dev", "x64-ssh"] satisfies NativeRunnerName[]) {
       const { exit42, trap, exit132, spin, printArgument } = probes(t);
       const glibc = nativeArtifact(
         "linux-x86_64",
-        join(homedir(), ".t3/tint-x64-sysroot/usr/bin/true"),
+        runner === "x64-local"
+          ? "/usr/bin/true"
+          : join(homedir(), ".t3/tint-x64-sysroot/usr/bin/true"),
       );
       const results = runNativeBatch(
         [exit42, trap, exit132, spin, glibc, exit42, printArgument].map(
