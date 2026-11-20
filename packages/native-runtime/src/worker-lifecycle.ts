@@ -4,6 +4,8 @@ import {
   nativeWorkerStopObserved,
   nativeWorkerStopRequested,
   nativeWorkerStopStateOffset,
+  nativeWorkerStackBytesOffset,
+  nativeWorkerHeapBytesOffset,
 } from "@tint/abi/host";
 import type {
   SharedBlockWaiting,
@@ -23,6 +25,7 @@ import {
   readNumber,
   writeNumber,
   type NativeSharedMemoryHost,
+  type NativeSharedBlockRegistry,
 } from "./shared-memory-host.ts";
 import {
   attachNativeWaitRegistry,
@@ -74,11 +77,18 @@ export interface NativeWorkerTurnControl {
   readonly input: number;
   stopRequested(): boolean;
   readonly waiters: NativeWaitRegistry | undefined;
+  readonly engine: NativeWorkerEngineGrant | undefined;
+  readonly stackBytes: number;
+  readonly heapBytes: number;
   /** Stop is represented by undefined. The caller still consumes its ticket. */
   parkWait(ticket: number, timeout: number): SharedResult<number> | undefined;
   interruptibleWaiting(waiting: SharedBlockWaiting): SharedBlockWaiting;
   /** Claim the parent channel only after the receiver can adopt it. */
   claimParentPort(ports: NativeMessagePorts): NativeMessagePort | undefined;
+}
+export interface NativeWorkerEngineGrant {
+  readonly sequence: number;
+  readonly shared: NativeSharedBlockRegistry;
 }
 
 export interface NativeWorkerRequest {
@@ -87,6 +97,9 @@ export interface NativeWorkerRequest {
   /** The owner keeps the wait registry alive until exit. */
   readonly waiters?: NativeWaitRegistry;
   readonly parentPort?: NativeMessagePortGrant;
+  readonly stackBytes?: number;
+  readonly heapBytes?: number;
+  readonly engine?: NativeWorkerEngineGrant;
   onUnclaimedParentPort?(grant: NativeMessagePortGrant): void;
   onError(message: string): void;
   onExit(status: number): void;
@@ -107,6 +120,10 @@ const WAIT_TICKET = 104;
 const PARENT_PORT = 112;
 const PORT_SIDE = 120;
 const PORT_GENERATION = 128;
+const ENGINE_SEQUENCE = 152;
+const BLOCKS = 160;
+const BLOCK_BYTES = 168;
+const BLOCK_ENGINE = 176;
 
 /** Launch from the current image. The owner watches a nonblocking exit pipe.
  * Worker code uses its own hosted context and shares only scalar startup data. */
@@ -120,6 +137,15 @@ export function startNativeWorker(
   const { threadId, moduleId } = request;
   if (!integer(threadId) || threadId === 0 || !integer(moduleId))
     throw new RangeError("invalid worker identity");
+  const stackBytes = request.stackBytes ?? 0;
+  const heapBytes = request.heapBytes ?? 0;
+  if (
+    !integer(stackBytes) ||
+    stackBytes % 16 !== 0 ||
+    !integer(heapBytes) ||
+    heapBytes % 16 !== 0
+  )
+    throw new RangeError("invalid worker memory limit");
   if (
     request.parentPort !== undefined &&
     request.onUnclaimedParentPort === undefined
@@ -238,6 +264,15 @@ export function startNativeWorker(
     writeNumber(memory, record, MODULE_ID, moduleId);
     writeNumber(memory, record, ERROR_QUEUE, errors.registry.base);
     writeNumber(memory, record, CONTROL_INPUT, signals.input);
+    writeNumber(memory, record, nativeWorkerStackBytesOffset, stackBytes);
+    writeNumber(memory, record, nativeWorkerHeapBytesOffset, heapBytes);
+    const engine = request.engine;
+    if (engine !== undefined) {
+      writeNumber(memory, record, ENGINE_SEQUENCE, engine.sequence);
+      writeNumber(memory, record, BLOCKS, engine.shared.base);
+      writeNumber(memory, record, BLOCK_BYTES, engine.shared.byteLength);
+      writeNumber(memory, record, BLOCK_ENGINE, engine.shared.engineId);
+    }
     const port = request.parentPort;
     if (port !== undefined) {
       writeNumber(memory, record, PARENT_PORT, port.base);
@@ -378,10 +413,30 @@ export function runNativeWorker(
       now: (): number => waiting.now(),
     };
   }
+  const sequence = readNumber(memory, record, ENGINE_SEQUENCE, scratch);
+  const engine: NativeWorkerEngineGrant | undefined =
+    sequence === 0
+      ? undefined
+      : {
+          sequence,
+          shared: {
+            base: readNumber(memory, record, BLOCKS, scratch),
+            byteLength: readNumber(memory, record, BLOCK_BYTES, scratch),
+            engineId: readNumber(memory, record, BLOCK_ENGINE, scratch),
+          },
+        };
   const control: NativeWorkerTurnControl = {
     input: readNumber(memory, record, CONTROL_INPUT, scratch),
     stopRequested,
     waiters,
+    engine,
+    stackBytes: readNumber(
+      memory,
+      record,
+      nativeWorkerStackBytesOffset,
+      scratch,
+    ),
+    heapBytes: readNumber(memory, record, nativeWorkerHeapBytesOffset, scratch),
     parkWait,
     interruptibleWaiting,
     claimParentPort: (ports): NativeMessagePort | undefined => {

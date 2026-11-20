@@ -230,7 +230,7 @@ export interface NativeServiceImport {
   readonly surface?: string;
 }
 export interface CompileRequest extends ModuleRequest {
-  readonly workerModules?: readonly string[];
+  readonly workerModules?: readonly string[] | undefined;
   readonly storage?: BuildStorage;
   readonly serviceImports?: readonly NativeServiceImport[];
   readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
@@ -347,6 +347,8 @@ export type GeneralProgram =
       readonly value: {
         /** Generated typed modules (lowered application and its host). */
         readonly modules: readonly SourceModule[];
+        /** Generated guest modules that may execute on a product worker. */
+        readonly workerModules?: readonly string[];
         /** The generated host module; it exports `start(): number`. */
         readonly entry: string;
         /** Record bindings of generated runtime modules (record view
@@ -365,6 +367,8 @@ export interface GeneralLowering {
   /** Representation views and runtime exports the generated code needs. */
   readonly recordBindings: readonly NativeRecordBinding[];
   readonly runtimes: readonly RuntimeSource[];
+  /** Image-provided modules materialized by the generated host. */
+  readonly syntheticModules?: readonly string[];
   readonly lower: (request: GeneralProgramRequest) => GeneralProgram;
 }
 export interface SourceLineRange {
@@ -758,8 +762,13 @@ function compileGeneralProgram<T>(
   // application general.
   const seed = new Set<string>();
   const applicationIds = new Set<string>();
-  for (const module of application.value)
-    if (module !== undefined) applicationIds.add(module.id);
+  for (const module of application.value) {
+    if (module === undefined) continue;
+    applicationIds.add(module.id);
+    for (const [, dependency] of module.dependencies)
+      if (lowering.syntheticModules?.includes(dependency) === true)
+        seed.add(module.id);
+  }
   // The general runtime's representation views and retained exports join
   // the request's, without duplicates.
   const recordBindings: NativeRecordBinding[] = [],
@@ -872,6 +881,7 @@ function compileGeneralProgram<T>(
         moduleLoader: undefined,
         entry: lowered.value.entry,
         exports: [start],
+        workerModules: lowered.value.workerModules ?? request.workerModules,
       },
       realmTypeofModules,
     );
@@ -932,11 +942,15 @@ function generalApplicationModules(
     imported: SourceModule[] = [],
     seen = new Set<string>();
   const queue = [request.entry];
+  if (request.generalLowering?.syntheticModules !== undefined)
+    for (const id of request.workerModules ?? []) queue.push(id);
   for (let index = 0; index < queue.length; index++) {
     const id = queue[index];
     if (id === undefined) throw "general queue invariant";
     if (seen.has(id)) continue;
     seen.add(id);
+    if (request.generalLowering?.syntheticModules?.includes(id) === true)
+      continue;
     const module = byId.get(id);
     if (module === undefined)
       return { ok: false, error: "missing module " + id };

@@ -68,6 +68,7 @@ function packageShape(specifier: string): "bare" | "deep" | "invalid" {
   // (docs/native-ffi.md).
   if (
     specifier === "node:fs" ||
+    specifier === "node:worker_threads" ||
     specifier === "tint:ffi" ||
     specifier === "tint:ffi/unsafe"
   )

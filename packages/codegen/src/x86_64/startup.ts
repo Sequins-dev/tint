@@ -16,6 +16,8 @@ import {
   nativeThreadExitReadOffset,
   nativeWorkerStopPointerOffset,
   nativeWorkerStopStateOffset,
+  nativeWorkerStackBytesOffset,
+  nativeWorkerHeapBytesOffset,
   nativeThreadExitWriteOffset,
   type PosixHostFacts,
 } from "@tint/abi/host";
@@ -293,6 +295,28 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   const contextFrameBytes = saveOffset + (far ? 16 : 0);
   const threadArgumentOffset = contextBytes + 16;
   const threadModeOffset = threadArgumentOffset + 8;
+  function workerBytes(
+    offset: number,
+    maximum: number,
+    minimum: number,
+    site: string,
+  ): void {
+    constantAddress(rax, maximum);
+    const ready = "worker-limit-ready-" + site;
+    const actual = gpr(10);
+    emit({ op: "mov", dst: actual, src: mem(12, threadArgumentOffset) });
+    emit({ op: "test", dst: actual, src: imm(1) });
+    emit({ op: "jcc", cc: "e", target: label(ready) });
+    emit({ op: "mov", dst: actual, src: mem(10, offset - 1) });
+    emit({ op: "test", dst: actual, src: actual });
+    emit({ op: "jcc", cc: "e", target: label(ready) });
+    emit({ op: "cmp", dst: actual, src: rax });
+    emit({ op: "jcc", cc: "a", target: label("guard-failed") });
+    emit({ op: "cmp", dst: actual, src: imm(minimum) });
+    emit({ op: "jcc", cc: "b", target: label("guard-failed") });
+    emit({ op: "mov", dst: rax, src: actual });
+    emit({ op: "label", name: ready });
+  }
   if (threaded) {
     const hostedRun = "hosted-run";
     emit({ op: "xor", dst: edx, src: edx });
@@ -364,7 +388,17 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     emit({ op: "test", dst: eax, src: eax });
     emit({ op: "jcc", cc: "ne", target: label("guard-failed") });
   }
-  emit({ op: "lea", dst: rax, src: mem(13, pageBytes) });
+  if (request.workerSafepoints === true) {
+    workerBytes(
+      nativeWorkerStackBytesOffset,
+      stackBytes,
+      131072,
+      "stack-limit",
+    );
+    mappedAddress(gpr(11), stackEnd);
+    emit({ op: "sub", dst: gpr(11), src: rax });
+    emit({ op: "mov", dst: rax, src: gpr(11) });
+  } else emit({ op: "lea", dst: rax, src: mem(13, pageBytes) });
   emit({ op: "mov", dst: mem(12, nativeStackLimitOffset), src: rax });
   if (threaded || live) {
     // The inaccessible identity page outlives this heap and prevents address
@@ -471,7 +505,29 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     for (let index = 0; index < extents.length; index++) {
       const value = extents[index];
       if (value === undefined) throw "runtime window invariant";
-      if (index === 4) emit({ op: "lea", dst: rax, src: rip("image") });
+      if (request.workerSafepoints === true && index === 1)
+        workerBytes(
+          nativeWorkerHeapBytesOffset,
+          managedBytes,
+          pageBytes * 4,
+          "heap-window",
+        );
+      else if (
+        request.workerSafepoints === true &&
+        (index === 6 || index === 7)
+      ) {
+        workerBytes(
+          nativeWorkerStackBytesOffset,
+          stackBytes,
+          131072,
+          index === 6 ? "stack-base" : "stack-size",
+        );
+        if (index === 6) {
+          mappedAddress(gpr(11), stackEnd);
+          emit({ op: "sub", dst: gpr(11), src: rax });
+          emit({ op: "mov", dst: rax, src: gpr(11) });
+        }
+      } else if (index === 4) emit({ op: "lea", dst: rax, src: rip("image") });
       else if (index % 2 === 0) mappedAddress(rax, value);
       else constantAddress(rax, value);
       if (index === 0)

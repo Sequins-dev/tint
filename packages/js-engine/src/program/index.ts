@@ -43,7 +43,26 @@ export interface GeneralLoweringOptions {
     readonly clock: string;
     readonly reactor: string;
   };
+  readonly nodeWorkers?: GeneralNodeWorkers;
 }
+export interface GeneralNodeWorkers {
+  readonly host: string;
+  readonly threadHost: string;
+  readonly lifecycle: string;
+  readonly shared: string;
+  readonly stackBytes: number;
+  readonly managedBytes: number;
+}
+const workerExports: readonly string[] = [
+  "Worker",
+  "MessageChannel",
+  "MessagePort",
+  "isMainThread",
+  "parentPort",
+  "workerData",
+  "threadId",
+  "resourceLimits",
+];
 
 /** The general lowering used when the typed pipeline rejects a program: each
  * application module has its TypeScript syntax erased and lowers to runtime
@@ -69,6 +88,17 @@ export function createGeneralLowering(
       eventLoop.clock,
       eventLoop.reactor,
     );
+  const workers = options.nodeWorkers;
+  if (workers !== undefined) {
+    if (eventLoop === undefined)
+      throw "node:worker_threads requires a Node event loop";
+    runtimeModules.push(
+      workers.host,
+      workers.threadHost,
+      workers.lifecycle,
+      workers.shared,
+    );
+  }
   const objectViews = [
       "viewObjectValue",
       "viewSymbolValue",
@@ -84,6 +114,9 @@ export function createGeneralLowering(
   return {
     runtimeModules,
     recordBindings,
+    ...(workers === undefined
+      ? {}
+      : { syntheticModules: ["node:worker_threads"] }),
     runtimes: [
       {
         module: runtime.modules,
@@ -112,6 +145,7 @@ function lowerGeneralProgram(
   options: GeneralLoweringOptions,
 ): GeneralProgram {
   const runtime = options.runtime;
+  const workers = options.nodeWorkers;
   const available = new Map<string, SourceModule>();
   for (const module of request.available) {
     if (module === undefined) throw "general module invariant";
@@ -215,6 +249,8 @@ function lowerGeneralProgram(
         );
         if (boundary >= 0) targetIndex = request.modules.length + boundary;
       }
+      if (workers !== undefined && target === "node:worker_threads")
+        targetIndex = request.modules.length + request.boundaries.length;
       if (targetIndex >= 0)
         edges +=
           " edges.set(" +
@@ -306,17 +342,43 @@ function lowerGeneralProgram(
     return { ok: false, error: "entry module is not lowered" };
   const output = options.output;
   const eventLoop = options.nodeEventLoop;
+  const moduleCount = names.length + request.boundaries.length;
+  if (workers !== undefined) {
+    const exports = workerExports
+      .map(
+        (name): string =>
+          "setSyntheticModuleExport(module," +
+          JSON.stringify(name) +
+          ",workers." +
+          name +
+          ");",
+      )
+      .join("");
+    creates +=
+      "  case " +
+      moduleCount +
+      ": return createSyntheticModule(realm," +
+      JSON.stringify(workerExports) +
+      ",(module:ModuleRecord):void=>{" +
+      exports +
+      "},undefined);\n";
+  }
+  const installers = generalIntrinsics(erasedModules).slice();
+  if (workers !== undefined && !installers.includes("installPromiseIntrinsics"))
+    installers.push("installPromiseIntrinsics");
   const text = generalHostSource(
     imports,
     creates,
     edges,
-    names.length + request.boundaries.length,
+    moduleCount + (workers === undefined ? 0 : 1),
     entryIndex,
     request.start,
     output !== undefined,
-    generalIntrinsics(erasedModules),
+    installers,
     adapters.functions + errors.functions,
     eventLoop !== undefined,
+    workers,
+    names,
   );
   const parsed = parseModule(createSourceTextView(text));
   if (!parsed.ok)
@@ -340,6 +402,16 @@ function lowerGeneralProgram(
     hostDependencies.set("node-event-clock", eventLoop.clock);
     hostDependencies.set("node-event-reactor", eventLoop.reactor);
   }
+  if (workers !== undefined) {
+    hostDependencies.set("worker-host", workers.host);
+    hostDependencies.set("worker-platform", workers.threadHost);
+    hostDependencies.set("worker-lifecycle", workers.lifecycle);
+    hostDependencies.set("worker-shared", workers.shared);
+  }
+  const workerModules =
+    workers === undefined
+      ? undefined
+      : generated.map((module): string => module.id);
   for (const module of generated)
     if (module !== undefined) hostDependencies.set(module.id, module.id);
   for (const boundary of request.boundaries)
@@ -356,7 +428,14 @@ function lowerGeneralProgram(
   });
   const records = request.records ?? [];
   if (records.length === 0 && errors.stubs === "")
-    return { ok: true, value: { modules: generated, entry: hostId } };
+    return {
+      ok: true,
+      value: {
+        modules: generated,
+        entry: hostId,
+        ...(workerModules === undefined ? {} : { workerModules }),
+      },
+    };
   const viewsParsed = parseModule(
     createSourceTextView(adapters.stubs + errors.stubs),
   );
@@ -400,6 +479,7 @@ function lowerGeneralProgram(
       modules: generated,
       entry: hostId,
       recordBindings: viewSlots,
+      ...(workerModules === undefined ? {} : { workerModules }),
       runtimes: [
         { module: viewsId, namespace: "general-record-views", retainedExports },
       ],
@@ -751,11 +831,18 @@ function generalHostSource(
   installers: readonly string[],
   adapters: string,
   nodeEventLoop: boolean,
+  workers: GeneralNodeWorkers | undefined,
+  names: readonly string[],
 ): string {
   let installs = "";
   const programInstallers: string[] = [];
   for (const installer of installers) {
     if (installer === undefined) throw "general installer invariant";
+    if (workers !== undefined && installer === "installPromiseIntrinsics") {
+      installs += " installProgramPromiseIntrinsics(core);\n";
+      programInstallers.push("installProgramPromiseIntrinsics");
+      continue;
+    }
     if (installer === "installObjectIntrinsics") {
       installs += " installProgramObjectIntrinsics(core);\n";
       continue;
@@ -794,24 +881,75 @@ import {createReactorEventLoop} from "node-event-driver";
 import {monotonicMilliseconds} from "node-event-clock";
 import {createReactor} from "node-event-reactor";`
     : "";
+  const workerImports =
+    workers === undefined
+      ? ""
+      : `
+import {startNodeWorkerHost,type NodeWorkerThreads} from "worker-host";
+import {createNativeWorkerThreadHost} from "worker-platform";
+import {runNativeWorker,type NativeWorkerTurnControl} from "worker-lifecycle";
+import {nativeSharedMemoryHost,nativeWaiterParkingHost,type NativeSharedMemoryHost,type NativeWaiterParkingHost} from "worker-shared";
+import {processAtomicWaitEvents} from "objects";`;
+  const workerRegistry =
+    workers === undefined
+      ? ""
+      : `
+ const workerNames:readonly string[]=${JSON.stringify(names)};
+ const workers=startNodeWorkerHost({global:object,realm,reactor:events,
+  memory,parking,threads:createNativeWorkerThreadHost(),threadId,control,
+  managedBytes:${workers.managedBytes},stackBytes:${workers.stackBytes},
+  now:():number=>monotonicMilliseconds(),
+  lookup:(filename:string):number|undefined=>{
+   const index=workerNames.indexOf(filename);
+   return index<0?undefined:index;
+  }
+ });
+ workerHost=workers;`;
   const eventSetup = nodeEventLoop
     ? `const events=createReactorEventLoop({
   createReactor:()=>createReactor(),
   now:():number=>monotonicMilliseconds(),
-  drainMicrotasks:():void=>{drainScriptJobs(realm.agent,(error:unknown):void=>{throw error;});},
-  onWake:():void=>{}
+  drainMicrotasks:():void=>{${workers === undefined ? "" : "processAtomicWaitEvents(realm.agent,true);"}drainScriptJobs(realm.agent,(error:unknown):void=>{throw error;});},
+  onWake:():void=>{}${workers === undefined ? "" : ",stopRequested:():boolean=>control?.stopRequested()===true"}
  });
+ ${workers === undefined ? "" : "let workerHost:NodeWorkerThreads|undefined=undefined;"}
  try {
-  installNodeEventLoopGlobals(events.loop,object,realm,hooks);`
+  installNodeEventLoopGlobals(events.loop,object,realm,hooks);
+  ${workerRegistry}`
     : "";
   const eventCleanup = nodeEventLoop
-    ? `} catch(error){report(error);return 1;} finally{events.close();}`
+    ? `} catch(error){report(error);return 1;} finally{${workers === undefined ? "" : "workerHost?.close();"}events.close();}`
     : "";
+  const entryWrapper =
+    workers === undefined
+      ? `export function ${start}():number {`
+      : `export function ${start}(argument:number):number {
+ const memory=nativeSharedMemoryHost(),parking=nativeWaiterParkingHost();
+ if(argument===0)return runIsolate(${entry},0,undefined,memory,parking);
+ return runNativeWorker(memory,parking,argument,
+  (moduleId:number,threadId:number,control:NativeWorkerTurnControl):number=>
+   runIsolate(moduleId,threadId,control,memory,parking));
+}
+function runIsolate(moduleId:number,threadId:number,control:NativeWorkerTurnControl|undefined,memory:NativeSharedMemoryHost,parking:NativeWaiterParkingHost):number{`;
+  const workerError =
+    workers === undefined
+      ? ""
+      : `
+  if(control!==undefined){
+   if(control.stopRequested())return;
+   const exception=viewObjectValue(error,object);
+   if(exception!==undefined){
+    const message=getProperty<ScriptPropertyKey,unknown>(exception,"message",exception,hooks);
+    if(typeof message==="string")throw message;
+   }
+   throw describe(error,hooks,realm);
+  }`;
   return `${imports}import {createGlobalEnvironment,type GlobalEnvironment} from "global";
 import {createSyntheticModule,setSyntheticModuleExport,loadRequestedModules,finishLoadingImportedModule,linkModule,evaluateModule,settledModulePromise,getModuleNamespace,type ModuleRecord,type ModuleRequest,type ModuleReferrer,type ModuleLoadPayload} from "modules";
 import {createObject,createCallableObject,createDataProperty,programRealmCore,installProgramObjectIntrinsics,createRuntimeError,getProperty,callObjectValue,stringValue,drainScriptJobs,installGlobalProperties,createRecordView,typedRecordOf,viewObjectValue,${programInstallers.join(",")},type ErrorRealm,type ScriptPropertyKey,type ObjectHooks,type OrdinaryObject} from "objects";
 ${output ? 'import {write as writeOutput} from "output";' : ""}
 ${eventImports}
+${workerImports}
 ${write}
 function rejectArgument(realm:ErrorRealm):never{throw createRuntimeError(realm,"type");}
 function describe(value:unknown,hooks:ObjectHooks<unknown>,realm:ErrorRealm):string{
@@ -824,7 +962,7 @@ let current:ProgramRealm|undefined=undefined;
  * program can reach. */
 export function programRealm():ProgramRealm{
  if(current!==undefined)return current;
- const core=programRealmCore(),object=core.object,hooks=core.hooks,realm=core.realm;
+ const core=programRealmCore(${workers === undefined ? "" : "true"}),object=core.object,hooks=core.hooks,realm=core.realm;
  const global=createGlobalEnvironment<ScriptPropertyKey,unknown>(object,object,object,(name:string):ScriptPropertyKey=>name,hooks);
  installGlobalProperties(object,object,hooks);
 ${installs} const console=createObject<ScriptPropertyKey,unknown>(realm.objectPrototype);
@@ -835,9 +973,12 @@ ${installs} const console=createObject<ScriptPropertyKey,unknown>(realm.objectPr
  current=created;
  return created;
 }
-${adapters}export function ${start}():number {
+${adapters}${entryWrapper}
  const program=programRealm();
  const global=program.global,realm=program.realm,hooks=program.hooks,object=program.object;
+ let failed=false;
+ function report(error:unknown):void{failed=true;${workerError}emit(2,"Uncaught "+describe(error,hooks,realm)+"\\n");}
+ ${eventSetup}
  const records:(ModuleRecord|undefined)[]=[];for(let i=0;i<${count};i++)records.push(undefined);
  function create(index:number):ModuleRecord{
   switch(index){
@@ -852,19 +993,18 @@ ${edges} realm.moduleLoader=(referrer:ModuleReferrer,request:ModuleRequest,hostD
   if(target===undefined){finishLoadingImportedModule(referrer,request,payload,{ok:false,error:createRuntimeError(realm,"type")});return;}
   finishLoadingImportedModule(referrer,request,payload,{ok:true,module:record(target)});
  };
- let failed=false;
- function report(error:unknown):void{failed=true;emit(2,"Uncaught "+describe(error,hooks,realm)+"\\n");}
- ${eventSetup}
- const root=record(${entry});
+ const root=record(${workers === undefined ? entry : "moduleId"});
  const loaded=settledModulePromise(loadRequestedModules(root,hooks,undefined),realm);
  if(loaded.kind==="rejected"){report(loaded.error);return 1;}
  const linked=linkModule(root);
  if(!linked.ok){report(linked.error);return 1;}
  const evaluation=evaluateModule(root,hooks);
  ${nodeEventLoop ? 'events.loop.checkpoint("microtask");' : "drainScriptJobs(realm.agent,report);"}
- const evaluated=settledModulePromise(evaluation,realm);
+ ${workers === undefined ? "const" : "let"} evaluated=settledModulePromise(evaluation,realm);
+ ${workers === undefined ? "" : 'if(evaluated.kind==="pending"){events.loop.run("microtask");evaluated=settledModulePromise(evaluation,realm);}'}
  if(evaluated.kind==="rejected"){report(evaluated.error);return 1;}
  if(evaluated.kind==="pending"){emit(2,"module evaluation did not settle\\n");return 1;}
+ ${workers === undefined ? "" : 'if(threadId!==0){events.loop.run("callback");return failed?1:0;}'}
  const namespace=getModuleNamespace(root);
  const main=getProperty<ScriptPropertyKey,unknown>(namespace,${JSON.stringify(start)},namespace,hooks);
  const result=callObjectValue(main,undefined,[],object);
@@ -873,6 +1013,17 @@ ${edges} realm.moduleLoader=(referrer:ModuleReferrer,request:ModuleRequest,hostD
  if(failed)return 1;
  const value=result.value;
  if(typeof value==="number")return value;
+ ${
+   workers === undefined
+     ? ""
+     : `const promise=viewObjectValue(value,object)?.internalPromiseData;
+ if(promise!==undefined){
+  if(promise.state==="rejected"){report(promise.result);return 1;}
+  if(promise.state==="pending"){emit(2,"entry promise did not settle\\n");return 1;}
+  const status=promise.result;
+  if(typeof status==="number")return status;
+ }`
+ }
  return 0;
  ${eventCleanup}
 }

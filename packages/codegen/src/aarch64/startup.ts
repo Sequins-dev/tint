@@ -17,6 +17,8 @@ import {
   nativeThreadExitReadOffset,
   nativeWorkerStopPointerOffset,
   nativeWorkerStopStateOffset,
+  nativeWorkerStackBytesOffset,
+  nativeWorkerHeapBytesOffset,
   nativeThreadExitWriteOffset,
   type PosixHostABI,
 } from "@tint/abi/host";
@@ -661,6 +663,41 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
     imm(9, value);
     emit({ op: "scvtf-d-x", rd: register, rn: 9 });
   }
+  /** x9 returns the configured ceiling. The startup record is a trusted
+   * scalar capability, present only in tagged worker invocations. */
+  function workerBytes(
+    offset: number,
+    maximum: number,
+    minimum: number,
+    site: string,
+  ): void {
+    imm(9, maximum);
+    const ready = "worker-limit-ready-" + site;
+    imm(11, 1);
+    emit({ op: "and-reg", width: 64, rd: 10, rn: 27, rm: 11 });
+    imm(11, 0);
+    compare(10, 11);
+    branch(ready, "eq");
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: 10,
+      rn: 27,
+      immediate: 1,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({ op: "ldr", width: 64, rt: 10, rn: 10, offset });
+    compare(10, 11);
+    branch(ready, "eq");
+    compare(10, 9);
+    branch("runtime-failure", "hi");
+    imm(11, minimum);
+    compare(10, 11);
+    branch("runtime-failure", "cc");
+    move(9, 10);
+    label(ready);
+  }
   let workerEntryOffset: number | undefined;
   if (request.threaded === true) {
     // Root process forwards zero; worker forwards only its raw scalar argument.
@@ -799,7 +836,26 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
   // Managed prologues compare their new stack pointer against this limit and
   // throw instead of reaching the low guard page; the headroom above it runs
   // the throw path. Startup frames are not zeroed: clear the pending word.
-  address(9, 22, page + stackHeadroom);
+  if (request.workerSafepoints === true) {
+    workerBytes(
+      nativeWorkerStackBytesOffset,
+      request.stackBytes,
+      stackHeadroom * 2,
+      "stack-limit",
+    );
+    move(12, 9);
+    address(9, 22, page + request.stackBytes + stackHeadroom);
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: 9,
+      rn: 9,
+      rm: 12,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+  } else address(9, 22, page + stackHeadroom);
   store(9, 96 + nativeStackLimitOffset);
   imm(9, 0);
   store(9, 96 + nativeEngineThrowOffset);
@@ -910,16 +966,47 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
   branch("runtime-failure", "ne");
   // Runtime factory: eight numeric windows, then seven borrowed typed arrays.
   emit({ op: "scvtf-d-x", rd: 0, rn: 21 });
-  number(1, request.managedBytes);
+  if (request.workerSafepoints === true) {
+    workerBytes(
+      nativeWorkerHeapBytesOffset,
+      request.managedBytes,
+      page * 4,
+      "heap-window",
+    );
+    emit({ op: "scvtf-d-x", rd: 1, rn: 9 });
+  } else number(1, request.managedBytes);
   emit({ op: "scvtf-d-x", rd: 2, rn: 20 });
   number(3, controlLength);
   local(26, -1, 0);
   emit({ op: "scvtf-d-x", rd: 4, rn: 26 });
   const imageLengthInstruction = instructions.length;
   number(5, 0);
-  address(9, 22, page);
-  emit({ op: "scvtf-d-x", rd: 6, rn: 9 });
-  number(7, request.stackBytes);
+  if (request.workerSafepoints === true) {
+    workerBytes(
+      nativeWorkerStackBytesOffset,
+      request.stackBytes,
+      stackHeadroom * 2,
+      "stack-window",
+    );
+    move(12, 9);
+    address(9, 22, page + request.stackBytes);
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: 9,
+      rn: 9,
+      rm: 12,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    emit({ op: "scvtf-d-x", rd: 6, rn: 9 });
+    emit({ op: "scvtf-d-x", rd: 7, rn: 12 });
+  } else {
+    address(9, 22, page);
+    emit({ op: "scvtf-d-x", rd: 6, rn: 9 });
+    number(7, request.stackBytes);
+  }
   for (let index = 0; index < 7; index++) {
     if (index < 4) address(index + 4, 20, 32 + index * 32);
     else {
@@ -1007,7 +1094,14 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
   });
   store(9, 120);
   store(21, 104);
-  imm(9, request.managedBytes);
+  if (request.workerSafepoints === true)
+    workerBytes(
+      nativeWorkerHeapBytesOffset,
+      request.managedBytes,
+      page * 4,
+      "allocator-window",
+    );
+  else imm(9, request.managedBytes);
   store(9, 128);
   if (request.threaded === true) emit({ op: "scvtf-d-x", rd: 0, rn: 27 });
   if (diagnostics?.stackTraces === true) {

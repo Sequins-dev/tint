@@ -2827,6 +2827,14 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/worker-host.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/worker-threads.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/zlib.ts",
       packageId: "native-runtime",
     },

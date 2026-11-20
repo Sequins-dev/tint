@@ -19,6 +19,10 @@ export const nativeThreadExitReadOffset = 16;
  * It points at the worker's stop state, or is zero in the main isolate. */
 export const nativeWorkerStopPointerOffset = -8;
 export const nativeWorkerStopStateOffset = 72;
+/** Optional size ceilings in a worker startup record. Zero uses the image
+ * default. The image retains its reserved virtual address layout. */
+export const nativeWorkerStackBytesOffset = 136;
+export const nativeWorkerHeapBytesOffset = 144;
 export const nativeWorkerStopRequested = 1;
 export const nativeWorkerStopObserved = 2;
 /** A tag-zero general payload reserved for managed worker interruption. */

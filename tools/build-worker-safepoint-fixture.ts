@@ -107,12 +107,12 @@ export function run(argument:number):number {
   try{
     let allocationExit=-1,callExit=-1;
     const allocating=startNativeWorker(memory,parking,threads,runtime,{
-      threadId:1,moduleId:base,
+      threadId:1,moduleId:base,stackBytes:8388608,heapBytes:8388608,
       onError:(message:string):void=>{throw message;},
       onExit:(status:number):void=>{allocationExit=status;},
     });
     const calling=startNativeWorker(memory,parking,threads,runtime,{
-      threadId:2,moduleId:base,
+      threadId:2,moduleId:base,stackBytes:8388608,heapBytes:8388608,
       onError:(message:string):void=>{throw message;},
       onExit:(status:number):void=>{callExit=status;},
     });

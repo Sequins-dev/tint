@@ -99,10 +99,11 @@ const eventLoopClockModule = "packages/native-runtime/src/intrinsics/clock.ts";
  * fixtures set the variable after their (hoisted) imports. */
 export function workspaceGeneralLowering(
   nodeEventLoop = false,
+  workerImage?: { readonly managedBytes: number; readonly stackBytes: number },
 ): GeneralLowering | undefined {
   if (process.env.TINT_GENERAL_FALLBACK === "0") return undefined;
   const cached = nodeEventLoop ? nodeGeneralLowering : generalLowering;
-  if (cached !== undefined) return cached;
+  if (workerImage === undefined && cached !== undefined) return cached;
   const lowering = createGeneralLowering({
     runtime: {
       objects: "packages/js-runtime/src/objects/index.ts",
@@ -126,9 +127,23 @@ export function workspaceGeneralLowering(
           },
         }
       : {}),
+    ...(workerImage === undefined
+      ? {}
+      : {
+          nodeWorkers: {
+            host: "packages/native-runtime/src/node/worker-host.ts",
+            shared: "packages/native-runtime/src/shared-blocks.ts",
+            lifecycle: "packages/native-runtime/src/worker-lifecycle.ts",
+            threadHost: "packages/platform/src/workers.ts",
+            managedBytes: workerImage.managedBytes,
+            stackBytes: workerImage.stackBytes,
+          },
+        }),
   });
-  if (nodeEventLoop) nodeGeneralLowering = lowering;
-  else generalLowering = lowering;
+  if (workerImage === undefined) {
+    if (nodeEventLoop) nodeGeneralLowering = lowering;
+    else generalLowering = lowering;
+  }
   return lowering;
 }
 
@@ -172,6 +187,7 @@ function buildHostedFixture(
      * measurements must be of typed code). */
     readonly requireTyped?: boolean;
     readonly nodeEventLoop?: boolean;
+    readonly nodeWorkers?: boolean;
     readonly optimization?: BuildRequest["optimization"];
     /** Receives the general fallback when one was used (also reported on
      * stderr). */
@@ -201,8 +217,20 @@ function buildHostedFixture(
   },
 ): string {
   const bytes = new TextEncoder().encode(text);
-  const general = workspaceGeneralLowering(options.nodeEventLoop);
-  const eventLoop = options.nodeEventLoop === true && general !== undefined;
+  const workerImage =
+    options.nodeWorkers === true
+      ? {
+          managedBytes: options.managedBytes,
+          stackBytes: options.stackBytes ?? 16777216,
+        }
+      : undefined;
+  const general = workspaceGeneralLowering(
+    options.nodeEventLoop === true || workerImage !== undefined,
+    workerImage,
+  );
+  const eventLoop =
+    (options.nodeEventLoop === true || workerImage !== undefined) &&
+    general !== undefined;
   const stackTraces =
       options.stackTraces ?? process.env.TINT_STACK_TRACES === "1",
     signposts = options.signposts ?? process.env.TINT_SIGNPOSTS === "1",
