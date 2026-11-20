@@ -28,8 +28,10 @@ export interface DebugOrigin {
   readonly inline?: number | undefined;
 }
 /** Categories general-is tests. */
+export type NativeTypedArray =
+  "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array";
 export type GeneralTest =
-  "undefined" | "number" | "boolean" | "string" | "null" | "Uint8Array";
+  "undefined" | "number" | "boolean" | "string" | "null" | NativeTypedArray;
 export type Instruction = Span &
   DebugOrigin &
   (
@@ -89,7 +91,7 @@ export type Instruction = Span &
         /** Uint8Array: an object payload whose header marks 1-byte typed
          * array elements (checked; a narrowed `string | Uint8Array`). */
         readonly type:
-          "number" | "boolean" | "string" | "reference" | "Uint8Array";
+          "number" | "boolean" | "string" | "reference" | NativeTypedArray;
       }
     | {
         readonly kind: "record-has" | "record-read";

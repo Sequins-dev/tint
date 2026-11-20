@@ -196,7 +196,15 @@ function referenceValueType(
 }
 function generalValueType(
   code: number,
-): "number" | "boolean" | "string" | "reference" | "Uint8Array" {
+):
+  | "number"
+  | "boolean"
+  | "string"
+  | "reference"
+  | "Uint8Array"
+  | "Uint16Array"
+  | "Uint32Array"
+  | "Float64Array" {
   switch (code) {
     case 7:
       return "number";
@@ -206,10 +214,8 @@ function generalValueType(
       return "string";
     case 4:
       return "reference";
-    case 9:
-      return "Uint8Array";
   }
-  throw "packed IR general value type";
+  return arrayType(code);
 }
 function errorName(code: number): "Error" | "TypeError" | "RangeError" {
   if (code === 0) return "TypeError";
@@ -300,6 +306,9 @@ const generalTests: readonly GeneralTest[] = [
   "string",
   "null",
   "Uint8Array",
+  "Uint16Array",
+  "Uint32Array",
+  "Float64Array",
 ];
 export function encodeInstruction(
   writer: ByteWriter,

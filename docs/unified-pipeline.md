@@ -315,6 +315,43 @@ The view's stack is captured at first exposure. Native-only construction
 keeps the private native descriptors and an undefined stack. See the
 [error view design](design-4a-narrowing-errors.md#native-errors-and-their-realm-views).
 
+### Realm constructors and typed-array flow (slice 4a, B5)
+
+The right operand's checked call, construct or `[Symbol.hasInstance]`
+signature supplies the static refinement. Constructor aliases and properties
+carry that signature. A guard updates facts for the original binding or
+stable property path without changing its declared storage. The false branch
+keeps values whose type may still occur outside the checked instance type.
+
+The constructor table is generated from the workspace's pinned TypeScript
+`lib.esnext.d.ts` and its transitive declarations. It records the realm
+installer, library call and construct overloads, instance type and members.
+Typed global reads and the general host share installation state, so later
+reads see the current global binding. Library-backed instances use realm
+Get and Call when the typed bridge can represent the library signature.
+
+In realm-capable code, constructor reads use the shared global object and
+the predicate uses the same `instanceOfValue` operation as general code.
+The operation orders both operands and the hook lookup, uses actual
+prototypes, and propagates failures from accessors, hooks and proxies. The
+existing native error tests remain available in typed-only programs.
+
+Narrowed typed-array values keep their general carrier. Each indexed read,
+write, metadata read and supported method tests the native array header
+before using the native operation. Realm arrays and prototype imitations use
+ordinary realm property lookup, assignment and method calls. A successful
+guard is independent of the brand checks inside typed-array methods.
+
+A native typed-array ABI still requires matching native storage. The
+projection checks the element layout and passes the same reference. A realm
+value fails with TypeError and the message
+`Passing a realm typed array to a native typed-array parameter requires the slice 2b buffer view`.
+
+Evidence comes from `tools/build-typed-realm-instanceof-fixture.ts`, its Node
+reference, and the two native projection fixtures. The mixed fixture uses a
+general producer to supply objects to a trusted typed guard and asserts the
+module partition.
+
 ### Typed BigInt (slice 4a)
 
 A typed `bigint` is a reference to js-runtime's `BigIntValue` record, the
@@ -545,7 +582,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | (Removed by 2a) General code cannot import trusted runtime/FFI modules                                                                                                                                                                                                                      | (needs runtime modules)                                                                                         | 2                                        |
 | Classes rejected in module-instance (runtime) contexts                                                                                                                                                                                                                                      | `class-basic`                                                                                                   | 3                                        |
 | (Removed by 4a: native errors) `new Error` and guarded reads of caught native errors                                                                                                                                                                                                        | `errors`, `caught-error-reads`, `native-error-flow`                                                             | 4a                                       |
-| Typed `instanceof Uint8Array`                                                                                                                                                                                                                                                               | `typed-arrays`                                                                                                  | 4a                                       |
+| (Removed by 4a B5) Typed `instanceof Uint8Array`                                                                                                                                                                                                                                                               | `typed-arrays`                                                                                                  | 4a                                       |
 | `stack` of a native error exposed to realm code names the frames at first exposure, not at creation (creation-site capture is deferred to native stack capture; needs allocation-time frame capture without realm access)                                                                   | `exposed-native-error`                                                                                          | Native stack capture                     |
 | Native Error options and stack capture                                                                                                                                                                                                                                                      | `Error options (cause) require the realm Error constructor`. Native `stack` is undefined.                       | Realm constructor / native stack capture |
 | `toLowerCase` and other unlisted String methods; `Math.pow`/`log2`/`fround`; `JSON`                                                                                                                                                                                                         | `string-methods`, `math`, `json`                                                                                | 4                                        |
@@ -573,7 +610,9 @@ the ledger corpus reproduce the ones expressible in a single application.
 | (Removed by 4a: callable classification) Typed `typeof` on realm callables received as `unknown`                                                                                                                                                                                            | `unknown-typeof-callable`, `tools/build-mixed-general-typeof-fixture.ts`                                        | 4a                                       |
 | (Removed by 4a B4) Direct calls of realm values narrowed by `typeof` to `Function`                                                                                                                                                                                                          | `unknown-callable-direct`, `unknown-callable-arguments`                                                         | 4a B4                                    |
 | Calling a native closure through a narrowed `Function` requires the slice 2b closure view.                                                                                                                                                                                                  | `tools/build-typed-general-call-contracts-fixture.ts`                                                           | 2b, 4a                                   |
-| Passing a realm typed array narrowed by `instanceof` to a native typed-array parameter requires the slice 2b buffer view. The narrowing itself is pending.                                                                                                                                  | (mixed typed-array fixture planned)                                                                             | 2b, 4a                                   |
+| Realm library member signatures with callbacks or non-scalar results, including `Promise.then`, `Map.get`, `RegExp.exec` and `Uint8Array.prototype`, require additional bridge lowering. Realm property writes, index signatures, optional chains and direct calls or construction through library constructor aliases also require separate lowering. | `build-typed-realm-instanceof-fixture.ts` and checker diagnostics | 4 |
+| WeakMap and WeakSet constructors are installed. Constructing their instances requires the realm's weak-storage service. | `weak-collections` | 2b, 4 |
+| Passing a realm typed array narrowed by `instanceof` to a native typed-array parameter requires the slice 2b buffer view. Matching native storage passes without a copy.                                                                                                                                  | `build-realm-array-native-projection-failure-fixture.ts`                                                                             | 2b, 4a                                   |
 | `for…of` elements are typed `T \| undefined` (array holes) instead of TypeScript's `T`: passing the element on or reading its properties fails (FFI phases 2 and 4)                                                                                                                         | `for-of-typed-array-list`, `for-of-object-list`, `for-of-record-reads`                                          | 4a                                       |
 | Assignment does not narrow a `let` to the assigned type (`x = x === undefined ? v : x`); `??=` only on optional primitives (FFI phase 4)                                                                                                                                                    | `reassignment-narrowing`                                                                                        | 4a                                       |
 | Module-level loops and non-literal initializers ("module evaluation is required for this statement"; `tint:ffi` runtime module, FFI phase 4)                                                                                                                                                | `module-initializers`, `module-statements`                                                                      | 5                                        |

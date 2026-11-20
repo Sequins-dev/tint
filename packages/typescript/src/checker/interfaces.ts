@@ -22,6 +22,10 @@ import type {
   ClassElement,
   Parameter,
 } from "../syntax/index.ts";
+import {
+  realmLibrary,
+  type RealmLibraryConstructor,
+} from "../binding/realm-library.ts";
 import type { CViewRegistry } from "./c-views.ts";
 import {
   createTypeSystem,
@@ -31,6 +35,63 @@ import {
   type StringIndex,
   unsupportedDynamicContract,
 } from "../types/index.ts";
+export const realmOnlyTypedArrays: readonly string[] = [
+  "Int8Array",
+  "Uint8ClampedArray",
+  "Int16Array",
+  "Int32Array",
+  "Float16Array",
+  "Float32Array",
+  "BigInt64Array",
+  "BigUint64Array",
+];
+export function withRealmGlobals(globals: readonly string[]): string[] {
+  const result = globals.slice();
+  for (const entry of realmLibrary) {
+    if (entry === undefined) throw "realm library constructor invariant";
+    if (!result.includes(entry.name)) result.push(entry.name);
+  }
+  return result;
+}
+/** Realm constructors that have an instance representation in the typed checker. */
+export function realmConstructorInstance(name: string): string | undefined {
+  switch (name) {
+    case "Error":
+    case "TypeError":
+    case "RangeError":
+    case "ArrayBuffer":
+    case "Uint8Array":
+    case "Uint16Array":
+    case "Uint32Array":
+    case "Float64Array":
+      return name;
+    default:
+      return realmOnlyTypedArrays.includes(name) ? name : undefined;
+  }
+}
+
+export function realmArrayInstance(name: string, brand: number): Type {
+  return {
+    kind: "object",
+    realmTypedArray: name,
+    properties: [{ name: "@@toStringTag", type: brand, readonly: true }],
+  };
+}
+/** Keep library-backed values in the general carrier. String members are
+ * resolved from the library at their use site, without creating a record. */
+export function realmLibraryType(
+  entry: RealmLibraryConstructor,
+  constructor: boolean,
+): Type {
+  const name = constructor ? entry.constructorType : entry.instanceName;
+  return {
+    kind: "object",
+    realmLibrary: entry.name,
+    realmConstructor: constructor,
+    properties: [{ name: "\0" + name, type: 0, readonly: true }],
+  };
+}
+
 export interface InterfaceTypes {
   readonly names: ReadonlyKeyIndex<string, number>;
   readonly types: readonly Type[];
@@ -300,6 +361,29 @@ export function resolveInterfaceTypes(
         fail(node, "INVALID_TYPE", "type parameter does not accept arguments");
       return parameter;
     }
+    if (!declarations.has(name) && !names.has(name)) {
+      const entry = realmLibrary.find(
+        (candidate) =>
+          candidate !== undefined &&
+          (candidate.constructorType === name ||
+            candidate.instanceName === name),
+      );
+      if (
+        entry !== undefined &&
+        args.length === 0 &&
+        (name === entry.constructorType ||
+          realmConstructorInstance(entry.name) === undefined) &&
+        (name === entry.constructorType ||
+          (name !== "Array" && name !== "Map" && name !== "Set"))
+      ) {
+        const id = add(
+          realmLibraryType(entry, name === entry.constructorType),
+          node,
+        );
+        names.set(name, id);
+        return id;
+      }
+    }
     if (
       (name === "Array" || name === "ReadonlyArray") &&
       !declarations.has(name)
@@ -366,6 +450,12 @@ export function resolveInterfaceTypes(
         name === "unknown" ? { kind: "unknown" } : { kind: "never" },
         node,
       );
+      names.set(name, id);
+      return id;
+    }
+    if (declaration === undefined && realmOnlyTypedArrays.includes(name)) {
+      const brand = add({ kind: "literal", value: name }, node);
+      const id = add(realmArrayInstance(name, brand), node);
       names.set(name, id);
       return id;
     }
@@ -578,6 +668,7 @@ export function resolveInterfaceTypes(
     result: number,
     receiver: number | undefined,
     node: Span,
+    instancePredicate?: number,
   ): number {
     let minimumArguments = 0,
       seenOptional = false,
@@ -619,6 +710,7 @@ export function resolveInterfaceTypes(
         minimumArguments,
         ...(rest ? { rest: true } : {}),
         result,
+        ...(instancePredicate === undefined ? {} : { instancePredicate }),
         ...(receiver === undefined ? {} : { receiver }),
       },
       node,
@@ -737,7 +829,8 @@ export function resolveInterfaceTypes(
         fail(p, "INVALID_TYPE", "duplicate property: " + p.name);
       own.add(p.name);
       const field: Property = {
-          name: p.name,
+          name: p.hasInstanceSymbol === true ? "@@hasInstance" : p.name,
+          ...(p.hasInstanceSymbol === true ? { hasInstanceSymbol: true } : {}),
           type: resolve(p.type),
           readonly: p.readonly,
           ...(p.optional ? { optional: true } : {}),
@@ -1134,6 +1227,9 @@ export function resolveInterfaceTypes(
             resolve(node.returnType),
             node.receiver === undefined ? undefined : resolve(node.receiver),
             node,
+            node.instancePredicate === undefined
+              ? undefined
+              : resolve(node.instancePredicate),
           );
       }
       throw "unhandled type syntax";
@@ -1418,6 +1514,9 @@ export function resolveInterfaceTypes(
                   ...t,
                   parameters: t.parameters.map(canonical),
                   result: canonical(t.result),
+                  ...(t.instancePredicate === undefined
+                    ? {}
+                    : { instancePredicate: canonical(t.instancePredicate) }),
                   ...(t.receiver === undefined
                     ? {}
                     : { receiver: canonical(t.receiver) }),

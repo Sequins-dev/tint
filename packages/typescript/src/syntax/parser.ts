@@ -785,10 +785,12 @@ function parseSource(
     result: TypeNode,
     start: number,
     generics: readonly TypeParameter[] = [],
+    instancePredicate?: TypeNode,
   ): TypeNode {
     return {
       kind: "function",
       ...genericSyntax(generics),
+      ...(instancePredicate === undefined ? {} : { instancePredicate }),
       ...functionParameters(params),
       returnType: result,
       start,
@@ -1103,7 +1105,23 @@ function parseSource(
           fail("expected property separator");
         continue;
       }
-      const key = propertyName();
+      const key = propertyName(true);
+      const computed = key.keyExpression;
+      const receiver =
+        computed?.kind === "member" ? computed.object : undefined;
+      const hasInstance =
+        receiver?.kind === "identifier" &&
+        receiver.name === "Symbol" &&
+        computed?.kind === "member" &&
+        computed.property === "hasInstance" &&
+        !computed.optional;
+      if (computed !== undefined && !hasInstance)
+        fail(
+          "dynamic computed property names are not implemented",
+          "UNSUPPORTED_SYNTAX",
+          computed,
+          "computed-property-names",
+        );
       const optional = eat("?");
       const method = at("(") || at("<");
       let annotation: TypeNode;
@@ -1113,14 +1131,40 @@ function parseSource(
         const generics = typeParameters();
         const params = parameters(true);
         expect(":");
-        const returnType = type();
-        annotation = functionType(params, returnType, key.start, generics);
+        const first = params[0];
+        if (
+          hasInstance &&
+          first !== undefined &&
+          first.kind !== "pattern-parameter" &&
+          at(first.name) &&
+          at("is", 1)
+        ) {
+          const predicate = take();
+          expect("is");
+          const narrowed = type();
+          annotation = functionType(
+            params,
+            {
+              kind: "named",
+              name: "boolean",
+              start: predicate.start,
+              end: predicate.end,
+            },
+            key.start,
+            generics,
+            narrowed,
+          );
+        } else {
+          const returnType = type();
+          annotation = functionType(params, returnType, key.start, generics);
+        }
       } else {
         expect(":");
         annotation = type();
       }
       properties.push({
-        name: key.value,
+        name: hasInstance ? "[Symbol.hasInstance]" : key.value,
+        ...(hasInstance ? { hasInstanceSymbol: true } : {}),
         ...(key.computed ? { computed: true } : {}),
         ...(method ? { method: true } : {}),
         readonly,

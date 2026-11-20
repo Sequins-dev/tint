@@ -1,3 +1,7 @@
+import {
+  installedNonConstructorGlobals,
+  otherLibraryGlobals,
+} from "./realm-library.ts";
 import { statementFunctionDeclaration } from "./script.ts";
 import {
   type KeyIndex,
@@ -522,6 +526,7 @@ function bindProgram(
     node: Expression & { readonly kind: "identifier" },
     s: ScopeState,
     access: Reference["access"],
+    instanceConstructor: boolean = false,
   ): void {
     if (restrictedArguments && node.name === "arguments")
       fail(
@@ -538,8 +543,32 @@ function bindProgram(
       cursor = cursor.parent === undefined ? undefined : scopes[cursor.parent];
     }
     if (id === undefined) {
-      if (!javascript && !external.has(node.name))
+      if (!javascript && !external.has(node.name)) {
+        if (otherLibraryGlobals.includes(node.name))
+          fail(
+            node,
+            "UNKNOWN_NAME",
+            "Program realm does not install the library global " + node.name,
+          );
+        if (
+          instanceConstructor &&
+          installedNonConstructorGlobals.includes(node.name)
+        )
+          fail(
+            node,
+            "UNKNOWN_NAME",
+            "Program realm global " +
+              node.name +
+              " has no supported constructor projection",
+          );
+        if (instanceConstructor)
+          fail(
+            node,
+            "UNKNOWN_NAME",
+            "No pinned TypeScript library value named " + node.name,
+          );
         fail(node, "UNKNOWN_NAME", "unknown value name: " + node.name);
+      }
       references.push({
         node,
         scope: s.id,
@@ -948,10 +977,15 @@ function bindProgram(
         case "unary":
           expr(node.operand, s);
           break;
-        case "binary":
+        case "binary": {
           expr(node.left, s);
-          expr(node.right, s);
+          let target = node.right;
+          while (target.kind === "group") target = target.expression;
+          if (node.operator === "instanceof" && target.kind === "identifier")
+            reference(target, s, "read", true);
+          else expr(node.right, s);
           break;
+        }
         case "conditional":
           expr(node.test, s);
           expr(node.consequent, s);
