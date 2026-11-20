@@ -258,6 +258,8 @@ function linuxBatch(
     );
     const setup = [`mode=${quote(runner)}`];
     if (!ssh) setup.push(`inferior_cwd=${quote(process.cwd())}`);
+    if (runner === "linux-dev" && env.TINT_LINUX_DEBUGGER_LAUNCH === "lldb")
+      setup.push("debugger=lldb");
     if (env.TZ !== undefined) setup.push(`export TZ=${quote(env.TZ)}`);
     let sysrootSha256: string | undefined;
     if (runner === "x64-qemu-dev") {

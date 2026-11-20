@@ -27,7 +27,13 @@ import {
   type ObjectCall,
   type ObjectExecutionContext,
 } from "./operations.ts";
-import { viewObjectValue, callObjectValue } from "./values.ts";
+import {
+  checkPrimitiveContract,
+  primitiveContractPredicate,
+  viewObjectValue,
+  callObjectValue,
+} from "./values.ts";
+import { attachClassFieldContract } from "./property-contracts.ts";
 import { makeMethod } from "./methods.ts";
 import { constructorPrototype } from "./functions.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
@@ -44,9 +50,20 @@ export interface ClassField {
   readonly name: ScriptPropertyKey;
   readonly initialize: ObjectCall<unknown>;
   readonly decoration?: ClassFieldDecoration;
+  readonly contract?: number;
+  readonly deferred?: boolean;
 }
 
 export type ClassPrivateMethod = PrivateMethod<unknown>;
+
+export function checkClassMethodResult(
+  implementation: ObjectCall<unknown>,
+  realm: ErrorRealm,
+  allowed: number,
+): ObjectCall<unknown> {
+  return (receiver: unknown, args: readonly unknown[]): unknown =>
+    checkPrimitiveContract(realm, implementation(receiver, args), allowed);
+}
 
 /** Auto-accessor closures share an anonymous private backing field. Public
  * accessors are installed at definition time; private pairs are installed by
@@ -184,12 +201,16 @@ export function initializeClassFields(
       }
     }
     const privateName = field.privateName;
+    const contract = field.contract ?? 0;
+    if (contract !== 0 && !(field.deferred === true && value === undefined))
+      checkPrimitiveContract(realm, value, contract);
     if (privateName !== undefined) {
       if (
         addPrivateField<ScriptPropertyKey, unknown>(
           receiver,
           privateName,
           value,
+          primitiveContractPredicate(contract),
         ) !== "none"
       )
         throw createRuntimeError(realm, "type");
@@ -202,6 +223,8 @@ export function initializeClassFields(
       )
     )
       throw createRuntimeError(realm, "type");
+    if (privateName === undefined && contract !== 0)
+      attachClassFieldContract(receiver, field.name, contract, realm);
     if (decoration !== undefined)
       runClassInitializers(decoration.extraInitializers, receiver, realm);
   }

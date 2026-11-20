@@ -43,6 +43,39 @@ test("streamed rel32 fields patch across byte chunks", () => {
   assert.equal(hex(layout.bytes.subarray(65534)), "e80100000090c3");
 });
 
+test("streamed rel64 fields patch across byte chunks", () => {
+  const assembler = createAssembler(true);
+  for (let index = 0; index < 65524; index++)
+    assembler.instruction({ op: "nop" });
+  assembler.instruction({
+    op: "call",
+    target: { kind: "label", label: "callee" },
+  });
+  assembler.instruction({ op: "nop" });
+  assembler.instruction({ op: "label", name: "callee" });
+  assembler.instruction({ op: "ret" });
+  const layout = assembler.finish();
+  assert.equal(layout.labels.get("callee"), 65549);
+  assert.equal(
+    hex(layout.bytes.subarray(65524)),
+    "4c8d350000000049bf12000000000000004f8d343e41ffd690c3",
+  );
+});
+
+test("encoding failures identify the instruction and its operands", () => {
+  assert.throws(
+    () =>
+      encode([
+        {
+          op: "add",
+          dst: mem(64, 5, -24),
+          src: { kind: "imm32", value: 2147483648 },
+        },
+      ]),
+    /immediate out of range.*add.*mem64\(base=5, disp=-24\).*imm32\(2147483648\)/,
+  );
+});
+
 test("PIE far addresses encode signed rel64 with separate file and VM offsets", () => {
   const reference = { kind: "label", label: "data", addend: 7 } as const;
   const instructions = [

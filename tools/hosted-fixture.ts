@@ -6,6 +6,7 @@ import { dirname, join } from "node:path";
 import { prepareDateTimeNativeService } from "./date-time-native-service.ts";
 import { frozenNativeRunIdentity } from "./native-run-journal.ts";
 import {
+  workspaceModuleLoader,
   workspaceModules,
   workspaceSources,
   workspaceSourceIdentity,
@@ -21,6 +22,10 @@ import {
   type ImageOperationRange,
 } from "@tint/compiler/build";
 import type { SourceModule } from "@tint/typescript/modules/model";
+import {
+  createSourceModuleLoader,
+  type SourceModuleText,
+} from "@tint/typescript/modules";
 import type { ModuleIR } from "@tint/ir/scalar";
 import { createGeneralLowering } from "@tint/js-engine/program";
 import { formatModule } from "./ir-dump/format.ts";
@@ -34,6 +39,8 @@ import {
   foreignRuntimeModules,
   prepareForeignLibrary,
   type ForeignLibrary,
+  type GeneralFallbackFunction,
+  type GeneralFallbackClass,
   type NativeForeignBinding,
   type NativeForeignMemoryBinding,
   type NativeHostBinding,
@@ -95,9 +102,14 @@ let generalLowering: GeneralLowering | undefined;
  * pipeline rejects, with console output through the hosted fs binding.
  * TINT_GENERAL_FALLBACK=0 disables it. Read per build, not at import:
  * fixtures set the variable after their (hoisted) imports. */
-export function workspaceGeneralLowering(): GeneralLowering | undefined {
+export function workspaceGeneralLowering(
+  functionFallback = false,
+): GeneralLowering | undefined {
   if (process.env.TINT_GENERAL_FALLBACK === "0") return undefined;
-  generalLowering ??= createGeneralLowering({
+  if (!functionFallback && generalLowering !== undefined)
+    return generalLowering;
+  const lowering = createGeneralLowering({
+    functionFallback,
     runtime: {
       objects: "packages/js-runtime/src/objects/index.ts",
       modules: "packages/js-runtime/src/modules/index.ts",
@@ -110,7 +122,8 @@ export function workspaceGeneralLowering(): GeneralLowering | undefined {
       name: "write",
     },
   });
-  return generalLowering;
+  if (!functionFallback) generalLowering = lowering;
+  return lowering;
 }
 
 /** Build through the full hosted pipeline and run through the target runner.
@@ -150,7 +163,15 @@ function buildHostedFixture(
     /** Fail instead of falling back to general semantics (benchmarks whose
      * measurements must be of typed code). */
     readonly requireTyped?: boolean;
+    /** Host validation over captured application sources, when supplied. */
+    readonly validateSource?: GeneralLowering["validateSource"];
+    readonly functionFallback?: boolean;
+    /** Replay fixtures and these helper modules from captured source text. */
+    readonly replaySources?: readonly SourceModuleText[];
     readonly optimization?: BuildRequest["optimization"];
+    readonly onFallbackTrigger?: (
+      trigger: NonNullable<Parameters<GeneralLowering["lower"]>[0]["trigger"]>,
+    ) => void;
     /** Receives the general fallback when one was used (also reported on
      * stderr). */
     readonly onGeneralFallback?: (
@@ -179,7 +200,31 @@ function buildHostedFixture(
   },
 ): string {
   const bytes = new TextEncoder().encode(text);
-  const general = workspaceGeneralLowering();
+  const functionFallback =
+    options.functionFallback === true && options.validateSource !== undefined;
+  const general = workspaceGeneralLowering(functionFallback);
+  let fallbackFunctions: readonly GeneralFallbackFunction[] | undefined;
+  let fallbackClasses: readonly GeneralFallbackClass[] | undefined;
+  const replaySources = options.replaySources;
+  const fixtureSource = "fixture";
+  const original =
+    replaySources === undefined
+      ? (() => {
+          const source = createSourceText(bytes, bytes.length);
+          assert.ok(source.ok);
+          const parsed = parseModule(source.value);
+          assert.ok(parsed.ok, JSON.stringify(parsed));
+          return {
+            id: fixtureSource,
+            module: parsed.value,
+            dependencies: new Map(dependencies),
+            sourcePosition: (offset: number) => {
+              const position = source.value.positionAt(offset);
+              return position.ok ? position.value : undefined;
+            },
+          };
+        })()
+      : undefined;
   const stackTraces =
       options.stackTraces ?? process.env.TINT_STACK_TRACES === "1",
     signposts = options.signposts ?? process.env.TINT_SIGNPOSTS === "1",
@@ -189,10 +234,6 @@ function buildHostedFixture(
     heapIntrospection =
       options.heapIntrospection ??
       (heapVariable === undefined ? undefined : heapVariable === "1");
-  const source = createSourceText(bytes, bytes.length);
-  assert.ok(source.ok);
-  const parsed = parseModule(source.value);
-  assert.ok(parsed.ok, JSON.stringify(parsed));
   const captured = workspaceSources();
   const sourceSnapshot = workspaceSourceIdentity(captured);
   const foreign = expandForeignSnapshot(captured);
@@ -257,6 +298,14 @@ function buildHostedFixture(
     );
   }
   const fixtureGenerated = [...generatedModules, ...foreignModules];
+  if (replaySources !== undefined)
+    assert.ok(
+      fixtureGenerated.length === 0 && serviceImage === undefined,
+      "source replay fixtures must supply text for every application module",
+    );
+  const localModuleIds = new Set(
+    (replaySources ?? fixtureGenerated).map((module) => module.id),
+  );
   const sysvDynamic =
     fixtureTarget.arch === "x86_64" &&
     (dependencyIds.includes(foreignRuntimeModules.unsafe) ||
@@ -266,38 +315,67 @@ function buildHostedFixture(
           dependency[1] === foreignRuntimeModules.index,
       ));
 
-  const capturedModules = [
-    ...workspaceModules(
-      [
-        ...projectRoots(),
-        ...(general?.runtimeModules ?? []),
-        ...dependencies
-          .map((dependency) => dependency[1])
-          .filter((id) => !fixtureGenerated.some((module) => module.id === id)),
-        ...dependencyIds,
-        ...(sysvDynamic ? [foreignRuntimeModules.sysv] : []),
-      ],
-      foreign.snapshot,
-    ),
-    ...fixtureGenerated,
+  const roots = [
+    ...projectRoots(),
+    ...(general?.runtimeModules ?? []),
+    ...dependencies
+      .map((dependency) => dependency[1])
+      .filter((id) => !localModuleIds.has(id)),
+    ...dependencyIds,
+    ...(sysvDynamic ? [foreignRuntimeModules.sysv] : []),
   ];
-  capturedModules.push({
-    id: "fixture",
-    module: parsed.value,
-    dependencies: new Map(dependencies),
-    sourcePosition: (offset) => {
-      const position = source.value.positionAt(offset);
-      return position.ok ? position.value : undefined;
-    },
-  });
+  const replay = { loads: 0, modules: 0, utf16Units: 0 };
+  const moduleLoader =
+    replaySources === undefined
+      ? undefined
+      : (() => {
+          const workspace = workspaceModuleLoader(roots, foreign.snapshot);
+          const fixture = createSourceModuleLoader([
+            ...replaySources,
+            { id: fixtureSource, text, dependencies: new Map(dependencies) },
+          ]);
+          const ids = [...workspace.ids, ...fixture.ids];
+          assert.equal(
+            new Set(ids).size,
+            ids.length,
+            "duplicate replay module",
+          );
+          return {
+            ids,
+            sourceDependencies: (id: string) =>
+              fixture.sourceDependencies?.(id) ??
+              workspace.sourceDependencies?.(id),
+            load: (selected?: readonly string[]) => {
+              const loaded = [
+                ...workspace.load(selected),
+                ...fixture.load(selected),
+              ];
+              replay.loads++;
+              replay.modules += loaded.length;
+              for (const module of loaded)
+                replay.utf16Units += module.module.end;
+              return loaded;
+            },
+          };
+        })();
   const modules =
-    serviceImage === undefined
-      ? capturedModules
-      : serviceImage.transformModules(capturedModules);
+    original === undefined
+      ? []
+      : (() => {
+          const capturedModules: SourceModule[] = [
+            ...workspaceModules(roots, foreign.snapshot),
+            ...fixtureGenerated,
+            original,
+          ];
+          return (
+            serviceImage?.transformModules(capturedModules) ?? capturedModules
+          );
+        })();
   const { runtimeEntry: defaultRuntimeEntry, ...request } = projectBuildRequest(
     modules,
     () => {},
     foreignLibraries,
+    moduleLoader,
   );
   const runtimeEntry =
     fixtureTarget.arch === "x86_64"
@@ -305,7 +383,7 @@ function buildHostedFixture(
       : (options.runtimeEntry ?? defaultRuntimeEntry ?? "initializeRuntime");
   // The tint:ffi runtime's capabilities when the program loads it.
   const ffi = foreignRuntimeBindings(
-    new Set(modules.map((module) => module.id)),
+    new Set(moduleLoader?.ids ?? modules.map((module) => module.id)),
   );
   const nativeServices = [
     ...(options.nativeServices ?? []),
@@ -368,12 +446,33 @@ function buildHostedFixture(
     ],
     runtimeModule: options.runtimeModule ?? request.runtimeModule,
     ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
-    entry: "fixture",
+    entry: fixtureSource,
     start: "run",
     ...(general === undefined
       ? {}
       : {
-          generalLowering: general,
+          generalLowering: {
+            ...general,
+            ...(options.validateSource === undefined
+              ? {}
+              : { validateSource: options.validateSource }),
+            ...(functionFallback || options.onFallbackTrigger !== undefined
+              ? {
+                  lower: (request: Parameters<GeneralLowering["lower"]>[0]) => {
+                    if (request.trigger !== undefined)
+                      options.onFallbackTrigger?.(request.trigger);
+                    const lowered = general.lower(request);
+                    fallbackFunctions = lowered.ok
+                      ? lowered.value.functions
+                      : undefined;
+                    fallbackClasses = lowered.ok
+                      ? lowered.value.classes
+                      : undefined;
+                    return lowered;
+                  },
+                }
+              : {}),
+          },
           ...(options.requireTyped === true ? { requireTyped: true } : {}),
           onGeneralFallback: (modules: readonly string[], reason: string) => {
             options.onGeneralFallback?.(modules, reason);
@@ -463,11 +562,19 @@ function buildHostedFixture(
     writeFileSync(path + "." + stage + ".ir", text + "\n");
   const fixturePath = path + ".source.ts";
   writeFileSync(fixturePath, bytes, { flag: "wx" });
-  const generated = generatedModules.map((module) => ({
-    id: module.id,
-    dependencies: [...module.dependencies],
-    module: module.module,
-  }));
+  const generated =
+    replaySources === undefined
+      ? generatedModules.map((module) => ({
+          id: module.id,
+          dependencies: [...module.dependencies],
+          module: module.module,
+        }))
+      : replaySources.map((module) => ({
+          id: module.id,
+          dependencies: [...module.dependencies],
+          text: module.text,
+        }));
+  const { replaySources: _replaySources, ...manifestOptions } = options;
   writeFileSync(
     path + ".manifest.json",
     JSON.stringify(
@@ -483,8 +590,11 @@ function buildHostedFixture(
         generatedModulesSha256: createHash("sha256")
           .update(JSON.stringify(generated))
           .digest("hex"),
+        ...(moduleLoader === undefined ? {} : { sourceReplay: replay }),
+        ...(fallbackFunctions === undefined ? {} : { fallbackFunctions }),
+        ...(fallbackClasses === undefined ? {} : { fallbackClasses }),
         options: {
-          ...options,
+          ...manifestOptions,
           ...(serviceImage === undefined
             ? {}
             : {

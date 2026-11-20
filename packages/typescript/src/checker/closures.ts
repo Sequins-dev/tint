@@ -64,7 +64,10 @@ import {
   type CheckedCellOperation,
   type CellOperation,
 } from "../types/index.ts";
-import { realmLibraryConstructor } from "../binding/realm-library.ts";
+import {
+  installedNonConstructorGlobals,
+  realmLibraryConstructor,
+} from "../binding/realm-library.ts";
 import {
   realmArrayInstance,
   realmConstructorInstance,
@@ -73,6 +76,7 @@ import {
   realmLibraryType,
   resolveInterfaceTypes,
   type ClassContract,
+  type InterfaceFallback,
   type InterfaceResolutionCache,
 } from "./interfaces.ts";
 /** A fixed key proven by syntax or a singleton checked type, never by speculation. */
@@ -319,9 +323,24 @@ export interface CheckedClosures {
    * throw a TypeError when the value is not a T (docs/unified-pipeline.md). */
   readonly downcasts?: ReadonlyKeyIndex<Expression, number>;
   readonly dynamicEnrollments?: ReadonlyKeyIndex<Expression, number>;
+  readonly nativeCallableViews?: ReadonlyKeyIndex<Expression, boolean>;
+  readonly nativeListViews?: ReadonlyKeyIndex<Expression, boolean>;
+  readonly nativeRecordViews?: ReadonlyKeyIndex<
+    Expression,
+    readonly NativeRecordViewField[]
+  >;
   readonly finitePropertyKeys?: ReadonlyKeyIndex<Expression, readonly string[]>;
   readonly operations: readonly BindingOperation[];
 }
+export interface NativeRecordViewField {
+  readonly name: string;
+  readonly type: "number" | "string" | "boolean" | "unknown";
+  readonly optional: boolean;
+  readonly readonly: boolean;
+}
+/** A generated binding name. The parser cannot create it from source. */
+export const nativeCallableProjectionAlias =
+  "$tint$dynamic$@projectUnaryNumber";
 export interface CheckedTypeSystem {
   readonly types: readonly Type[];
   readonly system: TypeSystem;
@@ -330,6 +349,35 @@ export interface ClosureDiagnostic extends Span {
   readonly code: string;
   readonly message: string;
   readonly preventsFallback?: boolean;
+  readonly fallback?: ClosureFallback;
+}
+export interface ClosureFallback {
+  readonly capability:
+    | "generator-suspension"
+    | "async-suspension"
+    | InterfaceFallback["capability"]
+    | "function-signature-inference"
+    | "open-binding-write"
+    | "checked-index-read"
+    | "object-accessor-layout"
+    | "binding-initialization"
+    | "aggregate-inference"
+    | "aggregate-spread"
+    | "default-parameter-layout"
+    | "rest-call-layout"
+    | "optional-call"
+    | "iterable-layout"
+    | "lexical-receiver"
+    | "collection-construction"
+    | "realm-library-global"
+    | "realm-library-member"
+    | "realm-library-construction"
+    | "union-member-narrowing"
+    | "realm-aggregate-update"
+    | "general-result-projection"
+    | "operator-layout";
+  readonly ownerKind: "function" | "class" | "module";
+  readonly owner: Span;
 }
 export type ClosureResult =
   | { readonly ok: true; readonly value: CheckedClosures }
@@ -426,6 +474,7 @@ function checkClosureModuleLayout(
     code: string,
     message: string,
     definitive: boolean = false,
+    fallback?: ClosureFallback,
   ): never {
     error = {
       start: node.start,
@@ -433,8 +482,62 @@ function checkClosureModuleLayout(
       code,
       message,
       ...(definitive ? { preventsFallback: true } : {}),
+      ...(fallback === undefined ? {} : { fallback }),
     };
     throw abort;
+  }
+  // On a rejection, recover the source owner from the bound declarations. A
+  // class is one unit even when the unsupported operation is inside a method.
+  function fallbackAt(
+    node: Span,
+    capability: ClosureFallback["capability"],
+  ): ClosureFallback {
+    for (const statement of module.statements)
+      if (
+        statement?.kind === "class" &&
+        statement.start <= node.start &&
+        node.end <= statement.end
+      )
+        return {
+          capability,
+          ownerKind: "class",
+          owner: { start: statement.start, end: statement.end },
+        };
+    let owner: Span | undefined;
+    for (const frame of graph.functions)
+      if (
+        frame !== undefined &&
+        frame.node.start <= node.start &&
+        node.end <= frame.node.end &&
+        (owner === undefined ||
+          frame.node.end - frame.node.start < owner.end - owner.start)
+      )
+        owner = frame.node;
+    return owner === undefined
+      ? {
+          capability,
+          ownerKind: "module",
+          owner: { start: node.start, end: node.end },
+        }
+      : {
+          capability,
+          ownerKind: "function",
+          owner: { start: owner.start, end: owner.end },
+        };
+  }
+  function unsupported(
+    node: Span,
+    capability: ClosureFallback["capability"],
+    message: string,
+    blocked: boolean = false,
+  ): never {
+    return fail(
+      node,
+      "UNSUPPORTED",
+      message,
+      blocked,
+      fallbackAt(node, capability),
+    );
   }
   function annotation(node: Span, type: TypeNode | undefined): void {
     if (type !== undefined) {
@@ -606,6 +709,12 @@ function checkClosureModuleLayout(
         node,
         "UNSUPPORTED",
         "named functions require parameter and return annotations",
+        false,
+        {
+          capability: "function-signature-inference",
+          ownerKind: "function",
+          owner: node,
+        },
       );
     collect(body);
   }
@@ -663,18 +772,36 @@ function checkClosureModuleLayout(
                 member,
                 "UNSUPPORTED",
                 "typed class static blocks require initialization lowering",
+                false,
+                {
+                  capability: "class-static-block",
+                  ownerKind: "class",
+                  owner: node,
+                },
               );
             if (member.kind !== "field" && member.async)
               fail(
                 member,
                 "UNSUPPORTED",
                 "typed async method lowering is not implemented",
+                false,
+                {
+                  capability: "async-suspension",
+                  ownerKind: "class",
+                  owner: node,
+                },
               );
             if (member.kind !== "field" && member.generator)
               fail(
                 member,
                 "UNSUPPORTED",
                 "generator suspension lowering is not implemented",
+                false,
+                {
+                  capability: "generator-suspension",
+                  ownerKind: "class",
+                  owner: node,
+                },
               );
             if (
               member.kind !== "field" &&
@@ -704,12 +831,24 @@ function checkClosureModuleLayout(
               node,
               "UNSUPPORTED",
               "typed async function lowering is not implemented",
+              false,
+              {
+                capability: "async-suspension",
+                ownerKind: "function",
+                owner: node,
+              },
             );
           if (node.generator)
             fail(
               node,
               "UNSUPPORTED",
               "generator suspension lowering is not implemented",
+              false,
+              {
+                capability: "generator-suspension",
+                ownerKind: "function",
+                owner: node,
+              },
             );
           if (typeParameterCount(node.typeParameters))
             fail(
@@ -739,12 +878,24 @@ function checkClosureModuleLayout(
               node,
               "UNSUPPORTED",
               "typed async function lowering is not implemented",
+              false,
+              {
+                capability: "async-suspension",
+                ownerKind: "function",
+                owner: node,
+              },
             );
           if (node.kind === "function-expression" && node.generator)
             fail(
               node,
               "UNSUPPORTED",
               "generator suspension lowering is not implemented",
+              false,
+              {
+                capability: "generator-suspension",
+                ownerKind: "function",
+                owner: node,
+              },
             );
           collectFunction(
             node,
@@ -878,9 +1029,9 @@ function checkClosureModuleLayout(
         case "for-in":
         case "for-of": {
           if (node.await)
-            fail(
+            unsupported(
               node,
-              "UNSUPPORTED",
+              "async-suspension",
               "typed for-await lowering is not implemented",
             );
           const loopBinding = node.binding;
@@ -1030,7 +1181,29 @@ function checkClosureModuleLayout(
     options.interfaceCache,
     options.cViews,
   );
-  if (!resolved.ok) return resolved;
+  if (!resolved.ok) {
+    const diagnostic = resolved.error;
+    return {
+      ok: false,
+      error: {
+        start: diagnostic.start,
+        end: diagnostic.end,
+        code: diagnostic.code,
+        message: diagnostic.message,
+        ...(diagnostic.preventsFallback === true
+          ? { preventsFallback: true }
+          : {}),
+        ...(diagnostic.fallback === undefined
+          ? {}
+          : {
+              fallback:
+                diagnostic.fallback.ownerKind === "class"
+                  ? diagnostic.fallback
+                  : fallbackAt(diagnostic, diagnostic.fallback.capability),
+            }),
+      },
+    };
+  }
   const contracts = resolved.value;
   const classContracts = createKeyIndex<ClassDefinition, ClassContract>(
     syntaxHash,
@@ -1778,19 +1951,23 @@ function checkClosureModuleLayout(
       b.owner === owner &&
       pendingParameters.has(b.id)
     )
-      fail(node, "UNSUPPORTED", "parameter is not initialized: " + b.name);
+      unsupported(
+        node,
+        "binding-initialization",
+        "parameter is not initialized: " + b.name,
+      );
     const type = bindingTypes[b.id];
     if (type === undefined)
-      fail(
+      unsupported(
         node,
-        "UNSUPPORTED",
+        "binding-initialization",
         "forward or recursive inferred bindings require an annotation",
       );
     if (deferred.has(b.id)) {
       if ((b.captured && b.kind !== "var") || b.owner === undefined)
-        fail(
+        unsupported(
           node,
-          "UNSUPPORTED",
+          "binding-initialization",
           "deferred captured or module bindings require initialization support",
         );
       if (
@@ -1821,6 +1998,31 @@ function checkClosureModuleLayout(
             checked.error,
             "rest function assignments require matching rest layouts",
           );
+      }
+      if (
+        checked.error === "TYPE_MISMATCH" &&
+        op.kind === "write" &&
+        b.mutable &&
+        !declared.has(b.node)
+      ) {
+        const frame = owner === undefined ? undefined : graph.functions[owner];
+        fail(
+          node,
+          checked.error,
+          "invalid binding operation",
+          false,
+          frame === undefined
+            ? {
+                capability: "open-binding-write",
+                ownerKind: "module",
+                owner: node,
+              }
+            : {
+                capability: "open-binding-write",
+                ownerKind: "function",
+                owner: frame.node,
+              },
+        );
       }
       fail(node, checked.error, "invalid binding operation");
     }
@@ -2476,9 +2678,9 @@ function checkClosureModuleLayout(
         break;
       }
     }
-    return fail(
+    return unsupported(
       node,
-      "UNSUPPORTED",
+      "realm-library-member",
       "Realm property " +
         entry.name +
         "." +
@@ -2536,9 +2738,9 @@ function checkClosureModuleLayout(
         );
       }
     }
-    return fail(
+    return unsupported(
       node,
-      "UNSUPPORTED",
+      "realm-library-member",
       "Realm method " +
         entry.name +
         "." +
@@ -3352,9 +3554,9 @@ function checkClosureModuleLayout(
     node: Expression,
   ): number {
     if (expected === undefined)
-      fail(
+      unsupported(
         node,
-        "UNSUPPORTED",
+        "aggregate-inference",
         "object, array and arrow expressions need a contextual or explicit type",
       );
     const t = types[expected];
@@ -3393,9 +3595,9 @@ function checkClosureModuleLayout(
           for (const property of properties) {
             if (property === undefined) throw "missing object property";
             if (property.kind === "spread")
-              fail(
+              unsupported(
                 property,
-                "UNSUPPORTED",
+                "aggregate-spread",
                 "object spread requires property-copy checking and lowering",
               );
             const field = candidateProperties.find(
@@ -3431,6 +3633,8 @@ function checkClosureModuleLayout(
       node,
       "TYPE_MISMATCH",
       "expected an unambiguous " + kind + " type",
+      false,
+      fallbackAt(node, "aggregate-inference"),
     );
   }
   function checkFunction(
@@ -3498,9 +3702,9 @@ function checkClosureModuleLayout(
             types[defined]?.kind !== "set" &&
             types[defined]?.kind !== "map"
           )
-            fail(
+            unsupported(
               p,
-              "UNSUPPORTED",
+              "default-parameter-layout",
               "default parameters currently require primitive, object, collection or supported array types",
             );
           requireType(presentType(expected) ?? expected, actual, p);
@@ -3517,9 +3721,9 @@ function checkClosureModuleLayout(
         pendingParameters.delete(b.id);
         if (p.kind === "pattern-parameter") {
           if (p.rest)
-            fail(
+            unsupported(
               p,
-              "UNSUPPORTED",
+              "rest-call-layout",
               "destructured rest parameters require rest parameter lowering",
             );
           initializeBindingPattern(
@@ -3666,7 +3870,19 @@ function checkClosureModuleLayout(
       constructors,
     );
     if (initialization !== undefined)
-      fail(initialization, initialization.code, initialization.message);
+      fail(
+        initialization,
+        initialization.code,
+        initialization.message,
+        undefined,
+        initialization.code === "UNSUPPORTED"
+          ? {
+              capability: "class-initialization",
+              ownerKind: "class",
+              owner: node,
+            }
+          : undefined,
+      );
     cell(
       outer,
       { kind: "initialize", value: contract.constructor },
@@ -3735,6 +3951,12 @@ function checkClosureModuleLayout(
     chainReceivers = createKeyIndex<Expression, number>(syntaxHash),
     downcasts = createKeyIndex<Expression, number>(syntaxHash),
     dynamicEnrollments = createKeyIndex<Expression, number>(syntaxHash),
+    nativeCallableViews = createKeyIndex<Expression, boolean>(syntaxHash),
+    nativeListViews = createKeyIndex<Expression, boolean>(syntaxHash),
+    nativeRecordViews = createKeyIndex<
+      Expression,
+      readonly NativeRecordViewField[]
+    >(syntaxHash),
     finitePropertyKeys = createKeyIndex<Expression, readonly string[]>(
       syntaxHash,
     );
@@ -3788,9 +4010,9 @@ function checkClosureModuleLayout(
     const element = rest?.kind === "array" ? rest.element : undefined;
     if (list !== undefined && element !== undefined) {
       if (!isList(list))
-        fail(
+        unsupported(
           node,
-          "UNSUPPORTED",
+          "rest-call-layout",
           "rest parameter requires a supported array layout",
         );
       restCalls.set(node, {
@@ -3816,9 +4038,9 @@ function checkClosureModuleLayout(
         continue;
       }
       if (!trailing || element === undefined)
-        fail(
+        unsupported(
           argument,
-          "UNSUPPORTED",
+          "rest-call-layout",
           "spread arguments are only supported in the rest position",
         );
       const source = expression(
@@ -3835,7 +4057,11 @@ function checkClosureModuleLayout(
           ? spread.element
           : undefined;
       if (supplied === undefined)
-        fail(argument, "UNSUPPORTED", "rest spread requires a supported array");
+        unsupported(
+          argument,
+          "rest-call-layout",
+          "rest spread requires a supported array",
+        );
       recordTypeFlow(supplied, element, argument);
       if (!system.assignable(supplied, element))
         fail(
@@ -3852,9 +4078,9 @@ function checkClosureModuleLayout(
     owner: number | undefined,
   ): number {
     if (isOptionalChain(node))
-      fail(
+      unsupported(
         node,
-        "UNSUPPORTED",
+        "optional-call",
         "general calls through optional chains require reference lowering",
       );
     const unknown = primitive("unknown");
@@ -3871,7 +4097,11 @@ function checkClosureModuleLayout(
   }
   function requireForInObject(id: number, node: Span): void {
     if (!dynamicObject(presentType(id, true) ?? id))
-      fail(node, "UNSUPPORTED", "typed for-in requires a dynamic-key object");
+      unsupported(
+        node,
+        "iterable-layout",
+        "typed for-in requires a dynamic-key object",
+      );
   }
   function realmArray(
     element: number,
@@ -4041,9 +4271,9 @@ function checkClosureModuleLayout(
     const known = realmTypes.get(id);
     if (known !== undefined) return known;
     if (convertingRealm.has(id))
-      fail(
+      unsupported(
         node,
-        "UNSUPPORTED",
+        "realm-payload-layout",
         "recursive fixed realm payload types require recursive layout selection",
         true,
       );
@@ -4094,15 +4324,97 @@ function checkClosureModuleLayout(
     }
     return value;
   }
-  function checkDynamicPayload(value: number, node: Expression): void {
+  function unaryNumberCallable(value: number): boolean {
+    const signature = types[value];
+    return (
+      signature?.kind === "function" &&
+      signature.receiver === undefined &&
+      signature.rest !== true &&
+      signature.parameters.length === 1 &&
+      signature.minimumArguments !== 0 &&
+      signature.parameters[0] === number &&
+      signature.result === number
+    );
+  }
+  function projectedCallable(node: Expression): boolean {
+    const callee = node.kind === "call" ? node.callee : undefined;
+    return (
+      callee?.kind === "identifier" &&
+      callee.name === nativeCallableProjectionAlias
+    );
+  }
+  function checkDynamicPayload(
+    value: number,
+    node: Expression,
+    erased?: number,
+  ): void {
     const unsupported = unsupportedDynamicPayload(types, value);
     if (unsupported === undefined) return;
+    const erasing = types[erased ?? -1]?.kind === "unknown";
+    if (erasing && unaryNumberCallable(value)) {
+      nativeCallableViews.set(node, true);
+      return;
+    }
+    const signature = types[value];
+    if (erasing) {
+      const source = ungroup(node);
+      const declaration =
+        source.kind === "identifier" ? references.get(source) : undefined;
+      if (
+        declaration !== undefined &&
+        declared.get(declaration.node) !== undefined
+      ) {
+        if (
+          signature?.kind === "array" &&
+          signature.element === number &&
+          !signature.readonly &&
+          signature.tupleElements === undefined
+        ) {
+          nativeListViews.set(node, true);
+          return;
+        }
+        if (
+          signature?.kind === "object" &&
+          signature.call === undefined &&
+          signature.construct === undefined
+        ) {
+          const fields: NativeRecordViewField[] = [];
+          for (const field of signature.properties) {
+            if (field === undefined) throw "native view field invariant";
+            const type = types[field.type]?.kind;
+            if (
+              type !== "number" &&
+              type !== "string" &&
+              type !== "boolean" &&
+              type !== "unknown"
+            )
+              break;
+            fields.push({
+              name: field.name,
+              type,
+              optional: field.optional === true,
+              readonly: field.readonly,
+            });
+          }
+          if (fields.length === signature.properties.length) {
+            nativeRecordViews.set(node, fields);
+            return;
+          }
+        }
+      }
+    }
     if (realmPlan === undefined && aggregatePayload(types, value)) {
       realmSinks.set(node, true);
       replayRealm = true;
       return;
     }
-    fail(node, "UNSUPPORTED", unsupported, true);
+    fail(
+      node,
+      "UNSUPPORTED",
+      unsupported.message,
+      true,
+      fallbackAt(node, unsupported.capability),
+    );
   }
   function realmAggregate(id: number): boolean {
     const type = types[id];
@@ -4133,9 +4445,9 @@ function checkClosureModuleLayout(
           sourceIndex === undefined ||
           index === undefined
         )
-          fail(
+          unsupported(
             property,
-            "UNSUPPORTED",
+            "aggregate-spread",
             "typed dynamic spread requires a dynamic-key object source",
           );
         requireType(sourceIndex.type, index.type, property);
@@ -4150,9 +4462,9 @@ function checkClosureModuleLayout(
         continue;
       }
       if (property.accessor !== undefined)
-        fail(
+        unsupported(
           property,
-          "UNSUPPORTED",
+          "native-callable-view",
           "typed dynamic object accessors require callable views",
         );
       if (property.prototypeSetter === true) {
@@ -4177,7 +4489,7 @@ function checkClosureModuleLayout(
         owner,
         dynamicPayloadType(first.type, property.value),
       );
-      checkDynamicPayload(value, property.value);
+      checkDynamicPayload(value, property.value, first.type);
       for (const field of fields) {
         if (field === undefined) throw "dynamic literal field invariant";
         if (
@@ -4302,9 +4614,9 @@ function checkClosureModuleLayout(
       }
       switch (node.kind) {
         case "spread":
-          return fail(
+          return unsupported(
             node,
-            "UNSUPPORTED",
+            "rest-call-layout",
             "spread arguments are only supported in the rest position",
           );
         case "private-in":
@@ -4314,15 +4626,15 @@ function checkClosureModuleLayout(
             "typed private brand checks require private layouts",
           );
         case "new-target":
-          return fail(
+          return unsupported(
             node,
-            "UNSUPPORTED",
+            "lexical-receiver",
             "typed new.target requires constructor context support",
           );
         case "super":
-          return fail(
+          return unsupported(
             node,
-            "UNSUPPORTED",
+            "lexical-receiver",
             "typed super references require class receiver support",
           );
         case "this": {
@@ -4332,9 +4644,9 @@ function checkClosureModuleLayout(
           else {
             const receiver = receiverTypes.get(receiverOwner);
             if (receiver === undefined)
-              fail(
+              unsupported(
                 node,
-                "UNSUPPORTED",
+                "lexical-receiver",
                 "receiver-aware native calls require a receiver annotation or context",
               );
             result = receiver;
@@ -4374,6 +4686,8 @@ function checkClosureModuleLayout(
               result = constructor;
               break;
             }
+            if (installedNonConstructorGlobals.includes(node.name))
+              unsupported(node, "realm-library-global", "unsupported global");
             return fail(node, "UNSUPPORTED", "unsupported global");
           } else {
             const declared = cell(b, { kind: "read" }, node, owner);
@@ -4451,9 +4765,9 @@ function checkClosureModuleLayout(
           if (proof !== undefined) contextualProofs.set(node, proof);
           break;
         case "tagged-template":
-          return fail(
+          return unsupported(
             node,
-            "UNSUPPORTED",
+            "template-call",
             "typed template tag calls are not implemented",
           );
         case "template-expression":
@@ -4466,9 +4780,9 @@ function checkClosureModuleLayout(
                 (type) => system.assignable(input, type),
               )
             )
-              fail(
+              unsupported(
                 substitution,
-                "UNSUPPORTED",
+                "template-call",
                 "typed templates require fixed primitive substitution types",
               );
           }
@@ -4499,9 +4813,9 @@ function checkClosureModuleLayout(
               }
               return listReadType(iterable, element);
             }
-            fail(
+            unsupported(
               element,
-              "UNSUPPORTED",
+              "iterable-layout",
               "array spread requires a supported array until general iterable lowering is available",
             );
           }
@@ -4536,9 +4850,9 @@ function checkClosureModuleLayout(
             )
               context = arrayOf(firstType, first);
             else
-              fail(
+              unsupported(
                 first,
-                "UNSUPPORTED",
+                "aggregate-inference",
                 "array elements require an explicit supported context",
               );
           }
@@ -4645,9 +4959,9 @@ function checkClosureModuleLayout(
                 (p.keyExpression !== undefined || p.prototypeSetter === true),
             )
           )
-            fail(
+            unsupported(
               node,
-              "UNSUPPORTED",
+              "aggregate-inference",
               "dynamic object literal requires an indexed object context",
             );
           if (
@@ -4659,6 +4973,15 @@ function checkClosureModuleLayout(
               node,
               "UNSUPPORTED",
               "typed object accessors require accessor layout support",
+              false,
+              {
+                capability: "object-accessor-layout",
+                ownerKind: owner === undefined ? "module" : "function",
+                owner:
+                  owner === undefined
+                    ? node
+                    : (graph.functions[owner]?.node ?? node),
+              },
             );
           const hasSpread = node.properties.some((p) => p.kind === "spread");
           if (types[expected ?? -1]?.kind === "Error") {
@@ -4730,9 +5053,9 @@ function checkClosureModuleLayout(
                     }
                   } else if (source?.kind === "object") sources.push(id);
                   else
-                    fail(
+                    unsupported(
                       property,
-                      "UNSUPPORTED",
+                      "aggregate-spread",
                       "object spread requires finite object source variants",
                     );
                 }
@@ -4903,9 +5226,9 @@ function checkClosureModuleLayout(
             if (inputProperty === undefined) throw "missing object property";
             const p = inputProperty;
             if (p.kind === "spread")
-              fail(
+              unsupported(
                 p,
-                "UNSUPPORTED",
+                "aggregate-spread",
                 "object spread requires property-copy checking and lowering",
               );
             const field = context.properties.find(
@@ -4984,9 +5307,9 @@ function checkClosureModuleLayout(
             library.realmLibrary !== undefined
           ) {
             if (node.optional === true || skipped !== undefined)
-              fail(
+              unsupported(
                 node,
-                "UNSUPPORTED",
+                "optional-call",
                 "Optional realm library property access requires optional chain lowering",
                 true,
               );
@@ -5010,9 +5333,9 @@ function checkClosureModuleLayout(
           const objectType = types[obj];
           if (objectType?.kind === "array" && objectType.realmArray === true) {
             if (node.property !== "length")
-              fail(
+              unsupported(
                 node,
-                "UNSUPPORTED",
+                "realm-library-member",
                 "realm array member requires typed array method lowering",
               );
             intrinsics.set(node, "dynamic-object-read");
@@ -5074,7 +5397,15 @@ function checkClosureModuleLayout(
           const fact = propertyFact(receiver, node.property);
           if (!p.ok) {
             if (fact === undefined)
-              fail(node, p.error, "invalid property read");
+              fail(
+                node,
+                p.error,
+                "invalid property read",
+                false,
+                types[obj]?.kind === "union"
+                  ? fallbackAt(node, "union-member-narrowing")
+                  : undefined,
+              );
             intrinsics.set(
               node,
               types[inputExpected ?? -1]?.kind === "unknown"
@@ -5095,9 +5426,9 @@ function checkClosureModuleLayout(
             objectType?.kind === "object" &&
             objectType.realmLibrary !== undefined
           )
-            fail(
+            unsupported(
               node,
-              "UNSUPPORTED",
+              "realm-library-member",
               "Realm indexed read on " +
                 objectType.realmLibrary +
                 " requires library index lowering",
@@ -5222,9 +5553,9 @@ function checkClosureModuleLayout(
             !references.has(target)
           ) {
             if (node.arguments.length > 1)
-              fail(
+              unsupported(
                 node,
-                "UNSUPPORTED",
+                "realm-library-construction",
                 "Error options (cause) require the realm Error constructor",
               );
             for (const argument of node.arguments) {
@@ -5253,9 +5584,9 @@ function checkClosureModuleLayout(
             const annotation = collectionConstructors.get(node);
             if (map) {
               if (node.arguments.length !== 0 || annotation === undefined)
-                fail(
+                unsupported(
                   node,
-                  "UNSUPPORTED",
+                  "collection-construction",
                   "Map construction requires explicit type arguments and no iterable yet",
                 );
               result = typeOf(annotation);
@@ -5273,9 +5604,9 @@ function checkClosureModuleLayout(
                 else if (isList(iterable))
                   element = listReadType(iterable, input);
                 else
-                  fail(
+                  unsupported(
                     input,
-                    "UNSUPPORTED",
+                    "collection-construction",
                     "Set input requires a supported array or Set until general iteration is available",
                   );
               }
@@ -5290,9 +5621,9 @@ function checkClosureModuleLayout(
                 result = expected;
               else {
                 if (element === undefined)
-                  fail(
+                  unsupported(
                     node,
-                    "UNSUPPORTED",
+                    "collection-construction",
                     "empty Set requires an explicit or contextual element type",
                   );
                 const inferredElement = element;
@@ -5309,8 +5640,17 @@ function checkClosureModuleLayout(
               const set = types[result];
               if (set?.kind !== "set")
                 fail(node, "UNSUPPORTED", "collection type is shadowed");
+              if (
+                element !== undefined &&
+                !system.assignable(element, set.element)
+              )
+                unsupported(
+                  node,
+                  "collection-construction",
+                  "Set iterable does not match the native element layout",
+                );
               if (element !== undefined)
-                requireType(element, set.element, node);
+                recordTypeFlow(element, set.element, node);
             }
             if (types[result]?.kind !== (map ? "map" : "set"))
               fail(node, "UNSUPPORTED", "collection type is shadowed");
@@ -5340,9 +5680,9 @@ function checkClosureModuleLayout(
               contract?.kind === "object" &&
               contract.realmLibrary !== undefined
             )
-              fail(
+              unsupported(
                 node,
-                "UNSUPPORTED",
+                "realm-library-construction",
                 "Realm constructor " +
                   contract.realmLibrary +
                   " requires library overload lowering",
@@ -5365,11 +5705,17 @@ function checkClosureModuleLayout(
             result = constructed.value;
             break;
           }
-          if (node.typeArguments.length !== 0 || node.arguments.length > 1)
+          if (node.typeArguments.length !== 0)
             fail(
               node,
               "ARITY",
               "typed-array construction accepts an optional numeric length, numeric array or supported typed-array source",
+            );
+          if (node.arguments.length > 1)
+            unsupported(
+              node,
+              "realm-library-construction",
+              "typed-array byte offsets and lengths require the realm constructor",
             );
           for (const arg of node.arguments) {
             if (arg === undefined) throw "missing call argument";
@@ -5380,6 +5726,12 @@ function checkClosureModuleLayout(
                 ? typeOf(optionalNumericListAnnotation)
                 : undefined,
             );
+            if (types[input]?.kind === "ArrayBuffer")
+              unsupported(
+                arg,
+                "realm-library-construction",
+                "typed-array buffer construction requires the realm constructor",
+              );
             if (isList(input))
               requireType(listReadType(input, arg), optionalNumber, arg);
             else if (!isArray(input)) requireType(input, optionalNumber, arg);
@@ -5454,9 +5806,9 @@ function checkClosureModuleLayout(
                 )
                   replayRealm = true;
                 else
-                  fail(
+                  unsupported(
                     input,
-                    "UNSUPPORTED",
+                    "realm-aggregate-update",
                     "typed Object method requires a realm record",
                   );
               }
@@ -5473,9 +5825,9 @@ function checkClosureModuleLayout(
               if (definition) {
                 const descriptor = node.arguments[2];
                 if (descriptor?.kind !== "object")
-                  fail(
+                  unsupported(
                     node,
-                    "UNSUPPORTED",
+                    "realm-aggregate-update",
                     "typed Object.defineProperty requires a data descriptor literal",
                   );
                 const name = checkedPropertyName(key, types[keyType]);
@@ -5521,9 +5873,9 @@ function checkClosureModuleLayout(
                     property.keyExpression !== undefined ||
                     property.prototypeSetter === true
                   )
-                    fail(
+                    unsupported(
                       property,
-                      "UNSUPPORTED",
+                      "realm-aggregate-update",
                       "typed Object.defineProperty requires a data descriptor literal",
                     );
                 }
@@ -5598,9 +5950,9 @@ function checkClosureModuleLayout(
                 )
                   replayRealm = true;
                 else
-                  fail(
+                  unsupported(
                     argument,
-                    "UNSUPPORTED",
+                    "realm-aggregate-update",
                     "typed Object enumeration requires a dynamic-key object",
                   );
               }
@@ -5865,9 +6217,9 @@ function checkClosureModuleLayout(
                 target.optional === true ||
                 skipped !== undefined
               )
-                fail(
+                unsupported(
                   node,
-                  "UNSUPPORTED",
+                  "optional-call",
                   "Optional realm library method calls require optional chain lowering",
                   true,
                 );
@@ -6227,6 +6579,16 @@ function checkClosureModuleLayout(
               const argument = node.arguments[0];
               if (argument === undefined) throw "map argument invariant";
               const callback = ungroup(argument);
+              if (
+                mapping &&
+                replayRealm &&
+                realmPlan === undefined &&
+                projectedCallable(callback)
+              ) {
+                expression(argument, owner);
+                result = arrayOf(number, node);
+                break;
+              }
               const typed = isArray(obj);
               const sortElement = typed
                 ? number
@@ -6259,9 +6621,9 @@ function checkClosureModuleLayout(
                     (p) => p.initializer !== undefined || p.optional,
                   )
                 )
-                  fail(
+                  unsupported(
                     callback,
-                    "UNSUPPORTED",
+                    "default-parameter-layout",
                     "array callback defaults and optional parameters require adapted call signatures",
                   );
                 const context =
@@ -6340,9 +6702,9 @@ function checkClosureModuleLayout(
                             : listReadType(obj, node)
                           : boolean;
               if (mapping && !isList(result))
-                fail(
+                unsupported(
                   node,
-                  "UNSUPPORTED",
+                  "collection-construction",
                   "map result requires a supported array element encoding",
                 );
               intrinsics.set(
@@ -6512,9 +6874,9 @@ function checkClosureModuleLayout(
             const realmList = types[obj];
             if (realmList?.kind === "array" && realmList.realmArray === true) {
               if (node.optional || target.optional)
-                fail(
+                unsupported(
                   target,
-                  "UNSUPPORTED",
+                  "optional-call",
                   "optional realm array methods require optional-call lowering",
                   true,
                 );
@@ -6564,9 +6926,9 @@ function checkClosureModuleLayout(
                   if (argument === undefined || type === undefined)
                     throw "realm array argument invariant";
                   if (argument.kind === "spread")
-                    fail(
+                    unsupported(
                       argument,
-                      "UNSUPPORTED",
+                      "rest-call-layout",
                       "realm array method spread arguments require iterable call lowering",
                       true,
                     );
@@ -6607,9 +6969,9 @@ function checkClosureModuleLayout(
                 case "sort":
                 case "toSorted":
                   if (size !== 0)
-                    fail(
+                    unsupported(
                       target,
-                      "UNSUPPORTED",
+                      "native-callable-view",
                       "native callbacks passed to realm array methods need slice 2b closure views",
                       true,
                     );
@@ -6644,7 +7006,36 @@ function checkClosureModuleLayout(
                   argumentsOf(0, []);
                   result = realmArray(element, node);
                   break;
-                case "map":
+                case "map": {
+                  const callback = args[0];
+                  if (
+                    size === 1 &&
+                    callback !== undefined &&
+                    element === number &&
+                    callback.kind !== "spread"
+                  ) {
+                    const actual = expression(callback, owner);
+                    if (unaryNumberCallable(actual)) {
+                      nativeCallableViews.set(callback, true);
+                      result = realmArray(number, node);
+                      break;
+                    }
+                    if (
+                      types[actual]?.kind === "unknown" &&
+                      projectedCallable(callback)
+                    ) {
+                      result = realmArray(number, node);
+                      break;
+                    }
+                  }
+                  // Other signatures still need their own checked ABI view.
+                  unsupported(
+                    target,
+                    "native-callable-view",
+                    "native callbacks passed to realm array methods need slice 2b closure views",
+                    true,
+                  );
+                }
                 case "filter":
                 case "flatMap":
                 case "forEach":
@@ -6656,16 +7047,16 @@ function checkClosureModuleLayout(
                 case "findLastIndex":
                 case "reduce":
                 case "reduceRight":
-                  fail(
+                  unsupported(
                     target,
-                    "UNSUPPORTED",
+                    "native-callable-view",
                     "native callbacks passed to realm array methods need slice 2b closure views",
                     true,
                   );
                 default:
-                  fail(
+                  unsupported(
                     target,
-                    "UNSUPPORTED",
+                    "realm-library-member",
                     "realm array method is outside typed realm array checking",
                     true,
                   );
@@ -6749,7 +7140,23 @@ function checkClosureModuleLayout(
               break;
             }
             const member = system.property(obj, target.property);
-            if (!member.ok) fail(target, member.error, "invalid method call");
+            if (!member.ok) {
+              const receiverKind = types[obj]?.kind;
+              fail(
+                target,
+                member.error,
+                "invalid method call",
+                false,
+                member.error === "PROPERTY" &&
+                  (receiverKind === "string" ||
+                    receiverKind === "number" ||
+                    receiverKind === "literal" ||
+                    receiverKind === "array" ||
+                    isArray(obj))
+                  ? fallbackAt(target, "realm-library-member")
+                  : undefined,
+              );
+            }
             const memberType =
               propertyFact(target.object, target.property) ?? member.value;
             if (types[memberType]?.kind === "realm-callable") {
@@ -6789,9 +7196,9 @@ function checkClosureModuleLayout(
             signature?.kind === "object" &&
             signature.realmLibrary !== undefined
           )
-            fail(
+            unsupported(
               node,
-              "UNSUPPORTED",
+              "realm-library-member",
               "Realm callable " +
                 signature.realmLibrary +
                 " requires library overload lowering",
@@ -6920,7 +7327,7 @@ function checkClosureModuleLayout(
                   dynamicPayloadType(field.type, node.value),
                 );
                 if (dynamicObject(object))
-                  checkDynamicPayload(written, node.value);
+                  checkDynamicPayload(written, node.value, field.type);
                 present = intersect(before, present);
                 result = join(
                   node.operator === "??" || node.operator === "||"
@@ -7011,9 +7418,9 @@ function checkClosureModuleLayout(
               break;
             }
             if (propertyName === undefined)
-              fail(
+              unsupported(
                 target,
-                "UNSUPPORTED",
+                "realm-aggregate-update",
                 "property update requires a singleton key",
               );
             if (isList(object) && propertyName === "length") {
@@ -7053,9 +7460,9 @@ function checkClosureModuleLayout(
                     ? boolean
                     : undefined;
               if (primitive === undefined)
-                fail(
+                unsupported(
                   target,
-                  "UNSUPPORTED",
+                  "realm-aggregate-update",
                   "logical property assignment requires a present primitive field",
                 );
               expressions.set(target, property.value);
@@ -7080,9 +7487,9 @@ function checkClosureModuleLayout(
                     ? boolean
                     : undefined;
               if (primitive === undefined)
-                fail(
+                unsupported(
                   target,
-                  "UNSUPPORTED",
+                  "realm-aggregate-update",
                   "nullish property assignment requires an optional primitive field",
                 );
               const optionalPrimitive = unionSubset(
@@ -7146,9 +7553,9 @@ function checkClosureModuleLayout(
               // binding is present afterwards.
               const presentBase = presentType(declared);
               if (presentBase === undefined || mentionsNull(declared))
-                fail(
+                unsupported(
                   target,
-                  "UNSUPPORTED",
+                  "operator-layout",
                   "nullish assignment requires an optional local without null",
                 );
               expressions.set(target, old);
@@ -7205,9 +7612,9 @@ function checkClosureModuleLayout(
                   ? boolean
                   : undefined;
             if (primitive === undefined)
-              fail(
+              unsupported(
                 target,
-                "UNSUPPORTED",
+                "operator-layout",
                 "logical assignment requires a present primitive local",
               );
             expressions.set(target, old);
@@ -7282,9 +7689,9 @@ function checkClosureModuleLayout(
               receiverType?.kind === "object" &&
               receiverType.realmLibrary !== undefined
             )
-              fail(
+              unsupported(
                 target,
-                "UNSUPPORTED",
+                "realm-aggregate-update",
                 "Realm property write on " +
                   receiverType.realmLibrary +
                   " requires library mutability lowering",
@@ -7315,7 +7722,7 @@ function checkClosureModuleLayout(
                 owner,
                 dynamicPayloadType(field.type, node.value),
               );
-              checkDynamicPayload(result, node.value);
+              checkDynamicPayload(result, node.value, field.type);
               for (const allowed of fields) {
                 if (allowed === undefined)
                   throw "dynamic write field invariant";
@@ -7354,9 +7761,9 @@ function checkClosureModuleLayout(
                 );
               if (property !== "length") {
                 if (target.kind !== "index" || keyType === undefined)
-                  fail(
+                  unsupported(
                     target,
-                    "UNSUPPORTED",
+                    "realm-aggregate-update",
                     "realm array writes require an index or length",
                     true,
                   );
@@ -7471,9 +7878,9 @@ function checkClosureModuleLayout(
                   "in requires a known object operand",
                 );
               if (checkedPropertyName(node.left, types[key]) === undefined)
-                fail(
+                unsupported(
                   node.left,
-                  "UNSUPPORTED",
+                  "operator-layout",
                   "native in requires a literal property key",
                 );
               intrinsics.set(node, "literal-property-has");
@@ -7553,9 +7960,9 @@ function checkClosureModuleLayout(
                 !system.assignable(left, optionalNumber) &&
                 presentType(left, true) === undefined
               )
-                fail(
+                unsupported(
                   node.left,
-                  "UNSUPPORTED",
+                  "operator-layout",
                   "nullish coalescing requires a supported optional value",
                 );
               const fallback = ungroup(node.right);
@@ -7715,9 +8122,9 @@ function checkClosureModuleLayout(
               ? boolean
               : number;
           } else
-            fail(
+            unsupported(
               node,
-              "UNSUPPORTED",
+              "operator-layout",
               "unsupported binary operator: " + node.operator,
             );
           break;
@@ -7798,7 +8205,12 @@ function checkClosureModuleLayout(
             // Unary plus on a BigInt throws a TypeError: it requires number.
             requireType(value, number, node);
             result = number;
-          } else fail(node, "UNSUPPORTED", "unary operation is unsupported");
+          } else
+            unsupported(
+              node,
+              "operator-layout",
+              "unary operation is unsupported",
+            );
           break;
         }
         case "conditional": {
@@ -7883,9 +8295,9 @@ function checkClosureModuleLayout(
         !system.assignable(result, expected)
       ) {
         if (!downcastable(expected))
-          fail(
+          unsupported(
             node,
-            "UNSUPPORTED",
+            "general-result-projection",
             "general call result requires a checked projection to its declared type",
             true,
           );
@@ -8257,9 +8669,9 @@ function checkClosureModuleLayout(
                 : checkedPropertyName(key, types[expressions.get(key) ?? -1]);
             if (name !== undefined) excluded.push(name);
             else if (!realm)
-              fail(
+              unsupported(
                 property,
-                "UNSUPPORTED",
+                "aggregate-spread",
                 "computed object rest requires runtime key exclusion",
                 true,
               );
@@ -8283,9 +8695,9 @@ function checkClosureModuleLayout(
                 (entry) => entry !== undefined && entry.instance === type,
               ))
           )
-            fail(
+            unsupported(
               rest,
-              "UNSUPPORTED",
+              "aggregate-spread",
               "typed object rest requires a native record with data fields",
               true,
             );
@@ -8363,7 +8775,13 @@ function checkClosureModuleLayout(
           const elementType = realmPayload(rawElementType, pattern);
           const unsupported = unsupportedDynamicPayload(types, elementType);
           if (unsupported !== undefined)
-            fail(pattern, "UNSUPPORTED", unsupported, true);
+            fail(
+              pattern,
+              "UNSUPPORTED",
+              unsupported.message,
+              true,
+              fallbackAt(pattern, unsupported.capability),
+            );
           const readType = system.assignable(undefinedType, elementType)
             ? elementType
             : unionSubset([elementType, undefinedType], pattern);
@@ -8509,9 +8927,9 @@ function checkClosureModuleLayout(
             }
             if (deferred.has(b.id) && node.mode !== "var") {
               if (b.captured || b.owner === undefined)
-                fail(
+                unsupported(
                   d,
-                  "UNSUPPORTED",
+                  "binding-initialization",
                   "deferred captured or module bindings require initialization support",
                 );
               present.add(declaredToken(b.id));
@@ -8531,6 +8949,19 @@ function checkClosureModuleLayout(
                   ? undefinedType
                   : expression(d.initializer, owner, expected);
             if (bindingTypes[b.id] === undefined) bindingTypes[b.id] = actual;
+            if (
+              expected !== undefined &&
+              d.initializer !== undefined &&
+              intrinsics.get(ungroup(d.initializer)) === "array-read" &&
+              !system.assignable(actual, expected)
+            )
+              fail(
+                d,
+                "TYPE_MISMATCH",
+                "invalid binding operation",
+                false,
+                fallbackAt(d, "checked-index-read"),
+              );
             if (
               b.kind === "var" &&
               !system.assignable(undefinedType, bindingTypes[b.id] ?? actual)
@@ -8892,9 +9323,9 @@ function checkClosureModuleLayout(
         }
         case "for-of": {
           if (node.await)
-            fail(
+            unsupported(
               node,
-              "UNSUPPORTED",
+              "async-suspension",
               "typed for-await lowering is not implemented",
             );
           const loopBinding = node.binding;
@@ -9131,6 +9562,9 @@ function checkClosureModuleLayout(
       voidValueReturns,
       downcasts,
       dynamicEnrollments,
+      nativeCallableViews,
+      nativeListViews,
+      nativeRecordViews,
       finitePropertyKeys,
       operations,
       intrinsics,

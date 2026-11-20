@@ -115,3 +115,17 @@ test("dynamic access to globals installs everything", () => {
       text,
     );
 });
+
+test("installer requirements accumulate in installation order across replayed modules", async () => {
+  const { createGeneralIntrinsicPlan } =
+    await import("../src/program/intrinsics.ts");
+  const plan = createGeneralIntrinsicPlan();
+  const a = parse("export const promise = Promise.resolve(1);");
+  const b = parse("export const map = new Map();");
+  plan.addModule(a);
+  plan.addModule(b);
+  plan.addModule(a);
+  assert.deepEqual(plan.installers(), generalIntrinsics([a, b]));
+  plan.addModule(parse("export const realm = globalThis;"));
+  assert.deepEqual(plan.installers(), intrinsicInstallers);
+});

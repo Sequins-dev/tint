@@ -146,9 +146,10 @@ import {
   type NativeManagedPointerImport,
 } from "../../scalar/managed-abi.ts";
 import {
-  encodeWideStackMapTable,
+  planWideStackMapTable,
   rootHeadBinding,
   type SafepointEntry,
+  type WideStackMapPlan,
 } from "../../scalar/stack-maps.ts";
 import {
   frameStackMaps,
@@ -3618,7 +3619,7 @@ export function emitModule(
     const withPool = poolEnd > poolBase ? poolEnd : instructionBytes;
     const tableOffset = Math.ceil(withPool / 8) * 8;
     const stackMaps: X64Module["stackMaps"][number][] = [];
-    let words: number[] = [];
+    let stackMapPlan: WideStackMapPlan | undefined;
     if (host !== undefined) {
       const entries: SafepointEntry[] = [];
       for (const site of pendingMaps) {
@@ -3629,8 +3630,8 @@ export function emitModule(
           throw "x86-64 safepoint label invariant";
         entries.push({ offset, start, map: site.map });
       }
-      words = encodeWideStackMapTable(entries);
-      words.push(nativeStackMapFooterMagic, tableOffset);
+      pendingMaps.length = 0;
+      stackMapPlan = planWideStackMapTable(entries);
       const thunkStart = assembler.labels.get(callbackThunksLabel);
       stackMaps.push({
         codeOffset: 0,
@@ -3653,7 +3654,9 @@ export function emitModule(
         external.has(name) ||
         strings.has(name) ||
         descriptors.has(name),
-      words.length === 0 ? withPool : tableOffset + words.length * 8,
+      stackMapPlan === undefined
+        ? withPool
+        : tableOffset + (stackMapPlan.wordLength + 2) * 8,
     );
     const code = encoded.bytes;
     const functions: X64Function[] = [];
@@ -3692,21 +3695,26 @@ export function emitModule(
         ...(frame === undefined ? {} : { frame }),
       });
     }
-    for (let i = 0; i < words.length; i++) {
-      const value = words[i];
-      if (
-        value === undefined ||
-        !writeWord64(
-          code,
-          tableOffset + i * 8,
-          {
-            lo: value % 4294967296,
-            hi: Math.floor(value / 4294967296),
-          },
-          "little",
-        ).ok
-      )
-        throw "x86-64 stack map word invariant";
+    if (stackMapPlan !== undefined) {
+      let offset = tableOffset;
+      function writeMapWord(value: number): void {
+        if (
+          !writeWord64(
+            code,
+            offset,
+            {
+              lo: value % 4294967296,
+              hi: Math.floor(value / 4294967296),
+            },
+            "little",
+          ).ok
+        )
+          throw "x86-64 stack map word invariant";
+        offset += 8;
+      }
+      stackMapPlan.forEachWord(writeMapWord);
+      writeMapWord(nativeStackMapFooterMagic);
+      writeMapWord(tableOffset);
     }
     if (poolEnd > poolBase) {
       for (const [, item] of strings) {

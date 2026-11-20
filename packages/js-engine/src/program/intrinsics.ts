@@ -109,6 +109,19 @@ const byMember: ReadonlyMap<string, string> = new Map<string, string>([
 export function generalIntrinsics(
   modules: readonly Module[],
 ): readonly string[] {
+  const plan = createGeneralIntrinsicPlan();
+  for (const module of modules) {
+    if (module === undefined) throw "general intrinsics invariant";
+    plan.addModule(module);
+  }
+  return plan.installers();
+}
+
+/** Keep installer requirements while letting each erased tree go after lowering. */
+export function createGeneralIntrinsicPlan(): {
+  readonly addModule: (module: Module) => void;
+  readonly installers: () => readonly string[];
+} {
   const needed = new Set<string>(core);
   let everything = false;
   function add(name: string): void {
@@ -129,12 +142,12 @@ export function generalIntrinsics(
         add("installPromiseIntrinsics");
     }
   }
-  for (const module of modules) {
-    if (module === undefined) throw "general intrinsics invariant";
+  function addModule(module: Module): void {
+    if (everything) return;
     const bound = bindJavaScriptModule(module);
     if (!bound.ok) {
       everything = true;
-      break;
+      return;
     }
     for (const reference of bound.value.references) {
       if (reference === undefined) throw "general intrinsics invariant";
@@ -208,9 +221,12 @@ export function generalIntrinsics(
       },
     });
   }
-  const result: string[] = [];
-  for (const installer of intrinsicInstallers)
-    if (installer !== undefined && (everything || needed.has(installer)))
-      result.push(installer);
-  return result;
+  function installers(): readonly string[] {
+    const result: string[] = [];
+    for (const installer of intrinsicInstallers)
+      if (installer !== undefined && (everything || needed.has(installer)))
+        result.push(installer);
+    return result;
+  }
+  return { addModule, installers };
 }

@@ -34,6 +34,7 @@ import {
   type Property,
   type StringIndex,
   unsupportedDynamicContract,
+  type DynamicPayloadRejection,
 } from "../types/index.ts";
 export const realmOnlyTypedArrays: readonly string[] = [
   "Int8Array",
@@ -131,6 +132,30 @@ export interface InterfaceError extends Span {
     | "LIMIT";
   readonly message: string;
   readonly preventsFallback?: boolean;
+  readonly fallback?: InterfaceFallback;
+}
+export interface InterfaceFallback {
+  readonly capability:
+    | "class-decorators"
+    | "class-heritage"
+    | "class-static-block"
+    | "class-private-layout"
+    | "class-computed-member"
+    | "class-generic-method"
+    | "class-auto-accessor"
+    | "class-field-inference"
+    | "class-method-inference"
+    | "class-accessor-contract"
+    | "class-initialization"
+    | "index-key-layout"
+    | "intersection-layout"
+    | "indexed-access-layout"
+    | "tuple-layout"
+    | "template-call"
+    | "generic-contract"
+    | DynamicPayloadRejection["capability"];
+  readonly ownerKind: "class" | "module";
+  readonly owner: Span;
 }
 export type InterfaceResult =
   | { readonly ok: true; readonly value: InterfaceTypes }
@@ -224,9 +249,25 @@ export function resolveInterfaceTypes(
     node: Span,
     code: InterfaceError["code"],
     message: string,
+    fallback?: InterfaceFallback,
   ): never {
-    error = { start: node.start, end: node.end, code, message };
+    const diagnostic: InterfaceError =
+      fallback === undefined
+        ? { start: node.start, end: node.end, code, message }
+        : { start: node.start, end: node.end, code, message, fallback };
+    error = diagnostic;
     throw abort;
+  }
+  function unsupportedContract(
+    node: Span,
+    capability: InterfaceFallback["capability"],
+    message: string,
+  ): never {
+    return fail(node, "UNSUPPORTED", message, {
+      capability,
+      ownerKind: "module",
+      owner: { start: node.start, end: node.end },
+    });
   }
   function add(t: Type, node: Span): number {
     const id = types.length;
@@ -473,6 +514,12 @@ export function resolveInterfaceTypes(
       names.set(name, id);
       return id;
     }
+    if (declaration === undefined && name === "TemplateStringsArray")
+      unsupportedContract(
+        node,
+        "template-call",
+        "template strings require the realm template-site object",
+      );
     if (declaration === undefined)
       fail(node, "UNKNOWN_TYPE", "unknown type: " + name);
     const resolvedDeclaration = declaration;
@@ -540,6 +587,17 @@ export function resolveInterfaceTypes(
     instance: number,
     args: readonly number[],
   ): number {
+    function unsupportedClass(
+      node: Span,
+      capability: InterfaceFallback["capability"],
+      message: string,
+    ): never {
+      return fail(node, "UNSUPPORTED", message, {
+        capability,
+        ownerKind: "class",
+        owner: { start: definition.start, end: definition.end },
+      });
+    }
     if (
       (definition.decorators?.length ?? 0) !== 0 ||
       definition.elements.some(
@@ -548,15 +606,15 @@ export function resolveInterfaceTypes(
           (element.decorators?.length ?? 0) !== 0,
       )
     )
-      fail(
+      unsupportedClass(
         definition,
-        "UNSUPPORTED",
+        "class-decorators",
         "typed decorators require dynamic class replacement contracts",
       );
     if (definition.heritage !== undefined)
-      fail(
+      unsupportedClass(
         definition,
-        "UNSUPPORTED",
+        "class-heritage",
         "class inheritance contracts require heritage checking",
       );
     const constructor = add({ kind: "object", properties: [] }, definition);
@@ -578,22 +636,22 @@ export function resolveInterfaceTypes(
     for (const member of definition.elements) {
       if (member === undefined) throw "class member invariant";
       if (member.kind === "static-block")
-        fail(
+        unsupportedClass(
           member,
-          "UNSUPPORTED",
+          "class-static-block",
           "typed class static blocks require initialization lowering",
         );
       if (member.private)
-        fail(
+        unsupportedClass(
           member,
-          "UNSUPPORTED",
+          "class-private-layout",
           "typed private class elements require private layouts",
         );
       const key = member.key;
       if (member.computed || (key.kind !== "string" && key.kind !== "number"))
-        fail(
+        unsupportedClass(
           member,
-          "UNSUPPORTED",
+          "class-computed-member",
           "computed class member contracts require key evaluation",
         );
       const name = key.kind === "string" ? key.value : String(key.value),
@@ -612,23 +670,23 @@ export function resolveInterfaceTypes(
       }
       let type: number;
       if (member.kind !== "field" && typeParameterCount(member.typeParameters))
-        fail(
+        unsupportedClass(
           member,
-          "UNSUPPORTED",
+          "class-generic-method",
           "generic class methods require specialization",
         );
       if (member.kind === "field") {
         if (member.accessor)
-          fail(
+          unsupportedClass(
             member,
-            "UNSUPPORTED",
+            "class-auto-accessor",
             "typed auto-accessors require private storage and accessor lowering",
           );
         const annotation = member.type;
         if (annotation === undefined)
-          fail(
+          unsupportedClass(
             member,
-            "UNSUPPORTED",
+            "class-field-inference",
             "class field requires annotation until initializer inference is available",
           );
         type = resolve(annotation);
@@ -643,16 +701,16 @@ export function resolveInterfaceTypes(
         }
         const result = member.returnType;
         if (result === undefined)
-          fail(
+          unsupportedClass(
             member,
-            "UNSUPPORTED",
+            "class-method-inference",
             "class method return requires annotation until body inference is available",
           );
         type = signature(member.parameters, resolve(result), receiver, member);
       } else
-        fail(
+        unsupportedClass(
           member,
-          "UNSUPPORTED",
+          "class-accessor-contract",
           "class accessor contracts require separate read and write checking",
         );
       parameters = outer;
@@ -767,16 +825,16 @@ export function resolveInterfaceTypes(
         return;
       }
       if (member?.kind !== "literal")
-        fail(
+        unsupportedContract(
           node,
-          "UNSUPPORTED",
+          "index-key-layout",
           "Record keys require string or finite string literal types",
         );
       const name = member.value;
       if (typeof name !== "string")
-        fail(
+        unsupportedContract(
           node,
-          "UNSUPPORTED",
+          "index-key-layout",
           "Record keys require string or finite string literal types",
         );
       if (seen.has(name)) return;
@@ -863,9 +921,9 @@ export function resolveInterfaceTypes(
     const signature = indexSyntax;
     if (signature !== undefined) {
       if (canonical(resolve(signature.keyType)) !== 3)
-        fail(
+        unsupportedContract(
           signature,
-          "UNSUPPORTED",
+          "index-key-layout",
           "only string index signatures are implemented",
         );
       stringIndex = {
@@ -910,9 +968,9 @@ export function resolveInterfaceTypes(
     left = canonical(left);
     right = canonical(right);
     if (pending.has(left) || pending.has(right))
-      fail(
+      unsupportedContract(
         node,
-        "UNSUPPORTED",
+        "intersection-layout",
         "recursive intersection operand is not yet resolved",
       );
     if (left === right) return left;
@@ -946,9 +1004,9 @@ export function resolveInterfaceTypes(
     if (a?.kind === "literal" && b?.kind === typeof a.value) return left;
     if (b?.kind === "literal" && a?.kind === typeof b.value) return right;
     if (a?.kind !== "object" || b?.kind !== "object")
-      fail(
+      unsupportedContract(
         node,
-        "UNSUPPORTED",
+        "intersection-layout",
         "intersection requires structural object operands",
       );
     const properties: Property[] = [];
@@ -987,9 +1045,9 @@ export function resolveInterfaceTypes(
         rightConstruct !== undefined &&
         canonical(leftConstruct) !== canonical(rightConstruct))
     )
-      fail(
+      unsupportedContract(
         node,
-        "UNSUPPORTED",
+        "intersection-layout",
         "intersections with multiple signatures require overload support",
       );
     const callSignature = leftCall ?? rightCall,
@@ -1036,9 +1094,9 @@ export function resolveInterfaceTypes(
     objectId = canonical(objectId);
     indexId = canonical(indexId);
     if (pending.has(objectId) || pending.has(indexId))
-      fail(
+      unsupportedContract(
         node,
-        "UNSUPPORTED",
+        "indexed-access-layout",
         "recursive indexed access operand is not yet resolved",
       );
     const objectType = types[objectId],
@@ -1166,9 +1224,9 @@ export function resolveInterfaceTypes(
             value === undefined ||
             canonical(resolve(key)) !== 3
           )
-            fail(
+            unsupportedContract(
               node,
-              "UNSUPPORTED",
+              "tuple-layout",
               "only [string, T] entry tuple types are implemented",
             );
           const valueType = resolve(value);
@@ -1231,9 +1289,9 @@ export function resolveInterfaceTypes(
         }
         case "function":
           if (typeParameterCount(node.typeParameters))
-            fail(
+            unsupportedContract(
               node,
-              "UNSUPPORTED",
+              "generic-contract",
               "generic signatures require specialization",
             );
           return signature(
@@ -1560,7 +1618,12 @@ export function resolveInterfaceTypes(
           start: node.start,
           end: node.end,
           code: "UNSUPPORTED",
-          message: unsupported,
+          message: unsupported.message,
+          fallback: {
+            capability: unsupported.capability,
+            ownerKind: "module",
+            owner: { start: node.start, end: node.end },
+          },
           preventsFallback: true,
         };
   }

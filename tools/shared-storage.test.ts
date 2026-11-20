@@ -4,6 +4,11 @@ import test from "node:test";
 import { NodeSharedBlockService } from "./node-shared-block-service.ts";
 import { workspaceModules } from "./workspace-sources.ts";
 import type { SharedOrder } from "@tint/js-runtime/bytes/shared";
+import {
+  createObject,
+  projectArrayBufferViewRange,
+  type ScriptPropertyKey,
+} from "@tint/js-runtime/objects";
 
 async function contract() {
   assert.ok(
@@ -19,6 +24,52 @@ async function fixture(initial = 8, maximum = 24, growable = true) {
   assert.ok(result.ok);
   return { api, service, storage: result.value };
 }
+
+test("byte-range projection keeps shared backing and observes growth", async () => {
+  const { api, service, storage } = await fixture(7, 16);
+  const alias = api.attachSharedStorage(service, storage.handle);
+  assert.ok(alias.ok);
+  const buffer = createObject<ScriptPropertyKey, unknown>(undefined);
+  buffer.internalSharedArrayBufferData = storage;
+  const elementView = createObject<ScriptPropertyKey, unknown>(undefined);
+  elementView.internalTypedArrayData = {
+    buffer,
+    storage,
+    byteOffset: 2,
+    length: undefined,
+    kind: "Uint16",
+    endian: "little",
+  };
+  const dataView = createObject<ScriptPropertyKey, unknown>(undefined);
+  dataView.internalDataViewData = {
+    buffer,
+    storage: alias.value,
+    byteOffset: 3,
+    byteLength: 2,
+  };
+  const first = projectArrayBufferViewRange(elementView)!;
+  const second = projectArrayBufferViewRange(dataView)!;
+  assert.equal(first.kind, "shared");
+  assert.equal(first.byteLength, 4);
+  assert.equal(first.bytes, undefined);
+  assert.equal(second.kind, "shared");
+  assert.equal(second.byteLength, 2);
+  assert.ok(
+    first.storage.kind === "shared" && second.storage.kind === "shared",
+  );
+  assert.equal(api.sameSharedBlock(first.storage, second.storage), true);
+  assert.equal(
+    api.writeSharedUnsigned(first.storage, second.byteOffset, 1, 42, "seq-cst"),
+    "none",
+  );
+  assert.deepEqual(api.readSharedByte(second.storage, second.byteOffset), {
+    ok: true,
+    value: 42,
+  });
+  assert.equal(api.growSharedStorage(storage, 12), "none");
+  assert.equal(projectArrayBufferViewRange(elementView)?.byteLength, 10);
+  assert.equal(projectArrayBufferViewRange(dataView)?.byteLength, 2);
+});
 
 test("shared aliases retain primitive engine/block identity including empty blocks", async () => {
   const { api, service, storage } = await fixture(0, 0, false);

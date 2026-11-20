@@ -60,12 +60,20 @@ export function createPromiseRecord<Value>(
 export function createResolvingFunctions<Value>(
   promise: PromiseRecord<Value>,
   hooks: PromiseHooks<Value>,
+  acceptsFulfillment?: (value: Value) => boolean,
 ): PromiseResolvingFunctions<Value> {
   let alreadyResolved = false;
   function reject(reason: Value): void {
     if (alreadyResolved) return;
     alreadyResolved = true;
     settle<Value>(promise, "rejected", reason, hooks);
+  }
+  function fulfill(value: Value): void {
+    if (acceptsFulfillment !== undefined && !acceptsFulfillment(value)) {
+      settle<Value>(promise, "rejected", hooks.typeError(), hooks);
+      return;
+    }
+    settle<Value>(promise, "fulfilled", value, hooks);
   }
   function resolve(resolution: Value): void {
     if (alreadyResolved) return;
@@ -75,7 +83,7 @@ export function createResolvingFunctions<Value>(
       return;
     }
     if (!hooks.isObject(resolution)) {
-      settle<Value>(promise, "fulfilled", resolution, hooks);
+      fulfill(resolution);
       return;
     }
     const then = hooks.getThen(resolution);
@@ -85,11 +93,15 @@ export function createResolvingFunctions<Value>(
     }
     const method = then.value;
     if (!hooks.isCallable(method)) {
-      settle<Value>(promise, "fulfilled", resolution, hooks);
+      fulfill(resolution);
       return;
     }
     hooks.enqueue((): void => {
-      const functions = createResolvingFunctions<Value>(promise, hooks);
+      const functions = createResolvingFunctions<Value>(
+        promise,
+        hooks,
+        acceptsFulfillment,
+      );
       const completion = hooks.callThen(method, resolution, functions);
       if (completion.kind === "throw") functions.reject(completion.value);
     }, method);

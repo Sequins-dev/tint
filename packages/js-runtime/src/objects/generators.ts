@@ -8,6 +8,7 @@ import {
   resumeGenerator,
   resumeYieldDelegate,
   type GeneratorOutcome,
+  type GeneratorContracts,
   type GeneratorResumeKind,
   type GeneratorStep,
   type GeneratorStepOutcome,
@@ -18,7 +19,11 @@ import {
   type OrdinaryObject,
   type ObjectHooks,
 } from "./operations.ts";
-import { viewObjectValue } from "./values.ts";
+import {
+  checkPrimitiveContract,
+  primitiveContractPredicate,
+  viewObjectValue,
+} from "./values.ts";
 import { createIteratorResult } from "./iterator-intrinsics.ts";
 import {
   functionMetadata,
@@ -47,6 +52,8 @@ export type GeneratorInitializer = (
 export function createDelegatingContinuation(
   iterator: ScriptIterator,
   following: GeneratorStep<unknown>,
+  realm?: ErrorRealm,
+  yieldContract: number = 0,
 ): GeneratorStep<unknown> {
   return (kind, value): GeneratorStepOutcome<unknown> => {
     const outcome = resumeYieldDelegate<unknown>(
@@ -55,8 +62,15 @@ export function createDelegatingContinuation(
       value,
       iterator.hooks,
     );
-    if (outcome.kind === "yield")
+    if (outcome.kind === "yield") {
+      if (realm !== undefined && yieldContract !== 0)
+        checkPrimitiveContract(
+          realm,
+          iterator.hooks.get(outcome.result, "value"),
+          yieldContract,
+        );
       return { kind: "yield", result: outcome.result };
+    }
     if (outcome.kind === "return")
       return { kind: "return", value: outcome.value };
     return {
@@ -94,8 +108,17 @@ export function createSourceGeneratorFunction(
   name: string = "",
   length: number = 0,
   home: OrdinaryObject<ScriptPropertyKey, unknown> | undefined = undefined,
+  returnContract: number = 0,
+  nextContract: number = 0,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const identity: { value: unknown } = { value: undefined };
+  const contracts: GeneratorContracts<unknown> | undefined =
+    returnContract === 0 && nextContract === 0
+      ? undefined
+      : {
+          acceptsNext: primitiveContractPredicate(nextContract),
+          acceptsReturn: primitiveContractPredicate(returnContract),
+        };
   const fn = createCallableObject<ScriptPropertyKey, unknown>(
     realm.generatorFunctionPrototype,
     (receiver, args): unknown => {
@@ -106,7 +129,7 @@ export function createSourceGeneratorFunction(
         realm,
         hooks,
       );
-      return createGeneratorObject(continuation, realm, prototype);
+      return createGeneratorObject(continuation, realm, prototype, contracts);
     },
     createSourceExecutionContext(realm),
   );
@@ -133,6 +156,7 @@ export function createGeneratorObject(
   ) => GeneratorOutcome<unknown>,
   realm: ErrorRealm,
   prototype: OrdinaryObject<ScriptPropertyKey, unknown> | undefined = undefined,
+  contracts?: GeneratorContracts<unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const generator = createObject<ScriptPropertyKey, unknown>(
     prototype === undefined ? realm.generatorPrototype : prototype,
@@ -149,6 +173,7 @@ export function createGeneratorObject(
         context,
         (): GeneratorOutcome<unknown> => continuation(kind, value),
       ),
+    contracts,
   );
   return generator;
 }
