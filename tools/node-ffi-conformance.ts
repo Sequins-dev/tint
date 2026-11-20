@@ -467,6 +467,7 @@ writeFileSync(
 if (
   observations.some(
     (item) =>
+      !("result" in item) ||
       item.result?.kind !== "exited" ||
       item.result.status !== 42 ||
       !item.complete ||
