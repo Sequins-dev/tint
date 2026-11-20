@@ -237,6 +237,160 @@ function invalid(message: string): never {
   throw "x86-64 encoder: " + message;
 }
 
+function describeRelative(value: Relative): string {
+  if (typeof value === "number") return String(value);
+  return value.addend === undefined
+    ? value.label
+    : value.label + " (addend=" + String(value.addend) + ")";
+}
+
+function describeOperand(operand: RmOperand | Immediate): string {
+  switch (operand.kind) {
+    case "gpr":
+      return "gpr" + String(operand.width) + "[" + String(operand.index) + "]";
+    case "xmm":
+      return "xmm" + String(operand.index);
+    case "mem": {
+      const address = operand.address;
+      const prefix = "mem" + String(operand.width) + "(";
+      if (address.kind === "rip")
+        return prefix + "rip, disp=" + describeRelative(address.disp) + ")";
+      const index =
+        address.index === undefined
+          ? ""
+          : ", index=" +
+            String(address.index) +
+            ", scale=" +
+            String(address.scale ?? 1);
+      const base = address.base;
+      return (
+        prefix +
+        "base=" +
+        (base === undefined ? "none" : String(base)) +
+        index +
+        ", disp=" +
+        String(address.disp) +
+        ")"
+      );
+    }
+    case "imm64":
+      return (
+        "imm64(hi=" +
+        String(operand.value.hi) +
+        ", lo=" +
+        String(operand.value.lo) +
+        ")"
+      );
+    default:
+      return operand.kind + "(" + String(operand.value) + ")";
+  }
+}
+
+function describeInstruction(insn: Encodable): string {
+  const opcode = insn.op + " ";
+  switch (insn.op) {
+    case "jcc":
+      return opcode + insn.cc + ", " + describeRelative(insn.target);
+    case "jmp":
+    case "call": {
+      const target = insn.target;
+      return (
+        opcode +
+        (typeof target === "number" || target.kind === "label"
+          ? describeRelative(target)
+          : describeOperand(target))
+      );
+    }
+    case "push":
+      return opcode + describeOperand(insn.src);
+    case "setcc":
+      return opcode + insn.cc + ", " + describeOperand(insn.dst);
+    case "pop":
+    case "inc":
+    case "dec":
+    case "not":
+    case "neg":
+    case "mul":
+    case "imul-one":
+    case "div":
+    case "idiv":
+      return opcode + describeOperand(insn.dst);
+    case "rol":
+    case "ror":
+    case "shl":
+    case "shr":
+    case "sar": {
+      const count = insn.count;
+      return (
+        opcode +
+        describeOperand(insn.dst) +
+        ", " +
+        (typeof count === "number" ? String(count) : count)
+      );
+    }
+    case "imul-imm":
+      return (
+        opcode +
+        describeOperand(insn.dst) +
+        ", " +
+        describeOperand(insn.src) +
+        ", " +
+        describeOperand(insn.immediate)
+      );
+    case "cmovcc":
+      return (
+        opcode +
+        insn.cc +
+        ", " +
+        describeOperand(insn.dst) +
+        ", " +
+        describeOperand(insn.src)
+      );
+    case "mov":
+    case "add":
+    case "or":
+    case "adc":
+    case "sbb":
+    case "and":
+    case "sub":
+    case "xor":
+    case "cmp":
+    case "test":
+    case "xchg":
+    case "lock-cmpxchg":
+    case "lock-xadd":
+    case "imul":
+    case "lea":
+    case "movzx":
+    case "movsx":
+    case "movsd":
+    case "addsd":
+    case "subsd":
+    case "mulsd":
+    case "divsd":
+    case "sqrtsd":
+    case "minsd":
+    case "maxsd":
+    case "comisd":
+    case "ucomisd":
+    case "cvtsd2ss":
+    case "andpd":
+    case "orpd":
+    case "xorpd":
+    case "cvtss2sd":
+    case "cvtsi2sd":
+    case "cvtsd2si":
+    case "cvttsd2si":
+    case "movd":
+    case "movq":
+      return (
+        opcode + describeOperand(insn.dst) + ", " + describeOperand(insn.src)
+      );
+    default:
+      return insn.op;
+  }
+}
+
 function fits(value: number, min: number, max: number): boolean {
   return Number.isInteger(value) && value >= min && value <= max;
 }
@@ -1068,7 +1222,13 @@ export function createAssembler(far: boolean = false): Assembler {
       while (out.bytes.length % 4 !== 0) append(out.bytes, 0x90);
     } else {
       const before = out.fixups.length;
-      emit(out, insn);
+      try {
+        emit(out, insn);
+      } catch (error) {
+        if (typeof error === "string")
+          throw error + " while encoding " + describeInstruction(insn);
+        throw error;
+      }
       // Any relative field in this instruction is relative to its end.
       const fixup = out.fixups[before];
       if (fixup !== undefined && fixup.byteLength === 4)

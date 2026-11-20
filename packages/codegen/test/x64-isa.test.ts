@@ -43,6 +43,20 @@ test("streamed rel32 fields patch across byte chunks", () => {
   assert.equal(hex(layout.bytes.subarray(65534)), "e80100000090c3");
 });
 
+test("encoding failures identify the instruction and its operands", () => {
+  assert.throws(
+    () =>
+      encode([
+        {
+          op: "add",
+          dst: mem(64, 5, -24),
+          src: { kind: "imm32", value: 2147483648 },
+        },
+      ]),
+    /immediate out of range.*add.*mem64\(base=5, disp=-24\).*imm32\(2147483648\)/,
+  );
+});
+
 test("PIE far addresses encode signed rel64 with separate file and VM offsets", () => {
   const reference = { kind: "label", label: "data", addend: 7 } as const;
   const instructions = [
