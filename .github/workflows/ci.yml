@@ -108,6 +108,9 @@ jobs:
 
       - name: Run Linux gate
         if: matrix.gate == 'linux'
+        env:
+          # Node defaults to roughly 2 GiB on an 8 GiB runner.
+          NODE_OPTIONS: --max-old-space-size=5120
         run: tools/gate/linux-gate.sh
 
       - name: Upload gate evidence
