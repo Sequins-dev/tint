@@ -407,3 +407,108 @@ test(
     assert.equal(run(built.value).status, 42);
   },
 );
+
+test(
+  "x86-64 typed arrays share backing storage across nested views",
+  native,
+  () => {
+    const built = build(
+      `
+    export function run(): number {
+      const bytes = new Uint8Array(3);
+      const halves = new Uint16Array(3);
+      const words = new Uint32Array(6);
+      const doubles = new Float64Array(3);
+      bytes[0] = -1;
+      halves[0] = 65537;
+      words[2] = -1;
+      doubles[0] = -0;
+      doubles[1] = 0 / 0;
+      doubles[2] = 1.125;
+      if ((bytes[0] ?? 0) !== 255 || (halves[0] ?? 0) !== 1 ||
+          (words[2] ?? 0) !== 4294967295 || doubles.byteLength !== 24 ||
+          1 / (doubles[0] ?? 1) !== -1 / 0 || (doubles[1] ?? 1) === 1 ||
+          (doubles[2] ?? 0) !== 1.125) return 1;
+      const view = words.subarray(1, 5);
+      const nested = view.subarray(1, 3);
+      if (nested.byteOffset !== 8 || nested.byteLength !== 8 ||
+          nested.buffer !== words.buffer ||
+          (nested[0] ?? 0) !== 4294967295 ||
+          (nested[1.5] ?? 47) !== 47 || (nested[-1] ?? 48) !== 48) return 2;
+      nested[0] = 19;
+      nested[1] = 42;
+      if ((words[2] ?? 0) !== 19 || (view[1] ?? 0) !== 19) return 3;
+      return words[3] ?? 0;
+    }
+    `,
+      {},
+      { optimization: "none" },
+    );
+    assert.ok(built.ok, JSON.stringify(built));
+    assert.equal(run(built.value).status, 42);
+  },
+);
+
+test(
+  "x86-64 permanent UTF-16 strings support code-unit access and tagged throws",
+  native,
+  () => {
+    const built = build(
+      `
+    function read(text: string): number {
+      if (text.length !== 4 || text.charCodeAt(0) !== 65 ||
+          text.charCodeAt(1) !== 55357 || text.charCodeAt(2) !== 56832 ||
+          text.charCodeAt(3) !== 55296 || text.charCodeAt(-0.75) !== 65 ||
+          text.charCodeAt(0 / 0) !== 65) return 1;
+      const absent = text.charCodeAt(1 / 0);
+      return absent !== absent ? 42 : 2;
+    }
+    function raise(): number { throw "A😀\\ud800"; }
+    function relay(): number { return raise(); }
+    export function run(): number {
+      const status = read("A😀\\ud800");
+      if (status !== 42) return status;
+      try { return relay(); }
+      catch { return read("A😀\\ud800"); }
+    }
+    `,
+      {},
+      { optimization: "none" },
+    );
+    assert.ok(built.ok, JSON.stringify(built));
+    assert.equal(run(built.value).status, 42);
+  },
+);
+
+test(
+  "x86-64 string leaves preserve optional equality and prefix bounds",
+  native,
+  () => {
+    const built = build(
+      `
+    function maybe(available: boolean): string | undefined {
+      return available ? "Tint" : undefined;
+    }
+    function equal(left: string | undefined, right: string | undefined): boolean {
+      return left === right;
+    }
+    function prefix(text: string, pattern: string, position: number): boolean {
+      return text.startsWith(pattern, position);
+    }
+    export function run(): number {
+      const text = "A😀B";
+      if (!equal(maybe(true), "Tint") || equal(maybe(true), "Ting") ||
+          !equal(maybe(false), undefined) || equal(maybe(false), "Tint")) return 1;
+      if (!prefix(text, "A", -2) || !prefix(text, "A", 0 / 0) ||
+          !prefix(text, "😀", 1.75) || prefix(text, "B", 1) ||
+          !prefix(text, "", 1 / 0) || prefix(text, "B", 1 / 0)) return 2;
+      return 42;
+    }
+    `,
+      {},
+      { optimization: "none" },
+    );
+    assert.ok(built.ok, JSON.stringify(built));
+    assert.equal(run(built.value).status, 42);
+  },
+);

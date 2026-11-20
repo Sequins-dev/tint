@@ -22,6 +22,7 @@ import {
   emitModule as emitX64Module,
   imageRelocations,
 } from "@tint/codegen/x86_64/scalar";
+import { appendHostedEntry } from "@tint/codegen/x86_64/startup";
 import { buildElfExecutable } from "@tint/image/linux/elf";
 import {
   darwinAArch64Target,
@@ -640,6 +641,78 @@ test("unsupported operations identify the operation and its source location", ()
   });
 });
 
+function overlappingArrayCopyImage(): Uint8Array {
+  const f = new Fixture();
+  const array = f.ir.next();
+  f.ir.emit({
+    ...span,
+    kind: "array-new",
+    id: array,
+    type: "Uint32Array",
+    length: f.constant(4),
+  });
+  for (const [index, value] of [1, 2, 42, 4].entries())
+    f.ir.emit({
+      ...span,
+      kind: "array-write",
+      array,
+      index: f.constant(index),
+      value: f.constant(value),
+    });
+  const source = f.ir.next();
+  f.ir.emit({
+    ...span,
+    kind: "array-subarray",
+    id: source,
+    array,
+    begin: f.constant(0),
+    length: f.constant(3),
+  });
+  function copyAt(offset: number): number {
+    const id = f.ir.next();
+    f.ir.emit({
+      ...span,
+      kind: "array-copy",
+      id,
+      array,
+      source,
+      offset: f.constant(offset),
+    });
+    return id;
+  }
+  const copied = copyAt(1);
+  const rejected = f.binary("===", copyAt(2), f.constant(false));
+  const contents = [1, 1, 2, 42].map((expected, index) => {
+    const id = f.ir.next();
+    f.ir.emit({
+      ...span,
+      kind: "array-element",
+      id,
+      array,
+      index: f.constant(index),
+    });
+    return f.binary("===", id, f.constant(expected));
+  });
+  const target = linuxX86_64Target;
+  const compiled = emitX64Module(
+    { functions: [f.check([copied, rejected, ...contents])] },
+    target.hostABI,
+  );
+  assert.ok(compiled.ok, JSON.stringify(compiled));
+  const image = appendHostedEntry({
+    native: compiled.value,
+    host: target.hostABI,
+    invocation: 0,
+    returnType: "number",
+    managedBytes: 4096,
+    stackBytes: 1048576,
+    pageBytes: target.memoryPageBytes,
+  });
+  const written = buildElfExecutable({ ...image, linux: { arch: "x86_64" } });
+  assert.ok(written.ok, JSON.stringify(written));
+  return written.value.bytes;
+}
+
 const runnerFixtures = [
   ...fixtures.map(({ name, module, status }) => ({
     name,
@@ -655,6 +728,11 @@ const runnerFixtures = [
     },
   })),
   { name: "RIP-relative GOT import", status: 42, bytes: gotImportImage },
+  {
+    name: "overlapping hosted typed-array copy",
+    status: 42,
+    bytes: overlappingArrayCopyImage,
+  },
 ];
 
 const runner = process.env.TINT_X64_SCALAR_RUNNER;
