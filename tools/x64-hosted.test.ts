@@ -555,3 +555,43 @@ test(
     assert.equal(run(built.value).status, 42);
   },
 );
+
+test(
+  "x86-64 C memory adopts and retargets borrowed array storage",
+  native,
+  () => {
+    const built = build(
+      `import { adoptExternal, externalAddress, retargetExternal, stableBytes } from "ffi";
+    export function run(): number {
+      const empty = new Uint8Array(0);
+      if (externalAddress(empty) !== -1 || stableBytes(empty)) return 11;
+      const borrowed = adoptExternal(empty, 4096, 3);
+      if (externalAddress(borrowed) !== 4096 || !stableBytes(borrowed) ||
+          borrowed.length !== 3) return 12;
+      retargetExternal(borrowed, 8192);
+      if (externalAddress(borrowed) !== 8192 || borrowed.length !== 3) return 13;
+      return 42;
+    }`,
+      {
+        ffi: {
+          text: `
+        export function adoptExternal(empty: Uint8Array, address: number, length: number): Uint8Array { throw "HOST_UNAVAILABLE"; }
+        export function externalAddress(view: Uint8Array): number { throw "HOST_UNAVAILABLE"; }
+        export function retargetExternal(view: Uint8Array, address: number): void { throw "HOST_UNAVAILABLE"; }
+        export function stableBytes(view: Uint8Array): boolean { throw "HOST_UNAVAILABLE"; }`,
+          bindings: {},
+        },
+      },
+      {
+        foreignMemoryBindings: [
+          { module: "ffi", name: "adoptExternal", operation: "adopt" },
+          { module: "ffi", name: "externalAddress", operation: "address" },
+          { module: "ffi", name: "retargetExternal", operation: "retarget" },
+          { module: "ffi", name: "stableBytes", operation: "stable" },
+        ],
+      },
+    );
+    assert.ok(built.ok, JSON.stringify(built));
+    assert.equal(run(built.value).status, 42);
+  },
+);

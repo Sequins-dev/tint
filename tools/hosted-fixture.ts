@@ -35,6 +35,7 @@ import {
   prepareForeignLibrary,
   type ForeignLibrary,
   type NativeForeignBinding,
+  type NativeForeignMemoryBinding,
   type NativeHostBinding,
   type NativeRecordBinding,
   type NativeWeakBinding,
@@ -66,8 +67,6 @@ export function expandForeignSnapshot(captured: WorkspaceSourceSnapshot): {
 } {
   const cached = foreignSnapshots.get(captured);
   if (cached !== undefined) return cached;
-  if (fixtureTarget.arch === "x86_64")
-    return { snapshot: captured, libraries: [] };
   const expanded = expandForeignInputs(captured.inputs, fixtureTarget.c);
   if (!expanded.ok) throw Error(expanded.error);
   const result = {
@@ -134,6 +133,7 @@ function buildHostedFixture(
     /** Fixture-local binding declarations and explicit c-call bindings. */
     readonly foreignDeclarations?: readonly FixtureForeignDeclaration[];
     readonly foreignBindings?: readonly NativeForeignBinding[];
+    readonly foreignMemoryBindings?: readonly NativeForeignMemoryBinding[];
     readonly weakBindings?: readonly NativeWeakBinding[];
     readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
     readonly nativeServices?: BuildRequest["nativeServices"];
@@ -201,8 +201,6 @@ function buildHostedFixture(
   /** Runtime modules the generated binding modules import. */
   const dependencyIds: string[] = [];
   for (const declaration of options.foreignDeclarations ?? []) {
-    if (fixtureTarget.arch === "x86_64")
-      assert.fail("linux-x86_64: user FFI requires SysV foreign bindings");
     const prepared = prepareForeignLibrary(
       declaration.id,
       declaration.text,
@@ -298,6 +296,7 @@ function buildHostedFixture(
   // The tint:ffi runtime's capabilities when the program loads it.
   const ffi = foreignRuntimeBindings(
     new Set(modules.map((module) => module.id)),
+    fixtureTarget.c,
   );
   const nativeServices = [
     ...(options.nativeServices ?? []),
@@ -336,8 +335,14 @@ function buildHostedFixture(
       ...recordBindings,
       ...(serviceImage?.recordBindings ?? []),
     ],
-    weakBindings: [...(options.weakBindings ?? []), ...ffi.weakBindings],
-    foreignMemoryBindings: ffi.memoryBindings,
+    weakBindings: [
+      ...(options.weakBindings ?? []),
+      ...(fixtureTarget.arch === "x86_64" ? [] : ffi.weakBindings),
+    ],
+    foreignMemoryBindings: [
+      ...ffi.memoryBindings,
+      ...(options.foreignMemoryBindings ?? []),
+    ],
     managedSurfaces: [
       ...(options.managedSurfaces ?? []),
       ...(serviceImage === undefined ? [] : [serviceImage.surface]),

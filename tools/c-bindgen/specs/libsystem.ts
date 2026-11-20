@@ -8,6 +8,7 @@ export default {
     "glibc (libc.so.6) on Linux.",
   ],
   targets: ["darwin-arm64", "linux-arm64"],
+  linuxX86_64: {},
   headers: ["unistd.h", "stdio.h", "sys/stat.h"],
   aliases: ["mode_t"],
   functions: [

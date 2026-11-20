@@ -176,6 +176,7 @@ import {
   foreignDeclaration,
   foreignCall,
   foreignViewRegistry,
+  x64ForeignDiagnostic,
   type ForeignLibrary,
   type NativeForeignBinding,
   type NativeForeignMemoryBinding,
@@ -2499,7 +2500,11 @@ export function compileX64HostedProgram(
       readonly invocation: number;
       readonly returnType: "number" | "boolean" | "void";
     } {
-  const lowered = lowerTypedProgram(request, undefined, true);
+  const lowered = lowerTypedProgram(
+    withForeignRuntimes({ ...request, symbols: true }),
+    undefined,
+    true,
+  );
   if (!lowered.ok) return lowered;
   const program = lowered.value;
   const first = program.ir.module;
@@ -2528,6 +2533,16 @@ export function compileX64HostedProgram(
         }).module;
   request.onScalarIR?.("lowered", initial);
   request.onScalarIR?.("optimized", optimized);
+  const sourceNames = program.sourceNames;
+  if (sourceNames === undefined) throw "x64 foreign source names invariant";
+  const deferred = x64ForeignDiagnostic(
+    initial,
+    optimized,
+    sourceNames.names,
+    request.foreignLibraries ?? [],
+    (span) => locateSourceRange(program.ranges, span)?.module,
+  );
+  if (deferred !== undefined) return stageFailure("foreign", deferred);
   const emitted = emitX64(optimized, host);
   if (!emitted.ok) {
     const message = emitted.error.message;

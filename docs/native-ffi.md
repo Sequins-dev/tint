@@ -251,7 +251,7 @@ slots (Phase 3 b4).
 
 ## Struct layout and classification
 
-Layouts (`cLayout`) use the arm64 data model: natural alignment equal to scalar
+Layouts (`cLayout`) use the supported LP64 data model: natural alignment equal to scalar
 size, members in order at their alignment (1 when packed), record alignment the
 largest member alignment raised by `Aligned<N>`, size rounded to it; unions place
 every member at offset 0. Empty records and zero-length arrays are rejected.
@@ -292,6 +292,43 @@ need not extend narrow arguments, so extension bits are checked only for Apple)
 and skips with a visible reason without clang. Header layout checks compare the
 `CC_SHA256_CTX` (Darwin) and `z_stream` (both targets) declarations with the
 system headers.
+
+### Linux x86-64
+
+`classifySysVCCall` uses the same C layouts as AAPCS64 for the supported
+LP64 scalars, records and unions. Plain `char` is signed. Use `ByTarget`
+when a C alias or header constant differs. The binding language rejects
+`long double` and bitfields.
+
+System V classifies each of at most two eightbytes as INTEGER, SSE or
+padding. INTEGER wins when fields of both classes overlap an eightbyte,
+including in unions. Larger records and records with unaligned fields
+pass on the stack. If an argument cannot fit in the remaining six integer
+and eight SSE argument registers, it consumes registers from neither
+bank. The caller copies stack arguments by value into an aligned area.
+A memory result is written into aligned caller storage passed as the first
+integer argument, and C returns that address in RAX. Variadic calls use C
+default promotions and pass the occupied vector register count in AL.
+
+F1 part 1 supports static imports from required libraries for C scalar and
+pointer arguments and results, including `CStringBytes` arguments. The
+leaf adapter also supports the raw `$c` stubs with caller-provided
+`Uint8Array` record images, leaf C memory operations, and the
+compiler-authorized C call-frame trampoline. The C oracle in
+`tools/native-x64-ffi.test.ts` exercises generated static stubs and
+`dlsym` plus the trampoline under QEMU with the pinned x86 sysroot.
+
+The build diagnoses FFI paths that need later slices before machine
+emission:
+
+- F1 part 2 needs x64 slice 7a-3 for TypeScript record-by-value arguments
+  and results, including wrappers such as `ldiv`.
+- F1 part 2 needs managed emission from x64 slices 7a–7b for the public
+  `foreignFunction` API, run-time library and symbol loading (including
+  optional libraries), `CString` string conversion, `cStringAt` string
+  reads, and managed FFI creation of layout views, foreign memory views
+  and storage.
+- C callback signatures and callback runtime operations need F2.
 
 ## The `c-call` instruction
 

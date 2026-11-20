@@ -31,6 +31,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "abi",
     },
     {
+      id: "packages/abi/src/c/sysv.ts",
+      packageId: "abi",
+    },
+    {
       id: "packages/abi/src/c/types.ts",
       packageId: "abi",
     },
@@ -204,6 +208,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/codegen/src/x86_64/scalar/exit-entry.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/x86_64/scalar/foreign.ts",
       packageId: "codegen",
     },
     {
@@ -3157,6 +3165,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "codegen",
+      specifier: "@tint/abi/c/sysv",
+      target: "packages/abi/src/c/sysv.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/abi/function",
       target: "packages/abi/src/function.ts",
     },
@@ -3419,6 +3432,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/abi/c",
       target: "packages/abi/src/c/index.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/abi/c/sysv",
+      target: "packages/abi/src/c/sysv.ts",
     },
     {
       packageId: "compiler",
@@ -4047,6 +4065,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "image",
+      specifier: "@tint/abi/c/sysv",
+      target: "packages/abi/src/c/sysv.ts",
+    },
+    {
+      packageId: "image",
       specifier: "@tint/abi/function",
       target: "packages/abi/src/function.ts",
     },
@@ -4274,6 +4297,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "ir",
       specifier: "@tint/abi/c",
       target: "packages/abi/src/c/index.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/abi/c/sysv",
+      target: "packages/abi/src/c/sysv.ts",
     },
     {
       packageId: "ir",
@@ -4504,6 +4532,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-engine",
       specifier: "@tint/abi/c",
       target: "packages/abi/src/c/index.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/abi/c/sysv",
+      target: "packages/abi/src/c/sysv.ts",
     },
     {
       packageId: "js-engine",
@@ -5142,6 +5175,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "native-runtime",
+      specifier: "@tint/abi/c/sysv",
+      target: "packages/abi/src/c/sysv.ts",
+    },
+    {
+      packageId: "native-runtime",
       specifier: "@tint/abi/function",
       target: "packages/abi/src/function.ts",
     },
@@ -5429,6 +5467,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "platform",
       specifier: "@tint/abi/c",
       target: "packages/abi/src/c/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/abi/c/sysv",
+      target: "packages/abi/src/c/sysv.ts",
     },
     {
       packageId: "platform",
