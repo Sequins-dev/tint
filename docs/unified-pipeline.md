@@ -679,8 +679,10 @@ uses that record for exit and error delivery, and holds the owner alive
 through its referenced pipe watcher. A worker stop request updates its shared
 record and signals a separate nonblocking pipe. The worker checks the request
 between turns and after reactor polling, and reports status 1 through the same
-teardown path. Checks inside managed execution and interruption of blocking
-Atomics waits require further integration.
+teardown path. If a worker is parked on a registered Atomics waiter, the stop
+request also wakes that ticket. The worker consumes its ticket before exiting.
+Guest Atomics delivery and checks at allocation and call safepoints require
+further integration.
 
 ### What happens to each front end
 

@@ -31,10 +31,20 @@ import {createReactor} from 'reactor';
 import {createNativeWorkerThreadHost} from 'thread';
 import {createReactorEventLoop} from 'loop';
 import {nativeSharedMemoryHost,nativeWaiterParkingHost} from 'blocks';
+import {createNativeWaitRegistry,type NativeWaiterParkingHost} from 'waiters';
 import {startNativeWorker,runNativeWorker,type NativeWorkerTurnControl} from 'workers';
 
 export function run(argument:number):number {
-  const memory=nativeSharedMemoryHost(),parking=nativeWaiterParkingHost();
+  const memory=nativeSharedMemoryHost(),kernel=nativeWaiterParkingHost();
+  let observedWait=0;
+  const parking:NativeWaiterParkingHost={
+    park:(address:number,expected:number,timeout:number):number=>{
+      if(observedWait!==0&&timeout===0&&memory.writeSharedWord64(observedWait,16384,8,1,1,0)!==0)
+        throw "worker wait ready signal failed";
+      return kernel.park(address,expected,timeout);
+    },
+    wake:(address:number,all?:boolean):number=>kernel.wake(address,all),
+  };
   if(argument!==0)return runNativeWorker(memory,parking,argument,(moduleId:number,id:number,control:NativeWorkerTurnControl):number=>{
     if(moduleId===19&&id===1)return 7;
     if(moduleId===23&&id===2)throw "module failed";
@@ -66,6 +76,28 @@ export function run(argument:number):number {
         return 0;
       }finally{waiting.close();}
     }
+    if(id===4){
+      const active=control.waiters;
+      if(active===undefined)throw "missing worker waiter registry";
+      const registered=active.register({engineId:moduleId,blockId:1,address:moduleId,
+        byteLength:16384,byteOffset:16,width:4},0,0,false);
+      if(!registered.ok||registered.value.state!=="waiting")throw "worker waiter enrollment failed";
+      const ticket=registered.value.ticket;
+      observedWait=moduleId;
+      try{
+        while(true){
+          const parked=control.parkWait(ticket,0);
+          if(parked===undefined)return 0;
+          if(!parked.ok)throw "worker waiter did not park";
+          const state=active.poll(ticket);
+          if(!state.ok||state.value!=="waiting")throw "worker waiter woke without stop";
+        }
+      }finally{
+        active.expire(ticket);
+        const retired=active.take(ticket);
+        if(!retired.ok||retired.value==="waiting")throw "worker waiter release failed";
+      }
+    }
     return 93;
   });
   const runtime=createReactorEventLoop({
@@ -77,8 +109,11 @@ export function run(argument:number):number {
   const threads=createNativeWorkerThreadHost();
   const ready=memory.mapMemory(16384);
   if(ready<=0)return 6;
+  const created=createNativeWaitRegistry(memory,parking,ready,1);
+  if(!created.ok){memory.unmapMemory(ready,16384);return 7;}
+  const waiters=created.value;
   try{
-    let first=0,second=0,third=0,events="";
+    let first=0,second=0,third=0,fourth=0,events="";
     const worker=startNativeWorker(memory,parking,threads,runtime,{
       threadId:1,moduleId:19,
       onError:(message:string):void=>{throw message;},
@@ -94,13 +129,19 @@ export function run(argument:number):number {
       onError:(message:string):void=>{throw message;},
       onExit:(status:number):void=>{third=status;},
     });
+    const atomic=startNativeWorker(memory,parking,threads,runtime,{
+      threadId:4,moduleId:ready,waiters,
+      onError:(message:string):void=>{throw message;},
+      onExit:(status:number):void=>{fourth=status;},
+    });
     const scratch=new Uint32Array(2);
+    let stopReactor=false,stopAtomic=false;
     const request:{close():void}=runtime.loop.setInterval(():void=>{
       if(memory.readSharedWord64(ready,16384,0,1,scratch)!==0)throw "worker ready read failed";
-      if(scratch[0]===0)return;
-      blocked.requestStop();
-      blocked.requestStop();
-      request.close();
+      if(scratch[0]!==0&&!stopReactor){blocked.requestStop();blocked.requestStop();stopReactor=true;}
+      if(memory.readSharedWord64(ready,16384,8,1,scratch)!==0)throw "worker wait ready read failed";
+      if(scratch[0]!==0&&!stopAtomic){atomic.requestStop();stopAtomic=true;}
+      if(stopReactor&&stopAtomic)request.close();
     },5);
     worker.unref();if(worker.hasRef())return 2;
     worker.ref();if(!worker.hasRef()||worker.threadId!==1||failure.threadId!==2)return 3;
@@ -108,18 +149,25 @@ export function run(argument:number):number {
     deadline.unref();
     runtime.loop.run("callback");
     blocked.requestStop();
-    if(worker.hasRef()||failure.hasRef()||blocked.hasRef())return 4;
-    return first===7&&second===1&&third===1&&events==="module failed=exit"?42:5;
-  }finally{runtime.close();memory.unmapMemory(ready,16384);}
+    if(worker.hasRef()||failure.hasRef()||blocked.hasRef()||atomic.hasRef())return 4;
+    const reused=waiters.register({engineId:ready,blockId:1,address:ready,
+      byteLength:16384,byteOffset:16,width:4},0,0,false);
+    if(!reused.ok||reused.value.state!=="waiting")return 8;
+    return first===7&&second===1&&third===1&&fourth===1&&events==="module failed=exit"?42:5;
+  }finally{
+    runtime.close();memory.unmapMemory(ready,16384);
+    memory.unmapMemory(waiters.registry.base,waiters.registry.byteLength);
+  }
 }
 `,
-  "worker-lifecycle-v3",
+  "worker-lifecycle-v4",
   [
     ["clock", clock],
     ["reactor", "packages/platform/src/" + target.os + "/reactor.ts"],
     ["thread", "packages/platform/src/workers.ts"],
     ["loop", "packages/native-runtime/src/event-loop-reactor.ts"],
     ["blocks", "packages/native-runtime/src/shared-blocks.ts"],
+    ["waiters", "packages/native-runtime/src/shared-waiters.ts"],
     ["workers", "packages/native-runtime/src/worker-lifecycle.ts"],
   ],
   [],

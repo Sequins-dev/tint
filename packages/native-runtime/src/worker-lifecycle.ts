@@ -2,6 +2,7 @@ import {
   nativeThreadExitReadOffset,
   nativeThreadExitWriteOffset,
 } from "@tint/abi/host";
+import type { SharedResult } from "@tint/js-runtime/bytes/shared";
 import {
   createNativeAgentMailbox,
   attachNativeAgentMailbox,
@@ -14,7 +15,11 @@ import {
   writeNumber,
   type NativeSharedMemoryHost,
 } from "./shared-memory-host.ts";
-import type { NativeWaiterParkingHost } from "./shared-waiters.ts";
+import {
+  attachNativeWaitRegistry,
+  type NativeWaiterParkingHost,
+  type NativeWaitRegistry,
+} from "./shared-waiters.ts";
 
 export interface WorkerExitPipe {
   readonly input: number;
@@ -53,11 +58,16 @@ export interface NativeWorkerTurnControl {
   /** Borrowed descriptor. Register and unref it to wake the worker's poll. */
   readonly input: number;
   stopRequested(): boolean;
+  readonly waiters: NativeWaitRegistry | undefined;
+  /** Stop is represented by undefined. The caller still consumes its ticket. */
+  parkWait(ticket: number, timeout: number): SharedResult<number> | undefined;
 }
 
 export interface NativeWorkerRequest {
   readonly threadId: number;
   readonly moduleId: number;
+  /** The owner keeps the wait registry alive until exit. */
+  readonly waiters?: NativeWaitRegistry;
   onError(message: string): void;
   onExit(status: number): void;
 }
@@ -71,6 +81,10 @@ const ERROR_QUEUE = 48;
 const ENTERED = 56;
 const CONTROL_INPUT = 64;
 const STOP_REQUESTED = 72;
+const WAIT_REGISTRY = 80;
+const WAIT_REGISTRY_BYTES = 88;
+const WAIT_ENGINE = 96;
+const WAIT_TICKET = 104;
 
 /** Launch from the current image. The owner watches a nonblocking exit pipe.
  * Worker code uses its own hosted context and shares only scalar startup data. */
@@ -132,6 +146,9 @@ export function startNativeWorker(
     const signals = control;
     if (signals === undefined) throw "NATIVE_WORKER_CONTROL_PIPE";
     writeNumber(memory, record, STOP_REQUESTED, 1);
+    const ticket = readNumber(memory, record, WAIT_TICKET, scratch);
+    if (ticket !== 0 && request.waiters !== undefined)
+      request.waiters.expire(ticket);
     let count = threads.write(signals.output, bytes);
     while (count === -4) count = threads.write(signals.output, bytes);
     if (count !== 1) throw new Error("worker wake failed: " + String(count));
@@ -182,6 +199,17 @@ export function startNativeWorker(
     writeNumber(memory, record, MODULE_ID, moduleId);
     writeNumber(memory, record, ERROR_QUEUE, errors.registry.base);
     writeNumber(memory, record, CONTROL_INPUT, signals.input);
+    const waiters = request.waiters;
+    if (waiters !== undefined) {
+      writeNumber(memory, record, WAIT_REGISTRY, waiters.registry.base);
+      writeNumber(
+        memory,
+        record,
+        WAIT_REGISTRY_BYTES,
+        waiters.registry.byteLength,
+      );
+      writeNumber(memory, record, WAIT_ENGINE, waiters.registry.engineId);
+    }
     const handle = runtime.watchReadable(endpoints.input, (): void =>
       finish(endpoints.input),
     );
@@ -239,9 +267,39 @@ export function runNativeWorker(
   function stopRequested(): boolean {
     return readNumber(memory, record, STOP_REQUESTED, scratch) !== 0;
   }
+  let waiters: NativeWaitRegistry | undefined;
+  const waitRegistry = readNumber(memory, record, WAIT_REGISTRY, scratch);
+  if (waitRegistry !== 0) {
+    const attached = attachNativeWaitRegistry(memory, parking, {
+      base: waitRegistry,
+      byteLength: readNumber(memory, record, WAIT_REGISTRY_BYTES, scratch),
+      engineId: readNumber(memory, record, WAIT_ENGINE, scratch),
+    });
+    if (!attached.ok) return 70;
+    waiters = attached.value;
+  }
+  function parkWait(
+    ticket: number,
+    timeout: number,
+  ): SharedResult<number> | undefined {
+    const active = waiters;
+    if (active === undefined) throw "NATIVE_WORKER_WAIT_REGISTRY";
+    // Publish before testing the stop flag. Either the owner observes this
+    // ticket and expires it, or this thread observes stop before parking.
+    writeNumber(memory, record, WAIT_TICKET, ticket);
+    try {
+      if (stopRequested()) return undefined;
+      const result = active.park(ticket, timeout);
+      return stopRequested() ? undefined : result;
+    } finally {
+      writeNumber(memory, record, WAIT_TICKET, 0);
+    }
+  }
   const control: NativeWorkerTurnControl = {
     input: readNumber(memory, record, CONTROL_INPUT, scratch),
     stopRequested,
+    waiters,
+    parkWait,
   };
   writeNumber(memory, record, ENTERED, 1);
   if (stopRequested()) return 1;
