@@ -1,6 +1,8 @@
 import { spawn, spawnSync } from "node:child_process";
 import { appendFileSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
+import { createInterface } from "node:readline";
+import { nativeBatchWaiting } from "./native-batch-clock.ts";
 
 interface ProcessEntry {
   pid: number;
@@ -40,8 +42,9 @@ function processTree(root: number): ProcessEntry[] {
   return tree;
 }
 
-function stageInferior(): number | undefined {
-  const pidFile = process.env.TINT_GATE_INFERIOR_PID_FILE;
+export function stageInferior(
+  pidFile = process.env.TINT_GATE_INFERIOR_PID_FILE,
+): number | undefined {
   if (!pidFile) return undefined;
   try {
     const pid = Number(readFileSync(pidFile, "utf8"));
@@ -50,6 +53,21 @@ function stageInferior(): number | undefined {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     return undefined;
   }
+}
+
+export function killGateProcess(
+  root: number,
+  inferior?: number,
+  earlierTree: ProcessEntry[] = [],
+) {
+  const remaining = processTree(root);
+  if (inferior !== undefined) kill(inferior);
+  kill(-root);
+  kill(root);
+  for (const pid of new Set(
+    [...remaining, ...earlierTree].map(({ pid }) => pid),
+  ))
+    kill(pid);
 }
 
 function kill(pid: number) {
@@ -114,12 +132,7 @@ function diagnoseStall(
   } finally {
     // The job has its own group. Also kill descendants such as debugger
     // inferiors and detached helpers that may have started their own groups.
-    if (inferior !== undefined) kill(inferior);
-    const remaining = processTree(root);
-    kill(-root);
-    kill(root);
-    for (const pid of new Set([...remaining, ...tree].map(({ pid }) => pid)))
-      kill(pid);
+    killGateProcess(root, inferior, tree);
   }
 }
 
@@ -142,27 +155,101 @@ export async function runWithWatchdog(
   if (!/^[a-zA-Z0-9_-]+$/.test(label))
     throw Error("Invalid gate step: " + label);
 
-  const child = spawn(command, args, { detached: true, stdio: "inherit" });
+  const journal = process.env.TINT_GATE_NATIVE_IMAGES;
+  return runWithDeadline(command, args, seconds, {
+    onTimeout: (pid) => diagnoseStall(pid, label, seconds, evidence),
+    waiting:
+      label === "check-native" && journal
+        ? nativeBatchWaiting(journal)
+        : undefined,
+  });
+}
+
+interface DeadlineHandlers {
+  onTimeout: (pid: number) => void;
+  onInterrupt?: (pid: number) => void;
+  onLine?: (line: string) => void;
+  waiting?: (() => boolean) | undefined;
+}
+
+export function runWithDeadline(
+  command: string,
+  args: string[],
+  seconds: number,
+  { onTimeout, onInterrupt, onLine, waiting }: DeadlineHandlers,
+): Promise<number> {
+  const child = spawn(command, args, {
+    detached: true,
+    stdio: ["inherit", onLine ? "pipe" : "inherit", "inherit"],
+  });
+  if (child.stdout && onLine) {
+    child.stdout.pipe(process.stdout, { end: false });
+    createInterface({ input: child.stdout }).on("line", onLine);
+  }
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
+    function stop(status: number, cleanup: (pid: number) => void) {
+      clearDeadline();
       try {
-        diagnoseStall(child.pid!, label, seconds, evidence);
+        if (child.pid !== undefined) cleanup(child.pid);
       } catch (error) {
-        console.error(
-          `STALL ${label} exceeded ${seconds}s; watchdog diagnostics failed:`,
-          error,
-        );
+        console.error(`${command}: watchdog cleanup failed:`, error);
       } finally {
         child.unref();
-        resolve(124);
+        resolve(status);
       }
-    }, seconds * 1000);
-    child.once("error", (error) => {
+    }
+    const interrupt = () => stop(130, onInterrupt!);
+    const terminate = () => stop(143, onInterrupt!);
+    const budgetMs = seconds * 1000;
+    let tick = performance.now();
+    let activeMs = 0;
+    let waitingMs = 0;
+    let paused = false;
+    let finished = false;
+    function account() {
+      const now = performance.now();
+      if (paused) waitingMs += now - tick;
+      else activeMs += now - tick;
+      tick = now;
+    }
+    const timer = waiting
+      ? setInterval(() => {
+          account();
+          try {
+            paused = waiting();
+          } catch (error) {
+            console.error("Could not read native fixture wait status:", error);
+            stop(1, killGateProcess);
+            return;
+          }
+          if (activeMs >= budgetMs) stop(124, onTimeout);
+        }, 100)
+      : setTimeout(() => stop(124, onTimeout), budgetMs);
+    function clearDeadline() {
+      if (finished) return;
+      finished = true;
       clearTimeout(timer);
+      if (waiting) {
+        account();
+        console.log(
+          `native-batch active-ms=${Math.round(activeMs)} all-workers-wait-ms=${Math.round(waitingMs)}`,
+        );
+      }
+      if (onInterrupt) {
+        process.off("SIGINT", interrupt);
+        process.off("SIGTERM", terminate);
+      }
+    }
+    if (onInterrupt) {
+      process.once("SIGINT", interrupt);
+      process.once("SIGTERM", terminate);
+    }
+    child.once("error", (error) => {
+      clearDeadline();
       reject(error);
     });
-    child.once("exit", (status, signal) => {
-      clearTimeout(timer);
+    child.once("close", (status, signal) => {
+      clearDeadline();
       if (signal !== null) console.error(command, "terminated by", signal);
       resolve(status ?? 1);
     });

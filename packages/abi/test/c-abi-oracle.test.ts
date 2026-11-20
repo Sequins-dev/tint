@@ -1,3 +1,5 @@
+import { buildNativeFixture } from "../../../tools/gate/native-fixture.ts";
+import { runDarwinFixture } from "../../../tools/native-admission.ts";
 /** Test-only ABI oracle: clang compiles C callers of naked capture/produce
  * stubs; the captured register file and stack must hold every value where
  * classifyCCall says. clang is never part of Tint's build or link. */
@@ -596,20 +598,25 @@ test(
       const source = join(directory, "oracle.c"),
         binary = join(directory, "oracle");
       writeFileSync(source, program());
-      const compiled = spawnSync(
-        "clang",
-        [
-          "-O0",
-          ...(target === darwinArm64CTarget ? ["-arch", "arm64"] : []),
-          "-w",
-          "-o",
-          binary,
-          source,
-        ],
-        { encoding: "utf8" },
+      buildNativeFixture(binary, () => {
+        const compiled = spawnSync(
+          "clang",
+          [
+            "-O0",
+            ...(target === darwinArm64CTarget ? ["-arch", "arm64"] : []),
+            "-w",
+            "-o",
+            binary,
+            source,
+          ],
+          { encoding: "utf8" },
+        );
+        assert.equal(compiled.status, 0, compiled.stderr);
+        return binary;
+      });
+      const run = runDarwinFixture(binary, () =>
+        spawnSync(binary, [], { encoding: "utf8" }),
       );
-      assert.equal(compiled.status, 0, compiled.stderr);
-      const run = spawnSync(binary, [], { encoding: "utf8" });
       assert.equal(run.status, 0, run.stderr);
       const observed = JSON.parse(run.stdout) as Record<
         string,

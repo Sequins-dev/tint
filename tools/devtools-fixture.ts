@@ -1,3 +1,4 @@
+import { nativeFixtureBuildOnlyMode } from "./gate/native-fixture.ts";
 // A native Tint fixture for the DevTools bridge tests (docs/native-devtools.md):
 // an inlined callee for frame presentation, strings, lists, records, a Map,
 // a Set and general values for value formatting, a retained chain for heap
@@ -89,7 +90,7 @@ export function buildDevToolsFixture(name: string): string {
     only: process.env.TINT_BUILD_ONLY,
   };
   process.env.TINT_DEBUG_SYMBOLS = "1";
-  process.env.TINT_BUILD_ONLY = "1";
+  process.env.TINT_BUILD_ONLY = nativeFixtureBuildOnlyMode();
   try {
     return verifyHostedFixture(devtoolsFixtureSource, name, [], [], [], [], {
       managedBytes: 67108864,

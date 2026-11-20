@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { prepareDateTimeNativeService } from "./date-time-native-service.ts";
 import { frozenNativeRunIdentity } from "./native-run-journal.ts";
 import {
@@ -43,7 +43,8 @@ import {
 } from "@tint/compiler/native";
 import { nativeFixtureTarget } from "./native-host-target.ts";
 import { writeNodeExecutable } from "./node-file-host.ts";
-import { admitUnderLldb } from "./native-admission.ts";
+import { buildNativeFixture } from "./gate/native-fixture.ts";
+import { admitDarwinFixture } from "./native-admission.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
 /** Build target and execution runner are selected independently. */
 const fixtureTarget = nativeFixtureTarget();
@@ -116,7 +117,7 @@ export function workspaceGeneralLowering(): GeneralLowering | undefined {
 /** Build through the full hosted pipeline and run through the target runner.
  * Returns the image path (kept only with TINT_BUILD_ONLY=1 or
  * TINT_KEEP_NATIVE=1). */
-export function verifyHostedFixture(
+function buildHostedFixture(
   text: string,
   name: string,
   dependencies: readonly [string, string][] = [],
@@ -528,10 +529,20 @@ export function verifyHostedFixture(
     ) + "\n",
     { flag: "wx" },
   );
+  return path;
+}
+
+export function verifyHostedFixture(
+  ...args: Parameters<typeof buildHostedFixture>
+): string {
+  const name = args[1];
+  const path = buildNativeFixture(name, () => buildHostedFixture(...args));
   console.log(path);
-  if (process.env.TINT_BUILD_ONLY === "1") {
+  const mode = process.env.TINT_BUILD_ONLY;
+  if (mode === "defer-admission") return path;
+  if (mode === "1") {
     // Admit build-only Darwin images before callers launch their own LLDB.
-    if (fixtureTarget.os === "darwin") admitUnderLldb(path);
+    if (fixtureTarget.os === "darwin") admitDarwinFixture(path);
   } else
     try {
       const artifact = nativeArtifact(
@@ -555,7 +566,7 @@ export function verifyHostedFixture(
       console.log("Verified native " + name + " twice.");
     } finally {
       if (process.env.TINT_KEEP_NATIVE !== "1")
-        rmSync(directory, { recursive: true, force: true });
+        rmSync(dirname(path), { recursive: true, force: true });
     }
   return path;
 }
