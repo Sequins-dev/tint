@@ -723,7 +723,7 @@ function withNodeRuntimes(
   const ffi = foreignRuntimeBindings(ids);
   for (const runtime of ffi.runtimes) {
     if (runtime === undefined) throw "node FFI runtime invariant";
-    retain({ module: runtime.module, namespace: runtime.namespace });
+    retain(runtime);
   }
   const hostBindings = (request.hostBindings ?? []).slice();
   for (const binding of ffi.hostBindings) {

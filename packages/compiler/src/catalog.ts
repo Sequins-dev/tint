@@ -2723,6 +2723,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/ffi/address-words.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/ffi/c-string.ts",
       packageId: "native-runtime",
     },
@@ -2824,6 +2828,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/node/errors.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/ffi-memory.ts",
       packageId: "native-runtime",
     },
     {

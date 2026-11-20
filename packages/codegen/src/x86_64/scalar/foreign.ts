@@ -669,11 +669,29 @@ export function emitSysVMemory(request: MemorySite): ScalarType | "void" {
     return "boolean";
   }
 
-  if (operation === "adopt" || operation === "retarget") {
-    toInteger(request, arg(1), 8, false, site + ":address");
+  if (operation === "address-into") {
+    byteData(emit, arg(0), 0, trap);
+    emit({ op: "mov", dst: rdx, src: r11 });
+    byteData(emit, arg(1), 8, trap);
+    emit({ op: "mov", dst: mem(11, 0), src: rdx });
+    return "void";
+  }
+
+  if (
+    operation === "adopt" ||
+    operation === "adopt-words" ||
+    operation === "retarget"
+  ) {
+    const exact = operation === "adopt-words";
+    toInteger(request, arg(1), exact ? 4 : 8, false, site + ":address");
     emit({ op: "mov", dst: rdx, src: rax });
-    if (operation === "adopt") {
-      toInteger(request, arg(2), 4, false, site + ":length");
+    if (exact) {
+      toInteger(request, arg(2), 4, false, site + ":address-high");
+      emit({ op: "shl", dst: rax, count: 32 });
+      emit({ op: "or", dst: rdx, src: rax });
+    }
+    if (operation !== "retarget") {
+      toInteger(request, arg(exact ? 3 : 2), 4, false, site + ":length");
       emit({ op: "mov", dst: r11, src: arg(0) });
       emit({ op: "cmp", dst: mem(11, 0), src: imm(2) });
       branch(emit, "ne", trap);

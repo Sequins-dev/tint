@@ -452,7 +452,9 @@ export interface ForeignMemoryAccess {
     | "store"
     | "fits"
     | "address"
+    | "address-into"
     | "adopt"
+    | "adopt-words"
     | "retarget"
     | "available"
     | "callback-key"
@@ -549,6 +551,19 @@ export function foreignMemoryTypes(
       return validSymbol(access.symbol ?? "")
         ? { ok: true, value: { parameters: [], result: "boolean" } }
         : { ok: false, error: "invalid foreign symbol" };
+    if (access.operation === "address-into")
+      return {
+        ok: true,
+        value: { parameters: ["Uint8Array", "Uint8Array"], result: "void" },
+      };
+    if (access.operation === "adopt-words")
+      return {
+        ok: true,
+        value: {
+          parameters: ["Uint8Array", "number", "number", "number"],
+          result: "Uint8Array",
+        },
+      };
     return access.operation === "address"
       ? { ok: true, value: { parameters: ["Uint8Array"], result: "number" } }
       : access.operation === "retarget"

@@ -1,3 +1,4 @@
+import type { RuntimeSource } from "../runtime-contracts.ts";
 import {
   cLibraryImage,
   linuxArm64CTarget,
@@ -69,6 +70,8 @@ export interface NativeForeignMemoryBinding {
   readonly operation:
     | "address"
     | "adopt"
+    | "adopt-words"
+    | "address-into"
     | "retarget"
     | "stable"
     | "callback-key"
@@ -87,6 +90,7 @@ export const foreignRuntimeModules = {
   /** The public loader with the SysV leaf call-frame implementation. */
   sysv: "packages/native-runtime/src/ffi/dynamic-sysv.ts",
   primitives: "packages/native-runtime/src/ffi/primitives.ts",
+  addressWords: "packages/native-runtime/src/ffi/address-words.ts",
   weak: "packages/native-runtime/src/intrinsics/weak.ts",
   memory: "packages/native-runtime/src/intrinsics/memory.ts",
 };
@@ -96,7 +100,7 @@ export const foreignRuntimeModules = {
  * collector-registered storage (`external`) uses. Weak cells work under
  * every collector, and only a created one makes collections trace them. */
 export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
-  readonly runtimes: readonly { module: string; namespace: string }[];
+  readonly runtimes: readonly RuntimeSource[];
   readonly memoryBindings: readonly NativeForeignMemoryBinding[];
   readonly weakBindings: readonly {
     readonly module: string;
@@ -150,18 +154,38 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
     { module: modules.weak, name: "createWeakSlot", operation: "new" },
     { module: modules.weak, name: "weakSlotKey", operation: "key" },
   ];
+  const runtimes: RuntimeSource[] = [
+    { module: modules.primitives, namespace: "ffi" },
+    { module: modules.weak, namespace: "ffi-weak" },
+    { module: modules.memory, namespace: "ffi-memory" },
+  ];
   if (loaded.has(modules.nodeFfi))
     weakBindings.push({
       module: modules.weak,
       name: "clearWeakSlot",
       operation: "clear",
     });
+  if (loaded.has(modules.nodeFfi) && loaded.has(modules.addressWords)) {
+    runtimes.push({
+      module: modules.addressWords,
+      namespace: "ffi-address-words",
+      retainedExports: ["adoptExternalWords", "byteAddressInto"],
+    });
+    bindings.push(
+      {
+        module: modules.addressWords,
+        name: "adoptExternalWords",
+        operation: "adopt-words",
+      },
+      {
+        module: modules.addressWords,
+        name: "byteAddressInto",
+        operation: "address-into",
+      },
+    );
+  }
   return {
-    runtimes: [
-      { module: modules.primitives, namespace: "ffi" },
-      { module: modules.weak, namespace: "ffi-weak" },
-      { module: modules.memory, namespace: "ffi-memory" },
-    ],
+    runtimes,
     memoryBindings: bindings,
     weakBindings,
     hostBindings: [

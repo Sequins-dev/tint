@@ -71,6 +71,8 @@ export function instructionEffects(op: Instruction): number {
         : op.access.operation === "store"
           ? effectWriteHeap
           : op.access.operation === "adopt" ||
+              op.access.operation === "adopt-words" ||
+              op.access.operation === "address-into" ||
               op.access.operation === "retarget"
             ? effectReadHeap | effectWriteHeap
             : effectReadHeap;

@@ -10166,6 +10166,15 @@ function emitModuleForms(
                   saveRaw(9, resultId);
                   break;
                 }
+                if (access.operation === "address-into") {
+                  const destination = operands[1];
+                  if (destination === undefined)
+                    throw "c-memory address output invariant";
+                  dataPointer(base, 12, false, 0);
+                  dataPointer(destination, 13, false, 8);
+                  emit({ op: "str", width: 64, rt: 12, rn: 13, offset: 0 });
+                  break;
+                }
                 if (access.operation === "address") {
                   // The data address of an external (borrowed) array, or -1:
                   // owned and view storage moves with collections.
@@ -10263,20 +10272,40 @@ function emitModuleForms(
                   });
                   break;
                 }
-                if (access.operation === "adopt") {
+                if (
+                  access.operation === "adopt" ||
+                  access.operation === "adopt-words"
+                ) {
                   // Owned and empty (header exactly the Uint8Array marker,
                   // length 0) becomes an external view: borrowed flag, the
                   // length and the address. The extent is unchanged (both
                   // round to 32 bytes), so collectors see a valid object.
+                  const exact = access.operation === "adopt-words";
                   const address = operands[1],
-                    length = operands[2];
+                    length = operands[exact ? 3 : 2];
                   if (
                     address === undefined ||
                     length === undefined ||
                     resultId === undefined
                   )
                     throw "c-memory adopt invariant";
-                  numberToInteger(address, 12, "usize");
+                  if (exact) {
+                    const high = operands[2];
+                    if (high === undefined)
+                      throw "c-memory adopt high word invariant";
+                    numberToInteger(address, 12, "u32");
+                    numberToInteger(high, 11, "u32");
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 12,
+                      rn: 12,
+                      rm: 11,
+                      shift: "lsl",
+                      amount: 32,
+                      setFlags: false,
+                    });
+                  } else numberToInteger(address, 12, "usize");
                   numberToInteger(length, 13, "u32");
                   rawValue(9, base);
                   emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });

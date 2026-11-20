@@ -25,6 +25,7 @@ import {
 } from "@tint/js-runtime/objects";
 import { TARGET_AAPCS64 } from "tint:c/dl";
 import {
+  bytesAtWords,
   closeLibrary,
   findSymbolWords,
   foreignFunction,
@@ -37,6 +38,7 @@ import {
   setBytes,
   setNumber,
   setWords,
+  stableAddressWords,
   type ForeignFunction,
   type LibraryHandle,
   type SymbolAddress,
@@ -79,6 +81,8 @@ interface NodeFfi {
   readonly types: FfiObject;
   readonly defaultExport: FfiObject;
 }
+
+import { installFfiMemory } from "./ffi-memory.ts";
 
 const wordMask = 0xffffffffn;
 const maxPointer = 0xffffffffffffffffn;
@@ -761,6 +765,11 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     suffix,
     hooks,
   );
+  installFfiMemory(
+    core,
+    { view: bytesAtWords, address: stableAddressWords },
+    defaultExport,
+  );
   return { constructor, dlopen, dlclose, dlsym, types, defaultExport };
 }
 
@@ -771,5 +780,41 @@ export const dlopen: unknown = nativeNodeFfi.dlopen;
 export const dlclose: unknown = nativeNodeFfi.dlclose;
 export const dlsym: unknown = nativeNodeFfi.dlsym;
 export const types: unknown = nativeNodeFfi.types;
+function memoryExport(name: string): unknown {
+  return getOwnProperty<ScriptPropertyKey, unknown>(
+    nativeNodeFfi.defaultExport,
+    name,
+  )?.value;
+}
+export const getInt8: unknown = memoryExport("getInt8");
+export const getUint8: unknown = memoryExport("getUint8");
+export const getInt16: unknown = memoryExport("getInt16");
+export const getUint16: unknown = memoryExport("getUint16");
+export const getInt32: unknown = memoryExport("getInt32");
+export const getUint32: unknown = memoryExport("getUint32");
+export const getInt64: unknown = memoryExport("getInt64");
+export const getUint64: unknown = memoryExport("getUint64");
+export const getFloat32: unknown = memoryExport("getFloat32");
+export const getFloat64: unknown = memoryExport("getFloat64");
+export const setInt8: unknown = memoryExport("setInt8");
+export const setUint8: unknown = memoryExport("setUint8");
+export const setInt16: unknown = memoryExport("setInt16");
+export const setUint16: unknown = memoryExport("setUint16");
+export const setInt32: unknown = memoryExport("setInt32");
+export const setUint32: unknown = memoryExport("setUint32");
+export const setInt64: unknown = memoryExport("setInt64");
+export const setUint64: unknown = memoryExport("setUint64");
+export const setFloat32: unknown = memoryExport("setFloat32");
+export const setFloat64: unknown = memoryExport("setFloat64");
+export const exportBuffer: unknown = memoryExport("exportBuffer");
+export const exportString: unknown = memoryExport("exportString");
+export const exportArrayBuffer: unknown = memoryExport("exportArrayBuffer");
+export const exportArrayBufferView: unknown = memoryExport(
+  "exportArrayBufferView",
+);
+export const toBuffer: unknown = memoryExport("toBuffer");
+export const toArrayBuffer: unknown = memoryExport("toArrayBuffer");
+export const toString: unknown = memoryExport("toString");
+export const getRawPointer: unknown = memoryExport("getRawPointer");
 const defaultExport: unknown = nativeNodeFfi.defaultExport;
 export { defaultExport as default };
