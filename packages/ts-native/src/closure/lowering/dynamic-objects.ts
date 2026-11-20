@@ -128,9 +128,19 @@ export function arrayFlowReceiver(
       return undefined;
   }
 }
+function isNativeRealmGuard(intrinsic: string): boolean {
+  return (
+    intrinsic === "array-instanceof" ||
+    intrinsic === "error-is" ||
+    intrinsic === "type-error-is" ||
+    intrinsic === "range-error-is" ||
+    intrinsic === "error-property"
+  );
+}
+
 export function usesRealmInstanceof(
   checked: CheckedClosures,
-  arrayGuards: boolean,
+  realmGuards: boolean,
 ): boolean {
   let used = false;
   checked.intrinsics.forEach((intrinsic, node) => {
@@ -138,7 +148,7 @@ export function usesRealmInstanceof(
       intrinsic.startsWith("realm-library-") ||
       intrinsic === "realm-global" ||
       intrinsic === "realm-instanceof" ||
-      (arrayGuards && intrinsic === "array-instanceof") ||
+      (realmGuards && isNativeRealmGuard(intrinsic)) ||
       arrayFlowReceiver(checked, node, intrinsic) === "realm"
     )
       used = true;
@@ -453,7 +463,7 @@ export function insertDynamicObjectRuntime(
         (intrinsic.startsWith("realm-library-") ||
           intrinsic === "realm-global" ||
           intrinsic === "realm-instanceof" ||
-          intrinsic === "array-instanceof" ||
+          isNativeRealmGuard(intrinsic) ||
           arrayFlowReceiver(checked, node, intrinsic) !== undefined))
     )
       uses.push(node);
