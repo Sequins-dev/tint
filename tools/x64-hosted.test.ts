@@ -595,3 +595,69 @@ test(
     assert.equal(run(built.value).status, 42);
   },
 );
+
+test(
+  "x86-64 escaping closures share writes across indirect calls",
+  native,
+  () => {
+    const built = build(
+      `
+    interface Counter {
+      add: (n: number) => number;
+      read: () => number;
+    }
+    function counter(start: number): Counter {
+      let value = start;
+      function bump(n: number): number { value += n; return value; }
+      function add(n: number): number { return bump(n); }
+      return { add, read: (): number => value };
+    }
+    export function run(): number {
+      const first = counter(10);
+      const other = counter(8);
+      if (first.add(20) !== 30) return 1;
+      if (other.add(3) !== 11) return 2;
+      if (first.read() !== 30) return 3;
+      return first.add(12);
+    }
+    `,
+      {},
+      { optimization: "none" },
+    );
+    assert.ok(built.ok, JSON.stringify(built));
+    assert.equal(run(built.value).status, 42);
+  },
+);
+
+test(
+  "x86-64 indirect calls forward stack arguments and propagate throws",
+  native,
+  () => {
+    const built = build(
+      `
+    type F = (a: boolean, b: boolean, c: boolean, d: number, e: number,
+      f: number, g: number, h: number, i: number, j: number, k: number,
+      l: number) => number;
+    function choose(base: number): F {
+      return (a, b, c, d, e, f, g, h, i, j, k, l): number => {
+        if (!a || b || !c) throw "bad flags";
+        return base + d + e + f + g + h + i + j + k + l;
+      };
+    }
+    export function run(): number {
+      const fn = choose(6);
+      try {
+        fn(false, false, true, 0, 1, 2, 3, 4, 5, 6, 7, 8);
+        return 2;
+      } catch (e) {
+        return fn(true, false, true, 0, 1, 2, 3, 4, 5, 6, 7, 8);
+      }
+    }
+    `,
+      {},
+      { optimization: "none" },
+    );
+    assert.ok(built.ok, JSON.stringify(built));
+    assert.equal(run(built.value).status, 42);
+  },
+);

@@ -41,6 +41,7 @@ export function frameStackMaps(
   homes: ReadonlyMap<number, number>,
   types: ReadonlyMap<number, ScalarType>,
   sites: readonly LabeledSafepoint[],
+  environment?: number,
 ): PendingSafepoint[] {
   const trackedSlots: number[] = [];
   const tracked = new Uint8Array(slots.length);
@@ -102,6 +103,7 @@ export function frameStackMaps(
       const list = type === "general" ? generals : references;
       list.push(frameBytes + offset);
     }
+    if (environment !== undefined) add(environment, "reference");
     for (const slot of live) {
       if (slot === undefined) throw "x86-64 live slot invariant";
       const offset = slots[slot];

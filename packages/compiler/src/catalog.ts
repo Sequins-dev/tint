@@ -199,6 +199,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/scalar/signature.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/scalar/stack-maps.ts",
       packageId: "codegen",
     },

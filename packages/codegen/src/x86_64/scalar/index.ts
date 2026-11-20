@@ -1,4 +1,14 @@
 import {
+  nativeFunctionByteLength,
+  nativeFunctionEntryOffset,
+  nativeFunctionEnvironmentOffset,
+  nativeFunctionReservedOffset,
+  nativeFunctionSignatureOffset,
+  nativeSignatureHeaderByteLength,
+  nativeSignatureParameterByteLength,
+  nativeSignatureVersion,
+} from "@tint/abi/function";
+import {
   classifySysVCCall as classifyCCall,
   linuxX86_64CTarget,
   type SysVCallLayout as CCallLayout,
@@ -37,6 +47,7 @@ import {
   type Instruction,
   type ModuleIR,
   type RecordField,
+  type RecordLayout,
   type ScalarType,
   type Span,
   type Terminator,
@@ -81,6 +92,7 @@ import {
 } from "./foreign.ts";
 import { branch, emitHostCall, exactInteger } from "./host.ts";
 import { createNumberEmission, floatBits } from "./numbers.ts";
+import { nativeSignatureTypeCode } from "../../scalar/signature.ts";
 import {
   encodeWideStackMapTable,
   rootHeadBinding,
@@ -236,10 +248,26 @@ export function emitModule(
     { readonly offset: number; readonly words: readonly number[] }
   >();
   let poolBytes = 0;
+  function poolWords(name: string, words: readonly number[]): void {
+    descriptors.set(name, { offset: poolBytes, words });
+    poolBytes += words.length * 8;
+  }
+  const functionRecord = module.records?.length ?? 0;
+  const functionLayout: RecordLayout = {
+    byteLength: nativeFunctionByteLength,
+    fields: [
+      {
+        offset: nativeFunctionEnvironmentOffset,
+        type: "optional-reference",
+        mutable: false,
+      },
+    ],
+  };
   function descriptor(record: number): Memory<64> {
     const name = "record:" + String(record);
     if (!descriptors.has(name)) {
-      const layout = module.records?.[record];
+      const layout =
+        record === functionRecord ? functionLayout : module.records?.[record];
       if (layout === undefined) throw "x86-64 record layout invariant";
       const references: number[] = [];
       const generals: number[] = [];
@@ -254,8 +282,7 @@ export function emitModule(
       words.push(generals.length);
       for (const offset of generals)
         if (offset !== undefined) words.push(offset);
-      descriptors.set(name, { offset: poolBytes, words });
-      poolBytes += words.length * 8;
+      poolWords(name, words);
     }
     return rip(name);
   }
@@ -282,6 +309,29 @@ export function emitModule(
 
   const argumentsByFunction: Argument[][] = [];
 
+  const signatures: { parameters: string; name: string }[] = [];
+  const discardSignatures = new Map<string, Set<string>>();
+  function signature(target: number): Memory<64> {
+    const fn = module.functions[target];
+    const args = argumentsByFunction[target];
+    const shape = signatures[target];
+    if (fn === undefined || args === undefined || shape === undefined)
+      throw "x86-64 signature invariant";
+    if (!descriptors.has(shape.name)) {
+      const words = [
+        nativeSignatureVersion,
+        nativeSignatureHeaderByteLength +
+          args.length * nativeSignatureParameterByteLength,
+        args.length,
+        nativeSignatureTypeCode(fn.returnType),
+      ];
+      for (const arg of args)
+        if (arg !== undefined) words.push(nativeSignatureTypeCode(arg.type));
+      poolWords(shape.name, words);
+    }
+    return rip(shape.name);
+  }
+
   function constant(value: number): Memory<64> {
     const bits = encodeFloat64(value);
     const key = "constant:" + String(bits.hi) + ":" + String(bits.lo);
@@ -305,7 +355,11 @@ export function emitModule(
     const savedContext = -8,
       savedResult = -16;
     const callResult = savedResult - resultBytes;
-    let depth = -callResult;
+    const savedEnvironment =
+      fn.environment !== undefined || fn.closureEnvironment !== undefined
+        ? callResult - 8
+        : undefined;
+    let depth = -(savedEnvironment ?? callResult);
     let outgoing = 0;
     let needsForeign = false;
     const plans = new Map<Instruction, CCallLayout>();
@@ -342,7 +396,7 @@ export function emitModule(
           );
           needsForeign = true;
         }
-        if (op.kind === "call") {
+        if (op.kind === "call" || op.kind === "call-indirect") {
           const args = argumentsByFunction[op.target];
           if (args === undefined) throw "call layout invariant";
           for (const arg of args)
@@ -409,20 +463,54 @@ export function emitModule(
       callSites.push({ block: block.id, index, label: name });
     }
 
+    const r10 = gpr(10),
+      rdx = gpr(2),
+      r9 = gpr(9);
+    const x0 = xmm(0);
+    const absent = bits(optionalNumberAbsentLow, optionalNumberAbsentHigh);
     function call(op: Instruction, block: Block, index: number): void {
-      if (op.kind !== "call") throw "call invariant";
+      if (op.kind !== "call" && op.kind !== "call-indirect")
+        throw "call invariant";
       const args = argumentsByFunction[op.target];
       const callee = module.functions[op.target];
       if (args === undefined || callee === undefined) throw "callee invariant";
-      if (callee.import === true || op.environment === "inherit")
-        fail(
-          "UNSUPPORTED",
-          "unsupported instruction call (" +
-            (callee.import === true
-              ? "managed import"
-              : "inherited environment") +
-            ")",
-        );
+      if (callee.import === true)
+        fail("UNSUPPORTED", "unsupported managed import " + callee.name);
+      if (op.kind === "call-indirect") {
+        guardRecord(op.callee, functionRecord, trapLabel);
+        emit({
+          op: "mov",
+          dst: rax,
+          src: mem(9, nativeFunctionSignatureOffset),
+        });
+        emit({ op: "lea", dst: scratch, src: signature(op.target) });
+        emit({ op: "cmp", dst: rax, src: scratch });
+        if (op.discardResult === true) {
+          const shape = signatures[op.target];
+          if (shape === undefined) throw "discarded result signature invariant";
+          const valid = fnLabel + ":signature:" + String(machine.length);
+          const matches = discardSignatures.get(shape.parameters);
+          if (matches !== undefined)
+            for (const match of matches) {
+              if (match === undefined || match === shape.name) continue;
+              branch(emit, "e", valid);
+              emit({ op: "lea", dst: scratch, src: rip(match) });
+              emit({ op: "cmp", dst: rax, src: scratch });
+            }
+          branch(emit, "ne", trapLabel);
+          emit({ op: "label", name: valid });
+        } else branch(emit, "ne", trapLabel);
+        emit({
+          op: "mov",
+          dst: environment,
+          src: mem(9, nativeFunctionEnvironmentOffset),
+        });
+        emit({ op: "mov", dst: r10, src: mem(9, nativeFunctionEntryOffset) });
+      } else if (op.environment === "inherit") {
+        if (savedEnvironment === undefined)
+          throw "inherited environment invariant";
+        emit({ op: "mov", dst: environment, src: frame(savedEnvironment) });
+      } else emit({ op: "xor", dst: environment, src: environment });
       for (let i = 0; i < args.length; i++) {
         const arg = args[i],
           id = op.arguments[i];
@@ -440,14 +528,17 @@ export function emitModule(
         }
       }
       emit({ op: "mov", dst: context, src: frame(savedContext) });
-      emit({ op: "xor", dst: environment, src: environment });
       if (op.receiver === undefined)
         emit({ op: "xor", dst: receiver, src: receiver });
       else emit({ op: "lea", dst: receiver, src: frame(home(op.receiver)) });
       emit({ op: "lea", dst: result, src: frame(callResult) });
       emit({ op: "mov", dst: frame(callResult), src: imm(0) });
       emit({ op: "mov", dst: frame(callResult + 8), src: imm(0) });
-      emit({ op: "call", target: label(functionLabel(op.target)) });
+      emit({
+        op: "call",
+        target:
+          op.kind === "call-indirect" ? r10 : label(functionLabel(op.target)),
+      });
       safepoint(block, index);
       const received = fnLabel + ":call:" + String(machine.length);
       emit({ op: "cmp", dst: eax, src: imm(normal) });
@@ -468,11 +559,6 @@ export function emitModule(
       }
     }
 
-    const r10 = gpr(10),
-      rdx = gpr(2),
-      r9 = gpr(9);
-    const x0 = xmm(0);
-    const absent = bits(optionalNumberAbsentLow, optionalNumberAbsentHigh);
     function numberBits(): void {
       emit({ op: "cvtsi2sd", dst: x0, src: rax });
       floatBits(emit, rax, x0);
@@ -1397,6 +1483,61 @@ export function emitModule(
             scalarByteLength(typeOf(op.value)),
           );
           return;
+        case "closure-environment":
+          if (savedEnvironment === undefined)
+            throw "closure environment invariant";
+          emit({ op: "mov", dst: rax, src: frame(savedEnvironment) });
+          define(op.id, "reference");
+          return;
+        case "function-environment":
+          guardRecord(op.callee, functionRecord, trapLabel);
+          emit({
+            op: "mov",
+            dst: rax,
+            src: mem(9, nativeFunctionEnvironmentOffset),
+          });
+          define(op.id, "optional-reference");
+          return;
+        case "function-new": {
+          if (host === undefined) break;
+          const site = fnLabel + ":function:" + String(op.id);
+          const closure = op.environment;
+          if (closure !== undefined) {
+            const layout = module.functions[op.target]?.closureEnvironment;
+            if (layout === undefined)
+              throw "function environment layout invariant";
+            guardRecord(closure, layout, trapLabel);
+          }
+          emit({ op: "mov", dst: r10, src: imm(nativeFunctionByteLength) });
+          allocate(block, site, site + ":denied");
+          emit({ op: "mov", dst: r9, src: rax });
+          emit({ op: "lea", dst: rax, src: descriptor(functionRecord) });
+          emit({ op: "mov", dst: mem(9, 0), src: rax });
+          emit({ op: "lea", dst: rax, src: rip(functionLabel(op.target)) });
+          emit({ op: "mov", dst: mem(9, nativeFunctionEntryOffset), src: rax });
+          if (closure === undefined) emit({ op: "xor", dst: eax, src: eax });
+          else emit({ op: "mov", dst: rax, src: frame(home(closure)) });
+          emit({
+            op: "mov",
+            dst: mem(9, nativeFunctionEnvironmentOffset),
+            src: rax,
+          });
+          emit({ op: "lea", dst: rax, src: signature(op.target) });
+          emit({
+            op: "mov",
+            dst: mem(9, nativeFunctionSignatureOffset),
+            src: rax,
+          });
+          emit({
+            op: "mov",
+            dst: mem(9, nativeFunctionReservedOffset),
+            src: imm(0),
+          });
+          emit({ op: "mov", dst: rax, src: r9 });
+          define(op.id, "reference");
+          return;
+        }
+        case "call-indirect":
         case "call":
           call(op, block, index);
           return;
@@ -1557,22 +1698,37 @@ export function emitModule(
           return;
         }
         case "record":
-        case "record-cell": {
+        case "record-cell":
+        case "cell": {
           const alternate = blockLabel(fn.id, op.alternate);
-          const field = recordField(op.record, op.field);
+          let field: RecordField;
+          if (op.kind === "cell") {
+            const cell = fn.environment?.cells[op.cell];
+            if (cell === undefined || savedEnvironment === undefined)
+              throw "borrowed environment cell invariant";
+            field = {
+              offset: cell.valueOffset,
+              type: cell.type,
+              mutable: cell.mutable,
+              stateOffset: cell.stateOffset,
+            };
+            emit({ op: "mov", dst: r9, src: frame(savedEnvironment) });
+          } else {
+            field = recordField(op.record, op.field);
+            guardRecord(op.object, op.record, alternate);
+          }
           const state = field.stateOffset;
           if (
-            op.kind === "record-cell" &&
+            op.kind !== "record" &&
             op.operation === "write" &&
             !field.mutable
           ) {
             emit({ op: "jmp", target: label(alternate) });
             return;
           }
-          guardRecord(op.object, op.record, alternate);
-          if (op.kind === "record-cell") {
+          if (op.kind !== "record") {
             if (state === undefined) throw "x86-64 record cell state invariant";
-            if (op.initialized !== true) {
+            if (op.kind === "cell" || op.initialized !== true) {
               emit({
                 op: "cmp",
                 dst: { ...mem(9, state), width: 8 },
@@ -1660,6 +1816,8 @@ export function emitModule(
     emit({ op: "sub", dst: rsp, src: imm(frameBytes) });
     emit({ op: "mov", dst: frame(savedResult), src: result });
     emit({ op: "mov", dst: frame(savedContext), src: context });
+    if (savedEnvironment !== undefined)
+      emit({ op: "mov", dst: frame(savedEnvironment), src: environment });
     const receiverSlot = fn.receiverSlot;
     if (receiverSlot !== undefined) {
       const offset = slot(receiverSlot),
@@ -1721,6 +1879,7 @@ export function emitModule(
         homes,
         types,
         callSites,
+        fn.closureEnvironment === undefined ? undefined : savedEnvironment,
       ))
         if (map !== undefined) pendingMaps.push(map);
   }
@@ -1728,15 +1887,39 @@ export function emitModule(
   try {
     for (const fn of module.functions) {
       if (fn === undefined) throw "function invariant";
-      argumentsByFunction.push(argumentLayout(fn));
+      const args = argumentLayout(fn);
+      argumentsByFunction.push(args);
+      let parameters = "";
+      for (const arg of args)
+        if (arg !== undefined) parameters += ":" + arg.type;
+      signatures.push({
+        parameters,
+        name: "signature:" + fn.returnType + parameters,
+      });
+    }
+    for (const fn of module.functions) {
+      if (fn === undefined) throw "function invariant";
+      for (const block of fn.blocks) {
+        if (block === undefined) throw "block invariant";
+        for (const op of block.instructions) {
+          if (op?.kind !== "function-new") continue;
+          const shape = signatures[op.target];
+          if (shape === undefined) throw "function signature invariant";
+          signature(op.target);
+          let matches = discardSignatures.get(shape.parameters);
+          if (matches === undefined) {
+            matches = new Set<string>();
+            discardSignatures.set(shape.parameters, matches);
+          }
+          matches.add(shape.name);
+        }
+      }
     }
     for (const fn of module.functions) {
       if (fn === undefined) throw "function invariant";
       functionId = fn.id;
       blockId = undefined;
       span = undefined;
-      if (fn.environment !== undefined || fn.closureEnvironment !== undefined)
-        fail("UNSUPPORTED", "unsupported function environment");
       if (fn.import !== true) body(fn);
     }
     // A declaration by itself also needs a linker binding.
