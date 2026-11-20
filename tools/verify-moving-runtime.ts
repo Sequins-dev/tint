@@ -19,6 +19,7 @@ const rejectMinor = process.env.TINT_REJECT_MINOR === "1";
 const rejectAllocations = process.env.TINT_REJECT_ALLOCATIONS === "1";
 const receivers = process.env.TINT_RECEIVER_RUNTIME === "1";
 const generalArrays = process.env.TINT_GENERAL_ARRAY_RUNTIME === "1";
+const stringPressure = process.env.TINT_STRING_RUNTIME === "1";
 const forcedCollection = process.env.TINT_FORCED_COLLECTION === "1";
 const shiftedPC = process.env.TINT_SHIFT_SAFEPOINT_PC === "1";
 const memoryModule = "packages/native-runtime/src/intrinsics/memory.ts";
@@ -84,7 +85,7 @@ export function run():number {
  for(let i=0;i<40;i++){if(create().read()!==42||captured()!==42)return 2;}
  return 42;
 }`
-        : generational
+        : generational && !stringPressure
           ? `interface Link {next:Link|undefined;value:number;}
 export function run():number {
  const a:Link={next:undefined,value:1},b:Link={next:undefined,value:2},c:Link={next:undefined,value:3};

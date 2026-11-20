@@ -59,6 +59,7 @@ import {
   type NearFixup,
   type Instruction as MachineInstruction,
   type Address,
+  type Gpr,
   type Memory,
 } from "../isa.ts";
 import {
@@ -713,19 +714,37 @@ export function emitModule(
       emit({ op: "label", name: fits });
     }
 
-    function ownedArray(
-      op: {
-        readonly id: number;
-        readonly type: ScalarType;
-        readonly length: number;
-      },
+    function remember(): void {
+      // The store leaves the object start in R9.
+      if (!generational) return;
+      emit({ op: "mov", dst: context, src: frame(savedContext) });
+      emit({ op: "call", target: label(rememberLabel) });
+    }
+
+    function vectorGuard(
+      value: number,
+      register: Gpr<64>,
+      invalid: string,
+    ): void {
+      emit({ op: "mov", dst: register, src: frame(home(value)) });
+      emit({ op: "test", dst: register, src: register });
+      branch(emit, "e", invalid);
+      emit({ op: "cmp", dst: mem(register.index, 0), src: imm(6) });
+      branch(emit, "ne", invalid);
+    }
+
+    function ownedIndexed(
+      id: number,
+      length: number,
+      type: ScalarType,
+      width: ElementBytes,
+      marker: number,
       block: Block,
       index: number,
     ): void {
-      const site = fnLabel + ":array:" + String(op.id);
+      const site = fnLabel + ":array:" + String(id);
       const denied = site + ":invalid";
-      const width = arrayWidth(op.type);
-      exactInteger(emit, frame(home(op.length)), r9, denied);
+      exactInteger(emit, frame(home(length)), r9, denied);
       emit({
         op: "mov",
         dst: word(11),
@@ -751,13 +770,14 @@ export function emitModule(
       });
       emit({ op: "and", dst: r10, src: imm(-8) });
       allocate(block, index, site, denied);
-      if (generational)
-        exactInteger(emit, frame(home(op.length)), r9, trapLabel);
-      emit({ op: "mov", dst: mem(0, 0), src: imm(arrayMarker(width)) });
+      if (generational) exactInteger(emit, frame(home(length)), r9, trapLabel);
+      emit({ op: "mov", dst: mem(0, 0), src: imm(marker) });
       emit({ op: "mov", dst: mem(0, nativeArrayLengthOffset), src: r9 });
-      emit({ op: "lea", dst: r10, src: mem(0, nativeArrayInlineOffset) });
-      emit({ op: "mov", dst: mem(0, nativeArrayDataOffset), src: r10 });
-      define(op.id, op.type);
+      if (marker !== 6) {
+        emit({ op: "lea", dst: r10, src: mem(0, nativeArrayInlineOffset) });
+        emit({ op: "mov", dst: mem(0, nativeArrayDataOffset), src: r10 });
+      }
+      define(id, type);
     }
 
     function arrayView(
@@ -1012,6 +1032,70 @@ export function emitModule(
       emit({ op: "xor", dst: eax, src: eax });
       emit({ op: "label", name: done });
       define(op.id, "boolean");
+    }
+
+    /** Allocate a flat string from its unit count in R9. The spare
+     * word of this result home holds the count across the allocation. */
+    function allocateString(id: number, block: Block, index: number): void {
+      const site = fnLabel + ":allocate-string:" + String(id);
+      const denied = site + ":invalid";
+      const maxUnits = Math.floor((0xfffffff0 - nativeStringDataOffset) / 2);
+      emit({ op: "cmp", dst: r9, src: imm(maxUnits) });
+      branch(emit, "a", denied);
+      emit({ op: "mov", dst: frame(home(id) + 8), src: r9 });
+      emit({ op: "mov", dst: r10, src: imm(4) });
+      emit({ op: "cmp", dst: r9, src: r10 });
+      emit({ op: "cmovcc", cc: "a", dst: r10, src: r9 });
+      emit({
+        op: "lea",
+        dst: r10,
+        src: {
+          kind: "mem",
+          width: 64,
+          address: {
+            kind: "base",
+            index: 10,
+            scale: 2,
+            disp: nativeStringDataOffset + 7,
+          },
+        },
+      });
+      emit({ op: "and", dst: r10, src: imm(-8) });
+      allocate(block, index, site, denied);
+      emit({ op: "mov", dst: mem(0, 0), src: imm(1) });
+      emit({ op: "mov", dst: scratch, src: frame(home(id) + 8) });
+      emit({ op: "mov", dst: mem(0, nativeStringLengthOffset), src: scratch });
+    }
+
+    function stringCopy(symbol: string): void {
+      // RDI/RSI: string bases, possibly adjusted by a code-unit offset.
+      // RDX: copy length in units.
+      emit({ op: "lea", dst: gpr(7), src: mem(7, nativeStringDataOffset) });
+      emit({ op: "lea", dst: gpr(6), src: mem(6, nativeStringDataOffset) });
+      emit({ op: "shl", dst: rdx, count: 1 });
+      foreign(symbol);
+    }
+
+    function sliceIndex(value: number, dst: Gpr<64>, site: string): void {
+      // RDX holds the string length. Clamp in binary64 before truncating,
+      // then make strictly negative truncated bounds relative to length.
+      const done = site + ":done";
+      const x1 = xmm(1),
+        x2 = xmm(2);
+      emit({ op: "xor", dst, src: dst });
+      emit({ op: "movsd", dst: x0, src: frame(home(value)) });
+      emit({ op: "ucomisd", dst: x0, src: x0 });
+      branch(emit, "p", done);
+      emit({ op: "cvtsi2sd", dst: x1, src: rdx });
+      emit({ op: "xorpd", dst: x2, src: x2 });
+      emit({ op: "subsd", dst: x2, src: x1 });
+      emit({ op: "minsd", dst: x0, src: x1 });
+      emit({ op: "maxsd", dst: x0, src: x2 });
+      emit({ op: "cvttsd2si", dst, src: x0 });
+      emit({ op: "test", dst, src: dst });
+      branch(emit, "ns", done);
+      emit({ op: "add", dst, src: rdx });
+      emit({ op: "label", name: done });
     }
 
     // RDI/RSI hold the two string bases (RDI may already be advanced by a
@@ -1361,10 +1445,125 @@ export function emitModule(
           define(id, "number");
           return;
         }
-        case "array-new":
+        case "array-new": {
           if (host === undefined) break;
-          ownedArray(op, block, index);
+          const width = arrayWidth(op.type);
+          ownedIndexed(
+            op.id,
+            op.length,
+            op.type,
+            width,
+            arrayMarker(width),
+            block,
+            index,
+          );
           return;
+        }
+        case "reference-vector-new":
+          if (host === undefined) break;
+          ownedIndexed(op.id, op.length, "reference", 8, 6, block, index);
+          return;
+        case "reference-vector-is": {
+          const done = fnLabel + ":vector-test:" + String(op.id);
+          emit({ op: "xor", dst: eax, src: eax });
+          vectorGuard(op.vector, scratch, done);
+          emit({ op: "mov", dst: eax, src: imm(1) });
+          emit({ op: "label", name: done });
+          define(op.id, "boolean");
+          return;
+        }
+        case "reference-vector-length":
+          vectorGuard(op.vector, scratch, trapLabel);
+          emit({ op: "mov", dst: rax, src: mem(11, nativeArrayLengthOffset) });
+          numberBits();
+          define(op.id, "number");
+          return;
+        case "reference-vector-read":
+        case "reference-vector-write": {
+          const read = op.kind === "reference-vector-read";
+          const done = fnLabel + ":vector-element:" + String(machine.length);
+          const invalid = read ? done : trapLabel;
+          vectorGuard(op.vector, scratch, trapLabel);
+          emit({ op: "xor", dst: eax, src: eax });
+          exactInteger(emit, frame(home(op.index)), r9, invalid);
+          emit({ op: "cmp", dst: r9, src: mem(11, nativeArrayLengthOffset) });
+          branch(emit, "ae", invalid);
+          const element: Memory<64> = {
+            kind: "mem",
+            width: 64,
+            address: {
+              kind: "base",
+              base: 11,
+              index: 9,
+              scale: 8,
+              disp: nativeArrayInlineOffset,
+            },
+          };
+          if (op.kind === "reference-vector-read") {
+            emit({ op: "mov", dst: rax, src: element });
+            emit({ op: "label", name: done });
+            define(op.id, "optional-reference");
+          } else {
+            emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
+            emit({ op: "mov", dst: element, src: rax });
+            emit({ op: "mov", dst: r9, src: scratch });
+            remember();
+          }
+          return;
+        }
+        case "reference-vector-copy": {
+          const loop = fnLabel + ":copy-vector:" + String(machine.length);
+          const done = loop + ":done";
+          const at = gpr(8);
+          vectorGuard(op.source, r10, trapLabel);
+          vectorGuard(op.target, scratch, trapLabel);
+          exactInteger(emit, frame(home(op.count)), rdx, trapLabel);
+          emit({ op: "cmp", dst: rdx, src: mem(10, nativeArrayLengthOffset) });
+          branch(emit, "a", trapLabel);
+          emit({ op: "cmp", dst: rdx, src: mem(11, nativeArrayLengthOffset) });
+          branch(emit, "a", trapLabel);
+          emit({ op: "test", dst: rdx, src: rdx });
+          branch(emit, "e", done);
+          emit({ op: "xor", dst: at, src: at });
+          emit({ op: "label", name: loop });
+          const source: Memory<64> = {
+            kind: "mem",
+            width: 64,
+            address: {
+              kind: "base",
+              base: 10,
+              index: 8,
+              scale: 8,
+              disp: nativeArrayInlineOffset,
+            },
+          };
+          emit({ op: "mov", dst: rax, src: source });
+          if (op.rebase) {
+            emit({ op: "cmp", dst: rax, src: r10 });
+            emit({ op: "cmovcc", cc: "e", dst: rax, src: scratch });
+          }
+          emit({
+            op: "mov",
+            dst: {
+              ...source,
+              address: {
+                kind: "base",
+                base: 11,
+                index: 8,
+                scale: 8,
+                disp: nativeArrayInlineOffset,
+              },
+            },
+            src: rax,
+          });
+          emit({ op: "inc", dst: at });
+          emit({ op: "cmp", dst: at, src: rdx });
+          branch(emit, "b", loop);
+          emit({ op: "mov", dst: r9, src: scratch });
+          remember();
+          emit({ op: "label", name: done });
+          return;
+        }
         case "array-subarray":
           if (host === undefined) break;
           arrayView(op, block, index);
@@ -1437,6 +1636,128 @@ export function emitModule(
           if (host === undefined) break;
           stringPrefix(op, host.symbolPrefix + "memcmp");
           return;
+        case "string-from-code-units": {
+          if (host === undefined) break;
+          emit({ op: "mov", dst: r9, src: imm(op.values.length) });
+          allocateString(op.id, block, index);
+          define(op.id, "string");
+          for (let unit = 0; unit < op.values.length; unit++) {
+            const value = op.values[unit];
+            if (value === undefined) throw "string code unit invariant";
+            numbers.toWord(frame(home(value)));
+            emit({ op: "mov", dst: r9, src: frame(home(op.id)) });
+            emit({
+              op: "mov",
+              dst: { ...mem(9, nativeStringDataOffset + unit * 2), width: 16 },
+              src: { kind: "gpr", width: 16, index: 0 },
+            });
+          }
+          return;
+        }
+        case "string-allocate": {
+          if (host === undefined) break;
+          const invalid =
+            fnLabel + ":allocate-string:" + String(op.id) + ":invalid";
+          exactInteger(emit, frame(home(op.length)), r9, invalid);
+          allocateString(op.id, block, index);
+          define(op.id, "string");
+          return;
+        }
+        case "string-concat": {
+          if (host === undefined) break;
+          const move = host.symbolPrefix + "memmove";
+          emit({ op: "mov", dst: receiver, src: frame(home(op.left)) });
+          emit({ op: "mov", dst: environment, src: frame(home(op.right)) });
+          emit({ op: "mov", dst: r9, src: mem(2, nativeStringLengthOffset) });
+          emit({ op: "add", dst: r9, src: mem(6, nativeStringLengthOffset) });
+          allocateString(op.id, block, index);
+          define(op.id, "string");
+          emit({ op: "mov", dst: context, src: rax });
+          emit({ op: "mov", dst: environment, src: frame(home(op.left)) });
+          emit({ op: "mov", dst: rdx, src: mem(6, nativeStringLengthOffset) });
+          stringCopy(move);
+          emit({ op: "mov", dst: context, src: frame(home(op.id)) });
+          emit({ op: "mov", dst: environment, src: frame(home(op.left)) });
+          emit({ op: "mov", dst: rdx, src: mem(6, nativeStringLengthOffset) });
+          emit({
+            op: "lea",
+            dst: context,
+            src: {
+              kind: "mem",
+              width: 64,
+              address: { kind: "base", base: 7, index: 2, scale: 2, disp: 0 },
+            },
+          });
+          emit({ op: "mov", dst: environment, src: frame(home(op.right)) });
+          emit({ op: "mov", dst: rdx, src: mem(6, nativeStringLengthOffset) });
+          stringCopy(move);
+          return;
+        }
+        case "string-slice": {
+          if (host === undefined) break;
+          const move = host.symbolPrefix + "memmove";
+          const site = fnLabel + ":slice:" + String(op.id);
+          const bounded = site + ":limit-bounded";
+          const begin = gpr(8);
+          emit({ op: "mov", dst: scratch, src: frame(home(op.string)) });
+          emit({ op: "mov", dst: rdx, src: mem(11, nativeStringLengthOffset) });
+          sliceIndex(op.begin, begin, site + ":begin");
+          emit({ op: "mov", dst: scratch, src: absent });
+          emit({ op: "cmp", dst: frame(home(op.limit)), src: scratch });
+          emit({ op: "mov", dst: r9, src: rdx });
+          branch(emit, "e", bounded);
+          sliceIndex(op.limit, r9, site + ":limit");
+          emit({ op: "label", name: bounded });
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "sub", dst: r9, src: begin });
+          emit({ op: "cmovcc", cc: "b", dst: r9, src: rax });
+          emit({ op: "mov", dst: frame(home(op.id)), src: begin });
+          allocateString(op.id, block, index);
+          emit({ op: "mov", dst: context, src: rax });
+          emit({ op: "mov", dst: environment, src: frame(home(op.string)) });
+          emit({ op: "mov", dst: begin, src: frame(home(op.id)) });
+          emit({
+            op: "lea",
+            dst: environment,
+            src: {
+              kind: "mem",
+              width: 64,
+              address: { kind: "base", base: 6, index: 8, scale: 2, disp: 0 },
+            },
+          });
+          define(op.id, "string");
+          emit({ op: "mov", dst: rdx, src: frame(home(op.id) + 8) });
+          stringCopy(move);
+          return;
+        }
+        case "string-write": {
+          if (host === undefined) break;
+          const move = host.symbolPrefix + "memmove";
+          exactInteger(emit, frame(home(op.offset)), r9, trapLabel);
+          emit({ op: "mov", dst: context, src: frame(home(op.target)) });
+          emit({ op: "mov", dst: environment, src: frame(home(op.source)) });
+          emit({ op: "mov", dst: rdx, src: mem(6, nativeStringLengthOffset) });
+          emit({
+            op: "mov",
+            dst: scratch,
+            src: mem(7, nativeStringLengthOffset),
+          });
+          emit({ op: "sub", dst: scratch, src: r9 });
+          branch(emit, "b", trapLabel);
+          emit({ op: "cmp", dst: rdx, src: scratch });
+          branch(emit, "a", trapLabel);
+          emit({
+            op: "lea",
+            dst: context,
+            src: {
+              kind: "mem",
+              width: 64,
+              address: { kind: "base", base: 7, index: 9, scale: 2, disp: 0 },
+            },
+          });
+          stringCopy(move);
+          return;
+        }
         case "string-literal":
           if (host === undefined) break;
           emit({ op: "lea", dst: rax, src: literal(op.value) });
@@ -1836,6 +2157,9 @@ export function emitModule(
           } else if (
             (type === "boolean" ||
               type === "Uint8Array" ||
+              type === "Uint16Array" ||
+              type === "Uint32Array" ||
+              type === "Float64Array" ||
               type === "reference" ||
               type === "optional-reference") &&
             (equal || unequal)
@@ -1937,14 +2261,11 @@ export function emitModule(
               src: { kind: "imm8", value: 1 },
             });
           if (
-            generational &&
             op.kind !== "cell" &&
             op.operation !== "read" &&
             isRootType(field.type)
-          ) {
-            emit({ op: "mov", dst: context, src: frame(savedContext) });
-            emit({ op: "call", target: label(rememberLabel) });
-          }
+          )
+            remember();
           emit({ op: "jmp", target: label(blockLabel(fn.id, op.consequent)) });
           return;
         }

@@ -683,3 +683,35 @@ test(
     assert.equal(run(built.value).status, 42);
   },
 );
+
+test(
+  "x86-64 allocates UTF-16 strings with JavaScript slice bounds",
+  native,
+  () => {
+    const built = build(
+      `function units(a: number, b: number, c: number): string {
+      return String.fromCharCode(a, b, c);
+    }
+    function tail(text: string, start: number, end?: number): string {
+      return text.slice(start, end);
+    }
+    export function run(): number {
+      const left = units(65601, -1, 55296);
+      const right = units(0 / 0, 66.9, 1 / 0);
+      const text = left + right;
+      if (text.length !== 6 || text.charCodeAt(1) !== 65535 ||
+          text.charCodeAt(2) !== 55296 || text.charCodeAt(4) !== 66) return 1;
+      if (tail(text, -2.8) !== "B\\0" ||
+          tail(text, -0.75, 1) !== "A" ||
+          tail(text, -1 / 0, -5) !== "A" ||
+          tail(text, 0 / 0, 1 / 0) !== text ||
+          tail(text, 1 / 0, 0) !== "") return 2;
+      return 42;
+    }`,
+      {},
+      { optimization: "none" },
+    );
+    assert.ok(built.ok, JSON.stringify(built));
+    assert.equal(run(built.value).status, 42);
+  },
+);

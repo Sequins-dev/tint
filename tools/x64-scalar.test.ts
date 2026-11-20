@@ -791,6 +791,81 @@ function guardedRecordImage(): Uint8Array {
   });
 }
 
+function referenceVectorImage(): Uint8Array {
+  const f = new Fixture();
+  const length = f.constant(3);
+  const first = f.ir.next();
+  f.ir.emit({ ...span, kind: "reference-vector-new", length, id: first });
+  const other = f.ir.next();
+  f.ir.emit({ ...span, kind: "reference-vector-new", length, id: other });
+  function wrap(value: number): number {
+    const id = f.ir.next();
+    f.ir.emit({ ...span, kind: "reference-wrap", id, value });
+    return id;
+  }
+  const self = wrap(first),
+    destination = wrap(other);
+  const zero = f.constant(0);
+  f.ir.emit({
+    ...span,
+    kind: "reference-vector-write",
+    vector: first,
+    index: zero,
+    value: self,
+  });
+  f.ir.emit({
+    ...span,
+    kind: "reference-vector-copy",
+    source: first,
+    target: other,
+    count: length,
+    rebase: true,
+  });
+  const value = f.ir.next();
+  f.ir.emit({
+    ...span,
+    kind: "reference-vector-read",
+    vector: other,
+    index: zero,
+    id: value,
+  });
+  const invalid = f.ir.next();
+  const fractional = f.constant(0.5);
+  f.ir.emit({
+    ...span,
+    kind: "reference-vector-read",
+    vector: other,
+    index: fractional,
+    id: invalid,
+  });
+  const absent = f.ir.next();
+  f.ir.emit({ ...span, kind: "reference-none", id: absent });
+  const branded = f.ir.next();
+  f.ir.emit({
+    ...span,
+    kind: "reference-vector-is",
+    vector: destination,
+    id: branded,
+  });
+  const capacity = f.ir.next();
+  f.ir.emit({
+    ...span,
+    kind: "reference-vector-length",
+    vector: other,
+    id: capacity,
+  });
+  return hostedFixtureImage({
+    functions: [
+      f.check([
+        branded,
+        f.binary("===", value, destination),
+        f.binary("===", invalid, absent),
+        f.binary("===", length, capacity),
+      ]),
+    ],
+  });
+}
+
 const runnerFixtures = [
   ...fixtures.map(({ name, module, status }) => ({
     name,
@@ -805,6 +880,11 @@ const runnerFixtures = [
       return image.value;
     },
   })),
+  {
+    name: "reference vector copies rebase the source identity",
+    status: 42,
+    bytes: referenceVectorImage,
+  },
   {
     name: "guarded record and cell operations",
     status: 42,

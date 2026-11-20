@@ -447,6 +447,9 @@ function buildX64HostedProgram(
       foreignMemoryBindings: request.foreignMemoryBindings ?? [],
       foreignLibraries: request.foreignLibraries ?? [],
       recordBindings: request.recordBindings ?? [],
+      ...(request.denseReferenceLists === undefined
+        ? {}
+        : { denseReferenceLists: request.denseReferenceLists }),
       closedProgram: true,
       optimization: request.optimization ?? "basic",
       maxSpecializations: request.maxSpecializations ?? 4096,

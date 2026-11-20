@@ -2512,6 +2512,14 @@ export function compileX64HostedProgram(
   );
   if (!lowered.ok) return lowered;
   const program = lowered.value;
+  const lists = program.referenceLists;
+  if (lists !== undefined)
+    lowerProgramReferenceLists(
+      program,
+      lists,
+      undefined,
+      (_stats, _module) => false,
+    );
   const first = program.ir.module;
   const entry = first.functions[program.invocation];
   if (entry === undefined)
