@@ -666,6 +666,13 @@ bounded set of helpers on its first submission. The
 [pool fixture](../tools/build-event-loop-blocking-pool-fixture.ts) exercises
 file reads, capacity enforcement and completion turns through the control wake.
 
+Threaded images can opt in to the
+[worker exit record ABI](../packages/abi/src/host.ts). A tagged startup
+argument identifies a raw record. After managed teardown, the startup thunk
+publishes the status and wakes the owner's nonblocking pipe. The
+[worker exit fixture](../tools/build-worker-exit-fixture.ts) launches a detached
+isolate from the same image and observes completion without joining it.
+
 ### What happens to each front end
 
 - js-engine lowering becomes a library of construct lowerings callable for a

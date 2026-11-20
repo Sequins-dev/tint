@@ -135,6 +135,8 @@ export interface BuildRequest extends ModuleRequest {
    * frozen project sources predate it). */
   readonly target?: NativeTarget;
   readonly threaded?: boolean;
+  /** Tagged worker arguments carry the post-teardown pipe notification ABI. */
+  readonly threadExitPipe?: boolean;
   /** Verification of the large code model (docs/large-images.md): emit
    * every module with all far-reach forms, which large images select
    * automatically only where reach requires them. */
@@ -291,6 +293,8 @@ function compileFailure(
 }
 /** Pure artifact composition shared by Node bootstrap and the native compiler. */
 export function buildMacOSProgram(request: BuildRequest): BuildResult {
+  if (request.threadExitPipe === true && request.threaded !== true)
+    return failure("startup", "thread exit records require threaded startup");
   const target = buildTarget(request);
   if (target.arch === "x86_64") {
     const built = buildX64HostedProgram(request, target);
@@ -593,6 +597,7 @@ function buildX64HostedProgram(
       ...(runtime === undefined ? {} : { runtime }),
       stackBytes,
       threaded: request.threaded === true,
+      threadExitPipe: request.threadExitPipe === true,
       allowJit: request.allowJit === true,
       managedBytes,
       pageBytes,
@@ -1322,6 +1327,7 @@ function linkHostedImage(
   const hosted = planHostedEntry({
     diagnostics,
     threaded: request.threaded ?? false,
+    threadExitPipe: request.threadExitPipe === true,
     abi: hostABI,
     allocator: {
       native: compiled.allocator,

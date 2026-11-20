@@ -14,6 +14,8 @@ import {
   nativeStackMapRegistryHeaderBytes,
   nativeStackMapTransitionTable,
   nativeStackMapRegistryOffset,
+  nativeThreadExitReadOffset,
+  nativeThreadExitWriteOffset,
   type PosixHostABI,
 } from "@tint/abi/host";
 import {
@@ -124,6 +126,7 @@ export interface HostedDiagnostics {
 export interface HostRequest {
   /** Opt in to a raw pthread entry and a one-number application entry. */
   readonly threaded?: boolean;
+  readonly threadExitPipe?: boolean;
   readonly forceFarReach?: boolean | undefined;
   readonly allocator: {
     readonly native: NativeModule;
@@ -1062,6 +1065,93 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
     imm(1, length);
     foreign("munmap");
     label(skip);
+  }
+  if (request.threaded === true && request.threadExitPipe === true) {
+    imm(9, 1);
+    emit({
+      op: "and-reg",
+      width: 64,
+      rd: 9,
+      rn: 27,
+      rm: 9,
+    });
+    imm(10, 0);
+    compare(9, 10);
+    branch("thread-exit-done", "eq");
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: 27,
+      rn: 27,
+      immediate: 1,
+      shift: 0,
+      setFlags: false,
+    });
+    // The owner can release the record as soon as it sees the status.
+    // Copy both worker-owned descriptors before publication.
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 23,
+      rn: 27,
+      offset: nativeThreadExitWriteOffset,
+    });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 24,
+      rn: 27,
+      offset: nativeThreadExitReadOffset,
+    });
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 9,
+      rn: 25,
+      immediate: 1,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({ op: "stlr", width: 64, rt: 9, rn: 27 });
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: "sp",
+      rn: "sp",
+      immediate: 16,
+      shift: 0,
+      setFlags: false,
+    });
+    imm(9, 1);
+    store(9, 0);
+    label("thread-exit-write");
+    move(0, 23);
+    stackAddress(1, 0);
+    imm(2, 1);
+    foreign("write");
+    imm(9, 0);
+    compare(0, 9);
+    branch("thread-exit-close", "ge");
+    importCall(abi.errnoSymbol);
+    emit({ op: "ldr", width: 32, rt: 9, rn: 0, offset: 0 });
+    imm(10, 4); // EINTR. EAGAIN already has a readable notification.
+    compare(9, 10);
+    branch("thread-exit-write", "eq");
+    label("thread-exit-close");
+    move(0, 23);
+    foreign("close");
+    move(0, 24);
+    foreign("close");
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: "sp",
+      rn: 19,
+      immediate: 0,
+      shift: 0,
+      setFlags: false,
+    });
+    label("thread-exit-done");
   }
   move(0, 25);
   for (const first of [27, 25, 23, 21, 19, 29]) {

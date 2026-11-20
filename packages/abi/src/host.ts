@@ -8,6 +8,13 @@ export const nativeHostedContextByteLength = 96;
 /** The hosted entry sends this to its allocator only after the mutator
  * has returned, before reclaiming the collector's permanent storage. */
 export const nativeAllocatorShutdownRequest = -1;
+/** Threaded images may accept a tagged startup record (aligned address + 1).
+ * Its first word starts at zero, then startup publishes exit status + 1 after
+ * releasing the worker's managed storage. Both descriptors are duplicates
+ * owned by the worker. Keeping a read end prevents SIGPIPE if the parent
+ * consumes the status from another wake and closes its own descriptors. */
+export const nativeThreadExitWriteOffset = 8;
+export const nativeThreadExitReadOffset = 16;
 /** Lowest stack pointer a managed frame may establish: the stack's low guard
  * page plus headroom. A stack overflow saves it in the engine-throw word and
  * sets it to 0 (emergency mode: no check, the guard page is the last resort)

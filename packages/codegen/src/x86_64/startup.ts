@@ -13,6 +13,8 @@ import {
   nativeStackMapRegistryHeaderBytes,
   nativeStackMapRegistryOffset,
   nativeStackMapTransitionTable,
+  nativeThreadExitReadOffset,
+  nativeThreadExitWriteOffset,
   type PosixHostFacts,
 } from "@tint/abi/host";
 import type {
@@ -80,6 +82,7 @@ interface HostedEntry {
   readonly returnType: "number" | "boolean" | "void" | "general";
   readonly stackBytes: number;
   readonly threaded?: boolean;
+  readonly threadExitPipe?: boolean;
   readonly allowJit?: boolean;
   readonly managedBytes: number;
   readonly pageBytes: number;
@@ -603,6 +606,40 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   emit({ op: "label", name: "mapping-failed" });
   emit({ op: "mov", dst: eax, src: imm(71) });
   emit({ op: "label", name: "return" });
+  if (threaded && request.threadExitPipe === true) {
+    emit({ op: "mov", dst: rdx, src: mem(12, threadArgumentOffset) });
+    emit({ op: "test", dst: rdx, src: imm(1) });
+    emit({ op: "jcc", cc: "e", target: label("thread-exit-done") });
+    emit({ op: "mov", dst: rsp, src: r12 });
+    emit({ op: "mov", dst: mem(12, contextBytes), src: rax });
+    emit({ op: "sub", dst: rdx, src: imm(1) });
+    // Copy the descriptors into dead system-frame slots before publishing.
+    emit({ op: "mov", dst: gpr(8), src: mem(2, nativeThreadExitWriteOffset) });
+    emit({ op: "mov", dst: gpr(9), src: mem(2, nativeThreadExitReadOffset) });
+    emit({ op: "mov", dst: mem(12, threadArgumentOffset), src: gpr(8) });
+    emit({ op: "mov", dst: mem(12, threadModeOffset), src: gpr(9) });
+    emit({ op: "add", dst: rax, src: imm(1) });
+    emit({ op: "mov", dst: mem(2, 0), src: rax });
+    emit({ op: "mov", dst: mem(12, argumentCountOffset), src: imm(1) });
+
+    emit({ op: "label", name: "thread-exit-write" });
+    emit({ op: "mov", dst: rdi, src: mem(12, threadArgumentOffset) });
+    emit({ op: "lea", dst: rsi, src: mem(12, argumentCountOffset) });
+    emit({ op: "mov", dst: edx, src: imm(1) });
+    call(host.symbolPrefix + "write");
+    emit({ op: "cmp", dst: rax, src: imm(0) });
+    emit({ op: "jcc", cc: "ge", target: label("thread-exit-close") });
+    call(host.errnoSymbol);
+    emit({ op: "cmp", dst: { ...mem(0, 0), width: 32 }, src: imm(4) });
+    emit({ op: "jcc", cc: "e", target: label("thread-exit-write") });
+    emit({ op: "label", name: "thread-exit-close" });
+    emit({ op: "mov", dst: rdi, src: mem(12, threadArgumentOffset) });
+    call(host.symbolPrefix + "close");
+    emit({ op: "mov", dst: rdi, src: mem(12, threadModeOffset) });
+    call(host.symbolPrefix + "close");
+    emit({ op: "mov", dst: rax, src: mem(12, contextBytes) });
+    emit({ op: "label", name: "thread-exit-done" });
+  }
   if (far) {
     emit({ op: "mov", dst: gpr(14), src: mem(12, saveOffset) });
     emit({ op: "mov", dst: gpr(15), src: mem(12, saveOffset + 8) });

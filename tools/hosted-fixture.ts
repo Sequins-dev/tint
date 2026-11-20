@@ -145,6 +145,7 @@ function buildHostedFixture(
   options: {
     readonly allowJit?: boolean;
     readonly threaded?: boolean;
+    readonly threadExitPipe?: boolean;
     readonly hostBindings?: readonly NativeHostBinding[];
     /** Project bindings to leave out, so the bound functions keep their
      * portable bodies (e.g. cpu-sha256, forcing the portable SHA-256). */
@@ -347,6 +348,7 @@ function buildHostedFixture(
       ? {}
       : { optimization: options.optimization }),
     threaded: options.threaded ?? false,
+    threadExitPipe: options.threadExitPipe ?? false,
     forceFarReach:
       options.forceFarReach ?? process.env.TINT_FORCE_FAR_REACH === "1",
     machOLayout:
