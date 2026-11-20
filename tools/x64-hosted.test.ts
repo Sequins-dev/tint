@@ -239,6 +239,37 @@ test("x86-64 forced far image resolves calls, branches, permanent data and impor
   if (runner !== undefined) assert.equal(run(built.value).status, 42);
 });
 
+test("x86-64 publishes code from an owned executable mapping", () => {
+  const built = build(
+    `import { mapExecutableMemory, writeExecutableMemory, callExecutableNumber,
+       unmapExecutableMemory } from "memory";
+     export function run(): number {
+       const arena = mapExecutableMemory(4096);
+       if (arena <= 0) return 1;
+       const code = new Uint8Array(20);
+       code[0] = 0x48; code[1] = 0xb8; code[8] = 0x45; code[9] = 0x40;
+       code[10] = 0x48; code[11] = 0x89; code[12] = 0x41; code[13] = 16;
+       code[14] = 0xb8; code[15] = 1; code[19] = 0xc3;
+       if (writeExecutableMemory(arena, 4096, 4090, code) !== -1) return 2;
+       if (writeExecutableMemory(arena, 4096, 33, code) !== 0) return 3;
+       const answer = callExecutableNumber(arena + 33);
+       if (unmapExecutableMemory(arena, 4096) !== 0) return 4;
+       return answer;
+     }`,
+    {
+      memory: intrinsic("memory", {
+        mapExecutableMemory: "executable-map",
+        writeExecutableMemory: "executable-write",
+        callExecutableNumber: "executable-call-number",
+        unmapExecutableMemory: "executable-unmap",
+      }),
+    },
+    { allowJit: true },
+  );
+  assert.ok(built.ok, built.ok ? undefined : JSON.stringify(built.error));
+  if (runner !== undefined) assert.equal(run(built.value).status, 42);
+});
+
 test("x86-64 shared atomics preserve width, observed words and adjacent bytes", () => {
   const built = build(
     `import { mapMemory, unmapMemory, readMemoryWord, writeMemoryWord,
@@ -537,7 +568,8 @@ function run(image: Uint8Array, args: (name: string) => string[] = () => []) {
     console.log(JSON.stringify(result));
     return result;
   } finally {
-    rmSync(directory, { recursive: true, force: true });
+    if (process.env.TINT_KEEP_NATIVE !== "1")
+      rmSync(directory, { recursive: true, force: true });
   }
 }
 

@@ -80,6 +80,7 @@ interface HostedEntry {
   readonly returnType: "number" | "boolean" | "void" | "general";
   readonly stackBytes: number;
   readonly threaded?: boolean;
+  readonly allowJit?: boolean;
   readonly managedBytes: number;
   readonly pageBytes: number;
   /** Unoccupied placement between the program and the hosted runtime. */
@@ -99,6 +100,7 @@ interface HostedImage extends ImageRelocations {
   readonly maxByteLength: number;
   readonly imports: readonly string[];
   readonly symbols: readonly ImageSymbol[];
+  readonly dataSymbols: readonly ImageSymbol[];
   readonly runtimeOffset: number;
   readonly unwind: readonly UnwindRange[];
   readonly probes: readonly X64Probe[];
@@ -114,6 +116,7 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     managedBytes = request.managedBytes,
     pageBytes = request.pageBytes;
   const threaded = request.threaded === true;
+  const live = request.allowJit === true;
   const processStart = host.processStart;
   if (processStart === undefined) throw "glibc startup policy required";
   const stackEnd = pageBytes + stackBytes;
@@ -147,9 +150,10 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
       });
     }
   const registryStart = stackEnd + pageBytes;
+  const registryCapacity = stackMaps.length + (live ? 16384 : 0);
   const registryBytes =
     nativeStackMapRegistryHeaderBytes +
-    stackMaps.length * nativeStackMapRegistryEntryBytes;
+    registryCapacity * nativeStackMapRegistryEntryBytes;
   const afterRegistry = registryStart + registryBytes;
   const heapAlignment = runtime === undefined ? 16 : pageBytes;
   const heapStart = Math.ceil(afterRegistry / heapAlignment) * heapAlignment;
@@ -355,7 +359,7 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   }
   emit({ op: "lea", dst: rax, src: mem(13, pageBytes) });
   emit({ op: "mov", dst: mem(12, nativeStackLimitOffset), src: rax });
-  if (threaded) {
+  if (threaded || live) {
     // The inaccessible identity page outlives this heap and prevents address
     // reuse from aliasing context-owned values after a join.
     emit({ op: "xor", dst: edi, src: edi });
@@ -392,7 +396,7 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   emit({ op: "lea", dst: rax, src: mem(13, registryStart) });
   emit({ op: "mov", dst: mem(12, nativeStackMapRegistryOffset), src: rax });
   emit({ op: "mov", dst: mem(0, 0), src: imm(stackMaps.length) });
-  emit({ op: "mov", dst: mem(0, 8), src: imm(stackMaps.length) });
+  emit({ op: "mov", dst: mem(0, 8), src: imm(registryCapacity) });
   for (let index = 0; index < stackMaps.length; index++) {
     const table = stackMaps[index];
     if (table === undefined) throw "stack map registry entry invariant";
@@ -723,6 +727,7 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   const main = stub.labels.get("main");
   if (main === undefined) throw "startup label invariant";
   const symbols: ImageSymbol[] = [];
+  const dataSymbols: ImageSymbol[] = [];
   const unwind = native.unwind.slice();
   const probes = native.probes.slice();
   for (const fn of native.functions) {
@@ -756,6 +761,17 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   }
   symbols.push({ name: "_start", offset: base });
   symbols.push({ name: "main", offset: base + main });
+  const debug = native.jitDebug;
+  if (debug !== undefined) {
+    dataSymbols.push({
+      name: "__jit_debug_descriptor",
+      offset: debug.descriptorOffset,
+    });
+    symbols.push({
+      name: "__jit_debug_register_code",
+      offset: debug.registerOffset,
+    });
+  }
   const addressFixups: ImageAddressReference[] = native.addressFixups.slice();
   if (runtimeCode !== undefined)
     for (const reference of runtimeCode.addressFixups) {
@@ -781,6 +797,7 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     maxByteLength: Number.MAX_SAFE_INTEGER,
     imports: importNames,
     symbols,
+    dataSymbols,
     runtimeOffset: codeOffset,
     unwind,
     probes,

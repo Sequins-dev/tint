@@ -335,12 +335,20 @@ function buildX64HostedProgram(
     });
   if (request.runtimeEntry !== undefined && !generational)
     return deferred(request.runtimeEntry);
-  if (request.allowJit === true) return deferred("executable-map");
   if (
-    request.stackTraces === true ||
-    request.heapIntrospection === true ||
-    request.jitDebugInterface === true
+    request.allowJit !== true &&
+    request.hostBindings.some(
+      (binding) =>
+        binding !== undefined && binding.operation.startsWith("executable-"),
+    )
   )
+    return failure(
+      "host-binding",
+      "executable-memory capabilities require allowJit",
+    );
+  if (request.jitDebugInterface === true && request.allowJit !== true)
+    return failure("startup", "the JIT debug interface requires allowJit");
+  if (request.stackTraces === true || request.heapIntrospection === true)
     return failure(
       "target",
       target.name + ": native diagnostics are unavailable",
@@ -451,7 +459,12 @@ function buildX64HostedProgram(
       start: request.start,
       exports: [request.start],
       runtimes: request.runtimes,
-      hostBindings: request.hostBindings,
+      // The shared SHA-256 implementation is the x86 baseline. This binding
+      // replaces its portable source body with the ARMv8 instruction leaf.
+      hostBindings: request.hostBindings.filter(
+        (binding) =>
+          binding !== undefined && binding.operation !== "sha256-rounds",
+      ),
       foreignBindings: request.foreignBindings ?? [],
       foreignMemoryBindings: request.foreignMemoryBindings ?? [],
       foreignLibraries: request.foreignLibraries ?? [],
@@ -474,6 +487,7 @@ function buildX64HostedProgram(
     {
       generational,
       forceFarReach,
+      jitDebugInterface: request.jitDebugInterface === true,
       inlineAllocation: request.inlineAllocation !== false,
       threaded: request.threaded === true,
       allocationProbes: request.signposts === true,
@@ -571,6 +585,7 @@ function buildX64HostedProgram(
       ...(runtime === undefined ? {} : { runtime }),
       stackBytes,
       threaded: request.threaded === true,
+      allowJit: request.allowJit === true,
       managedBytes,
       pageBytes,
     });
@@ -589,6 +604,7 @@ function buildX64HostedProgram(
       maxByteLength: image.maxByteLength,
       data: image.data,
       symbols: image.symbols,
+      dataSymbols: image.dataSymbols,
       unwind: image.unwind,
       probes: image.probes,
       debug:

@@ -4,10 +4,16 @@ import {
   nativeContextDomainOffset,
   nativeStackMapRegistryOffset,
   nativeStackMapSaveBlockOffset,
+  nativeStackMapRegistryHeaderBytes,
+  nativeStackMapRegistryEntryBytes,
   nativeTargetOSLinux,
   nativeTargetArchX86_64,
   type PosixHostFacts,
 } from "@tint/abi/host";
+import {
+  nativeFunctionEnvironmentOffset,
+  nativeFunctionEntryOffset,
+} from "@tint/abi/function";
 import type { HostOperation } from "@tint/ir/scalar";
 import type { Condition, Gpr, IntegerWidth, Memory } from "../isa.ts";
 import {
@@ -71,6 +77,7 @@ interface HostCall {
   ) => Memory<64>;
   readonly scratch: Memory<64>;
   readonly scratchNext: Memory<64>;
+  readonly scratchResult: Memory<64>;
   readonly context: Memory<64>;
   readonly ownRootHead: boolean;
   readonly constant: (value: number) => Memory<64>;
@@ -557,6 +564,146 @@ export function emitHostCall(request: HostCall): boolean {
       emit({ op: "xor", dst: eax, src: eax });
       emit({ op: "jmp", target: label(done) });
       emit({ op: "label", name: invalid });
+      emit({ op: "mov", dst: rax, src: imm(-1) });
+      emit({ op: "label", name: done });
+      numberResult(rax);
+      return true;
+    }
+    case "external-memory-register": {
+      const invalid = site + ":registrar-invalid";
+      const done = site + ":registrar-done";
+      emit({ op: "mov", dst: rdi, src: context });
+      emit({ op: "mov", dst: r10, src: mem(7, externalMemoryOffset) });
+      emit({ op: "test", dst: r10, src: r10 });
+      branch(emit, "e", invalid);
+      emit({
+        op: "mov",
+        dst: rsi,
+        src: mem(10, nativeFunctionEnvironmentOffset),
+      });
+      emit({ op: "mov", dst: r10, src: mem(10, nativeFunctionEntryOffset) });
+      emit({ op: "xor", dst: edx, src: edx });
+      emit({ op: "lea", dst: gpr(1), src: scratch });
+      emit({ op: "mov", dst: scratch, src: imm(0) });
+      emit({ op: "movsd", dst: x0, src: argument(0) });
+      emit({ op: "movsd", dst: x1, src: argument(1) });
+      emit({ op: "call", target: r10 });
+      emit({ op: "cmp", dst: eax, src: imm(1) });
+      branch(emit, "ne", invalid);
+      emit({ op: "cmp", dst: request.scratchResult, src: imm(1) });
+      branch(emit, "ne", invalid);
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: invalid });
+      emit({ op: "mov", dst: rax, src: imm(-1) });
+      emit({ op: "label", name: done });
+      numberResult(rax);
+      return true;
+    }
+    case "stack-maps-register": {
+      const bad = site + ":register-maps-invalid";
+      const done = site + ":register-maps-done";
+      const start = gpr(8),
+        length = gpr(9),
+        table = rdx;
+      const limit = rsi,
+        entry = rdi,
+        count = r10,
+        registry = r11;
+      emit({ op: "mov", dst: limit, src: bits(0, 0x10000) });
+      const numbers = [start, length, table];
+      for (let at = 0; at < numbers.length; at++) {
+        const value = numbers[at];
+        if (value === undefined)
+          throw "stack map registration argument invariant";
+        exactInteger(emit, argument(at), value, bad);
+        emit({ op: "test", dst: value, src: value });
+        branch(emit, "le", bad);
+        emit({ op: "cmp", dst: value, src: limit });
+        branch(emit, "ae", bad);
+      }
+      emit({ op: "test", dst: table, src: imm(7) });
+      branch(emit, "ne", bad);
+      emit({ op: "mov", dst: rax, src: start });
+      emit({ op: "add", dst: rax, src: length });
+      emit({ op: "cmp", dst: rax, src: limit });
+      branch(emit, "ae", bad);
+      emit({ op: "cmp", dst: table, src: start });
+      branch(emit, "b", bad);
+      emit({ op: "cmp", dst: table, src: rax });
+      branch(emit, "ae", bad);
+      emit({ op: "mov", dst: registry, src: context });
+      emit({
+        op: "mov",
+        dst: registry,
+        src: mem(11, nativeStackMapRegistryOffset),
+      });
+      emit({ op: "test", dst: registry, src: registry });
+      branch(emit, "e", bad);
+      emit({ op: "mov", dst: count, src: mem(11, 0) });
+      emit({ op: "cmp", dst: count, src: mem(11, 8) });
+      branch(emit, "ae", bad);
+      emit({
+        op: "imul-imm",
+        dst: entry,
+        src: count,
+        immediate: imm(nativeStackMapRegistryEntryBytes),
+      });
+      emit({ op: "add", dst: entry, src: registry });
+      emit({
+        op: "mov",
+        dst: mem(7, nativeStackMapRegistryHeaderBytes),
+        src: start,
+      });
+      emit({
+        op: "mov",
+        dst: mem(7, nativeStackMapRegistryHeaderBytes + 8),
+        src: length,
+      });
+      emit({
+        op: "mov",
+        dst: mem(7, nativeStackMapRegistryHeaderBytes + 16),
+        src: table,
+      });
+      emit({ op: "add", dst: count, src: imm(1) });
+      emit({ op: "mov", dst: mem(11, 0), src: count });
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: bad });
+      emit({ op: "mov", dst: rax, src: imm(-1) });
+      emit({ op: "label", name: done });
+      numberResult(rax);
+      return true;
+    }
+    case "memory-write-bytes": {
+      const failed = site + ":write-invalid",
+        done = site + ":write-done";
+      const limit = r11;
+      emit({ op: "mov", dst: limit, src: bits(0, 0x10000) });
+      const args = [rdi, rsi, rdx];
+      for (let index = 0; index < args.length; index++) {
+        const target = args[index];
+        if (target === undefined) throw "write-byte argument invariant";
+        exactInteger(emit, argument(index), target, failed);
+        emit({ op: "cmp", dst: target, src: limit });
+        branch(emit, "ae", failed);
+      }
+      emit({ op: "test", dst: rdi, src: rdi });
+      branch(emit, "e", failed);
+      emit({ op: "sub", dst: limit, src: rdi });
+      emit({ op: "cmp", dst: rsi, src: limit });
+      branch(emit, "a", failed);
+      emit({ op: "sub", dst: rsi, src: rdx });
+      branch(emit, "b", failed);
+      emit({ op: "add", dst: rdi, src: rdx });
+      array(3);
+      emit({ op: "cmp", dst: rdx, src: rsi });
+      branch(emit, "a", failed);
+      emit({ op: "mov", dst: rsi, src: r10 });
+      libc("memmove");
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: failed });
       emit({ op: "mov", dst: rax, src: imm(-1) });
       emit({ op: "label", name: done });
       numberResult(rax);

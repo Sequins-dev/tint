@@ -3,6 +3,14 @@ import { readFileSync } from "node:fs";
 import { createSourceTextView } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
+const x64 = nativeFixtureTarget().arch === "x86_64";
+const linkSurface = x64
+  ? "linkX64ManagedSurfaceModule"
+  : "linkManagedSurfaceModule";
+const resolvePointers = x64
+  ? "resolveX64ManagedPointers"
+  : "resolveManagedPointers";
 const sparse = JSON.stringify(
   readFileSync("packages/foundation/src/collections/sparse-list.ts", "utf8"),
 );
@@ -29,10 +37,11 @@ import {prepareCollectionRuntimes,runtimeFunctionIds} from "runtime";
 import {lowerModuleEntries} from "lowering";
 import {pruneClosedModule,optimizeModule} from "optimization";
 import {emitModule} from "emitter";
-import {readManagedSurfaceDirectory,linkManagedSurfaceModule,resolveManagedPointers,selectManagedIdentityBindings} from "compiler";
+import {readManagedSurfaceDirectory,${linkSurface} as linkManagedSurfaceModule,${resolvePointers} as resolveManagedPointers,selectManagedIdentityBindings} from "compiler";
 import {managedRuntimeKeyForSurfaceType,managedRuntimeKeysForOptions,describeManagedRuntimeUses,finalFunctionSources,bindManagedRuntimeImports} from "selection";
 import type {SourceModule} from "module-model";
-import {nativeValueFunctionDescriptor,nativeValueFunctionSignature,currentContextDomain,readMemoryWord,mapExecutableMemory,registerExternalMemory,writeExecutableMemory,callExecutableManaged,currentRootHead} from "memory";
+import {nativeValueFunctionDescriptor,nativeValueFunctionSignature,currentContextDomain,readMemoryWord,mapExecutableMemory,registerExternalMemory,writeExecutableMemory,callExecutableManaged,currentRootHead${x64 ? ",registerStackMaps" : ""}} from "memory";
+${x64 ? 'import {linuxX86_64Target} from "target";' : ""}
 function parse(text:string):Module{const parsed=parseModule(createSourceTextView(text));if(!parsed.ok)throw "PARSE";return parsed.value;}
 function churn():void{for(let i=0;i<1024;i++){const garbage=new Uint32Array(8192);garbage[0]=i;if(garbage[0]!==i)throw "CHURN";}}
 export function run():number {
@@ -77,7 +86,11 @@ export function run():number {
  const uses=describeManagedRuntimeUses(prepared.value.options,keys.value);if(!uses.ok)return 16;
  const bindings=bindManagedRuntimeImports(read.value.directory,second.module,sources,uses.value);if(!bindings.ok||bindings.value.length!==3)return 17;
  const finalRoot=(second.functionIds[firstRoot]??0)-1;
- const emitted=emitModule(second.module,{closedRoots:[finalRoot],managedABI:{version:1,signatures:[],functions:bindings.value}});if(!emitted.ok)return 18;
+ const emitted=${
+   x64
+     ? 'emitModule(second.module,linuxX86_64Target.hostABI,true,true,false,[],false,false,{mode:"live",functions:[],records:[],bindings:{version:1,signatures:[],functions:bindings.value}})'
+     : "emitModule(second.module,{closedRoots:[finalRoot],managedABI:{version:1,signatures:[],functions:bindings.value}})"
+ };if(!emitted.ok)return 18;
  const native=emitted.value,nativeEntry=native.functions[finalRoot];if(nativeEntry===undefined||nativeEntry.import===true)return 19;
  const calls={count:0};
  const words=(address:number,length:number,offset:number):number=>{calls.count++;return readMemoryWord(address,length,offset);};
@@ -90,6 +103,7 @@ export function run():number {
  const linkedCode=linkManagedSurfaceModule(read.value,native,words,currentContextDomain());if(!linkedCode.ok)return 23;
  const capacity=Math.ceil((linkedCode.value.code.length+4095)/4096)*4096,arena=mapExecutableMemory(capacity);
  if(arena<=0||registerExternalMemory(arena,capacity)!==0||writeExecutableMemory(arena,capacity,0,linkedCode.value.code)!==0)return 24;
+ ${x64 ? "const maps=native.stackMaps[0];if(maps===undefined||registerStackMaps(arena,native.code.length,arena+maps.tableOffset)!==0)return 27;" : ""}
  const head=currentRootHead(),callback=():unknown=>undefined;
  for(let repeat=0;repeat<8;repeat++){if(callExecutableManaged(arena+nativeEntry.offset,callback)!==100000||currentRootHead()!==head)return 25;}
  churn();
@@ -111,7 +125,13 @@ export function run():number {
     ["lowering", "packages/ts-native/src/closure/lowering/index.ts"],
     ["module-model", "packages/typescript/src/modules/model.ts"],
     ["optimization", "packages/ir/src/optimization/index.ts"],
-    ["emitter", "packages/codegen/src/aarch64/scalar/index.ts"],
+    [
+      "emitter",
+      x64
+        ? "packages/codegen/src/x86_64/scalar/index.ts"
+        : "packages/codegen/src/aarch64/scalar/index.ts",
+    ],
+    ...(x64 ? ([["target", "packages/platform/src/target.ts"]] as const) : []),
     ["memory", memory],
   ],
   [
@@ -127,7 +147,9 @@ export function run():number {
   [{ module: memory, namespace: "runtime-link-memory" }],
   {
     allowJit: true,
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: x64
+      ? "initializeGenerationalRuntime"
+      : "initializeCopyingRuntime",
     managedBytes: 67108864,
     allocationCapacity: 1048576,
     rootCapacity: 16384,
@@ -170,6 +192,15 @@ export function run():number {
         operation: "executable-call-managed",
       },
       { module: memory, name: "currentRootHead", operation: "root-head" },
+      ...(x64
+        ? ([
+            {
+              module: memory,
+              name: "registerStackMaps",
+              operation: "stack-maps-register",
+            },
+          ] as const)
+        : []),
     ],
     managedSurfaces: [
       {

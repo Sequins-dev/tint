@@ -15,17 +15,25 @@ import {
 } from "@tint/typescript/syntax";
 import {
   prepareManagedSurfaceEntry,
+  prepareX64ManagedSurfaceEntry,
   createManagedTypeContractCache,
   declareManagedJitRuntime,
   createManagedCollectionPlanCache,
   createInterfaceResolutionCache,
   linkManagedSurfaceModule,
+  linkX64ManagedSurfaceModule,
+  type ManagedSurfaceEntryRequest,
+  type ManagedPointerResolution,
   type ManagedSurfaceDirectoryRead,
   type ManagedSurfaceLayoutRuntime,
   type ManagedIdentityReader,
 } from "@tint/compiler/native";
 import { scriptRuntimeSurface } from "../lowering/runtime-imports.ts";
-import { engineCodeFunctions, type EngineCodeStorage } from "./code-storage.ts";
+import {
+  engineCodeFunctions,
+  type EngineCodeStorage,
+  type EngineCodeFunction,
+} from "./code-storage.ts";
 import type {
   ScriptEntryCompilation,
   ScriptEntryShape,
@@ -703,7 +711,7 @@ export function createScriptEntryCompiler(
     }
   }
   function compileEntry(source: Module): ScriptEntryCompilation {
-    const prepared = prepareManagedSurfaceEntry({
+    const request: ManagedSurfaceEntryRequest = {
       module: source,
       entry: "execute",
       specifiers,
@@ -716,7 +724,24 @@ export function createScriptEntryCompiler(
       typeContracts: createManagedTypeContractCache(),
       collectionPlans,
       interfaceCache,
-    });
+    };
+    if (host.storage.architecture === "x86_64") {
+      const prepared = prepareX64ManagedSurfaceEntry({
+        ...request,
+        generationalBarriers: true,
+        linearAllocation: true,
+      });
+      if (!prepared.ok) return { ok: false, stage: prepared.error.stage };
+      const entry = prepared.value,
+        native = entry.native;
+      if (native.code.length > maximum) return { ok: false, stage: "budget" };
+      return publishEntry(
+        entry.entryOffset,
+        engineCodeFunctions(native.functions),
+        linkX64ManagedSurfaceModule(read, native, host.readWord, host.domain()),
+      );
+    }
+    const prepared = prepareManagedSurfaceEntry(request);
     if (!prepared.ok) return { ok: false, stage: prepared.error.stage };
     const entry = prepared.value,
       native = entry.native;
@@ -727,11 +752,19 @@ export function createScriptEntryCompiler(
       host.readWord,
       host.domain(),
     );
-    if (!linked.ok || !live()) return { ok: false, stage: "link" };
-    const base = host.storage.publish(
-      linked.value.code,
+    return publishEntry(
+      entry.entryOffset,
       engineCodeFunctions(native.functions),
+      linked,
     );
+  }
+  function publishEntry(
+    entryOffset: number,
+    functions: readonly EngineCodeFunction[],
+    linked: ManagedPointerResolution,
+  ): ScriptEntryCompilation {
+    if (!linked.ok || !live()) return { ok: false, stage: "link" };
+    const base = host.storage.publish(linked.value.code, functions);
     if (
       base === undefined ||
       !Number.isSafeInteger(base) ||
@@ -740,7 +773,7 @@ export function createScriptEntryCompiler(
       !live()
     )
       return { ok: false, stage: "publish" };
-    const address = base + entry.entryOffset;
+    const address = base + entryOffset;
     if (!Number.isSafeInteger(address)) return { ok: false, stage: "publish" };
     // Template sites moved to the per-parse carrier and no other module
     // initialization is admitted, so published entries are reusable.

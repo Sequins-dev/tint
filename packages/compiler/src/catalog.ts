@@ -199,6 +199,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/scalar/executable-memory.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/scalar/managed-abi.ts",
       packageId: "codegen",
     },
@@ -220,6 +224,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/codegen/src/x86_64/scalar/callbacks.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/x86_64/scalar/executable-memory.ts",
       packageId: "codegen",
     },
     {

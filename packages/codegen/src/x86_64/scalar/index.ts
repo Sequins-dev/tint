@@ -139,6 +139,7 @@ import {
 } from "./callbacks.ts";
 import { createNumberEmission, floatBits } from "./numbers.ts";
 import { nativeSignatureTypeCode } from "../../scalar/signature.ts";
+import { emitExecutableMemory, serializeCode } from "./executable-memory.ts";
 import {
   bindManagedABI,
   type ManagedABIRequest,
@@ -192,6 +193,11 @@ export interface X64Module extends ImageRelocations {
   readonly generationalBarriers: boolean;
   readonly managedImports: readonly NativeManagedPointerImport[];
   readonly managedFixups: readonly X64ManagedReference[];
+  readonly liveSlotOffset?: number;
+  readonly jitDebug?: {
+    readonly descriptorOffset: number;
+    readonly registerOffset: number;
+  };
   readonly signatures: readonly X64Signature[];
   readonly records: readonly X64Record[];
   readonly functionDescriptor?: X64Record;
@@ -334,6 +340,7 @@ export function emitModule(
   allocationProbes: boolean = false,
   far: boolean = false,
   managed?: X64ManagedOptions,
+  jitDebug: boolean = false,
 ): X64Emission {
   const verified = verify(module);
   if (!verified.ok)
@@ -393,6 +400,9 @@ export function emitModule(
     { readonly offset: number; readonly words: readonly number[] }
   >();
   let poolBytes = 0;
+  const live = managed?.mode === "live";
+  const debugDescriptor = "tint:jit-debug-descriptor";
+  const debugRegister = "tint:jit-debug-register";
   function poolWords(name: string, words: readonly number[]): void {
     descriptors.set(name, { offset: poolBytes, words });
     poolBytes += words.length * 8;
@@ -415,7 +425,7 @@ export function emitModule(
   }
   function address(dst: Gpr<64>, source: Memory<64>): void {
     const from = source.address;
-    if (managed?.mode === "live" && from.kind === "rip") {
+    if (live && from.kind === "rip") {
       const ref = from.disp;
       if (typeof ref !== "number" && managedNames.has(ref.label)) {
         emit({ op: "mov", dst, src: source });
@@ -507,6 +517,63 @@ export function emitModule(
   function foreign(symbol: string): void {
     emit({ op: "call", target: importSlot(symbol) });
   }
+  /** Live code has no ELF GOT. Use the same caller-clobbered operands as
+   * the libc leaves for overlapping moves and byte equality. */
+  function bytesOperation(symbol: string): void {
+    if (!live) {
+      foreign(symbol);
+      return;
+    }
+    const dst = gpr(7),
+      src = gpr(6),
+      left = gpr(2);
+    const site = "live-bytes:" + String(machine.length);
+    const done = site + ":done",
+      loop = site + ":loop";
+    const destination: Memory<8> = { ...mem(7, 0), width: 8 };
+    const source: Memory<8> = { ...mem(6, 0), width: 8 };
+    emit({ op: "xor", dst: eax, src: eax });
+    emit({ op: "test", dst: left, src: left });
+    branch(emit, "e", done);
+    if (symbol === (host?.symbolPrefix ?? "") + "memcmp") {
+      emit({ op: "label", name: loop });
+      emit({ op: "mov", dst: byte(0), src: destination });
+      emit({ op: "sub", dst: byte(0), src: source });
+      branch(emit, "ne", done);
+      emit({ op: "add", dst, src: imm(1) });
+      emit({ op: "add", dst: src, src: imm(1) });
+      emit({ op: "sub", dst: left, src: imm(1) });
+      branch(emit, "ne", loop);
+    } else {
+      const reverse = site + ":reverse";
+      emit({ op: "cmp", dst, src });
+      branch(emit, "a", reverse);
+      emit({ op: "label", name: loop });
+      emit({ op: "mov", dst: byte(0), src: source });
+      emit({ op: "mov", dst: destination, src: byte(0) });
+      emit({ op: "add", dst, src: imm(1) });
+      emit({ op: "add", dst: src, src: imm(1) });
+      emit({ op: "sub", dst: left, src: imm(1) });
+      branch(emit, "ne", loop);
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: reverse });
+      emit({ op: "sub", dst: left, src: imm(1) });
+      const from: Memory<8> = {
+        kind: "mem",
+        width: 8,
+        address: { kind: "base", base: 6, index: 2, disp: 0 },
+      };
+      const to: Memory<8> = {
+        kind: "mem",
+        width: 8,
+        address: { kind: "base", base: 7, index: 2, disp: 0 },
+      };
+      emit({ op: "mov", dst: byte(0), src: from });
+      emit({ op: "mov", dst: to, src: byte(0) });
+      branch(emit, "ne", reverse);
+    }
+    emit({ op: "label", name: done });
+  }
 
   const argumentsByFunction: Argument[][] = [];
 
@@ -580,6 +647,7 @@ export function emitModule(
       : (savedEnvironment ?? callResult));
     let outgoing = 0;
     let needsForeign = false;
+    let needsExecutableMemory = false;
     let transitionCapacity = 0;
     const transitions = new Map<Instruction, TransitionPlan>();
     const plans = new Map<Instruction, CCallLayout>();
@@ -616,6 +684,12 @@ export function emitModule(
           );
           needsForeign = true;
         }
+        if (
+          op.kind === "host-call" &&
+          (op.operation === "executable-map" ||
+            op.operation === "executable-write")
+        )
+          needsExecutableMemory = true;
         if (op.kind === "call" || op.kind === "call-indirect") {
           const args = argumentsByFunction[op.target];
           if (args === undefined) throw "call layout invariant";
@@ -630,6 +704,8 @@ export function emitModule(
     if (signpost !== undefined && signpost.metrics === true)
       depth += collectionMetricBytes;
     const metricOffset = -depth;
+    if (needsExecutableMemory) depth += 7 * 8;
+    const executableHomes = -depth;
     const staging = -(depth + sysVStagingBytes);
     const frameBytes = align16(
       depth + (needsForeign ? sysVStagingBytes : 0) + outgoing,
@@ -830,6 +906,53 @@ export function emitModule(
     function numberBits(): void {
       emit({ op: "cvtsi2sd", dst: x0, src: rax });
       floatBits(emit, rax, x0);
+    }
+    function callExecutable(
+      entry: Memory<64>,
+      input: number | undefined,
+      operation:
+        | "executable-call-number"
+        | "executable-call-value"
+        | "executable-call-managed",
+      id: number,
+      block: Block,
+      index: number,
+    ): void {
+      serializeCode(emit);
+      exactInteger(emit, entry, r10, trapLabel);
+      emit({ op: "test", dst: r10, src: r10 });
+      branch(emit, "le", trapLabel);
+      emit({ op: "mov", dst: context, src: frame(savedContext) });
+      emit({ op: "xor", dst: environment, src: environment });
+      emit({ op: "xor", dst: receiver, src: receiver });
+      emit({ op: "lea", dst: result, src: frame(callResult) });
+      emit({ op: "mov", dst: frame(callResult), src: imm(0) });
+      if (operation !== "executable-call-number") {
+        if (input === undefined) throw "executable input invariant";
+        const value = frame(home(input));
+        if (operation === "executable-call-managed")
+          emit({ op: "mov", dst: gpr(8), src: value });
+        else emit({ op: "lea", dst: gpr(8), src: value });
+      }
+      emit({ op: "call", target: r10 });
+      if (operation === "executable-call-managed") {
+        safepoint(block, index);
+        const received =
+          fnLabel + ":executable-result:" + String(machine.length);
+        emit({ op: "cmp", dst: eax, src: imm(normal) });
+        branch(emit, "e", received);
+        emit({ op: "cmp", dst: eax, src: imm(thrown) });
+        branch(emit, "ne", trapLabel);
+        raise(block, callResult + resultPayload);
+        emit({ op: "label", name: received });
+      } else {
+        emit({ op: "cmp", dst: eax, src: imm(normal) });
+        branch(emit, "ne", trapLabel);
+      }
+      if (operation !== "executable-call-number")
+        copy(emit, frame(callResult + resultPayload + 8), frame(home(id) + 8));
+      emit({ op: "mov", dst: rax, src: frame(callResult + resultPayload) });
+      define(id, operation === "executable-call-number" ? "number" : "general");
     }
     function allocationFailure(block: Block): void {
       emit({ op: "mov", dst: frame(callResult), src: imm(0) });
@@ -1328,7 +1451,7 @@ export function emitModule(
           address: { kind: "base", index: 2, scale: width, disp: 0 },
         },
       });
-      foreign(symbol);
+      bytesOperation(symbol);
       emit({ op: "mov", dst: eax, src: imm(1) });
       emit({ op: "jmp", target: label(done) });
       emit({ op: "label", name: invalid });
@@ -1376,7 +1499,7 @@ export function emitModule(
       emit({ op: "lea", dst: gpr(7), src: mem(7, nativeStringDataOffset) });
       emit({ op: "lea", dst: gpr(6), src: mem(6, nativeStringDataOffset) });
       emit({ op: "shl", dst: rdx, count: 1 });
-      foreign(symbol);
+      bytesOperation(symbol);
     }
 
     function sliceIndex(value: number, dst: Gpr<64>, site: string): void {
@@ -1407,7 +1530,7 @@ export function emitModule(
       emit({ op: "lea", dst: gpr(7), src: mem(7, nativeStringDataOffset) });
       emit({ op: "lea", dst: gpr(6), src: mem(6, nativeStringDataOffset) });
       emit({ op: "shl", dst: rdx, count: 1 });
-      foreign(symbol);
+      bytesOperation(symbol);
       emit({ op: "test", dst: eax, src: eax });
       setBoolean(emit, equal ? "e" : "ne", 0);
     }
@@ -1770,17 +1893,107 @@ export function emitModule(
           }
           const args = op.arguments;
           const id = op.id;
+          function argument(index: number): Memory<64> {
+            const arg = args[index];
+            if (arg === undefined) throw "host argument invariant";
+            return frame(home(arg));
+          }
+          const operation = op.operation;
+          if (
+            operation === "native-function-descriptor" ||
+            operation === "native-function-signature" ||
+            operation === "native-value-function-descriptor" ||
+            operation === "native-value-function-signature"
+          ) {
+            const input = args[0];
+            if (id === undefined || input === undefined)
+              throw "function reflection invariant";
+            const failed = fnLabel + ":reflection-invalid:" + String(id);
+            const end = fnLabel + ":reflection-done:" + String(id);
+            const generic =
+              operation === "native-value-function-descriptor" ||
+              operation === "native-value-function-signature";
+            const from = home(input);
+            if (generic) {
+              emit({
+                op: "cmp",
+                dst: frame(from),
+                src: imm(generalTag("reference")),
+              });
+              branch(emit, "ne", failed);
+            }
+            emit({ op: "mov", dst: r9, src: frame(from + (generic ? 8 : 0)) });
+            emit({ op: "test", dst: r9, src: r9 });
+            branch(emit, "e", failed);
+            address(scratch, descriptor(functionRecord));
+            emit({ op: "cmp", dst: mem(9, 0), src: scratch });
+            branch(emit, "ne", failed);
+            const offset =
+              operation === "native-function-signature" ||
+              operation === "native-value-function-signature"
+                ? nativeFunctionSignatureOffset
+                : 0;
+            emit({ op: "mov", dst: rax, src: mem(9, offset) });
+            emit({ op: "test", dst: rax, src: rax });
+            branch(emit, "e", failed);
+            emit({ op: "mov", dst: scratch, src: bits(0xffffffff, 0x1fffff) });
+            emit({ op: "cmp", dst: rax, src: scratch });
+            branch(emit, "a", failed);
+            emit({ op: "jmp", target: label(end) });
+            emit({ op: "label", name: failed });
+            emit({ op: "mov", dst: rax, src: imm(-1) });
+            emit({ op: "label", name: end });
+            numberBits();
+            define(id, "number");
+            return;
+          }
+          if (jitDebug && operation === "jit-debug-descriptor") {
+            if (id === undefined) throw "JIT descriptor result invariant";
+            emit({ op: "lea", dst: rax, src: rip(debugDescriptor) });
+            numberBits();
+            define(id, "number");
+            return;
+          }
+          if (jitDebug && operation === "jit-debug-register") {
+            emit({ op: "call", target: label(debugRegister) });
+            return;
+          }
+          if (
+            host !== undefined &&
+            (operation === "executable-call-managed" ||
+              operation === "executable-call-value" ||
+              operation === "executable-call-number")
+          ) {
+            if (id === undefined) throw "executable result invariant";
+            callExecutable(argument(0), args[1], operation, id, block, index);
+            return;
+          }
+          const hostPolicy = host;
+          if (hostPolicy !== undefined && operation.startsWith("executable-")) {
+            if (
+              emitExecutableMemory(
+                {
+                  emit,
+                  call: foreign,
+                  argument,
+                  privateWord: (index) => frame(executableHomes + index * 8),
+                  name: fnLabel + ":executable:" + String(machine.length),
+                },
+                hostPolicy,
+                operation,
+              )
+            ) {
+              if (id !== undefined) define(id, "number");
+              return;
+            }
+          }
           if (
             host === undefined ||
             !emitHostCall({
               operation: op.operation,
               emit,
               policy: host,
-              argument: (index) => {
-                const arg = args[index];
-                if (arg === undefined) throw "host argument invariant";
-                return frame(home(arg));
-              },
+              argument,
               call: foreign,
               threadEntry: (operation) => {
                 if (operation === "hosted-thread-entry")
@@ -1790,6 +2003,7 @@ export function emitModule(
               },
               scratch: frame(callResult),
               scratchNext: frame(callResult + 8),
+              scratchResult: frame(callResult + resultPayload),
               context: frame(savedContext),
               ownRootHead,
               constant,
@@ -2699,7 +2913,33 @@ export function emitModule(
             define(op.id, "boolean");
             return;
           }
-          if (
+          if (type === "optional-boolean" && predicate) {
+            emit({ op: "xor", dst: eax, src: eax });
+            if (truth) {
+              emit({ op: "mov", dst: rax, src });
+              emit({ op: "and", dst: rax, src: frame(home(op.operand) + 8) });
+              if (op.operator === "!")
+                emit({ op: "xor", dst: rax, src: imm(1) });
+            }
+          } else if (
+            (type === "string" || type === "optional-string") &&
+            predicate
+          ) {
+            emit({ op: "xor", dst: eax, src: eax });
+            if (truth) {
+              const absent = fnLabel + ":string-truth:" + String(op.id);
+              emit({ op: "mov", dst: scratch, src });
+              emit({ op: "test", dst: scratch, src: scratch });
+              branch(emit, "e", absent);
+              emit({
+                op: "cmp",
+                dst: mem(11, nativeStringLengthOffset),
+                src: imm(0),
+              });
+              emit({ op: "label", name: absent });
+              setBoolean(emit, op.operator === "!" ? "e" : "ne", 0);
+            }
+          } else if (
             (type === "boolean" ||
               type === "reference" ||
               type === "optional-reference") &&
@@ -2712,7 +2952,9 @@ export function emitModule(
               setBoolean(emit, op.operator === "!" ? "e" : "ne", 0);
             }
           } else if (
-            (type === "number" || op.operator === "boolean-number") &&
+            (type === "number" ||
+              (type === "optional-number" && predicate) ||
+              op.operator === "boolean-number") &&
             numbers.unary(op.operator, src)
           ) {
             // The numeric selector leaves either the boolean or binary64 bits in RAX.
@@ -2890,6 +3132,7 @@ export function emitModule(
       fail("UNSUPPORTED", "unsupported terminator " + op.kind);
     }
 
+    if (managed !== undefined) emit({ op: "align-entry" });
     emit({ op: "label", name: fnLabel });
     const cfi = frameRows(emit, fnLabel);
     const saved = [returnSave, frameSave];
@@ -3230,6 +3473,11 @@ export function emitModule(
     numbers.helpers();
     if (generational) collectorLeaves();
     probes.emitStubs();
+    if (jitDebug) {
+      emit({ op: "label", name: debugRegister });
+      emit({ op: "nop" });
+      emit({ op: "ret" });
+    }
     emit({ op: "label", name: leafEnd });
     if (host !== undefined)
       unwind.push({ start: leafStart, end: leafEnd, rule: "leaf", rows: [] });
@@ -3335,6 +3583,10 @@ export function emitModule(
         kind: "data",
         offset: callbackKeyOffset,
       });
+    const sharedDataBytes =
+      constants.length * 8 + (callbackKeyOffset === undefined ? 0 : 8);
+    if (jitDebug)
+      external.set(debugDescriptor, { kind: "data", offset: sharedDataBytes });
     const encoded = encodeLayout(
       machine,
       (name) =>
@@ -3381,9 +3633,11 @@ export function emitModule(
       });
     }
     const poolBase = Math.ceil(encoded.bytes.length / 8) * 8;
+    const constantsBase = poolBase + poolBytes;
+    const poolEnd = constantsBase + (live ? constants.length * 8 : 0);
     let code = encoded.bytes;
-    if (poolBytes !== 0) {
-      code = new Uint8Array(poolBase + poolBytes);
+    if (poolEnd > poolBase) {
+      code = new Uint8Array(poolEnd);
       code.set(encoded.bytes);
       for (const [, item] of strings) {
         if (item === undefined) throw "x86-64 literal invariant";
@@ -3442,20 +3696,39 @@ export function emitModule(
         managedFixups.push({ fixup, import: imported });
         continue;
       }
-      const offset =
+      const local =
         strings.get(fixup.ref.label)?.offset ??
         descriptors.get(fixup.ref.label)?.offset;
+      const constant = live ? external.get(fixup.ref.label) : undefined;
+      const offset =
+        constant?.kind === "data"
+          ? constantsBase + constant.offset
+          : local === undefined
+            ? undefined
+            : poolBase + local;
       if (offset === undefined) imageFixups.push(fixup);
       else {
-        const status = patchRelative(
-          code,
-          fixup,
-          fixup.fieldOffset,
-          poolBase + offset,
-        );
+        const status = patchRelative(code, fixup, fixup.fieldOffset, offset);
         if (status === "range") throw "x86-64 rel32 displacement out of range";
         if (status !== "complete") throw "x86-64 pool fixup invariant";
       }
+    }
+    const data = new Uint8Array(
+      live ? 0 : sharedDataBytes + (jitDebug ? 24 : 0),
+    );
+    if (jitDebug) data[sharedDataBytes] = 1; // struct jit_descriptor.version
+    for (let i = 0; i < constants.length; i++) {
+      const word = constants[i];
+      if (
+        word === undefined ||
+        !writeWord64(
+          live ? code : data,
+          (live ? constantsBase : 0) + i * 8,
+          word,
+          "little",
+        ).ok
+      )
+        throw "binary64 data invariant";
     }
     const stackMaps: X64Module["stackMaps"][number][] = [];
     if (host !== undefined) {
@@ -3506,14 +3779,6 @@ export function emitModule(
       }
       code = moduleCode;
     }
-    const data = new Uint8Array(
-      constants.length * 8 + (needsCallbackKey ? 8 : 0),
-    );
-    for (let i = 0; i < constants.length; i++) {
-      const bits = constants[i];
-      if (bits === undefined || !writeWord64(data, i * 8, bits, "little").ok)
-        throw "binary64 data invariant";
-    }
     const relocations = imageRelocations(imageFixups, external);
     const managedImports: NativeManagedPointerImport[] = [];
     for (let index = 0; index < abiRequests.length; index++) {
@@ -3555,6 +3820,7 @@ export function emitModule(
       });
     }
     const sourceRanges: X64SourceRange[] = [];
+    const debugRegisterOffset = encoded.labels.get(debugRegister);
     for (let index = 0; index + 1 < sourceLabels.length; index++) {
       const row = sourceLabels[index],
         next = sourceLabels[index + 1];
@@ -3581,6 +3847,15 @@ export function emitModule(
         generationalBarriers: generational,
         managedImports,
         managedFixups,
+        ...(live ? { liveSlotOffset: poolBase } : {}),
+        ...(debugRegisterOffset === undefined
+          ? {}
+          : {
+              jitDebug: {
+                descriptorOffset: sharedDataBytes,
+                registerOffset: debugRegisterOffset,
+              },
+            }),
         ...(functionDescriptor === undefined ? {} : { functionDescriptor }),
         signatures: nativeSignatures,
         records: nativeRecords,

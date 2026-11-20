@@ -2498,6 +2498,7 @@ export function compileX64HostedProgram(
   options: {
     readonly runtime?: true;
     readonly forceFarReach?: boolean;
+    readonly jitDebugInterface?: boolean;
     readonly generational?: boolean;
     readonly inlineAllocation?: boolean;
     readonly threaded?: boolean;
@@ -2653,6 +2654,7 @@ export function compileX64HostedProgram(
           functions: functionWitnesses,
         }
       : undefined,
+    options.jitDebugInterface === true,
   );
   if (!emitted.ok) {
     const message = emitted.error.message;
@@ -3213,6 +3215,7 @@ export {
   type PreparedNativeFunctionEntry,
   type NativeEntryPreparationOptions,
   compileClosedFunction,
+  compileX64ClosedNumberFunction,
   compileClosedDynamicFunction,
   compileManagedGlobalAccessDynamicFunction,
   compileManagedReceiverWriteDynamicFunction,
@@ -3227,6 +3230,7 @@ export {
 } from "./closed-functions.ts";
 export {
   resolveManagedPointers,
+  resolveX64ManagedPointers,
   managedIdentityByteLength,
   sameManagedRecordLayout,
   type ManagedIdentityShape,
@@ -3334,6 +3338,7 @@ export {
   managedSurfaceContract,
   selectManagedIdentityBindings,
   linkManagedSurfaceModule,
+  linkX64ManagedSurfaceModule,
   type ManagedIdentitySelection,
   type ManagedSurfaceDirectoryHost,
   type ManagedSurfaceDirectoryRead,

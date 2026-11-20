@@ -130,7 +130,10 @@ type Encodable =
   | { readonly op: "call" | "jmp"; readonly target: Relative | Rm<64> }
   | { readonly op: "push"; readonly src: Rm<64> | SmallImmediate }
   | { readonly op: "pop"; readonly dst: Rm<64> }
-  | { readonly op: "ret" | "nop" | "pause" | "cdq" | "cqo" | "ud2" | "syscall" }
+  | {
+      readonly op:
+        "ret" | "nop" | "pause" | "cdq" | "cqo" | "ud2" | "syscall" | "cpuid";
+    }
   | { readonly op: "movsd"; readonly dst: XmmRm<64>; readonly src: XmmRm<64> }
   | {
       readonly op: ScalarDouble;
@@ -164,7 +167,9 @@ type Encodable =
   | { readonly op: "movq"; readonly dst: Gpr<64>; readonly src: Xmm };
 
 export type Instruction =
-  Encodable | { readonly op: "label"; readonly name: string };
+  | Encodable
+  | { readonly op: "label"; readonly name: string }
+  | { readonly op: "align-entry" };
 
 type Register = Gpr<IntegerWidth> | Xmm;
 type RmOperand = Register | Memory<IntegerWidth | 128>;
@@ -846,6 +851,9 @@ function emit(out: Encoding, insn: Encodable): void {
     case "ret":
       bytes.push(0xc3);
       return;
+    case "cpuid":
+      bytes.push(0x0f, 0xa2);
+      return;
     case "ud2":
     case "syscall":
       bytes.push(0x0f, insn.op === "ud2" ? 0x0b : 0x05);
@@ -974,6 +982,8 @@ export function encodeLayout(
     if (insn.op === "label") {
       if (labels.has(insn.name)) invalid("duplicate label: " + insn.name);
       labels.set(insn.name, out.bytes.length);
+    } else if (insn.op === "align-entry") {
+      while (out.bytes.length % 4 !== 0) out.bytes.push(0x90);
     } else {
       const before = out.fixups.length;
       emit(out, insn);
