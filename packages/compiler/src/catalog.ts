@@ -2855,6 +2855,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/worker-threads-native.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/worker-threads.ts",
       packageId: "native-runtime",
     },

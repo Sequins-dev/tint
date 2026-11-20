@@ -3,7 +3,13 @@
 //   node tools/unified-pipeline/verify-construct.ts <construct> typed|untyped
 // A general fallback is reported on stderr ("general fallback for ...").
 import { createSourceModuleLoader } from "@tint/typescript/modules";
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { verifyHostedFixture } from "../hosted-fixture.ts";
+import {
+  workerFixtureOptions,
+  workerFixtureRuntimes,
+} from "../worker-fixture-options.ts";
 import {
   createHostedSourceValidator,
   type HostedValidationSource,
@@ -25,19 +31,30 @@ const replay = process.env.TINT_SOURCE_REPLAY === "1";
 const functionFallback =
   process.env.TINT_FUNCTION_FALLBACK === "1" && form === "typed";
 const dependencies: [string, string][] = [];
+const workerDependency = [
+  "node:worker_threads",
+  "node:worker_threads",
+] as const;
+const workerModules = construct.workers?.map(
+  (file) => "./" + construct.name + "/" + file,
+);
+if (workerModules !== undefined) dependencies.push([...workerDependency]);
 const sources = [];
 for (const [file, text] of Object.entries(construct.helpers ?? {})) {
-  const id = "construct-helper:" + file;
+  const worker = construct.workers?.includes(file) === true;
+  const id = worker
+    ? "./" + construct.name + "/" + file
+    : "construct-helper:" + file;
   dependencies.push(["./" + file, id]);
   sources.push({
     id,
     text,
-    dependencies: new Map(
-      (construct.helperImports?.[file] ?? []).map((target) => [
-        "./" + target,
-        "construct-helper:" + target,
-      ]),
-    ),
+    dependencies: new Map([
+      ...(construct.helperImports?.[file] ?? []).map(
+        (target) => ["./" + target, "construct-helper:" + target] as const,
+      ),
+      ...(worker ? [workerDependency] : []),
+    ]),
     unchecked: file === "untyped.ts" || form === "untyped",
   } satisfies HostedValidationSource);
 }
@@ -55,6 +72,21 @@ const validateSource =
             unchecked: form === "untyped",
           },
           ...sources,
+          ...(workerModules === undefined
+            ? []
+            : [
+                {
+                  id: "node:worker_threads",
+                  text: readFileSync(
+                    createRequire(import.meta.url).resolve(
+                      "@types/node/worker_threads.d.ts",
+                    ),
+                    "utf8",
+                  ),
+                  declaration: true,
+                  unchecked: true,
+                },
+              ]),
         ],
         construct.options,
         (advisory) =>
@@ -67,10 +99,11 @@ verifyHostedFixture(
   dependencies,
   helpers,
   [],
-  [],
+  workerModules === undefined ? [] : workerFixtureRuntimes,
   {
     managedBytes: 67108864,
     allocationCapacity: 1048576,
+    ...(workerModules === undefined ? {} : workerFixtureOptions(workerModules)),
     ...(validateSource === undefined
       ? {}
       : {

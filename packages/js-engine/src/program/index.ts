@@ -57,6 +57,7 @@ export interface GeneralNodeWorkers {
   readonly threadHost: string;
   readonly lifecycle: string;
   readonly shared: string;
+  readonly typedBindings?: string;
   readonly stackBytes: number;
   readonly managedBytes: number;
   readonly nodeHosted?: boolean;
@@ -106,6 +107,8 @@ export function createGeneralLowering(
       workers.lifecycle,
       workers.shared,
     );
+    if (workers.typedBindings !== undefined)
+      runtimeModules.push(workers.typedBindings);
   }
   const objectViews = [
       "viewObjectValue",
@@ -125,6 +128,13 @@ export function createGeneralLowering(
     ...(workers === undefined
       ? {}
       : { syntheticModules: ["node:worker_threads"] }),
+    ...(workers?.typedBindings === undefined
+      ? {}
+      : {
+          prepareTypedWorkers: (
+            request: GeneralProgramRequest,
+          ): GeneralProgram => lowerGeneralProgram(request, options, true),
+        }),
     runtimes: [
       {
         module: runtime.modules,
@@ -151,6 +161,7 @@ export function createGeneralLowering(
 function lowerGeneralProgram(
   original: GeneralProgramRequest,
   options: GeneralLoweringOptions,
+  typedWorkerEntry = false,
 ): GeneralProgram {
   const runtime = options.runtime;
   const workers = options.nodeWorkers;
@@ -167,6 +178,28 @@ function lowerGeneralProgram(
     return id;
   }
   const hostId = fresh("$general-host:" + original.entry);
+  function applicationGraph(roots: readonly string[]): Set<string> {
+    const seen = new Set<string>();
+    const queue = roots.slice();
+    for (let i = 0; i < queue.length; i++) {
+      const id = queue[i];
+      if (id === undefined || seen.has(id)) continue;
+      seen.add(id);
+      const source = available.get(id);
+      if (source === undefined) continue;
+      for (const [, dependency] of source.dependencies)
+        if (!seen.has(dependency)) queue.push(dependency);
+    }
+    return seen;
+  }
+  const typedGraph = typedWorkerEntry
+    ? applicationGraph([original.entry])
+    : undefined;
+  if (typedGraph !== undefined && !typedGraph.has("node:worker_threads"))
+    return { ok: false, error: "entry graph does not use node:worker_threads" };
+  const guestGraph = typedWorkerEntry
+    ? applicationGraph(original.workerEntries ?? [])
+    : undefined;
   const mixed =
     options.functionFallback === true && workers === undefined
       ? planFunctionFallback(
@@ -212,22 +245,31 @@ function lowerGeneralProgram(
         ))
       : undefined;
   const request: GeneralProgramRequest =
-    mixed === undefined
-      ? companions === undefined
-        ? original
+    guestGraph !== undefined
+      ? {
+          ...original,
+          modules: original.modules.filter(
+            (source) => source !== undefined && guestGraph.has(source.id),
+          ),
+        }
+      : mixed === undefined
+        ? companions === undefined
+          ? original
+          : {
+              ...original,
+              modules: original.modules.map((module) =>
+                module.id === companions.general.id
+                  ? companions.general
+                  : module,
+              ),
+              boundaries: [...original.boundaries, companions.boundary],
+            }
         : {
             ...original,
-            modules: original.modules.map((module) =>
-              module.id === companions.general.id ? companions.general : module,
-            ),
-            boundaries: [...original.boundaries, companions.boundary],
-          }
-      : {
-          ...original,
-          modules: [mixed.general],
-          boundaries:
-            mixed.boundary.exports.length === 0 ? [] : [mixed.boundary],
-        };
+            modules: [mixed.general],
+            boundaries:
+              mixed.boundary.exports.length === 0 ? [] : [mixed.boundary],
+          };
   const typeOnly = new Map<string, Set<string>>();
   function typeNames(id: string): Set<string> | undefined {
     const known = typeOnly.get(id);
@@ -259,6 +301,15 @@ function lowerGeneralProgram(
   if (mixed !== undefined) generated.push(mixed.typed);
   if (companions !== undefined) generated.push(companions.typed);
   const installers = createGeneralIntrinsicPlan();
+  const typedEntry = typedWorkerEntry
+    ? available.get(original.entry)
+    : undefined;
+  const typedBindings = typedWorkerEntry ? workers?.typedBindings : undefined;
+  if (
+    typedWorkerEntry &&
+    (typedEntry === undefined || typedBindings === undefined)
+  )
+    return { ok: false, error: "missing typed Worker entry or module binding" };
   const checkMethodCalls =
     request.sourceValidated === true &&
     request.modules.some((module) =>
@@ -470,7 +521,7 @@ function lowerGeneralProgram(
   const entryIndex = request.modules.findIndex(
     (module) => module !== undefined && module.id === request.entry,
   );
-  if (entryIndex < 0)
+  if (entryIndex < 0 && typedEntry === undefined)
     return { ok: false, error: "entry module is not lowered" };
   const output = options.output;
   const eventLoop = options.nodeEventLoop;
@@ -502,6 +553,32 @@ function lowerGeneralProgram(
     !selectedInstallers.includes("installPromiseIntrinsics")
   )
     selectedInstallers.push("installPromiseIntrinsics");
+  if (
+    typedEntry !== undefined &&
+    typedBindings !== undefined &&
+    typedGraph !== undefined
+  ) {
+    for (const source of original.modules) {
+      if (source === undefined || !typedGraph.has(source.id)) continue;
+      const dependencies = new Map<string, string>();
+      let usesWorker = false;
+      for (const [specifier, target] of source.dependencies) {
+        if (target === "node:worker_threads") {
+          usesWorker = true;
+          dependencies.set(specifier, typedBindings);
+        } else dependencies.set(specifier, target);
+      }
+      if (usesWorker) generated.push({ ...source, dependencies });
+    }
+    imports +=
+      "import {" +
+      request.start +
+      " as typedStart} from " +
+      JSON.stringify(typedEntry.id) +
+      ";\n";
+    imports +=
+      'import {initializeWorkerThreads} from "typed-worker-bindings";\n';
+  }
   const text = generalHostSource(
     imports,
     creates,
@@ -516,6 +593,7 @@ function lowerGeneralProgram(
     workers,
     names,
     mixed,
+    typedWorkerEntry,
   );
   const parsed = parseModule(createSourceTextView(text));
   if (!parsed.ok)
@@ -545,6 +623,8 @@ function lowerGeneralProgram(
     hostDependencies.set("worker-lifecycle", workers.lifecycle);
     hostDependencies.set("worker-shared", workers.shared);
   }
+  if (typedBindings !== undefined)
+    hostDependencies.set("typed-worker-bindings", typedBindings);
   for (const module of generated)
     if (module !== undefined) hostDependencies.set(module.id, module.id);
   for (const boundary of request.boundaries)
@@ -593,6 +673,29 @@ function lowerGeneralProgram(
         modules: generated,
         entry: hostId,
         ...units,
+        ...(typedBindings === undefined ||
+        typedGraph === undefined ||
+        typedEntry === undefined
+          ? {}
+          : {
+              workerEvaluation: {
+                entry: typedEntry.id,
+                start: request.start,
+                modules: original.modules
+                  .filter(
+                    (source) =>
+                      source !== undefined && typedGraph.has(source.id),
+                  )
+                  .map((source) => source.id),
+              },
+              moduleConstructors: [
+                {
+                  module: typedBindings,
+                  name: "Worker",
+                  factory: "constructWorker",
+                },
+              ],
+            }),
         ...(workerModules === undefined ? {} : { workerModules }),
       },
     };
@@ -995,6 +1098,7 @@ function generalHostSource(
   workers: GeneralNodeWorkers | undefined,
   names: readonly string[],
   mixed?: FunctionFallbackPlan,
+  typedWorkerEntry = false,
 ): string {
   let installs = "";
   const programInstallers: string[] = [];
@@ -1070,7 +1174,8 @@ import {nativeSharedMemoryHost,nativeWaiterParkingHost,type NativeSharedMemoryHo
   }
  });
  workerHost=session;
- const workers=session.exports;`;
+ const workers=session.exports;
+ ${typedWorkerEntry ? 'initializeWorkerThreads(workers,realm);if(threadId===0){const status=typedStart();events.loop.run("callback");return failed?1:status;}' : ""}`;
   const drainJobs =
     "drainScriptJobs(realm.agent,(error:unknown):void=>{throw error;});";
   const drainCheckpoint =

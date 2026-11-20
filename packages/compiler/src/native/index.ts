@@ -236,6 +236,8 @@ export interface NativeServiceImport {
   readonly surface?: string;
 }
 export interface CompileRequest extends ModuleRequest {
+  readonly moduleConstructors?: readonly ModuleConstructorBinding[];
+  readonly workerEvaluation?: WorkerEvaluation;
   readonly workerModules?: readonly string[] | undefined;
   readonly storage?: BuildStorage;
   readonly serviceImports?: readonly NativeServiceImport[];
@@ -310,6 +312,16 @@ export interface CompileRequest extends ModuleRequest {
    * specialization. */
   readonly requireTyped?: boolean;
 }
+export interface ModuleConstructorBinding {
+  readonly module: string;
+  readonly name: string;
+  readonly factory: string;
+}
+export interface WorkerEvaluation {
+  readonly entry: string;
+  readonly start: string;
+  readonly modules: readonly string[];
+}
 /** An optimization remark with its span resolved to an original source file
  * (UTF-16 offsets in that file; line and column when the module supplies
  * source positions, as for debug line tables). */
@@ -347,6 +359,8 @@ export interface GeneralProgramRequest {
    * entries: the host imports their exports and presents them to general
    * code as synthetic modules. */
   readonly boundaries: readonly TypedBoundaryModule[];
+  /** Configured guest entry modules when composing a checked worker program. */
+  readonly workerEntries?: readonly string[];
   /** Record types the boundaries use; they cross as JavaScript views. */
   readonly records?: readonly BoundaryRecord[];
   /** Source capability that seeded this retry, where classified. */
@@ -383,6 +397,8 @@ export type GeneralProgram =
         readonly modules: readonly SourceModule[];
         /** Generated guest modules that may execute on a product worker. */
         readonly workerModules?: readonly string[];
+        readonly moduleConstructors?: readonly ModuleConstructorBinding[];
+        readonly workerEvaluation?: WorkerEvaluation;
         /** The generated host module; it exports `start(): number`. */
         readonly entry: string;
         /** A proved primitive entry uses the general value ABI without the program realm. */
@@ -424,6 +440,10 @@ export interface GeneralLowering {
   /** Optional host oracle for the captured original source graph. The host
    * supplies source goals, options and module resolution for this entry. */
   readonly validateSource?: (entry: string) => readonly SourceDiagnostic[];
+  /** Compose a typed entry with host-managed guest modules before checking it. */
+  readonly prepareTypedWorkers?: (
+    request: GeneralProgramRequest,
+  ) => GeneralProgram;
   readonly lower: (request: GeneralProgramRequest) => GeneralProgram;
 }
 export interface SourceDiagnostic extends Span {
@@ -866,11 +886,15 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       };
   }
   const request = withForeignRuntimes(original);
-  const typed = compileTypedWithProgramRealm(request);
+  const typed = compileWithTypedWorkerEntry<CompiledProgram>(
+    request,
+    (source): Compilation => compileTypedWithProgramRealm(source),
+  );
   const lowering = request.generalLowering;
   if (
     typed.ok ||
     lowering === undefined ||
+    request.requireTyped === true ||
     typed.error.preventsFallback === true
   )
     return typed;
@@ -886,6 +910,86 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     ok: true,
     value: { ...general.value, general: general.fallback },
   };
+}
+
+/** A typed worker entry is checked directly. The host owns launching and
+ * evaluating guest modules, just as in an image whose entry uses JS semantics. */
+function compileWithTypedWorkerEntry<T>(
+  request: CompileRequest,
+  compile: (
+    request: CompileRequest,
+  ) => { readonly ok: true; readonly value: T } | CompilationFailure,
+): { readonly ok: true; readonly value: T } | CompilationFailure {
+  const lowering = request.generalLowering;
+  const prepare = lowering?.prepareTypedWorkers;
+  const guests = request.workerModules;
+  const start = request.start;
+  if (
+    lowering === undefined ||
+    prepare === undefined ||
+    guests === undefined ||
+    start === undefined
+  )
+    return compile(request);
+  const available = requestModules(request);
+  const application = generalApplicationModules(request, available);
+  if (!application.ok) return stageFailure("worker-entry", application.error);
+  const prepared = prepare({
+    available,
+    modules: application.value,
+    entry: request.entry,
+    start,
+    boundaries: [],
+    workerEntries: guests,
+  });
+  if (!prepared.ok)
+    return request.requireTyped === true
+      ? stageFailure("worker-entry", prepared.error)
+      : compile(request);
+  const program = prepared.value;
+  const replaced = new Set(program.modules.map((source) => source.id));
+  const modules: SourceModule[] = [];
+  for (const source of available)
+    if (source !== undefined && !replaced.has(source.id)) modules.push(source);
+  for (const source of program.modules)
+    if (source !== undefined) modules.push(source);
+  const runtimes = request.runtimes.slice();
+  const recordBindings = (request.recordBindings ?? []).slice();
+  for (const runtime of [...lowering.runtimes, ...(program.runtimes ?? [])])
+    if (
+      runtime !== undefined &&
+      !runtimes.some((existing) => existing.module === runtime.module)
+    )
+      runtimes.push(runtime);
+  for (const binding of [
+    ...lowering.recordBindings,
+    ...(program.recordBindings ?? []),
+  ])
+    if (
+      binding !== undefined &&
+      !recordBindings.some(
+        (existing) =>
+          existing.module === binding.module && existing.name === binding.name,
+      )
+    )
+      recordBindings.push(binding);
+  const typed = compile({
+    ...request,
+    modules,
+    moduleLoader: undefined,
+    entry: program.entry,
+    workerModules: program.workerModules ?? guests,
+    ...(program.moduleConstructors === undefined
+      ? {}
+      : { moduleConstructors: program.moduleConstructors }),
+    ...(program.workerEvaluation === undefined
+      ? {}
+      : { workerEvaluation: program.workerEvaluation }),
+    recordBindings,
+    runtimes,
+  });
+  if (typed.ok || request.requireTyped === true) return typed;
+  return compile(request);
 }
 
 type GeneralCompilation<T> =
@@ -1374,6 +1478,16 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
     if (runtime.retainedExports !== undefined)
       rootExports.set(runtime.module, runtime.retainedExports.slice());
   }
+  for (const constructor of request.moduleConstructors ?? []) {
+    if (constructor === undefined) throw "module constructor invariant";
+    const requested = rootExports.get(constructor.module);
+    if (requested === undefined)
+      rootExports.set(constructor.module, [
+        constructor.name,
+        constructor.factory,
+      ]);
+    else requested.push(constructor.name, constructor.factory);
+  }
   // Managed surfaces select exports of their modules by name and publish
   // them; those modules stay entirely used.
   for (const surface of request.managedSurfaces ?? []) {
@@ -1507,6 +1621,33 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
   }
   const consoleLog = helpers.get("native-console:consoleLog"),
     consoleError = helpers.get("native-console:consoleError");
+  const moduleConstructors: { name: string; factory: string }[] = [];
+  for (const binding of request.moduleConstructors ?? []) {
+    if (binding === undefined) throw "module constructor invariant";
+    const constructor = linked.value.exports.find(
+      (item) =>
+        item !== undefined &&
+        item.module === binding.module &&
+        item.namespace === "value" &&
+        item.name === binding.name,
+    );
+    const factory = linked.value.exports.find(
+      (item) =>
+        item !== undefined &&
+        item.module === binding.module &&
+        item.namespace === "value" &&
+        item.name === binding.factory,
+    );
+    if (constructor === undefined || factory === undefined)
+      return stageFailure(
+        "globals",
+        "missing module constructor or factory: " + binding.name,
+      );
+    moduleConstructors.push({
+      name: constructor.linkedName,
+      factory: factory.linkedName,
+    });
+  }
   const normalized = prepareNativeGlobals(
     linked.value.module,
     bound.value,
@@ -1514,10 +1655,26 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
     consoleLog === undefined || consoleError === undefined
       ? undefined
       : { log: consoleLog, error: consoleError },
+    moduleConstructors,
   );
   if (!normalized.ok) return stageFailure("globals", normalized.error);
+  const workerEvaluation = request.workerEvaluation;
+  const application =
+    workerEvaluation === undefined
+      ? normalized.value
+      : deferWorkerEvaluation(
+          normalized.value,
+          linked.value.exports,
+          linked.value.ranges,
+          workerEvaluation,
+        );
+  if (application === undefined)
+    return stageFailure(
+      "worker-entry",
+      "missing checked Worker entry function",
+    );
   const surfaces = prepareManagedSurfaceExports(
-    normalized.value,
+    application,
     linked.value,
     request.managedSurfaces ?? [],
     surfaceModules,
@@ -1542,6 +1699,71 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
       surfacePlans,
     },
   };
+}
+
+/** The root isolate's application module body runs after its host installed the
+ * Worker bindings. Guest isolates enter only their own module evaluation. */
+function deferWorkerEvaluation(
+  module: Module,
+  exports: readonly LinkedExport[],
+  ranges: readonly SourceRange[],
+  evaluation: WorkerEvaluation,
+): Module | undefined {
+  const entry = exports.find(
+    (item) =>
+      item !== undefined &&
+      item.module === evaluation.entry &&
+      item.namespace === "value" &&
+      item.name === evaluation.start,
+  );
+  if (entry === undefined) return undefined;
+  const declarations: Statement[] = [];
+  const body: Statement[] = [];
+  let wrapper: Statement | undefined = undefined;
+  const deferred = new Set(evaluation.modules);
+  for (const statement of module.statements) {
+    if (statement === undefined) throw "worker evaluation statement invariant";
+    const origin = locateSourceRange(ranges, statement);
+    if (
+      origin === undefined ||
+      !deferred.has(origin.module) ||
+      statement.kind === "interface" ||
+      statement.kind === "type-alias"
+    ) {
+      declarations.push(statement);
+      continue;
+    }
+    body.push(statement);
+    if (statement.kind === "function" && statement.name === entry.linkedName)
+      wrapper = statement;
+  }
+  if (wrapper?.kind !== "function") return undefined;
+  const end = module.end;
+  body.push({
+    kind: "return",
+    expression: {
+      kind: "call",
+      callee: { kind: "identifier", name: entry.linkedName, start: end, end },
+      arguments: [],
+      start: end,
+      end,
+    },
+    start: end,
+    end,
+  });
+  const scopedBody: Statement = {
+    kind: "block",
+    statements: body,
+    start: module.start,
+    end,
+  };
+  declarations.push({
+    ...wrapper,
+    start: module.start,
+    end,
+    body: scopedBody,
+  });
+  return { ...module, statements: declarations };
 }
 /** Specializes the application; its binding dies with this frame. */
 function specializeApplication(
@@ -3137,11 +3359,16 @@ export function compileX64HostedProgram(
   });
   const invokeDirectly = options.runtime !== true && options.threaded !== true;
   function lower(): TypedLowering {
-    const typed = lowerTypedProgram(source, undefined, invokeDirectly);
+    const typed = compileWithTypedWorkerEntry<TypedProgram>(
+      source,
+      (prepared): TypedLowering =>
+        lowerTypedProgram(prepared, undefined, invokeDirectly),
+    );
     const lowering = source.generalLowering;
     if (
       typed.ok ||
       lowering === undefined ||
+      source.requireTyped === true ||
       typed.error.preventsFallback === true
     )
       return typed;

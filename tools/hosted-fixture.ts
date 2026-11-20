@@ -113,7 +113,8 @@ export function workspaceGeneralLowering(
     readonly nodeHosted: boolean;
   },
 ): GeneralLowering | undefined {
-  if (process.env.TINT_GENERAL_FALLBACK === "0") return undefined;
+  if (process.env.TINT_GENERAL_FALLBACK === "0" && workerImage === undefined)
+    return undefined;
   const cached = nodeEventLoop ? nodeGeneralLowering : generalLowering;
   if (!functionFallback && workerImage === undefined && cached !== undefined)
     return cached;
@@ -149,6 +150,8 @@ export function workspaceGeneralLowering(
             shared: "packages/native-runtime/src/shared-blocks.ts",
             lifecycle: "packages/native-runtime/src/worker-lifecycle.ts",
             threadHost: "packages/platform/src/workers.ts",
+            typedBindings:
+              "packages/native-runtime/src/node/worker-threads-native.ts",
             managedBytes: workerImage.managedBytes,
             nodeHosted: workerImage.nodeHosted,
             stackBytes: workerImage.stackBytes,
@@ -376,7 +379,11 @@ function buildHostedFixture(
     ...(general?.runtimeModules ?? []),
     ...dependencies
       .map((dependency) => dependency[1])
-      .filter((id) => !localModuleIds.has(id)),
+      .filter(
+        (id) =>
+          !localModuleIds.has(id) &&
+          general?.syntheticModules?.includes(id) !== true,
+      ),
     ...dependencyIds,
     ...(sysvDynamic ? [foreignRuntimeModules.sysv] : []),
   ];
@@ -527,6 +534,10 @@ function buildHostedFixture(
     ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
     entry: fixtureSource,
     start: "run",
+    ...(options.requireTyped === true ||
+    process.env.TINT_GENERAL_FALLBACK === "0"
+      ? { requireTyped: true }
+      : {}),
     ...(general === undefined
       ? {}
       : {
@@ -552,7 +563,6 @@ function buildHostedFixture(
                 }
               : {}),
           },
-          ...(options.requireTyped === true ? { requireTyped: true } : {}),
           onGeneralFallback: (modules: readonly string[], reason: string) => {
             options.onGeneralFallback?.(modules, reason);
             process.stderr.write(
