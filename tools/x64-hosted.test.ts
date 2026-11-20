@@ -165,33 +165,194 @@ test("x86-64 hosted compilation pinpoints deferred runtime operations", () => {
   );
 });
 
-test("x86-64 rejects a parallel collection requirement with a target diagnostic", () => {
-  assert.equal(linuxX86_64Target.parallelCollection, false);
-  assert.deepEqual(
-    build(
-      "export function run(): number { return 42; }",
-      {},
-      {
-        runtimeEntry: "initializeGenerationalRuntime",
-        requireParallelCollection: true,
-      },
-    ),
-    {
-      ok: false,
-      error: {
-        stage: "target",
-        message:
-          "linux-x86_64: parallel collection is unavailable until slice 8; the collector uses one worker",
-      },
-    },
-  );
-});
-
 const runner = process.env.TINT_X64_HOSTED_RUNNER;
 const native = {
   skip:
     runner === undefined && "set TINT_X64_HOSTED_RUNNER for x86-64 execution",
 };
+
+test("x86-64 shared atomics preserve width, observed words and adjacent bytes", () => {
+  const built = build(
+    `import { mapMemory, unmapMemory, readMemoryWord, writeMemoryWord,
+       compareExchangeMemoryWord, fetchAddMemoryWord, loadAcquireMemoryWord,
+       storeReleaseMemoryWord, compareExchangeMemoryUnsigned } from "memory";
+     import { readSharedUnsigned, writeSharedUnsigned, readSharedWord64,
+       writeSharedWord64, compareExchangeSharedWord64 } from "shared";
+     export function run(): number {
+       const base = mapMemory(4096);
+       if (base <= 0) return 1;
+       if (writeMemoryWord(base, 16, 0, 0x11223344) !== 0 ||
+           compareExchangeMemoryUnsigned(base, 16, 1, 1, 0x35, 0xff) !== 0x33 ||
+           compareExchangeMemoryUnsigned(base, 16, 1, 1, 0x33, 0xff) !== 0x33 ||
+           writeSharedUnsigned(base, 16, 2, 2, 0xabcd, 1) !== 0 ||
+           readSharedUnsigned(base, 16, 0, 4, 1) !== 0xabcdff44) return 2;
+       if (readSharedUnsigned(base, 16, 1, 2, 1) !== -1 ||
+           readSharedUnsigned(base, 16, 15, 4, 1) !== -1 ||
+           compareExchangeMemoryUnsigned(base, 16, 0, 1, 256, 0) !== -1) return 3;
+       if (storeReleaseMemoryWord(base, 16, 8, 5) !== 0 ||
+           compareExchangeMemoryWord(base, 16, 8, 4, 7) !== 5 ||
+           compareExchangeMemoryWord(base, 16, 8, 5, 9) !== 5 ||
+           fetchAddMemoryWord(base, 16, 8, -2) !== 9 ||
+           loadAcquireMemoryWord(base, 16, 8) !== 7 ||
+           readMemoryWord(base, 16, 0) !== 0xabcdff44) return 4;
+       const scratch = new Uint32Array(2);
+       if (writeSharedWord64(base, 16, 0, 1, 0xabcdef01, 0x87654321) !== 0 ||
+           readSharedWord64(base, 16, 0, 1, scratch) !== 0 ||
+           scratch[0] !== 0xabcdef01 || scratch[1] !== 0x87654321) return 5;
+       if (compareExchangeSharedWord64(base, 16, 0, 0xabcdef01, 0x87654321,
+           3, 4, scratch) !== 0 || scratch[0] !== 0xabcdef01 ||
+           scratch[1] !== 0x87654321 ||
+           readSharedWord64(base, 16, 0, 0, scratch) !== 0 ||
+           scratch[0] !== 3 || scratch[1] !== 4) return 6;
+       if (readSharedWord64(base, 16, 0, 1, new Uint32Array(1)) !== -1 ||
+           writeSharedWord64(base, 16, 0, 2, 0, 0) !== -1) return 7;
+       return unmapMemory(base, 4096) === 0 ? 42 : 8;
+     }`,
+    {
+      memory: intrinsic("memory", {
+        mapMemory: "memory-map",
+        unmapMemory: "memory-unmap",
+        readMemoryWord: "memory-read-word",
+        writeMemoryWord: "memory-write-word",
+        compareExchangeMemoryWord: "memory-compare-exchange-word",
+        fetchAddMemoryWord: "memory-fetch-add-word",
+        loadAcquireMemoryWord: "memory-load-acquire-word",
+        storeReleaseMemoryWord: "memory-store-release-word",
+        compareExchangeMemoryUnsigned: "shared-compare-exchange-unsigned",
+      }),
+      shared: intrinsic("shared-atomics", {
+        readSharedUnsigned: "shared-read-unsigned",
+        writeSharedUnsigned: "shared-write-unsigned",
+        readSharedWord64: "shared-read-word64",
+        writeSharedWord64: "shared-write-word64",
+        compareExchangeSharedWord64: "shared-compare-exchange-word64",
+      }),
+    },
+  );
+  assert.ok(built.ok, JSON.stringify(built));
+  if (runner !== undefined) assert.equal(run(built.value).status, 42);
+});
+
+test("x86-64 collector workers contend on shared words and wake futex waiters", () => {
+  const built = build(
+    `import { mapMemory, unmapMemory, readMemoryWord, writeMemoryWord,
+       fetchAddMemoryWord, loadAcquireMemoryWord, storeReleaseMemoryWord,
+       collectorWorkerEntry, permanentFunctionAddress, startNativeThread,
+       joinNativeThread, parkNativeWord, wakeNativeWord, spinPause } from "memory";
+     const worker = (mailbox: number): number => {
+       for (let i = 0; i < 10000; i++) fetchAddMemoryWord(mailbox, 32, 8, 1);
+       fetchAddMemoryWord(mailbox, 32, 16, 1);
+       while (loadAcquireMemoryWord(mailbox, 32, 24) === 0) {
+         const status = parkNativeWord(mailbox + 24, 0, 0);
+         if (status !== 0 && status !== -11 && status !== -4) return 3;
+       }
+       return 7;
+     };
+     export function run(): number {
+       const mailbox = mapMemory(4096);
+       if (mailbox <= 0) return 1;
+       if (parkNativeWord(mailbox + 24, 1, 1000000) !== -11 ||
+           parkNativeWord(mailbox + 24, 0, 1000000) !== -110 ||
+           wakeNativeWord(mailbox + 24, 0) !== 0 ||
+           parkNativeWord(mailbox + 25, 0, 1) !== -1) return 2;
+       if (writeMemoryWord(mailbox, 32, 0, permanentFunctionAddress(worker)) !== 0) return 3;
+       const entry = collectorWorkerEntry();
+       const threads = new Float64Array(4);
+       for (let i = 0; i < threads.length; i++) {
+         const handle = startNativeThread(entry, mailbox);
+         if (handle <= 0) return 4;
+         threads[i] = handle;
+       }
+       while (loadAcquireMemoryWord(mailbox, 32, 16) !== 4) spinPause();
+       let woke = 0;
+       while (woke === 0) {
+         woke = wakeNativeWord(mailbox + 24, 0);
+         spinPause();
+       }
+       if (woke !== 1) return 5;
+       if (storeReleaseMemoryWord(mailbox, 32, 24, 1) !== 0 ||
+           wakeNativeWord(mailbox + 24, 1) < 0) return 5;
+       for (let i = 0; i < threads.length; i++)
+         if (joinNativeThread(threads[i] ?? 0) !== 7) return 6;
+       if (readMemoryWord(mailbox, 32, 8) !== 40000) return 7;
+       return unmapMemory(mailbox, 4096) === 0 ? 42 : 8;
+     }`,
+    {
+      memory: intrinsic("memory", {
+        mapMemory: "memory-map",
+        unmapMemory: "memory-unmap",
+        readMemoryWord: "memory-read-word",
+        writeMemoryWord: "memory-write-word",
+        fetchAddMemoryWord: "memory-fetch-add-word",
+        loadAcquireMemoryWord: "memory-load-acquire-word",
+        storeReleaseMemoryWord: "memory-store-release-word",
+        collectorWorkerEntry: "collector-worker-entry",
+        permanentFunctionAddress: "permanent-function-address",
+        startNativeThread: "thread-start",
+        joinNativeThread: "thread-join",
+        parkNativeWord: "word-park",
+        wakeNativeWord: "word-wake",
+        spinPause: "cpu-pause",
+      }),
+    },
+  );
+  assert.ok(built.ok, JSON.stringify(built));
+  if (runner !== undefined) assert.equal(run(built.value).status, 42);
+});
+
+test("x86-64 hosted threads have independent contexts and process arguments", () => {
+  const built = build(
+    `import { mapMemory, unmapMemory, readMemoryWord, writeMemoryWord,
+       startNativeThread, joinNativeThread, hostedThreadEntry,
+       currentContextDomain } from "memory";
+     import { argc } from "host";
+     export function run(argument: number): number {
+       if (argument === 1) throw "worker failure";
+       const domain = currentContextDomain();
+       if (domain <= 0) return 2;
+       if (argument !== 0) {
+         if (argc() !== 0) return 3;
+         const retained = new Uint8Array(64);
+         retained[0] = 7;
+         if (writeMemoryWord(argument, 8, 0, domain) !== 0) return 4;
+         return retained[0] ?? 0;
+       }
+       if (argc() < 1) return 5;
+       const mailbox = mapMemory(4096);
+       if (mailbox <= 0) return 6;
+       const entry = hostedThreadEntry();
+       const first = startNativeThread(entry, mailbox);
+       const second = startNativeThread(entry, mailbox + 8);
+       if (first <= 0 || second <= 0) return 7;
+       if (joinNativeThread(first) !== 7 || joinNativeThread(second) !== 7) return 8;
+       const a = readMemoryWord(mailbox, 16, 0);
+       const b = readMemoryWord(mailbox, 16, 8);
+       if (a <= 0 || b <= 0 || a === b || a === domain || b === domain) return 9;
+       const failed = startNativeThread(entry, 1);
+       if (failed <= 0 || joinNativeThread(failed) !== 70) return 10;
+       return unmapMemory(mailbox, 4096) === 0 ? 42 : 11;
+     }`,
+    {
+      memory: intrinsic("memory", {
+        mapMemory: "memory-map",
+        unmapMemory: "memory-unmap",
+        readMemoryWord: "memory-read-word",
+        writeMemoryWord: "memory-write-word",
+        startNativeThread: "thread-start",
+        joinNativeThread: "thread-join",
+        hostedThreadEntry: "hosted-thread-entry",
+        currentContextDomain: "context-domain",
+      }),
+      host: {
+        text: "export function argc(): number { return 0; }",
+        bindings: { argc: "argument-count" },
+      },
+    },
+    { threaded: true },
+  );
+  assert.ok(built.ok, JSON.stringify(built));
+  if (runner !== undefined) assert.equal(run(built.value).status, 42);
+});
 
 test(
   "x86-64 hosted stack maps locate and update actual suspended roots",

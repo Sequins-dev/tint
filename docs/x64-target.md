@@ -136,11 +136,17 @@ random words, and process and target facts. Startup binds
 `__libc_start_main@GLIBC_2.34` through the GOT and declares the version
 in the ELF dynamic table. The mapping and guard granule is 4 KiB.
 
-The x86-64 generational collector runs with one worker. The target's
-`parallelCollection` capability is false, so hosted builds link the
-serial policy without the evacuation pool. A build that requires
-parallel collection gets a target diagnostic until slice 8. Leaf C
-calls run on the single mutator and cannot collect.
+The x86-64 generational collector uses the shared evacuation and
+mark-compact worker pool. Affinity and cgroup limits select the number of
+workers, and small collections use the serial path. Hosted threads have
+independent contexts, stacks and heaps. Threaded entries stop and join their
+collector workers before releasing context storage. Each heap has one
+mutator, and its leaf C calls cannot start a collection.
+
+Aligned acquire loads and release stores use MOV. Shared sequentially
+consistent stores use XCHG, and read-modify-write operations use locked
+CMPXCHG or XADD. The Linux waiter uses private futex operations and
+rechecks its condition after every kernel return.
 
 **Slice 7 and F1 are complete for hosted x86-64.** The managed emitter
 supports strings, typed arrays and reference vectors, descriptor-backed
@@ -323,7 +329,7 @@ updates with their owning slices.
 | 5. Freestanding scalar emission                    | `codegen/src/x86_64/scalar/`, compiler backend dispatch and native fixture tests. Integer/FP, branches, frames, basic direct managed calls and near data/import fixup model.                                                            | 1,500–2,800 | 1–4          | Cross-build IR through Tint into an ELF. Run call/branch, register pressure, mixed overflow args, NaN and signed-zero fixtures. Stable unsupported-op diagnostics.                                                         |
 | 6. Hosted entry and libc                           | `codegen/src/x86_64/startup.ts`, platform Linux host policy, native host identity/process intrinsics, `compiler/src/{build,image-writer}.ts` and bootstrap.                                                                             | 900–1,700   | 5            | Cross-build hosted CLI smoke, argv/env, file/time/entropy and runtime init. Verify loader finalizer/stack args, native host identity, fixed glibc floor, guard checks and AArch64 output parity for unchanged programs.    |
 | 7. Managed runtime and roots (complete)            | x86 scalar helpers, `abi/src/host.ts`, tracing scanner, managed compiler/linker contracts and GC fixtures. Land numeric/string/array, record, closure and completion families in smaller merges with exact-PC maps and barrier support. | 4,000–8,000 | 6            | Root relocation through nested calls, tagged throws, GC under allocation pressure, safepoint faults and missing-map rejection. Pass managed call and typed-contract fixtures before enabling corresponding language paths. |
-| 8. Parallel runtime                                | x86 atomics/thread leaves, Linux host policy, waiter, contention and collector fixtures.                                                                                                                                                | 700–1,500   | 7            | Exact-width access, CAS failure and RMW tests, concurrent collection and futex park/wake under guest kernel. Verify SC mapping and repeat on hardware for release.                                                         |
+| 8. Parallel runtime (complete)                     | x86 atomics/thread leaves, Linux host policy, waiter, contention and collector fixtures.                                                                                                                                                | —           | 7            | Exact-width access, CAS failure and RMW tests, concurrent collection and futex park/wake under guest kernel. Repeat on hardware for release.                                                                               |
 | 9. Far image and service link                      | x86 fixups, emission plans, service-unit linker and large-image verifier.                                                                                                                                                               | 600–1,200   | 5            | Forced-far native execution at normal size, synthetic rel32 bounds and far GOT/data/call recipes, then a real large ELF spanning the signed limit. Preserve PIE and streaming memory behavior.                             |
 | 10. Unwind, debug and diagnostics                  | x86 frame/debug/USDT emission, `abi/src/unwind.ts`, DWARF/EH frame and ELF policies. Land CFI and USDT in separately testable changes.                                                                                                  | 700–1,400   | 6            | Independent CFI and DWARF readers, GDB chain across startup and managed code, real guest USDT hits with correct operands, large CFI offsets alongside slice 9.                                                             |
 | 11. Live publishing                                | x86 code-memory leaves and adapters, compiler managed JIT/linking, runtime registry, engine tests and ELF JIT registration.                                                                                                             | 1,200–2,400 | 7, 9, 10     | In-image compilation and generated-code execution, code-range map registration/GC, W^X policies and ptrace breakpoint copying on guest kernel, same-target entries and cross-context rejection.                            |

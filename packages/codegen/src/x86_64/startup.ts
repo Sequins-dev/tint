@@ -3,8 +3,10 @@ import {
   nativeFunctionEnvironmentOffset,
 } from "@tint/abi/function";
 import {
+  nativeAllocatorShutdownRequest,
   nativeArrayDataOffset,
   nativeArrayLengthOffset,
+  nativeContextDomainOffset,
   nativeHeaderFlagUnit,
   nativeStackLimitOffset,
   nativeStackMapRegistryEntryBytes,
@@ -33,6 +35,7 @@ import {
   contextBytes,
   heapCursorOffset,
   heapEndOffset,
+  hostedThreadEntryLabel,
   bits,
   gpr,
   imageRelocations,
@@ -63,6 +66,7 @@ interface HostedEntry {
   };
   readonly returnType: "number" | "boolean" | "void" | "general";
   readonly stackBytes: number;
+  readonly threaded?: boolean;
   readonly managedBytes: number;
   readonly pageBytes: number;
 }
@@ -90,6 +94,7 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     stackBytes = request.stackBytes,
     managedBytes = request.managedBytes,
     pageBytes = request.pageBytes;
+  const threaded = request.threaded === true;
   const processStart = host.processStart;
   if (processStart === undefined) throw "glibc startup policy required";
   const stackEnd = pageBytes + stackBytes;
@@ -210,11 +215,25 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   emit({ op: "ud2" });
 
   emit({ op: "label", name: "main" });
+  const threadArgumentOffset = contextBytes + 16;
+  const threadModeOffset = threadArgumentOffset + 8;
+  if (threaded) {
+    const hostedRun = "hosted-run";
+    emit({ op: "xor", dst: edx, src: edx });
+    emit({ op: "xor", dst: word(1), src: word(1) });
+    emit({ op: "jmp", target: label(hostedRun) });
+    emit({ op: "label", name: hostedThreadEntryLabel });
+    emit({ op: "mov", dst: rdx, src: rdi });
+    emit({ op: "xor", dst: edi, src: edi });
+    emit({ op: "xor", dst: esi, src: esi });
+    emit({ op: "mov", dst: word(1), src: imm(1) });
+    emit({ op: "label", name: hostedRun });
+  }
   emit({ op: "push", src: rbp });
   emit({ op: "mov", dst: rbp, src: rsp });
   emit({ op: "push", src: r12 });
   emit({ op: "push", src: r13 });
-  emit({ op: "sub", dst: rsp, src: imm(contextBytes + 16) });
+  emit({ op: "sub", dst: rsp, src: imm(contextBytes + (threaded ? 32 : 16)) });
   emit({ op: "mov", dst: r12, src: rsp });
   emit({ op: "mov", dst: mem(12, contextBytes + 8), src: rbp });
   for (let offset = 0; offset < contextBytes; offset += 8)
@@ -225,6 +244,10 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     src: edi,
   });
   emit({ op: "mov", dst: mem(12, argumentsOffset), src: rsi });
+  if (threaded) {
+    emit({ op: "mov", dst: mem(12, threadArgumentOffset), src: rdx });
+    emit({ op: "mov", dst: mem(12, threadModeOffset), src: gpr(1) });
+  }
   emit({ op: "xor", dst: edi, src: edi });
   emit({ op: "mov", dst: esi, src: imm(mappingBytes) });
   emit({ op: "mov", dst: edx, src: imm(3) }); // PROT_READ | PROT_WRITE
@@ -252,6 +275,21 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   }
   emit({ op: "lea", dst: rax, src: mem(13, pageBytes) });
   emit({ op: "mov", dst: mem(12, nativeStackLimitOffset), src: rax });
+  if (threaded) {
+    // The inaccessible identity page outlives this heap and prevents address
+    // reuse from aliasing context-owned values after a join.
+    emit({ op: "xor", dst: edi, src: edi });
+    emit({ op: "mov", dst: esi, src: imm(pageBytes) });
+    emit({ op: "xor", dst: edx, src: edx });
+    emit({ op: "mov", dst: word(1), src: imm(host.anonymousPrivateFlags) });
+    emit({ op: "mov", dst: word(8), src: imm(-1) });
+    emit({ op: "xor", dst: word(9), src: word(9) });
+    call(host.symbolPrefix + "mmap");
+    emit({ op: "mov", dst: gpr(11), src: bits(0xffffffff, 0x1fffff) });
+    emit({ op: "cmp", dst: rax, src: gpr(11) });
+    emit({ op: "jcc", cc: "a", target: label("guard-failed") });
+    emit({ op: "mov", dst: mem(12, nativeContextDomainOffset), src: rax });
+  }
 
   const local = new Map<string, number>();
   local.set("invoke", request.invocation);
@@ -378,6 +416,12 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   emit({ op: "mov", dst: gpr(1), src: rsp });
   emit({ op: "mov", dst: mem(4, 0), src: imm(0) });
   emit({ op: "mov", dst: mem(4, 8), src: imm(0) });
+  if (threaded)
+    emit({
+      op: "cvtsi2sd",
+      dst: xmm(0),
+      src: mem(12, threadArgumentOffset),
+    });
   emit({ op: "call", target: label("invoke") });
   emit({ op: "cmp", dst: eax, src: imm(normal) });
   emit({ op: "jcc", cc: "ne", target: label("program-failed") });
@@ -414,12 +458,35 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   emit({ op: "jmp", target: label("unmap") });
   emit({ op: "label", name: "program-failed" });
   emit({ op: "mov", dst: eax, src: imm(1) });
+  if (threaded) {
+    emit({ op: "cmp", dst: mem(12, threadModeOffset), src: imm(0) });
+    emit({ op: "mov", dst: word(10), src: imm(70) });
+    emit({ op: "cmovcc", cc: "ne", dst: eax, src: word(10) });
+  }
   emit({ op: "jmp", target: label("unmap") });
   emit({ op: "label", name: "guard-failed" });
   emit({ op: "mov", dst: eax, src: imm(71) });
   emit({ op: "label", name: "unmap" });
-  emit({ op: "mov", dst: rsp, src: r12 });
   emit({ op: "mov", dst: mem(12, contextBytes), src: rax });
+  if (threaded && runtime !== undefined) {
+    const cleanup = "unmap-hosted-context";
+    const allocator = mem(12, allocatorEntryOffset);
+    emit({ op: "cmp", dst: allocator, src: imm(0) });
+    emit({ op: "jcc", cc: "e", target: label(cleanup) });
+    emit({ op: "mov", dst: rdi, src: r12 });
+    emit({ op: "mov", dst: rsi, src: mem(12, allocatorEnvironmentOffset) });
+    emit({ op: "xor", dst: edx, src: edx });
+    emit({ op: "mov", dst: gpr(1), src: rsp });
+    emit({ op: "mov", dst: rax, src: imm(nativeAllocatorShutdownRequest) });
+    emit({ op: "cvtsi2sd", dst: xmm(0), src: rax });
+    emit({ op: "call", target: allocator });
+    emit({ op: "cmp", dst: eax, src: imm(normal) });
+    emit({ op: "jcc", cc: "e", target: label(cleanup) });
+    // An unjoined worker could still access the context's storage.
+    emit({ op: "jmp", target: label("mapping-failed") });
+    emit({ op: "label", name: cleanup });
+  }
+  emit({ op: "mov", dst: rsp, src: r12 });
   emit({ op: "mov", dst: rdi, src: r13 });
   emit({ op: "mov", dst: esi, src: imm(mappingBytes) });
   call(host.symbolPrefix + "munmap");
@@ -450,6 +517,23 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     data.set(runtimeCode.data, dataOffset);
   }
   code.set(stub.bytes, base);
+  function patchThreadEntry(unit: X64Module, unitOffset: number): void {
+    if (unit.hostedThreadFixups.length === 0) return;
+    const offset = stub.labels.get(hostedThreadEntryLabel);
+    if (offset === undefined)
+      throw "thread entry requires threaded hosted startup";
+    for (const fixup of unit.hostedThreadFixups) {
+      if (fixup === undefined) throw "thread entry fixup invariant";
+      writeRel32(
+        code,
+        unitOffset + fixup.fieldOffset,
+        unitOffset + fixup.nextOffset,
+        base + offset,
+      );
+    }
+  }
+  patchThreadEntry(native, 0);
+  if (runtimeCode !== undefined) patchThreadEntry(runtimeCode, codeOffset);
   const external: NearFixup[] = [];
   for (const fixup of stub.externalFixups) {
     if (fixup === undefined) throw "startup fixup invariant";

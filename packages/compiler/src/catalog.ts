@@ -2847,10 +2847,6 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
-      id: "packages/native-runtime/src/tracing/serial.ts",
-      packageId: "native-runtime",
-    },
-    {
       id: "packages/native-runtime/src/tracing/transitions.ts",
       packageId: "native-runtime",
     },

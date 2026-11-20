@@ -74,9 +74,11 @@ import {
   allocatorEnvironmentOffset,
   bits,
   byte,
+  contextBytes,
   gpr,
   heapCursorOffset,
   heapEndOffset,
+  hostedThreadEntryLabel,
   rip,
   imm,
   imageRelocations,
@@ -130,6 +132,7 @@ export interface X64Module extends ImageRelocations {
   readonly data: Uint8Array;
   readonly functions: readonly X64Function[];
   readonly imports: readonly string[];
+  readonly hostedThreadFixups: readonly NearFixup[];
   readonly stackMaps: readonly {
     readonly codeOffset: number;
     readonly codeLength: number;
@@ -343,6 +346,8 @@ export function emitModule(
   }
   const external = new Map<string, ImageAddressTarget>();
   const imports = new Set<string>();
+  const collectorWorker = "tint:collector-worker-entry";
+  let needsCollectorWorker = false;
   function importSlot(symbol: string): Memory<64> {
     imports.add(symbol);
     const key = "import:" + symbol;
@@ -1497,7 +1502,6 @@ export function emitModule(
           const id = op.id;
           if (
             host === undefined ||
-            id === undefined ||
             !emitHostCall({
               operation: op.operation,
               emit,
@@ -1508,6 +1512,12 @@ export function emitModule(
                 return frame(home(arg));
               },
               call: foreign,
+              threadEntry: (operation) => {
+                if (operation === "hosted-thread-entry")
+                  return rip(hostedThreadEntryLabel);
+                needsCollectorWorker = true;
+                return rip(collectorWorker);
+              },
               scratch: frame(callResult),
               scratchNext: frame(callResult + 8),
               context: frame(savedContext),
@@ -1524,7 +1534,7 @@ export function emitModule(
                 " (requires slice 7)",
             );
           }
-          define(id, "number");
+          if (id !== undefined) define(id, "number");
           return;
         }
         case "array-new": {
@@ -2849,12 +2859,59 @@ export function emitModule(
     span = undefined;
     numbers.helpers();
     if (generational) collectorLeaves();
+    if (needsCollectorWorker) {
+      // SysV void*(void*) entry. The permanent work closure gets its own
+      // bounded, nonallocating context, with no mutator stack or root chain.
+      const rsp = gpr(4);
+      const rbp = gpr(5);
+      const rdi = gpr(7);
+      const rsi = gpr(6);
+      const rdx = gpr(2);
+      const rcx = gpr(1);
+      const entry = gpr(11);
+      const done = collectorWorker + ":done";
+      emit({ op: "label", name: collectorWorker });
+      emit({ op: "push", src: rbp });
+      emit({ op: "sub", dst: rsp, src: imm(contextBytes + resultBytes) });
+      for (let offset = 0; offset < contextBytes; offset += 8)
+        emit({ op: "mov", dst: mem(4, offset), src: imm(0) });
+      emit({ op: "lea", dst: rax, src: mem(4, -262144) });
+      emit({ op: "mov", dst: mem(4, nativeStackLimitOffset), src: rax });
+      emit({ op: "cvtsi2sd", dst: xmm(0), src: rdi });
+      emit({ op: "mov", dst: rax, src: mem(7, 0) });
+      emit({
+        op: "mov",
+        dst: rsi,
+        src: mem(0, nativeFunctionEnvironmentOffset),
+      });
+      emit({ op: "mov", dst: entry, src: mem(0, nativeFunctionEntryOffset) });
+      emit({ op: "mov", dst: rdi, src: rsp });
+      emit({ op: "xor", dst: word(2), src: word(2) });
+      emit({ op: "lea", dst: rcx, src: mem(4, contextBytes) });
+      emit({ op: "xor", dst: word(5), src: word(5) });
+      emit({ op: "call", target: entry });
+      emit({ op: "cmp", dst: eax, src: imm(normal) });
+      emit({ op: "mov", dst: eax, src: imm(70) });
+      branch(emit, "ne", done);
+      emit({
+        op: "cvttsd2si",
+        dst: rax,
+        src: mem(4, contextBytes + resultPayload),
+      });
+      emit({ op: "label", name: done });
+      emit({ op: "add", dst: rsp, src: imm(contextBytes + resultBytes) });
+      emit({ op: "pop", dst: rbp });
+      emit({ op: "ret" });
+    }
     emit({ op: "label", name: trapLabel });
     emit({ op: "ud2" });
     const encoded = encodeLayout(
       machine,
       (name) =>
-        external.has(name) || strings.has(name) || descriptors.has(name),
+        name === hostedThreadEntryLabel ||
+        external.has(name) ||
+        strings.has(name) ||
+        descriptors.has(name),
     );
     const functions: X64Function[] = [];
     for (const fn of module.functions) {
@@ -2912,8 +2969,13 @@ export function emitModule(
       }
     }
     const imageFixups: NearFixup[] = [];
+    const hostedThreadFixups: NearFixup[] = [];
     for (const fixup of encoded.externalFixups) {
       if (fixup === undefined) throw "x86-64 fixup invariant";
+      if (fixup.ref.label === hostedThreadEntryLabel) {
+        hostedThreadFixups.push(fixup);
+        continue;
+      }
       const offset =
         strings.get(fixup.ref.label)?.offset ??
         descriptors.get(fixup.ref.label)?.offset;
@@ -2979,6 +3041,7 @@ export function emitModule(
         data,
         functions,
         imports: [...imports],
+        hostedThreadFixups,
         stackMaps,
         addressFixups: relocations.addressFixups,
         patchAddress: relocations.patchAddress,

@@ -89,6 +89,11 @@ type Encodable =
       readonly dst: Rm<IntegerWidth>;
       readonly src: Rm<IntegerWidth> | SmallImmediate;
     }
+  | {
+      readonly op: "xchg" | "lock-cmpxchg" | "lock-xadd";
+      readonly dst: Memory<IntegerWidth>;
+      readonly src: Gpr<IntegerWidth>;
+    }
   | { readonly op: Unary; readonly dst: Rm<IntegerWidth> }
   | {
       readonly op: Shift;
@@ -123,7 +128,7 @@ type Encodable =
   | { readonly op: "call" | "jmp"; readonly target: Relative | Rm<64> }
   | { readonly op: "push"; readonly src: Rm<64> | SmallImmediate }
   | { readonly op: "pop"; readonly dst: Rm<64> }
-  | { readonly op: "ret" | "nop" | "cdq" | "cqo" | "ud2" | "syscall" }
+  | { readonly op: "ret" | "nop" | "pause" | "cdq" | "cqo" | "ud2" | "syscall" }
   | { readonly op: "movsd"; readonly dst: XmmRm<64>; readonly src: XmmRm<64> }
   | {
       readonly op: ScalarDouble;
@@ -659,6 +664,27 @@ function emit(out: Encoding, insn: Encodable): void {
         size === 1 || width === 64,
       );
     }
+    case "xchg":
+    case "lock-cmpxchg":
+    case "lock-xadd": {
+      const width = integerWidth(insn.dst.width);
+      requireWidth(insn.src.width, width);
+      if (insn.dst.kind !== "mem") invalid("expected an atomic memory operand");
+      if (insn.op !== "xchg") bytes.push(0xf0);
+      const opcode =
+        insn.op === "xchg"
+          ? 0x86
+          : insn.op === "lock-cmpxchg"
+            ? 0x0fb0
+            : 0x0fc0;
+      return integerRm(
+        out,
+        width,
+        opcode + (width === 8 ? 0 : 1),
+        insn.src,
+        insn.dst,
+      );
+    }
     case "lea": {
       if (insn.src.kind !== "mem") invalid("lea requires a memory operand");
       return integerRm(
@@ -738,6 +764,9 @@ function emit(out: Encoding, insn: Encodable): void {
       return;
     case "nop":
       bytes.push(0x90);
+      return;
+    case "pause":
+      bytes.push(0xf3, 0x90);
       return;
     case "cdq":
     case "cqo":

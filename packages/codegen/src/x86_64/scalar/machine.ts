@@ -21,6 +21,7 @@ export const resultBytes = 32;
 export const resultPayload = 16;
 export const normal = 1;
 export const thrown = 2;
+export const hostedThreadEntryLabel = "tint:hosted-thread-entry";
 
 export const managedBaseOffset = 8;
 export const allocatorEntryOffset = 16;

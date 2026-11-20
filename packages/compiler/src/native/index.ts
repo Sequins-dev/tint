@@ -2497,6 +2497,7 @@ export function compileX64HostedProgram(
     readonly runtime?: true;
     readonly generational?: boolean;
     readonly inlineAllocation?: boolean;
+    readonly threaded?: boolean;
   } = {},
 ):
   | CompilationFailure
@@ -2518,7 +2519,7 @@ export function compileX64HostedProgram(
       symbols: true,
     }),
     undefined,
-    options.runtime !== true,
+    options.runtime !== true && options.threaded !== true,
   );
   if (!lowered.ok) return lowered;
   const program = lowered.value;
@@ -2567,6 +2568,15 @@ export function compileX64HostedProgram(
     return stageFailure(
       "entry",
       "linux-x86_64: expected a Number, Boolean, void or general entry",
+    );
+  if (
+    options.threaded === true &&
+    (entry.parameters.length !== 1 ||
+      entry.slots[entry.parameters[0] ?? -1] !== "number")
+  )
+    return stageFailure(
+      "entry",
+      "linux-x86_64: a threaded entry must take one Number argument",
     );
   const roots = [program.invocation];
   const reachable = pruneModuleReferences(first, roots, unboundedWork);

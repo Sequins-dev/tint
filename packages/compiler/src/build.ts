@@ -1,4 +1,3 @@
-import { serialCollectorModule } from "./native/runtime-contracts.ts";
 import { nativeTargetLayout } from "./native/target-layout.ts";
 import {
   aarch64ImageRelocations,
@@ -303,13 +302,11 @@ function buildX64HostedProgram(
   if (request.requireParallelCollection === true && !target.parallelCollection)
     return failure(
       "target",
-      target.name +
-        ": parallel collection is unavailable until slice 8; the collector uses one worker",
+      target.name + ": parallel collection is unavailable",
     );
   const generational = request.runtimeEntry === "initializeGenerationalRuntime";
   if (request.runtimeEntry !== undefined && !generational)
     return deferred(request.runtimeEntry);
-  if (request.threaded === true) return deferred("hosted-thread-entry");
   if (request.allowJit === true) return deferred("executable-map");
   if (
     request.debugSymbols === true ||
@@ -373,38 +370,21 @@ function buildX64HostedProgram(
     const invalid = movingWorkspaceError(request, true);
     if (invalid !== undefined) return failure("memory-policy", invalid);
     request.report("runtime");
-    const sources = runtimeModules(request, serialCollectorModule);
-    const root = request.runtimeModule.slice(
-      0,
-      request.runtimeModule.lastIndexOf("/") + 1,
-    );
-    const serial = sources.find(
-      (source) => source?.id === serialCollectorModule,
-    );
-    if (serial === undefined)
-      return failure("runtime", "serial collector policy source is missing");
-    const modules: SourceModule[] = [];
-    for (const source of sources) {
-      if (source === undefined) throw "runtime source invariant";
-      if (source.id === root + "generational.ts") {
-        const dependencies = new Map<string, string>();
-        for (const [specifier, id] of source.dependencies)
-          dependencies.set(specifier, id);
-        dependencies.set("./tracing/parallel.ts", serial.id);
-        dependencies.set("./processors.ts", serial.id);
-        modules.push({ ...source, dependencies });
-      } else modules.push(source);
+    const hostBindings = x64CollectorBindings(request.memoryModule);
+    for (const binding of parallelCollectorBindings(request)) {
+      if (binding === undefined) throw "collector binding invariant";
+      hostBindings.push(binding);
     }
     const loweredRuntime = compileX64HostedProgram(
       {
-        modules,
+        modules: runtimeModules(request),
         entry: request.runtimeModule,
         start: "initializeGenerationalRuntime",
         exports: ["initializeGenerationalRuntime"],
         runtimes: [
           { module: request.memoryModule, namespace: "native-memory" },
         ],
-        hostBindings: serialCollectorBindings(request.memoryModule),
+        hostBindings,
         closedProgram: true,
         optimization: "basic",
         maxSpecializations: request.maxSpecializations ?? 4096,
@@ -457,7 +437,11 @@ function buildX64HostedProgram(
       },
     },
     target.hostABI,
-    { generational, inlineAllocation: request.inlineAllocation !== false },
+    {
+      generational,
+      inlineAllocation: request.inlineAllocation !== false,
+      threaded: request.threaded === true,
+    },
   );
   if (!compiled.ok) return compiled;
   const native = compiled.native;
@@ -481,6 +465,7 @@ function buildX64HostedProgram(
       returnType,
       ...(runtime === undefined ? {} : { runtime }),
       stackBytes,
+      threaded: request.threaded === true,
       managedBytes,
       pageBytes,
     });
@@ -528,7 +513,7 @@ function sourceFunctionNames(request: ModuleRequest, id: string): Set<string> {
   return names;
 }
 
-function serialCollectorBindings(module: string): NativeHostBinding[] {
+function x64CollectorBindings(module: string): NativeHostBinding[] {
   return [
     {
       module,
@@ -542,24 +527,137 @@ function serialCollectorBindings(module: string): NativeHostBinding[] {
     },
     { module, name: "currentRootHead", operation: "root-head" },
     { module, name: "engineRangeError", operation: "engine-range-error" },
-    { module, name: "memoryPageBytes", operation: "memory-page-bytes" },
-    { module, name: "processorCount", operation: "processor-count" },
     { module, name: "readMemoryWord", operation: "memory-read-word" },
     { module, name: "writeMemoryWord", operation: "memory-write-word" },
     { module, name: "moveMemory", operation: "memory-move" },
-    { module, name: "releaseMemory", operation: "memory-release" },
   ];
 }
 
+function parallelCollectorBindings(request: BuildRequest): NativeHostBinding[] {
+  // Parallel collection: raw atomics over its shared record, the worker
+  // pool's threads and parking, and the worker thunk. Bound only when the
+  // memory intrinsics declare them, so older frozen source graphs still build.
+  const memoryFunctions = sourceFunctionNames(request, request.memoryModule);
+  const collectorBindings: NativeHostBinding[] = [],
+    collectorCandidates: NativeHostBinding[] = [
+      {
+        module: request.memoryModule,
+        name: "mapMemory",
+        operation: "memory-map",
+      },
+      {
+        module: request.memoryModule,
+        name: "unmapMemory",
+        operation: "memory-unmap",
+      },
+      {
+        module: request.memoryModule,
+        name: "releaseMemory",
+        operation: "memory-release",
+      },
+      {
+        module: request.memoryModule,
+        name: "memoryPageBytes",
+        operation: "memory-page-bytes",
+      },
+      {
+        module: request.memoryModule,
+        name: "processorCount",
+        operation: "processor-count",
+      },
+      {
+        module: request.memoryModule,
+        name: "openRuntimeFile",
+        operation: "open-read",
+      },
+      {
+        module: request.memoryModule,
+        name: "readRuntimeFile",
+        operation: "read",
+      },
+      {
+        module: request.memoryModule,
+        name: "closeRuntimeFile",
+        operation: "close",
+      },
+      {
+        module: request.memoryModule,
+        name: "compareExchangeMemoryWord",
+        operation: "memory-compare-exchange-word",
+      },
+      {
+        module: request.memoryModule,
+        name: "fetchAddMemoryWord",
+        operation: "memory-fetch-add-word",
+      },
+      {
+        module: request.memoryModule,
+        name: "loadAcquireMemoryWord",
+        operation: "memory-load-acquire-word",
+      },
+      {
+        module: request.memoryModule,
+        name: "storeReleaseMemoryWord",
+        operation: "memory-store-release-word",
+      },
+      {
+        module: request.memoryModule,
+        name: "collectorWorkerEntry",
+        operation: "collector-worker-entry",
+      },
+      {
+        module: request.memoryModule,
+        name: "permanentFunctionAddress",
+        operation: "permanent-function-address",
+      },
+      {
+        module: request.memoryModule,
+        name: "permanentArrayAddress",
+        operation: "permanent-array-address",
+      },
+      {
+        module: request.memoryModule,
+        name: "compareExchangeMemoryUnsigned",
+        operation: "shared-compare-exchange-unsigned",
+      },
+      {
+        module: request.memoryModule,
+        name: "startNativeThread",
+        operation: "thread-start",
+      },
+      {
+        module: request.memoryModule,
+        name: "joinNativeThread",
+        operation: "thread-join",
+      },
+      {
+        module: request.memoryModule,
+        name: "parkNativeWord",
+        operation: "word-park",
+      },
+      {
+        module: request.memoryModule,
+        name: "wakeNativeWord",
+        operation: "word-wake",
+      },
+      {
+        module: request.memoryModule,
+        name: "spinPause",
+        operation: "cpu-pause",
+      },
+    ];
+  for (const binding of collectorCandidates) {
+    if (binding === undefined) throw "collector binding invariant";
+    if (memoryFunctions.has(binding.name)) collectorBindings.push(binding);
+  }
+  return collectorBindings;
+}
+
 /** The standalone collector links only its own dependency graph. */
-function runtimeModules(
-  request: BuildRequest,
-  extra?: string,
-): readonly SourceModule[] {
+function runtimeModules(request: BuildRequest): readonly SourceModule[] {
   const loader = request.moduleLoader;
   if (loader === undefined) return request.modules;
   const pending = [request.runtimeModule, request.memoryModule];
-  if (extra !== undefined) pending.push(extra);
   const seen = new Set<string>();
   const modules = new Map<string, SourceModule>();
   for (let index = 0; index < pending.length; index++) {
@@ -706,112 +804,7 @@ export function compileMacOSProgram(
   if (!allocator.ok)
     return compileFailure("allocator", allocator.error.message);
   request.report("runtime");
-  // Parallel collection: raw atomics over its shared record, the worker
-  // pool's threads and parking, and the worker thunk. Bound only when the
-  // memory intrinsics declare them, so older frozen source graphs still build.
-  const memoryFunctions = sourceFunctionNames(request, request.memoryModule);
-  const collectorBindings: NativeHostBinding[] = [],
-    collectorCandidates: NativeHostBinding[] = [
-      {
-        module: request.memoryModule,
-        name: "mapMemory",
-        operation: "memory-map",
-      },
-      {
-        module: request.memoryModule,
-        name: "releaseMemory",
-        operation: "memory-release",
-      },
-      {
-        module: request.memoryModule,
-        name: "memoryPageBytes",
-        operation: "memory-page-bytes",
-      },
-      {
-        module: request.memoryModule,
-        name: "processorCount",
-        operation: "processor-count",
-      },
-      {
-        module: request.memoryModule,
-        name: "openRuntimeFile",
-        operation: "open-read",
-      },
-      {
-        module: request.memoryModule,
-        name: "readRuntimeFile",
-        operation: "read",
-      },
-      {
-        module: request.memoryModule,
-        name: "closeRuntimeFile",
-        operation: "close",
-      },
-      {
-        module: request.memoryModule,
-        name: "compareExchangeMemoryWord",
-        operation: "memory-compare-exchange-word",
-      },
-      {
-        module: request.memoryModule,
-        name: "fetchAddMemoryWord",
-        operation: "memory-fetch-add-word",
-      },
-      {
-        module: request.memoryModule,
-        name: "loadAcquireMemoryWord",
-        operation: "memory-load-acquire-word",
-      },
-      {
-        module: request.memoryModule,
-        name: "storeReleaseMemoryWord",
-        operation: "memory-store-release-word",
-      },
-      {
-        module: request.memoryModule,
-        name: "collectorWorkerEntry",
-        operation: "collector-worker-entry",
-      },
-      {
-        module: request.memoryModule,
-        name: "permanentFunctionAddress",
-        operation: "permanent-function-address",
-      },
-      {
-        module: request.memoryModule,
-        name: "permanentArrayAddress",
-        operation: "permanent-array-address",
-      },
-      {
-        module: request.memoryModule,
-        name: "compareExchangeMemoryUnsigned",
-        operation: "shared-compare-exchange-unsigned",
-      },
-      {
-        module: request.memoryModule,
-        name: "startNativeThread",
-        operation: "thread-start",
-      },
-      {
-        module: request.memoryModule,
-        name: "parkNativeWord",
-        operation: "word-park",
-      },
-      {
-        module: request.memoryModule,
-        name: "wakeNativeWord",
-        operation: "word-wake",
-      },
-      {
-        module: request.memoryModule,
-        name: "spinPause",
-        operation: "cpu-pause",
-      },
-    ];
-  for (const binding of collectorCandidates) {
-    if (binding === undefined) throw "collector binding invariant";
-    if (memoryFunctions.has(binding.name)) collectorBindings.push(binding);
-  }
+  const collectorBindings = parallelCollectorBindings(request);
   const runtimeBindings: NativeHostBinding[] = [
     {
       module: request.memoryModule,
