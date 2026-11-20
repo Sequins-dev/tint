@@ -13,7 +13,10 @@ export function nativeBatchWaiting(journal: string): () => boolean {
     waiting = false;
     if (!size) return waiting;
 
-    const workers = new Map<number, boolean>();
+    const workers = new Map<
+      number,
+      { queued: number; holding: number; building: number }
+    >();
     // A worker may be appending the last event as we read the file.
     const complete = readFileSync(journal, "utf8").split("\n").slice(0, -1);
     for (const line of complete) {
@@ -23,14 +26,27 @@ export function nativeBatchWaiting(journal: string): () => boolean {
         worker?: number;
       };
       if (worker === undefined) continue;
-      if (phase === "worker-start") workers.set(worker, false);
+      if (phase === "worker-start")
+        workers.set(worker, { queued: 0, holding: 0, building: 0 });
       else if (phase === "worker-end") workers.delete(worker);
-      else if (workers.has(worker)) {
-        if (phase === "lock-wait-start") workers.set(worker, true);
-        else if (phase === "lock-wait") workers.set(worker, false);
+      else {
+        const state = workers.get(worker);
+        if (!state) continue;
+        if (phase === "lock-wait-start") state.queued++;
+        else if (phase === "lock-wait") {
+          state.queued--;
+          state.holding++;
+        } else if (phase === "lock-release") state.holding--;
+        else if (phase === "build-start") state.building++;
+        else if (phase === "build") state.building--;
       }
     }
-    waiting = workers.size > 0 && [...workers.values()].every(Boolean);
+    waiting =
+      workers.size > 0 &&
+      [...workers.values()].every(
+        ({ queued, holding, building }) =>
+          queued > 0 && holding === 0 && building === 0,
+      );
     return waiting;
   };
 }

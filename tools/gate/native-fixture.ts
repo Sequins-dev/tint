@@ -1,6 +1,12 @@
 import { appendFileSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
-import { acquireGateLock, gateMemorySlots, withGateLock } from "./lock.ts";
+import {
+  acquireGateLock,
+  acquireGateLockSync,
+  gateMemorySlots,
+  withGateLock,
+  type GateLock,
+} from "./lock.ts";
 
 function record(
   output: string,
@@ -79,17 +85,12 @@ const admitted = new Map<
   { dev: number; ino: number; ctimeMs: number }
 >();
 
-export function beginNativeFixtureExecution(
+function queueNativeFixture(
   image: string,
   admit: (() => void) | undefined,
-  env = process.env,
-  admissionOnly = false,
-): () => void {
-  const output = env.TINT_GATE_NATIVE_IMAGES;
-  if (!output) {
-    admit?.();
-    return () => {};
-  }
+  env: NodeJS.ProcessEnv,
+  output: string,
+) {
   const file = env.TINT_GATE_EXCLUSIVE_LOCK;
   if (!file)
     throw Error("Native fixture execution requires TINT_GATE_EXCLUSIVE_LOCK");
@@ -99,68 +100,84 @@ export function beginNativeFixtureExecution(
   const fields = { path, bytes: stat.size };
   const queued = performance.now();
   record(output, "lock-wait-start", queued, fields, worker);
-  const lock = acquireGateLock(
-    [file],
-    "fixture-launch",
-    env.TINT_GATE_LOCK_TIMING,
-  );
-  try {
-    record(output, "lock-wait", queued, fields, worker);
-    const previous = admitted.get(path);
-    if (
-      admit &&
-      !(
-        previous?.dev === stat.dev &&
-        previous.ino === stat.ino &&
-        previous.ctimeMs === stat.ctimeMs
-      )
-    ) {
-      const started = performance.now();
-      record(output, "admission-start", started, fields, worker);
+  function begin(lock: GateLock, admissionOnly = false): () => void {
+    const acquired = performance.now();
+    function releaseLock() {
       try {
-        admit();
-        admitted.set(path, {
-          dev: stat.dev,
-          ino: stat.ino,
-          ctimeMs: stat.ctimeMs,
-        });
-        record(output, "admission", started, fields, worker);
-      } catch (error) {
-        record(
-          output,
-          "admission",
-          started,
-          { ...fields, failed: true },
-          worker,
-        );
-        throw error;
+        record(output, "lock-release", acquired, fields, worker);
+      } finally {
+        lock.release();
       }
     }
-  } catch (error) {
-    lock.release();
-    throw error;
+    let started: number;
+    try {
+      record(output, "lock-wait", queued, fields, worker);
+      const previous = admitted.get(path);
+      if (
+        admit &&
+        !(
+          previous?.dev === stat.dev &&
+          previous.ino === stat.ino &&
+          previous.ctimeMs === stat.ctimeMs
+        )
+      ) {
+        const admissionStarted = performance.now();
+        record(output, "admission-start", admissionStarted, fields, worker);
+        try {
+          admit();
+          admitted.set(path, {
+            dev: stat.dev,
+            ino: stat.ino,
+            ctimeMs: stat.ctimeMs,
+          });
+          record(output, "admission", admissionStarted, fields, worker);
+        } catch (error) {
+          record(
+            output,
+            "admission",
+            admissionStarted,
+            { ...fields, failed: true },
+            worker,
+          );
+          throw error;
+        }
+      }
+      started = performance.now();
+      if (!admissionOnly)
+        record(output, "execution-start", started, fields, worker);
+    } catch (error) {
+      releaseLock();
+      throw error;
+    }
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      try {
+        if (!admissionOnly)
+          record(output, "execution", started, fields, worker);
+      } finally {
+        releaseLock();
+      }
+    };
   }
-  if (admissionOnly) {
-    lock.release();
+  return { file, begin };
+}
+
+export async function beginNativeFixtureExecution(
+  image: string,
+  admit: (() => void) | undefined,
+  env = process.env,
+): Promise<() => void> {
+  const output = env.TINT_GATE_NATIVE_IMAGES;
+  if (!output) {
+    admit?.();
     return () => {};
   }
-  const started = performance.now();
-  try {
-    record(output, "execution-start", started, fields, worker);
-  } catch (error) {
-    lock.release();
-    throw error;
-  }
-  let released = false;
-  return () => {
-    if (released) return;
-    released = true;
-    try {
-      record(output, "execution", started, fields, worker);
-    } finally {
-      lock.release();
-    }
-  };
+  const { file, begin } = queueNativeFixture(image, admit, env, output);
+  return begin(
+    await acquireGateLock([file], "fixture-launch", env.TINT_GATE_LOCK_TIMING),
+  );
 }
 
 export function runNativeFixture<T>(
@@ -168,8 +185,20 @@ export function runNativeFixture<T>(
   execute: () => T,
   admit?: () => void,
   env = process.env,
+  admissionOnly = false,
 ): T {
-  const release = beginNativeFixtureExecution(image, admit, env);
+  const output = env.TINT_GATE_NATIVE_IMAGES;
+  if (!output) {
+    admit?.();
+    return execute();
+  }
+  // These callers perform admission and execution synchronously, releasing
+  // the launch lock before returning to the event loop.
+  const { file, begin } = queueNativeFixture(image, admit, env, output);
+  const release = begin(
+    acquireGateLockSync([file], "fixture-launch", env.TINT_GATE_LOCK_TIMING),
+    admissionOnly,
+  );
   try {
     return execute();
   } finally {

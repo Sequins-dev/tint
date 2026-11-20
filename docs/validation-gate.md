@@ -54,6 +54,8 @@ slot, and byte comparisons run unlocked.
 The watchdog starts when a step begins running. The native batch watchdog
 pauses while every active test file worker waits for the exclusive lock.
 Build, admission and execution continue to count against its deadline.
+DevTools sessions wait asynchronously for the launch lock. Their test
+deadlines start after admission in the gate.
 The batch logs active time and all-worker queue time (wall time), and the
 per-image journal logs individual lock waits. The full gate wall budget
 continues through those waits.

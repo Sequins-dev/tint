@@ -9,6 +9,7 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
 import {
@@ -44,32 +45,58 @@ function tryAcquire(file: string): number | undefined {
   }
 }
 
-export function acquireGateLock(
+export interface GateLock {
+  fd: number;
+  release(): void;
+}
+
+function probeGateLocks(
   files: readonly string[],
   label: string,
   timing: string | undefined,
-): { fd: number; release: () => void } {
+): GateLock | undefined {
   if (files.length === 0) throw Error("No gate locks configured");
+  for (const file of files) {
+    const fd = tryAcquire(file);
+    if (fd === undefined) continue;
+    const startedAt = Date.now();
+    const start = performance.now();
+    return {
+      fd,
+      release() {
+        const elapsed = Math.round(performance.now() - start);
+        closeSync(fd);
+        if (timing)
+          appendFileSync(
+            timing,
+            [label, file, startedAt, elapsed].join("\t") + "\n",
+          );
+      },
+    };
+  }
+  return undefined;
+}
+
+export async function acquireGateLock(
+  files: readonly string[],
+  label: string,
+  timing: string | undefined,
+): Promise<GateLock> {
   for (;;) {
-    for (const file of files) {
-      const fd = tryAcquire(file);
-      if (fd === undefined) continue;
-      const startedAt = Date.now();
-      const start = performance.now();
-      return {
-        fd,
-        release() {
-          const elapsed = Math.round(performance.now() - start);
-          closeSync(fd);
-          if (timing)
-            appendFileSync(
-              timing,
-              [label, file, startedAt, elapsed].join("\t") + "\n",
-            );
-        },
-      };
-    }
-    // Probe once per memory slot and sleep while every slot is occupied.
+    const lock = probeGateLocks(files, label, timing);
+    if (lock) return lock;
+    await delay(250);
+  }
+}
+
+export function acquireGateLockSync(
+  files: readonly string[],
+  label: string,
+  timing: string | undefined,
+): GateLock {
+  for (;;) {
+    const lock = probeGateLocks(files, label, timing);
+    if (lock) return lock;
     Atomics.wait(sleep, 0, 0, 250);
   }
 }
@@ -80,7 +107,7 @@ export function withGateLock<T>(
   timing: string | undefined,
   run: (fd: number) => T,
 ): T {
-  const lock = acquireGateLock(files, label, timing);
+  const lock = acquireGateLockSync(files, label, timing);
   try {
     return run(lock.fd);
   } finally {
