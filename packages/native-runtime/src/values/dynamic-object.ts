@@ -1,5 +1,20 @@
 import {
   beginObjectPropertyContract,
+  binaryObjectValueOperationOrThrow,
+  unaryObjectValueOperationOrThrow,
+  updateObjectValue,
+  stringValueOrThrow,
+  scriptStrictEqual,
+  looselyEqual,
+  objectPropertyKeyOrThrow,
+  throwIfRuntimeError,
+  requireObjectCoercible,
+  getScriptIterator,
+  stepScriptIterator,
+  skipScriptIterator,
+  collectScriptIterator,
+  closeScriptIterator,
+  type ScriptIterator,
   callObjectValue,
   isArrayValue,
   copyObjectProperties,
@@ -195,10 +210,44 @@ export function read(base: unknown, key: unknown): unknown {
   const core = programRealmCore();
   return readObjectValueProperty(
     base,
-    requireKey(key, core),
+    objectPropertyKeyOrThrow(base, key, core.hooks, core.realm),
     core.hooks,
     core.realm,
   );
+}
+export function speculativeBinary(
+  operator: string,
+  left: unknown,
+  right: unknown,
+): unknown {
+  if (operator === "===" || operator === "!==")
+    return scriptStrictEqual(left, right) === (operator === "===");
+  const core = programRealmCore();
+  if (operator === "==" || operator === "!=") {
+    const result = looselyEqual(left, right, core.hooks, core.realm);
+    throwIfRuntimeError(core.realm, result.error);
+    return result.value === (operator === "==");
+  }
+  return binaryObjectValueOperationOrThrow(
+    operator,
+    left,
+    right,
+    core.hooks,
+    core.realm,
+  );
+}
+export function speculativeUnary(operator: string, value: unknown): unknown {
+  const core = programRealmCore();
+  return unaryObjectValueOperationOrThrow(
+    operator,
+    value,
+    core.hooks,
+    core.realm,
+  );
+}
+export function speculativeString(value: unknown): string {
+  const core = programRealmCore();
+  return stringValueOrThrow(value, core.hooks, core.realm);
 }
 export function project(value: unknown, schema: string): unknown {
   const core = programRealmCore();
@@ -217,6 +266,20 @@ export function write(base: unknown, key: unknown, value: unknown): void {
     ) !== "none"
   )
     throw createRuntimeError(core.realm, "type");
+}
+export function update(
+  base: unknown,
+  key: unknown,
+  operator: string,
+  prefix: boolean,
+): unknown {
+  const core = programRealmCore();
+  const property = objectPropertyKeyOrThrow(base, key, core.hooks, core.realm);
+  const old = readObjectValueProperty(base, property, core.hooks, core.realm);
+  const result = updateObjectValue(operator, old, core.hooks, core.realm);
+  throwIfRuntimeError(core.realm, result.error);
+  write(base, property, result.value);
+  return prefix ? result.value : result.previous;
 }
 export function has(key: unknown, base: unknown): boolean {
   const core = programRealmCore();
@@ -373,4 +436,51 @@ export function invoke(
   );
   if (result.error !== "none") throw createRuntimeError(core.realm, "type");
   return result.value;
+}
+
+export function bindingObject(source: unknown): void {
+  requireObjectCoercible(source, programRealmCore().realm);
+}
+export function bindingIterator(source: unknown): ScriptIterator {
+  const core = programRealmCore();
+  installProgramArrayIntrinsics(core);
+  return getScriptIterator(source, core.realm, core.hooks);
+}
+export function bindingNext(iterator: ScriptIterator): unknown {
+  return stepScriptIterator(iterator).value;
+}
+export function bindingSkip(iterator: ScriptIterator): void {
+  skipScriptIterator(iterator);
+}
+export function bindingTail(iterator: ScriptIterator): unknown {
+  const core = programRealmCore();
+  return collectScriptIterator(iterator, core.realm, core.hooks);
+}
+export function bindingClose(
+  iterator: ScriptIterator,
+  throwing: boolean,
+): void {
+  closeScriptIterator(iterator, throwing);
+}
+export function bindingRest(
+  source: unknown,
+  keys: unknown,
+  count: number,
+): unknown {
+  const core = programRealmCore();
+  const excluded: ScriptPropertyKey[] = [];
+  for (let i = 0; i < count; i++) {
+    const key = readObjectValueProperty(
+      keys,
+      String(i),
+      core.hooks,
+      core.realm,
+    );
+    excluded.push(requireKey(key, core));
+  }
+  const result = createObject<ScriptPropertyKey, unknown>(
+    core.realm.objectPrototype,
+  );
+  copyObjectProperties(result, source, excluded, core.hooks, core.realm);
+  return result;
 }

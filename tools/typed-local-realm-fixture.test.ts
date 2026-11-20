@@ -12,19 +12,24 @@ test("local realm allocation fixture matches Node for seven checks", async () =>
   assert.equal(fixture.run(), 42);
 });
 
-test("compiled storage of an aggregate that escaped into a typed call keeps its diagnostic", () => {
-  assert.throws(
-    () =>
-      verifyHostedFixture(
-        `function consume(values: number[]): number { return values.length; }
-export function run(): number {
+test("a native list can flow through a direct typed call into realm storage", async () => {
+  const source = `function consume(values: number[]): number { return values.length; }
+export function directCallLength(): number {
   const values = [42];
   const length = consume(values);
   const object: Record<string, unknown> = { values };
   return length;
-}`,
-        "local-realm-native-escape",
-      ),
-    /UNSUPPORTED: native list values in dynamic-key objects need slice 2b list\/record views/,
+}`;
+  const fixture = (await import(
+    "data:text/javascript," + encodeURIComponent(stripTypeScriptTypes(source))
+  )) as { directCallLength(): number };
+  const length = fixture.directCallLength();
+  assert.equal(length, 1);
+
+  process.env.TINT_GENERAL_FALLBACK = "0";
+  verifyHostedFixture(
+    `${source}
+export function run(): number { return directCallLength() === ${length} ? 42 : 1; }`,
+    "local-realm-native-escape",
   );
 });

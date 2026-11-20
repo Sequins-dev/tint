@@ -170,6 +170,61 @@ export const constructs: readonly Construct[] = [
 }`,
   },
   {
+    name: "dynamic-object-update",
+    typed: `export function run(): number {
+  const values: { first: number; [key: string]: number } = { first: 9 };
+  const name: "first" = "first";
+  if (values[name]++ !== 9 || (values[name] *= 4) !== 40) return 1;
+  return (values.last ??= values.first + 2);
+}`,
+    untyped: `export function run() {
+  const values = { first: 9 };
+  const name = "first";
+  if (values[name]++ !== 9 || (values[name] *= 4) !== 40) return 1;
+  return (values.last ??= values.first + 2);
+}`,
+  },
+  {
+    name: "dynamic-object-realm-methods",
+    typed: `export function run(): number {
+  const values: Record<string, number[]> = { first: [20] };
+  const items = values.first;
+  if (items === undefined || items.unshift(22) !== 2) return 1;
+  const copy = items.slice();
+  return copy === items ? 2 : (copy.pop() ?? 0) + (copy.shift() ?? 0);
+}`,
+    untyped: `export function run() {
+  const values = { first: [20] };
+  const items = values.first;
+  if (items === undefined || items.unshift(22) !== 2) return 1;
+  const copy = items.slice();
+  return copy === items ? 2 : (copy.pop() ?? 0) + (copy.shift() ?? 0);
+}`,
+  },
+  {
+    name: "dynamic-object-aggregate-flow",
+    typed: `function pass(items: number[]): number[] { return items; }
+export function run(): number {
+  const list = [40];
+  const holder: { items: number[] } = { items: list };
+  const choice = list.length === 1 ? pass(holder.items) : [0];
+  const work = (): void => { choice.push(2); };
+  const record: Record<string, number[]> = { choice };
+  work();
+  return record.choice === list ? (list[0] ?? 0) + (list[1] ?? 0) : 1;
+}`,
+    untyped: `function pass(items) { return items; }
+export function run() {
+  const list = [40];
+  const holder = { items: list };
+  const choice = list.length === 1 ? pass(holder.items) : [0];
+  const work = () => { choice.push(2); };
+  const record = { choice };
+  work();
+  return record.choice === list ? list[0] + list[1] : 1;
+}`,
+  },
+  {
     name: "dynamic-object-in-delete",
     typed: `export function run(): number {
   const object: Record<string, number> = { key: 1 };
@@ -363,6 +418,52 @@ export function run() {
 }`,
   },
   {
+    name: "destructuring-entry-points",
+    typed: `function read({ value = 20 }: { value?: number }): number {
+      return value;
+    }
+    export function run(): number {
+      let a: number = 2, b: number = 20;
+      [a, b] = [b, a];
+      const rows: { value: number }[] = [{ value: b }, { value: a }];
+      let total: number = read({});
+      for (const { value } of rows) total += value;
+      return total === 42 ? 42 : 1;
+    }`,
+    untyped: `function read({ value = 20 }) {
+      return value;
+    }
+    export function run() {
+      let a = 2, b = 20;
+      [a, b] = [b, a];
+      const rows = [{ value: b }, { value: a }];
+      let total = read({});
+      for (const { value } of rows) total += value;
+      return total === 42 ? 42 : 1;
+    }`,
+  },
+  {
+    name: "destructuring-realm",
+    typed: `export const { answer } = { answer: 42 };
+function head([glyph]: string): string | undefined { return glyph; }
+export function run(): number {
+  try {
+    throw { value: answer };
+  } catch ({ value }: any) {
+    return head("😀x") === "😀" && value === 42 ? 42 : 1;
+  }
+}`,
+    untyped: `export const { answer } = { answer: 42 };
+function head([glyph]) { return glyph; }
+export function run() {
+  try {
+    throw { value: answer };
+  } catch ({ value }) {
+    return head("😀x") === "😀" && value === 42 ? 42 : 1;
+  }
+}`,
+  },
+  {
     name: "spread",
     typed: `function sum3(a: number, b: number, c: number): number { return a + b + c; }
 export function run(): number {
@@ -436,6 +537,36 @@ export function run() {
   const action = () => (result = 42);
   invoke(action);
   return result;
+}`,
+  },
+  {
+    name: "void-callback-result",
+    typed: `function forward(callback: () => void): void { return callback(); }
+export function run(): number {
+  const answer: unknown = forward(() => 42);
+  return answer === 42 ? 42 : 1;
+}`,
+    untyped: `function forward(callback) { return callback(); }
+export function run() {
+  const answer = forward(() => 42);
+  return answer === 42 ? 42 : 1;
+}`,
+  },
+  {
+    name: "array-mixed-spread",
+    typed: `function frameMap(frame: number, roots: number[], generals: number[]): number[] {
+  return [frame, roots.length, ...roots, generals.length, ...generals, 0];
+}
+export function run(): number {
+  const map = frameMap(32, [3], [4]);
+  return map.join(",") === "32,1,3,1,4,0" ? 42 : 1;
+}`,
+    untyped: `function frameMap(frame, roots, generals) {
+  return [frame, roots.length, ...roots, generals.length, ...generals, 0];
+}
+export function run() {
+  const map = frameMap(32, [3], [4]);
+  return map.join(",") === "32,1,3,1,4,0" ? 42 : 1;
 }`,
   },
   {
@@ -1187,6 +1318,31 @@ export function run() {
   try { throw "plain"; }
   catch (error) { if (typeof error === "string") plain = error; }
   return message === "bad" && name === "RangeError" && plain === "plain" ? 42 : 1;
+}`,
+  },
+  {
+    name: "coded-error-guard",
+    typed: `function code(error: unknown): string {
+  if (error instanceof Error && "code" in error && typeof error.code === "string") {
+    const code: string = error.code;
+    return code;
+  }
+  return "";
+}
+export function run(): number {
+  const coded: { name: string; message: string; code: string } = { name: "Example", message: "test", code: "E_TEST" };
+  return code(new Error("missing")) === "" && code(coded) === "" && code(1) === "" ? 42 : 1;
+}`,
+    untyped: `function code(error) {
+  if (error instanceof Error && "code" in error && typeof error.code === "string") {
+    const code = error.code;
+    return code;
+  }
+  return "";
+}
+export function run() {
+  const coded = { name: "Example", message: "test", code: "E_TEST" };
+  return code(new Error("missing")) === "" && code(coded) === "" && code(1) === "" ? 42 : 1;
 }`,
   },
   {

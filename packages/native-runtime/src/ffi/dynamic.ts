@@ -16,8 +16,7 @@
  * the frame names them through patches, which the trampoline resolves
  * inside the leaf call, where no collection can run.
  *
- * KNOWN DEFECT (typed-pipeline gap, docs/native-ffi.md#known-defects):
- * dlfcn failures are TypeErrors with dlerror's text; Node throws Errors. */
+ */
 import {
   classifyCCall,
   darwinArm64CTarget,
@@ -50,6 +49,8 @@ import {
 } from "./index.ts";
 import { bytesAt } from "./unsafe.ts";
 import { readCString } from "./c-string.ts";
+import { codedError } from "../node/errors.ts";
+import type { NativeCodedError } from "../node/errors.ts";
 
 /** A C prototype and C type as data (@tint/abi/c's model). */
 export type ForeignSignature = CSignature;
@@ -697,10 +698,13 @@ export function resultRecord(fn: ForeignFunction, into: Uint8Array): void {
         );
   } else for (let at = 0; at < result.size; at++) into[at] = resultByte(fn, at);
 }
-/** dlerror's text, or `fallback` when it reports none. */
-function loaderError(fallback: string): TypeError {
-  const message = dlerror();
-  return new TypeError(message === 0 ? fallback : readCString(message));
+function loaderError(
+  operation: string,
+  message: number,
+  fallback: string,
+): NativeCodedError {
+  const detail = message === 0 ? fallback : readCString(message);
+  return codedError(operation + " failed: " + detail, "ERR_FFI_CALL_FAILED");
 }
 /** An open library: its handle's exact 64-bit word. */
 export interface LibraryHandle {
@@ -713,13 +717,13 @@ function isNull(handle: LibraryHandle): boolean {
 /** dlopen(path, RTLD_LAZY) (as libuv's uv_dlopen). */
 export function openLibrary(path: string): LibraryHandle {
   const handle = dlopen(path, RTLD_LAZY);
-  if (isNull(handle)) throw loaderError("dlopen failed: " + path);
+  if (isNull(handle)) throw loaderError("dlopen", dlerror(), path);
   return handle;
 }
 /** dlopen(NULL): the program itself and every library it loaded. */
 export function openProgram(): LibraryHandle {
   const handle = dlopen$self(0, RTLD_LAZY);
-  if (isNull(handle)) throw loaderError("dlopen failed");
+  if (isNull(handle)) throw loaderError("dlopen", dlerror(), "current process");
   return handle;
 }
 /** The address of symbol `name` in library `handle` (dlsym; an error
@@ -730,7 +734,7 @@ export function findSymbol(handle: LibraryHandle, name: string): number {
   const symbol = dlsym({ low: handle.low, high: handle.high }, name);
   if (isNull(symbol)) {
     const message = dlerror();
-    if (message !== 0) throw new TypeError(readCString(message));
+    if (message !== 0) throw loaderError("dlsym", message, name);
     return 0;
   }
   // User-space code addresses are below 2^53 on arm64 (48-bit VAs).
@@ -743,7 +747,7 @@ export function findSymbol(handle: LibraryHandle, name: string): number {
 export function closeLibrary(handle: LibraryHandle): void {
   if (isNull(handle)) throw new TypeError("null library handle");
   if (dlclose({ low: handle.low, high: handle.high }) !== 0)
-    throw loaderError("dlclose failed");
+    throw loaderError("dlclose", dlerror(), "library handle");
 }
 /** Opened optional libraries by image name, and those that failed. */
 const optionalLibraries = new Map<string, LibraryHandle>(),

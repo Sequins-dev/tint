@@ -849,7 +849,7 @@ test("join-crossing proofs include every chain proof on the existing fixtures", 
       if (chain[block] === 1) assert.equal(joined[block], 1, String(block));
   }
 });
-test("Test262 and JIT host operations preserve descriptors without closing the world", () => {
+test("Test262 and JIT host operations preserve descriptors", () => {
   // None of these can replace a managed object's descriptor: JIT entries are
   // verified managed code, executable and shared-memory writes target
   // non-heap mappings, unmapping releases non-heap mappings, collections
@@ -894,9 +894,11 @@ test("Test262 and JIT host operations preserve descriptors without closing the w
             },
       ),
     };
-    // They leave the closed world, so interprocedural facts stay off...
-    assert.equal(stableRecordLayouts({ functions: [fn] }), false, operation);
-    // ...but descriptors stay stable, which intraprocedural proofs need.
+    assert.equal(
+      stableRecordLayouts({ functions: [fn] }),
+      operation === "native-function-signature",
+      operation,
+    );
     assert.equal(stableDescriptors({ functions: [fn] }), true, operation);
     // A guard after such a call stays proven from the earlier check.
     assert.equal(

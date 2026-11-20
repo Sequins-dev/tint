@@ -1,3 +1,7 @@
+import type {
+  BindingInitialization,
+  BindingInitializationStep,
+} from "@tint/typescript/checker";
 import type { DynamicObjectRuntime } from "./closure/lowering/dynamic-objects.ts";
 import { syntaxHash } from "@tint/typescript/syntax";
 import {
@@ -17,6 +21,7 @@ import type {
   ExpressionInfo,
   NativeTypedArray,
   CheckedDowncast,
+  DowncastTest,
   RestArguments,
   Expression,
   Statement,
@@ -374,6 +379,13 @@ export interface RealmErrorRuntime {
   readonly applies: (span: IRSpan) => boolean;
 }
 
+export interface NodeErrorRecords {
+  readonly coded?: number | undefined;
+  readonly range?: number | undefined;
+  readonly system?: number | undefined;
+  readonly info?: number | undefined;
+}
+
 export function lowerFunction(
   fn: CheckedFunction,
   signatures: readonly FunctionSignature[],
@@ -387,6 +399,7 @@ export function lowerFunction(
   dynamicObjects?: DynamicObjectRuntime,
   dynamicSignatures: readonly number[] = [],
   realmErrorBindings?: RealmErrorRuntime,
+  nodeErrors?: NodeErrorRecords,
 ): FunctionIR {
   const primitives = primitiveBindings,
     bigints = bigIntBindings,
@@ -404,6 +417,8 @@ export function lowerFunction(
   const valueTypes: (ScalarType | undefined)[] = [];
   // Proofs apply to SSA values and expression-result temporaries, never mutable
   // source locals. Union-valued merge slots are not inferred from a branch store.
+  const speculativeSlots: number[] = [],
+    speculativeValues: number[] = [];
   const undefinedValues: number[] = [],
     undefinedSlots: number[] = [],
     // Slots holding BigInts (references to BigIntValue, possibly absent).
@@ -642,6 +657,16 @@ export function lowerFunction(
     node: IRSpan,
   ): number {
     const sourceType = valueTypes[id];
+    if (
+      sourceType === "general" &&
+      speculativeValues[id] === 1 &&
+      type !== undefined &&
+      type !== "general"
+    ) {
+      const input = save(id, "general", node);
+      requireSpeculativeContract(input, type, node);
+      id = load(input, node);
+    }
     if (sourceType === "general" && type === "primitive") {
       if (primitives === undefined) throw "primitive runtime invariant";
       const source = save(id, "general", node);
@@ -1180,6 +1205,7 @@ export function lowerFunction(
     const id = nextValue++;
     emit({ kind: "load", id, slot, start: node.start, end: node.end });
     if (undefinedSlots[slot] === 1) undefinedValues[id] = 1;
+    if (speculativeSlots[slot] === 1) speculativeValues[id] = 1;
     return id;
   }
   function store(slot: number, value: number, node: IRSpan): void {
@@ -1394,6 +1420,7 @@ export function lowerFunction(
     return slot;
   }
   const expressionOverrides = createKeyIndex<Expression, number>(syntaxHash);
+  const patternReads = createKeyIndex<Expression, () => number>(syntaxHash);
   const informationOverrides = createKeyIndex<Expression, ExpressionInfo>(
     syntaxHash,
   );
@@ -1414,6 +1441,7 @@ export function lowerFunction(
     node: Span,
     visit: (item: number, typed: boolean) => void,
     evaluated?: number,
+    start: number = 0,
   ): void {
     const source = evaluated ?? value(input);
     if (info(input).setElement !== undefined) {
@@ -1437,7 +1465,7 @@ export function lowerFunction(
       current = exit;
       return;
     }
-    const index = numberSlot(0, node),
+    const index = numberSlot(start, node),
       sourceList =
         slots[source] === "reference" ? listRuntime(input) : undefined;
     const head = block(),
@@ -1487,6 +1515,12 @@ export function lowerFunction(
   }
   function stringOperand(slot: number, node: Expression): number {
     if (slots[slot] === "string") return slot;
+    if (speculativeSlots[slot] === 1) {
+      const helper = dynamicObjects?.speculativeString;
+      if (helper === undefined)
+        throw "speculative string requires the program realm";
+      return dynamicResult(helper, [slot], node);
+    }
     if (bigIntSlots[slot] === 1 && slots[slot] === "reference") {
       const text = runtimeCall(bigIntRuntime().toString, [slot], node);
       if (text === undefined) throw "BigInt string conversion invariant";
@@ -2272,6 +2306,40 @@ export function lowerFunction(
     error: "Error" | "RangeError" | "TypeError",
     node: IRSpan,
   ): number {
+    if (nodeErrors === undefined || error === "TypeError")
+      return intrinsicErrorTest(value, error, node);
+    const candidates: (number | undefined)[] =
+      error === "RangeError"
+        ? [nodeErrors.range]
+        : [nodeErrors.coded, nodeErrors.range, nodeErrors.system];
+    const operand = save(value, "general", node);
+    const yes = block(),
+      done = block(),
+      result = temporary("boolean");
+    for (const record of candidates) {
+      if (record === undefined) continue;
+      const next = block();
+      choose(
+        errorRecordTest(load(operand, node), record, node),
+        yes,
+        next,
+        node,
+      );
+      current = next;
+    }
+    store(result, intrinsicErrorTest(load(operand, node), error, node), node);
+    jump(done.id, node);
+    current = yes;
+    store(result, load(booleanSlot(true, node), node), node);
+    jump(done.id, node);
+    current = done;
+    return load(result, node);
+  }
+  function intrinsicErrorTest(
+    value: number,
+    error: "Error" | "RangeError" | "TypeError",
+    node: IRSpan,
+  ): number {
     const layouts = realmErrors;
     if (layouts !== undefined) {
       if (error === "TypeError")
@@ -2621,10 +2689,397 @@ export function lowerFunction(
       jump(done.id, node);
       current = no;
     }
+    const system = nodeErrors?.system;
+    if (system !== undefined) {
+      const yes = block(),
+        no = block();
+      choose(
+        errorRecordTest(
+          coerce(load(operand, node), "general", node),
+          system,
+          node,
+        ),
+        yes,
+        no,
+        node,
+      );
+      current = yes;
+      store(result, load(errorString("SystemError", node), node), node);
+      jump(done.id, node);
+      current = no;
+    }
     store(result, load(errorString("Error", node), node), node);
     jump(done.id, node);
     current = done;
     return result;
+  }
+  function rawPropertyField(
+    object: number,
+    record: number,
+    field: number,
+    type: ScalarType,
+    node: Span,
+  ): number {
+    const slot = temporary(type),
+      read = block(),
+      wrong = block();
+    finish({
+      kind: "record",
+      object,
+      record,
+      field,
+      operation: "read",
+      slot,
+      consequent: read.id,
+      alternate: wrong.id,
+      start: node.start,
+      end: node.end,
+    });
+    current = wrong;
+    finish({ kind: "trap", start: node.start, end: node.end });
+    current = read;
+    return slot;
+  }
+  function fieldPresent(
+    object: number,
+    record: number,
+    field: number,
+    node: Span,
+  ): number {
+    const id = nextValue++;
+    emit({
+      kind: "record-has",
+      id,
+      object,
+      record,
+      field,
+      start: node.start,
+      end: node.end,
+    });
+    return id;
+  }
+  function nativeProperty(
+    operand: number,
+    property: string,
+    membership: boolean,
+    node: Expression,
+  ): number {
+    const type: ScalarType = membership ? "boolean" : "general";
+    const result = temporary(type),
+      done = block();
+    const general = save(
+      coerce(load(operand, node), "general", node),
+      "general",
+      node,
+    );
+    const reference = (): number =>
+      coerce(load(general, node), "reference", node);
+    function answer(raw: number): void {
+      store(result, load(raw, node), node);
+      jump(done.id, node);
+    }
+    function chooseRecord(record: number): Builder {
+      const yes = block(),
+        next = block();
+      choose(
+        errorRecordTest(load(general, node), record, node),
+        yes,
+        next,
+        node,
+      );
+      current = yes;
+      return next;
+    }
+    const coded = nodeErrors?.coded,
+      range = nodeErrors?.range,
+      system = nodeErrors?.system;
+    if (property === "code") {
+      for (const record of [coded, range, system]) {
+        if (record === undefined) continue;
+        const next = chooseRecord(record);
+        answer(
+          membership
+            ? booleanSlot(true, node)
+            : rawPropertyField(reference(), record, 1, "string", node),
+        );
+        current = next;
+      }
+    }
+    if (property === "errno" && coded !== undefined) {
+      const next = chooseRecord(coded);
+      answer(
+        membership
+          ? save(fieldPresent(reference(), coded, 2, node), "boolean", node)
+          : rawPropertyField(reference(), coded, 2, "optional-number", node),
+      );
+      current = next;
+    }
+    const details = nodeErrors?.info;
+    if (
+      system !== undefined &&
+      details !== undefined &&
+      (property === "info" || property === "errno" || property === "syscall")
+    ) {
+      const next = chooseRecord(system);
+      if (membership) answer(booleanSlot(true, node));
+      else {
+        const context = rawPropertyField(
+          reference(),
+          system,
+          2,
+          "reference",
+          node,
+        );
+        answer(
+          property === "info"
+            ? context
+            : rawPropertyField(
+                load(context, node),
+                details,
+                property === "errno" ? 0 : 3,
+                property === "errno" ? "number" : "string",
+                node,
+              ),
+        );
+      }
+      current = next;
+    }
+    for (const field of records?.accesses.get(node)?.choices ?? []) {
+      if (field === undefined) throw "literal property layout invariant";
+      const next = chooseRecord(field.record);
+      function readField(receiver: number, field: RecordAccessChoice): void {
+        const inherited = field.prototype;
+        const present = fieldPresent(
+          load(receiver, node),
+          field.record,
+          field.field,
+          node,
+        );
+        const own = block(),
+          absent = block();
+        choose(present, own, absent, node);
+        current = own;
+        answer(
+          membership
+            ? booleanSlot(true, node)
+            : rawPropertyField(
+                load(receiver, node),
+                field.record,
+                field.field,
+                field.type,
+                node,
+              ),
+        );
+        current = absent;
+        if (inherited === undefined) jump(next.id, node);
+        else {
+          const prototype = rawPropertyField(
+            load(receiver, node),
+            field.record,
+            inherited.field,
+            "reference",
+            node,
+          );
+          const parentField = inherited.access.choices[0];
+          if (parentField === undefined)
+            throw "literal property prototype invariant";
+          readField(prototype, parentField);
+        }
+      }
+      readField(save(reference(), "reference", node), field);
+      current = next;
+    }
+    if (membership && (property === "name" || property === "message"))
+      answer(
+        save(
+          nativeErrorTest(load(general, node), "Error", node),
+          "boolean",
+          node,
+        ),
+      );
+    else if (membership) answer(booleanSlot(false, node));
+    else {
+      const id = nextValue++;
+      emit({ kind: "general-none", id, start: node.start, end: node.end });
+      answer(save(id, "general", node));
+    }
+    current = done;
+    return result;
+  }
+  function literalPropertyOperation(
+    operand: number,
+    property: string,
+    membership: boolean,
+    node: Expression,
+  ): number {
+    if (realmErrors === undefined)
+      return nativeProperty(operand, property, membership, node);
+    const exposed = exposedError(operand, node);
+    const result = temporary(membership ? "boolean" : "general");
+    const semantic = block(),
+      native = block(),
+      done = block();
+    choose(
+      truth(realmErrorOperation(exposed, "attached", node), node),
+      semantic,
+      native,
+      node,
+    );
+    current = semantic;
+    const value = realmErrorOperation(
+      exposed,
+      (membership ? "has:" : "get:") + property,
+      node,
+    );
+    store(result, load(value, node), node);
+    jump(done.id, node);
+    current = native;
+    store(
+      result,
+      load(nativeProperty(operand, property, membership, node), node),
+      node,
+    );
+    jump(done.id, node);
+    current = done;
+    return result;
+  }
+  /** A speculative carrier reaching typed storage crosses a checked contract.
+   * Open locals and expressions have general slots, so they never project here. */
+  function requireSpeculativeContract(
+    input: number,
+    type: ScalarType,
+    node: IRSpan,
+  ): void {
+    const tests: DowncastTest[] = [];
+    switch (type) {
+      case "number":
+        tests.push("number");
+        break;
+      case "string":
+        tests.push("string");
+        break;
+      case "boolean":
+        tests.push("boolean");
+        break;
+      case "Uint8Array":
+        tests.push("Uint8Array");
+        break;
+      case "optional-number":
+        tests.push("undefined", "number");
+        break;
+      case "optional-string":
+        tests.push("undefined", "string");
+        break;
+      case "optional-boolean":
+        tests.push("undefined", "boolean");
+        break;
+      case "primitive":
+        tests.push("undefined", "null", "string", "number", "boolean");
+        break;
+      default:
+        throw "speculative value requires a testable written contract";
+    }
+    const accepted = block();
+    for (const type of tests) {
+      if (type === undefined) throw "speculative contract category invariant";
+      const id = nextValue++,
+        rejected = block();
+      emit({
+        kind: "general-is",
+        id,
+        value: load(input, node),
+        type,
+        start: node.start,
+        end: node.end,
+      });
+      choose(id, accepted, rejected, node);
+      current = rejected;
+    }
+    requireCondition(
+      booleanSlot(false, node),
+      "TypeError",
+      "value does not match its declared type",
+      node,
+    );
+    jump(accepted.id, node);
+    current = accepted;
+  }
+  function speculativePropertyRead(
+    node: Expression & { readonly kind: "member" | "index" },
+  ): number {
+    const runtime = dynamicObjects;
+    if (runtime === undefined)
+      throw "speculative property read requires the program realm";
+    return dynamicResult(
+      runtime.read,
+      [value(node.object), dynamicKey(node)],
+      node,
+    );
+  }
+  function speculativeBinaryOperation(
+    node: Expression & { readonly kind: "binary" },
+    left: number,
+    right: number,
+  ): number {
+    const helper = dynamicObjects?.speculativeBinary;
+    if (helper === undefined)
+      throw "speculative binary operation requires the program realm";
+    const identity =
+      node.operator === "===" ||
+      node.operator === "!==" ||
+      node.operator === "==" ||
+      node.operator === "!=";
+    const result = dynamicResult(
+      helper,
+      [
+        stringSlot(node.operator, node),
+        identity && mayCarryError(left) ? exposedError(left, node) : left,
+        identity && mayCarryError(right) ? exposedError(right, node) : right,
+      ],
+      node,
+    );
+    const type = scalarType(node);
+    return type === "general"
+      ? result
+      : save(coerce(load(result, node), type, node), type, node);
+  }
+  function flowPropertyRead(
+    node: Expression & { readonly kind: "member" | "index" },
+  ): number {
+    const object = value(node.object);
+    if (node.kind === "index") value(node.index);
+    const key = info(node).propertyKey;
+    if (key === undefined) throw "flow property key invariant";
+    const raw = literalPropertyOperation(object, key, false, node);
+    const type = scalarType(node);
+    if (type === "general") return raw;
+    const bigintRecord = info(node).bigIntRecord;
+    let matches: number;
+    if (type === "reference" && bigintRecord !== undefined)
+      matches = errorRecordTest(load(raw, node), bigintRecord, node);
+    else {
+      let test: DowncastTest;
+      if (info(node).undefinedValue === true) test = "undefined";
+      else if (type === "string" || type === "number" || type === "boolean")
+        test = type;
+      else throw "flow property read requires a testable narrowed type";
+      matches = nextValue++;
+      emit({
+        kind: "general-is",
+        id: matches,
+        value: load(raw, node),
+        type: test,
+        start: node.start,
+        end: node.end,
+      });
+    }
+    requireCondition(
+      save(matches, "boolean", node),
+      "TypeError",
+      "Property " + key + " no longer matches its narrowed type",
+      node,
+    );
+    return save(coerce(load(raw, node), type, node), type, node);
   }
   function errorMessage(
     argument: Expression | undefined,
@@ -3240,11 +3695,17 @@ export function lowerFunction(
     receiver: number | undefined,
     node: Expression,
   ): number | undefined {
-    const parameters = signatures[target]?.parameters;
-    if (parameters === undefined) throw "call signature invariant";
+    const signature = signatures[target];
+    if (signature === undefined) throw "call signature invariant";
+    const parameters = signature.parameters;
     supplyOmittedArguments(argumentsSlots, parameters, parameters.length, node);
-    const type = info(node).type,
-      id = type === "void" ? undefined : nextValue++;
+    const metadata = info(node);
+    const type = metadata.type,
+      candidates = metadata.voidCallResults;
+    const id =
+      candidates !== undefined || signature.returnType === "void"
+        ? undefined
+        : nextValue++;
     const prepared = argumentsSlots.map((slot, i) => {
       const parameter = parameters[i];
       if (parameter === undefined) throw "call parameter invariant";
@@ -3263,6 +3724,80 @@ export function lowerFunction(
       receiver === undefined
         ? undefined
         : save(coerce(load(receiver, node), "general", node), "general", node);
+    if (candidates !== undefined) {
+      const callee = calleeSlot;
+      if (callee === undefined)
+        throw "observed callback requires an indirect callee";
+      const actual = nextValue++;
+      emit({
+        kind: "host-call",
+        operation: "native-function-signature",
+        id: actual,
+        arguments: [load(callee, node)],
+        start: node.start,
+        end: node.end,
+      });
+      const actualSignature = save(actual, "number", node);
+      const result = temporary("general"),
+        done = block();
+      for (const candidate of candidates) {
+        if (candidate === undefined)
+          throw "callback signature candidate invariant";
+        const expected = nextValue++;
+        emit({
+          kind: "function-address",
+          part: "signature",
+          id: expected,
+          target: candidate,
+          start: node.start,
+          end: node.end,
+        });
+        const call = block(),
+          next = block();
+        const matches = binarySlot(
+          "===",
+          actualSignature,
+          save(expected, "number", node),
+          node,
+        );
+        choose(load(matches, node), call, next, node);
+        current = call;
+        const representation = signatures[candidate]?.returnType;
+        if (representation === undefined)
+          throw "callback return signature invariant";
+        const id = representation === "void" ? undefined : nextValue++;
+        const receiverValue =
+          preparedReceiver === undefined
+            ? undefined
+            : load(preparedReceiver, node);
+        const args = prepared.map((slot) => load(slot, node));
+        emit({
+          kind: "call-indirect",
+          id,
+          target: candidate,
+          callee: load(callee, node),
+          arguments: args,
+          ...(receiverValue === undefined ? {} : { receiver: receiverValue }),
+          start: node.start,
+          end: node.end,
+        });
+        if (id === undefined) {
+          const absent = nextValue++;
+          emit({
+            kind: "general-none",
+            id: absent,
+            start: node.start,
+            end: node.end,
+          });
+          store(result, absent, node);
+        } else store(result, coerce(id, "general", node), node);
+        jump(done.id, node);
+        current = next;
+      }
+      finish({ kind: "trap", start: node.start, end: node.end });
+      current = done;
+      return result;
+    }
     const call = {
       ...(preparedReceiver === undefined
         ? {}
@@ -3286,9 +3821,18 @@ export function lowerFunction(
         arguments: operation.arguments,
       });
     }
-    return id === undefined || type === "void"
-      ? undefined
-      : save(id, type, node);
+    if (type === "void") return undefined;
+    if (id !== undefined) return save(id, type, node);
+    if (metadata.type !== "general")
+      throw "observed void direct call invariant";
+    const absent = nextValue++;
+    emit({
+      kind: "general-none",
+      id: absent,
+      start: node.start,
+      end: node.end,
+    });
+    return save(absent, "general", node);
   }
   function dispatchRecordKey(
     paths: readonly FiniteRecordAccess[],
@@ -4111,6 +4655,8 @@ export function lowerFunction(
   function expression(node: Expression): number | undefined {
     const known = expressionOverrides.get(node);
     if (known !== undefined) return known;
+    const patternRead = patternReads.get(node);
+    if (patternRead !== undefined) return patternRead();
     let result =
       info(node).chainType === undefined
         ? expressionValue(node)
@@ -4121,6 +4667,16 @@ export function lowerFunction(
       // removes all following value plumbing before IR verification/emission.
       current = block();
       return undefined;
+    }
+    if (result === undefined && info(node).voidValueCall === true) {
+      const absent = nextValue++;
+      emit({
+        kind: "general-none",
+        id: absent,
+        start: node.start,
+        end: node.end,
+      });
+      result = save(absent, "general", node);
     }
     const downcast = info(node).downcast;
     if (
@@ -4143,6 +4699,8 @@ export function lowerFunction(
       undefinedSlots[result] = 1;
     if (result !== undefined && info(node).bigint === true)
       bigIntSlots[result] = 1;
+    if (result !== undefined && info(node).speculative === true)
+      speculativeSlots[result] = 1;
     return result;
   }
   function chainExpression(node: Expression): number | undefined {
@@ -4269,6 +4827,23 @@ export function lowerFunction(
     if (result === undefined) throw "dynamic object result invariant";
     return result;
   }
+  function projectDynamicResult(
+    runtime: DynamicObjectRuntime,
+    raw: number,
+    metadata: ExpressionInfo,
+    node: Expression,
+  ): number {
+    const schema = metadata.dynamicContract,
+      type = metadata.type;
+    if (schema === undefined || type === "void")
+      throw "dynamic object projection invariant";
+    const checked = dynamicResult(
+      runtime.project,
+      [raw, stringSlot(schema, node)],
+      node,
+    );
+    return save(load(checked, node), type, node);
+  }
   function dynamicKey(node: Expression): number {
     if (node.kind === "index") return value(node.index);
     if (node.kind === "member") return stringSlot(node.property, node);
@@ -4308,13 +4883,13 @@ export function lowerFunction(
       case "array-literal":
         if (node.kind !== "array") throw "realm array literal invariant";
         return dynamicArray(runtime, node.elements, node);
-      case "array-push":
+      case "array-method":
       case "static-call": {
         if (node.kind !== "call") throw "realm method call invariant";
         const target = node.callee;
         if (target.kind !== "member") throw "realm method target invariant";
         const receiver =
-          operation === "array-push"
+          operation === "array-method"
             ? value(target.object)
             : dynamicResult(runtime.objectConstructor, [], node);
         const callee = dynamicResult(
@@ -4434,6 +5009,65 @@ export function lowerFunction(
         const assigned = value(node.value);
         dynamicCall(runtime.write, [object, key, assigned], node);
         return assigned;
+      }
+      case "update":
+      case "compound": {
+        if (node.kind !== "update" && node.kind !== "compound")
+          throw "realm property update invariant";
+        const target = ungroup(node.target);
+        if (target.kind !== "member" && target.kind !== "index")
+          throw "realm property target invariant";
+        const object = value(target.object),
+          key = dynamicKey(target);
+        if (node.kind === "update") {
+          const update = runtime.update;
+          if (update === undefined) throw "realm update helper invariant";
+          const raw = dynamicResult(
+            update,
+            [
+              object,
+              key,
+              stringSlot(node.operator, node),
+              booleanSlot(node.prefix, node),
+            ],
+            node,
+          );
+          return projectDynamicResult(runtime, raw, metadata, node);
+        }
+        const canonical = dynamicResult(runtime.convertKey, [key], target);
+        const old = dynamicResult(runtime.read, [object, canonical], target);
+        if (
+          node.operator === "??" ||
+          node.operator === "&&" ||
+          node.operator === "||"
+        ) {
+          const assign = block(),
+            done = block();
+          const result = temporary("general");
+          store(result, load(old, target), target);
+          if (node.operator === "??")
+            choose(nonNullish(old, target), done, assign, node);
+          else if (node.operator === "&&")
+            choose(truth(old, target), assign, done, node);
+          else choose(truth(old, target), done, assign, node);
+          current = assign;
+          const right = value(node.value);
+          dynamicCall(runtime.write, [object, canonical, right], node);
+          store(result, load(right, node), node);
+          jump(done.id, node);
+          current = done;
+          return projectDynamicResult(runtime, result, metadata, node);
+        }
+        const binary = runtime.speculativeBinary;
+        if (binary === undefined) throw "realm compound helper invariant";
+        const right = value(node.value);
+        const result = dynamicResult(
+          binary,
+          [stringSlot(node.operator, node), old, right],
+          node,
+        );
+        dynamicCall(runtime.write, [object, canonical, result], node);
+        return projectDynamicResult(runtime, result, metadata, node);
       }
       case "has":
         if (node.kind !== "binary") throw "dynamic object membership invariant";
@@ -5594,6 +6228,16 @@ export function lowerFunction(
             );
           return result;
         }
+        if (info(node).speculative === true) {
+          const helper = dynamicObjects?.speculativeUnary;
+          if (helper === undefined)
+            throw "speculative unary operation requires the program realm";
+          return dynamicResult(
+            helper,
+            [stringSlot(node.operator, node), value(node.operand)],
+            node,
+          );
+        }
         if (info(node.operand).bigint === true) {
           const operand = value(node.operand);
           if (node.operator === "!")
@@ -5634,6 +6278,14 @@ export function lowerFunction(
         return save(id, scalarType(node), node);
       }
       case "index": {
+        const operation = info(node).builtin;
+        if (operation === "speculative-property-read")
+          return speculativePropertyRead(node);
+        if (
+          operation === "flow-property-read" ||
+          operation === "flow-property-read-boxed"
+        )
+          return flowPropertyRead(node);
         const indexView = info(node).cView;
         if (indexView !== undefined) return viewRead(node, indexView);
         const reference = propertyReference(
@@ -5749,7 +6401,15 @@ export function lowerFunction(
         return save(id, "optional-number", node);
       }
       case "member": {
-        if (info(node).builtin === "error-property") return errorProperty(node);
+        const builtin = info(node).builtin;
+        if (builtin === "speculative-property-read")
+          return speculativePropertyRead(node);
+        if (
+          builtin === "flow-property-read" ||
+          builtin === "flow-property-read-boxed"
+        )
+          return flowPropertyRead(node);
+        if (builtin === "error-property") return errorProperty(node);
         const memberView = info(node).cView;
         if (memberView !== undefined) return viewRead(node, memberView);
         if (info(node).undefinedValue) {
@@ -5802,6 +6462,17 @@ export function lowerFunction(
         );
       }
       case "binary": {
+        if (info(node).builtin === "list-has") {
+          const index = value(node.left),
+            receiver = value(node.right);
+          return listValue(
+            listRuntime(node.right),
+            "has",
+            [receiver, index],
+            node,
+          );
+        }
+
         const metadata = info(node);
         const array = metadata.arrayInstance;
         if (array !== undefined) return arrayInstanceOf(node, array, metadata);
@@ -5812,6 +6483,33 @@ export function lowerFunction(
           return callRealmInstanceOf(instance, left, right, node);
         }
         const builtin = metadata.builtin;
+        if (builtin === "literal-property-has") {
+          value(node.left);
+          const object = value(node.right);
+          const property = info(node).propertyKey;
+          if (property === undefined) throw "literal property key invariant";
+          const receiver = save(
+            coerce(load(object, node), "general", node),
+            "general",
+            node,
+          );
+          const valid = nextValue++;
+          emit({
+            kind: "general-is",
+            id: valid,
+            value: load(receiver, node),
+            type: "object",
+            start: node.start,
+            end: node.end,
+          });
+          requireCondition(
+            save(valid, "boolean", node),
+            "TypeError",
+            "in requires an object operand",
+            node,
+          );
+          return literalPropertyOperation(receiver, property, true, node);
+        }
         if (
           builtin === "type-error-is" ||
           builtin === "range-error-is" ||
@@ -5869,6 +6567,8 @@ export function lowerFunction(
           return result;
         }
         const right = value(node.right);
+        if (speculativeSlots[left] === 1 || speculativeSlots[right] === 1)
+          return speculativeBinaryOperation(node, left, right);
         if (bigIntSlots[left] === 1 || bigIntSlots[right] === 1) {
           const lowered = bigIntBinary(node, left, right);
           if (lowered !== undefined) return lowered;
@@ -6230,6 +6930,9 @@ export function lowerFunction(
         return node.kind === "update" && !node.prefix ? old : updated;
       }
       case "assignment": {
+        const plan = fn.bindingInitializations?.get(node);
+        if (plan !== undefined)
+          return initializeBindingPlan(plan, value(node.value));
         const target = ungroup(node.target);
         const finite = records?.finiteAccesses?.get(node);
         if (finite !== undefined) {
@@ -9060,10 +9763,322 @@ export function lowerFunction(
     }
     return { head, exit };
   }
+  function initializeBindingPlan(
+    plan: BindingInitialization,
+    source: number,
+  ): number {
+    const input = save(
+      load(source, plan.root),
+      scalarType(plan.root),
+      plan.root,
+    );
+    expressionOverrides.set(plan.root, input);
+    const realm = dynamicObjects;
+    const iterators = createKeyIndex<Expression, number>(syntaxHash);
+    const exclusions = createKeyIndex<Expression, number>(syntaxHash);
+    const counts = createKeyIndex<Expression, number>(syntaxHash);
+    const cleanup: {
+      readonly cursor: number;
+      readonly caught: Builder;
+      readonly error: number;
+      readonly previous:
+        { readonly target: number; readonly slot: number } | undefined;
+    }[] = [];
+    const exhausted = createKeyIndex<Expression, number>(syntaxHash);
+    for (const step of plan.steps) {
+      if (step === undefined) throw "binding step invariant";
+      const action = step.realmAction;
+      if (action !== undefined) {
+        if (realm === undefined) throw "binding realm runtime invariant";
+        const source = step.read;
+        if (action === "object") {
+          const target = realm.bindingObject;
+          if (target === undefined) throw "binding object helper invariant";
+          dynamicCall(target, [value(source)], source);
+        } else if (action === "iterator") {
+          const target = realm.bindingIterator;
+          if (target === undefined) throw "binding iterator helper invariant";
+          const cursor = dynamicResult(target, [value(source)], source);
+          iterators.set(source, cursor);
+          const caught = block(),
+            body = block();
+          const error = temporary("general");
+          cleanup.push({ cursor, caught, error, previous: exception });
+          jump(body.id, source);
+          current = body;
+          exception = { target: caught.id, slot: error };
+        } else if (action === "skip") {
+          const target = realm.bindingSkip;
+          const cursor = iterators.get(source);
+          if (target === undefined || cursor === undefined)
+            throw "binding iterator elision invariant";
+          dynamicCall(target, [cursor], source);
+        } else {
+          const target = realm.bindingClose;
+          const frame = cleanup.pop();
+          if (target === undefined || frame === undefined)
+            throw "binding iterator close invariant";
+          const normal = block();
+          jump(normal.id, source);
+          exception = frame.previous;
+          current = frame.caught;
+          dynamicCall(
+            target,
+            [frame.cursor, booleanSlot(true, source)],
+            source,
+          );
+          finish({
+            kind: "throw",
+            value: load(frame.error, source),
+            start: source.start,
+            end: source.end,
+          });
+          current = normal;
+          dynamicCall(
+            target,
+            [frame.cursor, booleanSlot(false, source)],
+            source,
+          );
+          iterators.delete(source);
+        }
+        continue;
+      }
+      const currentStep = step;
+      function readStep(): number {
+        const array = currentStep.array;
+        const rest = currentStep.realmRest;
+        if (rest !== undefined) {
+          if (realm === undefined) throw "binding rest runtime invariant";
+          const target = realm.bindingRest;
+          if (target === undefined) throw "binding rest helper invariant";
+          const keys =
+            exclusions.get(rest) ??
+            dynamicResult(realm.createArray, [numberSlot(0, rest)], rest);
+          return dynamicResult(
+            target,
+            [value(rest), keys, numberSlot(counts.get(rest) ?? 0, rest)],
+            rest,
+          );
+        }
+        if (array === undefined)
+          return bindingDefault(value(currentStep.read), currentStep, false);
+        if (array.realm === true) {
+          if (realm === undefined) throw "binding iterator runtime invariant";
+          const target = array.rest ? realm.bindingTail : realm.bindingNext;
+          const cursor = iterators.get(array.source),
+            node = currentStep.read;
+          const schema = info(node).dynamicContract;
+          if (
+            target === undefined ||
+            cursor === undefined ||
+            schema === undefined
+          )
+            throw "binding iterator read invariant";
+          const raw = dynamicResult(target, [cursor], node);
+          const checked = dynamicResult(
+            realm.project,
+            [raw, stringSlot(schema, node)],
+            node,
+          );
+          return bindingDefault(
+            save(load(checked, node), scalarType(node), node),
+            currentStep,
+            false,
+          );
+        }
+        const node = currentStep.read;
+        const source = value(array.source);
+        const runtime =
+          slots[source] === "reference" ? listRuntime(array.source) : undefined;
+        if (array.inBounds) {
+          if (runtime === undefined) throw "fixed binding position invariant";
+          const position = numberSlot(array.position, node);
+          const item = listValue(runtime, "read", [source, position], node);
+          return bindingDefault(item, currentStep, true);
+        }
+        // Once the native iterator reaches its end, subsequent defaults can
+        // grow the list but cannot restart iteration. Elisions have no read.
+        let done = exhausted.get(array.source);
+        if (done === undefined) {
+          done = booleanSlot(false, node);
+          exhausted.set(array.source, done);
+        }
+        const active = block(),
+          after = block();
+        if (array.rest) {
+          const target = listRuntime(node);
+          const rest = listValue(target, "create", [numberSlot(0, node)], node);
+          choose(load(done, node), after, active, node);
+          current = active;
+          arrayValues(
+            array.source,
+            node,
+            (item, _typed) => listCall(target, "push", [rest, item], node),
+            source,
+            array.position,
+          );
+          jump(after.id, node);
+          current = after;
+          return bindingDefault(rest, currentStep, false);
+        }
+        const absent = nextValue++;
+        emit({
+          kind: "undefined",
+          id: absent,
+          start: node.start,
+          end: node.end,
+        });
+        const read = save(absent, scalarType(node), node);
+        choose(load(done, node), after, active, node);
+        current = active;
+        const position = numberSlot(array.position, node);
+        const length =
+          runtime === undefined
+            ? arrayLength(source, node)
+            : listValue(runtime, "length", [source], node);
+        store(done, load(binarySlot(">=", position, length, node), node), node);
+        const item = block();
+        choose(load(done, node), after, item, node);
+        current = item;
+        if (runtime !== undefined)
+          store(
+            read,
+            load(listValue(runtime, "read", [source, position], node), node),
+            node,
+          );
+        else {
+          const id = nextValue++;
+          emit({
+            kind: "array-read",
+            id,
+            array: load(source, node),
+            index: load(position, node),
+            start: node.start,
+            end: node.end,
+          });
+          store(read, id, node);
+        }
+        jump(after.id, node);
+        current = after;
+        return bindingDefault(read, currentStep, false);
+      }
+      const assignment = step.assignment;
+      const key = step.computedKey;
+      const object = step.realmObject;
+      const realmRead = info(step.read).dynamicObject === "read";
+      let keySlot: number | undefined;
+      if (
+        key !== undefined &&
+        (assignment !== undefined || object !== undefined)
+      ) {
+        const slot = value(key);
+        if (realmRead) {
+          if (realm === undefined)
+            throw "binding property key runtime invariant";
+          keySlot = dynamicResult(realm.convertKey, [slot], key);
+        } else keySlot = save(load(slot, key), scalarType(key), key);
+        expressionOverrides.set(key, keySlot);
+      }
+      if (object !== undefined) {
+        if (realm === undefined) throw "binding key list runtime invariant";
+        const source = step.read;
+        const excluded =
+          keySlot ??
+          (source.kind === "member"
+            ? stringSlot(source.property, source)
+            : undefined);
+        if (excluded === undefined) throw "binding excluded key invariant";
+        const keys =
+          exclusions.get(object) ??
+          dynamicResult(realm.createArray, [numberSlot(0, source)], source);
+        exclusions.set(object, keys);
+        const count = counts.get(object) ?? 0;
+        dynamicCall(
+          realm.define,
+          [keys, stringSlot(String(count), source), excluded],
+          source,
+        );
+        counts.set(object, count + 1);
+      }
+      if (assignment !== undefined) {
+        // Normal assignment captures its reference before requesting the RHS.
+        patternReads.set(step.target, readStep);
+        expression(assignment);
+        patternReads.delete(step.target);
+        if (keySlot !== undefined && key !== undefined)
+          expressionOverrides.delete(key);
+        continue;
+      }
+      const item = readStep();
+      if (keySlot !== undefined && key !== undefined)
+        expressionOverrides.delete(key);
+      const binding = step.binding;
+      if (binding === undefined) expressionOverrides.set(step.target, item);
+      else {
+        const local = fn.declarations.get(binding);
+        if (local === undefined) throw "binding pattern local invariant";
+        writeLocal(local.id, load(item, binding), binding);
+      }
+    }
+    expressionOverrides.delete(plan.root);
+    for (const step of plan.steps)
+      if (step !== undefined) expressionOverrides.delete(step.target);
+    return input;
+  }
+  function bindingDefault(
+    read: number,
+    step: BindingInitializationStep,
+    inBounds: boolean,
+  ): number {
+    const initializer = step.initializer;
+    const type = scalarType(step.target);
+    if (initializer === undefined)
+      return inBounds
+        ? save(bindingPayload(read, type, step.target), type, step.target)
+        : read;
+    if (undefinedSlots[read] === 1) return value(initializer);
+    const item = temporary(type);
+    const defined = block(),
+      absent = block(),
+      done = block();
+    choose(
+      load(holeAbsent(read, step.read), step.read),
+      defined,
+      absent,
+      step.read,
+    );
+    current = defined;
+    store(item, bindingPayload(read, type, step.target), step.target);
+    jump(done.id, step.target);
+    current = absent;
+    store(item, load(value(initializer), initializer), step.target);
+    jump(done.id, step.target);
+    current = done;
+    return item;
+  }
+  function bindingPayload(
+    read: number,
+    target: ScalarType,
+    node: Span,
+  ): number {
+    const source = slots[read];
+    const payload = load(read, node);
+    if (
+      (source === "optional-number" && target === "number") ||
+      (source === "optional-string" && target === "string") ||
+      (source === "optional-reference" && target === "reference")
+    ) {
+      const id = nextValue++;
+      emitUnwrap(id, payload, target, node);
+      return id;
+    }
+    return payload;
+  }
   function statement(
     input: Statement,
     loop: LoopTarget | undefined,
     named: readonly LabelTarget[] = [],
+    cellsAllocated: boolean = false,
   ): void {
     const node = input;
     if (current === undefined) return;
@@ -9085,10 +10100,11 @@ export function lowerFunction(
         break;
       }
       case "block":
-        allocateCells(node);
+        if (!cellsAllocated) allocateCells(node);
         hoistFunctions(node);
         for (const child of node.statements) {
           if (child === undefined) throw "block statement invariant";
+          if (child === fn.bindingPrologue) continue;
           statement(child, loop);
           createSunkFunctions(child);
         }
@@ -9107,8 +10123,14 @@ export function lowerFunction(
       case "variable":
         for (const d of node.declarations) {
           if (d === undefined) throw "declaration invariant";
-          if (d.kind === "object-binding" || d.kind === "array-binding")
-            throw "unchecked binding pattern";
+          if (d.kind === "object-binding" || d.kind === "array-binding") {
+            const plan = fn.bindingInitializations?.get(d);
+            const input = plan?.input;
+            if (plan === undefined || input === undefined)
+              throw "unchecked binding pattern";
+            initializeBindingPlan(plan, value(input));
+            continue;
+          }
           const local = fn.declarations.get(d);
           if (local === undefined) throw "binding invariant";
           const initializer = d.initializer;
@@ -9146,15 +10168,17 @@ export function lowerFunction(
         const pending =
           cleanup === undefined ? undefined : temporary("general");
         const binding = handler?.binding;
+        const pattern =
+          binding === undefined
+            ? undefined
+            : fn.bindingInitializations?.get(binding);
         let local: Local | undefined;
-        if (binding !== undefined) {
-          if (
-            binding.kind === "object-binding" ||
-            binding.kind === "array-binding"
-          )
-            throw "unchecked catch pattern";
+        if (
+          binding !== undefined &&
+          binding.kind !== "object-binding" &&
+          binding.kind !== "array-binding"
+        )
           local = fn.declarations.get(binding);
-        }
         const caughtSlot =
           local === undefined ? temporary("general") : local.id;
         const cleanupException =
@@ -9180,7 +10204,11 @@ export function lowerFunction(
           exception = cleanupException;
           current = caught;
           if (local !== undefined) cellAccess(local.id, "initialize", handler);
-          statement(handler.body, loop);
+          if (pattern !== undefined) {
+            allocateCells(handler.body);
+            initializeBindingPlan(pattern, caughtSlot);
+          }
+          statement(handler.body, loop, [], pattern !== undefined);
           if (current !== undefined) jump(merge.id, node);
         } else
           caught.terminator = {
@@ -9428,9 +10456,8 @@ export function lowerFunction(
       }
       case "for-of": {
         const binding = node.binding;
-        if (binding.kind === "object-binding")
-          throw "unchecked iteration pattern";
-        if (binding.kind === "array-binding") {
+        const pattern = fn.bindingInitializations?.get(binding);
+        if (binding.kind === "array-binding" && pattern === undefined) {
           const runtime = mapRuntime(node.iterable).iterator;
           if (runtime === undefined) throw "map iterator runtime invariant";
           allocateCells(node);
@@ -9486,6 +10513,14 @@ export function lowerFunction(
           current = exit;
           break;
         }
+        const local =
+          pattern === undefined
+            ? binding.kind === "object-binding" ||
+              binding.kind === "array-binding"
+              ? undefined
+              : fn.declarations.get(binding)
+            : fn.bindingIterationLocals?.get(binding);
+        if (local === undefined) throw "iteration binding invariant";
         allocateCells(node);
         if (info(node.iterable).setElement !== undefined) {
           const runtime = setRuntime(node.iterable).iterator;
@@ -9493,8 +10528,6 @@ export function lowerFunction(
           const receiver = value(node.iterable),
             cursor = runtimeCall(runtime.create, [receiver], node);
           if (cursor === undefined) throw "set cursor result invariant";
-          const local = fn.declarations.get(binding);
-          if (local === undefined) throw "set iteration binding invariant";
           const head = block(),
             body = block(),
             exit = block();
@@ -9513,6 +10546,7 @@ export function lowerFunction(
             node.mode === "var" ? "write" : "initialize",
             binding,
           );
+          if (pattern !== undefined) initializeBindingPlan(pattern, local.id);
           statement(node.body, iterationTarget(head.id, exit.id, named));
           if (current !== undefined) jump(head.id, node);
           current = exit;
@@ -9521,9 +10555,7 @@ export function lowerFunction(
         if (scalarType(node.iterable) === "string") {
           const string = value(node.iterable),
             index = numberSlot(0, node),
-            local = fn.declarations.get(binding),
             lengthId = nextValue++;
-          if (local === undefined) throw "string iteration binding invariant";
           emit({
             kind: "string-length",
             id: lengthId,
@@ -9571,6 +10603,7 @@ export function lowerFunction(
             node.mode === "var" ? "write" : "initialize",
             binding,
           );
+          if (pattern !== undefined) initializeBindingPlan(pattern, local.id);
           statement(node.body, iterationTarget(update.id, exit.id, named));
           if (current !== undefined) jump(update.id, node);
           current = update;
@@ -9580,9 +10613,7 @@ export function lowerFunction(
           break;
         }
         const array = value(node.iterable),
-          index = numberSlot(0, node),
-          local = fn.declarations.get(binding);
-        if (local === undefined) throw "iteration binding invariant";
+          index = numberSlot(0, node);
         const head = block(),
           body = block(),
           update = block(),
@@ -9647,6 +10678,7 @@ export function lowerFunction(
           node.mode === "var" ? "write" : "initialize",
           binding,
         );
+        if (pattern !== undefined) initializeBindingPlan(pattern, local.id);
         statement(node.body, iterationTarget(update.id, exit.id, named));
         if (current !== undefined) jump(update.id, node);
         current = update;
@@ -9785,6 +10817,8 @@ export function lowerFunction(
     );
     cellAccess(receiverLocal, "initialize", fn.node);
   }
+  const bindingPrologue = fn.bindingPrologue;
+  if (bindingPrologue !== undefined) statement(bindingPrologue, undefined);
   for (let i = 0; i < fn.node.parameters.length; i++) {
     const p = fn.node.parameters[i],
       input = parameters[i];
@@ -9792,6 +10826,8 @@ export function lowerFunction(
     const initializer = p.initializer;
     if (initializer === undefined) {
       cellAccess(input, "initialize", p);
+      const pattern = fn.bindingInitializations?.get(p);
+      if (pattern !== undefined) initializeBindingPlan(pattern, input);
       continue;
     }
     const local = fn.declarations.get(p);
@@ -9852,6 +10888,8 @@ export function lowerFunction(
     jump(merge.id, p);
     current = merge;
     cellAccess(local.id, "initialize", p);
+    const pattern = fn.bindingInitializations?.get(p);
+    if (pattern !== undefined) initializeBindingPlan(pattern, local.id);
   }
   for (const local of fn.locals) {
     if (local === undefined) throw "local invariant";

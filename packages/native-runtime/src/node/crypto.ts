@@ -1,7 +1,4 @@
 /** `node:crypto` message digests (docs/native-ffi.md, "node:crypto").
- * KNOWN DEFECT (typed-pipeline gap, docs/native-ffi.md#known-defects):
- * Node throws plain Errors with these messages; the typed pipeline can
- * construct only TypeError and RangeError, so these are TypeErrors.
  * SHA-256 is Tint's own (`@tint/foundation/binary/sha256-stream`) on every
  * target: its compression binds the `sha256-rounds` intrinsic (the ARMv8
  * SHA-256 instructions) in native builds, so it needs no system library —
@@ -14,6 +11,7 @@ import {
 } from "@tint/foundation/binary/sha256-stream";
 import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
 import { encodeHex, encodeBase64 } from "@tint/foundation/text/base-encoding";
+import { codedError } from "./errors.ts";
 
 /** A message digest in progress (Node's Hash). */
 export interface Hash {
@@ -31,12 +29,12 @@ export interface Hash {
  * class. */
 export function createHash(algorithm: string): Hash {
   if (!sameAsciiLetters(algorithm, "sha256"))
-    throw new TypeError("Digest method not supported");
+    throw new Error("Digest method not supported");
   const stream = createSha256Stream();
   let finalized = false;
   const hash: Hash = {
     update(data: string | Uint8Array): Hash {
-      if (finalized) throw new TypeError("Digest already called");
+      requireActive();
       updateSha256Stream(
         stream,
         typeof data === "string" ? encodeUTF8(data) : data,
@@ -44,6 +42,7 @@ export function createHash(algorithm: string): Hash {
       return hash;
     },
     digest(encoding?: string): string | Uint8Array {
+      requireActive();
       if (encoding === undefined) return finish();
       if (
         encoding !== "hex" &&
@@ -66,8 +65,11 @@ export function createHash(algorithm: string): Hash {
       return text;
     },
   };
+  function requireActive(): void {
+    if (finalized)
+      throw codedError("Digest already called", "ERR_CRYPTO_HASH_FINALIZED");
+  }
   function finish(): Uint8Array {
-    if (finalized) throw new TypeError("Digest already called");
     finalized = true;
     return finishSha256Stream(stream);
   }

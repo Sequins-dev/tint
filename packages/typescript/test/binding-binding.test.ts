@@ -270,25 +270,26 @@ test("computed object keys participate in closure capture analysis", () => {
   );
 });
 
-test("typed array iteration defaults fail explicitly until typed lowering supports them", () => {
-  const result = bind("function f(){for(const [x=42] of values){}}", [
-    "values",
-  ]);
-  assert.equal(result.ok, false);
-  if (!result.ok) {
-    assert.equal(result.error.code, "UNSUPPORTED");
-    assert.match(result.error.message, /array iteration defaults/);
-  }
-});
-
-test("typed array iteration rest fails explicitly until typed lowering supports it", () => {
-  const result = bind("function f(){for(const [...rest] of values){}}", [
-    "values",
-  ]);
-  assert.equal(result.ok, false);
-  if (!result.ok) {
-    assert.equal(result.error.code, "UNSUPPORTED");
-    assert.match(result.error.message, /array iteration rest/);
+test("typed iteration binds array defaults and rest in the loop scope", () => {
+  const result = bind(
+    "function f(defaultValue){for(const [x=defaultValue, ...rest] of values){use(x, rest);}}",
+    ["values", "use"],
+  );
+  assert.ok(result.ok);
+  const bindings = result.value.bindings;
+  const x = bindings.find((binding) => binding.name === "x");
+  const rest = bindings.find((binding) => binding.name === "rest");
+  assert.ok(x && rest);
+  assert.equal(x.scope, rest.scope);
+  assert.equal(result.value.scopes[x.scope]?.kind, "for");
+  for (const name of ["defaultValue", "x", "rest"]) {
+    const binding = bindings.find((entry) => entry.name === name);
+    assert.ok(
+      binding &&
+        result.value.references.some(
+          (reference) => reference.binding === binding.id,
+        ),
+    );
   }
 });
 

@@ -145,7 +145,8 @@ function generalType(checked: CheckedClosures, id: number): boolean {
   if (
     type?.kind === "unknown" ||
     type?.kind === "realm-callable" ||
-    type?.kind === "dynamic-result"
+    type?.kind === "dynamic-result" ||
+    type?.kind === "void-value"
   )
     return true;
   if (
@@ -181,7 +182,8 @@ function generalType(checked: CheckedClosures, id: number): boolean {
     } else if (
       current?.kind === "unknown" ||
       current?.kind === "realm-callable" ||
-      current?.kind === "dynamic-result"
+      current?.kind === "dynamic-result" ||
+      current?.kind === "void-value"
     )
       unknown = true;
     else if (current?.kind === "never") return;
@@ -427,7 +429,8 @@ export function admitsUndefined(checked: CheckedClosures, id: number): boolean {
     t.kind === "undefined" ||
     t.kind === "void" ||
     t.kind === "unknown" ||
-    t.kind === "dynamic-result"
+    t.kind === "dynamic-result" ||
+    t.kind === "void-value"
   )
     return true;
   return (
@@ -699,6 +702,12 @@ export interface RecordContracts extends RecordOperations {
     name: string,
     type: ScalarType,
   ) => void;
+  readonly planProperty: (
+    node: Expression,
+    receiver: number,
+    name: string,
+    type: ScalarType,
+  ) => void;
   readonly forType: (type: number) => number | undefined;
   /** The hidden field of a viewed record layout that holds the record's
    * JavaScript view (the value bridge), or undefined. */
@@ -752,6 +761,7 @@ export function createRecordContracts(
    * record keeps one JavaScript identity (docs/unified-pipeline.md). Other
    * layouts are unchanged. */
   viewed: ReadonlySet<number> = new Set<number>(),
+  distinct?: ReadonlySet<number>,
 ): RecordContracts {
   if (target.pointerSize !== 8 || target.wordSize !== 8)
     fail("record IR currently requires a 64-bit target");
@@ -802,10 +812,15 @@ export function createRecordContracts(
       name
     );
   }
+  // Native error brands belong to their factory layouts even when another
+  // record has exactly the same public fields and storage.
+  const distinctLayouts =
+    distinct === undefined ? undefined : new Set<number>();
   function sharedLayout(wanted: string): number {
     // Index records added since the last lookup; a record with cell state
     // or a missing field name can never be shared.
     for (; indexedLayouts < records.length; indexedLayouts++) {
+      if (distinctLayouts?.has(indexedLayouts) === true) continue;
       const record = records[indexedLayouts],
         recordNames = names[indexedLayouts];
       if (record === undefined || recordNames === undefined) continue;
@@ -1212,13 +1227,15 @@ export function createRecordContracts(
         throw "record field invariant";
       wanted += layoutFieldKey(field.type, field.mutable, field.optional, name);
     }
-    const duplicate = sharedLayout(wanted);
+    const distinctLayout = distinct?.has(id) === true;
+    const duplicate = distinctLayout ? -1 : sharedLayout(wanted);
     if (duplicate >= 0) {
       byType[id] = duplicate;
       return duplicate;
     }
     const result = records.length;
     if (identity !== undefined) identities[result] = key;
+    if (distinctLayout) distinctLayouts?.add(result);
     records.push(planRecordLayout(fields, layout, fail));
     names.push(fieldNames);
     if (viewed.has(id)) viewSlots[result] = fields.length - 1;
@@ -1244,6 +1261,7 @@ export function createRecordContracts(
   function spreadProperties(
     source: Expression,
     fieldNames: readonly string[],
+    excluded?: readonly string[],
   ): { name: string; access: RecordAccess; alwaysPresent: boolean }[] {
     const sourceType = checked.expressions.get(source);
     if (sourceType === undefined) fail("missing spread source type");
@@ -1272,6 +1290,21 @@ export function createRecordContracts(
         continue;
       for (const shape of shapesForType(id)) {
         if (shape === undefined) throw "spread shape invariant";
+        if (excluded !== undefined) {
+          const excludedNames = excluded;
+
+          if (nonEnumerable[shape] === 1)
+            fail("typed object rest requires known own enumerable fields");
+          const fields = names[shape];
+          if (fields === undefined) throw "spread shape fields invariant";
+          for (const name of fields)
+            if (
+              name !== undefined &&
+              !fieldNames.includes(name) &&
+              !excludedNames.includes(name)
+            )
+              fail("typed object rest requires known own enumerable fields");
+        }
         if (nonEnumerable[shape] !== 1)
           candidates.push({ type: id, record: shape });
       }
@@ -1488,6 +1521,41 @@ export function createRecordContracts(
       }
       accesses.set(node, { type, choices });
     },
+    planProperty: (node, receiver, name, type) => {
+      const candidates = compatibleShapes(receiver);
+      const choices: RecordAccessChoice[] = [];
+      const seen = new Set<number>();
+      function property(record: number): RecordAccessChoice | undefined {
+        const field = names[record]?.indexOf(name) ?? -1;
+        const info = records[record]?.fields[field];
+        if (info === undefined) return undefined;
+        const prototype = prototypes[record];
+        const inherited =
+          prototype === undefined ? undefined : property(prototype.record);
+        if (inherited === undefined || prototype === undefined)
+          return { record, field, type: info.type };
+        return {
+          record,
+          field,
+          type: info.type,
+          prototype: {
+            field: prototype.field,
+            access: { type: inherited.type, choices: [inherited] },
+          },
+        };
+      }
+      for (const candidate of candidates) {
+        if (candidate === undefined)
+          throw "record membership candidate invariant";
+        for (const descriptor of shapesForType(candidate)) {
+          if (descriptor === undefined || seen.has(descriptor)) continue;
+          seen.add(descriptor);
+          const choice = property(descriptor);
+          if (choice !== undefined) choices.push(choice);
+        }
+      }
+      accesses.set(node, { type, choices });
+    },
     forType: record,
     viewSlot: (record: number): number | undefined => viewSlots[record],
     plannedRecord: (type) => {
@@ -1699,7 +1767,14 @@ export function createRecordContracts(
           const copied = fields.filter(
             (name) => name !== undefined && !overwritten.has(name),
           );
-          spreads.set(property.value, spreadProperties(property.value, copied));
+          spreads.set(
+            property.value,
+            spreadProperties(
+              property.value,
+              copied,
+              checked.bindingRestExclusions?.get(node),
+            ),
+          );
         } else overwritten.add(property.name);
       }
       constructions.set(node, construction);

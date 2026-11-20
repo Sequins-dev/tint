@@ -11,6 +11,8 @@ import {
   literalPropertyName,
   isOptionalChain,
   rewriteModule,
+  visitBindingExpressions,
+  bindingIdentifiers,
 } from "../syntax/index.ts";
 import { createUnionIndex } from "./union-index.ts";
 import {
@@ -23,6 +25,7 @@ import {
 import {
   createKeyIndex,
   type ReadonlyKeyIndex,
+  type KeyIndex,
   createStringIndex,
 } from "@tint/foundation/collections/key-index";
 import {
@@ -42,6 +45,10 @@ import type {
   BlockStatement,
   ClassDefinition,
   ClassElement,
+  VariableBinding,
+  Binding as SyntaxBinding,
+  ObjectBindingProperty,
+  PropertySignature,
 } from "../syntax/index.ts";
 import {
   bindModule,
@@ -178,6 +185,10 @@ export type ClosureIntrinsic =
   | "array-instanceof"
   | "error-is"
   | "error-property"
+  | "literal-property-has"
+  | "list-has"
+  | "flow-property-read"
+  | "flow-property-read-boxed"
   | "range-error-new"
   | "range-error-is"
   | "type-error-new"
@@ -186,7 +197,7 @@ export type ClosureIntrinsic =
   | "array-byte-offset"
   | "array-byte-length"
   | "dynamic-object-array-literal"
-  | "dynamic-object-array-push"
+  | "dynamic-object-array-method"
   | "dynamic-object-static-call"
   | "dynamic-object-own-enumeration"
   | "dynamic-object-enroll"
@@ -194,6 +205,8 @@ export type ClosureIntrinsic =
   | "dynamic-object-literal"
   | "dynamic-object-read"
   | "dynamic-object-write"
+  | "dynamic-object-update"
+  | "dynamic-object-compound"
   | "dynamic-object-has"
   | "dynamic-object-delete"
   | "array-length"
@@ -238,7 +251,42 @@ export interface RestCall {
   readonly list: number;
   readonly admitsUndefined: boolean;
 }
+export interface BindingInitialization {
+  /** Evaluated once for declarations/assignments. Parameter and loop
+   * sites provide the input from their existing entry slots. */
+  readonly input: Expression | undefined;
+  readonly root: Expression;
+  readonly steps: readonly BindingInitializationStep[];
+}
+export interface BindingInitializationStep {
+  readonly read: Expression;
+  readonly initializer: Expression | undefined;
+  readonly target: Expression;
+  readonly binding: SyntaxBinding | undefined;
+  readonly array?: ArrayBindingRead;
+  readonly assignment?: Expression;
+  readonly computedKey?: Expression;
+  readonly realmObject?: Expression;
+  readonly realmRest?: Expression;
+  readonly realmAction?: "object" | "iterator" | "skip" | "close";
+}
+interface ArrayBindingRead {
+  readonly source: Expression;
+  readonly position: number;
+  readonly rest: boolean;
+  readonly inBounds: boolean;
+  readonly realm?: boolean;
+}
 export interface CheckedClosures {
+  readonly bindingRealm?: ReadonlyKeyIndex<Span, boolean>;
+  readonly needsBindingRealm?: boolean;
+  readonly bindingInitializations?:
+    ReadonlyKeyIndex<Span, BindingInitialization> | undefined;
+  readonly bindingValues?: ReadonlyKeyIndex<Expression, number>;
+  readonly bindingRestExclusions?: ReadonlyKeyIndex<
+    Expression,
+    readonly string[]
+  >;
   /** Resolved declaration names share IDs with this result's finite type graph. */
   readonly typeNames: ReadonlyKeyIndex<string, number>;
   readonly classes: readonly ClassContract[];
@@ -265,6 +313,8 @@ export interface CheckedClosures {
   readonly chainReceivers: ReadonlyKeyIndex<Expression, number>;
   readonly restCalls?: ReadonlyKeyIndex<Expression, RestCall>;
   readonly voidResultDiscard?: boolean;
+  readonly voidValueCalls?: ReadonlyKeyIndex<Expression, boolean>;
+  readonly voidValueReturns?: ReadonlySet<number>;
   /** `x as T` assertions from `unknown` to T: checked downcasts, which
    * throw a TypeError when the value is not a T (docs/unified-pipeline.md). */
   readonly downcasts?: ReadonlyKeyIndex<Expression, number>;
@@ -306,6 +356,7 @@ function checkClosureModuleLayout(
 ): ClosureResult {
   const realmSinks = createKeyIndex<Expression, boolean>(syntaxHash);
   const realmReads = createKeyIndex<Expression, boolean>(syntaxHash);
+  const realmReturnOwners = createKeyIndex<Span, number>(syntaxHash);
   let replayRealm = false;
   // Syntax the checker synthesizes for an existing node reuses that node's
   // span; distinct hashes, above any traversal ordinal, keep each one apart
@@ -356,6 +407,15 @@ function checkClosureModuleLayout(
   const uninitialized = new Set<Span>(),
     varAssignments = new Set<Span>();
   const varInitializers = createKeyIndex<Span, Expression>(syntaxHash);
+  const bindingInitializations = createKeyIndex<Span, BindingInitialization>(
+    syntaxHash,
+  );
+  const bindingRealm = createKeyIndex<Span, boolean>(syntaxHash);
+  let needsBindingRealm = false;
+  const patternValues = createKeyIndex<Expression, number>(syntaxHash);
+  const bindingRestExclusions = createKeyIndex<Expression, readonly string[]>(
+    syntaxHash,
+  );
   const declared = createKeyIndex<Span, TypeNode>(syntaxHash),
     signatures = createKeyIndex<Span, TypeNode>(syntaxHash),
     literals = createKeyIndex<Expression, TypeNode>(syntaxHash);
@@ -382,6 +442,85 @@ function checkClosureModuleLayout(
       declared.set(node, type);
     }
   }
+  function literalDefaultType(value: Expression): TypeNode | undefined {
+    const node = ungroup(value);
+    const span: Span = {
+      start: node.start,
+      end: node.end,
+      nodeHash: syntheticNodeHash(),
+    };
+    switch (node.kind) {
+      case "number":
+      case "string":
+      case "boolean":
+      case "bigint":
+      case "null":
+        return { ...span, kind: "named", name: node.kind };
+      case "object":
+        if (node.properties.length === 0)
+          return { ...span, kind: "object", properties: [] };
+        break;
+      case "satisfies":
+        return node.type;
+    }
+    return undefined;
+  }
+  function emptyPatternContext(
+    pattern: VariableBinding,
+    input: Expression,
+  ): TypeNode | undefined {
+    const source = ungroup(input);
+    const span: Span = {
+      start: pattern.start,
+      end: pattern.end,
+      nodeHash: syntheticNodeHash(),
+    };
+    if (
+      pattern.kind === "object-binding" &&
+      source.kind === "object" &&
+      source.properties.length === 0
+    ) {
+      const properties: PropertySignature[] = [];
+      for (const property of pattern.properties) {
+        const value = property?.binding.initializer;
+        if (
+          property === undefined ||
+          property.keyExpression !== undefined ||
+          value === undefined
+        )
+          return undefined;
+        const type = literalDefaultType(value);
+        if (type === undefined) return undefined;
+        properties.push({
+          name: property.name,
+          type,
+          readonly: false,
+          optional: true,
+          start: property.start,
+          end: property.end,
+          nodeHash: syntheticNodeHash(),
+        });
+      }
+      return { ...span, kind: "object", properties };
+    }
+    if (
+      pattern.kind === "array-binding" &&
+      source.kind === "array" &&
+      source.elements.length === 0
+    ) {
+      return {
+        ...span,
+        kind: "array",
+        element: {
+          ...span,
+          kind: "named",
+          name: "undefined",
+          nodeHash: syntheticNodeHash(),
+        },
+      };
+    }
+    return undefined;
+  }
   function collectFunction(
     node: Span,
     params: readonly Parameter[],
@@ -391,15 +530,25 @@ function checkClosureModuleLayout(
     receiver?: TypeNode,
   ): void {
     if (receiver !== undefined) annotations.push(receiver);
-    for (const p of params) {
+    let contextualParameters: Parameter[] | undefined;
+    for (let index = 0; index < params.length; index++) {
+      const p = params[index];
       if (p === undefined) throw "missing parameter";
       if (p.kind === "pattern-parameter")
-        fail(
-          p,
-          "UNSUPPORTED",
-          "typed parameter destructuring is not supported yet",
-        );
-      if (p.initializer !== undefined) collect(p.initializer);
+        visitBindingExpressions(p.pattern, (expression) => collect(expression));
+      const initializer = p.initializer;
+      if (initializer !== undefined) collect(initializer);
+      const inferred =
+        p.type === undefined &&
+        p.kind === "pattern-parameter" &&
+        initializer !== undefined
+          ? emptyPatternContext(p.pattern, initializer)
+          : undefined;
+      if (inferred !== undefined) {
+        const contextual = contextualParameters ?? params.slice();
+        contextual[index] = { ...p, type: inferred };
+        contextualParameters = contextual;
+      }
       annotation(
         p,
         p.optional && p.type !== undefined
@@ -419,9 +568,10 @@ function checkClosureModuleLayout(
               end: p.end,
               nodeHash: syntheticNodeHash(),
             }
-          : p.type,
+          : (p.type ?? inferred),
       );
     }
+    const signatureParameters = contextualParameters ?? params;
     if (result !== undefined) annotations.push(result);
     let signatureResult = result;
     if (result === undefined && !named && params.some((p) => p.rest)) {
@@ -435,12 +585,14 @@ function checkClosureModuleLayout(
       signatureResult = provisional;
     }
     if (
-      params.every((p) => p !== undefined && p.type !== undefined) &&
+      signatureParameters.every(
+        (p) => p !== undefined && p.type !== undefined,
+      ) &&
       signatureResult !== undefined
     ) {
       const type: TypeNode = {
         kind: "function",
-        parameters: params,
+        parameters: signatureParameters,
         ...(receiver === undefined ? {} : { receiver }),
         returnType: signatureResult,
         start: node.start,
@@ -607,16 +759,23 @@ function checkClosureModuleLayout(
           const handler = node.handler;
           if (handler !== undefined && handler.binding !== undefined) {
             const binding = handler.binding;
-            if (
+            const pattern =
               binding.kind === "object-binding" ||
-              binding.kind === "array-binding"
-            )
-              fail(
-                binding,
-                "UNSUPPORTED",
-                "typed catch destructuring is not supported yet",
+              binding.kind === "array-binding";
+            if (pattern) {
+              const type = binding.type;
+              if (type?.kind !== "named" || type.name !== "any")
+                fail(
+                  binding,
+                  "TYPE_MISMATCH",
+                  "catch patterns require an any annotation",
+                  true,
+                );
+              visitBindingExpressions(binding, (expression) =>
+                collect(expression),
               );
-            const bindingType = binding.type;
+            }
+            const bindingType = pattern ? undefined : binding.type;
             if (
               bindingType !== undefined &&
               (bindingType.kind !== "named" || bindingType.name !== "unknown")
@@ -648,12 +807,18 @@ function checkClosureModuleLayout(
         case "variable":
           for (const d of node.declarations) {
             if (d === undefined) throw "missing declaration";
-            if (d.kind === "object-binding" || d.kind === "array-binding")
-              fail(
+            if (d.kind === "object-binding" || d.kind === "array-binding") {
+              const initializer = d.initializer;
+              annotation(
                 d,
-                "UNSUPPORTED",
-                "typed binding patterns are not implemented",
+                d.type ??
+                  (initializer === undefined
+                    ? undefined
+                    : emptyPatternContext(d, initializer)),
               );
+              visitBindingExpressions(d, (expression) => collect(expression));
+              continue;
+            }
             annotation(d, d.type);
             const initializer = d.initializer;
             if (initializer !== undefined) {
@@ -719,17 +884,18 @@ function checkClosureModuleLayout(
               "typed for-await lowering is not implemented",
             );
           const loopBinding = node.binding;
-          if (loopBinding.kind === "object-binding")
-            fail(
-              loopBinding,
-              "UNSUPPORTED",
-              "typed object iteration patterns are not supported yet",
+          if (
+            loopBinding.kind === "object-binding" ||
+            loopBinding.kind === "array-binding"
+          ) {
+            visitBindingExpressions(loopBinding, (expression) =>
+              collect(expression),
             );
-          if (loopBinding.kind === "array-binding") {
-            for (const element of loopBinding.elements)
-              if (element !== undefined) {
+            if (node.mode === "var")
+              for (const element of bindingIdentifiers(loopBinding)) {
+                if (element === undefined) throw "iteration binding invariant";
                 annotation(element, element.type);
-                if (node.mode === "var") varAssignments.add(element);
+                varAssignments.add(element);
               }
           } else {
             annotation(loopBinding, loopBinding.type);
@@ -997,7 +1163,14 @@ function checkClosureModuleLayout(
   // that a later call must remove. Branch refinements use fresh set identities.
   let callSafeFacts: Set<number> | undefined;
   const pendingParameters = new Set<number>();
-  const narrowed: { binding: number; type: number; property?: string }[] = [],
+  const openPatternBindings = new Set<number>();
+  let writablePatternCandidates: Set<number> | undefined;
+  const narrowed: {
+      binding: number;
+      type: number;
+      property?: string;
+      checkedRead?: boolean;
+    }[] = [],
     narrowKeys = createStringIndex<number>();
   // Interned tokens outlive branch snapshots. This index limits queries and
   // invalidation by binding; each snapshot still decides active membership.
@@ -1058,13 +1231,16 @@ function checkClosureModuleLayout(
     binding: number,
     type: number,
     property?: string,
+    checkedRead?: boolean,
   ): number {
     const key =
         String(binding) +
         ":" +
         String(type) +
         ":" +
-        (property === undefined ? "object" : "field:" + property),
+        (property === undefined
+          ? "object"
+          : (checkedRead === true ? "checked-field:" : "field:") + property),
       known = narrowKeys.get(key);
     if (known !== undefined) return known;
     const token = graph.bindings.length + narrowed.length;
@@ -1076,6 +1252,7 @@ function checkClosureModuleLayout(
       binding,
       type,
       ...(property === undefined ? {} : { property }),
+      ...(checkedRead === true ? { checkedRead } : {}),
     });
     return token;
   }
@@ -1227,7 +1404,7 @@ function checkClosureModuleLayout(
       const fact = narrowed[token - graph.bindings.length];
       if (fact !== undefined) {
         if (
-          fact.property === undefined &&
+          (fact.property === undefined || fact.checkedRead === true) &&
           (graph.bindings[fact.binding]?.mutable === false ||
             (!immutableOnly &&
               graph.bindings[fact.binding]?.captured === false))
@@ -1320,6 +1497,7 @@ function checkClosureModuleLayout(
     if (value === undefined) return false;
     if (
       value.kind === "unknown" ||
+      value.kind === "void-value" ||
       value.kind === "never" ||
       value.kind === "number" ||
       value.kind === "string" ||
@@ -1656,6 +1834,8 @@ function checkClosureModuleLayout(
       if (b.mutable && b.captured) callSafeFacts = undefined;
       if (deferred.has(b.id)) present.add(assignedToken(b.id));
       forgetNarrowed(b.id);
+      if (openPatternBindings.has(b.id))
+        present.add(narrowToken(b.id, op.value));
       // Presence only narrows a declared union containing undefined. Definite
       // assignment has separate tokens; definite types need no snapshot entry.
       if (
@@ -2489,7 +2669,7 @@ function checkClosureModuleLayout(
     );
   }
   function generalFact(
-    kind: "realm-callable" | "dynamic-result",
+    kind: "realm-callable" | "dynamic-result" | "void-value",
     node: Span,
   ): number {
     const known = internedType(kind);
@@ -2722,6 +2902,89 @@ function checkClosureModuleLayout(
     }
     return result;
   }
+  function membershipObject(id: number): boolean {
+    const type = types[id];
+    if (type?.kind === "union") return type.members.every(membershipObject);
+    return type?.kind === "object" || isErrorKind(type?.kind);
+  }
+  function unknownType(node: Span): number {
+    const id = types.findIndex((type) => type?.kind === "unknown");
+    return id >= 0
+      ? id
+      : appendType({ kind: "unknown" }, node, "invalid unknown property type");
+  }
+  function withPropertyFact(
+    base: Set<number>,
+    binding: number,
+    property: string,
+    type: number,
+    checkedRead: boolean,
+  ): Set<number> {
+    const result = new Set(base);
+    for (const token of narrowingTokens.get(binding) ?? []) {
+      if (token === undefined) throw "property fact invariant";
+      if (
+        narrowed[token - graph.bindings.length]?.property === factKey(property)
+      )
+        result.delete(token);
+    }
+    result.add(narrowToken(binding, type, factKey(property), checkedRead));
+    return result;
+  }
+  function refineIntroducedProperty(
+    node: Expression,
+    truth: boolean,
+    base: Set<number>,
+  ): Set<number> | undefined {
+    if (
+      node.kind !== "binary" ||
+      (node.operator !== "===" && node.operator !== "!==")
+    )
+      return undefined;
+    if (truth !== (node.operator === "===")) return undefined;
+    const left = literals.get(ungroup(node.left));
+    const literal = left ?? literals.get(ungroup(node.right));
+    if (literal?.kind !== "literal") return undefined;
+    const compared = ungroup(left === undefined ? node.left : node.right);
+    const query = compared.kind === "unary" && compared.operator === "typeof";
+    const target =
+      query && compared.kind === "unary" ? ungroup(compared.operand) : compared;
+    if (target.kind !== "member" && target.kind !== "index") return undefined;
+    const read = intrinsics.get(target);
+    if (read !== "flow-property-read" && read !== "flow-property-read-boxed")
+      return undefined;
+    const binding = references.get(ungroup(target.object));
+    const property =
+      target.kind === "member"
+        ? target.property
+        : checkedPropertyName(
+            target.index,
+            types[expressions.get(target.index) ?? -1],
+          );
+    if (
+      binding === undefined ||
+      property === undefined ||
+      propertyFact(target.object, property, base) === undefined
+    )
+      return undefined;
+    const value = literal.value;
+    const selected = query
+      ? value === "string"
+        ? string
+        : value === "number"
+          ? number
+          : value === "boolean"
+            ? boolean
+            : value === "bigint"
+              ? bigint
+              : value === "undefined"
+                ? undefinedType
+                : undefined
+      : typeOf(literal);
+    return selected === undefined
+      ? undefined
+      : withPropertyFact(base, binding.id, property, selected, true);
+  }
   function refineField(
     node: Expression,
     truth: boolean,
@@ -2875,6 +3138,34 @@ function checkClosureModuleLayout(
           return narrowed;
         }
       }
+      if (
+        truth &&
+        node.operator === "in" &&
+        intrinsics.get(node) === "literal-property-has"
+      ) {
+        const binding = references.get(ungroup(node.right));
+        const object = expressions.get(node.right);
+        const key = checkedPropertyName(
+          node.left,
+          types[expressions.get(node.left) ?? -1],
+        );
+        if (
+          binding !== undefined &&
+          object !== undefined &&
+          key !== undefined
+        ) {
+          const property = system.property(object, key);
+          const existing = propertyFact(node.right, key, base);
+          if (existing === undefined)
+            return withPropertyFact(
+              base,
+              binding.id,
+              key,
+              property.ok ? property.value : unknownType(node),
+              !property.ok,
+            );
+        }
+      }
       if (node.operator === "&&")
         return truth
           ? refine(
@@ -2959,6 +3250,8 @@ function checkClosureModuleLayout(
     if (literal !== undefined) return literal;
     const tagged = refineDiscriminant(node, truth, base);
     if (tagged !== undefined) return tagged;
+    const introduced = refineIntroducedProperty(node, truth, base);
+    if (introduced !== undefined) return introduced;
     const field = refineField(node, truth, base);
     if (field !== undefined) return field;
     // Delegated refinements produce their own result. Copy only when this
@@ -3041,7 +3334,7 @@ function checkClosureModuleLayout(
         // when this view and its binding are readonly. Declared discriminant
         // variants remain stable for const bindings under strict assignment.
         if (
-          fact.property !== undefined ||
+          (fact.property !== undefined && fact.checkedRead !== true) ||
           (graph.bindings[fact.binding]?.mutable !== false &&
             graph.bindings[fact.binding]?.captured !== false)
         )
@@ -3189,6 +3482,8 @@ function checkClosureModuleLayout(
           parameterAnnotation === undefined
             ? expected
             : typeOf(parameterAnnotation);
+        const b = binding(p);
+        if (realmPlan?.bindings.has(b.id)) actual = realmPayload(actual, p);
         const initializer = p.initializer;
         if (initializer === undefined) requireType(expected, actual, p);
         else {
@@ -3217,13 +3512,33 @@ function checkClosureModuleLayout(
           )
             actual = defined;
         }
-        const b = binding(p);
         bindingTypes[b.id] = actual;
         cell(b, { kind: "initialize", value: actual }, p, owner);
         pendingParameters.delete(b.id);
+        if (p.kind === "pattern-parameter") {
+          if (p.rest)
+            fail(
+              p,
+              "UNSUPPORTED",
+              "destructured rest parameters require rest parameter lowering",
+            );
+          initializeBindingPattern(
+            p.pattern,
+            undefined,
+            initializer === undefined
+              ? actual
+              : (presentType(actual) ?? actual),
+            owner,
+            p,
+            undefined,
+            false,
+            p.type !== undefined,
+          );
+        }
       }
       let result =
         returnAnnotation === undefined ? type.result : typeOf(returnAnnotation);
+      if (realmPlan?.results.has(owner)) result = realmPayload(result, node);
       if (type.result !== voidType) requireType(result, type.result, node);
       bodies.set(owner, {
         node,
@@ -3265,6 +3580,8 @@ function checkClosureModuleLayout(
           result = actual;
           bodies.set(owner, { node, parameters: params, body, result });
         }
+        if (result === voidType && types[actual]?.kind === "void-value")
+          recordVoidReturn(owner, body);
         requireType(
           actual === undefinedType && result === voidType ? voidType : actual,
           result,
@@ -3281,8 +3598,11 @@ function checkClosureModuleLayout(
       callSafeFacts = savedCallSafeFacts;
     }
   }
+  function isVoidExpression(type: number): boolean {
+    return type === voidType || types[type]?.kind === "void-value";
+  }
   function condition(node: Expression, owner: number | undefined): void {
-    if (expression(node, owner) === voidType)
+    if (isVoidExpression(expression(node, owner)))
       fail(
         node,
         "TYPE_MISMATCH",
@@ -3890,13 +4210,67 @@ function checkClosureModuleLayout(
       open ? "dynamic-object-open-literal" : "dynamic-object-literal",
     );
   }
+  const voidValueCalls = createKeyIndex<Expression, boolean>(syntaxHash);
+  const voidValueReturns = new Set<number>();
+  const voidReturnCallers = new Map<number, number[]>();
+  const functionIdsByBinding = new Map<number, number>();
+  for (const fn of graph.functions) {
+    if (fn === undefined) throw "callback function invariant";
+    const b = declarations.get(fn.node);
+    if (b?.kind === "function") functionIdsByBinding.set(b.id, fn.id);
+  }
+  function recordVoidReturn(
+    owner: number,
+    input: Expression | undefined,
+  ): void {
+    if (input === undefined) return;
+    const node = ungroup(input);
+    if (node.kind === "call") {
+      const target = ungroup(node.callee);
+      const b = references.get(target);
+      const source =
+        b === undefined ? undefined : functionIdsByBinding.get(b.id);
+      if (source !== undefined) {
+        let callers = voidReturnCallers.get(source);
+        if (callers === undefined) {
+          callers = [];
+          voidReturnCallers.set(source, callers);
+        }
+        callers.push(owner);
+        return;
+      }
+      const builtin = intrinsics.get(node);
+      if (builtin !== undefined && builtin !== "function-call") return;
+    }
+    voidValueReturns.add(owner);
+  }
+  function propagateVoidReturns(): void {
+    const queue: number[] = [];
+    for (const id of voidValueReturns) {
+      if (id === undefined) throw "void result source invariant";
+      queue.push(id);
+    }
+    for (let i = 0; i < queue.length; i++) {
+      const id = queue[i];
+      if (id === undefined) throw "void result queue invariant";
+      for (const caller of voidReturnCallers.get(id) ?? []) {
+        if (caller === undefined) throw "void result caller invariant";
+        if (voidValueReturns.has(caller)) continue;
+        voidValueReturns.add(caller);
+        queue.push(caller);
+      }
+    }
+  }
   function expression(
     input: Expression,
     owner: number | undefined,
     inputExpected?: number,
     preserveContext: boolean = false,
+    discarded: boolean = false,
   ): number {
     const node = input;
+    const fromPattern = patternValues.get(node);
+    if (fromPattern !== undefined) return fromPattern;
     // unknown constrains assignability but supplies no contextual shape.
     const selected = realmPlan?.literals.has(node) === true;
     const expected =
@@ -4025,6 +4399,16 @@ function checkClosureModuleLayout(
             result = constraint;
             break;
           }
+          const target = types[constraint];
+          if (
+            node.assertion === "as" &&
+            types[result]?.kind === "unknown" &&
+            target?.kind === "object" &&
+            target.iteratorElement !== undefined
+          ) {
+            result = constraint;
+            break;
+          }
           // `x as T` from unknown is a checked downcast (an explicit
           // contract): the value is tested at run time and a mismatch
           // throws a TypeError.
@@ -4061,6 +4445,7 @@ function checkClosureModuleLayout(
             owner,
             expected,
             preserveContext,
+            discarded,
           );
           const proof = contextualProofs.get(node.expression);
           if (proof !== undefined) contextualProofs.set(node, proof);
@@ -4103,7 +4488,17 @@ function checkClosureModuleLayout(
             )
               return type.element;
             if (isArray(iterable)) return number;
-            if (isList(iterable)) return listReadType(iterable, element);
+            if (isList(iterable)) {
+              if (context !== undefined && expected !== undefined) {
+                const item = listIterationElement(iterable, element);
+                if (
+                  system.assignable(item, number) &&
+                  system.assignable(context, number)
+                )
+                  return item;
+              }
+              return listReadType(iterable, element);
+            }
             fail(
               element,
               "UNSUPPORTED",
@@ -4130,7 +4525,10 @@ function checkClosureModuleLayout(
               context = typeOf(optionalNumericListAnnotation);
             else if (system.assignable(firstType, string))
               context = typeOf(stringListAnnotation);
-            else if (system.assignable(firstType, boolean))
+            else if (
+              system.assignable(firstType, boolean) ||
+              types[firstType]?.kind === "void-value"
+            )
               context = arrayOf(firstType, first);
             else if (
               system.assignable(presentType(firstType) ?? firstType, string) ||
@@ -4673,9 +5071,18 @@ function checkClosureModuleLayout(
             intrinsics.set(node, "dynamic-object-read");
           const literal = literalProperty(obj, node.property, node);
           const p = system.property(obj, node.property);
-          if (!p.ok) fail(node, p.error, "invalid property read");
-          result = literal ?? p.value;
-          result = propertyFact(receiver, node.property) ?? result;
+          const fact = propertyFact(receiver, node.property);
+          if (!p.ok) {
+            if (fact === undefined)
+              fail(node, p.error, "invalid property read");
+            intrinsics.set(
+              node,
+              types[inputExpected ?? -1]?.kind === "unknown"
+                ? "flow-property-read-boxed"
+                : "flow-property-read",
+            );
+            result = fact;
+          } else result = fact ?? literal ?? p.value;
           if (dynamicObject(obj)) result = readDynamicPayload(result, node);
           break;
         }
@@ -4723,6 +5130,19 @@ function checkClosureModuleLayout(
               node,
             );
             break;
+          }
+          if (property !== undefined && !system.property(object, property).ok) {
+            const fact = propertyFact(node.object, property);
+            if (fact !== undefined) {
+              intrinsics.set(
+                node,
+                types[inputExpected ?? -1]?.kind === "unknown"
+                  ? "flow-property-read-boxed"
+                  : "flow-property-read",
+              );
+              result = fact;
+              break;
+            }
           }
           const viewRead = viewAccess(node, object, property, keyType, false);
           if (viewRead !== undefined) {
@@ -6091,33 +6511,167 @@ function checkClosureModuleLayout(
             }
             const realmList = types[obj];
             if (realmList?.kind === "array" && realmList.realmArray === true) {
-              if (target.property !== "push" || node.optional)
+              if (node.optional || target.optional)
                 fail(
                   target,
                   "UNSUPPORTED",
-                  "typed realm arrays currently support only push calls",
+                  "optional realm array methods require optional-call lowering",
                   true,
                 );
-              if (realmList.readonly || realmList.tupleElements !== undefined)
+              const method = target.property,
+                element = realmList.element;
+              const mutates = [
+                "push",
+                "unshift",
+                "pop",
+                "shift",
+                "splice",
+                "fill",
+                "copyWithin",
+                "reverse",
+                "sort",
+              ].includes(method);
+              if (
+                mutates &&
+                (realmList.readonly || realmList.tupleElements !== undefined)
+              )
                 fail(
                   target,
                   "IMMUTABLE",
-                  "cannot push to a readonly realm array",
+                  "cannot mutate a readonly realm array",
                   true,
                 );
-              const element = realmList.element;
-              for (const argument of node.arguments) {
-                if (argument === undefined)
-                  throw "realm push argument invariant";
-                requireType(
-                  expression(argument, owner, element),
-                  element,
-                  argument,
-                );
+              const args = node.arguments,
+                size = args.length;
+              function argumentsOf(
+                minimum: number,
+                positional: readonly number[],
+                rest?: number,
+              ): void {
+                if (
+                  size < minimum ||
+                  (rest === undefined && size > positional.length)
+                )
+                  fail(
+                    node,
+                    "ARITY",
+                    "invalid realm array method argument count",
+                    true,
+                  );
+                for (let i = 0; i < size; i++) {
+                  const argument = args[i],
+                    type = positional[i] ?? rest;
+                  if (argument === undefined || type === undefined)
+                    throw "realm array argument invariant";
+                  if (argument.kind === "spread")
+                    fail(
+                      argument,
+                      "UNSUPPORTED",
+                      "realm array method spread arguments require iterable call lowering",
+                      true,
+                    );
+                  const actual = expression(argument, owner, type);
+                  requireType(actual, type, argument);
+                  checkDynamicPayload(actual, argument);
+                }
               }
-              intrinsics.set(node, "dynamic-object-array-push");
+              switch (method) {
+                case "push":
+                case "unshift":
+                  argumentsOf(0, [], element);
+                  result = number;
+                  break;
+                case "pop":
+                case "shift":
+                case "at":
+                  argumentsOf(
+                    method === "at" ? 1 : 0,
+                    method === "at" ? [number] : [],
+                  );
+                  result = unionSubset([element, undefinedType], node);
+                  break;
+                case "includes":
+                case "indexOf":
+                case "lastIndexOf":
+                  argumentsOf(1, [element, optionalNumber]);
+                  result = method === "includes" ? boolean : number;
+                  break;
+                case "join":
+                  argumentsOf(0, [unionSubset([string, undefinedType], node)]);
+                  result = string;
+                  break;
+                case "reverse":
+                  argumentsOf(0, []);
+                  result = obj;
+                  break;
+                case "sort":
+                case "toSorted":
+                  if (size !== 0)
+                    fail(
+                      target,
+                      "UNSUPPORTED",
+                      "native callbacks passed to realm array methods need slice 2b closure views",
+                      true,
+                    );
+                  result = method === "sort" ? obj : realmArray(element, node);
+                  break;
+                case "fill":
+                  argumentsOf(1, [element, optionalNumber, optionalNumber]);
+                  result = obj;
+                  break;
+                case "copyWithin":
+                  argumentsOf(2, [number, number, optionalNumber]);
+                  result = obj;
+                  break;
+                case "slice":
+                  argumentsOf(0, [optionalNumber, optionalNumber]);
+                  result = realmArray(element, node);
+                  break;
+                case "splice":
+                case "toSpliced":
+                  argumentsOf(
+                    1,
+                    [number, size > 2 ? number : optionalNumber],
+                    element,
+                  );
+                  result = realmArray(element, node);
+                  break;
+                case "with":
+                  argumentsOf(2, [number, element]);
+                  result = realmArray(element, node);
+                  break;
+                case "toReversed":
+                  argumentsOf(0, []);
+                  result = realmArray(element, node);
+                  break;
+                case "map":
+                case "filter":
+                case "flatMap":
+                case "forEach":
+                case "every":
+                case "some":
+                case "find":
+                case "findIndex":
+                case "findLast":
+                case "findLastIndex":
+                case "reduce":
+                case "reduceRight":
+                  fail(
+                    target,
+                    "UNSUPPORTED",
+                    "native callbacks passed to realm array methods need slice 2b closure views",
+                    true,
+                  );
+                default:
+                  fail(
+                    target,
+                    "UNSUPPORTED",
+                    "realm array method is outside typed realm array checking",
+                    true,
+                  );
+              }
+              intrinsics.set(node, "dynamic-object-array-method");
               invalidateCalls();
-              result = number;
               break;
             }
             if (
@@ -6270,20 +6824,6 @@ function checkClosureModuleLayout(
           while (target.kind === "group") target = target.expression;
           if (target.kind === "member" || target.kind === "index") {
             const object = expression(target.object, owner);
-            if (realmAggregate(object))
-              fail(
-                target,
-                "UNSUPPORTED",
-                "compound assignments and updates on realm aggregates require reference lowering",
-                true,
-              );
-            if (dynamicObject(object))
-              fail(
-                target,
-                "UNSUPPORTED",
-                "compound assignments and updates on dynamic-key objects require reference lowering",
-                true,
-              );
             const keyType =
               target.kind === "index"
                 ? expression(target.index, owner)
@@ -6295,6 +6835,152 @@ function checkClosureModuleLayout(
                     target.index,
                     keyType === undefined ? undefined : types[keyType],
                   );
+            if (dynamicObject(object) || realmAggregate(object)) {
+              const shape = types[object];
+              const fields: Property[] = [];
+              if (dynamicObject(object))
+                for (const field of dynamicPropertyTargets(
+                  object,
+                  keyType,
+                  propertyName,
+                  target,
+                )) {
+                  if (field === undefined)
+                    throw "dynamic update field invariant";
+                  fields.push(field);
+                }
+              else if (shape?.kind === "array") {
+                if (propertyName !== "length") {
+                  if (target.kind !== "index" || keyType === undefined)
+                    fail(
+                      target,
+                      "PROPERTY",
+                      "realm array updates require an index or length",
+                      true,
+                    );
+                  requireType(keyType, number, target.index);
+                }
+                fields.push({
+                  name: propertyName ?? "",
+                  type: propertyName === "length" ? number : shape.element,
+                  readonly: shape.readonly || shape.tupleElements !== undefined,
+                });
+              } else if (shape?.kind === "object") {
+                const names =
+                  propertyName === undefined && keyType !== undefined
+                    ? finiteRecordKeys(object, keyType)
+                    : propertyName === undefined
+                      ? undefined
+                      : [propertyName];
+                if (names === undefined)
+                  fail(
+                    target,
+                    "PROPERTY",
+                    "realm record updates require a known property",
+                    true,
+                  );
+                for (const name of names) {
+                  const field = shape.properties.find(
+                    (item) => item?.name === name,
+                  );
+                  if (field === undefined)
+                    fail(
+                      target,
+                      "PROPERTY",
+                      "unknown realm record property",
+                      true,
+                    );
+                  fields.push(field);
+                }
+              }
+              const field = fields[0];
+              if (field === undefined) throw "realm update field invariant";
+              for (const allowed of fields) {
+                if (allowed === undefined) throw "realm update field invariant";
+                if (allowed.readonly)
+                  fail(
+                    target,
+                    "IMMUTABLE",
+                    "cannot update a readonly realm property",
+                    true,
+                  );
+              }
+              const old = expression(target, owner);
+              let written: number;
+              if (
+                node.kind === "compound" &&
+                (node.operator === "&&" ||
+                  node.operator === "||" ||
+                  node.operator === "??")
+              ) {
+                const before = new Set(present);
+                written = expression(
+                  node.value,
+                  owner,
+                  dynamicPayloadType(field.type, node.value),
+                );
+                if (dynamicObject(object))
+                  checkDynamicPayload(written, node.value);
+                present = intersect(before, present);
+                result = join(
+                  node.operator === "??" || node.operator === "||"
+                    ? (presentType(old, true) ?? old)
+                    : old,
+                  written,
+                  node,
+                  expected,
+                );
+              } else {
+                const right =
+                  node.kind === "compound"
+                    ? expression(node.value, owner)
+                    : number;
+                if (
+                  node.kind === "compound" &&
+                  node.operator === "+" &&
+                  (system.assignable(old, string) ||
+                    system.assignable(right, string)) &&
+                  [old, right].every(
+                    (type) =>
+                      system.assignable(type, string) ||
+                      system.assignable(type, number) ||
+                      system.assignable(type, boolean) ||
+                      system.assignable(type, bigint),
+                  )
+                )
+                  written = string;
+                else if (
+                  system.assignable(old, bigint) &&
+                  (node.kind === "update" ||
+                    system.assignable(right, bigint)) &&
+                  (node.kind === "update" || node.operator !== ">>>")
+                )
+                  written = bigint;
+                else {
+                  requireType(old, number, target);
+                  if (node.kind === "compound")
+                    requireType(right, number, node.value);
+                  written = number;
+                }
+                result = written;
+              }
+              for (const allowed of fields) {
+                if (allowed === undefined) throw "realm update field invariant";
+                requireType(
+                  written,
+                  dynamicPayloadType(allowed.type, target),
+                  target,
+                );
+              }
+              intrinsics.set(
+                node,
+                node.kind === "update"
+                  ? "dynamic-object-update"
+                  : "dynamic-object-compound",
+              );
+              invalidateCalls();
+              break;
+            }
             const viewWrite = viewAccess(
               target,
               object,
@@ -6554,6 +7240,20 @@ function checkClosureModuleLayout(
         case "assignment": {
           let target = node.target;
           while (target.kind === "group") target = target.expression;
+          if (target.kind === "array" || target.kind === "object") {
+            result = expression(node.value, owner);
+            const targets = createKeyIndex<Span, Expression>(syntaxHash);
+            const pattern = assignmentBinding(target, undefined, targets);
+            initializeBindingPattern(
+              pattern,
+              node.value,
+              result,
+              owner,
+              node,
+              targets,
+            );
+            break;
+          }
           if (target.kind === "identifier") {
             const b = references.get(target);
             if (b === undefined)
@@ -6758,10 +7458,26 @@ function checkClosureModuleLayout(
           if (node.operator === "in") {
             const key = expression(node.left, owner);
             const object = expression(node.right, owner);
-            if (!dynamicObject(object))
-              fail(node, "UNSUPPORTED", "in requires a realm-backed object");
-            dynamicPropertyTargets(object, key, undefined, node.left);
-            intrinsics.set(node, "dynamic-object-has");
+            if (dynamicObject(object)) {
+              dynamicPropertyTargets(object, key, undefined, node.left);
+              intrinsics.set(node, "dynamic-object-has");
+            } else if (isList(object) && system.assignable(key, number)) {
+              intrinsics.set(node, "list-has");
+            } else {
+              if (!membershipObject(object))
+                fail(
+                  node.right,
+                  "TYPE_MISMATCH",
+                  "in requires a known object operand",
+                );
+              if (checkedPropertyName(node.left, types[key]) === undefined)
+                fail(
+                  node.left,
+                  "UNSUPPORTED",
+                  "native in requires a literal property key",
+                );
+              intrinsics.set(node, "literal-property-has");
+            }
             result = boolean;
             break;
           }
@@ -6820,7 +7536,7 @@ function checkClosureModuleLayout(
           ) {
             const left = expression(node.left, owner),
               before = new Set(present);
-            if (left === voidType)
+            if (isVoidExpression(left))
               fail(node.left, "TYPE_MISMATCH", "void is not a logical operand");
             if (node.operator === "??" && !nullable(left)) {
               // A left operand that is never nullish is the result; the
@@ -6850,7 +7566,7 @@ function checkClosureModuleLayout(
                 owner,
                 expected ?? (emptyArray ? presentType(left, true) : undefined),
               );
-              if (right === voidType)
+              if (isVoidExpression(right))
                 fail(
                   node.right,
                   "TYPE_MISMATCH",
@@ -6872,7 +7588,7 @@ function checkClosureModuleLayout(
               const truth = node.operator === "&&";
               present = refine(node.left, truth, before);
               const right = expression(node.right, owner, expected);
-              if (right === voidType)
+              if (isVoidExpression(right))
                 fail(
                   node.right,
                   "TYPE_MISMATCH",
@@ -6889,7 +7605,20 @@ function checkClosureModuleLayout(
           }
           const left = expression(node.left, owner),
             right = expression(node.right, owner);
-          if (left === voidType || right === voidType)
+          if (
+            (isVoidExpression(left) || isVoidExpression(right)) &&
+            !(
+              ["===", "!==", "==", "!="].includes(node.operator) &&
+              (isVoidExpression(left) ||
+                left === undefinedType ||
+                left === nullType ||
+                types[left]?.kind === "unknown") &&
+              (isVoidExpression(right) ||
+                right === undefinedType ||
+                right === nullType ||
+                types[right]?.kind === "unknown")
+            )
+          )
             fail(
               node,
               "TYPE_MISMATCH",
@@ -7040,9 +7769,15 @@ function checkClosureModuleLayout(
               }
             }
           }
-          const value = expression(node.operand, owner);
+          const value = expression(
+            node.operand,
+            owner,
+            undefined,
+            false,
+            node.operator === "void",
+          );
           if (
-            value === voidType &&
+            isVoidExpression(value) &&
             node.operator !== "typeof" &&
             node.operator !== "void"
           )
@@ -7123,6 +7858,10 @@ function checkClosureModuleLayout(
             "UNSUPPORTED",
             "expression is outside the closure checking slice",
           );
+      }
+      if (node.kind === "call" && result === voidType && !discarded) {
+        voidValueCalls.set(node, true);
+        result = generalFact("void-value", node);
       }
       if (selected) {
         result = realmPayload(result, node);
@@ -7254,6 +7993,465 @@ function checkClosureModuleLayout(
       owner,
     );
   }
+  function heldPatternValue(type: number, node: Span): Expression {
+    const held: Expression = {
+      kind: "identifier",
+      name: "",
+      start: node.start,
+      end: node.end,
+      nodeHash: syntheticNodeHash(),
+    };
+    patternValues.set(held, type);
+    expressions.set(held, type);
+    return held;
+  }
+  function assignmentBinding(
+    input: Expression,
+    initializer: Expression | undefined,
+    targets: KeyIndex<Span, Expression>,
+  ): VariableBinding {
+    const target = ungroup(input);
+    const span: Span = {
+      start: target.start,
+      end: target.end,
+      nodeHash: syntheticNodeHash(),
+    };
+    if (target.kind === "assignment")
+      return assignmentBinding(target.target, target.value, targets);
+    if (target.kind === "array") {
+      const elements: (VariableBinding | undefined)[] = [];
+      let rest: VariableBinding | undefined;
+      for (const item of target.elements) {
+        if (item === undefined) throw "assignment pattern element invariant";
+        if (item.kind === "elision") elements.push(undefined);
+        else if (item.kind === "spread")
+          rest = assignmentBinding(item.value, undefined, targets);
+        else elements.push(assignmentBinding(item, undefined, targets));
+      }
+      return {
+        ...span,
+        kind: "array-binding",
+        elements,
+        initializer,
+        type: undefined,
+        ...(rest === undefined ? {} : { rest }),
+      };
+    }
+    if (target.kind === "object") {
+      const properties: ObjectBindingProperty[] = [];
+      let rest: SyntaxBinding | undefined;
+      for (const property of target.properties) {
+        if (property === undefined)
+          throw "assignment pattern property invariant";
+        const child = assignmentBinding(property.value, undefined, targets);
+        if (property.kind === "spread") {
+          if (child.kind === "array-binding" || child.kind === "object-binding")
+            throw "object assignment rest invariant";
+          rest = child;
+        } else
+          properties.push({
+            start: property.start,
+            end: property.end,
+            nodeHash: syntheticNodeHash(),
+            name: property.name,
+            binding: child,
+            ...(property.keyExpression === undefined
+              ? {}
+              : { keyExpression: property.keyExpression }),
+          });
+      }
+      return {
+        ...span,
+        kind: "object-binding",
+        properties,
+        rest,
+        initializer,
+        type: undefined,
+      };
+    }
+    const binding: SyntaxBinding = {
+      ...span,
+      name: "",
+      initializer,
+      type: undefined,
+    };
+    targets.set(binding, target);
+    return binding;
+  }
+  function patternWrites(): Set<number> {
+    const known = writablePatternCandidates;
+    if (known !== undefined) return known;
+    const writable = new Set<number>();
+    for (const reference of graph.references)
+      if (
+        reference !== undefined &&
+        reference.binding !== undefined &&
+        reference.access !== "read"
+      )
+        writable.add(reference.binding);
+    writablePatternCandidates = writable;
+    return writable;
+  }
+  function initializeBindingPattern(
+    pattern: VariableBinding,
+    input: Expression | undefined,
+    type: number,
+    owner: number | undefined,
+    site: Span = pattern,
+    assignments?: ReadonlyKeyIndex<Span, Expression>,
+    unchecked: boolean = false,
+    annotated: boolean = pattern.type !== undefined,
+  ): void {
+    const steps: BindingInitializationStep[] = [];
+    const root = heldPatternValue(type, pattern);
+    function bindChild(
+      child: VariableBinding,
+      read: Expression,
+      readType: number,
+      array?: ArrayBindingRead,
+      computedKey?: Expression,
+      realmObject?: Expression,
+      realmRest?: Expression,
+    ): void {
+      const initializer = child.initializer;
+      let type = readType;
+      if (initializer !== undefined) {
+        const before = new Set(present);
+        const defined = presentType(readType);
+        const initial = expression(initializer, owner, defined);
+        if (readType === undefinedType) type = initial;
+        else if (defined !== undefined) {
+          type = unionSubset([defined, initial], child);
+          present = intersect(before, present);
+        } else if (system.assignable(undefinedType, readType)) {
+          type = unionSubset([readType, initial], child);
+          present = intersect(before, present);
+        } else {
+          type = unionSubset([readType, initial], child);
+          present = before;
+        }
+      }
+      const target = heldPatternValue(type, child);
+      const destination = assignments?.get(child);
+      let assignment: Expression | undefined;
+      let local: SyntaxBinding | undefined;
+      if (destination !== undefined) {
+        assignment = {
+          kind: "assignment",
+          target: destination,
+          value: target,
+          start: child.start,
+          end: child.end,
+          nodeHash: syntheticNodeHash(),
+        };
+        expression(assignment, owner);
+      } else if (
+        child.kind === "object-binding" ||
+        child.kind === "array-binding"
+      ) {
+        steps.push({
+          read,
+          initializer,
+          target,
+          binding: undefined,
+          ...(array === undefined ? {} : { array }),
+          ...(computedKey === undefined ? {} : { computedKey }),
+          ...(realmObject === undefined ? {} : { realmObject }),
+        });
+        project(child, target, type);
+        return;
+      } else {
+        const b = binding(child);
+        if (!annotated && b.mutable && types[type]?.kind === "union") {
+          if (patternWrites().has(b.id)) {
+            openPatternBindings.add(b.id);
+            bindingTypes[b.id] = appendType(
+              { kind: "unknown" },
+              child,
+              "invalid open binding type",
+            );
+          } else bindingTypes[b.id] = type;
+        } else bindingTypes[b.id] = type;
+        cell(b, { kind: "initialize", value: type }, child, owner);
+        local = child;
+      }
+      steps.push({
+        read,
+        initializer,
+        target,
+        binding: local,
+        ...(array === undefined ? {} : { array }),
+        ...(assignment === undefined ? {} : { assignment }),
+        ...(computedKey === undefined ? {} : { computedKey }),
+        ...(realmObject === undefined ? {} : { realmObject }),
+        ...(realmRest === undefined ? {} : { realmRest }),
+      });
+    }
+    function realmAction(
+      action: "object" | "iterator" | "skip" | "close",
+      source: Expression,
+    ): void {
+      needsBindingRealm = true;
+      bindingRealm.set(site, true);
+      steps.push({
+        read: source,
+        target: source,
+        initializer: undefined,
+        binding: undefined,
+        realmAction: action,
+      });
+    }
+    function project(
+      pattern: VariableBinding,
+      source: Expression,
+      type: number,
+    ): void {
+      const general = unchecked && types[type]?.kind === "unknown";
+      if (
+        !general &&
+        (system.assignable(undefinedType, type) ||
+          system.assignable(nullType, type))
+      )
+        fail(
+          pattern,
+          "TYPE_MISMATCH",
+          "binding pattern source may be null or undefined",
+          true,
+        );
+      if (pattern.kind === "object-binding") {
+        const realm = general || dynamicObject(type) || realmAggregate(type);
+        if (realm) realmAction("object", source);
+        const excluded: string[] = [];
+        for (const property of pattern.properties) {
+          if (property === undefined) throw "binding property invariant";
+          const key = property.keyExpression;
+          const read: Expression =
+            key === undefined
+              ? {
+                  kind: "member",
+                  object: source,
+                  property: property.name,
+                  start: property.start,
+                  end: property.end,
+                  nodeHash: syntheticNodeHash(),
+                }
+              : {
+                  kind: "index",
+                  object: source,
+                  index: key,
+                  start: property.start,
+                  end: property.end,
+                  nodeHash: syntheticNodeHash(),
+                };
+          let result: number;
+          if (general) {
+            if (key !== undefined) expression(key, owner);
+            intrinsics.set(read, "dynamic-object-read");
+            expressions.set(read, type);
+            result = type;
+          } else result = expression(read, owner);
+          if (pattern.rest !== undefined) {
+            const name =
+              key === undefined
+                ? property.name
+                : checkedPropertyName(key, types[expressions.get(key) ?? -1]);
+            if (name !== undefined) excluded.push(name);
+            else if (!realm)
+              fail(
+                property,
+                "UNSUPPORTED",
+                "computed object rest requires runtime key exclusion",
+                true,
+              );
+          }
+          bindChild(
+            property.binding,
+            read,
+            result,
+            undefined,
+            key,
+            realm && pattern.rest !== undefined ? source : undefined,
+          );
+        }
+        const rest = pattern.rest;
+        if (rest !== undefined) {
+          const shape = types[type];
+          if (
+            !realm &&
+            (shape?.kind !== "object" ||
+              contracts.classes.some(
+                (entry) => entry !== undefined && entry.instance === type,
+              ))
+          )
+            fail(
+              rest,
+              "UNSUPPORTED",
+              "typed object rest requires a native record with data fields",
+              true,
+            );
+          const properties: Property[] = [];
+          for (const field of shape?.kind === "object"
+            ? shape.properties
+            : []) {
+            if (field === undefined) throw "binding rest property invariant";
+            if (!excluded.includes(field.name))
+              properties.push({ ...field, readonly: false });
+          }
+          const index =
+            shape?.kind === "object" ? shape.stringIndex : undefined;
+          const restType = general
+            ? type
+            : appendType(
+                {
+                  kind: "object",
+                  properties,
+                  ...(index === undefined
+                    ? {}
+                    : { stringIndex: { ...index, readonly: false } }),
+                  ...(realm ? { realmRecord: true } : {}),
+                },
+                rest,
+                "invalid object rest type",
+              );
+          if (realm) {
+            const read = heldPatternValue(restType, rest);
+            bindChild(
+              rest,
+              read,
+              restType,
+              undefined,
+              undefined,
+              undefined,
+              source,
+            );
+            return;
+          }
+          const read: Expression = {
+            kind: "object",
+            properties: [
+              {
+                kind: "spread",
+                value: source,
+                start: rest.start,
+                end: rest.end,
+              },
+            ],
+            start: rest.start,
+            end: rest.end,
+            nodeHash: syntheticNodeHash(),
+          };
+          expressions.set(read, restType);
+          bindingRestExclusions.set(read, excluded);
+          bindChild(rest, read, restType);
+        }
+      } else if (pattern.kind === "array-binding") {
+        const shape = types[type];
+        const list =
+          isList(type) && shape?.kind === "array" && shape.realmArray !== true;
+        const iteratorElement =
+          shape?.kind === "object" ? shape.iteratorElement : undefined;
+        const realm =
+          general ||
+          iteratorElement !== undefined ||
+          (shape?.kind === "array" && shape.realmArray === true) ||
+          system.assignable(type, string);
+        if (realm) {
+          const rawElementType = general
+            ? type
+            : (iteratorElement ??
+              (shape?.kind === "array" ? shape.element : string));
+          const elementType = realmPayload(rawElementType, pattern);
+          const unsupported = unsupportedDynamicPayload(types, elementType);
+          if (unsupported !== undefined)
+            fail(pattern, "UNSUPPORTED", unsupported, true);
+          const readType = system.assignable(undefinedType, elementType)
+            ? elementType
+            : unionSubset([elementType, undefinedType], pattern);
+          realmAction("iterator", source);
+          for (const element of pattern.elements) {
+            if (element === undefined) realmAction("skip", source);
+            else {
+              const read = heldPatternValue(readType, element);
+              bindChild(element, read, readType, {
+                source,
+                position: 0,
+                rest: false,
+                inBounds: false,
+                realm: true,
+              });
+            }
+          }
+          const rest = pattern.rest;
+          if (rest !== undefined) {
+            const type = general
+              ? elementType
+              : realmPayload(arrayOf(elementType, rest), rest);
+            const read = heldPatternValue(type, rest);
+            bindChild(rest, read, type, {
+              source,
+              position: 0,
+              rest: true,
+              inBounds: false,
+              realm: true,
+            });
+          }
+          realmAction("close", source);
+          return;
+        }
+        if (!list && !isArray(type))
+          fail(
+            pattern,
+            "UNSUPPORTED",
+            "typed array binding requires a native list, numeric typed array, string, or realm iterable",
+            true,
+          );
+        const readType = list ? listReadType(type, pattern) : optionalNumber;
+        const origin =
+          source === root && input !== undefined ? ungroup(input) : undefined;
+        const fixedElements =
+          origin?.kind === "array" &&
+          !origin.elements.some((item) => item.kind === "spread")
+            ? origin.elements
+            : undefined;
+        for (let position = 0; position < pattern.elements.length; position++) {
+          const element = pattern.elements[position];
+          if (element === undefined) continue;
+          const fixed = fixedElements?.[position];
+          const elementType =
+            fixed === undefined
+              ? readType
+              : fixed.kind === "elision"
+                ? undefinedType
+                : (expressions.get(fixed) ?? readType);
+          const read = heldPatternValue(elementType, element);
+          bindChild(element, read, elementType, {
+            source,
+            position,
+            rest: false,
+            inBounds:
+              fixed !== undefined &&
+              fixed.kind !== "elision" &&
+              elementType !== undefinedType,
+          });
+        }
+        const rest = pattern.rest;
+        if (rest !== undefined) {
+          const restType = arrayOf(list ? readType : number, rest);
+          const read = heldPatternValue(restType, rest);
+          bindChild(rest, read, restType, {
+            source,
+            position: pattern.elements.length,
+            rest: true,
+            inBounds: false,
+          });
+        }
+      } else throw "binding pattern invariant";
+    }
+    project(pattern, root, type);
+    bindingInitializations.set(site, { input, root, steps });
+  }
+  let patternedThrow = false;
+  let patternedThrowOwner: number | undefined;
   function statement(
     input: Statement,
     owner: number | undefined,
@@ -7273,12 +8471,38 @@ function checkClosureModuleLayout(
         case "variable":
           for (const d of node.declarations) {
             if (d === undefined) throw "missing declaration";
-            if (d.kind === "object-binding" || d.kind === "array-binding")
-              fail(
+            if (d.kind === "object-binding" || d.kind === "array-binding") {
+              const initializer = d.initializer;
+              if (node.mode === "var")
+                fail(
+                  d,
+                  "UNSUPPORTED",
+                  "typed binding patterns require let or const",
+                );
+              if (initializer === undefined)
+                fail(
+                  d,
+                  "TYPE_MISMATCH",
+                  "binding pattern requires an initializer",
+                  true,
+                );
+              const annotation = declared.get(d);
+              const expected =
+                annotation === undefined ? undefined : typeOf(annotation);
+              const actual = expression(initializer, owner, expected);
+              if (expected !== undefined) {
+                requireType(actual, expected, initializer);
+                if (dynamicObject(expected))
+                  dynamicEnrollments.set(initializer, expected);
+              }
+              initializeBindingPattern(
                 d,
-                "UNSUPPORTED",
-                "typed binding patterns are not implemented",
+                initializer,
+                expected ?? actual,
+                owner,
               );
+              continue;
+            }
             const b = binding(d);
             if (node.mode === "var" && d.initializer === undefined) {
               continue;
@@ -7331,8 +8555,9 @@ function checkClosureModuleLayout(
           const body = node.body;
           if (signature === undefined || body.kind !== "block")
             throw "named function invariant";
-          const type = typeOf(signature);
-          cell(binding(node), { kind: "initialize", value: type }, node, owner);
+          const b = binding(node);
+          const type = bindingTypes[b.id] ?? typeOf(signature);
+          cell(b, { kind: "initialize", value: type }, node, owner);
           checkFunction(node, node.parameters, node.returnType, body, type);
           return 1;
         }
@@ -7341,16 +8566,44 @@ function checkClosureModuleLayout(
           const handler = node.handler;
           const finalizer = node.finalizer;
           const invariant = stableFacts(definiteEntry, true);
+          const priorPattern = patternedThrow;
+          const priorOwner = patternedThrowOwner;
+          if (handler !== undefined) {
+            const caught = handler.binding;
+            patternedThrow =
+              caught?.kind === "object-binding" ||
+              caught?.kind === "array-binding";
+            patternedThrowOwner = owner;
+          }
           let pending = statement(node.body, owner, result);
+          patternedThrow = priorPattern;
+          patternedThrowOwner = priorOwner;
           let normal = assignedFacts();
           if (handler !== undefined) {
             present = new Set(definiteEntry);
             if (handler.binding !== undefined) {
-              const caught = handler.binding,
-                b = binding(caught),
-                type = bindingTypes[b.id];
-              if (type === undefined) throw "catch type invariant";
-              cell(b, { kind: "initialize", value: type }, caught, owner);
+              const caught = handler.binding;
+              if (
+                caught.kind === "object-binding" ||
+                caught.kind === "array-binding"
+              ) {
+                const type = declared.get(caught);
+                if (type === undefined) throw "catch pattern type invariant";
+                initializeBindingPattern(
+                  caught,
+                  undefined,
+                  typeOf(type),
+                  owner,
+                  caught,
+                  undefined,
+                  true,
+                );
+              } else {
+                const b = binding(caught),
+                  type = bindingTypes[b.id];
+                if (type === undefined) throw "catch type invariant";
+                cell(b, { kind: "initialize", value: type }, caught, owner);
+              }
             }
             const handled = statement(handler.body, owner, result);
             if ((handled & 1) !== 0)
@@ -7378,6 +8631,8 @@ function checkClosureModuleLayout(
           return pending;
         }
         case "return": {
+          if (owner !== undefined && node.expression !== undefined)
+            realmReturnOwners.set(node, owner);
           const inferred =
             owner === undefined ? undefined : inferredReturns.get(owner);
           const actual =
@@ -7388,7 +8643,13 @@ function checkClosureModuleLayout(
                   owner,
                   inferred === undefined ? result : undefined,
                 );
-          if (inferred === undefined)
+          if (inferred === undefined) {
+            if (
+              owner !== undefined &&
+              result === voidType &&
+              types[actual]?.kind === "void-value"
+            )
+              recordVoidReturn(owner, node.expression);
             requireType(
               actual === undefinedType && result === voidType
                 ? voidType
@@ -7396,7 +8657,7 @@ function checkClosureModuleLayout(
               result,
               node,
             );
-          else {
+          } else {
             const absent = node.expression === undefined || actual === voidType;
             inferred.push(
               absent && result === voidType
@@ -7408,12 +8669,18 @@ function checkClosureModuleLayout(
           }
           return types[actual]?.kind === "never" ? throwCompletion : 2;
         }
-        case "throw":
-          expression(node.expression, owner);
+        case "throw": {
+          const value = node.expression;
+          const type = expression(value, owner);
+          if (patternedThrow && patternedThrowOwner === owner)
+            checkDynamicPayload(type, value);
           return throwCompletion;
+        }
         case "expression":
           // A never result cannot continue normally; it may throw or diverge.
-          return types[expression(node.expression, owner)]?.kind === "never"
+          return types[
+            expression(node.expression, owner, undefined, false, true)
+          ]?.kind === "never"
             ? throwCompletion
             : 1;
         case "if": {
@@ -7631,28 +8898,32 @@ function checkClosureModuleLayout(
               "typed for-await lowering is not implemented",
             );
           const loopBinding = node.binding;
-          if (loopBinding.kind === "object-binding")
-            fail(
-              loopBinding,
-              "UNSUPPORTED",
-              "typed object iteration patterns are not supported yet",
-            );
           // The iterable is evaluated once, under the incoming facts. Only
           // immutable object discriminants remain valid across iterations.
           const iterable = expression(node.iterable, owner);
           const definiteEntry = stableFacts();
           present = new Set(definiteEntry);
-          if (loopBinding.kind === "array-binding") {
-            const map = types[iterable];
-            if (map?.kind !== "map")
+          const map = types[iterable];
+          if (loopBinding.kind === "array-binding" && map?.kind === "map") {
+            if (loopBinding.rest !== undefined)
               fail(
-                node.iterable,
+                loopBinding.rest,
                 "UNSUPPORTED",
-                "destructured iteration currently requires a Map",
+                "typed Map iteration rest requires entry pattern lowering",
               );
             for (let index = 0; index < loopBinding.elements.length; index++) {
               const element = loopBinding.elements[index];
               if (element === undefined) continue;
+              if (
+                element.kind === "array-binding" ||
+                element.kind === "object-binding" ||
+                element.initializer !== undefined
+              )
+                fail(
+                  element,
+                  "UNSUPPORTED",
+                  "typed Map iteration requires a simple entry pattern",
+                );
               const type =
                 index === 0 ? map.key : index === 1 ? map.value : undefinedType;
               initializeIteration(element, type, owner, node.mode === "var");
@@ -7685,7 +8956,24 @@ function checkClosureModuleLayout(
                 : system.assignable(iterable, string)
                   ? string
                   : number;
-          initializeIteration(loopBinding, element, owner, node.mode === "var");
+          if (
+            loopBinding.kind === "object-binding" ||
+            loopBinding.kind === "array-binding"
+          ) {
+            if (node.mode === "var")
+              fail(
+                loopBinding,
+                "UNSUPPORTED",
+                "typed iteration binding patterns require let or const",
+              );
+            initializeBindingPattern(loopBinding, undefined, element, owner);
+          } else
+            initializeIteration(
+              loopBinding,
+              element,
+              owner,
+              node.mode === "var",
+            );
           const body = loopBody(node.body, owner, result);
           present = new Set(definiteEntry);
           return loopCompletion(body, false);
@@ -7744,6 +9032,37 @@ function checkClosureModuleLayout(
     }
   }
   try {
+    const plan = realmPlan;
+    if (plan !== undefined)
+      rewriteModule(module, {
+        statement: (mapped, node) => {
+          if (node.kind !== "function") return mapped;
+          const params = node.parameters;
+          const b = binding(node),
+            owner = functions.get(node);
+          const type = types[bindingTypes[b.id] ?? -1];
+          if (owner === undefined || type?.kind !== "function")
+            throw "realm function signature invariant";
+          const result = plan.results.has(owner)
+            ? realmPayload(type.result, node)
+            : type.result;
+          let changed = result !== type.result;
+          const parameters = type.parameters.map((id, index) => {
+            const p = params[index];
+            if (p === undefined) throw "realm parameter invariant";
+            if (!plan.bindings.has(binding(p).id)) return id;
+            changed = true;
+            return realmPayload(id, p);
+          });
+          if (changed)
+            bindingTypes[b.id] = appendType(
+              { ...type, parameters, result },
+              node,
+              "invalid realm function signature",
+            );
+          return mapped;
+        },
+      });
     for (const node of module.statements) {
       if (node === undefined) throw "missing module statement";
       if (
@@ -7774,13 +9093,17 @@ function checkClosureModuleLayout(
         module,
         graph,
         types,
+        bindingTypes,
         expressions,
         references,
         declarations,
+        functions,
+        realmReturnOwners,
         realmSinks,
         realmReads,
       ),
     );
+  propagateVoidReturns();
   return {
     ok: true,
     value: {
@@ -7794,11 +9117,18 @@ function checkClosureModuleLayout(
       types,
       typeSystem: { types, system },
       bindingTypes,
+      bindingInitializations,
+      bindingRealm,
+      needsBindingRealm,
+      bindingValues: patternValues,
+      bindingRestExclusions,
       expressions,
       chainValues,
       chainReceivers,
       restCalls,
       voidResultDiscard: requiresVoidResultDiscard(),
+      voidValueCalls,
+      voidValueReturns,
       downcasts,
       dynamicEnrollments,
       finitePropertyKeys,

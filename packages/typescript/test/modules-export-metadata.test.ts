@@ -140,13 +140,24 @@ test("missing identity and duplicate type diagnostics retain declaration spans",
 });
 
 for (const text of [
-  "export const {value}=external;",
-  "export const [value]=external;",
+  "export const {nested:{key:first},...rest}=external;",
+  "export const [first,,...rest]=external;",
 ])
-  test("binding patterns fail explicitly in metadata: " + text, () => {
+  test("binding patterns export their leaf identities: " + text, () => {
     const data = input(text, ["external"]);
-    assert.throws(
-      () => describeModuleExports(data.source, data.bound, data.names, fail),
-      { message: "typed binding patterns are not implemented" },
+    const metadata = describeModuleExports(
+      data.source,
+      data.bound,
+      data.names,
+      fail,
+    );
+    assert.deepEqual(
+      metadata.exports,
+      ["first", "rest"].map((name) => ({
+        module: data.source.id,
+        name,
+        namespace: "value",
+        identity: data.names.values.get(name),
+      })),
     );
   });

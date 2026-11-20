@@ -53,6 +53,7 @@ const instructions: Instruction[] = [
   { kind: "general-is", id: 1, value: 2, type: "Uint16Array", ...span },
   { kind: "general-is", id: 1, value: 2, type: "Uint32Array", ...span },
   { kind: "general-is", id: 1, value: 2, type: "Float64Array", ...span },
+  { kind: "general-is", id: 1, value: 2, type: "object", ...span },
   { kind: "general-equal", id: 1, left: 2, right: 3, ...span },
   { kind: "general-none", id: 1, ...span },
   { kind: "general-null", id: 1, ...span, inline: 0 },

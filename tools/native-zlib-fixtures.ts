@@ -178,22 +178,27 @@ export function zlibFixtureSource(): string {
     "gzip zero padding",
   );
   check(
-    `throwsType(() => gunzipSync(fromHex(${JSON.stringify(hex(Buffer.concat([zlib.gzipSync("abc"), Buffer.from("xyz")])))})))`,
+    `throwsZlib("Z_DATA_ERROR", -3, () => gunzipSync(fromHex(${JSON.stringify(hex(Buffer.concat([zlib.gzipSync("abc"), Buffer.from("xyz")])))})))`,
     "gzip trailing garbage",
   );
   check(
     `same(inflateSync(fromHex(${JSON.stringify(hex(Buffer.concat([zlib.deflateSync("abc"), Buffer.from("xyz")])))})), ascii("abc"))`,
     "inflate ignores trailing bytes",
   );
-  // Corrupt, truncated and empty input fail like Node (Error there,
-  // TypeError here: docs/native-ffi.md#known-defects).
+  // Corrupt, truncated and empty inputs carry Node's zlib status fields.
   const truncated = new Uint8Array(
     zlib.deflateSync("hello world").subarray(0, 8),
   );
-  check(`throwsType(() => inflateSync(new Uint8Array(0)))`, "empty inflate");
-  check(`throwsType(() => inflateSync(ascii("garbage")))`, "garbage inflate");
   check(
-    `throwsType(() => inflateSync(fromHex(${JSON.stringify(hex(truncated))})))`,
+    `throwsZlib("Z_BUF_ERROR", -5, () => inflateSync(new Uint8Array(0)))`,
+    "empty inflate",
+  );
+  check(
+    `throwsZlib("Z_DATA_ERROR", -3, () => inflateSync(ascii("garbage")))`,
+    "garbage inflate",
+  );
+  check(
+    `throwsZlib("Z_BUF_ERROR", -5, () => inflateSync(fromHex(${JSON.stringify(hex(truncated))})))`,
     "truncated inflate",
   );
   check(
@@ -201,15 +206,15 @@ export function zlibFixtureSource(): string {
     "truncated sync flush",
   );
   check(
-    `throwsType(() => gunzipSync(deflateSync("abc")))`,
+    `throwsZlib("Z_DATA_ERROR", -3, () => gunzipSync(deflateSync("abc")))`,
     "gunzip of zlib data",
   );
   check(
-    `throwsType(() => inflateRawSync(fromHex("ffff")))`,
+    `throwsZlib("Z_DATA_ERROR", -3, () => inflateRawSync(fromHex("ffff")))`,
     "invalid block type",
   );
   check(
-    `throwsType(() => inflateSync(deflateSync("abc", { windowBits: 15 }), { windowBits: 9 }))`,
+    `throwsZlib("Z_DATA_ERROR", -3, () => inflateSync(deflateSync("abc", { windowBits: 15 }), { windowBits: 9 }))`,
     "window too small",
   );
   // Option validation (RangeError, as Node), defaults and truncation.
@@ -235,7 +240,7 @@ export function zlibFixtureSource(): string {
     "infinite level",
   );
   check(
-    `throwsRange(() => inflateSync(deflateSync("abc"), { maxOutputLength: 2 }))`,
+    `throwsRange(() => inflateSync(deflateSync("abc"), { maxOutputLength: 2 }), "ERR_BUFFER_TOO_LARGE")`,
     "max output",
   );
   check(
@@ -253,12 +258,17 @@ export function zlibFixtureSource(): string {
   return `import { createHash } from "node:crypto";
 import { deflateSync, inflateSync, deflateRawSync, inflateRawSync, gzipSync, gunzipSync, unzipSync } from "node:zlib";
 ${fixtureHelpers}
-function throwsType(f: () => Uint8Array): boolean {
-  try { f(); } catch (error) { return error instanceof TypeError; }
+function throwsZlib(code: string, errno: number, f: () => Uint8Array): boolean {
+  try { f(); } catch (error) {
+    return error instanceof Error && !(error instanceof TypeError) &&
+      "code" in error && error.code === code && "errno" in error && error.errno === errno;
+  }
   return false;
 }
-function throwsRange(f: () => Uint8Array): boolean {
-  try { f(); } catch (error) { return error instanceof RangeError; }
+function throwsRange(f: () => Uint8Array, code: string = "ERR_OUT_OF_RANGE"): boolean {
+  try { f(); } catch (error) {
+    return error instanceof RangeError && "code" in error && error.code === code;
+  }
   return false;
 }
 export function run(): number {

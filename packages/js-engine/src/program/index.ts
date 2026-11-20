@@ -219,7 +219,9 @@ function lowerGeneralProgram(
   // Record types cross as JavaScript views (docs/unified-pipeline.md, the
   // value bridge): one view per record, cached in the record's view slot.
   const adapters = recordAdapters(request.records ?? []);
-  const errors = errorAdapters(request.boundaries.length !== 0);
+  const nodeErrorModule = "packages/native-runtime/src/node/errors.ts";
+  const hasNodeErrors = available.has(nodeErrorModule);
+  const errors = errorAdapters(request.boundaries.length !== 0, hasNodeErrors);
   boundaryImports += adapters.imports + errors.imports;
   const dynamicDeclarations = new Set<string>();
   for (let k = 0; k < request.boundaries.length; k++) {
@@ -341,6 +343,7 @@ function lowerGeneralProgram(
       error: "general views: " + viewsParsed.error.message,
     };
   const viewsDependencies = new Map<string, string>();
+  if (hasNodeErrors) viewsDependencies.set("node-errors", nodeErrorModule);
   for (const record of records)
     if (record !== undefined)
       viewsDependencies.set(record.module, record.module);
@@ -383,7 +386,10 @@ function lowerGeneralProgram(
 
 /** The retained stubs see only native layout identities and traced slots.
  * Publication lives in the host, where the shared realm is available. */
-function errorAdapters(enabled: boolean): {
+function errorAdapters(
+  enabled: boolean,
+  nodeErrors: boolean,
+): {
   imports: string;
   functions: string;
   stubs: string;
@@ -395,20 +401,12 @@ function errorAdapters(enabled: boolean): {
   let stubs = "",
     lookup = "",
     publish = "";
-  for (const [kind, intrinsic] of [
-    ["Error", "error"],
-    ["TypeError", "type"],
-    ["RangeError", "range"],
-  ]) {
-    const layout = "Native" + kind;
-    const project = "project" + kind,
-      get = "get" + kind + "View",
-      set = "set" + kind + "View";
-    // The flag's name partitions otherwise identical physical layouts.
-    const flag = "has" + kind + "Message";
+  function adapter(layout: string, suffix: string, initializer: string): void {
+    const project = "project" + suffix,
+      get = "get" + suffix + "View",
+      set = "set" + suffix + "View";
     imports.push(project, get, set);
-    stubs += `export interface ${layout} { readonly message: string; readonly ${flag}: boolean }
-export function ${project}(value:unknown):${layout}|undefined { throw "UNBOUND_ERROR_PROJECTION"; }
+    stubs += `export function ${project}(value:unknown):${layout}|undefined { throw "UNBOUND_ERROR_PROJECTION"; }
 export function ${get}(error:${layout}):unknown { throw "UNBOUND_ERROR_VIEW_SLOT"; }
 export function ${set}(error:${layout}, view:unknown):void { throw "UNBOUND_ERROR_VIEW_SLOT"; }
 `;
@@ -423,15 +421,53 @@ export function ${set}(error:${layout}, view:unknown):void { throw "UNBOUND_ERRO
     publish += `{const native=${project}(value);if(native!==undefined){
  const cached=${get}(native);if(cached!==undefined)return cached;
  const program=programRealm();
- const view:unknown=createNativeErrorView(program.realm,program.hooks,${JSON.stringify(intrinsic)},native.message,native.${flag},value,program.object);
+ const view:unknown=${initializer};
  ${set}(native,view);return view;
  }}\n`;
+  }
+  for (const [kind, intrinsic] of [
+    ["Error", "error"],
+    ["TypeError", "type"],
+    ["RangeError", "range"],
+  ]) {
+    if (kind === undefined || intrinsic === undefined)
+      throw "native error adapter invariant";
+    const layout = "Native" + kind;
+    // The flag's name partitions otherwise identical physical layouts.
+    const flag = "has" + kind + "Message";
+    stubs += `export interface ${layout} { readonly message: string; readonly ${flag}: boolean }\n`;
+    adapter(
+      layout,
+      kind,
+      `createNativeErrorView(program.realm,program.hooks,${JSON.stringify(intrinsic)},native.message,native.${flag},value,program.object)`,
+    );
+  }
+  let factories = "createNativeErrorView,prepareRealmErrorArgument";
+  if (nodeErrors) {
+    factories += ",createNativeCodedErrorView,createNativeSystemErrorView";
+    stubs +=
+      'import type {NativeCodedError,NativeCodedRangeError,NativeSystemError} from "node-errors";\n';
+    adapter(
+      "NativeCodedError",
+      "NativeCodedError",
+      'createNativeCodedErrorView(program.realm,program.hooks,"error",native.message,native.code,native.errno,false,value,program.object)',
+    );
+    adapter(
+      "NativeCodedRangeError",
+      "NativeCodedRangeError",
+      'createNativeCodedErrorView(program.realm,program.hooks,"range",native.message,native.code,undefined,native.rangeErrorCodeFirst,value,program.object)',
+    );
+    adapter(
+      "NativeSystemError",
+      "NativeSystemError",
+      "createNativeSystemErrorView(program.realm,program.hooks,native.message,native.info.errno,native.info.code,native.info.message,native.info.syscall,value,program.object)",
+    );
   }
   stubs += `export function nativeErrorReceiver(value:unknown):unknown {
 ${lookup}return value;
 }\n`;
   return {
-    imports: `import {${imports.join(",")}} from "views";\nimport {createNativeErrorView,prepareRealmErrorArgument} from "objects";\n`,
+    imports: `import {${imports.join(",")}} from "views";\nimport {${factories}} from "objects";\n`,
     functions: `function toRealmError(value:unknown):unknown {
 ${publish}return value;
 }

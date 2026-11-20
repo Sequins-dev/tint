@@ -432,6 +432,7 @@ interface CompilationError {
   readonly diagnostic?: string;
   readonly preventsFallback?: boolean;
   readonly needsDynamicRealm?: boolean;
+  readonly needsBindingRealm?: boolean;
 }
 /** A compiler-issued identity that foreign code binds by contract. */
 interface IdentityPlan {
@@ -491,7 +492,14 @@ function stageFailure(
 }
 /** What lowering needs from linking, specialization and checking; the
  * linked and intermediate syntax stays in checkTypedProgram's frame. */
+interface NodeErrorNames {
+  readonly coded: string | undefined;
+  readonly range: string | undefined;
+  readonly system: string | undefined;
+  readonly info: string | undefined;
+}
 interface CheckedTypedProgram {
+  readonly nodeErrors: NodeErrorNames | undefined;
   readonly checked: CheckedClosures;
   readonly options: ModuleEntryOptions;
   readonly exports: readonly LinkedExport[];
@@ -619,7 +627,10 @@ function compileTypedWithProgramRealm(
         };
   const initial = compileTypedProgram(without, realmTypeofModules);
   if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
-  const runtime = explicit ?? dynamicObjectRuntimeSource();
+  const runtime =
+    initial.error.needsBindingRealm === true
+      ? dynamicObjectRuntimeSource(true)
+      : (explicit ?? dynamicObjectRuntimeSource());
   const module = runtime.module;
   const loader = request.moduleLoader;
   let expandedRequest = request;
@@ -1196,6 +1207,7 @@ function checkApplication(
         readonly instanceSource: Module;
         readonly observation: CollectionRuntimeObservation;
         readonly callsGeneral: boolean;
+        readonly nodeErrors: NodeErrorNames | undefined;
       };
     }
   | CompilationFailure {
@@ -1236,8 +1248,21 @@ function checkApplication(
   const helpers = linkedProgram.helpers,
     application = linkedProgram.application,
     hasDynamicRuntime = helpers.has("dynamic-object:create");
-  const dynamic = usesDynamicObjectRuntime(checked.value);
-  const realmInstanceof = usesRealmInstanceof(checked.value, mixed || dynamic);
+  const dynamic = usesDynamicObjectRuntime(checked.value, mixed);
+  // Retained runtime functions can dispatch through attached error views
+  // without capturing the program instance's realm closures.
+  function canCaptureErrorRealm(site: Span): boolean {
+    const origin = locateSourceRange(linkedProgram.ranges, site);
+    return (
+      origin === undefined ||
+      !linkedProgram.retainedRuntimeModules.has(origin.module)
+    );
+  }
+  const realmInstanceof = usesRealmInstanceof(
+    checked.value,
+    mixed || dynamic,
+    canCaptureErrorRealm,
+  );
   if (!hasDynamicRuntime && (dynamic || realmInstanceof))
     return {
       ok: false,
@@ -1247,6 +1272,9 @@ function checkApplication(
           ? "UNSUPPORTED: instanceof requires the program realm runtime"
           : "UNSUPPORTED: dynamic-key objects require the program realm runtime",
         needsDynamicRealm: true,
+        ...(checked.value.needsBindingRealm === true
+          ? { needsBindingRealm: true }
+          : {}),
       },
     };
   const instanceSource = hasDynamicRuntime
@@ -1255,6 +1283,8 @@ function checkApplication(
         checked.value,
         helpers,
         realmInstanceof,
+        mixed,
+        canCaptureErrorRealm,
       )
     : application;
   let callsGeneral = false;
@@ -1262,12 +1292,31 @@ function checkApplication(
     checked.value.intrinsics.forEach((intrinsic, _expression) => {
       if (intrinsic === "general-call") callsGeneral = true;
     });
+  // Carry only linked names across collection preparation. The final checker
+  // assigns fresh type IDs, and the observation releases the first graph.
+  function nodeErrorName(name: string): string | undefined {
+    return linkedProgram.exports.find(
+      (item) =>
+        item !== undefined &&
+        item.module === "packages/native-runtime/src/node/errors.ts" &&
+        item.namespace === "type" &&
+        item.name === name,
+    )?.linkedName;
+  }
+  const coded = nodeErrorName("NativeCodedError"),
+    range = nodeErrorName("NativeCodedRangeError"),
+    system = nodeErrorName("NativeSystemError");
+  const nodeErrors: NodeErrorNames | undefined =
+    coded === undefined && range === undefined && system === undefined
+      ? undefined
+      : { coded, range, system, info: nodeErrorName("SystemErrorInfo") };
   return {
     ok: true,
     value: {
       instanceSource,
       observation: { checked: checked.value },
       callsGeneral,
+      nodeErrors,
     },
   };
 }
@@ -1291,7 +1340,8 @@ function checkTypedProgram(
   const callHelper = helpers.get("general-object-views:callGeneralValue");
   const checked = checkApplication(linkedProgram, request, callHelper, mixed);
   if (!checked.ok) return { ok: false, error: checked.error };
-  const callsGeneral = checked.value.callsGeneral;
+  const callsGeneral = checked.value.callsGeneral,
+    nodeErrors = checked.value.nodeErrors;
   let initializerName = "",
     entryName = "";
   const start = request.start;
@@ -1479,6 +1529,7 @@ function checkTypedProgram(
     ok: true,
     value: {
       checked: prepared.value.checked,
+      nodeErrors,
       options: prepared.value.options,
       exports,
       ranges,
@@ -1795,6 +1846,10 @@ function lowerTypedProgram(
       "record-binding",
       "incomplete mixed native error views",
     );
+  function nodeErrorType(name: string | undefined): number | undefined {
+    return name === undefined ? undefined : nativeChecked.typeNames.get(name);
+  }
+  const nodeErrors = checkedProgram.nodeErrors;
   const lowered = lowerModuleEntries(
     nativeChecked,
     entries,
@@ -1825,6 +1880,15 @@ function lowerTypedProgram(
               typeError: typeErrorSlot,
               rangeError: rangeErrorSlot,
               applies: realmTypeofSourcePredicate(ranges, realmTypeofModules),
+            },
+      nodeErrorTypes:
+        nodeErrors === undefined
+          ? undefined
+          : {
+              coded: nodeErrorType(nodeErrors.coded),
+              range: nodeErrorType(nodeErrors.range),
+              system: nodeErrorType(nodeErrors.system),
+              info: nodeErrorType(nodeErrors.info),
             },
       recordBindings,
       functionAddressBindings,

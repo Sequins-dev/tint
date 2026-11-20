@@ -32,32 +32,48 @@ export const dynamicObjectRuntimeModule =
   "packages/native-runtime/src/values/dynamic-object.ts";
 
 /** This provider uses module instance state and is demanded by the AOT checker. */
-export function dynamicObjectRuntimeSource(): RuntimeSource {
+export function dynamicObjectRuntimeSource(
+  patterns: boolean = false,
+): RuntimeSource {
+  const retainedExports = [
+    "create",
+    "createArray",
+    "invoke",
+    "finish",
+    "enroll",
+    "convertKey",
+    "define",
+    "setPrototype",
+    "read",
+    "project",
+    "write",
+    "update",
+    "has",
+    "remove",
+    "spread",
+    "enumerate",
+    "advance",
+    "objectConstructor",
+    "invokeEnumeration",
+    "speculativeBinary",
+    "speculativeString",
+    "speculativeUnary",
+    "realmGlobal",
+    "realmInstanceOf",
+    "invokeArrayMethod",
+  ];
+  if (patterns) {
+    retainedExports.push(
+      "bindingObject",
+      "bindingIterator",
+      "bindingNext",
+      "bindingSkip",
+    );
+    retainedExports.push("bindingTail", "bindingClose", "bindingRest");
+  }
   return {
     module: dynamicObjectRuntimeModule,
     namespace: "dynamic-object",
-    retainedExports: [
-      "create",
-      "createArray",
-      "invoke",
-      "finish",
-      "enroll",
-      "convertKey",
-      "define",
-      "setPrototype",
-      "read",
-      "project",
-      "write",
-      "has",
-      "remove",
-      "spread",
-      "enumerate",
-      "advance",
-      "objectConstructor",
-      "invokeEnumeration",
-      "realmGlobal",
-      "realmInstanceOf",
-      "invokeArrayMethod",
-    ],
+    retainedExports,
   };
 }
