@@ -1,15 +1,15 @@
 import {
-  EPOLL_DATA_OFFSET,
-  EPOLL_EVENT_BYTES,
   epoll_create1,
   epoll_ctl,
   epoll_ctl$delete,
   epoll_wait,
   eventfd,
 } from "tint:c/linux-reactor";
+import { nativeTargetArchX86_64 } from "@tint/abi/host";
 import { readUnsigned, writeUnsigned } from "@tint/foundation/binary/bytes";
 import { close, read, write } from "@tint/native-runtime/intrinsics/fs";
-import type { NativeReactor } from "../io/reactor.ts";
+import { targetArchitecture } from "@tint/native-runtime/intrinsics/process";
+import type { NativeReactor } from "@tint/native-runtime/event-loop";
 
 const BATCH = 16;
 const CLOSE_ON_EXEC = 0x80000;
@@ -39,14 +39,17 @@ export function createReactor(): NativeReactor {
     close(queue);
     throw new Error("eventfd failed: " + String(control));
   }
-  const event = new Uint8Array(EPOLL_EVENT_BYTES);
-  const events = new Uint8Array(EPOLL_EVENT_BYTES * BATCH);
+  // glibc packs struct epoll_event on x86-64 and aligns its data union on arm64.
+  const offset = targetArchitecture() === nativeTargetArchX86_64 ? 4 : 8;
+  const eventBytes = offset + 8;
+  const event = new Uint8Array(eventBytes);
+  const events = new Uint8Array(eventBytes * BATCH);
   const wake = new Uint8Array(8);
 
   function watch(fd: number, token: number): void {
     if (
       !writeUnsigned(event, 0, 4, READ, "little").ok ||
-      !writeUnsigned(event, EPOLL_DATA_OFFSET, 4, token, "little").ok
+      !writeUnsigned(event, offset, 4, token, "little").ok
     )
       throw new RangeError("invalid epoll registration");
     const status = epoll_ctl(queue, ADD, fd, event);
@@ -88,7 +91,7 @@ export function createReactor(): NativeReactor {
       for (let i = 0; i < received; i++) {
         const token = readUnsigned(
           events,
-          i * EPOLL_EVENT_BYTES + EPOLL_DATA_OFFSET,
+          i * eventBytes + offset,
           4,
           "little",
         );

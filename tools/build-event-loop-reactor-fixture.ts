@@ -24,7 +24,8 @@ const bindings = [
 verifyHostedFixture(
   `
 import {createReactor,signalReactor} from 'reactor';
-import {createEventLoop,type EventLoop,type EventLoopHandle} from 'loop';
+import {createReactorEventLoop} from 'loop';
+import type {EventLoopHandle} from 'loop-core';
 import {monotonicMilliseconds} from 'clock';
 import {startNativeThread,joinNativeThread,hostedThreadEntry} from 'memory';
 import {read,write,close} from 'fs';
@@ -59,32 +60,29 @@ export function run(argument:number):number {
       const data=new Uint8Array(1);
       if(read(input,data)!==${darwin ? -35 : -11})return 7;
       let trace="";
-      const loop:EventLoop=createEventLoop({
+      const runtime=createReactorEventLoop({
+        createReactor:()=>reactor,
         now:():number=>monotonicMilliseconds(),
-        poll:(timeout:number):void=>{
-          reactor.poll(timeout,(token:number):void=>{
-            if(token!==123)return;
-            loop.enqueueIO(():void=>{
-              if(read(input,data)!==1||data[0]!==42)trace+="!";
-              trace+="I";
-              reactor.unwatchReadable(input);
-              watch.close();
-              loop.setTimeout(():void=>{trace+="T";},0);
-              loop.setImmediate(():void=>{trace+="C";});
-            });
-          });
-        },
+        onWake:():void=>{},
         drainMicrotasks:():void=>{}
       });
-      const watch:EventLoopHandle=loop.retain();
-      reactor.watchReadable(input,123);
-      const deadline=loop.setTimeout(():void=>{throw "read did not become ready";},1000);
-      deadline.unref();
-      data[0]=42;
-      if(write(output,data)!==1)return 8;
-      data[0]=0;
-      loop.run("callback");
-      return trace==="ICT"?42:9;
+      try {
+        const loop=runtime.loop;
+        const watch:EventLoopHandle=runtime.watchReadable(input,():void=>{
+          if(read(input,data)!==1||data[0]!==42)trace+="!";
+          trace+="I";
+          watch.close();
+          loop.setTimeout(():void=>{trace+="T";},0);
+          loop.setImmediate(():void=>{trace+="C";});
+        });
+        const deadline=loop.setTimeout(():void=>{throw "read did not become ready";},1000);
+        deadline.unref();
+        data[0]=42;
+        if(write(output,data)!==1)return 8;
+        data[0]=0;
+        loop.run("callback");
+        return trace==="ICT"?42:9;
+      }finally{runtime.close();}
     } finally {
       close(input);close(output);
     }
@@ -93,10 +91,11 @@ export function run(argument:number):number {
   }
 }
 `,
-  "event-loop-reactor-v1",
+  "event-loop-reactor-v2",
   [
     ["reactor", reactor],
-    ["loop", "packages/native-runtime/src/event-loop.ts"],
+    ["loop", "packages/native-runtime/src/event-loop-reactor.ts"],
+    ["loop-core", "packages/native-runtime/src/event-loop.ts"],
     ["memory", memory],
     ["clock", clock],
     ["fs", "packages/native-runtime/src/intrinsics/fs.ts"],

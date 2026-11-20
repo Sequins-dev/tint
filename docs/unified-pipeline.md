@@ -656,6 +656,16 @@ eventfd. [The reactor fixture](../tools/build-event-loop-reactor-fixture.ts)
 exercises a pre-posted wake, a cross-thread wake and a nonblocking pipe
 through the same phases on Darwin arm64, Linux arm64 and Linux x86-64.
 
+The Node personality of the general AOT host can
+[install scheduling globals](../packages/native-runtime/src/node/event-loop-globals.ts)
+and drive their callbacks after module evaluation. The clock and reactor are
+explicit capabilities. Immediate-only and synchronous programs can complete
+without opening a reactor. The
+[blocking pool](../packages/native-runtime/src/blocking-pool.ts) starts a
+bounded set of helpers on its first submission. The
+[pool fixture](../tools/build-event-loop-blocking-pool-fixture.ts) exercises
+file reads, capacity enforcement and completion turns through the control wake.
+
 ### What happens to each front end
 
 - js-engine lowering becomes a library of construct lowerings callable for a

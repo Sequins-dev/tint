@@ -33,6 +33,7 @@ export interface EventLoop {
   clearTimeout(handle: EventLoopHandle | undefined): void;
   setInterval(callback: Callback, delay?: number): EventLoopHandle;
   clearInterval(handle: EventLoopHandle | undefined): void;
+  checkpoint(entry: Entry): void;
   run(entry: Entry): void;
 }
 
@@ -312,6 +313,7 @@ export function createEventLoop(host: EventLoopHost): EventLoop {
     setInterval: (callback, delay): EventLoopHandle =>
       scheduleTimer(callback, delay, true),
     clearInterval: clearTimeout,
+    checkpoint,
     run,
   };
 }

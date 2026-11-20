@@ -91,13 +91,19 @@ export interface FixtureForeignDeclaration {
 
 type GeneralLowering = ReturnType<typeof createGeneralLowering>;
 let generalLowering: GeneralLowering | undefined;
+let nodeGeneralLowering: GeneralLowering | undefined;
+const eventLoopClockModule = "packages/native-runtime/src/intrinsics/clock.ts";
 /** General (JavaScript-semantics) lowering for application code the typed
  * pipeline rejects, with console output through the hosted fs binding.
  * TINT_GENERAL_FALLBACK=0 disables it. Read per build, not at import:
  * fixtures set the variable after their (hoisted) imports. */
-export function workspaceGeneralLowering(): GeneralLowering | undefined {
+export function workspaceGeneralLowering(
+  nodeEventLoop = false,
+): GeneralLowering | undefined {
   if (process.env.TINT_GENERAL_FALLBACK === "0") return undefined;
-  generalLowering ??= createGeneralLowering({
+  const cached = nodeEventLoop ? nodeGeneralLowering : generalLowering;
+  if (cached !== undefined) return cached;
+  const lowering = createGeneralLowering({
     runtime: {
       objects: "packages/js-runtime/src/objects/index.ts",
       modules: "packages/js-runtime/src/modules/index.ts",
@@ -109,8 +115,21 @@ export function workspaceGeneralLowering(): GeneralLowering | undefined {
       module: "packages/native-runtime/src/intrinsics/fs.ts",
       name: "write",
     },
+    ...(nodeEventLoop
+      ? {
+          nodeEventLoop: {
+            globals: "packages/native-runtime/src/node/event-loop-globals.ts",
+            driver: "packages/native-runtime/src/event-loop-reactor.ts",
+            clock: eventLoopClockModule,
+            reactor:
+              "packages/platform/src/" + fixtureTarget.os + "/reactor.ts",
+          },
+        }
+      : {}),
   });
-  return generalLowering;
+  if (nodeEventLoop) nodeGeneralLowering = lowering;
+  else generalLowering = lowering;
+  return lowering;
 }
 
 /** Build through the full hosted pipeline and run through the target runner.
@@ -150,6 +169,7 @@ function buildHostedFixture(
     /** Fail instead of falling back to general semantics (benchmarks whose
      * measurements must be of typed code). */
     readonly requireTyped?: boolean;
+    readonly nodeEventLoop?: boolean;
     readonly optimization?: BuildRequest["optimization"];
     /** Receives the general fallback when one was used (also reported on
      * stderr). */
@@ -179,7 +199,8 @@ function buildHostedFixture(
   },
 ): string {
   const bytes = new TextEncoder().encode(text);
-  const general = workspaceGeneralLowering();
+  const general = workspaceGeneralLowering(options.nodeEventLoop);
+  const eventLoop = options.nodeEventLoop === true && general !== undefined;
   const stackTraces =
       options.stackTraces ?? process.env.TINT_STACK_TRACES === "1",
     signposts = options.signposts ?? process.env.TINT_SIGNPOSTS === "1",
@@ -338,6 +359,15 @@ function buildHostedFixture(
       ...request.runtimes,
       ...additionalRuntimes,
       ...ffi.runtimes,
+      ...(eventLoop
+        ? [
+            {
+              module: eventLoopClockModule,
+              namespace: "node-event-loop-clock",
+              retainedExports: ["monotonicMilliseconds"],
+            },
+          ]
+        : []),
       ...(serviceImage?.runtimes ?? []),
     ],
     recordBindings: [
@@ -361,6 +391,15 @@ function buildHostedFixture(
       ),
       ...(options.hostBindings ?? []),
       ...ffi.hostBindings,
+      ...(eventLoop
+        ? [
+            {
+              module: eventLoopClockModule,
+              name: "monotonicMilliseconds",
+              operation: "monotonic-time" as const,
+            },
+          ]
+        : []),
     ],
     foreignBindings: [
       ...(request.foreignBindings ?? []),

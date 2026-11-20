@@ -36,6 +36,13 @@ export interface GeneralLoweringOptions {
    * general code as `console.log`/`console.error` and used to report
    * uncaught exceptions. Without it, console output is discarded. */
   readonly output?: { readonly module: string; readonly name: string };
+  /** The Node personality and the reactor of the executable's target. */
+  readonly nodeEventLoop?: {
+    readonly globals: string;
+    readonly driver: string;
+    readonly clock: string;
+    readonly reactor: string;
+  };
 }
 
 /** The general lowering used when the typed pipeline rejects a program: each
@@ -54,6 +61,14 @@ export function createGeneralLowering(
     runtime.environmentRecords,
   ];
   if (options.output !== undefined) runtimeModules.push(options.output.module);
+  const eventLoop = options.nodeEventLoop;
+  if (eventLoop !== undefined)
+    runtimeModules.push(
+      eventLoop.globals,
+      eventLoop.driver,
+      eventLoop.clock,
+      eventLoop.reactor,
+    );
   const objectViews = [
       "viewObjectValue",
       "viewSymbolValue",
@@ -290,6 +305,7 @@ function lowerGeneralProgram(
   if (entryIndex < 0)
     return { ok: false, error: "entry module is not lowered" };
   const output = options.output;
+  const eventLoop = options.nodeEventLoop;
   const text = generalHostSource(
     imports,
     creates,
@@ -300,6 +316,7 @@ function lowerGeneralProgram(
     output !== undefined,
     generalIntrinsics(erasedModules),
     adapters.functions + errors.functions,
+    eventLoop !== undefined,
   );
   const parsed = parseModule(createSourceTextView(text));
   if (!parsed.ok)
@@ -317,6 +334,12 @@ function lowerGeneralProgram(
     ["global", runtime.globalEnvironment],
   ]);
   if (output !== undefined) hostDependencies.set("output", output.module);
+  if (eventLoop !== undefined) {
+    hostDependencies.set("node-event-globals", eventLoop.globals);
+    hostDependencies.set("node-event-driver", eventLoop.driver);
+    hostDependencies.set("node-event-clock", eventLoop.clock);
+    hostDependencies.set("node-event-reactor", eventLoop.reactor);
+  }
   for (const module of generated)
     if (module !== undefined) hostDependencies.set(module.id, module.id);
   for (const boundary of request.boundaries)
@@ -727,6 +750,7 @@ function generalHostSource(
   output: boolean,
   installers: readonly string[],
   adapters: string,
+  nodeEventLoop: boolean,
 ): string {
   let installs = "";
   const programInstallers: string[] = [];
@@ -764,10 +788,30 @@ function generalHostSource(
   const write = output
     ? `function emit(fd:number,text:string):void{const bytes=new TextEncoder().encode(text);let offset=0;while(offset<bytes.length){const written=writeOutput(fd,bytes.subarray(offset));if(written<=0)return;offset+=written;}}`
     : `function emit(fd:number,text:string):void{}`;
+  const eventImports = nodeEventLoop
+    ? `import {installNodeEventLoopGlobals} from "node-event-globals";
+import {createReactorEventLoop} from "node-event-driver";
+import {monotonicMilliseconds} from "node-event-clock";
+import {createReactor} from "node-event-reactor";`
+    : "";
+  const eventSetup = nodeEventLoop
+    ? `const events=createReactorEventLoop({
+  createReactor:()=>createReactor(),
+  now:():number=>monotonicMilliseconds(),
+  drainMicrotasks:():void=>{drainScriptJobs(realm.agent,(error:unknown):void=>{throw error;});},
+  onWake:():void=>{}
+ });
+ try {
+  installNodeEventLoopGlobals(events.loop,object,realm,hooks);`
+    : "";
+  const eventCleanup = nodeEventLoop
+    ? `} catch(error){report(error);return 1;} finally{events.close();}`
+    : "";
   return `${imports}import {createGlobalEnvironment,type GlobalEnvironment} from "global";
 import {createSyntheticModule,setSyntheticModuleExport,loadRequestedModules,finishLoadingImportedModule,linkModule,evaluateModule,settledModulePromise,getModuleNamespace,type ModuleRecord,type ModuleRequest,type ModuleReferrer,type ModuleLoadPayload} from "modules";
 import {createObject,createCallableObject,createDataProperty,programRealmCore,installProgramObjectIntrinsics,createRuntimeError,getProperty,callObjectValue,stringValue,drainScriptJobs,installGlobalProperties,createRecordView,typedRecordOf,viewObjectValue,${programInstallers.join(",")},type ErrorRealm,type ScriptPropertyKey,type ObjectHooks,type OrdinaryObject} from "objects";
 ${output ? 'import {write as writeOutput} from "output";' : ""}
+${eventImports}
 ${write}
 function rejectArgument(realm:ErrorRealm):never{throw createRuntimeError(realm,"type");}
 function describe(value:unknown,hooks:ObjectHooks<unknown>,realm:ErrorRealm):string{
@@ -810,13 +854,14 @@ ${edges} realm.moduleLoader=(referrer:ModuleReferrer,request:ModuleRequest,hostD
  };
  let failed=false;
  function report(error:unknown):void{failed=true;emit(2,"Uncaught "+describe(error,hooks,realm)+"\\n");}
+ ${eventSetup}
  const root=record(${entry});
  const loaded=settledModulePromise(loadRequestedModules(root,hooks,undefined),realm);
  if(loaded.kind==="rejected"){report(loaded.error);return 1;}
  const linked=linkModule(root);
  if(!linked.ok){report(linked.error);return 1;}
  const evaluation=evaluateModule(root,hooks);
- drainScriptJobs(realm.agent,report);
+ ${nodeEventLoop ? 'events.loop.checkpoint("microtask");' : "drainScriptJobs(realm.agent,report);"}
  const evaluated=settledModulePromise(evaluation,realm);
  if(evaluated.kind==="rejected"){report(evaluated.error);return 1;}
  if(evaluated.kind==="pending"){emit(2,"module evaluation did not settle\\n");return 1;}
@@ -824,11 +869,12 @@ ${edges} realm.moduleLoader=(referrer:ModuleReferrer,request:ModuleRequest,hostD
  const main=getProperty<ScriptPropertyKey,unknown>(namespace,${JSON.stringify(start)},namespace,hooks);
  const result=callObjectValue(main,undefined,[],object);
  if(result.error!=="none"){report(result.value);return 1;}
- drainScriptJobs(realm.agent,report);
+ ${nodeEventLoop ? 'events.loop.run("callback");' : "drainScriptJobs(realm.agent,report);"}
  if(failed)return 1;
  const value=result.value;
  if(typeof value==="number")return value;
  return 0;
+ ${eventCleanup}
 }
 `;
 }

@@ -2659,6 +2659,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/blocking-pool.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/c/commoncrypto.d.ts",
       packageId: "native-runtime",
     },
@@ -2696,6 +2700,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/copying.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/event-loop-reactor.ts",
       packageId: "native-runtime",
     },
     {
@@ -2796,6 +2804,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/node/errors.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/event-loop-globals.ts",
       packageId: "native-runtime",
     },
     {
@@ -2928,10 +2940,6 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/platform/src/host.ts",
-      packageId: "platform",
-    },
-    {
-      id: "packages/platform/src/io/reactor.ts",
       packageId: "platform",
     },
     {
@@ -3887,6 +3895,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/native-runtime/allocators/region",
       target: "packages/native-runtime/src/allocators/region/index.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/native-runtime/event-loop",
+      target: "packages/native-runtime/src/event-loop-reactor.ts",
     },
     {
       packageId: "compiler",
@@ -5777,6 +5790,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "platform",
       specifier: "@tint/native-runtime/allocators/region",
       target: "packages/native-runtime/src/allocators/region/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/native-runtime/event-loop",
+      target: "packages/native-runtime/src/event-loop-reactor.ts",
     },
     {
       packageId: "platform",

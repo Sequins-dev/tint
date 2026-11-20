@@ -11,7 +11,7 @@ import {
   writeUnsigned,
 } from "@tint/foundation/binary/bytes";
 import { close } from "@tint/native-runtime/intrinsics/fs";
-import type { NativeReactor } from "../io/reactor.ts";
+import type { NativeReactor } from "@tint/native-runtime/event-loop";
 
 // sys/event.h: kevent64_s, EVFILT_READ, EVFILT_USER and EV_*.
 const EVENT_BYTES = 48;
