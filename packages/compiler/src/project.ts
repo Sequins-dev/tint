@@ -89,11 +89,15 @@ export function runtimeSources(): RuntimeSource[] {
     },
   ];
 }
+export const serialCollectorModule =
+  "packages/native-runtime/src/tracing/serial.ts";
+
 export function projectRoots(): string[] {
   const roots = [
     "packages/compiler/src/cli.ts",
     "packages/native-runtime/src/index.ts",
     "packages/native-runtime/src/allocators/region/index.ts",
+    serialCollectorModule,
     dynamicObjectRuntimeModule,
   ];
   for (const source of runtimeSources()) {

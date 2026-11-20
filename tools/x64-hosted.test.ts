@@ -152,14 +152,36 @@ test("x86-64 hosted compilation pinpoints deferred runtime operations", () => {
     build(
       "export function run(): number { return 42; }",
       {},
-      { runtimeEntry: "initializeGenerationalRuntime" },
+      { runtimeEntry: "initializeCopyingRuntime" },
     ),
     {
       ok: false,
       error: {
         stage: "target",
         message:
-          "linux-x86_64: unsupported operation initializeGenerationalRuntime (requires slice 7)",
+          "linux-x86_64: unsupported operation initializeCopyingRuntime (requires slice 7)",
+      },
+    },
+  );
+});
+
+test("x86-64 rejects a parallel collection requirement with a target diagnostic", () => {
+  assert.equal(linuxX86_64Target.parallelCollection, false);
+  assert.deepEqual(
+    build(
+      "export function run(): number { return 42; }",
+      {},
+      {
+        runtimeEntry: "initializeGenerationalRuntime",
+        requireParallelCollection: true,
+      },
+    ),
+    {
+      ok: false,
+      error: {
+        stage: "target",
+        message:
+          "linux-x86_64: parallel collection is unavailable until slice 8; the collector uses one worker",
       },
     },
   );

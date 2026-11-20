@@ -1,3 +1,4 @@
+import { serialCollectorModule } from "./project.ts";
 import { nativeTargetLayout } from "./native/target-layout.ts";
 import {
   aarch64ImageRelocations,
@@ -88,6 +89,7 @@ import type {
   ImageSymbol,
   ReadOnlySection,
 } from "@tint/image/executable";
+import type { X64Module } from "@tint/codegen/x86_64/scalar";
 import { appendHostedEntry } from "@tint/codegen/x86_64/startup";
 import { nativeCStackReserveBytes } from "@tint/abi/host";
 import { writeExecutableImage } from "./image-writer.ts";
@@ -148,6 +150,7 @@ export interface BuildRequest extends ModuleRequest {
   readonly recordBindings?: readonly NativeRecordBinding[];
   readonly weakBindings?: readonly NativeWeakBinding[];
   readonly inlineAllocation?: boolean;
+  readonly requireParallelCollection?: boolean;
   readonly denseReferenceLists?: boolean;
   readonly optimization?: "none" | "basic";
   readonly debugSymbols?: boolean;
@@ -297,7 +300,15 @@ function buildX64HostedProgram(
         " (requires slice 7)",
     );
   }
-  if (request.runtimeEntry !== undefined) return deferred(request.runtimeEntry);
+  if (request.requireParallelCollection === true && !target.parallelCollection)
+    return failure(
+      "target",
+      target.name +
+        ": parallel collection is unavailable until slice 8; the collector uses one worker",
+    );
+  const generational = request.runtimeEntry === "initializeGenerationalRuntime";
+  if (request.runtimeEntry !== undefined && !generational)
+    return deferred(request.runtimeEntry);
   if (request.threaded === true) return deferred("hosted-thread-entry");
   if (request.allowJit === true) return deferred("executable-map");
   if (
@@ -351,6 +362,76 @@ function buildX64HostedProgram(
       target.name + ": invalid hosted mapping or stack size",
     );
 
+  let runtime:
+    | {
+        native: X64Module;
+        entry: number;
+        controlBytes: number;
+        allocationCapacity: number;
+        rootCapacity: number;
+      }
+    | undefined;
+  if (generational) {
+    const invalid = movingWorkspaceError(request, true);
+    if (invalid !== undefined) return failure("memory-policy", invalid);
+    request.report("runtime");
+    const sources = runtimeModules(request, serialCollectorModule);
+    const root = request.runtimeModule.slice(
+      0,
+      request.runtimeModule.lastIndexOf("/") + 1,
+    );
+    const serial = sources.find(
+      (source) => source?.id === serialCollectorModule,
+    );
+    if (serial === undefined)
+      return failure("runtime", "serial collector policy source is missing");
+    const modules: SourceModule[] = [];
+    for (const source of sources) {
+      if (source === undefined) throw "runtime source invariant";
+      if (source.id === root + "generational.ts") {
+        const dependencies = new Map<string, string>();
+        for (const [specifier, id] of source.dependencies)
+          dependencies.set(specifier, id);
+        dependencies.set("./tracing/parallel.ts", serial.id);
+        dependencies.set("./processors.ts", serial.id);
+        modules.push({ ...source, dependencies });
+      } else modules.push(source);
+    }
+    const loweredRuntime = compileX64HostedProgram(
+      {
+        modules,
+        entry: request.runtimeModule,
+        start: "initializeGenerationalRuntime",
+        exports: ["initializeGenerationalRuntime"],
+        runtimes: [
+          { module: request.memoryModule, namespace: "native-memory" },
+        ],
+        hostBindings: serialCollectorBindings(request.memoryModule),
+        closedProgram: true,
+        optimization: "basic",
+        maxSpecializations: request.maxSpecializations ?? 4096,
+      },
+      target.hostABI,
+      { runtime: true },
+    );
+    if (!loweredRuntime.ok)
+      return failure(
+        "runtime " + loweredRuntime.error.stage,
+        loweredRuntime.error.message,
+      );
+    const entry =
+      loweredRuntime.native.functions[loweredRuntime.invocation]?.offset;
+    if (entry === undefined)
+      return failure("runtime", "missing collector initializer");
+    runtime = {
+      native: loweredRuntime.native,
+      entry,
+      controlBytes: request.controlBytes,
+      allocationCapacity: request.allocationCapacity,
+      rootCapacity: request.rootCapacity,
+    };
+  }
+
   request.report("program");
   const reportIR = request.onScalarIR;
   const compiled = compileX64HostedProgram(
@@ -374,19 +455,28 @@ function buildX64HostedProgram(
       },
     },
     target.hostABI,
+    { generational, inlineAllocation: request.inlineAllocation !== false },
   );
   if (!compiled.ok) return compiled;
   const native = compiled.native;
   const main = native.functions[compiled.invocation];
   if (main === undefined)
     return failure("startup", target.name + ": missing managed entry");
+  const returnType = compiled.returnType;
+  if (
+    returnType !== "number" &&
+    returnType !== "boolean" &&
+    returnType !== "void"
+  )
+    return failure("startup", target.name + ": invalid managed status type");
   request.report("startup");
   try {
     const image = appendHostedEntry({
       native,
       host: target.hostABI,
       invocation: main.offset,
-      returnType: compiled.returnType,
+      returnType,
+      ...(runtime === undefined ? {} : { runtime }),
       stackBytes,
       managedBytes,
       pageBytes,
@@ -435,11 +525,38 @@ function sourceFunctionNames(request: ModuleRequest, id: string): Set<string> {
   return names;
 }
 
+function serialCollectorBindings(module: string): NativeHostBinding[] {
+  return [
+    {
+      module,
+      name: "configureGenerationalAllocation",
+      operation: "generational-state",
+    },
+    {
+      module,
+      name: "configureExternalMemory",
+      operation: "external-memory-configure",
+    },
+    { module, name: "currentRootHead", operation: "root-head" },
+    { module, name: "engineRangeError", operation: "engine-range-error" },
+    { module, name: "memoryPageBytes", operation: "memory-page-bytes" },
+    { module, name: "processorCount", operation: "processor-count" },
+    { module, name: "readMemoryWord", operation: "memory-read-word" },
+    { module, name: "writeMemoryWord", operation: "memory-write-word" },
+    { module, name: "moveMemory", operation: "memory-move" },
+    { module, name: "releaseMemory", operation: "memory-release" },
+  ];
+}
+
 /** The standalone collector links only its own dependency graph. */
-function runtimeModules(request: BuildRequest): readonly SourceModule[] {
+function runtimeModules(
+  request: BuildRequest,
+  extra?: string,
+): readonly SourceModule[] {
   const loader = request.moduleLoader;
   if (loader === undefined) return request.modules;
   const pending = [request.runtimeModule, request.memoryModule];
+  if (extra !== undefined) pending.push(extra);
   const seen = new Set<string>();
   const modules = new Map<string, SourceModule>();
   for (let index = 0; index < pending.length; index++) {
@@ -464,6 +581,44 @@ function runtimeModules(request: BuildRequest): readonly SourceModule[] {
   }
   return ordered;
 }
+function movingWorkspaceError(
+  request: BuildRequest,
+  generational: boolean,
+): string | undefined {
+  // Both moving collectors require a start bitmap for the semispace.
+  // Generational collection also needs old-space mark bytes.
+  // Reject invalid workspaces before runtime initialization can throw.
+  const capacity = generational
+      ? Math.floor(request.managedBytes / 1024) * 512
+      : Math.floor(request.managedBytes / 32) * 16,
+    // One start bit per 8-byte allocation granule.
+    units = capacity / 8,
+    requiredWords = Math.ceil(units / 32),
+    // Must match initializeGenerationalRuntime's nursery bound.
+    youngCapacity = Math.min(
+      268435456,
+      Math.max(512, Math.floor(capacity / 2048) * 512),
+    ),
+    // One dirty bit per granule, eight per mark byte.
+    requiredMarks = generational
+      ? Math.ceil((capacity - youngCapacity) / 64)
+      : 0;
+  if (
+    !Number.isSafeInteger(request.managedBytes) ||
+    request.managedBytes > 0xffffffff ||
+    capacity < (generational ? 1024 : 16) ||
+    !Number.isSafeInteger(request.allocationCapacity) ||
+    request.allocationCapacity < Math.max(1, requiredMarks) ||
+    // Generational metadata also holds the major's live bits and chunk
+    // offsets beside the start bits.
+    request.allocationCapacity * 3 + 96 < (generational ? 3 : 1) * requiredWords
+  )
+    return generational
+      ? "generational runtime allocation metadata cannot cover forwarding and old-space marks"
+      : "copying runtime allocation metadata cannot cover the managed semispace";
+  return undefined;
+}
+
 /** Validate the memory policy and compile the allocator, runtime and program.
  * Native services are linked by linkMacOSProgram. */
 export function compileMacOSProgram(
@@ -493,41 +648,8 @@ export function compileMacOSProgram(
     );
   const generational = request.runtimeEntry === "initializeGenerationalRuntime";
   if (request.runtimeEntry === "initializeCopyingRuntime" || generational) {
-    // Both moving collectors require a start bitmap for the semispace.
-    // Generational collection also needs old-space mark bytes.
-    // Reject invalid workspaces before runtime initialization can throw.
-    const capacity = generational
-        ? Math.floor(request.managedBytes / 1024) * 512
-        : Math.floor(request.managedBytes / 32) * 16,
-      // One start bit per 8-byte allocation granule.
-      units = capacity / 8,
-      requiredWords = Math.ceil(units / 32),
-      // Must match initializeGenerationalRuntime's nursery bound.
-      youngCapacity = Math.min(
-        268435456,
-        Math.max(512, Math.floor(capacity / 2048) * 512),
-      ),
-      // One dirty bit per granule, eight per mark byte.
-      requiredMarks = generational
-        ? Math.ceil((capacity - youngCapacity) / 64)
-        : 0;
-    if (
-      !Number.isSafeInteger(request.managedBytes) ||
-      request.managedBytes > 0xffffffff ||
-      capacity < (generational ? 1024 : 16) ||
-      !Number.isSafeInteger(request.allocationCapacity) ||
-      request.allocationCapacity < Math.max(1, requiredMarks) ||
-      // Generational metadata also holds the major's live bits and chunk
-      // offsets beside the start bits.
-      request.allocationCapacity * 3 + 96 <
-        (generational ? 3 : 1) * requiredWords
-    )
-      return compileFailure(
-        "memory-policy",
-        generational
-          ? "generational runtime allocation metadata cannot cover forwarding and old-space marks"
-          : "copying runtime allocation metadata cannot cover the managed semispace",
-      );
+    const invalid = movingWorkspaceError(request, generational);
+    if (invalid !== undefined) return compileFailure("memory-policy", invalid);
   }
   const hostABI = target.hostABI;
   request.report("allocator");

@@ -1,3 +1,5 @@
+import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
+import { nativeStackMapMagic, nativeStackMapWideVersion } from "@tint/abi/host";
 import { nativeFixtureTarget } from "./native-host-target.ts";
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync, mkdtempSync } from "node:fs";
@@ -17,10 +19,41 @@ const rejectMinor = process.env.TINT_REJECT_MINOR === "1";
 const rejectAllocations = process.env.TINT_REJECT_ALLOCATIONS === "1";
 const receivers = process.env.TINT_RECEIVER_RUNTIME === "1";
 const generalArrays = process.env.TINT_GENERAL_ARRAY_RUNTIME === "1";
-const fixture = rejectAllocations
-  ? "export function run():number{return 42;}"
-  : generalArrays
-    ? `function create():unknown[]{
+const forcedCollection = process.env.TINT_FORCED_COLLECTION === "1";
+const shiftedPC = process.env.TINT_SHIFT_SAFEPOINT_PC === "1";
+const memoryModule = "packages/native-runtime/src/intrinsics/memory.ts";
+const fixture = forcedCollection
+  ? `import { collectGarbage } from "memory";
+interface Record { value: number; }
+function throwRecord(): void {
+  const record: Record = { value: 42 };
+  throw record;
+}
+function relocateThrown(): void {
+  try { throwRecord(); }
+  catch (caught) {
+    collectGarbage();
+    throw caught;
+  }
+}
+export function run(): number {
+  // Dead old storage gives the thrown record room to move in the major.
+  const old = new Uint8Array(144);
+  if (old.length !== 144) return 2;
+  try { relocateThrown(); }
+  catch (caught) { return (caught as Record).value; }
+  return 3;
+}`
+  : rejectAllocations
+    ? `interface Small { value: number; }
+    export function run(): number {
+      const a: Small = { value: 42 };
+      const b = new Uint8Array(16);
+      b[0] = a.value;
+      return b[0] ?? 0;
+    }`
+    : generalArrays
+      ? `function create():unknown[]{
  const object={value:42};return [object,object,"persistent"+String(42),undefined,false,42];
 }
 export function run():number {
@@ -34,8 +67,8 @@ export function run():number {
  }
  return 42;
 }`
-    : receivers
-      ? `interface Value {value:number;}
+      : receivers
+        ? `interface Value {value:number;}
 interface Owner {value:number;read(this:Value):number;capture(this:Value):()=>number;}
 function create():Owner {
  return {value:42,
@@ -51,8 +84,8 @@ export function run():number {
  for(let i=0;i<40;i++){if(create().read()!==42||captured()!==42)return 2;}
  return 42;
 }`
-      : generational
-        ? `interface Link {next:Link|undefined;value:number;}
+        : generational
+          ? `interface Link {next:Link|undefined;value:number;}
 export function run():number {
  const a:Link={next:undefined,value:1},b:Link={next:undefined,value:2},c:Link={next:undefined,value:3};
  let held:Link={next:undefined,value:0};const get=():number=>held.value;
@@ -67,7 +100,7 @@ export function run():number {
  }
  return 42;
 }`
-        : `interface Link {next:Link|undefined;value:number;}
+          : `interface Link {next:Link|undefined;value:number;}
 export function run():number {
  const first:Link={next:undefined,value:19},second:Link={next:first,value:23};first.next=second;
  const links:Link[]=[];for(let i=0;i<16;i++)links.push(i%2===0?first:second);
@@ -137,8 +170,18 @@ else if (
   assert.ok(copyingModule);
   const text = readFileSync(runtimePath, "utf8");
   let modified = text;
-  if (rejectMoves)
+  if (rejectMoves && !generational)
     modified = modified.replace(/moveMemory\([\s\S]*?\) === 0/, "false");
+  if (rejectMoves && generational) {
+    const id = "packages/native-runtime/src/tracing/cheney.ts";
+    const index = modules.findIndex((item) => item.id === id);
+    const cheney = modules[index];
+    assert.ok(cheney);
+    const text = readFileSync(id, "utf8");
+    const reject = text.replace(/moveMemory\([\s\S]*?\) !== 0/g, "true");
+    assert.notEqual(reject, text);
+    modules[index] = { ...cheney, module: parse(reject) };
+  }
   if (rejectAllocations)
     modified = modified.replace(
       "return (bytes) => {",
@@ -164,17 +207,36 @@ else if (
       "  function collect(",
       "  allocation[6] = 0;\n  function collect(",
     );
-  assert.notEqual(modified, text);
-  modules[copyingIndex] = { ...copyingModule, module: parse(modified) };
+  if (modified !== text)
+    modules[copyingIndex] = { ...copyingModule, module: parse(modified) };
+  else assert.ok(rejectMoves && generational);
 }
 modules.push({
   id: "fixture",
   module: parse(fixture),
-  dependencies: new Map(),
+  dependencies: new Map(forcedCollection ? [["memory", memoryModule]] : []),
 });
+const target = nativeFixtureTarget();
+const request = projectBuildRequest(modules, () => {});
 const built = buildMacOSProgram({
-  target: nativeFixtureTarget(),
-  ...projectBuildRequest(modules, () => {}),
+  target,
+  ...request,
+  runtimes: forcedCollection
+    ? [
+        ...request.runtimes,
+        { module: memoryModule, namespace: "native-memory" },
+      ]
+    : request.runtimes,
+  hostBindings: forcedCollection
+    ? [
+        ...request.hostBindings,
+        {
+          module: memoryModule,
+          name: "collectGarbage",
+          operation: "collect-garbage",
+        },
+      ]
+    : request.hostBindings,
   runtimeEntry: generational
     ? "initializeGenerationalRuntime"
     : copying
@@ -193,8 +255,53 @@ const built = buildMacOSProgram({
 assert.ok(built.ok, JSON.stringify(built));
 const directory = mkdtempSync(join(tmpdir(), "tint-moving-runtime-")),
   path = join(directory, "runtime");
+if (shiftedPC) {
+  const image = Buffer.from(
+    built.value.buffer,
+    built.value.byteOffset,
+    built.value.byteLength,
+  );
+  const tag = Buffer.alloc(16);
+  tag.writeBigUInt64LE(BigInt(nativeStackMapMagic), 0);
+  tag.writeBigUInt64LE(BigInt(nativeStackMapWideVersion), 8);
+  const table = image.indexOf(tag);
+  assert.ok(table >= 0);
+  const count = Number(image.readBigUInt64LE(table + 16));
+  assert.ok(count > 0);
+  for (let i = 0; i < count; i++) {
+    const offset = table + 24 + i * 16;
+    image.writeBigUInt64LE(image.readBigUInt64LE(offset) + 1n, offset);
+  }
+}
 writeFileSync(path, built.value, { mode: 0o755 });
 console.log(path);
+if (target.arch === "x86_64" && process.env.TINT_BUILD_ONLY !== "1") {
+  const artifact = nativeArtifact(target.name, path);
+  const results = runNativeBatch([{ artifact }, { artifact }]);
+  for (const result of results) {
+    console.log(JSON.stringify(result));
+    if (
+      disableBarriers &&
+      result.kind === "signaled" &&
+      result.signal === "SIGILL"
+    )
+      continue;
+    assert.equal(result.kind, "exited");
+    const rejected =
+      shiftedPC ||
+      rejectMoves ||
+      rejectMajor ||
+      rejectMinor ||
+      (rejectAllocations && process.env.TINT_INLINE_ALLOCATION === "0");
+    if (disableBarriers)
+      assert.ok(
+        result.status === 4 || result.status === 5 || result.status === 1,
+      );
+    else assert.equal(result.status, rejected ? 1 : 42);
+  }
+  console.log("Verified moving-runtime fixture twice.");
+  process.exit(0);
+}
 for (
   let attempt = 0;
   process.env.TINT_BUILD_ONLY !== "1" && attempt < 2;

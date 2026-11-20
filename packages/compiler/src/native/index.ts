@@ -2492,24 +2492,55 @@ function emitProgram(
 export function compileX64HostedProgram(
   request: CompileRequest,
   host: PosixHostFacts,
+  options: {
+    readonly runtime?: true;
+    readonly generational?: boolean;
+    readonly inlineAllocation?: boolean;
+  } = {},
 ):
   | CompilationFailure
   | {
       readonly ok: true;
       readonly native: X64Module;
       readonly invocation: number;
-      readonly returnType: "number" | "boolean" | "void";
+      readonly returnType: "number" | "boolean" | "void" | "reference";
     } {
   const lowered = lowerTypedProgram(
     withForeignRuntimes({ ...request, symbols: true }),
     undefined,
-    true,
+    options.runtime !== true,
   );
   if (!lowered.ok) return lowered;
   const program = lowered.value;
   const first = program.ir.module;
-  const returnType = first.functions[program.invocation]?.returnType;
-  if (
+  const entry = first.functions[program.invocation];
+  if (entry === undefined)
+    return stageFailure("entry", "linux-x86_64: missing entry");
+  const returnType = entry.returnType;
+  if (options.runtime === true) {
+    const workspaces: readonly ScalarType[] = [
+      "Uint32Array",
+      "Uint32Array",
+      "Uint32Array",
+      "Float64Array",
+      "Uint8Array",
+      "Uint32Array",
+      "Float64Array",
+    ];
+    if (
+      returnType !== "reference" ||
+      entry.parameters.length !== 8 + workspaces.length ||
+      entry.parameters.some(
+        (slot, index) =>
+          slot === undefined ||
+          entry.slots[slot] !== (index < 8 ? "number" : workspaces[index - 8]),
+      )
+    )
+      return stageFailure(
+        "entry",
+        "linux-x86_64: invalid collector initializer signature",
+      );
+  } else if (
     returnType !== "number" &&
     returnType !== "boolean" &&
     returnType !== "void"
@@ -2543,12 +2574,20 @@ export function compileX64HostedProgram(
     (span) => locateSourceRange(program.ranges, span)?.module,
   );
   if (deferred !== undefined) return stageFailure("foreign", deferred);
-  const emitted = emitX64(optimized, host);
+  const emitted = emitX64(
+    optimized,
+    host,
+    options.generational === true,
+    options.inlineAllocation !== false,
+  );
   if (!emitted.ok) {
     const message = emitted.error.message;
     return stageFailure(
       "emit",
-      "linux-x86_64: " + message.slice("x86-64 scalar: ".length),
+      "linux-x86_64: " +
+        (message.startsWith("x86-64 scalar: ")
+          ? message.slice("x86-64 scalar: ".length)
+          : message),
     );
   }
   return { ok: true, native: emitted.value, invocation, returnType };
