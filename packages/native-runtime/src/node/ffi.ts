@@ -101,6 +101,7 @@ interface NodeFfi {
 }
 
 import {
+  ffiSharedAddress,
   installFfiMemory,
   readScalar,
   stableFfiBacking,
@@ -188,7 +189,12 @@ function pointerArgument(
         );
       const bytes = window.bytes,
         storage = window.storage;
-      if (bytes !== undefined && storage.kind === "ordinary") {
+      if (storage.kind === "shared")
+        return ffiPointer(
+          ffiSharedAddress(core, storage, window.byteOffset, window.byteLength),
+          undefined,
+        );
+      if (bytes !== undefined) {
         const backing = stable ? stableFfiBacking(core, storage, bytes) : bytes;
         return ffiPointer(
           0n,

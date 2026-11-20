@@ -1,4 +1,5 @@
 import { retargetByteStorage, type ByteStorage } from "@tint/js-runtime/bytes";
+import type { SharedBlockStorage } from "@tint/js-runtime/bytes/shared";
 import {
   adoptArrayBuffer,
   builtinFunction,
@@ -141,6 +142,32 @@ export function writeScalar(
     default:
       throw "FFI_MEMORY_KIND_INVARIANT";
   }
+}
+
+/** Acquire a live window from the embedding's shared mapping owner. */
+export function ffiSharedAddress(
+  core: ProgramRealmCore,
+  storage: SharedBlockStorage,
+  offset: number,
+  length: number,
+): bigint {
+  const address = storage.service.foreignAddress;
+  if (address === undefined)
+    return ffiError(
+      core,
+      "error",
+      "ERR_FFI_CALL_FAILED",
+      "SharedArrayBuffer backing requires an embedding with native shared mappings",
+    );
+  const resolved = address(storage.handle, offset, length);
+  if (!resolved.ok)
+    return ffiError(
+      core,
+      "type",
+      "ERR_INVALID_ARG_VALUE",
+      "Invalid SharedArrayBuffer backing range",
+    );
+  return BigInt(resolved.value);
 }
 
 /** Keep existing owners and aliases together when C needs a stable address. */
@@ -367,9 +394,23 @@ export function installFfiMemory(
     if (brand === "ArrayBuffer" ? storage === undefined : window === undefined)
       return type("The source must be a " + brand);
     const count = size(args[2], "len", true);
+    if (window !== undefined) {
+      const owner = window.storage;
+      if (owner.kind === "shared") {
+        const length = window.byteLength;
+        ensureFit(count, length);
+        const pointer = ffiSharedAddress(
+          core,
+          owner,
+          window.byteOffset,
+          length,
+        );
+        exportBytes(host.view(pointer, length), args[1], count);
+        return;
+      }
+    }
     const bytes = window === undefined ? storage?.data : window.bytes;
-    if (bytes === undefined)
-      return invalid("ArrayBuffer is detached or inaccessible");
+    if (bytes === undefined) return invalid("ArrayBuffer is detached");
     const offset = window?.byteOffset ?? 0;
     const length = window?.byteLength ?? bytes.length;
     ensureFit(count, length);
@@ -393,12 +434,20 @@ export function installFfiMemory(
       );
     const window = projectArrayBufferViewRange(source);
     const storage = window?.storage ?? source.internalArrayBufferData;
-    if (storage === undefined)
+    if (storage === undefined) {
+      const shared = source.internalSharedArrayBufferData;
+      if (shared !== undefined) return ffiSharedAddress(core, shared, 0, 0);
       return type(
         "The source must be an ArrayBuffer, SharedArrayBuffer, or ArrayBufferView",
       );
-    if (storage.kind !== "ordinary")
-      return invalid("SharedArrayBuffer does not have an accessible backing");
+    }
+    if (storage.kind === "shared")
+      return ffiSharedAddress(
+        core,
+        storage,
+        window?.byteOffset ?? 0,
+        window?.byteLength ?? 0,
+      );
     const bytes = storage.data;
     if (bytes === undefined) return invalid("ArrayBuffer is detached");
     const stable = stableFfiBacking(core, storage, bytes);

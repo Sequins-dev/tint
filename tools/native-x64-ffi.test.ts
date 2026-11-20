@@ -1181,7 +1181,13 @@ test(
   {
     skip: !x64,
   },
-  () => {
+  (context) => {
+    const previous = process.env.TINT_GENERAL_FALLBACK;
+    process.env.TINT_GENERAL_FALLBACK = "0";
+    context.after(() => {
+      if (previous === undefined) delete process.env.TINT_GENERAL_FALLBACK;
+      else process.env.TINT_GENERAL_FALLBACK = previous;
+    });
     withOracle(
       (library) => {
         verifyHostedFixture(

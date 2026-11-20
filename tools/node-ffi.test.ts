@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 import { withDynamicLibrary } from "./native-dynamic-fixtures.ts";
+import type { NativeHostBinding } from "@tint/compiler/native";
 
 function source(library: string, generic: boolean): string {
   return `
@@ -396,5 +397,122 @@ test("node:ffi registers runtime signatures without a fixed callback pool", () =
       callbackLibrary,
     ),
     "clang is required",
+  );
+});
+
+test("node:ffi lends the mapped span of a shared ArrayBuffer view", (context) => {
+  const previous = process.env.TINT_GENERAL_FALLBACK;
+  process.env.TINT_GENERAL_FALLBACK = "0";
+  context.after(() => {
+    if (previous === undefined) delete process.env.TINT_GENERAL_FALLBACK;
+    else process.env.TINT_GENERAL_FALLBACK = previous;
+  });
+
+  const memory = "packages/native-runtime/src/intrinsics/memory.ts";
+  const atomics = "packages/native-runtime/src/intrinsics/shared-atomics.ts";
+  const hostBindings: readonly NativeHostBinding[] = [
+    { module: memory, name: "mapMemory", operation: "memory-map" },
+    { module: memory, name: "unmapMemory", operation: "memory-unmap" },
+    {
+      module: atomics,
+      name: "readSharedUnsigned",
+      operation: "shared-read-unsigned",
+    },
+    {
+      module: atomics,
+      name: "writeSharedUnsigned",
+      operation: "shared-write-unsigned",
+    },
+    {
+      module: atomics,
+      name: "readSharedWord64",
+      operation: "shared-read-word64",
+    },
+    {
+      module: atomics,
+      name: "writeSharedWord64",
+      operation: "shared-write-word64",
+    },
+    {
+      module: atomics,
+      name: "compareExchangeSharedWord64",
+      operation: "shared-compare-exchange-word64",
+    },
+  ];
+  verifyHostedFixture(
+    `import ffi from "node:ffi";
+import { createNativeSharedBlockService, nativeSharedMemoryHost } from "shared";
+import {
+  callObjectValueOrThrow, constructObjectValueOrThrow, createArrayFromList,
+  createDataProperty, createObject, getObjectValuePropertyOrThrow,
+  installProgramArrayIntrinsics, installProgramTypedArrayIntrinsics,
+  installSharedArrayBufferIntrinsics, programRealmCore, type ScriptPropertyKey,
+} from "objects";
+export function run(): number {
+  const native = createNativeSharedBlockService(
+    nativeSharedMemoryHost(), { pageSize: 16384, maxBlocks: 16, maxReservedBytes: 262144 },
+  );
+  if (!native.ok) return 1;
+  const core = programRealmCore(), realm = core.realm, hooks = core.hooks;
+  installSharedArrayBufferIntrinsics(core.object, realm, hooks, native.value);
+  installProgramArrayIntrinsics(core);
+  installProgramTypedArrayIntrinsics(core);
+  function get(receiver: unknown, property: string): unknown {
+    return getObjectValuePropertyOrThrow(receiver, property, hooks, realm);
+  }
+  function call(receiver: unknown, property: string, args: readonly unknown[]): unknown {
+    return callObjectValueOrThrow(get(receiver, property), receiver, args, core.object, realm);
+  }
+  function make(name: string, args: readonly unknown[]): unknown {
+    const ctor = get(core.object, name);
+    return constructObjectValueOrThrow(realm, ctor, args, core.object);
+  }
+  const shared = make("SharedArrayBuffer", [16]);
+  const view = make("Uint8Array", [shared, 4, 3]);
+  const base = call(ffi, "getRawPointer", [shared]);
+  const pointer = call(ffi, "getRawPointer", [view]);
+  if (typeof base !== "bigint" || typeof pointer !== "bigint" || pointer !== base + 4n) return 2;
+  const signature = createObject<ScriptPropertyKey, unknown>(realm.objectPrototype);
+  const definitions = createObject<ScriptPropertyKey, unknown>(undefined);
+  const args = createArrayFromList(["pointer", "int32", "uint64"], 0, realm.arrayPrototype, realm, hooks);
+  createDataProperty<ScriptPropertyKey, unknown>(signature, "arguments", args, hooks);
+  createDataProperty<ScriptPropertyKey, unknown>(signature, "return", "pointer", hooks);
+  createDataProperty<ScriptPropertyKey, unknown>(definitions, "memset", signature, hooks);
+  const opened = call(ffi, "dlopen", [null, definitions]);
+  const lib = get(opened, "lib"), functions = get(opened, "functions");
+  const result = call(functions, "memset", [view, 42, 3n]);
+  try {
+    if (typeof result !== "bigint" || result !== pointer || get(view, "0") !== 42 || get(view, "2") !== 42)
+      return 3;
+    call(ffi, "exportArrayBufferView", [view, base, 3]);
+    const original = make("Uint8Array", [shared]);
+    if (get(original, "0") !== 42 || get(original, "2") !== 42 || get(original, "3") !== 0) return 4;
+    return 42;
+  } finally { call(lib, "close", []); }
+}`,
+    "node-ffi-shared-span",
+    [
+      ["node:ffi", "packages/native-runtime/src/node/ffi.ts"],
+      ["shared", "packages/native-runtime/src/shared-blocks.ts"],
+      ["objects", "packages/js-runtime/src/objects/index.ts"],
+    ],
+    [],
+    [],
+    [
+      {
+        module: atomics,
+        namespace: "node-ffi-shared-fixture",
+        retainedExports: hostBindings
+          .filter((entry) => entry.module === atomics)
+          .map((entry) => entry.name),
+      },
+    ],
+    {
+      requireTyped: true,
+      runtimeEntry: "initializeCopyingRuntime",
+      managedBytes: 67108864,
+      allocationCapacity: 1048576,
+      hostBindings,
+    },
   );
 });

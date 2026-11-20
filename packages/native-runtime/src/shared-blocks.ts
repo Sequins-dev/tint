@@ -391,6 +391,31 @@ function sharedFacade(
       ),
     };
   }
+  function foreignAddress(
+    handle: number,
+    offset: number,
+    extent: number,
+  ): SharedResult<number> {
+    const scratch = new Uint32Array(2);
+    const block = location(handle, scratch);
+    if (block === undefined) return { ok: false, error: "invalid-handle" };
+    const length = readNumber(
+      host,
+      registry,
+      block.offset + sharedBlockLengthOffset,
+      scratch,
+      orderCode("seq-cst"),
+    );
+    if (
+      !integer(offset) ||
+      !integer(extent) ||
+      offset > length ||
+      extent > length - offset
+    )
+      return { ok: false, error: "invalid-range" };
+    return { ok: true, value: block.base + offset };
+  }
+
   function grow(handle: number, target: number): SharedStatus {
     const scratch = new Uint32Array(2),
       block = location(handle, scratch);
@@ -751,6 +776,8 @@ function sharedFacade(
       create(initial, maximum, growable),
     describe: (handle): SharedResult<SharedBlockDescriptor> => describe(handle),
     length: (handle, order): SharedResult<number> => length(handle, order),
+    foreignAddress: (handle, offset, extent): SharedResult<number> =>
+      foreignAddress(handle, offset, extent),
     grow: (handle, target): SharedStatus => grow(handle, target),
     readUnsigned: (handle, offset, width, order): SharedResult<number> =>
       readUnsigned(handle, offset, width, order),
