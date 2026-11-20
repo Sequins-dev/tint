@@ -133,6 +133,24 @@ export interface BindingError extends Span {
     | "LIMIT"
     | "UNSUPPORTED";
   readonly message: string;
+  readonly fallback?: BindingFallback;
+}
+export const directEvalUnavailable =
+  "direct eval requires the hosted evaluator and shared binding contracts";
+export interface BindingFallback {
+  readonly capability:
+    | "arguments-object"
+    | "import-meta"
+    | "realm-library-global"
+    | "dynamic-import"
+    | "named-function-expression"
+    | "regexp-literal"
+    | "resource-disposal"
+    | "iteration-assignment"
+    | "default-export"
+    | "catch-var-initialization";
+  readonly ownerKind: "function" | "class" | "module";
+  readonly owner: Span;
 }
 export type BindingResult =
   | { readonly ok: true; readonly value: BoundModule }
@@ -271,13 +289,52 @@ function bindProgram(
     abort = {};
   let error: BindingError | undefined,
     depth = 0;
+  let classOwner: Span | undefined;
   function fail(
     node: Span,
     code: BindingError["code"],
     message: string,
+    fallback?: BindingFallback,
   ): never {
-    error = { start: node.start, end: node.end, code, message };
+    const diagnostic: BindingError =
+      fallback === undefined
+        ? { start: node.start, end: node.end, code, message }
+        : {
+            start: node.start,
+            end: node.end,
+            code,
+            message,
+            fallback,
+          };
+    error = diagnostic;
     throw abort;
+  }
+  function unsupported(
+    node: Span,
+    s: ScopeState,
+    capability: BindingFallback["capability"],
+    message: string,
+    code: BindingError["code"] = "UNSUPPORTED",
+  ): never {
+    const classNode = classOwner;
+    if (classNode !== undefined)
+      fail(node, code, message, {
+        capability,
+        ownerKind: "class",
+        owner: { start: classNode.start, end: classNode.end },
+      });
+    const owner = s.owner === undefined ? undefined : functions[s.owner]?.node;
+    if (owner === undefined)
+      fail(node, code, message, {
+        capability,
+        ownerKind: "module",
+        owner: { start: module.start, end: module.end },
+      });
+    return fail(node, code, message, {
+      capability,
+      ownerKind: "function",
+      owner: { start: owner.start, end: owner.end },
+    });
   }
   function scope(
     parent: ScopeState | undefined,
@@ -512,9 +569,10 @@ function bindProgram(
           simpleCatchBindings.has(existingBinding.node)
         ) {
           if (!javascript)
-            fail(
+            unsupported(
               node,
-              "UNSUPPORTED",
+              scope,
+              "catch-var-initialization",
               "var redeclarations of catch parameters require separate initializer bindings",
             );
           if (caught === undefined) caught = existing;
@@ -530,6 +588,15 @@ function bindProgram(
     if (writes && caught !== undefined)
       varInitializerTargets.push({ node, binding: caught });
   }
+  function localBinding(name: string, s: ScopeState): number | undefined {
+    let cursor: ScopeState | undefined = s;
+    while (cursor !== undefined) {
+      const id = cursor.names.get(name);
+      if (id !== undefined) return id;
+      cursor = cursor.parent === undefined ? undefined : scopes[cursor.parent];
+    }
+    return undefined;
+  }
   function reference(
     node: Expression & { readonly kind: "identifier" },
     s: ScopeState,
@@ -543,13 +610,7 @@ function bindProgram(
         "arguments is not allowed in class initializers",
       );
     if (node.name === "arguments") observeArguments(s);
-    let cursor: ScopeState | undefined = s,
-      id: number | undefined;
-    while (cursor !== undefined) {
-      id = cursor.names.get(node.name);
-      if (id !== undefined) break;
-      cursor = cursor.parent === undefined ? undefined : scopes[cursor.parent];
-    }
+    const id = localBinding(node.name, s);
     if (id === undefined) {
       if (!javascript && !external.has(node.name)) {
         if (otherLibraryGlobals.includes(node.name))
@@ -559,15 +620,19 @@ function bindProgram(
             "Program realm does not install the library global " + node.name,
           );
         if (
-          instanceConstructor &&
+          node.name !== "eval" &&
           installedNonConstructorGlobals.includes(node.name)
         )
-          fail(
+          unsupported(
             node,
+            s,
+            "realm-library-global",
+            instanceConstructor
+              ? "Program realm global " +
+                  node.name +
+                  " has no supported constructor projection"
+              : "unknown value name: " + node.name,
             "UNKNOWN_NAME",
-            "Program realm global " +
-              node.name +
-              " has no supported constructor projection",
           );
         if (instanceConstructor)
           fail(
@@ -575,6 +640,26 @@ function bindProgram(
             "UNKNOWN_NAME",
             "No pinned TypeScript library value named " + node.name,
           );
+        const receiver =
+          node.name !== "arguments" || s.owner === undefined
+            ? undefined
+            : functions[s.owner]?.receiver;
+        const owner =
+          receiver === undefined ? undefined : functions[receiver]?.node;
+        if (owner !== undefined) {
+          const owningClass = classOwner;
+          if (owningClass !== undefined)
+            fail(node, "UNKNOWN_NAME", "unknown value name: " + node.name, {
+              capability: "arguments-object",
+              ownerKind: "class",
+              owner: { start: owningClass.start, end: owningClass.end },
+            });
+          fail(node, "UNKNOWN_NAME", "unknown value name: " + node.name, {
+            capability: "arguments-object",
+            ownerKind: "function",
+            owner: { start: owner.start, end: owner.end },
+          });
+        }
         fail(node, "UNKNOWN_NAME", "unknown value name: " + node.name);
       }
       references.push({
@@ -780,6 +865,8 @@ function bindProgram(
     restrictedArguments = outerArguments;
   }
   function classDefinition(node: ClassDefinition, parent: ScopeState): void {
+    const enclosingClass = classOwner;
+    classOwner = node;
     for (const decorator of node.decorators ?? []) {
       if (decorator === undefined) throw "CLASS_DECORATOR_INVARIANT";
       expr(decorator, parent);
@@ -831,6 +918,7 @@ function bindProgram(
       }
     } finally {
       privateScopes.pop();
+      classOwner = enclosingClass;
     }
   }
   function checkPrivateName(name: string, node: Span): void {
@@ -867,13 +955,19 @@ function bindProgram(
           break;
         case "import-meta":
           if (!javascript)
-            fail(node, "UNSUPPORTED", "typed import.meta is not implemented");
+            unsupported(
+              node,
+              s,
+              "import-meta",
+              "typed import.meta is not implemented",
+            );
           break;
         case "import-call":
           if (!javascript)
-            fail(
+            unsupported(
               node,
-              "UNSUPPORTED",
+              s,
+              "dynamic-import",
               "typed dynamic import is not implemented",
             );
           expr(node.specifier, s);
@@ -925,9 +1019,10 @@ function bindProgram(
             node.kind === "function-expression" ? node.name : undefined;
           if (selfName !== undefined) {
             if (!javascript)
-              fail(
+              unsupported(
                 node,
-                "UNSUPPORTED",
+                s,
+                "named-function-expression",
                 "typed named function expression lowering is not implemented",
               );
             parent = scope(s, "block", node, s.owner);
@@ -1004,6 +1099,8 @@ function bindProgram(
         case "new":
         case "call":
           if (isDirectEvalCandidate(node)) {
+            if (!javascript && localBinding("eval", s) === undefined)
+              fail(node, "UNSUPPORTED", directEvalUnavailable);
             observeArguments(s);
             const parameters =
               s.owner !== undefined && parameterOwners.has(s.owner);
@@ -1037,9 +1134,10 @@ function bindProgram(
           break;
         case "regexp":
           if (!javascript)
-            fail(
+            unsupported(
               node,
-              "UNSUPPORTED",
+              s,
+              "regexp-literal",
               "typed RegExp values are not implemented",
             );
           break;
@@ -1098,7 +1196,12 @@ function bindProgram(
           break;
         case "variable":
           if (!javascript && node.disposal !== undefined)
-            fail(node, "UNSUPPORTED", "resource disposal is not implemented");
+            unsupported(
+              node,
+              s,
+              "resource-disposal",
+              "resource disposal is not implemented",
+            );
           for (const b of node.declarations) {
             if (b === undefined) throw "declaration invariant";
             if (node.mode === "var")
@@ -1192,9 +1295,10 @@ function bindProgram(
         case "for-of-assignment":
         case "for-in-assignment":
           if (!javascript && node.kind === "for-of-assignment")
-            fail(
+            unsupported(
               node,
-              "UNSUPPORTED",
+              s,
+              "iteration-assignment",
               "typed iteration assignment lowering is not implemented",
             );
           expr(node.iterable, s);
@@ -1204,7 +1308,12 @@ function bindProgram(
         case "for-in":
         case "for-of": {
           if (!javascript && node.disposal !== undefined)
-            fail(node, "UNSUPPORTED", "resource disposal is not implemented");
+            unsupported(
+              node,
+              s,
+              "resource-disposal",
+              "resource disposal is not implemented",
+            );
           const loop = scope(s, "for", node, s.owner);
           const iterationBinding = node.binding;
           for (const element of bindingIdentifiers(iterationBinding))
@@ -1242,9 +1351,10 @@ function bindProgram(
           break;
         case "export-default": {
           if (!javascript)
-            fail(
+            unsupported(
               node,
-              "UNSUPPORTED",
+              s,
+              "default-export",
               "typed default export lowering is not implemented",
             );
           const value = node.value;

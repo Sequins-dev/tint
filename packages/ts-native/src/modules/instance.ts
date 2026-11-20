@@ -15,6 +15,7 @@ import {
   type ObjectProperty,
   type VariableBinding,
   type Expression,
+  type Span,
 } from "@tint/typescript/syntax";
 
 type FunctionDeclaration = Statement & { readonly kind: "function" };
@@ -29,7 +30,19 @@ export interface ModuleInstance {
 }
 export type ModuleInstanceResult =
   | { readonly ok: true; readonly value: ModuleInstance }
-  | { readonly ok: false; readonly error: string };
+  | {
+      readonly ok: false;
+      readonly error: string;
+      readonly fallback?: ModuleInstanceFallback;
+    };
+
+export interface ModuleInstanceFallback {
+  readonly capability:
+    "module-class-construction" | "module-uninitialized-binding";
+  readonly location: Span;
+  readonly owner: Span;
+  readonly ownerKind: "module" | "class";
+}
 
 /** Prepare one resolved, specialized module instance. Rebind and check the returned AST. */
 export function prepareModuleInstance(
@@ -124,6 +137,12 @@ export function prepareModuleInstance(
             return {
               ok: false,
               error: "module instance declarations require initializers",
+              fallback: {
+                capability: "module-uninitialized-binding",
+                ownerKind: "module",
+                location: { start: binding.start, end: binding.end },
+                owner: { start: statement.start, end: statement.end },
+              },
             };
         }
         body.push({ ...statement, declarations: moved, exported: false });
@@ -134,6 +153,12 @@ export function prepareModuleInstance(
           ok: false,
           error:
             "module instance classes require scoped contract and construction lowering",
+          fallback: {
+            capability: "module-class-construction",
+            ownerKind: "class",
+            location: { start: statement.start, end: statement.end },
+            owner: { start: statement.start, end: statement.end },
+          },
         };
       case "expression":
       case "debugger":

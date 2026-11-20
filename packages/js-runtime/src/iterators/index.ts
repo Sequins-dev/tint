@@ -20,6 +20,7 @@ export {
   type GeneratorResumeKind,
   type GeneratorOutcome,
   type GeneratorRecord,
+  type GeneratorContracts,
   type GeneratorHooks,
 } from "./generator.ts";
 export {
@@ -35,6 +36,7 @@ export {
   type AsyncGeneratorCapability,
   type AsyncGeneratorHooks,
   type AsyncGeneratorRecord,
+  type AsyncGeneratorContracts,
 } from "./async-generator.ts";
 export {
   resumeAsyncFromSyncIterator,

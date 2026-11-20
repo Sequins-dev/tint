@@ -1,4 +1,4 @@
-import type { GeneratorResumeKind } from "./generator.ts";
+import type { GeneratorContracts, GeneratorResumeKind } from "./generator.ts";
 
 export type AsyncGeneratorOutcome<Value> =
   | { readonly kind: "await"; readonly value: Value }
@@ -77,24 +77,43 @@ export interface AsyncGeneratorRecord<Value> {
     | "draining-queue"
     | "completed";
   continuation: AsyncGeneratorContinuation<Value> | undefined;
+  readonly contracts: AsyncGeneratorContracts<Value> | undefined;
   head: AsyncGeneratorRequest<Value> | undefined;
   tail: AsyncGeneratorRequest<Value> | undefined;
   running: boolean;
   waiting: boolean;
   pending: AwaitResumption<Value> | undefined;
 }
+export interface AsyncGeneratorContracts<
+  Value,
+> extends GeneratorContracts<Value> {
+  readonly typeError: () => Value;
+}
 export function createAsyncGeneratorRecord<Value>(
   continuation: AsyncGeneratorContinuation<Value>,
+  contracts?: AsyncGeneratorContracts<Value>,
 ): AsyncGeneratorRecord<Value> {
   return {
     state: "suspended-start",
     continuation,
+    contracts,
     head: undefined,
     tail: undefined,
     running: false,
     waiting: false,
     pending: undefined,
   };
+}
+function settleReturn<Value>(
+  record: AsyncGeneratorRecord<Value>,
+  value: Value,
+  hooks: AsyncGeneratorHooks<Value>,
+): void {
+  const contracts = record.contracts;
+  const accepts = contracts?.acceptsReturn;
+  if (contracts !== undefined && accepts !== undefined && !accepts(value))
+    settleRequest<Value>(record, contracts.typeError(), true, true, hooks);
+  else settleRequest<Value>(record, value, false, true, hooks);
 }
 function settleRequest<Value>(
   record: AsyncGeneratorRecord<Value>,
@@ -166,7 +185,7 @@ function continueBody<Value>(
   } else {
     record.continuation = undefined;
     record.state = "draining-queue";
-    settleRequest<Value>(record, outcome.value, false, true, hooks);
+    settleReturn<Value>(record, outcome.value, hooks);
   }
 }
 /** One iterative pump owns execution. Reentrant requests append to the FIFO;
@@ -188,13 +207,9 @@ function drainAsyncGenerator<Value>(
       if (pending !== undefined) {
         record.pending = undefined;
         if (pending.target === "completed-return") {
-          settleRequest<Value>(
-            record,
-            pending.value,
-            pending.kind === "throw",
-            true,
-            hooks,
-          );
+          if (pending.kind === "throw")
+            settleRequest<Value>(record, pending.value, true, true, hooks);
+          else settleReturn<Value>(record, pending.value, hooks);
         } else {
           const kind: GeneratorResumeKind =
             pending.target === "yield-return" && pending.kind === "next"
@@ -224,10 +239,21 @@ function drainAsyncGenerator<Value>(
         if (!initial && request.kind === "return") {
           awaitInput<Value>(record, "yield-return", request.value, hooks);
         } else {
+          const contracts = record.contracts;
+          const accepts = contracts?.acceptsNext;
+          const invalid =
+            !initial &&
+            request.kind === "next" &&
+            accepts !== undefined &&
+            !accepts(request.value);
           continueBody<Value>(
             record,
-            request.kind,
-            initial ? hooks.undefinedValue : request.value,
+            invalid ? "throw" : request.kind,
+            invalid && contracts !== undefined
+              ? contracts.typeError()
+              : initial
+                ? hooks.undefinedValue
+                : request.value,
             hooks,
           );
         }

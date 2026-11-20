@@ -3284,19 +3284,15 @@ test("unannotated computed literals keep open storage", () => {
   assert.ok(result.ok, JSON.stringify(result));
 });
 
-test("external native aggregate inputs do not box into a dynamic property", () => {
+test("a numeric native list parameter gets a live view in a dynamic property", () => {
   const result = check(`
     export function f(value: number[]): void {
       const object: Record<string, unknown> = {};
       object.value = value;
     }
   `);
-  assert.equal(result.ok, false);
-  if (!result.ok)
-    assert.match(
-      result.error.message,
-      /native list values in dynamic-key objects need slice 2b/,
-    );
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.equal(indexValues(result.value.nativeListViews!).length, 1);
 });
 
 test("finite Record keys select the declared fixed fields", () => {
@@ -3712,4 +3708,25 @@ test("a statically void callback result can be evaluated in a value context", ()
     }
   `);
   assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("dynamic-key erasure requests native views for witnessed layouts", () => {
+  const result = check(`
+    function run(): void {
+      const list: number[] = [1];
+      const record: {value: number; readonly label: string} = {value: 2, label: "a"};
+      const callable = (x: number): number => x + 1;
+      const table: Record<string, unknown> = {list, record, callable};
+      table.alias = record;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.equal(indexValues(result.value.nativeCallableViews!).length, 1);
+  assert.equal(indexValues(result.value.nativeListViews!).length, 1);
+  const fields = indexValues(result.value.nativeRecordViews!);
+  assert.equal(fields.length, 2);
+  assert.deepEqual(fields[0], [
+    { name: "value", type: "number", optional: false, readonly: false },
+    { name: "label", type: "string", optional: false, readonly: true },
+  ]);
 });

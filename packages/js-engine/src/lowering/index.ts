@@ -27,6 +27,7 @@ export {
   type ScriptRuntimeSurfaceEntry,
 } from "./runtime-imports.ts";
 import { generatorContinuation } from "./generators.ts";
+import { primitiveContractBit } from "@tint/foundation/values/primitive-contract";
 import {
   isOptionalChain,
   isDirectEvalCandidate,
@@ -35,6 +36,7 @@ import {
   rewriteModule,
   parameterIdentifiers,
   parameterHasExpressions,
+  typeParameterCount,
   isSimpleParameter,
   type BlockStatement,
   type CatchClause,
@@ -54,6 +56,7 @@ import {
 import {
   bindScript,
   bindJavaScriptModule,
+  directEvalUnavailable,
   collectModuleDeclarations,
   type ModuleDefaultFunction,
   bindEvalScript,
@@ -74,6 +77,10 @@ export type ScriptLoweringResult =
  * getIdentifierValue) with unchanged semantics; AOT output keeps inline checks. */
 export interface ScriptLoweringOptions {
   readonly runtimeCompiled?: boolean;
+}
+/** Immutable numeric imports proved by the hosted function planner. */
+export interface NumericCallSite extends Span {
+  readonly target: string;
 }
 
 /** Runtime-compiled entries read the global environment's fields (hooks,
@@ -193,6 +200,7 @@ interface ScriptResourceScope {
   readonly position: number;
 }
 interface CallableOptions {
+  readonly resultType?: TypeNode | undefined;
   readonly sourceStart?: number | undefined;
   readonly generator?: boolean | undefined;
   readonly async?: boolean | undefined;
@@ -268,8 +276,23 @@ export function lowerScript(
 export function lowerSourceTextModule(
   module: Module,
   sourceText?: string,
+  numericCalls?: readonly NumericCallSite[],
+  checkContracts: boolean = false,
+  checkMethodCalls: boolean = false,
+  sourceTypes?: Module,
 ): ScriptLoweringResult {
-  return lowerScriptEntry(module, sourceText, "module");
+  return lowerScriptEntry(
+    module,
+    sourceText,
+    "module",
+    0,
+    undefined,
+    false,
+    numericCalls,
+    checkContracts,
+    checkMethodCalls,
+    sourceTypes,
+  );
 }
 /** Indirect eval uses fresh lexical storage and eval declaration admission. */
 export function lowerEvalScript(
@@ -322,6 +345,10 @@ function lowerScriptEntry(
   directFlags: number = 0,
   directContext: EvalBindingContext | undefined = undefined,
   compactResults: boolean = false,
+  numericCalls?: readonly NumericCallSite[],
+  checkContracts: boolean = false,
+  checkMethodCalls: boolean = false,
+  sourceTypes?: Module,
 ): ScriptLoweringResult {
   const bound =
     entryKind === "module"
@@ -329,19 +356,23 @@ function lowerScriptEntry(
       : directContext === undefined
         ? bindScript(script)
         : bindEvalScript(script, directContext);
-  if (!bound.ok)
+  if (!bound.ok) {
+    const diagnostic = bound.error;
     return {
       ok: false,
       error: {
-        ...bound.error,
+        start: diagnostic.start,
+        end: diagnostic.end,
+        message: diagnostic.message,
         code:
-          bound.error.code === "LIMIT"
+          diagnostic.code === "LIMIT"
             ? "LIMIT"
-            : bound.error.code === "UNSUPPORTED"
+            : diagnostic.code === "UNSUPPORTED"
               ? "UNSUPPORTED"
               : "EARLY_ERROR",
       },
     };
+  }
   const moduleDeclarations =
     entryKind === "module" ? collectModuleDeclarations(script) : undefined;
   const declarations = moduleDeclarations ?? collectScriptDeclarations(script);
@@ -350,6 +381,91 @@ function lowerScriptEntry(
   if (moduleShape !== undefined && !moduleShape.ok)
     return { ok: false, error: { ...moduleShape.error, code: "UNSUPPORTED" } };
   const directEvalOwners = bound.value.directEvalOwners ?? [];
+  if (checkContracts && directEvalOwners.length !== 0) {
+    const first = directEvalOwners[0];
+    if (first === undefined) throw "DIRECT_EVAL_OWNER_INVARIANT";
+    const site = first.owner ?? script;
+    return {
+      ok: false,
+      error: {
+        start: site.start,
+        end: site.end,
+        code: "UNSUPPORTED",
+        message: directEvalUnavailable,
+      },
+    };
+  }
+  const bindingWrites = new Map<number, number>();
+  const bindingContracts = new Map<number, number>();
+  const bindingRecordContracts = new Map<number, TypeNode>();
+  const recordTypes = new Map<string, TypeNode>();
+  const boundBindings = bound.value.bindings;
+  if (checkContracts) {
+    for (const declaration of sourceTypes?.statements ?? []) {
+      if (declaration === undefined) throw "SOURCE_TYPE_DECLARATION_INVARIANT";
+      if (declaration.kind === "type-alias") {
+        if (typeParameterCount(declaration.typeParameters) !== 0) continue;
+        recordTypes.set(declaration.name, declaration.type);
+      } else if (declaration.kind === "interface") {
+        const bases = declaration.bases;
+        if (
+          typeParameterCount(declaration.typeParameters) !== 0 ||
+          (bases !== undefined && bases.length !== 0) ||
+          declaration.call !== undefined ||
+          declaration.construct !== undefined
+        )
+          continue;
+        const index = declaration.indexSignature;
+        const annotated: TypeNode = {
+          kind: "object",
+          properties: declaration.properties,
+          start: declaration.start,
+          end: declaration.end,
+          ...(index === undefined ? {} : { indexSignature: index }),
+        };
+        recordTypes.set(declaration.name, annotated);
+      }
+    }
+    rewriteModule(script, {
+      statement: (node, _original) => {
+        if (node.kind === "variable")
+          for (const declaration of node.declarations) {
+            if (declaration === undefined) throw "SCRIPT_DECLARATION_INVARIANT";
+            if (
+              declaration.kind === "object-binding" ||
+              declaration.kind === "array-binding"
+            )
+              continue;
+            const type = declaration.type;
+            if (type === undefined) continue;
+            const mask = contract(type);
+            if (mask !== 0) bindingContracts.set(declaration.start, mask);
+            else if (recordType(type) !== undefined)
+              bindingRecordContracts.set(declaration.start, type);
+          }
+        return node;
+      },
+    });
+    function writtenBinding(binding: number, site: Span): void {
+      const target = boundBindings[binding];
+      if (
+        target !== undefined &&
+        (target.kind === "parameter" ||
+          bindingContracts.has(target.node.start) ||
+          bindingRecordContracts.has(target.node.start))
+      )
+        bindingWrites.set(site.start, target.node.start);
+    }
+    for (const reference of bound.value.references) {
+      if (reference.access === "read" || reference.binding === undefined)
+        continue;
+      writtenBinding(reference.binding, reference.node);
+    }
+    for (const alias of bound.value.aliases ?? []) {
+      if (alias === undefined) throw "BINDING_ALIAS_INVARIANT";
+      writtenBinding(alias.binding, alias.node);
+    }
+  }
   const argumentsOwners = bound.value.argumentsOwners;
   /** Identifier sites that can reach the global record: names the binder
    * left unresolved and Script-level var/function bindings, which live on the
@@ -537,11 +653,13 @@ function lowerScriptEntry(
   let functionDepth = 0;
   let tailEnds: ReadonlyMap<number, number> = new Map<number, number>();
   let usesTailCalls = false;
+  let usesPrimitiveContracts = false;
   let suspensionInput: string | undefined =
     entryKind === "module" ? "$moduleInput" : undefined;
   let moduleSuspends = false;
   let moduleContinuation: BlockStatement | undefined;
   let asyncGeneratorBody = false;
+  let yieldContract = 0;
   let disposalScope: Expression | undefined;
   let usesDirectEval = false;
   let usesImportCall = false;
@@ -689,6 +807,17 @@ function lowerScriptEntry(
       arguments: args,
       typeArguments: instantiation(name),
     };
+  }
+  function numericCallAt(span: Span): NumericCallSite | undefined {
+    if (numericCalls === undefined) return undefined;
+    for (const site of numericCalls)
+      if (
+        site !== undefined &&
+        site.start === span.start &&
+        site.end === span.end
+      )
+        return site;
+    return undefined;
   }
   function expression(value: Expression): void {
     statements.push({ ...at(value), kind: "expression", expression: value });
@@ -846,6 +975,18 @@ function lowerScriptEntry(
     );
   }
   function write(target: Expression, value: Expression, span: Span): void {
+    const declaration = bindingWrites.get(span.start) ?? span.start;
+    const mask = bindingContracts.get(declaration);
+    const shape = bindingRecordContracts.get(declaration);
+    if (mask !== undefined || shape !== undefined) {
+      const assigned = temporary(value, true);
+      // PutValue checks the binding's initialization after evaluating the RHS.
+      expression(read(target, span));
+      value =
+        mask === undefined
+          ? (recordContract(assigned, shape, span) ?? assigned)
+          : checkedContract(assigned, mask, span);
+    }
     checkedRuntimeCompletion("putBindingReference", [target, value], span);
   }
   function read(
@@ -1178,13 +1319,24 @@ function lowerScriptEntry(
       span,
     );
   }
-  function callTarget(input: Expression): {
+  function callTarget(
+    input: Expression,
+    checkMethod: boolean = false,
+  ): {
     value: Expression;
     receiver: Expression;
+    contract: Expression | undefined;
   } {
     let node = input;
     while (node.kind === "group") node = node.expression;
-    if (isOptionalChain(node)) return optionalChainValue(node, false);
+    if (isOptionalChain(node)) {
+      const evaluated = optionalChainValue(node, false);
+      return {
+        value: evaluated.value,
+        receiver: evaluated.receiver,
+        contract: undefined,
+      };
+    }
     if (node.kind === "identifier") {
       // Declarative, module and global records have no base object; reading
       // the callee before its arguments preserves evaluation order.
@@ -1192,21 +1344,59 @@ function lowerScriptEntry(
         return {
           value: identifierValue(node.name, node),
           receiver: id("undefined", node),
+          contract: undefined,
         };
       const resolved = reference(node.name, node);
       return {
         value: read(resolved, node),
         receiver: temporary(call("getBindingThisValue", [resolved], node)),
+        contract: undefined,
       };
     }
     if (node.kind === "member" || node.kind === "index") {
       const reference = captureAssignment(node);
+      const property = reference.property;
+      if (checkMethod && property !== undefined) {
+        usesPrimitiveContracts = true;
+        const key = referenceKey(reference, property, node, false);
+        const superReceiver = reference.superReceiver;
+        const args: Expression[] = [reference.base, key];
+        if (superReceiver !== undefined) args.push(superReceiver);
+        args.push(member(id("$global"), "hooks", node), id("$errors"));
+        const callable = temporary(
+          checkedRuntimeValue(
+            superReceiver === undefined
+              ? "getObjectValueProperty"
+              : "getObjectValuePropertyWithReceiver",
+            args,
+            node,
+          ),
+          true,
+        );
+        const methodContract = temporary(
+          runtimeCall(
+            "findClassMethodContract",
+            [reference.base, key, id("$errors")],
+            node,
+          ),
+        );
+        return {
+          value: callable,
+          receiver: superReceiver ?? reference.base,
+          contract: methodContract,
+        };
+      }
       return {
         value: readAssignment(reference),
         receiver: reference.superReceiver ?? reference.base,
+        contract: undefined,
       };
     }
-    return { value: value(node), receiver: id("undefined", node) };
+    return {
+      value: value(node),
+      receiver: id("undefined", node),
+      contract: undefined,
+    };
   }
   function invokeEvalCandidate(
     callee: Expression,
@@ -1630,6 +1820,173 @@ function lowerScriptEntry(
       ? fn
       : runtimeCall("retainFunctionSource", [fn, retainedSource(span)], span);
   }
+  /** The first executable contracts use the built-in primitive categories. */
+  function contract(type: TypeNode | undefined): number {
+    if (!checkContracts || type === undefined) return 0;
+    if (type.kind === "group") return contract(type.type);
+    if (type.kind === "named" && (type.arguments?.length ?? 0) === 0)
+      return primitiveContractBit(type.name);
+    if (type.kind !== "union") return 0;
+    let mask = 0;
+    for (const member of type.members) {
+      const bit = contract(member);
+      if (bit === 0) return 0;
+      mask |= bit;
+    }
+    return mask;
+  }
+  function recordType(type: TypeNode): TypeNode | undefined {
+    if (type.kind === "group") return recordType(type.type);
+    if (type.kind === "object") return type;
+    if (type.kind !== "named" || (type.arguments?.length ?? 0) !== 0)
+      return undefined;
+    const named = recordTypes.get(type.name);
+    return named?.kind === "object" ? named : undefined;
+  }
+  function recordContract(
+    value: Expression,
+    annotation: TypeNode | undefined,
+    span: Span,
+  ): Expression | undefined {
+    if (!checkContracts || annotation === undefined) return undefined;
+    const root = recordType(annotation);
+    if (root === undefined) return undefined;
+    const types: Expression[] = [];
+    const seen = new Map<TypeNode, number>();
+    function index(value: number): Expression {
+      return { ...at(span), kind: "number", value, raw: String(value) };
+    }
+    function flag(value: boolean): Expression {
+      return { ...at(span), kind: "boolean", value };
+    }
+    function array(elements: readonly Expression[]): Expression {
+      return { ...at(span), kind: "array", elements };
+    }
+    function rule(type: TypeNode): number | undefined {
+      if (type.kind === "group") return rule(type.type);
+      const resolved = recordType(type);
+      if (resolved !== undefined && resolved !== type) return rule(resolved);
+      const known = seen.get(type);
+      if (known !== undefined) return known;
+      const id_ = types.length;
+      seen.set(type, id_);
+      types.push(object(["kind"], [text("unknown", span)], span));
+      let entry: Expression;
+      if (
+        type.kind === "object" &&
+        type.call === undefined &&
+        type.construct === undefined
+      ) {
+        const fields: Expression[] = [];
+        for (const field of type.properties) {
+          if (field === undefined || field.computed || field.method)
+            return undefined;
+          const fieldType = rule(field.type);
+          if (fieldType === undefined) return undefined;
+          fields.push(
+            object(
+              ["name", "value", "required", "readonly"],
+              [
+                text(field.name, span),
+                index(fieldType),
+                flag(!field.optional),
+                flag(field.readonly),
+              ],
+              span,
+            ),
+          );
+        }
+        const key = type.indexSignature;
+        if (key !== undefined) {
+          const keyType = key.keyType;
+          if (keyType.kind !== "named" || keyType.name !== "string")
+            return undefined;
+        }
+        const valueType = key === undefined ? -1 : rule(key.valueType);
+        if (valueType === undefined) return undefined;
+        entry = object(
+          ["kind", "stringIndex", "readonlyIndex", "fields"],
+          [
+            text("object", span),
+            index(valueType),
+            flag(key?.readonly === true),
+            array(fields),
+          ],
+          span,
+        );
+      } else if (type.kind === "array") {
+        const element = rule(type.element);
+        if (element === undefined) return undefined;
+        entry = object(
+          ["kind", "element", "readonly"],
+          [
+            text("array-elements", span),
+            index(element),
+            flag(type.readonly === true),
+          ],
+          span,
+        );
+      } else if (type.kind === "union") {
+        const members: Expression[] = [];
+        for (const part of type.members) {
+          if (part === undefined) return undefined;
+          const member = rule(part);
+          if (member === undefined) return undefined;
+          members.push(index(member));
+        }
+        entry = object(
+          ["kind", "members"],
+          [text("union", span), array(members)],
+          span,
+        );
+      } else if (
+        type.kind === "named" &&
+        (type.arguments?.length ?? 0) === 0 &&
+        [
+          "number",
+          "string",
+          "boolean",
+          "undefined",
+          "null",
+          "bigint",
+          "unknown",
+          "never",
+        ].includes(type.name)
+      ) {
+        entry = object(["kind"], [text(type.name, span)], span);
+      } else return undefined;
+      types[id_] = entry;
+      return id_;
+    }
+    const first = rule(root);
+    if (first === undefined) return undefined;
+    const schema = object(
+      ["types", "root"],
+      [array(types), index(first)],
+      span,
+    );
+    usesPrimitiveContracts = true;
+    return runtimeCall(
+      "projectPropertyContract",
+      [value, schema, id("$errors"), flag(true)],
+      span,
+    );
+  }
+  function contractValue(mask: number, span: Span): Expression {
+    usesPrimitiveContracts = true;
+    return { ...at(span), kind: "number", value: mask, raw: String(mask) };
+  }
+  function checkedContract(
+    value: Expression,
+    mask: number,
+    span: Span,
+  ): Expression {
+    return runtimeCall(
+      "checkPrimitiveContract",
+      [id("$errors"), value, contractValue(mask, span)],
+      span,
+    );
+  }
   function callable(
     parameters: readonly Parameter[],
     body: Expression | BlockStatement,
@@ -1640,6 +1997,7 @@ function lowerScriptEntry(
     const derived = options.derived ?? false;
     const generator = options.generator ?? false;
     const suspending = generator || (options.async ?? false);
+    const resultContract = suspending ? 0 : contract(options.resultType);
     const outerSuspensionInput = suspensionInput;
     const outerAsyncGeneratorBody = asyncGeneratorBody;
     const outerDisposalScope = disposalScope;
@@ -1648,6 +2006,23 @@ function lowerScriptEntry(
     disposalScope = undefined;
     const asyncGenerator = generator && (options.async ?? false);
     asyncGeneratorBody = asyncGenerator;
+    const annotation = options.resultType;
+    const suspendedArguments =
+      annotation?.kind === "named" &&
+      annotation.name ===
+        (generator
+          ? asyncGenerator
+            ? "AsyncGenerator"
+            : "Generator"
+          : "Promise")
+        ? annotation.arguments
+        : undefined;
+    const outerYieldContract = yieldContract;
+    yieldContract = generator ? contract(suspendedArguments?.[0]) : 0;
+    const completionContract = contract(
+      suspendedArguments?.[generator ? 1 : 0],
+    );
+    const resumeContract = generator ? contract(suspendedArguments?.[2]) : 0;
     const inputName = "$resumeValue" + serial++;
     const kindName = "$resumeKind" + serial++;
     suspensionInput = suspending ? inputName : undefined;
@@ -1659,10 +2034,11 @@ function lowerScriptEntry(
       homeObject = options.homeObject;
     const outerTailEnds = tailEnds;
     const localTailEnds = new Map<number, number>();
-    if (!raw && !suspending)
+    if (!raw && !suspending && resultContract === 0)
       for (const candidate of collectTailCalls(body, { strict: codeStrict })) {
         if (candidate === undefined) throw "TAIL_POSITION_CALL_INVARIANT";
-        localTailEnds.set(candidate.start, candidate.end);
+        if (numericCallAt(candidate) === undefined)
+          localTailEnds.set(candidate.start, candidate.end);
       }
     const tailEnabled = localTailEnds.size !== 0;
     if (tailEnabled) usesTailCalls = true;
@@ -1913,6 +2289,16 @@ function lowerScriptEntry(
     const parameterNames: Expression[] = [];
     for (const parameter of parameters) {
       if (parameter === undefined) throw "SCRIPT_PARAMETER_INVARIANT";
+      if (parameter.kind !== "pattern-parameter" && !parameter.rest) {
+        const mask = contract(parameter.type);
+        if (mask !== 0)
+          bindingContracts.set(
+            parameter.start,
+            parameter.optional
+              ? mask | primitiveContractBit("undefined")
+              : mask,
+          );
+      }
       for (const identifier of parameterIdentifiers(parameter)) {
         if (identifier === undefined)
           throw "SCRIPT_PARAMETER_IDENTIFIER_INVARIANT";
@@ -1995,6 +2381,23 @@ function lowerScriptEntry(
         value: i,
         raw: "" + i,
       };
+      const annotation = parameter.type;
+      if (parameter.rest && annotation?.kind === "array") {
+        const mask = contract(annotation.element);
+        if (mask !== 0)
+          expression(
+            runtimeCall(
+              "checkPrimitiveRestArguments",
+              [
+                id("$errors"),
+                id(argsName, parameter),
+                offset,
+                contractValue(mask, parameter),
+              ],
+              parameter,
+            ),
+          );
+      }
       const argumentValue: Expression = parameter.rest
         ? runtimeCall(
             "createArrayFromList",
@@ -2043,6 +2446,9 @@ function lowerScriptEntry(
         initializePattern(parameter.pattern, initialized, "let", false);
         continue;
       }
+      const mask = bindingContracts.get(parameter.start);
+      if (mask !== undefined)
+        initialized = checkedContract(initialized, mask, parameter);
       if (initializedParameters.has(parameter.name)) {
         write(reference(parameter.name, parameter), initialized, parameter);
       } else {
@@ -2197,6 +2603,7 @@ function lowerScriptEntry(
           declaration,
           {
             generator: declaration.generator,
+            resultType: declaration.returnType,
             async: declaration.async,
             codeStrict: declaration.strict ?? strict,
             functionName: text(declaration.name, declaration),
@@ -2245,21 +2652,27 @@ function lowerScriptEntry(
                 ],
                 body,
               ),
-        (value, following) =>
-          runtimeCall(
+        (value, following) => {
+          const delegateArguments: Expression[] = [
+            runtimeCall(
+              asyncGenerator ? "getScriptAsyncIterator" : "getScriptIterator",
+              [value, id("$errors"), member(id("$global"), "hooks", body)],
+              body,
+            ),
+            following,
+          ];
+          if (yieldContract !== 0) {
+            delegateArguments.push(id("$errors"));
+            delegateArguments.push(contractValue(yieldContract, body));
+          }
+          return runtimeCall(
             asyncGenerator
               ? "createAsyncDelegatingContinuation"
               : "createDelegatingContinuation",
-            [
-              runtimeCall(
-                asyncGenerator ? "getScriptAsyncIterator" : "getScriptIterator",
-                [value, id("$errors"), member(id("$global"), "hooks", body)],
-                body,
-              ),
-              following,
-            ],
+            delegateArguments,
             body,
-          ),
+          );
+        },
         (node) =>
           fail(
             node,
@@ -2354,6 +2767,7 @@ function lowerScriptEntry(
     functionDepth--;
     suspensionInput = outerSuspensionInput;
     asyncGeneratorBody = outerAsyncGeneratorBody;
+    yieldContract = outerYieldContract;
     disposalScope = outerDisposalScope;
     annexVariableRecord = outerAnnexVariableRecord;
     const callbackParameters: Parameter[] = [
@@ -2417,13 +2831,37 @@ function lowerScriptEntry(
         : named(suspending ? "GeneratorContinuation" : "unknown"),
       body: callbackBody,
     };
-    if (raw) return callback;
+    if (raw)
+      return resultContract === 0
+        ? callback
+        : runtimeCall(
+            "checkClassMethodResult",
+            [callback, id("$errors"), contractValue(resultContract, span)],
+            span,
+          );
     const retainedSpan: Span =
       options.sourceStart === undefined
         ? span
         : { start: options.sourceStart, end: span.end };
     const length = options.packed ? 0 : expectedArgumentCount(parameters);
-    if (generator || options.async)
+    if (generator || options.async) {
+      const suspensionArguments: Expression[] = [
+        callback,
+        id("$errors"),
+        member(id("$global"), "hooks", span),
+        runtimeCall(
+          "propertyFunctionName",
+          [functionName ?? text("", span)],
+          span,
+        ),
+        { ...at(span), kind: "number", value: length, raw: "" + length },
+        homeObject ?? id("undefined"),
+      ];
+      if (completionContract !== 0 || resumeContract !== 0) {
+        suspensionArguments.push(contractValue(completionContract, span));
+        if (generator)
+          suspensionArguments.push(contractValue(resumeContract, span));
+      }
       return retainSource(
         runtimeCall(
           asyncGenerator
@@ -2431,27 +2869,12 @@ function lowerScriptEntry(
             : generator
               ? "createSourceGeneratorFunction"
               : "createSourceAsyncContinuationFunction",
-          [
-            callback,
-            id("$errors"),
-            member(id("$global"), "hooks", span),
-            runtimeCall(
-              "propertyFunctionName",
-              [functionName ?? text("", span)],
-              span,
-            ),
-            {
-              ...at(span),
-              kind: "number",
-              value: length,
-              raw: "" + length,
-            },
-            homeObject ?? id("undefined"),
-          ],
+          suspensionArguments,
           span,
         ),
         retainedSpan,
       );
+    }
     const canConstruct = !arrow && !method && !options.packed;
     const constructible: Expression = {
       ...at(span),
@@ -2469,7 +2892,12 @@ function lowerScriptEntry(
       span,
     );
     // One call names, creates and retains the source of each function.
-    if (compactResults && sourceText !== undefined && !tailEnabled)
+    if (
+      compactResults &&
+      sourceText !== undefined &&
+      !tailEnabled &&
+      resultContract === 0
+    )
       return runtimeCall(
         "createRetainedSourceFunction",
         [
@@ -2485,27 +2913,34 @@ function lowerScriptEntry(
         ],
         span,
       );
+    const functionArguments: Expression[] = [
+      callback,
+      constructible,
+      id("$errors"),
+      member(id("$global"), "hooks", span),
+      runtimeCall(
+        "propertyFunctionName",
+        [functionName ?? text("", span)],
+        span,
+      ),
+      { ...at(span), kind: "number", value: length, raw: "" + length },
+      homeObject ?? id("undefined"),
+      callerPolicy,
+    ];
+    if (resultContract !== 0)
+      functionArguments.push(contractValue(resultContract, span));
     return retainSource(
       {
         ...at(span),
         kind: "call",
         callee: id(
-          tailEnabled ? "createTailSourceFunction" : "createSourceFunction",
+          resultContract !== 0
+            ? "createCheckedSourceFunction"
+            : tailEnabled
+              ? "createTailSourceFunction"
+              : "createSourceFunction",
         ),
-        arguments: [
-          callback,
-          constructible,
-          id("$errors"),
-          member(id("$global"), "hooks", span),
-          runtimeCall(
-            "propertyFunctionName",
-            [functionName ?? text("", span)],
-            span,
-          ),
-          { ...at(span), kind: "number", value: length, raw: "" + length },
-          homeObject ?? id("undefined"),
-          callerPolicy,
-        ],
+        arguments: functionArguments,
         typeArguments: [],
       },
       retainedSpan,
@@ -2860,6 +3295,7 @@ function lowerScriptEntry(
           method = temporary(
             callable(element.parameters, element.body, false, methodSpan, {
               generator: element.generator,
+              resultType: element.returnType,
               async: element.async,
               method: true,
               codeStrict: true,
@@ -2873,7 +3309,13 @@ function lowerScriptEntry(
             element.body,
             false,
             element,
-            { method: true, raw: true, codeStrict: true, homeObject: home },
+            {
+              method: true,
+              raw: true,
+              codeStrict: true,
+              homeObject: home,
+              resultType: element.returnType,
+            },
           );
           const name = runtimeCall("propertyFunctionName", [key], element);
           const methodName: Expression =
@@ -2917,6 +3359,51 @@ function lowerScriptEntry(
           id("undefined"),
           id("undefined"),
         );
+        if (
+          checkContracts &&
+          element.kind === "method" &&
+          !element.private &&
+          (element.decorators?.length ?? 0) !== 0
+        ) {
+          const parameters: Expression[] = [];
+          let rest = 0;
+          for (const parameter of element.parameters) {
+            if (parameter === undefined) throw "SCRIPT_PARAMETER_INVARIANT";
+            const annotation = parameter.type;
+            if (parameter.rest) {
+              if (annotation?.kind === "array")
+                rest = contract(annotation.element);
+              continue;
+            }
+            let mask = contract(annotation);
+            if (
+              mask !== 0 &&
+              (parameter.optional || parameter.initializer !== undefined)
+            )
+              mask |= primitiveContractBit("undefined");
+            parameters.push(contractValue(mask, parameter));
+          }
+          expression(
+            runtimeCall(
+              "attachClassMethodContract",
+              [
+                home,
+                key,
+                object(
+                  ["parameters", "rest", "result"],
+                  [
+                    { ...at(element), kind: "array", elements: parameters },
+                    contractValue(rest, element),
+                    contractValue(contract(element.returnType), element),
+                  ],
+                  element,
+                ),
+                id("$errors"),
+              ],
+              element,
+            ),
+          );
+        }
         if (element.private)
           privateDefinition(
             element,
@@ -2935,6 +3422,7 @@ function lowerScriptEntry(
           const method = temporary(
             callable(element.parameters, element.body, false, methodSpan, {
               generator: element.generator,
+              resultType: element.returnType,
               async: element.async,
               method: true,
               codeStrict: true,
@@ -2979,6 +3467,7 @@ function lowerScriptEntry(
           {
             method: true,
             raw: true,
+            resultType: element.returnType,
             codeStrict: true,
             homeObject: element.static ? result : prototype,
           },
@@ -3094,6 +3583,15 @@ function lowerScriptEntry(
           accessorSet: Expression = id("undefined");
         const fieldNames = ["name", "initialize"];
         const fieldValues: Expression[] = [key, implementation];
+        const fieldContract = contract(element.type);
+        if (fieldContract !== 0) {
+          fieldNames.push("contract");
+          fieldValues.push(contractValue(fieldContract, element));
+          if (element.initializer === undefined) {
+            fieldNames.push("deferred");
+            fieldValues.push({ ...at(element), kind: "boolean", value: true });
+          }
+        }
         if (element.accessor) {
           usesAutoAccessors = true;
           const storage = temporary(
@@ -3652,6 +4150,7 @@ function lowerScriptEntry(
         if (selfName === undefined)
           return callable(node.parameters, node.body, false, node, {
             generator: node.generator,
+            resultType: node.returnType,
             async: node.async,
             codeStrict: node.strict ?? strict,
             functionName: inferredName,
@@ -3677,6 +4176,7 @@ function lowerScriptEntry(
         const fn = temporary(
           callable(node.parameters, node.body, false, node, {
             generator: node.generator,
+            resultType: node.returnType,
             async: node.async,
             codeStrict: node.strict ?? strict,
             functionName: text(selfName, node),
@@ -3691,6 +4191,7 @@ function lowerScriptEntry(
       }
       case "arrow":
         return callable(node.parameters, node.body, true, node, {
+          resultType: node.returnType,
           async: node.async,
           codeStrict: node.strict ?? strict,
           functionName: inferredName,
@@ -3711,6 +4212,22 @@ function lowerScriptEntry(
         );
       }
       case "call": {
+        const numeric = numericCallAt(node);
+        if (numeric !== undefined) {
+          const checked: Expression[] = [];
+          for (const argument of node.arguments) {
+            if (argument === undefined) throw "numeric argument invariant";
+            const evaluated = temporary(value(argument), true);
+            checked.push({
+              ...at(argument),
+              kind: "satisfies",
+              assertion: "as",
+              type: named("number"),
+              expression: evaluated,
+            });
+          }
+          return runtimeCall(numeric.target, checked, node);
+        }
         let target = node.callee;
         while (target.kind === "group") target = target.expression;
         if (target.kind === "super") {
@@ -3730,8 +4247,21 @@ function lowerScriptEntry(
           check(member(result, "error", node), node);
           return member(result, "value", node);
         }
-        const evaluated = callTarget(node.callee);
+        const evaluated = callTarget(node.callee, checkMethodCalls);
         const callee = temporary(evaluated.value, true);
+        const methodContract = evaluated.contract;
+        if (methodContract !== undefined)
+          return checkedRuntimeValue(
+            "callWithClassMethodContract",
+            [
+              callee,
+              evaluated.receiver,
+              argumentList(node.arguments, node),
+              methodContract,
+              id("$errors"),
+            ],
+            node,
+          );
         return isDirectEvalCandidate(node)
           ? invokeEvalCandidate(
               callee,
@@ -4016,10 +4546,15 @@ function lowerScriptEntry(
             ? id("undefined")
             : temporary(value(node.expression), true);
         if (node.kind === "await") return awaitLoweredValue(operand, node);
-        const yielded =
+        let yielded =
           asyncGeneratorBody && !node.delegate
             ? awaitLoweredValue(operand, node)
             : operand;
+        if (!node.delegate && yieldContract !== 0)
+          yielded = temporary(
+            checkedContract(yielded, yieldContract, node),
+            true,
+          );
         statements.push({
           ...at(node),
           kind: "expression",
@@ -4231,6 +4766,7 @@ function lowerScriptEntry(
       fail(body, "Script function body must be a block");
     return callable(declaration.parameters, body, false, declaration, {
       sourceStart: declaration.sourceStart,
+      resultType: declaration.returnType,
       generator: declaration.generator,
       async: declaration.async,
       codeStrict: declaration.strict ?? strict,
@@ -4243,6 +4779,7 @@ function lowerScriptEntry(
     const node = declaration.value;
     return callable(node.parameters, node.body, false, node, {
       generator: node.generator,
+      resultType: node.returnType,
       async: node.async,
       codeStrict: node.strict ?? true,
       functionName: text(
@@ -5690,6 +6227,17 @@ function lowerScriptEntry(
             initializer === undefined
               ? id("undefined")
               : value(initializer, text(declaration.name, declaration));
+          if (initializer !== undefined) {
+            const mask = bindingContracts.get(declaration.start);
+            initialized =
+              mask === undefined
+                ? (recordContract(
+                    initialized,
+                    bindingRecordContracts.get(declaration.start),
+                    declaration,
+                  ) ?? initialized)
+                : checkedContract(initialized, mask, declaration);
+          }
           if (node.disposal !== undefined) {
             const resource = disposalScope;
             if (resource === undefined) throw "SCRIPT_RESOURCE_SCOPE_INVARIANT";
@@ -6087,6 +6635,7 @@ function lowerScriptEntry(
     usesEngineAborts,
     compactResults,
     compactResults,
+    usesPrimitiveContracts,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,

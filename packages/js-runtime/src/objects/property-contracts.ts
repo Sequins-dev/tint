@@ -7,7 +7,14 @@ import {
 } from "./operations.ts";
 import type { Descriptor } from "../descriptors/index.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
-import { isArrayValue, viewObjectValue } from "./values.ts";
+import {
+  acceptsPrimitiveContract,
+  callObjectValue,
+  checkPrimitiveContract,
+  checkPrimitiveRestArguments,
+  isArrayValue,
+  viewObjectValue,
+} from "./values.ts";
 import { viewBigIntValue } from "./bigints.ts";
 import {
   scriptPropertyKeyOrder,
@@ -30,6 +37,16 @@ export interface IndexedObjectRule {
 export type PropertyValueRule =
   | IndexedObjectRule
   | {
+      readonly kind: "class-field";
+      readonly name: ScriptPropertyKey;
+      readonly allowed: number;
+    }
+  | {
+      readonly kind: "class-method";
+      readonly name: ScriptPropertyKey;
+      readonly call: ClassMethodContract;
+    }
+  | {
       readonly kind: "array-elements";
       readonly element: number;
       readonly readonly: boolean;
@@ -51,6 +68,11 @@ export type PropertyValueRule =
 export interface ObjectShapeContract {
   readonly types: readonly PropertyValueRule[];
   readonly root: number;
+}
+export interface ClassMethodContract {
+  readonly parameters: readonly number[];
+  readonly rest: number;
+  readonly result: number;
 }
 type ObjectRecord = OrdinaryObject<ScriptPropertyKey, unknown>;
 interface Enrollment {
@@ -206,8 +228,16 @@ function validateDescriptor(
   realm: ErrorRealm,
   modifyingValue: boolean,
 ): boolean {
-  if (typeof key !== "string") return true;
   const rule = schema.types[schema.root];
+  if (rule?.kind === "class-method") return true;
+  if (rule?.kind === "class-field")
+    return (
+      key !== rule.name ||
+      (!descriptor.accessor &&
+        (!modifyingValue ||
+          acceptsPrimitiveContract(descriptor.value, rule.allowed)))
+    );
+  if (typeof key !== "string") return true;
   if (rule?.kind === "array-elements") {
     if (scriptPropertyKeyOrder(key) < 0)
       return key !== "length" || !rule.readonly || !modifyingValue;
@@ -256,47 +286,147 @@ function publish(
   realm: ErrorRealm,
   initializing: boolean,
 ): void {
-  attachPropertyContract<ScriptPropertyKey, unknown>(object, {
-    schemas,
-    beforeDefine: (key, descriptor, writesValue): void => {
-      const pending: Enrollment[] = [];
-      for (const schema of schemas) {
-        if (schema === undefined) throw "PROPERTY_CONTRACT_SCHEMA_INVARIANT";
-        if (
-          !validateDescriptor(
-            key,
-            descriptor,
-            schema,
-            pending,
-            realm,
-            !initializing && writesValue,
+  attachPropertyContract<ScriptPropertyKey, unknown>(
+    object,
+    {
+      schemas,
+      beforeDefine: (key, descriptor, writesValue): void => {
+        const pending: Enrollment[] = [];
+        for (const schema of schemas) {
+          if (schema === undefined) throw "PROPERTY_CONTRACT_SCHEMA_INVARIANT";
+          if (
+            !validateDescriptor(
+              key,
+              descriptor,
+              schema,
+              pending,
+              realm,
+              !initializing && writesValue,
+            )
           )
-        )
-          reject(realm);
-      }
-      commit(pending, realm);
+            reject(realm);
+        }
+        commit(pending, realm);
+      },
+      canDelete: (key): boolean => {
+        for (const schema of schemas) {
+          if (schema === undefined) throw "PROPERTY_CONTRACT_SCHEMA_INVARIANT";
+          const rule = schema.types[schema.root];
+          if (rule?.kind === "class-method") continue;
+          if (rule?.kind === "class-field") {
+            if (key === rule.name) return false;
+            continue;
+          }
+          if (typeof key !== "string") continue;
+          if (rule?.kind === "array-elements") {
+            if (rule.readonly && scriptPropertyKeyOrder(key) >= 0) return false;
+            continue;
+          }
+          if (rule?.kind !== "object") throw "PROPERTY_CONTRACT_ROOT_INVARIANT";
+          const field = fieldFor(rule, key);
+          if (
+            rule.readonlyIndex ||
+            field?.required === true ||
+            field?.readonly === true
+          )
+            return false;
+        }
+        return true;
+      },
     },
-    canDelete: (key): boolean => {
-      if (typeof key !== "string") return true;
-      for (const schema of schemas) {
+    schemas.some((schema) => {
+      const kind = schema.types[schema.root]?.kind;
+      return kind === "class-field" || kind === "class-method";
+    }),
+  );
+}
+
+/** A class field already owns its initialized descriptor. A declaration
+ * without an initializer may hold undefined until the constructor writes. */
+export function attachClassFieldContract(
+  object: ObjectRecord,
+  name: ScriptPropertyKey,
+  allowed: number,
+  realm: ErrorRealm,
+): void {
+  if (!acceptsPropertyContract<ScriptPropertyKey, unknown>(object, true))
+    reject(realm);
+  const schema: ObjectShapeContract = {
+    types: [{ kind: "class-field", name, allowed }],
+    root: 0,
+  };
+  commit([{ object, schema }], realm);
+}
+
+export function attachClassMethodContract(
+  object: ObjectRecord,
+  name: ScriptPropertyKey,
+  call: ClassMethodContract,
+  realm: ErrorRealm,
+): void {
+  if (!acceptsPropertyContract<ScriptPropertyKey, unknown>(object, true))
+    reject(realm);
+  const schema: ObjectShapeContract = {
+    types: [{ kind: "class-method", name, call }],
+    root: 0,
+  };
+  commit([{ object, schema }], realm);
+}
+
+/** Lookup on ordinary storage mirrors the completed member reference. The
+ * method object itself is left unchanged so aliases and decorators retain it. */
+export function findClassMethodContract(
+  base: unknown,
+  key: ScriptPropertyKey,
+  realm: ErrorRealm,
+): ClassMethodContract | undefined {
+  let cursor = viewObjectValue(base, realm.objectPrototype);
+  while (cursor !== undefined && cursor.internalMethods === undefined) {
+    if (cursor.properties.has(key)) {
+      const schemas = cursor.internalPropertyContract?.schemas;
+      for (const schema of schemas ?? []) {
         if (schema === undefined) throw "PROPERTY_CONTRACT_SCHEMA_INVARIANT";
         const rule = schema.types[schema.root];
-        if (rule?.kind === "array-elements") {
-          if (rule.readonly && scriptPropertyKeyOrder(key) >= 0) return false;
-          continue;
-        }
-        if (rule?.kind !== "object") throw "PROPERTY_CONTRACT_ROOT_INVARIANT";
-        const field = fieldFor(rule, key);
-        if (
-          rule.readonlyIndex ||
-          field?.required === true ||
-          field?.readonly === true
-        )
-          return false;
+        if (rule?.kind === "class-method" && rule.name === key)
+          return rule.call;
       }
-      return true;
-    },
-  });
+      return undefined;
+    }
+    cursor = cursor.prototype;
+  }
+  return undefined;
+}
+
+export function callWithClassMethodContract(
+  method: unknown,
+  receiver: unknown,
+  args: readonly unknown[],
+  contract: ClassMethodContract | undefined,
+  realm: ErrorRealm,
+): { readonly error: "none" | "type"; readonly value: unknown } {
+  if (contract !== undefined) {
+    const parameters = contract.parameters;
+    const rest = contract.rest;
+    for (let i = 0; i < parameters.length; i++) {
+      const allowed = parameters[i] ?? 0;
+      if (allowed !== 0) checkPrimitiveContract(realm, args[i], allowed);
+    }
+    if (rest !== 0)
+      checkPrimitiveRestArguments(realm, args, parameters.length, rest);
+  }
+  const completed = callObjectValue(
+    method,
+    receiver,
+    args,
+    realm.objectPrototype,
+  );
+  if (
+    completed.error === "none" &&
+    contract !== undefined &&
+    contract.result !== 0
+  )
+    checkPrimitiveContract(realm, completed.value, contract.result);
+  return completed;
 }
 function commit(pending: readonly Enrollment[], realm: ErrorRealm): void {
   for (const item of pending) {

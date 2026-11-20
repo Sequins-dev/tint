@@ -183,7 +183,7 @@ export interface RelativeFixup {
 
 interface Encoding {
   readonly bytes: ByteBuffer;
-  readonly fixups: RelativeFixup[];
+  fixups: RelativeFixup[];
   readonly far: boolean;
 }
 
@@ -235,6 +235,160 @@ function encodedBytes(buffer: ByteBuffer, length: number): Uint8Array {
 
 function invalid(message: string): never {
   throw "x86-64 encoder: " + message;
+}
+
+function describeRelative(value: Relative): string {
+  if (typeof value === "number") return String(value);
+  return value.addend === undefined
+    ? value.label
+    : value.label + " (addend=" + String(value.addend) + ")";
+}
+
+function describeOperand(operand: RmOperand | Immediate): string {
+  switch (operand.kind) {
+    case "gpr":
+      return "gpr" + String(operand.width) + "[" + String(operand.index) + "]";
+    case "xmm":
+      return "xmm" + String(operand.index);
+    case "mem": {
+      const address = operand.address;
+      const prefix = "mem" + String(operand.width) + "(";
+      if (address.kind === "rip")
+        return prefix + "rip, disp=" + describeRelative(address.disp) + ")";
+      const index =
+        address.index === undefined
+          ? ""
+          : ", index=" +
+            String(address.index) +
+            ", scale=" +
+            String(address.scale ?? 1);
+      const base = address.base;
+      return (
+        prefix +
+        "base=" +
+        (base === undefined ? "none" : String(base)) +
+        index +
+        ", disp=" +
+        String(address.disp) +
+        ")"
+      );
+    }
+    case "imm64":
+      return (
+        "imm64(hi=" +
+        String(operand.value.hi) +
+        ", lo=" +
+        String(operand.value.lo) +
+        ")"
+      );
+    default:
+      return operand.kind + "(" + String(operand.value) + ")";
+  }
+}
+
+function describeInstruction(insn: Encodable): string {
+  const opcode = insn.op + " ";
+  switch (insn.op) {
+    case "jcc":
+      return opcode + insn.cc + ", " + describeRelative(insn.target);
+    case "jmp":
+    case "call": {
+      const target = insn.target;
+      return (
+        opcode +
+        (typeof target === "number" || target.kind === "label"
+          ? describeRelative(target)
+          : describeOperand(target))
+      );
+    }
+    case "push":
+      return opcode + describeOperand(insn.src);
+    case "setcc":
+      return opcode + insn.cc + ", " + describeOperand(insn.dst);
+    case "pop":
+    case "inc":
+    case "dec":
+    case "not":
+    case "neg":
+    case "mul":
+    case "imul-one":
+    case "div":
+    case "idiv":
+      return opcode + describeOperand(insn.dst);
+    case "rol":
+    case "ror":
+    case "shl":
+    case "shr":
+    case "sar": {
+      const count = insn.count;
+      return (
+        opcode +
+        describeOperand(insn.dst) +
+        ", " +
+        (typeof count === "number" ? String(count) : count)
+      );
+    }
+    case "imul-imm":
+      return (
+        opcode +
+        describeOperand(insn.dst) +
+        ", " +
+        describeOperand(insn.src) +
+        ", " +
+        describeOperand(insn.immediate)
+      );
+    case "cmovcc":
+      return (
+        opcode +
+        insn.cc +
+        ", " +
+        describeOperand(insn.dst) +
+        ", " +
+        describeOperand(insn.src)
+      );
+    case "mov":
+    case "add":
+    case "or":
+    case "adc":
+    case "sbb":
+    case "and":
+    case "sub":
+    case "xor":
+    case "cmp":
+    case "test":
+    case "xchg":
+    case "lock-cmpxchg":
+    case "lock-xadd":
+    case "imul":
+    case "lea":
+    case "movzx":
+    case "movsx":
+    case "movsd":
+    case "addsd":
+    case "subsd":
+    case "mulsd":
+    case "divsd":
+    case "sqrtsd":
+    case "minsd":
+    case "maxsd":
+    case "comisd":
+    case "ucomisd":
+    case "cvtsd2ss":
+    case "andpd":
+    case "orpd":
+    case "xorpd":
+    case "cvtss2sd":
+    case "cvtsi2sd":
+    case "cvtsd2si":
+    case "cvttsd2si":
+    case "movd":
+    case "movq":
+      return (
+        opcode + describeOperand(insn.dst) + ", " + describeOperand(insn.src)
+      );
+    default:
+      return insn.op;
+  }
 }
 
 function fits(value: number, min: number, max: number): boolean {
@@ -299,6 +453,35 @@ export function patchRelative(
   ).ok
     ? "complete"
     : "invalid";
+}
+
+function patchChunkRelative(
+  buffer: ByteBuffer,
+  fixup: RelativeFixup,
+  target: number,
+  scratch: Uint8Array,
+): void {
+  const page = Math.floor(fixup.fieldOffset / codeChunkBytes);
+  const offset = fixup.fieldOffset % codeChunkBytes;
+  const chunk = buffer.chunks[page];
+  if (chunk === undefined) invalid("missing relative fixup chunk");
+  const first = codeChunkBytes - offset;
+  const spansChunks = fixup.byteLength > first;
+  const status = patchRelative(
+    spansChunks ? scratch : chunk,
+    fixup,
+    spansChunks ? 0 : offset,
+    target,
+    fixup.fieldOffset,
+  );
+  if (status === "range") invalid("rel32 displacement out of range");
+  if (status !== "complete") invalid("invalid relative fixup field");
+  if (spansChunks) {
+    const next = buffer.chunks[page + 1];
+    if (next === undefined) invalid("missing relative fixup chunk");
+    chunk.set(scratch.subarray(0, first), offset);
+    next.set(scratch.subarray(first, fixup.byteLength));
+  }
 }
 
 function lowBits(bytes: ByteBuffer, value: number, width: FieldWidth): void {
@@ -1068,7 +1251,13 @@ export function createAssembler(far: boolean = false): Assembler {
       while (out.bytes.length % 4 !== 0) append(out.bytes, 0x90);
     } else {
       const before = out.fixups.length;
-      emit(out, insn);
+      try {
+        emit(out, insn);
+      } catch (error) {
+        if (typeof error === "string")
+          throw error + " while encoding " + describeInstruction(insn);
+        throw error;
+      }
       // Any relative field in this instruction is relative to its end.
       const fixup = out.fixups[before];
       if (fixup !== undefined && fixup.byteLength === 4)
@@ -1084,10 +1273,8 @@ export function createAssembler(far: boolean = false): Assembler {
     if (!Number.isSafeInteger(byteLength) || byteLength < out.bytes.length)
       invalid("assembly output is smaller than instruction bytes or invalid");
     finished = true;
-    const bytes = encodedBytes(out.bytes, byteLength);
-    out.bytes.chunks.length = 0;
-    out.bytes.chunk = new Uint8Array(0);
     const externalFixups: RelativeFixup[] = [];
+    const scratch = new Uint8Array(8);
     for (const fixup of out.fixups) {
       if (fixup === undefined) throw "rel32 fixup invariant";
       const target = labels.get(fixup.ref.label);
@@ -1097,11 +1284,14 @@ export function createAssembler(far: boolean = false): Assembler {
         externalFixups.push(fixup);
         continue;
       }
-      const status = patchRelative(bytes, fixup, fixup.fieldOffset, target);
-      if (status === "range") invalid("rel32 displacement out of range");
-      if (status !== "complete") invalid("invalid relative fixup field");
+      patchChunkRelative(out.bytes, fixup, target, scratch);
     }
-    out.fixups.length = 0;
+    // The compiler can accumulate millions of local relocations. Drop their
+    // records and backing list before allocating the contiguous output.
+    out.fixups = [];
+    const bytes = encodedBytes(out.bytes, byteLength);
+    out.bytes.chunks.length = 0;
+    out.bytes.chunk = new Uint8Array(0);
     return { bytes, labels, externalFixups };
   }
   return {

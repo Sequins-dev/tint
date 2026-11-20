@@ -1,6 +1,7 @@
 import {
   attachNativeAgentMailbox,
   createNativeAgentMailbox,
+  prepareNativeAgentMessage,
   type NativeAgentMailbox,
 } from "./agent-messages.ts";
 import type { ReactorEventLoop } from "./event-loop-reactor.ts";
@@ -197,7 +198,12 @@ export function createNativeMessagePorts(
     return {
       send: (packet, commit): boolean => {
         if (!owned) return false;
-        const prepared = outgoing.prepare(packet);
+        const prepared = prepareNativeAgentMessage(
+          memory,
+          parking,
+          outgoing.registry,
+          packet,
+        );
         if (!prepared.ok)
           throw new Error("message port packet allocation failed");
         try {

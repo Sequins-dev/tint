@@ -4,6 +4,7 @@ import { bindModule } from "@tint/typescript/binding";
 import type { Module, Statement, TypeNode } from "@tint/typescript/syntax";
 import {
   specializeModule,
+  type SpecializationError,
   type SpecializationResult,
 } from "./specialization.ts";
 export interface CheckedSpecializationRoot {
@@ -24,11 +25,7 @@ export type ReifiedSpecialization =
   | { readonly ok: true; readonly value: ReifiedSpecializationRoots }
   | {
       readonly ok: false;
-      readonly error: {
-        readonly message: string;
-        readonly start: number;
-        readonly end: number;
-      };
+      readonly error: SpecializationError;
     };
 function declaredNames(module: Module): string[] | undefined {
   const names: string[] = [];
@@ -125,7 +122,17 @@ export function specializeReifiedRoots(
   }
   const prepared: Module = { ...module, statements };
   const bound = bindModule(prepared, globals);
-  if (!bound.ok) return { ok: false, error: bound.error };
+  if (!bound.ok) {
+    const diagnostic = bound.error;
+    return {
+      ok: false,
+      error: {
+        message: diagnostic.message,
+        start: diagnostic.start,
+        end: diagnostic.end,
+      },
+    };
+  }
   const roots: { function: number; arguments: readonly TypeNode[] }[] = [];
   for (const request of plan.roots) {
     if (request === undefined) throw "validated request invariant";

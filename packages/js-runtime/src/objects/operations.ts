@@ -313,12 +313,14 @@ export function createObject<Key, Value>(
 /** Only ordinary data storage and the standard Array exotic can enroll. */
 export function acceptsPropertyContract<Key, Value>(
   object: OrdinaryObject<Key, Value>,
+  allowCallable: boolean = false,
 ): boolean {
   return (
     (object.internalMethods === undefined || object.internalArrayData) &&
     object.internalDataAliases === undefined &&
-    object.internalCall === undefined &&
-    object.internalConstruct === undefined &&
+    (allowCallable ||
+      (object.internalCall === undefined &&
+        object.internalConstruct === undefined)) &&
     !object.internalArgumentsData
   );
 }
@@ -326,8 +328,9 @@ export function acceptsPropertyContract<Key, Value>(
 export function attachPropertyContract<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   contract: PropertyWriteContract<Key, Value>,
+  allowCallable: boolean = false,
 ): void {
-  if (!acceptsPropertyContract<Key, Value>(object))
+  if (!acceptsPropertyContract<Key, Value>(object, allowCallable))
     throw "PROPERTY_CONTRACT_OBJECT_INVARIANT";
   // Contracted array writes use the existing descriptor guard. Transfer the
   // packed elements without invoking any user code or changing their keys.

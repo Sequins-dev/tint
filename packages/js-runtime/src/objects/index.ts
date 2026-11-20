@@ -158,6 +158,14 @@ export {
   type Receiver,
 } from "./operations.ts";
 export { isCallableObject, callObject, constructObject } from "./call.ts";
+export {
+  createNativeViewCache,
+  cachedNativeView,
+  cacheNativeView,
+  createNativeCallableView,
+  createNativeListView,
+  type NativeViewCache,
+} from "./native-views.ts";
 export { objectValueHasProperty } from "./membership.ts";
 export { looselyEqual } from "./equality.ts";
 export { installPrimitiveIntrinsics } from "./primitive-intrinsics.ts";
@@ -188,6 +196,8 @@ export {
   objectValueTypeof,
   objectTypeof,
   generalValueTypeof,
+  checkPrimitiveContract,
+  checkPrimitiveRestArguments,
   viewTypeofObject,
   scriptBoolean,
   scriptStrictEqual,
@@ -216,6 +226,7 @@ export { copyDataProperties } from "./copy.ts";
 export {
   createBaseClass,
   createClassMethod,
+  checkClassMethodResult,
   prepareClassAutoAccessor,
   initializeClassPrivateMethods,
   type ClassPrivateMethod,
@@ -249,6 +260,7 @@ export {
 export {
   createSourceFunction,
   createTailSourceFunction,
+  createCheckedSourceFunction,
   requestSourceTailCall,
   constructorPrototype,
   retainFunctionSource,
@@ -393,6 +405,11 @@ export { speciesConstructor } from "./species.ts";
 
 export { installDataViewIntrinsics } from "./data-view.ts";
 export {
+  projectArrayBufferView,
+  projectArrayBufferViewRange,
+  type ArrayBufferViewRange,
+} from "./array-buffer-view.ts";
+export {
   createIntegerIndexedObject,
   type IntegerIndexedHooks,
 } from "./integer-indexed.ts";
@@ -497,6 +514,9 @@ export {
   enrollObjectPropertyContract,
   finishObjectPropertyContract,
   projectPropertyContract,
+  attachClassMethodContract,
+  findClassMethodContract,
+  callWithClassMethodContract,
   type ContractField,
   type ObjectShapeContract,
   type PropertyValueRule,
@@ -513,3 +533,4 @@ export {
   builtinFunctionMetadata,
   builtinProperty,
 } from "./intrinsics.ts";
+export { primitiveContractBit } from "@tint/foundation/values/primitive-contract";
