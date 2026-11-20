@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { rmSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import test from "node:test";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 import { withDynamicLibrary } from "./native-dynamic-fixtures.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
+import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
 import type { NativeHostBinding } from "@tint/compiler/native";
 
 function source(library: string, generic: boolean): string {
@@ -18,6 +22,9 @@ export function run() {
   dlclose(empty.lib);
   const path = ${JSON.stringify(library)};
   const lib = new DynamicLibrary(path);
+  if (DynamicLibrary.length !== 1 || lib.getFunction.length !== 2 ||
+      lib.getFunctions.length !== 1 ||
+      !Object.getOwnPropertyDescriptor(DynamicLibrary, "prototype").writable) return 22;
   const trace = [];
   const inherited = { return: "uint64", arguments: ["uint64"] };
   const signature = new Proxy(Object.create(inherited), {
@@ -514,5 +521,244 @@ export function run(): number {
       allocationCapacity: 1048576,
       hostBindings,
     },
+  );
+});
+
+test("node:ffi diagnoses unavailable libuv access", () => {
+  verifyHostedFixture(
+    `import ffi, { getCurrentEventLoop } from "node:ffi";
+export function run() {
+  if (ffi.getCurrentEventLoop !== getCurrentEventLoop) return 1;
+  try { getCurrentEventLoop(); return 2; }
+  catch (error) {
+    return error instanceof Error && error.code === "ERR_FFI_CALL_FAILED" &&
+      error.message === "getCurrentEventLoop requires a libuv embedding" ? 42 : 3;
+  }
+}`,
+    "node-ffi-libuv-diagnostic",
+    [["node:ffi", "packages/native-runtime/src/node/ffi.ts"]],
+    [],
+    [],
+    [],
+    { managedBytes: 67108864, allocationCapacity: 1048576 },
+  );
+});
+
+const abortLibrary = `
+#include <pthread.h>
+int32_t tint_invoke_int(int32_t (*callback)(void)) { return callback(); }
+static void *tint_other_thread(void *data) {
+  void (*callback)(void) = data;
+  callback();
+  return 0;
+}
+void tint_invoke_thread(void (*callback)(void)) {
+  pthread_t thread;
+  if (!pthread_create(&thread, 0, tint_other_thread, callback)) pthread_join(thread, 0);
+}
+void tint_untracked_callback(void (*callback)(void)) { callback(); }
+`;
+
+test("node:ffi aborts before returning invalid callbacks to C", () => {
+  assert.ok(
+    withDynamicLibrary((library) => {
+      const id = "node-ffi-abort-probes.d.ts";
+      const specifier = "tint:c/ffi-abort-probes";
+      const prior = process.env.TINT_BUILD_ONLY;
+      process.env.TINT_BUILD_ONLY = "1";
+      let binary: string;
+      try {
+        binary = verifyHostedFixture(
+          `import ffi from "node:ffi";
+import { argumentByteLength } from "arguments";
+import { tint_untracked_callback } from "${specifier}";
+export function run() {
+  const mode = argumentByteLength(1);
+  const { lib, functions } = ffi.dlopen(${JSON.stringify(library)}, {
+    tint_invoke_int: { arguments: ["pointer"], return: "int32" },
+    tint_invoke_thread: { arguments: ["pointer"] },
+  });
+  if (mode === 4 || mode === 5) {
+    const callback = lib.registerCallback(() => { throw new Error("unexpected callback body"); });
+    if (mode === 4) functions.tint_invoke_thread(callback);
+    else tint_untracked_callback(Number(callback));
+  } else {
+    const callback = lib.registerCallback({ return: "int32" }, () => {
+      if (mode === 1) throw new Error("callback throw");
+      if (mode === 2) return Promise.resolve(1);
+      if (mode === 3) return 1.5;
+      return 2 ** 40;
+    });
+    functions.tint_invoke_int(callback);
+  }
+  return 42;
+}`,
+          "node-ffi-callback-abort",
+          [
+            ["node:ffi", "packages/native-runtime/src/node/ffi.ts"],
+            ["arguments", "packages/native-runtime/src/intrinsics/process.ts"],
+            [specifier, id],
+          ],
+          [],
+          [],
+          [],
+          {
+            allowJit: true,
+            managedBytes: 67108864,
+            allocationCapacity: 1048576,
+            foreignDeclarations: [
+              {
+                id,
+                text: `declare module "${specifier}" {
+              import type { Address } from "tint:ffi";
+              export function tint_untracked_callback(pointer: Address<void>): void;
+            }`,
+                manifest: [
+                  {
+                    module: specifier,
+                    darwin: {
+                      name: library,
+                      optional: false,
+                      currentVersion: 0,
+                      compatibilityVersion: 0,
+                    },
+                    linux: {
+                      name: library,
+                      optional: false,
+                      currentVersion: 0,
+                      compatibilityVersion: 0,
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        );
+      } finally {
+        if (prior === undefined) delete process.env.TINT_BUILD_ONLY;
+        else process.env.TINT_BUILD_ONLY = prior;
+      }
+      if (prior === "1") return true;
+      const expected = [
+        "Callbacks cannot throw an exception",
+        "Callbacks cannot return promises",
+        "Callback returned invalid value for declared FFI type",
+        "Callbacks can only be invoked on the system thread they were created on",
+        "node:ffi callback outside an FFI transition",
+        "Callback returned invalid value for declared FFI type",
+      ];
+      try {
+        const artifact = nativeArtifact(
+          nativeFixtureTarget().name,
+          binary,
+          binary + ".manifest.json",
+        );
+        const results = runNativeBatch(
+          expected.map((_, index) => ({
+            artifact,
+            args: ["x".repeat(index + 1)],
+          })),
+        );
+        writeFileSync(
+          binary + ".run.json",
+          JSON.stringify(results, null, 2) + "\n",
+        );
+        for (const [index, message] of expected.entries()) {
+          const result = results[index];
+          assert.ok(
+            result?.kind === "signaled" && result.signal === "SIGABRT",
+            JSON.stringify(result),
+          );
+          assert.ok(
+            (result.stdout + result.stderr).includes(message),
+            JSON.stringify(result),
+          );
+        }
+      } finally {
+        if (process.env.TINT_KEEP_NATIVE !== "1")
+          rmSync(dirname(binary), { recursive: true, force: true });
+      }
+      return true;
+    }, abortLibrary),
+    "clang is required",
+  );
+});
+
+const unloadLibrary = `
+static uint8_t *unload_flag;
+void tint_track_unload(uint8_t *flag) { unload_flag = flag; }
+__attribute__((destructor)) static void tint_record_unload(void) {
+  if (unload_flag) *unload_flag += 1;
+}
+`;
+
+test("node:ffi releases an unreachable library at the realm checkpoint", (context) => {
+  const previous = process.env.TINT_GENERAL_FALLBACK;
+  process.env.TINT_GENERAL_FALLBACK = "0";
+  context.after(() => {
+    if (previous === undefined) delete process.env.TINT_GENERAL_FALLBACK;
+    else process.env.TINT_GENERAL_FALLBACK = previous;
+  });
+  assert.ok(
+    withDynamicLibrary(
+      (library) =>
+        verifyHostedFixture(
+          `import ffi from "node:ffi";
+import { Buffer } from "node:buffer";
+import { collectGarbage } from "memory";
+import {
+  callObjectValueOrThrow, createArrayFromList, createDataProperty,
+  createObject, drainScriptJobs, getObjectValuePropertyOrThrow,
+  installProgramArrayIntrinsics, programRealmCore, type ScriptPropertyKey,
+} from "objects";
+export function run(): number {
+  const core = programRealmCore(), realm = core.realm, hooks = core.hooks;
+  installProgramArrayIntrinsics(core);
+  function get(receiver: unknown, name: string): unknown {
+    return getObjectValuePropertyOrThrow(receiver, name, hooks, realm);
+  }
+  function call(receiver: unknown, name: string, args: readonly unknown[]): unknown {
+    return callObjectValueOrThrow(get(receiver, name), receiver, args, core.object, realm);
+  }
+  const bytes = call(Buffer, "alloc", [1]);
+  const pointer = call(ffi, "getRawPointer", [bytes]);
+  function openAndDrop(): void {
+    const signature = createObject<ScriptPropertyKey, unknown>(realm.objectPrototype);
+    const types = createArrayFromList(["pointer"], 0, realm.arrayPrototype, realm, hooks);
+    createDataProperty<ScriptPropertyKey, unknown>(signature, "arguments", types, hooks);
+    const definitions = createObject<ScriptPropertyKey, unknown>(undefined);
+    createDataProperty<ScriptPropertyKey, unknown>(definitions, "tint_track_unload", signature, hooks);
+    const handle = call(ffi, "dlopen", [${JSON.stringify(library)}, definitions]);
+    call(get(handle, "functions"), "tint_track_unload", [pointer]);
+  }
+  openAndDrop();
+  if (get(bytes, "0") !== 0) return 1;
+  collectGarbage();
+  let failed = false;
+  drainScriptJobs(realm.agent, (_error: unknown): void => { failed = true; });
+  if (failed || get(bytes, "0") !== 1) return 2;
+  collectGarbage();
+  drainScriptJobs(realm.agent, (_error: unknown): void => { failed = true; });
+  return !failed && get(bytes, "0") === 1 ? 42 : 3;
+}`,
+          "node-ffi-library-finalization",
+          [
+            ["node:ffi", "packages/native-runtime/src/node/ffi.ts"],
+            ["node:buffer", "packages/native-runtime/src/node/buffer.ts"],
+            ["memory", "packages/native-runtime/src/intrinsics/memory.ts"],
+            ["objects", "packages/js-runtime/src/objects/index.ts"],
+          ],
+          [],
+          [],
+          [],
+          {
+            requireTyped: true,
+            managedBytes: 67108864,
+            allocationCapacity: 1048576,
+          },
+        ),
+      unloadLibrary,
+    ),
+    "clang is required",
   );
 });

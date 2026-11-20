@@ -720,6 +720,20 @@ function withNodeRuntimes(
     }
   }
   if (!nodeFfi) return { ...request, runtimes, recordBindings };
+  const finalizerView = "viewWeakRegistryOwner";
+  if (!recordBindings.some((binding) => binding?.name === finalizerView)) {
+    const values = "packages/js-runtime/src/objects/values.ts";
+    retain({
+      module: values,
+      namespace: "node-ffi-finalization",
+      retainedExports: [finalizerView],
+    });
+    recordBindings.push({
+      module: values,
+      name: finalizerView,
+      operation: "view",
+    });
+  }
 
   const ffi = foreignRuntimeBindings(ids);
   for (const runtime of ffi.runtimes) {

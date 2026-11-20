@@ -110,7 +110,7 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
   readonly weakBindings: readonly {
     readonly module: string;
     readonly name: string;
-    readonly operation: "new" | "key" | "clear";
+    readonly operation: "new" | "key" | "clear" | "value" | "set-value";
   }[];
   readonly hostBindings: readonly {
     readonly module: string;
@@ -154,7 +154,7 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
   const weakBindings: {
     readonly module: string;
     readonly name: string;
-    readonly operation: "new" | "key" | "clear";
+    readonly operation: "new" | "key" | "clear" | "value" | "set-value";
   }[] = [
     { module: modules.weak, name: "createWeakSlot", operation: "new" },
     { module: modules.weak, name: "weakSlotKey", operation: "key" },
@@ -176,11 +176,15 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
     },
   ];
   if (loaded.has(modules.nodeFfi))
-    weakBindings.push({
-      module: modules.weak,
-      name: "clearWeakSlot",
-      operation: "clear",
-    });
+    weakBindings.push(
+      { module: modules.weak, name: "clearWeakSlot", operation: "clear" },
+      { module: modules.weak, name: "weakSlotValue", operation: "value" },
+      {
+        module: modules.weak,
+        name: "setWeakSlotValue",
+        operation: "set-value",
+      },
+    );
   if (loaded.has(modules.nodeFfi) && loaded.has(modules.addressWords)) {
     runtimes.push({
       module: modules.addressWords,

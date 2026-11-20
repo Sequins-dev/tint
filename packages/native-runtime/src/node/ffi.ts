@@ -6,6 +6,7 @@ import {
   builtinFunctionMetadata,
   builtinProperty,
   callObjectValueOrThrow,
+  constructObjectValueOrThrow,
   createConstructorObject,
   createDataProperty,
   createObject,
@@ -13,6 +14,7 @@ import {
   getObjectValuePropertyOrThrow,
   getOwnProperty,
   getProperty,
+  hostFinalizationRegistry,
   ownKeys,
   programRealmCore,
   projectArrayBufferViewRange,
@@ -58,7 +60,9 @@ import {
 import {
   clearWeakSlot,
   createWeakSlot,
+  setWeakSlotValue,
   weakSlotKey,
+  weakSlotValue,
 } from "../intrinsics/weak.ts";
 import {
   classifyScalarCall,
@@ -84,6 +88,7 @@ interface Binding {
   wrapper: unknown;
 }
 interface DynamicLibraryState {
+  readonly serial: number;
   readonly identity: unknown;
   readonly path: string;
   handle: LibraryHandle | undefined;
@@ -445,6 +450,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
   const realm = core.realm,
     hooks = core.hooks;
   const states: DynamicLibraryState[] = [];
+  let serial = 0;
   const prototype = createObject<ScriptPropertyKey, unknown>(
     realm.objectPrototype,
   );
@@ -719,6 +725,33 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
   ): FfiObject {
     return builtinFunction(realm.functionPrototype, name, length, body, hooks);
   }
+  function forget(index: number, state: DynamicLibraryState): void {
+    close(state);
+    clearWeakSlot(state.identity);
+    states.splice(index, 1);
+  }
+  const trackLibrary = hostFinalizationRegistry(
+    realm,
+    {
+      create: (key, value, ephemeron): unknown =>
+        createWeakSlot(key, value, ephemeron),
+      key: (cell): unknown => weakSlotKey(cell),
+      value: (cell): unknown => weakSlotValue(cell),
+      setValue: (cell, value): void => setWeakSlotValue(cell, value),
+      clear: (cell): void => clearWeakSlot(cell),
+    },
+    method("release FFI library", 1, (_receiver, args): unknown => {
+      const expired = args[0];
+      for (let index = 0; index < states.length; index++) {
+        const state = states[index];
+        if (state !== undefined && state.serial === expired) {
+          forget(index, state);
+          break;
+        }
+      }
+      return undefined;
+    }),
+  );
   function getter(
     object: FfiObject,
     name: string,
@@ -743,11 +776,8 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     const text = path === null ? "" : ffiString(core, path, "Library path");
     for (let index = states.length - 1; index >= 0; index--) {
       const old = states[index];
-      if (old !== undefined && weakSlotKey(old.identity) === undefined) {
-        close(old);
-        clearWeakSlot(old.identity);
-        states.splice(index, 1);
-      }
+      if (old !== undefined && weakSlotKey(old.identity) === undefined)
+        forget(index, old);
     }
     let handle: LibraryHandle;
     try {
@@ -756,14 +786,18 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       return checkedLoaderError(error);
     }
     const object = createObject<ScriptPropertyKey, unknown>(parent);
+    const identity = createWeakSlot(object, undefined, false);
+    serial++;
     states.push({
-      identity: createWeakSlot(object, undefined, false),
+      serial,
+      identity,
       path: text,
       handle,
       symbols: new Map<string, SymbolAddress>(),
       bindings: new Map<string, Binding>(),
       callbacks: new Map<number, FfiCallback>(),
     });
+    trackLibrary(object, serial);
     getter(
       object,
       "path",
@@ -789,8 +823,8 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       return load(args[0], parent ?? prototype);
     },
   );
-  builtinFunctionMetadata(constructor, "DynamicLibrary", 0, hooks);
-  builtinProperty(constructor, "prototype", prototype, false, false, hooks);
+  builtinFunctionMetadata(constructor, "DynamicLibrary", 1, hooks);
+  builtinProperty(constructor, "prototype", prototype, true, false, hooks);
   builtinProperty(prototype, "constructor", constructor, true, true, hooks);
   const closeMethod = method("close", 0, (receiver, _args): unknown => {
     close(requireState(receiver));
@@ -823,7 +857,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
   builtinProperty(
     prototype,
     "getFunction",
-    method("getFunction", 0, (receiver, args): unknown => {
+    method("getFunction", 2, (receiver, args): unknown => {
       const state = requireState(receiver);
       const owner = ffiObject(core, receiver, "DynamicLibrary receiver");
       const name = ffiString(core, args[0], "Function name");
@@ -839,7 +873,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
   builtinProperty(
     prototype,
     "getFunctions",
-    method("getFunctions", 0, (receiver, args): unknown =>
+    method("getFunctions", 1, (receiver, args): unknown =>
       functions(receiver, args[0]),
     ),
     true,
@@ -929,21 +963,50 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     );
   }
 
+  function disposeLibrary(lib: unknown): void {
+    const close = getObjectValuePropertyOrThrow(lib, "close", hooks, realm);
+    callObjectValueOrThrow(close, lib, [], core.object, realm);
+  }
+  const dlclose = method("dlclose", 1, (_receiver, args): unknown => {
+    disposeLibrary(args[0]);
+    return undefined;
+  });
   const dlopen = method("dlopen", 2, (_receiver, args): unknown => {
-    const lib = load(args[0], prototype);
+    const lib = constructObjectValueOrThrow(
+      realm,
+      constructor,
+      [args[0]],
+      core.object,
+    );
     const definitions = args[1];
-    let table: FfiObject;
+    let table: unknown;
     try {
-      table = functions(lib, definitions);
-      if (definitions === undefined)
+      if (definitions === undefined) {
+        const empty = createObject<ScriptPropertyKey, unknown>(undefined);
         setIntegrityLevel<ScriptPropertyKey, unknown>(
-          table,
+          empty,
           true,
           hooks,
           scriptPropertyKeyOrder,
         );
+        table = empty;
+      } else {
+        const get = getObjectValuePropertyOrThrow(
+          lib,
+          "getFunctions",
+          hooks,
+          realm,
+        );
+        table = callObjectValueOrThrow(
+          get,
+          lib,
+          [definitions],
+          core.object,
+          realm,
+        );
+      }
     } catch (error) {
-      close(requireState(lib));
+      disposeLibrary(lib);
       throw error;
     }
     const result = createObject<ScriptPropertyKey, unknown>(
@@ -960,18 +1023,12 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       result,
       dispose,
       method("[Symbol.dispose]", 0, (_receiver, _args): unknown => {
-        close(requireState(lib));
+        disposeLibrary(lib);
         return undefined;
       }),
       hooks,
     );
     return result;
-  });
-  const dlclose = method("dlclose", 1, (_receiver, args): unknown => {
-    const handle = args[0];
-    const close = getObjectValuePropertyOrThrow(handle, "close", hooks, realm);
-    callObjectValueOrThrow(close, handle, [], core.object, realm);
-    return undefined;
   });
   const dlsym = method("dlsym", 2, (_receiver, args): unknown => {
     const handle = args[0];
@@ -1034,6 +1091,19 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     { view: bytesAtWords, address: stableAddressWords },
     defaultExport,
   );
+  createDataProperty<ScriptPropertyKey, unknown>(
+    defaultExport,
+    "getCurrentEventLoop",
+    method("getCurrentEventLoop", 0, (_receiver, _args): unknown =>
+      ffiError(
+        core,
+        "error",
+        "ERR_FFI_CALL_FAILED",
+        "getCurrentEventLoop requires a libuv embedding",
+      ),
+    ),
+    hooks,
+  );
   return { constructor, dlopen, dlclose, dlsym, types, defaultExport };
 }
 
@@ -1044,41 +1114,42 @@ export const dlopen: unknown = nativeNodeFfi.dlopen;
 export const dlclose: unknown = nativeNodeFfi.dlclose;
 export const dlsym: unknown = nativeNodeFfi.dlsym;
 export const types: unknown = nativeNodeFfi.types;
-function memoryExport(name: string): unknown {
+function ffiExport(name: string): unknown {
   return getOwnProperty<ScriptPropertyKey, unknown>(
     nativeNodeFfi.defaultExport,
     name,
   )?.value;
 }
-export const getInt8: unknown = memoryExport("getInt8");
-export const getUint8: unknown = memoryExport("getUint8");
-export const getInt16: unknown = memoryExport("getInt16");
-export const getUint16: unknown = memoryExport("getUint16");
-export const getInt32: unknown = memoryExport("getInt32");
-export const getUint32: unknown = memoryExport("getUint32");
-export const getInt64: unknown = memoryExport("getInt64");
-export const getUint64: unknown = memoryExport("getUint64");
-export const getFloat32: unknown = memoryExport("getFloat32");
-export const getFloat64: unknown = memoryExport("getFloat64");
-export const setInt8: unknown = memoryExport("setInt8");
-export const setUint8: unknown = memoryExport("setUint8");
-export const setInt16: unknown = memoryExport("setInt16");
-export const setUint16: unknown = memoryExport("setUint16");
-export const setInt32: unknown = memoryExport("setInt32");
-export const setUint32: unknown = memoryExport("setUint32");
-export const setInt64: unknown = memoryExport("setInt64");
-export const setUint64: unknown = memoryExport("setUint64");
-export const setFloat32: unknown = memoryExport("setFloat32");
-export const setFloat64: unknown = memoryExport("setFloat64");
-export const exportBuffer: unknown = memoryExport("exportBuffer");
-export const exportString: unknown = memoryExport("exportString");
-export const exportArrayBuffer: unknown = memoryExport("exportArrayBuffer");
-export const exportArrayBufferView: unknown = memoryExport(
+export const getInt8: unknown = ffiExport("getInt8");
+export const getUint8: unknown = ffiExport("getUint8");
+export const getInt16: unknown = ffiExport("getInt16");
+export const getUint16: unknown = ffiExport("getUint16");
+export const getInt32: unknown = ffiExport("getInt32");
+export const getUint32: unknown = ffiExport("getUint32");
+export const getInt64: unknown = ffiExport("getInt64");
+export const getUint64: unknown = ffiExport("getUint64");
+export const getFloat32: unknown = ffiExport("getFloat32");
+export const getFloat64: unknown = ffiExport("getFloat64");
+export const setInt8: unknown = ffiExport("setInt8");
+export const setUint8: unknown = ffiExport("setUint8");
+export const setInt16: unknown = ffiExport("setInt16");
+export const setUint16: unknown = ffiExport("setUint16");
+export const setInt32: unknown = ffiExport("setInt32");
+export const setUint32: unknown = ffiExport("setUint32");
+export const setInt64: unknown = ffiExport("setInt64");
+export const setUint64: unknown = ffiExport("setUint64");
+export const setFloat32: unknown = ffiExport("setFloat32");
+export const setFloat64: unknown = ffiExport("setFloat64");
+export const exportBuffer: unknown = ffiExport("exportBuffer");
+export const exportString: unknown = ffiExport("exportString");
+export const exportArrayBuffer: unknown = ffiExport("exportArrayBuffer");
+export const exportArrayBufferView: unknown = ffiExport(
   "exportArrayBufferView",
 );
-export const toBuffer: unknown = memoryExport("toBuffer");
-export const toArrayBuffer: unknown = memoryExport("toArrayBuffer");
-export const toString: unknown = memoryExport("toString");
-export const getRawPointer: unknown = memoryExport("getRawPointer");
+export const toBuffer: unknown = ffiExport("toBuffer");
+export const toArrayBuffer: unknown = ffiExport("toArrayBuffer");
+export const toString: unknown = ffiExport("toString");
+export const getRawPointer: unknown = ffiExport("getRawPointer");
+export const getCurrentEventLoop: unknown = ffiExport("getCurrentEventLoop");
 const defaultExport: unknown = nativeNodeFfi.defaultExport;
 export { defaultExport as default };

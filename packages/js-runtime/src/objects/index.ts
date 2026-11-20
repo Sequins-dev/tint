@@ -1,6 +1,9 @@
 export { viewWeakRegistryOwner } from "./values.ts";
 export { createModuleSourceObject } from "./module-source.ts";
-export { installFinalizationRegistryIntrinsics } from "./finalization-registry.ts";
+export {
+  installFinalizationRegistryIntrinsics,
+  hostFinalizationRegistry,
+} from "./finalization-registry.ts";
 export { installWeakRefIntrinsics } from "./weak-ref.ts";
 export { installWeakCollectionIntrinsics } from "./weak-collections.ts";
 export { canBeHeldWeakly, type WeakStorageService } from "./weak-storage.ts";
