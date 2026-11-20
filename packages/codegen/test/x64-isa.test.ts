@@ -4,12 +4,70 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { encode, writeRel32, type Instruction } from "@tint/codegen/x86_64/isa";
+import {
+  createAssembler,
+  encode,
+  encodeLayout,
+  patchRelative,
+  writeRel32,
+  type Instruction,
+} from "@tint/codegen/x86_64/isa";
 import { conditions, mem, oracleCases, reg, xmm } from "./x64-isa-cases.ts";
 
 function hex(bytes: Uint8Array): string {
   return Buffer.from(bytes).toString("hex");
 }
+
+test("the assembler reserves the final image tail without changing byte labels", () => {
+  const assembler = createAssembler();
+  assembler.instruction({ op: "nop" });
+  assembler.instruction({ op: "label", name: "end" });
+  assert.equal(assembler.labels.get("end"), 1);
+  const laidOut = assembler.finish(undefined, 16);
+  assert.equal(hex(laidOut.bytes), "90" + "00".repeat(15));
+});
+
+test("streamed rel32 fields patch across byte chunks", () => {
+  const assembler = createAssembler();
+  for (let index = 0; index < 65534; index++)
+    assembler.instruction({ op: "nop" });
+  assembler.instruction({
+    op: "call",
+    target: { kind: "label", label: "callee" },
+  });
+  assembler.instruction({ op: "nop" });
+  assembler.instruction({ op: "label", name: "callee" });
+  assembler.instruction({ op: "ret" });
+  const layout = assembler.finish();
+  assert.equal(layout.labels.get("callee"), 65540);
+  assert.equal(hex(layout.bytes.subarray(65534)), "e80100000090c3");
+});
+
+test("PIE far addresses encode signed rel64 with separate file and VM offsets", () => {
+  const reference = { kind: "label", label: "data", addend: 7 } as const;
+  const instructions = [
+    {
+      op: "lea",
+      dst: reg(64, 0),
+      src: {
+        kind: "mem",
+        width: 64,
+        address: { kind: "rip", disp: reference },
+      },
+    },
+  ] satisfies Instruction[];
+  const near = encodeLayout(instructions, () => true);
+  const far = encodeLayout(instructions, () => true, true);
+  const [short] = near.externalFixups,
+    [long] = far.externalFixups;
+  assert.ok(short && long);
+  const word = Buffer.alloc(8);
+  assert.equal(patchRelative(word, short, 0, 0x80010000, 0x100), "range");
+  assert.equal(patchRelative(word, long, 0, 0x80010000, 0x100), "complete");
+  assert.equal(word.readBigInt64LE(), 0x8000ff09n);
+  assert.equal(patchRelative(word, long, 0, 0x100, 0x80010000), "complete");
+  assert.equal(word.readBigInt64LE(), -0x8000fef7n);
+});
 
 function llvm(...args: string[]): boolean {
   const result = spawnSync(args[0]!, args.slice(1), { encoding: "utf8" });

@@ -13,6 +13,7 @@ import {
 
 interface LabeledSafepoint extends SafepointSite {
   readonly label: string;
+  readonly transitionRoots?: readonly number[];
 }
 export interface PendingSafepoint {
   readonly label: string;
@@ -104,6 +105,10 @@ export function frameStackMaps(
       list.push(frameBytes + offset);
     }
     if (environment !== undefined) add(environment, "reference");
+    for (const offset of site.transitionRoots ?? []) {
+      if (offset === undefined) throw "callback stack-map invariant";
+      add(offset, "reference");
+    }
     for (const slot of live) {
       if (slot === undefined) throw "x86-64 live slot invariant";
       const offset = slots[slot];

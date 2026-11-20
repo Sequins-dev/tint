@@ -21,7 +21,9 @@ export {
 } from "./service-unit-link.ts";
 export {
   compileNativeServiceUnit,
+  compileX64NativeServiceUnit,
   type NativeServiceUnit,
+  type X64NativeServiceUnit,
   type NativeServiceCompilation,
 } from "./service-unit.ts";
 import {
@@ -70,11 +72,11 @@ import {
 import {
   emitModule as emitX64,
   type X64Module,
+  type X64SignpostSite,
 } from "@tint/codegen/x86_64/scalar";
 import type { PosixHostFacts } from "@tint/abi/host";
 import { bindingIdentifiers, rewriteModule } from "@tint/typescript/syntax";
 import {
-  optimizeModule,
   optimizeModuleVersion,
   pruneClosedModule,
   pruneModuleReferences,
@@ -176,7 +178,6 @@ import {
   foreignDeclaration,
   foreignCall,
   foreignViewRegistry,
-  x64ForeignDiagnostic,
   selectX64ForeignRuntime,
   type ForeignLibrary,
   type NativeForeignBinding,
@@ -2559,14 +2560,24 @@ export function compileX64HostedProgram(
   host: PosixHostFacts,
   options: {
     readonly runtime?: true;
+    readonly forceFarReach?: boolean;
+    readonly jitDebugInterface?: boolean;
     readonly generational?: boolean;
     readonly inlineAllocation?: boolean;
+    readonly threaded?: boolean;
+    readonly signposts?: readonly X64SignpostSite[];
+    readonly allocationProbes?: boolean;
+    readonly report?: (stage: string) => void;
   } = {},
 ):
   | CompilationFailure
   | {
       readonly ok: true;
       readonly native: X64Module;
+      readonly lines: readonly SourceLineRange[];
+      readonly functionNames: ReadonlyMap<string, string>;
+      readonly parameterNames: ReadonlyMap<string, string>;
+      readonly serviceIdentities: readonly NativeServiceBinding[];
       readonly invocation: number;
       readonly returnType:
         "number" | "boolean" | "void" | "reference" | "general";
@@ -2582,7 +2593,7 @@ export function compileX64HostedProgram(
       symbols: true,
     }),
     undefined,
-    options.runtime !== true,
+    options.runtime !== true && options.threaded !== true,
   );
   if (!lowered.ok) return lowered;
   const program = lowered.value;
@@ -2594,8 +2605,7 @@ export function compileX64HostedProgram(
       undefined,
       (_stats, _module) => false,
     );
-  const first = program.ir.module;
-  const entry = first.functions[program.invocation];
+  const entry = program.ir.module.functions[program.invocation];
   if (entry === undefined)
     return stageFailure("entry", "linux-x86_64: missing entry");
   const returnType = entry.returnType;
@@ -2632,35 +2642,96 @@ export function compileX64HostedProgram(
       "entry",
       "linux-x86_64: expected a Number, Boolean, void or general entry",
     );
-  const roots = [program.invocation];
-  const reachable = pruneModuleReferences(first, roots, unboundedWork);
-  const initial = reachable?.module ?? first;
-  const invocation =
-    (reachable?.functionIds[program.invocation] ?? program.invocation + 1) - 1;
-  const optimized =
-    request.optimization === "none"
-      ? initial
-      : optimizeModule(initial, unboundedWork, {
-          closedRecords: true,
-          closedCalls: true,
-          devirtualizeClosures: true,
-        }).module;
-  request.onScalarIR?.("lowered", initial);
-  request.onScalarIR?.("optimized", optimized);
+  if (
+    options.threaded === true &&
+    (entry.parameters.length !== 1 ||
+      entry.slots[entry.parameters[0] ?? -1] !== "number")
+  )
+    return stageFailure(
+      "entry",
+      "linux-x86_64: a threaded entry must take one Number argument",
+    );
+  const managed =
+    program.serviceImports.length !== 0 || program.surfacePlans.length !== 0;
+  if (!managed) {
+    // Keep the remapped module and release the superseded version before
+    // optimization. The native compiler's managed heap is bounded.
+    const reachable = pruneModuleReferences(
+      program.ir.module,
+      [program.invocation],
+      unboundedWork,
+    );
+    if (reachable !== undefined) {
+      program.invocation =
+        (reachable.functionIds[program.invocation] ?? program.invocation + 1) -
+        1;
+      program.ir.module = reachable.module;
+    }
+  }
+  const reportIR = request.onScalarIR,
+    initial = reportIR === undefined ? undefined : program.ir.module;
+  options.report?.("optimize");
+  if (request.optimization !== "none")
+    optimizeModuleVersion(program.ir, unboundedWork, {
+      closedRecords: !managed,
+      closedCalls: !managed,
+      devirtualizeClosures: true,
+    });
+  const invocation = program.invocation,
+    optimized = program.ir.module;
+  if (reportIR !== undefined && initial !== undefined) {
+    reportIR("lowered", initial);
+    reportIR("optimized", optimized);
+  }
   const sourceNames = program.sourceNames;
   if (sourceNames === undefined) throw "x64 foreign source names invariant";
-  const deferred = x64ForeignDiagnostic(
-    initial,
-    optimized,
-    sourceNames.names,
-    request.foreignLibraries ?? [],
-  );
-  if (deferred !== undefined) return stageFailure("foreign", deferred);
+  const signposts: X64SignpostSite[] = [];
+  if (request.debugSymbols === true || options.signposts !== undefined)
+    for (const fn of optimized.functions) {
+      if (fn === undefined) throw "x64 signpost function invariant";
+      // Devirtualization gives a closure a direct twin with the same source
+      // and the same positional arguments, followed by its environment.
+      const name = fn.name.endsWith("$direct") ? fn.name.slice(0, -7) : fn.name;
+      const source = sourceNames.names.get(name);
+      if (source === undefined) continue;
+      sourceNames.names.set(fn.name, source);
+      const site = options.signposts?.find(
+        (item) => item !== undefined && item.name === source,
+      );
+      if (site !== undefined) signposts.push({ ...site, name: fn.name });
+    }
+  const recordWitnesses: number[] = [],
+    functionWitnesses: number[] = [];
+  for (const plan of program.identityPlans) {
+    if (plan === undefined) throw "service identity plan invariant";
+    const record = plan.record,
+      fn = plan.function;
+    if (record !== undefined) recordWitnesses.push(record);
+    if (fn !== undefined) functionWitnesses.push(fn);
+  }
+  options.report?.("emit");
   const emitted = emitX64(
     optimized,
     host,
     options.generational === true,
     options.inlineAllocation !== false,
+    request.debugSymbols === true,
+    signposts,
+    options.allocationProbes === true,
+    options.forceFarReach === true,
+    managed
+      ? {
+          mode: "service",
+          bindings: {
+            version: 1,
+            signatures: [],
+            functions: program.serviceImports,
+          },
+          records: recordWitnesses,
+          functions: functionWitnesses,
+        }
+      : undefined,
+    options.jitDebugInterface === true,
   );
   if (!emitted.ok) {
     const message = emitted.error.message;
@@ -2672,7 +2743,86 @@ export function compileX64HostedProgram(
           : message),
     );
   }
-  return { ok: true, native: emitted.value, invocation, returnType };
+  const lines: SourceLineRange[] = [];
+  const serviceIdentities: NativeServiceBinding[] = [];
+  const native = emitted.value;
+  const brand = native.functionDescriptor;
+  if (program.surfacePlans.length !== 0 && brand !== undefined)
+    serviceIdentities.push({
+      name: "tint.function.v1",
+      contract: "tint.function.v1",
+      role: "function-brand",
+      parameters: [],
+      returnType: undefined,
+      metadataOffset: brand.offset,
+    });
+  for (const plan of program.identityPlans) {
+    if (plan === undefined) throw "service identity plan invariant";
+    const record = plan.record,
+      fn = plan.function;
+    const metadata =
+      plan.shape.role === "record"
+        ? native.records.find(
+            (item) => item !== undefined && item.record === record,
+          )
+        : native.signatures.find(
+            (item) => item !== undefined && item.functions.includes(fn ?? -1),
+          );
+    if (metadata === undefined) continue;
+    const entry = fn === undefined ? undefined : native.functions[fn];
+    serviceIdentities.push({
+      ...plan.shape,
+      name: plan.contract,
+      contract: plan.contract,
+      metadataOffset: metadata.offset,
+      ...(plan.shape.role !== "function-entry" || entry === undefined
+        ? {}
+        : { entryOffset: entry.offset }),
+    });
+  }
+  const parameterNames = new Map<string, string>();
+  if (request.debugSymbols === true)
+    for (const fn of emitted.value.functions) {
+      if (fn === undefined) throw "x64 debug function invariant";
+      for (const parameter of fn.frame?.parameters ?? []) {
+        if (parameter === undefined) throw "x64 debug parameter invariant";
+        const origin = locateSourceRange(program.ranges, parameter);
+        if (origin === undefined) continue;
+        const name = sourceNames.variables.get(
+          origin.module + ":" + origin.start + ":" + origin.end,
+        );
+        if (name !== undefined)
+          parameterNames.set(
+            String(fn.id) + ":" + String(parameter.frameOffset),
+            name,
+          );
+      }
+    }
+  for (const span of emitted.value.sourceRanges) {
+    if (span === undefined) throw "x64 source range invariant";
+    const origin = locateSourceRange(program.ranges, span);
+    if (origin === undefined) continue;
+    const locate = sourceNames.positions.get(origin.module);
+    const position = locate === undefined ? undefined : locate(origin.start);
+    if (position === undefined) continue;
+    lines.push({
+      offset: span.offset,
+      byteLength: span.byteLength,
+      file: origin.module,
+      line: position.line,
+      column: position.column,
+    });
+  }
+  return {
+    ok: true,
+    native: emitted.value,
+    invocation,
+    returnType,
+    lines,
+    functionNames: sourceNames.names,
+    parameterNames,
+    serviceIdentities,
+  };
 }
 
 function compileTypedProgram(
@@ -3142,6 +3292,7 @@ export {
   type PreparedNativeFunctionEntry,
   type NativeEntryPreparationOptions,
   compileClosedFunction,
+  compileX64ClosedNumberFunction,
   compileClosedDynamicFunction,
   compileManagedGlobalAccessDynamicFunction,
   compileManagedReceiverWriteDynamicFunction,
@@ -3156,6 +3307,7 @@ export {
 } from "./closed-functions.ts";
 export {
   resolveManagedPointers,
+  resolveX64ManagedPointers,
   managedIdentityByteLength,
   sameManagedRecordLayout,
   type ManagedIdentityShape,
@@ -3263,6 +3415,7 @@ export {
   managedSurfaceContract,
   selectManagedIdentityBindings,
   linkManagedSurfaceModule,
+  linkX64ManagedSurfaceModule,
   type ManagedIdentitySelection,
   type ManagedSurfaceDirectoryHost,
   type ManagedSurfaceDirectoryRead,
@@ -3315,6 +3468,7 @@ export {
 } from "@tint/typescript/checker";
 export {
   prepareManagedSurfaceEntry,
+  prepareX64ManagedSurfaceEntry,
   type ManagedSurfaceEntryRequest,
   type ManagedSurfaceEntryPreparation,
   type PreparedManagedSurfaceEntry,

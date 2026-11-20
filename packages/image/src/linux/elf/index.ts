@@ -164,7 +164,6 @@ export type ElfError =
   | "INVALID_LIMIT"
   | "INVALID_SYMBOL"
   | "INVALID_UNWIND"
-  | "UNSUPPORTED_UNWIND"
   | "INVALID_IMPORT"
   | "INVALID_LIBRARY"
   | "INVALID_REFERENCE"
@@ -233,6 +232,13 @@ const ARM64_FRAME_TARGET: CallFrameTarget = {
   framePointer: 29,
   returnAddress: 30,
   dataAlignment: 8,
+};
+const X64_FRAME_TARGET: CallFrameTarget = {
+  stackPointer: 7,
+  framePointer: 6,
+  returnAddress: 16,
+  dataAlignment: 8,
+  stackReturnAddress: true,
 };
 
 interface ProgramHeader {
@@ -489,8 +495,6 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   }
 
   const unwindRanges = request.unwind ?? [];
-  if (arch === "x86_64" && unwindRanges.length > 0)
-    return { ok: false, error: "UNSUPPORTED_UNWIND" };
   let unwindEnd = 0;
   const unwound: UnwindRange[] = [];
   for (const range of unwindRanges) {
@@ -644,7 +648,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       const built = buildEhFrame(
         descriptions,
         ehFrameAddress,
-        ARM64_FRAME_TARGET,
+        arch === "x86_64" ? X64_FRAME_TARGET : ARM64_FRAME_TARGET,
       );
       // A zero-length entry terminates the section for unwinders that walk it.
       ehFrame = new Uint8Array(built.bytes.length + 4);
@@ -1297,6 +1301,13 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   if (symbolCount > 0) {
     const codeSizes = symbolSizes(codeSymbols, instructionEnd),
       dataSizes = symbolSizes(dataSymbols, data.length);
+    // A large image can place padding after a function. x86 hosted CFI
+    // supplies the exact extent even when the next symbol is distant.
+    const codeExtents = new Map<number, number>();
+    if (arch === "x86_64")
+      for (const range of unwound)
+        if (range !== undefined)
+          codeExtents.set(range.offset, range.byteLength);
     for (let i = 0; i < symbolCount; i++) {
       const isCode = i < codeSymbols.length;
       const symbol = isCode
@@ -1313,7 +1324,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
         STB_LOCAL * 16 + (isCode ? STT_FUNC : STT_OBJECT),
         isCode ? textIndex : dataIndex,
         (isCode ? codeAddress : dataAddress) + symbol.offset,
-        size,
+        isCode ? (codeExtents.get(symbol.offset) ?? size) : size,
       );
     }
   }

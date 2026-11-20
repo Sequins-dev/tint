@@ -199,6 +199,14 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/scalar/executable-memory.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/scalar/managed-abi.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/scalar/signature.ts",
       packageId: "codegen",
     },
@@ -208,6 +216,18 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/codegen/src/x86_64/isa.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/x86_64/probes.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/x86_64/scalar/callbacks.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/x86_64/scalar/executable-memory.ts",
       packageId: "codegen",
     },
     {
@@ -240,6 +260,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/codegen/src/x86_64/startup.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/x86_64/unwind.ts",
       packageId: "codegen",
     },
     {
@@ -2848,10 +2872,6 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/tracing/scan.ts",
-      packageId: "native-runtime",
-    },
-    {
-      id: "packages/native-runtime/src/tracing/serial.ts",
       packageId: "native-runtime",
     },
     {

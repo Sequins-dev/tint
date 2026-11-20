@@ -1,14 +1,21 @@
 import {
   nativeArrayDataOffset,
   nativeArrayLengthOffset,
+  nativeContextDomainOffset,
   nativeStackMapRegistryOffset,
   nativeStackMapSaveBlockOffset,
+  nativeStackMapRegistryHeaderBytes,
+  nativeStackMapRegistryEntryBytes,
   nativeTargetOSLinux,
   nativeTargetArchX86_64,
   type PosixHostFacts,
 } from "@tint/abi/host";
+import {
+  nativeFunctionEnvironmentOffset,
+  nativeFunctionEntryOffset,
+} from "@tint/abi/function";
 import type { HostOperation } from "@tint/ir/scalar";
-import type { Condition, Gpr, Memory } from "../isa.ts";
+import type { Condition, Gpr, IntegerWidth, Memory } from "../isa.ts";
 import {
   allocationStateOffset,
   argumentCountOffset,
@@ -65,8 +72,12 @@ interface HostCall {
   readonly policy: PosixHostFacts;
   readonly argument: (index: number) => Memory<64>;
   readonly call: (symbol: string) => void;
+  readonly threadEntry: (
+    operation: "collector-worker-entry" | "hosted-thread-entry",
+  ) => Memory<64>;
   readonly scratch: Memory<64>;
   readonly scratchNext: Memory<64>;
+  readonly scratchResult: Memory<64>;
   readonly context: Memory<64>;
   readonly ownRootHead: boolean;
   readonly constant: (value: number) => Memory<64>;
@@ -127,8 +138,63 @@ export function emitHostCall(request: HostCall): boolean {
     branch(emit, "ne", trap);
     emit({ op: "mov", dst: target, src: r10 });
   }
+  const invalidWord = site + ":word-invalid";
+  const wordDone = site + ":word-done";
+  function checkedWord(index: number, dst: Gpr<64>, safe: boolean): void {
+    exactInteger(emit, argument(index), dst, invalidWord);
+    if (safe) {
+      emit({ op: "cmp", dst, src: r11 });
+      branch(emit, "a", invalidWord);
+    }
+  }
+  function wordWindow(bytes: number, shared: boolean): void {
+    const length = gpr(8);
+    const offset = gpr(9);
+    emit({ op: "mov", dst: r11, src: bits(0xffffffff, 0x1fffff) });
+    checkedWord(0, r10, true);
+    checkedWord(1, length, true);
+    checkedWord(2, offset, true);
+    emit({ op: "test", dst: r10, src: r10 });
+    branch(emit, "e", invalidWord);
+    if (shared) {
+      emit({
+        op: "lea",
+        dst: rax,
+        src: {
+          kind: "mem",
+          width: 64,
+          address: { kind: "base", base: 10, index: 8, disp: 0 },
+        },
+      });
+      emit({ op: "cmp", dst: rax, src: r11 });
+      branch(emit, "a", invalidWord);
+    }
+    emit({ op: "sub", dst: length, src: imm(bytes) });
+    branch(emit, "b", invalidWord);
+    emit({ op: "cmp", dst: offset, src: length });
+    branch(emit, "a", invalidWord);
+    emit({ op: "add", dst: r10, src: offset });
+    emit({ op: "cmp", dst: r10, src: r11 });
+    branch(emit, "a", invalidWord);
+    emit({ op: "test", dst: r10, src: imm(bytes - 1) });
+    branch(emit, "ne", invalidWord);
+  }
+  function finishWord(): boolean {
+    emit({ op: "jmp", target: label(wordDone) });
+    emit({ op: "label", name: invalidWord });
+    emit({ op: "mov", dst: rax, src: imm(-1) });
+    emit({ op: "label", name: wordDone });
+    numberResult(rax);
+    return true;
+  }
 
   switch (operation) {
+    case "context-domain": {
+      emit({ op: "mov", dst: rax, src: context });
+      emit({ op: "mov", dst: rax, src: mem(0, nativeContextDomainOffset) });
+      numberResult(rax);
+      return true;
+    }
     case "root-head": {
       const done = site + ":root-head";
       emit({ op: "mov", dst: rax, src: context });
@@ -153,46 +219,271 @@ export function emitHostCall(request: HostCall): boolean {
       return true;
     }
     case "memory-read-word":
-    case "memory-write-word": {
-      const invalid = site + ":word-invalid";
-      const done = site + ":word-done";
-      const length = gpr(8);
-      const offset = gpr(9);
-      const write = operation === "memory-write-word";
-      emit({ op: "mov", dst: r11, src: bits(0xffffffff, 0x1fffff) });
-      const args = [r10, length, offset, rdi];
-      for (let index = 0; index < (write ? 4 : 3); index++) {
-        const dst = args[index];
-        if (dst === undefined) throw "memory word argument invariant";
-        exactInteger(emit, argument(index), dst, invalid);
-        emit({ op: "cmp", dst, src: r11 });
-        branch(emit, "a", invalid);
-      }
-      emit({ op: "test", dst: r10, src: r10 });
-      branch(emit, "e", invalid);
-      emit({ op: "sub", dst: length, src: imm(8) });
-      branch(emit, "b", invalid);
-      emit({ op: "cmp", dst: offset, src: length });
-      branch(emit, "a", invalid);
-      emit({ op: "add", dst: r10, src: offset });
-      emit({ op: "cmp", dst: r10, src: r11 });
-      branch(emit, "a", invalid);
-      emit({ op: "test", dst: r10, src: imm(7) });
-      branch(emit, "ne", invalid);
-      if (write) {
+    case "memory-write-word":
+    case "memory-load-acquire-word":
+    case "memory-store-release-word":
+    case "memory-compare-exchange-word":
+    case "memory-fetch-add-word": {
+      wordWindow(8, false);
+      const read =
+        operation === "memory-read-word" ||
+        operation === "memory-load-acquire-word";
+      const store =
+        operation === "memory-write-word" ||
+        operation === "memory-store-release-word";
+      if (!read) checkedWord(3, rdi, operation !== "memory-fetch-add-word");
+      if (store) {
+        // On TSO MOV already supplies release ordering. The public shared
+        // leaves use XCHG for seq-cst stores.
         emit({ op: "mov", dst: mem(10, 0), src: rdi });
         emit({ op: "xor", dst: eax, src: eax });
       } else {
-        emit({ op: "mov", dst: rax, src: mem(10, 0) });
+        if (read) emit({ op: "mov", dst: rax, src: mem(10, 0) });
+        else if (operation === "memory-fetch-add-word") {
+          emit({ op: "lock-xadd", dst: mem(10, 0), src: rdi });
+          emit({ op: "mov", dst: rax, src: rdi });
+        } else {
+          checkedWord(4, rdx, true);
+          emit({ op: "mov", dst: rax, src: rdi });
+          emit({ op: "lock-cmpxchg", dst: mem(10, 0), src: rdx });
+        }
         emit({ op: "cmp", dst: rax, src: r11 });
-        branch(emit, "a", invalid);
+        branch(emit, "a", invalidWord);
       }
-      emit({ op: "jmp", target: label(done) });
-      emit({ op: "label", name: invalid });
-      emit({ op: "mov", dst: rax, src: imm(-1) });
-      emit({ op: "label", name: done });
+      return finishWord();
+    }
+    case "shared-read-unsigned":
+    case "shared-write-unsigned":
+    case "shared-compare-exchange-unsigned":
+    case "shared-read-word64":
+    case "shared-write-word64":
+    case "shared-compare-exchange-word64": {
+      const cas =
+        operation === "shared-compare-exchange-unsigned" ||
+        operation === "shared-compare-exchange-word64";
+      const read =
+        operation === "shared-read-unsigned" ||
+        operation === "shared-read-word64";
+      const unsigned =
+        operation === "shared-read-unsigned" ||
+        operation === "shared-write-unsigned" ||
+        operation === "shared-compare-exchange-unsigned";
+      const order = gpr(6);
+      function checkedPayload(
+        index: number,
+        dst: Gpr<64>,
+        limit: Gpr<64>,
+      ): void {
+        exactInteger(emit, argument(index), dst, invalidWord);
+        emit({ op: "cmp", dst, src: limit });
+        branch(emit, "a", invalidWord);
+      }
+      function halves(index: number, dst: Gpr<64>): void {
+        checkedPayload(index, dst, r11);
+        checkedPayload(index + 1, rdi, r11);
+        emit({ op: "shl", dst: rdi, count: 32 });
+        emit({ op: "or", dst, src: rdi });
+      }
+      function access(width: IntegerWidth): void {
+        const cell = { ...mem(10, 0), width };
+        const payload = { ...rdx, width };
+        const observed = { ...rax, width };
+        if (cas) {
+          // The locked instruction supplies SC order even on mismatch.
+          emit({ op: "lock-cmpxchg", dst: cell, src: payload });
+        } else if (read) emit({ op: "mov", dst: observed, src: cell });
+        else {
+          const plain = site + ":shared-plain-" + width;
+          const stored = site + ":shared-stored-" + width;
+          emit({ op: "test", dst: order, src: order });
+          branch(emit, "e", plain);
+          emit({ op: "xchg", dst: cell, src: payload });
+          emit({ op: "jmp", target: label(stored) });
+          emit({ op: "label", name: plain });
+          emit({ op: "mov", dst: cell, src: payload });
+          emit({ op: "label", name: stored });
+          emit({ op: "xor", dst: eax, src: eax });
+        }
+        if (width === 8 || width === 16)
+          emit({ op: "movzx", dst: eax, src: { ...rax, width } });
+      }
+      if (!cas) {
+        exactInteger(
+          emit,
+          argument(unsigned ? (read ? 4 : 5) : 3),
+          order,
+          invalidWord,
+        );
+        emit({ op: "cmp", dst: order, src: imm(1) });
+        branch(emit, "a", invalidWord);
+      }
+      if (unsigned) {
+        const widthArg = gpr(1);
+        exactInteger(emit, argument(3), widthArg, invalidWord);
+        function unsignedAccess(width: IntegerWidth): void {
+          const next = site + ":atomic-width-" + width;
+          emit({ op: "cmp", dst: widthArg, src: imm(width / 8) });
+          branch(emit, "ne", next);
+          wordWindow(width / 8, true);
+          if (!read) {
+            const limit =
+              width === 8 ? 0xff : width === 16 ? 0xffff : 0xffffffff;
+            emit({ op: "mov", dst: word(11), src: imm(limit) });
+            checkedPayload(cas ? 5 : 4, rdx, r11);
+            if (cas) checkedPayload(4, rax, r11);
+          }
+          access(width);
+          emit({ op: "jmp", target: label(wordDone) });
+          emit({ op: "label", name: next });
+        }
+        unsignedAccess(8);
+        unsignedAccess(16);
+        unsignedAccess(32);
+        emit({ op: "jmp", target: label(invalidWord) });
+      } else {
+        wordWindow(8, true);
+        const buffer = gpr(9);
+        if (read || cas) {
+          emit({ op: "mov", dst: buffer, src: argument(cas ? 7 : 4) });
+          emit({ op: "test", dst: buffer, src: buffer });
+          branch(emit, "e", invalidWord);
+          emit({
+            op: "cmp",
+            dst: mem(9, nativeArrayLengthOffset),
+            src: imm(2),
+          });
+          branch(emit, "b", invalidWord);
+          emit({ op: "mov", dst: buffer, src: mem(9, nativeArrayDataOffset) });
+          emit({ op: "test", dst: buffer, src: buffer });
+          branch(emit, "e", invalidWord);
+          emit({ op: "test", dst: buffer, src: imm(3) });
+          branch(emit, "ne", invalidWord);
+          emit({ op: "lea", dst: rax, src: mem(9, 8) });
+          emit({ op: "cmp", dst: rax, src: r11 });
+          branch(emit, "a", invalidWord);
+          emit({ op: "cmp", dst: rax, src: r10 });
+          const disjoint = site + ":scratch-disjoint";
+          branch(emit, "be", disjoint);
+          emit({ op: "lea", dst: rax, src: mem(10, 8) });
+          emit({ op: "cmp", dst: buffer, src: rax });
+          branch(emit, "b", invalidWord);
+          emit({ op: "label", name: disjoint });
+        }
+        if (!read) {
+          emit({ op: "mov", dst: word(11), src: imm(0xffffffff) });
+          halves(cas ? 5 : 4, rdx);
+          if (cas) halves(3, rax);
+        }
+        access(64);
+        if (read || cas) {
+          emit({ op: "mov", dst: { ...mem(9, 0), width: 32 }, src: eax });
+          emit({ op: "shr", dst: rax, count: 32 });
+          emit({ op: "mov", dst: { ...mem(9, 4), width: 32 }, src: eax });
+          emit({ op: "xor", dst: eax, src: eax });
+        }
+      }
+      return finishWord();
+    }
+    case "cpu-pause": {
+      emit({ op: "pause" });
+      return true;
+    }
+    case "permanent-function-address":
+    case "permanent-array-address": {
+      emit({ op: "mov", dst: rax, src: argument(0) });
+      if (operation === "permanent-array-address")
+        emit({ op: "mov", dst: rax, src: mem(0, nativeArrayDataOffset) });
       numberResult(rax);
       return true;
+    }
+    case "collector-worker-entry":
+    case "hosted-thread-entry": {
+      emit({ op: "lea", dst: rax, src: request.threadEntry(operation) });
+      numberResult(rax);
+      return true;
+    }
+    case "thread-start":
+    case "thread-join": {
+      const threads = policy.threads;
+      if (threads === undefined) return false;
+      const start = operation === "thread-start";
+      emit({ op: "mov", dst: r11, src: bits(0xffffffff, 0x1fffff) });
+      checkedWord(0, start ? rdx : rdi, true);
+      emit({ op: "mov", dst: scratch, src: imm(0) });
+      if (start) {
+        checkedWord(1, gpr(1), true);
+        emit({ op: "test", dst: rdx, src: rdx });
+        branch(emit, "e", invalidWord);
+        emit({ op: "lea", dst: rdi, src: scratch });
+        emit({ op: "xor", dst: word(6), src: word(6) });
+        libc(threads.createSymbol);
+      } else {
+        emit({ op: "test", dst: rdi, src: rdi });
+        branch(emit, "e", invalidWord);
+        emit({ op: "lea", dst: rsi, src: scratch });
+        libc(threads.joinSymbol);
+      }
+      emit({ op: "neg", dst: eax });
+      // pthread returns the error number directly as a C int.
+      emit({ op: "movsx", dst: rax, src: eax });
+      branch(emit, "ne", wordDone);
+      emit({ op: "mov", dst: rax, src: scratch });
+      return finishWord();
+    }
+    case "word-park":
+    case "word-wake": {
+      const parking = policy.parking;
+      if (parking?.kind !== "linux-futex") return false;
+      const wait = operation === "word-park";
+      const ready = site + ":futex-ready";
+      const fourth = gpr(1);
+      const timeout = gpr(8);
+      emit({ op: "mov", dst: r11, src: bits(0xffffffff, 0x1fffff) });
+      checkedWord(0, rsi, true);
+      emit({ op: "test", dst: rsi, src: rsi });
+      branch(emit, "e", invalidWord);
+      emit({ op: "test", dst: rsi, src: imm(3) });
+      branch(emit, "ne", invalidWord);
+      checkedWord(1, fourth, true);
+      emit({ op: "xor", dst: word(8), src: word(8) });
+      if (wait) {
+        emit({ op: "mov", dst: word(10), src: imm(0xffffffff) });
+        emit({ op: "cmp", dst: fourth, src: r10 });
+        branch(emit, "a", invalidWord);
+        checkedWord(2, rax, true);
+        emit({ op: "test", dst: rax, src: rax });
+        branch(emit, "e", ready);
+        emit({ op: "xor", dst: edx, src: edx });
+        emit({ op: "mov", dst: r10, src: imm(1000000000) });
+        emit({ op: "div", dst: r10 });
+        emit({ op: "mov", dst: scratch, src: rax });
+        emit({ op: "mov", dst: scratchNext, src: rdx });
+        emit({ op: "lea", dst: timeout, src: scratch });
+      } else {
+        emit({ op: "cmp", dst: fourth, src: imm(1) });
+        branch(emit, "a", invalidWord);
+        emit({ op: "test", dst: fourth, src: fourth });
+        emit({ op: "mov", dst: fourth, src: imm(1) });
+        branch(emit, "e", ready);
+        emit({ op: "mov", dst: fourth, src: imm(2147483647) });
+      }
+      emit({ op: "label", name: ready });
+      emit({ op: "mov", dst: edi, src: imm(parking.futexSyscall) });
+      emit({
+        op: "mov",
+        dst: edx,
+        src: imm(wait ? parking.waitOperation : parking.wakeOperation),
+      });
+      emit({ op: "xor", dst: word(9), src: word(9) });
+      // syscall is variadic. No floating point arguments and no bitset.
+      emit({ op: "xor", dst: eax, src: eax });
+      libc(parking.syscallSymbol);
+      emit({ op: "test", dst: rax, src: rax });
+      branch(emit, "ns", wordDone);
+      libc(policy.errnoSymbol);
+      emit({ op: "mov", dst: eax, src: { ...mem(0, 0), width: 32 } });
+      emit({ op: "neg", dst: rax });
+      return finishWord();
     }
     case "generational-state": {
       const invalid = site + ":invalid-state";
@@ -273,6 +564,146 @@ export function emitHostCall(request: HostCall): boolean {
       emit({ op: "xor", dst: eax, src: eax });
       emit({ op: "jmp", target: label(done) });
       emit({ op: "label", name: invalid });
+      emit({ op: "mov", dst: rax, src: imm(-1) });
+      emit({ op: "label", name: done });
+      numberResult(rax);
+      return true;
+    }
+    case "external-memory-register": {
+      const invalid = site + ":registrar-invalid";
+      const done = site + ":registrar-done";
+      emit({ op: "mov", dst: rdi, src: context });
+      emit({ op: "mov", dst: r10, src: mem(7, externalMemoryOffset) });
+      emit({ op: "test", dst: r10, src: r10 });
+      branch(emit, "e", invalid);
+      emit({
+        op: "mov",
+        dst: rsi,
+        src: mem(10, nativeFunctionEnvironmentOffset),
+      });
+      emit({ op: "mov", dst: r10, src: mem(10, nativeFunctionEntryOffset) });
+      emit({ op: "xor", dst: edx, src: edx });
+      emit({ op: "lea", dst: gpr(1), src: scratch });
+      emit({ op: "mov", dst: scratch, src: imm(0) });
+      emit({ op: "movsd", dst: x0, src: argument(0) });
+      emit({ op: "movsd", dst: x1, src: argument(1) });
+      emit({ op: "call", target: r10 });
+      emit({ op: "cmp", dst: eax, src: imm(1) });
+      branch(emit, "ne", invalid);
+      emit({ op: "cmp", dst: request.scratchResult, src: imm(1) });
+      branch(emit, "ne", invalid);
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: invalid });
+      emit({ op: "mov", dst: rax, src: imm(-1) });
+      emit({ op: "label", name: done });
+      numberResult(rax);
+      return true;
+    }
+    case "stack-maps-register": {
+      const bad = site + ":register-maps-invalid";
+      const done = site + ":register-maps-done";
+      const start = gpr(8),
+        length = gpr(9),
+        table = rdx;
+      const limit = rsi,
+        entry = rdi,
+        count = r10,
+        registry = r11;
+      emit({ op: "mov", dst: limit, src: bits(0, 0x10000) });
+      const numbers = [start, length, table];
+      for (let at = 0; at < numbers.length; at++) {
+        const value = numbers[at];
+        if (value === undefined)
+          throw "stack map registration argument invariant";
+        exactInteger(emit, argument(at), value, bad);
+        emit({ op: "test", dst: value, src: value });
+        branch(emit, "le", bad);
+        emit({ op: "cmp", dst: value, src: limit });
+        branch(emit, "ae", bad);
+      }
+      emit({ op: "test", dst: table, src: imm(7) });
+      branch(emit, "ne", bad);
+      emit({ op: "mov", dst: rax, src: start });
+      emit({ op: "add", dst: rax, src: length });
+      emit({ op: "cmp", dst: rax, src: limit });
+      branch(emit, "ae", bad);
+      emit({ op: "cmp", dst: table, src: start });
+      branch(emit, "b", bad);
+      emit({ op: "cmp", dst: table, src: rax });
+      branch(emit, "ae", bad);
+      emit({ op: "mov", dst: registry, src: context });
+      emit({
+        op: "mov",
+        dst: registry,
+        src: mem(11, nativeStackMapRegistryOffset),
+      });
+      emit({ op: "test", dst: registry, src: registry });
+      branch(emit, "e", bad);
+      emit({ op: "mov", dst: count, src: mem(11, 0) });
+      emit({ op: "cmp", dst: count, src: mem(11, 8) });
+      branch(emit, "ae", bad);
+      emit({
+        op: "imul-imm",
+        dst: entry,
+        src: count,
+        immediate: imm(nativeStackMapRegistryEntryBytes),
+      });
+      emit({ op: "add", dst: entry, src: registry });
+      emit({
+        op: "mov",
+        dst: mem(7, nativeStackMapRegistryHeaderBytes),
+        src: start,
+      });
+      emit({
+        op: "mov",
+        dst: mem(7, nativeStackMapRegistryHeaderBytes + 8),
+        src: length,
+      });
+      emit({
+        op: "mov",
+        dst: mem(7, nativeStackMapRegistryHeaderBytes + 16),
+        src: table,
+      });
+      emit({ op: "add", dst: count, src: imm(1) });
+      emit({ op: "mov", dst: mem(11, 0), src: count });
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: bad });
+      emit({ op: "mov", dst: rax, src: imm(-1) });
+      emit({ op: "label", name: done });
+      numberResult(rax);
+      return true;
+    }
+    case "memory-write-bytes": {
+      const failed = site + ":write-invalid",
+        done = site + ":write-done";
+      const limit = r11;
+      emit({ op: "mov", dst: limit, src: bits(0, 0x10000) });
+      const args = [rdi, rsi, rdx];
+      for (let index = 0; index < args.length; index++) {
+        const target = args[index];
+        if (target === undefined) throw "write-byte argument invariant";
+        exactInteger(emit, argument(index), target, failed);
+        emit({ op: "cmp", dst: target, src: limit });
+        branch(emit, "ae", failed);
+      }
+      emit({ op: "test", dst: rdi, src: rdi });
+      branch(emit, "e", failed);
+      emit({ op: "sub", dst: limit, src: rdi });
+      emit({ op: "cmp", dst: rsi, src: limit });
+      branch(emit, "a", failed);
+      emit({ op: "sub", dst: rsi, src: rdx });
+      branch(emit, "b", failed);
+      emit({ op: "add", dst: rdi, src: rdx });
+      array(3);
+      emit({ op: "cmp", dst: rdx, src: rsi });
+      branch(emit, "a", failed);
+      emit({ op: "mov", dst: rsi, src: r10 });
+      libc("memmove");
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: failed });
       emit({ op: "mov", dst: rax, src: imm(-1) });
       emit({ op: "label", name: done });
       numberResult(rax);

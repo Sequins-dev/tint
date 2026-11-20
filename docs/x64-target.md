@@ -1,7 +1,7 @@
 # Linux x86-64 target design
 
-The first x86-64 target is `linux-x86_64`, a proposed name for the 64-bit
-System V ABI, ELF PIE and glibc combination. Tint emits and links the native
+The first x86-64 target is `linux-x86_64`. It uses the 64-bit System V ABI,
+ELF PIE and glibc. Tint emits and links the native
 image directly. The same scalar IR, runtime contracts and x86-64 backend serve
 strict and live code, including runtime compilation. Build host, output target
 and execution runner are independent. This plan follows the
@@ -136,21 +136,27 @@ random words, and process and target facts. Startup binds
 `__libc_start_main@GLIBC_2.34` through the GOT and declares the version
 in the ELF dynamic table. The mapping and guard granule is 4 KiB.
 
-The x86-64 generational collector runs with one worker. The target's
-`parallelCollection` capability is false, so hosted builds link the
-serial policy without the evacuation pool. A build that requires
-parallel collection gets a target diagnostic until slice 8. Leaf C
-calls run on the single mutator and cannot collect.
+The x86-64 generational collector uses the shared evacuation and
+mark-compact worker pool. Affinity and cgroup limits select the number of
+workers, and small collections use the serial path. Hosted threads have
+independent contexts, stacks and heaps. Threaded entries stop and join their
+collector workers before releasing context storage. Each heap has one
+mutator, and its leaf C calls cannot start a collection.
+
+Aligned acquire loads and release stores use MOV. Shared sequentially
+consistent stores use XCHG, and read-modify-write operations use locked
+CMPXCHG or XADD. The Linux waiter uses private futex operations and
+rechecks its condition after every kernel return.
 
 **Slice 7 and F1 are complete for hosted x86-64.** The managed emitter
 supports strings, typed arrays and reference vectors, descriptor-backed
 records, escaping function environments, and tagged completions. The
 generational collector moves roots across managed call frames and uses
-the shared transition-aware walker. [F1](native-ffi.md#linux-x86-64)
-covers static and dynamic SysV leaf calls, including aggregates,
-variadics, optional libraries, and FFI views into managed or external
-storage. F2 diagnostics cover callback signatures and callback runtime
-operations. Threads and live code publication have their own slices.
+the shared transition-aware walker. [F1 and F2](native-ffi.md#linux-x86-64)
+cover static and dynamic SysV calls, including aggregates, variadics,
+optional libraries, FFI views, and scoped, registered and dynamic
+callbacks. Callback thunks preserve the transition pointer at frame
+offset +48 and use stack map sentinel 1 with the shared walker.
 
 Run the hosted smoke from the project root after `pnpm build`.
 
@@ -185,6 +191,23 @@ math. Cross-build a native fixture for the portable byte writer and
 execute representative instruction groups. Keep assembler and disassembler
 tools as test oracles.
 
+## Far images and services
+
+The default x86-64 code model uses rel32. An out-of-range image reference
+retries with the far model. `forceFarReach` exercises that model at ordinary
+image sizes. Far code computes addresses from RIP and signed 64-bit deltas,
+preserves condition flags, and saves its scratch pair at SysV entry
+boundaries. The ELF remains position independent. The writer selects wide
+unwind pointers when the frame table crosses the signed 32-bit range.
+
+Managed service units use the same semantic contract and witness validation
+as arm64. They carry x86-64 relocation windows and place their code into the
+final image through the hosted code plan. Their collector maps are rebased
+with their code. The service fixture collects while an independent unit is
+on the stack and rejects a changed address window. To build a sparse ELF
+that places startup, the GOT and writable data more than 2 GiB away from
+the managed entry, run `node tools/verify-x64-large-image.ts OUTPUT`.
+
 ## Live execution and observability
 
 Reuse Linux memfd RX/RW aliases and the RW→RX fallback, including debugger
@@ -200,6 +223,22 @@ available according to the existing lifetime protocol. Cross-check W^X and
 USDT on the guest kernel, including exec-memfd policy, since user-mode
 emulation translates kernel interfaces. See [native code loading](native-code-loading.md#linux)
 and [Linux diagnostics](runtime-diagnostics.md#linux-usdt-probes).
+
+Published x86-64 modules place literals, managed identity slots and
+safepoint tables in their retained arena. The linker checks the owning
+context and descriptor bytes before filling any slot. Publication
+registers the module's stack map before returning an entry address.
+Executable writes and calls serialize the current instruction stream
+with CPUID. Linux arenas keep distinct RX and RW views, or switch the
+single view from RW back to RX when executable memory files are denied.
+The writer repairs private RX pages dirtied by a debugger's breakpoint.
+The GDB registration object carries the x86-64 ELF machine type.
+
+Hosted ELF images carry indexed `.eh_frame` data for managed frames,
+worker entries, the stack switch in `main`, and the outermost `_start`.
+Debug builds add DWARF source lines and stable scalar parameter homes.
+Signposted builds expose collector phases, worker intervals and
+allocation slow paths through USDT.
 
 ## Bootstrap and validation
 
@@ -218,6 +257,14 @@ and [Linux diagnostics](runtime-diagnostics.md#linux-usdt-probes).
    additional diagnostic. Run the resulting compiler on fixtures and
    verify debug info when built with debug. Keep both arm64 targets
    working throughout with regression and frozen native self-build gates.
+
+The native Linux arm64 cross-build produced the same x86-64 compiler as
+the Node bootstrap from the 796-file frozen snapshot. That compiler ran
+under QEMU user mode and in the Debian x86-64 VM. In Debian x86-64
+userspace under Rosetta, stage 1 built stage 2 and stage 2 built stage 3.
+All three compiler images are byte-identical. The full QEMU TCG
+self-build reached optimization and hit its one-hour watchdog.
+[Fixed-point manifest and logs](results/x64-native-fixed-point-v1.json).
 
 | Tier             | Runner and evidence                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -239,6 +286,8 @@ its build manifest without executing the fixture.
 
 Linux x86-64 requires an explicit runner.
 
+- `x64-local` launches the image on a Linux x86-64 host and records each
+  inferior's exit, signal, or timeout.
 - `x64-qemu-dev` runs QEMU user mode on the arm64 Linux `dev` machine.
   From this checkout on macOS, install the pinned Debian glibc 2.36 sysroot
   and QEMU with
@@ -256,9 +305,9 @@ Linux x86-64 requires an explicit runner.
   already trust the VM host key. Set `TINT_X64_SSH_HOST`,
   `TINT_X64_SSH_PORT`, or `TINT_X64_SSH_KEY` to override these settings.
 
-Run the two raw ELF and glibc acceptance probes on either executor with
+Run the raw ELF and glibc acceptance probes with
 `TINT_X64_RUNNER_TEST=x64-qemu-dev node --test tools/native-target-runner.test.ts`
-or the same command with `x64-ssh`. The batch includes a trap, a timeout
+or select `x64-ssh` or `x64-local`. The batch includes a trap, a timeout
 and a subsequent successful run to check result recovery.
 
 Keep hosted fixture execution records with `TINT_KEEP_NATIVE=1`.
@@ -269,6 +318,33 @@ the executor. Stage the source snapshot separately when using SSH and
 retrieve any compiled output from the guest path supplied to the compiler.
 The execution records identify the executor, input image and build
 manifest, and record exit status, signal, timeout or execution-unavailable.
+
+### Conformance and release status
+
+The initial matched Test262 selection passed all 22 variants on Darwin
+arm64, Linux x86-64 under user-mode QEMU, and the Debian x86-64 VM. It
+covers calls, abrupt completion, numeric behavior, arrays, parser rejection,
+direct eval, `$262.evalScript`, the `Function` constructor, and shared
+atomics and agent waiting. The complete journals record the pinned
+revision, exact source and harness hashes, and frozen Node toolchain.
+[Conformance report](results/x64-test262-v1.json).
+
+Run the selection with `tools/test262-native-run.ts` using
+`TINT_NATIVE_TARGET=linux-x86_64`, one of the x86-64 runners above, and
+`TINT_TEST262_VARIANTS=docs/results/x64-test262-selection-v1.json`. Use
+root selection `.` and program linking. For a matched Darwin run, set
+`TINT_TEST262_NATIVE_SERVICES=monolithic` on both targets. The x86-64
+adapter builds with the generational collector and stages one ELF per
+batch. It records each case separately.
+
+The glibc 2.34 loader check on the x86-64 guest exercised executable
+publication, a moving collector with live code, and selected Test262 cases
+for shared atomics, agent waiting, `Function` and direct eval.
+[Loader results](results/x64-glibc-2.34-v1.json).
+
+The supported status still requires the baseline and current physical
+x86-64 hardware runs, including concurrency, collection, live publishing
+and the compiler and JavaScript timing comparisons.
 
 ## Performance stance
 
@@ -323,15 +399,15 @@ updates with their owning slices.
 | 5. Freestanding scalar emission                    | `codegen/src/x86_64/scalar/`, compiler backend dispatch and native fixture tests. Integer/FP, branches, frames, basic direct managed calls and near data/import fixup model.                                                            | 1,500–2,800 | 1–4          | Cross-build IR through Tint into an ELF. Run call/branch, register pressure, mixed overflow args, NaN and signed-zero fixtures. Stable unsupported-op diagnostics.                                                         |
 | 6. Hosted entry and libc                           | `codegen/src/x86_64/startup.ts`, platform Linux host policy, native host identity/process intrinsics, `compiler/src/{build,image-writer}.ts` and bootstrap.                                                                             | 900–1,700   | 5            | Cross-build hosted CLI smoke, argv/env, file/time/entropy and runtime init. Verify loader finalizer/stack args, native host identity, fixed glibc floor, guard checks and AArch64 output parity for unchanged programs.    |
 | 7. Managed runtime and roots (complete)            | x86 scalar helpers, `abi/src/host.ts`, tracing scanner, managed compiler/linker contracts and GC fixtures. Land numeric/string/array, record, closure and completion families in smaller merges with exact-PC maps and barrier support. | 4,000–8,000 | 6            | Root relocation through nested calls, tagged throws, GC under allocation pressure, safepoint faults and missing-map rejection. Pass managed call and typed-contract fixtures before enabling corresponding language paths. |
-| 8. Parallel runtime                                | x86 atomics/thread leaves, Linux host policy, waiter, contention and collector fixtures.                                                                                                                                                | 700–1,500   | 7            | Exact-width access, CAS failure and RMW tests, concurrent collection and futex park/wake under guest kernel. Verify SC mapping and repeat on hardware for release.                                                         |
-| 9. Far image and service link                      | x86 fixups, emission plans, service-unit linker and large-image verifier.                                                                                                                                                               | 600–1,200   | 5            | Forced-far native execution at normal size, synthetic rel32 bounds and far GOT/data/call recipes, then a real large ELF spanning the signed limit. Preserve PIE and streaming memory behavior.                             |
-| 10. Unwind, debug and diagnostics                  | x86 frame/debug/USDT emission, `abi/src/unwind.ts`, DWARF/EH frame and ELF policies. Land CFI and USDT in separately testable changes.                                                                                                  | 700–1,400   | 6            | Independent CFI and DWARF readers, GDB chain across startup and managed code, real guest USDT hits with correct operands, large CFI offsets alongside slice 9.                                                             |
-| 11. Live publishing                                | x86 code-memory leaves and adapters, compiler managed JIT/linking, runtime registry, engine tests and ELF JIT registration.                                                                                                             | 1,200–2,400 | 7, 9, 10     | In-image compilation and generated-code execution, code-range map registration/GC, W^X policies and ptrace breakpoint copying on guest kernel, same-target entries and cross-context rejection.                            |
-| 12. Native fixed point                             | Bootstrap catalog and closure, x86 lowering gaps for the compiler, frozen self-build tools and reports.                                                                                                                                 | 800–2,500   | 7–9          | Native arm64 cross-build runs on x86-64, and x86-64 makes identical stage 2 and stage 3 images. Publish manifest and hashes. Debug variant uses slice 10.                                                                  |
-| 13. Test262 and support gate                       | `tools/test262-native-run.ts` and runner adapters, target docs and immutable reports.                                                                                                                                                   | 450–900     | 8, 10–12     | Pinned equivalent AOT and live selections with complete terminal records, glibc floor and kernel tests, verified arm64 regressions and baseline x86 hardware validation before supported status.                           |
+| 8. Parallel runtime (complete)                     | x86 atomics/thread leaves, Linux host policy, waiter, contention and collector fixtures.                                                                                                                                                | —           | 7            | Exact-width access, CAS failure and RMW tests, concurrent collection and futex park/wake under guest kernel. Repeat on hardware for release.                                                                               |
+| 9. Far image and service link (complete)           | x86 fixups, emission plans, service-unit linker and large-image verifier.                                                                                                                                                               | —           | 5            | Forced-far native execution at normal size, rel32 bounds, a real ELF spanning the signed limit, and collection through an independently compiled service.                                                                  |
+| 10. Unwind, debug and diagnostics (complete)       | x86 frame/debug/USDT emission, `abi/src/unwind.ts`, DWARF/EH frame and ELF policies.                                                                                                                                                    | —           | 6            | Independent CFI and DWARF readers, GDB chain across startup and managed code, real guest USDT hits with correct operands. Large CFI offsets are covered by slice 9.                                                        |
+| 11. Live publishing (complete)                     | x86 code-memory leaves and adapters, compiler managed JIT/linking, runtime registry, engine tests and ELF JIT registration.                                                                                                             | —           | 7, 9, 10     | In-image compilation, collection across published entries, cross-context rejection, kernel W^X fallback, and GDB line lookup and private-page repair.                                                                      |
+| 12. Native fixed point (verified under Rosetta)    | Bootstrap catalog and closure, x86 lowering gaps for the compiler, frozen self-build tools and reports.                                                                                                                                 | —           | 7–9          | Native arm64 cross-build runs on x86-64, and x86-64 makes identical stage 2 and stage 3 images. Publish manifest and hashes. Debug variant uses slice 10.                                                                  |
+| 13. Test262 and support gate (hardware pending)    | `tools/test262-native-run.ts` and runner adapters, target docs and immutable reports.                                                                                                                                                   | —           | 8, 10–12     | Pinned equivalent AOT and live selections with complete terminal records, glibc floor and kernel tests, verified arm64 regressions and baseline x86 hardware validation before supported status.                           |
 | F1 part 1. SysV C leaf calls and layout (complete) | **FFI/convergence**. SysV classification and layouts, static leaf imports, raw aggregate stubs, leaf C memory operations and the C call-frame trampoline.                                                                               | —           | 2, 5, 6      | C oracle fixtures for scalars, variadics, mixed aggregates, sret, layout/padding and by-value copies. Verify static imports and the trusted trampoline under QEMU. Diagnose deferred FFI paths before emission.            |
 | F1 part 2. Managed FFI wrappers (complete)         | Record-by-value argument and result wrappers, public `foreignFunction`, runtime library loading, string conversion, and managed FFI views and storage.                                                                                  | —           | F1 part 1, 7 | Public static and dynamic bindings pass the C oracle.                                                                                                                                                                      |
-| F2. C callbacks and thunks                         | **FFI/convergence**. Same ownership plus x86 thunk rows, managed transitions and scanner integration.                                                                                                                                   | 900–1,800   | F1, 7, 10    | ABI preservation across may-callback, moving GC across foreign frames, failure/throw policy, nesting and stale-entry rejection.                                                                                            |
+| F2. C callbacks and thunks (complete)              | SysV scoped, registered and dynamic callbacks, x86 thunk unwind rows, managed transitions and scanner integration.                                                                                                                      | —           | F1, 7, 10    | ABI preservation across may-callback, moving GC across foreign frames, failure/throw policy, nesting and stale-entry rejection.                                                                                            |
 
 Slices 1–4 can start in parallel on distinct files, with catalog and
 bootstrap edits coordinated at merge. After slice 5, the far linker can

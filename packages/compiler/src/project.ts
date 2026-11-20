@@ -16,10 +16,7 @@ import type {
   NativeForeignBinding,
   ForeignLibrary,
 } from "./native/index.ts";
-import {
-  dynamicObjectRuntimeModule,
-  serialCollectorModule,
-} from "./native/runtime-contracts.ts";
+import { dynamicObjectRuntimeModule } from "./native/runtime-contracts.ts";
 import {
   foreignDeclaration,
   foreignRuntimeModules,
@@ -100,7 +97,6 @@ export function projectRoots(): string[] {
     "packages/compiler/src/cli.ts",
     "packages/native-runtime/src/index.ts",
     "packages/native-runtime/src/allocators/region/index.ts",
-    serialCollectorModule,
     dynamicObjectRuntimeModule,
   ];
   for (const source of runtimeSources()) {

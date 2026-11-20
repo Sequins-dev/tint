@@ -13,6 +13,8 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { functionStorageFromEnvironment } from "./emission-storage.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
+import { darwinAArch64Target } from "@tint/platform/target";
 import {
   nativeSyntaxVerdictSource,
   nativeSyntaxDependencies,
@@ -137,8 +139,13 @@ export function nativeAdmissionTimeout(requested: string | undefined): number {
  * The copying collector reserves half the heap as evacuation space; large
  * generated Unicode inputs cannot fit in the former 4 MiB managed window. */
 export const nativeDebuggerEntitlement = "com.apple.security.get-task-allow";
+// Preserve the library's default Mach-O build profile on arm64 hosts.
+export const nativeTestTarget =
+  process.env.TINT_NATIVE_TARGET === undefined && process.arch === "arm64"
+    ? darwinAArch64Target
+    : nativeFixtureTarget();
 export const nativeTestResources = Object.freeze({
-  collector: "copying",
+  collector: nativeTestTarget.arch === "x86_64" ? "generational" : "copying",
   // The complete module/agent host plus the decorator runtime surface exceeds
   // the project compiler's 16K specialization budget even for a small batch.
   maxSpecializations: 32768,
@@ -1152,7 +1159,7 @@ type NativeScript=(global:GlobalEnvironment<ScriptPropertyKey,unknown>,script:Sc
 // ${agentProvider === undefined ? "Process" : "Agent"}-owned bounded arena: never recycle code while a returned function can
 // refer to it. General code ownership/GC is a separate loader integration step.
 const executableStorage=createEngineCodeStorage({
- domain:():number=>currentContextDomain(),
+ ${nativeTestTarget.arch === "x86_64" ? 'architecture:"x86_64",\n ' : ""}domain:():number=>currentContextDomain(),
  map:(bytes:number):number=>mapExecutableMemory(bytes),
  register:(address:number,bytes:number):number=>registerExternalMemory(address,bytes),
  stackMaps:(code:number,bytes:number,table:number):number=>registerStackMaps(code,bytes,table),
@@ -2967,6 +2974,8 @@ function createNativeImageRequest(
   let surface: ReturnType<typeof createScriptRuntimeRequest> | undefined;
   let runtimeLoader: SourceModuleLoader | undefined;
   const storage = functionStorageFromEnvironment();
+  const target = nativeTestTarget;
+  const x64 = target.arch === "x86_64";
   let emissionForms: Parameters<
     typeof buildMacOSProgram
   >[0]["emissionFormHints"];
@@ -3030,16 +3039,21 @@ function createNativeImageRequest(
     const request = projectBuildRequest([], () => {}, [], moduleLoader);
     return {
       ...request,
+      target,
       ...(storage === undefined ? {} : { storage }),
       // Batches share the whole runtime: start from the branch forms the
       // previous batch settled on instead of re-emitting the image until
       // its out-of-reach sites are found again.
-      ...(emissionForms === undefined
+      ...(x64
         ? {}
-        : { emissionFormHints: emissionForms }),
-      onEmissionForms: (forms) => {
-        emissionForms = forms;
-      },
+        : {
+            ...(emissionForms === undefined
+              ? {}
+              : { emissionFormHints: emissionForms }),
+            onEmissionForms: (forms: typeof emissionForms) => {
+              emissionForms = forms;
+            },
+          }),
       entry: "test262-host",
       start: "run",
       identifier: "tint-test262-native",
@@ -3048,7 +3062,9 @@ function createNativeImageRequest(
       debugSymbols: process.env.TINT_DEBUG_SYMBOLS === "1",
       threaded: agentProvider !== undefined,
       allowJit: true,
-      runtimeEntry: "initializeCopyingRuntime",
+      runtimeEntry: x64
+        ? ("initializeGenerationalRuntime" as const)
+        : ("initializeCopyingRuntime" as const),
       denseReferenceLists: false,
       maxSpecializations: nativeTestResources.maxSpecializations,
       managedBytes: nativeTestResources.managedBytes,

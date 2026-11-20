@@ -17,6 +17,7 @@ import {
   writeMemoryWord,
   moveMemory,
   mapMemory,
+  unmapMemory,
   compareExchangeMemoryWord,
   fetchAddMemoryWord,
   loadAcquireMemoryWord,
@@ -27,6 +28,7 @@ import {
   compareExchangeMemoryUnsigned,
   spinPause,
   startNativeThread,
+  joinNativeThread,
   parkNativeWord,
   wakeNativeWord,
 } from "../intrinsics/memory.ts";
@@ -926,6 +928,8 @@ function waitEpoch(record: number, seen: number): number {
 export interface ParallelEvacuator extends CompactHelpers {
   /** Worker count including the caller (worker 0). */
   readonly workers: number;
+  /** Stop and join all workers before releasing permanent state. */
+  readonly dispose: () => void;
   /** Evacuates every object of [fromBase, fromBase + fromLength) reachable
    * from the root chain and, when `remembered` is true, the remembered set
    * (`rememberedCount` offsets, or -1 for dirty cards below `oldTop`) into
@@ -967,13 +971,11 @@ export function createParallelEvacuator(
     return undefined;
   const record = mapMemory(recordBytes),
     startsData = permanentArrayAddress(starts);
-  if (
-    !Number.isSafeInteger(record) ||
-    record <= 0 ||
-    !Number.isSafeInteger(startsData) ||
-    startsData <= 0
-  )
+  if (!Number.isSafeInteger(record) || record <= 0) return undefined;
+  if (!Number.isSafeInteger(startsData) || startsData <= 0) {
+    unmapMemory(record, recordBytes);
     return undefined;
+  }
   let states: Worker | undefined = undefined;
   for (let index = workers - 1; index >= 0; index--)
     states = {
@@ -1007,6 +1009,17 @@ export function createParallelEvacuator(
     };
   const head = states;
   if (head === undefined) return undefined;
+  function releaseWorkspaces(): void {
+    for (let state: Worker | undefined = head; state !== undefined;) {
+      const current: Worker = state;
+      if (current.markStack > 0)
+        unmapMemory(current.markStack, markStackCapacity * 8);
+      if (current.weakList > 0)
+        unmapMemory(current.weakList, weakListCapacity * 8);
+      state = current.next;
+    }
+    unmapMemory(record, recordBytes);
+  }
   for (let state: Worker | undefined = head; state !== undefined;) {
     const current: Worker = state;
     if (
@@ -1014,8 +1027,10 @@ export function createParallelEvacuator(
       current.markStack <= 0 ||
       !Number.isSafeInteger(current.weakList) ||
       current.weakList <= 0
-    )
+    ) {
+      releaseWorkspaces();
       return undefined;
+    }
     state = current.next;
   }
   // Created here, so permanent: the caller (worker 0) scans the stack.
@@ -1102,15 +1117,42 @@ export function createParallelEvacuator(
   write(record + recordWorker, permanentFunctionAddress(worker));
   write(record + recordNextIndex, 1);
   write(record + recordWorkers, workers);
+  const handles = new Float64Array(workers - 1);
+  let count = 0;
   let started = false;
+  let epoch = 0;
+  function stopWorkers(): void {
+    if (count === 0) return;
+    // Command zero ends waitEpoch's consumer loop. Publish it before waking
+    // even workers that have been created but have not started waiting yet.
+    write(record + recordCommand, 0);
+    epoch = epoch + 1;
+    storeReleaseMemoryWord(record + recordEpoch, 8, 0, epoch);
+    wakeNativeWord(record + recordEpoch, 1);
+    for (let i = 0; i < count; i++) {
+      const handle = handles[i];
+      if (handle === undefined || joinNativeThread(handle) !== 0)
+        throw "PARALLEL_COLLECTOR_JOIN_FAILED";
+    }
+    count = 0;
+    started = false;
+  }
   function start(): boolean {
     const entry = collectorWorkerEntry();
-    for (let index = 1; index < workers; index++)
-      if (startNativeThread(entry, record) <= 0) return false;
+    for (let index = 1; index < workers; index++) {
+      const handle = startNativeThread(entry, record);
+      if (handle <= 0) {
+        stopWorkers();
+        epoch = 0;
+        write(record + recordEpoch, 0);
+        write(record + recordNextIndex, 1);
+        return false;
+      }
+      handles[count++] = handle;
+    }
     started = true;
     return true;
   }
-  let epoch = 0;
   /** Runs one command on the pool, the caller taking part as worker 0
    * (after walking the roots for a mark), and waits for every worker.
    * `cursor` seeds the shared cursor (an evacuation's destination top). A
@@ -1250,6 +1292,10 @@ export function createParallelEvacuator(
   }
   return {
     workers,
+    dispose() {
+      stopWorkers();
+      releaseWorkspaces();
+    },
     mark(region, rootHead) {
       if (!started && !start()) return -1;
       const liveData = permanentArrayAddress(region.live);

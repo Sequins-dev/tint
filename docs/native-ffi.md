@@ -323,8 +323,16 @@ The C oracle in `tools/native-x64-ffi.test.ts` checks generated static
 bindings and the public dynamic API under QEMU with the pinned x86
 sysroot. Its fixtures cover scalar and variadic calls, mixed aggregates,
 register exhaustion, stack arguments, aligned memory results, layout
-and padding, and borrowed buffers moved between calls. C callback
-signatures and callback runtime operations report the F2 diagnostic.
+and padding, and borrowed buffers moved between calls.
+
+F2 supports scoped, registered and dynamically bound callbacks. A
+may-callback call publishes its transition record at the managed return
+PC. The thunk checks thread ownership and transition state before
+reentering managed code. Moving collection through that thunk uses the
+same walker as arm64, with the transition pointer at frame offset +48.
+Thunk unwind rows also describe the saved C frame for debuggers. The
+oracle exercises nested calls, collection and throws in a callback,
+stack-passed arguments and stale or wrong-thread callback rejection.
 
 ## The `c-call` instruction
 

@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "architecture": "x86_64",
+  "executor": "Debian 13 QEMU TCG VM",
+  "kernel": "6.12.117+deb13-cloud-amd64",
+  "memoryPageBytes": 4096,
+  "guestGlibc": "2.41-12+deb13u4",
+  "loader": {
+    "version": "2.34-0ubuntu3",
+    "package": "libc6_2.34-0ubuntu3_amd64.deb",
+    "packageSha256": "27e68efbb5d27b777a466bfa60f5adbe403131a55ddf74fc7244bcee1755b1b5",
+    "metadata": "https://old-releases.ubuntu.com/ubuntu/dists/impish/main/binary-amd64/"
+  },
+  "fixtures": {
+    "code-map-x64": {
+      "imageSha256": "de7bbc43684a4ed64f57e77a69498c18a2cf20450dc7d108c7d0fb7530bd7b11",
+      "exitStatus": 42
+    },
+    "managed-runtime-link": {
+      "imageSha256": "c0757f3e346165144b63ea56e42361ec58ef76ef913c75787bf6ad5bcbdc999b",
+      "exitStatus": 42
+    },
+    "jit-debug-stack16": {
+      "imageSha256": "b5c5fb07c0f8c7292e653b3ac7477938c91c66f85174ace1c06b8daed0349168",
+      "exitStatus": 42
+    }
+  },
+  "test262": {
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "imageSha256": "680e8031030a46fc0d3ccf75a1293b1fcd3d275b7e1fac9641698eb8f8effdf2",
+    "selections": [
+      {
+        "selector": 0,
+        "path": "built-ins/Atomics/add/expected-return-value.js",
+        "variant": "sloppy",
+        "exitStatus": 42
+      },
+      {
+        "selector": 2,
+        "path": "built-ins/Atomics/wait/negative-timeout-agent.js",
+        "variant": "sloppy",
+        "exitStatus": 42
+      },
+      {
+        "selector": 4,
+        "path": "built-ins/Function/S15.3.2.1_A3_T4.js",
+        "variant": "sloppy",
+        "exitStatus": 42
+      },
+      {
+        "selector": 16,
+        "path": "language/expressions/object/11.1.5-0-1.js",
+        "variant": "sloppy",
+        "exitStatus": 42
+      }
+    ]
+  },
+  "logs": [
+    {
+      "path": "x64-glibc-2.34-v1-guest-package.log.gz",
+      "sha256": "eb131e5d8389d4d9ef7b7b45230d62eb3219707fc57efe71816028067dc31df4"
+    },
+    {
+      "path": "x64-glibc-2.34-v1-guest-execution.log.gz",
+      "sha256": "348c35bd5d84af425419e86796af5d2619b7571729985920258c814cd4878584"
+    },
+    {
+      "path": "x64-glibc-2.34-v1-guest-test262.log.gz",
+      "sha256": "161ee72f5e71e4573a22a10e3a756a1ee6a651836d17b6fee7b29ea4412c87c9"
+    }
+  ]
+}

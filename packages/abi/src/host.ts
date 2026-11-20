@@ -5,6 +5,9 @@ import type { CTarget } from "./c/types.ts";
  * Realms within one context share this token; it is not an agent identifier. */
 export const nativeContextDomainOffset = 88;
 export const nativeHostedContextByteLength = 96;
+/** The hosted entry sends this to its allocator only after the mutator
+ * has returned, before reclaiming the collector's permanent storage. */
+export const nativeAllocatorShutdownRequest = -1;
 /** Lowest stack pointer a managed frame may establish: the stack's low guard
  * page plus headroom. A stack overflow saves it in the engine-throw word and
  * sets it to 0 (emergency mode: no check, the guard page is the last resort)

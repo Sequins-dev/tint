@@ -7,11 +7,7 @@ import {
   type CLibraryManifestEntry,
   type CTarget,
 } from "@tint/abi/c";
-import {
-  indirectCallClass,
-  indirectCallTargets,
-  type ModuleIR,
-} from "@tint/ir/scalar";
+import {} from "@tint/ir/scalar";
 import type { ImportMapping } from "@tint/source/resolver";
 import { createSourceTextView } from "@tint/source/text";
 import {
@@ -97,10 +93,7 @@ export const foreignRuntimeModules = {
  * its primitives and the weak-storage and collection intrinsics its
  * collector-registered storage (`external`) uses. Weak cells work under
  * every collector, and only a created one makes collections trace them. */
-export function foreignRuntimeBindings(
-  loaded: ReadonlySet<string>,
-  target?: CTarget,
-): {
+export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
   readonly runtimes: readonly { module: string; namespace: string }[];
   readonly memoryBindings: readonly NativeForeignMemoryBinding[];
   readonly weakBindings: readonly {
@@ -147,24 +140,13 @@ export function foreignRuntimeBindings(
       operation: "callback-key",
     },
   ];
-  // Callback capabilities are reserved for F2, including in a program
-  // whose leaf uses load the shared runtime module.
-  const memoryBindings =
-    target?.name === "linux-x86_64"
-      ? bindings.filter(
-          (binding) =>
-            binding !== undefined &&
-            binding.operation !== "callback-key" &&
-            binding.operation !== "call-callbacks",
-        )
-      : bindings;
   return {
     runtimes: [
       { module: modules.primitives, namespace: "ffi" },
       { module: modules.weak, namespace: "ffi-weak" },
       { module: modules.memory, namespace: "ffi-memory" },
     ],
-    memoryBindings,
+    memoryBindings: bindings,
     weakBindings: [
       { module: modules.weak, name: "createWeakSlot", operation: "new" },
       { module: modules.weak, name: "weakSlotKey", operation: "key" },
@@ -256,111 +238,6 @@ export function selectX64ForeignRuntime(
   return { modules };
 }
 
-const x64Callbacks: string =
-  "C callbacks are not supported on linux-x86_64 (needs F2)";
-const x64DynamicFFI: string = "packages/native-runtime/src/ffi/dynamic.ts:";
-
-/** Reject C callback entry paths by linked identity before emission.
- * A leaf program can still load the shared module that declares them. */
-export function x64ForeignDiagnostic(
-  reachable: ModuleIR,
-  optimized: ModuleIR,
-  names: ReadonlyMap<string, string>,
-  libraries: readonly ForeignLibrary[],
-): string | undefined {
-  const used = new Set<string>();
-  const calls = indirectCallTargets(reachable, true, Infinity);
-  const runtime = foreignRuntimeModules.index + ":";
-  const unsafe = foreignRuntimeModules.unsafe + ":";
-  function recordCallee(target: number): void {
-    const callee = reachable.functions[target];
-    if (callee === undefined) throw "reachable FFI call invariant";
-    const sourceName = names.get(callee.name);
-    if (sourceName !== undefined) used.add(sourceName);
-  }
-  for (const fn of reachable.functions) {
-    if (fn === undefined) throw "reachable FFI function invariant";
-    const name = names.get(fn.name) ?? "";
-    // Module instances retain support functions even if the application
-    // uses only one export. Report the boundary the caller actually uses.
-    if (
-      name.startsWith(x64DynamicFFI) ||
-      name.startsWith(foreignRuntimeModules.sysv + ":") ||
-      name.startsWith(runtime) ||
-      name.startsWith(unsafe)
-    )
-      continue;
-    for (const block of fn.blocks) {
-      if (block === undefined) throw "reachable FFI block invariant";
-      for (const op of block.instructions) {
-        if (op === undefined) throw "reachable FFI instruction invariant";
-        if (op.kind === "call") recordCallee(op.target);
-        if (op.kind !== "call-indirect" || calls === undefined) continue;
-        // The witness identifies a calling convention, not the callee.
-        const targets =
-          calls.classes[indirectCallClass(calls, fn.id, block.id, op)];
-        if (targets === undefined) continue;
-        for (const target of targets) {
-          if (target === undefined) throw "indirect FFI call invariant";
-          recordCallee(target);
-        }
-      }
-    }
-  }
-  if (
-    used.has(x64DynamicFFI + "setCallback") ||
-    used.has(runtime + "registerCallback") ||
-    used.has(runtime + "noteCallback") ||
-    used.has(runtime + "releaseCallback") ||
-    used.has(runtime + "callbackState") ||
-    used.has(runtime + "callbackDispatcher") ||
-    used.has(runtime + "rethrowCallbackFailure")
-  )
-    return x64Callbacks;
-
-  // A wrapper can also survive as a first-class value without a call site.
-  const retained = new Set<string>();
-  for (const fn of optimized.functions) {
-    if (fn === undefined) throw "reachable FFI function invariant";
-    const name = names.get(fn.name);
-    if (name !== undefined) retained.add(name);
-  }
-  let retainedWrapper: string | undefined;
-  for (const library of libraries) {
-    if (library === undefined) throw "foreign library invariant";
-    const prefix = library.id + ":";
-    for (const fn of library.declaration.functions) {
-      if (fn === undefined) throw "foreign declaration invariant";
-      const name = prefix + fn.name;
-      const called = used.has(name);
-      if (!called && !retained.has(name)) continue;
-      if (fn.signature.callClass !== "may-callback") continue;
-      if (called) return x64Callbacks;
-      retainedWrapper = x64Callbacks;
-    }
-  }
-  if (retainedWrapper !== undefined) return retainedWrapper;
-
-  for (const fn of optimized.functions) {
-    if (fn === undefined) throw "reachable FFI function invariant";
-    for (const block of fn.blocks) {
-      if (block === undefined) throw "reachable FFI block invariant";
-      for (const op of block.instructions) {
-        if (op === undefined) throw "reachable FFI instruction invariant";
-        if (op.kind === "c-call" && op.call.mayCallback === true)
-          return x64Callbacks;
-        if (
-          op.kind === "c-memory" &&
-          (op.access.operation === "callback-key" ||
-            op.access.operation === "callback-address")
-        )
-          return x64Callbacks;
-      }
-    }
-  }
-  return undefined;
-}
-
 /** Parse and expand one binding declaration module. */
 export function prepareForeignLibrary(
   id: string,
@@ -384,17 +261,6 @@ export function prepareForeignLibrary(
         parsed.value.module +
         " is not in the C library manifest for " +
         target.name,
-    };
-  if (
-    target.name === "linux-x86_64" &&
-    ((parsed.value.callbackTypes?.length ?? 0) !== 0 ||
-      parsed.value.functions.some(
-        (fn) => fn?.signature.callClass === "may-callback",
-      ))
-  )
-    return {
-      ok: false,
-      error: id + ": " + x64Callbacks,
     };
   for (const fn of parsed.value.functions) {
     if (fn === undefined) throw "foreign library function invariant";

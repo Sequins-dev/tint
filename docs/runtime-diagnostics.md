@@ -156,6 +156,11 @@ Interval probe names are the interval names with `.` and `-` replaced by `_`
 sampling hook's `nop`, so it exists in every heap-introspection image (debug
 builds), with or without `signposts`.
 
+On Linux x86-64 the interval identifier is `8@%rbp`. The `gc__end` probe
+uses `8@%r8 8@%r9 8@%r10 8@%r11 8@%rbp` in the same metric order.
+One leaf stub per probe name serves every instrumented call site, including
+the collector's direct closure specializations.
+
 ```sh
 TINT_BUILD_ONLY=1 TINT_SIGNPOSTS=1 node tools/<fixture>.ts   # prints the image path
 readelf --notes <image>

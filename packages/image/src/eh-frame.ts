@@ -4,6 +4,8 @@ export interface CallFrameTarget {
   readonly stackPointer: number;
   readonly framePointer: number;
   readonly returnAddress: number;
+  /** On x86-64 CALL pushes the return PC before a callee executes. */
+  readonly stackReturnAddress?: boolean;
   /** Factor of every saved-register offset (the target's word size). */
   readonly dataAlignment: number;
 }
@@ -80,15 +82,19 @@ export function unwindRows(
     if (rule.kind !== "rows") throw "unwind rule invariant";
     return rule.rows;
   }
-  if (kind === "leaf" || kind === "outermost")
+  if (kind === "leaf" || kind === "outermost") {
+    const stackReturn = kind === "leaf" && target.stackReturnAddress === true;
     return [
       {
         offset: 0,
         cfaRegister: target.stackPointer,
-        cfaOffset: 0,
-        saves: [],
+        cfaOffset: stackReturn ? target.dataAlignment : 0,
+        saves: stackReturn
+          ? [{ register: target.returnAddress, offset: -target.dataAlignment }]
+          : [],
       },
     ];
+  }
   if (rule.kind !== "frame") throw "unwind rule invariant";
   const saves: UnwindSave[] = [
     { register: target.framePointer, offset: -16 },

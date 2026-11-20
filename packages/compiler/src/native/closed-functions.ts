@@ -39,6 +39,12 @@ import {
   type NativeModule,
   type NativeFunction,
 } from "@tint/codegen/aarch64/scalar";
+import {
+  emitModule as emitX64,
+  type X64Module,
+  type X64Function,
+} from "@tint/codegen/x86_64/scalar";
+import { linuxX86_64Target } from "@tint/platform/target";
 
 export interface ClosedFunctionOptions {
   /** The publisher registers and retains literal storage through process exit. */
@@ -310,6 +316,77 @@ export function compileClosedFunction(
       requiresPermanentLiterals: native.value.strings.length !== 0,
     },
   };
+}
+
+/** Closed numeric entry for the x86 publisher, through the same checked IR
+ * and effect proof as the ordinary closed-function path. */
+export function compileX64ClosedNumberFunction(
+  module: Module,
+  name: string,
+  maxByteLength: number,
+):
+  | {
+      readonly ok: true;
+      readonly value: {
+        readonly native: X64Module;
+        readonly entry: X64Function;
+      };
+    }
+  | ClosedCompilationFailure {
+  const prepared = prepareNativeFunctionEntry(module, name);
+  if (!prepared.ok) return prepared;
+  const ir = prepared.value.module,
+    id = prepared.value.entryId;
+  const fn = prepared.value.fn;
+  if (fn.returnType !== "number" || fn.parameters.length !== 0)
+    return failure("profile", "closed numeric entry takes no parameters");
+  const effects = summarizeEffects(ir),
+    effect = effects === undefined ? undefined : effects[id];
+  if (
+    effect === undefined ||
+    (effect &
+      (effectThrow |
+        effectAllocate |
+        effectWriteHeap |
+        effectInvoke |
+        effectEscape)) !==
+      0
+  )
+    return failure(
+      "effects",
+      "closed function may allocate, throw, write managed state or invoke opaque code",
+    );
+  const emitted = emitX64(
+    ir,
+    linuxX86_64Target.hostABI,
+    false,
+    false,
+    true,
+    [],
+    false,
+    false,
+    { mode: "live", functions: [], records: [] },
+  );
+  if (!emitted.ok) return failure("emit", emitted.error.message);
+  const native = emitted.value;
+  if (
+    !Number.isSafeInteger(maxByteLength) ||
+    native.code.length > maxByteLength
+  )
+    return failure("emit", "closed function exceeds code budget");
+  if (
+    native.addressFixups.length !== 0 ||
+    native.records.length !== 0 ||
+    native.managedImports.length !== 0
+  )
+    return failure(
+      "profile",
+      "closed function requires an image or managed identities",
+    );
+  const entry = native.functions[id];
+  if (entry === undefined || entry.import === true)
+    return failure("emit", "closed function native entry is missing");
+  return { ok: true, value: { native, entry } };
 }
 
 function dynamicExpression(

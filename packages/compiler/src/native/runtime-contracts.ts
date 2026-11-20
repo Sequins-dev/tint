@@ -25,9 +25,6 @@ export function validRuntimeNamespace(namespace: string): boolean {
   return true;
 }
 
-export const serialCollectorModule =
-  "packages/native-runtime/src/tracing/serial.ts";
-
 export const dynamicObjectRuntimeModule =
   "packages/native-runtime/src/values/dynamic-object.ts";
 

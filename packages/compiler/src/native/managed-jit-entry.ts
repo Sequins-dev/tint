@@ -1,6 +1,16 @@
 import type { Module } from "@tint/typescript/syntax";
 import type { TargetDataLayout } from "@tint/ts-native/closure/layout";
-import { emitModule, type NativeModule } from "@tint/codegen/aarch64/scalar";
+import {
+  emitModule,
+  type ManagedABIRequest,
+  type NativeModule,
+} from "@tint/codegen/aarch64/scalar";
+import {
+  emitModule as emitX64,
+  type X64Module,
+} from "@tint/codegen/x86_64/scalar";
+import { linuxX86_64Target } from "@tint/platform/target";
+import type { ModuleIR } from "@tint/ir/scalar";
 import type { ManagedSurfaceLayoutRuntime } from "./managed-directory.ts";
 import type { ManagedTypeContractCache } from "./managed-contracts.ts";
 import type { ManagedCollectionPlanCache } from "./managed-jit-program.ts";
@@ -63,19 +73,25 @@ export type ManagedSurfaceEntryFailure = {
 export type ManagedSurfaceEntryPreparation =
   | { readonly ok: true; readonly value: PreparedManagedSurfaceEntry }
   | ManagedSurfaceEntryFailure;
-/** Compile against an image-issued surface. Resolve every semantic contract
- * before returning unresolved code; mapping, pointer reads and publication are
- * exclusively the owning engine's responsibility. */
-export function prepareManagedSurfaceEntry(
+interface ManagedSurfaceIR {
+  readonly module: ModuleIR;
+  readonly entry: number;
+  readonly abi: ManagedABIRequest;
+  readonly counts: PreparedManagedSurfaceEntry["counts"];
+}
+
+function fail(
+  stage: ManagedSurfaceEntryFailure["error"]["stage"],
+  message: string,
+): ManagedSurfaceEntryFailure {
+  return { ok: false, error: { stage, message } };
+}
+
+function prepareManagedSurfaceIR(
   request: ManagedSurfaceEntryRequest,
-): ManagedSurfaceEntryPreparation {
-  const fail = (
-    stage: "profile" | "prepare" | "lower" | "emit" | "select",
-    message: string,
-  ): ManagedSurfaceEntryPreparation => ({
-    ok: false,
-    error: { stage, message },
-  });
+):
+  | { readonly ok: true; readonly value: ManagedSurfaceIR }
+  | ManagedSurfaceEntryFailure {
   const read = request.read,
     frame = read.directory.frame,
     surface = read.contracts.surface;
@@ -176,49 +192,25 @@ export function prepareManagedSurfaceEntry(
     direct.value,
   );
   if (!signatures.ok) return fail("profile", signatures.error);
-  const brand = signatures.value.brand;
-  const emitted = emitModule(lowered.value.module, {
-    // Service factories are relocated by service-unit linking, which
-    // rewrites five-instruction slot loads; other entries only fill slots.
-    compactManagedReferences: request.initialization !== "factory",
-    linearAllocation: request.linearAllocation ?? false,
-    generationalBarriers: request.generationalBarriers ?? false,
-    closedRoots: [lowered.value.entry],
-    signatureRoots:
-      request.initialization === "factory" ? [lowered.value.entry] : [],
-    managedABI: {
-      version: 1,
-      ...(brand === undefined ? {} : { functionBrand: brand }),
-      signatures: signatures.value.signatures,
-      records: records.value,
-      functions: functions.value,
-    },
-  });
-  if (!emitted.ok) return fail("emit", emitted.error.message);
-
-  if (emitted.value.imports.length !== 0)
-    return fail("profile", "managed entry has unresolved native imports");
-  const selection = selectManagedIdentityBindings(
-    read,
-    emitted.value.managedImports,
-  );
-  if (!selection.ok) return fail("select", selection.error);
-  const entry = emitted.value.functions.find(
-    (fn) => fn !== undefined && fn.id === lowered.value.entry,
-  );
-  if (entry === undefined || entry.import === true)
-    return fail("emit", "managed native entry is missing");
   let memberOnly = 0;
   for (const binding of signatures.value.signatures) {
     if (binding === undefined)
       return fail("profile", "missing signature binding");
     if (binding.witness === undefined) memberOnly++;
   }
+  const brand = signatures.value.brand;
   return {
     ok: true,
     value: {
-      native: emitted.value,
-      entryOffset: entry.offset,
+      module: lowered.value.module,
+      entry: lowered.value.entry,
+      abi: {
+        version: 1,
+        ...(brand === undefined ? {} : { functionBrand: brand }),
+        signatures: signatures.value.signatures,
+        records: records.value,
+        functions: functions.value,
+      },
       counts: {
         signatures: signatures.value.signatures.length,
         memberOnly,
@@ -226,5 +218,95 @@ export function prepareManagedSurfaceEntry(
         functions: functions.value.length,
       },
     },
+  };
+}
+
+/** Compile against an image-issued surface. Resolve every semantic contract
+ * before returning unresolved code; mapping, pointer reads and publication are
+ * exclusively the owning engine's responsibility. */
+export function prepareManagedSurfaceEntry(
+  request: ManagedSurfaceEntryRequest,
+): ManagedSurfaceEntryPreparation {
+  const prepared = prepareManagedSurfaceIR(request);
+  if (!prepared.ok) return prepared;
+  const ir = prepared.value;
+  const emitted = emitModule(ir.module, {
+    compactManagedReferences: request.initialization !== "factory",
+    linearAllocation: request.linearAllocation ?? false,
+    generationalBarriers: request.generationalBarriers ?? false,
+    closedRoots: [ir.entry],
+    signatureRoots: request.initialization === "factory" ? [ir.entry] : [],
+    managedABI: ir.abi,
+  });
+  if (!emitted.ok) return fail("emit", emitted.error.message);
+
+  if (emitted.value.imports.length !== 0)
+    return fail("profile", "managed entry has unresolved native imports");
+  const selection = selectManagedIdentityBindings(
+    request.read,
+    emitted.value.managedImports,
+  );
+  if (!selection.ok) return fail("select", selection.error);
+  const entry = emitted.value.functions.find(
+    (fn) => fn !== undefined && fn.id === ir.entry,
+  );
+  if (entry === undefined || entry.import === true)
+    return fail("emit", "managed native entry is missing");
+  return {
+    ok: true,
+    value: {
+      native: emitted.value,
+      entryOffset: entry.offset,
+      counts: ir.counts,
+    },
+  };
+}
+
+export interface PreparedX64ManagedSurfaceEntry {
+  readonly native: X64Module;
+  readonly entryOffset: number;
+  readonly counts: PreparedManagedSurfaceEntry["counts"];
+}
+
+export function prepareX64ManagedSurfaceEntry(
+  request: ManagedSurfaceEntryRequest,
+):
+  | { readonly ok: true; readonly value: PreparedX64ManagedSurfaceEntry }
+  | ManagedSurfaceEntryFailure {
+  const prepared = prepareManagedSurfaceIR(request);
+  if (!prepared.ok) return prepared;
+  const ir = prepared.value;
+  const service = request.initialization === "factory";
+  const emitted = emitX64(
+    ir.module,
+    linuxX86_64Target.hostABI,
+    request.generationalBarriers ?? false,
+    request.linearAllocation ?? false,
+    false,
+    [],
+    false,
+    service,
+    {
+      mode: service ? "service" : "live",
+      bindings: ir.abi,
+      functions: [ir.entry],
+      records: [],
+    },
+  );
+  if (!emitted.ok) return fail("emit", emitted.error.message);
+  const native = emitted.value;
+  if (native.imports.length !== 0)
+    return fail("profile", "managed entry has unresolved native imports");
+  const selection = selectManagedIdentityBindings(
+    request.read,
+    native.managedImports,
+  );
+  if (!selection.ok) return fail("select", selection.error);
+  const entry = native.functions[ir.entry];
+  if (entry === undefined || entry.import === true)
+    return fail("emit", "managed native entry is missing");
+  return {
+    ok: true,
+    value: { native, entryOffset: entry.offset, counts: ir.counts },
   };
 }
