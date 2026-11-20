@@ -255,6 +255,8 @@ export interface CompileRequest extends ModuleRequest {
   readonly hostABI?: PosixHostABI;
   readonly recordBindings?: readonly NativeRecordBinding[];
   readonly weakBindings?: readonly NativeWeakBinding[];
+  /** Executable hosts select whether the runtime processes weak slots. */
+  readonly nodeFfiWeakProcessing?: boolean;
   /** Require the hosted context's optional linear-allocation state at byte 56. */
   readonly linearAllocation?: boolean;
   readonly generationalBarriers?: boolean;
@@ -710,9 +712,10 @@ function withStaticFfiRuntimes(
       : requestModules(request).filter(
           (source) => source !== undefined && direct(source.dependencies),
         );
-  const plans = recognizeStaticFfi(sources, signedChar);
-  if (plans.length === 0) return request;
-  const generated = makeStaticFfiModule(plans);
+  const weakProcessing = request.nodeFfiWeakProcessing !== false;
+  const plans = weakProcessing ? recognizeStaticFfi(sources, signedChar) : [];
+  if (weakProcessing && plans.length === 0) return request;
+  const generated = makeStaticFfiModule(plans, weakProcessing);
   function replace(modules: readonly SourceModule[]): SourceModule[] {
     return modules.map((source) =>
       source?.id === generated.id ? generated : source,

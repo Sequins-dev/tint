@@ -152,8 +152,12 @@ export function staticFfiEntry(index: number): string {
 
 export function makeStaticFfiModule(
   plans: readonly StaticFfiPlan[],
+  weakProcessing: boolean,
 ): SourceModule {
-  let text = "";
+  let text =
+    "export function ffiWeakProcessing():boolean { return " +
+    String(weakProcessing) +
+    "; }\n";
   let lookup = "export function staticFfiIndex(key:string):number {\n";
   let dispatch =
     "export function staticFfiCall(index:number,frame:Uint8Array):boolean {\n";

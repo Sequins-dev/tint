@@ -513,9 +513,10 @@ realm's callable and property operations.
 The pinned Node suite uses a test-only CommonJS adapter. Its diagnostics
 identify Node's CLI, permission, VFS and libuv requirements and V8's private
 ABI metadata. Shared byte views require a host-supplied native shared-block
-service. Generational and copying runtimes process weak references. The
-region collector retains its weak slots and still needs an explicit FFI
-capability diagnostic.
+service. Generational and copying runtimes process weak references. Library
+creation in the region collector raises `ERR_FFI_CALL_FAILED` with
+`node:ffi DynamicLibrary requires a runtime that processes weak slots`.
+Raw memory helpers remain available.
 
 ### Captured bindings across function fallback (slice 3)
 

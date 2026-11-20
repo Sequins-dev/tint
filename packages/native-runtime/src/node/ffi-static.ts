@@ -1,5 +1,8 @@
-/** Build-time specialization supplies entries for recognized literal
- * signatures. An ordinary call plan remains available for every signature. */
+/** Hosts may supply fixed scalar call stubs and select the weak-slot policy. */
+export function ffiWeakProcessing(): boolean {
+  return true;
+}
+
 export function staticFfiIndex(key: string): number {
   return -1;
 }

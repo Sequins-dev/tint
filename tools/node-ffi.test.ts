@@ -468,7 +468,7 @@ import {
 } from "objects";
 export function run(): number {
   const native = createNativeSharedBlockService(
-    nativeSharedMemoryHost(), { pageSize: 16384, maxBlocks: 16, maxReservedBytes: 262144 },
+    nativeSharedMemoryHost(), { pageSize: ${nativeFixtureTarget().memoryPageBytes}, maxBlocks: 16, maxReservedBytes: 262144 },
   );
   if (!native.ok) return 1;
   const core = programRealmCore(), realm = core.realm, hooks = core.hooks;
@@ -527,9 +527,13 @@ export function run(): number {
     ],
     {
       requireTyped: true,
-      runtimeEntry: "initializeCopyingRuntime",
+      runtimeEntry:
+        nativeFixtureTarget().arch === "x86_64"
+          ? "initializeGenerationalRuntime"
+          : "initializeCopyingRuntime",
       managedBytes: 67108864,
       allocationCapacity: 1048576,
+      stackBytes: 4194304,
       hostBindings,
     },
   );
@@ -552,6 +556,33 @@ export function run() {
     [],
     [],
     { managedBytes: 67108864, allocationCapacity: 1048576 },
+  );
+});
+
+test("node:ffi diagnoses weak FFI ownership in the region runtime", () => {
+  verifyHostedFixture(
+    `import ffi from "node:ffi";
+export function run() {
+  for (const open of [() => ffi.dlopen(null), () => new ffi.DynamicLibrary(null)]) {
+    try { open(); return 1; }
+    catch (error) {
+      if (error.code !== "ERR_FFI_CALL_FAILED" ||
+          error.message !== "node:ffi DynamicLibrary requires a runtime that processes weak slots")
+        return 2;
+    }
+  }
+  return ffi.toString(0n) === null ? 42 : 3;
+}`,
+    "node-ffi-region-weak-ownership",
+    [["node:ffi", "packages/native-runtime/src/node/ffi.ts"]],
+    [],
+    [],
+    [],
+    {
+      runtimeEntry: "initializeRuntime",
+      managedBytes: 67108864,
+      allocationCapacity: 1048576,
+    },
   );
 });
 

@@ -81,7 +81,11 @@ import {
 
 import { createFfiCallbacks, type FfiCallback } from "./ffi-callbacks.ts";
 
-import { staticFfiCall, staticFfiIndex } from "./ffi-static.ts";
+import {
+  ffiWeakProcessing,
+  staticFfiCall,
+  staticFfiIndex,
+} from "./ffi-static.ts";
 
 interface ScalarWorkspace {
   readonly frame: Uint8Array;
@@ -796,11 +800,13 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     setValue: (cell, value): void => setWeakSlotValue(cell, value),
     clear: (cell): void => clearWeakSlot(cell),
   };
-  if (realm.agent.weakStorage === undefined)
-    realm.agent.weakStorage = weakStorage;
-  if (!core.installed.has("installWeakRefIntrinsics")) {
-    installWeakRefIntrinsics(core.object, realm, hooks);
-    core.installed.add("installWeakRefIntrinsics");
+  if (ffiWeakProcessing()) {
+    if (realm.agent.weakStorage === undefined)
+      realm.agent.weakStorage = weakStorage;
+    if (!core.installed.has("installWeakRefIntrinsics")) {
+      installWeakRefIntrinsics(core.object, realm, hooks);
+      core.installed.add("installWeakRefIntrinsics");
+    }
   }
   const trackLibrary = hostFinalizationRegistry(
     realm,
@@ -839,6 +845,13 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
         "Library path must be a string or null",
       );
     const text = path === null ? "" : ffiString(core, path, "Library path");
+    if (!ffiWeakProcessing())
+      return ffiError(
+        core,
+        "error",
+        "ERR_FFI_CALL_FAILED",
+        "node:ffi DynamicLibrary requires a runtime that processes weak slots",
+      );
     for (let index = states.length - 1; index >= 0; index--) {
       const old = states[index];
       if (old !== undefined && weakSlotKey(old.identity) === undefined)
