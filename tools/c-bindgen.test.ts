@@ -806,14 +806,45 @@ test("parity reports differing layouts, signatures and constants", () => {
 
 // Clang on this host: facts, the oracle, unsupported shapes, native code.
 
+test("SDK parameter spelling can differ while the C signature stays the same", () => {
+  const declaration = (name: string, type: CScalar) =>
+    facts("darwin-arm64", {
+      functions: [
+        {
+          name: "close",
+          parameters: [{ name, type: scalar(type) }],
+          result: scalar("i32"),
+          variadic: false,
+        },
+      ],
+    });
+  const original = declaration("arg0", "i32");
+  const renamed = declaration("__fd", "i32");
+  const spec = unitSpec({
+    functions: [{ name: "close", parameters: { 0: { name: "fd" } } }],
+  });
+  assert.equal(factsMeaning(original, spec), factsMeaning(renamed, spec));
+  assert.notEqual(
+    factsMeaning(original, spec),
+    factsMeaning(declaration("__fd", "u32"), spec),
+  );
+  const byName = unitSpec({
+    functions: [{ name: "close", parameters: { arg0: { name: "fd" } } }],
+  });
+  assert.notEqual(
+    factsMeaning(original, byName),
+    factsMeaning(renamed, byName),
+  );
+});
+
 test("this host's headers still produce the checked-in facts", clang, () => {
   for (const loaded of specs) {
     if (!loaded.spec.targets.includes(host!)) continue;
     const current = readFacts(loaded).get(host!);
     assert.ok(current !== undefined, loaded.name);
     assert.equal(
-      factsMeaning(extractFacts(loaded.spec, host!)),
-      factsMeaning(current),
+      factsMeaning(extractFacts(loaded.spec, host!), loaded.spec),
+      factsMeaning(current, loaded.spec),
       loaded.name,
     );
   }

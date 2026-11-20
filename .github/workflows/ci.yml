@@ -19,7 +19,7 @@ jobs:
       matrix:
         include:
           - name: macOS arm64
-            runner: macos-15
+            runner: macos-26
             arch: arm64
             gate: mac
           - name: Linux x86-64
@@ -61,10 +61,14 @@ jobs:
           sudo apt-get install -y lldb
           lldb --version
 
-      - name: Enable macOS debugger
+      - name: Prepare macOS SDK and debugger
         if: matrix.gate == 'mac'
         run: |
           sudo /usr/sbin/DevToolsSecurity -enable
+          sdk="$(xcrun --sdk macosx --show-sdk-path)"
+          test -d "$sdk"
+          echo "SDKROOT=$sdk" >> "$GITHUB_ENV"
+          xcrun --sdk macosx --show-sdk-version
           lldb --version
 
       # Only the macOS gate consumes the Test262 checkout.
@@ -104,6 +108,7 @@ jobs:
           TINT_GATE_MEMORY_SLOTS: 1
           TINT_GATE_BUDGET: 6000
           TINT_GATE_NATIVE_TIMEOUT: 3600
+          NODE_OPTIONS: --max-old-space-size=5120
         run: tools/gate/mac-gate.sh
 
       - name: Run Linux gate
@@ -119,4 +124,12 @@ jobs:
         with:
           name: gate-${{ matrix.runner }}
           path: .tint-bootstrap/gate.*/
+          include-hidden-files: true
+
+      - name: Upload macOS native test results
+        if: success() && matrix.gate == 'mac'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: native-tests-${{ matrix.runner }}
+          path: .tint-bootstrap/gate.*/check-native.log
           include-hidden-files: true
