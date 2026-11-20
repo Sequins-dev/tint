@@ -26,6 +26,7 @@ import {
   planTypedCompanions,
   type FunctionFallbackPlan,
 } from "./function-fallback.ts";
+import { planNestedCompanions } from "./nested-fallback.ts";
 
 /** Module IDs of the JavaScript runtime the general lowering targets. */
 export interface GeneralRuntimeModules {
@@ -126,10 +127,17 @@ function lowerGeneralProgram(
       : undefined;
   const companions =
     mixed === undefined && options.functionFallback === true
-      ? planTypedCompanions(
+      ? (planNestedCompanions(
+          original,
+          fresh(
+            "$nested:" + (original.trigger?.owner.module ?? original.entry),
+          ),
+          runtime.objects,
+        ) ??
+        planTypedCompanions(
           original,
           fresh("$typed:" + (original.trigger?.owner.module ?? original.entry)),
-        )
+        ))
       : undefined;
   const request: GeneralProgramRequest =
     mixed === undefined
@@ -210,6 +218,7 @@ function lowerGeneralProgram(
       request.sourceValidated === true &&
         (mixed === undefined || mixed.ordinaryEntries !== undefined),
       checkMethodCalls,
+      source.module,
     );
     if (!lowered.ok)
       return {

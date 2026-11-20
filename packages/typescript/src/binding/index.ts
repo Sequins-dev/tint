@@ -135,6 +135,8 @@ export interface BindingError extends Span {
   readonly message: string;
   readonly fallback?: BindingFallback;
 }
+export const directEvalUnavailable =
+  "direct eval requires the hosted evaluator and shared binding contracts";
 export interface BindingFallback {
   readonly capability:
     | "arguments-object"
@@ -586,6 +588,15 @@ function bindProgram(
     if (writes && caught !== undefined)
       varInitializerTargets.push({ node, binding: caught });
   }
+  function localBinding(name: string, s: ScopeState): number | undefined {
+    let cursor: ScopeState | undefined = s;
+    while (cursor !== undefined) {
+      const id = cursor.names.get(name);
+      if (id !== undefined) return id;
+      cursor = cursor.parent === undefined ? undefined : scopes[cursor.parent];
+    }
+    return undefined;
+  }
   function reference(
     node: Expression & { readonly kind: "identifier" },
     s: ScopeState,
@@ -599,13 +610,7 @@ function bindProgram(
         "arguments is not allowed in class initializers",
       );
     if (node.name === "arguments") observeArguments(s);
-    let cursor: ScopeState | undefined = s,
-      id: number | undefined;
-    while (cursor !== undefined) {
-      id = cursor.names.get(node.name);
-      if (id !== undefined) break;
-      cursor = cursor.parent === undefined ? undefined : scopes[cursor.parent];
-    }
+    const id = localBinding(node.name, s);
     if (id === undefined) {
       if (!javascript && !external.has(node.name)) {
         if (otherLibraryGlobals.includes(node.name))
@@ -1094,6 +1099,8 @@ function bindProgram(
         case "new":
         case "call":
           if (isDirectEvalCandidate(node)) {
+            if (!javascript && localBinding("eval", s) === undefined)
+              fail(node, "UNSUPPORTED", directEvalUnavailable);
             observeArguments(s);
             const parameters =
               s.owner !== undefined && parameterOwners.has(s.owner);

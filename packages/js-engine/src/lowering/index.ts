@@ -36,6 +36,7 @@ import {
   rewriteModule,
   parameterIdentifiers,
   parameterHasExpressions,
+  typeParameterCount,
   isSimpleParameter,
   type BlockStatement,
   type CatchClause,
@@ -55,6 +56,7 @@ import {
 import {
   bindScript,
   bindJavaScriptModule,
+  directEvalUnavailable,
   collectModuleDeclarations,
   type ModuleDefaultFunction,
   bindEvalScript,
@@ -277,6 +279,7 @@ export function lowerSourceTextModule(
   numericCalls?: readonly NumericCallSite[],
   checkContracts: boolean = false,
   checkMethodCalls: boolean = false,
+  sourceTypes?: Module,
 ): ScriptLoweringResult {
   return lowerScriptEntry(
     module,
@@ -288,6 +291,7 @@ export function lowerSourceTextModule(
     numericCalls,
     checkContracts,
     checkMethodCalls,
+    sourceTypes,
   );
 }
 /** Indirect eval uses fresh lexical storage and eval declaration admission. */
@@ -344,6 +348,7 @@ function lowerScriptEntry(
   numericCalls?: readonly NumericCallSite[],
   checkContracts: boolean = false,
   checkMethodCalls: boolean = false,
+  sourceTypes?: Module,
 ): ScriptLoweringResult {
   const bound =
     entryKind === "module"
@@ -386,26 +391,79 @@ function lowerScriptEntry(
         start: site.start,
         end: site.end,
         code: "UNSUPPORTED",
-        message:
-          "direct eval requires the hosted evaluator and shared binding contracts",
+        message: directEvalUnavailable,
       },
     };
   }
-  const parameterWrites = new Map<number, number>();
-  const parameterContracts = new Map<number, number>();
+  const bindingWrites = new Map<number, number>();
+  const bindingContracts = new Map<number, number>();
+  const bindingRecordContracts = new Map<number, TypeNode>();
+  const recordTypes = new Map<string, TypeNode>();
+  const boundBindings = bound.value.bindings;
   if (checkContracts) {
+    for (const declaration of sourceTypes?.statements ?? []) {
+      if (declaration === undefined) throw "SOURCE_TYPE_DECLARATION_INVARIANT";
+      if (declaration.kind === "type-alias") {
+        if (typeParameterCount(declaration.typeParameters) !== 0) continue;
+        recordTypes.set(declaration.name, declaration.type);
+      } else if (declaration.kind === "interface") {
+        const bases = declaration.bases;
+        if (
+          typeParameterCount(declaration.typeParameters) !== 0 ||
+          (bases !== undefined && bases.length !== 0) ||
+          declaration.call !== undefined ||
+          declaration.construct !== undefined
+        )
+          continue;
+        const index = declaration.indexSignature;
+        const annotated: TypeNode = {
+          kind: "object",
+          properties: declaration.properties,
+          start: declaration.start,
+          end: declaration.end,
+          ...(index === undefined ? {} : { indexSignature: index }),
+        };
+        recordTypes.set(declaration.name, annotated);
+      }
+    }
+    rewriteModule(script, {
+      statement: (node, _original) => {
+        if (node.kind === "variable")
+          for (const declaration of node.declarations) {
+            if (declaration === undefined) throw "SCRIPT_DECLARATION_INVARIANT";
+            if (
+              declaration.kind === "object-binding" ||
+              declaration.kind === "array-binding"
+            )
+              continue;
+            const type = declaration.type;
+            if (type === undefined) continue;
+            const mask = contract(type);
+            if (mask !== 0) bindingContracts.set(declaration.start, mask);
+            else if (recordType(type) !== undefined)
+              bindingRecordContracts.set(declaration.start, type);
+          }
+        return node;
+      },
+    });
+    function writtenBinding(binding: number, site: Span): void {
+      const target = boundBindings[binding];
+      if (
+        target !== undefined &&
+        (target.kind === "parameter" ||
+          bindingContracts.has(target.node.start) ||
+          bindingRecordContracts.has(target.node.start))
+      )
+        bindingWrites.set(site.start, target.node.start);
+    }
     for (const reference of bound.value.references) {
       if (reference.access === "read" || reference.binding === undefined)
         continue;
-      const binding = bound.value.bindings[reference.binding];
-      if (binding?.kind === "parameter")
-        parameterWrites.set(reference.node.start, binding.node.start);
+      writtenBinding(reference.binding, reference.node);
     }
     for (const alias of bound.value.aliases ?? []) {
       if (alias === undefined) throw "BINDING_ALIAS_INVARIANT";
-      const binding = bound.value.bindings[alias.binding];
-      if (binding?.kind === "parameter")
-        parameterWrites.set(alias.node.start, binding.node.start);
+      writtenBinding(alias.binding, alias.node);
     }
   }
   const argumentsOwners = bound.value.argumentsOwners;
@@ -917,16 +975,17 @@ function lowerScriptEntry(
     );
   }
   function write(target: Expression, value: Expression, span: Span): void {
-    const declaration = parameterWrites.get(span.start);
-    const mask =
-      declaration === undefined
-        ? undefined
-        : parameterContracts.get(declaration);
-    if (mask !== undefined) {
+    const declaration = bindingWrites.get(span.start) ?? span.start;
+    const mask = bindingContracts.get(declaration);
+    const shape = bindingRecordContracts.get(declaration);
+    if (mask !== undefined || shape !== undefined) {
       const assigned = temporary(value, true);
       // PutValue checks the binding's initialization after evaluating the RHS.
       expression(read(target, span));
-      value = checkedContract(assigned, mask, span);
+      value =
+        mask === undefined
+          ? (recordContract(assigned, shape, span) ?? assigned)
+          : checkedContract(assigned, mask, span);
     }
     checkedRuntimeCompletion("putBindingReference", [target, value], span);
   }
@@ -1776,6 +1835,143 @@ function lowerScriptEntry(
     }
     return mask;
   }
+  function recordType(type: TypeNode): TypeNode | undefined {
+    if (type.kind === "group") return recordType(type.type);
+    if (type.kind === "object") return type;
+    if (type.kind !== "named" || (type.arguments?.length ?? 0) !== 0)
+      return undefined;
+    const named = recordTypes.get(type.name);
+    return named?.kind === "object" ? named : undefined;
+  }
+  function recordContract(
+    value: Expression,
+    annotation: TypeNode | undefined,
+    span: Span,
+  ): Expression | undefined {
+    if (!checkContracts || annotation === undefined) return undefined;
+    const root = recordType(annotation);
+    if (root === undefined) return undefined;
+    const types: Expression[] = [];
+    const seen = new Map<TypeNode, number>();
+    function index(value: number): Expression {
+      return { ...at(span), kind: "number", value, raw: String(value) };
+    }
+    function flag(value: boolean): Expression {
+      return { ...at(span), kind: "boolean", value };
+    }
+    function array(elements: readonly Expression[]): Expression {
+      return { ...at(span), kind: "array", elements };
+    }
+    function rule(type: TypeNode): number | undefined {
+      if (type.kind === "group") return rule(type.type);
+      const resolved = recordType(type);
+      if (resolved !== undefined && resolved !== type) return rule(resolved);
+      const known = seen.get(type);
+      if (known !== undefined) return known;
+      const id_ = types.length;
+      seen.set(type, id_);
+      types.push(object(["kind"], [text("unknown", span)], span));
+      let entry: Expression;
+      if (
+        type.kind === "object" &&
+        type.call === undefined &&
+        type.construct === undefined
+      ) {
+        const fields: Expression[] = [];
+        for (const field of type.properties) {
+          if (field === undefined || field.computed || field.method)
+            return undefined;
+          const fieldType = rule(field.type);
+          if (fieldType === undefined) return undefined;
+          fields.push(
+            object(
+              ["name", "value", "required", "readonly"],
+              [
+                text(field.name, span),
+                index(fieldType),
+                flag(!field.optional),
+                flag(field.readonly),
+              ],
+              span,
+            ),
+          );
+        }
+        const key = type.indexSignature;
+        if (key !== undefined) {
+          const keyType = key.keyType;
+          if (keyType.kind !== "named" || keyType.name !== "string")
+            return undefined;
+        }
+        const valueType = key === undefined ? -1 : rule(key.valueType);
+        if (valueType === undefined) return undefined;
+        entry = object(
+          ["kind", "stringIndex", "readonlyIndex", "fields"],
+          [
+            text("object", span),
+            index(valueType),
+            flag(key?.readonly === true),
+            array(fields),
+          ],
+          span,
+        );
+      } else if (type.kind === "array") {
+        const element = rule(type.element);
+        if (element === undefined) return undefined;
+        entry = object(
+          ["kind", "element", "readonly"],
+          [
+            text("array-elements", span),
+            index(element),
+            flag(type.readonly === true),
+          ],
+          span,
+        );
+      } else if (type.kind === "union") {
+        const members: Expression[] = [];
+        for (const part of type.members) {
+          if (part === undefined) return undefined;
+          const member = rule(part);
+          if (member === undefined) return undefined;
+          members.push(index(member));
+        }
+        entry = object(
+          ["kind", "members"],
+          [text("union", span), array(members)],
+          span,
+        );
+      } else if (
+        type.kind === "named" &&
+        (type.arguments?.length ?? 0) === 0 &&
+        [
+          "number",
+          "string",
+          "boolean",
+          "undefined",
+          "null",
+          "bigint",
+          "unknown",
+          "never",
+        ].includes(type.name)
+      ) {
+        entry = object(["kind"], [text(type.name, span)], span);
+      } else return undefined;
+      types[id_] = entry;
+      return id_;
+    }
+    const first = rule(root);
+    if (first === undefined) return undefined;
+    const schema = object(
+      ["types", "root"],
+      [array(types), index(first)],
+      span,
+    );
+    usesPrimitiveContracts = true;
+    return runtimeCall(
+      "projectPropertyContract",
+      [value, schema, id("$errors"), flag(true)],
+      span,
+    );
+  }
   function contractValue(mask: number, span: Span): Expression {
     usesPrimitiveContracts = true;
     return { ...at(span), kind: "number", value: mask, raw: String(mask) };
@@ -2096,7 +2292,7 @@ function lowerScriptEntry(
       if (parameter.kind !== "pattern-parameter" && !parameter.rest) {
         const mask = contract(parameter.type);
         if (mask !== 0)
-          parameterContracts.set(
+          bindingContracts.set(
             parameter.start,
             parameter.optional
               ? mask | primitiveContractBit("undefined")
@@ -2250,7 +2446,7 @@ function lowerScriptEntry(
         initializePattern(parameter.pattern, initialized, "let", false);
         continue;
       }
-      const mask = parameterContracts.get(parameter.start);
+      const mask = bindingContracts.get(parameter.start);
       if (mask !== undefined)
         initialized = checkedContract(initialized, mask, parameter);
       if (initializedParameters.has(parameter.name)) {
@@ -6031,6 +6227,17 @@ function lowerScriptEntry(
             initializer === undefined
               ? id("undefined")
               : value(initializer, text(declaration.name, declaration));
+          if (initializer !== undefined) {
+            const mask = bindingContracts.get(declaration.start);
+            initialized =
+              mask === undefined
+                ? (recordContract(
+                    initialized,
+                    bindingRecordContracts.get(declaration.start),
+                    declaration,
+                  ) ?? initialized)
+                : checkedContract(initialized, mask, declaration);
+          }
           if (node.disposal !== undefined) {
             const resource = disposalScope;
             if (resource === undefined) throw "SCRIPT_RESOURCE_SCOPE_INVARIANT";

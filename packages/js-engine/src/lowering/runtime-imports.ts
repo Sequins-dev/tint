@@ -221,6 +221,7 @@ export function scriptRuntimeImports(
           ? [
               "checkPrimitiveContract",
               "checkPrimitiveRestArguments",
+              "projectPropertyContract",
               "createCheckedSourceFunction",
               "checkClassMethodResult",
               "attachClassMethodContract",

@@ -13,6 +13,10 @@
 // constructs that pin a contract declare a different Node result.
 
 import { nativeCallablePropertySource } from "../slice2b-view-fixtures.ts";
+import {
+  nestedCaptureSource,
+  nestedContractSource,
+} from "../slice3-nested-fixture-source.ts";
 
 export interface Construct {
   readonly name: string;
@@ -1356,6 +1360,41 @@ export function run() {
   // Enforced contracts: written annotations reject foreign writes with a
   // TypeError on every path and keep the previous value. The untyped forms
   // have no annotations, so the same writes succeed.
+  {
+    name: "nested-shared-captures",
+    typed: nestedCaptureSource,
+    untyped: `function activation(seed) {
+  let count = seed;
+  function bump(delta) { count += delta; return count; }
+  const alias = bump;
+  function general(delta) {
+    if (arguments.length !== 1 || bump !== alias) return -1;
+    count += 1;
+    return alias(delta);
+  }
+  return general;
+}
+export function run() {
+  const first = activation(1);
+  const second = activation(10);
+  if (first(1) !== 3 || second(1) !== 12) return 1;
+  return first(38) === 42 ? 42 : 2;
+}`,
+  },
+  {
+    name: "nested-capture-contract",
+    typed: nestedContractSource,
+    node: { typed: 3 },
+    untyped: `export function run() {
+  let count = 20;
+  function write(value) { count = value; }
+  function read() { return count; }
+  write("open");
+  if (read() !== "open") return 1;
+  write(42);
+  return read();
+}`,
+  },
   {
     name: "explicit-field-contract",
     helpers: untypedHelper,

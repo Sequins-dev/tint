@@ -1179,6 +1179,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-engine",
     },
     {
+      id: "packages/js-engine/src/program/nested-fallback.ts",
+      packageId: "js-engine",
+    },
+    {
       id: "packages/js-engine/src/script-evaluation.ts",
       packageId: "js-engine",
     },

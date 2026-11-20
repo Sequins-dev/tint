@@ -488,6 +488,26 @@ typed-array ABI crossings. A raw array header would retain stale storage
 after a realm resize or detach. The byte-range interface supplies the
 projection needed by a scoped lending consumer.
 
+### Captured bindings across function fallback (slice 3)
+
+When a nested function needs the realm, an eligible arithmetic sibling can
+keep a typed entry. Its source-level wrapper keeps the original callable
+identity. Bridge reads and writes resolve the original captured binding in
+that activation, and the typed entry projects numeric reads before operating
+on them. The lexical environment remains authoritative for all callers,
+including escaped closures and separate loop iterations.
+
+Written primitive binding annotations guard initialization and subsequent
+writes in the validated general path. A write evaluates its right-hand side
+before testing the binding's initialization and contract. Inferred bindings
+stay open. A realm record with a supported written shape installs its
+property contract over the actual object, covering writes through aliases.
+
+The bridge selects arithmetic siblings with annotated number captures.
+Other sibling signatures and typed-owned environments need more capture
+layouts. Direct eval remains blocked in this composition with
+`direct eval requires the hosted evaluator and shared binding contracts`.
+
 ### Typed rest parameters and void callbacks (slice 4a)
 
 A rest signature stores one final array parameter and a rest flag. The minimum
