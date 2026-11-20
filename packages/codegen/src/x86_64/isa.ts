@@ -1,4 +1,4 @@
-import { writeSigned } from "@tint/foundation/binary/bytes";
+import { writeSigned, writeWord64 } from "@tint/foundation/binary/bytes";
 import { fromParts, type Word64 } from "@tint/foundation/binary/word64";
 
 export type IntegerWidth = 8 | 16 | 32 | 64;
@@ -22,6 +22,8 @@ export interface LabelReference {
 
   readonly label: string;
   readonly addend?: number;
+  /** Used for a bounded entry jump before the far scratch pair is saved. */
+  readonly near?: true;
 }
 
 /** A numeric relative operand is a signed displacement from next RIP. */
@@ -167,15 +169,17 @@ export type Instruction =
 type Register = Gpr<IntegerWidth> | Xmm;
 type RmOperand = Register | Memory<IntegerWidth | 128>;
 type FieldWidth = 1 | 2 | 4;
-export interface NearFixup {
+export interface RelativeFixup {
   readonly ref: LabelReference;
   readonly fieldOffset: number;
+  readonly byteLength: 4 | 8;
   nextOffset: number;
 }
 
 interface Encoding {
   readonly bytes: number[];
-  readonly fixups: NearFixup[];
+  readonly fixups: RelativeFixup[];
+  readonly far: boolean;
 }
 
 function invalid(message: string): never {
@@ -218,6 +222,34 @@ export function writeRel32(
     invalid("invalid rel32 field offset");
 }
 
+/** Patch in image coordinates, including when the output window and VM
+ * address have different origins. */
+export function patchRelative(
+  bytes: Uint8Array,
+  fixup: RelativeFixup,
+  site: number,
+  target: number,
+  address: number = site,
+): "complete" | "invalid" | "range" {
+  const next = address + fixup.nextOffset - fixup.fieldOffset;
+  const distance = target - next + (fixup.ref.addend ?? 0);
+  if (!Number.isSafeInteger(distance)) return "range";
+  if (fixup.byteLength === 4) {
+    if (!fitsSigned(distance, 4)) return "range";
+    return writeSigned(bytes, site, 4, distance, "little").ok
+      ? "complete"
+      : "invalid";
+  }
+  return writeWord64(
+    bytes,
+    site,
+    { lo: distance >>> 0, hi: Math.floor(distance / 0x100000000) >>> 0 },
+    "little",
+  ).ok
+    ? "complete"
+    : "invalid";
+}
+
 function lowBits(bytes: number[], value: number, width: FieldWidth): void {
   for (let i = 0; i < width; i++) {
     bytes.push(value & 0xff);
@@ -236,10 +268,39 @@ function relative(out: Encoding, value: Relative): void {
     out.fixups.push({
       ref: value,
       fieldOffset: out.bytes.length,
+      byteLength: 4,
       nextOffset: 0,
     });
     lowBits(out.bytes, 0, 4);
   }
+}
+
+/** LEA r14,[RIP] / MOVABS r15,delta / LEA r14,[r14+r15]. Both registers
+ * are reserved by the far model. None of the three instructions sets flags. */
+function farAddress(out: Encoding, target: LabelReference): void {
+  const bytes = out.bytes;
+  bytes.push(0x4c, 0x8d, 0x35, 0, 0, 0, 0);
+  const nextOffset = bytes.length;
+  bytes.push(0x49, 0xbf);
+  out.fixups.push({
+    ref: target,
+    fieldOffset: bytes.length,
+    byteLength: 8,
+    nextOffset,
+  });
+  lowBits(bytes, 0, 4);
+  lowBits(bytes, 0, 4);
+  bytes.push(0x4f, 0x8d, 0x34, 0x3e);
+}
+
+const farTransferBytes = 24;
+function farTransfer(
+  out: Encoding,
+  target: LabelReference,
+  call: boolean,
+): void {
+  farAddress(out, target);
+  out.bytes.push(0x41, 0xff, call ? 0xd6 : 0xe6);
 }
 
 function registerIndex(index: number): number {
@@ -321,6 +382,7 @@ function modRm(
   opcode: number,
   reg: Register | number,
   rm: RmOperand,
+  locked: boolean = false,
 ): void {
   const bytes = out.bytes;
   const regIndex = typeof reg === "number" ? reg : registerIndex(reg.index);
@@ -337,9 +399,20 @@ function modRm(
   }
   const address = rm.address;
   if (address.kind === "rip") {
+    const displacement = address.disp;
+    if (typeof displacement !== "number" && out.far) {
+      if (typeof reg !== "number" && reg.kind === "gpr" && regIndex >= 14)
+        invalid("far address uses a reserved register");
+      farAddress(out, displacement);
+      if (locked) bytes.push(0xf0);
+      opcodeBytes(bytes, legacy, rex | 1, opcode);
+      bytes.push(regField | 6); // [r14]
+      return;
+    }
+    if (locked) bytes.push(0xf0);
     opcodeBytes(bytes, legacy, rex, opcode);
     bytes.push(regField | 5);
-    relative(out, address.disp);
+    relative(out, displacement);
     return;
   }
   if (address.kind !== "base") invalid("invalid memory address");
@@ -364,6 +437,7 @@ function modRm(
   const sib = index !== undefined || base === undefined || baseField === 4;
   if (base !== undefined && base >= 8) rex |= 1;
   if (index !== undefined && index >= 8) rex |= 2;
+  if (locked) bytes.push(0xf0);
   opcodeBytes(bytes, legacy, rex, opcode);
   bytes.push((mod << 6) | regField | (sib ? 4 : baseField));
   if (sib) {
@@ -381,8 +455,9 @@ function integerRm(
   opcode: number,
   reg: Register | number,
   rm: RmOperand,
+  locked: boolean = false,
 ): void {
-  modRm(out, legacyWidth(width), width === 64, opcode, reg, rm);
+  modRm(out, legacyWidth(width), width === 64, opcode, reg, rm, locked);
 }
 
 function registerOpcode(
@@ -670,7 +745,6 @@ function emit(out: Encoding, insn: Encodable): void {
       const width = integerWidth(insn.dst.width);
       requireWidth(insn.src.width, width);
       if (insn.dst.kind !== "mem") invalid("expected an atomic memory operand");
-      if (insn.op !== "xchg") bytes.push(0xf0);
       const opcode =
         insn.op === "xchg"
           ? 0x86
@@ -683,6 +757,7 @@ function emit(out: Encoding, insn: Encodable): void {
         opcode + (width === 8 ? 0 : 1),
         insn.src,
         insn.dst,
+        insn.op !== "xchg",
       );
     }
     case "lea": {
@@ -721,13 +796,26 @@ function emit(out: Encoding, insn: Encodable): void {
     case "setcc":
       requireWidth(insn.dst.width, 8);
       return integerRm(out, 8, 0x0f90 + conditionCode(insn.cc), 0, insn.dst);
-    case "jcc":
+    case "jcc": {
+      const target = insn.target;
+      if (typeof target !== "number" && out.far) {
+        bytes.push(0x70 + (conditionCode(insn.cc) ^ 1), farTransferBytes);
+        return farTransfer(out, target, false);
+      }
       opcodeBytes(bytes, 0, 0, 0x0f80 + conditionCode(insn.cc));
-      return relative(out, insn.target);
+      return relative(out, target);
+    }
     case "call":
     case "jmp": {
       const target = insn.target;
       const call = insn.op === "call";
+      if (
+        out.far &&
+        typeof target !== "number" &&
+        target.kind === "label" &&
+        target.near !== true
+      )
+        return farTransfer(out, target, call);
       if (typeof target === "number" || target.kind === "label") {
         bytes.push(call ? 0xe8 : 0xe9);
         return relative(out, target);
@@ -866,7 +954,7 @@ function emit(out: Encoding, insn: Encodable): void {
 export interface EncodedLayout {
   readonly bytes: Uint8Array;
   readonly labels: ReadonlyMap<string, number>;
-  readonly externalFixups: readonly NearFixup[];
+  readonly externalFixups: readonly RelativeFixup[];
 }
 
 export function encode(instructions: readonly Instruction[]): Uint8Array {
@@ -878,8 +966,9 @@ export function encode(instructions: readonly Instruction[]): Uint8Array {
 export function encodeLayout(
   instructions: readonly Instruction[],
   isExternal?: (label: string) => boolean,
+  far: boolean = false,
 ): EncodedLayout {
-  const out: Encoding = { bytes: [], fixups: [] };
+  const out: Encoding = { bytes: [], fixups: [], far };
   const labels = new Map<string, number>();
   for (const insn of instructions) {
     if (insn.op === "label") {
@@ -890,13 +979,14 @@ export function encodeLayout(
       emit(out, insn);
       // Any relative field in this instruction is relative to its end.
       const fixup = out.fixups[before];
-      if (fixup !== undefined) fixup.nextOffset = out.bytes.length;
+      if (fixup !== undefined && fixup.byteLength === 4)
+        fixup.nextOffset = out.bytes.length;
     }
   }
   const bytes = new Uint8Array(out.bytes.length);
   let offset = 0;
   for (const byte of out.bytes) bytes[offset++] = byte;
-  const externalFixups: NearFixup[] = [];
+  const externalFixups: RelativeFixup[] = [];
   for (const fixup of out.fixups) {
     if (fixup === undefined) throw "rel32 fixup invariant";
     const target = labels.get(fixup.ref.label);
@@ -906,13 +996,9 @@ export function encodeLayout(
       externalFixups.push(fixup);
       continue;
     }
-    writeRel32(
-      bytes,
-      fixup.fieldOffset,
-      fixup.nextOffset,
-      target,
-      fixup.ref.addend ?? 0,
-    );
+    const status = patchRelative(bytes, fixup, fixup.fieldOffset, target);
+    if (status === "range") invalid("rel32 displacement out of range");
+    if (status !== "complete") invalid("invalid relative fixup field");
   }
   return { bytes, labels, externalFixups };
 }

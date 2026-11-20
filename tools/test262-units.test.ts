@@ -1,11 +1,18 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createSourceTextView } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
 import {
   compileArm64Program,
   compileNativeServiceUnit,
+  compileX64NativeServiceUnit,
+  type CompileRequest,
 } from "@tint/compiler/native";
+import { buildMacOSProgram, type BuildRequest } from "@tint/compiler/build";
+import { linuxX86_64Target } from "@tint/platform/target";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import { runtimeSources } from "@tint/compiler/cli";
 import { nativeServiceFixtureRequest } from "./native-service-fixture.ts";
@@ -18,6 +25,7 @@ import {
 } from "./test262-native.ts";
 import { executeNativeFile } from "./test262-native-process.ts";
 import { workspaceModules, workspaceSources } from "./workspace-sources.ts";
+import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
 
 function module(
   id: string,
@@ -31,15 +39,31 @@ function module(
 
 /** A host publishing the fixture's "counter" surface, with one factory slot
  * reserved before its directory (and so its digest) exists. */
-function compileCounterHost() {
+const serviceMemory = "packages/native-runtime/src/intrinsics/memory.ts";
+const serviceRuntime = "packages/native-runtime/src/index.ts";
+const serviceAllocator =
+  "packages/native-runtime/src/allocators/region/index.ts";
+
+function counterHostRequest(collect: boolean = false): CompileRequest {
   const contracts = "packages/compiler/src/native/index.ts",
     runtimes = runtimeSources();
+  if (collect)
+    runtimes.push({ module: serviceMemory, namespace: "native-memory" });
+  const dependencies: [string, string][] = [["contracts", contracts]];
+  if (collect) dependencies.push(["memory", serviceMemory]);
   const modules: SourceModule[] = [
-    ...workspaceModules([contracts, ...runtimes.map((item) => item.module)]),
+    ...workspaceModules([
+      contracts,
+      ...runtimes.map((item) => item.module),
+      ...(collect ? [serviceRuntime, serviceAllocator] : []),
+    ]),
     module(
       "counter-helpers",
-      'import type {ManagedSurfaceExport} from "contracts";export interface Frame{readonly $imports:unknown;}export interface Counter{readonly next:()=>number;}export function seed():number{return 1;}export function bind():ManagedSurfaceExport{throw "MANAGED_SURFACE_UNBOUND";}export function view(value:unknown):Counter|undefined{throw "UNBOUND_COUNTER_VIEW";}',
-      [["contracts", contracts]],
+      (collect ? 'import { collectGarbage } from "memory";' : "") +
+        'import type {ManagedSurfaceExport} from "contracts";export interface Frame{readonly $imports:unknown;}export interface Counter{readonly next:()=>number;}export function seed():number{' +
+        (collect ? "collectGarbage();" : "") +
+        'return 1;}export function bind():ManagedSurfaceExport{throw "MANAGED_SURFACE_UNBOUND";}export function view(value:unknown):Counter|undefined{throw "UNBOUND_COUNTER_VIEW";}',
+      dependencies,
     ),
     module(
       "counter-facade",
@@ -47,14 +71,14 @@ function compileCounterHost() {
     ),
     module(
       "main",
-      'import {bind,view} from "helpers";import {instantiate} from "service";export function run():number{const counter=view(instantiate({$imports:bind().table}));return counter===undefined?1:counter.next();}',
+      'import {bind,view} from "helpers";import {instantiate} from "service";export function run():number{const counter=view(instantiate({$imports:bind().table}));return counter===undefined?1:counter.next()+40;}',
       [
         ["helpers", "counter-helpers"],
         ["service", "counter-facade"],
       ],
     ),
   ];
-  return compileArm64Program({
+  return {
     modules,
     entry: "main",
     exports: ["run"],
@@ -73,7 +97,15 @@ function compileCounterHost() {
         retainedExports: ["instantiate"],
       },
     ],
-    hostBindings: [],
+    hostBindings: collect
+      ? [
+          {
+            module: serviceMemory,
+            name: "collectGarbage",
+            operation: "collect-garbage",
+          },
+        ]
+      : [],
     recordBindings: [
       { module: "counter-helpers", name: "view", operation: "view" },
     ],
@@ -94,7 +126,11 @@ function compileCounterHost() {
     serviceImports: [
       { module: "counter-facade", name: "instantiate", surface: "counter" },
     ],
-  });
+  };
+}
+
+function compileCounterHost() {
+  return compileArm64Program(counterHostRequest());
 }
 
 test("surface slots take the published directory's factory contract, which units compiled against it share", () => {
@@ -142,6 +178,75 @@ test("a published directory is read only while it stays canonical", () => {
       }),
     /not readable/,
   );
+});
+
+test("x86-64 links a managed service, collects through its frames and rejects a changed fixup", () => {
+  const host = compileCounterHost();
+  assert.ok(host.ok, JSON.stringify(host));
+  const published = host.value.managedSurfaces?.[0];
+  assert.ok(published);
+  const unit = compileX64NativeServiceUnit({
+    ...nativeServiceFixtureRequest(),
+    read: readPublishedSurface(published.directory),
+    linearAllocation: true,
+    generationalBarriers: true,
+  });
+  assert.ok(unit.ok, JSON.stringify(unit));
+  const hostRequest = counterHostRequest(true);
+  const bind = { module: "counter-facade", name: "instantiate" };
+  const request: BuildRequest = {
+    ...hostRequest,
+    target: linuxX86_64Target,
+    start: "run",
+    nativeServices: [{ bind, unit: unit.value }],
+    allocatorModule: serviceAllocator,
+    runtimeModule: serviceRuntime,
+    runtimeEntry: "initializeGenerationalRuntime",
+    memoryModule: serviceMemory,
+    identifier: "tint.x64.service",
+    managedBytes: 4194304,
+    controlBytes: 65536,
+    allocationCapacity: 65536,
+    rootCapacity: 65536,
+    stackBytes: 1048576,
+    report: () => {},
+  };
+  const image = buildMacOSProgram(request);
+  assert.ok(image.ok, image.ok ? undefined : JSON.stringify(image.error));
+  const { native } = unit.value;
+  const reference = native.managedFixups[0];
+  assert.ok(reference);
+  const code = native.code.slice();
+  code[reference.fixup.fieldOffset] = 1;
+  const bad = buildMacOSProgram({
+    ...request,
+    nativeServices: [
+      { bind, unit: { ...unit.value, native: { ...native, code } } },
+    ],
+  });
+  assert.deepEqual(bad, {
+    ok: false,
+    error: {
+      stage: "service-link",
+      message: "native service: invalid managed reference",
+    },
+  });
+  const runner = process.env.TINT_X64_HOSTED_RUNNER;
+  if (runner === undefined) return;
+  const directory = mkdtempSync(join(tmpdir(), "tint-x64-service-"));
+  try {
+    const path = join(directory, "counter");
+    writeFileSync(path, image.value, { mode: 0o755 });
+    const artifact = nativeArtifact(linuxX86_64Target.name, path);
+    const result = runNativeBatch([{ artifact }], {
+      ...process.env,
+      TINT_NATIVE_RUNNER: runner,
+    })[0];
+    assert.equal(result?.kind, "exited", JSON.stringify(result));
+    assert.equal(result.status, 42, JSON.stringify(result));
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 test("surface slots without a published surface are rejected", () => {

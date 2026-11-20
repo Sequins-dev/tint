@@ -61,8 +61,8 @@ import {
 } from "@tint/ir/scalar";
 import {
   encodeLayout,
-  writeRel32,
-  type NearFixup,
+  patchRelative,
+  type RelativeFixup,
   type Instruction as MachineInstruction,
   type Address,
   type Gpr,
@@ -140,6 +140,11 @@ import {
 import { createNumberEmission, floatBits } from "./numbers.ts";
 import { nativeSignatureTypeCode } from "../../scalar/signature.ts";
 import {
+  bindManagedABI,
+  type ManagedABIRequest,
+  type NativeManagedPointerImport,
+} from "../../scalar/managed-abi.ts";
+import {
   encodeWideStackMapTable,
   rootHeadBinding,
   type SafepointEntry,
@@ -155,6 +160,7 @@ export { appendExitEntry } from "./exit-entry.ts";
 export type { X64SignpostSite } from "../probes.ts";
 
 export interface X64Function {
+  readonly import?: true;
   readonly id: number;
   readonly name: string;
   readonly offset: number;
@@ -180,7 +186,15 @@ export interface X64Module extends ImageRelocations {
   readonly data: Uint8Array;
   readonly functions: readonly X64Function[];
   readonly imports: readonly string[];
-  readonly hostedThreadFixups: readonly NearFixup[];
+  readonly hostedThreadFixups: readonly RelativeFixup[];
+  readonly far: boolean;
+  readonly linearAllocation: boolean;
+  readonly generationalBarriers: boolean;
+  readonly managedImports: readonly NativeManagedPointerImport[];
+  readonly managedFixups: readonly X64ManagedReference[];
+  readonly signatures: readonly X64Signature[];
+  readonly records: readonly X64Record[];
+  readonly functionDescriptor?: X64Record;
   readonly unwind: readonly UnwindRange[];
   readonly sourceRanges: readonly X64SourceRange[];
   readonly probes: readonly X64Probe[];
@@ -190,6 +204,26 @@ export interface X64Module extends ImageRelocations {
     readonly codeLength: number;
     readonly tableOffset: number;
   }[];
+}
+interface X64Signature {
+  readonly functions: readonly number[];
+  readonly offset: number;
+  readonly parameters: readonly ScalarType[];
+  readonly returnType: ScalarType | "void";
+}
+interface X64Record {
+  readonly record: number;
+  readonly offset: number;
+}
+export interface X64ManagedReference {
+  readonly fixup: RelativeFixup;
+  readonly import: number;
+}
+export interface X64ManagedOptions {
+  readonly mode: "service" | "live";
+  readonly bindings?: ManagedABIRequest;
+  readonly functions: readonly number[];
+  readonly records: readonly number[];
 }
 export interface X64Diagnostic {
   readonly code: "INVALID_IR" | "UNSUPPORTED" | "FRAME_LIMIT" | "ENCODING";
@@ -298,6 +332,8 @@ export function emitModule(
   debugSpans: boolean = false,
   signposts: readonly X64SignpostSite[] = [],
   allocationProbes: boolean = false,
+  far: boolean = false,
+  managed?: X64ManagedOptions,
 ): X64Emission {
   const verified = verify(module);
   if (!verified.ok)
@@ -361,6 +397,39 @@ export function emitModule(
     descriptors.set(name, { offset: poolBytes, words });
     poolBytes += words.length * 8;
   }
+  const abiRequests: NativeManagedPointerImport[] = [];
+  const entryImports = new Map<number, number>();
+  const signatureImports = new Map<number, number>();
+  const recordImports = new Map<number, number>();
+  const managedNames = new Map<string, number>();
+  const recordNames = new Map<number, string>();
+  const signatureMembers = new Map<string, number[]>();
+  let brand: number | undefined;
+  function importedAddress(index: number): Memory<64> {
+    const name = "managed:" + String(index);
+    if (!managedNames.has(name)) {
+      managedNames.set(name, index);
+      poolWords(name, [0]);
+    }
+    return rip(name);
+  }
+  function address(dst: Gpr<64>, source: Memory<64>): void {
+    const from = source.address;
+    if (managed?.mode === "live" && from.kind === "rip") {
+      const ref = from.disp;
+      if (typeof ref !== "number" && managedNames.has(ref.label)) {
+        emit({ op: "mov", dst, src: source });
+        return;
+      }
+    }
+    emit({ op: "lea", dst, src: source });
+  }
+  function functionAddress(id: number): Memory<64> {
+    const imported = entryImports.get(id);
+    return imported === undefined
+      ? rip(functionLabel(id))
+      : importedAddress(imported);
+  }
   const functionRecord = module.records?.length ?? 0;
   const functionLayout: RecordLayout = {
     byteLength: nativeFunctionByteLength,
@@ -378,6 +447,9 @@ export function emitModule(
     fields: [{ offset: 8, type: "string", mutable: false }],
   };
   function descriptor(record: number): Memory<64> {
+    const imported =
+      record === functionRecord ? brand : recordImports.get(record);
+    if (imported !== undefined) return importedAddress(imported);
     const name = "record:" + String(record);
     if (!descriptors.has(name)) {
       const layout =
@@ -401,6 +473,7 @@ export function emitModule(
       for (const offset of generals)
         if (offset !== undefined) words.push(offset);
       poolWords(name, words);
+      if (managed !== undefined) recordNames.set(record, name);
     }
     return rip(name);
   }
@@ -440,6 +513,8 @@ export function emitModule(
   const signatures: { parameters: string; name: string }[] = [];
   const discardSignatures = new Map<string, Set<string>>();
   function signature(target: number): Memory<64> {
+    const imported = signatureImports.get(target);
+    if (imported !== undefined) return importedAddress(imported);
     const fn = module.functions[target];
     const args = argumentsByFunction[target];
     const shape = signatures[target];
@@ -456,6 +531,14 @@ export function emitModule(
       for (const arg of args)
         if (arg !== undefined) words.push(nativeSignatureTypeCode(arg.type));
       poolWords(shape.name, words);
+    }
+    if (managed !== undefined) {
+      let members = signatureMembers.get(shape.name);
+      if (members === undefined) {
+        members = [];
+        signatureMembers.set(shape.name, members);
+      }
+      if (!members.includes(target)) members.push(target);
     }
     return rip(shape.name);
   }
@@ -654,7 +737,8 @@ export function emitModule(
       const args = argumentsByFunction[op.target];
       const callee = module.functions[op.target];
       if (args === undefined || callee === undefined) throw "callee invariant";
-      if (callee.import === true)
+      const imported = entryImports.get(op.target);
+      if (callee.import === true && imported === undefined)
         fail("UNSUPPORTED", "unsupported managed import " + callee.name);
       if (op.kind === "call-indirect") {
         guardRecord(op.callee, functionRecord, trapLabel);
@@ -663,9 +747,9 @@ export function emitModule(
           dst: rax,
           src: mem(9, nativeFunctionSignatureOffset),
         });
-        emit({ op: "lea", dst: scratch, src: signature(op.target) });
+        address(scratch, signature(op.target));
         emit({ op: "cmp", dst: rax, src: scratch });
-        if (op.discardResult === true) {
+        if (op.discardResult === true && !signatureImports.has(op.target)) {
           const shape = signatures[op.target];
           if (shape === undefined) throw "discarded result signature invariant";
           const valid = fnLabel + ":signature:" + String(machine.length);
@@ -714,10 +798,14 @@ export function emitModule(
       emit({ op: "lea", dst: result, src: frame(callResult) });
       emit({ op: "mov", dst: frame(callResult), src: imm(0) });
       emit({ op: "mov", dst: frame(callResult + 8), src: imm(0) });
+      if (op.kind === "call" && imported !== undefined)
+        address(r10, importedAddress(imported));
       emit({
         op: "call",
         target:
-          op.kind === "call-indirect" ? r10 : label(functionLabel(op.target)),
+          op.kind === "call-indirect" || imported !== undefined
+            ? r10
+            : label(functionLabel(op.target)),
       });
       safepoint(block, index);
       const received = fnLabel + ":call:" + String(machine.length);
@@ -1437,7 +1525,7 @@ export function emitModule(
       emit({ op: "mov", dst: word(10), src: imm(layout.byteLength) });
       allocate(block, siteIndex, site, site + ":denied");
       emit({ op: "mov", dst: r9, src: rax });
-      emit({ op: "lea", dst: scratch, src: descriptor(op.record) });
+      address(scratch, descriptor(op.record));
       emit({ op: "mov", dst: mem(9, 0), src: scratch });
       for (let index = 0; index < layout.fields.length; index++) {
         const field = recordField(op.record, index);
@@ -1484,7 +1572,7 @@ export function emitModule(
       emit({ op: "mov", dst: r9, src: frame(home(object)) });
       emit({ op: "test", dst: r9, src: r9 });
       branch(emit, "e", alternate);
-      emit({ op: "lea", dst: scratch, src: descriptor(record) });
+      address(scratch, descriptor(record));
       emit({ op: "cmp", dst: mem(9, 0), src: scratch });
       branch(emit, "ne", alternate);
     }
@@ -2254,9 +2342,9 @@ export function emitModule(
           emit({ op: "mov", dst: r10, src: imm(nativeFunctionByteLength) });
           allocate(block, index, site, site + ":denied");
           emit({ op: "mov", dst: r9, src: rax });
-          emit({ op: "lea", dst: rax, src: descriptor(functionRecord) });
+          address(rax, descriptor(functionRecord));
           emit({ op: "mov", dst: mem(9, 0), src: rax });
-          emit({ op: "lea", dst: rax, src: rip(functionLabel(op.target)) });
+          address(rax, functionAddress(op.target));
           emit({ op: "mov", dst: mem(9, nativeFunctionEntryOffset), src: rax });
           if (closure === undefined) emit({ op: "xor", dst: eax, src: eax });
           else emit({ op: "mov", dst: rax, src: frame(home(closure)) });
@@ -2265,7 +2353,7 @@ export function emitModule(
             dst: mem(9, nativeFunctionEnvironmentOffset),
             src: rax,
           });
-          emit({ op: "lea", dst: rax, src: signature(op.target) });
+          address(rax, signature(op.target));
           emit({
             op: "mov",
             dst: mem(9, nativeFunctionSignatureOffset),
@@ -2358,7 +2446,7 @@ export function emitModule(
             (op.error === "TypeError" ? 0 : op.error === "RangeError" ? 1 : 2);
           emit({ op: "mov", dst: r10, src: imm(errorLayout.byteLength) });
           allocate(block, index, site, site + ":denied");
-          emit({ op: "lea", dst: scratch, src: descriptor(record) });
+          address(scratch, descriptor(record));
           emit({ op: "mov", dst: mem(0, 0), src: scratch });
           emit({ op: "mov", dst: scratch, src: frame(home(op.message)) });
           emit({ op: "mov", dst: mem(0, 8), src: scratch });
@@ -2390,7 +2478,7 @@ export function emitModule(
           emit({ op: "mov", dst: r9, src: frame(home(op.value) + 8) });
           emit({ op: "test", dst: r9, src: r9 });
           branch(emit, "e", done);
-          emit({ op: "lea", dst: scratch, src: descriptor(op.record) });
+          address(scratch, descriptor(op.record));
           emit({ op: "cmp", dst: mem(9, 0), src: scratch });
           if (reflection)
             emit({ op: "cmovcc", cc: "e", dst: rax, src: scratch });
@@ -2401,19 +2489,17 @@ export function emitModule(
           return;
         }
         case "record-descriptor-address":
-          emit({ op: "lea", dst: rax, src: descriptor(op.record) });
+          address(rax, descriptor(op.record));
           numberBits();
           define(op.id, "number");
           return;
         case "function-address":
-          emit({
-            op: "lea",
-            dst: rax,
-            src:
-              op.part === "entry"
-                ? rip(functionLabel(op.target))
-                : signature(op.target),
-          });
+          address(
+            rax,
+            op.part === "entry"
+              ? functionAddress(op.target)
+              : signature(op.target),
+          );
           numberBits();
           define(op.id, "number");
           return;
@@ -2487,11 +2573,7 @@ export function emitModule(
               emit({ op: "mov", dst: rax, src: frame(home(op.value) + 8) });
               emit({ op: "test", dst: rax, src: rax });
               branch(emit, "e", object);
-              emit({
-                op: "lea",
-                dst: scratch,
-                src: descriptor(functionRecord),
-              });
+              address(scratch, descriptor(functionRecord));
               emit({ op: "cmp", dst: mem(0, 0), src: scratch });
               branch(emit, "ne", object);
               emit({ op: "lea", dst: rax, src: literal("function") });
@@ -2571,11 +2653,7 @@ export function emitModule(
           const first = op.error === "RangeError" ? 1 : 0;
           const last = op.error === "Error" ? 2 : first;
           for (let kind: number = first; kind <= last; kind++) {
-            emit({
-              op: "lea",
-              dst: scratch,
-              src: descriptor(errorRecord + kind),
-            });
+            address(scratch, descriptor(errorRecord + kind));
             emit({ op: "cmp", dst: mem(9, 0), src: scratch });
             branch(emit, "e", yes);
           }
@@ -3064,6 +3142,42 @@ export function emitModule(
         name: "signature:" + fn.returnType + parameters,
       });
     }
+    const abi = managed?.bindings;
+    if (abi !== undefined) {
+      const witnesses = new Uint8Array(module.functions.length);
+      for (const fn of module.functions) {
+        if (fn === undefined) throw "managed function invariant";
+        for (const block of fn.blocks) {
+          if (block === undefined) throw "managed block invariant";
+          for (const op of block.instructions)
+            if (op?.kind === "function-new" || op?.kind === "call-indirect")
+              witnesses[op.target] =
+                (witnesses[op.target] ?? 0) |
+                (op.kind === "function-new" ? 1 : 2);
+        }
+      }
+      brand = bindManagedABI(
+        module,
+        abi,
+        witnesses,
+        {
+          requests: abiRequests,
+          entries: entryImports,
+          signatures: signatureImports,
+          records: recordImports,
+        },
+        (code, message) => fail(code, message),
+      );
+      for (let index = 0; index < abiRequests.length; index++)
+        importedAddress(index);
+    }
+    const published = managed;
+    if (published !== undefined) {
+      descriptor(functionRecord);
+      for (const record of published.records)
+        if (record !== undefined) descriptor(record);
+      for (const fn of published.functions) if (fn !== undefined) signature(fn);
+    }
     for (const fn of module.functions) {
       if (fn === undefined) throw "function invariant";
       for (const block of fn.blocks) {
@@ -3101,6 +3215,7 @@ export function emitModule(
     // A declaration by itself also needs a linker binding.
     for (const fn of module.functions) {
       if (fn?.import !== true) continue;
+      if (entryImports.has(fn.id)) continue;
       functionId = fn.id;
       blockId = undefined;
       span = undefined;
@@ -3130,7 +3245,8 @@ export function emitModule(
       const entry = gpr(11);
       const done = collectorWorker + ":done";
       const end = collectorWorker + ":end";
-      const bytes = contextBytes + resultBytes;
+      const saveOffset = contextBytes + resultBytes;
+      const bytes = saveOffset + (far ? 16 : 0);
       const cfi = frameRows(emit, collectorWorker);
       const saved = [returnSave, frameSave];
       emit({ op: "label", name: collectorWorker });
@@ -3138,6 +3254,16 @@ export function emitModule(
       cfi.record(dwarfStackPointer, 16, saved);
       emit({ op: "sub", dst: rsp, src: imm(bytes) });
       cfi.record(dwarfStackPointer, bytes + 16, saved);
+      if (far) {
+        emit({ op: "mov", dst: mem(4, saveOffset), src: gpr(14) });
+        emit({ op: "mov", dst: mem(4, saveOffset + 8), src: gpr(15) });
+        const farSaved = saved.slice();
+        farSaved.push(
+          { register: 14, offset: -32 },
+          { register: 15, offset: -24 },
+        );
+        cfi.record(dwarfStackPointer, bytes + 16, farSaved);
+      }
       for (let offset = 0; offset < contextBytes; offset += 8)
         emit({ op: "mov", dst: mem(4, offset), src: imm(0) });
       emit({ op: "lea", dst: rax, src: mem(4, -262144) });
@@ -3164,8 +3290,12 @@ export function emitModule(
         src: mem(4, contextBytes + resultPayload),
       });
       emit({ op: "label", name: done });
+      if (far) {
+        emit({ op: "mov", dst: gpr(14), src: mem(4, saveOffset) });
+        emit({ op: "mov", dst: gpr(15), src: mem(4, saveOffset + 8) });
+      }
       emit({ op: "add", dst: rsp, src: imm(bytes) });
-      cfi.record(dwarfStackPointer, 16, saved);
+      cfi.record(dwarfStackPointer, 16, [returnSave, frameSave]);
       emit({ op: "pop", dst: rbp });
       cfi.record(dwarfStackPointer, 8, [returnSave]);
       emit({ op: "ret" });
@@ -3189,6 +3319,7 @@ export function emitModule(
             call: foreign,
             constant,
             trap: trapLabel,
+            far,
           }),
         );
       }
@@ -3211,10 +3342,21 @@ export function emitModule(
         external.has(name) ||
         strings.has(name) ||
         descriptors.has(name),
+      far,
     );
     const functions: X64Function[] = [];
     for (const fn of module.functions) {
       if (fn === undefined) throw "function invariant";
+      if (fn.import === true) {
+        functions.push({
+          id: fn.id,
+          name: fn.name,
+          import: true,
+          offset: 0,
+          byteLength: 0,
+        });
+        continue;
+      }
       const name = functionLabel(fn.id);
       const offset = encoded.labels.get(name);
       const end = encoded.labels.get(name + ":end");
@@ -3286,25 +3428,34 @@ export function emitModule(
           throw "x86-64 descriptor word invariant";
       }
     }
-    const imageFixups: NearFixup[] = [];
-    const hostedThreadFixups: NearFixup[] = [];
+    const imageFixups: RelativeFixup[] = [];
+    const hostedThreadFixups: RelativeFixup[] = [];
+    const managedFixups: X64ManagedReference[] = [];
     for (const fixup of encoded.externalFixups) {
       if (fixup === undefined) throw "x86-64 fixup invariant";
       if (fixup.ref.label === hostedThreadEntryLabel) {
         hostedThreadFixups.push(fixup);
         continue;
       }
+      const imported = managedNames.get(fixup.ref.label);
+      if (imported !== undefined && managed?.mode === "service") {
+        managedFixups.push({ fixup, import: imported });
+        continue;
+      }
       const offset =
         strings.get(fixup.ref.label)?.offset ??
         descriptors.get(fixup.ref.label)?.offset;
       if (offset === undefined) imageFixups.push(fixup);
-      else
-        writeRel32(
+      else {
+        const status = patchRelative(
           code,
+          fixup,
           fixup.fieldOffset,
-          fixup.nextOffset,
           poolBase + offset,
         );
+        if (status === "range") throw "x86-64 rel32 displacement out of range";
+        if (status !== "complete") throw "x86-64 pool fixup invariant";
+      }
     }
     const stackMaps: X64Module["stackMaps"][number][] = [];
     if (host !== undefined) {
@@ -3364,6 +3515,45 @@ export function emitModule(
         throw "binary64 data invariant";
     }
     const relocations = imageRelocations(imageFixups, external);
+    const managedImports: NativeManagedPointerImport[] = [];
+    for (let index = 0; index < abiRequests.length; index++) {
+      const request = abiRequests[index];
+      const slot = descriptors.get("managed:" + String(index));
+      if (request === undefined || slot === undefined)
+        throw "managed import invariant";
+      managedImports.push({ ...request, offset: poolBase + slot.offset });
+    }
+    const nativeRecords: X64Record[] = [];
+    let functionDescriptor: X64Record | undefined;
+    for (const [record, name] of recordNames) {
+      const item = descriptors.get(name);
+      if (item === undefined) throw "managed record invariant";
+      const info = { record, offset: poolBase + item.offset };
+      if (record === functionRecord) functionDescriptor = info;
+      else if (record < functionRecord) nativeRecords.push(info);
+    }
+    const nativeSignatures: X64Signature[] = [];
+    for (const [name, members] of signatureMembers) {
+      const id = members[0];
+      if (id === undefined) throw "managed signature member invariant";
+      const fn = module.functions[id];
+      const item = descriptors.get(name);
+      if (fn === undefined || item === undefined)
+        throw "managed signature invariant";
+      const args = argumentsByFunction[id];
+      if (args === undefined) throw "managed signature arguments invariant";
+      const parameters: ScalarType[] = [];
+      for (const arg of args) {
+        if (arg === undefined) throw "managed argument invariant";
+        parameters.push(arg.type);
+      }
+      nativeSignatures.push({
+        functions: members,
+        offset: poolBase + item.offset,
+        parameters,
+        returnType: fn.returnType,
+      });
+    }
     const sourceRanges: X64SourceRange[] = [];
     for (let index = 0; index + 1 < sourceLabels.length; index++) {
       const row = sourceLabels[index],
@@ -3386,6 +3576,14 @@ export function emitModule(
         functions,
         imports: [...imports],
         hostedThreadFixups,
+        far,
+        linearAllocation: inlineAllocation,
+        generationalBarriers: generational,
+        managedImports,
+        managedFixups,
+        ...(functionDescriptor === undefined ? {} : { functionDescriptor }),
+        signatures: nativeSignatures,
+        records: nativeRecords,
         unwind: resolveUnwind(unwind, encoded.labels),
         sourceRanges,
         probes: probes.resolve(encoded.labels),

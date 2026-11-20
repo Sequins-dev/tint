@@ -222,6 +222,23 @@ const native = {
     runner === undefined && "set TINT_X64_HOSTED_RUNNER for x86-64 execution",
 };
 
+test("x86-64 forced far image resolves calls, branches, permanent data and imports", () => {
+  const built = build(
+    `import { argumentCount } from "process";
+     function answer(text: string): number {
+       if (argumentCount() > 0 && text === "far") return 42;
+       return 1;
+     }
+     export function run(): number { return answer("far"); }`,
+    {
+      process: intrinsic("process", { argumentCount: "argument-count" }),
+    },
+    { forceFarReach: true, managedBytes: 4294966272, optimization: "none" },
+  );
+  assert.ok(built.ok, JSON.stringify(built));
+  if (runner !== undefined) assert.equal(run(built.value).status, 42);
+});
+
 test("x86-64 shared atomics preserve width, observed words and adjacent bytes", () => {
   const built = build(
     `import { mapMemory, unmapMemory, readMemoryWord, writeMemoryWord,

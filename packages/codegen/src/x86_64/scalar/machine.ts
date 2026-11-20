@@ -4,7 +4,7 @@ import type {
   ImageAddressReference,
   ImageAddressTarget,
 } from "@tint/abi/relocation";
-import { writeSigned } from "@tint/foundation/binary/bytes";
+import { patchRelative } from "../isa.ts";
 import type {
   Condition,
   Gpr,
@@ -12,7 +12,7 @@ import type {
   Instruction,
   LabelReference,
   Memory,
-  NearFixup,
+  RelativeFixup,
   Xmm,
 } from "../isa.ts";
 
@@ -81,10 +81,9 @@ export interface ImageRelocations {
   readonly patchAddress: ImageAddressPatcher;
 }
 
-/** ELF data and GOT windows are four-byte fields. Keep the distance to the
- * instruction end separately so the same patcher works with trailing bytes. */
+/** The image writer gets the exact rel32 or rel64 field and its PC base. */
 export function imageRelocations(
-  fixups: readonly NearFixup[],
+  fixups: readonly RelativeFixup[],
   external: ReadonlyMap<string, ImageAddressTarget>,
 ): ImageRelocations {
   const addressFixups: ImageAddressReference[] = [];
@@ -94,7 +93,7 @@ export function imageRelocations(
     if (target === undefined) throw "rel32 symbol invariant";
     addressFixups.push({
       offset: fixup.fieldOffset,
-      byteLength: 4,
+      byteLength: fixup.byteLength,
       alignment: 1,
       target,
     });
@@ -108,18 +107,7 @@ export function imageRelocations(
   ) => {
     const fixup = fixups[index];
     if (fixup === undefined) return "invalid";
-    const next =
-      (siteAddress ?? siteOffset) + fixup.nextOffset - fixup.fieldOffset;
-    const distance = targetOffset - next + (fixup.ref.addend ?? 0);
-    if (
-      !Number.isSafeInteger(distance) ||
-      distance < -0x80000000 ||
-      distance > 0x7fffffff
-    )
-      return "range";
-    return writeSigned(bytes, siteOffset, 4, distance, "little").ok
-      ? "complete"
-      : "invalid";
+    return patchRelative(bytes, fixup, siteOffset, targetOffset, siteAddress);
   };
   return { addressFixups, patchAddress };
 }

@@ -10,7 +10,11 @@ import {
   type NativeTarget,
 } from "@tint/platform/target";
 import type { CodePlan } from "@tint/abi/relocation";
-import { planNativeServiceModules } from "./native/service-unit-link.ts";
+import {
+  planNativeServiceModules,
+  planX64ServiceModules,
+  type X64ServiceLink,
+} from "./native/service-unit-link.ts";
 import type { PosixHostABI } from "@tint/abi/host";
 import { optimizeModule, unboundedWork } from "@tint/ir/optimization";
 import {
@@ -18,6 +22,7 @@ import {
   compileX64HostedProgram,
   selectNativeBackend,
   type NativeServiceUnit,
+  type X64NativeServiceUnit,
   type NativeServiceBinding,
   type NativeServiceLink,
   type NativeHostBinding,
@@ -137,7 +142,7 @@ export interface BuildRequest extends ModuleRequest {
   readonly machOLayout?: MachOLayoutOptions | undefined;
   /** Immutable native units prepared for the same frozen source/toolchain. */
   readonly nativeServices?: readonly {
-    readonly unit: NativeServiceUnit;
+    readonly unit: NativeServiceUnit | X64NativeServiceUnit;
     readonly bind: { readonly module: string; readonly name: string };
   }[];
   /** Service import slots the program reserves in addition to one per native
@@ -287,7 +292,17 @@ function compileFailure(
 /** Pure artifact composition shared by Node bootstrap and the native compiler. */
 export function buildMacOSProgram(request: BuildRequest): BuildResult {
   const target = buildTarget(request);
-  if (target.arch === "x86_64") return buildX64HostedProgram(request, target);
+  if (target.arch === "x86_64") {
+    const built = buildX64HostedProgram(request, target);
+    if (
+      !built.ok &&
+      request.forceFarReach !== true &&
+      (built.error.message.includes("rel32 displacement out of range") ||
+        built.error.message === "ELF image: ADDRESS_OUT_OF_RANGE")
+    )
+      return buildX64HostedProgram({ ...request, forceFarReach: true }, target);
+    return built;
+  }
   const compiled = compileMacOSProgram(request);
   if (!compiled.ok) return { ok: false, error: compiled.error };
   return linkMacOSProgram(compiled.value, request);
@@ -311,6 +326,13 @@ function buildX64HostedProgram(
       target.name + ": parallel collection is unavailable",
     );
   const generational = request.runtimeEntry === "initializeGenerationalRuntime";
+  const forceFarReach =
+    request.forceFarReach === true ||
+    (request.nativeServices ?? []).some((service) => {
+      if (service === undefined) return false;
+      const unit = service.unit;
+      return unit.arch === "x86_64" && unit.native.far;
+    });
   if (request.runtimeEntry !== undefined && !generational)
     return deferred(request.runtimeEntry);
   if (request.allowJit === true) return deferred("executable-map");
@@ -323,8 +345,6 @@ function buildX64HostedProgram(
       "target",
       target.name + ": native diagnostics are unavailable",
     );
-  if (request.forceFarReach === true)
-    return failure("target", target.name + ": far code model is unavailable");
   if (
     request.onOperationRanges !== undefined ||
     request.onEmittedFunctions !== undefined ||
@@ -337,13 +357,6 @@ function buildX64HostedProgram(
       "target",
       target.name + ": emission and optimization reports are unavailable",
     );
-  if (
-    (request.nativeServices?.length ?? 0) !== 0 ||
-    (request.serviceSlots?.length ?? 0) !== 0 ||
-    (request.managedSurfaces?.length ?? 0) !== 0
-  )
-    return deferred("managed surfaces");
-
   const managedBytes = request.managedBytes,
     stackBytes = request.stackBytes;
   const pageBytes = target.memoryPageBytes;
@@ -354,7 +367,8 @@ function buildX64HostedProgram(
     !Number.isSafeInteger(stackBytes) ||
     stackBytes <= nativeCStackReserveBytes ||
     stackBytes % pageBytes !== 0 ||
-    stackBytes + managedBytes + pageBytes * 2 > 0x7fffffff
+    stackBytes + pageBytes * 2 > 0x7fffffff ||
+    managedBytes > 0xffffffff
   )
     return failure(
       "memory-policy",
@@ -400,6 +414,7 @@ function buildX64HostedProgram(
       target.hostABI,
       {
         runtime: true,
+        forceFarReach,
         ...(request.signposts === true
           ? { signposts: collectorSignpostNames(request) }
           : {}),
@@ -440,6 +455,8 @@ function buildX64HostedProgram(
       foreignBindings: request.foreignBindings ?? [],
       foreignMemoryBindings: request.foreignMemoryBindings ?? [],
       foreignLibraries: request.foreignLibraries ?? [],
+      serviceImports: serviceImportsForRequest(request),
+      managedSurfaces: request.managedSurfaces ?? [],
       recordBindings: request.recordBindings ?? [],
       weakBindings: request.weakBindings ?? [],
       ...(request.denseReferenceLists === undefined
@@ -456,13 +473,82 @@ function buildX64HostedProgram(
     target.hostABI,
     {
       generational,
+      forceFarReach,
       inlineAllocation: request.inlineAllocation !== false,
       threaded: request.threaded === true,
       allocationProbes: request.signposts === true,
     },
   );
   if (!compiled.ok) return compiled;
-  const native = compiled.native;
+  let native = compiled.native;
+  let programCodePlan: CodePlan | undefined;
+  if (
+    native.managedImports.length !== 0 ||
+    (request.nativeServices?.length ?? 0) !== 0
+  ) {
+    const bindings: NativeServiceBinding[] = [];
+    const links: X64ServiceLink[] = [];
+    const linkedUnits = new Map<X64NativeServiceUnit, number>();
+    for (const service of request.nativeServices ?? []) {
+      if (service === undefined) throw "native service invariant";
+      const unit = service.unit;
+      if (unit.arch !== "x86_64")
+        return failure("service-link", "native service target differs");
+      const entry = unit.native.functions.find(
+        (fn) =>
+          fn !== undefined &&
+          fn.import !== true &&
+          fn.offset === unit.entryOffset,
+      );
+      const signature =
+        entry === undefined
+          ? undefined
+          : unit.native.signatures.find(
+              (item) => item !== undefined && item.functions.includes(entry.id),
+            );
+      if (
+        unit.version !== 1 ||
+        unit.profile !== "managed-factory-v1" ||
+        signature === undefined ||
+        signature.parameters.length !== 1 ||
+        signature.parameters[0] !== "reference" ||
+        signature.returnType !== "general"
+      )
+        return failure("service-link", "invalid managed factory entry");
+      const known = linkedUnits.get(unit),
+        index = known ?? links.length;
+      bindings.push({
+        unit: index,
+        name: service.bind.module + ":" + service.bind.name,
+        contract: unit.factoryContract,
+        role: "function-entry",
+        parameters: signature.parameters,
+        returnType: signature.returnType,
+        metadataOffset: signature.offset,
+        entryOffset: unit.entryOffset,
+      });
+      if (known !== undefined) continue;
+      const imports: NativeServiceBinding[] = [];
+      for (const imported of unit.native.managedImports) {
+        if (imported === undefined) throw "native service import invariant";
+        const binding = compiled.serviceIdentities.find(
+          (item) => item !== undefined && item.contract === imported.contract,
+        );
+        if (binding === undefined)
+          return failure(
+            "service-link",
+            "host is missing unit contract: " + imported.contract,
+          );
+        imports.push({ ...binding, name: imported.name });
+      }
+      linkedUnits.set(unit, index);
+      links.push({ native: unit.native, bindings: imports });
+    }
+    const linked = planX64ServiceModules(native, links, bindings);
+    if (!linked.ok) return failure("service-link", linked.error);
+    native = linked.native;
+    programCodePlan = linked.codePlan;
+  }
   const main = native.functions[compiled.invocation];
   if (main === undefined)
     return failure("startup", target.name + ": missing managed entry");
@@ -481,6 +567,7 @@ function buildX64HostedProgram(
       host: target.hostABI,
       invocation: main.offset,
       returnType,
+      ...(programCodePlan === undefined ? {} : { programCodePlan }),
       ...(runtime === undefined ? {} : { runtime }),
       stackBytes,
       threaded: request.threaded === true,
@@ -496,7 +583,8 @@ function buildX64HostedProgram(
     if (typeof libraries === "string") return failure("image", libraries);
     const executable: ExecutableImageRequest = {
       libraries,
-      code: image.code,
+      code: new Uint8Array(0),
+      codePlan: image.codePlan,
       entryOffset: image.entryOffset,
       maxByteLength: image.maxByteLength,
       data: image.data,
@@ -554,6 +642,7 @@ function x64DebugInfo(
     }
     for (const fn of unit.native.functions) {
       if (fn === undefined) throw "x64 debug function invariant";
+      if (fn.import === true) continue;
       const frame = fn.frame;
       const name = unit.functionNames.get(fn.name) ?? fn.name;
       if (frame === undefined) {
@@ -998,40 +1087,12 @@ export function compileMacOSProgram(
   if (runtimeEntry === undefined)
     return compileFailure("runtime", "runtime entry is missing");
   request.report("program");
-  const serviceImports: NativeServiceImport[] = [];
-  for (const service of request.nativeServices ?? []) {
-    if (service === undefined) throw "native service invariant";
-    serviceImports.push({
-      module: service.bind.module,
-      name: service.bind.name,
-      contract: service.unit.factoryContract,
-      surface: service.unit.surface.name,
-    });
-  }
-  for (const slot of request.serviceSlots ?? []) {
-    if (slot === undefined) throw "service slot invariant";
-    const contract = slot.contract;
-    serviceImports.push(
-      contract === undefined
-        ? {
-            module: slot.bind.module,
-            name: slot.bind.name,
-            surface: slot.surface,
-          }
-        : {
-            module: slot.bind.module,
-            name: slot.bind.name,
-            contract,
-            surface: slot.surface,
-          },
-    );
-  }
   const program = compileNativeProgram(
     {
       ...(request.storage === undefined ? {} : { storage: request.storage }),
       pageAlignedCode: true,
       forceFarReach: request.forceFarReach === true,
-      serviceImports,
+      serviceImports: serviceImportsForRequest(request),
       managedSurfaces: request.managedSurfaces ?? [],
       closedProgram: true,
       denseReferenceLists: request.denseReferenceLists ?? false,
@@ -1150,8 +1211,10 @@ function linkHostedImage(
     for (let index = 0; index < services.length; index++) {
       const service = services[index];
       if (service === undefined) throw "native service invariant";
-      const unit = service.unit,
-        entry = unit.native.functions.find(
+      const unit = service.unit;
+      if (unit.arch === "x86_64")
+        return failure("service-link", "native service target differs");
+      const entry = unit.native.functions.find(
           (fn) =>
             fn !== undefined &&
             fn.import !== true &&
@@ -1675,6 +1738,40 @@ function linkHostedImage(
   if (!image.ok) return failure("image", image.error);
   return { ok: true, value: image.value };
 }
+function serviceImportsForRequest(
+  request: BuildRequest,
+): NativeServiceImport[] {
+  const serviceImports: NativeServiceImport[] = [];
+  for (const service of request.nativeServices ?? []) {
+    if (service === undefined) throw "native service invariant";
+    serviceImports.push({
+      module: service.bind.module,
+      name: service.bind.name,
+      contract: service.unit.factoryContract,
+      surface: service.unit.surface.name,
+    });
+  }
+  for (const slot of request.serviceSlots ?? []) {
+    if (slot === undefined) throw "service slot invariant";
+    const contract = slot.contract;
+    serviceImports.push(
+      contract === undefined
+        ? {
+            module: slot.bind.module,
+            name: slot.bind.name,
+            surface: slot.surface,
+          }
+        : {
+            module: slot.bind.module,
+            name: slot.bind.name,
+            contract,
+            surface: slot.surface,
+          },
+    );
+  }
+  return serviceImports;
+}
+
 function buildTarget(request: BuildRequest): NativeTarget {
   return request.target ?? darwinAArch64Target;
 }

@@ -214,6 +214,7 @@ export function callbackThunkKey(thunk: CallbackThunk): string {
 interface ThunkSite extends IntegerSite {
   readonly thunk: CallbackThunk;
   readonly call: (symbol: string) => void;
+  readonly far: boolean;
 }
 
 /** A synthetic frame record at RBP preserves the walker contract at +48.
@@ -255,6 +256,17 @@ export function emitCallbackThunk(site: ThunkSite): LabeledUnwind {
   emit({ op: "sub", dst: rsp, src: imm(frameBytes) });
   cfi.record(dwarfStackPointer, frameBytes + 16, saves);
   emit({ op: "lea", dst: rbp, src: mem(4, outgoing) });
+  if (site.far) {
+    // The reserved scratch saves fit between the completion and arguments.
+    emit({ op: "mov", dst: mem(5, 224), src: gpr(14) });
+    emit({ op: "mov", dst: mem(5, 232), src: gpr(15) });
+    const farSaves = saves.slice();
+    farSaves.push(
+      { register: 14, offset: 224 + outgoing - frameBytes - 16 },
+      { register: 15, offset: 232 + outgoing - frameBytes - 16 },
+    );
+    cfi.record(dwarfStackPointer, frameBytes + 16, farSaves);
+  }
   emit({ op: "mov", dst: rax, src: mem(4, frameBytes) });
   emit({ op: "mov", dst: mem(5, 0), src: rax });
   emit({ op: "mov", dst: rax, src: mem(4, frameBytes + 8) });
@@ -469,6 +481,10 @@ export function emitCallbackThunk(site: ThunkSite): LabeledUnwind {
   emit({ op: "xor", dst: eax, src: eax });
   emit({ op: "xorpd", dst: x0, src: x0 });
   emit({ op: "label", name: finished });
+  if (site.far) {
+    emit({ op: "mov", dst: gpr(14), src: mem(5, 224) });
+    emit({ op: "mov", dst: gpr(15), src: mem(5, 232) });
+  }
   emit({ op: "add", dst: rsp, src: imm(frameBytes) });
   cfi.record(dwarfStackPointer, 16, saves);
   emit({ op: "pop", dst: rbp });

@@ -1301,6 +1301,13 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   if (symbolCount > 0) {
     const codeSizes = symbolSizes(codeSymbols, instructionEnd),
       dataSizes = symbolSizes(dataSymbols, data.length);
+    // A large image can place padding after a function. x86 hosted CFI
+    // supplies the exact extent even when the next symbol is distant.
+    const codeExtents = new Map<number, number>();
+    if (arch === "x86_64")
+      for (const range of unwound)
+        if (range !== undefined)
+          codeExtents.set(range.offset, range.byteLength);
     for (let i = 0; i < symbolCount; i++) {
       const isCode = i < codeSymbols.length;
       const symbol = isCode
@@ -1317,7 +1324,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
         STB_LOCAL * 16 + (isCode ? STT_FUNC : STT_OBJECT),
         isCode ? textIndex : dataIndex,
         (isCode ? codeAddress : dataAddress) + symbol.offset,
-        size,
+        isCode ? (codeExtents.get(symbol.offset) ?? size) : size,
       );
     }
   }

@@ -1,5 +1,19 @@
-import { contiguousCodeOutput, type CodePlan } from "@tint/abi/relocation";
-import type { NativeModule } from "@tint/codegen/aarch64/scalar";
+import {
+  contiguousCodeOutput,
+  type CodePlan,
+  type ImageAddressPatcher,
+  type ImageAddressReference,
+} from "@tint/abi/relocation";
+import type {
+  NativeModule,
+  NativeManagedPointerImport,
+} from "@tint/codegen/aarch64/scalar";
+import { encodeLayout, patchRelative } from "@tint/codegen/x86_64/isa";
+import type {
+  X64Module,
+  X64ManagedReference,
+} from "@tint/codegen/x86_64/scalar";
+import type { ScalarType } from "@tint/ir/scalar";
 import {
   encode,
   relativeAddress,
@@ -59,7 +73,26 @@ function word(bytes: Uint8Array, offset: number, width: number = 8): number {
   }
   return value;
 }
-function owns(host: NativeModule, binding: NativeServiceBinding): boolean {
+interface ServiceIdentityOwner {
+  readonly records: readonly { readonly offset: number }[];
+  readonly functionDescriptor?: { readonly offset: number } | undefined;
+  readonly signatures: readonly {
+    readonly offset: number;
+    readonly returnType: ScalarType | "void";
+    readonly parameters: readonly ScalarType[];
+    readonly functions: readonly number[];
+  }[];
+  readonly functions: readonly {
+    readonly id: number;
+    readonly offset: number;
+    readonly byteLength: number;
+    readonly import?: true;
+  }[];
+}
+function owns(
+  host: ServiceIdentityOwner,
+  binding: NativeServiceBinding,
+): boolean {
   if (!uint(binding.metadataOffset) || binding.metadataOffset % 8 !== 0)
     return false;
   if (binding.role === "record" || binding.role === "function-brand") {
@@ -88,6 +121,20 @@ function owns(host: NativeModule, binding: NativeServiceBinding): boolean {
       f.byteLength > 0 &&
       f.offset === binding.entryOffset &&
       signature.functions.includes(f.id),
+  );
+}
+
+function matchesImport(
+  binding: NativeServiceBinding,
+  imported: NativeManagedPointerImport,
+): boolean {
+  return (
+    binding.contract === imported.contract &&
+    binding.role === imported.role &&
+    binding.returnType === imported.returnType &&
+    binding.parameters.length === imported.parameters.length &&
+    !binding.parameters.some((p, i) => p !== imported.parameters[i]) &&
+    sameManagedRecordLayout(binding.recordLayout, imported.recordLayout)
   );
 }
 /** Preflight the entire set, then compose unpublished position-independent code.
@@ -186,12 +233,7 @@ export function planNativeServiceModules(
       if (
         binding === undefined ||
         names.has(imported.name) ||
-        binding.contract !== imported.contract ||
-        binding.role !== imported.role ||
-        binding.returnType !== imported.returnType ||
-        binding.parameters.length !== imported.parameters.length ||
-        binding.parameters.some((p, i) => p !== imported.parameters[i]) ||
-        !sameManagedRecordLayout(binding.recordLayout, imported.recordLayout)
+        !matchesImport(binding, imported)
       )
         return reject("import contract differs");
       names.add(imported.name);
@@ -435,6 +477,297 @@ export function planNativeServiceModules(
           }
           return undefined;
         },
+      },
+    },
+  };
+}
+
+export interface X64ServiceLink {
+  readonly native: X64Module;
+  readonly bindings: readonly NativeServiceBinding[];
+}
+
+type X64ServicePlanning =
+  | { readonly ok: false; readonly error: string }
+  | {
+      readonly ok: true;
+      readonly native: X64Module;
+      readonly codePlan: CodePlan;
+    };
+
+/** Validate the complete LEA window before replacing its relative field. */
+function serviceAddress(
+  native: X64Module,
+  reference: X64ManagedReference,
+): number | undefined {
+  const fixup = reference.fixup;
+  const far = fixup.byteLength === 8;
+  const field = fixup.fieldOffset;
+  const start = field - (far ? 9 : 3),
+    rexAt = far ? field + 12 : start;
+  if (!uint(start) || !uint(field)) return undefined;
+  const rex = native.code[rexAt],
+    modrm = native.code[rexAt + 2];
+  if (rex === undefined || modrm === undefined) return undefined;
+  const index = ((modrm >> 3) & 7) + ((rex & 4) << 1);
+  if (index >= 14 && far) return undefined;
+  const expected = encodeLayout(
+    [
+      {
+        op: "lea",
+        dst: { kind: "gpr", width: 64, index },
+        src: {
+          kind: "mem",
+          width: 64,
+          address: { kind: "rip", disp: fixup.ref },
+        },
+      },
+    ],
+    (name) => name === fixup.ref.label,
+    far,
+  );
+  const relative = expected.externalFixups[0];
+  if (
+    relative === undefined ||
+    relative.fieldOffset + start !== field ||
+    relative.nextOffset + start !== fixup.nextOffset ||
+    !native.functions.some(
+      (fn) =>
+        fn !== undefined &&
+        fn.import !== true &&
+        start >= fn.offset &&
+        start + expected.bytes.length <= fn.offset + fn.byteLength,
+    )
+  )
+    return undefined;
+  for (let index = 0; index < expected.bytes.length; index++)
+    if (native.code[start + index] !== expected.bytes[index]) return undefined;
+  return start;
+}
+
+/** Resolve x86 service references through relative instruction windows and
+ * place code directly in the final image. Writable constants and stack-map
+ * coordinates follow the placement of each unit. */
+export function planX64ServiceModules(
+  host: X64Module,
+  units: readonly X64ServiceLink[],
+  hostBindings: readonly NativeServiceBinding[],
+): X64ServicePlanning {
+  const reject = (error: string): X64ServicePlanning => ({
+    ok: false,
+    error: "native service: " + error,
+  });
+  const all: X64ServiceLink[] = [{ native: host, bindings: hostBindings }];
+  const offsets = [0],
+    dataOffsets = [0];
+  let codeLength = host.code.length,
+    dataLength = host.data.length;
+  for (const unit of units) {
+    if (unit === undefined) return reject("missing unit");
+    if (
+      unit.native.imports.length !== 0 ||
+      unit.native.hostedThreadFixups.length !== 0
+    )
+      return reject("unit has unresolved platform imports");
+    if (
+      (unit.native.linearAllocation && !host.linearAllocation) ||
+      unit.native.generationalBarriers !== host.generationalBarriers
+    )
+      return reject("unit allocation policy differs");
+    const codeBase = Math.ceil(codeLength / 16) * 16;
+    const dataBase = Math.ceil(dataLength / 8) * 8;
+    offsets.push(codeBase);
+    dataOffsets.push(dataBase);
+    codeLength = codeBase + unit.native.code.length;
+    dataLength = dataBase + unit.native.data.length;
+    if (!uint(codeLength) || !uint(dataLength))
+      return reject("composed image exceeds address domain");
+    all.push(unit);
+  }
+
+  const patches: { readonly offset: number; readonly bytes: Uint8Array }[] = [];
+  const functions = host.functions.slice(),
+    unwind = host.unwind.slice(),
+    probes = host.probes.slice(),
+    stackMaps = host.stackMaps.slice();
+  const addressFixups: ImageAddressReference[] = [];
+  const patchers: {
+    readonly patch: ImageAddressPatcher;
+    readonly index: number;
+  }[] = [];
+  const data = new Uint8Array(dataLength);
+  for (let index = 0; index < all.length; index++) {
+    const unit = all[index],
+      offset = offsets[index],
+      dataOffset = dataOffsets[index];
+    if (unit === undefined || offset === undefined || dataOffset === undefined)
+      throw "service placement invariant";
+    const native = unit.native;
+    const bindings = new Map<string, NativeServiceBinding>();
+    for (const binding of unit.bindings) {
+      if (
+        binding === undefined ||
+        binding.name === "" ||
+        binding.name.includes("\0") ||
+        bindings.has(binding.name)
+      )
+        return reject("invalid or duplicate binding");
+      const owner = all[binding.unit === undefined ? 0 : binding.unit + 1];
+      const words = managedIdentityDescriptorWords(binding);
+      if (
+        owner === undefined ||
+        !owns(owner.native, binding) ||
+        words === undefined
+      )
+        return reject("binding is not owned by this host");
+      for (let wordIndex = 0; wordIndex < words.length; wordIndex++)
+        if (
+          word(owner.native.code, binding.metadataOffset + wordIndex * 8) !==
+          words[wordIndex]
+        )
+          return reject("host descriptor bytes differ");
+      bindings.set(binding.name, binding);
+    }
+    if (bindings.size !== native.managedImports.length)
+      return reject("binding count differs");
+    const slots = new Set<number>(),
+      names = new Set<string>();
+    for (const imported of native.managedImports) {
+      if (imported === undefined) return reject("missing import");
+      const binding = bindings.get(imported.name);
+      if (
+        binding === undefined ||
+        names.has(imported.name) ||
+        !matchesImport(binding, imported)
+      )
+        return reject("import contract differs");
+      const slot = imported.offset;
+      if (
+        !uint(slot) ||
+        slot % 8 !== 0 ||
+        slots.has(slot) ||
+        imported.byteLength !== 8 ||
+        word(native.code, slot) !== 0
+      )
+        return reject("invalid managed import slot");
+      names.add(imported.name);
+      slots.add(slot);
+    }
+    const windows = new Set<number>();
+    for (const reference of native.managedFixups) {
+      if (reference === undefined) return reject("missing reference");
+      const imported = native.managedImports[reference.import];
+      const binding =
+        imported === undefined ? undefined : bindings.get(imported.name);
+      const fixup = reference.fixup;
+      const start = serviceAddress(native, reference);
+      if (
+        binding === undefined ||
+        start === undefined ||
+        fixup.ref.label !== "managed:" + String(reference.import) ||
+        fixup.ref.addend !== undefined ||
+        windows.has(start)
+      )
+        return reject("invalid managed reference");
+      windows.add(start);
+      const target =
+        binding.role === "function-entry"
+          ? binding.entryOffset
+          : binding.metadataOffset;
+      const owner = offsets[binding.unit === undefined ? 0 : binding.unit + 1];
+      if (target === undefined || owner === undefined)
+        return reject("missing target");
+      const site = offset + fixup.fieldOffset;
+      const bytes = new Uint8Array(fixup.byteLength);
+      const status = patchRelative(bytes, fixup, 0, owner + target, site);
+      if (status === "range") return reject("rel32 displacement out of range");
+      if (status !== "complete") return reject("invalid managed address");
+      patches.push({ offset: site, bytes });
+    }
+    data.set(native.data, dataOffset);
+    for (let at = 0; at < native.addressFixups.length; at++) {
+      const reference = native.addressFixups[at];
+      if (reference === undefined) throw "service image reference invariant";
+      const target = reference.target;
+      addressFixups.push({
+        ...reference,
+        offset: offset + reference.offset,
+        target:
+          target.kind === "data"
+            ? { kind: "data", offset: dataOffset + target.offset }
+            : target,
+      });
+      patchers.push({ patch: native.patchAddress, index: at });
+    }
+    if (index === 0) continue;
+    const functionBase = functions.length;
+    for (const fn of native.functions) {
+      if (fn === undefined) throw "service function invariant";
+      const frame = fn.frame;
+      functions.push({
+        ...fn,
+        id: functionBase + fn.id,
+        offset: fn.import === true ? 0 : offset + fn.offset,
+        ...(frame === undefined
+          ? {}
+          : { frame: { ...frame, offset: offset + frame.offset } }),
+      });
+    }
+    for (const range of native.unwind)
+      if (range !== undefined)
+        unwind.push({ ...range, offset: offset + range.offset });
+    for (const probe of native.probes)
+      if (probe !== undefined)
+        probes.push({ ...probe, offset: offset + probe.offset });
+    for (const map of native.stackMaps)
+      if (map !== undefined)
+        stackMaps.push({
+          ...map,
+          codeOffset: offset + map.codeOffset,
+          tableOffset:
+            map.tableOffset < 0 ? map.tableOffset : offset + map.tableOffset,
+        });
+  }
+  const patchAddress: ImageAddressPatcher = (
+    bytes,
+    index,
+    site,
+    target,
+    address,
+  ) => {
+    const patcher = patchers[index];
+    return patcher === undefined
+      ? "invalid"
+      : patcher.patch(bytes, patcher.index, site, target, address);
+  };
+  return {
+    ok: true,
+    native: {
+      ...host,
+      data,
+      functions,
+      unwind,
+      probes,
+      stackMaps,
+      addressFixups,
+      patchAddress,
+      managedImports: [],
+      managedFixups: [],
+    },
+    codePlan: {
+      byteLength: codeLength,
+      write(output, base) {
+        for (let index = 0; index < all.length; index++) {
+          const unit = all[index],
+            offset = offsets[index];
+          if (unit === undefined || offset === undefined)
+            throw "service placement invariant";
+          output.write(unit.native.code, base + offset);
+        }
+        for (const patch of patches)
+          if (patch !== undefined)
+            output.write(patch.bytes, base + patch.offset);
+        return undefined;
       },
     },
   };
