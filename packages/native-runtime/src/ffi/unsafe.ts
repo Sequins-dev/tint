@@ -94,11 +94,13 @@ export {
   openLibrary,
   openProgram,
   findSymbol,
+  findSymbolWords,
   closeLibrary,
   optionalSymbol,
   type ForeignFunction,
   type DynamicCallback,
   type LibraryHandle,
+  type SymbolAddress,
   type ForeignSignature,
   type ForeignType,
 } from "./dynamic.ts";

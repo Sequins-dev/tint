@@ -806,3 +806,24 @@ export {
   wordNumber,
   wordOffset,
 };
+
+/** The exact address returned by dlsym, including absolute symbols. */
+export interface SymbolAddress {
+  readonly low: number;
+  readonly high: number;
+}
+/** Preserve the full pointer word for consumers that expose BigInt addresses.
+ * The legacy numeric lookup keeps its existing generated call path. */
+export function findSymbolWords(
+  handle: LibraryHandle,
+  name: string,
+): SymbolAddress {
+  if (isNull(handle)) throw new TypeError("null library handle");
+  dlerror();
+  const symbol = dlsym({ low: handle.low, high: handle.high }, name);
+  if (isNull(symbol)) {
+    const message = dlerror();
+    if (message !== 0) throw loaderError("dlsym", message, name);
+  }
+  return symbol;
+}

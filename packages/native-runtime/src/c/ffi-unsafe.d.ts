@@ -145,6 +145,15 @@ declare module "tint:ffi/unsafe" {
     handle: LibraryHandle,
     name: string,
   ): Address<void>;
+  /** The exact address returned by dlsym, including absolute symbols. */
+  export interface SymbolAddress {
+    readonly low: number;
+    readonly high: number;
+  }
+  export function findSymbolWords(
+    handle: LibraryHandle,
+    name: string,
+  ): SymbolAddress;
   export function closeLibrary(handle: LibraryHandle): void;
   /** The address of `name` in optional library `image` (dlopen'd once, at
    * first use), or -1 when either is absent: optional libraries on ELF. */

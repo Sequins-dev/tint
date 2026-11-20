@@ -48,6 +48,11 @@ int64_t i64_min(void) { return INT64_MIN; }
 uint64_t echo_u64(uint64_t v) { return v + 1; }
 int64_t echo_i64(int64_t v) { return v - 1; }
 void *echo_pointer(void *p) { return p; }
+uint64_t tint_pointer_address(void) { return (uintptr_t)&echo_pointer; }
+#ifdef __ELF__
+__asm__(".globl tint_absolute_word\\n.set tint_absolute_word, 0xfedcba9876543211\\n"
+        ".globl tint_absolute_zero\\n.set tint_absolute_zero, 0");
+#endif
 void fill(uint8_t *buffer, size_t count, uint8_t value) { memset(buffer, value, count); }
 size_t matching(const uint8_t *a, const uint8_t *b, size_t count) {
   size_t same = 0;
@@ -386,6 +391,50 @@ export function verifyDynamicFixture(
       managedBytes: 4194304,
       allocationCapacity: 65536,
     },
+  );
+}
+
+export function verifyDynamicSymbolWords(library: string): string {
+  const absoluteSymbols =
+    nativeFixtureTarget().os === "linux"
+      ? `
+  const absolute = findSymbolWords(library, "tint_absolute_word");
+  if (absolute.low !== 1985229329 || absolute.high !== 4275878552) return 2;
+  const zero = findSymbolWords(library, "tint_absolute_zero");
+  if (zero.low !== 0 || zero.high !== 0) return 3;`
+      : "";
+  return verifyHostedFixture(
+    `import {
+  closeLibrary, findSymbol, findSymbolWords, foreignFunction, invoke,
+  openLibrary, resultHigh, resultLow, type ForeignSignature,
+} from "tint:ffi/unsafe";
+const addressSignature: ForeignSignature = {
+  parameters: [], result: { kind: "scalar", scalar: "u64" },
+  fixedParameters: 0, callClass: "leaf", errno: "none",
+};
+export function run(): number {
+  const library = openLibrary(${JSON.stringify(library)});
+  try {
+    const expected = foreignFunction(findSymbol(library, "tint_pointer_address"), addressSignature);
+    invoke(expected);
+    const actual = findSymbolWords(library, "echo_pointer");
+    if (actual.low !== resultLow(expected) || actual.high !== resultHigh(expected)) return 1;
+    ${absoluteSymbols}
+    try {
+      findSymbolWords(library, "tint_missing_absolute_word");
+      return 4;
+    } catch (error) {
+      if (!(error instanceof Error) || !("code" in error) || error.code !== "ERR_FFI_CALL_FAILED")
+        return 5;
+    }
+    return 42;
+  } finally {
+    closeLibrary(library);
+  }
+}
+`,
+    "ffi-dynamic-symbol-words",
+    [["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"]],
   );
 }
 /** Build the library in a temporary directory, run `body`, clean up;
