@@ -308,12 +308,9 @@ export function x64ForeignDiagnostic(
       let diagnostic: string | undefined;
       if (fn.signature.callClass === "may-callback") diagnostic = x64Callbacks;
       else if (library.image.optional) diagnostic = optional;
-      else if (fn.resultForm === "record")
-        diagnostic =
-          "C record-by-value results are not yet supported on linux-x86_64 (needs x64 slice 7a-3)";
       else if (fn.parameterForms.includes("record"))
         diagnostic =
-          "C record-by-value arguments are not yet supported on linux-x86_64 (needs x64 slice 7a-3)";
+          "C record-by-value arguments are not yet supported on linux-x86_64 (needs managed errors from x64 slice 7c)";
       else if (fn.parameterForms.includes("string"))
         diagnostic =
           "CString conversion" + x64ManagedSuffix + "; use CStringBytes";

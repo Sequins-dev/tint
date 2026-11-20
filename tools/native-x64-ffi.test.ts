@@ -677,6 +677,43 @@ test(
   },
 );
 
+test(
+  "SysV static ldiv returns a managed record by value",
+  { skip: !x64 },
+  () => {
+    verifyHostedFixture(
+      'import { ldiv } from "tint:c/sysv"; export function run(): number { return ldiv(85, 2).quot; }',
+      "sysv-ldiv",
+      [["tint:c/sysv", "sysv.d.ts"]],
+      [],
+      [],
+      [],
+      {
+        managedBytes: 4194304,
+        allocationCapacity: 65536,
+        requireTyped: true,
+        foreignDeclarations: [
+          {
+            id: "sysv.d.ts",
+            text: 'declare module "tint:c/sysv" { import type { i64 } from "tint:ffi"; export interface Result { quot: i64; rem: i64; } export function ldiv(n: i64, d: i64): Result; }',
+            manifest: [
+              {
+                module: "tint:c/sysv",
+                linux: {
+                  name: "libc.so.6",
+                  optional: false,
+                  currentVersion: 0,
+                  compatibilityVersion: 0,
+                },
+              },
+            ],
+          },
+        ],
+      },
+    );
+  },
+);
+
 function assertForeignDiagnostic(message: string, build: () => string): void {
   assert.throws(build, {
     message: JSON.stringify({ stage: "foreign", message }),
@@ -685,28 +722,12 @@ function assertForeignDiagnostic(message: string, build: () => string): void {
 
 for (const scenario of [
   {
-    name: "record result",
-    declaration:
-      "export interface Result { quot: i64; rem: i64; } export function ldiv(n: i64, d: i64): Result;",
-    run: 'import { ldiv } from "tint:c/sysv"; export function run(): number { return ldiv(85, 2).quot; }',
-    message:
-      "C record-by-value results are not yet supported on linux-x86_64 (needs x64 slice 7a-3)",
-  },
-  {
     name: "record argument",
     declaration:
       "export interface Pair { a: i32; b: i32; } export function inspect(pair: Pair): i32;",
     run: 'import { inspect } from "tint:c/sysv"; export function run(): number { return inspect({ a: 19, b: 23 }); }',
     message:
-      "C record-by-value arguments are not yet supported on linux-x86_64 (needs x64 slice 7a-3)",
-  },
-  {
-    name: "record wrapper used as a function value",
-    declaration:
-      "export interface Result { quot: i64; rem: i64; } export function ldiv(n: i64, d: i64): Result;",
-    run: 'import { ldiv } from "tint:c/sysv"; export function run(): number { const divide = ldiv; return 42; }',
-    message:
-      "C record-by-value results are not yet supported on linux-x86_64 (needs x64 slice 7a-3)",
+      "C record-by-value arguments are not yet supported on linux-x86_64 (needs managed errors from x64 slice 7c)",
   },
   {
     name: "CString conversion",
