@@ -529,7 +529,9 @@ function primitiveEntry(
         '!== "number") throw new TypeError("Invalid primitive argument");',
     )
     .join("\n");
-  const projected = new Map(parameters.map((name, i) => [name, args[i]!]));
+  const projected = new Map(
+    parameters.map((name, index) => [name, "$arg" + index]),
+  );
   const selected = general.statements.find(
     (statement) => statement.kind === "function",
   );
