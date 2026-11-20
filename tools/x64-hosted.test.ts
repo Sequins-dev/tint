@@ -715,3 +715,34 @@ test(
     assert.equal(run(built.value).status, 42);
   },
 );
+
+test(
+  "x86-64 hosted general completion preserves tags and JavaScript equality",
+  native,
+  () => {
+    const built = build(
+      `function same(a: unknown, b: unknown): boolean { return a === b; }
+    function kind(value: unknown): string { return typeof value; }
+    export function run(): unknown {
+      const joined = "native" + String.fromCharCode(33);
+      const object = { value: 42 };
+      const fn = (): number => 42;
+      if (!same(joined, "native!") || !same(0, -0) || same(0 / 0, 0 / 0) ||
+          same(undefined, null) || same(false, 0) || !same(object, object) ||
+          same(object, { value: 42 })) return 2;
+      if (kind(fn) !== "function" || kind(object) !== "object" ||
+          kind(null) !== "object" || kind(joined) !== "string") return 3;
+      try { throw new RangeError("range"); }
+      catch (caught) {
+        if (!(caught instanceof RangeError) || !(caught instanceof Error) ||
+            caught instanceof TypeError || caught.message !== "range") return 4;
+      }
+      return 42;
+    }`,
+      {},
+      { optimization: "none" },
+    );
+    assert.ok(built.ok, JSON.stringify(built));
+    assert.equal(run(built.value).status, 42);
+  },
+);

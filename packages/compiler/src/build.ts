@@ -342,8 +342,6 @@ function buildX64HostedProgram(
     (request.managedSurfaces?.length ?? 0) !== 0
   )
     return deferred("managed surfaces");
-  if ((request.weakBindings?.length ?? 0) !== 0)
-    return deferred("weak storage");
 
   const managedBytes = request.managedBytes,
     stackBytes = request.stackBytes;
@@ -447,6 +445,7 @@ function buildX64HostedProgram(
       foreignMemoryBindings: request.foreignMemoryBindings ?? [],
       foreignLibraries: request.foreignLibraries ?? [],
       recordBindings: request.recordBindings ?? [],
+      weakBindings: request.weakBindings ?? [],
       ...(request.denseReferenceLists === undefined
         ? {}
         : { denseReferenceLists: request.denseReferenceLists }),
@@ -469,7 +468,8 @@ function buildX64HostedProgram(
   if (
     returnType !== "number" &&
     returnType !== "boolean" &&
-    returnType !== "void"
+    returnType !== "void" &&
+    returnType !== "general"
   )
     return failure("startup", target.name + ": invalid managed status type");
   request.report("startup");

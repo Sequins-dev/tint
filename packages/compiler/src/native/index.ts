@@ -2503,7 +2503,8 @@ export function compileX64HostedProgram(
       readonly ok: true;
       readonly native: X64Module;
       readonly invocation: number;
-      readonly returnType: "number" | "boolean" | "void" | "reference";
+      readonly returnType:
+        "number" | "boolean" | "void" | "reference" | "general";
     } {
   const lowered = lowerTypedProgram(
     withForeignRuntimes({ ...request, symbols: true }),
@@ -2551,11 +2552,12 @@ export function compileX64HostedProgram(
   } else if (
     returnType !== "number" &&
     returnType !== "boolean" &&
-    returnType !== "void"
+    returnType !== "void" &&
+    returnType !== "general"
   )
     return stageFailure(
       "entry",
-      "linux-x86_64: expected a Number, Boolean or void entry",
+      "linux-x86_64: expected a Number, Boolean, void or general entry",
     );
   const roots = [program.invocation];
   const reachable = pruneModuleReferences(first, roots, unboundedWork);

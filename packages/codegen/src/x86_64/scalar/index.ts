@@ -29,6 +29,12 @@ import {
   nativeStackOverflowPayload,
   type PosixHostFacts,
 } from "@tint/abi/host";
+import {
+  nativeWeakSlotByteLength,
+  nativeWeakSlotKeyOffset,
+  nativeWeakSlotMarker,
+  nativeWeakSlotValueOffset,
+} from "@tint/abi/weak-slot";
 import type { ImageAddressTarget } from "@tint/abi/relocation";
 import {
   encodeFloat64,
@@ -171,6 +177,26 @@ function arrayWidth(type: ScalarType): ElementBytes {
 }
 function arrayMarker(width: ElementBytes): number {
   return width === 8 ? 5 : width === 4 ? 4 : width === 2 ? 3 : 2;
+}
+function typedArrayMarker(type: ScalarType): number {
+  return type === "Uint8Array"
+    ? 2
+    : type === "Uint16Array"
+      ? 3
+      : type === "Uint32Array"
+        ? 4
+        : type === "Float64Array"
+          ? 5
+          : 0;
+}
+function generalTag(type: string): number {
+  return type === "number"
+    ? 1
+    : type === "boolean"
+      ? 2
+      : type === "string"
+        ? 3
+        : 5;
 }
 function align16(bytes: number): number {
   return Math.ceil(bytes / 16) * 16;
@@ -835,6 +861,62 @@ export function emitModule(
         src: imm(0),
       });
       define(op.id, type);
+    }
+
+    function marker(object: Gpr<64>, output: Gpr<64>): void {
+      emit({ op: "mov", dst: output, src: mem(object.index, 0) });
+      emit({ op: "shl", dst: output, count: 64 - nativeHeaderFlagsShift });
+      emit({ op: "shr", dst: output, count: 64 - nativeHeaderFlagsShift });
+    }
+
+    function generalTruth(value: number, invert: boolean, site: string): void {
+      const numeric = site + ":number";
+      const string = site + ":string";
+      const boolean = site + ":boolean";
+      const done = site + ":done";
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "mov", dst: r9, src: frame(home(value)) });
+      emit({ op: "test", dst: r9, src: r9 });
+      branch(emit, "e", done);
+      emit({ op: "cmp", dst: r9, src: imm(4) });
+      branch(emit, "e", done);
+      emit({ op: "cmp", dst: r9, src: imm(6) });
+      branch(emit, "a", trapLabel);
+      emit({ op: "cmp", dst: r9, src: imm(1) });
+      branch(emit, "e", numeric);
+      emit({ op: "cmp", dst: r9, src: imm(2) });
+      branch(emit, "e", boolean);
+      emit({ op: "cmp", dst: r9, src: imm(3) });
+      branch(emit, "e", string);
+      emit({ op: "mov", dst: eax, src: imm(1) });
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: numeric });
+      emit({ op: "movsd", dst: x0, src: frame(home(value) + 8) });
+      emit({ op: "xorpd", dst: xmm(1), src: xmm(1) });
+      emit({ op: "ucomisd", dst: x0, src: xmm(1) });
+      // Both zero and NaN set ZF.
+      setBoolean(emit, "ne", 0);
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: boolean });
+      emit({ op: "mov", dst: rax, src: frame(home(value) + 8) });
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: string });
+      emit({ op: "mov", dst: r9, src: frame(home(value) + 8) });
+      emit({ op: "cmp", dst: mem(9, nativeStringLengthOffset), src: imm(0) });
+      setBoolean(emit, "ne", 0);
+      emit({ op: "label", name: done });
+      if (invert) emit({ op: "xor", dst: eax, src: imm(1) });
+    }
+
+    function weakGuard(value: number): void {
+      emit({ op: "cmp", dst: frame(home(value)), src: imm(5) });
+      branch(emit, "ne", trapLabel);
+      emit({ op: "mov", dst: r9, src: frame(home(value) + 8) });
+      emit({ op: "test", dst: r9, src: r9 });
+      branch(emit, "e", trapLabel);
+      marker(r9, scratch);
+      emit({ op: "cmp", dst: scratch, src: imm(nativeWeakSlotMarker) });
+      branch(emit, "ne", trapLabel);
     }
 
     function arrayOwner(array: number, site: string): void {
@@ -2010,6 +2092,72 @@ export function emitModule(
         case "call":
           call(op, block, index);
           return;
+        case "weak-slot-new": {
+          if (host === undefined) break;
+          const site = fnLabel + ":weak-slot:" + String(op.id);
+          const publishValue = site + ":publish";
+          emit({ op: "mov", dst: r10, src: imm(nativeWeakSlotByteLength) });
+          allocate(block, index, site, site + ":denied");
+          emit({ op: "mov", dst: r9, src: rax });
+          emit({ op: "mov", dst: scratch, src: frame(home(op.ephemeron)) });
+          emit({ op: "shl", dst: scratch, count: nativeHeaderFlagsShift });
+          emit({ op: "or", dst: scratch, src: imm(nativeWeakSlotMarker) });
+          emit({ op: "mov", dst: mem(9, 0), src: scratch });
+          copy(emit, frame(home(op.key)), mem(9, nativeWeakSlotKeyOffset));
+          copy(
+            emit,
+            frame(home(op.key) + 8),
+            mem(9, nativeWeakSlotKeyOffset + 8),
+          );
+          emit({ op: "cmp", dst: frame(home(op.ephemeron)), src: imm(0) });
+          branch(emit, "e", publishValue);
+          copy(emit, frame(home(op.value)), mem(9, nativeWeakSlotValueOffset));
+          copy(
+            emit,
+            frame(home(op.value) + 8),
+            mem(9, nativeWeakSlotValueOffset + 8),
+          );
+          emit({ op: "label", name: publishValue });
+          emit({ op: "mov", dst: frame(home(op.id) + 8), src: r9 });
+          emit({ op: "mov", dst: eax, src: imm(5) });
+          define(op.id, "general");
+          return;
+        }
+        case "weak-slot-key":
+        case "weak-slot-value": {
+          weakGuard(op.cell);
+          const offset =
+            op.kind === "weak-slot-key"
+              ? nativeWeakSlotKeyOffset
+              : nativeWeakSlotValueOffset;
+          copy(emit, mem(9, offset + 8), frame(home(op.id) + 8));
+          emit({ op: "mov", dst: rax, src: mem(9, offset) });
+          define(op.id, "general");
+          return;
+        }
+        case "weak-slot-set-value":
+          weakGuard(op.cell);
+          emit({ op: "mov", dst: scratch, src: mem(9, 0) });
+          emit({ op: "shr", dst: scratch, count: nativeHeaderFlagsShift });
+          emit({ op: "test", dst: scratch, src: imm(1) });
+          branch(emit, "e", trapLabel);
+          copy(emit, frame(home(op.value)), mem(9, nativeWeakSlotValueOffset));
+          copy(
+            emit,
+            frame(home(op.value) + 8),
+            mem(9, nativeWeakSlotValueOffset + 8),
+          );
+          remember();
+          return;
+        case "weak-slot-clear":
+          weakGuard(op.cell);
+          for (
+            let offset = nativeWeakSlotKeyOffset;
+            offset < nativeWeakSlotByteLength;
+            offset += 8
+          )
+            emit({ op: "mov", dst: mem(9, offset), src: imm(0) });
+          return;
         case "error-new": {
           if (host === undefined) break;
           const site = fnLabel + ":error:" + String(op.id);
@@ -2035,36 +2183,16 @@ export function emitModule(
           });
           define(op.id, "general");
           return;
-        case "general-wrap": {
-          const type = typeOf(op.value);
-          if (
-            type !== "number" &&
-            type !== "boolean" &&
-            type !== "string" &&
-            type !== "Uint8Array" &&
-            type !== "reference"
-          )
-            break;
+        case "general-wrap":
           copy(emit, frame(home(op.value)), frame(home(op.id) + 8));
-          emit({
-            op: "mov",
-            dst: eax,
-            src: imm(
-              type === "number"
-                ? 1
-                : type === "boolean"
-                  ? 2
-                  : type === "string"
-                    ? 3
-                    : 5,
-            ),
-          });
+          emit({ op: "mov", dst: eax, src: imm(generalTag(typeOf(op.value))) });
           define(op.id, "general");
           return;
-        }
-        case "general-record-is": {
+        case "general-record-is":
+        case "general-record-descriptor": {
+          const reflection = op.kind === "general-record-descriptor";
           const done = fnLabel + ":record-test:" + String(op.id);
-          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "mov", dst: rax, src: imm(reflection ? -1 : 0) });
           emit({ op: "cmp", dst: frame(home(op.value)), src: imm(5) });
           branch(emit, "ne", done);
           emit({ op: "mov", dst: r9, src: frame(home(op.value) + 8) });
@@ -2072,41 +2200,235 @@ export function emitModule(
           branch(emit, "e", done);
           emit({ op: "lea", dst: scratch, src: descriptor(op.record) });
           emit({ op: "cmp", dst: mem(9, 0), src: scratch });
+          if (reflection)
+            emit({ op: "cmovcc", cc: "e", dst: rax, src: scratch });
+          else setBoolean(emit, "e", 0);
+          emit({ op: "label", name: done });
+          if (reflection) numberBits();
+          define(op.id, reflection ? "number" : "boolean");
+          return;
+        }
+        case "record-descriptor-address":
+          emit({ op: "lea", dst: rax, src: descriptor(op.record) });
+          numberBits();
+          define(op.id, "number");
+          return;
+        case "function-address":
+          emit({
+            op: "lea",
+            dst: rax,
+            src:
+              op.part === "entry"
+                ? rip(functionLabel(op.target))
+                : signature(op.target),
+          });
+          numberBits();
+          define(op.id, "number");
+          return;
+        case "general-is": {
+          const type = op.type;
+          const targetTag =
+            type === "undefined" ? 0 : type === "null" ? 4 : generalTag(type);
+          const array =
+            type === "undefined" || type === "null"
+              ? 0
+              : typedArrayMarker(type);
+          emit({ op: "cmp", dst: frame(home(op.value)), src: imm(targetTag) });
+          if (array === 0) setBoolean(emit, "e", 0);
+          else {
+            const done = fnLabel + ":array-kind:" + String(op.id);
+            // MOV leaves the category comparison live.
+            emit({ op: "mov", dst: eax, src: imm(0) });
+            branch(emit, "ne", done);
+            emit({ op: "mov", dst: r9, src: frame(home(op.value) + 8) });
+            emit({ op: "test", dst: r9, src: r9 });
+            branch(emit, "e", done);
+            marker(r9, scratch);
+            emit({ op: "cmp", dst: scratch, src: imm(array) });
+            setBoolean(emit, "e", 0);
+            emit({ op: "label", name: done });
+          }
+          define(op.id, "boolean");
+          return;
+        }
+        case "general-value": {
+          emit({
+            op: "cmp",
+            dst: frame(home(op.value)),
+            src: imm(generalTag(op.type)),
+          });
+          branch(emit, "ne", trapLabel);
+          emit({ op: "mov", dst: rax, src: frame(home(op.value) + 8) });
+          const array = typedArrayMarker(op.type);
+          if (array !== 0) {
+            emit({ op: "test", dst: rax, src: rax });
+            branch(emit, "e", trapLabel);
+            marker(rax, scratch);
+            emit({ op: "cmp", dst: scratch, src: imm(array) });
+            branch(emit, "ne", trapLabel);
+          }
+          define(op.id, op.type);
+          return;
+        }
+        case "general-kind": {
+          const site = fnLabel + ":typeof:" + String(op.id);
+          const done = site + ":done";
+          const names = [
+            "undefined",
+            "number",
+            "boolean",
+            "string",
+            "object",
+            "object",
+            "symbol",
+            "bigint",
+          ];
+          emit({ op: "mov", dst: r9, src: frame(home(op.value)) });
+          for (let tag = 0; tag < names.length; tag++) {
+            const name = names[tag];
+            if (name === undefined) throw "tagged kind invariant";
+            const next = site + ":tag:" + String(tag);
+            emit({ op: "cmp", dst: r9, src: imm(tag) });
+            branch(emit, "ne", next);
+            if (tag === 5) {
+              const object = site + ":object";
+              emit({ op: "mov", dst: rax, src: frame(home(op.value) + 8) });
+              emit({ op: "test", dst: rax, src: rax });
+              branch(emit, "e", object);
+              emit({
+                op: "lea",
+                dst: scratch,
+                src: descriptor(functionRecord),
+              });
+              emit({ op: "cmp", dst: mem(0, 0), src: scratch });
+              branch(emit, "ne", object);
+              emit({ op: "lea", dst: rax, src: literal("function") });
+              emit({ op: "jmp", target: label(done) });
+              emit({ op: "label", name: object });
+            }
+            emit({ op: "lea", dst: rax, src: literal(name) });
+            emit({ op: "jmp", target: label(done) });
+            emit({ op: "label", name: next });
+          }
+          emit({ op: "jmp", target: label(trapLabel) });
+          emit({ op: "label", name: done });
+          define(op.id, "string");
+          return;
+        }
+        case "general-equal": {
+          if (host === undefined) break;
+          const compareText = host.symbolPrefix + "memcmp";
+          const site = fnLabel + ":general-equal:" + String(op.id);
+          const equal = site + ":equal",
+            numeric = site + ":number",
+            text = site + ":text",
+            done = site + ":done";
+          const left = home(op.left),
+            right = home(op.right);
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "mov", dst: r9, src: frame(left) });
+          emit({ op: "cmp", dst: r9, src: frame(right) });
+          branch(emit, "ne", done);
+          emit({ op: "cmp", dst: r9, src: imm(6) });
+          branch(emit, "a", trapLabel);
+          emit({ op: "test", dst: r9, src: r9 });
+          branch(emit, "e", equal);
+          emit({ op: "cmp", dst: r9, src: imm(4) });
+          branch(emit, "e", equal);
+          emit({ op: "cmp", dst: r9, src: imm(1) });
+          branch(emit, "e", numeric);
+          emit({ op: "cmp", dst: r9, src: imm(3) });
+          branch(emit, "e", text);
+          emit({ op: "mov", dst: scratch, src: frame(left + 8) });
+          emit({ op: "cmp", dst: scratch, src: frame(right + 8) });
           setBoolean(emit, "e", 0);
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: numeric });
+          numbers.binary("===", frame(left + 8), frame(right + 8));
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: text });
+          stringEqual(
+            frame(left + 8),
+            frame(right + 8),
+            true,
+            site + ":units",
+            compareText,
+          );
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: equal });
+          emit({ op: "mov", dst: eax, src: imm(1) });
           emit({ op: "label", name: done });
           define(op.id, "boolean");
           return;
         }
-        case "general-value":
+        case "error-message":
+          emit({ op: "mov", dst: scratch, src: frame(home(op.value)) });
+          emit({ op: "mov", dst: rax, src: mem(11, 8) });
+          define(op.id, "string");
+          return;
+        case "error-is": {
+          const site = fnLabel + ":error-test:" + String(op.id);
+          const done = site + ":done",
+            yes = site + ":yes";
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "cmp", dst: frame(home(op.value)), src: imm(5) });
+          branch(emit, "ne", done);
+          emit({ op: "mov", dst: r9, src: frame(home(op.value) + 8) });
+          emit({ op: "test", dst: r9, src: r9 });
+          branch(emit, "e", done);
+          const first = op.error === "RangeError" ? 1 : 0;
+          const last = op.error === "Error" ? 2 : first;
+          for (let kind: number = first; kind <= last; kind++) {
+            emit({
+              op: "lea",
+              dst: scratch,
+              src: descriptor(errorRecord + kind),
+            });
+            emit({ op: "cmp", dst: mem(9, 0), src: scratch });
+            branch(emit, "e", yes);
+          }
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: yes });
+          emit({ op: "mov", dst: eax, src: imm(1) });
+          emit({ op: "label", name: done });
+          define(op.id, "boolean");
+          return;
+        }
+        case "primitive-wrap":
+        case "primitive-reference":
+        case "string-reference":
+        case "reference-string":
+          emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
           if (
-            op.type !== "number" &&
-            op.type !== "boolean" &&
-            op.type !== "string" &&
-            op.type !== "reference"
-          )
-            break;
-          emit({
-            op: "cmp",
-            dst: frame(home(op.value)),
-            src: imm(
-              op.type === "number"
-                ? 1
-                : op.type === "boolean"
-                  ? 2
-                  : op.type === "string"
-                    ? 3
-                    : 5,
-            ),
-          });
-          emit({ op: "jcc", cc: "ne", target: label(trapLabel) });
-          emit({ op: "mov", dst: rax, src: frame(home(op.value) + 8) });
-          define(op.id, op.type);
+            op.kind === "primitive-wrap" ||
+            op.kind === "primitive-reference"
+          ) {
+            emit({ op: "test", dst: rax, src: rax });
+            branch(emit, "e", trapLabel);
+          }
+          define(
+            op.id,
+            op.kind === "primitive-wrap"
+              ? "primitive"
+              : op.kind === "reference-string"
+                ? "string"
+                : "reference",
+          );
           return;
         case "unary": {
           const type = typeOf(op.operand);
           const src = frame(home(op.operand));
           const truth = op.operator === "!" || op.operator === "truthy";
           const predicate = truth || op.operator === "is-integer";
+          if (type === "general" && truth) {
+            generalTruth(
+              op.operand,
+              op.operator === "!",
+              fnLabel + ":truth:" + String(op.id),
+            );
+            define(op.id, "boolean");
+            return;
+          }
           if (
             (type === "boolean" ||
               type === "reference" ||

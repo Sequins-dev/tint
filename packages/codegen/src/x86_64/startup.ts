@@ -61,7 +61,7 @@ interface HostedEntry {
     readonly allocationCapacity: number;
     readonly rootCapacity: number;
   };
-  readonly returnType: "number" | "boolean" | "void";
+  readonly returnType: "number" | "boolean" | "void" | "general";
   readonly stackBytes: number;
   readonly managedBytes: number;
   readonly pageBytes: number;
@@ -382,13 +382,35 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   emit({ op: "cmp", dst: eax, src: imm(normal) });
   emit({ op: "jcc", cc: "ne", target: label("program-failed") });
 
-  if (request.returnType === "number") {
-    emit({ op: "cvttsd2si", dst: rax, src: mem(4, resultPayload) });
+  const general = request.returnType === "general";
+  if (general) {
+    emit({ op: "mov", dst: rax, src: mem(4, resultPayload) });
+    emit({ op: "test", dst: rax, src: rax });
+    emit({ op: "jcc", cc: "e", target: label("unmap") });
+    emit({ op: "cmp", dst: rax, src: imm(2) });
+    emit({ op: "jcc", cc: "e", target: label("boolean-status") });
+    emit({ op: "cmp", dst: rax, src: imm(1) });
+    emit({ op: "jcc", cc: "ne", target: label("program-failed") });
+  }
+  if (request.returnType === "number" || general) {
+    const payload = mem(4, resultPayload + (general ? 8 : 0));
+    emit({ op: "cvttsd2si", dst: rax, src: payload });
     emit({ op: "cmp", dst: rax, src: imm(255) });
     emit({ op: "jcc", cc: "a", target: label("program-failed") });
-  } else if (request.returnType === "boolean")
-    emit({ op: "mov", dst: rax, src: mem(4, resultPayload) });
-  else emit({ op: "xor", dst: eax, src: eax });
+    emit({ op: "cvtsi2sd", dst: xmm(0), src: rax });
+    emit({ op: "ucomisd", dst: xmm(0), src: payload });
+    emit({ op: "jcc", cc: "ne", target: label("program-failed") });
+    if (general) emit({ op: "jmp", target: label("unmap") });
+  }
+  if (request.returnType === "boolean" || general) {
+    emit({ op: "label", name: "boolean-status" });
+    emit({
+      op: "mov",
+      dst: rax,
+      src: mem(4, resultPayload + (general ? 8 : 0)),
+    });
+  } else if (request.returnType === "void")
+    emit({ op: "xor", dst: eax, src: eax });
   emit({ op: "jmp", target: label("unmap") });
   emit({ op: "label", name: "program-failed" });
   emit({ op: "mov", dst: eax, src: imm(1) });
