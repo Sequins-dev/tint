@@ -24,6 +24,7 @@ export interface ReactorEventLoopOptions {
   drainMicrotasks(): void;
   /** Ingest raw records and enqueue turns. No user callback runs here. */
   onWake(): void;
+  stopRequested?(): boolean;
 }
 
 export interface ReactorEventLoop {
@@ -58,6 +59,10 @@ export function createReactorEventLoop(
   const loop: EventLoop = createEventLoop({
     now: (): number => options.now(),
     drainMicrotasks: (): void => options.drainMicrotasks(),
+    stopRequested: (): boolean => {
+      const requested = options.stopRequested;
+      return requested !== undefined && requested();
+    },
     poll: (timeout): void => {
       if (closed) throw new Error("event loop is closed");
       if (reactor === undefined && timeout === 0) return;

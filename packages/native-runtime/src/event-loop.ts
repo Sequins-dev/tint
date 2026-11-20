@@ -11,6 +11,9 @@ export interface EventLoopHost {
   now(): number;
   poll(timeoutMilliseconds: number): void;
   drainMicrotasks(): void;
+  /** Once requested, the isolate may finish its current callback or host
+   * microtask drain and must then leave the loop. */
+  stopRequested?(): boolean;
 }
 
 export interface EventLoopHandle {
@@ -79,6 +82,11 @@ export function createEventLoop(host: EventLoopHost): EventLoop {
   let refs = 0;
   let running = false;
   let lastTime = 0;
+
+  function stopped(): boolean {
+    const requested = host.stopRequested;
+    return requested !== undefined && requested();
+  }
 
   function now(): number {
     const time = host.now();
@@ -199,16 +207,21 @@ export function createEventLoop(host: EventLoopHost): EventLoop {
   }
 
   function checkpoint(entry: Entry): void {
+    if (stopped()) return;
     if (entry === "microtask") host.drainMicrotasks();
-    do {
-      drainJobs<undefined>(ticks, (callback, _context): void => callback());
+    while (!stopped()) {
+      drainJobs<undefined>(ticks, (callback, _context): void => {
+        if (!stopped()) callback();
+      });
+      if (stopped()) return;
       host.drainMicrotasks();
-    } while (ticks.size > 0);
+      if (ticks.size === 0) return;
+    }
   }
 
   function runTimers(): void {
     const cutoff = now();
-    for (;;) {
+    while (!stopped()) {
       const timer = timers[0];
       if (timer === undefined || timer.deadline > cutoff) return;
       const callback = timer.callback;
@@ -234,7 +247,7 @@ export function createEventLoop(host: EventLoopHost): EventLoop {
   function runPhase(phase: Phase): void {
     const end = phase.callbacks.length;
     try {
-      while (phase.next < end) {
+      while (phase.next < end && !stopped()) {
         const callback = phase.callbacks[phase.next++];
         if (callback === undefined) throw "EVENT_LOOP_PHASE_QUEUE";
         callback();
@@ -260,9 +273,10 @@ export function createEventLoop(host: EventLoopHost): EventLoop {
     enter();
     try {
       checkpoint(entry);
-      if (alive() && timers.length > 0) runTimers();
-      while (alive()) {
+      if (!stopped() && alive() && timers.length > 0) runTimers();
+      while (!stopped() && alive()) {
         runPhase(pending);
+        if (stopped()) return;
         const timer = timers[0];
         const timeout =
           refs === 0 || hasReady() || hasQueued(check)

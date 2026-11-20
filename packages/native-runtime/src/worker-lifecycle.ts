@@ -22,11 +22,19 @@ export interface WorkerExitPipe {
   readonly childReadGuard: number;
 }
 
+export interface WorkerControlPipe {
+  readonly input: number;
+  readonly output: number;
+}
+
 export interface NativeWorkerThreadHost {
   readonly entry: number;
   /** Both ends are nonblocking. The caller owns all three descriptors. */
   exitPipe(): WorkerExitPipe;
+  /** Both ends are nonblocking and remain open until the child has exited. */
+  controlPipe(): WorkerControlPipe;
   read(fd: number, bytes: Uint8Array): number;
+  write(fd: number, bytes: Uint8Array): number;
   close(fd: number): void;
   start(entry: number, argument: number): number;
   detach(thread: number): number;
@@ -37,6 +45,14 @@ export interface NativeWorkerLifecycle {
   ref(): void;
   unref(): void;
   hasRef(): boolean;
+  /** Request a stop at a worker turn boundary. Completion is still onExit. */
+  requestStop(): void;
+}
+
+export interface NativeWorkerTurnControl {
+  /** Borrowed descriptor. Register and unref it to wake the worker's poll. */
+  readonly input: number;
+  stopRequested(): boolean;
 }
 
 export interface NativeWorkerRequest {
@@ -53,6 +69,8 @@ const THREAD_ID = 32;
 const MODULE_ID = 40;
 const ERROR_QUEUE = 48;
 const ENTERED = 56;
+const CONTROL_INPUT = 64;
+const STOP_REQUESTED = 72;
 
 /** Launch from the current image. The owner watches a nonblocking exit pipe.
  * Worker code uses its own hosted context and shares only scalar startup data. */
@@ -78,11 +96,15 @@ export function startNativeWorker(
   const scratch = new Uint32Array(2);
   const bytes = new Uint8Array(1);
   let pipe: WorkerExitPipe | undefined;
+  let control: WorkerControlPipe | undefined;
   let watch: EventLoopHandle | undefined;
   let thread = 0;
   let detachStatus = 0;
+  let stopSignalled = false;
+  let released = false;
 
   function release(): void {
+    released = true;
     const handle = watch;
     if (handle !== undefined) handle.close();
     const end = pipe;
@@ -93,11 +115,27 @@ export function startNativeWorker(
         threads.close(end.childReadGuard);
       }
     }
+    const signals = control;
+    if (signals !== undefined) {
+      threads.close(signals.input);
+      threads.close(signals.output);
+    }
     if (
       memory.unmapMemory(errors.registry.base, MAPPING_BYTES) !== 0 ||
       memory.unmapMemory(base, MAPPING_BYTES) !== 0
     )
       throw "NATIVE_WORKER_RELEASE";
+  }
+
+  function requestStop(): void {
+    if (released || stopSignalled) return;
+    const signals = control;
+    if (signals === undefined) throw "NATIVE_WORKER_CONTROL_PIPE";
+    writeNumber(memory, record, STOP_REQUESTED, 1);
+    let count = threads.write(signals.output, bytes);
+    while (count === -4) count = threads.write(signals.output, bytes);
+    if (count !== 1) throw new Error("worker wake failed: " + String(count));
+    stopSignalled = true;
   }
   function finish(fd: number): void {
     let count = threads.read(fd, bytes);
@@ -125,6 +163,8 @@ export function startNativeWorker(
   try {
     const endpoints = threads.exitPipe();
     pipe = endpoints;
+    const signals = threads.controlPipe();
+    control = signals;
     writeNumber(
       memory,
       record,
@@ -141,6 +181,7 @@ export function startNativeWorker(
     writeNumber(memory, record, THREAD_ID, threadId);
     writeNumber(memory, record, MODULE_ID, moduleId);
     writeNumber(memory, record, ERROR_QUEUE, errors.registry.base);
+    writeNumber(memory, record, CONTROL_INPUT, signals.input);
     const handle = runtime.watchReadable(endpoints.input, (): void =>
       finish(endpoints.input),
     );
@@ -159,6 +200,7 @@ export function startNativeWorker(
         handle.unref();
       },
       hasRef: (): boolean => handle.hasRef(),
+      requestStop,
     };
   } catch (error) {
     // Once started, the child owns its pipe duplicates and the record until
@@ -174,7 +216,11 @@ export function runNativeWorker(
   memory: NativeSharedMemoryHost,
   parking: NativeWaiterParkingHost,
   argument: number,
-  evaluate: (moduleId: number, threadId: number) => number,
+  evaluate: (
+    moduleId: number,
+    threadId: number,
+    control: NativeWorkerTurnControl,
+  ) => number,
 ): number {
   if (!integer(argument) || argument < 2 || argument % 2 !== 1)
     throw "NATIVE_WORKER_ENTRY_ARGUMENT";
@@ -190,11 +236,19 @@ export function runNativeWorker(
   if (!errors.ok) return 70;
   const moduleId = readNumber(memory, record, MODULE_ID, scratch);
   const threadId = readNumber(memory, record, THREAD_ID, scratch);
+  function stopRequested(): boolean {
+    return readNumber(memory, record, STOP_REQUESTED, scratch) !== 0;
+  }
+  const control: NativeWorkerTurnControl = {
+    input: readNumber(memory, record, CONTROL_INPUT, scratch),
+    stopRequested,
+  };
   writeNumber(memory, record, ENTERED, 1);
+  if (stopRequested()) return 1;
   try {
-    const status = evaluate(moduleId, threadId);
+    const status = evaluate(moduleId, threadId, control);
     if (!integer(status) || status > 255) throw "invalid worker exit status";
-    return status;
+    return stopRequested() ? 1 : status;
   } catch (error) {
     const text =
       typeof error === "string" ? error : "uncaught worker exception";

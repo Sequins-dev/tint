@@ -674,7 +674,11 @@ publishes the status and wakes the owner's nonblocking pipe. The
 isolate from the same image and observes completion without joining it.
 The [native lifecycle](../packages/native-runtime/src/worker-lifecycle.ts)
 uses that record for exit and error delivery, and holds the owner alive
-through its referenced pipe watcher.
+through its referenced pipe watcher. A worker stop request updates its shared
+record and signals a separate nonblocking pipe. The worker checks the request
+between turns and after reactor polling, and reports status 1 through the same
+teardown path. Checks inside managed execution and interruption of blocking
+Atomics waits require further integration.
 
 ### What happens to each front end
 

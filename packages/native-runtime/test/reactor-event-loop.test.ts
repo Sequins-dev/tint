@@ -54,3 +54,31 @@ test("closing an old registration discards stale readiness after fd reuse", () =
   assert.deepEqual(execution, ["wake", "read", "close"]);
   assert.equal(tokens.size, 0);
 });
+
+test("a stop request during a blocked poll prevents dispatching ready turns", () => {
+  let stop = false;
+  let token = 0;
+  let polls = 0;
+  const runtime = createReactorEventLoop({
+    createReactor: () => ({
+      control: 99,
+      watchReadable: (_fd, id) => (token = id),
+      unwatchReadable: () => {},
+      poll: (timeout, emit) => {
+        assert.equal(timeout, Infinity);
+        assert.equal(++polls, 1);
+        stop = true;
+        emit(token);
+      },
+      close: () => {},
+    }),
+    now: () => 0,
+    drainMicrotasks: () => {},
+    onWake: () => {},
+    stopRequested: () => stop,
+  });
+  runtime.watchReadable(7, () => assert.fail("ran after the stop request"));
+  runtime.loop.run("callback");
+  runtime.close();
+  assert.equal(polls, 1);
+});
