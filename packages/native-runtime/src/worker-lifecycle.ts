@@ -2,7 +2,12 @@ import {
   nativeThreadExitReadOffset,
   nativeThreadExitWriteOffset,
 } from "@tint/abi/host";
-import type { SharedResult } from "@tint/js-runtime/bytes/shared";
+import type {
+  SharedBlockWaiting,
+  SharedResult,
+  SharedWaitRegistration,
+  SharedWaitState,
+} from "@tint/js-runtime/bytes/shared";
 import {
   createNativeAgentMailbox,
   attachNativeAgentMailbox,
@@ -61,6 +66,7 @@ export interface NativeWorkerTurnControl {
   readonly waiters: NativeWaitRegistry | undefined;
   /** Stop is represented by undefined. The caller still consumes its ticket. */
   parkWait(ticket: number, timeout: number): SharedResult<number> | undefined;
+  interruptibleWaiting(waiting: SharedBlockWaiting): SharedBlockWaiting;
 }
 
 export interface NativeWorkerRequest {
@@ -295,11 +301,48 @@ export function runNativeWorker(
       writeNumber(memory, record, WAIT_TICKET, 0);
     }
   }
+  // Script cannot produce a native closure as a thrown value. Its existing
+  // engine-abort boundary propagates this marker past JavaScript catches.
+  function waitInterrupted(): void {}
+  function interruptibleWaiting(
+    waiting: SharedBlockWaiting,
+  ): SharedBlockWaiting {
+    const active = waiters;
+    if (active === undefined || waiting.registryId !== active.registry.base)
+      throw "NATIVE_WORKER_WAIT_REGISTRY";
+    return {
+      registryId: active.registry.base,
+      register: (
+        handle,
+        offset,
+        width,
+        lo,
+        hi,
+        zero,
+      ): SharedResult<SharedWaitRegistration> =>
+        waiting.register(handle, offset, width, lo, hi, zero),
+      poll: (ticket): SharedResult<SharedWaitState> => {
+        const state = waiting.poll(ticket);
+        if (stopRequested()) throw waitInterrupted;
+        return state;
+      },
+      order: (ticket): SharedResult<number> => active.order(ticket),
+      expire: (ticket): SharedResult<boolean> => waiting.expire(ticket),
+      take: (ticket): SharedResult<SharedWaitState> => waiting.take(ticket),
+      park: (ticket, timeout): SharedResult<number> => {
+        const result = parkWait(ticket, timeout);
+        if (result === undefined) throw waitInterrupted;
+        return result;
+      },
+      now: (): number => waiting.now(),
+    };
+  }
   const control: NativeWorkerTurnControl = {
     input: readNumber(memory, record, CONTROL_INPUT, scratch),
     stopRequested,
     waiters,
     parkWait,
+    interruptibleWaiting,
   };
   writeNumber(memory, record, ENTERED, 1);
   if (stopRequested()) return 1;
@@ -308,6 +351,7 @@ export function runNativeWorker(
     if (!integer(status) || status > 255) throw "invalid worker exit status";
     return stopRequested() ? 1 : status;
   } catch (error) {
+    if (error === waitInterrupted) return 1;
     const text =
       typeof error === "string" ? error : "uncaught worker exception";
     if (errors.value.send(text).ok) return 1;

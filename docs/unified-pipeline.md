@@ -681,8 +681,9 @@ record and signals a separate nonblocking pipe. The worker checks the request
 between turns and after reactor polling, and reports status 1 through the same
 teardown path. If a worker is parked on a registered Atomics waiter, the stop
 request also wakes that ticket. The worker consumes its ticket before exiting.
-Guest Atomics delivery and checks at allocation and call safepoints require
-further integration.
+Worker realms that attach shared memory with the worker wait control propagate
+the interruption through the engine-abort boundary in `Atomics.wait`. Checks
+at managed allocation and call safepoints remain open.
 
 ### What happens to each front end
 
