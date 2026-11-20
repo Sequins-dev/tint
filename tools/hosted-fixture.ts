@@ -543,12 +543,20 @@ function buildHostedFixture(
   return path;
 }
 
-export function verifyHostedFixture(
+export function prepareHostedFixture(
   ...args: Parameters<typeof buildHostedFixture>
 ): string {
   const name = args[1];
   const path = buildNativeFixture(name, () => buildHostedFixture(...args));
   console.log(path);
+  return path;
+}
+
+export function verifyHostedFixture(
+  ...args: Parameters<typeof buildHostedFixture>
+): string {
+  const name = args[1];
+  const path = prepareHostedFixture(...args);
   const mode = process.env.TINT_BUILD_ONLY;
   if (mode === "defer-admission") return path;
   if (mode === "1") {
