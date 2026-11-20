@@ -791,6 +791,25 @@ produced identical images from owned syntax and replay. The hosted manifest
 counts loader calls, returned modules and UTF-16 units. The dense-graph
 wall-time and peak RSS budgets still need measurements.
 
+### Private function fallback prototype (slice 3)
+
+`TINT_FUNCTION_FALLBACK=1` enables the hosted prototype on the typed
+corpus forms. It requires successful source validation. A function that
+observes only `arguments.length` can lower through the general engine
+while its numeric callers and callees stay typed. Admission is limited to
+a single module of top-level functions, a private declaration with direct
+calls, and a numeric return expression. It accepts nullary calls or a
+numeric rest signature. The general body reads the count captured at entry
+even when a typed callee re-enters with a different count. The adapter
+checks the numeric result and propagates thrown values across the same
+program realm. Observable replacement and escaping references retain
+the whole-module path.
+
+The [Linux function fallback probes](results/slice3-function-fallback-focused.md)
+cover both call directions, a reentrant call and a primitive throw. The
+single-unit `arguments-object` image was smaller than its matched
+whole-module image. Startup and call-cycle budgets still need evidence.
+
 ## Status
 
 Slice 0: `requireTyped` guards the compiler self-build, frozen workloads and

@@ -225,3 +225,27 @@ test("source replay preserves dependency bindings and emitted bytes", () => {
   const start = text.indexOf("function*");
   assert.deepEqual(observed, [start, start]);
 });
+
+test("linking attributes implicit arguments to its receiver-owning function", () => {
+  const { lowering, requests } = recordingLowering();
+  const text = `function size(): number {
+  const read = (): number => arguments.length;
+  return read();
+}
+export function run(): number { return size(); }`;
+  compileArm64Program({
+    ...generatorProgram(lowering),
+    modules: [source("main", text)],
+  });
+  assert.deepEqual(requests[0]?.trigger, {
+    phase: "link",
+    code: "UNKNOWN_NAME",
+    capability: "arguments-object",
+    owner: {
+      module: "main",
+      kind: "function",
+      start: 0,
+      end: text.indexOf("\nexport function"),
+    },
+  });
+});

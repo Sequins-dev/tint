@@ -100,13 +100,13 @@ export type LinkResult =
   | { readonly ok: true; readonly value: LinkedProgram }
   | {
       readonly ok: false;
-      readonly error: {
-        readonly module: string;
-        readonly message: string;
-        readonly start: number;
-        readonly end: number;
-      };
+      readonly error: LinkDiagnostic;
     };
+interface LinkDiagnostic extends Span {
+  readonly module: string;
+  readonly message: string;
+  readonly implicitArgumentsOwner?: Span;
+}
 interface ModuleState {
   readonly source: SourceModule;
   readonly bound: BoundModule;
@@ -138,8 +138,7 @@ export function linkModules(
     order: SourceModule[] = [],
     origins = createKeyIndex<Span, SourceOrigin>(syntaxHash),
     recordOrigins = options?.origins !== false;
-  let error:
-    { module: string; message: string; start: number; end: number } | undefined;
+  let error: LinkDiagnostic | undefined;
   function fail(module: string, node: Span, message: string): never {
     error = { module, message, start: node.start, end: node.end };
     throw abort;
@@ -179,7 +178,21 @@ export function linkModules(
         }
       }
       const bound = bindModule(source.module, globals);
-      if (!bound.ok) fail(source.id, bound.error, bound.error.message);
+      if (!bound.ok) {
+        const diagnostic = bound.error;
+        const owner = diagnostic.implicitArgumentsOwner;
+        if (owner === undefined)
+          fail(source.id, diagnostic, diagnostic.message);
+        const located: LinkDiagnostic = {
+          module: source.id,
+          message: diagnostic.message,
+          start: diagnostic.start,
+          end: diagnostic.end,
+          implicitArgumentsOwner: owner,
+        };
+        error = located;
+        throw abort;
+      }
       const names = new Map<number, string>(),
         valueNames = new Map<string, string>(),
         typeNames = new Map<string, string>();

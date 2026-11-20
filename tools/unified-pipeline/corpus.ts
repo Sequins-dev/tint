@@ -953,6 +953,33 @@ export function run() {
 }`,
   },
   {
+    name: "arguments-function-fallback",
+    typed: `function kernel(): number { return 6 * 7; }
+function read(): number { return kernel() - arguments.length; }
+export function run(): number { return read(); }`,
+    untyped: `function kernel() { return 6 * 7; }
+function read() { return kernel() - arguments.length; }
+export function run() { return read(); }`,
+  },
+  {
+    name: "arguments-function-fallback-reentry",
+    typed: `function kernel(): number { return read() + 22; }
+function read(...values: number[]): number { return arguments.length === 0 ? 17 : kernel() + arguments.length; }
+export function run(): number { return read(1, 2, 3); }`,
+    untyped: `function kernel() { return read() + 22; }
+function read(...values) { return arguments.length === 0 ? 17 : kernel() + arguments.length; }
+export function run() { return read(1, 2, 3); }`,
+  },
+  {
+    name: "arguments-function-fallback-throw",
+    typed: `function kernel(): number { throw 7; }
+function read(): number { return kernel() + arguments.length; }
+export function run(): number { try { read(); return 1; } catch (error) { return error === 7 ? 42 : 2; } }`,
+    untyped: `function kernel() { throw 7; }
+function read() { return kernel() + arguments.length; }
+export function run() { try { read(); return 1; } catch (error) { return error === 7 ? 42 : 2; } }`,
+  },
+  {
     name: "tagged-templates",
     typed: `function tag(strings: TemplateStringsArray, ...values: number[]): string {
   return strings.raw.join("|") + values.join(",");

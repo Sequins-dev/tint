@@ -39,6 +39,7 @@ import {
   foreignRuntimeModules,
   prepareForeignLibrary,
   type ForeignLibrary,
+  type GeneralFallbackFunction,
   type NativeForeignBinding,
   type NativeForeignMemoryBinding,
   type NativeHostBinding,
@@ -100,9 +101,14 @@ let generalLowering: GeneralLowering | undefined;
  * pipeline rejects, with console output through the hosted fs binding.
  * TINT_GENERAL_FALLBACK=0 disables it. Read per build, not at import:
  * fixtures set the variable after their (hoisted) imports. */
-export function workspaceGeneralLowering(): GeneralLowering | undefined {
+export function workspaceGeneralLowering(
+  functionFallback = false,
+): GeneralLowering | undefined {
   if (process.env.TINT_GENERAL_FALLBACK === "0") return undefined;
-  generalLowering ??= createGeneralLowering({
+  if (!functionFallback && generalLowering !== undefined)
+    return generalLowering;
+  const lowering = createGeneralLowering({
+    functionFallback,
     runtime: {
       objects: "packages/js-runtime/src/objects/index.ts",
       modules: "packages/js-runtime/src/modules/index.ts",
@@ -115,7 +121,8 @@ export function workspaceGeneralLowering(): GeneralLowering | undefined {
       name: "write",
     },
   });
-  return generalLowering;
+  if (!functionFallback) generalLowering = lowering;
+  return lowering;
 }
 
 /** Build through the full hosted pipeline and run through the target runner.
@@ -157,6 +164,7 @@ function buildHostedFixture(
     readonly requireTyped?: boolean;
     /** Host validation over captured application sources, when supplied. */
     readonly validateSource?: GeneralLowering["validateSource"];
+    readonly functionFallback?: boolean;
     /** Replay fixtures and these helper modules from captured source text. */
     readonly replaySources?: readonly SourceModuleText[];
     readonly optimization?: BuildRequest["optimization"];
@@ -188,7 +196,10 @@ function buildHostedFixture(
   },
 ): string {
   const bytes = new TextEncoder().encode(text);
-  const general = workspaceGeneralLowering();
+  const functionFallback =
+    options.functionFallback === true && options.validateSource !== undefined;
+  const general = workspaceGeneralLowering(functionFallback);
+  let fallbackFunctions: readonly GeneralFallbackFunction[] | undefined;
   const replaySources = options.replaySources;
   const fixtureSource = "fixture";
   const original =
@@ -433,10 +444,23 @@ function buildHostedFixture(
     ...(general === undefined
       ? {}
       : {
-          generalLowering:
-            options.validateSource === undefined
-              ? general
-              : { ...general, validateSource: options.validateSource },
+          generalLowering: {
+            ...general,
+            ...(options.validateSource === undefined
+              ? {}
+              : { validateSource: options.validateSource }),
+            ...(functionFallback
+              ? {
+                  lower: (request: Parameters<GeneralLowering["lower"]>[0]) => {
+                    const lowered = general.lower(request);
+                    fallbackFunctions = lowered.ok
+                      ? lowered.value.functions
+                      : undefined;
+                    return lowered;
+                  },
+                }
+              : {}),
+          },
           ...(options.requireTyped === true ? { requireTyped: true } : {}),
           onGeneralFallback: (modules: readonly string[], reason: string) => {
             options.onGeneralFallback?.(modules, reason);
@@ -555,6 +579,7 @@ function buildHostedFixture(
           .update(JSON.stringify(generated))
           .digest("hex"),
         ...(moduleLoader === undefined ? {} : { sourceReplay: replay }),
+        ...(fallbackFunctions === undefined ? {} : { fallbackFunctions }),
         options: {
           ...manifestOptions,
           ...(serviceImage === undefined

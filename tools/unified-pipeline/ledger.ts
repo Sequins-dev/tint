@@ -14,6 +14,7 @@ import { spawn } from "node:child_process";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { constructs } from "./corpus.ts";
+import type { GeneralFallbackFunction } from "@tint/compiler/native";
 
 type Form = "typed" | "untyped";
 interface Entry {
@@ -21,7 +22,7 @@ interface Entry {
   readonly form: Form;
   /** "general" when the build used the general fallback; "type-error" when
    * an ill-typed form was rejected at compile time as expected. */
-  readonly path: "typed" | "general" | "type-error" | "none";
+  readonly path: "typed" | "mixed" | "general" | "type-error" | "none";
   /** "missed-type-error": an ill-typed form compiled; "unsupported": the
    * construct needs compiler options Tint does not offer yet. */
   readonly outcome:
@@ -31,6 +32,7 @@ interface Entry {
     | "missed-type-error"
     | "unsupported";
   readonly generalModules?: readonly string[];
+  readonly fallbackFunctions?: readonly GeneralFallbackFunction[];
   readonly reason?: string;
   readonly error?: string;
   readonly sourceSnapshot?: string;
@@ -110,15 +112,18 @@ function verify(construct: string, form: Form): Promise<Entry> {
         );
       let sourceSnapshot: string | undefined;
       let sourceReplay: Entry["sourceReplay"];
+      let fallbackFunctions: Entry["fallbackFunctions"];
       if (image !== undefined) {
         const manifest = JSON.parse(
           readFileSync(image + ".manifest.json", "utf8"),
         ) as {
           sourceSnapshot: { sha256: string };
           sourceReplay?: Entry["sourceReplay"];
+          fallbackFunctions?: Entry["fallbackFunctions"];
         };
         sourceSnapshot = manifest.sourceSnapshot.sha256;
         sourceReplay = manifest.sourceReplay;
+        fallbackFunctions = manifest.fallbackFunctions;
         rmSync(dirname(image), { recursive: true, force: true });
       }
       // A build that fails before compiling (the hosted builder asserts its
@@ -160,7 +165,9 @@ function verify(construct: string, form: Form): Promise<Entry> {
               ? "none"
               : fallback === null
                 ? "typed"
-                : "general",
+                : fallbackFunctions === undefined
+                  ? "general"
+                  : "mixed",
         outcome,
         ...(fallback === null
           ? assertion === undefined || image !== undefined
@@ -173,6 +180,7 @@ function verify(construct: string, form: Form): Promise<Entry> {
         ...(outcome === "pass" ? {} : { error: stderr.slice(-1200) }),
         ...(sourceSnapshot === undefined ? {} : { sourceSnapshot }),
         ...(sourceReplay === undefined ? {} : { sourceReplay }),
+        ...(fallbackFunctions === undefined ? {} : { fallbackFunctions }),
         seconds,
       });
     });

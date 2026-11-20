@@ -22,6 +22,8 @@ if (construct.options?.noUncheckedIndexedAccess === false) {
   process.exit(3);
 }
 const replay = process.env.TINT_SOURCE_REPLAY === "1";
+const functionFallback =
+  process.env.TINT_FUNCTION_FALLBACK === "1" && form === "typed";
 const dependencies: [string, string][] = [];
 const sources = [];
 for (const [file, text] of Object.entries(construct.helpers ?? {})) {
@@ -37,6 +39,7 @@ for (const [file, text] of Object.entries(construct.helpers ?? {})) {
 const helpers = replay ? [] : createSourceModuleLoader(sources).load();
 const validateSource =
   process.env.TINT_SOURCE_VALIDATION === "1" ||
+  functionFallback ||
   construct.typedError !== undefined
     ? createHostedSourceValidator(
         [
@@ -63,5 +66,6 @@ verifyHostedFixture(
     allocationCapacity: 1048576,
     ...(validateSource === undefined ? {} : { validateSource }),
     ...(replay ? { replaySources: sources } : {}),
+    ...(functionFallback ? { functionFallback } : {}),
   },
 );

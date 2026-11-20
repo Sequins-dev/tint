@@ -21,6 +21,10 @@ import {
 import type { SourceModule } from "@tint/typescript/modules/model";
 import { lowerSourceTextModule } from "../lowering/index.ts";
 import { createGeneralIntrinsicPlan } from "./intrinsics.ts";
+import {
+  planFunctionFallback,
+  type FunctionFallbackPlan,
+} from "./function-fallback.ts";
 
 /** Module IDs of the JavaScript runtime the general lowering targets. */
 export interface GeneralRuntimeModules {
@@ -31,6 +35,8 @@ export interface GeneralRuntimeModules {
 }
 export interface GeneralLoweringOptions {
   readonly runtime: GeneralRuntimeModules;
+  /** Enables the limited function fallback route for validated fixtures. */
+  readonly functionFallback?: boolean;
   /** A host function `(fd: number, bytes: Uint8Array) => number`, exposed to
    * general code as `console.log`/`console.error` and used to report
    * uncaught exceptions. Without it, console output is discarded. */
@@ -92,15 +98,40 @@ export function createGeneralLowering(
 }
 
 function lowerGeneralProgram(
-  request: GeneralProgramRequest,
+  original: GeneralProgramRequest,
   options: GeneralLoweringOptions,
 ): GeneralProgram {
   const runtime = options.runtime;
   const available = new Map<string, SourceModule>();
-  for (const module of request.available) {
+  for (const module of original.available) {
     if (module === undefined) throw "general module invariant";
     available.set(module.id, module);
   }
+  const used = new Set(available.keys());
+  function fresh(base: string): string {
+    let id = base;
+    while (used.has(id)) id += "$";
+    used.add(id);
+    return id;
+  }
+  const hostId = fresh("$general-host:" + original.entry);
+  const mixed =
+    options.functionFallback === true
+      ? planFunctionFallback(
+          original,
+          fresh("$typed:" + original.entry),
+          hostId,
+        )
+      : undefined;
+  const request: GeneralProgramRequest =
+    mixed === undefined
+      ? original
+      : {
+          ...original,
+          modules: [mixed.general],
+          boundaries:
+            mixed.boundary.exports.length === 0 ? [] : [mixed.boundary],
+        };
   const typeOnly = new Map<string, Set<string>>();
   function typeNames(id: string): Set<string> | undefined {
     const known = typeOnly.get(id);
@@ -126,16 +157,7 @@ function lowerGeneralProgram(
     ["@tint/js-runtime/environments/global", runtime.globalEnvironment],
     ["@tint/js-runtime/environments/records", runtime.environmentRecords],
   ]);
-  const used = new Set<string>();
-  for (const module of request.available)
-    if (module !== undefined) used.add(module.id);
-  function fresh(base: string): string {
-    let id = base;
-    while (used.has(id)) id += "$";
-    used.add(id);
-    return id;
-  }
-  const generated: SourceModule[] = [];
+  const generated: SourceModule[] = mixed === undefined ? [] : [mixed.typed];
   const installers = createGeneralIntrinsicPlan();
   let imports = "",
     creates = "",
@@ -211,8 +233,7 @@ function lowerGeneralProgram(
   // declared primitive type (an explicit cast); a failed check throws a
   // TypeError instead of entering typed code with an ill-typed value.
   let boundaryImports = "";
-  const hostId = fresh("$general-host:" + request.entry),
-    viewsId = fresh("$general-views:" + request.entry);
+  const viewsId = fresh("$general-views:" + request.entry);
   // Record types cross as JavaScript views (docs/unified-pipeline.md, the
   // value bridge): one view per record, cached in the record's view slot.
   const adapters = recordAdapters(request.records ?? []);
@@ -279,6 +300,13 @@ function lowerGeneralProgram(
       "},undefined);\n";
   }
   imports += boundaryImports;
+  if (mixed !== undefined)
+    imports +=
+      "import {" +
+      request.start +
+      " as $tintTypedStart} from " +
+      JSON.stringify(mixed.typed.id) +
+      ";\n";
   for (const declarations of dynamicDeclarations)
     imports += declarations + "\n";
   const entryIndex = request.modules.findIndex(
@@ -297,6 +325,7 @@ function lowerGeneralProgram(
     output !== undefined,
     installers.installers(),
     adapters.functions + errors.functions,
+    mixed,
   );
   const parsed = parseModule(createSourceTextView(text));
   if (!parsed.ok)
@@ -329,8 +358,25 @@ function lowerGeneralProgram(
     dependencies: hostDependencies,
   });
   const records = request.records ?? [];
+  const owner = original.trigger?.owner;
+  const functions =
+    mixed === undefined || owner === undefined
+      ? {}
+      : {
+          functions: [
+            {
+              module: owner.module,
+              name: mixed.name,
+              start: owner.start,
+              end: owner.end,
+            },
+          ],
+        };
   if (records.length === 0 && errors.stubs === "")
-    return { ok: true, value: { modules: generated, entry: hostId } };
+    return {
+      ok: true,
+      value: { modules: generated, entry: hostId, ...functions },
+    };
   const viewsParsed = parseModule(
     createSourceTextView(adapters.stubs + errors.stubs),
   );
@@ -373,6 +419,7 @@ function lowerGeneralProgram(
     value: {
       modules: generated,
       entry: hostId,
+      ...functions,
       recordBindings: viewSlots,
       runtimes: [
         { module: viewsId, namespace: "general-record-views", retainedExports },
@@ -724,6 +771,7 @@ function generalHostSource(
   output: boolean,
   installers: readonly string[],
   adapters: string,
+  mixed?: FunctionFallbackPlan,
 ): string {
   let installs = "";
   const programInstallers: string[] = [];
@@ -761,6 +809,38 @@ function generalHostSource(
   const write = output
     ? `function emit(fd:number,text:string):void{const bytes=new TextEncoder().encode(text);let offset=0;while(offset<bytes.length){const written=writeOutput(fd,bytes.subarray(offset));if(written<=0)return;offset+=written;}}`
     : `function emit(fd:number,text:string):void{}`;
+  const mixedAdapter =
+    mixed === undefined
+      ? ""
+      : `
+let mixedCallable:unknown=undefined;
+${mixed.rest ? "const mixedArguments:unknown[]=[undefined];" : "const mixedArguments:readonly unknown[]=[];"}
+export function $tintCallUnit(${mixed.rest ? "...values:number[]" : ""}):number {
+ const program=programRealm();
+ ${mixed.rest ? "mixedArguments[0]=values.length;" : ""}
+ const value=callObjectValue(mixedCallable,undefined,mixedArguments,program.object).value;
+ if(typeof value!=="number")rejectArgument(program.realm);
+ return value;
+}
+`;
+  const invoke =
+    mixed === undefined
+      ? `
+ const main=getProperty<ScriptPropertyKey,unknown>(namespace,${JSON.stringify(start)},namespace,hooks);
+ const result=callObjectValue(main,undefined,[],object);
+ if(result.error!=="none"){report(result.value);return 1;}
+ drainScriptJobs(realm.agent,report);
+ if(failed)return 1;
+ const value=result.value;
+ if(typeof value==="number")return value;
+ return 0;
+`
+      : `
+ mixedCallable=getProperty<ScriptPropertyKey,unknown>(namespace,${JSON.stringify(mixed.name)},namespace,hooks);
+ const code=$tintTypedStart();
+ drainScriptJobs(realm.agent,report);
+ return failed?1:code;
+`;
   return `${imports}import {createGlobalEnvironment,type GlobalEnvironment} from "global";
 import {createSyntheticModule,setSyntheticModuleExport,loadRequestedModules,finishLoadingImportedModule,linkModule,evaluateModule,settledModulePromise,getModuleNamespace,type ModuleRecord,type ModuleRequest,type ModuleReferrer,type ModuleLoadPayload} from "modules";
 import {createObject,createCallableObject,createDataProperty,programRealmCore,installProgramObjectIntrinsics,createRuntimeError,getProperty,callObjectValue,stringValue,drainScriptJobs,installGlobalProperties,createRecordView,typedRecordOf,viewObjectValue,${programInstallers.join(",")},type ErrorRealm,type ScriptPropertyKey,type ObjectHooks,type OrdinaryObject} from "objects";
@@ -788,7 +868,7 @@ ${installs} const console=createObject<ScriptPropertyKey,unknown>(realm.objectPr
  current=created;
  return created;
 }
-${adapters}export function ${start}():number {
+${adapters}${mixedAdapter}export function ${start}():number {
  const program=programRealm();
  const global=program.global,realm=program.realm,hooks=program.hooks,object=program.object;
  const records:(ModuleRecord|undefined)[]=[];for(let i=0;i<${count};i++)records.push(undefined);
@@ -817,15 +897,6 @@ ${edges} realm.moduleLoader=(referrer:ModuleReferrer,request:ModuleRequest,hostD
  const evaluated=settledModulePromise(evaluation,realm);
  if(evaluated.kind==="rejected"){report(evaluated.error);return 1;}
  if(evaluated.kind==="pending"){emit(2,"module evaluation did not settle\\n");return 1;}
- const namespace=getModuleNamespace(root);
- const main=getProperty<ScriptPropertyKey,unknown>(namespace,${JSON.stringify(start)},namespace,hooks);
- const result=callObjectValue(main,undefined,[],object);
- if(result.error!=="none"){report(result.value);return 1;}
- drainScriptJobs(realm.agent,report);
- if(failed)return 1;
- const value=result.value;
- if(typeof value==="number")return value;
- return 0;
-}
+ const namespace=getModuleNamespace(root);${invoke}}
 `;
 }

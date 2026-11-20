@@ -133,6 +133,7 @@ export interface BindingError extends Span {
     | "LIMIT"
     | "UNSUPPORTED";
   readonly message: string;
+  readonly implicitArgumentsOwner?: Span;
 }
 export type BindingResult =
   | { readonly ok: true; readonly value: BoundModule }
@@ -275,8 +276,22 @@ function bindProgram(
     node: Span,
     code: BindingError["code"],
     message: string,
+    implicitArgumentsOwner?: Span,
   ): never {
-    error = { start: node.start, end: node.end, code, message };
+    const diagnostic: BindingError =
+      implicitArgumentsOwner === undefined
+        ? { start: node.start, end: node.end, code, message }
+        : {
+            start: node.start,
+            end: node.end,
+            code,
+            message,
+            implicitArgumentsOwner: {
+              start: implicitArgumentsOwner.start,
+              end: implicitArgumentsOwner.end,
+            },
+          };
+    error = diagnostic;
     throw abort;
   }
   function scope(
@@ -575,7 +590,13 @@ function bindProgram(
             "UNKNOWN_NAME",
             "No pinned TypeScript library value named " + node.name,
           );
-        fail(node, "UNKNOWN_NAME", "unknown value name: " + node.name);
+        const receiver =
+          node.name !== "arguments" || s.owner === undefined
+            ? undefined
+            : functions[s.owner]?.receiver;
+        const owner =
+          receiver === undefined ? undefined : functions[receiver]?.node;
+        fail(node, "UNKNOWN_NAME", "unknown value name: " + node.name, owner);
       }
       references.push({
         node,

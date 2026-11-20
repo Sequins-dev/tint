@@ -1167,6 +1167,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-engine",
     },
     {
+      id: "packages/js-engine/src/program/function-fallback.ts",
+      packageId: "js-engine",
+    },
+    {
       id: "packages/js-engine/src/program/index.ts",
       packageId: "js-engine",
     },

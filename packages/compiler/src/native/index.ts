@@ -341,11 +341,13 @@ export interface GeneralProgramRequest {
   readonly records?: readonly BoundaryRecord[];
   /** Source capability that seeded this retry, where classified. */
   readonly trigger?: FallbackTrigger;
+  /** The original graph passed the host checker before representation choice. */
+  readonly sourceValidated?: boolean;
 }
 export interface FallbackTrigger {
-  readonly phase: "check";
+  readonly phase: "link" | "check";
   readonly code: string;
-  readonly capability: ClosureFallback["capability"];
+  readonly capability: ClosureFallback["capability"] | "arguments-object";
   readonly owner: {
     readonly kind: ClosureFallback["ownerKind"];
     readonly module: string;
@@ -361,6 +363,7 @@ export type GeneralProgram =
         readonly modules: readonly SourceModule[];
         /** The generated host module; it exports `start(): number`. */
         readonly entry: string;
+        readonly functions?: readonly GeneralFallbackFunction[];
         /** Record bindings of generated runtime modules (record view
          * slots), and those runtime modules. */
         readonly recordBindings?: readonly NativeRecordBinding[];
@@ -368,6 +371,15 @@ export type GeneralProgram =
       };
     }
   | { readonly ok: false; readonly error: string };
+export interface GeneralFallbackFunction extends Span {
+  readonly module: string;
+  readonly name: string;
+}
+interface GeneralCompilation {
+  readonly modules: readonly string[];
+  readonly reason: string;
+  readonly functions?: readonly GeneralFallbackFunction[];
+}
 /** Lowers application modules to typed modules of runtime-helper calls that
  * implement JavaScript semantics, plus a typed host entry. Provided by the
  * JavaScript engine (it depends on this package). */
@@ -428,10 +440,7 @@ export interface CompiledProgram {
   readonly exports: readonly string[];
   /** Present when application modules were compiled with general semantics
    * because the typed pipeline rejected them (visible fallback). */
-  readonly general?: {
-    readonly modules: readonly string[];
-    readonly reason: string;
-  };
+  readonly general?: GeneralCompilation;
 }
 export type Compilation =
   | { readonly ok: true; readonly value: CompiledProgram }
@@ -854,6 +863,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       entry: request.entry,
       start,
       boundaries: partition.boundaries,
+      sourceValidated: validateSource !== undefined,
       ...(error.fallback === undefined ? {} : { trigger: error.fallback }),
       ...(partition.records === undefined
         ? {}
@@ -887,14 +897,20 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     const generalIds: string[] = [];
     for (const module of partition.general)
       if (module !== undefined) generalIds.push(module.id);
-    if (compiled.ok)
+    if (compiled.ok) {
+      const functions = lowered.value.functions;
+      const general: GeneralCompilation =
+        functions === undefined
+          ? { modules: generalIds, reason }
+          : { modules: generalIds, reason, functions };
       return {
         ok: true,
         value: {
           ...compiled.value,
-          general: { modules: generalIds, reason },
+          general,
         },
       };
+    }
     if (compiled.error.preventsFallback === true) return compiled;
     if (seed.size === applicationIds.size)
       return failure(
@@ -1151,8 +1167,31 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
           request.runtimes.map((runtime) => runtime.module),
         );
   modules.length = 0;
-  if (!linked.ok)
-    return stageFailure("link", linked.error.message, linked.error.module);
+  if (!linked.ok) {
+    const diagnostic = linked.error;
+    const owner = diagnostic.implicitArgumentsOwner;
+    if (owner === undefined)
+      return stageFailure("link", diagnostic.message, diagnostic.module);
+    return {
+      ok: false,
+      error: {
+        stage: "link",
+        message: diagnostic.message,
+        module: diagnostic.module,
+        fallback: {
+          phase: "link",
+          code: "UNKNOWN_NAME",
+          capability: "arguments-object",
+          owner: {
+            kind: "function",
+            module: diagnostic.module,
+            start: owner.start,
+            end: owner.end,
+          },
+        },
+      },
+    };
+  }
   const retainedRuntimeExports: string[] = [];
   for (const runtime of request.runtimes) {
     if (runtime === undefined) throw "runtime source invariant";
