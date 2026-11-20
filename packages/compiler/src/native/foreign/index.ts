@@ -78,6 +78,8 @@ export interface NativeForeignMemoryBinding {
 /** The `tint:ffi` runtime: its trusted primitives and the weak-storage and
  * collection intrinsics its collector-registered storage uses. */
 export const foreignRuntimeModules = {
+  nodeFfi: "packages/native-runtime/src/node/ffi.ts",
+  nodeBuffer: "packages/native-runtime/src/node/buffer.ts",
   /** `tint:ffi` itself (its `View<R>` type names C views). */
   index: "packages/native-runtime/src/ffi/index.ts",
   /** `tint:ffi/unsafe`: views over memory C owns. */
@@ -99,7 +101,7 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
   readonly weakBindings: readonly {
     readonly module: string;
     readonly name: string;
-    readonly operation: "new" | "key";
+    readonly operation: "new" | "key" | "clear";
   }[];
   readonly hostBindings: readonly {
     readonly module: string;
@@ -140,6 +142,20 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
       operation: "callback-key",
     },
   ];
+  const weakBindings: {
+    readonly module: string;
+    readonly name: string;
+    readonly operation: "new" | "key" | "clear";
+  }[] = [
+    { module: modules.weak, name: "createWeakSlot", operation: "new" },
+    { module: modules.weak, name: "weakSlotKey", operation: "key" },
+  ];
+  if (loaded.has(modules.nodeFfi))
+    weakBindings.push({
+      module: modules.weak,
+      name: "clearWeakSlot",
+      operation: "clear",
+    });
   return {
     runtimes: [
       { module: modules.primitives, namespace: "ffi" },
@@ -147,10 +163,7 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
       { module: modules.memory, namespace: "ffi-memory" },
     ],
     memoryBindings: bindings,
-    weakBindings: [
-      { module: modules.weak, name: "createWeakSlot", operation: "new" },
-      { module: modules.weak, name: "weakSlotKey", operation: "key" },
-    ],
+    weakBindings,
     hostBindings: [
       {
         module: modules.memory,
@@ -398,6 +411,34 @@ export function expandForeignInputs(
       packageId: input.packageId,
       bytes: encoder.encode(prepared.value.text),
     });
+  }
+  if (
+    target.name === "darwin-arm64" ||
+    target.name === "linux-arm64" ||
+    target.name === "linux-x86_64"
+  ) {
+    const packages = new Set<string>();
+    for (const input of inputs) {
+      if (input === undefined) throw "foreign input invariant";
+      packages.add(input.packageId);
+    }
+    for (const packageId of packages) {
+      if (packageId === undefined) throw "foreign package invariant";
+      grantForeignRuntime(
+        inputs,
+        mappings,
+        packageId,
+        "node:ffi",
+        foreignRuntimeModules.nodeFfi,
+      );
+      grantForeignRuntime(
+        inputs,
+        mappings,
+        packageId,
+        "node:buffer",
+        foreignRuntimeModules.nodeBuffer,
+      );
+    }
   }
   return { ok: true, value: { inputs: expanded, mappings, libraries } };
 }

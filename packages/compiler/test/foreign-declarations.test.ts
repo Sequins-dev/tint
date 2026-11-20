@@ -18,6 +18,8 @@ import {
 import { createSourceText } from "@tint/source/text";
 import { dynamicCallFrame } from "@tint/ir/scalar";
 import { parseModule } from "@tint/typescript/syntax";
+import { loadSourceGraph } from "@tint/typescript/modules";
+import { linuxX86_64CTarget } from "@tint/abi/c/sysv";
 import {
   parseForeignDeclarations,
   prepareForeignLibrary,
@@ -30,6 +32,64 @@ import {
 const root = new URL("../../native-runtime/src/c/", import.meta.url);
 const commonCrypto = readFileSync(new URL("commoncrypto.d.ts", root), "utf8");
 const libSystem = readFileSync(new URL("libsystem.d.ts", root), "utf8");
+
+test("the application resolver grants native Node FFI only on supported targets", () => {
+  const entry = "application/main.ts";
+  const ffi = "packages/native-runtime/src/node/ffi.ts";
+  const buffer = "packages/native-runtime/src/node/buffer.ts";
+  const encoder = new TextEncoder();
+  const inputs = [
+    {
+      id: entry,
+      packageId: "application",
+      bytes: encoder.encode(
+        'import { dlopen } from "node:ffi"; import { Buffer } from "node:buffer";',
+      ),
+    },
+    {
+      id: ffi,
+      packageId: "native-runtime",
+      bytes: encoder.encode("export const dlopen = 1;"),
+    },
+    {
+      id: buffer,
+      packageId: "native-runtime",
+      bytes: encoder.encode("export const Buffer = 1;"),
+    },
+  ];
+  for (const target of [
+    darwinArm64CTarget,
+    linuxArm64CTarget,
+    linuxX86_64CTarget,
+  ]) {
+    const expanded = expandForeignInputs(inputs, target);
+    assert.ok(expanded.ok);
+    const loaded = loadSourceGraph(
+      expanded.value.inputs,
+      expanded.value.mappings,
+      [entry],
+    );
+    assert.ok(loaded.ok, JSON.stringify(loaded));
+    assert.deepEqual(
+      loaded.value.find((module) => module.id === entry)?.dependencies,
+      new Map([
+        ["node:ffi", ffi],
+        ["node:buffer", buffer],
+      ]),
+    );
+  }
+  const unsupported = expandForeignInputs(inputs, {
+    ...linuxArm64CTarget,
+    name: "other",
+  });
+  assert.ok(unsupported.ok);
+  const rejected = loadSourceGraph(
+    unsupported.value.inputs,
+    unsupported.value.mappings,
+    [entry],
+  );
+  assert.equal(rejected.ok, false);
+});
 
 function parsed(
   text: string,

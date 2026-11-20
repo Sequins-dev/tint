@@ -183,6 +183,8 @@ import type {
 import {
   foreignDeclaration,
   foreignCall,
+  foreignRuntimeBindings,
+  foreignRuntimeModules,
   foreignViewRegistry,
   selectX64ForeignRuntime,
   type ForeignLibrary,
@@ -602,7 +604,6 @@ type TypedLowering =
  * below); unloaded ones add nothing to the program. */
 function withForeignRuntimes(request: CompileRequest): CompileRequest {
   const libraries = request.foreignLibraries ?? [];
-  if (libraries.length === 0) return request;
   const loader = request.moduleLoader;
   const ids = new Set<string>();
   if (loader !== undefined) {
@@ -611,6 +612,28 @@ function withForeignRuntimes(request: CompileRequest): CompileRequest {
     for (const module of request.modules)
       if (module !== undefined) ids.add(module.id);
   }
+  let nodeFfi = false,
+    nodeBuffer = false;
+  if (
+    ids.has(foreignRuntimeModules.nodeFfi) ||
+    ids.has(foreignRuntimeModules.nodeBuffer)
+  ) {
+    // The standalone collector can receive the application's source table
+    // too. Authority follows the entry's imports, not source availability.
+    const dependencies = new Map<string, ReadonlyMap<string, string>>();
+    for (const source of request.modules) {
+      if (source === undefined) throw "node source invariant";
+      dependencies.set(source.id, source.dependencies);
+    }
+    const resolve =
+      loader?.sourceDependencies ??
+      ((id: string): ReadonlyMap<string, string> | undefined =>
+        dependencies.get(id));
+    const reachable = sourceDependencyClosure([request.entry], resolve);
+    nodeFfi = reachable.includes(foreignRuntimeModules.nodeFfi);
+    nodeBuffer = reachable.includes(foreignRuntimeModules.nodeBuffer);
+  }
+  if (libraries.length === 0 && !nodeFfi && !nodeBuffer) return request;
   const runtimes: RuntimeSource[] = request.runtimes.slice();
   for (const library of libraries) {
     if (library === undefined) throw "foreign library invariant";
@@ -644,7 +667,113 @@ function withForeignRuntimes(request: CompileRequest): CompileRequest {
       retainedExports: retained,
     });
   }
-  return { ...request, runtimes };
+  return nodeFfi || nodeBuffer
+    ? withNodeRuntimes(request, ids, runtimes, nodeFfi, nodeBuffer)
+    : { ...request, runtimes };
+}
+
+/** Resolve the reviewed runtime surfaces only when loaded. Their values pass
+ * directly to the shared realm while byte and weak-slot primitives stay private. */
+function withNodeRuntimes(
+  request: CompileRequest,
+  ids: ReadonlySet<string>,
+  runtimes: RuntimeSource[],
+  nodeFfi: boolean,
+  nodeBuffer: boolean,
+): CompileRequest {
+  function retain(runtime: RuntimeSource): void {
+    if (!runtimes.some((existing) => existing?.module === runtime.module))
+      runtimes.push(runtime);
+  }
+  if (nodeFfi)
+    retain({
+      module: foreignRuntimeModules.nodeFfi,
+      namespace: "node-ffi",
+      retainedExports: [],
+    });
+  if (nodeBuffer)
+    retain({
+      module: foreignRuntimeModules.nodeBuffer,
+      namespace: "node-buffer",
+      retainedExports: [],
+    });
+  const recordBindings = (request.recordBindings ?? []).slice();
+  // General compilation enrolls these same witnesses when that partition
+  // starts. A standalone typed request needs them without a general host.
+  if (request.generalLowering === undefined) {
+    const objects = "packages/js-runtime/src/objects/index.ts";
+    const views = ["viewObjectValue", "viewSymbolValue", "viewBigIntValue"];
+    retain({
+      module: objects,
+      namespace: "node-object-views",
+      retainedExports: views,
+    });
+    for (const name of views) {
+      if (name === undefined) throw "node runtime view invariant";
+      if (
+        !recordBindings.some(
+          (binding) => binding?.module === objects && binding.name === name,
+        )
+      )
+        recordBindings.push({ module: objects, name, operation: "view" });
+    }
+  }
+  if (!nodeFfi) return { ...request, runtimes, recordBindings };
+
+  const ffi = foreignRuntimeBindings(ids);
+  for (const runtime of ffi.runtimes) {
+    if (runtime === undefined) throw "node FFI runtime invariant";
+    retain({ module: runtime.module, namespace: runtime.namespace });
+  }
+  const hostBindings = (request.hostBindings ?? []).slice();
+  for (const binding of ffi.hostBindings) {
+    if (binding === undefined) throw "node FFI host binding invariant";
+    if (
+      !hostBindings.some(
+        (entry) =>
+          entry?.module === binding.module && entry.name === binding.name,
+      )
+    )
+      hostBindings.push({
+        module: binding.module,
+        name: binding.name,
+        operation: binding.operation,
+      });
+  }
+  const foreignMemoryBindings = (request.foreignMemoryBindings ?? []).slice();
+  for (const binding of ffi.memoryBindings) {
+    if (binding === undefined) throw "node FFI memory binding invariant";
+    if (
+      !foreignMemoryBindings.some(
+        (entry) =>
+          entry?.module === binding.module && entry.name === binding.name,
+      )
+    )
+      foreignMemoryBindings.push(binding);
+  }
+  const weakBindings = (request.weakBindings ?? []).slice();
+  for (const binding of ffi.weakBindings) {
+    if (binding === undefined) throw "node FFI weak binding invariant";
+    if (
+      !weakBindings.some(
+        (entry) =>
+          entry?.module === binding.module && entry.name === binding.name,
+      )
+    )
+      weakBindings.push({
+        module: binding.module,
+        name: binding.name,
+        operation: binding.operation,
+      });
+  }
+  return {
+    ...request,
+    runtimes,
+    recordBindings,
+    hostBindings,
+    foreignMemoryBindings,
+    weakBindings,
+  };
 }
 export type NativeBackendSelection =
   | { readonly ok: true; readonly target: AArch64Target }

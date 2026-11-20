@@ -311,6 +311,7 @@ function buildHostedFixture(
     (dependencyIds.includes(foreignRuntimeModules.unsafe) ||
       dependencies.some(
         (dependency) =>
+          dependency[1] === foreignRuntimeModules.nodeFfi ||
           dependency[1] === foreignRuntimeModules.unsafe ||
           dependency[1] === foreignRuntimeModules.index,
       ));
