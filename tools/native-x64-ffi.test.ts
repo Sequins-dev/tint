@@ -78,6 +78,68 @@ test(
   },
 );
 
+test("SysV Node FFI specializes a fixed scalar frame", { skip: !x64 }, () => {
+  verifyHostedFixture(
+    `import { Cell, DynamicScalarFrame } from "tint:c/dl";
+import { findSymbolWords, openProgram } from "tint:ffi/unsafe";
+import { invokeFixed } from "./stub.ts";
+export function run(): number {
+  const address = findSymbolWords(openProgram(), "difftime");
+  const bytes = new Uint8Array(DynamicScalarFrame.size);
+  const frame = DynamicScalarFrame.view(bytes);
+  frame.target.low = address.low;
+  frame.target.high = address.high;
+  bytes[0] = 84;
+  bytes[8] = 42;
+  if (!invokeFixed(bytes)) return 1;
+  return Cell.view(bytes.subarray(64, 72)).f64;
+}`,
+    "sysv-node-ffi-fixed-frame",
+    [
+      ["tint:c/dl", "packages/native-runtime/src/c/dl.d.ts"],
+      ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
+      ["./stub.ts", "node-ffi-fixed-stub"],
+    ],
+    [],
+    [],
+    [
+      {
+        module: "node-ffi-fixed-stub",
+        namespace: "node-ffi-fixed-fixture",
+        retainedExports: ["invokeFixed"],
+      },
+    ],
+    {
+      replaySources: [
+        {
+          id: "node-ffi-fixed-stub",
+          text: 'export function invokeFixed(frame: Uint8Array): boolean { throw "FIXED_CALL_UNBOUND"; }',
+          dependencies: new Map<string, string>(),
+        },
+      ],
+      requireTyped: true,
+      runtimeEntry: "initializeGenerationalRuntime",
+      managedBytes: 67108864,
+      allocationCapacity: 1048576,
+      stackBytes: 4194304,
+      foreignMemoryBindings: [
+        {
+          module: "node-ffi-fixed-stub",
+          name: "invokeFixed",
+          operation: "call-static-scalar",
+          staticSignature: {
+            parameters: [cScalar("i64"), cScalar("i64")],
+            result: cScalar("f64"),
+            fixedParameters: 2,
+            callClass: "leaf",
+            errno: "none",
+          },
+        },
+      ],
+    },
+  );
+});
+
 test(
   "SysV public foreignFunction calls a glibc function",
   { skip: !x64 },
