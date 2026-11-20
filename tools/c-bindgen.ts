@@ -22,6 +22,7 @@ import type { TargetFacts } from "./c-bindgen/facts.ts";
 import { bindingDifferences } from "./c-bindgen/parity.ts";
 import {
   cTargetOf,
+  functionSpec,
   type BindingSpec,
   type TargetName,
 } from "./c-bindgen/spec.ts";
@@ -87,10 +88,24 @@ export function readFacts(loaded: LoadedSpec): Map<TargetName, TargetFacts> {
   }
   return facts;
 }
-/** Facts as compared for drift: the clang version names the toolchain, not
- * the headers' meaning, so a newer clang with equal facts is no drift. */
-export function factsMeaning(facts: TargetFacts): string {
-  return JSON.stringify({ ...facts, clang: "" });
+/** Compare header facts across SDKs. Parameter spelling is ABI-neutral,
+ * except that a name-keyed binding override must still select its parameter. */
+export function factsMeaning(facts: TargetFacts, spec: BindingSpec): string {
+  const namedOverrides = new Set<string>();
+  for (const entry of spec.functions ?? []) {
+    const fn = functionSpec(entry);
+    if (Object.keys(fn.parameters ?? {}).some((key) => !/^\d+$/.test(key)))
+      namedOverrides.add(fn.name);
+  }
+  return JSON.stringify({
+    ...facts,
+    clang: "",
+    functions: facts.functions.map((fn) =>
+      namedOverrides.has(fn.name)
+        ? fn
+        : { ...fn, parameters: fn.parameters.map(({ type }) => ({ type })) },
+    ),
+  });
 }
 
 /** What a regenerated binding declares differently from the checked-in
@@ -134,7 +149,8 @@ async function main(argv: readonly string[]): Promise<number> {
           : undefined;
         if (
           current === undefined ||
-          factsMeaning(current) !== factsMeaning(facts)
+          factsMeaning(current, loaded.spec) !==
+            factsMeaning(facts, loaded.spec)
         ) {
           console.error(
             `${loaded.name}: ${host} facts drifted from the headers (run pnpm bindgen extract)`,
