@@ -64,6 +64,27 @@ jobs:
           sudo apt-get install -y lldb
           lldb --version
 
+      - name: Reproduce precise stack-map fixture on Linux x86-64
+        if: matrix.arch == 'x64'
+        env:
+          TZ: UTC
+          TINT_BUILD_ONLY: 1
+        run: |
+          uname -sm
+          pnpm build
+          node --test tools/native-gc-stack-maps.test.ts | tee "$RUNNER_TEMP/gc-stack-maps.log"
+          image="$(sed -nE 's/^# (\/.*\/gc-stack-maps)$/\1/p' "$RUNNER_TEMP/gc-stack-maps.log")"
+          test -x "$image"
+          cat "$image.manifest.json"
+          sha256sum "$image"
+          lldb --no-lldbinit --batch \
+            -o 'settings set target.disable-aslr false' \
+            -o 'process launch --stop-at-entry' \
+            -o 'script assert lldb.process.GetState() == lldb.eStateStopped; print("STOPPED_AT_ENTRY")' \
+            -o continue \
+            -o 'script assert lldb.process.GetState() == lldb.eStateExited; print("INFERIOR_EXIT", lldb.process.GetExitStatus()); assert lldb.process.GetExitStatus() == 42' \
+            "$image"
+
       - name: Prepare macOS SDK and debugger
         if: matrix.gate == 'mac'
         run: |
