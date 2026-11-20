@@ -114,16 +114,18 @@ import {
   nativeStackMapRegistryOffset,
   nativeStackMapSaveBlockOffset,
   nativeStackMapRegisterShift,
+  nativeTargetArchAArch64,
   nativeTargetOSDarwin,
   nativeTargetOSLinux,
   type PosixHostABI,
 } from "@tint/abi/host";
 import {
   encodeStackMapTable,
+  rootHeadBinding,
   safepointLiveSlots,
   type SafepointEntry,
   type SafepointSite,
-} from "./stack-maps.ts";
+} from "../../scalar/stack-maps.ts";
 import {
   encodeFloat64,
   writeUnsigned,
@@ -323,7 +325,7 @@ export {
   encodeStackMapTable,
   type DecodedSafepoint,
   type SafepointEntry,
-} from "./stack-maps.ts";
+} from "../../scalar/stack-maps.ts";
 export interface NativeStackMapTable {
   readonly codeOffset: number;
   readonly codeLength: number;
@@ -926,18 +928,6 @@ function rawWordOperation(operation: string): boolean {
     operation === "memory-load-acquire-word" ||
     operation === "memory-store-release-word"
   );
-}
-/** A root-head binding's own body: one block that only loads slots and
- * reads the root head. Its frame is popped before the walk it starts. */
-function rootHeadBinding(fn: FunctionIR): boolean {
-  const block = fn.blocks.length === 1 ? fn.blocks[0] : undefined;
-  if (block === undefined) return false;
-  let reads = false;
-  for (const op of block.instructions) {
-    if (op?.kind === "host-call" && op.operation === "root-head") reads = true;
-    else if (op?.kind !== "load") return false;
-  }
-  return reads;
 }
 /** Frame preparation may replace bodies with compacted slot layouts. */
 export interface EmissionBodies extends FunctionBodySource {
@@ -8715,7 +8705,17 @@ function emitModuleForms(
                   shift: 0,
                   setFlags: true,
                 });
-                if (op.type !== "Uint8Array") {
+                const marker =
+                  op.type === "Uint8Array"
+                    ? 2
+                    : op.type === "Uint16Array"
+                      ? 3
+                      : op.type === "Uint32Array"
+                        ? 4
+                        : op.type === "Float64Array"
+                          ? 5
+                          : 0;
+                if (marker === 0) {
                   emit({ op: "cset", rd: 12, condition: "eq" });
                   saveRaw(12, op.id);
                   break;
@@ -8741,7 +8741,7 @@ function emitModuleForms(
                   width: 64,
                   rd: "zr",
                   rn: 10,
-                  immediate: 2,
+                  immediate: marker,
                   shift: 0,
                   setFlags: true,
                 });
@@ -9123,7 +9123,17 @@ function emitModuleForms(
                 });
                 trapIf({ op: "b.cond", condition: "ne" });
                 rawLoad(9, value(op.value).offset + 8);
-                if (op.type === "Uint8Array") {
+                const marker =
+                  op.type === "Uint8Array"
+                    ? 2
+                    : op.type === "Uint16Array"
+                      ? 3
+                      : op.type === "Uint32Array"
+                        ? 4
+                        : op.type === "Float64Array"
+                          ? 5
+                          : 0;
+                if (marker !== 0) {
                   // The object's header marker (bits 0-47) must be 2:
                   // a typed array of 1-byte elements (any storage kind).
                   emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
@@ -9140,7 +9150,7 @@ function emitModuleForms(
                     width: 64,
                     rd: "zr",
                     rn: 10,
-                    immediate: 2,
+                    immediate: marker,
                     shift: 0,
                     setFlags: true,
                   });
@@ -11878,6 +11888,14 @@ function emitModuleForms(
                   // The hosted routine returns the descriptor's address in x0.
                   startupCall("jit-descriptor");
                   emit({ op: "scvtf-d-x", rd: 0, rn: 0 });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (operation === "environment-copy")
+                  fail("UNSUPPORTED", "host operation environment-copy");
+                if (operation === "target-architecture") {
+                  imm(9, nativeTargetArchAArch64);
+                  emit({ op: "scvtf-d-w", rd: 0, rn: 9 });
                   floatStore(0, resultId);
                   break;
                 }

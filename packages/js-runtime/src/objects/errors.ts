@@ -234,6 +234,7 @@ export interface ErrorRealm {
   readonly arrayHooks: ArrayObjectHooks<ScriptPropertyKey, unknown>;
   readonly throwTypeError: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly functionPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
+  ordinaryHasInstanceMethod: unknown;
   readonly objectPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   /** Sticky embedding diagnostic; reset only at the start of a new host job. */
   unsupported: boolean;
@@ -621,6 +622,7 @@ export function createErrorRealm(
     constructors: new Map<string, OrdinaryObject<ScriptPropertyKey, unknown>>(),
     objectPrototype,
     functionPrototype,
+    ordinaryHasInstanceMethod: undefined,
     unsupported: false,
   };
   installObjectPrototype(realm, hooks);
@@ -708,6 +710,7 @@ function attachTypedErrorAccess(
   identity: unknown,
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
+  global: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): void {
   function get(key: string): unknown {
     return getProperty<ScriptPropertyKey, unknown>(object, key, value, hooks);
@@ -747,13 +750,14 @@ function attachTypedErrorAccess(
         throw createRuntimeError(realm, "type");
       }
       default: {
-        const kind =
-          operation === "TypeError"
-            ? "type"
-            : operation === "RangeError"
-              ? "range"
-              : "error";
-        const constructor = realm.constructors.get(kind);
+        if (!hasProperty<ScriptPropertyKey, unknown>(global, operation))
+          throw createRuntimeError(realm, "reference");
+        const constructor = getProperty<ScriptPropertyKey, unknown>(
+          global,
+          operation,
+          global,
+          hooks,
+        );
         const result = instanceOfValue(value, constructor, hooks, realm);
         if (result.error !== "none") throw createRuntimeError(realm, "type");
         return result.value;
@@ -767,12 +771,13 @@ export function prepareRealmErrorArgument(
   value: unknown,
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
+  global: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): unknown {
   const object = viewObjectValue(value, realm.objectPrototype);
   if (object === undefined) return value;
   const access = object.internalTypedErrorAccess;
   if (access !== undefined) return access("identity");
-  attachTypedErrorAccess(object, value, value, realm, hooks);
+  attachTypedErrorAccess(object, value, value, realm, hooks, global);
   return value;
 }
 
@@ -783,11 +788,12 @@ export function createNativeErrorView(
   message: string,
   hasMessage: boolean,
   native: unknown,
+  global: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const object = createRuntimeError(realm, kind);
   if (hasMessage)
     builtinProperty(object, "message", message, true, true, hooks);
-  attachTypedErrorAccess(object, object, native, realm, hooks);
+  attachTypedErrorAccess(object, object, native, realm, hooks, global);
   return object;
 }
 /** Node's coded errors use ordinary data properties. The producer supplies
@@ -801,6 +807,7 @@ export function createNativeCodedErrorView(
   errno: number | undefined,
   codeFirst: boolean,
   native: unknown,
+  global: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const object = createRuntimeError(realm, kind);
   if (codeFirst)
@@ -815,7 +822,7 @@ export function createNativeCodedErrorView(
     );
   if (!codeFirst)
     createDataProperty<ScriptPropertyKey, unknown>(object, "code", code, hooks);
-  attachTypedErrorAccess(object, object, native, realm, hooks);
+  attachTypedErrorAccess(object, object, native, realm, hooks, global);
   return object;
 }
 
@@ -828,6 +835,7 @@ export function createNativeSystemErrorView(
   text: string,
   syscall: string,
   native: unknown,
+  global: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const key = "node:system-error";
   const errorPrototype = realm.prototypes.get("error");
@@ -914,7 +922,7 @@ export function createNativeSystemErrorView(
   }
   alias("errno");
   alias("syscall");
-  attachTypedErrorAccess(object, object, native, realm, hooks);
+  attachTypedErrorAccess(object, object, native, realm, hooks, global);
   return object;
 }
 /** Resource cleanup uses intrinsic failure objects, without invoking a mutable

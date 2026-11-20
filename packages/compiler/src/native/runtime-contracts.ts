@@ -35,6 +35,8 @@ export function dynamicObjectRuntimeSource(): RuntimeSource {
     namespace: "dynamic-object",
     retainedExports: [
       "create",
+      "createArray",
+      "invoke",
       "finish",
       "enroll",
       "convertKey",
@@ -53,6 +55,9 @@ export function dynamicObjectRuntimeSource(): RuntimeSource {
       "speculativeBinary",
       "speculativeString",
       "speculativeUnary",
+      "realmGlobal",
+      "realmInstanceOf",
+      "invokeArrayMethod",
     ],
   };
 }

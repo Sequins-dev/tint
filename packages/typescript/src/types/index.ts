@@ -6,6 +6,7 @@ import {
   hashString,
 } from "@tint/foundation/collections/key-index";
 export interface Property {
+  readonly hasInstanceSymbol?: boolean;
   readonly optional?: boolean;
   readonly name: string;
   readonly type: number;
@@ -35,11 +36,15 @@ export type Type =
         | "Float64Array"
         | "void"
         | "unknown"
+        | "realm-callable"
+        | "dynamic-result"
         | "never";
       /** Uint8Array only: a C view (checker/c-views.ts) of the record or
        * fixed array with this key. Views are nominal: a view relates to
        * Uint8Array and to views of the same key, never the reverse. */
       readonly view?: string;
+      /** A typed-array flow fact retains a general carrier. */
+      readonly arrayFlow?: boolean;
     }
   | { readonly kind: "literal"; readonly value: string | number | boolean }
   | {
@@ -60,11 +65,15 @@ export type Type =
       readonly kind: "object";
       readonly properties: readonly Property[];
       readonly stringIndex?: StringIndex;
+      readonly realmRecord?: boolean;
       /** An interface without an index does not imply one from its fields. */
       readonly interfaceDeclaration?: boolean;
       /** Function-signature IDs for independent internal call/construct capabilities. */
       readonly call?: number;
       readonly construct?: number;
+      readonly realmConstructor?: boolean;
+      readonly realmLibrary?: string;
+      readonly realmTypedArray?: string;
     }
   | {
       readonly kind: "function";
@@ -75,6 +84,7 @@ export type Type =
       /** Required receiver type; absent means the function does not constrain its receiver. */
       readonly receiver?: number;
       readonly result: number;
+      readonly instancePredicate?: number;
     };
 export type ErrorCode =
   | "INVALID_TYPE"
@@ -366,7 +376,7 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     {
       if (targetType.kind === "Error" && scalar.kind !== "never")
         return cacheRelation(cache, actual, expected, errorContract(scalar));
-      if (targetType.kind === "unknown")
+      if (targetType.kind === "unknown" || targetType.kind === "dynamic-result")
         return cacheRelation(cache, actual, expected, scalar.kind !== "void");
       if (targetType.kind === "union") {
         let answer = false;
@@ -456,7 +466,11 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     if (!exact && source.kind === "never") return true;
     if (!exact && target.kind === "Error" && source.kind !== "union")
       return source.kind === "Error" || errorContract(source);
-    if (!exact && target.kind === "unknown") return source.kind !== "void";
+    if (
+      !exact &&
+      (target.kind === "unknown" || target.kind === "dynamic-result")
+    )
+      return source.kind !== "void";
     if (source.kind === "union") {
       if (exact) return undefined;
       let known = true;
@@ -504,6 +518,8 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     exact: boolean,
   ): boolean | undefined {
     if (source.kind !== "object" || target.kind !== "object") return undefined;
+    if ((source.realmRecord === true) !== (target.realmRecord === true))
+      return false;
     const sourceIndex = source.stringIndex,
       targetIndex = target.stringIndex,
       indexed = sourceIndex !== undefined || targetIndex !== undefined;
@@ -681,7 +697,10 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         continue;
       }
       if (!exact && source.kind === "never") continue;
-      else if (!exact && target.kind === "unknown")
+      else if (
+        !exact &&
+        (target.kind === "unknown" || target.kind === "dynamic-result")
+      )
         nodeValues[i] = source.kind !== "void" ? 1 : 0;
       else if (!exact && source.kind === "union") {
         for (const member of source.members) {
@@ -1029,6 +1048,7 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         return 4096;
       case "object":
       case "function":
+      case "realm-callable":
         return 8192;
       case "array":
         return 16384;
@@ -1059,7 +1079,8 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         mask = mask | kindMask(member);
       }
     else if (t.kind === "literal") mask = kindBit(typeof t.value);
-    else if (t.kind === "unknown") mask = everyKind;
+    else if (t.kind === "unknown" || t.kind === "dynamic-result")
+      mask = everyKind;
     else if (t.kind !== "never") mask = kindBit(t.kind);
     kindMasks[id] = mask | knownKind;
     return mask;
@@ -1538,6 +1559,7 @@ function copyType(
       refs = objectRefs;
       copy = {
         kind: t.kind,
+        ...(t.realmRecord === true ? { realmRecord: true } : {}),
         ...(t.interfaceDeclaration === true
           ? { interfaceDeclaration: true }
           : {}),
@@ -1552,8 +1574,16 @@ function copyType(
             }),
         ...(t.call === undefined ? {} : { call: t.call }),
         ...(t.construct === undefined ? {} : { construct: t.construct }),
+        ...(t.realmConstructor === true ? { realmConstructor: true } : {}),
+        ...(t.realmLibrary === undefined
+          ? {}
+          : { realmLibrary: t.realmLibrary }),
+        ...(t.realmTypedArray === undefined
+          ? {}
+          : { realmTypedArray: t.realmTypedArray }),
         properties: t.properties.map((p) => ({
           name: p.name,
+          ...(p.hasInstanceSymbol === true ? { hasInstanceSymbol: true } : {}),
           type: p.type,
           readonly: p.readonly,
           ...(p.optional ? { optional: true } : {}),
@@ -1584,6 +1614,8 @@ function copyType(
       }
       if (t.receiver !== undefined) functionRefs.push(t.receiver);
       functionRefs.push(t.result);
+      if (t.instancePredicate !== undefined)
+        functionRefs.push(t.instancePredicate);
       refs = functionRefs;
       copy = {
         kind: t.kind,
@@ -1594,6 +1626,9 @@ function copyType(
         ...(t.receiver === undefined ? {} : { receiver: t.receiver }),
         ...(t.rest === true ? { rest: true } : {}),
         result: t.result,
+        ...(t.instancePredicate === undefined
+          ? {}
+          : { instancePredicate: t.instancePredicate }),
       };
       break;
     }
@@ -1616,7 +1651,13 @@ function copyType(
       const view = t.view;
       if (view !== undefined && (t.kind !== "Uint8Array" || view.length === 0))
         return { ok: false, error: "INVALID_TYPE" };
-      copy = view === undefined ? { kind: t.kind } : { kind: t.kind, view };
+      copy =
+        view === undefined
+          ? {
+              kind: t.kind,
+              ...(t.arrayFlow === true ? { arrayFlow: true } : {}),
+            }
+          : { kind: t.kind, view };
       break;
     }
   }
@@ -1653,8 +1694,12 @@ export function unsupportedDynamicPayload(
     case "never":
     case "literal":
       return undefined;
+    case "array":
+      if (type.realmArray === true) return undefined;
+      break;
     case "object":
-      if (type.stringIndex !== undefined) return undefined;
+      if (type.stringIndex !== undefined || type.realmRecord === true)
+        return undefined;
       break;
     case "union":
       for (const member of type.members) {
@@ -1675,4 +1720,43 @@ export function unsupportedDynamicPayload(
     name +
     " values in dynamic-key objects need slice 2b list/record views"
   );
+}
+
+/** Declared indexed values may describe realm arrays and data records, even
+ * though the same annotation outside indexed storage still uses native layout. */
+export function unsupportedDynamicContract(
+  types: readonly Type[],
+  id: number,
+  seen: Set<number> = new Set<number>(),
+): string | undefined {
+  if (seen.has(id)) return undefined;
+  seen.add(id);
+  const type = types[id];
+  if (type?.kind === "array") {
+    return unsupportedDynamicContract(types, type.element, seen);
+  }
+  if (
+    type?.kind === "object" &&
+    type.call === undefined &&
+    type.construct === undefined
+  ) {
+    for (const field of type.properties) {
+      if (field === undefined) throw "dynamic contract field invariant";
+      const unsupported = unsupportedDynamicContract(types, field.type, seen);
+      if (unsupported !== undefined) return unsupported;
+    }
+    const index = type.stringIndex;
+    return index === undefined
+      ? undefined
+      : unsupportedDynamicContract(types, index.type, seen);
+  }
+  if (type?.kind === "union") {
+    for (const member of type.members) {
+      if (member === undefined) throw "dynamic contract union invariant";
+      const unsupported = unsupportedDynamicContract(types, member, seen);
+      if (unsupported !== undefined) return unsupported;
+    }
+    return undefined;
+  }
+  return unsupportedDynamicPayload(types, id);
 }

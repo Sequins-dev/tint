@@ -42,6 +42,10 @@ export const nativeCStackReserveBytes = 65536;
 export const nativeTargetOSDarwin = 1;
 export const nativeTargetOSLinux = 2;
 
+/** Compile-time architecture codes for the target-architecture host operation. */
+export const nativeTargetArchAArch64 = 1;
+export const nativeTargetArchX86_64 = 2;
+
 /** Target policy for POSIX-shaped file and clock calls.
  * Constants, symbol names, variadic mode placement are target
  * facts; image format is separate. */

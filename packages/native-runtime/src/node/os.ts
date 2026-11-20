@@ -6,11 +6,7 @@
  * module for its target; importing one on the other target fails at
  * resolution (its binding module has no image there).
  *
- * KNOWN DEFECT (API shape, removed by the typed/untyped convergence):
- * typed code has no objects with dynamic keys, so `networkInterfaces`
- * returns a Map from interface name to the same arrays Node's plain object
- * holds. `userInfo` takes no options (Node's `encoding` option re-encodes
- * each string). */
+ * `userInfo` takes no options (Node's `encoding` option re-encodes each string). */
 
 import { systemError, type NativeSystemError } from "./errors.ts";
 
@@ -457,8 +453,8 @@ export function assignMac(
  * (uv_ip4_name/uv_ip6_name, %02x MAC) and lib/os.js grouping by name. */
 export function shapeInterfaces(
   addresses: readonly InterfaceAddress[],
-): Map<string, NetworkInterfaceInfo[]> {
-  const result = new Map<string, NetworkInterfaceInfo[]>();
+): Record<string, NetworkInterfaceInfo[]> {
+  const result: Record<string, NetworkInterfaceInfo[]> = {};
   for (let i = 0; i < addresses.length; i++) {
     const item = addresses[i];
     if (item === undefined) throw "interface address invariant";
@@ -489,9 +485,18 @@ export function shapeInterfaces(
         (item.address[25] ?? 0) * 256 +
         (item.address[26] ?? 0) * 65536 +
         (item.address[27] ?? 0) * 16777216;
-    const existing = result.get(item.name);
-    if (existing !== undefined) existing.push(entry);
-    else result.set(item.name, [entry]);
+    if (Object.hasOwn(result, item.name)) {
+      const existing = result[item.name];
+      if (existing === undefined) throw "interface group invariant";
+      existing.push(entry);
+    } else {
+      Object.defineProperty(result, item.name, {
+        value: [entry],
+        enumerable: true,
+        configurable: true,
+        writable: true,
+      });
+    }
   }
   return result;
 }

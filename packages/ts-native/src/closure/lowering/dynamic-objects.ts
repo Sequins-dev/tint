@@ -11,10 +11,15 @@ import {
   type Statement,
 } from "@tint/typescript/syntax";
 import { createKeyIndex } from "@tint/foundation/collections/key-index";
-import type { CheckedClosures } from "@tint/typescript/checker";
+import type {
+  CheckedClosures,
+  NativeTypedArray,
+} from "@tint/typescript/checker";
 
 export interface DynamicObjectRuntime {
   readonly create: number;
+  readonly createArray: number;
+  readonly invoke: number;
   readonly finish: number;
   readonly enroll: number;
   readonly convertKey: number;
@@ -40,6 +45,8 @@ export function dynamicObjectRuntime(
 ): DynamicObjectRuntime {
   return {
     create: resolve("create"),
+    createArray: resolve("createArray"),
+    invoke: resolve("invoke"),
     finish: resolve("finish"),
     enroll: resolve("enroll"),
     convertKey: resolve("convertKey"),
@@ -58,12 +65,74 @@ export function dynamicObjectRuntime(
   };
 }
 
+export const realmInstanceofHelpers: readonly string[] = [
+  "realmGlobal",
+  "realmInstanceOf",
+  "invokeArrayMethod",
+];
+
+/** The receiver's checked brand is independent of its physical carrier. */
+export function arrayFlowReceiver(
+  checked: CheckedClosures,
+  node: Expression,
+  intrinsic: string | undefined,
+): NativeTypedArray | "realm" | undefined {
+  if (
+    intrinsic === undefined ||
+    !intrinsic.startsWith("array-") ||
+    intrinsic === "array-instanceof"
+  )
+    return undefined;
+  let target = node;
+  if (node.kind === "call") target = node.callee;
+  if (
+    node.kind === "assignment" ||
+    node.kind === "compound" ||
+    node.kind === "update"
+  )
+    target = node.target;
+  while (target.kind === "group" || target.kind === "satisfies")
+    target = target.expression;
+  if (target.kind !== "member" && target.kind !== "index") return undefined;
+  const receiver = checked.types[checked.expressions.get(target.object) ?? -1];
+  if (receiver?.kind === "object")
+    return receiver.realmTypedArray === undefined ? undefined : "realm";
+  if (receiver === undefined) return undefined;
+  switch (receiver.kind) {
+    case "Uint8Array":
+    case "Uint16Array":
+    case "Uint32Array":
+    case "Float64Array":
+      return receiver.arrayFlow === true ? receiver.kind : undefined;
+    default:
+      return undefined;
+  }
+}
+export function usesRealmInstanceof(
+  checked: CheckedClosures,
+  arrayGuards: boolean,
+): boolean {
+  let used = false;
+  checked.intrinsics.forEach((intrinsic, node) => {
+    if (
+      intrinsic.startsWith("realm-library-") ||
+      intrinsic === "realm-global" ||
+      intrinsic === "realm-instanceof" ||
+      (arrayGuards && intrinsic === "array-instanceof") ||
+      arrayFlowReceiver(checked, node, intrinsic) === "realm"
+    )
+      used = true;
+  });
+  return used;
+}
+
 export function hasDynamicObject(
   checked: CheckedClosures,
   id: number,
 ): boolean {
   const type = checked.types[id];
-  if (type?.kind === "object") return type.stringIndex !== undefined;
+  if (type?.kind === "object")
+    return type.stringIndex !== undefined || type.realmRecord === true;
   if (type?.kind === "array") return type.realmArray === true;
   return (
     type?.kind === "union" &&
@@ -224,7 +293,8 @@ export function usesDynamicObjectRuntime(
   if (
     !checked.types.some(
       (type) =>
-        (type?.kind === "object" && type.stringIndex !== undefined) ||
+        (type?.kind === "object" &&
+          (type.stringIndex !== undefined || type.realmRecord === true)) ||
         (type?.kind === "array" && type.realmArray === true),
     )
   )
@@ -282,6 +352,10 @@ export function encodeDynamicContract(
       case "never":
         emit(type.kind);
         break;
+      case "realm-callable":
+      case "dynamic-result":
+        emit("unknown");
+        break;
       case "literal": {
         const value = type.value;
         emit(typeof value + "-literal");
@@ -299,15 +373,18 @@ export function encodeDynamicContract(
         }
         break;
       case "array":
-        if (type.realmArray !== true) throw "native array contract invariant";
-        emit("array");
+        if (type.tupleElements !== undefined) emit("array");
+        else {
+          emit("array-elements");
+          emit(reference(type.element));
+          emit(type.readonly ? "1" : "0");
+        }
         break;
       case "object": {
         const index = type.stringIndex;
-        if (index === undefined) throw "dynamic contract object invariant";
         emit("object");
-        emit(reference(index.type));
-        emit(index.readonly ? "1" : "0");
+        emit(index === undefined ? "-1" : reference(index.type));
+        emit(index?.readonly === true ? "1" : "0");
         emit(String(type.properties.length));
         for (const field of type.properties) {
           if (field === undefined) throw "dynamic contract field invariant";
@@ -335,11 +412,21 @@ export function insertDynamicObjectRuntime(
   module: Module,
   checked: CheckedClosures,
   helpers: ReadonlyMap<string, string>,
+  realmInstanceof: boolean,
   speculativeFlow?: boolean,
 ): Module {
   const uses: Span[] = [];
   checked.intrinsics.forEach((intrinsic, node) => {
-    if (intrinsic.startsWith("dynamic-object-")) uses.push(node);
+    if (
+      intrinsic.startsWith("dynamic-object-") ||
+      (realmInstanceof &&
+        (intrinsic.startsWith("realm-library-") ||
+          intrinsic === "realm-global" ||
+          intrinsic === "realm-instanceof" ||
+          intrinsic === "array-instanceof" ||
+          arrayFlowReceiver(checked, node, intrinsic) !== undefined))
+    )
+      uses.push(node);
   });
   const flow =
     speculativeFlow === true ? planFlowPropertyStorage(checked) : undefined;
@@ -388,7 +475,12 @@ export function insertDynamicObjectRuntime(
         );
       case "named": {
         const name = checked.typeNames.get(node.name);
-        if (name !== undefined) return hasDynamicObject(checked, name);
+        if (name !== undefined) {
+          const type = checked.types[name];
+          return type?.kind !== "object"
+            ? hasDynamicObject(checked, name)
+            : type.stringIndex !== undefined;
+        }
         const key = node.arguments?.[0];
         return (
           node.name === "Record" &&
@@ -430,6 +522,11 @@ export function insertDynamicObjectRuntime(
       alias("speculativeString");
       alias("speculativeUnary");
     }
+    if (realmInstanceof)
+      for (const name of realmInstanceofHelpers) {
+        if (name === undefined) throw "realm instanceof helper invariant";
+        alias(name);
+      }
     return {
       kind: "variable",
       mode: "const",

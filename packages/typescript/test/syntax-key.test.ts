@@ -287,6 +287,14 @@ test("syntax keys of every token count match the streamed token encoding", () =>
   }
 });
 
+test("type parameter bounds and defaults contribute to syntax keys", () => {
+  const key = (parameters: string) =>
+    syntaxKey(parsedModule(`type Alias = <${parameters}>(value: T) => T;`));
+  const base = key("T extends number = 1");
+  assert.notEqual(base, key("T extends number = 2"));
+  assert.notEqual(base, key("T extends string = 1"));
+});
+
 test("index signatures participate in syntax keys and type rewriting", () => {
   const declaration =
     "interface Names<T> { readonly [name: string]: T; count: number }";

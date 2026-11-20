@@ -56,6 +56,12 @@ export interface TypeMembers {
   readonly call?: TypeNode;
   readonly construct?: TypeNode;
 }
+export interface TypeParameter extends Span {
+  readonly name: string;
+  readonly constraint?: TypeNode | undefined;
+  readonly defaultType?: TypeNode | undefined;
+}
+export type TypeParameters = readonly TypeParameter[];
 export type TypeNode = Span &
   (
     | {
@@ -79,9 +85,11 @@ export type TypeNode = Span &
     | { readonly kind: "group"; readonly type: TypeNode }
     | {
         readonly kind: "function";
+        readonly typeParameters?: TypeParameters | undefined;
         readonly async?: boolean | undefined;
         readonly parameters: readonly Parameter[];
         readonly returnType: TypeNode;
+        readonly instancePredicate?: TypeNode;
         readonly receiver?: TypeNode;
       }
     | {
@@ -122,6 +130,7 @@ export type Expression = Span &
       }
     | {
         readonly kind: "arrow";
+        readonly typeParameters?: TypeParameters | undefined;
         readonly async?: boolean | undefined;
         readonly strict?: boolean;
         readonly parameters: readonly Parameter[];
@@ -130,6 +139,7 @@ export type Expression = Span &
       }
     | {
         readonly kind: "function-expression";
+        readonly typeParameters?: TypeParameters | undefined;
         readonly async?: boolean | undefined;
         readonly generator?: boolean | undefined;
         readonly name?: string;
@@ -263,6 +273,7 @@ export interface ObjectAssignment extends Span {
   readonly value: Expression;
 }
 export interface PropertySignature extends Span {
+  readonly hasInstanceSymbol?: boolean;
   readonly computed?: boolean;
   readonly method?: boolean;
   readonly optional?: boolean;
@@ -335,7 +346,7 @@ export interface ClassDefinition extends Span {
   readonly sourceStart?: number | undefined;
   readonly decorators?: readonly Expression[] | undefined;
   readonly name: string | undefined;
-  readonly typeParameters: readonly string[];
+  readonly typeParameters: TypeParameters;
   readonly heritage: Expression | undefined;
   readonly elements: readonly ClassElement[];
 }
@@ -356,6 +367,7 @@ export type ClassElement =
           }
         | {
             readonly kind: "method" | "get" | "set";
+            readonly typeParameters?: TypeParameters | undefined;
             /** MethodDefinition start, excluding class-element modifiers. */
             readonly sourceStart?: number | undefined;
             readonly async?: boolean | undefined;
@@ -390,7 +402,7 @@ export type Statement = Span &
         readonly indexSignature?: IndexSignature;
         readonly call?: TypeNode;
         readonly construct?: TypeNode;
-        readonly typeParameters?: readonly string[];
+        readonly typeParameters?: TypeParameters;
         readonly bases?: readonly TypeNode[];
         readonly name: string;
         readonly exported: boolean;
@@ -398,7 +410,7 @@ export type Statement = Span &
       }
     | {
         readonly kind: "type-alias";
-        readonly typeParameters?: readonly string[];
+        readonly typeParameters?: TypeParameters;
         readonly name: string;
         readonly exported: boolean;
         readonly type: TypeNode;
@@ -418,7 +430,7 @@ export type Statement = Span &
         readonly async?: boolean | undefined;
         readonly generator?: boolean | undefined;
         readonly strict?: boolean;
-        readonly typeParameters?: readonly string[];
+        readonly typeParameters?: TypeParameters;
         readonly name: string;
         readonly exported: boolean;
         readonly receiver?: TypeNode;

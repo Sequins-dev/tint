@@ -30,20 +30,22 @@ export function installFunctionIntrinsics(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
 ): void {
+  const ordinary = builtinFunction(
+    realm.functionPrototype,
+    "[Symbol.hasInstance]",
+    1,
+    (receiver, args): unknown => {
+      const result = ordinaryHasInstance(args[0], receiver, hooks, realm);
+      if (result.error !== "none") throw createRuntimeError(realm, "type");
+      return result.value;
+    },
+    hooks,
+  );
+  realm.ordinaryHasInstanceMethod = ordinary;
   builtinProperty(
     realm.functionPrototype,
     wellKnownSymbol(realm.symbolRegistry, "hasInstance"),
-    builtinFunction(
-      realm.functionPrototype,
-      "[Symbol.hasInstance]",
-      1,
-      (receiver, args): unknown => {
-        const result = ordinaryHasInstance(args[0], receiver, hooks, realm);
-        if (result.error !== "none") throw createRuntimeError(realm, "type");
-        return result.value;
-      },
-      hooks,
-    ),
+    ordinary,
     false,
     false,
     hooks,

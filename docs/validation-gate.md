@@ -14,6 +14,13 @@ usual bootstrap directory. On the Linux dev machine run
 checkouts for parallel gates so each build can update its own TypeScript
 output. Run the gate on a fixed source tree.
 
+At most two full macOS gates are admitted at a time. Additional gates wait
+for an admission slot before building or running tests. The total wall
+budget is 3,600 seconds (`TINT_GATE_BUDGET`, in seconds), including admission
+and lock waits. When it expires the gate exits with status 124 and reports
+the active step or the admission wait. If the gate has started writing
+evidence, it also records the timeout in `budget.tsv`.
+
 The macOS gate runs ordinary builds and checks without locks. Its memory
 semaphore uses `TINT_GATE_MEMORY_SLOTS` slots (default three) shared across
 checkouts in `~/.t3/tint-gate-memory`. Use the same count for all gates on
@@ -24,23 +31,36 @@ callers. The gate uses `/usr/bin/lockf -k` for every acquisition so the
 exclusive pathname and memory slot inodes survive release. Use `-k` for
 manual acquisitions and keep those lock files in place.
 
-The gate runs all native-launch and timing-sensitive test files in one
-exclusively locked batch with the usual Node test concurrency. This keeps fixture
-builds and debugger sessions together and queues one waiter per gate.
-Separating those builds from their launches is future work. Test262 units
-and program smoke runs build their images under the semaphore and acquire
-the exclusive lock for admission and execution. Each macOS native bootstrap
-stage takes a memory slot for its LLDB invocation. These self-builds check
-byte identity and can overlap across checkouts. Toolchain freezes use a
-memory slot, and byte comparisons run unlocked.
+The gate bounds native test file concurrency to limit simultaneous fixture
+builds and contention for LLDB admission. Set `TINT_GATE_NATIVE_CONCURRENCY`
+to override the default of two workers for the native batch or standalone
+`pnpm check:exclusive`. The macOS gate prints the effective limit and records
+it in `check-native-concurrency.txt`. Fixture builds use the memory semaphore
+and release the slot before taking the exclusive lock for admission and
+execution. `native-images.jsonl` records path, bytes, build time, memory and
+exclusive waits, admission and execution. Phase start records survive a
+cancelled batch. The gate prints distinct built, admitted and launch-attempted
+path counts. Hosted callers can set `TINT_BUILD_ONLY=defer-admission` to
+produce an image without LLDB admission. `TINT_BUILD_ONLY=1` still admits
+Darwin images before returning. Test262 smokes also separate building from
+admission and execution.
 
-The watchdog starts when a step begins running, after any resource wait.
+Each macOS native bootstrap stage takes the exclusive lock for its LLDB
+invocation. LLDB attaches and debugserver launches can fail under concurrent
+load, so these invocations are serialized with native fixture launches and
+other exclusive steps. Node bootstrap and toolchain freezes use a memory
+slot, and byte comparisons run unlocked.
+
+The watchdog starts when a step begins running. The native batch watchdog
+pauses while every active test file worker waits for the exclusive lock.
+Build, admission and execution continue to count against its deadline.
+The batch logs active time and all-worker queue time (wall time), and the
+per-image journal logs individual lock waits. The full gate wall budget
+continues through those waits.
 Defaults are 1,800 seconds per bootstrap stage (`TINT_GATE_STAGE_TIMEOUT`),
 1,800 seconds for the native test batch (`TINT_GATE_NATIVE_TIMEOUT`), and
 600 seconds per Test262 admission or execution launch (`TINT_GATE_SMOKE_TIMEOUT`).
-Recent macOS bootstrap stages took 583–627 seconds. A reference run held the
-exclusive lock for 252 seconds for the batch and at most 2.2 seconds per smoke
-launch. The smoke deadline allows for contention in the host's first-launch
+The smoke deadline allows for contention in the host's first-launch
 admission queue. Both unlocked Linux native bootstrap stages use the stage
 timeout as well.
 
@@ -55,7 +75,7 @@ queue time. On macOS
 the final line reports total exclusive lock hold in milliseconds, excluding
 queue time. `locks.tsv` records the step, lock path, UTC epoch acquisition
 time in milliseconds, and hold duration excluding queue time. Use the
-`stage2` and `stage3` memory-slot rows to revisit the bootstrap timeout. The logs include exit statuses,
+`stage2` and `stage3` exclusive-lock rows to revisit the bootstrap timeout. The logs include exit statuses,
 self-build SHA-256s and both Test262 reports. The gate stops on the first
 failed step.
 

@@ -658,3 +658,26 @@ test("weak capabilities require runtime identity, exact signatures and unique au
   });
   assert.equal(duplicate.ok, false);
 });
+
+test("native typed compilation resolves imported generic bounds and defaults", () => {
+  const result = compileArm64Program({
+    modules: [
+      source(
+        "contracts",
+        "export interface Value { code: number } " +
+          "export interface Box<T extends Value = Value, U extends T = T> { value: U }",
+      ),
+      source(
+        "main",
+        'import type { Box } from "contracts"; ' +
+          "export function read(box: Box): number { return box.value.code; }",
+        new Map([["contracts", "contracts"]]),
+      ),
+    ],
+    entry: "main",
+    exports: ["read"],
+    runtimes: [],
+  });
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.ok(result.value.native.code.length > 0);
+});

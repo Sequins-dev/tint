@@ -1,14 +1,10 @@
-import {
-  nativeTargetNamed,
-  type AArch64Target,
-  type NativeTarget,
-} from "@tint/platform/target";
+import { nativeTargetNamed, type NativeTarget } from "@tint/platform/target";
 
 export const compilerUsage = `usage: tint-compiler <project-root> <output> [--debug-symbols] [--pass-stats] [--target <target>]
 Build a native executable from a TypeScript project.
 --pass-stats prints the program's optimizer passes and writes <output>.pass-stats.json.
 --target selects darwin-aarch64 or linux-aarch64 (default: the compiler's own host).
-The experimental linux-x86_64 target is recognized but cannot yet emit code.`;
+The experimental linux-x86_64 target supports a bounded hosted subset. The compiler project requires collector and managed runtime support.`;
 
 export interface CompilerArguments {
   readonly root: string;
@@ -24,7 +20,7 @@ export interface CompilerArguments {
  * once; anything else is a usage error (undefined). */
 export function parseCompilerArguments(
   args: readonly string[],
-  hostTarget: AArch64Target,
+  hostTarget: NativeTarget,
 ): CompilerArguments | undefined {
   const root = args[0],
     output = args[1];

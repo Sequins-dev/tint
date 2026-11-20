@@ -25,6 +25,7 @@ export {
   parameterHasExpressions,
   isSimpleParameter,
   expectedArgumentCount,
+  typeParameterCount,
 } from "./bindings.ts";
 export {
   parseDynamicFunction,

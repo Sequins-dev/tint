@@ -1,3 +1,5 @@
+import { buildNativeFixture } from "./gate/native-fixture.ts";
+import { runDarwinFixture } from "./native-admission.ts";
 // Native evidence for JIT code visibility (docs/runtime-diagnostics.md): a
 // native Tint program compiles a TypeScript function with the in-image
 // compiler, publishes it to executable memory (MAP_JIT on macOS, the dual
@@ -82,160 +84,169 @@ export function run():number {
  if(readMemoryWord(descriptor,24,16)!==0)return 10;
  return 42;
 }`;
-const snapshot = workspaceSources(),
-  bytes = new TextEncoder().encode(text),
-  source = createSourceText(bytes, bytes.length);
-assert.ok(source.ok);
-const parsed = parseModule(source.value);
-assert.ok(parsed.ok, JSON.stringify(parsed));
-const modules = [
-  ...workspaceModules(
-    [
-      ...projectRoots(),
-      memory,
-      diagnostics,
-      fs,
-      compiler,
-      sourceText,
-      syntax,
-      jitDebug,
-    ],
-    snapshot,
-  ),
-  {
-    id: "fixture",
-    module: parsed.value,
-    dependencies: new Map([
-      ["memory", memory],
-      ["diagnostics", diagnostics],
-      ["fs", fs],
-      ["source-text", sourceText],
-      ["syntax", syntax],
-      ["compiler", compiler],
-      ["jit-debug", jitDebug],
-    ]),
-    sourcePosition: (offset: number) => {
-      const position = source.value.positionAt(offset);
-      return position.ok ? position.value : undefined;
-    },
-  },
-];
-const request = projectBuildRequest(modules, () => {});
-const grants: NativeHostBinding[] = [
-  { module: memory, name: "mapExecutableMemory", operation: "executable-map" },
-  {
-    module: memory,
-    name: "writeExecutableMemory",
-    operation: "executable-write",
-  },
-  {
-    module: memory,
-    name: "callExecutableNumber",
-    operation: "executable-call-number",
-  },
-  { module: memory, name: "mapMemory", operation: "memory-map" },
-  { module: memory, name: "readMemoryWord", operation: "memory-read-word" },
-  { module: memory, name: "writeMemoryWord", operation: "memory-write-word" },
-  {
-    module: diagnostics,
-    name: "writeMemoryBytes",
-    operation: "memory-write-bytes",
-  },
-  {
-    module: diagnostics,
-    name: "jitDebugDescriptor",
-    operation: "jit-debug-descriptor",
-  },
-  {
-    module: diagnostics,
-    name: "notifyJitDebugger",
-    operation: "jit-debug-register",
-  },
-  { module: diagnostics, name: "processId", operation: "process-id" },
-];
-const built = buildMacOSProgram({
-  ...request,
-  target,
-  allowDebugger: true,
-  debugSymbols: true,
-  allowJit: true,
-  jitDebugInterface: true,
-  // Raw code capabilities do not yet have the generational write proof.
-  runtimeEntry: "initializeCopyingRuntime",
-  denseReferenceLists: false,
-  entry: "fixture",
-  start: "run",
-  managedBytes: 67108864,
-  allocationCapacity: 1048576,
-  rootCapacity: 4096,
-  stackBytes: 1048576,
-  identifier: "tint-hosted-jit-debug",
-  runtimes: [
-    ...request.runtimes,
-    { module: memory, namespace: "native-memory" },
-    { module: diagnostics, namespace: "native-diagnostics" },
-  ],
-  hostBindings: [...request.hostBindings, ...grants],
-});
-if (!built.ok) assert.fail(JSON.stringify(built.error));
-mkdirSync(output);
-const path = resolve(output, "jit-debug");
-writeFileSync(path, built.value, { flag: "wx", mode: 0o755 });
-writeFileSync(
-  resolve(output, "build.json"),
-  JSON.stringify(
+const path = buildNativeFixture("jit-debug", () => {
+  const snapshot = workspaceSources(),
+    bytes = new TextEncoder().encode(text),
+    source = createSourceText(bytes, bytes.length);
+  assert.ok(source.ok);
+  const parsed = parseModule(source.value);
+  assert.ok(parsed.ok, JSON.stringify(parsed));
+  const modules = [
+    ...workspaceModules(
+      [
+        ...projectRoots(),
+        memory,
+        diagnostics,
+        fs,
+        compiler,
+        sourceText,
+        syntax,
+        jitDebug,
+      ],
+      snapshot,
+    ),
     {
-      kind: "native-jit-debug-fixture",
-      sourceSnapshot: workspaceSourceIdentity(snapshot),
-      path,
-      expectedExitStatus: 42,
-      source: text,
+      id: "fixture",
+      module: parsed.value,
+      dependencies: new Map([
+        ["memory", memory],
+        ["diagnostics", diagnostics],
+        ["fs", fs],
+        ["source-text", sourceText],
+        ["syntax", syntax],
+        ["compiler", compiler],
+        ["jit-debug", jitDebug],
+      ]),
+      sourcePosition: (offset: number) => {
+        const position = source.value.positionAt(offset);
+        return position.ok ? position.value : undefined;
+      },
     },
-    null,
-    2,
-  ) + "\n",
-  { flag: "wx" },
-);
+  ];
+  const request = projectBuildRequest(modules, () => {});
+  const grants: NativeHostBinding[] = [
+    {
+      module: memory,
+      name: "mapExecutableMemory",
+      operation: "executable-map",
+    },
+    {
+      module: memory,
+      name: "writeExecutableMemory",
+      operation: "executable-write",
+    },
+    {
+      module: memory,
+      name: "callExecutableNumber",
+      operation: "executable-call-number",
+    },
+    { module: memory, name: "mapMemory", operation: "memory-map" },
+    { module: memory, name: "readMemoryWord", operation: "memory-read-word" },
+    { module: memory, name: "writeMemoryWord", operation: "memory-write-word" },
+    {
+      module: diagnostics,
+      name: "writeMemoryBytes",
+      operation: "memory-write-bytes",
+    },
+    {
+      module: diagnostics,
+      name: "jitDebugDescriptor",
+      operation: "jit-debug-descriptor",
+    },
+    {
+      module: diagnostics,
+      name: "notifyJitDebugger",
+      operation: "jit-debug-register",
+    },
+    { module: diagnostics, name: "processId", operation: "process-id" },
+  ];
+  const built = buildMacOSProgram({
+    ...request,
+    target,
+    allowDebugger: true,
+    debugSymbols: true,
+    allowJit: true,
+    jitDebugInterface: true,
+    // Raw code capabilities do not yet have the generational write proof.
+    runtimeEntry: "initializeCopyingRuntime",
+    denseReferenceLists: false,
+    entry: "fixture",
+    start: "run",
+    managedBytes: 67108864,
+    allocationCapacity: 1048576,
+    rootCapacity: 4096,
+    stackBytes: 1048576,
+    identifier: "tint-hosted-jit-debug",
+    runtimes: [
+      ...request.runtimes,
+      { module: memory, namespace: "native-memory" },
+      { module: diagnostics, namespace: "native-diagnostics" },
+    ],
+    hostBindings: [...request.hostBindings, ...grants],
+  });
+  if (!built.ok) assert.fail(JSON.stringify(built.error));
+  mkdirSync(output);
+  const path = resolve(output, "jit-debug");
+  writeFileSync(path, built.value, { flag: "wx", mode: 0o755 });
+  writeFileSync(
+    resolve(output, "build.json"),
+    JSON.stringify(
+      {
+        kind: "native-jit-debug-fixture",
+        sourceSnapshot: workspaceSourceIdentity(snapshot),
+        path,
+        expectedExitStatus: 42,
+        source: text,
+      },
+      null,
+      2,
+    ) + "\n",
+    { flag: "wx" },
+  );
+  return path;
+});
 console.log(path);
 if (process.env.TINT_BUILD_ONLY === "1") process.exit(0);
-const session = spawnSync(
-  "lldb",
-  [
-    "--no-lldbinit",
-    "--batch",
-    "-o",
-    "settings set plugin.jit-loader.gdb.enable on",
-    "-o",
-    "breakpoint set --name jit:jitSum",
-    "-o",
-    "breakpoint set --file jit-source.ts --line 3",
-    "-o",
-    "process launch --stop-at-entry",
-    "-o",
-    "script assert lldb.process.GetState() == lldb.eStateStopped",
-    "-o",
-    "continue",
-    "-o",
-    "script assert lldb.process.GetSelectedThread().GetStopReason() == lldb.eStopReasonBreakpoint",
-    "-o",
-    "script print('jit-pid', lldb.process.GetProcessID())",
-    "-o",
-    "thread backtrace -c 6",
-    "-o",
-    "continue",
-    "-o",
-    "script assert lldb.process.GetSelectedThread().GetStopReason() == lldb.eStopReasonBreakpoint",
-    "-o",
-    "image lookup -v -a $pc",
-    "-o",
-    "breakpoint delete 2",
-    "-o",
-    "continue",
-    "-o",
-    "script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42",
-    path,
-  ],
-  { encoding: "utf8", timeout: 120000 },
+const session = runDarwinFixture(path, () =>
+  spawnSync(
+    "lldb",
+    [
+      "--no-lldbinit",
+      "--batch",
+      "-o",
+      "settings set plugin.jit-loader.gdb.enable on",
+      "-o",
+      "breakpoint set --name jit:jitSum",
+      "-o",
+      "breakpoint set --file jit-source.ts --line 3",
+      "-o",
+      "process launch --stop-at-entry",
+      "-o",
+      "script assert lldb.process.GetState() == lldb.eStateStopped",
+      "-o",
+      "continue",
+      "-o",
+      "script assert lldb.process.GetSelectedThread().GetStopReason() == lldb.eStopReasonBreakpoint",
+      "-o",
+      "script print('jit-pid', lldb.process.GetProcessID())",
+      "-o",
+      "thread backtrace -c 6",
+      "-o",
+      "continue",
+      "-o",
+      "script assert lldb.process.GetSelectedThread().GetStopReason() == lldb.eStopReasonBreakpoint",
+      "-o",
+      "image lookup -v -a $pc",
+      "-o",
+      "breakpoint delete 2",
+      "-o",
+      "continue",
+      "-o",
+      "script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42",
+      path,
+    ],
+    { encoding: "utf8", timeout: 120000 },
+  ),
 );
 writeFileSync(resolve(output, "lldb.txt"), session.stdout + session.stderr);
 assert.equal(session.status, 0, session.stdout + session.stderr);

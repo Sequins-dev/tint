@@ -82,6 +82,7 @@ export function createGeneralLowering(
           ...objectViews,
           "objectTypeof",
           "generalValueTypeof",
+          "callGeneralValue",
           "realmErrorOperation",
         ],
       },
@@ -438,7 +439,7 @@ export function ${set}(error:${layout}, view:unknown):void { throw "UNBOUND_ERRO
     adapter(
       layout,
       kind,
-      `createNativeErrorView(program.realm,program.hooks,${JSON.stringify(intrinsic)},native.message,native.${flag},value)`,
+      `createNativeErrorView(program.realm,program.hooks,${JSON.stringify(intrinsic)},native.message,native.${flag},value,program.object)`,
     );
   }
   let factories = "createNativeErrorView,prepareRealmErrorArgument";
@@ -449,17 +450,17 @@ export function ${set}(error:${layout}, view:unknown):void { throw "UNBOUND_ERRO
     adapter(
       "NativeCodedError",
       "NativeCodedError",
-      'createNativeCodedErrorView(program.realm,program.hooks,"error",native.message,native.code,native.errno,false,value)',
+      'createNativeCodedErrorView(program.realm,program.hooks,"error",native.message,native.code,native.errno,false,value,program.object)',
     );
     adapter(
       "NativeCodedRangeError",
       "NativeCodedRangeError",
-      'createNativeCodedErrorView(program.realm,program.hooks,"range",native.message,native.code,undefined,native.rangeErrorCodeFirst,value)',
+      'createNativeCodedErrorView(program.realm,program.hooks,"range",native.message,native.code,undefined,native.rangeErrorCodeFirst,value,program.object)',
     );
     adapter(
       "NativeSystemError",
       "NativeSystemError",
-      "createNativeSystemErrorView(program.realm,program.hooks,native.message,native.info.errno,native.info.code,native.info.message,native.info.syscall,value)",
+      "createNativeSystemErrorView(program.realm,program.hooks,native.message,native.info.errno,native.info.code,native.info.message,native.info.syscall,value,program.object)",
     );
   }
   stubs += `export function nativeErrorReceiver(value:unknown):unknown {
@@ -472,7 +473,7 @@ ${publish}return value;
 }
 function fromRealmError(value:unknown):unknown {
  const program=programRealm();
- return prepareRealmErrorArgument(value,program.realm,program.hooks);
+ return prepareRealmErrorArgument(value,program.realm,program.hooks,program.object);
 }\n`,
     stubs,
     bindings,
@@ -728,17 +729,36 @@ function generalHostSource(
   adapters: string,
 ): string {
   let installs = "";
+  const programInstallers: string[] = [];
   for (const installer of installers) {
     if (installer === undefined) throw "general installer invariant";
     if (installer === "installObjectIntrinsics") {
       installs += " installProgramObjectIntrinsics(core);\n";
       continue;
     }
+    if (installer === "installArrayIntrinsics") {
+      installs += " installProgramArrayIntrinsics(core);\n";
+      programInstallers.push("installProgramArrayIntrinsics");
+      continue;
+    }
+    if (installer === "installArrayBufferIntrinsics") {
+      installs += " installProgramArrayBufferIntrinsics(core);\n";
+      programInstallers.push("installProgramArrayBufferIntrinsics");
+      continue;
+    }
+    if (installer === "installTypedArrayIntrinsics") {
+      installs += " installProgramTypedArrayIntrinsics(core);\n";
+      programInstallers.push("installProgramTypedArrayIntrinsics");
+      continue;
+    }
+    programInstallers.push(installer);
     installs +=
       " " +
       installer +
       "(object,realm,hooks" +
       (installerArguments.get(installer) ?? "") +
+      ");\n core.installed.add(" +
+      JSON.stringify(installer) +
       ");\n";
   }
   const write = output
@@ -746,7 +766,7 @@ function generalHostSource(
     : `function emit(fd:number,text:string):void{}`;
   return `${imports}import {createGlobalEnvironment,type GlobalEnvironment} from "global";
 import {createSyntheticModule,setSyntheticModuleExport,loadRequestedModules,finishLoadingImportedModule,linkModule,evaluateModule,settledModulePromise,getModuleNamespace,type ModuleRecord,type ModuleRequest,type ModuleReferrer,type ModuleLoadPayload} from "modules";
-import {createObject,createCallableObject,createDataProperty,programRealmCore,installProgramObjectIntrinsics,createRuntimeError,getProperty,callObjectValue,stringValue,drainScriptJobs,installGlobalProperties,createRecordView,typedRecordOf,viewObjectValue,${installers.filter((name) => name !== "installObjectIntrinsics").join(",")},type ErrorRealm,type ScriptPropertyKey,type ObjectHooks,type OrdinaryObject} from "objects";
+import {createObject,createCallableObject,createDataProperty,programRealmCore,installProgramObjectIntrinsics,createRuntimeError,getProperty,callObjectValue,stringValue,drainScriptJobs,installGlobalProperties,createRecordView,typedRecordOf,viewObjectValue,${programInstallers.join(",")},type ErrorRealm,type ScriptPropertyKey,type ObjectHooks,type OrdinaryObject} from "objects";
 ${output ? 'import {write as writeOutput} from "output";' : ""}
 ${write}
 function rejectArgument(realm:ErrorRealm):never{throw createRuntimeError(realm,"type");}

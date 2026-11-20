@@ -13,6 +13,7 @@ import type {
   Expression,
   Statement,
   TypeNode,
+  TypeParameter,
   TypeMembers,
   IndexSignature,
   Parameter,
@@ -783,9 +784,13 @@ function parseSource(
     params: readonly Parameter[],
     result: TypeNode,
     start: number,
+    generics: readonly TypeParameter[] = [],
+    instancePredicate?: TypeNode,
   ): TypeNode {
     return {
       kind: "function",
+      ...genericSyntax(generics),
+      ...(instancePredicate === undefined ? {} : { instancePredicate }),
       ...functionParameters(params),
       returnType: result,
       start,
@@ -814,15 +819,36 @@ function parseSource(
     }
     expect(">");
   }
-  function typeParameters(): string[] {
-    const parameters: string[] = [];
+  function typeParameters(unique: boolean = true): TypeParameter[] {
+    const parameters: TypeParameter[] = [];
     if (!eat("<")) return parameters;
     typescriptSyntax();
+    const names = new Set<string>();
     do {
-      parameters.push(name().value);
-    } while (eat(",") && !at(">"));
+      const parameter = name();
+      if (unique && names.has(parameter.value))
+        fail("duplicate type parameter", "SYNTAX_ERROR", parameter);
+      names.add(parameter.value);
+      const constraint = eat("extends") ? type() : undefined;
+      const defaultType = eat("=") ? type() : undefined;
+      parameters.push({
+        name: parameter.value,
+        constraint,
+        defaultType,
+        start: parameter.start,
+        end: end(),
+      });
+    } while (
+      eat(",") &&
+      !(current().kind === "punctuation" && current().value.startsWith(">"))
+    );
     typeClose();
     return parameters;
+  }
+  function genericSyntax(generics: readonly TypeParameter[]): {
+    typeParameters?: readonly TypeParameter[];
+  } {
+    return generics.length === 0 ? {} : { typeParameters: generics };
   }
   function typeReference(): TypeNode {
     const token = name(false);
@@ -1018,8 +1044,9 @@ function parseSource(
       constructSignature: TypeNode | undefined;
     while (!at("}")) {
       const start = current().start;
-      if (at("(") || (at("new") && at("(", 1))) {
+      if (at("(") || at("<") || (at("new") && (at("(", 1) || at("<", 1)))) {
         const construct = eat("new");
+        const generics = typeParameters();
         const params = parameters(true);
         if (
           construct &&
@@ -1029,7 +1056,7 @@ function parseSource(
         )
           fail("construct signatures cannot declare a this parameter");
         expect(":");
-        const signature = functionType(params, type(), start);
+        const signature = functionType(params, type(), start, generics);
         if (
           construct
             ? constructSignature !== undefined
@@ -1046,7 +1073,11 @@ function parseSource(
         continue;
       }
       const readonly =
-        at("readonly") && !at(":", 1) && !at("?", 1) && !at("(", 1)
+        at("readonly") &&
+        !at(":", 1) &&
+        !at("?", 1) &&
+        !at("(", 1) &&
+        !at("<", 1)
           ? (take(), true)
           : false;
       if (at("[") && current(1).kind === "identifier" && at(":", 2)) {
@@ -1074,23 +1105,66 @@ function parseSource(
           fail("expected property separator");
         continue;
       }
-      const key = propertyName();
+      const key = propertyName(true);
+      const computed = key.keyExpression;
+      const receiver =
+        computed?.kind === "member" ? computed.object : undefined;
+      const hasInstance =
+        receiver?.kind === "identifier" &&
+        receiver.name === "Symbol" &&
+        computed?.kind === "member" &&
+        computed.property === "hasInstance" &&
+        !computed.optional;
+      if (computed !== undefined && !hasInstance)
+        fail(
+          "dynamic computed property names are not implemented",
+          "UNSUPPORTED_SYNTAX",
+          computed,
+          "computed-property-names",
+        );
       const optional = eat("?");
-      const method = at("(");
+      const method = at("(") || at("<");
       let annotation: TypeNode;
       if (method) {
         if (readonly)
           fail("readonly modifiers apply to properties, not methods");
+        const generics = typeParameters();
         const params = parameters(true);
         expect(":");
-        const returnType = type();
-        annotation = functionType(params, returnType, key.start);
+        const first = params[0];
+        if (
+          hasInstance &&
+          first !== undefined &&
+          first.kind !== "pattern-parameter" &&
+          at(first.name) &&
+          at("is", 1)
+        ) {
+          const predicate = take();
+          expect("is");
+          const narrowed = type();
+          annotation = functionType(
+            params,
+            {
+              kind: "named",
+              name: "boolean",
+              start: predicate.start,
+              end: predicate.end,
+            },
+            key.start,
+            generics,
+            narrowed,
+          );
+        } else {
+          const returnType = type();
+          annotation = functionType(params, returnType, key.start, generics);
+        }
       } else {
         expect(":");
         annotation = type();
       }
       properties.push({
-        name: key.value,
+        name: hasInstance ? "[Symbol.hasInstance]" : key.value,
+        ...(hasInstance ? { hasInstanceSymbol: true } : {}),
         ...(key.computed ? { computed: true } : {}),
         ...(method ? { method: true } : {}),
         readonly,
@@ -1174,6 +1248,7 @@ function parseSource(
               leadingIntersection
             )
               fail("constructor type in a union requires parentheses");
+            const generics = typeParameters();
             const params = parameters(true);
             if (
               params.some(
@@ -1185,12 +1260,12 @@ function parseSource(
             node = {
               kind: "object",
               properties: [],
-              construct: functionType(params, type(), token.start),
+              construct: functionType(params, type(), token.start, generics),
               start: token.start,
               end: end(),
             };
-          } else if (at("(")) {
-            if (at("=>", afterParameters())) {
+          } else if (at("(") || at("<")) {
+            if (at("<") || at("=>", afterParameters())) {
               if (
                 members.length !== 0 ||
                 leading ||
@@ -1198,9 +1273,10 @@ function parseSource(
                 leadingIntersection
               )
                 fail("function type in a union requires parentheses");
+              const generics = typeParameters();
               const params = parameters(true);
               expect("=>");
-              node = functionType(params, type(), token.start);
+              node = functionType(params, type(), token.start, generics);
             } else {
               take();
               const inner = type();
@@ -1337,12 +1413,12 @@ function parseSource(
     strict = true;
     try {
       const className =
-        !at("{") && !at("extends") ? bindingName().value : undefined;
+        !at("{") && !at("<") && !at("extends")
+          ? bindingName().value
+          : undefined;
       if (declaration && className === undefined)
         fail("class declaration requires a name", "SYNTAX_ERROR");
       const generics = typeParameters();
-      if (new Set(generics).size !== generics.length)
-        fail("duplicate type parameter");
       const heritage = eat("extends") ? expression(15) : undefined;
       expect("{");
       const elements: ClassElement[] = [];
@@ -1377,7 +1453,7 @@ function parseSource(
         let isStatic = false;
         if (
           at("static") &&
-          !["(", "=", ";", "}", ":"].includes(current(1).value)
+          !["(", "<", "=", ";", "}", ":"].includes(current(1).value)
         ) {
           take();
           isStatic = true;
@@ -1430,12 +1506,12 @@ function parseSource(
         const accessor =
           at("accessor") &&
           !current(1).lineBreakBefore &&
-          !["(", "=", ";", "}", ":"].includes(current(1).value);
+          !["(", "<", "=", ";", "}", ":"].includes(current(1).value);
         if (accessor) take();
         let methodKind: "method" | "get" | "set" = "method";
         if (
           (at("get") || at("set")) &&
-          !["(", "=", ";", "}", ":", "*"].includes(current(1).value)
+          !["(", "<", "=", ";", "}", ":", "*"].includes(current(1).value)
         ) {
           methodKind = at("get") ? "get" : "set";
           take();
@@ -1496,7 +1572,14 @@ function parseSource(
             "SYNTAX_ERROR",
             key,
           );
-        if (at("(")) {
+        if (at("(") || (language === "typescript" && at("<"))) {
+          const generics = typeParameters();
+          if (
+            generics.length !== 0 &&
+            (methodKind !== "method" ||
+              (!isStatic && property === "constructor"))
+          )
+            fail("constructors and accessors cannot declare type parameters");
           if (!isStatic && property === "constructor") {
             if (elementDecorators.length !== 0)
               fail("constructors cannot be decorated");
@@ -1605,6 +1688,7 @@ function parseSource(
             ...(privateName ? { private: true } : {}),
             computed,
             static: isStatic,
+            ...genericSyntax(generics),
             parameters: params,
             returnType,
             body,
@@ -1989,6 +2073,7 @@ function parseSource(
     staticAwait = false;
     const functionName =
       current().kind === "identifier" ? bindingName() : undefined;
+    const generics = typeParameters();
     const previousStrict = strict;
     const previousSuper = superProperty;
     const previousSuperCall = superCall;
@@ -2019,6 +2104,7 @@ function parseSource(
       functionDirectives(params, body);
       return {
         kind: "function-expression",
+        ...genericSyntax(generics),
         generator,
         async,
         ...(functionName === undefined ? {} : { name: functionName.value }),
@@ -2051,6 +2137,7 @@ function parseSource(
   ): Expression {
     const begin = current().start;
     if (async) expect("async");
+    const generics = typeParameters();
     const previousStrict = strict;
     strict = functionStrict(true);
     const previousAwaitContext = awaitContext,
@@ -2060,7 +2147,7 @@ function parseSource(
     if (async || awaitContext !== 0) awaitContext = 1;
     let params: Parameter[];
     try {
-      if (at("(")) params = parameters(false, false);
+      if (at("(") || generics.length !== 0) params = parameters(false, false);
       else {
         const p = bindingName();
         params = [
@@ -2093,6 +2180,7 @@ function parseSource(
         functionDirectives(params, body);
         return {
           kind: "arrow",
+          ...genericSyntax(generics),
           async,
           strict,
           parameters: params,
@@ -2105,6 +2193,7 @@ function parseSource(
       const body = expression(1, conditionalConsequent, true, allowIn);
       return {
         kind: "arrow",
+        ...genericSyntax(generics),
         async,
         strict,
         parameters: params,
@@ -2399,9 +2488,15 @@ function parseSource(
         };
       }
       if (min <= 2) {
+        if (language === "typescript" && at("<"))
+          return arrow(conditionalConsequent, allowIn);
         if (at("async") && !current(1).lineBreakBefore) {
           if (current(1).kind === "identifier" && at("=>", 2))
             return arrow(conditionalConsequent, allowIn, true);
+          if (language === "typescript" && at("<", 1)) {
+            const parsed = annotatedArrow(conditionalConsequent, allowIn, true);
+            if (parsed !== undefined) return parsed;
+          }
           if (at("(", 1)) {
             const after = afterParameters(1);
             if (at("=>", after))
@@ -2731,13 +2826,15 @@ function parseSource(
             !async &&
             !generator &&
             (at("get") || at("set")) &&
-            !["(", ":", ",", "}", "="].includes(current(1).value)
+            !["(", "<", ":", ",", "}", "="].includes(current(1).value)
           ) {
             accessor = at("get") ? "get" : "set";
             take();
           }
           const key = propertyName(true);
-          const method = at("(");
+          const method = at("(") || (language === "typescript" && at("<"));
+          if (accessor !== undefined && at("<"))
+            fail("accessors cannot declare type parameters");
           if ((async || generator || accessor !== undefined) && !method)
             fail(
               "object accessor requires a parameter list",
@@ -3485,7 +3582,7 @@ function parseSource(
         if (!allowDeclaration) fail("type declaration requires a block");
         take();
         const id = name(),
-          parameters = typeParameters();
+          parameters = typeParameters(false);
         expect("=");
         const annotation = type();
         semi();
@@ -3544,7 +3641,7 @@ function parseSource(
         typescriptSyntax();
         if (!allowDeclaration) fail("interface declaration requires a block");
         const id = name(),
-          parameters = typeParameters(),
+          parameters = typeParameters(false),
           bases: TypeNode[] = [];
         if (eat("extends"))
           do {
@@ -3652,8 +3749,6 @@ function parseSource(
         const generator = eat("*");
         const id = bindingName();
         const generics = typeParameters();
-        if (new Set(generics).size !== generics.length)
-          fail("duplicate type parameter");
         const previousStrict = strict;
         const previousSuper = superProperty;
         const previousSuperCall = superCall;

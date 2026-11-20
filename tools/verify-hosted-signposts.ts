@@ -1,3 +1,4 @@
+import { runDarwinFixture } from "./native-admission.ts";
 // Native evidence for collector signposts (docs/runtime-diagnostics.md).
 // Builds a GC-heavy fixture with signposts for the host target. On macOS it
 // records every process with `xctrace` (Logging template) while LLDB runs
@@ -38,22 +39,24 @@ export function buildSignpostFixture(name: string): string {
 }
 /** LLDB launch of an image that must exit with status 42. */
 export function runUnderLldb(image: string): string {
-  const result = spawnSync(
-    "lldb",
-    [
-      "--no-lldbinit",
-      "--batch",
-      "-o",
-      "process launch --stop-at-entry",
-      "-o",
-      "script assert lldb.process.GetState() == lldb.eStateStopped",
-      "-o",
-      "continue",
-      "-o",
-      "script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42",
-      image,
-    ],
-    { encoding: "utf8", timeout: 120000 },
+  const result = runDarwinFixture(image, () =>
+    spawnSync(
+      "lldb",
+      [
+        "--no-lldbinit",
+        "--batch",
+        "-o",
+        "process launch --stop-at-entry",
+        "-o",
+        "script assert lldb.process.GetState() == lldb.eStateStopped",
+        "-o",
+        "continue",
+        "-o",
+        "script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42",
+        image,
+      ],
+      { encoding: "utf8", timeout: 120000 },
+    ),
   );
   assert.equal(result.error, undefined);
   assert.equal(result.status, 0, result.stdout + result.stderr);

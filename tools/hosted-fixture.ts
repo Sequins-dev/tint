@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { prepareDateTimeNativeService } from "./date-time-native-service.ts";
 import { frozenNativeRunIdentity } from "./native-run-journal.ts";
 import {
@@ -43,7 +43,8 @@ import {
 } from "@tint/compiler/native";
 import { nativeFixtureTarget } from "./native-host-target.ts";
 import { writeNodeExecutable } from "./node-file-host.ts";
-import { admitUnderLldb } from "./native-admission.ts";
+import { buildNativeFixture } from "./gate/native-fixture.ts";
+import { admitDarwinFixture } from "./native-admission.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
 /** Build target and execution runner are selected independently. */
 const fixtureTarget = nativeFixtureTarget();
@@ -65,6 +66,8 @@ export function expandForeignSnapshot(captured: WorkspaceSourceSnapshot): {
 } {
   const cached = foreignSnapshots.get(captured);
   if (cached !== undefined) return cached;
+  if (fixtureTarget.arch === "x86_64")
+    return { snapshot: captured, libraries: [] };
   const expanded = expandForeignInputs(captured.inputs, fixtureTarget.c);
   if (!expanded.ok) throw Error(expanded.error);
   const result = {
@@ -114,7 +117,7 @@ export function workspaceGeneralLowering(): GeneralLowering | undefined {
 /** Build through the full hosted pipeline and run through the target runner.
  * Returns the image path (kept only with TINT_BUILD_ONLY=1 or
  * TINT_KEEP_NATIVE=1). */
-export function verifyHostedFixture(
+function buildHostedFixture(
   text: string,
   name: string,
   dependencies: readonly [string, string][] = [],
@@ -198,6 +201,8 @@ export function verifyHostedFixture(
   /** Runtime modules the generated binding modules import. */
   const dependencyIds: string[] = [];
   for (const declaration of options.foreignDeclarations ?? []) {
+    if (fixtureTarget.arch === "x86_64")
+      assert.fail("linux-x86_64: user FFI requires SysV foreign bindings");
     const prepared = prepareForeignLibrary(
       declaration.id,
       declaration.text,
@@ -281,7 +286,15 @@ export function verifyHostedFixture(
     serviceImage === undefined
       ? capturedModules
       : serviceImage.transformModules(capturedModules);
-  const request = projectBuildRequest(modules, () => {}, foreignLibraries);
+  const { runtimeEntry: defaultRuntimeEntry, ...request } = projectBuildRequest(
+    modules,
+    () => {},
+    foreignLibraries,
+  );
+  const runtimeEntry =
+    fixtureTarget.arch === "x86_64"
+      ? options.runtimeEntry
+      : (options.runtimeEntry ?? defaultRuntimeEntry ?? "initializeRuntime");
   // The tint:ffi runtime's capabilities when the program loads it.
   const ffi = foreignRuntimeBindings(
     new Set(modules.map((module) => module.id)),
@@ -343,8 +356,7 @@ export function verifyHostedFixture(
       ...(options.foreignBindings ?? []),
     ],
     runtimeModule: options.runtimeModule ?? request.runtimeModule,
-    runtimeEntry:
-      options.runtimeEntry ?? request.runtimeEntry ?? "initializeRuntime",
+    ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
     entry: "fixture",
     start: "run",
     ...(general === undefined
@@ -517,10 +529,20 @@ export function verifyHostedFixture(
     ) + "\n",
     { flag: "wx" },
   );
+  return path;
+}
+
+export function verifyHostedFixture(
+  ...args: Parameters<typeof buildHostedFixture>
+): string {
+  const name = args[1];
+  const path = buildNativeFixture(name, () => buildHostedFixture(...args));
   console.log(path);
-  if (process.env.TINT_BUILD_ONLY === "1") {
+  const mode = process.env.TINT_BUILD_ONLY;
+  if (mode === "defer-admission") return path;
+  if (mode === "1") {
     // Admit build-only Darwin images before callers launch their own LLDB.
-    if (fixtureTarget.os === "darwin") admitUnderLldb(path);
+    if (fixtureTarget.os === "darwin") admitDarwinFixture(path);
   } else
     try {
       const artifact = nativeArtifact(
@@ -544,7 +566,7 @@ export function verifyHostedFixture(
       console.log("Verified native " + name + " twice.");
     } finally {
       if (process.env.TINT_KEEP_NATIVE !== "1")
-        rmSync(directory, { recursive: true, force: true });
+        rmSync(dirname(path), { recursive: true, force: true });
     }
   return path;
 }

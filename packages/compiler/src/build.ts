@@ -6,6 +6,7 @@ import {
 import {
   darwinAArch64Target,
   type AArch64Target,
+  type LinuxX86_64Target,
   type NativeTarget,
 } from "@tint/platform/target";
 import type { CodePlan } from "@tint/abi/relocation";
@@ -14,6 +15,7 @@ import type { PosixHostABI } from "@tint/abi/host";
 import { optimizeModule, unboundedWork } from "@tint/ir/optimization";
 import {
   compileNativeProgram,
+  compileX64HostedProgram,
   selectNativeBackend,
   type NativeServiceUnit,
   type NativeServiceBinding,
@@ -81,10 +83,13 @@ import type { Module, Statement } from "@tint/typescript/syntax";
 import { unwindRanges } from "@tint/codegen/aarch64/unwind";
 import type { UnwindRange } from "@tint/abi/unwind";
 import type {
+  ExecutableImageRequest,
   ImageLibrary,
   ImageSymbol,
   ReadOnlySection,
 } from "@tint/image/executable";
+import { appendHostedEntry } from "@tint/codegen/x86_64/startup";
+import { nativeCStackReserveBytes } from "@tint/abi/host";
 import { writeExecutableImage } from "./image-writer.ts";
 import type { MachOLayoutOptions } from "@tint/image/darwin/macho";
 import { cSystemLibrary } from "@tint/abi/c";
@@ -207,6 +212,7 @@ export interface BuildRequest extends ModuleRequest {
   readonly foreignMemoryBindings?: readonly NativeForeignMemoryBinding[];
   readonly allocatorModule: string;
   readonly runtimeModule: string;
+  /** Linux x86-64 selects its bounded, non-collecting runtime when omitted. */
   readonly runtimeEntry?:
     | "initializeRuntime"
     | "initializeCopyingRuntime"
@@ -272,10 +278,152 @@ function compileFailure(
 }
 /** Pure artifact composition shared by Node bootstrap and the native compiler. */
 export function buildMacOSProgram(request: BuildRequest): BuildResult {
+  const target = buildTarget(request);
+  if (target.arch === "x86_64") return buildX64HostedProgram(request, target);
   const compiled = compileMacOSProgram(request);
   if (!compiled.ok) return { ok: false, error: compiled.error };
   return linkMacOSProgram(compiled.value, request);
 }
+function buildX64HostedProgram(
+  request: BuildRequest,
+  target: LinuxX86_64Target,
+): BuildResult {
+  function deferred(operation: string): BuildResult {
+    return failure(
+      "target",
+      target.name +
+        ": unsupported operation " +
+        operation +
+        " (requires slice 7)",
+    );
+  }
+  if (request.runtimeEntry !== undefined) return deferred(request.runtimeEntry);
+  if (request.threaded === true) return deferred("hosted-thread-entry");
+  if (request.allowJit === true) return deferred("executable-map");
+  if (
+    request.debugSymbols === true ||
+    request.stackTraces === true ||
+    request.signposts === true ||
+    request.heapIntrospection === true ||
+    request.jitDebugInterface === true
+  )
+    return failure(
+      "target",
+      target.name + ": native diagnostics are unavailable",
+    );
+  if (request.forceFarReach === true)
+    return failure("target", target.name + ": far code model is unavailable");
+  if (
+    request.onOperationRanges !== undefined ||
+    request.onEmittedFunctions !== undefined ||
+    request.emissionFormHints !== undefined ||
+    request.onEmissionForms !== undefined ||
+    request.optimizationObserver !== undefined ||
+    request.optimizationPassLimit !== undefined
+  )
+    return failure(
+      "target",
+      target.name + ": emission and optimization reports are unavailable",
+    );
+  if (
+    (request.foreignBindings?.length ?? 0) !== 0 ||
+    (request.foreignMemoryBindings?.length ?? 0) !== 0 ||
+    (request.foreignLibraries?.length ?? 0) !== 0
+  )
+    return failure(
+      "target",
+      target.name + ": user FFI requires SysV foreign bindings",
+    );
+  if (
+    (request.nativeServices?.length ?? 0) !== 0 ||
+    (request.serviceSlots?.length ?? 0) !== 0 ||
+    (request.managedSurfaces?.length ?? 0) !== 0
+  )
+    return deferred("managed surfaces");
+  if ((request.weakBindings?.length ?? 0) !== 0)
+    return deferred("weak storage");
+
+  const managedBytes = request.managedBytes,
+    stackBytes = request.stackBytes;
+  const pageBytes = target.memoryPageBytes;
+  if (
+    !Number.isSafeInteger(managedBytes) ||
+    managedBytes < 16 ||
+    managedBytes % 8 !== 0 ||
+    !Number.isSafeInteger(stackBytes) ||
+    stackBytes <= nativeCStackReserveBytes ||
+    stackBytes % pageBytes !== 0 ||
+    stackBytes + managedBytes + pageBytes * 2 > 0x7fffffff
+  )
+    return failure(
+      "memory-policy",
+      target.name + ": invalid hosted mapping or stack size",
+    );
+
+  request.report("program");
+  const reportIR = request.onScalarIR;
+  const compiled = compileX64HostedProgram(
+    {
+      modules: request.modules,
+      moduleLoader: request.moduleLoader,
+      entry: request.entry,
+      start: request.start,
+      exports: [request.start],
+      runtimes: request.runtimes,
+      hostBindings: request.hostBindings,
+      recordBindings: request.recordBindings ?? [],
+      closedProgram: true,
+      optimization: request.optimization ?? "basic",
+      maxSpecializations: request.maxSpecializations ?? 4096,
+      onScalarIR: (stage, module) => {
+        if (reportIR !== undefined) reportIR(stage, module);
+      },
+    },
+    target.hostABI,
+  );
+  if (!compiled.ok) return compiled;
+  const native = compiled.native;
+  const main = native.functions[compiled.invocation];
+  if (main === undefined)
+    return failure("startup", target.name + ": missing managed entry");
+  request.report("startup");
+  try {
+    const image = appendHostedEntry({
+      native,
+      host: target.hostABI,
+      invocation: main.offset,
+      returnType: compiled.returnType,
+      stackBytes,
+      managedBytes,
+      pageBytes,
+    });
+    const executable: ExecutableImageRequest = {
+      code: image.code,
+      entryOffset: image.entryOffset,
+      maxByteLength: image.maxByteLength,
+      data: image.data,
+      symbols: image.symbols,
+      imports: image.imports,
+      addressFixups: image.addressFixups,
+      patchAddress: image.patchAddress,
+    };
+    const foreignLibraries: ForeignLibrary[] = [];
+    const written = writeExecutableImage(
+      target,
+      executable,
+      request.identifier,
+      foreignLibraries,
+    );
+    if (!written.ok) return failure("image", written.error);
+    return written;
+  } catch (caught) {
+    return failure(
+      "startup",
+      typeof caught === "string" ? caught : "x86-64 startup failed",
+    );
+  }
+}
+
 function sourceFunctionNames(request: ModuleRequest, id: string): Set<string> {
   const source = requestModules(request, [id])[0];
   const names = new Set<string>();
@@ -1277,7 +1425,8 @@ function linkHostedImage(
       maxByteLength: Number.MAX_SAFE_INTEGER,
       imports,
       libraries,
-      ...relocations,
+      addressFixups: relocations.addressFixups,
+      patchAddress: relocations.patchAddress,
     },
     request.identifier,
     request.foreignLibraries ?? [],

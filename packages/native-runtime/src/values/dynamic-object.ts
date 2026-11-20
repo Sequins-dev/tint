@@ -13,11 +13,17 @@ import {
   enumerateObjectValue,
   nextEnumerableProperty,
   createDataProperty,
+  createArrayObject,
+  installProgramArrayIntrinsics,
   createObject,
   createRuntimeError,
   deleteObjectValueProperty,
   finishObjectPropertyContract,
   installProgramObjectIntrinsics,
+  installProgramConstructorGroup,
+  installProgramTypedArrayIntrinsics,
+  instanceOfValue,
+  hasProperty,
   objectValueHasProperty,
   programRealmCore,
   projectPropertyContract,
@@ -65,6 +71,13 @@ function contract(text: string): ObjectShapeContract {
     switch (kind) {
       case "array":
         types.push({ kind: "array" });
+        break;
+      case "array-elements":
+        types.push({
+          kind: "array-elements",
+          element: Number(token()),
+          readonly: token() === "1",
+        });
         break;
       case "number":
         types.push({ kind: "number" });
@@ -310,5 +323,95 @@ export function invokeEnumeration(
   );
   if (result.error !== "none" || !isArrayValue(result.value, core.realm))
     throw createRuntimeError(core.realm, "type");
+  return result.value;
+}
+
+/** Evaluate a typed source's realm global as an ordinary property lookup. */
+export function realmGlobal(name: string, installer: string): unknown {
+  const core = programRealmCore();
+  installProgramConstructorGroup(core, installer);
+  if (!hasProperty<ScriptPropertyKey, unknown>(core.object, name))
+    throw createRuntimeError(core.realm, "reference");
+  return readObjectValueProperty(core.object, name, core.hooks, core.realm);
+}
+export function realmInstanceOf(
+  value: unknown,
+  constructor: unknown,
+  nativeKind: string,
+): boolean {
+  const core = programRealmCore();
+  let prototype: ObjectRecord | undefined;
+  if (nativeKind === "Error") prototype = core.realm.prototypes.get("error");
+  else if (nativeKind === "TypeError")
+    prototype = core.realm.prototypes.get("type");
+  else if (nativeKind === "RangeError")
+    prototype = core.realm.prototypes.get("range");
+  else if (nativeKind !== "") {
+    installProgramTypedArrayIntrinsics(core);
+    prototype = core.realm.typedArrayPrototypes.get(nativeKind.slice(0, -5));
+  }
+  const result = instanceOfValue(
+    value,
+    constructor,
+    core.hooks,
+    core.realm,
+    prototype,
+  );
+  if (result.error !== "none") throw createRuntimeError(core.realm, "type");
+  return result.value;
+}
+export function invokeArrayMethod(
+  receiver: unknown,
+  callable: unknown,
+  arity: number,
+  first: unknown,
+  second: unknown,
+  third: unknown,
+): unknown {
+  const core = programRealmCore();
+  const args: unknown[] = [];
+  if (arity > 0) args.push(first);
+  if (arity > 1) args.push(second);
+  if (arity > 2) args.push(third);
+  const result = callObjectValue(
+    callable,
+    receiver,
+    args,
+    core.realm.objectPrototype,
+  );
+  if (result.error !== "none") throw createRuntimeError(core.realm, "type");
+  return result.value;
+}
+
+export function createArray(length: number): unknown {
+  const core = programRealmCore();
+  installProgramObjectIntrinsics(core);
+  installProgramArrayIntrinsics(core);
+  return createArrayObject<ScriptPropertyKey, unknown>(
+    length,
+    core.realm.arrayPrototype,
+    core.realm.arrayHooks,
+    core.hooks,
+  );
+}
+
+export function invoke(
+  receiver: unknown,
+  callee: unknown,
+  values: unknown,
+): unknown {
+  const core = programRealmCore();
+  const length = read(values, "length");
+  if (typeof length !== "number") throw "dynamic call argument count invariant";
+  const args: unknown[] = [];
+  for (let index = 0; index < length; index++)
+    args.push(read(values, String(index)));
+  const result = callObjectValue(
+    callee,
+    receiver,
+    args,
+    core.realm.objectPrototype,
+  );
+  if (result.error !== "none") throw createRuntimeError(core.realm, "type");
   return result.value;
 }

@@ -310,17 +310,16 @@ export function createObject<Key, Value>(
     undefined,
   );
 }
-/** Packed arrays and mapped arguments have separate storage write paths. */
+/** Only ordinary data storage and the standard Array exotic can enroll. */
 export function acceptsPropertyContract<Key, Value>(
   object: OrdinaryObject<Key, Value>,
 ): boolean {
   return (
-    object.internalMethods === undefined &&
+    (object.internalMethods === undefined || object.internalArrayData) &&
     object.internalDataAliases === undefined &&
     object.internalCall === undefined &&
     object.internalConstruct === undefined &&
-    !object.internalArgumentsData &&
-    !object.internalArrayData
+    !object.internalArgumentsData
   );
 }
 /** Publish a previously validated contract and invalidate any direct cell. */
@@ -330,6 +329,10 @@ export function attachPropertyContract<Key, Value>(
 ): void {
   if (!acceptsPropertyContract<Key, Value>(object))
     throw "PROPERTY_CONTRACT_OBJECT_INVARIANT";
+  // Contracted array writes use the existing descriptor guard. Transfer the
+  // packed elements without invoking any user code or changing their keys.
+  const elements = object.internalArrayElements;
+  if (elements !== undefined) unpackArrayElements<Key, Value>(object, elements);
   object.internalPropertyContract = contract;
   object.internalPropertyEpoch++;
 }

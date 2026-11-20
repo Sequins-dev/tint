@@ -772,6 +772,9 @@ export function verify(
                 op.type !== "string" &&
                 op.type !== "null" &&
                 op.type !== "Uint8Array" &&
+                op.type !== "Uint16Array" &&
+                op.type !== "Uint32Array" &&
+                op.type !== "Float64Array" &&
                 op.type !== "object"
               )
                 fail("TYPE", "general test requires a known category");
@@ -804,7 +807,10 @@ export function verify(
                 op.type !== "boolean" &&
                 op.type !== "string" &&
                 op.type !== "reference" &&
-                op.type !== "Uint8Array"
+                op.type !== "Uint8Array" &&
+                op.type !== "Uint16Array" &&
+                op.type !== "Uint32Array" &&
+                op.type !== "Float64Array"
               )
                 fail("TYPE", "unsupported general extraction category");
               define(op.id, op.type);
