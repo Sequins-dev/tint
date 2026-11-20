@@ -698,6 +698,7 @@ test("checked-in modules are emitted byte-identically from the checked-in facts"
       "commoncrypto",
       "darwin-os",
       "dl",
+      "ffi-callbacks",
       "libsystem",
       "linux-os",
       "memory",
