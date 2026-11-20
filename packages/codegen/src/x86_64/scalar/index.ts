@@ -3,6 +3,7 @@ import {
   nativeArrayInlineOffset,
   nativeArrayLengthOffset,
   nativeCStackReserveBytes,
+  nativeStackMapFooterMagic,
   nativeStackLimitOffset,
   nativeStackOverflowPayload,
   type PosixHostFacts,
@@ -52,6 +53,12 @@ import {
 } from "./machine.ts";
 import { branch, emitHostCall, exactInteger } from "./host.ts";
 import { createNumberEmission, floatBits } from "./numbers.ts";
+import {
+  encodeWideStackMapTable,
+  rootHeadBinding,
+  type SafepointEntry,
+} from "../../scalar/stack-maps.ts";
+import { frameStackMaps, type PendingSafepoint } from "./stack-maps.ts";
 
 export { imageRelocations } from "./machine.ts";
 export { appendExitEntry } from "./exit-entry.ts";
@@ -66,6 +73,11 @@ export interface X64Module extends ImageRelocations {
   readonly data: Uint8Array;
   readonly functions: readonly X64Function[];
   readonly imports: readonly string[];
+  readonly stackMaps: readonly {
+    readonly codeOffset: number;
+    readonly codeLength: number;
+    readonly tableOffset: number;
+  }[];
 }
 export interface X64Diagnostic {
   readonly code: "INVALID_IR" | "UNSUPPORTED" | "FRAME_LIMIT" | "ENCODING";
@@ -166,6 +178,7 @@ export function emitModule(
   }
 
   const machine: MachineInstruction[] = [];
+  const pendingMaps: PendingSafepoint[] = [];
   const emit: Emit = (insn) => {
     machine.push(insn);
   };
@@ -278,7 +291,16 @@ export function emitModule(
       }
     }
 
-    function call(op: Instruction, block: Block): void {
+    const callSites: { block: number; index: number; label: string }[] = [];
+    const ownRootHead = host !== undefined && rootHeadBinding(fn);
+    function safepoint(block: Block, index: number): void {
+      if (host === undefined) return;
+      const name = fnLabel + ":safepoint:" + String(callSites.length);
+      emit({ op: "label", name });
+      callSites.push({ block: block.id, index, label: name });
+    }
+
+    function call(op: Instruction, block: Block, index: number): void {
       if (op.kind !== "call") throw "call invariant";
       const args = argumentsByFunction[op.target];
       const callee = module.functions[op.target];
@@ -317,6 +339,7 @@ export function emitModule(
       emit({ op: "mov", dst: frame(callResult), src: imm(0) });
       emit({ op: "mov", dst: frame(callResult + 8), src: imm(0) });
       emit({ op: "call", target: label(functionLabel(op.target)) });
+      safepoint(block, index);
       const received = fnLabel + ":call:" + String(machine.length);
       emit({ op: "cmp", dst: eax, src: imm(normal) });
       emit({ op: "jcc", cc: "e", target: label(received) });
@@ -464,7 +487,7 @@ export function emitModule(
         );
     }
 
-    function instruction(op: Instruction, block: Block): void {
+    function instruction(op: Instruction, block: Block, index: number): void {
       switch (op.kind) {
         case "host-call": {
           const args = op.arguments;
@@ -485,6 +508,7 @@ export function emitModule(
               scratch: frame(callResult),
               scratchNext: frame(callResult + 8),
               context: frame(savedContext),
+              ownRootHead,
               constant,
               site: fnLabel + ":host:" + String(machine.length),
               trap: trapLabel,
@@ -584,7 +608,7 @@ export function emitModule(
           );
           return;
         case "call":
-          call(op, block);
+          call(op, block, index);
           return;
         case "general-none":
         case "general-null":
@@ -779,10 +803,11 @@ export function emitModule(
       if (block === undefined) throw "block invariant";
       blockId = block.id;
       emit({ op: "label", name: blockLabel(fn.id, block.id) });
-      for (const op of block.instructions) {
+      for (let index = 0; index < block.instructions.length; index++) {
+        const op = block.instructions[index];
         if (op === undefined) throw "instruction invariant";
         span = { start: op.start, end: op.end };
-        instruction(op, block);
+        instruction(op, block, index);
       }
       const op = block.terminator;
       span = { start: op.start, end: op.end };
@@ -792,6 +817,17 @@ export function emitModule(
     emit({ op: "mov", dst: rsp, src: rbp });
     emit({ op: "pop", dst: rbp });
     emit({ op: "ret" });
+    if (callSites.length > 0)
+      for (const map of frameStackMaps(
+        fn,
+        fnLabel,
+        frameBytes,
+        slots,
+        homes,
+        types,
+        callSites,
+      ))
+        if (map !== undefined) pendingMaps.push(map);
   }
 
   try {
@@ -830,6 +866,42 @@ export function emitModule(
       if (offset === undefined) throw "function label invariant";
       functions.push({ id: fn.id, name: fn.name, offset });
     }
+    let code = encoded.bytes;
+    const stackMaps: X64Module["stackMaps"][number][] = [];
+    if (host !== undefined) {
+      const tableOffset = Math.ceil(code.length / 8) * 8;
+      const entries: SafepointEntry[] = [];
+      for (const site of pendingMaps) {
+        if (site === undefined) throw "x86-64 safepoint invariant";
+        const offset = encoded.labels.get(site.label);
+        const start = encoded.labels.get(site.functionLabel);
+        if (offset === undefined || start === undefined)
+          throw "x86-64 safepoint label invariant";
+        entries.push({ offset, start, map: site.map });
+      }
+      const words = encodeWideStackMapTable(entries);
+      words.push(nativeStackMapFooterMagic, tableOffset);
+      const moduleCode = new Uint8Array(tableOffset + words.length * 8);
+      moduleCode.set(code);
+      for (let i = 0; i < words.length; i++) {
+        const value = words[i];
+        if (
+          value === undefined ||
+          !writeWord64(
+            moduleCode,
+            tableOffset + i * 8,
+            {
+              lo: value % 4294967296,
+              hi: Math.floor(value / 4294967296),
+            },
+            "little",
+          ).ok
+        )
+          throw "x86-64 stack map word invariant";
+      }
+      stackMaps.push({ codeOffset: 0, codeLength: code.length, tableOffset });
+      code = moduleCode;
+    }
     const data = new Uint8Array(constants.length * 8);
     for (let i = 0; i < constants.length; i++) {
       const bits = constants[i];
@@ -840,10 +912,11 @@ export function emitModule(
     return {
       ok: true,
       value: {
-        code: encoded.bytes,
+        code,
         data,
         functions,
         imports: [...imports],
+        stackMaps,
         addressFixups: relocations.addressFixups,
         patchAddress: relocations.patchAddress,
       },

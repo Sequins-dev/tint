@@ -81,6 +81,7 @@ import type {
 import type { EnvironmentLayout, TargetDataLayout } from "../layout.ts";
 import {
   lowerFunction,
+  nativeClosureCallMessage,
   type FunctionSignature,
   type OwnedEnvironmentPlan,
   type OwnedHoistedFunction,
@@ -153,6 +154,7 @@ interface RealmErrorSources {
 
 export interface ModuleEntryOptions {
   readonly realmTypeof?: RealmTypeof | undefined;
+  readonly realmCall?: number | undefined;
   readonly realmErrors?: RealmErrorSources | undefined;
   /** Caller-selected top-level managed functions supplied by the linker. Their
    * checked ABI is lowered, but their bodies and child closures are not. */
@@ -280,6 +282,7 @@ export function lowerModuleEntries(
     bigints: options?.bigints,
     bigIntRepresentation: options?.bigIntRepresentation,
     realmTypeof: options?.realmTypeof,
+    realmCall: options?.realmCall,
     realmErrors: options?.realmErrors,
     recordBindings: options?.recordBindings,
     recordTypes: options?.recordTypes,
@@ -313,6 +316,7 @@ function lowerEntries(
     bigints?: BigIntRuntime | undefined;
     bigIntRepresentation?: number | undefined;
     realmTypeof?: RealmTypeof | undefined;
+    realmCall?: number | undefined;
     realmErrors?: RealmErrorSources | undefined;
     recordBindings?: readonly RecordBinding[] | undefined;
     recordTypes?: boolean | undefined;
@@ -905,9 +909,10 @@ function lowerEntries(
     }
     const realmTypeof = recordTarget?.realmTypeof;
     const realmErrorSources = recordTarget?.realmErrors;
-    function errorViewHelper(
+    function generalRuntimeHelper(
       source: number,
       params: readonly ScalarType[],
+      message: string,
     ): number {
       const target = targetIds[source];
       const signature = target === undefined ? undefined : signatures[target];
@@ -919,7 +924,7 @@ function lowerEntries(
         checked.bindings.functions[source]?.parent !== undefined ||
         checked.bindings.functions[source]?.captures.length !== 0
       )
-        fail("invalid mixed native error helper signature");
+        fail(message);
       return target;
     }
     function errorRecord(source: number): number {
@@ -945,11 +950,16 @@ function lowerEntries(
       realmErrorSources === undefined
         ? undefined
         : {
-            view: errorViewHelper(realmErrorSources.view, ["general"]),
-            operation: errorViewHelper(realmErrorSources.operation, [
-              "general",
-              "string",
-            ]),
+            view: generalRuntimeHelper(
+              realmErrorSources.view,
+              ["general"],
+              "invalid mixed native error helper signature",
+            ),
+            operation: generalRuntimeHelper(
+              realmErrorSources.operation,
+              ["general", "string"],
+              "invalid mixed native error helper signature",
+            ),
             error: errorRecord(realmErrorSources.error),
             typeError: errorRecord(realmErrorSources.typeError),
             rangeError: errorRecord(realmErrorSources.rangeError),
@@ -970,6 +980,23 @@ function lowerEntries(
         checked.bindings.functions[realmTypeof.function]?.captures.length !== 0
       )
         fail("realm typeof helper requires (unknown) => string");
+      return target;
+    }
+    function realmCallTarget(): number | undefined {
+      const source = recordTarget?.realmCall;
+      if (source === undefined) return undefined;
+      const target = generalRuntimeHelper(
+        source,
+        ["general", "general", "reference"],
+        "invalid realm call helper signature",
+      );
+      const argumentsType = parameterType(source, 2);
+      const argumentsList = checked.types[argumentsType ?? -1];
+      if (
+        argumentsList?.kind !== "array" ||
+        checked.types[argumentsList.element]?.kind !== "unknown"
+      )
+        fail("realm call helper requires a general argument list");
       return target;
     }
     /** The BigIntValue record layout, planned on first use. */
@@ -1776,6 +1803,31 @@ function lowerEntries(
       const expressions = createKeyIndex<Expression, ExpressionInfo>(
         syntaxHash,
       );
+      const nativeClosures = new Set<number>();
+      function knownNativeClosure(input: Expression): boolean {
+        let node = input;
+        while (node.kind === "group" || node.kind === "satisfies")
+          node = node.expression;
+        const type = checked.expressions.get(node);
+        return (
+          checked.types[type ?? -1]?.kind === "function" ||
+          (node.kind === "identifier" &&
+            nativeClosures.has(referenceBindings.get(node) ?? -1))
+        );
+      }
+      function nativeCallableType(id: number): boolean {
+        const type = checked.types[id];
+        if (type?.kind === "function") return true;
+        if (type?.kind !== "union") return false;
+        let callable = false;
+        for (const member of type.members) {
+          if (member === undefined) throw "callable union member invariant";
+          if (checked.types[member]?.kind === "undefined") continue;
+          if (!nativeCallableType(member)) return false;
+          callable = true;
+        }
+        return callable;
+      }
       function stringExpression(node: Expression): boolean {
         if (node.kind === "group") return stringExpression(node.expression);
         if (node.kind === "string") return true;
@@ -1877,6 +1929,7 @@ function lowerEntries(
         let viewTarget: CViewUse | undefined;
         let dynamicObject: ExpressionInfo["dynamicObject"];
         let dynamicContract: string | undefined;
+        let generalCall: ExpressionInfo["generalCall"];
         const dynamicIntrinsic = checked.intrinsics.get(node);
         if (viewUse !== undefined) {
           if (node.kind === "member") expr(node.object);
@@ -2464,6 +2517,21 @@ function lowerEntries(
             }
             case "call": {
               const intrinsic = checked.intrinsics.get(node);
+              if (intrinsic === "general-call") {
+                if (knownNativeClosure(node.callee))
+                  fail(
+                    nativeClosureCallMessage +
+                      " (source " +
+                      node.start +
+                      ":" +
+                      node.end +
+                      ")",
+                  );
+                generalCall = { target: realmCallTarget() };
+                expr(node.callee);
+                exprArguments(node.arguments);
+                break;
+              }
               if (
                 intrinsic === "dynamic-object-array-push" ||
                 intrinsic === "dynamic-object-static-call"
@@ -2990,6 +3058,7 @@ function lowerEntries(
             checkedType !== undefined &&
             bigIntType(checked, checkedType) !== undefined,
           realmTypeof,
+          generalCall,
           bigIntRecord:
             generalTypeof && realmTypeof === undefined
               ? bigIntRecord()
@@ -2997,8 +3066,7 @@ function lowerEntries(
           typeofFunction:
             node.kind === "unary" &&
             node.operator === "typeof" &&
-            checked.types[checked.expressions.get(node.operand) ?? -1]?.kind ===
-              "function",
+            nativeCallableType(checked.expressions.get(node.operand) ?? -1),
           setElement: element,
           listElement:
             checkedType === undefined
@@ -3126,6 +3194,8 @@ function lowerEntries(
               const initializer = d.initializer;
               if (initializer !== undefined) {
                 expr(initializer);
+                if (node.mode === "const" && knownNativeClosure(initializer))
+                  nativeClosures.add(bindingId(d));
                 if (d.type !== undefined)
                   enrollExpression(
                     initializer,

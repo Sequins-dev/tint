@@ -90,6 +90,7 @@ export interface BindingOperation {
 }
 export type ClosureIntrinsic =
   | "function-call"
+  | "general-call"
   | "map-new"
   | "map-get"
   | "map-has"
@@ -1813,6 +1814,8 @@ function checkClosureModuleLayout(
         ? "f" + type.result + "(" + type.parameters.join(",") + ")"
         : undefined;
     if (type.kind === "never") return "n";
+    if (type.kind === "realm-callable" || type.kind === "dynamic-result")
+      return type.kind;
     if (type.kind === "array")
       return type.readonly || type.realmArray === true
         ? undefined
@@ -2151,6 +2154,15 @@ function checkClosureModuleLayout(
       isErrorKind(type?.kind)
     );
   }
+  function generalFact(
+    kind: "realm-callable" | "dynamic-result",
+    node: Span,
+  ): number {
+    const known = internedType(kind);
+    return known >= 0
+      ? known
+      : appendType({ kind }, node, "invalid general value fact");
+  }
   function refineLiteralBinding(
     node: Expression,
     truth: boolean,
@@ -2174,13 +2186,35 @@ function checkClosureModuleLayout(
       compared.kind === "unary" && compared.operator === "typeof"
         ? ungroup(compared.operand)
         : compared;
-    if (target.kind !== "identifier") return undefined;
-    const binding = references.get(target);
+    let receiver = target;
+    let property: string | undefined;
+    if (target.kind !== "identifier") {
+      if (!typeQuery || literalValue !== "function") return undefined;
+      if (target.kind === "member" && !target.optional) {
+        receiver = ungroup(target.object);
+        property = target.property;
+      } else if (target.kind === "index" && !target.optional) {
+        receiver = ungroup(target.object);
+        property = checkedPropertyName(
+          target.index,
+          types[expressions.get(target.index) ?? -1],
+        );
+      }
+      if (property === undefined) return undefined;
+    }
+    const binding = references.get(receiver);
     if (binding === undefined) return undefined;
     const declared = bindingTypes[binding.id];
     if (declared === undefined) return undefined;
+    let input = narrowedType(binding.id, declared, base);
+    if (property !== undefined) {
+      const read = system.property(input, property);
+      if (!read.ok) return undefined;
+      input = propertyFact(receiver, property, base) ?? read.value;
+    }
     const selected: number[] = [],
       seen = new Set<number>();
+    const comparison = node;
     const equal = truth === (node.operator === "===");
     function collect(id: number): boolean {
       if (seen.has(id)) return true;
@@ -2188,8 +2222,10 @@ function checkClosureModuleLayout(
       const type = types[id];
       if (type?.kind === "union") return type.members.every(collect);
       if (typeQuery) {
-        if (type?.kind === "unknown") {
+        if (type?.kind === "unknown" || type?.kind === "dynamic-result") {
           if (!equal) selected.push(id);
+          else if (literalValue === "function")
+            selected.push(generalFact("realm-callable", comparison));
           else if (literalValue === "number") selected.push(number);
           else if (literalValue === "bigint") selected.push(bigint);
           else if (literalValue === "boolean") selected.push(boolean);
@@ -2212,7 +2248,9 @@ function checkClosureModuleLayout(
                 type?.kind === "Float64Array" ||
                 isErrorKind(type?.kind)
               ? "object"
-              : type?.kind;
+              : type?.kind === "realm-callable"
+                ? "function"
+                : type?.kind;
         if (
           tag !== "number" &&
           tag !== "boolean" &&
@@ -2250,22 +2288,18 @@ function checkClosureModuleLayout(
       if ((type.value === literalValue) === equal) selected.push(id);
       return true;
     }
-    if (
-      !collect(narrowedType(binding.id, declared, base)) ||
-      selected.length === 0
-    )
-      return undefined;
+    if (!collect(input) || selected.length === 0) return undefined;
     const result = new Set(base);
     for (const token of result) {
       const fact = narrowed[token - graph.bindings.length];
       if (
         fact !== undefined &&
         fact.binding === binding.id &&
-        fact.property === undefined
+        fact.property === property
       )
         result.delete(token);
     }
-    result.add(narrowToken(binding.id, unionSubset(selected, node)));
+    result.add(narrowToken(binding.id, unionSubset(selected, node), property));
     return result;
   }
   function refineDiscriminant(
@@ -3156,6 +3190,28 @@ function checkClosureModuleLayout(
     }
     return args;
   }
+  function generalCall(
+    node: Expression & { readonly kind: "call" },
+    owner: number | undefined,
+  ): number {
+    if (isOptionalChain(node))
+      fail(
+        node,
+        "UNSUPPORTED",
+        "general calls through optional chains require reference lowering",
+      );
+    const unknown = primitive("unknown");
+    const list = arrayOf(unknown, node);
+    callArguments(node, owner, {
+      kind: "function",
+      parameters: [list],
+      result: unknown,
+      rest: true,
+    });
+    intrinsics.set(node, "general-call");
+    invalidateCalls();
+    return generalFact("dynamic-result", node);
+  }
   function requireForInObject(id: number, node: Span): void {
     if (!dynamicObject(presentType(id, true) ?? id))
       fail(node, "UNSUPPORTED", "typed for-in requires a dynamic-key object");
@@ -3279,10 +3335,11 @@ function checkClosureModuleLayout(
   function propertyFact(
     receiver: Expression,
     property: string,
+    facts: Set<number> = present,
   ): number | undefined {
     const binding = references.get(ungroup(receiver));
     if (binding !== undefined)
-      for (const token of present) {
+      for (const token of facts) {
         const fact = narrowed[token - graph.bindings.length];
         if (
           fact !== undefined &&
@@ -4303,7 +4360,7 @@ function checkClosureModuleLayout(
               node,
               realmAggregate(object) ? "dynamic-object-read" : "record-read",
             );
-            result = read.value;
+            result = propertyFact(node.object, property) ?? read.value;
             break;
           }
           const finite = finiteRecordKeys(object, keyType);
@@ -5697,6 +5754,13 @@ function checkClosureModuleLayout(
             }
             const member = system.property(obj, target.property);
             if (!member.ok) fail(target, member.error, "invalid method call");
+            const memberType =
+              propertyFact(target.object, target.property) ?? member.value;
+            if (types[memberType]?.kind === "realm-callable") {
+              expression(node.callee, owner);
+              result = generalCall(node, owner);
+              break;
+            }
             if (skipped !== undefined) {
               chainReceivers.set(target, obj);
               chainValues.set(target, member.value);
@@ -5725,6 +5789,10 @@ function checkClosureModuleLayout(
           }
           const callee = expression(node.callee, owner),
             signature = types[callee];
+          if (signature?.kind === "realm-callable") {
+            result = generalCall(node, owner);
+            break;
+          }
           if (signature?.kind !== "function")
             fail(node, "TYPE_MISMATCH", "callee must have a function type");
           const args = callArguments(node, owner, signature);
@@ -6591,6 +6659,21 @@ function checkClosureModuleLayout(
         if (result !== voidType && !system.assignable(undefinedType, result))
           result = unionSubset([result, undefinedType], node);
       } else chainValues.delete(node);
+      if (
+        expected !== undefined &&
+        types[result]?.kind === "dynamic-result" &&
+        !system.assignable(result, expected)
+      ) {
+        if (!downcastable(expected))
+          fail(
+            node,
+            "UNSUPPORTED",
+            "general call result requires a checked projection to its declared type",
+            true,
+          );
+        downcasts.set(node, expected);
+        result = expected;
+      }
       const literal = literals.get(ungroup(node));
       if (
         expected !== undefined &&
