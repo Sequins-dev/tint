@@ -65,12 +65,6 @@ export function main(): number {
     const root = parsed.root,
       output = parsed.output,
       buildTarget = parsed.target;
-    if (buildTarget.arch === "x86_64") {
-      report(
-        "target: linux-x86_64: unsupported operation initializeGenerationalRuntime (requires slice 7)",
-      );
-      return 1;
-    }
     report("sources");
     const inputs: SourceInput[] = [];
     for (const file of projectFiles()) {

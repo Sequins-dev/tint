@@ -144,10 +144,7 @@ if (snapshot !== undefined) {
 report("parse");
 // C binding declarations become generated modules, as the native CLI loads
 // them (docs/native-ffi.md); frozen roots that predate them have none.
-const foreign =
-  target.arch === "aarch64"
-    ? expandForeignInputs(inputs, target.c)
-    : { ok: true as const, value: { inputs, mappings: [], libraries: [] } };
+const foreign = expandForeignInputs(inputs, target.c);
 if (!foreign.ok) throw Error(foreign.error);
 const libraries = foreign.value.libraries;
 const mappings = [...project.projectMappings(), ...foreign.value.mappings];

@@ -16,6 +16,7 @@ import {
 } from "./test262-execution.ts";
 import type { TestMetadata, SyntaxVariant } from "./test262.ts";
 import type { NativeDiagnosticPause } from "./native-run-control.ts";
+import type { NativeResult } from "./native-target-runner.ts";
 export interface NativeObservationInput {
   readonly path: string;
   readonly sha256: string;
@@ -47,6 +48,10 @@ export interface NativeCompilation {
   /** A staged image's first launch, separate from every case's execution
    * budget; absent for failed builds and in older journals. */
   readonly admissionMs?: number;
+  readonly execution?: {
+    readonly imageSha256: string;
+    readonly executor?: NativeResult["executor"];
+  };
   /** Linked-unit batches: compiling their cases' Script units while routing
    * them (memoized, so not part of `compileMs`). */
   readonly unitCompileMs?: number;

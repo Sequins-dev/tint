@@ -1,17 +1,29 @@
-/** Linux x86-64 leaf call-frame policy for tint:ffi/unsafe. The dynamic
+/** Linux x86-64 call-frame policy for tint:ffi/unsafe. The dynamic
  * loader, public value types, scalar readers and argument bookkeeping are
  * shared with the default implementation. */
 import type { CSignature } from "@tint/abi/c";
 import {
   classifySysVCCall,
   linuxX86_64CTarget,
+  sysVCallbackFrame,
   type SysVCallLayout,
 } from "@tint/abi/c/sysv";
 import { Cell, DynamicFrame } from "tint:c/dl";
-import { callForeign } from "./primitives.ts";
+import { callForeign, callForeignCallbacks } from "./primitives.ts";
+import {
+  allocate,
+  callbackDispatcher,
+  callbackState,
+  rethrowCallbackFailure,
+  stableBytes,
+} from "./index.ts";
+import { bytesAt } from "./unsafe.ts";
 import {
   argumentLocation,
   byteOperands,
+  callbackOperands,
+  cellRange,
+  cellValue,
   clearWord,
   exactAddress,
   frameFloats,
@@ -22,12 +34,16 @@ import {
   patchCapacity,
   resultByte,
   resultBytes,
+  scalarOf,
   scratchCapacity,
   setNumber as setScalarNumber,
   settle,
   stackCapacity,
+  wide,
+  wordNumber,
   wordOffset,
   type ForeignFunction as SharedForeignFunction,
+  type DynamicCallback,
 } from "./dynamic.ts";
 
 export {
@@ -42,7 +58,6 @@ export {
   resultNumber,
   setBoolean,
   setBytes,
-  setCallback,
   setWords,
   type DynamicCallback,
   type ForeignSignature,
@@ -53,6 +68,8 @@ export {
 export interface ForeignFunction extends SharedForeignFunction {
   readonly layout: SysVCallLayout;
 }
+const callbackFrames: Uint8Array[] = [];
+const callbackNesting = { depth: 0 };
 
 export function foreignFunction(
   address: number,
@@ -60,8 +77,8 @@ export function foreignFunction(
 ): ForeignFunction {
   if (exactAddress(address, "function") === 0)
     throw new TypeError("null C function address");
-  if (signature.callClass !== "leaf")
-    throw new TypeError("dynamic calls are leaf calls");
+  if (signature.callClass === "async")
+    throw new TypeError("dynamic calls are synchronous");
   const classified = classifySysVCCall(signature, linuxX86_64CTarget);
   if (!classified.ok) throw new TypeError(classified.error);
   const layout = classified.value;
@@ -157,6 +174,87 @@ export function setRecord(
   fn.assigned[index] = true;
 }
 
+export function setCallback(
+  fn: ForeignFunction,
+  index: number,
+  signature: CSignature,
+  callback: DynamicCallback,
+): void {
+  if (parameter(fn, index).kind !== "pointer")
+    throw new TypeError("not a C pointer parameter");
+  if (
+    signature.callClass !== "leaf" ||
+    signature.fixedParameters !== signature.parameters.length
+  )
+    throw new TypeError("callbacks need a fixed C prototype");
+  const classified = classifySysVCCall(signature, linuxX86_64CTarget);
+  if (!classified.ok) throw new TypeError(classified.error);
+  const layout = classified.value;
+  for (const type of signature.parameters) {
+    if (type === undefined) throw "dynamic callback parameter invariant";
+    scalarOf(type);
+  }
+  const result = signature.result;
+  const resultScalar = result.kind === "void" ? "void" : scalarOf(result);
+  let used = 0;
+  for (const adapter of fn.callbacks) if (adapter !== undefined) used++;
+  if (fn.callbacks[index] === undefined && used >= callbackOperands)
+    throw new RangeError("a dynamic call takes at most 4 callbacks");
+  const failure = fn.failure;
+  fn.callbacks[index] = (frame: number): number => {
+    if (failure.failed) return 0;
+    try {
+      const args: number[] = [];
+      for (let at = 0; at < layout.arguments.length; at++) {
+        const location = layout.arguments[at],
+          type = signature.parameters[at];
+        if (location === undefined || type === undefined)
+          throw "dynamic callback argument invariant";
+        const raw = scalarOf(type);
+        const scalar = raw === "char" ? "i8" : raw;
+        const offset =
+          location.stackOffset >= 0
+            ? sysVCallbackFrame.stack + location.stackOffset
+            : location.gp >= 0
+              ? sysVCallbackFrame.registers + location.gp * 8
+              : sysVCallbackFrame.floats + location.fp * 8;
+        const view = Cell.view(bytesAt(frame + offset, 8));
+        args.push(
+          wide(scalar)
+            ? wordNumber(view.halves.low, view.halves.high, scalar)
+            : cellValue(view, scalar),
+        );
+      }
+      const value = callback(args);
+      if (resultScalar === "void") return 1;
+      const scalar = resultScalar === "char" ? "i8" : resultScalar;
+      const float = scalar === "f32" || scalar === "f64";
+      const offset = float
+        ? sysVCallbackFrame.floats
+        : sysVCallbackFrame.registers;
+      const view = Cell.view(bytesAt(frame + offset, 8));
+      if (scalar === "f32") {
+        view.u64 = 0;
+        view.f32 = value;
+      } else if (scalar === "f64") view.f64 = value;
+      else {
+        if (scalar === "bool" && value !== 0 && value !== 1)
+          throw new TypeError("callback result is not a C boolean");
+        const checked = cellRange(value, scalar);
+        if (checked < 0) view.i64 = checked;
+        else view.u64 = checked;
+      }
+      return 1;
+    } catch (error) {
+      failure.failed = true;
+      failure.error = error;
+      return 0;
+    }
+  };
+  fn.bytes[index] = noBytes;
+  fn.assigned[index] = true;
+}
+
 export function invoke(fn: ForeignFunction): void {
   const frame = DynamicFrame.view(fn.frame);
   let patches = 0;
@@ -168,6 +266,7 @@ export function invoke(fn: ForeignFunction): void {
     patches++;
   }
   const operands: Uint8Array[] = [];
+  const callees: ((frame: number) => number)[] = [];
   for (let slot = 0; slot < byteOperands; slot++) operands.push(noBytes);
   for (let index = 0; index < fn.assigned.length; index++) {
     if (fn.assigned[index] !== true)
@@ -178,6 +277,11 @@ export function invoke(fn: ForeignFunction): void {
     if (slot >= 0 && borrowed !== noBytes) {
       operands[slot] = borrowed;
       patch(wordOffset(location), slot + 1, 0);
+    }
+    const callback = fn.callbacks[index];
+    if (callback !== undefined) {
+      patch(wordOffset(location), 1 + byteOperands + callees.length, 0);
+      callees.push(callback);
     }
   }
   const stack = frame.x[6],
@@ -190,6 +294,61 @@ export function invoke(fn: ForeignFunction): void {
   if (fn.resultCopy >= 0) patch(0, 0, frameScratch + fn.resultCopy);
   frame.patchCount = patches;
   frame.stackBytes = fn.layout.stackBytes;
+  if (callees.length > 0 || fn.signature.callClass === "may-callback") {
+    for (const borrowed of operands) {
+      if (
+        borrowed !== undefined &&
+        borrowed !== noBytes &&
+        !stableBytes(borrowed)
+      )
+        throw new TypeError(
+          "calls with callbacks take external storage or foreign memory",
+        );
+    }
+    const dispatcher = callbackDispatcher();
+    const idle = (_frame: number): number => 0;
+    const depth = callbackNesting.depth;
+    if (callbackFrames.length <= depth)
+      callbackFrames.push(allocate(DynamicFrame.size));
+    const stable = callbackFrames[depth] ?? noBytes;
+    settle(fn, false);
+    stable.set(fn.frame);
+    fn.failure.failed = false;
+    fn.failure.error = undefined;
+    callbackNesting.depth = depth + 1;
+    try {
+      callForeignCallbacks(
+        callbackState(),
+        dispatcher,
+        fn.address,
+        stable,
+        operands[0] ?? noBytes,
+        operands[1] ?? noBytes,
+        operands[2] ?? noBytes,
+        operands[3] ?? noBytes,
+        operands[4] ?? noBytes,
+        operands[5] ?? noBytes,
+        operands[6] ?? noBytes,
+        operands[7] ?? noBytes,
+        callees[0] ?? idle,
+        callees[1] ?? idle,
+        callees[2] ?? idle,
+        callees[3] ?? idle,
+      );
+    } finally {
+      callbackNesting.depth = depth;
+    }
+    fn.frame.set(stable);
+    settle(fn, true);
+    rethrowCallbackFailure();
+    if (fn.failure.failed) {
+      const error = fn.failure.error;
+      fn.failure.failed = false;
+      fn.failure.error = undefined;
+      throw error;
+    }
+    return;
+  }
   settle(fn, false);
   callForeign(
     fn.address,

@@ -711,7 +711,11 @@ function hostedFixtureImage(module: ModuleIR): Uint8Array {
     stackBytes: 1048576,
     pageBytes: target.memoryPageBytes,
   });
-  const written = buildElfExecutable({ ...image, linux: { arch: "x86_64" } });
+  const written = buildElfExecutable({
+    ...image,
+    code: new Uint8Array(0),
+    linux: { arch: "x86_64" },
+  });
   assert.ok(written.ok, JSON.stringify(written));
   return written.value.bytes;
 }

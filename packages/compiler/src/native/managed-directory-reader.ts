@@ -10,8 +10,10 @@ import type {
   NativeModule,
 } from "@tint/codegen/aarch64/scalar";
 import type { ManagedSurfaceContractPlan } from "./managed-contracts.ts";
+import type { X64Module } from "@tint/codegen/x86_64/scalar";
 import {
   resolveManagedPointers,
+  resolveX64ManagedPointers,
   type ManagedIdentityReader,
   type ManagedPointerResolution,
   managedIdentityByteLength,
@@ -420,4 +422,17 @@ export function linkManagedSurfaceModule(
   const selected = selectManagedIdentityBindings(read, imports);
   if (!selected.ok) return selected;
   return resolveManagedPointers(native, selected.value, readWord, domain);
+}
+
+export function linkX64ManagedSurfaceModule(
+  read: ManagedSurfaceDirectoryRead,
+  native: X64Module,
+  readWord: ManagedIdentityReader,
+  domain: number,
+): ManagedPointerResolution {
+  if (domain !== read.domain)
+    return { ok: false, error: "surface link: context domain changed" };
+  const selected = selectManagedIdentityBindings(read, native.managedImports);
+  if (!selected.ok) return selected;
+  return resolveX64ManagedPointers(native, selected.value, readWord, domain);
 }

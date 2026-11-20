@@ -11,7 +11,12 @@ import { projectRoots, projectBuildRequest } from "@tint/compiler/cli";
 import { createSourceText } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
 import { buildMacOSProgram } from "@tint/compiler/build";
-const generational = process.env.TINT_GENERATIONAL_RUNTIME === "1";
+const parallelThreads = process.env.TINT_PARALLEL_THREADS === "1";
+const parallel = parallelThreads || process.env.TINT_PARALLEL_RUNTIME === "1";
+const parallelRejection = process.env.TINT_REJECT_PARALLEL;
+const rejectParallel =
+  parallel && (parallelRejection === "1" || parallelRejection === "major");
+const generational = parallel || process.env.TINT_GENERATIONAL_RUNTIME === "1";
 const disableBarriers = process.env.TINT_DISABLE_BARRIERS === "1";
 const overflowQueue = process.env.TINT_REMEMBERED_OVERFLOW === "1";
 const rejectMajor = process.env.TINT_REJECT_MAJOR === "1";
@@ -23,8 +28,72 @@ const stringPressure = process.env.TINT_STRING_RUNTIME === "1";
 const forcedCollection = process.env.TINT_FORCED_COLLECTION === "1";
 const shiftedPC = process.env.TINT_SHIFT_SAFEPOINT_PC === "1";
 const memoryModule = "packages/native-runtime/src/intrinsics/memory.ts";
-const fixture = forcedCollection
-  ? `import { collectGarbage } from "memory";
+const parallelFixture = `import { collectGarbage } from "memory";
+interface Link { next: Link | undefined; value: number; }
+function fill(first: Link, last: Link): number {
+  for (let i = 0; i < 192; i++) {
+    const garbage = new Uint8Array(65536);
+    garbage[0] = i;
+    if (garbage[0] !== i || first.next !== last || last.next !== first) return 1;
+  }
+  return first.value + last.value;
+}
+function runParallel(): number {
+  const first: Link = { next: undefined, value: 19 };
+  const last: Link = { next: first, value: 23 };
+  first.next = last;
+  const backing = new Uint32Array(16);
+  const view = backing.subarray(4, 8);
+  view[1] = 42;
+  if (fill(first, last) !== 42) return 2;
+  collectGarbage();
+  if (first.next !== last || last.next !== first) return 3;
+  return backing[5] === 42 && view[1] === 42 ? 42 : 4;
+}`;
+const fixture = parallel
+  ? parallelFixture +
+    (parallelThreads
+      ? `
+import { startNativeThread, joinNativeThread, hostedThreadEntry, openRuntimeFile,
+  readRuntimeFile, closeRuntimeFile } from "memory";
+function threadCount(): number {
+  const path = "/proc/self/status";
+  const key = "Threads:\\t";
+  const name = new Uint8Array(path.length + 1);
+  for (let i = 0; i < path.length; i++) name[i] = path.charCodeAt(i);
+  const fd = openRuntimeFile(name);
+  if (fd < 0) return -1;
+  const data = new Uint8Array(4096);
+  const length = readRuntimeFile(fd, data);
+  closeRuntimeFile(fd);
+  for (let i = 1; i + key.length < length; i++) {
+    if (data[i - 1] !== 10) continue;
+    let j = 0;
+    while (j < key.length && data[i + j] === key.charCodeAt(j)) j++;
+    if (j < key.length) continue;
+    let total = 0;
+    for (let at = i + j; at < length; at++) {
+      const digit = (data[at] ?? 0) - 48;
+      if (digit < 0 || digit > 9) break;
+      total = total * 10 + digit;
+    }
+    return total;
+  }
+  return -1;
+}
+export function run(argument: number): number {
+  if (argument !== 0) return runParallel();
+  const before = threadCount();
+  if (before <= 0) return 5;
+  const handle = startNativeThread(hostedThreadEntry(), 42);
+  if (handle <= 0 || joinNativeThread(handle) !== 42) return 6;
+  for (let i = 0; i < 100; i++)
+    if (threadCount() === before) return 42;
+  return 7;
+}`
+      : "\nexport function run(): number { return runParallel(); }")
+  : forcedCollection
+    ? `import { collectGarbage } from "memory";
 interface Record { value: number; }
 function throwRecord(): void {
   const record: Record = { value: 42 };
@@ -45,16 +114,16 @@ export function run(): number {
   catch (caught) { return (caught as Record).value; }
   return 3;
 }`
-  : rejectAllocations
-    ? `interface Small { value: number; }
+    : rejectAllocations
+      ? `interface Small { value: number; }
     export function run(): number {
       const a: Small = { value: 42 };
       const b = new Uint8Array(16);
       b[0] = a.value;
       return b[0] ?? 0;
     }`
-    : generalArrays
-      ? `function create():unknown[]{
+      : generalArrays
+        ? `function create():unknown[]{
  const object={value:42};return [object,object,"persistent"+String(42),undefined,false,42];
 }
 export function run():number {
@@ -68,8 +137,8 @@ export function run():number {
  }
  return 42;
 }`
-      : receivers
-        ? `interface Value {value:number;}
+        : receivers
+          ? `interface Value {value:number;}
 interface Owner {value:number;read(this:Value):number;capture(this:Value):()=>number;}
 function create():Owner {
  return {value:42,
@@ -85,8 +154,8 @@ export function run():number {
  for(let i=0;i<40;i++){if(create().read()!==42||captured()!==42)return 2;}
  return 42;
 }`
-        : generational && !stringPressure
-          ? `interface Link {next:Link|undefined;value:number;}
+          : generational && !stringPressure
+            ? `interface Link {next:Link|undefined;value:number;}
 export function run():number {
  const a:Link={next:undefined,value:1},b:Link={next:undefined,value:2},c:Link={next:undefined,value:3};
  let held:Link={next:undefined,value:0};const get=():number=>held.value;
@@ -101,7 +170,7 @@ export function run():number {
  }
  return 42;
 }`
-          : `interface Link {next:Link|undefined;value:number;}
+            : `interface Link {next:Link|undefined;value:number;}
 export function run():number {
  const first:Link={next:undefined,value:19},second:Link={next:first,value:23};first.next=second;
  const links:Link[]=[];for(let i=0;i<16;i++)links.push(i%2===0?first:second);
@@ -215,40 +284,98 @@ else if (
 modules.push({
   id: "fixture",
   module: parse(fixture),
-  dependencies: new Map(forcedCollection ? [["memory", memoryModule]] : []),
+  dependencies: new Map(
+    forcedCollection || parallel ? [["memory", memoryModule]] : [],
+  ),
 });
+if (rejectParallel) {
+  const id = "packages/native-runtime/src/tracing/parallel.ts";
+  const index = modules.findIndex((item) => item.id === id);
+  const source = modules[index];
+  assert.ok(source);
+  const text = readFileSync(id, "utf8");
+  const needle =
+    parallelRejection === "major"
+      ? "      runCommand(commandMark, 0, rootHead);"
+      : "      runCommand(commandEvacuate, first, rootHead);";
+  const modified = text.replace(
+    needle,
+    needle + '\n      if (tracedTotal() >= 0) throw "PARALLEL_PHASE_REACHED";',
+  );
+  assert.notEqual(modified, text);
+  modules[index] = { ...source, module: parse(modified) };
+}
 const target = nativeFixtureTarget();
 const request = projectBuildRequest(modules, () => {});
 const built = buildMacOSProgram({
   target,
   ...request,
-  runtimes: forcedCollection
-    ? [
-        ...request.runtimes,
-        { module: memoryModule, namespace: "native-memory" },
-      ]
-    : request.runtimes,
-  hostBindings: forcedCollection
-    ? [
-        ...request.hostBindings,
-        {
-          module: memoryModule,
-          name: "collectGarbage",
-          operation: "collect-garbage",
-        },
-      ]
-    : request.hostBindings,
+  runtimes:
+    forcedCollection || parallel
+      ? [
+          ...request.runtimes,
+          { module: memoryModule, namespace: "native-memory" },
+        ]
+      : request.runtimes,
+  hostBindings:
+    forcedCollection || parallel
+      ? [
+          ...request.hostBindings,
+          {
+            module: memoryModule,
+            name: "collectGarbage",
+            operation: "collect-garbage",
+          },
+          ...(parallelThreads
+            ? ([
+                {
+                  module: memoryModule,
+                  name: "startNativeThread",
+                  operation: "thread-start",
+                },
+                {
+                  module: memoryModule,
+                  name: "joinNativeThread",
+                  operation: "thread-join",
+                },
+                {
+                  module: memoryModule,
+                  name: "hostedThreadEntry",
+                  operation: "hosted-thread-entry",
+                },
+                {
+                  module: memoryModule,
+                  name: "openRuntimeFile",
+                  operation: "open-read",
+                },
+                {
+                  module: memoryModule,
+                  name: "readRuntimeFile",
+                  operation: "read",
+                },
+                {
+                  module: memoryModule,
+                  name: "closeRuntimeFile",
+                  operation: "close",
+                },
+              ] as const)
+            : []),
+        ]
+      : request.hostBindings,
   runtimeEntry: generational
     ? "initializeGenerationalRuntime"
     : copying
       ? "initializeCopyingRuntime"
       : "initializeRuntime",
   inlineAllocation: copying && process.env.TINT_INLINE_ALLOCATION !== "0",
+  ...(process.env.TINT_SIGNPOSTS === "1" ? { signposts: true } : {}),
+  ...(parallel ? { requireParallelCollection: true } : {}),
+  ...(parallelThreads ? { threaded: true } : {}),
   entry: "fixture",
   start: "run",
-  managedBytes: 8192,
-  controlBytes: 262144,
-  allocationCapacity: 256,
+  managedBytes: parallel ? 67108864 : 8192,
+  controlBytes: parallel ? 1048576 : 262144,
+  allocationCapacity: parallel ? 1048576 : 256,
   rootCapacity: 4096,
   stackBytes: 1048576,
   identifier: "tint-moving-runtime",
@@ -290,6 +417,7 @@ if (target.arch === "x86_64" && process.env.TINT_BUILD_ONLY !== "1") {
     assert.equal(result.kind, "exited");
     const rejected =
       shiftedPC ||
+      rejectParallel ||
       rejectMoves ||
       rejectMajor ||
       rejectMinor ||

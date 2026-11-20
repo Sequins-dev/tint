@@ -1,3 +1,4 @@
+import { nativeAllocatorShutdownRequest } from "@tint/abi/host";
 import { initializeExternalMemory } from "./external-memory.ts";
 import { createCheneyCollector, createCompactor } from "./tracing/cheney.ts";
 import { createParallelEvacuator } from "./tracing/parallel.ts";
@@ -288,6 +289,10 @@ export function initializeGenerationalRuntime(
   // Request size 0 is reserved for a forced full collection (the Test262
   // host's $262.gc); it returns +0 and allocates nothing.
   return (bytes) => {
+    if (bytes === nativeAllocatorShutdownRequest && !collecting) {
+      if (parallel !== undefined) parallel.dispose();
+      return 0;
+    }
     if (bytes === 0 && !collecting) {
       if (!collect(true)) throw managedHeapExhausted;
       return 0;

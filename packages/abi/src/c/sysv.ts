@@ -204,11 +204,6 @@ export function classifySysVCCall(
     signature.fixedParameters > signature.parameters.length
   )
     return { ok: false, error: "invalid fixed parameter count" };
-  if (signature.callClass === "may-callback")
-    return {
-      ok: false,
-      error: "C callbacks are not supported on linux-x86_64",
-    };
   const returned = sysVShape(signature.result, target, true);
   if (!returned.ok) return { ok: false, error: "result: " + returned.error };
   const ret = returned.value;
@@ -277,3 +272,13 @@ export function classifySysVCCall(
     },
   };
 }
+
+/** RBP-relative data in a universal callback thunk. The runtime reads C
+ * arguments there and writes RAX and XMM0 into their argument slots. */
+export const sysVCallbackFrame = {
+  outgoingBytes: 64,
+  frameBytes: 384,
+  registers: 64,
+  floats: 128,
+  stack: 336,
+};

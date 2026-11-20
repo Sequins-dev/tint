@@ -33,6 +33,7 @@ export function engineCodeFunctions(
   return result;
 }
 export interface EngineCodeStorageHost {
+  readonly architecture?: "aarch64" | "x86_64";
   readonly domain: () => number;
   readonly map: (byteLength: number) => number;
   readonly register: (address: number, byteLength: number) => number;
@@ -60,6 +61,7 @@ export interface EngineCodeStorageHost {
   ) => void;
 }
 export interface EngineCodeStorage {
+  readonly architecture?: "aarch64" | "x86_64";
   readonly domain: number;
   readonly publish: (
     bytes: Uint8Array,
@@ -102,6 +104,9 @@ export function createEngineCodeStorage(
   const state = { address: 0, used: 0 };
   return {
     domain,
+    ...(host.architecture === undefined
+      ? {}
+      : { architecture: host.architecture }),
     publish: (
       bytes: Uint8Array,
       functions?: readonly EngineCodeFunction[],

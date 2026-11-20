@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "commit": "29323897a7716e114d6da91fa26d1380579dc07a",
+  "target": "linux-x86_64",
+  "nodeVersion": "v24.12.0",
+  "source": {
+    "files": 796,
+    "manifest": "x64-native-fixed-point-v1-sources.sha256.gz",
+    "sha256": "f71dd36c603f509932811e75256dc407f23193f5c2f5ad0a85767c351b04f37e"
+  },
+  "executor": {
+    "kind": "Rosetta translation",
+    "container": "Debian 13 linux/amd64",
+    "image": "sha256:bfc36aecdece0387418759dba474aa856c026ca8087da3606b41b90ab0509c99",
+    "kernel": "6.1.176",
+    "glibc": "2.41-12+deb13u4",
+    "timeZone": "UTC"
+  },
+  "commands": [
+    {
+      "stage": 2,
+      "arguments": [
+        "./stage1",
+        "./source",
+        "./stage2",
+        "--target",
+        "linux-x86_64"
+      ]
+    },
+    {
+      "stage": 3,
+      "arguments": ["./stage2", "./source", "./stage3"]
+    }
+  ],
+  "stages": [
+    {
+      "image": "stage1",
+      "bytes": 172640152,
+      "sha256": "e861978e05b318970349fc20ce583a0d8552de83c64dec8ce74ffe5b6ab09441"
+    },
+    {
+      "image": "stage1-native-arm64-cross",
+      "bytes": 172640152,
+      "sha256": "e861978e05b318970349fc20ce583a0d8552de83c64dec8ce74ffe5b6ab09441"
+    },
+    {
+      "image": "stage2",
+      "bytes": 172640152,
+      "sha256": "e861978e05b318970349fc20ce583a0d8552de83c64dec8ce74ffe5b6ab09441"
+    },
+    {
+      "image": "stage3",
+      "bytes": 172640152,
+      "sha256": "e861978e05b318970349fc20ce583a0d8552de83c64dec8ce74ffe5b6ab09441"
+    }
+  ],
+  "byteIdentical": true,
+  "nativeArm64CrossExecution": [
+    {
+      "executor": {
+        "runner": "x64-qemu-dev",
+        "identity": "dev Linux 6.1.176 aarch64 | qemu-x86_64 version 7.2.22 (Debian 1:7.2+dfsg-7+deb12u18+b3)",
+        "sysrootSha256": "5f1a0b72daa20e4c22d0ae92bb62da23c308e7caa33dc5525073a69d59688e92"
+      },
+      "imageSha256": "e861978e05b318970349fc20ce583a0d8552de83c64dec8ce74ffe5b6ab09441",
+      "arguments": ["--invalid"],
+      "exitStatus": 64
+    },
+    {
+      "executor": {
+        "runner": "x64-ssh",
+        "identity": "tint@127.0.0.1:2223 Linux 6.12.117+deb13-cloud-amd64 x86_64"
+      },
+      "imageSha256": "e861978e05b318970349fc20ce583a0d8552de83c64dec8ce74ffe5b6ab09441",
+      "arguments": ["--invalid"],
+      "exitStatus": 64
+    }
+  ],
+  "tcgFixedPoint": {
+    "guest": "Debian 13 x86-64 QEMU TCG",
+    "terminalPhase": "optimize",
+    "stage": 2,
+    "budgetSeconds": 3600,
+    "exitStatus": 124
+  },
+  "log": {
+    "path": "x64-native-fixed-point-v1.log.gz",
+    "sha256": "1b36c7861a9831bc419bb8d1a2c1c6e74ad143e7aeaeaf74a3a791627587aa7e"
+  }
+}

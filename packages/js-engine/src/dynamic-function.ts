@@ -273,6 +273,10 @@ export function createDynamicFunctionCompiler(
     const ensureCompiled = (): void => {
       ensureDomain();
       if (code.address !== 0 || code.carrier !== undefined) return;
+      if (host.storage.architecture === "x86_64") {
+        ensureGeneral();
+        return;
+      }
       const compiled = compileClosedDynamicFunction(
         syntax,
         limits.maxDynamicCodeBytes,

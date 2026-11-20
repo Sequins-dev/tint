@@ -13,6 +13,7 @@ import {
   type NativeManagedPointerImport,
   type NativeModule,
 } from "@tint/codegen/aarch64/scalar";
+import type { X64Module } from "@tint/codegen/x86_64/scalar";
 import { verify, type ScalarType, type RecordLayout } from "@tint/ir/scalar";
 
 /** Trusted loader-owned capability, never derived from JavaScript input or
@@ -224,23 +225,6 @@ export function resolveManagedPointers(
   // are installed by image startup, never for published live code.
   if (native.callbackThunks !== undefined)
     return reject("Live code cannot contain callback thunks");
-  const brand = native.functionDescriptorImport;
-  const needsBrand = native.managedImports.some(
-    (request) =>
-      request !== undefined &&
-      (request.role === "function-brand" || request.role === "signature"),
-  );
-  if (brand === undefined) {
-    if (needsBrand)
-      return reject("Missing or inconsistent imported function brand");
-  } else if (
-    native.functionDescriptor !== undefined ||
-    brand.role !== "function-brand" ||
-    brand.witness !== undefined ||
-    brand.returnType !== undefined ||
-    brand.parameters.length !== 0
-  )
-    return reject("Missing or inconsistent imported function brand");
   const occupied: { offset: number; byteLength: number }[] = [];
   for (const item of native.functions) {
     if (item === undefined) return reject("Missing native functions entry");
@@ -285,11 +269,106 @@ export function resolveManagedPointers(
     if (table === undefined) return reject("Missing native stack map table");
     occupied.push({ offset: table.tableOffset, byteLength: table.byteLength });
   }
+  return resolveManagedSlots(
+    native.code,
+    native.managedImports,
+    native.functionDescriptorImport,
+    native.functionDescriptor !== undefined,
+    occupied,
+    bindings,
+    readWord,
+    expectedDomain,
+  );
+}
+
+export function resolveX64ManagedPointers(
+  native: X64Module,
+  bindings: readonly ManagedIdentityBinding[],
+  readWord: ManagedIdentityReader,
+  expectedDomain: number,
+): ManagedPointerResolution {
+  const reject = (message: string): ManagedPointerResolution => ({
+    ok: false,
+    error: message,
+  });
+  if (!exact(expectedDomain) || expectedDomain === 0)
+    return reject("Expected an issued managed context domain");
+  const slot = native.liveSlotOffset;
+  if (
+    slot === undefined ||
+    !exact(slot) ||
+    slot % 8 !== 0 ||
+    native.managedFixups.length !== 0 ||
+    native.addressFixups.length !== 0 ||
+    native.callbackKeyOffset !== undefined ||
+    native.hostedThreadFixups.length !== 0
+  )
+    return reject("Expected an unresolved managed module");
+  const imports = native.managedImports;
+  const end = slot + imports.length * 8;
+  if (end > native.code.length)
+    return reject("Invalid or overlapping managed pointer slot");
+  for (let index = 0; index < imports.length; index++)
+    if (imports[index]?.offset !== slot + index * 8)
+      return reject("Invalid or overlapping managed pointer slot");
+  const occupied = [
+    { offset: 0, byteLength: slot },
+    { offset: end, byteLength: native.code.length - end },
+  ];
+  for (const item of native.unwind) {
+    if (item === undefined) return reject("Missing native unwind entry");
+    occupied.push({ offset: item.offset, byteLength: item.byteLength });
+  }
+  const brand = imports.find(
+    (item) => item !== undefined && item.role === "function-brand",
+  );
+  return resolveManagedSlots(
+    native.code,
+    imports,
+    brand,
+    native.functionDescriptor !== undefined,
+    occupied,
+    bindings,
+    readWord,
+    expectedDomain,
+  );
+}
+
+function resolveManagedSlots(
+  unlinked: Uint8Array,
+  imports: readonly NativeManagedPointerImport[],
+  brand: NativeManagedPointerImport | undefined,
+  localBrand: boolean,
+  occupied: readonly { readonly offset: number; readonly byteLength: number }[],
+  bindings: readonly ManagedIdentityBinding[],
+  readWord: ManagedIdentityReader,
+  expectedDomain: number,
+): ManagedPointerResolution {
+  const reject = (message: string): ManagedPointerResolution => ({
+    ok: false,
+    error: message,
+  });
+  const needsBrand = imports.some(
+    (request) =>
+      request !== undefined &&
+      (request.role === "function-brand" || request.role === "signature"),
+  );
+  if (brand === undefined) {
+    if (needsBrand)
+      return reject("Missing or inconsistent imported function brand");
+  } else if (
+    localBrand ||
+    brand.role !== "function-brand" ||
+    brand.witness !== undefined ||
+    brand.returnType !== undefined ||
+    brand.parameters.length !== 0
+  )
+    return reject("Missing or inconsistent imported function brand");
   let brandCount = 0;
   const names = new Set<string>(),
     offsets = new Set<number>();
   // Complete structural validation precedes any reads of external identities.
-  for (const request of native.managedImports) {
+  for (const request of imports) {
     if (request === undefined) return reject("Missing managed import");
     if (request.role === "function-brand") {
       brandCount++;
@@ -333,13 +412,13 @@ export function resolveManagedPointers(
       !exact(request.offset) ||
       request.offset % 8 !== 0 ||
       request.byteLength !== 8 ||
-      request.offset > native.code.length - 8 ||
+      request.offset > unlinked.length - 8 ||
       offsets.has(request.offset)
     )
       return reject("Invalid or overlapping managed pointer slot");
     offsets.add(request.offset);
     for (let i = 0; i < 8; i++)
-      if (native.code[request.offset + i] !== 0)
+      if (unlinked[request.offset + i] !== 0)
         return reject("Managed pointer slot is already initialized");
     for (const fn of occupied) {
       if (fn === undefined) return reject("Missing native function");
@@ -352,7 +431,7 @@ export function resolveManagedPointers(
   }
   if (brandCount !== (brand === undefined ? 0 : 1))
     return reject("Inconsistent imported function brand count");
-  if (bindings.length !== native.managedImports.length)
+  if (bindings.length !== imports.length)
     return reject("Managed identity binding count differs");
   const authorized = new Map<string, ManagedIdentityBinding>();
   for (const binding of bindings) {
@@ -395,7 +474,7 @@ export function resolveManagedPointers(
     // Validate the complete authority set before dereferencing any external
     // identity. An earlier valid import does not authorize reads when a later
     // contract, physical signature or descriptor extent is inconsistent.
-    for (const request of native.managedImports) {
+    for (const request of imports) {
       if (request === undefined) return reject("Missing managed import");
       const binding = authorized.get(request.name);
       if (
@@ -427,8 +506,8 @@ export function resolveManagedPointers(
   } catch {
     return reject("Managed identity descriptor is unreadable");
   }
-  const code = native.code.slice();
-  for (const request of native.managedImports) {
+  const code = unlinked.slice();
+  for (const request of imports) {
     if (request === undefined) throw "managed pointer import invariant";
     const binding = authorized.get(request.name);
     if (binding === undefined) throw "managed pointer binding invariant";

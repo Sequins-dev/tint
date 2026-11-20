@@ -3,27 +3,42 @@ import {
   nativeFunctionEnvironmentOffset,
 } from "@tint/abi/function";
 import {
+  nativeAllocatorShutdownRequest,
   nativeArrayDataOffset,
   nativeArrayLengthOffset,
+  nativeContextDomainOffset,
   nativeHeaderFlagUnit,
   nativeStackLimitOffset,
   nativeStackMapRegistryEntryBytes,
   nativeStackMapRegistryHeaderBytes,
   nativeStackMapRegistryOffset,
+  nativeStackMapTransitionTable,
   type PosixHostFacts,
 } from "@tint/abi/host";
 import type {
+  CodeOutput,
+  CodePlan,
   ImageAddressPatcher,
   ImageAddressReference,
   ImageAddressTarget,
 } from "@tint/abi/relocation";
 import {
   encodeLayout,
-  writeRel32,
+  patchRelative,
+  type Gpr,
   type Instruction,
-  type NearFixup,
+  type RelativeFixup,
 } from "./isa.ts";
 import type { X64Module } from "./scalar/index.ts";
+import type { X64Probe } from "./probes.ts";
+import type { UnwindRange } from "@tint/abi/unwind";
+import {
+  dwarfStackPointer,
+  frameRows,
+  frameSave,
+  returnSave,
+  resolveUnwind,
+} from "./unwind.ts";
 import {
   allocationStateOffset,
   allocatorEntryOffset,
@@ -33,6 +48,7 @@ import {
   contextBytes,
   heapCursorOffset,
   heapEndOffset,
+  hostedThreadEntryLabel,
   bits,
   gpr,
   imageRelocations,
@@ -63,8 +79,13 @@ interface HostedEntry {
   };
   readonly returnType: "number" | "boolean" | "void" | "general";
   readonly stackBytes: number;
+  readonly threaded?: boolean;
+  readonly allowJit?: boolean;
   readonly managedBytes: number;
   readonly pageBytes: number;
+  /** Unoccupied placement between the program and the hosted runtime. */
+  readonly programPaddingBytes?: number;
+  readonly programCodePlan?: CodePlan;
 }
 
 interface ImageSymbol {
@@ -73,12 +94,16 @@ interface ImageSymbol {
 }
 
 interface HostedImage extends ImageRelocations {
-  readonly code: Uint8Array;
+  readonly codePlan: CodePlan;
   readonly data: Uint8Array;
   readonly entryOffset: number;
   readonly maxByteLength: number;
   readonly imports: readonly string[];
   readonly symbols: readonly ImageSymbol[];
+  readonly dataSymbols: readonly ImageSymbol[];
+  readonly runtimeOffset: number;
+  readonly unwind: readonly UnwindRange[];
+  readonly probes: readonly X64Probe[];
 }
 
 /** A hosted stack, collector control storage and managed region live in
@@ -90,16 +115,22 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     stackBytes = request.stackBytes,
     managedBytes = request.managedBytes,
     pageBytes = request.pageBytes;
+  const threaded = request.threaded === true;
+  const live = request.allowJit === true;
   const processStart = host.processStart;
   if (processStart === undefined) throw "glibc startup policy required";
   const stackEnd = pageBytes + stackBytes;
   const app = native;
   const runtime = request.runtime;
   const runtimeCode = runtime?.native;
+  const far = native.far || runtimeCode?.far === true;
+  const appPlan = request.programCodePlan;
+  const appLength = appPlan?.byteLength ?? app.code.length;
+  const appEnd = appLength + (request.programPaddingBytes ?? 0);
+  if (!Number.isSafeInteger(appEnd) || appEnd < appLength)
+    throw "invalid program padding";
   const codeOffset =
-    runtimeCode === undefined
-      ? app.code.length
-      : Math.ceil(app.code.length / 8) * 8;
+    runtimeCode === undefined ? appEnd : Math.ceil(appEnd / 8) * 8;
   const dataOffset =
     runtimeCode === undefined
       ? app.data.length
@@ -112,13 +143,17 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
       stackMaps.push({
         codeOffset: codeOffset + table.codeOffset,
         codeLength: table.codeLength,
-        tableOffset: codeOffset + table.tableOffset,
+        tableOffset:
+          table.tableOffset < 0
+            ? table.tableOffset
+            : codeOffset + table.tableOffset,
       });
     }
   const registryStart = stackEnd + pageBytes;
+  const registryCapacity = stackMaps.length + (live ? 16384 : 0);
   const registryBytes =
     nativeStackMapRegistryHeaderBytes +
-    stackMaps.length * nativeStackMapRegistryEntryBytes;
+    registryCapacity * nativeStackMapRegistryEntryBytes;
   const afterRegistry = registryStart + registryBytes;
   const heapAlignment = runtime === undefined ? 16 : pageBytes;
   const heapStart = Math.ceil(afterRegistry / heapAlignment) * heapAlignment;
@@ -164,7 +199,8 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     controlEnd = controlCursor + runtime.controlBytes;
   }
   const mappingBytes = controlEnd;
-  if (mappingBytes > 0x7fffffff) throw "invalid hosted mapping size";
+  if (!Number.isSafeInteger(mappingBytes) || mappingBytes >= 281474976710656)
+    throw "invalid hosted mapping size";
   const rsp = gpr(4),
     rbp = gpr(5),
     rax = gpr(0);
@@ -187,6 +223,36 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   const emit = (insn: Instruction): void => {
     machine.push(insn);
   };
+  function constantAddress(dst: Gpr<64>, value: number): void {
+    if (value <= 0x7fffffff) emit({ op: "mov", dst, src: imm(value) });
+    else
+      emit({
+        op: "mov",
+        dst,
+        src: bits(value >>> 0, Math.floor(value / 0x100000000)),
+      });
+  }
+  function mappedAddress(dst: Gpr<64>, offset: number): void {
+    if (offset <= 0x7fffffff) {
+      emit({ op: "lea", dst, src: mem(13, offset) });
+      return;
+    }
+    constantAddress(dst, offset);
+    emit({
+      op: "lea",
+      dst,
+      src: {
+        kind: "mem",
+        width: 64,
+        address: { kind: "base", base: 13, index: dst.index, disp: 0 },
+      },
+    });
+  }
+  function mappingLength(): void {
+    if (mappingBytes <= 0x7fffffff)
+      emit({ op: "mov", dst: esi, src: imm(mappingBytes) });
+    else constantAddress(rsi, mappingBytes);
+  }
   function call(symbol: string): void {
     imports.set(symbol, { kind: "import", name: symbol });
     if (!importNames.includes(symbol)) importNames.push(symbol);
@@ -210,12 +276,49 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   emit({ op: "ud2" });
 
   emit({ op: "label", name: "main" });
+  const cfi = frameRows(emit, "main");
+  const savedFrame = [returnSave, frameSave];
+  const save12 = { register: 12, offset: -24 };
+  const save13 = { register: 13, offset: -32 };
+  const saved12 = [returnSave, frameSave, save12];
+  const saved = [returnSave, frameSave, save12, save13];
+  const saveOffset = contextBytes + (threaded ? 32 : 16);
+  const contextFrameBytes = saveOffset + (far ? 16 : 0);
+  const threadArgumentOffset = contextBytes + 16;
+  const threadModeOffset = threadArgumentOffset + 8;
+  if (threaded) {
+    const hostedRun = "hosted-run";
+    emit({ op: "xor", dst: edx, src: edx });
+    emit({ op: "xor", dst: word(1), src: word(1) });
+    emit({
+      op: "jmp",
+      target: { kind: "label", label: hostedRun, near: true },
+    });
+    emit({ op: "label", name: hostedThreadEntryLabel });
+    emit({ op: "mov", dst: rdx, src: rdi });
+    emit({ op: "xor", dst: edi, src: edi });
+    emit({ op: "xor", dst: esi, src: esi });
+    emit({ op: "mov", dst: word(1), src: imm(1) });
+    emit({ op: "label", name: hostedRun });
+  }
   emit({ op: "push", src: rbp });
+  cfi.record(dwarfStackPointer, 16, savedFrame);
   emit({ op: "mov", dst: rbp, src: rsp });
   emit({ op: "push", src: r12 });
+  cfi.record(dwarfStackPointer, 24, saved12);
   emit({ op: "push", src: r13 });
-  emit({ op: "sub", dst: rsp, src: imm(contextBytes + 16) });
+  cfi.record(dwarfStackPointer, 32, saved);
+  emit({ op: "sub", dst: rsp, src: imm(contextFrameBytes) });
+  cfi.record(dwarfStackPointer, contextFrameBytes + 32, saved);
   emit({ op: "mov", dst: r12, src: rsp });
+  cfi.record(12, contextFrameBytes + 32, saved);
+  if (far) {
+    emit({ op: "mov", dst: mem(12, saveOffset), src: gpr(14) });
+    emit({ op: "mov", dst: mem(12, saveOffset + 8), src: gpr(15) });
+    const farSaved = saved.slice();
+    farSaved.push({ register: 14, offset: -48 }, { register: 15, offset: -40 });
+    cfi.record(12, contextFrameBytes + 32, farSaved);
+  }
   emit({ op: "mov", dst: mem(12, contextBytes + 8), src: rbp });
   for (let offset = 0; offset < contextBytes; offset += 8)
     emit({ op: "mov", dst: mem(12, offset), src: imm(0) });
@@ -225,8 +328,12 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     src: edi,
   });
   emit({ op: "mov", dst: mem(12, argumentsOffset), src: rsi });
+  if (threaded) {
+    emit({ op: "mov", dst: mem(12, threadArgumentOffset), src: rdx });
+    emit({ op: "mov", dst: mem(12, threadModeOffset), src: gpr(1) });
+  }
   emit({ op: "xor", dst: edi, src: edi });
-  emit({ op: "mov", dst: esi, src: imm(mappingBytes) });
+  mappingLength();
   emit({ op: "mov", dst: edx, src: imm(3) }); // PROT_READ | PROT_WRITE
   emit({ op: "mov", dst: word(1), src: imm(host.anonymousPrivateFlags) });
   emit({ op: "mov", dst: word(8), src: imm(-1) });
@@ -238,7 +345,7 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   // Keep every byte that could become a managed address below bit 48,
   // including on kernels with five-level paging.
   emit({ op: "mov", dst: gpr(11), src: bits(0, 0x10000) });
-  emit({ op: "lea", dst: rax, src: mem(13, mappingBytes - 1) });
+  mappedAddress(rax, mappingBytes - 1);
   emit({ op: "cmp", dst: rax, src: gpr(11) });
   emit({ op: "jcc", cc: "ae", target: label("guard-failed") });
 
@@ -252,37 +359,70 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   }
   emit({ op: "lea", dst: rax, src: mem(13, pageBytes) });
   emit({ op: "mov", dst: mem(12, nativeStackLimitOffset), src: rax });
+  if (threaded || live) {
+    // The inaccessible identity page outlives this heap and prevents address
+    // reuse from aliasing context-owned values after a join.
+    emit({ op: "xor", dst: edi, src: edi });
+    emit({ op: "mov", dst: esi, src: imm(pageBytes) });
+    emit({ op: "xor", dst: edx, src: edx });
+    emit({ op: "mov", dst: word(1), src: imm(host.anonymousPrivateFlags) });
+    emit({ op: "mov", dst: word(8), src: imm(-1) });
+    emit({ op: "xor", dst: word(9), src: word(9) });
+    call(host.symbolPrefix + "mmap");
+    emit({ op: "mov", dst: gpr(11), src: bits(0xffffffff, 0x1fffff) });
+    emit({ op: "cmp", dst: rax, src: gpr(11) });
+    emit({ op: "jcc", cc: "a", target: label("guard-failed") });
+    emit({ op: "mov", dst: mem(12, nativeContextDomainOffset), src: rax });
+  }
 
   const local = new Map<string, number>();
   local.set("invoke", request.invocation);
+  const callbackKeyOffset = native.callbackKeyOffset;
+  if (callbackKeyOffset !== undefined) {
+    const key = "callback-key-storage";
+    const keyReady = "callback-key-ready";
+    if (threaded) {
+      emit({ op: "cmp", dst: mem(12, threadModeOffset), src: imm(0) });
+      emit({ op: "jcc", cc: "ne", target: label(keyReady) });
+    }
+    imports.set(key, { kind: "data", offset: callbackKeyOffset });
+    emit({ op: "lea", dst: rdi, src: rip(key) });
+    emit({ op: "xor", dst: esi, src: esi });
+    call(host.symbolPrefix + "pthread_key_create");
+    emit({ op: "test", dst: eax, src: eax });
+    emit({ op: "jcc", cc: "ne", target: label("guard-failed") });
+    if (threaded) emit({ op: "label", name: keyReady });
+  }
   emit({ op: "lea", dst: rax, src: mem(13, registryStart) });
   emit({ op: "mov", dst: mem(12, nativeStackMapRegistryOffset), src: rax });
   emit({ op: "mov", dst: mem(0, 0), src: imm(stackMaps.length) });
-  emit({ op: "mov", dst: mem(0, 8), src: imm(stackMaps.length) });
+  emit({ op: "mov", dst: mem(0, 8), src: imm(registryCapacity) });
   for (let index = 0; index < stackMaps.length; index++) {
     const table = stackMaps[index];
     if (table === undefined) throw "stack map registry entry invariant";
     const codeName = "stack-maps-code:" + String(index);
     const tableName = "stack-maps-table:" + String(index);
     local.set(codeName, table.codeOffset);
-    local.set(tableName, table.tableOffset);
+    if (table.tableOffset >= 0) local.set(tableName, table.tableOffset);
     const entry =
       nativeStackMapRegistryHeaderBytes +
       index * nativeStackMapRegistryEntryBytes;
     emit({ op: "lea", dst: gpr(11), src: rip(codeName) });
     emit({ op: "mov", dst: mem(0, entry), src: gpr(11) });
     emit({ op: "mov", dst: mem(0, entry + 8), src: imm(table.codeLength) });
-    emit({ op: "lea", dst: gpr(11), src: rip(tableName) });
+    if (table.tableOffset < 0)
+      emit({
+        op: "mov",
+        dst: gpr(11),
+        src: imm(nativeStackMapTransitionTable),
+      });
+    else emit({ op: "lea", dst: gpr(11), src: rip(tableName) });
     emit({ op: "mov", dst: mem(0, entry + 16), src: gpr(11) });
   }
 
-  emit({
-    op: "lea",
-    dst: rax,
-    src: mem(13, runtime === undefined ? heapStart : controlCursor),
-  });
+  mappedAddress(rax, runtime === undefined ? heapStart : controlCursor);
   emit({ op: "mov", dst: mem(12, heapCursorOffset), src: rax });
-  emit({ op: "lea", dst: rax, src: mem(13, mappingBytes) });
+  mappedAddress(rax, mappingBytes);
   emit({ op: "mov", dst: mem(12, heapEndOffset), src: rax });
   // A zero frame link on the managed stack terminates the walk. Keep the
   // system frame separately because it is outside the managed stack region.
@@ -309,9 +449,8 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
       const value = extents[index];
       if (value === undefined) throw "runtime window invariant";
       if (index === 4) emit({ op: "lea", dst: rax, src: rip("image") });
-      else if (index % 2 === 0)
-        emit({ op: "lea", dst: rax, src: mem(13, value) });
-      else emit({ op: "mov", dst: rax, src: imm(value) });
+      else if (index % 2 === 0) mappedAddress(rax, value);
+      else constantAddress(rax, value);
       if (index === 0)
         emit({ op: "mov", dst: mem(12, managedBaseOffset), src: rax });
       if (index === 1)
@@ -327,22 +466,29 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
         dst: rax,
         src: bits(array.kind, nativeHeaderFlagUnit / 4294967296),
       });
-      emit({ op: "mov", dst: mem(13, header), src: rax });
+      const headerRegister = gpr(10);
+      let headerBase = 13,
+        headerOffset = header;
+      if (header > 0x7ffffff0) {
+        mappedAddress(headerRegister, header);
+        headerBase = headerRegister.index;
+        headerOffset = 0;
+      }
+      emit({ op: "mov", dst: mem(headerBase, headerOffset), src: rax });
       emit({
         op: "mov",
-        dst: mem(13, header + nativeArrayLengthOffset),
+        dst: mem(headerBase, headerOffset + nativeArrayLengthOffset),
         src: imm(array.length),
       });
-      emit({ op: "lea", dst: pointer, src: mem(13, array.data) });
+      mappedAddress(pointer, array.data);
       emit({
         op: "mov",
-        dst: mem(13, header + nativeArrayDataOffset),
+        dst: mem(headerBase, headerOffset + nativeArrayDataOffset),
         src: pointer,
       });
-      if (index < 2)
-        emit({ op: "lea", dst: gpr(8 + index), src: mem(13, header) });
+      if (index < 2) mappedAddress(gpr(8 + index), header);
       else {
-        emit({ op: "lea", dst: rax, src: mem(13, header) });
+        mappedAddress(rax, header);
         emit({ op: "mov", dst: mem(4, (index - 2) * 8), src: rax });
       }
     }
@@ -378,6 +524,12 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   emit({ op: "mov", dst: gpr(1), src: rsp });
   emit({ op: "mov", dst: mem(4, 0), src: imm(0) });
   emit({ op: "mov", dst: mem(4, 8), src: imm(0) });
+  if (threaded)
+    emit({
+      op: "cvtsi2sd",
+      dst: xmm(0),
+      src: mem(12, threadArgumentOffset),
+    });
   emit({ op: "call", target: label("invoke") });
   emit({ op: "cmp", dst: eax, src: imm(normal) });
   emit({ op: "jcc", cc: "ne", target: label("program-failed") });
@@ -414,61 +566,136 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   emit({ op: "jmp", target: label("unmap") });
   emit({ op: "label", name: "program-failed" });
   emit({ op: "mov", dst: eax, src: imm(1) });
+  if (threaded) {
+    emit({ op: "cmp", dst: mem(12, threadModeOffset), src: imm(0) });
+    emit({ op: "mov", dst: word(10), src: imm(70) });
+    emit({ op: "cmovcc", cc: "ne", dst: eax, src: word(10) });
+  }
   emit({ op: "jmp", target: label("unmap") });
   emit({ op: "label", name: "guard-failed" });
   emit({ op: "mov", dst: eax, src: imm(71) });
   emit({ op: "label", name: "unmap" });
-  emit({ op: "mov", dst: rsp, src: r12 });
   emit({ op: "mov", dst: mem(12, contextBytes), src: rax });
+  if (threaded && runtime !== undefined) {
+    const cleanup = "unmap-hosted-context";
+    const allocator = mem(12, allocatorEntryOffset);
+    emit({ op: "cmp", dst: allocator, src: imm(0) });
+    emit({ op: "jcc", cc: "e", target: label(cleanup) });
+    emit({ op: "mov", dst: rdi, src: r12 });
+    emit({ op: "mov", dst: rsi, src: mem(12, allocatorEnvironmentOffset) });
+    emit({ op: "xor", dst: edx, src: edx });
+    emit({ op: "mov", dst: gpr(1), src: rsp });
+    emit({ op: "mov", dst: rax, src: imm(nativeAllocatorShutdownRequest) });
+    emit({ op: "cvtsi2sd", dst: xmm(0), src: rax });
+    emit({ op: "call", target: allocator });
+    emit({ op: "cmp", dst: eax, src: imm(normal) });
+    emit({ op: "jcc", cc: "e", target: label(cleanup) });
+    // An unjoined worker could still access the context's storage.
+    emit({ op: "jmp", target: label("mapping-failed") });
+    emit({ op: "label", name: cleanup });
+  }
+  emit({ op: "mov", dst: rsp, src: r12 });
   emit({ op: "mov", dst: rdi, src: r13 });
-  emit({ op: "mov", dst: esi, src: imm(mappingBytes) });
+  mappingLength();
   call(host.symbolPrefix + "munmap");
   emit({ op: "mov", dst: rax, src: mem(12, contextBytes) });
   emit({ op: "jmp", target: label("return") });
   emit({ op: "label", name: "mapping-failed" });
   emit({ op: "mov", dst: eax, src: imm(71) });
   emit({ op: "label", name: "return" });
+  if (far) {
+    emit({ op: "mov", dst: gpr(14), src: mem(12, saveOffset) });
+    emit({ op: "mov", dst: gpr(15), src: mem(12, saveOffset + 8) });
+  }
   emit({ op: "mov", dst: rbp, src: mem(12, contextBytes + 8) });
   emit({ op: "lea", dst: rsp, src: mem(5, -16) });
+  cfi.record(dwarfStackPointer, 32, saved);
   emit({ op: "pop", dst: r13 });
+  cfi.record(dwarfStackPointer, 24, saved12);
   emit({ op: "pop", dst: r12 });
+  cfi.record(dwarfStackPointer, 16, savedFrame);
   emit({ op: "pop", dst: rbp });
+  cfi.record(dwarfStackPointer, 8, [returnSave]);
   emit({ op: "ret" });
+  emit({ op: "label", name: "main:end" });
 
   const stub = encodeLayout(
     machine,
     (name) => local.has(name) || imports.has(name),
+    far,
   );
   const base = imageLength;
-  const code = new Uint8Array(base + stub.bytes.length);
-  code.set(native.code);
   let data = native.data;
   if (runtimeCode !== undefined) {
-    code.set(runtimeCode.code, codeOffset);
     data = new Uint8Array(dataOffset + runtimeCode.data.length);
     data.set(native.data);
     data.set(runtimeCode.data, dataOffset);
   }
-  code.set(stub.bytes, base);
-  const external: NearFixup[] = [];
+  const threadEntry = stub.labels.get(hostedThreadEntryLabel);
+  const external: RelativeFixup[] = [];
   for (const fixup of stub.externalFixups) {
     if (fixup === undefined) throw "startup fixup invariant";
     const name = fixup.ref.label;
     const offset = local.get(name);
-    if (offset !== undefined)
-      writeRel32(
-        code,
-        base + fixup.fieldOffset,
-        base + fixup.nextOffset,
+    if (offset !== undefined) {
+      const status = patchRelative(
+        stub.bytes,
+        fixup,
+        fixup.fieldOffset,
         offset,
+        base + fixup.fieldOffset,
       );
-    else
+      if (status === "range") throw "x86-64 rel32 displacement out of range";
+      if (status !== "complete") throw "startup fixup invariant";
+    } else
       external.push({
         ...fixup,
         fieldOffset: base + fixup.fieldOffset,
         nextOffset: base + fixup.nextOffset,
       });
   }
+  function writeUnit(
+    output: CodeOutput,
+    origin: number,
+    unit: X64Module,
+    offset: number,
+  ): string | undefined {
+    if (offset === 0 && appPlan !== undefined) {
+      const error = appPlan.write(output, origin);
+      if (error !== undefined) return error;
+    } else output.write(unit.code, origin + offset);
+    for (const fixup of unit.hostedThreadFixups) {
+      if (fixup === undefined || threadEntry === undefined)
+        return "hosted thread entry fixup invariant";
+      const address = offset + fixup.fieldOffset;
+      const target = base + threadEntry;
+      const error = output.patch(
+        origin + address,
+        fixup.byteLength,
+        (bytes, site) => {
+          const status = patchRelative(bytes, fixup, site, target, address);
+          return status === "complete"
+            ? undefined
+            : "thread entry fixup " + status;
+        },
+      );
+      if (error !== undefined) return error;
+    }
+    return undefined;
+  }
+  const codePlan: CodePlan = {
+    byteLength: base + stub.bytes.length,
+    write(output, origin) {
+      const appError = writeUnit(output, origin, native, 0);
+      if (appError !== undefined) return appError;
+      if (runtimeCode !== undefined) {
+        const runtimeError = writeUnit(output, origin, runtimeCode, codeOffset);
+        if (runtimeError !== undefined) return runtimeError;
+      }
+      output.write(stub.bytes, origin + base);
+      return undefined;
+    },
+  };
   const relocations = imageRelocations(external, imports);
   const appFixups = native.addressFixups.length;
   const runtimeFixups = runtimeCode?.addressFixups.length ?? 0;
@@ -500,17 +727,51 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   const main = stub.labels.get("main");
   if (main === undefined) throw "startup label invariant";
   const symbols: ImageSymbol[] = [];
+  const dataSymbols: ImageSymbol[] = [];
+  const unwind = native.unwind.slice();
+  const probes = native.probes.slice();
   for (const fn of native.functions) {
     if (fn === undefined) throw "program symbol invariant";
-    symbols.push({ name: fn.name, offset: fn.offset });
+    if (fn.import !== true) symbols.push({ name: fn.name, offset: fn.offset });
   }
-  if (runtimeCode !== undefined)
+  if (runtimeCode !== undefined) {
     for (const fn of runtimeCode.functions) {
       if (fn === undefined) throw "runtime symbol invariant";
       symbols.push({ name: fn.name, offset: codeOffset + fn.offset });
     }
+    for (const range of runtimeCode.unwind) {
+      if (range === undefined) throw "runtime unwind range invariant";
+      unwind.push({ ...range, offset: codeOffset + range.offset });
+    }
+    for (const probe of runtimeCode.probes) {
+      if (probe === undefined) throw "runtime probe invariant";
+      probes.push({ ...probe, offset: codeOffset + probe.offset });
+    }
+  }
+  const startupUnwind = resolveUnwind(
+    [
+      { start: "_start", end: "main", rule: "outermost", rows: [] },
+      { start: "main", end: "main:end", rule: "rows", rows: cfi.rows },
+    ],
+    stub.labels,
+  );
+  for (const range of startupUnwind) {
+    if (range === undefined) throw "startup unwind range invariant";
+    unwind.push({ ...range, offset: base + range.offset });
+  }
   symbols.push({ name: "_start", offset: base });
   symbols.push({ name: "main", offset: base + main });
+  const debug = native.jitDebug;
+  if (debug !== undefined) {
+    dataSymbols.push({
+      name: "__jit_debug_descriptor",
+      offset: debug.descriptorOffset,
+    });
+    symbols.push({
+      name: "__jit_debug_register_code",
+      offset: debug.registerOffset,
+    });
+  }
   const addressFixups: ImageAddressReference[] = native.addressFixups.slice();
   if (runtimeCode !== undefined)
     for (const reference of runtimeCode.addressFixups) {
@@ -530,12 +791,16 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     addressFixups.push(reference);
   }
   return {
-    code,
+    codePlan,
     entryOffset: base,
     data,
     maxByteLength: Number.MAX_SAFE_INTEGER,
     imports: importNames,
     symbols,
+    dataSymbols,
+    runtimeOffset: codeOffset,
+    unwind,
+    probes,
     addressFixups,
     patchAddress,
   };

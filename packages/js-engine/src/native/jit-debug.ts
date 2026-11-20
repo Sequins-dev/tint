@@ -21,6 +21,7 @@ export interface JitDebuggerHost {
   /** The in-memory object format of the platform's debuggers: the image
    * target's object format (NativeTarget.objectFormat). */
   readonly objectFormat: "macho" | "elf";
+  readonly architecture?: "aarch64" | "x86_64";
   /** Anonymous read/write mapping of byteLength bytes, or <= 0. */
   readonly map: (byteLength: number) => number;
   /** Copy bytes into [address, address + byteLength) at offset: 0 or -1. */
@@ -167,7 +168,7 @@ export function createJitDebugRegistrar(hosts: {
     };
     const object =
       host.objectFormat === "elf"
-        ? buildElfJitObject(request)
+        ? buildElfJitObject(request, host.architecture ?? "aarch64")
         : buildJitObject(request);
     if (!object.ok) return -1;
     const bytes = object.value,

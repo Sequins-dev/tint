@@ -1,7 +1,8 @@
 import { startNativeHeartbeat } from "./test262-native-heartbeat.ts";
 import { attributeNativeModule } from "./native-image-attribution.ts";
 import { nativeVariantSelection } from "./native-variant-selection.ts";
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { writeNodeExecutable } from "./node-file-host.ts";
 import {
   frozenNativeRunIdentity,
@@ -45,6 +46,7 @@ import {
   type NativeModuleInput,
   type NativeTestCase,
   nativeTestResources,
+  nativeTestTarget,
   capturedScriptEvaluation,
   nativeScriptAdapter,
   nativeDynamicImportCapability,
@@ -64,7 +66,13 @@ import {
   nativeExecutableWriteback,
   createNativeRunJournal,
   executeNativeFile,
+  nativeTransportOutcome,
 } from "./test262-native-process.ts";
+import {
+  nativeArtifact,
+  runNativeBatch,
+  type NativeResult,
+} from "./native-target-runner.ts";
 import { createNativeSyntaxBatchBuilder } from "./test262-native-syntax.ts";
 import { buildWithBisection } from "./native-batch-bisect.ts";
 import {
@@ -86,8 +94,31 @@ if (checkout === undefined)
   throw new Error(
     "usage: node tools/test262-native-run.ts <test262-checkout> [path-under-test] [batch-size]",
   );
-if (process.platform !== "darwin" || process.arch !== "arm64")
-  throw new Error("native adapter currently requires macOS arm64");
+const target = nativeTestTarget;
+const transport = target.arch === "x86_64";
+const runner = process.env.TINT_NATIVE_RUNNER;
+if (transport) {
+  if (
+    runner !== "x64-local" &&
+    runner !== "x64-qemu-dev" &&
+    runner !== "x64-ssh"
+  )
+    throw Error(
+      "Linux x86-64 Test262 requires an explicit x86-64 TINT_NATIVE_RUNNER",
+    );
+  if (nativeDebuggerLaunch !== "process" || process.env.TINT_TEST262_PAUSE)
+    throw Error(
+      "Linux x86-64 Test262 transport requires process launch without diagnostic pauses",
+    );
+} else if (
+  target.name !== "darwin-aarch64" ||
+  process.platform !== "darwin" ||
+  process.arch !== "arm64"
+) {
+  throw Error(
+    "the Test262 adapter requires local Darwin arm64 or a Linux x86-64 runner",
+  );
+}
 /** Concurrent native processes of a suite image (TINT_TEST262_SUITE_JOBS). */
 function suiteJobs(): number {
   const value = process.env.TINT_TEST262_SUITE_JOBS ?? "6";
@@ -167,6 +198,8 @@ try {
     throw Error(
       "TINT_TEST262_NATIVE_SERVICES must be aot, monolithic or unset",
     );
+  if (transport && serviceMode === "aot")
+    throw Error("cached DateTimeFormat native-service images require arm64");
   const capturedDateTimeService = snapshot.inputs.some(
     (input) =>
       input.id ===
@@ -175,7 +208,7 @@ try {
   if (serviceMode === "aot" && !capturedDateTimeService)
     throw Error("the captured runtime has no DateTimeFormat native service");
   let serviceImage: ReturnType<typeof prepareDateTimeNativeService> | undefined;
-  if (capturedDateTimeService && serviceMode !== "monolithic") {
+  if (!transport && capturedDateTimeService && serviceMode !== "monolithic") {
     if (frozenToolchainSha256 === undefined)
       throw Error("native service composition requires a frozen toolchain");
     heartbeat.phase("preparing cached DateTimeFormat native service");
@@ -205,6 +238,8 @@ try {
     scriptLinking !== "suite"
   )
     throw Error("TINT_TEST262_LINKING must be program, units, suite or unset");
+  if (transport && scriptLinking !== "program")
+    throw Error("Linux x86-64 Test262 currently requires program linking");
   const { append: journal, checkpoint } = createNativeRunJournal(
     process.env.TINT_TEST262_JOURNAL,
     {
@@ -215,6 +250,7 @@ try {
       ...nativeLinkingIdentity,
       scriptLinking,
       nodeVersion: process.version,
+      ...(transport ? { target: target.name, runner } : {}),
       debuggerTracing: nativeDebuggerTracing,
       revision: suite.revision,
       dirty: suite.dirty,
@@ -426,27 +462,59 @@ try {
     const id = built.compilation.id;
     let image: NativeImageRunner | undefined;
     let setupFailure: ExecutionOutcome | undefined;
+    let transported: NativeResult[] | undefined;
     if (built.ok) {
       let admissionMs: number | undefined;
       try {
         heartbeat.phase(`staging batch ${id}`);
-        image = new NativeImageRunner(
-          built.bytes,
-          nativeTestResources.timeoutMs,
-          nativeTestResources.admissionTimeoutMs,
-        );
-        heartbeat.phase(`admitting batch ${id} (first launch)`);
-        const admission = image.admit();
-        admissionMs = admission.admissionMs;
-        if (!admission.admitted) setupFailure = admission.outcome;
+        if (transport) {
+          const directory = mkdtempSync(
+            resolve(tmpdir(), "tint-test262-transport-"),
+          );
+          try {
+            const binary = resolve(directory, "batch");
+            writeNodeExecutable(binary, built.bytes);
+            const artifact = nativeArtifact(target.name, binary);
+            heartbeat.phase(
+              `executing batch ${id} (${runner}, ${group.length} variants)`,
+            );
+            transported = runNativeBatch(
+              group.map((_, index) => ({
+                artifact,
+                args: [String(built.selectors?.[index] ?? index)],
+                timeoutMs: nativeTestResources.timeoutMs,
+              })),
+            );
+          } finally {
+            rmSync(directory, { recursive: true, force: true });
+          }
+        } else {
+          image = new NativeImageRunner(
+            built.bytes,
+            nativeTestResources.timeoutMs,
+            nativeTestResources.admissionTimeoutMs,
+          );
+          heartbeat.phase(`admitting batch ${id} (first launch)`);
+          const admission = image.admit();
+          admissionMs = admission.admissionMs;
+          if (!admission.admitted) setupFailure = admission.outcome;
+        }
       } catch (error) {
         setupFailure = adapterCrash(error);
       }
-      commitCompilation(
-        admissionMs === undefined
-          ? built.compilation
-          : { ...built.compilation, admissionMs },
-      );
+      const first = transported?.[0];
+      commitCompilation({
+        ...built.compilation,
+        ...(admissionMs === undefined ? {} : { admissionMs }),
+        ...(first === undefined
+          ? {}
+          : {
+              execution: {
+                imageSha256: first.artifact.imageSha256,
+                executor: first.executor,
+              },
+            }),
+      });
     }
     try {
       for (const [index, item] of group.entries()) {
@@ -465,9 +533,11 @@ try {
           outcome = !built.ok
             ? built.outcome
             : (setupFailure ??
-              image!.run(built.selectors?.[index] ?? index, (phase) =>
-                heartbeat.phase(execution + " (" + phase + ")"),
-              ));
+              (transported === undefined
+                ? image!.run(built.selectors?.[index] ?? index, (phase) =>
+                    heartbeat.phase(execution + " (" + phase + ")"),
+                  )
+                : nativeTransportOutcome(transported[index]!)));
         } catch (error) {
           outcome = adapterCrash(error);
         }
@@ -814,7 +884,8 @@ try {
         engine: {
           name: "Tint",
           adapter: engine,
-          target: "macos-arm64",
+          target: transport ? target.name : "macos-arm64",
+          ...(transport ? { runner } : {}),
           bootstrap: process.version,
           debugger: nativeDebuggerExecutable,
           debuggerStdio: nativeDebuggerStdio,

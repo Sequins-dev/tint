@@ -14,7 +14,7 @@ command -v perl >/dev/null || unavailable 'perl is missing'
 command -v timeout >/dev/null || unavailable 'timeout is missing'
 identity=$(uname -smr)
 case "$mode:$(uname -m)" in
-  linux-dev:aarch64|x64-ssh:x86_64) ;;
+  linux-dev:aarch64|x64-local:x86_64|x64-ssh:x86_64) ;;
   x64-qemu-dev:aarch64)
     command -v "$qemu" >/dev/null || unavailable "QEMU is missing at $qemu"
     (cd "$sysroot" && sha256sum -c --status "$OLDPWD/sysroot.sha256") ||

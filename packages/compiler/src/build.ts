@@ -1,4 +1,3 @@
-import { serialCollectorModule } from "./native/runtime-contracts.ts";
 import { nativeTargetLayout } from "./native/target-layout.ts";
 import {
   aarch64ImageRelocations,
@@ -11,7 +10,11 @@ import {
   type NativeTarget,
 } from "@tint/platform/target";
 import type { CodePlan } from "@tint/abi/relocation";
-import { planNativeServiceModules } from "./native/service-unit-link.ts";
+import {
+  planNativeServiceModules,
+  planX64ServiceModules,
+  type X64ServiceLink,
+} from "./native/service-unit-link.ts";
 import type { PosixHostABI } from "@tint/abi/host";
 import { optimizeModule, unboundedWork } from "@tint/ir/optimization";
 import {
@@ -19,6 +22,7 @@ import {
   compileX64HostedProgram,
   selectNativeBackend,
   type NativeServiceUnit,
+  type X64NativeServiceUnit,
   type NativeServiceBinding,
   type NativeServiceLink,
   type NativeHostBinding,
@@ -62,7 +66,12 @@ export interface ImageOperationRange extends NativeOperationRange {
   /** Image offset of the function's first instruction. */
   readonly functionOffset: number;
 }
-import type { DebugFrame, DebugGlobal, FunctionRange } from "@tint/image/dwarf";
+import type {
+  DebugFrame,
+  DebugGlobal,
+  DebugVariable,
+  FunctionRange,
+} from "@tint/image/dwarf";
 import { heapDebugRecordVariablePrefix } from "@tint/abi/heap-debug";
 import {
   createDebugTypeTable,
@@ -85,11 +94,12 @@ import { unwindRanges } from "@tint/codegen/aarch64/unwind";
 import type { UnwindRange } from "@tint/abi/unwind";
 import type {
   ExecutableImageRequest,
+  ImageDebugInfo,
   ImageLibrary,
   ImageSymbol,
   ReadOnlySection,
 } from "@tint/image/executable";
-import type { X64Module } from "@tint/codegen/x86_64/scalar";
+import type { X64Module, X64SignpostSite } from "@tint/codegen/x86_64/scalar";
 import { appendHostedEntry } from "@tint/codegen/x86_64/startup";
 import { nativeCStackReserveBytes } from "@tint/abi/host";
 import { writeExecutableImage } from "./image-writer.ts";
@@ -132,7 +142,7 @@ export interface BuildRequest extends ModuleRequest {
   readonly machOLayout?: MachOLayoutOptions | undefined;
   /** Immutable native units prepared for the same frozen source/toolchain. */
   readonly nativeServices?: readonly {
-    readonly unit: NativeServiceUnit;
+    readonly unit: NativeServiceUnit | X64NativeServiceUnit;
     readonly bind: { readonly module: string; readonly name: string };
   }[];
   /** Service import slots the program reserves in addition to one per native
@@ -282,7 +292,17 @@ function compileFailure(
 /** Pure artifact composition shared by Node bootstrap and the native compiler. */
 export function buildMacOSProgram(request: BuildRequest): BuildResult {
   const target = buildTarget(request);
-  if (target.arch === "x86_64") return buildX64HostedProgram(request, target);
+  if (target.arch === "x86_64") {
+    const built = buildX64HostedProgram(request, target);
+    if (
+      !built.ok &&
+      request.forceFarReach !== true &&
+      (built.error.message.includes("rel32 displacement out of range") ||
+        built.error.message === "ELF image: ADDRESS_OUT_OF_RANGE")
+    )
+      return buildX64HostedProgram({ ...request, forceFarReach: true }, target);
+    return built;
+  }
   const compiled = compileMacOSProgram(request);
   if (!compiled.ok) return { ok: false, error: compiled.error };
   return linkMacOSProgram(compiled.value, request);
@@ -303,27 +323,36 @@ function buildX64HostedProgram(
   if (request.requireParallelCollection === true && !target.parallelCollection)
     return failure(
       "target",
-      target.name +
-        ": parallel collection is unavailable until slice 8; the collector uses one worker",
+      target.name + ": parallel collection is unavailable",
     );
   const generational = request.runtimeEntry === "initializeGenerationalRuntime";
+  const forceFarReach =
+    request.forceFarReach === true ||
+    (request.nativeServices ?? []).some((service) => {
+      if (service === undefined) return false;
+      const unit = service.unit;
+      return unit.arch === "x86_64" && unit.native.far;
+    });
   if (request.runtimeEntry !== undefined && !generational)
     return deferred(request.runtimeEntry);
-  if (request.threaded === true) return deferred("hosted-thread-entry");
-  if (request.allowJit === true) return deferred("executable-map");
   if (
-    request.debugSymbols === true ||
-    request.stackTraces === true ||
-    request.signposts === true ||
-    request.heapIntrospection === true ||
-    request.jitDebugInterface === true
+    request.allowJit !== true &&
+    request.hostBindings.some(
+      (binding) =>
+        binding !== undefined && binding.operation.startsWith("executable-"),
+    )
   )
+    return failure(
+      "host-binding",
+      "executable-memory capabilities require allowJit",
+    );
+  if (request.jitDebugInterface === true && request.allowJit !== true)
+    return failure("startup", "the JIT debug interface requires allowJit");
+  if (request.stackTraces === true || request.heapIntrospection === true)
     return failure(
       "target",
       target.name + ": native diagnostics are unavailable",
     );
-  if (request.forceFarReach === true)
-    return failure("target", target.name + ": far code model is unavailable");
   if (
     request.onOperationRanges !== undefined ||
     request.onEmittedFunctions !== undefined ||
@@ -336,13 +365,6 @@ function buildX64HostedProgram(
       "target",
       target.name + ": emission and optimization reports are unavailable",
     );
-  if (
-    (request.nativeServices?.length ?? 0) !== 0 ||
-    (request.serviceSlots?.length ?? 0) !== 0 ||
-    (request.managedSurfaces?.length ?? 0) !== 0
-  )
-    return deferred("managed surfaces");
-
   const managedBytes = request.managedBytes,
     stackBytes = request.stackBytes;
   const pageBytes = target.memoryPageBytes;
@@ -353,7 +375,8 @@ function buildX64HostedProgram(
     !Number.isSafeInteger(stackBytes) ||
     stackBytes <= nativeCStackReserveBytes ||
     stackBytes % pageBytes !== 0 ||
-    stackBytes + managedBytes + pageBytes * 2 > 0x7fffffff
+    stackBytes + pageBytes * 2 > 0x7fffffff ||
+    managedBytes > 0xffffffff
   )
     return failure(
       "memory-policy",
@@ -363,6 +386,9 @@ function buildX64HostedProgram(
   let runtime:
     | {
         native: X64Module;
+        lines: readonly SourceLineRange[];
+        functionNames: ReadonlyMap<string, string>;
+        parameterNames: ReadonlyMap<string, string>;
         entry: number;
         controlBytes: number;
         allocationCapacity: number;
@@ -373,44 +399,34 @@ function buildX64HostedProgram(
     const invalid = movingWorkspaceError(request, true);
     if (invalid !== undefined) return failure("memory-policy", invalid);
     request.report("runtime");
-    const sources = runtimeModules(request, serialCollectorModule);
-    const root = request.runtimeModule.slice(
-      0,
-      request.runtimeModule.lastIndexOf("/") + 1,
-    );
-    const serial = sources.find(
-      (source) => source?.id === serialCollectorModule,
-    );
-    if (serial === undefined)
-      return failure("runtime", "serial collector policy source is missing");
-    const modules: SourceModule[] = [];
-    for (const source of sources) {
-      if (source === undefined) throw "runtime source invariant";
-      if (source.id === root + "generational.ts") {
-        const dependencies = new Map<string, string>();
-        for (const [specifier, id] of source.dependencies)
-          dependencies.set(specifier, id);
-        dependencies.set("./tracing/parallel.ts", serial.id);
-        dependencies.set("./processors.ts", serial.id);
-        modules.push({ ...source, dependencies });
-      } else modules.push(source);
+    const hostBindings = x64CollectorBindings(request.memoryModule);
+    for (const binding of parallelCollectorBindings(request)) {
+      if (binding === undefined) throw "collector binding invariant";
+      hostBindings.push(binding);
     }
     const loweredRuntime = compileX64HostedProgram(
       {
-        modules,
+        modules: runtimeModules(request),
         entry: request.runtimeModule,
         start: "initializeGenerationalRuntime",
         exports: ["initializeGenerationalRuntime"],
         runtimes: [
           { module: request.memoryModule, namespace: "native-memory" },
         ],
-        hostBindings: serialCollectorBindings(request.memoryModule),
+        hostBindings,
         closedProgram: true,
         optimization: "basic",
+        debugSymbols: request.debugSymbols === true,
         maxSpecializations: request.maxSpecializations ?? 4096,
       },
       target.hostABI,
-      { runtime: true },
+      {
+        runtime: true,
+        forceFarReach,
+        ...(request.signposts === true
+          ? { signposts: collectorSignpostNames(request) }
+          : {}),
+      },
     );
     if (!loweredRuntime.ok)
       return failure(
@@ -423,6 +439,9 @@ function buildX64HostedProgram(
       return failure("runtime", "missing collector initializer");
     runtime = {
       native: loweredRuntime.native,
+      lines: loweredRuntime.lines,
+      functionNames: loweredRuntime.functionNames,
+      parameterNames: loweredRuntime.parameterNames,
       entry,
       controlBytes: request.controlBytes,
       allocationCapacity: request.allocationCapacity,
@@ -440,10 +459,17 @@ function buildX64HostedProgram(
       start: request.start,
       exports: [request.start],
       runtimes: request.runtimes,
-      hostBindings: request.hostBindings,
+      // The shared SHA-256 implementation is the x86 baseline. This binding
+      // replaces its portable source body with the ARMv8 instruction leaf.
+      hostBindings: request.hostBindings.filter(
+        (binding) =>
+          binding !== undefined && binding.operation !== "sha256-rounds",
+      ),
       foreignBindings: request.foreignBindings ?? [],
       foreignMemoryBindings: request.foreignMemoryBindings ?? [],
       foreignLibraries: request.foreignLibraries ?? [],
+      serviceImports: serviceImportsForRequest(request),
+      managedSurfaces: request.managedSurfaces ?? [],
       recordBindings: request.recordBindings ?? [],
       weakBindings: request.weakBindings ?? [],
       ...(request.denseReferenceLists === undefined
@@ -451,16 +477,91 @@ function buildX64HostedProgram(
         : { denseReferenceLists: request.denseReferenceLists }),
       closedProgram: true,
       optimization: request.optimization ?? "basic",
+      debugSymbols: request.debugSymbols === true,
       maxSpecializations: request.maxSpecializations ?? 4096,
-      onScalarIR: (stage, module) => {
-        if (reportIR !== undefined) reportIR(stage, module);
-      },
+      ...(reportIR === undefined ? {} : { onScalarIR: reportIR }),
     },
     target.hostABI,
-    { generational, inlineAllocation: request.inlineAllocation !== false },
+    {
+      generational,
+      forceFarReach,
+      jitDebugInterface: request.jitDebugInterface === true,
+      inlineAllocation: request.inlineAllocation !== false,
+      threaded: request.threaded === true,
+      allocationProbes: request.signposts === true,
+      report: request.report,
+    },
   );
   if (!compiled.ok) return compiled;
-  const native = compiled.native;
+  let native = compiled.native;
+  let programCodePlan: CodePlan | undefined;
+  if (
+    native.managedImports.length !== 0 ||
+    (request.nativeServices?.length ?? 0) !== 0
+  ) {
+    const bindings: NativeServiceBinding[] = [];
+    const links: X64ServiceLink[] = [];
+    const linkedUnits = new Map<X64NativeServiceUnit, number>();
+    for (const service of request.nativeServices ?? []) {
+      if (service === undefined) throw "native service invariant";
+      const unit = service.unit;
+      if (unit.arch !== "x86_64")
+        return failure("service-link", "native service target differs");
+      const entry = unit.native.functions.find(
+        (fn) =>
+          fn !== undefined &&
+          fn.import !== true &&
+          fn.offset === unit.entryOffset,
+      );
+      const signature =
+        entry === undefined
+          ? undefined
+          : unit.native.signatures.find(
+              (item) => item !== undefined && item.functions.includes(entry.id),
+            );
+      if (
+        unit.version !== 1 ||
+        unit.profile !== "managed-factory-v1" ||
+        signature === undefined ||
+        signature.parameters.length !== 1 ||
+        signature.parameters[0] !== "reference" ||
+        signature.returnType !== "general"
+      )
+        return failure("service-link", "invalid managed factory entry");
+      const known = linkedUnits.get(unit),
+        index = known ?? links.length;
+      bindings.push({
+        unit: index,
+        name: service.bind.module + ":" + service.bind.name,
+        contract: unit.factoryContract,
+        role: "function-entry",
+        parameters: signature.parameters,
+        returnType: signature.returnType,
+        metadataOffset: signature.offset,
+        entryOffset: unit.entryOffset,
+      });
+      if (known !== undefined) continue;
+      const imports: NativeServiceBinding[] = [];
+      for (const imported of unit.native.managedImports) {
+        if (imported === undefined) throw "native service import invariant";
+        const binding = compiled.serviceIdentities.find(
+          (item) => item !== undefined && item.contract === imported.contract,
+        );
+        if (binding === undefined)
+          return failure(
+            "service-link",
+            "host is missing unit contract: " + imported.contract,
+          );
+        imports.push({ ...binding, name: imported.name });
+      }
+      linkedUnits.set(unit, index);
+      links.push({ native: unit.native, bindings: imports });
+    }
+    const linked = planX64ServiceModules(native, links, bindings);
+    if (!linked.ok) return failure("service-link", linked.error);
+    native = linked.native;
+    programCodePlan = linked.codePlan;
+  }
   const main = native.functions[compiled.invocation];
   if (main === undefined)
     return failure("startup", target.name + ": missing managed entry");
@@ -479,8 +580,11 @@ function buildX64HostedProgram(
       host: target.hostABI,
       invocation: main.offset,
       returnType,
+      ...(programCodePlan === undefined ? {} : { programCodePlan }),
       ...(runtime === undefined ? {} : { runtime }),
       stackBytes,
+      threaded: request.threaded === true,
+      allowJit: request.allowJit === true,
       managedBytes,
       pageBytes,
     });
@@ -493,11 +597,24 @@ function buildX64HostedProgram(
     if (typeof libraries === "string") return failure("image", libraries);
     const executable: ExecutableImageRequest = {
       libraries,
-      code: image.code,
+      code: new Uint8Array(0),
+      codePlan: image.codePlan,
       entryOffset: image.entryOffset,
       maxByteLength: image.maxByteLength,
       data: image.data,
       symbols: image.symbols,
+      dataSymbols: image.dataSymbols,
+      unwind: image.unwind,
+      probes: image.probes,
+      debug:
+        request.debugSymbols === true
+          ? x64DebugInfo(
+              request.debugDirectory ?? ".",
+              compiled,
+              runtime,
+              image.runtimeOffset,
+            )
+          : undefined,
       imports: image.imports,
       addressFixups: image.addressFixups,
       patchAddress: image.patchAddress,
@@ -518,6 +635,98 @@ function buildX64HostedProgram(
   }
 }
 
+interface X64DebugUnit {
+  readonly native: X64Module;
+  readonly lines: readonly SourceLineRange[];
+  readonly functionNames: ReadonlyMap<string, string>;
+  readonly parameterNames: ReadonlyMap<string, string>;
+}
+
+function x64DebugInfo(
+  directory: string,
+  program: X64DebugUnit,
+  runtime: X64DebugUnit | undefined,
+  runtimeOffset: number,
+): ImageDebugInfo {
+  const functions: FunctionRange[] = [];
+  const lines: SourceLineRange[] = [];
+  function describe(unit: X64DebugUnit, base: number): void {
+    for (const range of unit.lines) {
+      if (range === undefined) throw "x64 debug line invariant";
+      lines.push({ ...range, offset: base + range.offset });
+    }
+    for (const fn of unit.native.functions) {
+      if (fn === undefined) throw "x64 debug function invariant";
+      if (fn.import === true) continue;
+      const frame = fn.frame;
+      const name = unit.functionNames.get(fn.name) ?? fn.name;
+      if (frame === undefined) {
+        functions.push({
+          name,
+          offset: base + fn.offset,
+          byteLength: fn.byteLength,
+        });
+        continue;
+      }
+      const range = {
+        offset: base + frame.offset,
+        byteLength: frame.byteLength,
+      };
+      const variables: DebugVariable[] = [];
+      for (const parameter of frame.parameters) {
+        if (parameter === undefined) throw "x64 debug parameter invariant";
+        variables.push({
+          name:
+            unit.parameterNames.get(
+              String(fn.id) + ":" + String(parameter.frameOffset),
+            ) ?? parameter.name,
+          type: parameter.type === "number" ? 0 : 1,
+          parameter: true,
+          locations: [
+            {
+              ...range,
+              pieces: [
+                {
+                  part: {
+                    kind: "memory",
+                    register: 6,
+                    offset: parameter.frameOffset,
+                  },
+                },
+              ],
+            },
+          ],
+        });
+      }
+      functions.push({
+        name,
+        offset: base + fn.offset,
+        byteLength: fn.byteLength,
+        variables,
+        frame: {
+          register: 6, // RBP
+          ranges: [range],
+          variables: [
+            { name: "__tint_context", offset: -8 },
+            { name: "__tint_result", offset: -16 },
+          ],
+        },
+      });
+    }
+  }
+  describe(program, 0);
+  if (runtime !== undefined) describe(runtime, runtimeOffset);
+  return {
+    directory,
+    functions,
+    lines,
+    types: [
+      { kind: "base", name: "number", byteSize: 8, encoding: "float" },
+      { kind: "base", name: "boolean", byteSize: 8, encoding: "boolean" },
+    ],
+  };
+}
+
 function sourceFunctionNames(request: ModuleRequest, id: string): Set<string> {
   const source = requestModules(request, [id])[0];
   const names = new Set<string>();
@@ -528,7 +737,7 @@ function sourceFunctionNames(request: ModuleRequest, id: string): Set<string> {
   return names;
 }
 
-function serialCollectorBindings(module: string): NativeHostBinding[] {
+function x64CollectorBindings(module: string): NativeHostBinding[] {
   return [
     {
       module,
@@ -542,24 +751,137 @@ function serialCollectorBindings(module: string): NativeHostBinding[] {
     },
     { module, name: "currentRootHead", operation: "root-head" },
     { module, name: "engineRangeError", operation: "engine-range-error" },
-    { module, name: "memoryPageBytes", operation: "memory-page-bytes" },
-    { module, name: "processorCount", operation: "processor-count" },
     { module, name: "readMemoryWord", operation: "memory-read-word" },
     { module, name: "writeMemoryWord", operation: "memory-write-word" },
     { module, name: "moveMemory", operation: "memory-move" },
-    { module, name: "releaseMemory", operation: "memory-release" },
   ];
 }
 
+function parallelCollectorBindings(request: BuildRequest): NativeHostBinding[] {
+  // Parallel collection: raw atomics over its shared record, the worker
+  // pool's threads and parking, and the worker thunk. Bound only when the
+  // memory intrinsics declare them, so older frozen source graphs still build.
+  const memoryFunctions = sourceFunctionNames(request, request.memoryModule);
+  const collectorBindings: NativeHostBinding[] = [],
+    collectorCandidates: NativeHostBinding[] = [
+      {
+        module: request.memoryModule,
+        name: "mapMemory",
+        operation: "memory-map",
+      },
+      {
+        module: request.memoryModule,
+        name: "unmapMemory",
+        operation: "memory-unmap",
+      },
+      {
+        module: request.memoryModule,
+        name: "releaseMemory",
+        operation: "memory-release",
+      },
+      {
+        module: request.memoryModule,
+        name: "memoryPageBytes",
+        operation: "memory-page-bytes",
+      },
+      {
+        module: request.memoryModule,
+        name: "processorCount",
+        operation: "processor-count",
+      },
+      {
+        module: request.memoryModule,
+        name: "openRuntimeFile",
+        operation: "open-read",
+      },
+      {
+        module: request.memoryModule,
+        name: "readRuntimeFile",
+        operation: "read",
+      },
+      {
+        module: request.memoryModule,
+        name: "closeRuntimeFile",
+        operation: "close",
+      },
+      {
+        module: request.memoryModule,
+        name: "compareExchangeMemoryWord",
+        operation: "memory-compare-exchange-word",
+      },
+      {
+        module: request.memoryModule,
+        name: "fetchAddMemoryWord",
+        operation: "memory-fetch-add-word",
+      },
+      {
+        module: request.memoryModule,
+        name: "loadAcquireMemoryWord",
+        operation: "memory-load-acquire-word",
+      },
+      {
+        module: request.memoryModule,
+        name: "storeReleaseMemoryWord",
+        operation: "memory-store-release-word",
+      },
+      {
+        module: request.memoryModule,
+        name: "collectorWorkerEntry",
+        operation: "collector-worker-entry",
+      },
+      {
+        module: request.memoryModule,
+        name: "permanentFunctionAddress",
+        operation: "permanent-function-address",
+      },
+      {
+        module: request.memoryModule,
+        name: "permanentArrayAddress",
+        operation: "permanent-array-address",
+      },
+      {
+        module: request.memoryModule,
+        name: "compareExchangeMemoryUnsigned",
+        operation: "shared-compare-exchange-unsigned",
+      },
+      {
+        module: request.memoryModule,
+        name: "startNativeThread",
+        operation: "thread-start",
+      },
+      {
+        module: request.memoryModule,
+        name: "joinNativeThread",
+        operation: "thread-join",
+      },
+      {
+        module: request.memoryModule,
+        name: "parkNativeWord",
+        operation: "word-park",
+      },
+      {
+        module: request.memoryModule,
+        name: "wakeNativeWord",
+        operation: "word-wake",
+      },
+      {
+        module: request.memoryModule,
+        name: "spinPause",
+        operation: "cpu-pause",
+      },
+    ];
+  for (const binding of collectorCandidates) {
+    if (binding === undefined) throw "collector binding invariant";
+    if (memoryFunctions.has(binding.name)) collectorBindings.push(binding);
+  }
+  return collectorBindings;
+}
+
 /** The standalone collector links only its own dependency graph. */
-function runtimeModules(
-  request: BuildRequest,
-  extra?: string,
-): readonly SourceModule[] {
+function runtimeModules(request: BuildRequest): readonly SourceModule[] {
   const loader = request.moduleLoader;
   if (loader === undefined) return request.modules;
   const pending = [request.runtimeModule, request.memoryModule];
-  if (extra !== undefined) pending.push(extra);
   const seen = new Set<string>();
   const modules = new Map<string, SourceModule>();
   for (let index = 0; index < pending.length; index++) {
@@ -706,112 +1028,7 @@ export function compileMacOSProgram(
   if (!allocator.ok)
     return compileFailure("allocator", allocator.error.message);
   request.report("runtime");
-  // Parallel collection: raw atomics over its shared record, the worker
-  // pool's threads and parking, and the worker thunk. Bound only when the
-  // memory intrinsics declare them, so older frozen source graphs still build.
-  const memoryFunctions = sourceFunctionNames(request, request.memoryModule);
-  const collectorBindings: NativeHostBinding[] = [],
-    collectorCandidates: NativeHostBinding[] = [
-      {
-        module: request.memoryModule,
-        name: "mapMemory",
-        operation: "memory-map",
-      },
-      {
-        module: request.memoryModule,
-        name: "releaseMemory",
-        operation: "memory-release",
-      },
-      {
-        module: request.memoryModule,
-        name: "memoryPageBytes",
-        operation: "memory-page-bytes",
-      },
-      {
-        module: request.memoryModule,
-        name: "processorCount",
-        operation: "processor-count",
-      },
-      {
-        module: request.memoryModule,
-        name: "openRuntimeFile",
-        operation: "open-read",
-      },
-      {
-        module: request.memoryModule,
-        name: "readRuntimeFile",
-        operation: "read",
-      },
-      {
-        module: request.memoryModule,
-        name: "closeRuntimeFile",
-        operation: "close",
-      },
-      {
-        module: request.memoryModule,
-        name: "compareExchangeMemoryWord",
-        operation: "memory-compare-exchange-word",
-      },
-      {
-        module: request.memoryModule,
-        name: "fetchAddMemoryWord",
-        operation: "memory-fetch-add-word",
-      },
-      {
-        module: request.memoryModule,
-        name: "loadAcquireMemoryWord",
-        operation: "memory-load-acquire-word",
-      },
-      {
-        module: request.memoryModule,
-        name: "storeReleaseMemoryWord",
-        operation: "memory-store-release-word",
-      },
-      {
-        module: request.memoryModule,
-        name: "collectorWorkerEntry",
-        operation: "collector-worker-entry",
-      },
-      {
-        module: request.memoryModule,
-        name: "permanentFunctionAddress",
-        operation: "permanent-function-address",
-      },
-      {
-        module: request.memoryModule,
-        name: "permanentArrayAddress",
-        operation: "permanent-array-address",
-      },
-      {
-        module: request.memoryModule,
-        name: "compareExchangeMemoryUnsigned",
-        operation: "shared-compare-exchange-unsigned",
-      },
-      {
-        module: request.memoryModule,
-        name: "startNativeThread",
-        operation: "thread-start",
-      },
-      {
-        module: request.memoryModule,
-        name: "parkNativeWord",
-        operation: "word-park",
-      },
-      {
-        module: request.memoryModule,
-        name: "wakeNativeWord",
-        operation: "word-wake",
-      },
-      {
-        module: request.memoryModule,
-        name: "spinPause",
-        operation: "cpu-pause",
-      },
-    ];
-  for (const binding of collectorCandidates) {
-    if (binding === undefined) throw "collector binding invariant";
-    if (memoryFunctions.has(binding.name)) collectorBindings.push(binding);
-  }
+  const collectorBindings = parallelCollectorBindings(request);
   const runtimeBindings: NativeHostBinding[] = [
     {
       module: request.memoryModule,
@@ -885,40 +1102,12 @@ export function compileMacOSProgram(
   if (runtimeEntry === undefined)
     return compileFailure("runtime", "runtime entry is missing");
   request.report("program");
-  const serviceImports: NativeServiceImport[] = [];
-  for (const service of request.nativeServices ?? []) {
-    if (service === undefined) throw "native service invariant";
-    serviceImports.push({
-      module: service.bind.module,
-      name: service.bind.name,
-      contract: service.unit.factoryContract,
-      surface: service.unit.surface.name,
-    });
-  }
-  for (const slot of request.serviceSlots ?? []) {
-    if (slot === undefined) throw "service slot invariant";
-    const contract = slot.contract;
-    serviceImports.push(
-      contract === undefined
-        ? {
-            module: slot.bind.module,
-            name: slot.bind.name,
-            surface: slot.surface,
-          }
-        : {
-            module: slot.bind.module,
-            name: slot.bind.name,
-            contract,
-            surface: slot.surface,
-          },
-    );
-  }
   const program = compileNativeProgram(
     {
       ...(request.storage === undefined ? {} : { storage: request.storage }),
       pageAlignedCode: true,
       forceFarReach: request.forceFarReach === true,
-      serviceImports,
+      serviceImports: serviceImportsForRequest(request),
       managedSurfaces: request.managedSurfaces ?? [],
       closedProgram: true,
       denseReferenceLists: request.denseReferenceLists ?? false,
@@ -1037,8 +1226,10 @@ function linkHostedImage(
     for (let index = 0; index < services.length; index++) {
       const service = services[index];
       if (service === undefined) throw "native service invariant";
-      const unit = service.unit,
-        entry = unit.native.functions.find(
+      const unit = service.unit;
+      if (unit.arch === "x86_64")
+        return failure("service-link", "native service target differs");
+      const entry = unit.native.functions.find(
           (fn) =>
             fn !== undefined &&
             fn.import !== true &&
@@ -1562,6 +1753,40 @@ function linkHostedImage(
   if (!image.ok) return failure("image", image.error);
   return { ok: true, value: image.value };
 }
+function serviceImportsForRequest(
+  request: BuildRequest,
+): NativeServiceImport[] {
+  const serviceImports: NativeServiceImport[] = [];
+  for (const service of request.nativeServices ?? []) {
+    if (service === undefined) throw "native service invariant";
+    serviceImports.push({
+      module: service.bind.module,
+      name: service.bind.name,
+      contract: service.unit.factoryContract,
+      surface: service.unit.surface.name,
+    });
+  }
+  for (const slot of request.serviceSlots ?? []) {
+    if (slot === undefined) throw "service slot invariant";
+    const contract = slot.contract;
+    serviceImports.push(
+      contract === undefined
+        ? {
+            module: slot.bind.module,
+            name: slot.bind.name,
+            surface: slot.surface,
+          }
+        : {
+            module: slot.bind.module,
+            name: slot.bind.name,
+            contract,
+            surface: slot.surface,
+          },
+    );
+  }
+  return serviceImports;
+}
+
 function buildTarget(request: BuildRequest): NativeTarget {
   return request.target ?? darwinAArch64Target;
 }
@@ -1699,10 +1924,9 @@ function returnedMethodStart(
 }
 /** Collector phase functions of the runtime, by source name. Absent functions
  * (another collector) are skipped; finding none is an error. */
-function collectorSignposts(
-  compiled: CompiledMacOSProgram,
+function collectorSignpostNames(
   request: BuildRequest,
-): HostSignpostSite[] | string {
+): readonly X64SignpostSite[] {
   const runtimeModule = request.runtimeModule,
     root = runtimeModule.slice(0, runtimeModule.lastIndexOf("/") + 1),
     cheney = root + "tracing/cheney.ts",
@@ -1715,15 +1939,7 @@ function collectorSignposts(
         : returnedMethodStart(source.module, factory, name);
     return start === undefined ? "" : id + ":closure@" + String(start);
   }
-  const wanted: {
-    readonly name: string;
-    readonly interval: string;
-    readonly alternate?: string;
-    readonly parameter?: number;
-    readonly metrics?: boolean;
-    /** With metrics: the parameter that forces a major collection. */
-    readonly force?: number;
-  }[] = [
+  return [
     {
       name: root + "generational.ts:collect",
       interval: "gc.collect",
@@ -1766,6 +1982,12 @@ function collectorSignposts(
     { name: root + "tracing/scan.ts:walkNativeStack", interval: "gc.roots" },
     { name: parallel + ":scanRemembered", interval: "gc.remembered" },
   ];
+}
+function collectorSignposts(
+  compiled: CompiledMacOSProgram,
+  request: BuildRequest,
+): HostSignpostSite[] | string {
+  const wanted = collectorSignpostNames(request);
   const functions = compiled.runtime.native.functions,
     sites: HostSignpostSite[] = [];
   for (const symbol of compiled.runtime.symbols) {

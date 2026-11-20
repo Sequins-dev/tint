@@ -25,6 +25,7 @@ import { buildMacOSProgram } from "@tint/compiler/build";
 import { projectBuildRequest, projectRoots } from "@tint/compiler/cli";
 import type { NativeHostBinding } from "@tint/compiler/native";
 import { nativeFixtureTarget } from "./native-host-target.ts";
+import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
 import {
   workspaceModules,
   workspaceSources,
@@ -44,19 +45,23 @@ const memory = "packages/native-runtime/src/intrinsics/memory.ts",
   syntax = "packages/typescript/src/syntax/index.ts",
   jitDebug = "packages/js-engine/src/native/jit-debug.ts";
 const target = nativeFixtureTarget();
+const x64 = target.arch === "x86_64";
+const compileFunction = x64
+  ? "compileX64ClosedNumberFunction"
+  : "compileClosedFunction";
 const text = `import {mapExecutableMemory,writeExecutableMemory,callExecutableNumber,mapMemory,readMemoryWord,writeMemoryWord} from "memory";
 import {writeMemoryBytes,jitDebugDescriptor,notifyJitDebugger,processId} from "diagnostics";
 import {openExclusive,write,unlink} from "fs";
 import {createSourceTextView} from "source-text";
 import {parseModule} from "syntax";
-import {compileClosedFunction} from "compiler";
+import {${compileFunction}} from "compiler";
 import {createJitDebugRegistrar,type JitCodeFunction,type JitCodeLine} from "jit-debug";
 function path(text:string):Uint8Array{const bytes=new TextEncoder().encode(text);const result=new Uint8Array(bytes.length+1);result.set(bytes);return result;}
 export function run():number {
  const source="export function jitSum():number {\\n let sum=0;\\n for(let i=0;i<6;i++){sum+=i;}\\n return sum+27;\\n}\\n";
  const view=createSourceTextView(source);
  const parsed=parseModule(view);if(!parsed.ok)return 1;
- const compiled=compileClosedFunction(parsed.value,"jitSum",16384);if(!compiled.ok)return 2;
+ const compiled=${compileFunction}(parsed.value,"jitSum",16384);if(!compiled.ok)return 2;
  const native=compiled.value.native;
  const size=16384,address=mapExecutableMemory(size);if(address<=0)return 3;
  if(writeExecutableMemory(address,size,0,native.code)!==0)return 4;
@@ -65,7 +70,7 @@ export function run():number {
  const lines:JitCodeLine[]=[];
  for(const range of native.sourceRanges){if(range===undefined)return 5;const position=view.positionAt(range.start);if(position.ok)lines.push({offset:range.offset,byteLength:range.byteLength,file:"jit-source.ts",line:position.value.line,column:position.value.column});}
  const registrar=createJitDebugRegistrar({
-  debugger:{objectFormat:"${target.objectFormat}",map:(n:number):number=>mapMemory(n),write:(a:number,l:number,o:number,b:Uint8Array):number=>writeMemoryBytes(a,l,o,b),readWord:(a:number,l:number,o:number):number=>readMemoryWord(a,l,o),writeWord:(a:number,l:number,o:number,v:number):number=>writeMemoryWord(a,l,o,v),descriptor:():number=>jitDebugDescriptor(),notify:():void=>notifyJitDebugger()},
+  debugger:{objectFormat:"${target.objectFormat}"${x64 ? ',architecture:"x86_64"' : ""},map:(n:number):number=>mapMemory(n),write:(a:number,l:number,o:number,b:Uint8Array):number=>writeMemoryBytes(a,l,o,b),readWord:(a:number,l:number,o:number):number=>readMemoryWord(a,l,o),writeWord:(a:number,l:number,o:number,v:number):number=>writeMemoryWord(a,l,o,v),descriptor:():number=>jitDebugDescriptor(),notify:():void=>notifyJitDebugger()},
   perfMap:{processId:():number=>processId(),create:(p:string):number=>openExclusive(path(p),420),remove:(p:string):number=>unlink(path(p)),write:(fd:number,b:Uint8Array):number=>write(fd,b)},
  });
  const entry=registrar.register({address,code:native.code,functions,lines,directory:"/"});if(entry<=0)return 6;
@@ -76,7 +81,7 @@ export function run():number {
  // in jitSum is inserted (on Linux the page is then the debugger's private
  // copy, which the write must still reach).
  const nextParsed=parseModule(createSourceTextView("export function jitNext():number {\\n return 43;\\n}\\n"));if(!nextParsed.ok)return 11;
- const next=compileClosedFunction(nextParsed.value,"jitNext",16384);if(!next.ok)return 12;
+ const next=${compileFunction}(nextParsed.value,"jitNext",16384);if(!next.ok)return 12;
  const nextOffset=Math.ceil(native.code.length/16)*16;
  if(nextOffset+next.value.native.code.length>size||writeExecutableMemory(address,size,nextOffset,next.value.native.code)!==0)return 13;
  if(callExecutableNumber(address+nextOffset+next.value.entry.offset)!==43)return 14;
@@ -123,7 +128,10 @@ const path = buildNativeFixture("jit-debug", () => {
       },
     },
   ];
-  const request = projectBuildRequest(modules, () => {});
+  const { runtimeEntry: _runtimeEntry, ...request } = projectBuildRequest(
+    modules,
+    () => {},
+  );
   const grants: NativeHostBinding[] = [
     {
       module: memory,
@@ -168,14 +176,14 @@ const path = buildNativeFixture("jit-debug", () => {
     allowJit: true,
     jitDebugInterface: true,
     // Raw code capabilities do not yet have the generational write proof.
-    runtimeEntry: "initializeCopyingRuntime",
+    ...(x64 ? {} : { runtimeEntry: "initializeCopyingRuntime" as const }),
     denseReferenceLists: false,
     entry: "fixture",
     start: "run",
-    managedBytes: 67108864,
+    managedBytes: x64 ? 268435456 : 67108864,
     allocationCapacity: 1048576,
     rootCapacity: 4096,
-    stackBytes: 1048576,
+    stackBytes: x64 ? 16777216 : 1048576,
     identifier: "tint-hosted-jit-debug",
     runtimes: [
       ...request.runtimes,
@@ -207,6 +215,15 @@ const path = buildNativeFixture("jit-debug", () => {
 });
 console.log(path);
 if (process.env.TINT_BUILD_ONLY === "1") process.exit(0);
+if (x64) {
+  const result = runNativeBatch([
+    { artifact: nativeArtifact(target.name, path) },
+  ])[0];
+  assert.equal(result?.kind, "exited", JSON.stringify(result));
+  assert.equal(result.status, 42, JSON.stringify(result));
+  console.log(JSON.stringify(result));
+  process.exit(0);
+}
 const session = runDarwinFixture(path, () =>
   spawnSync(
     "lldb",

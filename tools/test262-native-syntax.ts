@@ -7,7 +7,11 @@ import { buildMacOSProgram } from "@tint/compiler/build";
 import { projectBuildRequest, projectRoots } from "@tint/compiler/cli";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import type { ExecutionPlan, ExecutionOutcome } from "./test262-execution.ts";
-import { parsedNativeHost, nativeSelectorHost } from "./test262-native.ts";
+import {
+  parsedNativeHost,
+  nativeSelectorHost,
+  nativeTestTarget,
+} from "./test262-native.ts";
 import {
   workspaceModules,
   type WorkspaceSourceSnapshot,
@@ -65,6 +69,7 @@ function createNativeSyntaxImageBuilder(snapshot?: WorkspaceSourceSnapshot) {
     const request = projectBuildRequest(modules, () => {});
     const built = buildMacOSProgram({
       ...request,
+      target: nativeTestTarget,
       allowDebugger: true,
       entry: "test262-syntax-host",
       start: "run",

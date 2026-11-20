@@ -384,7 +384,6 @@ function buildHostedFixture(
   // The tint:ffi runtime's capabilities when the program loads it.
   const ffi = foreignRuntimeBindings(
     new Set(moduleLoader?.ids ?? modules.map((module) => module.id)),
-    fixtureTarget.c,
   );
   const nativeServices = [
     ...(options.nativeServices ?? []),

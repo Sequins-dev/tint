@@ -103,7 +103,7 @@ export const linuxX86_64Target: LinuxX86_64Target = {
   segmentAlignment: 4096,
   memoryPageBytes: 4096,
   c: linuxX86_64CTarget,
-  parallelCollection: false,
+  parallelCollection: true,
   hostABI: linuxX86_64HostFacts(),
   interpreter: "/lib64/ld-linux-x86-64.so.2",
   glibcStartVersion: "GLIBC_2.34",
