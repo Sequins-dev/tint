@@ -184,6 +184,51 @@ test("a generator fallback carries its original function owner and capability", 
   });
 });
 
+test("validated sources preserve capability and owner through typed rejection", () => {
+  const cases = [
+    [
+      'export function run(): number { return "text".toLowerCase().length; }',
+      "check",
+      "realm-library-member",
+      "function",
+    ],
+    [
+      "export function run(): number { type Result = number; const value: Result = 42; return value; }",
+      "link",
+      "nested-type-declaration",
+      "function",
+    ],
+    [
+      "while (false) {} export function run(): number { return 42; }",
+      "link",
+      "module-evaluation",
+      "module",
+    ],
+    [
+      "function scaled(n: number): number { return n * factor; } const factor = 6; export function run(): number { return scaled(7); }",
+      "runtime",
+      "binding-initialization",
+      "function",
+    ],
+  ] as const;
+  for (const [text, phase, capability, ownerKind] of cases) {
+    const { lowering, requests } = recordingLowering();
+    const compiled = compileArm64Program({
+      ...generatorProgram({ ...lowering, validateSource: () => [] }),
+      modules: [source("main", text)],
+    });
+    assert.equal(requests.length, 1, JSON.stringify(compiled));
+    const trigger = requests[0]?.trigger;
+    assert.equal(trigger?.phase, phase);
+    assert.equal(trigger?.capability, capability);
+    assert.equal(trigger?.location.module, "main");
+    assert.equal(trigger?.owner.kind, ownerKind);
+    assert.equal(trigger?.owner.module, "main");
+    assert.ok(trigger.owner.start <= trigger.location.start);
+    assert.ok(trigger.owner.end >= trigger.location.end);
+  }
+});
+
 test("source replay preserves dependency bindings and emitted bytes", () => {
   const text = '// 😀\nimport { offset } from "./offset.ts";\n' + generatorText;
   const dependencies = new Map([["./offset.ts", "offset"]]);

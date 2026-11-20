@@ -815,12 +815,13 @@ keeps a verdict per entry in the captured graph. A writable inferred local
 or contextual parameter can accept an assignment that TypeScript rejects
 solely because of inference. Explicit destinations still report type errors.
 
-This route is opt-in. The corpus uses it for the two source-error contracts,
-and `TINT_SOURCE_VALIDATION=1` enables it for the rest of the corpus.
-Open aggregate fields and list elements still need profile rules before
-the validator can become the default. Generator and async suspension and
-class static blocks carry structured owner ranges into the legacy module
-retry. Other typed rejections still use the legacy retry policy.
+The corpus uses the validator for the two source-error contracts and for
+every typed form built with function fallback. `TINT_SOURCE_VALIDATION=1`
+also enables it across the full corpus. The open-slot policy covers inferred
+fields, list elements and contextual parameters. Typed rejections on the
+validated path carry an enumerated capability and the original owner into
+fallback. A rejection without this information fails the build. The
+standalone hosted harness can still run the legacy path for comparison.
 
 The [focused ledger](results/unified-pipeline-ledger-slice3-source-validation-focused-v1.json)
 has eight native passes and two expected TS2322 rejections. The
@@ -844,29 +845,24 @@ counts loader calls, returned modules and UTF-16 units. The
 identical images and observed 4.1% higher compile wall time and 5.7% lower
 peak RSS on the 144-function fixture.
 
-### Private function fallback prototype (slice 3)
+### Hosted function and class fallback (slice 3)
 
-`TINT_FUNCTION_FALLBACK=1` enables the hosted prototype on the typed
-corpus forms. It requires successful source validation. A function that
-observes only `arguments.length` can lower through the general engine
-while its numeric callers and callees stay typed. Admission is limited to
-a single module of top-level functions, a private declaration with direct
-calls, and a numeric return expression. It accepts up to two required
-numeric parameters or one numeric rest parameter. The general body reads
-the count captured at entry even when a typed callee re-enters with a
-different count. Calls to immutable typed functions proved to complete
-with primitive values use a direct checked entry. Other calls use the
-existing callable and Error views. The adapter
-checks the numeric result and propagates thrown values across the same
-program realm. Observable replacement and escaping references retain
-the whole-module path.
+`TINT_FUNCTION_FALLBACK=1` enables unit selection on the typed corpus
+forms and requires successful source validation. Ordinary realm calls
+preserve callable identity through module exports and imports, supply the
+receiver, and evaluate defaults in the callee. Argument and result guards
+apply written primitive contracts. Abrupt completions preserve the original
+thrown value. Supported classes and suspended functions use the same
+program realm. Promise fulfillment and generator yields, completion and
+resumption are checked at their respective execution points.
 
-The [Linux function fallback probes](results/slice3-function-fallback-focused.md)
-cover both call directions, a reentrant call and a primitive throw. The
-single-unit `arguments-object` image was smaller than its matched
-whole-module image. Startup and call-cycle budgets still need evidence.
-The [fixed numeric call probes](results/slice3-fixed-numeric-calls.md)
-also passed on `dev` and came in 11,088 bytes below the whole-module image.
+A private fixed-arity primitive entry can use the boxed calling convention
+without initializing the realm. A numeric rest entry and calls that
+observe `arguments.length` use the count captured at entry. General
+callable views handle escaping references and observable replacement.
+The [fixed-arity budget report](results/slice3-primitive-budgets.md)
+records image size, cold startup, both call directions, managed allocations
+and dense replay results.
 
 ## Status
 

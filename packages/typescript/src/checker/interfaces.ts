@@ -151,6 +151,7 @@ export interface InterfaceFallback {
     | "intersection-layout"
     | "indexed-access-layout"
     | "tuple-layout"
+    | "template-call"
     | "generic-contract"
     | DynamicPayloadRejection["capability"];
   readonly ownerKind: "class" | "module";
@@ -513,6 +514,12 @@ export function resolveInterfaceTypes(
       names.set(name, id);
       return id;
     }
+    if (declaration === undefined && name === "TemplateStringsArray")
+      unsupportedContract(
+        node,
+        "template-call",
+        "template strings require the realm template-site object",
+      );
     if (declaration === undefined)
       fail(node, "UNKNOWN_TYPE", "unknown type: " + name);
     const resolvedDeclaration = declaration;

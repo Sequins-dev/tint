@@ -116,7 +116,7 @@ import {
   type BuildStorage,
 } from "../spill-files.ts";
 import type { FunctionStore } from "@tint/ir/storage";
-import { bindModule, type BindingFallback } from "@tint/typescript/binding";
+import { bindModule } from "@tint/typescript/binding";
 import {
   checkClosureModule,
   withRealmGlobals,
@@ -139,6 +139,7 @@ import {
   type NativeConstructor,
   type ModuleInstanceExport,
   type ModuleInstanceFallback,
+  type LinkFallback,
   type LinkedExport,
   type SourceRange,
   type SpecializationCapability,
@@ -357,7 +358,7 @@ export interface FallbackTrigger {
   readonly code: string;
   readonly capability:
     | ClosureFallback["capability"]
-    | BindingFallback["capability"]
+    | LinkFallback["capability"]
     | SpecializationCapability
     | ModuleInstanceFallback["capability"]
     | "native-callable-view";
@@ -1918,9 +1919,21 @@ function checkTypedProgram(
       (request.serviceImports?.length ?? 0) === 0,
   );
   if (!prepared.ok) {
-    const fallback = instanceFallback;
-    if (fallback !== undefined) {
-      const location = locateSourceRange(ranges, fallback.location);
+    const diagnostic = prepared.diagnostic;
+    const site = instanceFallback?.location ?? diagnostic;
+    const fallback = instanceFallback ?? diagnostic?.fallback;
+    if (diagnostic !== undefined && diagnostic.preventsFallback === true)
+      return {
+        ok: false,
+        error: {
+          stage: "runtime",
+          message: prepared.error,
+          diagnostic: diagnostic.code,
+          preventsFallback: true,
+        },
+      };
+    if (site !== undefined && fallback !== undefined) {
+      const location = locateSourceRange(ranges, site);
       const owner = locateSourceRange(ranges, fallback.owner);
       if (location !== undefined && owner !== undefined)
         return {
@@ -1931,7 +1944,7 @@ function checkTypedProgram(
             module: location.module,
             fallback: {
               phase: "runtime",
-              code: "UNSUPPORTED",
+              code: diagnostic?.code ?? "UNSUPPORTED",
               capability: fallback.capability,
               location,
               owner: {

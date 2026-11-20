@@ -64,7 +64,10 @@ import {
   type CheckedCellOperation,
   type CellOperation,
 } from "../types/index.ts";
-import { realmLibraryConstructor } from "../binding/realm-library.ts";
+import {
+  installedNonConstructorGlobals,
+  realmLibraryConstructor,
+} from "../binding/realm-library.ts";
 import {
   realmArrayInstance,
   realmConstructorInstance,
@@ -365,10 +368,11 @@ export interface ClosureFallback {
     | "optional-call"
     | "iterable-layout"
     | "lexical-receiver"
-    | "template-call"
     | "collection-construction"
+    | "realm-library-global"
     | "realm-library-member"
     | "realm-library-construction"
+    | "union-member-narrowing"
     | "realm-aggregate-update"
     | "general-result-projection"
     | "operator-layout";
@@ -3629,6 +3633,8 @@ function checkClosureModuleLayout(
       node,
       "TYPE_MISMATCH",
       "expected an unambiguous " + kind + " type",
+      false,
+      fallbackAt(node, "aggregate-inference"),
     );
   }
   function checkFunction(
@@ -4680,6 +4686,8 @@ function checkClosureModuleLayout(
               result = constructor;
               break;
             }
+            if (installedNonConstructorGlobals.includes(node.name))
+              unsupported(node, "realm-library-global", "unsupported global");
             return fail(node, "UNSUPPORTED", "unsupported global");
           } else {
             const declared = cell(b, { kind: "read" }, node, owner);
@@ -5389,7 +5397,15 @@ function checkClosureModuleLayout(
           const fact = propertyFact(receiver, node.property);
           if (!p.ok) {
             if (fact === undefined)
-              fail(node, p.error, "invalid property read");
+              fail(
+                node,
+                p.error,
+                "invalid property read",
+                false,
+                types[obj]?.kind === "union"
+                  ? fallbackAt(node, "union-member-narrowing")
+                  : undefined,
+              );
             intrinsics.set(
               node,
               types[inputExpected ?? -1]?.kind === "unknown"
@@ -5624,8 +5640,17 @@ function checkClosureModuleLayout(
               const set = types[result];
               if (set?.kind !== "set")
                 fail(node, "UNSUPPORTED", "collection type is shadowed");
+              if (
+                element !== undefined &&
+                !system.assignable(element, set.element)
+              )
+                unsupported(
+                  node,
+                  "collection-construction",
+                  "Set iterable does not match the native element layout",
+                );
               if (element !== undefined)
-                requireType(element, set.element, node);
+                recordTypeFlow(element, set.element, node);
             }
             if (types[result]?.kind !== (map ? "map" : "set"))
               fail(node, "UNSUPPORTED", "collection type is shadowed");
@@ -5680,11 +5705,17 @@ function checkClosureModuleLayout(
             result = constructed.value;
             break;
           }
-          if (node.typeArguments.length !== 0 || node.arguments.length > 1)
+          if (node.typeArguments.length !== 0)
             fail(
               node,
               "ARITY",
               "typed-array construction accepts an optional numeric length, numeric array or supported typed-array source",
+            );
+          if (node.arguments.length > 1)
+            unsupported(
+              node,
+              "realm-library-construction",
+              "typed-array byte offsets and lengths require the realm constructor",
             );
           for (const arg of node.arguments) {
             if (arg === undefined) throw "missing call argument";
@@ -5695,6 +5726,12 @@ function checkClosureModuleLayout(
                 ? typeOf(optionalNumericListAnnotation)
                 : undefined,
             );
+            if (types[input]?.kind === "ArrayBuffer")
+              unsupported(
+                arg,
+                "realm-library-construction",
+                "typed-array buffer construction requires the realm constructor",
+              );
             if (isList(input))
               requireType(listReadType(input, arg), optionalNumber, arg);
             else if (!isArray(input)) requireType(input, optionalNumber, arg);
@@ -7103,7 +7140,23 @@ function checkClosureModuleLayout(
               break;
             }
             const member = system.property(obj, target.property);
-            if (!member.ok) fail(target, member.error, "invalid method call");
+            if (!member.ok) {
+              const receiverKind = types[obj]?.kind;
+              fail(
+                target,
+                member.error,
+                "invalid method call",
+                false,
+                member.error === "PROPERTY" &&
+                  (receiverKind === "string" ||
+                    receiverKind === "number" ||
+                    receiverKind === "literal" ||
+                    receiverKind === "array" ||
+                    isArray(obj))
+                  ? fallbackAt(target, "realm-library-member")
+                  : undefined,
+              );
+            }
             const memberType =
               propertyFact(target.object, target.property) ?? member.value;
             if (types[memberType]?.kind === "realm-callable") {
