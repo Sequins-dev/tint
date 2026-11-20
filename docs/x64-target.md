@@ -1,8 +1,8 @@
 # Linux x86-64 target design
 
-The first x86-64 target is `linux-x86_64`. It uses the 64-bit System V ABI,
-ELF PIE and glibc. Tint emits and links the native
-image directly. The same scalar IR, runtime contracts and x86-64 backend serve
+Tint supports `linux-x86_64` with the 64-bit System V ABI, ELF PIE and
+glibc. Tint emits and links the native image directly. The same scalar IR,
+runtime contracts and x86-64 backend serve
 strict and live code, including runtime compilation. Build host, output target
 and execution runner are independent. This plan follows the
 [Linux arm64 port](linux-aarch64-target.md) and the
@@ -270,10 +270,10 @@ self-build reached optimization and hit its one-hour watchdog.
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Unit             | Node on the existing arm64 host for differential encoding, relocation limits, register/stack assignment and malformed map tests. Use readelf/objdump to verify image headers, dynamic imports and CFI independently.                                                                                                                                                                                                                                |
 | Per binary       | Use explicit `qemu-x86_64` in the shared arm64 Linux `dev` machine, with a pinned x86-64 sysroot via `-L` for interpreter, libc and fixture libraries. Copy binaries once and batch launches. Keep exit codes, signals, stdout, artifact manifests and executor identity. User emulation routes syscalls and cannot establish kernel, ptrace/USDT or exact memory-model behavior. [QEMU user mode](https://www.qemu.org/docs/master/user/main.html) |
-| Guest end to end | Debian 13 x86-64 QEMU TCG VM via `~/.t3/vms/start-x64.sh`, SSH 2223, 8 emulated vCPUs. Batch transfers and tests. Verify actual guest loader, page protections, threads, futex, USDT, GDB, JIT and self-build. Budget serial self-builds and avoid treating emulated CPU time as native performance. Shut down with `~/.t3/vms/stop.sh`.                                                                                                            |
+| Guest end to end | Debian 13 x86-64 QEMU TCG VM via `~/.t3/vms/start-x64.sh`, SSH 2223, 8 emulated vCPUs. Batch transfers and tests. Verify the guest loader, page protections, threads, futex, USDT, GDB and JIT. Shut down with `~/.t3/vms/stop.sh`.                                                                                                                                                                                                                 |
 | Darwin later     | Host Rosetta can run x86-64 Mach-O. Direct macOS execution requires Mach-O. Linux ELF translation through a virtualization service would require separate configuration and verification. Keep Linux x86-64 verification independent of the Darwin port.                                                                                                                                                                                            |
 | Conformance      | Run unchanged pinned Test262 selections against both backends under the same variant/negative-phase policy. Start with calls, abrupt completion, numeric edges, object/array behavior, then live eval and shared/atomic behavior. Store immutable per-target reports with the actual denominator, unsupported and failed variants, heartbeat/stall records and no whole-suite extrapolation.                                                        |
-| Hardware         | Before declaring production parity, run the supported baseline and a current x86-64 machine, exercise concurrency/GC and live publication, then measure native self-compile cycles and wall time and matched JS workloads.                                                                                                                                                                                                                          |
+| Support gate     | Run end-to-end checks in the Debian x86-64 VM and per-binary checks under QEMU user mode. The gate covers the pinned Test262 selection (22/22 in the VM), glibc 2.34, the collector, live code, and F1/F2. Native x86-64 CI and timing will follow on a GitHub Actions x64 runner after the repository is pushed.                                                                                                                                   |
 
 ## Running hosted fixtures and bootstrap images
 
@@ -342,9 +342,11 @@ publication, a moving collector with live code, and selected Test262 cases
 for shared atomics, agent waiting, `Function` and direct eval.
 [Loader results](results/x64-glibc-2.34-v1.json).
 
-The supported status still requires the baseline and current physical
-x86-64 hardware runs, including concurrency, collection, live publishing
-and the compiler and JavaScript timing comparisons.
+Linux x86-64 is supported. The Debian x86-64 VM and QEMU user-mode runs
+pass the support gate, including Test262 (22/22 in the VM), glibc 2.34,
+the collector, live code, and F1/F2. Native x86-64 CI and timing
+comparisons for compiler self-builds and matched JavaScript workloads will
+follow on a GitHub Actions x64 runner after the repository is pushed.
 
 ## Performance stance
 
@@ -384,9 +386,8 @@ VM was stopped after the probe.
 
 Sizes are rough estimates of changed production and test lines. Each row
 is independently mergeable after its dependencies and keeps both arm64
-targets operational. Use private fixtures or explicit experimental selection
-until the supported CLI and self-hosting gates pass. For implementation
-merges, run workspace checks, relevant native fixtures and the arm64
+targets operational. For implementation merges, run workspace checks,
+relevant native fixtures and the arm64
 regression gate. Keep new exports, workspace contracts and generated catalog
 updates with their owning slices.
 
@@ -399,12 +400,12 @@ updates with their owning slices.
 | 5. Freestanding scalar emission                    | `codegen/src/x86_64/scalar/`, compiler backend dispatch and native fixture tests. Integer/FP, branches, frames, basic direct managed calls and near data/import fixup model.                                                            | 1,500–2,800 | 1–4          | Cross-build IR through Tint into an ELF. Run call/branch, register pressure, mixed overflow args, NaN and signed-zero fixtures. Stable unsupported-op diagnostics.                                                         |
 | 6. Hosted entry and libc                           | `codegen/src/x86_64/startup.ts`, platform Linux host policy, native host identity/process intrinsics, `compiler/src/{build,image-writer}.ts` and bootstrap.                                                                             | 900–1,700   | 5            | Cross-build hosted CLI smoke, argv/env, file/time/entropy and runtime init. Verify loader finalizer/stack args, native host identity, fixed glibc floor, guard checks and AArch64 output parity for unchanged programs.    |
 | 7. Managed runtime and roots (complete)            | x86 scalar helpers, `abi/src/host.ts`, tracing scanner, managed compiler/linker contracts and GC fixtures. Land numeric/string/array, record, closure and completion families in smaller merges with exact-PC maps and barrier support. | 4,000–8,000 | 6            | Root relocation through nested calls, tagged throws, GC under allocation pressure, safepoint faults and missing-map rejection. Pass managed call and typed-contract fixtures before enabling corresponding language paths. |
-| 8. Parallel runtime (complete)                     | x86 atomics/thread leaves, Linux host policy, waiter, contention and collector fixtures.                                                                                                                                                | —           | 7            | Exact-width access, CAS failure and RMW tests, concurrent collection and futex park/wake under guest kernel. Repeat on hardware for release.                                                                               |
+| 8. Parallel runtime (complete)                     | x86 atomics/thread leaves, Linux host policy, waiter, contention and collector fixtures.                                                                                                                                                | —           | 7            | Exact-width access, CAS failure and RMW tests, concurrent collection and futex park/wake under guest kernel.                                                                                                               |
 | 9. Far image and service link (complete)           | x86 fixups, emission plans, service-unit linker and large-image verifier.                                                                                                                                                               | —           | 5            | Forced-far native execution at normal size, rel32 bounds, a real ELF spanning the signed limit, and collection through an independently compiled service.                                                                  |
 | 10. Unwind, debug and diagnostics (complete)       | x86 frame/debug/USDT emission, `abi/src/unwind.ts`, DWARF/EH frame and ELF policies.                                                                                                                                                    | —           | 6            | Independent CFI and DWARF readers, GDB chain across startup and managed code, real guest USDT hits with correct operands. Large CFI offsets are covered by slice 9.                                                        |
 | 11. Live publishing (complete)                     | x86 code-memory leaves and adapters, compiler managed JIT/linking, runtime registry, engine tests and ELF JIT registration.                                                                                                             | —           | 7, 9, 10     | In-image compilation, collection across published entries, cross-context rejection, kernel W^X fallback, and GDB line lookup and private-page repair.                                                                      |
 | 12. Native fixed point (verified under Rosetta)    | Bootstrap catalog and closure, x86 lowering gaps for the compiler, frozen self-build tools and reports.                                                                                                                                 | —           | 7–9          | Native arm64 cross-build runs on x86-64, and x86-64 makes identical stage 2 and stage 3 images. Publish manifest and hashes. Debug variant uses slice 10.                                                                  |
-| 13. Test262 and support gate (hardware pending)    | `tools/test262-native-run.ts` and runner adapters, target docs and immutable reports.                                                                                                                                                   | —           | 8, 10–12     | Pinned equivalent AOT and live selections with complete terminal records, glibc floor and kernel tests, verified arm64 regressions and baseline x86 hardware validation before supported status.                           |
+| 13. Test262 and support gate (complete)            | `tools/test262-native-run.ts` and runner adapters, target docs and immutable reports.                                                                                                                                                   | —           | 8, 10–12     | Debian x86-64 VM and QEMU user-mode coverage for pinned AOT and live selections, glibc 2.34, the collector, live code, and F1/F2. VM Test262 passed 22/22.                                                                 |
 | F1 part 1. SysV C leaf calls and layout (complete) | **FFI/convergence**. SysV classification and layouts, static leaf imports, raw aggregate stubs, leaf C memory operations and the C call-frame trampoline.                                                                               | —           | 2, 5, 6      | C oracle fixtures for scalars, variadics, mixed aggregates, sret, layout/padding and by-value copies. Verify static imports and the trusted trampoline under QEMU. Diagnose deferred FFI paths before emission.            |
 | F1 part 2. Managed FFI wrappers (complete)         | Record-by-value argument and result wrappers, public `foreignFunction`, runtime library loading, string conversion, and managed FFI views and storage.                                                                                  | —           | F1 part 1, 7 | Public static and dynamic bindings pass the C oracle.                                                                                                                                                                      |
 | F2. C callbacks and thunks (complete)              | SysV scoped, registered and dynamic callbacks, x86 thunk unwind rows, managed transitions and scanner integration.                                                                                                                      | —           | F1, 7, 10    | ABI preservation across may-callback, moving GC across foreign frames, failure/throw policy, nesting and stale-entry rejection.                                                                                            |
@@ -426,7 +427,6 @@ core support gate.
 - Confirm the public target spelling, the glibc floor and the x86-64-v2
   deployment profile. Choose whether to advertise baseline SSE2 compatibility
   separately if the finished emitted closure stays within it.
-- Assign the general far-link work and set the first milestone's reach gate.
-  The early experimental target may diagnose overflow until slice 9.
-- Identify x86-64 hardware for the support gate. Decide whether initial support
-  includes public FFI parity or publishes it as a follow-on owned by FFI/convergence.
+- Validate Linux x86-64 support with the Debian x86-64 VM and QEMU user mode,
+  including F1 and F2. Add native x86-64 CI and timing on a GitHub Actions x64
+  runner after the repository is pushed.

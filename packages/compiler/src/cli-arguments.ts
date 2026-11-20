@@ -3,8 +3,7 @@ import { nativeTargetNamed, type NativeTarget } from "@tint/platform/target";
 export const compilerUsage = `usage: tint-compiler <project-root> <output> [--debug-symbols] [--pass-stats] [--target <target>]
 Build a native executable from a TypeScript project.
 --pass-stats prints the program's optimizer passes and writes <output>.pass-stats.json on arm64 targets.
---target selects darwin-aarch64, linux-aarch64, or linux-x86_64 (default: the compiler's own host).
-The linux-x86_64 target is experimental.`;
+--target selects darwin-aarch64, linux-aarch64, or linux-x86_64 (default: the compiler's own host).`;
 
 export interface CompilerArguments {
   readonly root: string;
