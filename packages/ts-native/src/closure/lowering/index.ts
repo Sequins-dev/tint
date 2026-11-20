@@ -1,6 +1,7 @@
 export {
   insertDynamicObjectRuntime,
   usesDynamicObjectRuntime,
+  usesRealmInstanceof,
 } from "./dynamic-objects.ts";
 import {
   validateFunctionAddressBindings,
@@ -25,6 +26,7 @@ export {
 } from "./class-construction.ts";
 export type { RecordOperation } from "./record-bindings.ts";
 import {
+  arrayFlowReceiver,
   encodeDynamicContract,
   hasDynamicObject,
   dynamicObjectRuntime,
@@ -34,7 +36,11 @@ import {
 import type { RecordOperation } from "./record-bindings.ts";
 import { bindRecordOperation } from "./record-bindings.ts";
 import { incompatibleRepresentationView } from "./representation-views.ts";
-import { checkedPropertyName, numericConstant } from "@tint/typescript/checker";
+import {
+  checkedPropertyName,
+  numericConstant,
+  realmLibraryConstructor,
+} from "@tint/typescript/checker";
 import { syntaxHash } from "@tint/typescript/syntax";
 import type { Binding as BoundBinding } from "@tint/typescript/binding";
 import { createKeyIndex } from "@tint/foundation/collections/key-index";
@@ -1929,6 +1935,11 @@ function lowerEntries(
         let viewTarget: CViewUse | undefined;
         let dynamicObject: ExpressionInfo["dynamicObject"];
         let dynamicContract: string | undefined;
+        let realmGlobal: number | undefined;
+        let realmInstaller: string | undefined;
+        let realmMember = false;
+        let realmInstanceOf: number | undefined;
+        let arrayInstance: ExpressionInfo["arrayInstance"];
         let generalCall: ExpressionInfo["generalCall"];
         const dynamicIntrinsic = checked.intrinsics.get(node);
         if (viewUse !== undefined) {
@@ -2065,6 +2076,18 @@ function lowerEntries(
             case "identifier":
               if (
                 node.kind === "identifier" &&
+                dynamicIntrinsic === "realm-global"
+              ) {
+                realmGlobal = dynamicAliases.get("realmGlobal");
+                realmInstaller = realmLibraryConstructor(node.name)?.installer;
+                if (realmInstaller === undefined)
+                  fail("missing realm installer");
+                if (realmGlobal === undefined)
+                  fail("realm global requires the program realm");
+                break;
+              }
+              if (
+                node.kind === "identifier" &&
                 checked.intrinsics.get(node) === "numeric-constant"
               )
                 constant = numericConstant("", node.name);
@@ -2134,6 +2157,11 @@ function lowerEntries(
               expr(node.index);
               break;
             case "member":
+              if (dynamicIntrinsic === "realm-library-read") {
+                realmMember = true;
+                expr(node.object);
+                break;
+              }
               if (dynamicIntrinsic === "dynamic-object-read") {
                 if (dynamicObjects === undefined || checkedType === undefined)
                   fail("dynamic-key object read requires the program realm");
@@ -2265,12 +2293,41 @@ function lowerEntries(
                 break;
               }
               const intrinsic = dynamicIntrinsic;
+              if (intrinsic === "realm-instanceof") {
+                realmInstanceOf = dynamicAliases.get("realmInstanceOf");
+                if (realmInstanceOf === undefined)
+                  fail("instanceof requires the program realm");
+                expr(node.left);
+                expr(node.right);
+                break;
+              }
+              if (intrinsic === "array-instanceof") {
+                let target = node.right;
+                while (target.kind === "group") target = target.expression;
+                if (target.kind !== "identifier")
+                  fail("typed-array constructor invariant");
+                const name = target.name;
+                if (
+                  name !== "Uint8Array" &&
+                  name !== "Uint16Array" &&
+                  name !== "Uint32Array" &&
+                  name !== "Float64Array"
+                )
+                  fail("typed-array kind invariant");
+                arrayInstance = name;
+                realmGlobal = dynamicAliases.get("realmGlobal");
+                realmInstanceOf = dynamicAliases.get("realmInstanceOf");
+                expr(node.left);
+                break;
+              }
               if (
                 intrinsic === "type-error-is" ||
                 intrinsic === "range-error-is" ||
                 intrinsic === "error-is"
               ) {
                 builtin = intrinsic;
+                realmGlobal = dynamicAliases.get("realmGlobal");
+                realmInstanceOf = dynamicAliases.get("realmInstanceOf");
                 expr(node.left);
                 break;
               }
@@ -2550,6 +2607,16 @@ function lowerEntries(
                 dynamicContract = encodeDynamicContract(checked, checkedType);
                 if (intrinsic === "dynamic-object-array-push")
                   expr(target.object);
+                exprArguments(node.arguments);
+                break;
+              }
+              if (intrinsic === "realm-library-call") {
+                let member = node.callee;
+                while (member.kind === "group") member = member.expression;
+                if (member.kind !== "member")
+                  fail("realm library method invariant");
+                realmMember = true;
+                expr(member.object);
                 exprArguments(node.arguments);
                 break;
               }
@@ -3013,6 +3080,32 @@ function lowerEntries(
                 receiver.listElement,
             });
         }
+        if (
+          realmMember &&
+          type !== "void" &&
+          type !== "general" &&
+          checkedType !== undefined
+        )
+          dynamicContract = encodeDynamicContract(checked, checkedType);
+        const arrayReceiver = arrayFlowReceiver(
+          checked,
+          node,
+          dynamicIntrinsic,
+        );
+        const source =
+          dynamicIntrinsic === "array-set" && node.kind === "call"
+            ? node.arguments[0]
+            : undefined;
+        const sourceType =
+          source === undefined ? undefined : checked.expressions.get(source);
+        const sourceKind = checked.types[sourceType ?? -1]?.kind;
+        const arraySetSource =
+          sourceKind === "Uint8Array" ||
+          sourceKind === "Uint16Array" ||
+          sourceKind === "Uint32Array" ||
+          sourceKind === "Float64Array"
+            ? sourceKind
+            : undefined;
         const generalTypeof =
           node.kind === "unary" &&
           node.operator === "typeof" &&
@@ -3036,6 +3129,14 @@ function lowerEntries(
                 },
           dynamicObject,
           dynamicContract,
+          realmGlobal,
+          realmInstaller,
+          realmMember: realmMember ? true : undefined,
+          realmInstanceOf,
+          arrayInstance,
+          arrayReceiver,
+          arraySetSource,
+          arrayMethod: dynamicAliases.get("invokeArrayMethod"),
           dynamicEnrollment: enrollment(checked.dynamicEnrollments?.get(node)),
           chainType:
             chain === undefined

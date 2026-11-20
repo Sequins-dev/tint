@@ -6,6 +6,7 @@ import {
   hashString,
 } from "@tint/foundation/collections/key-index";
 export interface Property {
+  readonly hasInstanceSymbol?: boolean;
   readonly optional?: boolean;
   readonly name: string;
   readonly type: number;
@@ -42,6 +43,8 @@ export type Type =
        * fixed array with this key. Views are nominal: a view relates to
        * Uint8Array and to views of the same key, never the reverse. */
       readonly view?: string;
+      /** A typed-array flow fact retains a general carrier. */
+      readonly arrayFlow?: boolean;
     }
   | { readonly kind: "literal"; readonly value: string | number | boolean }
   | {
@@ -68,6 +71,9 @@ export type Type =
       /** Function-signature IDs for independent internal call/construct capabilities. */
       readonly call?: number;
       readonly construct?: number;
+      readonly realmConstructor?: boolean;
+      readonly realmLibrary?: string;
+      readonly realmTypedArray?: string;
     }
   | {
       readonly kind: "function";
@@ -78,6 +84,7 @@ export type Type =
       /** Required receiver type; absent means the function does not constrain its receiver. */
       readonly receiver?: number;
       readonly result: number;
+      readonly instancePredicate?: number;
     };
 export type ErrorCode =
   | "INVALID_TYPE"
@@ -1567,8 +1574,16 @@ function copyType(
             }),
         ...(t.call === undefined ? {} : { call: t.call }),
         ...(t.construct === undefined ? {} : { construct: t.construct }),
+        ...(t.realmConstructor === true ? { realmConstructor: true } : {}),
+        ...(t.realmLibrary === undefined
+          ? {}
+          : { realmLibrary: t.realmLibrary }),
+        ...(t.realmTypedArray === undefined
+          ? {}
+          : { realmTypedArray: t.realmTypedArray }),
         properties: t.properties.map((p) => ({
           name: p.name,
+          ...(p.hasInstanceSymbol === true ? { hasInstanceSymbol: true } : {}),
           type: p.type,
           readonly: p.readonly,
           ...(p.optional ? { optional: true } : {}),
@@ -1599,6 +1614,8 @@ function copyType(
       }
       if (t.receiver !== undefined) functionRefs.push(t.receiver);
       functionRefs.push(t.result);
+      if (t.instancePredicate !== undefined)
+        functionRefs.push(t.instancePredicate);
       refs = functionRefs;
       copy = {
         kind: t.kind,
@@ -1609,6 +1626,9 @@ function copyType(
         ...(t.receiver === undefined ? {} : { receiver: t.receiver }),
         ...(t.rest === true ? { rest: true } : {}),
         result: t.result,
+        ...(t.instancePredicate === undefined
+          ? {}
+          : { instancePredicate: t.instancePredicate }),
       };
       break;
     }
@@ -1631,7 +1651,13 @@ function copyType(
       const view = t.view;
       if (view !== undefined && (t.kind !== "Uint8Array" || view.length === 0))
         return { ok: false, error: "INVALID_TYPE" };
-      copy = view === undefined ? { kind: t.kind } : { kind: t.kind, view };
+      copy =
+        view === undefined
+          ? {
+              kind: t.kind,
+              ...(t.arrayFlow === true ? { arrayFlow: true } : {}),
+            }
+          : { kind: t.kind, view };
       break;
     }
   }

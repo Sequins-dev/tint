@@ -423,7 +423,7 @@ export function ${set}(error:${layout}, view:unknown):void { throw "UNBOUND_ERRO
     publish += `{const native=${project}(value);if(native!==undefined){
  const cached=${get}(native);if(cached!==undefined)return cached;
  const program=programRealm();
- const view:unknown=createNativeErrorView(program.realm,program.hooks,${JSON.stringify(intrinsic)},native.message,native.${flag},value);
+ const view:unknown=createNativeErrorView(program.realm,program.hooks,${JSON.stringify(intrinsic)},native.message,native.${flag},value,program.object);
  ${set}(native,view);return view;
  }}\n`;
   }
@@ -437,7 +437,7 @@ ${publish}return value;
 }
 function fromRealmError(value:unknown):unknown {
  const program=programRealm();
- return prepareRealmErrorArgument(value,program.realm,program.hooks);
+ return prepareRealmErrorArgument(value,program.realm,program.hooks,program.object);
 }\n`,
     stubs,
     bindings,
@@ -693,6 +693,7 @@ function generalHostSource(
   adapters: string,
 ): string {
   let installs = "";
+  const programInstallers: string[] = [];
   for (const installer of installers) {
     if (installer === undefined) throw "general installer invariant";
     if (installer === "installObjectIntrinsics") {
@@ -701,13 +702,27 @@ function generalHostSource(
     }
     if (installer === "installArrayIntrinsics") {
       installs += " installProgramArrayIntrinsics(core);\n";
+      programInstallers.push("installProgramArrayIntrinsics");
       continue;
     }
+    if (installer === "installArrayBufferIntrinsics") {
+      installs += " installProgramArrayBufferIntrinsics(core);\n";
+      programInstallers.push("installProgramArrayBufferIntrinsics");
+      continue;
+    }
+    if (installer === "installTypedArrayIntrinsics") {
+      installs += " installProgramTypedArrayIntrinsics(core);\n";
+      programInstallers.push("installProgramTypedArrayIntrinsics");
+      continue;
+    }
+    programInstallers.push(installer);
     installs +=
       " " +
       installer +
       "(object,realm,hooks" +
       (installerArguments.get(installer) ?? "") +
+      ");\n core.installed.add(" +
+      JSON.stringify(installer) +
       ");\n";
   }
   const write = output
@@ -715,7 +730,7 @@ function generalHostSource(
     : `function emit(fd:number,text:string):void{}`;
   return `${imports}import {createGlobalEnvironment,type GlobalEnvironment} from "global";
 import {createSyntheticModule,setSyntheticModuleExport,loadRequestedModules,finishLoadingImportedModule,linkModule,evaluateModule,settledModulePromise,getModuleNamespace,type ModuleRecord,type ModuleRequest,type ModuleReferrer,type ModuleLoadPayload} from "modules";
-import {createObject,createCallableObject,createDataProperty,programRealmCore,installProgramObjectIntrinsics,installProgramArrayIntrinsics,createRuntimeError,getProperty,callObjectValue,stringValue,drainScriptJobs,installGlobalProperties,createRecordView,typedRecordOf,viewObjectValue,${installers.filter((name) => name !== "installObjectIntrinsics" && name !== "installArrayIntrinsics").join(",")},type ErrorRealm,type ScriptPropertyKey,type ObjectHooks,type OrdinaryObject} from "objects";
+import {createObject,createCallableObject,createDataProperty,programRealmCore,installProgramObjectIntrinsics,createRuntimeError,getProperty,callObjectValue,stringValue,drainScriptJobs,installGlobalProperties,createRecordView,typedRecordOf,viewObjectValue,${programInstallers.join(",")},type ErrorRealm,type ScriptPropertyKey,type ObjectHooks,type OrdinaryObject} from "objects";
 ${output ? 'import {write as writeOutput} from "output";' : ""}
 ${write}
 function rejectArgument(realm:ErrorRealm):never{throw createRuntimeError(realm,"type");}

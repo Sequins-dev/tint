@@ -45,6 +45,10 @@ export interface Local {
 /** A run-time category test of a general value (a checked downcast). */
 export type DowncastTest =
   "undefined" | "number" | "boolean" | "string" | "null" | "Uint8Array";
+export { realmLibraryConstructor } from "../binding/realm-library.ts";
+export { withRealmGlobals } from "./interfaces.ts";
+export type NativeTypedArray =
+  "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array";
 export interface CheckedDowncast {
   readonly tests: readonly DowncastTest[];
   readonly records: readonly number[];
@@ -57,6 +61,14 @@ export interface RestArguments {
   readonly admitsUndefined: boolean;
 }
 export interface ExpressionInfo {
+  readonly realmGlobal?: number | undefined;
+  readonly realmInstaller?: string | undefined;
+  readonly realmMember?: boolean | undefined;
+  readonly realmInstanceOf?: number | undefined;
+  readonly arrayInstance?: NativeTypedArray | undefined;
+  readonly arrayReceiver?: NativeTypedArray | "realm" | undefined;
+  readonly arrayMethod?: number | undefined;
+  readonly arraySetSource?: NativeTypedArray | undefined;
   readonly dynamicObject?:
     | "literal"
     | "array-literal"

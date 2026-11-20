@@ -483,6 +483,9 @@ export {
 export {
   programRealmCore,
   installProgramObjectIntrinsics,
+  installProgramConstructorGroup,
+  installProgramArrayBufferIntrinsics,
+  installProgramTypedArrayIntrinsics,
   installProgramArrayIntrinsics,
   type ProgramRealmCore,
 } from "./program-realm.ts";

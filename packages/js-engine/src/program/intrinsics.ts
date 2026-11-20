@@ -26,6 +26,7 @@ export const intrinsicInstallers: readonly string[] = [
   "installIteratorConstructor",
   "installMapIntrinsics",
   "installSetIntrinsics",
+  "installWeakCollectionIntrinsics",
   "installRegExpIntrinsics",
   "installSymbolIntrinsics",
   "installMathIntrinsics",
@@ -54,6 +55,8 @@ const byGlobal: ReadonlyMap<string, readonly string[]> = new Map<
 >([
   ["Map", ["installMapIntrinsics"]],
   ["Set", ["installSetIntrinsics"]],
+  ["WeakMap", ["installWeakCollectionIntrinsics"]],
+  ["WeakSet", ["installWeakCollectionIntrinsics"]],
   ["RegExp", ["installRegExpIntrinsics"]],
   ["Math", ["installMathIntrinsics"]],
   ["Proxy", ["installProxyIntrinsics"]],

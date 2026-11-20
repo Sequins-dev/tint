@@ -1,0 +1,1668 @@
+{
+  "kind": "tint-unified-pipeline-ledger",
+  "version": 1,
+  "label": "slice4a-b5-v2",
+  "recorded": "2026-11-19T17:37:51.586Z",
+  "node": "v24.12.0",
+  "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+  "summary": {
+    "typed": {
+      "typed": 24,
+      "general": 27,
+      "build-failed": 1,
+      "run-failed": 18,
+      "missed-type-error": 1,
+      "unsupported": 1
+    },
+    "untyped": {
+      "general": 52,
+      "run-failed": 19,
+      "unsupported": 1
+    }
+  },
+  "entries": [
+    {
+      "construct": "numeric-loop",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 34.1
+    },
+    {
+      "construct": "numeric-loop",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:229: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 122.5
+    },
+    {
+      "construct": "string-methods",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:87:103: invalid method call",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 114.6
+    },
+    {
+      "construct": "string-methods",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:309: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 116
+    },
+    {
+      "construct": "array-callbacks",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:180:193: invalid method call",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 106.9
+    },
+    {
+      "construct": "array-callbacks",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:257: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 109.1
+    },
+    {
+      "construct": "explicit-dynamic-property-contract",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 84.9
+    },
+    {
+      "construct": "explicit-dynamic-property-contract",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:151: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 98.6
+    },
+    {
+      "construct": "dynamic-object-literal",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 90.6
+    },
+    {
+      "construct": "dynamic-object-literal",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:114: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 102.4
+    },
+    {
+      "construct": "dynamic-object-index",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 82.9
+    },
+    {
+      "construct": "dynamic-object-index",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:117: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 93.8
+    },
+    {
+      "construct": "dynamic-object-in-delete",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 90.8
+    },
+    {
+      "construct": "dynamic-object-in-delete",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:156: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 76.9
+    },
+    {
+      "construct": "dynamic-object-own-enumeration",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 74
+    },
+    {
+      "construct": "dynamic-object-own-enumeration",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:239: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 87.3
+    },
+    {
+      "construct": "dynamic-object-for-in",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 74
+    },
+    {
+      "construct": "dynamic-object-for-in",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:149: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 84.9
+    },
+    {
+      "construct": "dynamic-object-spread",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 79.1
+    },
+    {
+      "construct": "dynamic-object-spread",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:128: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 78.8
+    },
+    {
+      "construct": "object-records",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 20.7
+    },
+    {
+      "construct": "object-records",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:72: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 75.6
+    },
+    {
+      "construct": "closures",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 15.4
+    },
+    {
+      "construct": "closures",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:72: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 69
+    },
+    {
+      "construct": "class-basic",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "runtime: module instance classes require scoped contract and construction lowering",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 66.6
+    },
+    {
+      "construct": "class-basic",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:163:325: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 64.6
+    },
+    {
+      "construct": "class-inheritance",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:85:152: class accessor contracts require separate read and write checking",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 62.4
+    },
+    {
+      "construct": "class-inheritance",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:276:410: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 60.7
+    },
+    {
+      "construct": "class-private-static",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:68:95: typed class static blocks require initialization lowering",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 60.4
+    },
+    {
+      "construct": "class-private-static",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:52:79: typed class static blocks require initialization lowering",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 61.2
+    },
+    {
+      "construct": "destructuring",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:40:144: typed binding patterns are not implemented",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 60.9
+    },
+    {
+      "construct": "destructuring",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:290: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 58.4
+    },
+    {
+      "construct": "spread",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:196:220: only [string, T] entry tuple types are implemented",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 57.3
+    },
+    {
+      "construct": "spread",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:44: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 61.8
+    },
+    {
+      "construct": "rest-default-parameters",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 11.2
+    },
+    {
+      "construct": "rest-default-parameters",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:121: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 56.7
+    },
+    {
+      "construct": "rest-spread",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 11.6
+    },
+    {
+      "construct": "rest-spread",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:108: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 54.2
+    },
+    {
+      "construct": "void-callbacks",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 11.6
+    },
+    {
+      "construct": "void-callbacks",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:37: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 53
+    },
+    {
+      "construct": "generators",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:111: generator suspension lowering is not implemented",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 55.2
+    },
+    {
+      "construct": "generators",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:76: generator suspension lowering is not implemented",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 53.9
+    },
+    {
+      "construct": "async-await",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: Promise",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 53.3
+    },
+    {
+      "construct": "async-await",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: Promise",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 54
+    },
+    {
+      "construct": "errors",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 11
+    },
+    {
+      "construct": "errors",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:52: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 50.3
+    },
+    {
+      "construct": "exposed-native-error",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 11
+    },
+    {
+      "construct": "exposed-native-error",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:43:284: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 46.4
+    },
+    {
+      "construct": "unknown-typeof-callable",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 9.9
+    },
+    {
+      "construct": "unknown-typeof-callable",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:45: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 50.2
+    },
+    {
+      "construct": "unknown-narrowing",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:90:103: invalid method call",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 53.8
+    },
+    {
+      "construct": "unknown-narrowing",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:207: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 53.9
+    },
+    {
+      "construct": "map-set",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:186:215: value does not match its declared type",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 59.4
+    },
+    {
+      "construct": "map-set",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:351: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 60.2
+    },
+    {
+      "construct": "typed-arrays",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:146:154: unknown value name: DataView",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 61.9
+    },
+    {
+      "construct": "typed-arrays",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:138:146: unknown value name: DataView",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 63.9
+    },
+    {
+      "construct": "math",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:41:45: unsupported global",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 64.6
+    },
+    {
+      "construct": "math",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:200: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 59.9
+    },
+    {
+      "construct": "json",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: JSON",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 64.6
+    },
+    {
+      "construct": "json",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: JSON",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 58.6
+    },
+    {
+      "construct": "optional-chaining",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 11.3
+    },
+    {
+      "construct": "optional-chaining",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:57: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 65.7
+    },
+    {
+      "construct": "labels-switch",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 11.3
+    },
+    {
+      "construct": "labels-switch",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:113: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 74
+    },
+    {
+      "construct": "var-hoisting",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 11.3
+    },
+    {
+      "construct": "var-hoisting",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:195: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 76.9
+    },
+    {
+      "construct": "iterator-protocol",
+      "form": "typed",
+      "path": "none",
+      "outcome": "build-failed",
+      "reason": "{\"ok\":false,\"error\":{\"code\":\"SYNTAX_ERROR\",\"message\":\"expected {\",\"start\":16,\"end\":26,\"position\":{\"line\":1,\"column\":17}}}",
+      "error": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"ok\":false,\"error\":{\"code\":\"SYNTAX_ERROR\",\"message\":\"expected {\",\"start\":16,\"end\":26,\"position\":{\"line\":1,\"column\":17}}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:192:10)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "seconds": 0.3
+    },
+    {
+      "construct": "iterator-protocol",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: Symbol",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 79
+    },
+    {
+      "construct": "accessors-object-literal",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:64:208: typed object accessors require accessor layout support",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 67.3
+    },
+    {
+      "construct": "accessors-object-literal",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:280: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 83.3
+    },
+    {
+      "construct": "regexp",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: typed RegExp values are not implemented",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 69.3
+    },
+    {
+      "construct": "regexp",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: typed RegExp values are not implemented",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 70
+    },
+    {
+      "construct": "enums",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:40: object, array and arrow expressions need a contextual or explicit type",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 104.8
+    },
+    {
+      "construct": "enums",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:80:201: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 103.9
+    },
+    {
+      "construct": "arguments-object",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 112.9
+    },
+    {
+      "construct": "arguments-object",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 105
+    },
+    {
+      "construct": "tagged-templates",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:22:42: unknown type: TemplateStringsArray",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 88.8
+    },
+    {
+      "construct": "tagged-templates",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:87: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 76.6
+    },
+    {
+      "construct": "object-reflection",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: Reflect",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 73.2
+    },
+    {
+      "construct": "object-reflection",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: Reflect",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 69
+    },
+    {
+      "construct": "generic-functions",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "specialize: generic calls require explicit type arguments",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 73.9
+    },
+    {
+      "construct": "generic-functions",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:85: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 76.5
+    },
+    {
+      "construct": "open-variable",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 74.9
+    },
+    {
+      "construct": "open-variable",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 74.8
+    },
+    {
+      "construct": "open-object-literal-field",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "link: unknown value name: Reflect",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 73.5
+    },
+    {
+      "construct": "open-object-literal-field",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "link: unknown value name: Reflect",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 100.4
+    },
+    {
+      "construct": "open-class-field",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 99.2
+    },
+    {
+      "construct": "open-class-field",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 104.9
+    },
+    {
+      "construct": "open-array-elements",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 126.8
+    },
+    {
+      "construct": "open-array-elements",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 101
+    },
+    {
+      "construct": "open-callback-parameter",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:108:113: invalid binding operation",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 98.8
+    },
+    {
+      "construct": "open-callback-parameter",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:176: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 94
+    },
+    {
+      "construct": "explicit-field-contract",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "error": "typed\",\"imageSha256\":\"cae8ed54b3c0816ec93ea44b3b186b96a47349d30ee8de5b97ee287c591afd99\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-explicit-field-contract-typed-DQP2XS/construct-explicit-field-contract-typed.manifest.json\",\"sha256\":\"12e52a4104aa9f7f95d2f5af00a17e8639eb5eec7980729474a7ac7fd3128dd8\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 112.3
+    },
+    {
+      "construct": "explicit-field-contract",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 108.9
+    },
+    {
+      "construct": "explicit-binding-contract",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "link: unknown value name: eval",
+      "error": "d\",\"imageSha256\":\"394b3ba66c15a1df47bcb2683db1b38ed83ec73b0f317284dba7655125499430\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-explicit-binding-contract-typed-OChYt9/construct-explicit-binding-contract-typed.manifest.json\",\"sha256\":\"2dee6a8b4f310e4fbb6efb2ed905ea7f0d4232f9f2abff1b12c8d52e8e5eee9d\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 115.4
+    },
+    {
+      "construct": "explicit-binding-contract",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "link: unknown value name: eval",
+      "error": "imageSha256\":\"b042c8b3d390e4621922d1af03e9b2760bbb0aa89768aabf09a8fc9e4eb77f68\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-explicit-binding-contract-untyped-wEn1yc/construct-explicit-binding-contract-untyped.manifest.json\",\"sha256\":\"6b6f426e27314051a0885b4ef64a4542c2329f4e1f26d700bd06037e4a440831\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 105.9
+    },
+    {
+      "construct": "general-value-casts",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 27.1
+    },
+    {
+      "construct": "general-value-casts",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:95: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 82.7
+    },
+    {
+      "construct": "typed-array-buffer-views",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:101:114: value does not match its declared type",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 82.6
+    },
+    {
+      "construct": "typed-array-buffer-views",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:260: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 79
+    },
+    {
+      "construct": "unknown-realm-instanceof",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 67.5
+    },
+    {
+      "construct": "unknown-realm-instanceof",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:152: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 70.6
+    },
+    {
+      "construct": "unknown-typed-array-instanceof",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 19.9
+    },
+    {
+      "construct": "unknown-typed-array-instanceof",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:137: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 69.5
+    },
+    {
+      "construct": "native-error-flow",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 23.1
+    },
+    {
+      "construct": "native-error-flow",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:152: named functions require parameter and return annotations",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 62.5
+    },
+    {
+      "construct": "caught-error-reads",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 22.6
+    },
+    {
+      "construct": "caught-error-reads",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:435: named functions require parameter and return annotations",
+      "error": "ads-untyped\",\"imageSha256\":\"1c941ebe1c55009e34d72fe201499114fffc560f22162cc5f29748f780a9841b\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-caught-error-reads-untyped-rcOTKW/construct-caught-error-reads-untyped.manifest.json\",\"sha256\":\"e012fd0f9ca6ffde87e2c7e5db166ea418181c294a39d2d8f7d18463d35b695d\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 87.1
+    },
+    {
+      "construct": "tuple-types",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:26:42: only [string, T] entry tuple types are implemented",
+      "error": "L/construct-tuple-types-typed\",\"imageSha256\":\"a64c2591e04fe3db28c1eefc032d9118339a0626795642434cde2be715985598\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-tuple-types-typed-7qAuYL/construct-tuple-types-typed.manifest.json\",\"sha256\":\"70b6a71bc8ce3b8b2d8a611d75a5976b2c31c84a0ce217f4c5814951f8f02091\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 88.3
+    },
+    {
+      "construct": "tuple-types",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:38: named functions require parameter and return annotations",
+      "error": "truct-tuple-types-untyped\",\"imageSha256\":\"30c5fba58d360d69b7e7ddb6831c693bd70aae7940fa487aa17fa2611ce84b28\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-tuple-types-untyped-dyNQRM/construct-tuple-types-untyped.manifest.json\",\"sha256\":\"7e28b3ef68591ecd24d0c41ce68d60a0353442e279a27db0eae896c1b564e7c3\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 87.5
+    },
+    {
+      "construct": "nested-type-declarations",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: nested type declarations are not supported",
+      "error": "ped\",\"imageSha256\":\"692ac6850bf487c14a1680c46614ed62bd5229c95b2947b094985bd373300c99\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-nested-type-declarations-typed-70Tkwi/construct-nested-type-declarations-typed.manifest.json\",\"sha256\":\"4b1fc64df1155836fd8488b00a10f6db54d799cde1c3f5216d90e5b6ecc81e2f\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 83.3
+    },
+    {
+      "construct": "nested-type-declarations",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:170: named functions require parameter and return annotations",
+      "error": ",\"imageSha256\":\"d471a06704ca5abe743bf2e2f93f3bbb0be80a6ad64fc22e2e59761d926706ff\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-nested-type-declarations-untyped-xhVfWi/construct-nested-type-declarations-untyped.manifest.json\",\"sha256\":\"421c8c2ccd75c8d0f4999810086f9da6de7e78a892c5c8e9ebb48de9716a1b91\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 85.2
+    },
+    {
+      "construct": "forward-inferred-const",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "runtime: forward or recursive inferred bindings require an annotation",
+      "error": "t-typed\",\"imageSha256\":\"95634db9fa0e960e9fe53a9ae3eeae65ffb11fe69b32fc2de01d85acd441a046\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-forward-inferred-const-typed-AVf7sY/construct-forward-inferred-const-typed.manifest.json\",\"sha256\":\"9708bc0f37ed2186a93e9ee3d601178cc9c8df3730feadc1d79aec6df59822e6\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 90.3
+    },
+    {
+      "construct": "forward-inferred-const",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:41: named functions require parameter and return annotations",
+      "error": "ped\",\"imageSha256\":\"ac49ccfb7a8386ef4f87b5ea39c663bbfef920d1180cbe9249bab50a0e8e935c\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-forward-inferred-const-untyped-0iBMrr/construct-forward-inferred-const-untyped.manifest.json\",\"sha256\":\"c8267dda1585f65fd56520edd6a9d7165fc300aff90855038f730f5adbc82cfb\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 85.5
+    },
+    {
+      "construct": "union-object-ternary",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:281:318: expected an unambiguous object type",
+      "error": "rnary-typed\",\"imageSha256\":\"139da41f383f32ea3c8ec45b9cff320b2e976a536689ab4410bb59ec4dea613d\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-union-object-ternary-typed-jMgMKP/construct-union-object-ternary-typed.manifest.json\",\"sha256\":\"280fb62c5c5fad10d767c36285d299769a594efaff771fe86aa1e2140eae7996\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 79.8
+    },
+    {
+      "construct": "union-object-ternary",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:100: named functions require parameter and return annotations",
+      "error": "untyped\",\"imageSha256\":\"ae695785e21788f468f162dec247df4a7f9aabe2add9cb6e405d32922e2c2dd9\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-union-object-ternary-untyped-T87FHF/construct-union-object-ternary-untyped.manifest.json\",\"sha256\":\"95822bd68a4cc387cc3433bed1911f8854176b876c096b6dd39ddac496f7b98d\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 62.3
+    },
+    {
+      "construct": "typed-array-index",
+      "form": "typed",
+      "path": "general",
+      "outcome": "missed-type-error",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:92:116: invalid binding operation",
+      "error": "array-index-typed\",\"imageSha256\":\"66b3fd44635a5965e10040a1a9865c0eb88d2c019435482df2b33a699b372e08\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-typed-array-index-typed-ryW3iB/construct-typed-array-index-typed.manifest.json\",\"sha256\":\"9f5a2adc8f75a6d623637382bfbe45ca3f48cb4f5a602c9107cf122ba0e286d7\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 72.6
+    },
+    {
+      "construct": "typed-array-index",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:188: named functions require parameter and return annotations",
+      "error": "index-untyped\",\"imageSha256\":\"3665f6011771e4227b1ef7fbf4d006d0490b972f6fd1043beccfee42e2c1af49\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-typed-array-index-untyped-XMWv66/construct-typed-array-index-untyped.manifest.json\",\"sha256\":\"ae1b862fd77af0f60a91085619db5a52706b0e221020055b11f5c4ca9e6d8cc8\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 72.6
+    },
+    {
+      "construct": "typed-array-index-checked",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "run-failed",
+      "error": "d\",\"imageSha256\":\"aa48f8b1db430f2866500c9ae6b6cab953ed2ef9dc12854e618b95468979c445\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-typed-array-index-checked-typed-LpSa6F/construct-typed-array-index-checked-typed.manifest.json\",\"sha256\":\"fb9d571095093ef3022197b490c46a1ef31433a54168fb560807dbffdee08c1b\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 36.7
+    },
+    {
+      "construct": "typed-array-index-checked",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:193: named functions require parameter and return annotations",
+      "error": "imageSha256\":\"132da523a2ac3755dbd347e7fc01b04b5eb253414809d421847193c153f67c60\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-typed-array-index-checked-untyped-QaorTe/construct-typed-array-index-checked-untyped.manifest.json\",\"sha256\":\"6dd5417f2ce9675222e28a175c1b1263dc2a407a708b4e3e844cb79eccc171a2\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 63.1
+    },
+    {
+      "construct": "typed-array-index-unchecked",
+      "form": "typed",
+      "path": "none",
+      "outcome": "unsupported",
+      "error": "",
+      "seconds": 0.2
+    },
+    {
+      "construct": "typed-array-index-unchecked",
+      "form": "untyped",
+      "path": "none",
+      "outcome": "unsupported",
+      "error": "",
+      "seconds": 0.2
+    },
+    {
+      "construct": "for-of-record-reads",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "run-failed",
+      "error": "d-reads-typed\",\"imageSha256\":\"832c9a6d62c80efb0f6d5ab158c6895d942df633603420f88727995f99222570\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-for-of-record-reads-typed-WHQGH3/construct-for-of-record-reads-typed.manifest.json\",\"sha256\":\"c1ad9fac3a25602cf27806d8d2b155a265e3aef2e41bca68c876feae47d7743c\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 33.6
+    },
+    {
+      "construct": "for-of-record-reads",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:111: named functions require parameter and return annotations",
+      "error": "s-untyped\",\"imageSha256\":\"c144422d793850fd2733e7a536e7e7083d62c1e96d9b93226ebfacb333fbc162\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-for-of-record-reads-untyped-YYROci/construct-for-of-record-reads-untyped.manifest.json\",\"sha256\":\"91162db04c21a3f8f605663291c365cfac276b572c24ca573dfbe387bfc783cc\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 72.1
+    },
+    {
+      "construct": "bigint",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "run-failed",
+      "error": "int-typed-Im55Nd/construct-bigint-typed\",\"imageSha256\":\"64650b4884b1a30bfa0b069d62c880bc8461328ea18dcf8d88c5c9b0f705d50e\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-bigint-typed-Im55Nd/construct-bigint-typed.manifest.json\",\"sha256\":\"a76c4e5d937477b1ea4dcace2275bd06104f0d27edb31b9c9801af35015f1d6b\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 36.2
+    },
+    {
+      "construct": "bigint",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:48: named functions require parameter and return annotations",
+      "error": "ped-Qcm0Nc/construct-bigint-untyped\",\"imageSha256\":\"7de4bd82a09c0cb5136d698b8448580ff52422c0070f76d65aa8aad589a28ca4\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-bigint-untyped-Qcm0Nc/construct-bigint-untyped.manifest.json\",\"sha256\":\"c14088d63457ea1b0971c7e850fd58eb9dd941d35560f273ac2eff983030d00f\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 72.6
+    },
+    {
+      "construct": "module-statements",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: module evaluation is required for this statement",
+      "error": "-statements-typed\",\"imageSha256\":\"ebf4a604b27f6a699a2e9246bb09a6044d57324c47eb49d58c645decd2a62fda\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-module-statements-typed-ZIQfVc/construct-module-statements-typed.manifest.json\",\"sha256\":\"35b0c5af382139b9fcd58584154c0967eb91094607221506939315657fcdc1fa\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 68.5
+    },
+    {
+      "construct": "module-statements",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: module evaluation is required for this statement",
+      "error": "ments-untyped\",\"imageSha256\":\"9863ba39ceebfb3718c36f7475ff9992a72445a5c94b45cbc53e30c8a8cd6fa1\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-module-statements-untyped-Nekq1N/construct-module-statements-untyped.manifest.json\",\"sha256\":\"b4fb9af58c3554deca268d3226328a6efd5839bfc233b55bf468b03c48542fa4\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 63.6
+    },
+    {
+      "construct": "weak-collections",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: WeakMap",
+      "error": "k-collections-typed\",\"imageSha256\":\"3ed92b34924f10a4f6e5ab42bee6981d9dbe28136ab7075fd5a3214395dfedbc\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-weak-collections-typed-cJzMeL/construct-weak-collections-typed.manifest.json\",\"sha256\":\"f5da894ac40243f4e32c09f923829c3f72b905087eb414393aa59b785ecaf742\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 61.5
+    },
+    {
+      "construct": "weak-collections",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: WeakMap",
+      "error": "ections-untyped\",\"imageSha256\":\"a8456d170f1978b06ce55b10555b22c5181b6e6868161233596c059c5d5e9b21\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-weak-collections-untyped-5x6YQp/construct-weak-collections-untyped.manifest.json\",\"sha256\":\"4e75a0aa3c2ed04c6ad9c9114d7f8155a05a4dea686ee921c114f1396ce55840\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 61
+    },
+    {
+      "construct": "narrowing-across-calls",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "run-failed",
+      "error": "s-typed\",\"imageSha256\":\"a754f85ac0333eebd8a5e8bf9c21d2ed927452c940bb4e0a98aad6e0b5954688\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-narrowing-across-calls-typed-czHffj/construct-narrowing-across-calls-typed.manifest.json\",\"sha256\":\"32589ba53eb3f155116a36746e0b5b41351f91092f35f339536c5c4b21ccd31e\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 36.1
+    },
+    {
+      "construct": "narrowing-across-calls",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:110: named functions require parameter and return annotations",
+      "error": "ped\",\"imageSha256\":\"355ab8695b9fc5c25b6c9cbcb46fe88da44cdf8f24097715e96e624cced9542d\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-narrowing-across-calls-untyped-BYWN6x/construct-narrowing-across-calls-untyped.manifest.json\",\"sha256\":\"ff5da9ffee1141b51fa0d9081d16bfdc60a5e7ed1b8d3515e1ee96acaee63034\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 63.2
+    },
+    {
+      "construct": "for-of-typed-array-list",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "run-failed",
+      "error": "typed\",\"imageSha256\":\"3ea66bfb1d68b11f58499dc0e540cb7eb24429992fa6d45bb1a03f6f50ab217a\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-for-of-typed-array-list-typed-TmMU5M/construct-for-of-typed-array-list-typed.manifest.json\",\"sha256\":\"6fcaa711c641e9fd4f3a3d51df682d2dc525bb8c34d1c6e7078d0713302bad73\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 34.9
+    },
+    {
+      "construct": "for-of-typed-array-list",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:121: named functions require parameter and return annotations",
+      "error": "d\",\"imageSha256\":\"ba7d2be65876eb38c3bf8959c57c60749ecffd67cb914516db320443de32fe2e\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-for-of-typed-array-list-untyped-CLKE3y/construct-for-of-typed-array-list-untyped.manifest.json\",\"sha256\":\"8233d87121744575a0f4e72da104d9d8a75d725b76c330e7090d8f53ffb0352f\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 60.5
+    },
+    {
+      "construct": "for-of-object-list",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "run-failed",
+      "error": "ject-list-typed\",\"imageSha256\":\"b54a0ca9498e26e973fa1ce0383e0e45318639fd12c7dcdfb94ee6a340a5f7c3\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-for-of-object-list-typed-DBQTlu/construct-for-of-object-list-typed.manifest.json\",\"sha256\":\"0f701816b4fb02144f93f1ea4cc432465157ef610a35c9dca445b2803756432d\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 34.9
+    },
+    {
+      "construct": "for-of-object-list",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:170: named functions require parameter and return annotations",
+      "error": "ist-untyped\",\"imageSha256\":\"33596e6ab606d50724c9a0ac1cc9a081c62654745dbe5e2b3886a73e8243bbc8\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-for-of-object-list-untyped-RKAsJH/construct-for-of-object-list-untyped.manifest.json\",\"sha256\":\"1b79fda1769763a7b7f8adca65639e5e37ce8f8d31ff7484040c20b7d1da481b\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 64
+    },
+    {
+      "construct": "reassignment-narrowing",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "run-failed",
+      "error": "g-typed\",\"imageSha256\":\"14acdadba27aee895eae705a990219e7f3ecb32d7af40a4eb6d015c5c9aefd09\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-reassignment-narrowing-typed-zyK3sh/construct-reassignment-narrowing-typed.manifest.json\",\"sha256\":\"5b7ee0b0313cf46d03fb920100d462921bb966383ab7e2862363175745c16793\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 36
+    },
+    {
+      "construct": "reassignment-narrowing",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:64: named functions require parameter and return annotations",
+      "error": "ped\",\"imageSha256\":\"226e7ab17c08b420ffb985d4ecafa2279a650b8bbdec8234f3dced22afe45577\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-reassignment-narrowing-untyped-Pd0zVz/construct-reassignment-narrowing-untyped.manifest.json\",\"sha256\":\"b6a1fb7c7184e08b9019702cd22b32321ddac1f8eddd30b70474a60f6fe3864a\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 63
+    },
+    {
+      "construct": "module-initializers",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: module evaluation is required for this statement",
+      "error": "alizers-typed\",\"imageSha256\":\"4f8d41db22e6a83ab9c7082f7c0aeec47089b59a358811c30dcbfa798d52087a\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-module-initializers-typed-5Eeecg/construct-module-initializers-typed.manifest.json\",\"sha256\":\"c764d695557b80816403e4aa671268b733d7a032fe2914a1d1c15f7b2ebdd97a\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 68
+    },
+    {
+      "construct": "module-initializers",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: module evaluation is required for this statement",
+      "error": "s-untyped\",\"imageSha256\":\"1eb821e62df50eadf076f2b00cfa5cb8cf26b7ec1da990ecad926c276197c695\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-module-initializers-untyped-dh4zsf/construct-module-initializers-untyped.manifest.json\",\"sha256\":\"ce7b8aa173c8c731d7a335cce7dd760129c6f49155056ba8dd7a718d4155a290\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 67.3
+    },
+    {
+      "construct": "evolving-empty-array",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:45:47: object, array and arrow expressions need a contextual or explicit type",
+      "error": "array-typed\",\"imageSha256\":\"19f704b983c112a7a7cca1a4f1be6923d71a767db9e34f359b6dbeca4dc331b0\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-evolving-empty-array-typed-QWvId0/construct-evolving-empty-array-typed.manifest.json\",\"sha256\":\"5256805fb1a90a693ec930d9344c42f522ab3a47c284a0b81047bf9152e2b4f4\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 64.1
+    },
+    {
+      "construct": "evolving-empty-array",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:133: named functions require parameter and return annotations",
+      "error": "untyped\",\"imageSha256\":\"b79c2abf6ebac741bb239d2fd8ea357286b2706629159df988c29ac936f06565\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-evolving-empty-array-untyped-VrBLED/construct-evolving-empty-array-untyped.manifest.json\",\"sha256\":\"40e4825af88d96a9dae8ce6487fce222d9a97e3a5d08914e15ec540735bf7af6\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 61.4
+    },
+    {
+      "construct": "discriminant-narrowing",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:159:169: invalid property read",
+      "error": "g-typed\",\"imageSha256\":\"347f041f94aea1128708a89d00cec8272d6b61b25f2ff2770c58b54389765bd0\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-discriminant-narrowing-typed-B8Uaeo/construct-discriminant-narrowing-typed.manifest.json\",\"sha256\":\"f0c3bd54129ecebf36889159f7763ca04e381d4db4395349a520ff7d51cc6503\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 67
+    },
+    {
+      "construct": "discriminant-narrowing",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:102: named functions require parameter and return annotations",
+      "error": "ped\",\"imageSha256\":\"fca0db02d464a892beb6f33de5d551cbd97140b0aa90e51ed4e8a7d2e8224c11\",\"buildManifest\":{\"path\":\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-discriminant-narrowing-untyped-j2y9dk/construct-discriminant-narrowing-untyped.manifest.json\",\"sha256\":\"40c59f61fbf54ef8c6865bddab07f6e28a1b7eb69e279e22c2e1935f61c107de\"}},\"executor\":{\"runner\":\"darwin-local\",\"identity\":\"Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050\"}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/hosted-fixture.ts:539:16)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-ba8fcb53/.tint-bootstrap/b5-ledger-source-v2/tools/unified-pipeline/verify-construct.ts:35:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "15a91e04baa8588d02d45cf3e7019bf07d075807475040cd4bc9d45e2de0c72a",
+      "seconds": 62.8
+    }
+  ]
+}

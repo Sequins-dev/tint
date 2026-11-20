@@ -8705,7 +8705,17 @@ function emitModuleForms(
                   shift: 0,
                   setFlags: true,
                 });
-                if (op.type !== "Uint8Array") {
+                const marker =
+                  op.type === "Uint8Array"
+                    ? 2
+                    : op.type === "Uint16Array"
+                      ? 3
+                      : op.type === "Uint32Array"
+                        ? 4
+                        : op.type === "Float64Array"
+                          ? 5
+                          : 0;
+                if (marker === 0) {
                   emit({ op: "cset", rd: 12, condition: "eq" });
                   saveRaw(12, op.id);
                   break;
@@ -8731,7 +8741,7 @@ function emitModuleForms(
                   width: 64,
                   rd: "zr",
                   rn: 10,
-                  immediate: 2,
+                  immediate: marker,
                   shift: 0,
                   setFlags: true,
                 });
@@ -9113,7 +9123,17 @@ function emitModuleForms(
                 });
                 trapIf({ op: "b.cond", condition: "ne" });
                 rawLoad(9, value(op.value).offset + 8);
-                if (op.type === "Uint8Array") {
+                const marker =
+                  op.type === "Uint8Array"
+                    ? 2
+                    : op.type === "Uint16Array"
+                      ? 3
+                      : op.type === "Uint32Array"
+                        ? 4
+                        : op.type === "Float64Array"
+                          ? 5
+                          : 0;
+                if (marker !== 0) {
                   // The object's header marker (bits 0-47) must be 2:
                   // a typed array of 1-byte elements (any storage kind).
                   emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
@@ -9130,7 +9150,7 @@ function emitModuleForms(
                     width: 64,
                     rd: "zr",
                     rn: 10,
-                    immediate: 2,
+                    immediate: marker,
                     shift: 0,
                     setFlags: true,
                   });

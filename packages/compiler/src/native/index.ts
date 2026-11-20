@@ -116,6 +116,7 @@ import { nativeClosureCallMessage } from "@tint/ts-native/scalar";
 import { bindModule } from "@tint/typescript/binding";
 import {
   checkClosureModule,
+  withRealmGlobals,
   type CheckedClosures,
 } from "@tint/typescript/checker";
 import {
@@ -151,6 +152,7 @@ import {
   lowerModuleEntries,
   insertDynamicObjectRuntime,
   usesDynamicObjectRuntime,
+  usesRealmInstanceof,
   type ModuleEntryOptions,
   type RecordOperation,
   type FunctionAddressBinding,
@@ -901,7 +903,7 @@ function generalApplicationModules(
   return { ok: true, value: result, trusted: imported };
 }
 /** Globals of typed (non-general) programs. */
-const typedGlobals: readonly string[] = [
+const baseTypedGlobals: readonly string[] = [
   "undefined",
   "NaN",
   "Infinity",
@@ -927,6 +929,7 @@ const typedGlobals: readonly string[] = [
   "Error",
   "console",
 ];
+const typedGlobals: readonly string[] = withRealmGlobals(baseTypedGlobals);
 /** Links the program and prepares its globals and managed surfaces. */
 function linkTypedProgram(request: CompileRequest): TypedLinking {
   const globals = typedGlobals;
@@ -1183,6 +1186,7 @@ function checkApplication(
   linkedProgram: LinkedTypedProgram,
   request: CompileRequest,
   callHelper: string | undefined,
+  mixed: boolean,
 ):
   | {
       readonly ok: true;
@@ -1230,18 +1234,26 @@ function checkApplication(
   const helpers = linkedProgram.helpers,
     application = linkedProgram.application,
     hasDynamicRuntime = helpers.has("dynamic-object:create");
-  if (!hasDynamicRuntime && usesDynamicObjectRuntime(checked.value))
+  const dynamic = usesDynamicObjectRuntime(checked.value);
+  const realmInstanceof = usesRealmInstanceof(checked.value, mixed || dynamic);
+  if (!hasDynamicRuntime && (dynamic || realmInstanceof))
     return {
       ok: false,
       error: {
         stage: "lower",
-        message:
-          "UNSUPPORTED: dynamic-key objects require the program realm runtime",
+        message: realmInstanceof
+          ? "UNSUPPORTED: instanceof requires the program realm runtime"
+          : "UNSUPPORTED: dynamic-key objects require the program realm runtime",
         needsDynamicRealm: true,
       },
     };
   const instanceSource = hasDynamicRuntime
-    ? insertDynamicObjectRuntime(application, checked.value, helpers)
+    ? insertDynamicObjectRuntime(
+        application,
+        checked.value,
+        helpers,
+        realmInstanceof,
+      )
     : application;
   let callsGeneral = false;
   if (callHelper !== undefined)
@@ -1260,6 +1272,7 @@ function checkApplication(
 /** Specializes and checks the linked program; returns what lowering needs. */
 function checkTypedProgram(
   request: CompileRequest,
+  mixed: boolean,
   invokeDirectly: boolean,
 ): TypedChecking {
   const linking = linkTypedProgram(request);
@@ -1274,7 +1287,7 @@ function checkTypedProgram(
     retainedRuntimeModules = linkedProgram.retainedRuntimeModules,
     surfacePlans = linkedProgram.surfacePlans;
   const callHelper = helpers.get("general-object-views:callGeneralValue");
-  const checked = checkApplication(linkedProgram, request, callHelper);
+  const checked = checkApplication(linkedProgram, request, callHelper, mixed);
   if (!checked.ok) return { ok: false, error: checked.error };
   const callsGeneral = checked.value.callsGeneral;
   let initializerName = "",
@@ -1492,7 +1505,11 @@ function lowerTypedProgram(
   realmTypeofModules?: ReadonlySet<string>,
   invokeDirectly: boolean = false,
 ): TypedLowering {
-  const front = checkTypedProgram(request, invokeDirectly);
+  const front = checkTypedProgram(
+    request,
+    realmTypeofModules !== undefined,
+    invokeDirectly,
+  );
   if (!front.ok) return { ok: false, error: front.error };
   const checkedProgram = front.value,
     nativeChecked = checkedProgram.checked,
