@@ -170,6 +170,7 @@ interface RealmErrorSources {
 
 interface NodeErrorTypes {
   readonly coded?: number | undefined;
+  readonly type?: number | undefined;
   readonly range?: number | undefined;
   readonly system?: number | undefined;
   readonly info?: number | undefined;
@@ -513,6 +514,7 @@ function lowerEntries(
     if (nodeErrorTypes !== undefined && branded !== undefined)
       for (const type of [
         nodeErrorTypes.coded,
+        nodeErrorTypes.type,
         nodeErrorTypes.range,
         nodeErrorTypes.system,
       ])
@@ -1045,6 +1047,7 @@ function lowerEntries(
         ? undefined
         : {
             coded: nodeErrorRecord(nodeErrorTypes.coded),
+            type: nodeErrorRecord(nodeErrorTypes.type),
             range: nodeErrorRecord(nodeErrorTypes.range),
             system: nodeErrorRecord(nodeErrorTypes.system),
             info: nodeErrorRecord(nodeErrorTypes.info),

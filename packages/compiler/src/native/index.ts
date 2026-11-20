@@ -555,6 +555,7 @@ function stageFailure(
  * linked and intermediate syntax stays in checkTypedProgram's frame. */
 interface NodeErrorNames {
   readonly coded: string | undefined;
+  readonly type: string | undefined;
   readonly range: string | undefined;
   readonly system: string | undefined;
   readonly info: string | undefined;
@@ -1676,22 +1677,32 @@ function checkApplication(
     });
   // Carry only linked names across collection preparation. The final checker
   // assigns fresh type IDs, and the observation releases the first graph.
-  function nodeErrorName(name: string): string | undefined {
+  function nodeErrorName(
+    name: string,
+    module: string = "packages/native-runtime/src/node/errors.ts",
+  ): string | undefined {
     return linkedProgram.exports.find(
       (item) =>
         item !== undefined &&
-        item.module === "packages/native-runtime/src/node/errors.ts" &&
+        item.module === module &&
         item.namespace === "type" &&
         item.name === name,
     )?.linkedName;
   }
   const coded = nodeErrorName("NativeCodedError"),
+    type = nodeErrorName(
+      "NativeCodedTypeError",
+      "packages/native-runtime/src/node/type-error.ts",
+    ),
     range = nodeErrorName("NativeCodedRangeError"),
     system = nodeErrorName("NativeSystemError");
   const nodeErrors: NodeErrorNames | undefined =
-    coded === undefined && range === undefined && system === undefined
+    coded === undefined &&
+    type === undefined &&
+    range === undefined &&
+    system === undefined
       ? undefined
-      : { coded, range, system, info: nodeErrorName("SystemErrorInfo") };
+      : { coded, type, range, system, info: nodeErrorName("SystemErrorInfo") };
   return {
     ok: true,
     value: {
@@ -2320,6 +2331,7 @@ function lowerTypedProgram(
           ? undefined
           : {
               coded: nodeErrorType(nodeErrors.coded),
+              type: nodeErrorType(nodeErrors.type),
               range: nodeErrorType(nodeErrors.range),
               system: nodeErrorType(nodeErrors.system),
               info: nodeErrorType(nodeErrors.info),

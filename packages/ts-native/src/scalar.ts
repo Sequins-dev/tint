@@ -381,6 +381,7 @@ export interface RealmErrorRuntime {
 
 export interface NodeErrorRecords {
   readonly coded?: number | undefined;
+  readonly type?: number | undefined;
   readonly range?: number | undefined;
   readonly system?: number | undefined;
   readonly info?: number | undefined;
@@ -2306,12 +2307,22 @@ export function lowerFunction(
     error: "Error" | "RangeError" | "TypeError",
     node: IRSpan,
   ): number {
-    if (nodeErrors === undefined || error === "TypeError")
+    if (
+      nodeErrors === undefined ||
+      (error === "TypeError" && nodeErrors.type === undefined)
+    )
       return intrinsicErrorTest(value, error, node);
     const candidates: (number | undefined)[] =
-      error === "RangeError"
-        ? [nodeErrors.range]
-        : [nodeErrors.coded, nodeErrors.range, nodeErrors.system];
+      error === "TypeError"
+        ? [nodeErrors.type]
+        : error === "RangeError"
+          ? [nodeErrors.range]
+          : [
+              nodeErrors.coded,
+              nodeErrors.range,
+              nodeErrors.system,
+              nodeErrors.type,
+            ];
     const operand = save(value, "general", node);
     const yes = block(),
       done = block(),
@@ -2794,7 +2805,7 @@ export function lowerFunction(
       range = nodeErrors?.range,
       system = nodeErrors?.system;
     if (property === "code") {
-      for (const record of [coded, range, system]) {
+      for (const record of [coded, range, system, nodeErrors?.type]) {
         if (record === undefined) continue;
         const next = chooseRecord(record);
         answer(

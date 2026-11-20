@@ -2831,6 +2831,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/type-error.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/zlib.ts",
       packageId: "native-runtime",
     },
