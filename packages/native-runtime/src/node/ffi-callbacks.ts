@@ -111,7 +111,7 @@ export function createFfiCallbacks(
         core,
         "type",
         "ERR_INVALID_ARG_VALUE",
-        "Callback has been collected",
+        "Callback not found",
       );
     callback.strong = enabled ? value : undefined;
   }

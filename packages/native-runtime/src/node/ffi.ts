@@ -15,6 +15,7 @@ import {
   getOwnProperty,
   getProperty,
   hostFinalizationRegistry,
+  installWeakRefIntrinsics,
   ownKeys,
   programRealmCore,
   projectArrayBufferViewRange,
@@ -25,6 +26,7 @@ import {
   type ObjectCall,
   type ProgramRealmCore,
   type ScriptPropertyKey,
+  type WeakStorageService,
 } from "@tint/js-runtime/objects";
 import { Cell, DynamicScalarFrame, TARGET_AAPCS64 } from "tint:c/dl";
 import { abort, pthread_self } from "tint:c/ffi-callbacks";
@@ -81,6 +83,12 @@ import { createFfiCallbacks, type FfiCallback } from "./ffi-callbacks.ts";
 
 import { staticFfiCall, staticFfiIndex } from "./ffi-static.ts";
 
+interface ScalarWorkspace {
+  readonly frame: Uint8Array;
+  readonly scratch: Uint8Array;
+  readonly loans: Uint8Array[];
+}
+
 interface Binding {
   readonly name: string;
   readonly signature: FfiSignature;
@@ -88,6 +96,9 @@ interface Binding {
   readonly frame: ForeignFunction | undefined;
   readonly staticCall: number;
   wideLayout: CCallLayout | undefined;
+  leafWorkspace: ScalarWorkspace | undefined;
+  callbackWorkspace: ScalarWorkspace | undefined;
+  scalarDepth: number;
   wrapper: unknown;
 }
 interface DynamicLibraryState {
@@ -203,7 +214,7 @@ function pointerArgument(
           undefined,
         );
       if (bytes !== undefined) {
-        const backing = stable ? stableFfiBacking(core, storage, bytes) : bytes;
+        const backing = stableFfiBacking(core, storage, bytes);
         return ffiPointer(
           0n,
           backing.subarray(
@@ -218,10 +229,7 @@ function pointerArgument(
       const bytes = storage.data;
       if (bytes === undefined)
         return invalidArgument(core, index, "is a detached ArrayBuffer");
-      return ffiPointer(
-        0n,
-        stable ? stableFfiBacking(core, storage, bytes) : bytes,
-      );
+      return ffiPointer(0n, stableFfiBacking(core, storage, bytes));
     }
   }
   return invalidArgument(
@@ -317,18 +325,38 @@ function invokeScalar(
   dispatcher: CallbackDispatcher | undefined,
 ): unknown {
   const header = DynamicScalarFrame.size;
-  const frame =
-    dispatcher === undefined
-      ? new Uint8Array(header + layout.stackBytes)
-      : external(header + layout.stackBytes);
+  // The outer call owns its binding's workspace. Reentrant calls get private
+  // frames so they cannot overwrite saved arguments or borrowed byte roots.
+  const reusable = binding.scalarDepth === 0;
+  let workspace = reusable
+    ? dispatcher === undefined
+      ? binding.leafWorkspace
+      : binding.callbackWorkspace
+    : undefined;
+  if (workspace === undefined) {
+    workspace = {
+      frame:
+        dispatcher === undefined
+          ? new Uint8Array(header + layout.stackBytes)
+          : external(header + layout.stackBytes),
+      scratch: new Uint8Array(Cell.size),
+      loans: [],
+    };
+    if (reusable) {
+      if (dispatcher === undefined) binding.leafWorkspace = workspace;
+      else binding.callbackWorkspace = workspace;
+    }
+  }
+  const frame = workspace.frame;
+  const loans = workspace.loans;
+  const bytes = workspace.scratch;
   const view = DynamicScalarFrame.view(frame);
   view.target.low = binding.address.low;
   view.target.high = binding.address.high;
   view.stackBytes = layout.stackBytes;
-  const loans: Uint8Array[] = [];
-  const bytes = new Uint8Array(Cell.size);
   const cell = Cell.view(bytes);
   const types = binding.signature.parameters;
+  binding.scalarDepth++;
   try {
     for (let index = 0; index < types.length; index++) {
       const type = types[index],
@@ -346,7 +374,7 @@ function invokeScalar(
         }
       }
       cell.u64 = 0;
-      writeScalar(core, cell, scalarKind(type), argument);
+      writeScalar(core, cell, scalarKind(type), argument, index);
       const stackOffset = location.stackOffset;
       let offset: number, width: number;
       if (stackOffset >= 0) {
@@ -385,6 +413,7 @@ function invokeScalar(
   } finally {
     // C holds only raw words. Keep the true storage roots live across the loan.
     while (loans.length !== 0) loans.pop();
+    binding.scalarDepth--;
   }
 }
 
@@ -595,10 +624,17 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       frame,
       staticCall,
       wideLayout,
+      leafWorkspace: undefined,
+      callbackWorkspace: undefined,
+      scalarDepth: 0,
       wrapper: undefined,
     };
   }
-  function wrapper(owner: FfiObject, binding: Binding): unknown {
+  function wrapper(
+    owner: FfiObject,
+    state: DynamicLibraryState,
+    binding: Binding,
+  ): unknown {
     const slot = binding.wrapper;
     const existing = slot === undefined ? undefined : weakSlotKey(slot);
     if (existing !== undefined) return existing;
@@ -607,7 +643,11 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       binding.name,
       0,
       (_receiver, args): unknown => {
-        requireOpen(requireState(owner));
+        requireOpen(state);
+        // The wrapper retains its owner while the library caches the wrapper
+        // weakly. Validate this single identity without searching the realm.
+        if (weakSlotKey(state.identity) !== owner)
+          throw "FFI_WRAPPER_OWNER_INVARIANT";
         const frame = binding.frame;
         let wideLayout = binding.wideLayout;
         if (frame === undefined && wideLayout === undefined) return closed();
@@ -676,7 +716,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
         createDataProperty<ScriptPropertyKey, unknown>(
           table,
           name,
-          wrapper(owner, binding),
+          wrapper(owner, state, binding),
           hooks,
         );
       return table;
@@ -717,7 +757,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       createDataProperty<ScriptPropertyKey, unknown>(
         table,
         name,
-        wrapper(owner, binding),
+        wrapper(owner, state, binding),
         hooks,
       );
     }
@@ -748,16 +788,23 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     clearWeakSlot(state.identity);
     states.splice(index, 1);
   }
+  const weakStorage: WeakStorageService = {
+    create: (key, value, ephemeron): unknown =>
+      createWeakSlot(key, value, ephemeron),
+    key: (cell): unknown => weakSlotKey(cell),
+    value: (cell): unknown => weakSlotValue(cell),
+    setValue: (cell, value): void => setWeakSlotValue(cell, value),
+    clear: (cell): void => clearWeakSlot(cell),
+  };
+  if (realm.agent.weakStorage === undefined)
+    realm.agent.weakStorage = weakStorage;
+  if (!core.installed.has("installWeakRefIntrinsics")) {
+    installWeakRefIntrinsics(core.object, realm, hooks);
+    core.installed.add("installWeakRefIntrinsics");
+  }
   const trackLibrary = hostFinalizationRegistry(
     realm,
-    {
-      create: (key, value, ephemeron): unknown =>
-        createWeakSlot(key, value, ephemeron),
-      key: (cell): unknown => weakSlotKey(cell),
-      value: (cell): unknown => weakSlotValue(cell),
-      setValue: (cell, value): void => setWeakSlotValue(cell, value),
-      clear: (cell): void => clearWeakSlot(cell),
-    },
+    weakStorage,
     method("release FFI library", 1, (_receiver, args): unknown => {
       const expired = args[0];
       for (let index = 0; index < states.length; index++) {
@@ -882,7 +929,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       const definition = ffiObject(core, args[1], "Function signature");
       const binding = prepare(state, name, definition);
       publish(state, binding);
-      return wrapper(owner, binding);
+      return wrapper(owner, state, binding);
     }),
     true,
     true,

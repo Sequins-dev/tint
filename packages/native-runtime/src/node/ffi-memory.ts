@@ -36,6 +36,18 @@ const scalarNames: string[] = [
   "Float32",
   "Float64",
 ];
+const scalarLabels: string[] = [
+  "an int8",
+  "a uint8",
+  "an int16",
+  "a uint16",
+  "an int32",
+  "a uint32",
+  "an int64",
+  "a uint64",
+  "a float",
+  "a double",
+];
 const scalarWidths: number[] = [1, 1, 2, 2, 4, 4, 8, 8, 4, 8];
 const scalarMinimums: number[] = [-128, 0, -32768, 0, -2147483648, 0];
 const scalarMaximums: number[] = [
@@ -76,8 +88,10 @@ export function writeScalar(
   cell: View<Cell>,
   kind: number,
   value: unknown,
+  argumentIndex: number = -1,
 ): void {
-  const name = scalarNames[kind] ?? "numeric";
+  const subject = argumentIndex < 0 ? "Value" : "Argument " + argumentIndex;
+  const label = scalarLabels[kind] ?? "a number";
   if (kind === 6 || kind === 7) {
     const bits =
       typeof value === "bigint"
@@ -95,7 +109,7 @@ export function writeScalar(
         core,
         "type",
         "ERR_INVALID_ARG_VALUE",
-        "Value must be a " + name,
+        subject + " must be " + label,
       );
     cell.halves.low = Number(bits & 0xffffffffn);
     cell.halves.high = Number((bits >> 32n) & 0xffffffffn);
@@ -112,7 +126,7 @@ export function writeScalar(
       core,
       "type",
       "ERR_INVALID_ARG_VALUE",
-      "Value must be a " + name,
+      subject + " must be " + label,
     );
   switch (kind) {
     case 0:
@@ -208,19 +222,19 @@ export function installFfiMemory(
   function range(message: string): never {
     return ffiError(core, "range", "ERR_OUT_OF_RANGE", message);
   }
-  function nullPointer(): never {
-    return ffiError(
-      core,
-      "error",
-      "ERR_FFI_INVALID_POINTER",
-      "Cannot dereference a null pointer",
-    );
+  function nullPointer(
+    message: string = "Cannot dereference a null pointer",
+  ): never {
+    return ffiError(core, "error", "ERR_FFI_INVALID_POINTER", message);
   }
-  function readPointer(value: unknown): bigint {
-    if (typeof value !== "bigint") return type("The pointer must be a bigint");
+  function readPointer(value: unknown, label: string = "pointer"): bigint {
+    if (typeof value !== "bigint")
+      return type("The " + label + " must be a bigint");
     if (value < 0n || value > maxPointer)
       return invalid(
-        "The pointer must be a non-negative bigint within the platform pointer range",
+        "The " +
+          label +
+          " must be a non-negative bigint within the platform pointer range",
       );
     return value;
   }
@@ -235,12 +249,16 @@ export function installFfiMemory(
       return range("The " + label + " is too large");
     return value;
   }
-  function validateSpan(address: bigint, count: number): void {
+  function validateSpan(
+    address: bigint,
+    count: number,
+    message: string = "The accessed range exceeds the platform address range",
+  ): void {
     if (
       address > maxPointer ||
       (count > 0 && BigInt(count - 1) > maxPointer - address)
     )
-      invalid("The accessed range exceeds the platform address range");
+      invalid(message);
   }
   function scalarAddress(
     pointer: unknown,
@@ -254,7 +272,11 @@ export function installFfiMemory(
     const start =
       address +
       BigInt(offset === undefined ? 0 : size(offset, "offset", false));
-    validateSpan(start, 1);
+    validateSpan(
+      start,
+      1,
+      "The pointer and offset exceed the platform address range",
+    );
     return start;
   }
   function define(
@@ -297,7 +319,7 @@ export function installFfiMemory(
   }
 
   define("toString", 0, (_receiver, args): unknown => {
-    const address = readPointer(args[0]);
+    const address = readPointer(args[0], "first argument");
     if (address === 0n) return null;
     const capacity = Number(
       maxPointer - address < BigInt(maxStringBytes)
@@ -313,11 +335,16 @@ export function installFfiMemory(
     return ffiError(core, "error", "ERR_STRING_TOO_LONG", "String is too long");
   });
 
-  function importBytes(args: readonly unknown[]): Uint8Array {
-    const address = readPointer(args[0]);
+  function importBytes(args: readonly unknown[], kind: string): Uint8Array {
+    const address = readPointer(args[0], "first argument");
     const count = size(args[1], "length", false);
-    if (address === 0n && count !== 0) return nullPointer();
-    validateSpan(address, count);
+    if (address === 0n && count !== 0)
+      return nullPointer("Cannot create " + kind + " from a null pointer");
+    validateSpan(
+      address,
+      count,
+      "The pointer and length exceed the platform address range",
+    );
     const copy = args[2];
     if (copy !== undefined && typeof copy !== "boolean")
       return type("The copy argument must be a boolean");
@@ -338,10 +365,10 @@ export function installFfiMemory(
     return bytes;
   }
   define("toBuffer", 0, (_receiver, args): unknown =>
-    adoptNodeBuffer(core, importBytes(args)),
+    adoptNodeBuffer(core, importBytes(args, "a buffer")),
   );
   define("toArrayBuffer", 0, (_receiver, args): unknown =>
-    adoptArrayBuffer(importBytes(args), core.realm),
+    adoptArrayBuffer(importBytes(args, "an ArrayBuffer"), core.realm),
   );
 
   function exportBytes(
@@ -392,7 +419,11 @@ export function installFfiMemory(
       brand === "ArrayBuffer" ? undefined : projectArrayBufferViewRange(source);
     const storage = source.internalArrayBufferData;
     if (brand === "ArrayBuffer" ? storage === undefined : window === undefined)
-      return type("The source must be a " + brand);
+      return type(
+        brand === "ArrayBuffer"
+          ? 'The "arrayBuffer" argument must be an instance of ArrayBuffer'
+          : "The source must be a " + brand,
+      );
     const count = size(args[2], "len", true);
     if (window !== undefined) {
       const owner = window.storage;
@@ -433,6 +464,8 @@ export function installFfiMemory(
         "The source must be an ArrayBuffer, SharedArrayBuffer, or ArrayBufferView",
       );
     const window = projectArrayBufferViewRange(source);
+    if (window?.kind === "detached")
+      return invalid("ArrayBufferView is backed by a detached ArrayBuffer");
     const storage = window?.storage ?? source.internalArrayBufferData;
     if (storage === undefined) {
       const shared = source.internalSharedArrayBufferData;

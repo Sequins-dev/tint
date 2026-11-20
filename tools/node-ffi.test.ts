@@ -179,6 +179,17 @@ export function run() {
     catch (error) { if (!(error instanceof TypeError) || error.code !== "ERR_INVALID_ARG_VALUE") return 11; }
     try { ffi.toBuffer(1n, 2 ** 50); return 12; }
     catch (error) { if (!(error instanceof RangeError) || error.code !== "ERR_MEMORY_ALLOCATION_FAILED") return 12; }
+    const definitions = { memset: { return: "pointer", arguments: ["pointer", "int32", "uint64"] } };
+    const secondary = ffi.dlopen(null, definitions);
+    try {
+      const buffer = Buffer.alloc(2);
+      const addressFromC = secondary.functions.memset(buffer, 42, 1n);
+      if (addressFromC !== ffi.getRawPointer(buffer) || buffer[0] !== 42) return 13;
+    } finally { secondary.lib.close(); }
+    try { functions.malloc(-1n); return 14; }
+    catch (error) {
+      if (error.code !== "ERR_INVALID_ARG_VALUE" || error.message !== "Argument 0 must be a uint64") return 14;
+    }
     return 42;
   } finally {
     functions.free(pointer);

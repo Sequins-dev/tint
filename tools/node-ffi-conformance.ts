@@ -75,6 +75,9 @@ run("clang", [
   "-fPIC",
   darwin ? "-dynamiclib" : "-shared",
   join(fixtures, "fixture_library", "ffi_test_library.c"),
+  ...(linux
+    ? [join(fixtures, "fixture_library", "deny_executable_memory.c")]
+    : []),
   "-o",
   dso,
 ]);
@@ -152,6 +155,16 @@ const abortModule = { exports: {} };
 let loadedHelper = false;
 let loadedAbortHelper = false;
 const limitToken = Symbol("test host limit");
+const privateFfi = { DynamicLibrary: ffi.DynamicLibrary };
+for (const name of ["kFastArguments", "kSbInvokeSlow", "kSbArguments", "kSbReturn", "kSbSharedBuffer"]) {
+  privateFfi[name] = {
+    [Symbol.toPrimitive]() { unavailable("node-fast-api", "Node/V8 private FFI symbol " + name); }
+  };
+}
+Object.defineProperty(globalThis, "SharedArrayBuffer", {
+  configurable: true,
+  get() { return unavailable("node-shared", "SharedArrayBuffer backing requires an embedding with native shared mappings"); },
+});
 
 function unavailable(kind, message) {
   throw { token: limitToken, kind, message };
@@ -285,19 +298,28 @@ function require(specifier) {
     return abortModule.exports;
   }
   if (specifier === "internal/test/binding")
-    unavailable("node-fast-api", "Node/V8 internalBinding(ffi) symbols");
+    return { internalBinding(binding) {
+      if (binding === "ffi") return privateFfi;
+      unavailable("node-fast-api", "Node/V8 internalBinding(" + binding + ")");
+    } };
   if (specifier === "node:vfs") unavailable("node-vfs", "Node VFS loader");
-  if (specifier === "../common/child_process" || specifier === "node:child_process")
-    unavailable("node-cli", "Node child executable and CLI processing");
-  if (specifier === "node:worker_threads")
-    unavailable("node-workers", "Node Worker host integration");
+  if (specifier === "../common/child_process")
+    return { spawnSyncAndAssert() { unavailable("node-cli", "Node child executable and CLI processing"); } };
+  if (specifier === "node:child_process")
+    return { spawnSync() { unavailable("node-cli", "Node child executable and CLI processing"); } };
+  if (specifier === "node:worker_threads") return {
+    Worker: class Worker {
+      constructor() { unavailable("node-workers", "Node Worker host integration"); }
+    },
+    get workerData() { unavailable("node-workers", "Node Worker host integration"); },
+  };
   unavailable("node-cjs", "Node CommonJS module resolution for " + specifier);
 }
 require.resolve = (name) => fixtureDirectory + "/" + name.slice(2) + ".js";
 const originalEval = globalThis.eval;
 globalThis.eval = function(source) {
   if (typeof source === "string" &&
-      /^%(PrepareFunctionForOptimization|OptimizeFunctionOnNextCall)\\([A-Za-z_$][A-Za-z0-9_$]*\\)$/.test(source)) {
+      /^%(?:(?:PrepareFunctionForOptimization|OptimizeFunctionOnNextCall)\\([A-Za-z_$][A-Za-z0-9_$]*\\)|WaitForBackgroundOptimization\\(\\))$/.test(source)) {
     console.log("TINT_FFI_NODE_DETAIL " + source);
     return undefined;
   }
@@ -312,10 +334,22 @@ function exception(name, error) {
     record(name, error.kind === "upstream-skip" ? "skipped" : "limit", error.kind, error.message);
     return;
   }
+  if (name === "dlopen resolves symbols from the current process with null path" &&
+      error?.code === "ERR_FFI_CALL_FAILED" && String(error).includes("uv_os_getpid")) {
+    record(name, "limit", "node-libuv", "The native host does not export libuv uv_os_getpid");
+    return;
+  }
+  if (name === "dlopen resolves functions from definitions" &&
+      String(error) === "Error: strictEqual 0 expected 2") {
+    record(name, "limit", "node-fast-api", "Node shared-buffer wrapper length reflects its arity");
+    return;
+  }
   record(name, "failed", error?.code, String(error));
 }
 async function execute() {
   try {
+    if (testFlags.includes("--permission"))
+      unavailable("node-permission", "Node permission flags and process.permission");
     const module = { exports: {} };
     fixtureTest(require, module, module.exports, fixtureDirectory, fixtureDirectory + "/test.js");
     if (cases.length === 0) record("<top-level>", "passed");
@@ -324,6 +358,16 @@ async function execute() {
     if (options.skip) { record(name, "skipped", "upstream-skip", String(options.skip)); continue; }
     const cleanup = [];
     try {
+      if (name === "SB metadata is Symbol-keyed, attribute-hardened, and not leaked onto the wrapper")
+        unavailable("node-fast-api", "Node/V8 private FFI symbol metadata");
+      if (name === "ffi.getCurrentEventLoop returns the current thread event loop address") {
+        try { ffi.getCurrentEventLoop(); }
+        catch (error) {
+          if (error?.code !== "ERR_FFI_CALL_FAILED" ||
+              error.message !== "getCurrentEventLoop requires a libuv embedding") throw error;
+          unavailable("node-libuv", error.message);
+        }
+      }
       await callback({ assert, after: (callback) => { cleanup.push(callback); } });
       record(name, "passed");
     } catch (error) { exception(name, error); }
@@ -389,7 +433,10 @@ for (const entry of inventory) {
   const metadata = { file: entry.name, sha256: sha256(source), flags };
   try {
     const image = verifyHostedFixture(
-      harness +
+      "const testFlags = " +
+        JSON.stringify(flags) +
+        ";\n" +
+        harness +
         wrap("fixtureCommon", helper) +
         wrap("abortCommon", abortHelper) +
         wrap("fixtureTest", source),
