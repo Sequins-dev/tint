@@ -2895,6 +2895,14 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/platform/src/c/darwin-reactor.d.ts",
+      packageId: "platform",
+    },
+    {
+      id: "packages/platform/src/c/linux-reactor.d.ts",
+      packageId: "platform",
+    },
+    {
       id: "packages/platform/src/darwin/fs-errors.ts",
       packageId: "platform",
     },
@@ -2907,6 +2915,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "platform",
     },
     {
+      id: "packages/platform/src/darwin/reactor.ts",
+      packageId: "platform",
+    },
+    {
       id: "packages/platform/src/files/service.ts",
       packageId: "platform",
     },
@@ -2916,6 +2928,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/platform/src/host.ts",
+      packageId: "platform",
+    },
+    {
+      id: "packages/platform/src/io/reactor.ts",
       packageId: "platform",
     },
     {
@@ -2932,6 +2948,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/platform/src/linux/host-abi.ts",
+      packageId: "platform",
+    },
+    {
+      id: "packages/platform/src/linux/reactor.ts",
       packageId: "platform",
     },
     {
@@ -5547,6 +5567,196 @@ export function projectMappings(): ImportMapping[] {
       packageId: "platform",
       specifier: "@tint/abi/weak-slot",
       target: "packages/abi/src/weak-slot.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/binary/bytes",
+      target: "packages/foundation/src/binary/bytes.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/binary/sha256",
+      target: "packages/foundation/src/binary/sha256.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/binary/sha256-stream",
+      target: "packages/foundation/src/binary/sha256-stream.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/binary/word-buffer",
+      target: "packages/foundation/src/binary/word-buffer.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/binary/word64",
+      target: "packages/foundation/src/binary/word64.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/chrono/gregorian-calendar",
+      target: "packages/foundation/src/chrono/gregorian-calendar/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/chrono/iso-date-time",
+      target: "packages/foundation/src/chrono/iso-date-time/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/chrono/temporal-duration",
+      target: "packages/foundation/src/chrono/temporal-duration/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/chrono/time-zone-identifiers",
+      target: "packages/foundation/src/chrono/time-zone-identifiers/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/chrono/tzif",
+      target: "packages/foundation/src/chrono/tzif/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/bit-vector",
+      target: "packages/foundation/src/collections/bit-vector.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/indexed-sort",
+      target: "packages/foundation/src/collections/indexed-sort.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/key-index",
+      target: "packages/foundation/src/collections/key-index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/linked-map",
+      target: "packages/foundation/src/collections/linked-map.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/linked-set",
+      target: "packages/foundation/src/collections/linked-set.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/list-sort",
+      target: "packages/foundation/src/collections/list-sort.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/number-list",
+      target: "packages/foundation/src/collections/number-list.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/sparse-list",
+      target: "packages/foundation/src/collections/sparse-list.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/graph/dataflow",
+      target: "packages/foundation/src/graph/dataflow.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/layout",
+      target: "packages/foundation/src/layout/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/modules",
+      target: "packages/foundation/src/modules.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/numeric/big-integer",
+      target: "packages/foundation/src/numeric/big-integer.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/numeric/binary64-trigonometry",
+      target: "packages/foundation/src/numeric/binary64-trigonometry/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/numeric/exact-sum",
+      target: "packages/foundation/src/numeric/exact-sum.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/numeric/integer-rounding",
+      target: "packages/foundation/src/numeric/integer-rounding.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/numeric/number-text",
+      target: "packages/foundation/src/numeric/number-text/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/regexp/engine",
+      target: "packages/foundation/src/regexp/engine/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/regexp/syntax",
+      target: "packages/foundation/src/regexp/syntax/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/text/base-encoding",
+      target: "packages/foundation/src/text/base-encoding/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/text/json-syntax",
+      target: "packages/foundation/src/text/json-syntax.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/text/string-builder",
+      target: "packages/foundation/src/text/string-builder.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/text/text-encoding",
+      target: "packages/foundation/src/text/text-encoding/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/text/text-scanner",
+      target: "packages/foundation/src/text/text-scanner.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/unicode/casing",
+      target: "packages/foundation/src/unicode/casing/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/unicode/identifiers",
+      target: "packages/foundation/src/unicode/identifiers/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/unicode/normalization",
+      target: "packages/foundation/src/unicode/normalization/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/unicode/properties",
+      target: "packages/foundation/src/unicode/properties/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/unicode/segmentation",
+      target: "packages/foundation/src/unicode/segmentation/index.ts",
     },
     {
       packageId: "platform",

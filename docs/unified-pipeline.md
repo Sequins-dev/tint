@@ -649,6 +649,13 @@ The [typed hosted fixture](../tools/build-event-loop-fixture.ts) exercises the
 driver without general fallback. [Node oracle traces](../tools/event-loop-oracle.test.ts)
 pin the public ordering that the application hosts need to reproduce.
 
+The [Darwin reactor](../packages/platform/src/darwin/reactor.ts) uses kqueue
+with an `EVFILT_USER` wake. The
+[Linux reactor](../packages/platform/src/linux/reactor.ts) uses epoll with
+eventfd. [The reactor fixture](../tools/build-event-loop-reactor-fixture.ts)
+exercises a pre-posted wake, a cross-thread wake and a nonblocking pipe
+through the same phases on Darwin arm64, Linux arm64 and Linux x86-64.
+
 ### What happens to each front end
 
 - js-engine lowering becomes a library of construct lowerings callable for a

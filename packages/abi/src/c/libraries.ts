@@ -41,7 +41,9 @@ export const cLibraryManifest: readonly CLibraryManifestEntry[] = [
   { module: "tint:c/libsystem", darwin: libSystem, linux: glibc },
   { module: "tint:c/commoncrypto", darwin: libSystem },
   { module: "tint:c/darwin-os", darwin: libSystem },
+  { module: "tint:c/darwin-reactor", darwin: libSystem },
   { module: "tint:c/linux-os", linux: glibc },
+  { module: "tint:c/linux-reactor", linux: glibc },
   { module: "tint:c/dl", darwin: libSystem, linux: glibc },
   { module: "tint:c/memory", darwin: libSystem, linux: glibc },
   {
