@@ -1,0 +1,278 @@
+# Parallel and bounded-memory AOT compilation
+
+Phase 1 proposal for review. Implementation begins after approval.
+
+## Baseline and priorities
+
+On the frozen 796-file self-build, native took **181.3 s** and peaked at
+**2,081 MiB RSS**. The Node-hosted build took **306.4 s** and peaked at
+**4,001 MiB RSS**. Both produced the same signed image. Optimization and
+codegen accounted for 88% of native wall time, with optimization alone
+taking 107.9 s. Codegen had the highest RSS on both hosts. Both compilers
+completed collection preparation in one pass. Use the Object suite to
+measure the retry improvement and the self-build to retain native throughput
+and image identity. [Frozen per-stage baseline](results/parallel-bounded-compile-baseline-2026-11-21.md)
+
+The Object Test262 suite exhausted V8 old space at 2,848 MiB during retry
+helper specialization and reached emission at 2,880 MiB. The minimum cap
+for a complete build remains unknown. These are old-space limits for that
+suite.
+The first target is to remove the retry peak and complete a matched build
+at or below the previously failing cap. The optimizer is next. The
+eventual throughput target is native self-compile beating the Node-hosted
+compiler on wall time, with cycles and peak RSS reported alongside it.
+Memory takes precedence when it determines whether compilation can finish.
+[Object suite cap trials](results/compiler-check-memory-instances-2026-11-20.md)
+
+## Work and dependencies
+
+| Stage                      | Work that can run independently                                                                                                                                                                                                                                                                | Global state and ordering                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Source intake and parse    | Decode and parse one module at a time. A worker returns import/export and position records and a handle to syntax. Link can re-read that syntax, or reparse immutable source if replay is cheaper. Generated foreign binding inputs use the same interface.                                    | Coordinator expands foreign inputs, resolves specifiers against the catalog and discovers reachability in the existing root and import order. Assign module ordinals on that walk. Preserve graph failure precedence even when workers finish out of order.                                                                                                                                                                                                                                                                                              |
+| Source link and bind       | Bind one module's local scopes and compute its export summary and rename plan before merging. Rewrite module fragments after the global tables are frozen.                                                                                                                                     | Resolve re-exports, namespace imports, type/value namespaces and cyclic dependencies from the complete reachable summaries. The instance initializer must preserve the existing module evaluation order, including cycles. Keep the current merge/bind/normalize path serial until fragment boundaries and name resolution have been verified.                                                                                                                                                                                                           |
+| Bind, specialize and check | Specialize helper declarations in batches once their canonical requests and lookup snapshot are known. Check function bodies against published type and capture facts when dependencies are complete. Recursive or mutually inferred declarations form one strongly connected component (SCC). | The checker currently uses identity-keyed indexes on a merged AST. Freeze declaration and class layouts, imports, type interning, contextual and inferred signatures, capture ownership and global initialization facts before extracting body work. Keep the current checker serial initially. Each collection retry consumes the prior observation, extends the demand plan, specializes helper roots, builds the instance, hashes syntax, then checks and validates demand against the new instance. Publish the next round only after that decision. |
+| Lower                      | A checked top-level function and its nested closures are a natural unit. Use per-body expression/representation facts, closure environments, and approved host/helper/foreign bindings to produce packed IR. Partition by function only once shared capture and identity inputs are explicit.  | Freeze ABI signatures, entry and export roots, environment/cell layouts, function identities and record-layout keys. Allocate global record/dispatch IDs in the existing discovery order, including slots first requested during lowering. Keep the initializer and invocation tied to the same checked instance.                                                                                                                                                                                                                                        |
+| Optimize                   | Apply function-local passes to numbered bodies. For cross-function passes, extract per-body contributions and rewrite against immutable summaries. Use bounded on-demand reads for inline candidates.                                                                                          | Keep the current pass order and barriers. Dense list eligibility, reachability and ID remaps, effects, call/record flow, devirtualization and inlining require global facts. Preserve the current update order and heuristics for passes whose decisions depend on earlier rewrites. A pass stays serial until a summary/rewrite split reproduces its output.                                                                                                                                                                                            |
+| Codegen                    | Emit a function's words, local fixups, frame and stack-map records, and debug ranges from frozen codegen facts. Use function-local scratch for register allocation and local branch retries.                                                                                                   | Freeze verified headers, signatures, list shapes, word argument/return and record-flow facts, direct returns and no-safepoint summaries. Canonical placement assigns text offsets and deduplicates descriptors, literals and imports. Retry compact branches/calls or near/far forms with a coordinator decision against that layout. Start with AArch64's store-aware path and prove equivalent boundaries for the separate x86-64 emitter.                                                                                                             |
+| Native link                | Validate and prepare service-unit records independently. Apply independent, non-overlapping fixup pages after layout and ownership are known.                                                                                                                                                  | Coordinator selects entry/startup and service order, creates the symbol and relocation index, assigns placement, and resolves reach constraints. A near/far rebuild rolls back the old generation. Preserve stack map PCs, trace identity and unwind offsets.                                                                                                                                                                                                                                                                                            |
+| Image emission             | Place immutable code and metadata extents into disjoint output windows. Hash independent Mach-O code-signature pages once their patches are complete.                                                                                                                                          | Header/load-command, metadata and section layout precede writes. UUID/build-ID hashes retain the existing byte stream and block order. Resolve patches that span windows under one owner. Assemble signing records in page order, finalize the image, then publish atomically. Use the existing single-copy placement plan.                                                                                                                                                                                                                              |
+
+The source graph loader already drops temporary discovery ASTs. Application
+linking reparses them into a merged graph. Parsing can gain parallelism before
+the checker is decomposed. Streaming source linking needs stable declaration
+and dependency records so discarding syntax cannot break a re-export, binding,
+position lookup or typed-to-general retry. A fallback uses the same frozen
+source descriptors and existing lowering/diagnostic decisions. Typing and
+explicit runtime contracts stay as specified by the unified pipeline.
+[Source loader](../packages/typescript/src/modules/index.ts) ·
+[Source link](../packages/ts-native/src/modules/index.ts) ·
+[Typed pipeline](unified-pipeline.md)
+
+## Ownership and data flow
+
+The coordinator owns the build's catalog, ID allocation, layout decisions,
+summary versions, and temporary-file namespace. The only mutator of a compiler
+heap is its isolate's thread. Run the same worker entry and pool protocol
+through the approved `node:worker_threads` surface in Node and native Tint.
+Both compiler entry paths need the native subset. A one-worker baseline uses
+the same numbered work and commit operations inline. Library/embedding
+entrypoints keep their synchronous behavior until the pool can be integrated
+without changing that contract. Decide CLI entry and worker module admission
+with PR #2 before enabling the pool.
+[Worker design, sections 6 and 12](https://github.com/Sequins-dev/tint/blob/8e63b50212ee0214459c56053b2b336a11608794/docs/design-event-loop.md) ·
+[Lifetime contract](memory-and-lifetimes.md)
+
+1. A stage receives stable IDs and read-only inputs for a generation. Source
+   and checked fragments use separate records from packed IR. Reuse
+   `TIRS` and the existing `FunctionStore` for IR. Keep versioned headers and
+   indexes resident. Encode references by ID, including file-segment
+   references and the codec's foreign descriptor IDs. A worker needs the
+   same descriptor table for that generation. Register file segments under
+   the coordinator's build directory and pass the path and logical handle
+   needed to open them. The existing spill backend's integer handles are
+   local to its owning instance.
+2. Dispatch generation, stage/pass, ordinal or ID range, input handles, and
+   reserved bytes. Workers decode only the inputs they lease. Each worker
+   owns its scratch and output until it has completed and sealed the result.
+   A completion carries its status, small counters and a handle. Transfer a
+   uniquely owned, standalone `ArrayBuffer` when the receiver needs the
+   packed bytes immediately. A transferred sender view is detached. Use read-only shared bytes by convention in a
+   `SharedArrayBuffer` for hot tables or chunks with multiple readers,
+   publishing after writes with synchronized handoff. Bound per-isolate views
+   and cache residency. Use spill for cold results and ordered merges when
+   retaining a buffer would exceed the allowance.
+3. On completion the coordinator commits an ordered range to the stage's
+   next version, registers its store records, and releases the prior
+   generation when readers and rollback obligations are gone. Use unchanged
+   chunk references across versions. Backpressure includes completed results
+   waiting for their predecessors. Spill them before returning producer
+   credit. Reserve progress for the oldest task so a later result queue
+   cannot deadlock it. Replace reference-identity change detection with
+   explicit changed IDs. Keep pass-level counters and diagnostic output
+   ordered. Stream observability by ID and avoid holding whole debug or IR
+   snapshot graphs in the ordinary build.
+4. Worker failures or cancellation stop new dispatch. Join or quiesce
+   workers, discard uncommitted generations, and release leases and files
+   from their owning scope. A short write or disk-full error fails the build
+   and leaves the prior published output intact. Retry a task only from its
+   immutable input once the failed attempt has surrendered all ownership.
+   Use separate generations for a failed emission attempt. Crash recovery
+   may delete abandoned files only after establishing the build no longer
+   owns them. Store I/O and output are cleared outside GC finalization.
+
+For helper retry, the first seam is the transition from the observed checker
+graph to helper requests. Extract the equivalence, demand and runtime binding
+facts used by `prepareObservedCollectionRuntimes`, then release the prior
+checker graph before the new helper body set grows. Preserve the original
+declaration order and specialized root order, replay source fragments as
+needed, and stream specialized fragments through instance transformation.
+The current preparation already clears the observation owner. Its helper frame
+still needs the checker for specialization, runtime binding and BigInt facts.
+Extract and validate those facts before processing the full helper set.
+Maintain the existing convergence and runtime binding validation. A helper
+needed by later requests can be reloaded by ID. Validate lifetimes across
+success and retry, including a helper whose body discovers a new contract.
+For optimizer streaming, move `rewriteFunctions` and module-version adoption
+onto generations of the store first. Keep each converted pass's rollback
+boundary and avoid packing a whole decoded module at the end of lowering.
+[Function store and spill](compiler-memory.md#function-store-tintirstorage) ·
+[Compiler observability](compiler-observability.md)
+
+For file-backed output, open the atomic-publication temporary file only after
+layout succeeds. The initial writer can materialize and patch windows in
+canonical order through the existing file host. Parallel writes to the same
+file require a positioned-write capability through the platform adapter and
+page ownership that excludes overlaps.
+
+## Determinism
+
+The coordinator reproduces the current serial traversal. Canonical orders
+are root and import discovery order for modules, existing lexical binder and
+statement order within each module, existing specialization discovery order for
+generated declarations, and the current function/record order at every pass.
+A worker can emit locally numbered temporaries and discovery records in that
+order. The coordinator consumes those records by serial ordinal, with their
+local sequence as a tie-breaker, and issues global IDs or remap tables. Avoid
+sorting by name as a substitute for the current traversal. Where specialization
+or inlining assigns an ID in response to a newly discovered request, commit
+that request before dispatching dependent work. Keep interning serial where
+it cannot yet be split faithfully. Store addresses, disk paths, capacity and
+worker IDs never enter output.
+
+At optimizer barriers, commit body versions and ID remaps in current visit
+order. Use the same root seeding and traversal when a fixpoint's update order
+affects the decision. Merge emitted fragments in existing module and function
+order, with locals relative to the function. Replay first-use interning,
+alignment, fixup application and retry decisions at canonical positions.
+Keep separate orders where the current writer distinguishes module, import,
+symbol, diagnostic and debug records. Errors are reported in the same logical
+order as the serial build. Count statistics in that order and treat measured
+timings as observations outside image identity.
+
+For each slice, run the frozen inputs twice on different schedules and compare
+entire images across inline execution, pool widths 1/2/available, forced
+spill versus budget and memory, and deliberate completion reordering where
+applicable. Compare release and debug images separately, including signature
+bytes and debug information. Check the result against the pre-change
+compiler's output for the same fixture input and platform. Self-build the
+candidate against one frozen source graph and verify stage 2 equals stage 3
+under LLDB with different worker counts and memory settings as applicable.
+Include module cycles, specialization recursion/retry, large branch reach,
+pruning, foreign bindings, spill failures and a single oversized body.
+Keep Test262 evidence and bootstrap identity separate.
+
+## Memory budget and admission
+
+For each stage \(s\), budget **fixed bytes + shared bytes + transient task
+reservations + pending output + headroom** under one build cap. The fixed
+budget includes coordinator and worker runtimes (private heap commitment,
+descriptor metadata, touched stack pages and collector workspace), with
+separate measurement on each host. Count shared backing once and private
+decodes per recipient. Credit buffers until even a transferred backing or
+evicted GC page is confirmed reusable or released. Include source/input
+buffers, packed segments, byte-array capacity, spill buffers and output
+windows separately from heap-object estimates.
+
+| Stage                | Fixed/shared charge before dispatch                                                                            | Per-task and pending-output charge                                                                                                 |
+| -------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Parse and discovery  | Catalog, dependency offsets, generated input bytes, source/position index                                      | Largest admitted source and decode, tokens and AST, packed fragment plus read/write overlap                                        |
+| Source link and bind | Reachability/export/SCC records, deterministic rename and span tables, retained merged graph where required    | Per-module symbols and rewrite scratch plus packed rewritten syntax. Charge aggregate merged AST until streamed.                   |
+| Check and retry      | Canonical declarations, type and relation summaries, live instance/observation facts and active global checker | Per-SCC or helper batch old/new syntax, local bindings, expression facts and caches, including live prior versions at retry seams  |
+| Lower                | Checked facts still required plus layouts, ABI and function headers                                            | Decode/check-fact window, closure-family plans, body and encoder scratch, open packed chunks                                       |
+| Optimize             | IR index, headers and pass summaries, with both generation indexes until commit                                | Active input and rewritten body, per-function analysis and inline-candidate cache, packed result and spill I/O                     |
+| Codegen              | ABI/analysis summaries, symbol, offset and fixup indexes                                                       | Decoded body, register/branch scratch, emitted chunks and metadata, including overlapping retry buffers                            |
+| Link                 | Placement and relocation tables plus retained startup and service descriptors                                  | Bounded patch/read windows and scratch at cross-window fixups                                                                      |
+| Image                | Section/signing layout and atomic publication metadata                                                         | Bounded file/patch/hash windows, plus a separate full output buffer reserve for callers that require the current byte-array result |
+
+For each stage, require `G_s + H_s + K_s + R_s + sum(W_i + T_si) <= C`.
+Here `G_s` is the coordinator and global tables in the stage's row,
+`H_s` is runtime and collector headroom, `K_s` is shared cache,
+`R_s` is reserved output and ordered-merge space, `W_i` is a worker's
+private runtime commitment, and `T_si` is the admitted task's workspace
+and result overlap. At equal task sizes, peak budget grows by `W + T_s`
+per active worker. For illustration, with a 4 GiB cap, 3 GiB reserved
+for fixed/shared costs and 128 MiB per active worker, the stage can admit
+eight workers even on a larger machine. If one task needs 512 MiB, it
+consumes four of those reservations. Use actual reservations for admission.
+
+Compute stage reservations from actual input extents and typed-table capacity
+before opening work. Calibrate per-unit temporary allowances from measured
+allocations and working-set tails. Each worker can hold at most one admitted
+task plus charged scratch retained for reuse. Admit a task only if its
+workspace, maximum overlapping input/output, queue slot and necessary progress
+credit fit. Limit active workers by available CPUs after accounting for the
+coordinator, collector helpers and I/O. Select the largest fitting work set
+using byte credits as well as task count. Reduce width or evict packed and
+decoded caches first. Drain and resize isolate pools at barriers if idle
+worker heap commitment blocks useful work. Shared compaction, chunk buffers
+and the largest pending record must also fit the cap.
+
+For the initial file-backed path, use the store's 1 MiB maximum target for
+ordinary chunks, and give every reader, writer and prefetch buffer its own
+credit. An oversized record needs an exclusive reservation or incremental
+encoding/decoding. A stage that cannot admit its necessary serial unit
+either uses a finer bounded representation or reports the cap and requested
+bytes. Spilled optimization runs all passes to completion under the
+existing AOT work policy. Public byte-array calls reserve their output extent. CLI file-backed
+emission, once available, reserves windows instead of that extent.
+
+Enforce reserved capacity at allocation and growth boundaries. An estimated body cost can drive scheduling, but
+allocation must still hold sufficient capacity or spill and retry that unit.
+Teach the native runtime to supply committed heap, stack, collector and
+external-buffer accounting before advertising a strict build-wide cap.
+V8 `resourceLimits` constrain isolate heap/stack resources while external
+backings, allocator residency and runtime overhead require their own budget.
+Specify a hard cap for compiler-owned reservations on both hosts. An exact OS
+RSS limit requires host enforcement and must be documented separately.
+Report charged bytes, measured RSS, live/committed memory where available,
+spilled bytes, disk peak, queue wait, active workers and cap-related failures.
+[Collector contract](memory-and-lifetimes.md#collection-points-and-triggers)
+
+## Sequence and estimates
+
+Engineering estimates assume one implementer familiar with Tint and exclude
+external dependency and gate queues. Each implementation step includes
+comparison to the frozen baseline and to its immediately preceding step.
+
+| Step | Scope and exit evidence                                                                                                                                                                                                                                                                                                                                                                             | Estimate  | PR #2 dependency                                                         |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------ |
+| 1    | Bound retry helper specialization. Retain only required observation facts, materialize helpers in stable order with bounded staging, verify all retries and remeasure the Object suite with a cap bracket. First win is completing that input at 2,848 MiB old space with identical output, or measuring a lower retry peak and identifying the next blocker. Report the two as different outcomes. | 1–2 weeks | Can start before workers                                                 |
+| 2    | Lower directly into the store, stream local optimizer passes, then split global passes one by one. Verify in-memory/budget/forced-spill identity and quantify packing, cache and replay cost.                                                                                                                                                                                                       | 3–5 weeks | Can start before workers                                                 |
+| 3    | File-backed emitted fragments and CLI image publication via existing placement plans. Preserve the byte-array result where callers require it. Exercise size and failure boundaries, both image formats, and x86-64 store parity.                                                                                                                                                                   | 2–4 weeks | Can start before workers                                                 |
+| 4    | Integrate the pool over proven store seams. Measure isolate startup, worker residency and transfer costs on both hosts. Enable a measured function-local optimizer pass first, then per-function codegen, with deterministic result commit and memory credits.                                                                                                                                      | 3–5 weeks | Worker API and compiler-subset worker entry                              |
+| 5    | Parallel module parsing, linking preparation and checked/lowered units with frozen summary contracts. Measure any remaining serial costs before extracting more of the checker.                                                                                                                                                                                                                     | 4–8 weeks | Parallel execution requires workers. Serial seam work can start earlier. |
+
+After each step, record one fresh immutable result with both hosts' wall time,
+CPU, cycles where available, and peak RSS on matched inputs. Use repeated
+interleaved runs for throughput acceptance. Attribute regressions to serial
+work, collection, spill I/O or scheduling where measurements permit. At
+the end run the macOS gate, Linux gate on the shared `dev` machine, and
+the x86-64 VM self-build,
+then wait for CI green before marking the PR ready.
+[Workspace validation](validation-gate.md)
+
+## Review questions and risks
+
+- Should the first bounded-build interface be an opt-in CLI memory cap with a
+  conservative default worker width, or should all CLI AOT builds use the
+  measured automatic policy once it is validated on both hosts? Start with
+  an opt-in policy while deriving reliable admission reservations.
+- What cap and spill-directory policy should embedders expose? Disk quotas,
+  cache amplification and repeated decode can dominate a low-memory build.
+  Compare memory-only, budget and all-spill modes on fast and constrained
+  scratch storage before choosing defaults.
+- The monolithic checker may keep more resident data than any worker budget
+  can absorb, especially a large cyclic instance with inference across
+  declarations. Keep it serial until compact type, closure and relation facts
+  reproduce results, and measure the remaining minimum on both hosts.
+- A single oversized function, transitive inlining set or fixup batch can
+  exceed a stage's normal work unit. Exercise the largest observed examples
+  before relying on a per-worker estimate. Preserve explicit reporting for any
+  stage that still needs a whole-program allocation.
+- Native worker startup currently depends on PR #2's product isolate API and
+  on a worker entrypoint that the native checker can compile. Test transfer
+  detachment, read-only summary publication, shutdown and collector CPU
+  contention before raising the default pool width.
+- Codegen fragment placement is a correctness dependency for branch relaxation,
+  stack maps, trace, unwind and signing. Keep global placement serial until
+  fixed-point and signed-image comparisons prove independent writers correct.
