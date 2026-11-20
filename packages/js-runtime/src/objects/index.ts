@@ -158,6 +158,14 @@ export {
   type Receiver,
 } from "./operations.ts";
 export { isCallableObject, callObject, constructObject } from "./call.ts";
+export {
+  createNativeViewCache,
+  cachedNativeView,
+  cacheNativeView,
+  createNativeCallableView,
+  createNativeListView,
+  type NativeViewCache,
+} from "./native-views.ts";
 export { objectValueHasProperty } from "./membership.ts";
 export { looselyEqual } from "./equality.ts";
 export { installPrimitiveIntrinsics } from "./primitive-intrinsics.ts";
@@ -397,6 +405,11 @@ export {
 export { speciesConstructor } from "./species.ts";
 
 export { installDataViewIntrinsics } from "./data-view.ts";
+export {
+  projectArrayBufferView,
+  projectArrayBufferViewRange,
+  type ArrayBufferViewRange,
+} from "./array-buffer-view.ts";
 export {
   createIntegerIndexedObject,
   type IntegerIndexedHooks,

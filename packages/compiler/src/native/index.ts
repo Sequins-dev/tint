@@ -32,6 +32,8 @@ import { materializeManagedRuntimeProviders } from "./managed-runtimes.ts";
 import {
   validRuntimeNamespace,
   dynamicObjectRuntimeSource,
+  nativeValueViewsModule,
+  nativeWeakModule,
   type RuntimeSource,
 } from "./runtime-contracts.ts";
 import {
@@ -487,6 +489,7 @@ interface CompilationError {
   readonly preventsFallback?: boolean;
   readonly needsDynamicRealm?: boolean;
   readonly needsBindingRealm?: boolean;
+  readonly nativeProjections?: readonly string[];
 }
 /** A compiler-issued identity that foreign code binds by contract. */
 interface IdentityPlan {
@@ -571,6 +574,7 @@ interface LinkedTypedProgram {
   readonly application: Module;
   readonly exports: readonly LinkedExport[];
   readonly ranges: readonly SourceRange[];
+  readonly sourceNames: ReadonlyMap<string, string> | undefined;
   readonly helpers: Map<string, string>;
   readonly runtimeNamespacesByModule: Map<string, string>;
   readonly retainedRuntimeExports: readonly string[];
@@ -681,9 +685,11 @@ function compileTypedWithProgramRealm(
         };
   const initial = compileTypedProgram(without, realmTypeofModules);
   if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
+  const projections = initial.error.nativeProjections ?? [];
+  const callableViews = projections.includes("projectUnaryNumber");
   const runtime =
-    initial.error.needsBindingRealm === true
-      ? dynamicObjectRuntimeSource(true)
+    initial.error.needsBindingRealm === true || projections.length !== 0
+      ? dynamicObjectRuntimeSource(initial.error.needsBindingRealm, projections)
       : (explicit ?? dynamicObjectRuntimeSource());
   const module = runtime.module;
   const loader = request.moduleLoader;
@@ -716,13 +722,99 @@ function compileTypedWithProgramRealm(
   ];
   const runtimes = without.runtimes.slice();
   runtimes.push(runtime);
+  const weakBindings = (request.weakBindings ?? []).slice();
+  const bindings = (request.recordBindings ?? []).slice();
+  const retained = names.slice();
+  let realmModules = realmTypeofModules;
+  if (callableViews) {
+    names.push("viewTypeofObject");
+    retained.push("viewTypeofObject", "generalValueTypeof", "callGeneralValue");
+    if (realmModules === undefined) {
+      const dependencies = new Map<string, ReadonlyMap<string, string>>();
+      for (const source of expandedRequest.modules) {
+        if (source === undefined) throw "realm view source invariant";
+        dependencies.set(source.id, source.dependencies);
+      }
+      const resolve =
+        loader?.sourceDependencies ??
+        ((id: string): ReadonlyMap<string, string> | undefined =>
+          dependencies.get(id));
+      const application = new Set<string>();
+      for (const id of sourceDependencyClosure([request.entry], resolve))
+        if (id !== undefined) application.add(id);
+      const runtimeModules = sourceDependencyClosure(
+        runtimes.map((source) => source.module),
+        resolve,
+      );
+      for (const id of runtimeModules)
+        if (id !== undefined) application.delete(id);
+      realmModules = application;
+    }
+  }
+  if (projections.length !== 0) {
+    const witnesses: string[] = [];
+    if (callableViews) witnesses.push("viewUnaryNumberClosure");
+    if (projections.includes("projectNumberList"))
+      witnesses.push("viewNumberList");
+    const existing = runtimes.findIndex(
+      (source) => source?.module === nativeValueViewsModule,
+    );
+    if (existing < 0)
+      runtimes.push({
+        module: nativeValueViewsModule,
+        namespace: "native-value-views",
+        retainedExports: witnesses,
+      });
+    for (const name of witnesses) {
+      if (name === undefined) throw "native view witness invariant";
+      if (
+        !bindings.some(
+          (binding) =>
+            binding?.module === nativeValueViewsModule && binding.name === name,
+        )
+      )
+        bindings.push({
+          module: nativeValueViewsModule,
+          name,
+          operation: "view",
+        });
+    }
+    if (!runtimes.some((source) => source?.module === nativeWeakModule))
+      runtimes.push({
+        module: nativeWeakModule,
+        namespace: "native-view-weak",
+      });
+    const operations: readonly NativeWeakBinding[] = [
+      { module: nativeWeakModule, name: "createWeakSlot", operation: "new" },
+      { module: nativeWeakModule, name: "weakSlotKey", operation: "key" },
+      { module: nativeWeakModule, name: "weakSlotValue", operation: "value" },
+      {
+        module: nativeWeakModule,
+        name: "setWeakSlotValue",
+        operation: "set-value",
+      },
+      { module: nativeWeakModule, name: "clearWeakSlot", operation: "clear" },
+    ];
+    for (const operation of operations) {
+      if (operation === undefined) throw "native weak operation invariant";
+      if (
+        !weakBindings.some(
+          (binding) =>
+            binding?.module === operation.module &&
+            binding.name === operation.name,
+        )
+      )
+        weakBindings.push(operation);
+    }
+  }
   if (!runtimes.some((source) => source?.module === objects))
     runtimes.push({
       module: objects,
-      namespace: "dynamic-object-views",
-      retainedExports: names,
+      namespace: callableViews
+        ? "general-object-views"
+        : "dynamic-object-views",
+      retainedExports: retained,
     });
-  const bindings = (request.recordBindings ?? []).slice();
   for (const name of names) {
     if (name === undefined) throw "dynamic realm binding invariant";
     if (
@@ -733,8 +825,8 @@ function compileTypedWithProgramRealm(
       bindings.push({ module: objects, name, operation: "view" });
   }
   return compileTypedProgram(
-    { ...expandedRequest, runtimes, recordBindings: bindings },
-    realmTypeofModules,
+    { ...expandedRequest, runtimes, recordBindings: bindings, weakBindings },
+    realmModules,
   );
 }
 export function compileArm64Program(original: CompileRequest): Compilation {
@@ -1268,7 +1360,11 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
     pruneUnusedModules(modules, entry, rootExports),
     entry,
     globals,
-    { evaluation: "instance", origins: false },
+    {
+      evaluation: "instance",
+      origins: false,
+      sourceNames: runtimeNamespacesByModule.has(nativeValueViewsModule),
+    },
   );
   // Managed-surface layouts link only the runtimes; the application's input
   // syntax is otherwise dead here and must not stay reachable through the
@@ -1379,6 +1475,7 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
       application: surfaces.value.module,
       exports: linked.value.exports,
       ranges: linked.value.ranges,
+      sourceNames: linked.value.sourceNames,
       helpers,
       runtimeNamespacesByModule,
       retainedRuntimeExports,
@@ -1509,6 +1606,19 @@ function checkApplication(
     application = linkedProgram.application,
     hasDynamicRuntime = helpers.has("dynamic-object:create");
   const dynamic = usesDynamicObjectRuntime(checked.value, mixed);
+  const nativeProjections: string[] = [];
+  checked.value.nativeCallableViews?.forEach((_value, _site) => {
+    if (!nativeProjections.includes("projectUnaryNumber"))
+      nativeProjections.push("projectUnaryNumber");
+  });
+  checked.value.nativeListViews?.forEach((_value, _site) => {
+    if (!nativeProjections.includes("projectNumberList"))
+      nativeProjections.push("projectNumberList");
+  });
+  checked.value.nativeRecordViews?.forEach((_value, _site) => {
+    if (!nativeProjections.includes("projectNativeRecord"))
+      nativeProjections.push("projectNativeRecord");
+  });
   // Retained runtime functions can dispatch through attached error views
   // without capturing the program instance's realm closures.
   function canCaptureErrorRealm(site: Span): boolean {
@@ -1523,7 +1633,10 @@ function checkApplication(
     mixed || dynamic,
     canCaptureErrorRealm,
   );
-  if (!hasDynamicRuntime && (dynamic || realmInstanceof))
+  if (
+    !hasDynamicRuntime &&
+    (dynamic || realmInstanceof || nativeProjections.length !== 0)
+  )
     return {
       ok: false,
       error: {
@@ -1532,6 +1645,7 @@ function checkApplication(
           ? "UNSUPPORTED: instanceof requires the program realm runtime"
           : "UNSUPPORTED: dynamic-key objects require the program realm runtime",
         needsDynamicRealm: true,
+        ...(nativeProjections.length > 0 ? { nativeProjections } : {}),
         ...(checked.value.needsBindingRealm === true
           ? { needsBindingRealm: true }
           : {}),
@@ -1545,6 +1659,7 @@ function checkApplication(
         realmInstanceof,
         mixed,
         canCaptureErrorRealm,
+        linkedProgram.sourceNames,
       )
     : application;
   let callsGeneral = false;
@@ -1598,6 +1713,12 @@ function checkTypedProgram(
     retainedRuntimeModules = linkedProgram.retainedRuntimeModules,
     surfacePlans = linkedProgram.surfacePlans;
   const callHelper = helpers.get("general-object-views:callGeneralValue");
+  const classifierHelper = helpers.get(
+    "general-object-views:generalValueTypeof",
+  );
+  const retainClassifier =
+    classifierHelper !== undefined &&
+    helpers.has("dynamic-object:projectUnaryNumber");
   const checked = checkApplication(linkedProgram, request, callHelper, mixed);
   if (!checked.ok) return { ok: false, error: checked.error };
   const callsGeneral = checked.value.callsGeneral,
@@ -1700,9 +1821,9 @@ function checkTypedProgram(
     }
     const bound = bindModule(module, globals);
     if (!bound.ok) return { ok: false, error: bound.error.message };
-    if (callsGeneral && callHelper !== undefined) {
-      // The stateless call entry uses a specialized callObject dependency.
-      // Retain its concrete function dependencies after specialization.
+    if ((callsGeneral && callHelper !== undefined) || retainClassifier) {
+      // Realm calls use specialized dependencies. Close the stateless
+      // classifier and call entries after specialization.
       const functionNames = new Map<Span, string>();
       for (const statement of module.statements)
         if (statement?.kind === "function")
@@ -1727,9 +1848,11 @@ function checkTypedProgram(
         names.add(target.name);
         if (known === undefined) dependencies.set(name, names);
       }
-      const pending: string[] = [callHelper],
-        seen = new Set<string>();
-      seen.add(callHelper);
+      const pending: string[] = [];
+      if (callsGeneral && callHelper !== undefined) pending.push(callHelper);
+      if (retainClassifier && classifierHelper !== undefined)
+        pending.push(classifierHelper);
+      const seen = new Set(pending);
       for (let index = 0; index < pending.length; index++) {
         const root = pending[index];
         if (root === undefined) throw "realm call dependency invariant";

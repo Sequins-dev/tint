@@ -30,10 +30,15 @@ export const serialCollectorModule =
 
 export const dynamicObjectRuntimeModule =
   "packages/native-runtime/src/values/dynamic-object.ts";
+export const nativeValueViewsModule =
+  "packages/native-runtime/src/intrinsics/value-views.ts";
+export const nativeWeakModule =
+  "packages/native-runtime/src/intrinsics/weak.ts";
 
 /** This provider uses module instance state and is demanded by the AOT checker. */
 export function dynamicObjectRuntimeSource(
   patterns: boolean = false,
+  projections: readonly string[] = [],
 ): RuntimeSource {
   const retainedExports = [
     "create",
@@ -70,6 +75,10 @@ export function dynamicObjectRuntimeSource(
       "bindingSkip",
     );
     retainedExports.push("bindingTail", "bindingClose", "bindingRest");
+  }
+  for (const projection of projections) {
+    if (projection === undefined) throw "native projection invariant";
+    retainedExports.push(projection);
   }
   return {
     module: dynamicObjectRuntimeModule,

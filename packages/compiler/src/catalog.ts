@@ -1339,6 +1339,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/array-buffer-view.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/array-buffer.ts",
       packageId: "js-runtime",
     },
@@ -1980,6 +1984,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-runtime/src/objects/named-time-zones.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/native-views.ts",
       packageId: "js-runtime",
     },
     {
@@ -2763,6 +2771,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/intrinsics/value-views.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/intrinsics/weak.ts",
       packageId: "native-runtime",
     },
@@ -2968,6 +2980,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ts-native/src/closure/lowering/record-layout.ts",
+      packageId: "ts-native",
+    },
+    {
+      id: "packages/ts-native/src/closure/lowering/record-view.ts",
       packageId: "ts-native",
     },
     {

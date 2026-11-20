@@ -320,9 +320,24 @@ export interface CheckedClosures {
    * throw a TypeError when the value is not a T (docs/unified-pipeline.md). */
   readonly downcasts?: ReadonlyKeyIndex<Expression, number>;
   readonly dynamicEnrollments?: ReadonlyKeyIndex<Expression, number>;
+  readonly nativeCallableViews?: ReadonlyKeyIndex<Expression, boolean>;
+  readonly nativeListViews?: ReadonlyKeyIndex<Expression, boolean>;
+  readonly nativeRecordViews?: ReadonlyKeyIndex<
+    Expression,
+    readonly NativeRecordViewField[]
+  >;
   readonly finitePropertyKeys?: ReadonlyKeyIndex<Expression, readonly string[]>;
   readonly operations: readonly BindingOperation[];
 }
+export interface NativeRecordViewField {
+  readonly name: string;
+  readonly type: "number" | "string" | "boolean" | "unknown";
+  readonly optional: boolean;
+  readonly readonly: boolean;
+}
+/** A generated binding name. The parser cannot create it from source. */
+export const nativeCallableProjectionAlias =
+  "$tint$dynamic$@projectUnaryNumber";
 export interface CheckedTypeSystem {
   readonly types: readonly Type[];
   readonly system: TypeSystem;
@@ -3930,6 +3945,12 @@ function checkClosureModuleLayout(
     chainReceivers = createKeyIndex<Expression, number>(syntaxHash),
     downcasts = createKeyIndex<Expression, number>(syntaxHash),
     dynamicEnrollments = createKeyIndex<Expression, number>(syntaxHash),
+    nativeCallableViews = createKeyIndex<Expression, boolean>(syntaxHash),
+    nativeListViews = createKeyIndex<Expression, boolean>(syntaxHash),
+    nativeRecordViews = createKeyIndex<
+      Expression,
+      readonly NativeRecordViewField[]
+    >(syntaxHash),
     finitePropertyKeys = createKeyIndex<Expression, readonly string[]>(
       syntaxHash,
     );
@@ -4297,9 +4318,85 @@ function checkClosureModuleLayout(
     }
     return value;
   }
-  function checkDynamicPayload(value: number, node: Expression): void {
+  function unaryNumberCallable(value: number): boolean {
+    const signature = types[value];
+    return (
+      signature?.kind === "function" &&
+      signature.receiver === undefined &&
+      signature.rest !== true &&
+      signature.parameters.length === 1 &&
+      signature.minimumArguments !== 0 &&
+      signature.parameters[0] === number &&
+      signature.result === number
+    );
+  }
+  function projectedCallable(node: Expression): boolean {
+    const callee = node.kind === "call" ? node.callee : undefined;
+    return (
+      callee?.kind === "identifier" &&
+      callee.name === nativeCallableProjectionAlias
+    );
+  }
+  function checkDynamicPayload(
+    value: number,
+    node: Expression,
+    erased?: number,
+  ): void {
     const unsupported = unsupportedDynamicPayload(types, value);
     if (unsupported === undefined) return;
+    const erasing = types[erased ?? -1]?.kind === "unknown";
+    if (erasing && unaryNumberCallable(value)) {
+      nativeCallableViews.set(node, true);
+      return;
+    }
+    const signature = types[value];
+    if (erasing) {
+      const source = ungroup(node);
+      const declaration =
+        source.kind === "identifier" ? references.get(source) : undefined;
+      if (
+        declaration !== undefined &&
+        declared.get(declaration.node) !== undefined
+      ) {
+        if (
+          signature?.kind === "array" &&
+          signature.element === number &&
+          !signature.readonly &&
+          signature.tupleElements === undefined
+        ) {
+          nativeListViews.set(node, true);
+          return;
+        }
+        if (
+          signature?.kind === "object" &&
+          signature.call === undefined &&
+          signature.construct === undefined
+        ) {
+          const fields: NativeRecordViewField[] = [];
+          for (const field of signature.properties) {
+            if (field === undefined) throw "native view field invariant";
+            const type = types[field.type]?.kind;
+            if (
+              type !== "number" &&
+              type !== "string" &&
+              type !== "boolean" &&
+              type !== "unknown"
+            )
+              break;
+            fields.push({
+              name: field.name,
+              type,
+              optional: field.optional === true,
+              readonly: field.readonly,
+            });
+          }
+          if (fields.length === signature.properties.length) {
+            nativeRecordViews.set(node, fields);
+            return;
+          }
+        }
+      }
+    }
     if (realmPlan === undefined && aggregatePayload(types, value)) {
       realmSinks.set(node, true);
       replayRealm = true;
@@ -4386,7 +4483,7 @@ function checkClosureModuleLayout(
         owner,
         dynamicPayloadType(first.type, property.value),
       );
-      checkDynamicPayload(value, property.value);
+      checkDynamicPayload(value, property.value, first.type);
       for (const field of fields) {
         if (field === undefined) throw "dynamic literal field invariant";
         if (
@@ -6445,6 +6542,16 @@ function checkClosureModuleLayout(
               const argument = node.arguments[0];
               if (argument === undefined) throw "map argument invariant";
               const callback = ungroup(argument);
+              if (
+                mapping &&
+                replayRealm &&
+                realmPlan === undefined &&
+                projectedCallable(callback)
+              ) {
+                expression(argument, owner);
+                result = arrayOf(number, node);
+                break;
+              }
               const typed = isArray(obj);
               const sortElement = typed
                 ? number
@@ -6862,7 +6969,36 @@ function checkClosureModuleLayout(
                   argumentsOf(0, []);
                   result = realmArray(element, node);
                   break;
-                case "map":
+                case "map": {
+                  const callback = args[0];
+                  if (
+                    size === 1 &&
+                    callback !== undefined &&
+                    element === number &&
+                    callback.kind !== "spread"
+                  ) {
+                    const actual = expression(callback, owner);
+                    if (unaryNumberCallable(actual)) {
+                      nativeCallableViews.set(callback, true);
+                      result = realmArray(number, node);
+                      break;
+                    }
+                    if (
+                      types[actual]?.kind === "unknown" &&
+                      projectedCallable(callback)
+                    ) {
+                      result = realmArray(number, node);
+                      break;
+                    }
+                  }
+                  // Other signatures still need their own checked ABI view.
+                  unsupported(
+                    target,
+                    "native-callable-view",
+                    "native callbacks passed to realm array methods need slice 2b closure views",
+                    true,
+                  );
+                }
                 case "filter":
                 case "flatMap":
                 case "forEach":
@@ -7138,7 +7274,7 @@ function checkClosureModuleLayout(
                   dynamicPayloadType(field.type, node.value),
                 );
                 if (dynamicObject(object))
-                  checkDynamicPayload(written, node.value);
+                  checkDynamicPayload(written, node.value, field.type);
                 present = intersect(before, present);
                 result = join(
                   node.operator === "??" || node.operator === "||"
@@ -7533,7 +7669,7 @@ function checkClosureModuleLayout(
                 owner,
                 dynamicPayloadType(field.type, node.value),
               );
-              checkDynamicPayload(result, node.value);
+              checkDynamicPayload(result, node.value, field.type);
               for (const allowed of fields) {
                 if (allowed === undefined)
                   throw "dynamic write field invariant";
@@ -9373,6 +9509,9 @@ function checkClosureModuleLayout(
       voidValueReturns,
       downcasts,
       dynamicEnrollments,
+      nativeCallableViews,
+      nativeListViews,
+      nativeRecordViews,
       finitePropertyKeys,
       operations,
       intrinsics,

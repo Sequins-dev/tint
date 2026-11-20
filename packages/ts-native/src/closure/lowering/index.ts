@@ -1882,7 +1882,7 @@ function lowerEntries(
         );
       }
       const dynamicObjects: DynamicObjectRuntime | undefined =
-        dynamicAliases.size === 0
+        !dynamicAliases.has("create")
           ? undefined
           : {
               ...dynamicObjectRuntime((name) => {

@@ -12,6 +12,8 @@
 // accepts any value. Type-erased execution (Node) ignores contracts, so the
 // constructs that pin a contract declare a different Node result.
 
+import { nativeCallablePropertySource } from "../slice2b-view-fixtures.ts";
+
 export interface Construct {
   readonly name: string;
   readonly typed: string;
@@ -223,6 +225,50 @@ export function run() {
   const record = { choice };
   work();
   return record.choice === list ? list[0] + list[1] : 1;
+}`,
+  },
+  {
+    name: "native-callable-property-views",
+    typed: nativeCallablePropertySource,
+    untyped: `export function run() {
+  let total = 0;
+  const increment = (by) => { total += by; return total; };
+  const table = {};
+  table.first = increment;
+  table.second = increment;
+  const callable = table.first;
+  if (callable !== table.second || typeof callable !== "function") return 1;
+  if (callable(38) !== 38) return 2;
+  const arrays = { values: [2, 2] };
+  const values = arrays.values;
+  if (values === undefined) return 3;
+  const mapped = values.map(increment);
+  return mapped[0] === 40 && mapped[1] === 42 && total === 42 ? 42 : 4;
+}`,
+  },
+  {
+    name: "native-storage-keyed-views",
+    typed: `export function run(): number {
+  const list: number[] = [18];
+  const record: { delta: number; label: string } = { delta: 2, label: "live" };
+  const table: Record<string, unknown> = { list, record };
+  table.listAlias = list;
+  table.recordAlias = record;
+  list[0] = 20;
+  record.delta = 22;
+  return table.list === table.listAlias && table.record === table.recordAlias
+    ? (list[0] ?? 0) + record.delta : 1;
+}`,
+    untyped: `export function run() {
+  const list = [18];
+  const record = { delta: 2, label: "live" };
+  const table = { list, record };
+  table.listAlias = list;
+  table.recordAlias = record;
+  list[0] = 20;
+  record.delta = 22;
+  return table.list === table.listAlias && table.record === table.recordAlias
+    ? list[0] + record.delta : 1;
 }`,
   },
   {

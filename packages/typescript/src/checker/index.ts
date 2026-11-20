@@ -1560,7 +1560,11 @@ export {
   resolveInterfaceTypes,
   createInterfaceResolutionCache,
 } from "./interfaces.ts";
-export { checkClosureModule, checkedPropertyName } from "./closures.ts";
+export {
+  checkClosureModule,
+  checkedPropertyName,
+  nativeCallableProjectionAlias,
+} from "./closures.ts";
 export type {
   ClosureBody,
   BindingInitialization,
@@ -1568,6 +1572,7 @@ export type {
   BindingOperation,
   ClosureIntrinsic,
   CheckedClosures,
+  NativeRecordViewField,
   CheckedTypeSystem,
   ClosureDiagnostic,
   ClosureFallback,

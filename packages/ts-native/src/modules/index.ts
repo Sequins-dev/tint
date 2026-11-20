@@ -63,6 +63,7 @@ export interface LinkedProgram {
   readonly origins: ReadonlyKeyIndex<Span, SourceOrigin>;
   /** Linker-owned ranges ordered by start, disjoint including their endpoints. */
   readonly ranges: readonly SourceRange[];
+  readonly sourceNames?: ReadonlyMap<string, string> | undefined;
 }
 export function locateSource(
   program: LinkedProgram,
@@ -127,6 +128,8 @@ export interface LinkOptions {
    * input node reachable for as long as the linked program is; compilers that
    * locate spans through `ranges` pass false. */
   readonly origins?: boolean;
+  /** Preserve source spellings when callable views expose Function#name. */
+  readonly sourceNames?: boolean;
 }
 /** Most modules one link accepts. */
 export const maxLinkedModules = 1048576;
@@ -143,6 +146,8 @@ export function linkModules(
     order: SourceModule[] = [],
     origins = createKeyIndex<Span, SourceOrigin>(syntaxHash),
     recordOrigins = options?.origins !== false;
+  const sourceNames =
+    options?.sourceNames === true ? new Map<string, string>() : undefined;
   let error: LinkDiagnostic | undefined;
   function fail(module: string, node: Span, message: string): never {
     error = { module, message, start: node.start, end: node.end };
@@ -207,6 +212,7 @@ export function linkModules(
         if (binding === undefined) throw "missing binding";
         const name = "@" + String(i) + ":value:" + String(binding.id);
         names.set(binding.id, name);
+        sourceNames?.set(name, binding.name);
         if (binding.scope === 0 && binding.kind !== "import")
           valueNames.set(binding.name, name);
       }
@@ -1539,6 +1545,7 @@ export function linkModules(
         module: { statements, imports: [], start: 0, end: cursor },
         exports,
         origins,
+        sourceNames,
         ranges,
       },
     };
