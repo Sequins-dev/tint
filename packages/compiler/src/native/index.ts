@@ -694,25 +694,60 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     typed.error.preventsFallback === true
   )
     return typed;
+  const general = compileGeneralProgram<CompiledProgram>(
+    request,
+    lowering,
+    typed.error,
+    (source, realmTypeofModules): Compilation =>
+      compileTypedWithProgramRealm(source, realmTypeofModules),
+  );
+  if (!general.ok) return general;
+  return {
+    ok: true,
+    value: { ...general.value, general: general.fallback },
+  };
+}
+
+interface GeneralFallback {
+  readonly modules: readonly string[];
+  readonly reason: string;
+}
+type GeneralCompilation<T> =
+  | {
+      readonly ok: true;
+      readonly value: T;
+      readonly fallback: GeneralFallback;
+    }
+  | CompilationFailure;
+
+function compileGeneralProgram<T>(
+  request: CompileRequest,
+  lowering: GeneralLowering,
+  typedError: CompilationError,
+  compile: (
+    request: CompileRequest,
+    realmTypeofModules: ReadonlySet<string>,
+  ) => { readonly ok: true; readonly value: T } | CompilationFailure,
+): GeneralCompilation<T> {
   if (request.requireTyped === true)
-    return failure(
-      typed.error.stage,
-      typed.error.message + " (typed compilation required)",
-      typed.error.module,
+    return stageFailure(
+      typedError.stage,
+      typedError.message + " (typed compilation required)",
+      typedError.module,
     );
-  const reason = typed.error.stage + ": " + typed.error.message;
+  const reason = typedError.stage + ": " + typedError.message;
   const start = request.start;
   if (start === undefined)
-    return failure(
-      typed.error.stage,
-      typed.error.message + " (general fallback requires a start export)",
+    return stageFailure(
+      typedError.stage,
+      typedError.message + " (general fallback requires a start export)",
     );
   const available = requestModules(request);
   const application = generalApplicationModules(request, available);
   if (!application.ok)
-    return failure(
-      typed.error.stage,
-      typed.error.message + " (general fallback: " + application.error + ")",
+    return stageFailure(
+      typedError.stage,
+      typedError.message + " (general fallback: " + application.error + ")",
     );
   // Module-granular partition: the module a typed failure is attributed to
   // becomes general, with its importers and any typed module whose used
@@ -771,7 +806,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
   for (const module of available)
     if (module !== undefined && !rawTypeofModules.has(module.id))
       realmTypeofModules.add(module.id);
-  let error = typed.error;
+  let error = typedError;
   for (let attempt = 0; attempt <= application.value.length; attempt++) {
     const culprit = error.module;
     if (
@@ -788,7 +823,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       available,
     );
     if (partition.blocked !== undefined)
-      return failure(
+      return stageFailure(
         "general",
         "general code uses " +
           partition.blocked.exports +
@@ -811,7 +846,10 @@ export function compileArm64Program(original: CompileRequest): Compilation {
         : { records: partition.records }),
     });
     if (!lowered.ok)
-      return failure("general", lowered.error + " (typed: " + reason + ")");
+      return stageFailure(
+        "general",
+        lowered.error + " (typed: " + reason + ")",
+      );
     const modules: SourceModule[] = [];
     for (const module of available)
       if (module !== undefined) modules.push(module);
@@ -823,7 +861,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       if (binding !== undefined) programBindings.push(binding);
     for (const runtime of lowered.value.runtimes ?? [])
       if (runtime !== undefined) programRuntimes.push(runtime);
-    const compiled = compileTypedWithProgramRealm(
+    const compiled = compile(
       {
         ...request,
         recordBindings: programBindings,
@@ -841,14 +879,12 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     if (compiled.ok)
       return {
         ok: true,
-        value: {
-          ...compiled.value,
-          general: { modules: generalIds, reason },
-        },
+        value: compiled.value,
+        fallback: { modules: generalIds, reason },
       };
     if (compiled.error.preventsFallback === true) return compiled;
     if (seed.size === applicationIds.size)
-      return failure(
+      return stageFailure(
         "general " + compiled.error.stage,
         compiled.error.message + " (typed: " + reason + ")",
       );
@@ -2568,6 +2604,10 @@ export function compileX64HostedProgram(
     readonly signposts?: readonly X64SignpostSite[];
     readonly allocationProbes?: boolean;
     readonly report?: (stage: string) => void;
+    readonly onGeneralFallback?: (
+      modules: readonly string[],
+      reason: string,
+    ) => void;
   } = {},
 ):
   | CompilationFailure
@@ -2585,16 +2625,36 @@ export function compileX64HostedProgram(
   const selected =
     options.runtime === true ? request : selectX64ForeignRuntime(request);
   if (typeof selected === "string") return stageFailure("foreign", selected);
-  const lowered = lowerTypedProgram(
-    withForeignRuntimes({
-      ...request,
-      moduleLoader: selected.moduleLoader,
-      modules: selected.modules,
-      symbols: true,
-    }),
-    undefined,
-    options.runtime !== true && options.threaded !== true,
-  );
+  const source = withForeignRuntimes({
+    ...request,
+    moduleLoader: selected.moduleLoader,
+    modules: selected.modules,
+    symbols: true,
+  });
+  const invokeDirectly = options.runtime !== true && options.threaded !== true;
+  function lower(): TypedLowering {
+    const typed = lowerTypedProgram(source, undefined, invokeDirectly);
+    const lowering = source.generalLowering;
+    if (
+      typed.ok ||
+      lowering === undefined ||
+      typed.error.preventsFallback === true
+    )
+      return typed;
+    const general = compileGeneralProgram<TypedProgram>(
+      source,
+      lowering,
+      typed.error,
+      (program, realmTypeofModules): TypedLowering =>
+        lowerTypedProgram(program, realmTypeofModules),
+    );
+    if (!general.ok) return general;
+    const report = options.onGeneralFallback;
+    if (report !== undefined)
+      report(general.fallback.modules, general.fallback.reason);
+    return { ok: true, value: general.value };
+  }
+  const lowered = lower();
   if (!lowered.ok) return lowered;
   const program = lowered.value;
   const lists = program.referenceLists;

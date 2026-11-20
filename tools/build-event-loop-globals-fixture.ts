@@ -1,4 +1,5 @@
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 
 if (process.env.TINT_BUILD_ONLY !== "1")
   throw Error("The Node globals fixture must run under LLDB");
@@ -37,6 +38,11 @@ export function run() {
   {
     managedBytes: 4194304,
     allocationCapacity: 65536,
+    // x86-64 module initialization needs more than the small fixture stack.
+    stackBytes: 16777216,
     nodeEventLoop: true,
+    ...(nativeFixtureTarget().arch === "x86_64"
+      ? { runtimeEntry: "initializeGenerationalRuntime" }
+      : {}),
   },
 );

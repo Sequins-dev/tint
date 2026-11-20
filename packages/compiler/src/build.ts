@@ -472,6 +472,12 @@ function buildX64HostedProgram(
       managedSurfaces: request.managedSurfaces ?? [],
       recordBindings: request.recordBindings ?? [],
       weakBindings: request.weakBindings ?? [],
+      ...(request.generalLowering === undefined
+        ? {}
+        : { generalLowering: request.generalLowering }),
+      ...(request.requireTyped === undefined
+        ? {}
+        : { requireTyped: request.requireTyped }),
       ...(request.denseReferenceLists === undefined
         ? {}
         : { denseReferenceLists: request.denseReferenceLists }),
@@ -490,6 +496,9 @@ function buildX64HostedProgram(
       threaded: request.threaded === true,
       allocationProbes: request.signposts === true,
       report: request.report,
+      ...(request.onGeneralFallback === undefined
+        ? {}
+        : { onGeneralFallback: request.onGeneralFallback }),
     },
   );
   if (!compiled.ok) return compiled;
