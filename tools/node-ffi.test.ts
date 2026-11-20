@@ -198,3 +198,94 @@ test("node:ffi lends and adopts native memory without losing byte aliases", () =
     { managedBytes: 67108864, allocationCapacity: 1048576 },
   );
 });
+
+const wideIntegers = 76;
+const wideFloats = 9;
+const widePointers = 17;
+const names = (prefix: string, count: number): string[] =>
+  Array.from({ length: count }, (_, index) => prefix + index);
+const integers = names("i", wideIntegers);
+const floats = names("f", wideFloats);
+const pointers = names("p", widePointers);
+const wideLibrary = `
+uint64_t tint_wide(${[
+  ...integers.map((name) => "uint64_t " + name),
+  ...floats.map((name) => "double " + name),
+  ...pointers.map((name) => "uint8_t *" + name),
+].join(",")}) {
+  uint64_t checksum = 0;
+  ${integers.map((name, index) => `checksum += ${name} * ${index + 1};`).join("\n")}
+  ${floats.map((name) => `checksum += (uint64_t)(${name} * 4);`).join("\n")}
+  ${pointers.map((name) => `checksum += *${name}; *${name} += 3;`).join("\n")}
+  return checksum;
+}
+`;
+function wideSource(library: string): string {
+  return `
+import { dlopen } from "node:ffi";
+export function run() {
+  const types = [];
+  const values = [];
+  let expected = 0n;
+  const bytes = new Uint8Array(${widePointers});
+  for (let i = 1; i <= ${wideIntegers}; i++) {
+    types.push("uint64");
+    const value = 9007199254740993n + BigInt(i);
+    values.push(value);
+    expected += BigInt(i) * value;
+  }
+  for (let i = 1; i <= ${wideFloats}; i++) {
+    types.push("double");
+    values.push(i + 0.25);
+    expected += BigInt(i * 4 + 1);
+  }
+  for (let i = 0; i < bytes.length; i++) {
+    types.push("pointer");
+    bytes[i] = i;
+    values.push(bytes.subarray(i));
+    expected += BigInt(i);
+  }
+  const { lib, functions } = dlopen(${JSON.stringify(library)}, {
+    tint_wide: { arguments: types, return: "uint64" }
+  });
+  try {
+    if (functions.tint_wide(...values) !== (expected & 0xffffffffffffffffn)) return 1;
+    for (let i = 0; i < bytes.length; i++)
+      if (bytes[i] !== i + 3) return 2;
+    if (functions.tint_wide(...values) !== ((expected + BigInt(bytes.length * 3)) & 0xffffffffffffffffn)) return 3;
+    return 42;
+  } finally {
+    lib.close();
+  }
+}`;
+}
+test(
+  "the wide call fixture agrees with the pinned Node reference",
+  { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
+  () =>
+    assert.ok(
+      withDynamicLibrary((library) => {
+        runOracle(wideSource(library));
+        return true;
+      }, wideLibrary),
+      "clang is required",
+    ),
+);
+test("node:ffi calls a wide scalar signature with many borrowed views", () => {
+  assert.ok(
+    withDynamicLibrary(
+      (library) =>
+        verifyHostedFixture(
+          wideSource(library),
+          "node-ffi-wide-call",
+          [["node:ffi", "packages/native-runtime/src/node/ffi.ts"]],
+          [],
+          [],
+          [],
+          { managedBytes: 67108864, allocationCapacity: 1048576 },
+        ),
+      wideLibrary,
+    ),
+    "clang is required",
+  );
+});

@@ -104,4 +104,8 @@ export {
   type ForeignSignature,
   type ForeignType,
 } from "./dynamic.ts";
-export { bytesAtWords, stableAddressWords } from "./address-words.ts";
+export {
+  bytesAtWords,
+  stableAddressWords,
+  callScalarForeign,
+} from "./address-words.ts";

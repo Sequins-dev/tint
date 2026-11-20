@@ -103,7 +103,9 @@ export function planTransition(call: ForeignCall): TransitionPlan {
   const thunks: PlannedCallback[] = [];
   const dynamic = call.dynamic === true;
   const count = dynamic
-    ? dynamicCallFrame.callbackOperands
+    ? call.dynamicScalar === true
+      ? 0
+      : dynamicCallFrame.callbackOperands
     : (call.callbacks ?? []).filter((item) => item !== undefined).length;
   const end = call.operands.length - directCallbackExtras(call);
   let view = 0;

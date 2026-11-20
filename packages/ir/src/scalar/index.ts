@@ -131,6 +131,8 @@ export {
   bindForeignCalls,
   dynamicForeignCall,
   dynamicCallFrame,
+  dynamicScalarCall,
+  dynamicScalarFrame,
   callbackTransition,
   callbackEntered,
   directCallbackExtras,

@@ -77,7 +77,10 @@ float halve(float v) { return v / 2; }
 `;
 
 /** Compile the library (clang -shared); undefined without clang. */
-export function buildDynamicLibrary(directory: string): string | undefined {
+export function buildDynamicLibrary(
+  directory: string,
+  additionalSource = "",
+): string | undefined {
   const clang = spawnSync("clang", ["--version"], { encoding: "utf8" });
   if (clang.status !== 0) return undefined;
   const source = join(directory, "tint-dynamic.c"),
@@ -87,7 +90,7 @@ export function buildDynamicLibrary(directory: string): string | undefined {
         ? "libtint-dynamic.dylib"
         : "libtint-dynamic.so",
     );
-  writeFileSync(source, dynamicLibrarySource);
+  writeFileSync(source, dynamicLibrarySource + additionalSource);
   const built = spawnSync(
     "clang",
     ["-O1", "-shared", "-fPIC", "-o", library, source],
@@ -441,10 +444,11 @@ export function run(): number {
  * undefined (and no run) without clang. */
 export function withDynamicLibrary<T>(
   body: (library: string) => T,
+  additionalSource = "",
 ): T | undefined {
   const directory = mkdtempSync(join(tmpdir(), "tint-dynamic-"));
   try {
-    const library = buildDynamicLibrary(directory);
+    const library = buildDynamicLibrary(directory, additionalSource);
     return library === undefined ? undefined : body(library);
   } finally {
     rmSync(directory, { recursive: true, force: true });

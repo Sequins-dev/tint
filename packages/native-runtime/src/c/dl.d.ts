@@ -77,6 +77,14 @@ declare module "tint:c/dl" {
     scratch: FixedArray<u8, 512>;
   }
   export const DynamicFrame: Layout<DynamicFrame>;
+  /** The growable scalar trampoline's header, followed by stack words. */
+  export interface DynamicScalarFrame {
+    x: FixedArray<Word, 8>;
+    d: FixedArray<Word, 8>;
+    stackBytes: u64;
+    target: Handle;
+  }
+  export const DynamicScalarFrame: Layout<DynamicScalarFrame>;
   /** A scalar of any C type, converted through one 8-byte cell. */
   export interface Cell extends Union {
     i8: i8;

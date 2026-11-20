@@ -1,3 +1,10 @@
+import {
+  classifyCCall,
+  darwinArm64CTarget,
+  linuxArm64CTarget,
+  type CCallLayout,
+} from "@tint/abi/c";
+import { classifySysVCCall, linuxX86_64CTarget } from "@tint/abi/c/sysv";
 import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
 import {
   builtinAccessor,
@@ -23,9 +30,11 @@ import {
   type ProgramRealmCore,
   type ScriptPropertyKey,
 } from "@tint/js-runtime/objects";
-import { TARGET_AAPCS64 } from "tint:c/dl";
+import { Cell, DynamicScalarFrame, TARGET_AAPCS64 } from "tint:c/dl";
+import { external } from "tint:ffi";
 import {
   bytesAtWords,
+  callScalarForeign,
   closeLibrary,
   findSymbolWords,
   foreignFunction,
@@ -64,6 +73,7 @@ interface Binding {
   readonly signature: FfiSignature;
   readonly address: SymbolAddress;
   readonly frame: ForeignFunction | undefined;
+  readonly wideLayout: CCallLayout | undefined;
   wrapper: unknown;
 }
 interface DynamicLibraryState {
@@ -82,7 +92,12 @@ interface NodeFfi {
   readonly defaultExport: FfiObject;
 }
 
-import { installFfiMemory } from "./ffi-memory.ts";
+import {
+  installFfiMemory,
+  readScalar,
+  stableFfiBacking,
+  writeScalar,
+} from "./ffi-memory.ts";
 
 const wordMask = 0xffffffffn;
 const maxPointer = 0xffffffffffffffffn;
@@ -113,16 +128,28 @@ function invalidArgument(
     "Argument " + index + " " + detail,
   );
 }
-function setPointer(
+interface FfiPointer {
+  readonly low: number;
+  readonly high: number;
+  readonly bytes: Uint8Array | undefined;
+}
+
+function ffiPointer(bits: bigint, bytes: Uint8Array | undefined): FfiPointer {
+  return {
+    low: Number(bits & wordMask),
+    high: Number((bits >> 32n) & wordMask),
+    bytes,
+  };
+}
+
+function pointerArgument(
   core: ProgramRealmCore,
-  frame: ForeignFunction,
   index: number,
   argument: unknown,
-): void {
-  if (argument === undefined || argument === null) {
-    setWords(frame, index, 0, 0);
-    return;
-  }
+  stable: boolean,
+): FfiPointer {
+  if (argument === undefined || argument === null)
+    return ffiPointer(0n, undefined);
   if (typeof argument === "bigint") {
     if (argument < 0n || argument > maxPointer)
       return invalidArgument(
@@ -130,16 +157,16 @@ function setPointer(
         index,
         "must be a non-negative pointer bigint",
       );
-    setWord(frame, index, argument);
-    return;
+    return ffiPointer(argument, undefined);
   }
   if (typeof argument === "string") {
     ffiString(core, argument, "Argument " + index);
     const encoded = encodeUTF8(argument);
-    const terminated = new Uint8Array(encoded.length + 1);
+    const terminated = stable
+      ? external(encoded.length + 1)
+      : new Uint8Array(encoded.length + 1);
     terminated.set(encoded);
-    setBytes(frame, index, terminated);
-    return;
+    return ffiPointer(0n, terminated);
   }
   const object = viewObjectValue(argument, core.object);
   if (object !== undefined) {
@@ -151,17 +178,17 @@ function setPointer(
           index,
           "is an ArrayBufferView backed by a detached ArrayBuffer",
         );
-      const bytes = window.bytes;
-      if (bytes !== undefined) {
-        setBytes(
-          frame,
-          index,
-          bytes.subarray(
+      const bytes = window.bytes,
+        storage = window.storage;
+      if (bytes !== undefined && storage.kind === "ordinary") {
+        const backing = stable ? stableFfiBacking(core, storage, bytes) : bytes;
+        return ffiPointer(
+          0n,
+          backing.subarray(
             window.byteOffset,
             window.byteOffset + window.byteLength,
           ),
         );
-        return;
       }
     }
     const storage = object.internalArrayBufferData;
@@ -169,8 +196,10 @@ function setPointer(
       const bytes = storage.data;
       if (bytes === undefined)
         return invalidArgument(core, index, "is a detached ArrayBuffer");
-      setBytes(frame, index, bytes);
-      return;
+      return ffiPointer(
+        0n,
+        stable ? stableFfiBacking(core, storage, bytes) : bytes,
+      );
     }
   }
   return invalidArgument(
@@ -210,7 +239,13 @@ function marshal(
   type: FfiType,
   argument: unknown,
 ): void {
-  if (type === "pointer") return setPointer(core, frame, index, argument);
+  if (type === "pointer") {
+    const pointer = pointerArgument(core, index, argument, false);
+    const bytes = pointer.bytes;
+    if (bytes === undefined) setWords(frame, index, pointer.low, pointer.high);
+    else setBytes(frame, index, bytes);
+    return;
+  }
   if (type === "i64" || type === "u64") {
     const signed = type === "i64";
     const bits =
@@ -250,6 +285,118 @@ function unmarshal(frame: ForeignFunction, type: FfiType): unknown {
     return type === "i64" && bits > maxSigned ? bits - (1n << 64n) : bits;
   }
   return resultNumber(frame);
+}
+
+/** The scalar memory codec also handles the native-endian register image. */
+function scalarKind(type: FfiType): number {
+  switch (type) {
+    case "i8":
+      return 0;
+    case "u8":
+      return 1;
+    case "i16":
+      return 2;
+    case "u16":
+      return 3;
+    case "i32":
+      return 4;
+    case "u32":
+      return 5;
+    case "i64":
+      return 6;
+    case "pointer":
+    case "u64":
+      return 7;
+    case "f32":
+      return 8;
+    case "f64":
+      return 9;
+    default:
+      throw "FFI_SCALAR_KIND_INVARIANT";
+  }
+}
+
+function classifyScalarCall(
+  core: ProgramRealmCore,
+  signature: FfiSignature,
+): CCallLayout {
+  const layout =
+    TARGET_AAPCS64 === 2
+      ? classifySysVCCall(signature.abi, linuxX86_64CTarget)
+      : classifyCCall(
+          signature.abi,
+          TARGET_AAPCS64 === 0 ? darwinArm64CTarget : linuxArm64CTarget,
+        );
+  if (!layout.ok)
+    return ffiError(core, "error", "ERR_FFI_CALL_FAILED", layout.error);
+  return layout.value;
+}
+
+function invokeScalar(
+  core: ProgramRealmCore,
+  binding: Binding,
+  layout: CCallLayout,
+  args: readonly unknown[],
+): unknown {
+  const header = DynamicScalarFrame.size;
+  const frame = new Uint8Array(header + layout.stackBytes);
+  const view = DynamicScalarFrame.view(frame);
+  view.target.low = binding.address.low;
+  view.target.high = binding.address.high;
+  view.stackBytes = layout.stackBytes;
+  const loans: Uint8Array[] = [];
+  const bytes = new Uint8Array(Cell.size);
+  const cell = Cell.view(bytes);
+  const types = binding.signature.parameters;
+  try {
+    for (let index = 0; index < types.length; index++) {
+      const type = types[index],
+        location = layout.arguments[index];
+      if (type === undefined || location === undefined)
+        throw "FFI_SCALAR_ARGUMENT_INVARIANT";
+      let argument = args[index];
+      if (type === "pointer") {
+        const pointer = pointerArgument(core, index, argument, true);
+        const loan = pointer.bytes;
+        if (loan === undefined) argument = word(pointer.low, pointer.high);
+        else {
+          loans.push(loan);
+          argument = stableAddressWords(loan);
+        }
+      }
+      cell.u64 = 0;
+      writeScalar(core, cell, scalarKind(type), argument);
+      const stackOffset = location.stackOffset;
+      let offset: number, width: number;
+      if (stackOffset >= 0) {
+        offset = header + stackOffset;
+        width = location.size;
+      } else {
+        offset = location.gp >= 0 ? location.gp * 8 : 64 + location.fp * 8;
+        width = 8;
+        if (location.extend === "sign" && typeof argument === "number")
+          cell.i64 = argument;
+      }
+      for (let byte = 0; byte < width; byte++)
+        frame[offset + byte] = bytes[byte] ?? 0;
+    }
+    if (!callScalarForeign(frame))
+      return ffiError(
+        core,
+        "range",
+        "ERR_FFI_CALL_FAILED",
+        "Insufficient native stack for FFI arguments",
+      );
+    const result = binding.signature.result;
+    if (result === "void") return undefined;
+    const offset = result === "f32" || result === "f64" ? 64 : 0;
+    for (let byte = 0; byte < Cell.size; byte++)
+      bytes[byte] = frame[offset + byte] ?? 0;
+    return readScalar(cell, scalarKind(result));
+  } finally {
+    // C holds only raw words. Keep the true storage roots live across the loan.
+    while (loans.length !== 0) loans.pop();
+  }
 }
 
 function nodeFfiTypeTable(core: ProgramRealmCore): FfiObject {
@@ -401,9 +548,20 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     }
     const address = resolve(state, name);
     const numeric = address.high * 4294967296 + address.low;
+    let pointers = 0;
+    for (const type of signature.parameters) if (type === "pointer") pointers++;
+    // Keep the existing scalar leaf trampoline for signatures it can carry.
+    const wide =
+      signature.parameters.length > 64 ||
+      pointers > 8 ||
+      (address.high >= 2097152 && !Number.isSafeInteger(numeric));
     const frame =
-      numeric === 0 ? undefined : foreignFunction(numeric, signature.abi);
-    return { name, signature, address, frame, wrapper: undefined };
+      numeric === 0 || wide
+        ? undefined
+        : foreignFunction(numeric, signature.abi);
+    const wideLayout =
+      numeric === 0 || !wide ? undefined : classifyScalarCall(core, signature);
+    return { name, signature, address, frame, wideLayout, wrapper: undefined };
   }
   function wrapper(owner: FfiObject, binding: Binding): unknown {
     const slot = binding.wrapper;
@@ -416,7 +574,8 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       (_receiver, args): unknown => {
         requireOpen(requireState(owner));
         const frame = binding.frame;
-        if (frame === undefined) return closed();
+        const wideLayout = binding.wideLayout;
+        if (frame === undefined && wideLayout === undefined) return closed();
         const parameters = binding.signature.parameters;
         if (args.length !== parameters.length)
           return ffiError(
@@ -428,6 +587,9 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
               ", got " +
               args.length,
           );
+        if (wideLayout !== undefined)
+          return invokeScalar(core, binding, wideLayout, args);
+        if (frame === undefined) throw "FFI_SCALAR_BINDING_INVARIANT";
         try {
           for (let index = 0; index < parameters.length; index++) {
             const type = parameters[index];

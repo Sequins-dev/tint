@@ -24,6 +24,7 @@ declare module "tint:ffi/unsafe" {
   ): Uint8Array;
   export function bytesAtWords(address: bigint, length: number): Uint8Array;
   export function stableAddressWords(bytes: Uint8Array): bigint;
+  export function callScalarForeign(frame: Uint8Array): boolean;
   /** A copy of the NUL-terminated UTF-8 text at `text` (`char *` results
    * and members; malformed sequences become U+FFFD). */
   export function cStringAt(text: Address<number>): string;

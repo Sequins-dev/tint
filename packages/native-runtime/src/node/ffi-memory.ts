@@ -1,4 +1,4 @@
-import { retargetByteStorage } from "@tint/js-runtime/bytes";
+import { retargetByteStorage, type ByteStorage } from "@tint/js-runtime/bytes";
 import {
   adoptArrayBuffer,
   builtinFunction,
@@ -41,7 +41,7 @@ const scalarMaximums: number[] = [
   127, 255, 32767, 65535, 2147483647, 4294967295,
 ];
 
-function readScalar(cell: View<Cell>, kind: number): unknown {
+export function readScalar(cell: View<Cell>, kind: number): unknown {
   switch (kind) {
     case 0:
       return cell.i8;
@@ -70,7 +70,7 @@ function readScalar(cell: View<Cell>, kind: number): unknown {
   }
 }
 
-function writeScalar(
+export function writeScalar(
   core: ProgramRealmCore,
   cell: View<Cell>,
   kind: number,
@@ -141,6 +141,30 @@ function writeScalar(
     default:
       throw "FFI_MEMORY_KIND_INVARIANT";
   }
+}
+
+/** Keep existing owners and aliases together when C needs a stable address. */
+export function stableFfiBacking(
+  core: ProgramRealmCore,
+  storage: ByteStorage,
+  bytes: Uint8Array,
+): Uint8Array {
+  if (stableBytes(bytes)) return bytes;
+  let stable: Uint8Array;
+  try {
+    stable = external(bytes.length);
+  } catch (error) {
+    if (!(error instanceof RangeError)) throw error;
+    return ffiError(
+      core,
+      "range",
+      "ERR_MEMORY_ALLOCATION_FAILED",
+      "Memory allocation failed",
+    );
+  }
+  if (!retargetByteStorage(storage, bytes, stable))
+    throw "FFI_STORAGE_OWNER_INVARIANT";
+  return stable;
 }
 
 export function installFfiMemory(
@@ -377,22 +401,7 @@ export function installFfiMemory(
       return invalid("SharedArrayBuffer does not have an accessible backing");
     const bytes = storage.data;
     if (bytes === undefined) return invalid("ArrayBuffer is detached");
-    let stable = bytes;
-    if (!stableBytes(bytes)) {
-      try {
-        stable = external(bytes.length);
-      } catch (error) {
-        if (!(error instanceof RangeError)) throw error;
-        return ffiError(
-          core,
-          "range",
-          "ERR_MEMORY_ALLOCATION_FAILED",
-          "Memory allocation failed",
-        );
-      }
-      if (!retargetByteStorage(storage, bytes, stable))
-        throw "FFI_STORAGE_OWNER_INVARIANT";
-    }
+    const stable = stableFfiBacking(core, storage, bytes);
     return host.address(stable) + BigInt(window?.byteOffset ?? 0);
   });
 }

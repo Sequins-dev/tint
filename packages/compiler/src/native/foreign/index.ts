@@ -76,7 +76,8 @@ export interface NativeForeignMemoryBinding {
     | "stable"
     | "callback-key"
     | "call"
-    | "call-callbacks";
+    | "call-callbacks"
+    | "call-scalar";
 }
 /** The `tint:ffi` runtime: its trusted primitives and the weak-storage and
  * collection intrinsics its collector-registered storage uses. */
@@ -169,7 +170,11 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
     runtimes.push({
       module: modules.addressWords,
       namespace: "ffi-address-words",
-      retainedExports: ["adoptExternalWords", "byteAddressInto"],
+      retainedExports: [
+        "adoptExternalWords",
+        "byteAddressInto",
+        "callScalarForeign",
+      ],
     });
     bindings.push(
       {
@@ -181,6 +186,11 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
         module: modules.addressWords,
         name: "byteAddressInto",
         operation: "address-into",
+      },
+      {
+        module: modules.addressWords,
+        name: "callScalarForeign",
+        operation: "call-scalar",
       },
     );
   }

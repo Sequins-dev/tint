@@ -36,6 +36,9 @@ export interface ForeignCall {
    * first operand's address and every argument comes from a call frame
    * (docs/native-ffi.md, "Dynamic calls"); `symbol` is empty. */
   readonly dynamic?: true | undefined;
+  /** The growable scalar frame has an exact target and no borrowed operands.
+   * Its boolean result reports whether the outgoing stack window fit. */
+  readonly dynamicScalar?: true | undefined;
   /** The callee is an address, not an import: the first operand is that
    * address (a nonzero number, else trap) and the remaining operands are
    * the prototype's (docs/native-ffi.md, "Optional libraries"). `symbol`
@@ -145,6 +148,42 @@ export const dynamicCallFrame = {
    * universal thunks' entries are bases 1 + byteOperands onward. */
   callbackOperands: 4,
 };
+/** Header of a growable scalar call. Stack words follow the header. The
+ * frame contains no managed pointers, and may live in stable storage. */
+export const dynamicScalarFrame = {
+  registers: 0,
+  floats: 64,
+  stackBytes: 128,
+  target: 136,
+  size: 144,
+};
+
+/** Use the shared callback transition without scoped callback operands. */
+export function dynamicScalarCall(callbacks: boolean): ForeignCall {
+  const pointer: CType = { kind: "pointer", pointee: { kind: "void" } };
+  const parameters: CType[] = callbacks
+    ? [pointer, pointer, pointer]
+    : [pointer];
+  const operands: ForeignOperand[] = callbacks
+    ? ["bytes", "callback", "bytes"]
+    : ["bytes"];
+  const call: ForeignCall = {
+    symbol: "",
+    signature: {
+      parameters,
+      result: { kind: "scalar", scalar: "bool" },
+      fixedParameters: parameters.length,
+      callClass: callbacks ? "may-callback" : "leaf",
+      errno: "none",
+    },
+    operands,
+    result: "boolean",
+    dynamic: true,
+    dynamicScalar: true,
+  };
+  return callbacks ? { ...call, mayCallback: true } : call;
+}
+
 /** The universal trampoline call: operands are the callee address, the
  * frame and `dynamicCallFrame.byteOperands` borrowed byte arrays. With
  * `callbacks` it is a may-callback call: the callback state and
@@ -187,12 +226,19 @@ export function dynamicForeignCall(callbacks: boolean = false): ForeignCall {
 }
 /** Whether `call` is exactly the universal trampoline's shape. */
 function dynamicShape(call: ForeignCall): boolean {
-  const expected = dynamicForeignCall(call.mayCallback === true);
+  const expected =
+    call.dynamicScalar === true
+      ? dynamicScalarCall(call.mayCallback === true)
+      : dynamicForeignCall(call.mayCallback === true);
+  const result = call.signature.result;
   if (
     call.symbol !== "" ||
-    call.result !== "void" ||
+    call.result !== expected.result ||
     call.callbacks !== undefined ||
-    call.signature.result.kind !== "void" ||
+    (call.dynamicScalar === true
+      ? result.kind !== "scalar" || result.scalar !== "bool"
+      : result.kind !== "void") ||
+    call.signature.fixedParameters !== expected.signature.fixedParameters ||
     call.signature.callClass !== expected.signature.callClass ||
     call.signature.errno !== "none" ||
     call.signature.parameters.length !== expected.signature.parameters.length ||
@@ -245,8 +291,16 @@ export function foreignCallTypes(call: ForeignCall): ForeignCallTypesResult {
             : "Uint8Array",
       );
     }
-    return { ok: true, value: { parameters, result: "void" } };
+    return {
+      ok: true,
+      value: {
+        parameters,
+        result: call.dynamicScalar === true ? "boolean" : "void",
+      },
+    };
   }
+  if (call.dynamicScalar === true)
+    return { ok: false, error: "dynamic scalar call requires a trampoline" };
   if (!validSymbol(call.symbol))
     return { ok: false, error: "invalid foreign symbol" };
   if (call.mayCallback === true) {

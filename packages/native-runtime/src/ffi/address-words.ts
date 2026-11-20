@@ -46,3 +46,9 @@ export function stableAddressWords(bytes: Uint8Array): bigint {
   const halves = Cell.view(address).halves;
   return (BigInt(halves.high) << 32n) | BigInt(halves.low);
 }
+
+/** Invoke a call described by DynamicScalarFrame and its outgoing stack
+ * image. The result overwrites its first GP and FP words. */
+export function callScalarForeign(frame: Uint8Array): boolean {
+  throw "HOST_UNAVAILABLE";
+}

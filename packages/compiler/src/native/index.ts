@@ -98,6 +98,7 @@ import {
   bindHostOperations,
   bindForeignCalls,
   dynamicForeignCall,
+  dynamicScalarCall,
   type ForeignBinding,
   bindWeakOperations,
   type WeakOperation,
@@ -2822,10 +2823,15 @@ function lowerTypedProgram(
       );
     const operation = binding.operation;
     foreignBindings.push(
-      operation === "call" || operation === "call-callbacks"
+      operation === "call" ||
+        operation === "call-callbacks" ||
+        operation === "call-scalar"
         ? {
             function: index,
-            call: dynamicForeignCall(operation === "call-callbacks"),
+            call:
+              operation === "call-scalar"
+                ? dynamicScalarCall(false)
+                : dynamicForeignCall(operation === "call-callbacks"),
           }
         : {
             function: index,

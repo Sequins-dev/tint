@@ -118,6 +118,7 @@ import {
 import {
   emitSysVCall,
   emitSysVDynamicCall,
+  emitSysVScalarDynamicCall,
   emitSysVMemory,
   sysVDynamicStackBytes,
   type CallSite,
@@ -682,7 +683,9 @@ export function emitModule(
           outgoing = Math.max(
             outgoing,
             op.call.dynamic === true
-              ? sysVDynamicStackBytes
+              ? op.call.dynamicScalar === true
+                ? 0
+                : sysVDynamicStackBytes
               : sysVOutgoingBytes(layout.value),
           );
           needsForeign = true;
@@ -1864,7 +1867,9 @@ export function emitModule(
             trap: trapLabel,
             ...(transition === undefined ? {} : { transition }),
           };
-          if (op.call.dynamic === true) emitSysVDynamicCall(site);
+          if (op.call.dynamicScalar === true)
+            emitSysVScalarDynamicCall(site, frame(savedContext));
+          else if (op.call.dynamic === true) emitSysVDynamicCall(site);
           else emitSysVCall(site, layout);
           const id = op.id;
           if (id !== undefined)

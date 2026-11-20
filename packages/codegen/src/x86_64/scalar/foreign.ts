@@ -10,12 +10,15 @@ import {
   nativeArrayDataOffset,
   nativeArrayLengthOffset,
   nativeArrayOwnerOffset,
+  nativeCStackReserveBytes,
+  nativeStackLimitOffset,
   nativeHeaderFlagUnit,
   nativeHeaderFlagsShift,
   type PosixHostFacts,
 } from "@tint/abi/host";
 import {
   dynamicCallFrame,
+  dynamicScalarFrame,
   type ForeignCall,
   type ForeignMemoryAccess,
   type ScalarType,
@@ -620,6 +623,68 @@ export function emitSysVDynamicCall(request: CallSite): void {
   emit({ op: "mov", dst: mem(11, 8), src: rdx });
   emit({ op: "movsd", dst: mem(11, layout.floats), src: x0 });
   emit({ op: "movsd", dst: mem(11, layout.floats + 8), src: x1 });
+}
+
+/** The scalar ABI frame has a variable stack image and an exact target. */
+export function emitSysVScalarDynamicCall(
+  request: CallSite,
+  context: Memory<64>,
+): void {
+  const emit = request.emit,
+    site = request.site,
+    trap = request.trap,
+    transition = request.transition;
+  const layout = dynamicScalarFrame;
+  const stage = request.staging;
+  const argument = request.argument(transition === undefined ? 0 : 2);
+  byteData(emit, argument, layout.size, trap);
+  emit({ op: "mov", dst: stage(8), src: r11 });
+  emit({ op: "mov", dst: rdx, src: mem(11, layout.stackBytes) });
+  emit({ op: "test", dst: rdx, src: imm(15) });
+  branch(emit, "ne", trap);
+  emit({ op: "mov", dst: r10, src: argument });
+  emit({ op: "mov", dst: r10, src: mem(10, nativeArrayLengthOffset) });
+  emit({ op: "sub", dst: r10, src: imm(layout.size) });
+  emit({ op: "cmp", dst: rdx, src: r10 });
+  branch(emit, "a", trap);
+  emit({ op: "lea", dst: rax, src: request.stack });
+  emit({ op: "sub", dst: rax, src: rdx });
+  emit({ op: "mov", dst: stage(16), src: rax });
+  emit({ op: "sub", dst: rax, src: imm(nativeCStackReserveBytes + 8) });
+  emit({ op: "mov", dst: r10, src: context });
+  emit({ op: "cmp", dst: rax, src: mem(10, nativeStackLimitOffset) });
+  const exhausted = site + ":exhausted";
+  const done = site + ":done";
+  branch(emit, "b", exhausted);
+  if (transition !== undefined) transition.begin();
+  emit({ op: "mov", dst: rsp, src: stage(16) });
+  emit({ op: "mov", dst: r11, src: stage(8) });
+  emit({ op: "mov", dst: rdx, src: mem(11, layout.stackBytes) });
+  const copyLoop = site + ":stack";
+  const copyDone = site + ":registers";
+  emit({ op: "xor", dst: word(1), src: word(1) });
+  emit({ op: "label", name: copyLoop });
+  emit({ op: "cmp", dst: rcx, src: rdx });
+  branch(emit, "ae", copyDone);
+  emit({ op: "mov", dst: rax, src: indexed(11, 1, layout.size, 1) });
+  emit({ op: "mov", dst: indexed(4, 1, 0, 1), src: rax });
+  emit({ op: "add", dst: rcx, src: imm(8) });
+  emit({ op: "jmp", target: label(copyLoop) });
+  emit({ op: "label", name: copyDone });
+  emit({ op: "cmp", dst: mem(11, layout.target), src: imm(0) });
+  branch(emit, "e", trap);
+  loadRegisters(emit, (offset) => mem(11, offset));
+  emit({ op: "call", target: mem(11, layout.target) });
+  if (transition !== undefined) transition.end();
+  emit({ op: "lea", dst: rsp, src: request.stack });
+  emit({ op: "mov", dst: r11, src: stage(8) });
+  emit({ op: "mov", dst: mem(11, layout.registers), src: rax });
+  emit({ op: "movsd", dst: mem(11, layout.floats), src: x0 });
+  emit({ op: "mov", dst: eax, src: imm(1) });
+  emit({ op: "jmp", target: label(done) });
+  emit({ op: "label", name: exhausted });
+  emit({ op: "xor", dst: eax, src: eax });
+  emit({ op: "label", name: done });
 }
 
 export interface MemorySite extends IntegerSite {

@@ -187,6 +187,7 @@ import {
   foreignCallTypes,
   foreignMemoryTypes,
   dynamicCallFrame,
+  dynamicScalarFrame,
   callbackTransition,
   callbackEntered,
   callbackState,
@@ -3998,11 +3999,11 @@ function emitModuleForms(
         // must list (a may-callback call's callback function values).
         const siteReferences = new Map<number, readonly number[]>();
         let siteIndex = 0;
-        function safepoint(): void {
+        function safepoint(at: number = instructions.length): void {
           const block = blockId;
           if (block === undefined) throw "safepoint block invariant";
           callSites.push({
-            offset: instructions.length * 4,
+            offset: at * 4,
             block,
             index: siteIndex,
           });
@@ -6267,13 +6268,14 @@ function emitModuleForms(
           record: number,
           returnAddressAt: number,
           words: readonly number[],
+          returnPC: number = instructions.length,
         ): void {
           patchInstruction(returnAddressAt, {
             op: "adr",
             rd: 12,
-            displacement: (instructions.length - returnAddressAt) * 4,
+            displacement: (returnPC - returnAddressAt) * 4,
           });
-          safepoint();
+          safepoint(returnPC);
           siteReferences.set(callSites.length - 1, words);
           dataPointer(state, 14, false, 0);
           emit({
@@ -6594,6 +6596,228 @@ function emitModuleForms(
             rn: 12,
             offset: frame.floats + 16,
           });
+        }
+        /** Copy the classified stack image below the managed frame. The
+         * saved transition and its roots stay at their normal frame offsets. */
+        function scalarDynamicCall(
+          call: ForeignCall,
+          operands: readonly number[],
+          result: number,
+        ): void {
+          const layout = dynamicScalarFrame;
+          const mayCallback = call.mayCallback === true;
+          const frame = operands[mayCallback ? 2 : 0];
+          if (frame === undefined) throw "scalar dynamic frame invariant";
+          dataPointer(frame, 12, false, layout.size);
+          emit({
+            op: "sub-imm",
+            width: 64,
+            rd: 10,
+            rn: 10,
+            immediate: layout.size,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 13,
+            rn: 12,
+            offset: layout.stackBytes,
+          });
+          emit({
+            op: "sub-reg",
+            width: 64,
+            rd: "zr",
+            rn: 10,
+            rm: 13,
+            shift: "lsl",
+            amount: 0,
+            setFlags: true,
+          });
+          trapIf({ op: "b.cond", condition: "cc" });
+          emit({ op: "ubfm", width: 64, rd: 9, rn: 13, immr: 0, imms: 3 });
+          trapIf({ op: "cbnz", width: 64, rt: 9 });
+          address(11, 0);
+          emit({
+            op: "sub-reg",
+            width: 64,
+            rd: 11,
+            rn: 11,
+            rm: 13,
+            shift: "lsl",
+            amount: 0,
+            setFlags: false,
+          });
+          rawLoad(9, contextOffset);
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 9,
+            rn: 9,
+            offset: nativeStackLimitOffset,
+          });
+          emit({
+            op: "sub-imm",
+            width: 64,
+            rd: 10,
+            rn: 11,
+            immediate: nativeCStackReserveBytes / 4096,
+            shift: 12,
+            setFlags: false,
+          });
+          emit({
+            op: "sub-reg",
+            width: 64,
+            rd: "zr",
+            rn: 10,
+            rm: 9,
+            shift: "lsl",
+            amount: 0,
+            setFlags: true,
+          });
+          const exhausted = instructions.length;
+          emit({ op: "b.cond", condition: "cc", displacement: 0 });
+          const words: number[] = [];
+          const state = operands[0];
+          let returnAddressAt = -1;
+          if (mayCallback) {
+            const dispatcher = operands[1];
+            if (state === undefined || dispatcher === undefined)
+              throw "scalar dynamic transition invariant";
+            returnAddressAt = pushTransition(state, dispatcher, [], 0, words);
+            dataPointer(frame, 12, false, 0);
+            emit({
+              op: "ldr",
+              width: 64,
+              rt: 13,
+              rn: 12,
+              offset: layout.stackBytes,
+            });
+          }
+          emit({ op: "ldr", width: 64, rt: 15, rn: 12, offset: layout.target });
+          trapIf({ op: "cbz", width: 64, rt: 15 });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: "sp",
+            rn: 11,
+            immediate: 0,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: 10,
+            rn: 12,
+            immediate: layout.size,
+            shift: 0,
+            setFlags: false,
+          });
+          const copy = instructions.length;
+          emit({ op: "cbz", width: 64, rt: 13, displacement: 0 });
+          emit({ op: "ldr", width: 64, rt: 14, rn: 10, offset: 0 });
+          emit({ op: "str", width: 64, rt: 14, rn: 11, offset: 0 });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: 10,
+            rn: 10,
+            immediate: 8,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: 11,
+            rn: 11,
+            immediate: 8,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "sub-imm",
+            width: 64,
+            rd: 13,
+            rn: 13,
+            immediate: 8,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({ op: "b", displacement: (copy - instructions.length) * 4 });
+          patchInstruction(copy, {
+            op: "cbz",
+            width: 64,
+            rt: 13,
+            displacement: (instructions.length - copy) * 4,
+          });
+          for (let register = 0; register < 8; register += 2) {
+            emit({
+              op: "ldp-d",
+              rt: register,
+              rt2: register + 1,
+              rn: 12,
+              offset: layout.floats + register * 8,
+            });
+            emit({
+              op: "ldp",
+              width: 64,
+              rt: register,
+              rt2: register + 1,
+              rn: 12,
+              offset: layout.registers + register * 8,
+              mode: "offset",
+            });
+          }
+          emit({ op: "blr", rn: 15 });
+          const returnPC = instructions.length;
+          imm(10, frameBytes);
+          emit({
+            op: "sub-reg",
+            width: 64,
+            rd: 11,
+            rn: 29,
+            rm: 10,
+            shift: "lsl",
+            amount: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: "sp",
+            rn: 11,
+            immediate: 0,
+            shift: 0,
+            setFlags: false,
+          });
+          if (mayCallback && state !== undefined)
+            popTransition(state, 0, returnAddressAt, words, returnPC);
+          dataPointer(frame, 12, false, 0);
+          emit({
+            op: "str",
+            width: 64,
+            rt: 0,
+            rn: 12,
+            offset: layout.registers,
+          });
+          emit({ op: "str-d", rt: 0, rn: 12, offset: layout.floats });
+          imm(9, 1);
+          const completed = instructions.length;
+          emit({ op: "b", displacement: 0 });
+          patchInstruction(exhausted, {
+            op: "b.cond",
+            condition: "cc",
+            displacement: (instructions.length - exhausted) * 4,
+          });
+          imm(9, 0);
+          patchInstruction(completed, {
+            op: "b",
+            displacement: (instructions.length - completed) * 4,
+          });
+          saveRaw(9, result);
         }
         function numberToInteger(
           id: number,
@@ -10521,6 +10745,13 @@ function emitModuleForms(
                 break;
               }
               case "c-call": {
+                if (op.call.dynamicScalar === true) {
+                  const result = op.id;
+                  if (result === undefined)
+                    throw "scalar dynamic status invariant";
+                  scalarDynamicCall(op.call, op.arguments, result);
+                  break;
+                }
                 if (op.call.dynamic === true) {
                   dynamicCall(op.call, op.arguments);
                   break;
