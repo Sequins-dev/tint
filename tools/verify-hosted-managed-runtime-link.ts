@@ -131,7 +131,12 @@ export function run():number {
         ? "packages/codegen/src/x86_64/scalar/index.ts"
         : "packages/codegen/src/aarch64/scalar/index.ts",
     ],
-    ...(x64 ? ([["target", "packages/platform/src/target.ts"]] as const) : []),
+    ...(x64
+      ? ([["target", "packages/platform/src/target.ts"]] satisfies [
+          string,
+          string,
+        ][])
+      : []),
     ["memory", memory],
   ],
   [

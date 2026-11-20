@@ -10,9 +10,9 @@ import {
   emitDualMappingUnmap,
   emitDualMappingWrite,
   instructionCacheSync,
-  type DualMapping,
   type InlineSequence,
 } from "../src/aarch64/scalar/executable-memory.ts";
+import type { DualMapping } from "../src/scalar/executable-memory.ts";
 
 const span = { start: 1, end: 3 };
 

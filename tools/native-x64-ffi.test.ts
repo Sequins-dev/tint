@@ -726,6 +726,7 @@ test(
     withOracle((library) => {
       const built = buildElfExecutable({
         ...image,
+        code: new Uint8Array(0),
         linux: {
           arch: target.arch,
           interpreter: target.interpreter,

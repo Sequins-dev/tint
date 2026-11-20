@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import {
+  createAssembler,
   encode,
   encodeLayout,
   patchRelative,
@@ -16,6 +17,31 @@ import { conditions, mem, oracleCases, reg, xmm } from "./x64-isa-cases.ts";
 function hex(bytes: Uint8Array): string {
   return Buffer.from(bytes).toString("hex");
 }
+
+test("the assembler reserves the final image tail without changing byte labels", () => {
+  const assembler = createAssembler();
+  assembler.instruction({ op: "nop" });
+  assembler.instruction({ op: "label", name: "end" });
+  assert.equal(assembler.labels.get("end"), 1);
+  const laidOut = assembler.finish(undefined, 16);
+  assert.equal(hex(laidOut.bytes), "90" + "00".repeat(15));
+});
+
+test("streamed rel32 fields patch across byte chunks", () => {
+  const assembler = createAssembler();
+  for (let index = 0; index < 65534; index++)
+    assembler.instruction({ op: "nop" });
+  assembler.instruction({
+    op: "call",
+    target: { kind: "label", label: "callee" },
+  });
+  assembler.instruction({ op: "nop" });
+  assembler.instruction({ op: "label", name: "callee" });
+  assembler.instruction({ op: "ret" });
+  const layout = assembler.finish();
+  assert.equal(layout.labels.get("callee"), 65540);
+  assert.equal(hex(layout.bytes.subarray(65534)), "e80100000090c3");
+});
 
 test("PIE far addresses encode signed rel64 with separate file and VM offsets", () => {
   const reference = { kind: "label", label: "data", addend: 7 } as const;

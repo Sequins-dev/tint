@@ -182,9 +182,55 @@ export interface RelativeFixup {
 }
 
 interface Encoding {
-  readonly bytes: number[];
+  readonly bytes: ByteBuffer;
   readonly fixups: RelativeFixup[];
   readonly far: boolean;
+}
+
+const codeChunkBytes = 65536;
+interface ByteBuffer {
+  readonly chunks: Uint8Array[];
+  chunk: Uint8Array;
+  used: number;
+  length: number;
+}
+
+function byteBuffer(): ByteBuffer {
+  return {
+    chunks: [],
+    chunk: new Uint8Array(0),
+    used: codeChunkBytes,
+    length: 0,
+  };
+}
+
+/** Keep output bytes in typed chunks during emission, independent of the
+ * managed representation and capacity of ordinary Number arrays. */
+function append(buffer: ByteBuffer, value: number): void {
+  if (buffer.used === codeChunkBytes) {
+    const chunk = new Uint8Array(codeChunkBytes);
+    buffer.chunks.push(chunk);
+    buffer.chunk = chunk;
+    buffer.used = 0;
+  }
+  buffer.chunk[buffer.used] = value;
+  buffer.used++;
+  buffer.length++;
+}
+
+function encodedBytes(buffer: ByteBuffer, length: number): Uint8Array {
+  const bytes = new Uint8Array(length);
+  let offset = 0;
+  for (const chunk of buffer.chunks) {
+    if (chunk === undefined) throw "x86-64 byte chunk invariant";
+    const available = buffer.length - offset;
+    bytes.set(
+      available < codeChunkBytes ? chunk.subarray(0, available) : chunk,
+      offset,
+    );
+    offset += codeChunkBytes;
+  }
+  return bytes;
 }
 
 function invalid(message: string): never {
@@ -255,14 +301,14 @@ export function patchRelative(
     : "invalid";
 }
 
-function lowBits(bytes: number[], value: number, width: FieldWidth): void {
+function lowBits(bytes: ByteBuffer, value: number, width: FieldWidth): void {
   for (let i = 0; i < width; i++) {
-    bytes.push(value & 0xff);
+    append(bytes, value & 0xff);
     value = value >>> 8;
   }
 }
 
-function displacement(bytes: number[], value: number, width: 1 | 4): void {
+function displacement(bytes: ByteBuffer, value: number, width: 1 | 4): void {
   if (!fitsSigned(value, width)) invalid("displacement out of range");
   lowBits(bytes, value, width);
 }
@@ -284,9 +330,16 @@ function relative(out: Encoding, value: Relative): void {
  * are reserved by the far model. None of the three instructions sets flags. */
 function farAddress(out: Encoding, target: LabelReference): void {
   const bytes = out.bytes;
-  bytes.push(0x4c, 0x8d, 0x35, 0, 0, 0, 0);
+  append(bytes, 0x4c);
+  append(bytes, 0x8d);
+  append(bytes, 0x35);
+  append(bytes, 0);
+  append(bytes, 0);
+  append(bytes, 0);
+  append(bytes, 0);
   const nextOffset = bytes.length;
-  bytes.push(0x49, 0xbf);
+  append(bytes, 0x49);
+  append(bytes, 0xbf);
   out.fixups.push({
     ref: target,
     fieldOffset: bytes.length,
@@ -295,7 +348,10 @@ function farAddress(out: Encoding, target: LabelReference): void {
   });
   lowBits(bytes, 0, 4);
   lowBits(bytes, 0, 4);
-  bytes.push(0x4f, 0x8d, 0x34, 0x3e);
+  append(bytes, 0x4f);
+  append(bytes, 0x8d);
+  append(bytes, 0x34);
+  append(bytes, 0x3e);
 }
 
 const farTransferBytes = 24;
@@ -305,7 +361,9 @@ function farTransfer(
   call: boolean,
 ): void {
   farAddress(out, target);
-  out.bytes.push(0x41, 0xff, call ? 0xd6 : 0xe6);
+  append(out.bytes, 0x41);
+  append(out.bytes, 0xff);
+  append(out.bytes, call ? 0xd6 : 0xe6);
 }
 
 function registerIndex(index: number): number {
@@ -354,7 +412,7 @@ function fullImmediateWidth(width: IntegerWidth): FieldWidth {
 }
 
 function emitImmediate(
-  bytes: number[],
+  bytes: ByteBuffer,
   value: number,
   width: FieldWidth,
   signExtended: boolean,
@@ -368,15 +426,15 @@ function emitImmediate(
 /** opcode packs a possible 0F escape in the high byte. REX stores W/R/X/B
  * in its low nibble, with bit 6 also used to request a bare REX prefix. */
 function opcodeBytes(
-  bytes: number[],
+  bytes: ByteBuffer,
   legacy: number,
   rex: number,
   opcode: number,
 ): void {
-  if (legacy !== 0) bytes.push(legacy);
-  if (rex !== 0) bytes.push(0x40 | rex);
-  if (opcode > 0xff) bytes.push(opcode >>> 8);
-  bytes.push(opcode & 0xff);
+  if (legacy !== 0) append(bytes, legacy);
+  if (rex !== 0) append(bytes, 0x40 | rex);
+  if (opcode > 0xff) append(bytes, opcode >>> 8);
+  append(bytes, opcode & 0xff);
 }
 
 /** A numeric reg field is a group opcode extension (/0–/7). */
@@ -399,7 +457,7 @@ function modRm(
     if (index >= 8) rex |= 1;
     if (needsByteRex(rm)) rex |= 0x40;
     opcodeBytes(bytes, legacy, rex, opcode);
-    bytes.push(0xc0 | regField | (index & 7));
+    append(bytes, 0xc0 | regField | (index & 7));
     return;
   }
   const address = rm.address;
@@ -409,14 +467,14 @@ function modRm(
       if (typeof reg !== "number" && reg.kind === "gpr" && regIndex >= 14)
         invalid("far address uses a reserved register");
       farAddress(out, displacement);
-      if (locked) bytes.push(0xf0);
+      if (locked) append(bytes, 0xf0);
       opcodeBytes(bytes, legacy, rex | 1, opcode);
-      bytes.push(regField | 6); // [r14]
+      append(bytes, regField | 6); // [r14]
       return;
     }
-    if (locked) bytes.push(0xf0);
+    if (locked) append(bytes, 0xf0);
     opcodeBytes(bytes, legacy, rex, opcode);
-    bytes.push(regField | 5);
+    append(bytes, regField | 5);
     relative(out, displacement);
     return;
   }
@@ -442,13 +500,13 @@ function modRm(
   const sib = index !== undefined || base === undefined || baseField === 4;
   if (base !== undefined && base >= 8) rex |= 1;
   if (index !== undefined && index >= 8) rex |= 2;
-  if (locked) bytes.push(0xf0);
+  if (locked) append(bytes, 0xf0);
   opcodeBytes(bytes, legacy, rex, opcode);
-  bytes.push((mod << 6) | regField | (sib ? 4 : baseField));
+  append(bytes, (mod << 6) | regField | (sib ? 4 : baseField));
   if (sib) {
     const scaleField = scale === 1 ? 0 : scale === 2 ? 1 : scale === 4 ? 2 : 3;
     const indexField = index === undefined ? 4 : index & 7;
-    bytes.push((scaleField << 6) | (indexField << 3) | baseField);
+    append(bytes, (scaleField << 6) | (indexField << 3) | baseField);
   }
   if (mod === 1) displacement(bytes, disp, 1);
   if (mod === 2 || base === undefined) displacement(bytes, disp, 4);
@@ -466,7 +524,7 @@ function integerRm(
 }
 
 function registerOpcode(
-  bytes: number[],
+  bytes: ByteBuffer,
   width: IntegerWidth,
   rexW: boolean,
   opcode: number,
@@ -724,7 +782,7 @@ function emit(out: Encoding, insn: Encodable): void {
         (count === 1 ? 0xd0 : count === "cl" ? 0xd2 : 0xc0) +
         (width === 8 ? 0 : 1);
       integerRm(out, width, opcode, shiftGroup(insn.op), insn.dst);
-      if (typeof count === "number" && count !== 1) bytes.push(count);
+      if (typeof count === "number" && count !== 1) append(bytes, count);
       return;
     }
     case "imul":
@@ -804,7 +862,8 @@ function emit(out: Encoding, insn: Encodable): void {
     case "jcc": {
       const target = insn.target;
       if (typeof target !== "number" && out.far) {
-        bytes.push(0x70 + (conditionCode(insn.cc) ^ 1), farTransferBytes);
+        append(bytes, 0x70 + (conditionCode(insn.cc) ^ 1));
+        append(bytes, farTransferBytes);
         return farTransfer(out, target, false);
       }
       opcodeBytes(bytes, 0, 0, 0x0f80 + conditionCode(insn.cc));
@@ -822,7 +881,7 @@ function emit(out: Encoding, insn: Encodable): void {
       )
         return farTransfer(out, target, call);
       if (typeof target === "number" || target.kind === "label") {
-        bytes.push(call ? 0xe8 : 0xe9);
+        append(bytes, call ? 0xe8 : 0xe9);
         return relative(out, target);
       }
       requireWidth(target.width, 64);
@@ -838,7 +897,7 @@ function emit(out: Encoding, insn: Encodable): void {
       }
       const size = immediateWidth(src);
       if (size === 2) invalid("invalid push immediate width");
-      bytes.push(size === 1 ? 0x6a : 0x68);
+      append(bytes, size === 1 ? 0x6a : 0x68);
       return emitImmediate(bytes, src.value, size, true);
     }
     case "pop": {
@@ -849,20 +908,23 @@ function emit(out: Encoding, insn: Encodable): void {
       return modRm(out, 0, false, 0x8f, 0, dst);
     }
     case "ret":
-      bytes.push(0xc3);
+      append(bytes, 0xc3);
       return;
     case "cpuid":
-      bytes.push(0x0f, 0xa2);
+      append(bytes, 0x0f);
+      append(bytes, 0xa2);
       return;
     case "ud2":
     case "syscall":
-      bytes.push(0x0f, insn.op === "ud2" ? 0x0b : 0x05);
+      append(bytes, 0x0f);
+      append(bytes, insn.op === "ud2" ? 0x0b : 0x05);
       return;
     case "nop":
-      bytes.push(0x90);
+      append(bytes, 0x90);
       return;
     case "pause":
-      bytes.push(0xf3, 0x90);
+      append(bytes, 0xf3);
+      append(bytes, 0x90);
       return;
     case "cdq":
     case "cqo":
@@ -976,14 +1038,34 @@ export function encodeLayout(
   isExternal?: (label: string) => boolean,
   far: boolean = false,
 ): EncodedLayout {
-  const out: Encoding = { bytes: [], fixups: [], far };
+  const assembler = createAssembler(far);
+  for (const instruction of instructions) assembler.instruction(instruction);
+  return assembler.finish(isExternal);
+}
+
+export interface Assembler {
+  readonly labels: ReadonlyMap<string, number>;
+  readonly byteLength: () => number;
+  readonly instruction: (insn: Instruction) => void;
+  readonly finish: (
+    isExternal?: (label: string) => boolean,
+    byteLength?: number,
+  ) => EncodedLayout;
+}
+
+/** Stream instructions into encoding storage and keep only symbols and
+ * relocation windows until final placement. */
+export function createAssembler(far: boolean = false): Assembler {
+  const out: Encoding = { bytes: byteBuffer(), fixups: [], far };
   const labels = new Map<string, number>();
-  for (const insn of instructions) {
+  let finished = false;
+  function instruction(insn: Instruction): void {
+    if (finished) invalid("assembler already finalized");
     if (insn.op === "label") {
       if (labels.has(insn.name)) invalid("duplicate label: " + insn.name);
       labels.set(insn.name, out.bytes.length);
     } else if (insn.op === "align-entry") {
-      while (out.bytes.length % 4 !== 0) out.bytes.push(0x90);
+      while (out.bytes.length % 4 !== 0) append(out.bytes, 0x90);
     } else {
       const before = out.fixups.length;
       emit(out, insn);
@@ -993,22 +1075,39 @@ export function encodeLayout(
         fixup.nextOffset = out.bytes.length;
     }
   }
-  const bytes = new Uint8Array(out.bytes.length);
-  let offset = 0;
-  for (const byte of out.bytes) bytes[offset++] = byte;
-  const externalFixups: RelativeFixup[] = [];
-  for (const fixup of out.fixups) {
-    if (fixup === undefined) throw "rel32 fixup invariant";
-    const target = labels.get(fixup.ref.label);
-    if (target === undefined) {
-      if (isExternal?.(fixup.ref.label) !== true)
-        invalid("undefined label: " + fixup.ref.label);
-      externalFixups.push(fixup);
-      continue;
+
+  function finish(
+    isExternal?: (label: string) => boolean,
+    byteLength: number = out.bytes.length,
+  ): EncodedLayout {
+    if (finished) invalid("assembler already finalized");
+    if (!Number.isSafeInteger(byteLength) || byteLength < out.bytes.length)
+      invalid("assembly output is smaller than instruction bytes or invalid");
+    finished = true;
+    const bytes = encodedBytes(out.bytes, byteLength);
+    out.bytes.chunks.length = 0;
+    out.bytes.chunk = new Uint8Array(0);
+    const externalFixups: RelativeFixup[] = [];
+    for (const fixup of out.fixups) {
+      if (fixup === undefined) throw "rel32 fixup invariant";
+      const target = labels.get(fixup.ref.label);
+      if (target === undefined) {
+        if (isExternal?.(fixup.ref.label) !== true)
+          invalid("undefined label: " + fixup.ref.label);
+        externalFixups.push(fixup);
+        continue;
+      }
+      const status = patchRelative(bytes, fixup, fixup.fieldOffset, target);
+      if (status === "range") invalid("rel32 displacement out of range");
+      if (status !== "complete") invalid("invalid relative fixup field");
     }
-    const status = patchRelative(bytes, fixup, fixup.fieldOffset, target);
-    if (status === "range") invalid("rel32 displacement out of range");
-    if (status !== "complete") invalid("invalid relative fixup field");
+    out.fixups.length = 0;
+    return { bytes, labels, externalFixups };
   }
-  return { bytes, labels, externalFixups };
+  return {
+    labels,
+    byteLength: (): number => out.bytes.length,
+    instruction,
+    finish,
+  };
 }

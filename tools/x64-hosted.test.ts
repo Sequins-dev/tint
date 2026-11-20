@@ -222,6 +222,31 @@ const native = {
     runner === undefined && "set TINT_X64_HOSTED_RUNNER for x86-64 execution",
 };
 
+test("x86-64 recognizes only the engine's stack and allocation error value", () => {
+  const built = build(
+    `import { engineRangeError, isStackOverflow } from "memory";
+     function exhaust(n: number): number { return exhaust(n + 1) + 1; }
+     export function run(): number {
+       if (isStackOverflow(undefined) !== 0 ||
+           isStackOverflow(6045965585763105) !== 0 ||
+           isStackOverflow(engineRangeError()) !== 1) return 1;
+       for (let i = 0; i < 2; i++) {
+         try { exhaust(0); return 2; }
+         catch (error) { if (isStackOverflow(error) !== 1) return 3; }
+       }
+       return 42;
+     }`,
+    {
+      memory: intrinsic("memory", {
+        engineRangeError: "engine-range-error",
+        isStackOverflow: "stack-overflow-is",
+      }),
+    },
+  );
+  assert.ok(built.ok, JSON.stringify(built));
+  if (runner !== undefined) assert.equal(run(built.value).status, 42);
+});
+
 test("x86-64 forced far image resolves calls, branches, permanent data and imports", () => {
   const built = build(
     `import { argumentCount } from "process";

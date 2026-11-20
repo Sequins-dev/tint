@@ -196,6 +196,7 @@ test("x86-64 links a managed service, collects through its frames and rejects a 
   const bind = { module: "counter-facade", name: "instantiate" };
   const request: BuildRequest = {
     ...hostRequest,
+    hostBindings: hostRequest.hostBindings ?? [],
     target: linuxX86_64Target,
     start: "run",
     nativeServices: [{ bind, unit: unit.value }],

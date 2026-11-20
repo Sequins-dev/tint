@@ -60,10 +60,9 @@ import {
   type Terminator,
 } from "@tint/ir/scalar";
 import {
-  encodeLayout,
+  createAssembler,
   patchRelative,
   type RelativeFixup,
-  type Instruction as MachineInstruction,
   type Address,
   type Gpr,
   type Memory,
@@ -370,13 +369,15 @@ export function emitModule(
     throw message;
   }
 
-  const machine: MachineInstruction[] = [];
+  const assembler = createAssembler(far);
+  let instructionCount = 0;
   const unwind: LabeledUnwind[] = [];
   const sourceLabels: { readonly name: string; readonly span: Span }[] = [];
   const debugFrames = new Map<number, readonly X64DebugParameter[]>();
   const pendingMaps: PendingSafepoint[] = [];
   const emit: Emit = (insn) => {
-    machine.push(insn);
+    assembler.instruction(insn);
+    instructionCount++;
   };
   const policy = host?.signposts;
   const probes = createProbeEmission(
@@ -527,7 +528,7 @@ export function emitModule(
     const dst = gpr(7),
       src = gpr(6),
       left = gpr(2);
-    const site = "live-bytes:" + String(machine.length);
+    const site = "live-bytes:" + String(instructionCount);
     const done = site + ":done",
       loop = site + ":loop";
     const destination: Memory<8> = { ...mem(7, 0), width: 8 };
@@ -733,7 +734,7 @@ export function emitModule(
       const arg = fn.parameters[parameter];
       if (arg === undefined) throw "x86-64 probe argument invariant";
       const useAlternate =
-        fnLabel + ":probe-alternate:" + String(machine.length);
+        fnLabel + ":probe-alternate:" + String(instructionCount);
       const next = useAlternate + ":next";
       emit({ op: "cmp", dst: frame(slot(arg)), src: imm(0) });
       branch(emit, "e", useAlternate);
@@ -828,7 +829,7 @@ export function emitModule(
         if (op.discardResult === true && !signatureImports.has(op.target)) {
           const shape = signatures[op.target];
           if (shape === undefined) throw "discarded result signature invariant";
-          const valid = fnLabel + ":signature:" + String(machine.length);
+          const valid = fnLabel + ":signature:" + String(instructionCount);
           const matches = discardSignatures.get(shape.parameters);
           if (matches !== undefined)
             for (const match of matches) {
@@ -884,7 +885,7 @@ export function emitModule(
             : label(functionLabel(op.target)),
       });
       safepoint(block, index);
-      const received = fnLabel + ":call:" + String(machine.length);
+      const received = fnLabel + ":call:" + String(instructionCount);
       emit({ op: "cmp", dst: eax, src: imm(normal) });
       emit({ op: "jcc", cc: "e", target: label(received) });
       emit({ op: "cmp", dst: eax, src: imm(thrown) });
@@ -938,7 +939,7 @@ export function emitModule(
       if (operation === "executable-call-managed") {
         safepoint(block, index);
         const received =
-          fnLabel + ":executable-result:" + String(machine.length);
+          fnLabel + ":executable-result:" + String(instructionCount);
         emit({ op: "cmp", dst: eax, src: imm(normal) });
         branch(emit, "e", received);
         emit({ op: "cmp", dst: eax, src: imm(thrown) });
@@ -1294,7 +1295,7 @@ export function emitModule(
             readonly value: number;
           },
     ): void {
-      const invalid = fnLabel + ":index:" + String(machine.length);
+      const invalid = fnLabel + ":index:" + String(instructionCount);
       const done = invalid + ":done";
       const checked = op.kind !== "array-element" && op.kind !== "array-store";
       if (checked) exactInteger(emit, frame(home(op.index)), r9, invalid);
@@ -1794,7 +1795,7 @@ export function emitModule(
             },
             importSlot: (symbol) => importSlot(prefix + symbol),
             constant,
-            site: fnLabel + ":c-memory:" + String(machine.length),
+            site: fnLabel + ":c-memory:" + String(instructionCount),
             trap: trapLabel,
           });
           if (op.id !== undefined && type !== "void") define(op.id, type);
@@ -1811,7 +1812,7 @@ export function emitModule(
             if (arg === undefined) throw "SysV C argument invariant";
             return frame(home(arg));
           }
-          const name = fnLabel + ":c:" + String(machine.length);
+          const name = fnLabel + ":c:" + String(instructionCount);
           const plan = transitions.get(op);
           let transition: ForeignTransition | undefined;
           if (plan !== undefined) {
@@ -1870,7 +1871,7 @@ export function emitModule(
         }
         case "host-call": {
           if (generational && op.operation === "collect-garbage") {
-            const site = fnLabel + ":collect:" + String(machine.length);
+            const site = fnLabel + ":collect:" + String(instructionCount);
             emit({ op: "xor", dst: word(10), src: word(10) });
             callAllocator(block, index, site);
             return;
@@ -1899,6 +1900,29 @@ export function emitModule(
             return frame(home(arg));
           }
           const operation = op.operation;
+          if (operation === "stack-overflow-is" && host !== undefined) {
+            const input = args[0];
+            if (id === undefined || input === undefined)
+              throw "stack overflow identity invariant";
+            const value = home(input);
+            emit({ op: "cmp", dst: frame(value), src: imm(0) });
+            setBoolean(emit, "e", 10);
+            emit({
+              op: "mov",
+              dst: rax,
+              src: bits(
+                nativeStackOverflowPayload % 4294967296,
+                Math.floor(nativeStackOverflowPayload / 4294967296),
+              ),
+            });
+            emit({ op: "cmp", dst: frame(value + 8), src: rax });
+            setBoolean(emit, "e", 0);
+            emit({ op: "and", dst: eax, src: word(10) });
+            emit({ op: "cvtsi2sd", dst: x0, src: eax });
+            floatBits(emit, rax, x0);
+            define(id, "number");
+            return;
+          }
           if (
             operation === "native-function-descriptor" ||
             operation === "native-function-signature" ||
@@ -1977,7 +2001,7 @@ export function emitModule(
                   call: foreign,
                   argument,
                   privateWord: (index) => frame(executableHomes + index * 8),
-                  name: fnLabel + ":executable:" + String(machine.length),
+                  name: fnLabel + ":executable:" + String(instructionCount),
                 },
                 hostPolicy,
                 operation,
@@ -2007,7 +2031,7 @@ export function emitModule(
               context: frame(savedContext),
               ownRootHead,
               constant,
-              site: fnLabel + ":host:" + String(machine.length),
+              site: fnLabel + ":host:" + String(instructionCount),
               trap: trapLabel,
             })
           ) {
@@ -2057,7 +2081,7 @@ export function emitModule(
         case "reference-vector-read":
         case "reference-vector-write": {
           const read = op.kind === "reference-vector-read";
-          const done = fnLabel + ":vector-element:" + String(machine.length);
+          const done = fnLabel + ":vector-element:" + String(instructionCount);
           const invalid = read ? done : trapLabel;
           vectorGuard(op.vector, scratch, trapLabel);
           emit({ op: "xor", dst: eax, src: eax });
@@ -2088,7 +2112,7 @@ export function emitModule(
           return;
         }
         case "reference-vector-copy": {
-          const loop = fnLabel + ":copy-vector:" + String(machine.length);
+          const loop = fnLabel + ":copy-vector:" + String(instructionCount);
           const done = loop + ":done";
           const at = gpr(8);
           vectorGuard(op.source, r10, trapLabel);
@@ -3587,15 +3611,53 @@ export function emitModule(
       constants.length * 8 + (callbackKeyOffset === undefined ? 0 : 8);
     if (jitDebug)
       external.set(debugDescriptor, { kind: "data", offset: sharedDataBytes });
-    const encoded = encodeLayout(
-      machine,
+    // Reserve the complete module span before copying code chunks. Large
+    // compilations cannot keep separate instruction, pool and map buffers.
+    const instructionBytes = assembler.byteLength();
+    const poolBase = Math.ceil(instructionBytes / 8) * 8;
+    const constantsBase = poolBase + poolBytes;
+    const poolEnd = constantsBase + (live ? constants.length * 8 : 0);
+    const withPool = poolEnd > poolBase ? poolEnd : instructionBytes;
+    const tableOffset = Math.ceil(withPool / 8) * 8;
+    const stackMaps: X64Module["stackMaps"][number][] = [];
+    let words: number[] = [];
+    if (host !== undefined) {
+      const entries: SafepointEntry[] = [];
+      for (const site of pendingMaps) {
+        if (site === undefined) throw "x86-64 safepoint invariant";
+        const offset = assembler.labels.get(site.label);
+        const start = assembler.labels.get(site.functionLabel);
+        if (offset === undefined || start === undefined)
+          throw "x86-64 safepoint label invariant";
+        entries.push({ offset, start, map: site.map });
+      }
+      words = encodeWideStackMapTable(entries);
+      words.push(nativeStackMapFooterMagic, tableOffset);
+      const thunkStart = assembler.labels.get(callbackThunksLabel);
+      stackMaps.push({
+        codeOffset: 0,
+        codeLength: thunkStart ?? instructionBytes,
+        tableOffset,
+      });
+      if (thunkStart !== undefined) {
+        const end = assembler.labels.get(callbackThunksLabel + ":end");
+        if (end === undefined) throw "callback range invariant";
+        stackMaps.push({
+          codeOffset: thunkStart,
+          codeLength: end - thunkStart,
+          tableOffset: -1,
+        });
+      }
+    }
+    const encoded = assembler.finish(
       (name) =>
         name === hostedThreadEntryLabel ||
         external.has(name) ||
         strings.has(name) ||
         descriptors.has(name),
-      far,
+      words.length === 0 ? withPool : tableOffset + words.length * 8,
     );
+    const code = encoded.bytes;
     const functions: X64Function[] = [];
     for (const fn of module.functions) {
       if (fn === undefined) throw "function invariant";
@@ -3632,13 +3694,23 @@ export function emitModule(
         ...(frame === undefined ? {} : { frame }),
       });
     }
-    const poolBase = Math.ceil(encoded.bytes.length / 8) * 8;
-    const constantsBase = poolBase + poolBytes;
-    const poolEnd = constantsBase + (live ? constants.length * 8 : 0);
-    let code = encoded.bytes;
+    for (let i = 0; i < words.length; i++) {
+      const value = words[i];
+      if (
+        value === undefined ||
+        !writeWord64(
+          code,
+          tableOffset + i * 8,
+          {
+            lo: value % 4294967296,
+            hi: Math.floor(value / 4294967296),
+          },
+          "little",
+        ).ok
+      )
+        throw "x86-64 stack map word invariant";
+    }
     if (poolEnd > poolBase) {
-      code = new Uint8Array(poolEnd);
-      code.set(encoded.bytes);
       for (const [, item] of strings) {
         if (item === undefined) throw "x86-64 literal invariant";
         const start = poolBase + item.offset;
@@ -3729,55 +3801,6 @@ export function emitModule(
         ).ok
       )
         throw "binary64 data invariant";
-    }
-    const stackMaps: X64Module["stackMaps"][number][] = [];
-    if (host !== undefined) {
-      const tableOffset = Math.ceil(code.length / 8) * 8;
-      const entries: SafepointEntry[] = [];
-      for (const site of pendingMaps) {
-        if (site === undefined) throw "x86-64 safepoint invariant";
-        const offset = encoded.labels.get(site.label);
-        const start = encoded.labels.get(site.functionLabel);
-        if (offset === undefined || start === undefined)
-          throw "x86-64 safepoint label invariant";
-        entries.push({ offset, start, map: site.map });
-      }
-      const words = encodeWideStackMapTable(entries);
-      words.push(nativeStackMapFooterMagic, tableOffset);
-      const moduleCode = new Uint8Array(tableOffset + words.length * 8);
-      moduleCode.set(code);
-      for (let i = 0; i < words.length; i++) {
-        const value = words[i];
-        if (
-          value === undefined ||
-          !writeWord64(
-            moduleCode,
-            tableOffset + i * 8,
-            {
-              lo: value % 4294967296,
-              hi: Math.floor(value / 4294967296),
-            },
-            "little",
-          ).ok
-        )
-          throw "x86-64 stack map word invariant";
-      }
-      const thunkStart = encoded.labels.get(callbackThunksLabel);
-      stackMaps.push({
-        codeOffset: 0,
-        codeLength: thunkStart ?? encoded.bytes.length,
-        tableOffset,
-      });
-      if (thunkStart !== undefined) {
-        const end = encoded.labels.get(callbackThunksLabel + ":end");
-        if (end === undefined) throw "callback range invariant";
-        stackMaps.push({
-          codeOffset: thunkStart,
-          codeLength: end - thunkStart,
-          tableOffset: -1,
-        });
-      }
-      code = moduleCode;
     }
     const relocations = imageRelocations(imageFixups, external);
     const managedImports: NativeManagedPointerImport[] = [];

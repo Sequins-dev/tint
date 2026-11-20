@@ -128,7 +128,10 @@ const path = buildNativeFixture("jit-debug", () => {
       },
     },
   ];
-  const request = projectBuildRequest(modules, () => {});
+  const { runtimeEntry: _runtimeEntry, ...request } = projectBuildRequest(
+    modules,
+    () => {},
+  );
   const grants: NativeHostBinding[] = [
     {
       module: memory,
@@ -173,7 +176,7 @@ const path = buildNativeFixture("jit-debug", () => {
     allowJit: true,
     jitDebugInterface: true,
     // Raw code capabilities do not yet have the generational write proof.
-    runtimeEntry: x64 ? undefined : "initializeCopyingRuntime",
+    ...(x64 ? {} : { runtimeEntry: "initializeCopyingRuntime" as const }),
     denseReferenceLists: false,
     entry: "fixture",
     start: "run",

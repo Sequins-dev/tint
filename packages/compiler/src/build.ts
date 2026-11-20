@@ -479,9 +479,7 @@ function buildX64HostedProgram(
       optimization: request.optimization ?? "basic",
       debugSymbols: request.debugSymbols === true,
       maxSpecializations: request.maxSpecializations ?? 4096,
-      onScalarIR: (stage, module) => {
-        if (reportIR !== undefined) reportIR(stage, module);
-      },
+      ...(reportIR === undefined ? {} : { onScalarIR: reportIR }),
     },
     target.hostABI,
     {
@@ -491,6 +489,7 @@ function buildX64HostedProgram(
       inlineAllocation: request.inlineAllocation !== false,
       threaded: request.threaded === true,
       allocationProbes: request.signposts === true,
+      report: request.report,
     },
   );
   if (!compiled.ok) return compiled;

@@ -77,7 +77,6 @@ import {
 import type { PosixHostFacts } from "@tint/abi/host";
 import { bindingIdentifiers, rewriteModule } from "@tint/typescript/syntax";
 import {
-  optimizeModule,
   optimizeModuleVersion,
   pruneClosedModule,
   pruneModuleReferences,
@@ -2504,6 +2503,7 @@ export function compileX64HostedProgram(
     readonly threaded?: boolean;
     readonly signposts?: readonly X64SignpostSite[];
     readonly allocationProbes?: boolean;
+    readonly report?: (stage: string) => void;
   } = {},
 ):
   | CompilationFailure
@@ -2541,8 +2541,7 @@ export function compileX64HostedProgram(
       undefined,
       (_stats, _module) => false,
     );
-  const first = program.ir.module;
-  const entry = first.functions[program.invocation];
+  const entry = program.ir.module.functions[program.invocation];
   if (entry === undefined)
     return stageFailure("entry", "linux-x86_64: missing entry");
   const returnType = entry.returnType;
@@ -2590,23 +2589,36 @@ export function compileX64HostedProgram(
     );
   const managed =
     program.serviceImports.length !== 0 || program.surfacePlans.length !== 0;
-  const roots = [program.invocation];
-  const reachable = managed
-    ? undefined
-    : pruneModuleReferences(first, roots, unboundedWork);
-  const initial = reachable?.module ?? first;
-  const invocation =
-    (reachable?.functionIds[program.invocation] ?? program.invocation + 1) - 1;
-  const optimized =
-    request.optimization === "none"
-      ? initial
-      : optimizeModule(initial, unboundedWork, {
-          closedRecords: !managed,
-          closedCalls: !managed,
-          devirtualizeClosures: true,
-        }).module;
-  request.onScalarIR?.("lowered", initial);
-  request.onScalarIR?.("optimized", optimized);
+  if (!managed) {
+    // Keep the remapped module and release the superseded version before
+    // optimization. The native compiler's managed heap is bounded.
+    const reachable = pruneModuleReferences(
+      program.ir.module,
+      [program.invocation],
+      unboundedWork,
+    );
+    if (reachable !== undefined) {
+      program.invocation =
+        (reachable.functionIds[program.invocation] ?? program.invocation + 1) -
+        1;
+      program.ir.module = reachable.module;
+    }
+  }
+  const reportIR = request.onScalarIR,
+    initial = reportIR === undefined ? undefined : program.ir.module;
+  options.report?.("optimize");
+  if (request.optimization !== "none")
+    optimizeModuleVersion(program.ir, unboundedWork, {
+      closedRecords: !managed,
+      closedCalls: !managed,
+      devirtualizeClosures: true,
+    });
+  const invocation = program.invocation,
+    optimized = program.ir.module;
+  if (reportIR !== undefined && initial !== undefined) {
+    reportIR("lowered", initial);
+    reportIR("optimized", optimized);
+  }
   const sourceNames = program.sourceNames;
   if (sourceNames === undefined) throw "x64 foreign source names invariant";
   const signposts: X64SignpostSite[] = [];
@@ -2633,6 +2645,7 @@ export function compileX64HostedProgram(
     if (record !== undefined) recordWitnesses.push(record);
     if (fn !== undefined) functionWitnesses.push(fn);
   }
+  options.report?.("emit");
   const emitted = emitX64(
     optimized,
     host,
