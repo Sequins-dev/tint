@@ -451,10 +451,10 @@ After evaluating the callee and arguments, a mixed call dispatches through
 the realm's ordinary `[[Call]]` implementation. A direct value call supplies
 `undefined` as its receiver. A property call supplies the evaluated reference
 base. The realm handles classes and delivers returned and thrown objects with
-their original identity. Native closures dynamically passed as `Function`
-still require the slice 2b view. Lowering diagnoses a known native closure.
-When its representation is only known at run time, the call throws a
-`TypeError` after evaluating its arguments.
+their original identity. Native closures passed as `Function` need a callable view. Slice 2b
+projects unary numeric closures. Lowering diagnoses other known native
+closure shapes. When only run time reveals an unprojected native closure,
+the call throws a `TypeError` after evaluating its arguments.
 
 The [B4 ledger](results/unified-pipeline-ledger-slice4a-b4-main-34187f4a8-dev-lldb-v1.json)
 covers 74 constructs. Both new typed forms stay typed, both untyped forms
@@ -752,7 +752,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | `toLowerCase` and other unlisted String methods; `Math.pow`/`log2`/`fround`; `JSON`                                                                                                                                                                                                                                                                    | `string-methods`, `math`, `json`                                                                        | 4                                        |
 | (Removed by 2b: checked downcasts) `x as Uint8Array` from a general value                                                                                                                                                                                                                                                                              | `general-value-casts`                                                                                   | 2 (projection), 4                        |
 | Typed-array views over another buffer                                                                                                                                                                                                                                                                                                                  | `typed-array-buffer-views`                                                                              | 4                                        |
-| Forward reference to an unannotated module const (inferred binding treated as a contract; the runtime-stage error also lacks a location)                                                                                                                                                                                                               | `forward-inferred-const`                                                                                | 4 (open slots); location separately      |
+| Forward references to unannotated module constants can use hosted fallback with the original diagnostic location. Native specialization requires module binding inference. | `forward-inferred-const` | Open module binding inference |
 | (Removed by 4a) Typed rest parameters and spreads in the rest position                                                                                                                                                                                                                                                                                 | `rest-default-parameters`, `rest-spread`                                                                | 4a                                       |
 | (Removed by 4a) Value-returning functions rejected in void callback slots                                                                                                                                                                                                                                                                              | `void-callbacks`                                                                                        | 4a                                       |
 | (Removed by 4a C3) Consuming the value returned through a void-typed callback                                                                                                                                                                                                                                                                          | `void-callback-result`                                                                                  | 4a C3                                    |
@@ -862,7 +862,8 @@ observe `arguments.length` use the count captured at entry. General
 callable views handle escaping references and observable replacement.
 The [fixed-arity budget report](results/slice3-primitive-budgets.md)
 records image size, cold startup, both call directions, managed allocations
-and dense replay results.
+and dense replay results. Both platform gates and the 198-form ledger
+passed. [Final validation](results/slice3-and-2b-final-validation.md)
 
 ## Status
 
