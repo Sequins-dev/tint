@@ -2815,6 +2815,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/buffer.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/crypto.ts",
       packageId: "native-runtime",
     },

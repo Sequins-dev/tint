@@ -241,6 +241,7 @@ export {
   createErrorRealm,
   installErrorIntrinsics,
   createRuntimeError,
+  createCodedRuntimeError,
   createNativeErrorView,
   createNativeCodedErrorView,
   createNativeSystemErrorView,
@@ -395,6 +396,16 @@ export {
   installArrayBufferIntrinsics,
   detachArrayBuffer,
 } from "./array-buffer.ts";
+export {
+  bufferStorageByteLength,
+  type BufferStorage,
+} from "./buffer-storage.ts";
+export {
+  builtinAccessor,
+  builtinFunction,
+  builtinFunctionMetadata,
+  builtinProperty,
+} from "./intrinsics.ts";
 
 export { installSharedArrayBufferIntrinsics } from "./shared-array-buffer.ts";
 export {
