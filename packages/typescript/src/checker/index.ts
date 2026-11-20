@@ -74,10 +74,12 @@ export interface ExpressionInfo {
   readonly dynamicObject?:
     | "literal"
     | "array-literal"
-    | "array-push"
+    | "array-method"
     | "static-call"
     | "read"
     | "write"
+    | "update"
+    | "compound"
     | "has"
     | "delete"
     | "enroll"
@@ -98,6 +100,8 @@ export interface ExpressionInfo {
   readonly never?: boolean;
   readonly functionTarget?: number | undefined;
   readonly indirect?: boolean | undefined;
+  readonly voidValueCall?: boolean | undefined;
+  readonly voidCallResults?: readonly number[] | undefined;
   readonly discardCallResult?: boolean | undefined;
   readonly typeofFunction?: boolean | undefined;
   /** The value is a BigInt (a reference to js-runtime's BigIntValue record),
@@ -200,6 +204,7 @@ export interface ExpressionInfo {
     | "array-at"
     | "array-reverse"
     | "list-reverse"
+    | "list-has"
     | "list-resize"
     | "list-at"
     | "array-fill"

@@ -265,7 +265,7 @@ export function reifyTypes(
       default:
         syntax = {
           kind: "named",
-          name: type.kind,
+          name: type.kind === "void-value" ? "unknown" : type.kind,
           start: 0,
           end: 0,
           nodeHash: nextNodeHash++,

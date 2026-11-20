@@ -595,10 +595,12 @@ function lowerEntries(
         returnType:
           initializer?.function === id
             ? "boolean"
-            : checked.types[body.result]?.kind === "void" ||
-                checked.types[body.result]?.kind === "never"
-              ? "void"
-              : scalar(body.result),
+            : checked.voidValueReturns?.has(id) === true
+              ? "general"
+              : checked.types[body.result]?.kind === "void" ||
+                  checked.types[body.result]?.kind === "never"
+                ? "void"
+                : scalar(body.result),
       };
     });
     // The first signature with a given contract that is not an imported
@@ -652,6 +654,39 @@ function lowerEntries(
       signatures.push({ parameters, returnType: result });
       signatureIds.set(key, id);
       return id;
+    }
+    const voidResultsBySignature = new Map<number, readonly number[]>();
+    function voidCallResults(target: number): readonly number[] {
+      const known = voidResultsBySignature.get(target);
+      if (known !== undefined) return known;
+      if (semanticWitnesses !== undefined)
+        fail(
+          "observing a void callback result across managed signatures requires a result adapter",
+        );
+      const signature = signatures[target];
+      if (signature === undefined) throw "void callback signature invariant";
+      const parameters = signature.parameters;
+      const results = new Set<FunctionSignature["returnType"]>();
+      for (const candidate of signatures) {
+        if (candidate === undefined) throw "void result signature invariant";
+        if (
+          candidate.parameters.length === parameters.length &&
+          candidate.parameters.every(
+            (type, index) => type === parameters[index],
+          )
+        )
+          results.add(candidate.returnType);
+      }
+      const witnesses: number[] = [];
+      for (const result of results) {
+        if (result === undefined) throw "void callback result invariant";
+        witnesses.push(signatures.length);
+        // The stub supplies an environment-free signature address for the
+        // guard. Dispatch always calls the closure's own entry.
+        signatures.push({ parameters, returnType: result });
+      }
+      voidResultsBySignature.set(target, witnesses);
+      return witnesses;
     }
     function parameterType(id: number, index: number): number | undefined {
       const parameter = bodyByFunction[id]?.parameters[index],
@@ -1728,12 +1763,9 @@ function lowerEntries(
       const sourceBody = body.body;
       const explicitResult =
         body.explicitResult === true ? body.result : undefined;
-      const returnType: SourceScalarType | "void" = initializing
-          ? "boolean"
-          : checked.types[body.result]?.kind === "void" ||
-              checked.types[body.result]?.kind === "never"
-            ? "void"
-            : scalar(body.result),
+      const functionSignature = signatures[functions.length];
+      if (functionSignature === undefined) throw "function signature invariant";
+      const returnType = functionSignature.returnType,
         locals: Local[] = [],
         localByBinding = new Map<number, Local>(),
         localByNode = createKeyIndex<Span, Local>(syntaxHash),
@@ -1848,6 +1880,7 @@ function lowerEntries(
                   fail("missing dynamic-object runtime helper: " + name);
                 return local;
               }, dynamicAliases.has("bindingObject")),
+              update: dynamicAliases.get("update"),
               speculativeBinary: dynamicAliases.get("speculativeBinary"),
               speculativeString: dynamicAliases.get("speculativeString"),
               speculativeUnary: dynamicAliases.get("speculativeUnary"),
@@ -2387,6 +2420,20 @@ function lowerEntries(
               expr(node.operand);
               break;
             case "binary": {
+              if (dynamicIntrinsic === "list-has") {
+                const element = representations.arrayElement(
+                  checked.expressions.get(node.right) ?? -1,
+                );
+                if (
+                  lists.find((list) => list?.element === element)?.runtime
+                    .has === undefined
+                )
+                  fail("array membership requires the list presence helper");
+                builtin = "list-has";
+                expr(node.left);
+                expr(node.right);
+                break;
+              }
               if (dynamicIntrinsic === "literal-property-has") {
                 builtin = dynamicIntrinsic;
                 planProperty(
@@ -2572,6 +2619,26 @@ function lowerEntries(
                 break;
               }
               if (
+                dynamicIntrinsic === "dynamic-object-update" ||
+                dynamicIntrinsic === "dynamic-object-compound"
+              ) {
+                if (
+                  dynamicObjects === undefined ||
+                  checkedType === undefined ||
+                  (target.kind !== "member" && target.kind !== "index")
+                )
+                  fail("realm property update requires the program realm");
+                dynamicObject =
+                  dynamicIntrinsic === "dynamic-object-update"
+                    ? "update"
+                    : "compound";
+                dynamicContract = encodeDynamicContract(checked, checkedType);
+                expr(target.object);
+                if (target.kind === "index") expr(target.index);
+                if (node.kind !== "update") expr(node.value);
+                break;
+              }
+              if (
                 dynamicIntrinsic === "dynamic-object-write" &&
                 node.kind === "assignment"
               ) {
@@ -2715,7 +2782,7 @@ function lowerEntries(
                 break;
               }
               if (
-                intrinsic === "dynamic-object-array-push" ||
+                intrinsic === "dynamic-object-array-method" ||
                 intrinsic === "dynamic-object-static-call"
               ) {
                 const target = node.callee;
@@ -2726,11 +2793,11 @@ function lowerEntries(
                 )
                   fail("realm method call requires the program realm");
                 dynamicObject =
-                  intrinsic === "dynamic-object-array-push"
-                    ? "array-push"
+                  intrinsic === "dynamic-object-array-method"
+                    ? "array-method"
                     : "static-call";
                 dynamicContract = encodeDynamicContract(checked, checkedType);
-                if (intrinsic === "dynamic-object-array-push")
+                if (intrinsic === "dynamic-object-array-method")
                   expr(target.object);
                 exprArguments(node.arguments);
                 break;
@@ -3280,8 +3347,18 @@ function lowerEntries(
             checked.types[checkedType]?.kind === "never",
           functionTarget,
           indirect,
+          voidValueCall: checked.voidValueCalls?.has(node),
+          voidCallResults:
+            indirect &&
+            callee !== undefined &&
+            checked.voidValueCalls?.has(node)
+              ? voidCallResults(callee)
+              : undefined,
           discardCallResult:
-            indirect && type === "void" && checked.voidResultDiscard === true,
+            indirect &&
+            type === "void" &&
+            (checked.voidResultDiscard === true ||
+              (checked.voidValueReturns?.size ?? 0) !== 0),
           speculative,
           bigint:
             !speculative &&

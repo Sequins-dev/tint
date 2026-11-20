@@ -28,6 +28,7 @@ export interface DynamicObjectRuntime {
   readonly read: number;
   readonly project: number;
   readonly write: number;
+  readonly update?: number | undefined;
   readonly has: number;
   readonly remove: number;
   readonly spread: number;
@@ -437,11 +438,15 @@ export function insertDynamicObjectRuntime(
 ): Module {
   const uses: Span[] = [];
   const patterns: Span[] = [];
+  const compoundUses: Span[] = [],
+    updates: Span[] = [];
   checked.bindingRealm?.forEach((_value, site) => {
     patterns.push(site);
     uses.push(site);
   });
   checked.intrinsics.forEach((intrinsic, node) => {
+    if (intrinsic === "dynamic-object-compound") compoundUses.push(node);
+    if (intrinsic === "dynamic-object-update") updates.push(node);
     if (
       intrinsic.startsWith("dynamic-object-") ||
       (realmInstanceof &&
@@ -545,16 +550,19 @@ export function insertDynamicObjectRuntime(
           site.end <= scope.end,
       ) || includePatterns,
     );
-    if (
-      flowUses.some(
+    function contains(sites: readonly Span[]): boolean {
+      return sites.some(
         (use) =>
           use !== undefined && use.start >= scope.start && use.end <= scope.end,
-      )
-    ) {
-      alias("speculativeBinary");
+      );
+    }
+    const speculative = contains(flowUses);
+    if (speculative || contains(compoundUses)) alias("speculativeBinary");
+    if (speculative) {
       alias("speculativeString");
       alias("speculativeUnary");
     }
+    if (contains(updates)) alias("update");
     if (realmInstanceof)
       for (const name of realmInstanceofHelpers) {
         if (name === undefined) throw "realm instanceof helper invariant";

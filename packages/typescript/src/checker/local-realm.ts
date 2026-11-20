@@ -15,6 +15,13 @@ import type { Type } from "../types/index.ts";
 export interface LocalRealmPlan {
   readonly literals: ReadonlyKeyIndex<Expression, boolean>;
   readonly bindings: ReadonlySet<number>;
+  readonly results: ReadonlySet<number>;
+}
+
+interface DirectFunction {
+  readonly parameters: readonly (number | undefined)[];
+  result: Flow | undefined;
+  escapes: boolean;
 }
 
 interface Flow {
@@ -44,9 +51,12 @@ export function planLocalRealm(
   module: Module,
   bound: BoundModule,
   types: readonly Type[],
+  bindingTypes: readonly number[],
   expressions: ReadonlyKeyIndex<Expression, number>,
   references: ReadonlyKeyIndex<Expression, Binding>,
   declarations: ReadonlyKeyIndex<Span, Binding>,
+  functions: ReadonlyKeyIndex<Span, number>,
+  returnOwners: ReadonlyKeyIndex<Span, number>,
   sinks: ReadonlyKeyIndex<Expression, boolean>,
   reads: ReadonlyKeyIndex<Expression, boolean>,
 ): LocalRealmPlan {
@@ -55,6 +65,42 @@ export function planLocalRealm(
   const consumed = createKeyIndex<Expression, boolean>(syntaxHash);
   const locals = new Map<number, Flow>();
   const initializers = new Set<number>();
+  const direct = new Map<number, DirectFunction>();
+  const functionNodes = new Map<number, DirectFunction>();
+  const called = createKeyIndex<Expression, boolean>(syntaxHash);
+  const writes = createKeyIndex<Expression, boolean>(syntaxHash);
+  rewriteModule(module, {
+    statement: (mapped, node) => {
+      if (node.kind !== "function") return mapped;
+      const params = node.parameters,
+        exported = node.exported;
+      const binding = declarations.get(node);
+      if (binding === undefined) throw "realm function binding invariant";
+      const id = functions.get(node);
+      const type = types[bindingTypes[binding.id] ?? -1];
+      if (id === undefined || type?.kind !== "function") return mapped;
+      const parameters = params.map((parameter) =>
+        parameter === undefined ? undefined : declarations.get(parameter)?.id,
+      );
+      const plan: DirectFunction = {
+        parameters,
+        result: aggregatePayload(types, type.result) ? newFlow() : undefined,
+        escapes:
+          exported ||
+          params.some(
+            (p) =>
+              p === undefined ||
+              p.kind === "pattern-parameter" ||
+              p.rest === true ||
+              p.initializer !== undefined ||
+              p.optional === true,
+          ),
+      };
+      direct.set(binding.id, plan);
+      functionNodes.set(id, plan);
+      return mapped;
+    },
+  });
 
   function newFlow(): Flow {
     const flow: Flow = {
@@ -113,7 +159,6 @@ export function planLocalRealm(
             initializer === undefined ||
             binding === undefined ||
             binding.owner === undefined ||
-            binding.captured ||
             node.mode === "var" ||
             !nodes.has(initializer)
           )
@@ -121,6 +166,10 @@ export function planLocalRealm(
           initializers.add(binding.id);
           use(initializer, local(binding.id));
         }
+      } else if (node.kind === "return" && node.expression !== undefined) {
+        const value = node.expression;
+        const result = functionNodes.get(returnOwners.get(node) ?? -1)?.result;
+        if (result !== undefined) use(value, result);
       }
       return mapped;
     },
@@ -139,7 +188,14 @@ export function planLocalRealm(
       }
       switch (node.kind) {
         case "group":
+        case "satisfies":
           if (flow !== undefined) use(node.expression, flow);
+          break;
+        case "conditional":
+          if (flow !== undefined) {
+            use(node.consequent, flow);
+            use(node.alternate, flow);
+          }
           break;
         case "identifier": {
           const binding = references.get(node);
@@ -162,7 +218,7 @@ export function planLocalRealm(
           for (const property of node.properties) {
             if (property === undefined) throw "record flow invariant";
             if (property.kind === "spread") flow.rejected = true;
-            else if (sinks.has(node)) use(property.value, flow);
+            else use(property.value, flow);
           }
           break;
         case "member":
@@ -175,18 +231,80 @@ export function planLocalRealm(
           break;
         }
         case "call": {
-          const target = node.callee;
+          let target = node.callee;
+          while (target.kind === "group" || target.kind === "satisfies")
+            target = target.expression;
+          const binding =
+            target.kind === "identifier" ? references.get(target) : undefined;
+          const fn = binding === undefined ? undefined : direct.get(binding.id);
+          if (fn !== undefined) {
+            called.set(target, true);
+            if (
+              node.arguments.length !== fn.parameters.length ||
+              node.arguments.some((arg) => arg?.kind === "spread")
+            )
+              fn.escapes = true;
+            for (let i = 0; i < fn.parameters.length; i++) {
+              const arg = node.arguments[i],
+                param = fn.parameters[i];
+              if (arg === undefined || param === undefined) continue;
+              if (aggregatePayload(types, bindingTypes[param] ?? -1))
+                use(arg, local(param));
+            }
+            connect(flow, fn.result);
+            if (flow !== undefined && fn.result === undefined)
+              flow.rejected = true;
+            break;
+          }
           if (
             target.kind === "member" &&
-            target.property === "push" &&
             kind(target.object)?.kind === "array"
           ) {
-            const list = use(target.object);
-            if (list !== undefined)
-              for (const argument of node.arguments) {
-                if (argument === undefined) throw "push flow invariant";
-                use(argument, list);
+            const name = target.property;
+            const methods = [
+              "push",
+              "unshift",
+              "pop",
+              "shift",
+              "splice",
+              "fill",
+              "at",
+              "join",
+              "includes",
+              "indexOf",
+              "lastIndexOf",
+              "slice",
+              "copyWithin",
+              "reverse",
+              "sort",
+              "toReversed",
+              "toSorted",
+              "toSpliced",
+              "with",
+            ];
+            if (methods.includes(name)) {
+              const receiver = use(target.object, flow);
+              const first =
+                name === "splice" || name === "toSpliced"
+                  ? 2
+                  : name === "with"
+                    ? 1
+                    : 0;
+              const count =
+                name === "fill" || name === "with"
+                  ? 1
+                  : name === "splice" ||
+                      name === "toSpliced" ||
+                      name === "push" ||
+                      name === "unshift"
+                    ? node.arguments.length - first
+                    : 0;
+              for (let i: number = first; i < first + count; i++) {
+                const arg = node.arguments[i];
+                if (arg !== undefined) use(arg, receiver);
               }
+              break;
+            }
           }
           const receiver = target.kind === "member" ? target.object : undefined;
           if (
@@ -202,21 +320,46 @@ export function planLocalRealm(
           if (flow !== undefined) flow.rejected = true;
           break;
         }
+        case "compound":
+        case "update":
         case "assignment": {
-          const target = node.target;
+          let target = node.target;
+          while (target.kind === "group") target = target.expression;
           if (target.kind === "member" || target.kind === "index") {
-            const receiver = use(target.object);
-            if (receiver !== undefined) {
-              connect(receiver, flow);
-              if (kind(target.object)?.kind === "array")
-                use(node.value, receiver);
-            } else if (sinks.has(node.value))
-              connect(flow, nodes.get(node.value));
-            else if (flow !== undefined) flow.rejected = true;
+            const receiver = use(target.object, flow);
+            use(target);
+            if (node.kind !== "update") {
+              if (receiver !== undefined) use(node.value, receiver);
+              else if (sinks.has(node.value))
+                connect(flow, nodes.get(node.value));
+              else if (flow !== undefined) flow.rejected = true;
+            }
+          } else if (
+            node.kind === "assignment" &&
+            target.kind === "identifier"
+          ) {
+            const binding = references.get(target);
+            if (binding !== undefined && nodes.has(node.value)) {
+              const storage = local(binding.id);
+              writes.set(target, true);
+              use(target, storage);
+              use(node.value, storage);
+              connect(flow, storage);
+            }
           } else if (flow !== undefined) flow.rejected = true;
           break;
         }
         case "binary":
+          if (
+            flow !== undefined &&
+            (node.operator === "&&" ||
+              node.operator === "||" ||
+              node.operator === "??")
+          ) {
+            use(node.left, flow);
+            use(node.right, flow);
+            break;
+          }
           if (
             node.operator === "===" ||
             node.operator === "!==" ||
@@ -243,11 +386,26 @@ export function planLocalRealm(
     if (reference === undefined) throw "realm flow reference invariant";
     const id = reference.binding;
     if (id === undefined) continue;
+    const fn = direct.get(id);
+    if (fn !== undefined && !called.has(reference.node)) fn.escapes = true;
     const flow = locals.get(id);
     if (flow === undefined) continue;
-    if (!initializers.has(id) || reference.access !== "read")
+    if (reference.access !== "read" && !writes.has(reference.node))
       flow.rejected = true;
   }
+  for (const [_id, fn] of functionNodes) {
+    const result = fn.result;
+    if (fn.escapes && result !== undefined) result.rejected = true;
+    for (const param of fn.parameters) {
+      if (param === undefined) continue;
+      const flow = locals.get(param);
+      if (flow === undefined) continue;
+      if (fn.escapes) flow.rejected = true;
+      else initializers.add(param);
+    }
+  }
+  for (const [id, flow] of locals)
+    if (!initializers.has(id)) flow.rejected = true;
 
   const selected = new Set<number>();
   const visited = new Set<number>();
@@ -284,5 +442,10 @@ export function planLocalRealm(
       literals.set(node, true);
   });
   for (const [id, flow] of locals) if (selected.has(flow.id)) bindings.add(id);
-  return { literals, bindings };
+  const results = new Set<number>();
+  for (const [id, fn] of functionNodes) {
+    const result = fn.result;
+    if (result !== undefined && selected.has(result.id)) results.add(id);
+  }
+  return { literals, bindings, results };
 }

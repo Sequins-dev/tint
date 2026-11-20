@@ -38,6 +38,9 @@ function closedWorldHostOperation(operation: string): boolean {
     case "root-head":
     case "memory-map":
     case "memory-read-word":
+    // A signature query reads immutable closure metadata. Only a separate
+    // raw execution capability can use an address to open the call graph.
+    case "native-function-signature":
     case "process-id":
     case "memory-page-bytes":
     case "processor-count":
@@ -73,7 +76,6 @@ function descriptorPreservingHostOperation(operation: string): boolean {
     case "external-memory-register":
     case "stack-maps-register":
     case "native-function-descriptor":
-    case "native-function-signature":
     case "native-value-function-descriptor":
     case "native-value-function-signature":
     case "thread-start":

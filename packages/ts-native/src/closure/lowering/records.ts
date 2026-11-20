@@ -145,7 +145,8 @@ function generalType(checked: CheckedClosures, id: number): boolean {
   if (
     type?.kind === "unknown" ||
     type?.kind === "realm-callable" ||
-    type?.kind === "dynamic-result"
+    type?.kind === "dynamic-result" ||
+    type?.kind === "void-value"
   )
     return true;
   if (
@@ -181,7 +182,8 @@ function generalType(checked: CheckedClosures, id: number): boolean {
     } else if (
       current?.kind === "unknown" ||
       current?.kind === "realm-callable" ||
-      current?.kind === "dynamic-result"
+      current?.kind === "dynamic-result" ||
+      current?.kind === "void-value"
     )
       unknown = true;
     else if (current?.kind === "never") return;
@@ -427,7 +429,8 @@ export function admitsUndefined(checked: CheckedClosures, id: number): boolean {
     t.kind === "undefined" ||
     t.kind === "void" ||
     t.kind === "unknown" ||
-    t.kind === "dynamic-result"
+    t.kind === "dynamic-result" ||
+    t.kind === "void-value"
   )
     return true;
   return (

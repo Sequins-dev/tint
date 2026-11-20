@@ -3695,11 +3695,17 @@ export function lowerFunction(
     receiver: number | undefined,
     node: Expression,
   ): number | undefined {
-    const parameters = signatures[target]?.parameters;
-    if (parameters === undefined) throw "call signature invariant";
+    const signature = signatures[target];
+    if (signature === undefined) throw "call signature invariant";
+    const parameters = signature.parameters;
     supplyOmittedArguments(argumentsSlots, parameters, parameters.length, node);
-    const type = info(node).type,
-      id = type === "void" ? undefined : nextValue++;
+    const metadata = info(node);
+    const type = metadata.type,
+      candidates = metadata.voidCallResults;
+    const id =
+      candidates !== undefined || signature.returnType === "void"
+        ? undefined
+        : nextValue++;
     const prepared = argumentsSlots.map((slot, i) => {
       const parameter = parameters[i];
       if (parameter === undefined) throw "call parameter invariant";
@@ -3718,6 +3724,80 @@ export function lowerFunction(
       receiver === undefined
         ? undefined
         : save(coerce(load(receiver, node), "general", node), "general", node);
+    if (candidates !== undefined) {
+      const callee = calleeSlot;
+      if (callee === undefined)
+        throw "observed callback requires an indirect callee";
+      const actual = nextValue++;
+      emit({
+        kind: "host-call",
+        operation: "native-function-signature",
+        id: actual,
+        arguments: [load(callee, node)],
+        start: node.start,
+        end: node.end,
+      });
+      const actualSignature = save(actual, "number", node);
+      const result = temporary("general"),
+        done = block();
+      for (const candidate of candidates) {
+        if (candidate === undefined)
+          throw "callback signature candidate invariant";
+        const expected = nextValue++;
+        emit({
+          kind: "function-address",
+          part: "signature",
+          id: expected,
+          target: candidate,
+          start: node.start,
+          end: node.end,
+        });
+        const call = block(),
+          next = block();
+        const matches = binarySlot(
+          "===",
+          actualSignature,
+          save(expected, "number", node),
+          node,
+        );
+        choose(load(matches, node), call, next, node);
+        current = call;
+        const representation = signatures[candidate]?.returnType;
+        if (representation === undefined)
+          throw "callback return signature invariant";
+        const id = representation === "void" ? undefined : nextValue++;
+        const receiverValue =
+          preparedReceiver === undefined
+            ? undefined
+            : load(preparedReceiver, node);
+        const args = prepared.map((slot) => load(slot, node));
+        emit({
+          kind: "call-indirect",
+          id,
+          target: candidate,
+          callee: load(callee, node),
+          arguments: args,
+          ...(receiverValue === undefined ? {} : { receiver: receiverValue }),
+          start: node.start,
+          end: node.end,
+        });
+        if (id === undefined) {
+          const absent = nextValue++;
+          emit({
+            kind: "general-none",
+            id: absent,
+            start: node.start,
+            end: node.end,
+          });
+          store(result, absent, node);
+        } else store(result, coerce(id, "general", node), node);
+        jump(done.id, node);
+        current = next;
+      }
+      finish({ kind: "trap", start: node.start, end: node.end });
+      current = done;
+      return result;
+    }
     const call = {
       ...(preparedReceiver === undefined
         ? {}
@@ -3741,9 +3821,18 @@ export function lowerFunction(
         arguments: operation.arguments,
       });
     }
-    return id === undefined || type === "void"
-      ? undefined
-      : save(id, type, node);
+    if (type === "void") return undefined;
+    if (id !== undefined) return save(id, type, node);
+    if (metadata.type !== "general")
+      throw "observed void direct call invariant";
+    const absent = nextValue++;
+    emit({
+      kind: "general-none",
+      id: absent,
+      start: node.start,
+      end: node.end,
+    });
+    return save(absent, "general", node);
   }
   function dispatchRecordKey(
     paths: readonly FiniteRecordAccess[],
@@ -4579,6 +4668,16 @@ export function lowerFunction(
       current = block();
       return undefined;
     }
+    if (result === undefined && info(node).voidValueCall === true) {
+      const absent = nextValue++;
+      emit({
+        kind: "general-none",
+        id: absent,
+        start: node.start,
+        end: node.end,
+      });
+      result = save(absent, "general", node);
+    }
     const downcast = info(node).downcast;
     if (
       result !== undefined &&
@@ -4728,6 +4827,23 @@ export function lowerFunction(
     if (result === undefined) throw "dynamic object result invariant";
     return result;
   }
+  function projectDynamicResult(
+    runtime: DynamicObjectRuntime,
+    raw: number,
+    metadata: ExpressionInfo,
+    node: Expression,
+  ): number {
+    const schema = metadata.dynamicContract,
+      type = metadata.type;
+    if (schema === undefined || type === "void")
+      throw "dynamic object projection invariant";
+    const checked = dynamicResult(
+      runtime.project,
+      [raw, stringSlot(schema, node)],
+      node,
+    );
+    return save(load(checked, node), type, node);
+  }
   function dynamicKey(node: Expression): number {
     if (node.kind === "index") return value(node.index);
     if (node.kind === "member") return stringSlot(node.property, node);
@@ -4767,13 +4883,13 @@ export function lowerFunction(
       case "array-literal":
         if (node.kind !== "array") throw "realm array literal invariant";
         return dynamicArray(runtime, node.elements, node);
-      case "array-push":
+      case "array-method":
       case "static-call": {
         if (node.kind !== "call") throw "realm method call invariant";
         const target = node.callee;
         if (target.kind !== "member") throw "realm method target invariant";
         const receiver =
-          operation === "array-push"
+          operation === "array-method"
             ? value(target.object)
             : dynamicResult(runtime.objectConstructor, [], node);
         const callee = dynamicResult(
@@ -4893,6 +5009,65 @@ export function lowerFunction(
         const assigned = value(node.value);
         dynamicCall(runtime.write, [object, key, assigned], node);
         return assigned;
+      }
+      case "update":
+      case "compound": {
+        if (node.kind !== "update" && node.kind !== "compound")
+          throw "realm property update invariant";
+        const target = ungroup(node.target);
+        if (target.kind !== "member" && target.kind !== "index")
+          throw "realm property target invariant";
+        const object = value(target.object),
+          key = dynamicKey(target);
+        if (node.kind === "update") {
+          const update = runtime.update;
+          if (update === undefined) throw "realm update helper invariant";
+          const raw = dynamicResult(
+            update,
+            [
+              object,
+              key,
+              stringSlot(node.operator, node),
+              booleanSlot(node.prefix, node),
+            ],
+            node,
+          );
+          return projectDynamicResult(runtime, raw, metadata, node);
+        }
+        const canonical = dynamicResult(runtime.convertKey, [key], target);
+        const old = dynamicResult(runtime.read, [object, canonical], target);
+        if (
+          node.operator === "??" ||
+          node.operator === "&&" ||
+          node.operator === "||"
+        ) {
+          const assign = block(),
+            done = block();
+          const result = temporary("general");
+          store(result, load(old, target), target);
+          if (node.operator === "??")
+            choose(nonNullish(old, target), done, assign, node);
+          else if (node.operator === "&&")
+            choose(truth(old, target), assign, done, node);
+          else choose(truth(old, target), done, assign, node);
+          current = assign;
+          const right = value(node.value);
+          dynamicCall(runtime.write, [object, canonical, right], node);
+          store(result, load(right, node), node);
+          jump(done.id, node);
+          current = done;
+          return projectDynamicResult(runtime, result, metadata, node);
+        }
+        const binary = runtime.speculativeBinary;
+        if (binary === undefined) throw "realm compound helper invariant";
+        const right = value(node.value);
+        const result = dynamicResult(
+          binary,
+          [stringSlot(node.operator, node), old, right],
+          node,
+        );
+        dynamicCall(runtime.write, [object, canonical, result], node);
+        return projectDynamicResult(runtime, result, metadata, node);
       }
       case "has":
         if (node.kind !== "binary") throw "dynamic object membership invariant";
@@ -6287,6 +6462,17 @@ export function lowerFunction(
         );
       }
       case "binary": {
+        if (info(node).builtin === "list-has") {
+          const index = value(node.left),
+            receiver = value(node.right);
+          return listValue(
+            listRuntime(node.right),
+            "has",
+            [receiver, index],
+            node,
+          );
+        }
+
         const metadata = info(node);
         const array = metadata.arrayInstance;
         if (array !== undefined) return arrayInstanceOf(node, array, metadata);

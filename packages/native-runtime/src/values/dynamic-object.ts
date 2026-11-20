@@ -2,6 +2,7 @@ import {
   beginObjectPropertyContract,
   binaryObjectValueOperationOrThrow,
   unaryObjectValueOperationOrThrow,
+  updateObjectValue,
   stringValueOrThrow,
   scriptStrictEqual,
   looselyEqual,
@@ -265,6 +266,20 @@ export function write(base: unknown, key: unknown, value: unknown): void {
     ) !== "none"
   )
     throw createRuntimeError(core.realm, "type");
+}
+export function update(
+  base: unknown,
+  key: unknown,
+  operator: string,
+  prefix: boolean,
+): unknown {
+  const core = programRealmCore();
+  const property = objectPropertyKeyOrThrow(base, key, core.hooks, core.realm);
+  const old = readObjectValueProperty(base, property, core.hooks, core.realm);
+  const result = updateObjectValue(operator, old, core.hooks, core.realm);
+  throwIfRuntimeError(core.realm, result.error);
+  write(base, property, result.value);
+  return prefix ? result.value : result.previous;
 }
 export function has(key: unknown, base: unknown): boolean {
   const core = programRealmCore();

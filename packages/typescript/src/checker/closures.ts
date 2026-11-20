@@ -186,6 +186,7 @@ export type ClosureIntrinsic =
   | "error-is"
   | "error-property"
   | "literal-property-has"
+  | "list-has"
   | "flow-property-read"
   | "flow-property-read-boxed"
   | "range-error-new"
@@ -196,7 +197,7 @@ export type ClosureIntrinsic =
   | "array-byte-offset"
   | "array-byte-length"
   | "dynamic-object-array-literal"
-  | "dynamic-object-array-push"
+  | "dynamic-object-array-method"
   | "dynamic-object-static-call"
   | "dynamic-object-own-enumeration"
   | "dynamic-object-enroll"
@@ -204,6 +205,8 @@ export type ClosureIntrinsic =
   | "dynamic-object-literal"
   | "dynamic-object-read"
   | "dynamic-object-write"
+  | "dynamic-object-update"
+  | "dynamic-object-compound"
   | "dynamic-object-has"
   | "dynamic-object-delete"
   | "array-length"
@@ -310,6 +313,8 @@ export interface CheckedClosures {
   readonly chainReceivers: ReadonlyKeyIndex<Expression, number>;
   readonly restCalls?: ReadonlyKeyIndex<Expression, RestCall>;
   readonly voidResultDiscard?: boolean;
+  readonly voidValueCalls?: ReadonlyKeyIndex<Expression, boolean>;
+  readonly voidValueReturns?: ReadonlySet<number>;
   /** `x as T` assertions from `unknown` to T: checked downcasts, which
    * throw a TypeError when the value is not a T (docs/unified-pipeline.md). */
   readonly downcasts?: ReadonlyKeyIndex<Expression, number>;
@@ -351,6 +356,7 @@ function checkClosureModuleLayout(
 ): ClosureResult {
   const realmSinks = createKeyIndex<Expression, boolean>(syntaxHash);
   const realmReads = createKeyIndex<Expression, boolean>(syntaxHash);
+  const realmReturnOwners = createKeyIndex<Span, number>(syntaxHash);
   let replayRealm = false;
   // Syntax the checker synthesizes for an existing node reuses that node's
   // span; distinct hashes, above any traversal ordinal, keep each one apart
@@ -1491,6 +1497,7 @@ function checkClosureModuleLayout(
     if (value === undefined) return false;
     if (
       value.kind === "unknown" ||
+      value.kind === "void-value" ||
       value.kind === "never" ||
       value.kind === "number" ||
       value.kind === "string" ||
@@ -2662,7 +2669,7 @@ function checkClosureModuleLayout(
     );
   }
   function generalFact(
-    kind: "realm-callable" | "dynamic-result",
+    kind: "realm-callable" | "dynamic-result" | "void-value",
     node: Span,
   ): number {
     const known = internedType(kind);
@@ -3475,6 +3482,8 @@ function checkClosureModuleLayout(
           parameterAnnotation === undefined
             ? expected
             : typeOf(parameterAnnotation);
+        const b = binding(p);
+        if (realmPlan?.bindings.has(b.id)) actual = realmPayload(actual, p);
         const initializer = p.initializer;
         if (initializer === undefined) requireType(expected, actual, p);
         else {
@@ -3503,7 +3512,6 @@ function checkClosureModuleLayout(
           )
             actual = defined;
         }
-        const b = binding(p);
         bindingTypes[b.id] = actual;
         cell(b, { kind: "initialize", value: actual }, p, owner);
         pendingParameters.delete(b.id);
@@ -3530,6 +3538,7 @@ function checkClosureModuleLayout(
       }
       let result =
         returnAnnotation === undefined ? type.result : typeOf(returnAnnotation);
+      if (realmPlan?.results.has(owner)) result = realmPayload(result, node);
       if (type.result !== voidType) requireType(result, type.result, node);
       bodies.set(owner, {
         node,
@@ -3571,6 +3580,8 @@ function checkClosureModuleLayout(
           result = actual;
           bodies.set(owner, { node, parameters: params, body, result });
         }
+        if (result === voidType && types[actual]?.kind === "void-value")
+          recordVoidReturn(owner, body);
         requireType(
           actual === undefinedType && result === voidType ? voidType : actual,
           result,
@@ -3587,8 +3598,11 @@ function checkClosureModuleLayout(
       callSafeFacts = savedCallSafeFacts;
     }
   }
+  function isVoidExpression(type: number): boolean {
+    return type === voidType || types[type]?.kind === "void-value";
+  }
   function condition(node: Expression, owner: number | undefined): void {
-    if (expression(node, owner) === voidType)
+    if (isVoidExpression(expression(node, owner)))
       fail(
         node,
         "TYPE_MISMATCH",
@@ -4196,11 +4210,63 @@ function checkClosureModuleLayout(
       open ? "dynamic-object-open-literal" : "dynamic-object-literal",
     );
   }
+  const voidValueCalls = createKeyIndex<Expression, boolean>(syntaxHash);
+  const voidValueReturns = new Set<number>();
+  const voidReturnCallers = new Map<number, number[]>();
+  const functionIdsByBinding = new Map<number, number>();
+  for (const fn of graph.functions) {
+    if (fn === undefined) throw "callback function invariant";
+    const b = declarations.get(fn.node);
+    if (b?.kind === "function") functionIdsByBinding.set(b.id, fn.id);
+  }
+  function recordVoidReturn(
+    owner: number,
+    input: Expression | undefined,
+  ): void {
+    if (input === undefined) return;
+    const node = ungroup(input);
+    if (node.kind === "call") {
+      const target = ungroup(node.callee);
+      const b = references.get(target);
+      const source =
+        b === undefined ? undefined : functionIdsByBinding.get(b.id);
+      if (source !== undefined) {
+        let callers = voidReturnCallers.get(source);
+        if (callers === undefined) {
+          callers = [];
+          voidReturnCallers.set(source, callers);
+        }
+        callers.push(owner);
+        return;
+      }
+      const builtin = intrinsics.get(node);
+      if (builtin !== undefined && builtin !== "function-call") return;
+    }
+    voidValueReturns.add(owner);
+  }
+  function propagateVoidReturns(): void {
+    const queue: number[] = [];
+    for (const id of voidValueReturns) {
+      if (id === undefined) throw "void result source invariant";
+      queue.push(id);
+    }
+    for (let i = 0; i < queue.length; i++) {
+      const id = queue[i];
+      if (id === undefined) throw "void result queue invariant";
+      for (const caller of voidReturnCallers.get(id) ?? []) {
+        if (caller === undefined) throw "void result caller invariant";
+        if (voidValueReturns.has(caller)) continue;
+        voidValueReturns.add(caller);
+        queue.push(caller);
+      }
+    }
+  }
   function expression(
     input: Expression,
     owner: number | undefined,
     inputExpected?: number,
     preserveContext: boolean = false,
+    discarded: boolean = false,
   ): number {
     const node = input;
     const fromPattern = patternValues.get(node);
@@ -4379,6 +4445,7 @@ function checkClosureModuleLayout(
             owner,
             expected,
             preserveContext,
+            discarded,
           );
           const proof = contextualProofs.get(node.expression);
           if (proof !== undefined) contextualProofs.set(node, proof);
@@ -4421,7 +4488,8 @@ function checkClosureModuleLayout(
             )
               return type.element;
             if (isArray(iterable)) return number;
-            if (isList(iterable)) return listReadType(iterable, element);
+            if (isList(iterable))
+              return listIterationElement(iterable, element);
             fail(
               element,
               "UNSUPPORTED",
@@ -4448,7 +4516,10 @@ function checkClosureModuleLayout(
               context = typeOf(optionalNumericListAnnotation);
             else if (system.assignable(firstType, string))
               context = typeOf(stringListAnnotation);
-            else if (system.assignable(firstType, boolean))
+            else if (
+              system.assignable(firstType, boolean) ||
+              types[firstType]?.kind === "void-value"
+            )
               context = arrayOf(firstType, first);
             else if (
               system.assignable(presentType(firstType) ?? firstType, string) ||
@@ -6431,33 +6502,167 @@ function checkClosureModuleLayout(
             }
             const realmList = types[obj];
             if (realmList?.kind === "array" && realmList.realmArray === true) {
-              if (target.property !== "push" || node.optional)
+              if (node.optional || target.optional)
                 fail(
                   target,
                   "UNSUPPORTED",
-                  "typed realm arrays currently support only push calls",
+                  "optional realm array methods require optional-call lowering",
                   true,
                 );
-              if (realmList.readonly || realmList.tupleElements !== undefined)
+              const method = target.property,
+                element = realmList.element;
+              const mutates = [
+                "push",
+                "unshift",
+                "pop",
+                "shift",
+                "splice",
+                "fill",
+                "copyWithin",
+                "reverse",
+                "sort",
+              ].includes(method);
+              if (
+                mutates &&
+                (realmList.readonly || realmList.tupleElements !== undefined)
+              )
                 fail(
                   target,
                   "IMMUTABLE",
-                  "cannot push to a readonly realm array",
+                  "cannot mutate a readonly realm array",
                   true,
                 );
-              const element = realmList.element;
-              for (const argument of node.arguments) {
-                if (argument === undefined)
-                  throw "realm push argument invariant";
-                requireType(
-                  expression(argument, owner, element),
-                  element,
-                  argument,
-                );
+              const args = node.arguments,
+                size = args.length;
+              function argumentsOf(
+                minimum: number,
+                positional: readonly number[],
+                rest?: number,
+              ): void {
+                if (
+                  size < minimum ||
+                  (rest === undefined && size > positional.length)
+                )
+                  fail(
+                    node,
+                    "ARITY",
+                    "invalid realm array method argument count",
+                    true,
+                  );
+                for (let i = 0; i < size; i++) {
+                  const argument = args[i],
+                    type = positional[i] ?? rest;
+                  if (argument === undefined || type === undefined)
+                    throw "realm array argument invariant";
+                  if (argument.kind === "spread")
+                    fail(
+                      argument,
+                      "UNSUPPORTED",
+                      "realm array method spread arguments require iterable call lowering",
+                      true,
+                    );
+                  const actual = expression(argument, owner, type);
+                  requireType(actual, type, argument);
+                  checkDynamicPayload(actual, argument);
+                }
               }
-              intrinsics.set(node, "dynamic-object-array-push");
+              switch (method) {
+                case "push":
+                case "unshift":
+                  argumentsOf(0, [], element);
+                  result = number;
+                  break;
+                case "pop":
+                case "shift":
+                case "at":
+                  argumentsOf(
+                    method === "at" ? 1 : 0,
+                    method === "at" ? [number] : [],
+                  );
+                  result = unionSubset([element, undefinedType], node);
+                  break;
+                case "includes":
+                case "indexOf":
+                case "lastIndexOf":
+                  argumentsOf(1, [element, optionalNumber]);
+                  result = method === "includes" ? boolean : number;
+                  break;
+                case "join":
+                  argumentsOf(0, [unionSubset([string, undefinedType], node)]);
+                  result = string;
+                  break;
+                case "reverse":
+                  argumentsOf(0, []);
+                  result = obj;
+                  break;
+                case "sort":
+                case "toSorted":
+                  if (size !== 0)
+                    fail(
+                      target,
+                      "UNSUPPORTED",
+                      "native callbacks passed to realm array methods need slice 2b closure views",
+                      true,
+                    );
+                  result = method === "sort" ? obj : realmArray(element, node);
+                  break;
+                case "fill":
+                  argumentsOf(1, [element, optionalNumber, optionalNumber]);
+                  result = obj;
+                  break;
+                case "copyWithin":
+                  argumentsOf(2, [number, number, optionalNumber]);
+                  result = obj;
+                  break;
+                case "slice":
+                  argumentsOf(0, [optionalNumber, optionalNumber]);
+                  result = realmArray(element, node);
+                  break;
+                case "splice":
+                case "toSpliced":
+                  argumentsOf(
+                    1,
+                    [number, size > 2 ? number : optionalNumber],
+                    element,
+                  );
+                  result = realmArray(element, node);
+                  break;
+                case "with":
+                  argumentsOf(2, [number, element]);
+                  result = realmArray(element, node);
+                  break;
+                case "toReversed":
+                  argumentsOf(0, []);
+                  result = realmArray(element, node);
+                  break;
+                case "map":
+                case "filter":
+                case "flatMap":
+                case "forEach":
+                case "every":
+                case "some":
+                case "find":
+                case "findIndex":
+                case "findLast":
+                case "findLastIndex":
+                case "reduce":
+                case "reduceRight":
+                  fail(
+                    target,
+                    "UNSUPPORTED",
+                    "native callbacks passed to realm array methods need slice 2b closure views",
+                    true,
+                  );
+                default:
+                  fail(
+                    target,
+                    "UNSUPPORTED",
+                    "realm array method is outside typed realm array checking",
+                    true,
+                  );
+              }
+              intrinsics.set(node, "dynamic-object-array-method");
               invalidateCalls();
-              result = number;
               break;
             }
             if (
@@ -6610,20 +6815,6 @@ function checkClosureModuleLayout(
           while (target.kind === "group") target = target.expression;
           if (target.kind === "member" || target.kind === "index") {
             const object = expression(target.object, owner);
-            if (realmAggregate(object))
-              fail(
-                target,
-                "UNSUPPORTED",
-                "compound assignments and updates on realm aggregates require reference lowering",
-                true,
-              );
-            if (dynamicObject(object))
-              fail(
-                target,
-                "UNSUPPORTED",
-                "compound assignments and updates on dynamic-key objects require reference lowering",
-                true,
-              );
             const keyType =
               target.kind === "index"
                 ? expression(target.index, owner)
@@ -6635,6 +6826,152 @@ function checkClosureModuleLayout(
                     target.index,
                     keyType === undefined ? undefined : types[keyType],
                   );
+            if (dynamicObject(object) || realmAggregate(object)) {
+              const shape = types[object];
+              const fields: Property[] = [];
+              if (dynamicObject(object))
+                for (const field of dynamicPropertyTargets(
+                  object,
+                  keyType,
+                  propertyName,
+                  target,
+                )) {
+                  if (field === undefined)
+                    throw "dynamic update field invariant";
+                  fields.push(field);
+                }
+              else if (shape?.kind === "array") {
+                if (propertyName !== "length") {
+                  if (target.kind !== "index" || keyType === undefined)
+                    fail(
+                      target,
+                      "PROPERTY",
+                      "realm array updates require an index or length",
+                      true,
+                    );
+                  requireType(keyType, number, target.index);
+                }
+                fields.push({
+                  name: propertyName ?? "",
+                  type: propertyName === "length" ? number : shape.element,
+                  readonly: shape.readonly || shape.tupleElements !== undefined,
+                });
+              } else if (shape?.kind === "object") {
+                const names =
+                  propertyName === undefined && keyType !== undefined
+                    ? finiteRecordKeys(object, keyType)
+                    : propertyName === undefined
+                      ? undefined
+                      : [propertyName];
+                if (names === undefined)
+                  fail(
+                    target,
+                    "PROPERTY",
+                    "realm record updates require a known property",
+                    true,
+                  );
+                for (const name of names) {
+                  const field = shape.properties.find(
+                    (item) => item?.name === name,
+                  );
+                  if (field === undefined)
+                    fail(
+                      target,
+                      "PROPERTY",
+                      "unknown realm record property",
+                      true,
+                    );
+                  fields.push(field);
+                }
+              }
+              const field = fields[0];
+              if (field === undefined) throw "realm update field invariant";
+              for (const allowed of fields) {
+                if (allowed === undefined) throw "realm update field invariant";
+                if (allowed.readonly)
+                  fail(
+                    target,
+                    "IMMUTABLE",
+                    "cannot update a readonly realm property",
+                    true,
+                  );
+              }
+              const old = expression(target, owner);
+              let written: number;
+              if (
+                node.kind === "compound" &&
+                (node.operator === "&&" ||
+                  node.operator === "||" ||
+                  node.operator === "??")
+              ) {
+                const before = new Set(present);
+                written = expression(
+                  node.value,
+                  owner,
+                  dynamicPayloadType(field.type, node.value),
+                );
+                if (dynamicObject(object))
+                  checkDynamicPayload(written, node.value);
+                present = intersect(before, present);
+                result = join(
+                  node.operator === "??" || node.operator === "||"
+                    ? (presentType(old, true) ?? old)
+                    : old,
+                  written,
+                  node,
+                  expected,
+                );
+              } else {
+                const right =
+                  node.kind === "compound"
+                    ? expression(node.value, owner)
+                    : number;
+                if (
+                  node.kind === "compound" &&
+                  node.operator === "+" &&
+                  (system.assignable(old, string) ||
+                    system.assignable(right, string)) &&
+                  [old, right].every(
+                    (type) =>
+                      system.assignable(type, string) ||
+                      system.assignable(type, number) ||
+                      system.assignable(type, boolean) ||
+                      system.assignable(type, bigint),
+                  )
+                )
+                  written = string;
+                else if (
+                  system.assignable(old, bigint) &&
+                  (node.kind === "update" ||
+                    system.assignable(right, bigint)) &&
+                  (node.kind === "update" || node.operator !== ">>>")
+                )
+                  written = bigint;
+                else {
+                  requireType(old, number, target);
+                  if (node.kind === "compound")
+                    requireType(right, number, node.value);
+                  written = number;
+                }
+                result = written;
+              }
+              for (const allowed of fields) {
+                if (allowed === undefined) throw "realm update field invariant";
+                requireType(
+                  written,
+                  dynamicPayloadType(allowed.type, target),
+                  target,
+                );
+              }
+              intrinsics.set(
+                node,
+                node.kind === "update"
+                  ? "dynamic-object-update"
+                  : "dynamic-object-compound",
+              );
+              invalidateCalls();
+              break;
+            }
             const viewWrite = viewAccess(
               target,
               object,
@@ -7115,6 +7452,8 @@ function checkClosureModuleLayout(
             if (dynamicObject(object)) {
               dynamicPropertyTargets(object, key, undefined, node.left);
               intrinsics.set(node, "dynamic-object-has");
+            } else if (isList(object) && system.assignable(key, number)) {
+              intrinsics.set(node, "list-has");
             } else {
               if (!membershipObject(object))
                 fail(
@@ -7188,7 +7527,7 @@ function checkClosureModuleLayout(
           ) {
             const left = expression(node.left, owner),
               before = new Set(present);
-            if (left === voidType)
+            if (isVoidExpression(left))
               fail(node.left, "TYPE_MISMATCH", "void is not a logical operand");
             if (node.operator === "??" && !nullable(left)) {
               // A left operand that is never nullish is the result; the
@@ -7218,7 +7557,7 @@ function checkClosureModuleLayout(
                 owner,
                 expected ?? (emptyArray ? presentType(left, true) : undefined),
               );
-              if (right === voidType)
+              if (isVoidExpression(right))
                 fail(
                   node.right,
                   "TYPE_MISMATCH",
@@ -7240,7 +7579,7 @@ function checkClosureModuleLayout(
               const truth = node.operator === "&&";
               present = refine(node.left, truth, before);
               const right = expression(node.right, owner, expected);
-              if (right === voidType)
+              if (isVoidExpression(right))
                 fail(
                   node.right,
                   "TYPE_MISMATCH",
@@ -7257,7 +7596,20 @@ function checkClosureModuleLayout(
           }
           const left = expression(node.left, owner),
             right = expression(node.right, owner);
-          if (left === voidType || right === voidType)
+          if (
+            (isVoidExpression(left) || isVoidExpression(right)) &&
+            !(
+              ["===", "!==", "==", "!="].includes(node.operator) &&
+              (isVoidExpression(left) ||
+                left === undefinedType ||
+                left === nullType ||
+                types[left]?.kind === "unknown") &&
+              (isVoidExpression(right) ||
+                right === undefinedType ||
+                right === nullType ||
+                types[right]?.kind === "unknown")
+            )
+          )
             fail(
               node,
               "TYPE_MISMATCH",
@@ -7408,9 +7760,15 @@ function checkClosureModuleLayout(
               }
             }
           }
-          const value = expression(node.operand, owner);
+          const value = expression(
+            node.operand,
+            owner,
+            undefined,
+            false,
+            node.operator === "void",
+          );
           if (
-            value === voidType &&
+            isVoidExpression(value) &&
             node.operator !== "typeof" &&
             node.operator !== "void"
           )
@@ -7491,6 +7849,10 @@ function checkClosureModuleLayout(
             "UNSUPPORTED",
             "expression is outside the closure checking slice",
           );
+      }
+      if (node.kind === "call" && result === voidType && !discarded) {
+        voidValueCalls.set(node, true);
+        result = generalFact("void-value", node);
       }
       if (selected) {
         result = realmPayload(result, node);
@@ -8184,8 +8546,9 @@ function checkClosureModuleLayout(
           const body = node.body;
           if (signature === undefined || body.kind !== "block")
             throw "named function invariant";
-          const type = typeOf(signature);
-          cell(binding(node), { kind: "initialize", value: type }, node, owner);
+          const b = binding(node);
+          const type = bindingTypes[b.id] ?? typeOf(signature);
+          cell(b, { kind: "initialize", value: type }, node, owner);
           checkFunction(node, node.parameters, node.returnType, body, type);
           return 1;
         }
@@ -8259,6 +8622,8 @@ function checkClosureModuleLayout(
           return pending;
         }
         case "return": {
+          if (owner !== undefined && node.expression !== undefined)
+            realmReturnOwners.set(node, owner);
           const inferred =
             owner === undefined ? undefined : inferredReturns.get(owner);
           const actual =
@@ -8269,7 +8634,13 @@ function checkClosureModuleLayout(
                   owner,
                   inferred === undefined ? result : undefined,
                 );
-          if (inferred === undefined)
+          if (inferred === undefined) {
+            if (
+              owner !== undefined &&
+              result === voidType &&
+              types[actual]?.kind === "void-value"
+            )
+              recordVoidReturn(owner, node.expression);
             requireType(
               actual === undefinedType && result === voidType
                 ? voidType
@@ -8277,7 +8648,7 @@ function checkClosureModuleLayout(
               result,
               node,
             );
-          else {
+          } else {
             const absent = node.expression === undefined || actual === voidType;
             inferred.push(
               absent && result === voidType
@@ -8298,7 +8669,9 @@ function checkClosureModuleLayout(
         }
         case "expression":
           // A never result cannot continue normally; it may throw or diverge.
-          return types[expression(node.expression, owner)]?.kind === "never"
+          return types[
+            expression(node.expression, owner, undefined, false, true)
+          ]?.kind === "never"
             ? throwCompletion
             : 1;
         case "if": {
@@ -8650,6 +9023,37 @@ function checkClosureModuleLayout(
     }
   }
   try {
+    const plan = realmPlan;
+    if (plan !== undefined)
+      rewriteModule(module, {
+        statement: (mapped, node) => {
+          if (node.kind !== "function") return mapped;
+          const params = node.parameters;
+          const b = binding(node),
+            owner = functions.get(node);
+          const type = types[bindingTypes[b.id] ?? -1];
+          if (owner === undefined || type?.kind !== "function")
+            throw "realm function signature invariant";
+          const result = plan.results.has(owner)
+            ? realmPayload(type.result, node)
+            : type.result;
+          let changed = result !== type.result;
+          const parameters = type.parameters.map((id, index) => {
+            const p = params[index];
+            if (p === undefined) throw "realm parameter invariant";
+            if (!plan.bindings.has(binding(p).id)) return id;
+            changed = true;
+            return realmPayload(id, p);
+          });
+          if (changed)
+            bindingTypes[b.id] = appendType(
+              { ...type, parameters, result },
+              node,
+              "invalid realm function signature",
+            );
+          return mapped;
+        },
+      });
     for (const node of module.statements) {
       if (node === undefined) throw "missing module statement";
       if (
@@ -8680,13 +9084,17 @@ function checkClosureModuleLayout(
         module,
         graph,
         types,
+        bindingTypes,
         expressions,
         references,
         declarations,
+        functions,
+        realmReturnOwners,
         realmSinks,
         realmReads,
       ),
     );
+  propagateVoidReturns();
   return {
     ok: true,
     value: {
@@ -8710,6 +9118,8 @@ function checkClosureModuleLayout(
       chainReceivers,
       restCalls,
       voidResultDiscard: requiresVoidResultDiscard(),
+      voidValueCalls,
+      voidValueReturns,
       downcasts,
       dynamicEnrollments,
       finitePropertyKeys,

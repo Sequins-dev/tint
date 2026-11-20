@@ -44,6 +44,7 @@ export function dynamicObjectRuntimeSource(
     "read",
     "project",
     "write",
+    "update",
     "has",
     "remove",
     "spread",

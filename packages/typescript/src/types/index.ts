@@ -38,6 +38,7 @@ export type Type =
         | "unknown"
         | "realm-callable"
         | "dynamic-result"
+        | "void-value"
         | "never";
       /** Uint8Array only: a C view (checker/c-views.ts) of the record or
        * fixed array with this key. Views are nominal: a view relates to
@@ -375,6 +376,11 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     // source, alternatives can therefore be queried independently and stop at
     // the first success, without creating a coinductive work graph for them.
     {
+      if (
+        (scalar.kind === "void-value" && targetType.kind === "void") ||
+        (scalar.kind === "undefined" && targetType.kind === "void-value")
+      )
+        return cacheRelation(cache, actual, expected, true);
       if (targetType.kind === "Error" && scalar.kind !== "never")
         return cacheRelation(cache, actual, expected, errorContract(scalar));
       if (targetType.kind === "unknown" || targetType.kind === "dynamic-result")
@@ -465,6 +471,10 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
       target = types[b];
     if (source === undefined || target === undefined) return undefined;
     if (!exact && source.kind === "never") return true;
+    if (!exact && source.kind === "void-value" && target.kind === "void")
+      return true;
+    if (!exact && source.kind === "undefined" && target.kind === "void-value")
+      return true;
     if (!exact && target.kind === "Error" && source.kind !== "union")
       return source.kind === "Error" || errorContract(source);
     if (
@@ -708,6 +718,12 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         continue;
       }
       if (!exact && source.kind === "never") continue;
+      else if (
+        !exact &&
+        ((source.kind === "void-value" && target.kind === "void") ||
+          (source.kind === "undefined" && target.kind === "void-value"))
+      )
+        continue;
       else if (
         !exact &&
         (target.kind === "unknown" || target.kind === "dynamic-result")
@@ -1064,6 +1080,8 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         return 2048;
       case "void":
         return 4096;
+      case "void-value":
+        return 4096 | 4;
       case "object":
       case "function":
       case "realm-callable":

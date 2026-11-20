@@ -258,10 +258,9 @@ function make():Counter { let count=0;
   );
   assert.ok(check("function f():void { return undefined; }").ok);
 });
-test("void results cannot become values and loop completion stays conservative", () => {
+test("void result checking and loop completion stay conservative", () => {
   for (const source of [
     "function f():void {} function g():number { return f(); }",
-    "function f():void {} function g():void { let x=f(); }",
     "function f(x:void):void {}",
     "interface Bad { value:void }",
     "function f():void { return 1; }",
@@ -287,13 +286,13 @@ test("compound assignments snapshot reads before RHS writes and preserve guards"
   );
 });
 
-test("void calls cannot supply conditions or equality operands", () => {
+test("void calls cannot supply conditions or equality operands of incompatible types", () => {
   for (const body of [
     "if(h()) return;",
     "while(h()) break;",
     "for(;h();) break;",
     "const x=!h();",
-    "const x=h()===h();",
+    "const x=h()===1;",
     "const x=h()?1:2;",
   ]) {
     const r = check("function h():void {} function f():void {" + body + "}");
@@ -3178,39 +3177,43 @@ test("selects realm allocations through local aliases and array insertion", () =
   if (type?.kind === "array") assert.equal(type.realmArray, true);
 });
 
-test("keeps native payloads with unmodeled escapes or joins", () => {
-  for (const [setup, value, kind] of [
-    ["const list = [42]; consume(list);", "list", "native list"],
-    [
-      "const record = { count: 42 }; const holder = { record };",
-      "record",
-      "native record",
-    ],
-    ["const list = flag ? [1] : [2];", "list", "native list"],
-    ["let list = [1]; list = [2];", "list", "native list"],
-    [
-      "const list = [42]; function escape(): number[] { return list; }",
-      "list",
-      "native list",
-    ],
-  ]) {
-    const result = check(`
-      function consume(xs: number[]): void {}
-      function f(flag: boolean): void {
-        ${setup}
-        const object: Record<string, unknown> = { payload: ${value} };
-      }
-    `);
-    assert.equal(result.ok, false, setup);
-    if (!result.ok) {
-      assert.equal(result.error.preventsFallback, true);
-      assert.equal(
-        result.error.message,
-        "UNSUPPORTED: " +
-          kind +
-          " values in dynamic-key objects need slice 2b list/record views",
-      );
+test("realm demand follows calls, captures, typed fields and joins", () => {
+  const result = check(`
+    function identity(input: number[]): number[] { return input; }
+    function f(flag: boolean): void {
+      const items: number[] = [39];
+      const holder: { items: number[] } = { items };
+      let selected = flag ? identity(holder.items) : [0];
+      if (!flag) selected = [1];
+      const append = (): void => { selected.push(3); };
+      const object: Record<string, number[]> = { selected };
+      append();
     }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+  const items = result.value.bindings.bindings.find((b) => b.name === "items");
+  assert.ok(items);
+  const type = result.value.types[result.value.bindingTypes[items.id] ?? -1];
+  assert.ok(type?.kind === "array" && type.realmArray === true);
+});
+
+test("indirect native aggregate calls still require views", () => {
+  const result = check(`
+    function consume(xs: number[]): void {}
+    function f(): void {
+      const list = [42];
+      const callback: (xs: number[]) => void = consume;
+      callback(list);
+      const object: Record<string, unknown> = { payload: list };
+    }
+  `);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.preventsFallback, true);
+    assert.equal(
+      result.error.message,
+      "UNSUPPORTED: native list values in dynamic-key objects need slice 2b list/record views",
+    );
   }
 });
 
@@ -3281,9 +3284,9 @@ test("unannotated computed literals keep open storage", () => {
   assert.ok(result.ok, JSON.stringify(result));
 });
 
-test("known native aggregate values do not box into a dynamic property", () => {
+test("external native aggregate inputs do not box into a dynamic property", () => {
   const result = check(`
-    function f(value: number[]): void {
+    export function f(value: number[]): void {
       const object: Record<string, unknown> = {};
       object.value = value;
     }
@@ -3671,4 +3674,42 @@ test("realm iterator values retain realm record layouts", () => {
       return variant?.kind === "object" && variant.realmRecord === true;
     }),
   );
+});
+
+test("numeric spreads compose with surrounding elements in typed literals", () => {
+  const result = check(`
+    function f(references: number[], generals: number[], frameBytes: number): number[] {
+      return [frameBytes, references.length, ...references, generals.length, ...generals, 0];
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("updates share dynamic-key read and write checks", () => {
+  const accepted = check(`
+    function f(numbers: Record<string, number>, labels: Record<string, string>, key: string): number {
+      numbers[key] ??= 20;
+      labels.title ??= "Tint";
+      if ("title" in labels) labels.title += "!";
+      const old = "value" in numbers ? numbers.value++ : 0;
+      return "value" in numbers ? old + (numbers.value *= 2) : old;
+    }
+  `);
+  assert.ok(accepted.ok, JSON.stringify(accepted));
+  for (const source of [
+    "function f(x: { readonly [key: string]: number }): void { x.value ??= 1; }",
+    'function f(x: Record<string, number>): void { if ("value" in x) x.value += "x"; }',
+  ])
+    assert.equal(check(source).ok, false);
+});
+
+test("a statically void callback result can be evaluated in a value context", () => {
+  const result = check(`
+    function read(action: () => void): unknown {
+      const actual: unknown = action();
+      if (action() === undefined) return action();
+      return actual;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
 });
