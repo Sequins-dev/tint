@@ -138,7 +138,7 @@ export interface BuildRequest extends ModuleRequest {
   /** Tagged worker arguments carry the post-teardown pipe notification ABI. */
   readonly threadExitPipe?: boolean;
   /** Application modules whose managed code can be stopped in a worker. */
-  readonly workerModules?: readonly string[];
+  readonly workerModules?: readonly string[] | undefined;
   /** Verification of the large code model (docs/large-images.md): emit
    * every module with all far-reach forms, which large images select
    * automatically only where reach requires them. */

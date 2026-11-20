@@ -9,7 +9,13 @@ import {
   workerData,
 } from "node:worker_threads";
 
-if (!isMainThread) {
+if (!isMainThread && workerData.mode === "notify") {
+  const words = new Int32Array(workerData.shared);
+  Atomics.wait(words, 1, 0, 5000);
+  Atomics.store(words, 2, Atomics.notify(words, 0, 1));
+  Atomics.wait(words, 3, 0, 5000);
+  parentPort.close();
+} else if (!isMainThread) {
   if (workerData.mode === "error") throw new Error("worker failed");
   if (workerData.mode === "stop") {
     parentPort.postMessage("running");
@@ -192,6 +198,32 @@ async function verifyLifecycle(filename) {
   }
 }
 
+async function verifyWaitAsync(filename) {
+  const shared = new SharedArrayBuffer(16);
+  const words = new Int32Array(shared);
+  const worker = new Worker(filename, {
+    workerData: { mode: "notify", shared },
+  });
+  let deadline;
+  try {
+    const exit = once(worker, "exit");
+    const wait = Atomics.waitAsync(words, 0, 0);
+    if (!wait.async) return 16;
+    const timeout = new Promise((resolve) => {
+      deadline = setTimeout(() => resolve("missing wake"), 3000);
+    });
+    Atomics.store(words, 1, 1);
+    Atomics.notify(words, 1);
+    if ((await Promise.race([wait.value, timeout])) !== "ok") return 17;
+    Atomics.store(words, 3, 1);
+    Atomics.notify(words, 3);
+    return (await exit) === 0 && Atomics.load(words, 2) === 1 ? 42 : 18;
+  } finally {
+    clearTimeout(deadline);
+    await worker.terminate();
+  }
+}
+
 /** Hosts give Worker the module designation for this same source. */
 export async function run(filename) {
   if (
@@ -205,5 +237,6 @@ export async function run(filename) {
   if (local !== 42) return local;
   const worker = await verifyWorker(filename);
   if (worker !== 42) return worker;
-  return verifyLifecycle(filename);
+  const lifecycle = await verifyLifecycle(filename);
+  return lifecycle === 42 ? verifyWaitAsync(filename) : lifecycle;
 }

@@ -17,13 +17,17 @@ import {
 export interface NativeWaiterParkingHost {
   park(address: number, expected: number, timeoutNanoseconds: number): number;
   wake(address: number, all?: boolean): number;
+  readonly wakeAsync?: ((target: number) => void) | undefined;
 }
-export function nativeWaiterParkingHost(): NativeWaiterParkingHost {
+export function nativeWaiterParkingHost(
+  wakeAsync?: (target: number) => void,
+): NativeWaiterParkingHost {
   return {
     park: (address, expected, timeout): number =>
       parkNativeWord(address, expected, timeout),
     wake: (address, all): number =>
       wakeNativeWord(address, all === true ? 1 : 0),
+    wakeAsync,
   };
 }
 export interface NativeWaitLocation {
@@ -70,6 +74,8 @@ export interface NativeWaitRegistry extends NativeWaitEvents {
   ): SharedResult<number>;
   poll(ticket: number): SharedResult<NativeWaitState>;
   order(ticket: number): SharedResult<number>;
+  /** Publish an owning reactor's wake target while the wait is live. */
+  setWakeTarget(ticket: number, target: number): SharedResult<undefined>;
   expire(ticket: number): SharedResult<boolean>;
   take(ticket: number): SharedResult<NativeWaitState>;
   park(ticket: number, timeoutNanoseconds: number): SharedResult<number>;
@@ -90,7 +96,8 @@ const STATE = 0,
   TICKET = 8,
   BLOCK = 16,
   OFFSET = 24,
-  COMPLETION = 32;
+  COMPLETION = 32,
+  WAKE_TARGET = 40;
 function word(value: number): boolean {
   return integer(value) && value <= 4294967295;
 }
@@ -257,6 +264,7 @@ function facade(
           writeNumber(host, registry, free + BLOCK, location.blockId);
           writeNumber(host, registry, free + OFFSET, location.byteOffset);
           writeNumber(host, registry, free + COMPLETION, 0);
+          writeNumber(host, registry, free + WAKE_TARGET, 0);
           writeNumber(host, registry, free + STATE, 1);
         }
       }
@@ -282,43 +290,52 @@ function facade(
       return { ok: false, error: "invalid-value" };
     const scratch = new Uint32Array(2);
     lock(scratch);
-    const firstCompletion =
-      readNumber(host, registry, NEXT_COMPLETION, scratch) + 1;
-    let notified = 0;
-    while (notified < count) {
-      let row = -1,
-        first = Infinity;
-      for (let i = 0; i < capacity; i++) {
-        const at = HEADER + i * ROW;
-        if (
-          readNumber(host, registry, at + STATE, scratch) === 1 &&
-          readNumber(host, registry, at + BLOCK, scratch) === block &&
-          readNumber(host, registry, at + OFFSET, scratch) === offset
-        ) {
-          const ticket = readNumber(host, registry, at + TICKET, scratch);
-          if (ticket < first) {
-            first = ticket;
-            row = at;
+    try {
+      const firstCompletion =
+        readNumber(host, registry, NEXT_COMPLETION, scratch) + 1;
+      let notified = 0;
+      while (notified < count) {
+        let row = -1,
+          first = Infinity;
+        for (let i = 0; i < capacity; i++) {
+          const at = HEADER + i * ROW;
+          if (
+            readNumber(host, registry, at + STATE, scratch) === 1 &&
+            readNumber(host, registry, at + BLOCK, scratch) === block &&
+            readNumber(host, registry, at + OFFSET, scratch) === offset
+          ) {
+            const ticket = readNumber(host, registry, at + TICKET, scratch);
+            if (ticket < first) {
+              first = ticket;
+              row = at;
+            }
           }
         }
+        if (row < 0) break;
+        complete(row, scratch);
+        writeNumber(host, registry, row + STATE, 2);
+        parking.wake(registry.base + row + STATE);
+        const target = readNumber(host, registry, row + WAKE_TARGET, scratch);
+        if (target !== 0) {
+          const wake = parking.wakeAsync;
+          if (wake === undefined) throw "NATIVE_WAITER_ASYNC_WAKE";
+          wake(target - 1);
+        }
+        notified++;
       }
-      if (row < 0) break;
-      complete(row, scratch);
-      writeNumber(host, registry, row + STATE, 2);
-      parking.wake(registry.base + row + STATE);
-      notified++;
+      const last = readNumber(host, registry, NEXT_COMPLETION, scratch);
+      if (notified > 0) signalEvents(scratch);
+      return {
+        ok: true,
+        value: {
+          count: notified,
+          first: notified === 0 ? 0 : firstCompletion,
+          last: notified === 0 ? 0 : last,
+        },
+      };
+    } finally {
+      unlock();
     }
-    const last = readNumber(host, registry, NEXT_COMPLETION, scratch);
-    if (notified > 0) signalEvents(scratch);
-    unlock();
-    return {
-      ok: true,
-      value: {
-        count: notified,
-        first: notified === 0 ? 0 : firstCompletion,
-        last: notified === 0 ? 0 : last,
-      },
-    };
   }
   function notify(
     block: number,
@@ -415,6 +432,27 @@ function facade(
       ? { ok: false, error: "invalid-handle" }
       : { ok: true, value: sequence };
   }
+  function setWakeTarget(
+    ticket: number,
+    target: number,
+  ): SharedResult<undefined> {
+    if (!validTicket(ticket)) return { ok: false, error: "invalid-handle" };
+    const wake = parking.wakeAsync;
+    if (wake === undefined || !integer(target) || target >= 2147483647)
+      return { ok: false, error: "invalid-value" };
+    const scratch = new Uint32Array(2);
+    lock(scratch);
+    try {
+      const row = find(ticket, scratch);
+      if (row < 0) return { ok: false, error: "invalid-handle" };
+      if (readNumber(host, registry, row + STATE, scratch) === 1)
+        writeNumber(host, registry, row + WAKE_TARGET, target + 1);
+      else wake(target);
+      return { ok: true, value: undefined };
+    } finally {
+      unlock();
+    }
+  }
   function park(ticket: number, timeout: number): SharedResult<number> {
     if (!validTicket(ticket)) return { ok: false, error: "invalid-handle" };
     if (!integer(timeout)) return { ok: false, error: "invalid-value" };
@@ -432,6 +470,7 @@ function facade(
     registry,
     register,
     order,
+    setWakeTarget,
     notify,
     notifyOrdered,
     poll: (ticket) => inspect(ticket, false),

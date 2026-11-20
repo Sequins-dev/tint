@@ -877,25 +877,24 @@ function generalHostSource(
     : `function emit(fd:number,text:string):void{}`;
   const eventImports = nodeEventLoop
     ? `import {installNodeEventLoopGlobals} from "node-event-globals";
-import {createReactorEventLoop} from "node-event-driver";
+import {createReactorEventLoop,type ReactorEventLoop} from "node-event-driver";
 import {monotonicMilliseconds} from "node-event-clock";
-import {createReactor} from "node-event-reactor";`
+import {createReactor${workers === undefined ? "" : ",signalReactor"}} from "node-event-reactor";`
     : "";
   const workerImports =
     workers === undefined
       ? ""
       : `
-import {startNodeWorkerHost,type NodeWorkerThreads} from "worker-host";
+import {startNodeWorkerHost,type NodeWorkerSession} from "worker-host";
 import {createNativeWorkerThreadHost} from "worker-platform";
 import {runNativeWorker,type NativeWorkerTurnControl} from "worker-lifecycle";
-import {nativeSharedMemoryHost,nativeWaiterParkingHost,type NativeSharedMemoryHost,type NativeWaiterParkingHost} from "worker-shared";
-import {processAtomicWaitEvents} from "objects";`;
+import {nativeSharedMemoryHost,nativeWaiterParkingHost,type NativeSharedMemoryHost,type NativeWaiterParkingHost} from "worker-shared";`;
   const workerRegistry =
     workers === undefined
       ? ""
       : `
  const workerNames:readonly string[]=${JSON.stringify(names)};
- const workers=startNodeWorkerHost({global:object,realm,reactor:events,
+ const session=startNodeWorkerHost({global:object,realm,reactor:events,
   memory,parking,threads:createNativeWorkerThreadHost(),threadId,control,
   managedBytes:${workers.managedBytes},stackBytes:${workers.stackBytes},
   now:():number=>monotonicMilliseconds(),
@@ -904,15 +903,22 @@ import {processAtomicWaitEvents} from "objects";`;
    return index<0?undefined:index;
   }
  });
- workerHost=workers;`;
+ workerHost=session;
+ const workers=session.exports;`;
+  const drainJobs =
+    "drainScriptJobs(realm.agent,(error:unknown):void=>{throw error;});";
+  const drainCheckpoint =
+    workers === undefined
+      ? drainJobs
+      : `workerHost?.checkpointAtomicWaits();do{${drainJobs}}while((workerHost?.checkpointAtomicWaits()??0)>0);`;
   const eventSetup = nodeEventLoop
-    ? `const events=createReactorEventLoop({
+    ? `${workers === undefined ? "" : "let workerHost:NodeWorkerSession|undefined=undefined;"}
+ const events:ReactorEventLoop=createReactorEventLoop({
   createReactor:()=>createReactor(),
   now:():number=>monotonicMilliseconds(),
-  drainMicrotasks:():void=>{${workers === undefined ? "" : "processAtomicWaitEvents(realm.agent,true);"}drainScriptJobs(realm.agent,(error:unknown):void=>{throw error;});},
-  onWake:():void=>{}${workers === undefined ? "" : ",stopRequested:():boolean=>control?.stopRequested()===true"}
+  drainMicrotasks:():void=>{${drainCheckpoint}},
+  onWake:():void=>{${workers === undefined ? "" : "events.loop.enqueueIO(():void=>{});"}}${workers === undefined ? "" : ",stopRequested:():boolean=>control?.stopRequested()===true"}
  });
- ${workers === undefined ? "" : "let workerHost:NodeWorkerThreads|undefined=undefined;"}
  try {
   installNodeEventLoopGlobals(events.loop,object,realm,hooks);
   ${workerRegistry}`
@@ -924,7 +930,7 @@ import {processAtomicWaitEvents} from "objects";`;
     workers === undefined
       ? `export function ${start}():number {`
       : `export function ${start}(argument:number):number {
- const memory=nativeSharedMemoryHost(),parking=nativeWaiterParkingHost();
+ const memory=nativeSharedMemoryHost(),parking=nativeWaiterParkingHost(signalReactor);
  if(argument===0)return runIsolate(${entry},0,undefined,memory,parking);
  return runNativeWorker(memory,parking,argument,
   (moduleId:number,threadId:number,control:NativeWorkerTurnControl):number=>

@@ -1,6 +1,7 @@
 import {
   installAtomicsIntrinsics,
   installSharedArrayBufferIntrinsics,
+  processAtomicWaitEvents,
   type ErrorRealm,
   type OrdinaryObject,
   type ScriptPropertyKey,
@@ -13,8 +14,8 @@ import {
   type NodeWorkerThreads,
   type WorkerResourceLimits,
 } from "./worker-threads.ts";
-export type { NodeWorkerThreads } from "./worker-threads.ts";
 import type { ReactorEventLoop } from "../event-loop-reactor.ts";
+import type { EventLoopHandle } from "../event-loop.ts";
 import {
   attachNativeSharedBlockService,
   createNativeSharedBlockService,
@@ -51,11 +52,16 @@ interface NodeWorkerHost {
   now(): number;
   lookup(filename: string): number | undefined;
 }
+export interface NodeWorkerSession {
+  readonly exports: NodeWorkerThreads;
+  checkpointAtomicWaits(): number;
+  close(): void;
+}
 
 const MiB = 1048576;
 const page = 16384;
 
-export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerThreads {
+export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
   const { realm, control, memory, parking, reactor } = host;
   const atomic = nativeSharedAtomicMemoryHost();
   let service: NativeSharedBlockService;
@@ -153,7 +159,7 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerThreads {
       );
     return result;
   }
-  return createNodeWorkerThreads({
+  const threads = createNodeWorkerThreads({
     realm,
     control,
     reactor,
@@ -206,4 +212,55 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerThreads {
       };
     },
   });
+  let reference: EventLoopHandle | undefined;
+  let timeout: EventLoopHandle | undefined;
+  let deadline: number = Infinity;
+  function checkpointAtomicWaits(): number {
+    const completed = processAtomicWaitEvents(realm.agent, true);
+    const pending = realm.agent.pendingAtomicWaits;
+    if (pending.length === 0) {
+      reference?.close();
+      reference = undefined;
+      timeout?.close();
+      timeout = undefined;
+      deadline = Infinity;
+      return completed;
+    }
+    const target = reactor.wakeTarget();
+    let next = Infinity;
+    for (const wait of pending) {
+      if (!waitEvents.setWakeTarget(wait.ticket, target).ok)
+        throw "WORKER_ENGINE_ASYNC_WAIT";
+      next = Math.min(next, wait.deadline);
+    }
+    if (reference === undefined) reference = reactor.loop.retain();
+    if (deadline !== next) {
+      deadline = next;
+      timeout?.close();
+      timeout = undefined;
+      if (deadline !== Infinity)
+        timeout = reactor.loop.setTimeout(
+          (): void => {
+            deadline = Infinity;
+          },
+          Math.ceil(deadline - host.now()),
+        );
+    }
+    return completed;
+  }
+  return {
+    exports: threads,
+    checkpointAtomicWaits,
+    close: (): void => {
+      const pending = realm.agent.pendingAtomicWaits;
+      for (const wait of pending) {
+        wait.waiting.expire(wait.ticket);
+        wait.waiting.take(wait.ticket);
+      }
+      pending.length = 0;
+      reference?.close();
+      timeout?.close();
+      threads.close();
+    },
+  };
 }
