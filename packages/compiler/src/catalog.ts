@@ -2919,6 +2919,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "platform",
     },
     {
+      id: "packages/platform/src/c/worker-thread-host.d.ts",
+      packageId: "platform",
+    },
+    {
       id: "packages/platform/src/darwin/fs-errors.ts",
       packageId: "platform",
     },
@@ -2968,6 +2972,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/platform/src/target.ts",
+      packageId: "platform",
+    },
+    {
+      id: "packages/platform/src/workers.ts",
       packageId: "platform",
     },
     {
@@ -4034,6 +4042,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/platform/target",
       target: "packages/platform/src/target.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/platform/workers",
+      target: "packages/platform/src/workers.ts",
     },
     {
       packageId: "compiler",

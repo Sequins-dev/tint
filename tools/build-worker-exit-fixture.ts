@@ -9,7 +9,6 @@ const target = nativeFixtureTarget();
 const memory = "packages/native-runtime/src/intrinsics/memory.ts";
 const shared = "packages/native-runtime/src/intrinsics/shared-atomics.ts";
 const clock = "packages/native-runtime/src/intrinsics/clock.ts";
-const declaration = "fixture:worker-exit-pipe";
 const bindings = [
   [clock, "monotonicMilliseconds", "monotonic-time"],
   [memory, "mapMemory", "memory-map"],
@@ -27,36 +26,13 @@ const bindings = [
 
 verifyHostedFixture(
   `
-import {startNativeThread,hostedThreadEntry} from 'memory';
 import {monotonicMilliseconds} from 'clock';
-import {read,write,close} from 'fs';
 import {createReactor} from 'reactor';
-import {pipe,dup,pthread_detach,fcntl$setFlags} from 'thread';
+import {createNativeWorkerThreadHost} from 'thread';
 import {createReactorEventLoop} from 'loop';
 import {nativeSharedMemoryHost,nativeWaiterParkingHost} from 'blocks';
-import {startNativeWorker,runNativeWorker,type NativeWorkerThreadHost,type NativeWorkerTurnControl,type WorkerControlPipe,type WorkerExitPipe} from 'workers';
+import {startNativeWorker,runNativeWorker,type NativeWorkerTurnControl} from 'workers';
 
-function descriptor(bytes:Uint8Array,offset:number):number {
-  return (bytes[offset]??0)+(bytes[offset+1]??0)*256+
-    (bytes[offset+2]??0)*65536+(bytes[offset+3]??0)*16777216;
-}
-
-function controlPipe():WorkerControlPipe {
-  const ends=new Uint8Array(8);
-  if(pipe(ends)!==0)throw "worker pipe failed";
-  const input=descriptor(ends,0),output=descriptor(ends,4);
-  const flags=${target.os === "darwin" ? 4 : 2048};
-  if(fcntl$setFlags(input,4,flags)!==0||fcntl$setFlags(output,4,flags)!==0){
-    close(input);close(output);throw "worker pipe flags failed";
-  }
-  return {input,output};
-}
-function exitPipe():WorkerExitPipe {
-  const ends=controlPipe();
-  const readGuard=dup(ends.input);
-  if(readGuard<0){close(ends.input);close(ends.output);throw "worker pipe duplicate failed";}
-  return {input:ends.input,childOutput:ends.output,childReadGuard:readGuard};
-}
 export function run(argument:number):number {
   const memory=nativeSharedMemoryHost(),parking=nativeWaiterParkingHost();
   if(argument!==0)return runNativeWorker(memory,parking,argument,(moduleId:number,id:number,control:NativeWorkerTurnControl):number=>{
@@ -98,16 +74,7 @@ export function run(argument:number):number {
     drainMicrotasks:():void=>{},
     onWake:():void=>{}
   });
-  const threads:NativeWorkerThreadHost={
-    entry:hostedThreadEntry(),
-    exitPipe:()=>exitPipe(),
-    controlPipe:()=>controlPipe(),
-    read:(fd:number,bytes:Uint8Array):number=>read(fd,bytes),
-    write:(fd:number,bytes:Uint8Array):number=>write(fd,bytes),
-    close:(fd:number):void=>{if(close(fd)!==0)throw "worker pipe close failed";},
-    start:(entry:number,arg:number):number=>startNativeThread(entry,arg),
-    detach:(thread:number):number=>pthread_detach(thread),
-  };
+  const threads=createNativeWorkerThreadHost();
   const ready=memory.mapMemory(16384);
   if(ready<=0)return 6;
   try{
@@ -146,14 +113,11 @@ export function run(argument:number):number {
   }finally{runtime.close();memory.unmapMemory(ready,16384);}
 }
 `,
-  "worker-lifecycle-v2",
+  "worker-lifecycle-v3",
   [
-    ["memory", memory],
-    ["shared", shared],
     ["clock", clock],
-    ["fs", "packages/native-runtime/src/intrinsics/fs.ts"],
     ["reactor", "packages/platform/src/" + target.os + "/reactor.ts"],
-    ["thread", declaration],
+    ["thread", "packages/platform/src/workers.ts"],
     ["loop", "packages/native-runtime/src/event-loop-reactor.ts"],
     ["blocks", "packages/native-runtime/src/shared-blocks.ts"],
     ["workers", "packages/native-runtime/src/worker-lifecycle.ts"],
@@ -181,36 +145,5 @@ export function run(argument:number):number {
       name,
       operation,
     })),
-    foreignDeclarations: [
-      {
-        id: declaration,
-        text: `
-declare module "tint:c/worker-exit-pipe" {
-  import type { Address, i32, u8, Ptr, OrErrno, Variadic } from "tint:ffi";
-  export function pipe(descriptors:Ptr<u8>):OrErrno<i32>;
-  export function dup(fd:i32):OrErrno<i32>;
-  export function pthread_detach(thread:Address<void>):i32;
-  export function fcntl$setFlags(fd:i32,command:i32,flags:Variadic<i32>):OrErrno<i32>;
-}
-`,
-        manifest: [
-          {
-            module: "tint:c/worker-exit-pipe",
-            darwin: {
-              name: "/usr/lib/libSystem.B.dylib",
-              optional: false,
-              currentVersion: 0x10000,
-              compatibilityVersion: 0x10000,
-            },
-            linux: {
-              name: "libc.so.6",
-              optional: false,
-              currentVersion: 0,
-              compatibilityVersion: 0,
-            },
-          },
-        ],
-      },
-    ],
   },
 );
