@@ -15,6 +15,7 @@ import {
   type FixtureForeignDeclaration,
 } from "./hosted-fixture.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
+import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
 
 export const callbackDeclarations: FixtureForeignDeclaration = {
   id: "fixture/callbacks.d.ts",
@@ -173,11 +174,13 @@ export function run(): number {
 `;
 }
 export function verifyCallbackFixture(
-  runtimeEntry?: "initializeCopyingRuntime",
+  runtimeEntry?: "initializeCopyingRuntime" | "initializeGenerationalRuntime",
 ): string {
   return verifyHostedFixture(
     callbackFixtureSource(),
-    runtimeEntry === undefined ? "ffi-callbacks" : "ffi-callbacks-copying",
+    runtimeEntry === "initializeCopyingRuntime"
+      ? "ffi-callbacks-copying"
+      : "ffi-callbacks",
     [
       ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
       ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
@@ -316,6 +319,9 @@ export function verifyCallbackTrap(
       [],
       [],
       {
+        ...(nativeFixtureTarget().arch === "x86_64"
+          ? { runtimeEntry: "initializeGenerationalRuntime" as const }
+          : {}),
         managedBytes: 4194304,
         allocationCapacity: 65536,
         foreignDeclarations: [declarations],
@@ -326,7 +332,20 @@ export function verifyCallbackTrap(
     else process.env.TINT_BUILD_ONLY = previous;
   }
   if (scenario === "ok") return binary;
+  if (nativeFixtureTarget().arch === "x86_64" && previous === "1")
+    return binary;
   try {
+    if (nativeFixtureTarget().arch === "x86_64") {
+      const [result] = runNativeBatch([
+        { artifact: nativeArtifact("linux-x86_64", binary) },
+      ]);
+      assert.equal(result?.kind, "signaled", JSON.stringify(result));
+      assert.equal(
+        result.signal,
+        scenario === "view-escape" ? "SIGSEGV" : "SIGILL",
+      );
+      return binary;
+    }
     const result = runDarwinFixture(binary, () =>
       spawnSync(
         "lldb",

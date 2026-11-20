@@ -215,6 +215,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/x86_64/scalar/callbacks.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/x86_64/scalar/exit-entry.ts",
       packageId: "codegen",
     },

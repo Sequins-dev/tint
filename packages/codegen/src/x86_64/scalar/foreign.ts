@@ -46,7 +46,7 @@ const r10 = gpr(10),
 const eax = word(0);
 const x0 = xmm(0),
   x1 = xmm(1);
-const argumentRegisters: readonly number[] = [7, 6, 2, 1, 8, 9];
+export const argumentRegisters: readonly number[] = [7, 6, 2, 1, 8, 9];
 export const sysVStagingBytes = 128;
 
 function align(value: number, alignment: number): number {
@@ -69,7 +69,7 @@ export function sysVOutgoingBytes(layout: SysVCallLayout): number {
   return used + callAlignment(layout) - 16;
 }
 
-interface IntegerSite {
+export interface IntegerSite {
   readonly emit: Emit;
   readonly constant: (value: number) => Memory<64>;
   readonly site: string;
@@ -83,6 +83,12 @@ export interface CallSite extends IntegerSite {
   readonly call: (symbol: string) => void;
   readonly staging: (offset: number) => Memory<64>;
   readonly stack: Memory<64>;
+  readonly transition?: ForeignTransition;
+}
+export interface ForeignTransition {
+  readonly begin: () => void;
+  readonly end: () => void;
+  readonly thunk: (parameter: number) => Memory<64>;
 }
 
 function indexed(
@@ -98,7 +104,7 @@ function indexed(
   };
 }
 
-function byteData(
+export function byteData(
   emit: Emit,
   source: Memory<64>,
   bytes: number,
@@ -113,7 +119,7 @@ function byteData(
 }
 
 /** Conversion leaves the exact raw integer in RAX. */
-function toInteger(
+export function toInteger(
   request: IntegerSite,
   input: Memory<64>,
   width: number,
@@ -176,7 +182,7 @@ function checkedSignedConversion(emit: Emit, trap: string): void {
 }
 
 /** Return the C integer as binary64 bits in RAX, trapping on precision loss. */
-function fromInteger(
+export function fromInteger(
   request: IntegerSite,
   width: number,
   signed: boolean,
@@ -288,7 +294,7 @@ function loadRegisters(emit: Emit, from: (offset: number) => Memory<64>): void {
     emit({ op: "movsd", dst: xmm(index), src: from(64 + index * 8) });
 }
 
-/** Leaf-only C call through the existing IR and import-slot machinery. */
+/** Static C call through the existing IR and import-slot machinery. */
 export function emitSysVCall(request: CallSite, layout: SysVCallLayout): void {
   const emit = request.emit,
     prototype = request.prototype,
@@ -297,8 +303,11 @@ export function emitSysVCall(request: CallSite, layout: SysVCallLayout): void {
     site = request.site,
     trap = request.trap;
   const signature = prototype.signature;
-  const extra = prototype.indirect === true ? 1 : 0;
-  if (extra !== 0) {
+  const transition = request.transition;
+  const prefix = transition === undefined ? 0 : 2;
+  const extra = prototype.indirect === true ? 1 : prefix;
+  if (transition !== undefined) transition.begin();
+  if (prototype.indirect === true) {
     toInteger(request, argument(0), 8, false, site + ":callee");
     emit({ op: "test", dst: rax, src: rax });
     branch(emit, "e", trap);
@@ -312,12 +321,22 @@ export function emitSysVCall(request: CallSite, layout: SysVCallLayout): void {
   for (let index = 0; index < layout.arguments.length; index++) {
     const location = layout.arguments[index];
     const type = signature.parameters[index];
-    const form = prototype.operands[index];
+    const form = prototype.operands[index + prefix];
     if (location === undefined || type === undefined || form === undefined)
       throw "SysV operand invariant";
     const source = argument(index + extra);
     const slot = location.stackOffset;
     const parts = location.parts;
+    if (form === "callback") {
+      if (transition === undefined) throw "SysV callback transition invariant";
+      emit({ op: "lea", dst: rax, src: transition.thunk(index) });
+      emit({
+        op: "mov",
+        dst: slot >= 0 ? mem(4, slot) : staging(location.gp * 8),
+        src: rax,
+      });
+      continue;
+    }
     if (form === "record") {
       byteData(emit, source, location.size, trap);
       if (parts === undefined) {
@@ -393,8 +412,10 @@ export function emitSysVCall(request: CallSite, layout: SysVCallLayout): void {
   }
   loadRegisters(emit, staging);
   emit({ op: "mov", dst: eax, src: imm(layout.vectorRegisters) });
-  if (extra === 0) request.call(request.abi.symbolPrefix + prototype.symbol);
+  if (prototype.indirect !== true)
+    request.call(request.abi.symbolPrefix + prototype.symbol);
   else emit({ op: "call", target: staging(48) });
+  if (transition !== undefined) transition.end();
 
   if (prototype.result === "record") {
     byteData(
@@ -463,18 +484,31 @@ export function emitSysVDynamicCall(request: CallSite): void {
   const arg = request.argument,
     stage = request.staging;
   const layout = dynamicCallFrame;
-  toInteger(request, arg(0), 8, false, site + ":address");
+  const transition = request.transition;
+  const first = transition === undefined ? 0 : 2;
+  if (transition !== undefined) transition.begin();
+  toInteger(request, arg(first), 8, false, site + ":address");
   emit({ op: "test", dst: rax, src: rax });
   branch(emit, "e", trap);
   emit({ op: "mov", dst: stage(0), src: rax });
-  byteData(emit, arg(1), layout.size, trap);
+  byteData(emit, arg(first + 1), layout.size, trap);
   emit({ op: "mov", dst: stage(8), src: r11 });
   emit({ op: "mov", dst: mem(11, layout.bases), src: r11 });
   for (let index = 0; index < layout.byteOperands; index++) {
-    byteData(emit, arg(index + 2), 0, trap);
+    byteData(emit, arg(first + index + 2), 0, trap);
     emit({ op: "mov", dst: r10, src: stage(8) });
     emit({ op: "mov", dst: mem(10, layout.bases + 8 + index * 8), src: r11 });
   }
+  if (transition !== undefined)
+    for (let index = 0; index < layout.callbackOperands; index++) {
+      emit({ op: "lea", dst: rax, src: transition.thunk(index) });
+      emit({ op: "mov", dst: r10, src: stage(8) });
+      emit({
+        op: "mov",
+        dst: mem(10, layout.bases + (1 + layout.byteOperands + index) * 8),
+        src: rax,
+      });
+    }
   emit({ op: "mov", dst: r11, src: stage(8) });
   emit({ op: "mov", dst: rdx, src: mem(11, layout.patchCount) });
   emit({ op: "cmp", dst: rdx, src: imm(layout.patchCapacity) });
@@ -492,7 +526,14 @@ export function emitSysVDynamicCall(request: CallSite): void {
     dst: r10,
     src: indexed(11, 1, layout.patches + layout.patchArray, 8),
   });
-  emit({ op: "cmp", dst: r10, src: imm(layout.byteOperands) });
+  emit({
+    op: "cmp",
+    dst: r10,
+    src: imm(
+      layout.byteOperands +
+        (transition === undefined ? 0 : layout.callbackOperands),
+    ),
+  });
   branch(emit, "a", trap);
   emit({ op: "mov", dst: rax, src: indexed(11, 10, layout.bases, 8) });
   emit({
@@ -572,6 +613,7 @@ export function emitSysVDynamicCall(request: CallSite): void {
   emit({ op: "cmp", dst: rax, src: imm(8) });
   branch(emit, "a", trap);
   emit({ op: "call", target: stage(0) });
+  if (transition !== undefined) transition.end();
   emit({ op: "lea", dst: rsp, src: request.stack });
   emit({ op: "mov", dst: r11, src: stage(8) });
   emit({ op: "mov", dst: mem(11, 0), src: rax });

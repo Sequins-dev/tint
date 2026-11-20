@@ -16,6 +16,11 @@ import { createSourceText } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
+import {
+  callbackLibrarySource,
+  verifyCallbackFixture,
+  verifyCallbackTrap,
+} from "./native-callback-fixtures.ts";
 
 const x64 = process.env.TINT_NATIVE_TARGET === "linux-x86_64";
 
@@ -134,7 +139,10 @@ const oracleDeclarations = `declare module "${oracleSpecifier}" {
   export function dlsym(handle: Address<void>, name: CStringBytes): Address<void>;
 }`;
 
-function withOracle(check: (library: string) => void): void {
+function withOracle(
+  check: (library: string) => void,
+  sourceText?: string,
+): void {
   // The worktree is visible on dev and QEMU receives the absolute DSO path
   // through DT_NEEDED. No modifications to the pinned sysroot are needed.
   const parent = resolve(".tint-bootstrap", "x64-ffi-sysv");
@@ -142,6 +150,11 @@ function withOracle(check: (library: string) => void): void {
   const directory = mkdtempSync(join(parent, "oracle-"));
   try {
     const library = join(directory, "oracle.so");
+    let source = "tools/fixtures/x64-ffi-oracle.c";
+    if (sourceText !== undefined) {
+      source = join(directory, "oracle.c");
+      writeFileSync(source, sourceText);
+    }
     const sysroot = join(homedir(), ".t3", "tint-x64-sysroot");
     const built = spawnSync(
       "container",
@@ -169,7 +182,7 @@ function withOracle(check: (library: string) => void): void {
         "-l:libc.so.6",
         "-o",
         library,
-        "tools/fixtures/x64-ffi-oracle.c",
+        source,
       ],
       { encoding: "utf8", timeout: 12000 },
     );
@@ -431,39 +444,100 @@ test(
 );
 
 test(
-  "SysV rejects a may-callback declaration explicitly",
+  "SysV scoped callbacks preserve nested views, throws and moving roots",
   { skip: !x64 },
   () => {
-    assert.throws(
-      () =>
-        verifyHostedFixture(
-          `import { getpid } from "tint:c/libsystem";
-      export function run(): number { return getpid(); }`,
-          "sysv-callback-rejected",
-          [["tint:c/libsystem", "sysv-callback.d.ts"]],
-          [],
-          [],
-          [],
-          {
-            managedBytes: 4194304,
-            allocationCapacity: 65536,
-            requireTyped: true,
-            foreignDeclarations: [
-              {
-                id: "sysv-callback.d.ts",
-                text: `declare module "tint:c/libsystem" {
-            import type { i32, MayCallback } from "tint:ffi";
-            export function getpid(): MayCallback<i32>;
+    verifyCallbackFixture("initializeGenerationalRuntime");
+  },
+);
+
+test(
+  "SysV callback contracts reject stale entries, leaf reentry and the wrong thread",
+  { skip: !x64 },
+  () => {
+    const source =
+      callbackLibrarySource.replace(
+        "#include <pthread.h>\n#include <stdint.h>",
+        `typedef int int32_t;
+typedef long intptr_t;
+typedef unsigned long pthread_t;
+extern int pthread_create(pthread_t *, const void *, void *(*)(void *), void *);
+extern int pthread_join(pthread_t, void **);`,
+      ) +
+      `
+void remember_address(void *callback) { remember((int32_t (*)(int32_t))callback); }
+int32_t call_saved_may(int32_t x) { return call_saved(x); }
+double call_mixed(double (*f)(signed char, long, int, int, int, int, int)) {
+  return f(-5, 22, 1, 2, 3, 4, 15);
+}
+`;
+    withOracle((library) => {
+      for (const scenario of [
+        "ok",
+        "leaf-later",
+        "leaf-inside",
+        "thread",
+        "view-escape",
+      ] as const)
+        console.log(scenario, verifyCallbackTrap(library, scenario));
+      verifyHostedFixture(
+        `import { Remembered, remember_address, call_saved_may, call_mixed } from "callbacks";
+       import { releaseCallback } from "tint:ffi";
+       import { collectGarbage } from "memory";
+       export function run(): number {
+         const retained = { offset: 23 };
+         const registered = Remembered((x: number): number => {
+           collectGarbage();
+           return x + retained.offset;
+         });
+         remember_address(registered);
+         const saved = call_saved_may(19);
+         if (saved !== 42) return 1;
+         releaseCallback(registered);
+         return call_mixed((a: number, b: number, c: number, d: number, e: number,
+           f: number, g: number): number => a + b + c + d + e + f + g);
+       }`,
+        "sysv-registered-and-mixed",
+        [
+          ["callbacks", "sysv-registered.d.ts"],
+          ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
+          ["memory", "packages/native-runtime/src/intrinsics/memory.ts"],
+        ],
+        [],
+        [],
+        [],
+        {
+          managedBytes: 4194304,
+          allocationCapacity: 65536,
+          runtimeEntry: "initializeGenerationalRuntime",
+          requireTyped: true,
+          foreignDeclarations: [
+            {
+              id: "sysv-registered.d.ts",
+              text: `declare module "tint:c/sysv-registered" {
+            import type { Address, Callback, f64, i8, i32, i64, MayCallback } from "tint:ffi";
+            export type Remembered = Callback<(x: i32) => i32>;
+            export function remember_address(f: Address<void>): void;
+            export function call_saved_may(x: i32): MayCallback<i32>;
+            export function call_mixed(f: Callback<(a: i8, b: i64, c: i32, d: i32,
+              e: i32, f: i32, g: i32) => f64>): f64;
           }`,
-              },
-            ],
-          },
-        ),
-      {
-        message:
-          "sysv-callback.d.ts: C callbacks are not supported on linux-x86_64 (needs F2)",
-      },
-    );
+              manifest: [
+                {
+                  module: "tint:c/sysv-registered",
+                  linux: {
+                    name: library,
+                    optional: false,
+                    currentVersion: 0,
+                    compatibilityVersion: 0,
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      );
+    }, source);
   },
 );
 
@@ -886,12 +960,6 @@ test(
   },
 );
 
-function assertForeignDiagnostic(message: string, build: () => string): void {
-  assert.throws(build, {
-    message: JSON.stringify({ stage: "foreign", message }),
-  });
-}
-
 test(
   "SysV loads optional C functions lazily and reports absent symbols",
   { skip: !x64 },
@@ -995,14 +1063,59 @@ test(
   },
 );
 
-test("SysV diagnoses F2 callback state before emission", { skip: !x64 }, () => {
-  assertForeignDiagnostic(
-    "C callbacks are not supported on linux-x86_64 (needs F2)",
-    () =>
-      verifyHostedFixture(
-        'import { callbackState } from "tint:ffi"; export function run(): number { return callbackState().length; }',
-        "sysv-callback-diagnostic",
-        [["tint:ffi", "packages/native-runtime/src/ffi/index.ts"]],
-      ),
-  );
-});
+test(
+  "SysV dynamic callbacks sort foreign storage, collect and rethrow",
+  { skip: !x64 },
+  () => {
+    verifyHostedFixture(
+      `import { allocate, release } from "tint:ffi";
+     import { bytesAt, findSymbol, foreignFunction, invoke, openProgram,
+       setBytes, setCallback, setNumber, type ForeignSignature } from "tint:ffi/unsafe";
+     import { collectGarbage } from "memory";
+     export function run(): number {
+       const signature: ForeignSignature = {
+         parameters: [{ kind: "pointer", pointee: { kind: "void" } }, { kind: "scalar", scalar: "usize" },
+           { kind: "scalar", scalar: "usize" }, { kind: "pointer", pointee: { kind: "void" } }],
+         result: { kind: "void" }, fixedParameters: 4, callClass: "may-callback", errno: "none",
+       };
+       const comparison: ForeignSignature = {
+         parameters: [{ kind: "pointer", pointee: { kind: "void" } }, { kind: "pointer", pointee: { kind: "void" } }], result: { kind: "scalar", scalar: "i32" },
+         fixedParameters: 2, callClass: "leaf", errno: "none",
+       };
+       const qsort = foreignFunction(findSymbol(openProgram(), "qsort"), signature);
+       const data = allocate(8);
+       data[0] = 23; data[4] = 19;
+       setBytes(qsort, 0, data); setNumber(qsort, 1, 2); setNumber(qsort, 2, 4);
+       let called = false;
+       setCallback(qsort, 3, comparison, (args: number[]): number => {
+         called = true;
+         collectGarbage();
+         return (bytesAt(args[0] ?? 0, 4)[0] ?? 0) - (bytesAt(args[1] ?? 0, 4)[0] ?? 0);
+       });
+       invoke(qsort);
+       if (!called || data[0] !== 19 || data[4] !== 23) return 1;
+       setCallback(qsort, 3, comparison, (_args: number[]): number => { throw new RangeError("callback"); });
+       try { invoke(qsort); } catch (error) {
+         release(data);
+         if (error instanceof RangeError && error.message === "callback") return 42;
+       }
+       return 2;
+     }`,
+      "sysv-dynamic-callbacks",
+      [
+        ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
+        ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
+        ["memory", "packages/native-runtime/src/intrinsics/memory.ts"],
+      ],
+      [],
+      [],
+      [],
+      {
+        requireTyped: true,
+        runtimeEntry: "initializeGenerationalRuntime",
+        managedBytes: 4194304,
+        allocationCapacity: 65536,
+      },
+    );
+  },
+);

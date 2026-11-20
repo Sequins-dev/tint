@@ -12,6 +12,7 @@ import {
   nativeStackMapRegistryEntryBytes,
   nativeStackMapRegistryHeaderBytes,
   nativeStackMapRegistryOffset,
+  nativeStackMapTransitionTable,
   type PosixHostFacts,
 } from "@tint/abi/host";
 import type {
@@ -129,7 +130,10 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
       stackMaps.push({
         codeOffset: codeOffset + table.codeOffset,
         codeLength: table.codeLength,
-        tableOffset: codeOffset + table.tableOffset,
+        tableOffset:
+          table.tableOffset < 0
+            ? table.tableOffset
+            : codeOffset + table.tableOffset,
       });
     }
   const registryStart = stackEnd + pageBytes;
@@ -317,6 +321,21 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
 
   const local = new Map<string, number>();
   local.set("invoke", request.invocation);
+  if (native.callbackKeyOffset !== undefined) {
+    const key = "callback-key-storage";
+    const keyReady = "callback-key-ready";
+    if (threaded) {
+      emit({ op: "cmp", dst: mem(12, threadModeOffset), src: imm(0) });
+      emit({ op: "jcc", cc: "ne", target: label(keyReady) });
+    }
+    imports.set(key, { kind: "data", offset: native.callbackKeyOffset });
+    emit({ op: "lea", dst: rdi, src: rip(key) });
+    emit({ op: "xor", dst: esi, src: esi });
+    call(host.symbolPrefix + "pthread_key_create");
+    emit({ op: "test", dst: eax, src: eax });
+    emit({ op: "jcc", cc: "ne", target: label("guard-failed") });
+    if (threaded) emit({ op: "label", name: keyReady });
+  }
   emit({ op: "lea", dst: rax, src: mem(13, registryStart) });
   emit({ op: "mov", dst: mem(12, nativeStackMapRegistryOffset), src: rax });
   emit({ op: "mov", dst: mem(0, 0), src: imm(stackMaps.length) });
@@ -327,14 +346,20 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     const codeName = "stack-maps-code:" + String(index);
     const tableName = "stack-maps-table:" + String(index);
     local.set(codeName, table.codeOffset);
-    local.set(tableName, table.tableOffset);
+    if (table.tableOffset >= 0) local.set(tableName, table.tableOffset);
     const entry =
       nativeStackMapRegistryHeaderBytes +
       index * nativeStackMapRegistryEntryBytes;
     emit({ op: "lea", dst: gpr(11), src: rip(codeName) });
     emit({ op: "mov", dst: mem(0, entry), src: gpr(11) });
     emit({ op: "mov", dst: mem(0, entry + 8), src: imm(table.codeLength) });
-    emit({ op: "lea", dst: gpr(11), src: rip(tableName) });
+    if (table.tableOffset < 0)
+      emit({
+        op: "mov",
+        dst: gpr(11),
+        src: imm(nativeStackMapTransitionTable),
+      });
+    else emit({ op: "lea", dst: gpr(11), src: rip(tableName) });
     emit({ op: "mov", dst: mem(0, entry + 16), src: gpr(11) });
   }
 

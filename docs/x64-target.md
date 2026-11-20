@@ -152,11 +152,11 @@ rechecks its condition after every kernel return.
 supports strings, typed arrays and reference vectors, descriptor-backed
 records, escaping function environments, and tagged completions. The
 generational collector moves roots across managed call frames and uses
-the shared transition-aware walker. [F1](native-ffi.md#linux-x86-64)
-covers static and dynamic SysV leaf calls, including aggregates,
-variadics, optional libraries, and FFI views into managed or external
-storage. F2 diagnostics cover callback signatures and callback runtime
-operations. Threads and live code publication have their own slices.
+the shared transition-aware walker. [F1 and F2](native-ffi.md#linux-x86-64)
+cover static and dynamic SysV calls, including aggregates, variadics,
+optional libraries, FFI views, and scoped, registered and dynamic
+callbacks. Callback thunks preserve the transition pointer at frame
+offset +48 and use stack map sentinel 1 with the shared walker.
 
 Run the hosted smoke from the project root after `pnpm build`.
 
@@ -343,7 +343,7 @@ updates with their owning slices.
 | 13. Test262 and support gate                       | `tools/test262-native-run.ts` and runner adapters, target docs and immutable reports.                                                                                                                                                   | 450–900     | 8, 10–12     | Pinned equivalent AOT and live selections with complete terminal records, glibc floor and kernel tests, verified arm64 regressions and baseline x86 hardware validation before supported status.                           |
 | F1 part 1. SysV C leaf calls and layout (complete) | **FFI/convergence**. SysV classification and layouts, static leaf imports, raw aggregate stubs, leaf C memory operations and the C call-frame trampoline.                                                                               | —           | 2, 5, 6      | C oracle fixtures for scalars, variadics, mixed aggregates, sret, layout/padding and by-value copies. Verify static imports and the trusted trampoline under QEMU. Diagnose deferred FFI paths before emission.            |
 | F1 part 2. Managed FFI wrappers (complete)         | Record-by-value argument and result wrappers, public `foreignFunction`, runtime library loading, string conversion, and managed FFI views and storage.                                                                                  | —           | F1 part 1, 7 | Public static and dynamic bindings pass the C oracle.                                                                                                                                                                      |
-| F2. C callbacks and thunks                         | **FFI/convergence**. Same ownership plus x86 thunk rows, managed transitions and scanner integration.                                                                                                                                   | 900–1,800   | F1, 7, 10    | ABI preservation across may-callback, moving GC across foreign frames, failure/throw policy, nesting and stale-entry rejection.                                                                                            |
+| F2. C callbacks and thunks (complete)              | SysV scoped, registered and dynamic callbacks, x86 thunk unwind rows, managed transitions and scanner integration.                                                                                                                      | —           | F1, 7, 10    | ABI preservation across may-callback, moving GC across foreign frames, failure/throw policy, nesting and stale-entry rejection.                                                                                            |
 
 Slices 1–4 can start in parallel on distinct files, with catalog and
 bootstrap edits coordinated at merge. After slice 5, the far linker can

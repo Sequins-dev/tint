@@ -177,7 +177,6 @@ import {
   foreignDeclaration,
   foreignCall,
   foreignViewRegistry,
-  x64ForeignDiagnostic,
   selectX64ForeignRuntime,
   type ForeignLibrary,
   type NativeForeignBinding,
@@ -2601,13 +2600,6 @@ export function compileX64HostedProgram(
   request.onScalarIR?.("optimized", optimized);
   const sourceNames = program.sourceNames;
   if (sourceNames === undefined) throw "x64 foreign source names invariant";
-  const deferred = x64ForeignDiagnostic(
-    initial,
-    optimized,
-    sourceNames.names,
-    request.foreignLibraries ?? [],
-  );
-  if (deferred !== undefined) return stageFailure("foreign", deferred);
   const signposts: X64SignpostSite[] = [];
   if (request.debugSymbols === true || options.signposts !== undefined)
     for (const fn of optimized.functions) {

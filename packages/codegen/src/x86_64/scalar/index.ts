@@ -121,10 +121,22 @@ import {
   emitSysVMemory,
   sysVDynamicStackBytes,
   type CallSite,
+  type ForeignTransition,
   sysVOutgoingBytes,
   sysVStagingBytes,
 } from "./foreign.ts";
 import { branch, emitHostCall, exactInteger } from "./host.ts";
+import {
+  beginTransition,
+  endTransition,
+  callbackKeyLabel,
+  callbackThunksLabel,
+  callbackThunkKey,
+  emitCallbackThunk,
+  planTransition,
+  type CallbackThunk,
+  type TransitionPlan,
+} from "./callbacks.ts";
 import { createNumberEmission, floatBits } from "./numbers.ts";
 import { nativeSignatureTypeCode } from "../../scalar/signature.ts";
 import {
@@ -172,6 +184,7 @@ export interface X64Module extends ImageRelocations {
   readonly unwind: readonly UnwindRange[];
   readonly sourceRanges: readonly X64SourceRange[];
   readonly probes: readonly X64Probe[];
+  readonly callbackKeyOffset?: number;
   readonly stackMaps: readonly {
     readonly codeOffset: number;
     readonly codeLength: number;
@@ -402,6 +415,14 @@ export function emitModule(
   }
   const external = new Map<string, ImageAddressTarget>();
   const imports = new Set<string>();
+  const callbackThunks = new Map<string, CallbackThunk>();
+  let needsCallbackKey = false;
+  function thunkAddress(thunk: CallbackThunk): Memory<64> {
+    const name = callbackThunksLabel + ":" + callbackThunkKey(thunk);
+    callbackThunks.set(name, thunk);
+    needsCallbackKey = true;
+    return rip(name);
+  }
   const collectorWorker = "tint:collector-worker-entry";
   let needsCollectorWorker = false;
   function importSlot(symbol: string): Memory<64> {
@@ -476,6 +497,8 @@ export function emitModule(
       : (savedEnvironment ?? callResult));
     let outgoing = 0;
     let needsForeign = false;
+    let transitionCapacity = 0;
+    const transitions = new Map<Instruction, TransitionPlan>();
     const plans = new Map<Instruction, CCallLayout>();
     for (const type of fn.slots) {
       if (type === undefined) throw "slot layout invariant";
@@ -494,11 +517,11 @@ export function emitModule(
           homes.set(id, -depth);
         }
         if (op.kind === "c-call") {
-          if (op.call.mayCallback === true)
-            fail(
-              "UNSUPPORTED",
-              "C callbacks are not supported on linux-x86_64",
-            );
+          if (op.call.mayCallback === true) {
+            const transition = planTransition(op.call);
+            transitions.set(op, transition);
+            transitionCapacity = Math.max(transitionCapacity, transition.bytes);
+          }
           const layout = classifyCCall(op.call.signature, linuxX86_64CTarget);
           if (!layout.ok) fail("UNSUPPORTED", layout.error);
           plans.set(op, layout.value);
@@ -519,6 +542,8 @@ export function emitModule(
         }
       }
     }
+    if (transitionCapacity !== 0) depth = align16(depth) + transitionCapacity;
+    const transitionOffset = -depth;
     if (signpost !== undefined && signpost.metrics === true)
       depth += collectionMetricBytes;
     const metricOffset = -depth;
@@ -594,13 +619,28 @@ export function emitModule(
       }
     }
 
-    const callSites: { block: number; index: number; label: string }[] = [];
+    const callSites: {
+      block: number;
+      index: number;
+      label: string;
+      transitionRoots?: readonly number[];
+    }[] = [];
     const ownRootHead = host !== undefined && rootHeadBinding(fn);
-    function safepoint(block: Block, index: number): void {
+    function safepoint(
+      block: Block,
+      index: number,
+      at?: string,
+      transitionRoots?: readonly number[],
+    ): void {
       if (host === undefined) return;
-      const name = fnLabel + ":safepoint:" + String(callSites.length);
+      const name = at ?? fnLabel + ":safepoint:" + String(callSites.length);
       emit({ op: "label", name });
-      callSites.push({ block: block.id, index, label: name });
+      callSites.push({
+        block: block.id,
+        index,
+        label: name,
+        ...(transitionRoots === undefined ? {} : { transitionRoots }),
+      });
     }
 
     const r10 = gpr(10),
@@ -1503,19 +1543,34 @@ export function emitModule(
         case "c-memory": {
           const abi = host,
             access = op.access;
-          if (
-            access.operation === "callback-key" ||
-            access.operation === "callback-address"
-          )
-            return fail(
-              "UNSUPPORTED",
-              "C callbacks are not supported on linux-x86_64",
-            );
           if (abi === undefined)
             return fail(
               "UNSUPPORTED",
               "C memory requires the hosted x86-64 target",
             );
+          if (
+            access.operation === "callback-key" ||
+            access.operation === "callback-address"
+          ) {
+            const id = op.id;
+            if (id === undefined) throw "callback address result invariant";
+            let address = rip(callbackKeyLabel);
+            needsCallbackKey = true;
+            if (access.operation === "callback-address") {
+              if (access.slot === undefined || access.callback === undefined)
+                throw "registered callback invariant";
+              address = thunkAddress({
+                signature: access.callback,
+                ordinal: -1 - access.slot,
+                views: undefined,
+              });
+            }
+            emit({ op: "lea", dst: rax, src: address });
+            emit({ op: "cvtsi2sd", dst: x0, src: rax });
+            floatBits(emit, rax, x0);
+            define(id, "number");
+            return;
+          }
           const prefix = abi.symbolPrefix,
             args = op.arguments;
           const type = emitSysVMemory({
@@ -1540,21 +1595,60 @@ export function emitModule(
           if (abi === undefined || layout === undefined)
             return fail("UNSUPPORTED", "unsupported SysV C call");
           const args = op.arguments;
+          function argument(index: number): Memory<64> {
+            const arg = args[index];
+            if (arg === undefined) throw "SysV C argument invariant";
+            return frame(home(arg));
+          }
+          const name = fnLabel + ":c:" + String(machine.length);
+          const plan = transitions.get(op);
+          let transition: ForeignTransition | undefined;
+          if (plan !== undefined) {
+            const returnPC = name + ":return-pc";
+            const state = {
+              emit,
+              trap: trapLabel,
+              argument,
+              call: foreign,
+              context: frame(savedContext),
+              returnPC,
+              plan,
+              record: (offset: number): Memory<64> =>
+                frame(transitionOffset + offset),
+            };
+            const roots: number[] = [];
+            for (const root of plan.roots) {
+              if (root === undefined) throw "callback root invariant";
+              roots.push(transitionOffset + root.offset);
+            }
+            transition = {
+              begin(): void {
+                beginTransition(state);
+              },
+              end(): void {
+                safepoint(block, index, returnPC, roots);
+                endTransition(state);
+              },
+              thunk(parameter: number): Memory<64> {
+                for (const thunk of plan.thunks)
+                  if (thunk !== undefined && thunk.parameter === parameter)
+                    return thunkAddress(thunk);
+                throw "callback parameter invariant";
+              },
+            };
+          }
           const site: CallSite = {
             emit,
             abi,
             prototype: op.call,
-            argument: (index) => {
-              const arg = args[index];
-              if (arg === undefined) throw "SysV C argument invariant";
-              return frame(home(arg));
-            },
+            argument,
             call: foreign,
             staging: (offset) => frame(staging + offset),
             stack: frame(-frameBytes),
             constant,
-            site: fnLabel + ":c:" + String(machine.length),
+            site: name,
             trap: trapLabel,
+            ...(transition === undefined ? {} : { transition }),
           };
           if (op.call.dynamic === true) emitSysVDynamicCall(site);
           else emitSysVCall(site, layout);
@@ -3083,8 +3177,33 @@ export function emitModule(
         rows: cfi.rows,
       });
     }
+    if (callbackThunks.size !== 0) {
+      emit({ op: "label", name: callbackThunksLabel });
+      for (const [site, thunk] of callbackThunks) {
+        if (thunk === undefined) throw "callback thunk invariant";
+        unwind.push(
+          emitCallbackThunk({
+            emit,
+            site,
+            thunk,
+            call: foreign,
+            constant,
+            trap: trapLabel,
+          }),
+        );
+      }
+      emit({ op: "label", name: callbackThunksLabel + ":end" });
+    }
     emit({ op: "label", name: trapLabel });
     emit({ op: "ud2" });
+    const callbackKeyOffset = needsCallbackKey
+      ? constants.length * 8
+      : undefined;
+    if (callbackKeyOffset !== undefined)
+      external.set(callbackKeyLabel, {
+        kind: "data",
+        offset: callbackKeyOffset,
+      });
     const encoded = encodeLayout(
       machine,
       (name) =>
@@ -3219,14 +3338,26 @@ export function emitModule(
         )
           throw "x86-64 stack map word invariant";
       }
+      const thunkStart = encoded.labels.get(callbackThunksLabel);
       stackMaps.push({
         codeOffset: 0,
-        codeLength: encoded.bytes.length,
+        codeLength: thunkStart ?? encoded.bytes.length,
         tableOffset,
       });
+      if (thunkStart !== undefined) {
+        const end = encoded.labels.get(callbackThunksLabel + ":end");
+        if (end === undefined) throw "callback range invariant";
+        stackMaps.push({
+          codeOffset: thunkStart,
+          codeLength: end - thunkStart,
+          tableOffset: -1,
+        });
+      }
       code = moduleCode;
     }
-    const data = new Uint8Array(constants.length * 8);
+    const data = new Uint8Array(
+      constants.length * 8 + (needsCallbackKey ? 8 : 0),
+    );
     for (let i = 0; i < constants.length; i++) {
       const bits = constants[i];
       if (bits === undefined || !writeWord64(data, i * 8, bits, "little").ok)
@@ -3258,6 +3389,7 @@ export function emitModule(
         unwind: resolveUnwind(unwind, encoded.labels),
         sourceRanges,
         probes: probes.resolve(encoded.labels),
+        ...(callbackKeyOffset === undefined ? {} : { callbackKeyOffset }),
         stackMaps,
         addressFixups: relocations.addressFixups,
         patchAddress: relocations.patchAddress,
