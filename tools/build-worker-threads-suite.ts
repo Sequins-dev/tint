@@ -33,6 +33,6 @@ export function run():unknown { return suite("${moduleId}"); }
     },
   ],
   [],
-  [...workerFixtureRuntimes],
+  workerFixtureRuntimes,
   workerFixtureOptions([moduleId], nodeHosted),
 );

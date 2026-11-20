@@ -102,8 +102,9 @@ let nodeGeneralLowering: GeneralLowering | undefined;
 const eventLoopClockModule = "packages/native-runtime/src/intrinsics/clock.ts";
 /** General (JavaScript-semantics) lowering for application code the typed
  * pipeline rejects, with console output through the hosted fs binding.
- * TINT_GENERAL_FALLBACK=0 disables it. Read per build, not at import:
- * fixtures set the variable after their (hoisted) imports. */
+ * TINT_GENERAL_FALLBACK=0 disables retries while retaining the worker image
+ * composition used by the typed path. Read per build: fixtures can set the
+ * variable after importing this module. */
 export function workspaceGeneralLowering(
   functionFallback = false,
   nodeEventLoop = false,

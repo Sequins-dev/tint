@@ -954,6 +954,11 @@ function compileWithTypedWorkerEntry<T>(
   for (const source of program.modules)
     if (source !== undefined) modules.push(source);
   const runtimes = request.runtimes.slice();
+  if (
+    program.workerEvaluation !== undefined &&
+    !runtimes.some((runtime) => runtime?.namespace === "dynamic-object")
+  )
+    runtimes.push(dynamicObjectRuntimeSource());
   const recordBindings = (request.recordBindings ?? []).slice();
   for (const runtime of [...lowering.runtimes, ...(program.runtimes ?? [])])
     if (
@@ -1552,7 +1557,20 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
   modules.length = 0;
   if (!linked.ok) {
     const diagnostic = linked.error;
-    const fallback = diagnostic.fallback;
+    let fallback = diagnostic.fallback;
+    if (fallback === undefined) {
+      for (const id of request.generalLowering?.syntheticModules ?? []) {
+        if (id === undefined) throw "synthetic module invariant";
+        if (diagnostic.message === "unresolved module: " + id) {
+          fallback = {
+            capability: "module-evaluation",
+            owner: { start: diagnostic.start, end: diagnostic.end },
+            ownerKind: "module",
+          };
+          break;
+        }
+      }
+    }
     if (fallback === undefined)
       return stageFailure("link", diagnostic.message, diagnostic.module);
     return {
