@@ -380,6 +380,8 @@ export type GeneralProgram =
         readonly modules: readonly SourceModule[];
         /** The generated host module; it exports `start(): number`. */
         readonly entry: string;
+        /** A proved primitive entry uses the general value ABI without the program realm. */
+        readonly usesRealm?: boolean;
         readonly functions?: readonly GeneralFallbackFunction[];
         readonly classes?: readonly GeneralFallbackClass[];
         /** Record bindings of generated runtime modules (record view
@@ -1051,8 +1053,11 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       for (const module of generated)
         if (module !== undefined) modules.push(module);
     }
-    const programBindings = recordBindings.slice(),
-      programRuntimes = runtimes.slice();
+    const usesRealm = lowered.value.usesRealm !== false;
+    const programBindings = usesRealm
+        ? recordBindings.slice()
+        : (request.recordBindings ?? []).slice(),
+      programRuntimes = usesRealm ? runtimes.slice() : request.runtimes.slice();
     for (const binding of lowered.value.recordBindings ?? [])
       if (binding !== undefined) programBindings.push(binding);
     for (const runtime of lowered.value.runtimes ?? [])
@@ -1067,7 +1072,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
         entry: lowered.value.entry,
         exports: [start],
       },
-      realmTypeofModules,
+      usesRealm ? realmTypeofModules : undefined,
     );
     const generalIds: string[] = [];
     for (const module of partition.general)

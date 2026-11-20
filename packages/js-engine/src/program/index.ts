@@ -123,8 +123,28 @@ function lowerGeneralProgram(
           original,
           fresh("$typed:" + original.entry),
           hostId,
+          () => fresh("$general:" + original.entry),
         )
       : undefined;
+  const primitive = mixed?.primitive;
+  const selected = original.trigger?.owner;
+  if (primitive !== undefined && mixed !== undefined && selected !== undefined)
+    return {
+      ok: true,
+      value: {
+        modules: [mixed.typed, primitive.entry, primitive.host],
+        entry: primitive.host.id,
+        usesRealm: false,
+        functions: [
+          {
+            module: selected.module,
+            start: selected.start,
+            end: selected.end,
+            name: mixed.name,
+          },
+        ],
+      },
+    };
   const companions =
     mixed === undefined && options.functionFallback === true
       ? (planNestedCompanions(

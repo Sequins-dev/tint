@@ -157,6 +157,7 @@ test("numeric arguments cross in both call directions", () => {
 function read(value: number): number { return kernel(value, arguments.length) + 1; }
 export function run(): number { return read(4); }`);
   assert.equal(mixed.functions?.[0]?.name, "read");
+  assert.equal(mixed.usesRealm, false);
   assert.equal(mixed.runtimes, undefined);
   const host = mixed.modules.find(({ id }) => id === mixed.entry);
   const call = host?.module.statements.find(
@@ -175,4 +176,12 @@ export function run(): number { return read(4); }`);
   );
   const general = mixed.modules.find(({ id }) => id === "$general:main");
   assert.equal(general?.dependencies.get("$typed:main"), "$typed:main");
+  const leaf = general?.module.statements.find(
+    (statement) =>
+      statement.kind === "function" && statement.name === "$tintPrimitive",
+  );
+  assert.ok(leaf?.kind === "function");
+  assert.equal(leaf.parameters[0]?.type?.kind, "named");
+  if (leaf.parameters[0]?.type?.kind === "named")
+    assert.equal(leaf.parameters[0].type.name, "unknown");
 });

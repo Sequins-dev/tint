@@ -30,6 +30,11 @@ export interface FunctionFallbackPlan {
   readonly arity: number;
   readonly numericCalls: readonly NumericCallSite[];
   readonly numericImports: Module | undefined;
+  /** A closed primitive body needs the general value ABI but no realm. */
+  readonly primitive?: {
+    readonly entry: SourceModule;
+    readonly host: SourceModule;
+  };
   /** Exact source argument count for ordinary entries with parameter effects. */
   readonly ordinaryEntries?: readonly OrdinaryFunctionEntry[];
 }
@@ -143,6 +148,7 @@ export function planFunctionFallback(
   request: GeneralProgramRequest,
   typedId: string,
   hostId: string,
+  primitiveModule: () => string,
 ): FunctionFallbackPlan | undefined {
   const trigger = request.trigger,
     original = request.modules[0];
@@ -189,6 +195,8 @@ export function planFunctionFallback(
           selected,
           typedId,
           hostId,
+          entry.name,
+          primitiveModule,
         )
       : undefined) ??
     planOrdinaryFunctionFallback(
@@ -207,6 +215,8 @@ function planFixedArgumentsFallback(
   selected: FunctionDeclaration,
   typedId: string,
   hostId: string,
+  start: string,
+  primitiveModule: () => string,
 ): FunctionFallbackPlan | undefined {
   if (!ordinaryNumber(selected)) return undefined;
   const fixed = fixedNumericParameters(selected);
@@ -437,12 +447,25 @@ function planFixedArgumentsFallback(
           : mapped,
     },
   );
+  const primitive =
+    fixed === undefined || needsErrorViews
+      ? undefined
+      : primitiveEntry(
+          general,
+          fixed,
+          callees,
+          primitiveModule(),
+          typedId,
+          hostId,
+          start,
+        );
   return {
     name: selected.name,
     rest,
     arity,
     numericCalls: numericImports === undefined ? [] : numericCalls,
     numericImports,
+    ...(primitive === undefined ? {} : { primitive }),
     general: {
       ...original,
       dependencies:
@@ -479,6 +502,124 @@ function planFixedArgumentsFallback(
               kind: "function",
               parameters: callee.parameters.map(() => boundaryNumber),
             })),
+    },
+  };
+}
+
+/** Lower the proved primitive subset without creating a realm closure or
+ * allocating an argument carrier. The private general entry keeps boxed
+ * arguments and results. Its numeric imports use the typed calling ABI. */
+function primitiveEntry(
+  general: Module,
+  parameters: readonly string[],
+  callees: ReadonlyMap<string, { readonly target: string }>,
+  generalId: string,
+  typedId: string,
+  hostId: string,
+  start: string,
+): NonNullable<FunctionFallbackPlan["primitive"]> {
+  const args = parameters.map((_, index) => "$arg" + index);
+  const generalParameters = args.map((arg) => arg + ":unknown").join(",");
+  const typedParameters = args.map((arg) => arg + ":number").join(",");
+  const guards = args
+    .map(
+      (arg) =>
+        "if(typeof " +
+        arg +
+        '!== "number") throw new TypeError("Invalid primitive argument");',
+    )
+    .join("\n");
+  const projected = new Map(parameters.map((name, i) => [name, args[i]!]));
+  const selected = general.statements.find(
+    (statement) => statement.kind === "function",
+  );
+  if (selected?.kind !== "function" || selected.body.kind !== "block")
+    throw Error("primitive general body invariant");
+  const rewritten = rewriteModule(
+    { ...general, statements: [selected] },
+    {
+      expression: (mapped, original) => {
+        if (mapped.kind === "identifier") {
+          const name = projected.get(mapped.name);
+          if (name !== undefined) return { ...mapped, name };
+        }
+        if (
+          mapped.kind === "call" &&
+          original.kind === "call" &&
+          original.callee.kind === "identifier" &&
+          mapped.callee.kind === "identifier"
+        ) {
+          const target = callees.get(original.callee.name)?.target;
+          if (target !== undefined)
+            return { ...mapped, callee: { ...mapped.callee, name: target } };
+        }
+        return mapped;
+      },
+    },
+  ).statements[0];
+  if (rewritten?.kind !== "function" || rewritten.body.kind !== "block")
+    throw Error("primitive general rewrite invariant");
+  const body = rewritten.body.statements;
+  const imports =
+    callees.size === 0
+      ? ""
+      : "import {" +
+        [...callees]
+          .map(([name, callee]) => name + " as " + callee.target)
+          .join(",") +
+        "} from " +
+        JSON.stringify(typedId) +
+        ";";
+  const declaration = parseImport(
+    imports +
+      "\nexport function $tintPrimitive(" +
+      generalParameters +
+      "):unknown {\n" +
+      guards +
+      "\n}",
+  );
+  const entry = declaration.statements.map((statement) => {
+    if (statement.kind !== "function" || statement.body.kind !== "block")
+      return statement;
+    return {
+      ...statement,
+      body: {
+        ...statement.body,
+        statements: [...statement.body.statements, ...body],
+      },
+    };
+  });
+  const typedStart =
+    start === "$tintTypedStart" ? "$tintTypedStart$" : "$tintTypedStart";
+  const generalStart =
+    start === "$tintPrimitive" ? "$tintPrimitive$" : "$tintPrimitive";
+  return {
+    entry: {
+      id: generalId,
+      module: {
+        ...declaration,
+        end: Math.max(declaration.end, general.end),
+        statements: entry,
+      },
+      dependencies:
+        callees.size === 0 ? new Map() : new Map([[typedId, typedId]]),
+    },
+    host: {
+      id: hostId,
+      module: parseImport(`
+import {$tintPrimitive as ${generalStart}} from ${JSON.stringify(generalId)};
+import {${start} as ${typedStart}} from ${JSON.stringify(typedId)};
+export function $tintCallUnit(${typedParameters}):number {
+  const result = ${generalStart}(${args.join(",")});
+  if (typeof result !== "number") throw new TypeError("Invalid primitive result");
+  return result;
+}
+export function ${start}():number { return ${typedStart}(); }
+`),
+      dependencies: new Map([
+        [generalId, generalId],
+        [typedId, typedId],
+      ]),
     },
   };
 }
