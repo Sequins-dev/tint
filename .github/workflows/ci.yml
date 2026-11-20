@@ -70,9 +70,11 @@ jobs:
           TZ: UTC
           TINT_BUILD_ONLY: 1
         run: |
+          set -o pipefail
           uname -sm
+          lscpu
           pnpm build
-          node --test tools/native-gc-stack-maps.test.ts | tee "$RUNNER_TEMP/gc-stack-maps.log"
+          node --test --test-reporter=tap tools/native-gc-stack-maps.test.ts | tee "$RUNNER_TEMP/gc-stack-maps.log"
           image="$(sed -nE 's/^# (\/.*\/gc-stack-maps)$/\1/p' "$RUNNER_TEMP/gc-stack-maps.log")"
           test -x "$image"
           cat "$image.manifest.json"
@@ -83,7 +85,9 @@ jobs:
             -o 'script assert lldb.process.GetState() == lldb.eStateStopped; print("STOPPED_AT_ENTRY")' \
             -o continue \
             -o 'script assert lldb.process.GetState() == lldb.eStateExited; print("INFERIOR_EXIT", lldb.process.GetExitStatus()); assert lldb.process.GetExitStatus() == 42' \
-            "$image"
+            "$image" | tee "$RUNNER_TEMP/gc-stack-maps-lldb.log"
+          grep -Fx 'STOPPED_AT_ENTRY' "$RUNNER_TEMP/gc-stack-maps-lldb.log"
+          grep -Fx 'INFERIOR_EXIT 42' "$RUNNER_TEMP/gc-stack-maps-lldb.log"
 
       - name: Prepare macOS SDK and debugger
         if: matrix.gate == 'mac'
