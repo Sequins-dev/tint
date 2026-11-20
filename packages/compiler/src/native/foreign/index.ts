@@ -11,11 +11,15 @@ import {
   indirectCallClass,
   indirectCallTargets,
   type ModuleIR,
-  type Span,
 } from "@tint/ir/scalar";
 import type { ImportMapping } from "@tint/source/resolver";
 import { createSourceTextView } from "@tint/source/text";
-import type { SourceInput } from "@tint/typescript/modules";
+import {
+  requestModules,
+  type ModuleRequest,
+  type SourceInput,
+} from "@tint/typescript/modules";
+import type { SourceModule } from "@tint/typescript/modules/model";
 import type { CViewRegistry, CViewShape } from "@tint/typescript/checker";
 import { parseForeignDeclarations } from "./declarations.ts";
 import { expandForeignLibrary, type ForeignStub } from "./expansion.ts";
@@ -82,6 +86,8 @@ export const foreignRuntimeModules = {
   index: "packages/native-runtime/src/ffi/index.ts",
   /** `tint:ffi/unsafe`: views over memory C owns. */
   unsafe: "packages/native-runtime/src/ffi/unsafe.ts",
+  /** The public loader with the SysV leaf call-frame implementation. */
+  sysv: "packages/native-runtime/src/ffi/dynamic-sysv.ts",
   primitives: "packages/native-runtime/src/ffi/primitives.ts",
   weak: "packages/native-runtime/src/intrinsics/weak.ts",
   memory: "packages/native-runtime/src/intrinsics/memory.ts",
@@ -219,21 +225,48 @@ function located(
     message
   );
 }
+/** Link the ABI-specific leaf adapter through the ordinary unsafe FFI
+ * module. Its shared helpers still resolve to the default dynamic module. */
+export function selectX64ForeignRuntime(
+  request: ModuleRequest,
+): ModuleRequest | string {
+  const id = foreignRuntimeModules.unsafe;
+  const unsafe = requestModules(request, [id])[0];
+  if (unsafe === undefined) return request;
+  const sysv = foreignRuntimeModules.sysv;
+  const loader = request.moduleLoader;
+  let available = requestModules(request);
+  if (!available.some((source) => source?.id === sysv)) {
+    const load = loader?.loadWithRoot;
+    const expanded = load === undefined ? undefined : load(sysv);
+    if (expanded === undefined)
+      return "linux-x86_64: the SysV dynamic FFI runtime source is missing";
+    if (!expanded.ok) return expanded.error.message;
+    available = expanded.value;
+  }
+  const dependencies = new Map<string, string>();
+  for (const [specifier, dependency] of unsafe.dependencies)
+    dependencies.set(specifier, dependency);
+  dependencies.set("./dynamic.ts", sysv);
+  const modules: SourceModule[] = [];
+  for (const source of available) {
+    if (source === undefined) throw "FFI source invariant";
+    modules.push(source.id === id ? { ...source, dependencies } : source);
+  }
+  return { modules };
+}
+
 const x64Callbacks: string =
   "C callbacks are not supported on linux-x86_64 (needs F2)";
-const x64ManagedSuffix: string =
-  " is not yet supported on linux-x86_64 (needs managed emission from x64 slice 7a–7b)";
 const x64DynamicFFI: string = "packages/native-runtime/src/ffi/dynamic.ts:";
 
-/** Diagnose public wrappers by linked identity. Raw leaf stubs have their
- * own identities, so aggregate images and the C trampoline stay available
- * even when their managed wrappers are unavailable. */
+/** Reject C callback entry paths by linked identity before emission.
+ * A leaf program can still load the shared module that declares them. */
 export function x64ForeignDiagnostic(
   reachable: ModuleIR,
   optimized: ModuleIR,
   names: ReadonlyMap<string, string>,
   libraries: readonly ForeignLibrary[],
-  sourceModule: (span: Span) => string | undefined,
 ): string | undefined {
   const used = new Set<string>();
   const calls = indirectCallTargets(reachable, true, Infinity);
@@ -252,6 +285,7 @@ export function x64ForeignDiagnostic(
     // uses only one export. Report the boundary the caller actually uses.
     if (
       name.startsWith(x64DynamicFFI) ||
+      name.startsWith(foreignRuntimeModules.sysv + ":") ||
       name.startsWith(runtime) ||
       name.startsWith(unsafe)
     )
@@ -283,8 +317,6 @@ export function x64ForeignDiagnostic(
     used.has(runtime + "rethrowCallbackFailure")
   )
     return x64Callbacks;
-  if (used.has(x64DynamicFFI + "foreignFunction"))
-    return "foreignFunction" + x64ManagedSuffix;
 
   // A wrapper can also survive as a first-class value without a call site.
   const retained = new Set<string>();
@@ -294,63 +326,19 @@ export function x64ForeignDiagnostic(
     if (name !== undefined) retained.add(name);
   }
   let retainedWrapper: string | undefined;
-  const layouts = new Set<string>();
-  const optional = "Optional C library loading" + x64ManagedSuffix;
   for (const library of libraries) {
     if (library === undefined) throw "foreign library invariant";
     const prefix = library.id + ":";
-    if (library.declaration.layouts.length > 0) layouts.add(library.id);
     for (const fn of library.declaration.functions) {
       if (fn === undefined) throw "foreign declaration invariant";
       const name = prefix + fn.name;
       const called = used.has(name);
       if (!called && !retained.has(name)) continue;
-      let diagnostic: string | undefined;
-      if (fn.signature.callClass === "may-callback") diagnostic = x64Callbacks;
-      else if (library.image.optional) diagnostic = optional;
-      else if (fn.parameterForms.includes("record"))
-        diagnostic =
-          "C record-by-value arguments are not yet supported on linux-x86_64 (needs managed errors from x64 slice 7c)";
-      else if (fn.parameterForms.includes("string"))
-        diagnostic =
-          "CString conversion" + x64ManagedSuffix + "; use CStringBytes";
-      if (diagnostic === undefined) continue;
-      if (called) return diagnostic;
-      if (retainedWrapper === undefined) retainedWrapper = diagnostic;
+      if (fn.signature.callClass !== "may-callback") continue;
+      if (called) return x64Callbacks;
+      retainedWrapper = x64Callbacks;
     }
-    if (library.image.optional)
-      for (const query of library.declaration.availability) {
-        if (query === undefined) throw "foreign availability invariant";
-        const name = prefix + query.name;
-        if (used.has(name)) return optional;
-        if (retainedWrapper === undefined && retained.has(name))
-          retainedWrapper = optional;
-      }
   }
-
-  if (
-    used.has(x64DynamicFFI + "openLibrary") ||
-    used.has(x64DynamicFFI + "openProgram") ||
-    used.has(x64DynamicFFI + "findSymbol") ||
-    used.has(x64DynamicFFI + "closeLibrary") ||
-    used.has(x64DynamicFFI + "optionalSymbol")
-  )
-    return "Dynamic C library loading" + x64ManagedSuffix;
-  if (used.has(unsafe + "cStringAt"))
-    return "Foreign C string reading" + x64ManagedSuffix;
-  for (const name of used) {
-    if (name === undefined) throw "foreign source name invariant";
-    if (name.startsWith(x64DynamicFFI))
-      return "foreignFunction" + x64ManagedSuffix;
-    if (name.startsWith(unsafe))
-      return "Foreign memory view creation" + x64ManagedSuffix;
-    if (name.startsWith(runtime))
-      return "Managed FFI storage" + x64ManagedSuffix;
-  }
-  // The dynamic runtime retains its own C wrappers for the platform loader.
-  // A retained public factory is the boundary before those wrappers.
-  if (retained.has(x64DynamicFFI + "foreignFunction"))
-    return "foreignFunction" + x64ManagedSuffix;
   if (retainedWrapper !== undefined) return retainedWrapper;
 
   for (const fn of optimized.functions) {
@@ -367,11 +355,6 @@ export function x64ForeignDiagnostic(
             op.access.operation === "callback-address")
         )
           return x64Callbacks;
-        if (op.kind === "record-new" && layouts.size !== 0) {
-          const id = sourceModule(op);
-          if (id !== undefined && layouts.has(id))
-            return "C Layout view creation" + x64ManagedSuffix;
-        }
       }
     }
   }

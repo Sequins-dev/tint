@@ -257,6 +257,15 @@ function buildHostedFixture(
     );
   }
   const fixtureGenerated = [...generatedModules, ...foreignModules];
+  const sysvDynamic =
+    fixtureTarget.arch === "x86_64" &&
+    (dependencyIds.includes(foreignRuntimeModules.unsafe) ||
+      dependencies.some(
+        (dependency) =>
+          dependency[1] === foreignRuntimeModules.unsafe ||
+          dependency[1] === foreignRuntimeModules.index,
+      ));
+
   const capturedModules = [
     ...workspaceModules(
       [
@@ -266,6 +275,7 @@ function buildHostedFixture(
           .map((dependency) => dependency[1])
           .filter((id) => !fixtureGenerated.some((module) => module.id === id)),
         ...dependencyIds,
+        ...(sysvDynamic ? [foreignRuntimeModules.sysv] : []),
       ],
       foreign.snapshot,
     ),
@@ -335,10 +345,7 @@ function buildHostedFixture(
       ...recordBindings,
       ...(serviceImage?.recordBindings ?? []),
     ],
-    weakBindings: [
-      ...(options.weakBindings ?? []),
-      ...(fixtureTarget.arch === "x86_64" ? [] : ffi.weakBindings),
-    ],
+    weakBindings: [...(options.weakBindings ?? []), ...ffi.weakBindings],
     foreignMemoryBindings: [
       ...ffi.memoryBindings,
       ...(options.foreignMemoryBindings ?? []),

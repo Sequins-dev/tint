@@ -63,17 +63,11 @@ test(
 );
 
 test(
-  "SysV diagnoses public foreignFunction before emission",
-  {
-    skip: !x64,
-  },
+  "SysV public foreignFunction calls a glibc function",
+  { skip: !x64 },
   () => {
-    process.env.TINT_GENERAL_FALLBACK = "0";
-    assertForeignDiagnostic(
-      "foreignFunction is not yet supported on linux-x86_64 (needs managed emission from x64 slice 7a–7b)",
-      () =>
-        verifyHostedFixture(
-          `import { openProgram, findSymbol, foreignFunction, setNumber, invoke, resultNumber } from "tint:ffi/unsafe";
+    verifyHostedFixture(
+      `import { openProgram, findSymbol, foreignFunction, setNumber, invoke, resultNumber } from "tint:ffi/unsafe";
     export function run(): number {
       const handle = openProgram();
       const fn = foreignFunction(findSymbol(handle, "difftime"), {
@@ -83,9 +77,17 @@ test(
       setNumber(fn, 0, 84); setNumber(fn, 1, 42); invoke(fn);
       return resultNumber(fn);
     }`,
-          "sysv-dynamic",
-          [["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"]],
-        ),
+      "sysv-dynamic",
+      [["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"]],
+      [],
+      [],
+      [],
+      {
+        requireTyped: true,
+        managedBytes: 4194304,
+        allocationCapacity: 65536,
+        runtimeEntry: "initializeGenerationalRuntime",
+      },
     );
   },
 );
@@ -714,153 +716,293 @@ test(
   },
 );
 
+test(
+  "SysV static managed records use mixed registers and sret by value",
+  { skip: !x64 },
+  () => {
+    withOracle((library) =>
+      verifyHostedFixture(
+        `import { oracle_is, oracle_big, type IS, type Big } from "${oracleSpecifier}";
+      export function run(): number {
+        const mixed: IS = { a: 19, b: 21 };
+        const big: Big = { a: 19, b: 23, c: 14 };
+        const result = oracle_is(mixed);
+        const large = oracle_big(big, 2);
+        if (mixed.b !== 21 || big.a !== 19) return 1;
+        if (result.a !== 19 || result.b !== 23) return 2;
+        if (large.a !== 21 || large.b !== 23 || large.c !== 12) return 3;
+        return result.a + result.b;
+      }`,
+        "sysv-managed-records",
+        [[oracleSpecifier, oracleId]],
+        [],
+        [],
+        [],
+        fixtureOptions(library),
+      ),
+    );
+  },
+);
+
+test(
+  "SysV static C layout views and CString conversion",
+  { skip: !x64 },
+  () => {
+    verifyHostedFixture(
+      `import { Pair, strlen } from "tint:c/sysv";
+     export function run(): number {
+       const bytes = new Uint8Array(Pair.size);
+       const view = Pair.view(bytes);
+       view.a = 37;
+       view.b = strlen("aé😀");
+       if (Pair.size !== 8 || view.b !== 7) return 1;
+       return view.a + view.b - 2;
+     }`,
+      "sysv-layout-and-string",
+      [["tint:c/sysv", "sysv.d.ts"]],
+      [],
+      [],
+      [],
+      {
+        managedBytes: 4194304,
+        allocationCapacity: 65536,
+        requireTyped: true,
+        foreignDeclarations: [
+          {
+            id: "sysv.d.ts",
+            text: 'declare module "tint:c/sysv" { import type { i32, i64, CString, Layout } from "tint:ffi"; export interface Pair { a: i32; b: i32; } export const Pair: Layout<Pair>; export function strlen(text: CString): i64; }',
+            manifest: [
+              {
+                module: "tint:c/sysv",
+                linux: {
+                  name: "libc.so.6",
+                  optional: false,
+                  currentVersion: 0,
+                  compatibilityVersion: 0,
+                },
+              },
+            ],
+          },
+        ],
+      },
+    );
+  },
+);
+
+test(
+  "SysV public dynamic C oracle handles variadics, mixed records, sret and moved byte operands",
+  { skip: !x64 },
+  () => {
+    const mixed = pairImage("is");
+    const big = Buffer.alloc(24);
+    big.writeBigInt64LE(19n, 0);
+    big.writeBigInt64LE(23n, 8);
+    big.writeBigInt64LE(14n, 16);
+    const memory = "packages/native-runtime/src/intrinsics/memory.ts";
+    withOracle((library) =>
+      verifyHostedFixture(
+        `import {
+        openLibrary, closeLibrary, findSymbol, foreignFunction, setNumber,
+        setRecord, setBytes, invoke, resultNumber, resultRecord,
+        type ForeignSignature, type ForeignType, type ForeignFunction, type LibraryHandle
+      } from "tint:ffi/unsafe";
+      import { collectGarbage } from "memory";
+      const i64: ForeignType = { kind:"scalar", scalar:"i64" };
+      const i32: ForeignType = { kind:"scalar", scalar:"i32" };
+      const char: ForeignType = { kind:"scalar", scalar:"char" };
+      const f64: ForeignType = { kind:"scalar", scalar:"f64" };
+      const f32: ForeignType = { kind:"scalar", scalar:"f32" };
+      const pointer: ForeignType = { kind:"pointer", pointee:{ kind:"void" } };
+      const mixedType: ForeignType = { kind:"record", name:"IS", union:false, packed:false,
+        alignment:0, fields:[{name:"a", type:i64}, {name:"b", type:f64}] };
+      const bigType: ForeignType = { kind:"record", name:"Big", union:false, packed:false,
+        alignment:0, fields:[{name:"a", type:i64}, {name:"b", type:i64}, {name:"c", type:i64}] };
+      function bind(handle: LibraryHandle, name: string, parameters: ForeignType[],
+        result: ForeignType, fixedParameters: number): ForeignFunction {
+        const signature: ForeignSignature = { parameters, result, fixedParameters, callClass:"leaf", errno:"none" };
+        return foreignFunction(findSymbol(handle, name), signature);
+      }
+      export function run(): number {
+        const handle = openLibrary(${JSON.stringify(library)});
+        ${bytes("mixed", mixed)}
+        ${bytes("big", big)}
+        const pair = bind(handle, "oracle_is", [mixedType], mixedType, 1);
+        const large = bind(handle, "oracle_big", [bigType, i64], bigType, 2);
+        const pairResult = new Uint8Array(16);
+        const largeResult = new Uint8Array(24);
+        const checkPair = bind(handle, "oracle_check_is", [pointer], i32, 1);
+        const checkLarge = bind(handle, "oracle_check_big", [pointer], i32, 1);
+        setRecord(pair, 0, mixed);
+        setRecord(large, 0, big);
+        setNumber(large, 1, 2);
+        setBytes(checkPair, 0, pairResult);
+        setBytes(checkLarge, 0, largeResult);
+        const variadic = bind(handle, "oracle_variadic", [i32, char, f32, mixedType], f64, 1);
+        setNumber(variadic, 0, 4);
+        setNumber(variadic, 1, -7);
+        setNumber(variadic, 2, 5.5);
+        setRecord(variadic, 3, mixed);
+        const count = bind(handle, "oracle_al", [i32, f64, mixedType, f32], i32, 1);
+        setNumber(count, 0, 0);
+        setNumber(count, 1, 1);
+        setRecord(count, 2, mixed);
+        setNumber(count, 3, 2);
+        const buffer = new Uint8Array(4);
+        buffer[1] = 20;
+        const borrow = bind(handle, "oracle_borrow", [pointer, i64], i64, 2);
+        setBytes(borrow, 0, buffer.subarray(1, 2));
+        setNumber(borrow, 1, 11);
+        collectGarbage();
+        for (let call = 0; call < 2; call++) {
+          invoke(pair); resultRecord(pair, pairResult);
+          invoke(large); resultRecord(large, largeResult);
+          invoke(checkPair); invoke(checkLarge);
+          if (resultNumber(checkPair) !== 1 || resultNumber(checkLarge) !== 1) return 2;
+          invoke(variadic); if (resultNumber(variadic) !== 42.5) return 3;
+          invoke(count); if (resultNumber(count) !== 3) return 4;
+          invoke(borrow);
+          if (resultNumber(borrow) !== 31 + call * 11) return 5;
+          collectGarbage();
+        }
+        closeLibrary(handle);
+        return buffer[1] ?? 0;
+      }`,
+        "sysv-public-c-oracle",
+        [
+          ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
+          ["memory", memory],
+        ],
+        [],
+        [],
+        [],
+        {
+          requireTyped: true,
+          runtimeEntry: "initializeGenerationalRuntime",
+          managedBytes: 4194304,
+          allocationCapacity: 65536,
+        },
+      ),
+    );
+  },
+);
+
 function assertForeignDiagnostic(message: string, build: () => string): void {
   assert.throws(build, {
     message: JSON.stringify({ stage: "foreign", message }),
   });
 }
 
-for (const scenario of [
-  {
-    name: "record argument",
-    declaration:
-      "export interface Pair { a: i32; b: i32; } export function inspect(pair: Pair): i32;",
-    run: 'import { inspect } from "tint:c/sysv"; export function run(): number { return inspect({ a: 19, b: 23 }); }',
-    message:
-      "C record-by-value arguments are not yet supported on linux-x86_64 (needs managed errors from x64 slice 7c)",
-  },
-  {
-    name: "CString conversion",
-    declaration: "export function strlen(value: CString): i64;",
-    run: 'import { strlen } from "tint:c/sysv"; export function run(): number { return strlen("abc"); }',
-    message:
-      "CString conversion is not yet supported on linux-x86_64 (needs managed emission from x64 slice 7a–7b); use CStringBytes",
-  },
-  {
-    name: "C layout view",
-    declaration:
-      "export interface Pair { a: i32; b: i32; } export const Pair: Layout<Pair>;",
-    run: 'import { Pair } from "tint:c/sysv"; export function run(): number { return Pair.view(new Uint8Array(8)).a; }',
-    message:
-      "C Layout view creation is not yet supported on linux-x86_64 (needs managed emission from x64 slice 7a–7b)",
-  },
-  {
-    name: "optional C library",
-    declaration: "export function getpid(): i32;",
-    run: 'import { getpid } from "tint:c/sysv"; export function run(): number { return getpid(); }',
-    optional: true,
-    message:
-      "Optional C library loading is not yet supported on linux-x86_64 (needs managed emission from x64 slice 7a–7b)",
-  },
-  {
-    name: "optional C symbol availability",
-    declaration:
-      'export function getpid(): i32; export function hasGetpid(): Available<"getpid">;',
-    run: 'import { hasGetpid as available } from "tint:c/sysv"; export function run(): boolean { return available(); }',
-    optional: true,
-    message:
-      "Optional C library loading is not yet supported on linux-x86_64 (needs managed emission from x64 slice 7a–7b)",
-  },
-]) {
-  test(
-    "SysV diagnoses " + scenario.name + " before emission",
-    { skip: !x64 },
-    () => {
-      assertForeignDiagnostic(scenario.message, () =>
-        verifyHostedFixture(
-          scenario.run,
-          "sysv-diagnostic",
-          [["tint:c/sysv", "sysv.d.ts"]],
-          [],
-          [],
-          [],
+test(
+  "SysV loads optional C functions lazily and reports absent symbols",
+  { skip: !x64 },
+  () => {
+    verifyHostedFixture(
+      `import { getpid, hasGetpid, hasMissing } from "tint:c/optional";
+    import { hasAbsent } from "tint:c/absent";
+    export function run(): number {
+      return hasGetpid() && getpid() > 0 && !hasMissing() && !hasAbsent() ? 42 : 1;
+    }`,
+      "sysv-optional",
+      [
+        ["tint:c/optional", "optional-sysv.d.ts"],
+        ["tint:c/absent", "absent-sysv.d.ts"],
+      ],
+      [],
+      [],
+      [],
+      {
+        requireTyped: true,
+        runtimeEntry: "initializeGenerationalRuntime",
+        managedBytes: 4194304,
+        allocationCapacity: 65536,
+        foreignDeclarations: [
           {
-            managedBytes: 4194304,
-            allocationCapacity: 65536,
-            requireTyped: true,
-            foreignDeclarations: [
+            id: "optional-sysv.d.ts",
+            text: 'declare module "tint:c/optional" { import type { i32, Available } from "tint:ffi"; export function getpid(): i32; export function hasGetpid(): Available<"getpid">; export function tint_sysv_missing_symbol(): i32; export function hasMissing(): Available<"tint_sysv_missing_symbol">; }',
+            manifest: [
               {
-                id: "sysv.d.ts",
-                text:
-                  'declare module "tint:c/sysv" { import type { i32, i64, CString, Layout, Available } from "tint:ffi"; ' +
-                  scenario.declaration +
-                  " }",
-                manifest: [
-                  {
-                    module: "tint:c/sysv",
-                    linux: {
-                      name: "libc.so.6",
-                      optional: scenario.optional ?? false,
-                      currentVersion: 0,
-                      compatibilityVersion: 0,
-                    },
-                  },
-                ],
+                module: "tint:c/optional",
+                linux: {
+                  name: "libc.so.6",
+                  optional: true,
+                  currentVersion: 0,
+                  compatibilityVersion: 0,
+                },
               },
             ],
           },
-        ),
-      );
-    },
-  );
-}
-
-for (const [name, expression, specifier, file, diagnostic] of [
-  [
-    "foreignFunction",
-    "foreignFunction === undefined ? 1 : 42",
-    "tint:ffi/unsafe",
-    "unsafe",
-    "foreignFunction",
-  ],
-  [
-    "openProgram",
-    "openProgram().low",
-    "tint:ffi/unsafe",
-    "unsafe",
-    "Dynamic C library loading",
-  ],
-  [
-    "bytesAt",
-    "bytesAt(4096, 1).length",
-    "tint:ffi/unsafe",
-    "unsafe",
-    "Foreign memory view creation",
-  ],
-  [
-    "cStringAt",
-    "cStringAt(4096).length",
-    "tint:ffi/unsafe",
-    "unsafe",
-    "Foreign C string reading",
-  ],
-  [
-    "allocate",
-    "allocate(8).length",
-    "tint:ffi",
-    "index",
-    "Managed FFI storage",
-  ],
-  [
-    "callbackState",
-    "callbackState().length",
-    "tint:ffi",
-    "index",
-    "C callbacks",
-  ],
-] as const) {
-  test("SysV diagnoses " + name + " before emission", { skip: !x64 }, () => {
-    const message =
-      diagnostic === "C callbacks"
-        ? "C callbacks are not supported on linux-x86_64 (needs F2)"
-        : diagnostic +
-          " is not yet supported on linux-x86_64 (needs managed emission from x64 slice 7a–7b)";
-    assertForeignDiagnostic(message, () =>
-      verifyHostedFixture(
-        `import { ${name} } from "${specifier}"; export function run(): number { return ${expression}; }`,
-        "sysv-runtime-diagnostic",
-        [[specifier, "packages/native-runtime/src/ffi/" + file + ".ts"]],
-      ),
+          {
+            id: "absent-sysv.d.ts",
+            text: 'declare module "tint:c/absent" { import type { i32, Available } from "tint:ffi"; export function absent(): i32; export function hasAbsent(): Available<"absent">; }',
+            manifest: [
+              {
+                module: "tint:c/absent",
+                linux: {
+                  name: "libtint-sysv-absent-fixture.so",
+                  optional: true,
+                  currentVersion: 0,
+                  compatibilityVersion: 0,
+                },
+              },
+            ],
+          },
+        ],
+      },
     );
-  });
-}
+  },
+);
+
+test(
+  "SysV managed FFI storage preserves borrowed data across moving collection",
+  { skip: !x64 },
+  () => {
+    verifyHostedFixture(
+      `import { allocate, address, release, stableBytes } from "tint:ffi";
+     import { bytesAt, cStringAt } from "tint:ffi/unsafe";
+     import { collectGarbage } from "memory";
+     export function run(): number {
+       const storage = allocate(16);
+       storage[0] = 65;
+       storage[1] = 195;
+       storage[2] = 169;
+       const addressBefore = address(storage);
+       const borrowed = bytesAt(addressBefore + 1, 2);
+       collectGarbage();
+       if (!stableBytes(storage) || !stableBytes(borrowed) || addressBefore !== address(storage) ||
+           borrowed[0] !== 195 || borrowed[1] !== 169 || cStringAt(addressBefore) !== "Aé") return 1;
+       release(storage);
+       try { address(storage); } catch (caught) {
+         if (caught instanceof TypeError) return 42;
+       }
+       return 2;
+     }`,
+      "sysv-managed-storage",
+      [
+        ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
+        ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
+        ["memory", "packages/native-runtime/src/intrinsics/memory.ts"],
+      ],
+      [],
+      [],
+      [],
+      {
+        requireTyped: true,
+        runtimeEntry: "initializeGenerationalRuntime",
+        managedBytes: 4194304,
+        allocationCapacity: 65536,
+      },
+    );
+  },
+);
+
+test("SysV diagnoses F2 callback state before emission", { skip: !x64 }, () => {
+  assertForeignDiagnostic(
+    "C callbacks are not supported on linux-x86_64 (needs F2)",
+    () =>
+      verifyHostedFixture(
+        'import { callbackState } from "tint:ffi"; export function run(): number { return callbackState().length; }',
+        "sysv-callback-diagnostic",
+        [["tint:ffi", "packages/native-runtime/src/ffi/index.ts"]],
+      ),
+  );
+});

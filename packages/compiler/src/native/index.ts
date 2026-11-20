@@ -177,6 +177,7 @@ import {
   foreignCall,
   foreignViewRegistry,
   x64ForeignDiagnostic,
+  selectX64ForeignRuntime,
   type ForeignLibrary,
   type NativeForeignBinding,
   type NativeForeignMemoryBinding,
@@ -2506,8 +2507,16 @@ export function compileX64HostedProgram(
       readonly returnType:
         "number" | "boolean" | "void" | "reference" | "general";
     } {
+  const selected =
+    options.runtime === true ? request : selectX64ForeignRuntime(request);
+  if (typeof selected === "string") return stageFailure("foreign", selected);
   const lowered = lowerTypedProgram(
-    withForeignRuntimes({ ...request, symbols: true }),
+    withForeignRuntimes({
+      ...request,
+      moduleLoader: selected.moduleLoader,
+      modules: selected.modules,
+      symbols: true,
+    }),
     undefined,
     options.runtime !== true,
   );
@@ -2581,7 +2590,6 @@ export function compileX64HostedProgram(
     optimized,
     sourceNames.names,
     request.foreignLibraries ?? [],
-    (span) => locateSourceRange(program.ranges, span)?.module,
   );
   if (deferred !== undefined) return stageFailure("foreign", deferred);
   const emitted = emitX64(

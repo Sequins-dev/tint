@@ -310,25 +310,21 @@ A memory result is written into aligned caller storage passed as the first
 integer argument, and C returns that address in RAX. Variadic calls use C
 default promotions and pass the occupied vector register count in AL.
 
-F1 part 1 supports static imports from required libraries for C scalar and
-pointer arguments and results, including `CStringBytes` arguments. The
-leaf adapter also supports the raw `$c` stubs with caller-provided
-`Uint8Array` record images, leaf C memory operations, and the
-compiler-authorized C call-frame trampoline. The C oracle in
-`tools/native-x64-ffi.test.ts` exercises generated static stubs and
-`dlsym` plus the trampoline under QEMU with the pinned x86 sysroot.
+F1 supports static leaf imports and the public dynamic `foreignFunction`
+API. Static bindings support scalar and pointer arguments, CString
+conversion, record arguments and results, and Layout views. Optional
+libraries and symbols resolve lazily. The dynamic API classifies the
+signature with the SysV classifier and reuses the existing leaf
+trampoline. Borrowed byte operands are resolved in the trampoline, so a
+collection before the call can move the views and their owners. C views
+and stable external storage use the shared managed representation.
 
-The build diagnoses FFI paths that need later slices before machine
-emission:
-
-- F1 part 2 needs x64 slice 7a-3 for TypeScript record-by-value arguments
-  and results, including wrappers such as `ldiv`.
-- F1 part 2 needs managed emission from x64 slices 7a–7b for the public
-  `foreignFunction` API, run-time library and symbol loading (including
-  optional libraries), `CString` string conversion, `cStringAt` string
-  reads, and managed FFI creation of layout views, foreign memory views
-  and storage.
-- C callback signatures and callback runtime operations need F2.
+The C oracle in `tools/native-x64-ffi.test.ts` checks generated static
+bindings and the public dynamic API under QEMU with the pinned x86
+sysroot. Its fixtures cover scalar and variadic calls, mixed aggregates,
+register exhaustion, stack arguments, aligned memory results, layout
+and padding, and borrowed buffers moved between calls. C callback
+signatures and callback runtime operations report the F2 diagnostic.
 
 ## The `c-call` instruction
 

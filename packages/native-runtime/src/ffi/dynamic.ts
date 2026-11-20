@@ -775,3 +775,24 @@ function openOptional(image: string): LibraryHandle | undefined {
     return undefined;
   }
 }
+
+// Shared with the SysV leaf adapter. The public unsafe module exports only
+// the supported call API.
+export {
+  argumentLocation,
+  byteOperands,
+  clearWord,
+  exactAddress,
+  frameFloats,
+  frameScratch,
+  frameStack,
+  noBytes,
+  parameter,
+  patchCapacity,
+  resultByte,
+  resultBytes,
+  scratchCapacity,
+  settle,
+  stackCapacity,
+  wordOffset,
+};

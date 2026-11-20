@@ -2683,6 +2683,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/ffi/dynamic-sysv.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/ffi/dynamic.ts",
       packageId: "native-runtime",
     },
