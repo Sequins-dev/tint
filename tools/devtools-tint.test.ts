@@ -3,7 +3,7 @@
 // by file and line, inlined frames as separate call frames, scopes with
 // locals, stepping and pausing the running program.
 import assert from "node:assert/strict";
-import test from "node:test";
+import { testNativeLaunch } from "./gate/native-launch-test.ts";
 import { findLldbDap } from "./devtools/backend.ts";
 import {
   fixtureLines,
@@ -15,11 +15,15 @@ import {
 
 const available = findLldbDap() !== undefined;
 
-test(
+testNativeLaunch(
   "DevTools bridge debugs a Tint debug build (core only)",
   { skip: !available && "needs lldb-dap", timeout: 300000 },
-  async () => {
-    const { client, url, close } = await tintSession("devtools-core", []);
+  async (onAdmitted) => {
+    const { client, url, close } = await tintSession(
+      "devtools-core",
+      [],
+      onAdmitted,
+    );
     try {
       const parsed = await client.next(
         "Debugger.scriptParsed",

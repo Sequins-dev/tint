@@ -4,6 +4,7 @@
 // the allocation hook, and forced major collections at a safepoint.
 import assert from "node:assert/strict";
 import test from "node:test";
+import { testNativeLaunch } from "./gate/native-launch-test.ts";
 import { findLldbDap } from "./devtools/backend.ts";
 import { TintPlugin, tintFrameName } from "./devtools/tint-plugin.ts";
 import {
@@ -35,13 +36,15 @@ test("Tint frame names drop module prefixes and suffixes", () => {
   assert.equal(tintFrameName("start"), "start");
 });
 
-test(
+testNativeLaunch(
   "Tint plugin formats strings, lists, records, Map, Set and generals",
   { skip: !available && "needs lldb-dap", timeout: 300000 },
-  async () => {
-    const { client, url, close } = await tintSession("devtools-values", [
-      new TintPlugin(),
-    ]);
+  async (onAdmitted) => {
+    const { client, url, close } = await tintSession(
+      "devtools-values",
+      [new TintPlugin()],
+      onAdmitted,
+    );
     try {
       await client.send("Debugger.setBreakpointByUrl", {
         url,
@@ -170,13 +173,15 @@ interface HeapNode {
   children: HeapNode[];
 }
 
-test(
+testNativeLaunch(
   "Tint plugin: heap snapshots, sampling heap profiles and collectGarbage",
   { skip: !available && "needs lldb-dap", timeout: 300000 },
-  async () => {
-    const { client, url, session, close } = await tintSession("devtools-heap", [
-      new TintPlugin(),
-    ]);
+  async (onAdmitted) => {
+    const { client, url, session, close } = await tintSession(
+      "devtools-heap",
+      [new TintPlugin()],
+      onAdmitted,
+    );
     try {
       await client.send("HeapProfiler.enable");
       const inspect = await client.send<{ breakpointId: string }>(

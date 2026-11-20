@@ -57,7 +57,9 @@ export function runDarwinFixture<T>(image: string, execute: () => T): T {
     : execute();
 }
 
-export function beginDarwinFixtureExecution(image: string): () => void {
+export function beginDarwinFixtureExecution(
+  image: string,
+): Promise<() => void> {
   return beginNativeFixtureExecution(
     image,
     process.env.TINT_GATE_NATIVE_IMAGES
@@ -67,8 +69,9 @@ export function beginDarwinFixtureExecution(image: string): () => void {
 }
 
 export function admitDarwinFixture(image: string): void {
-  beginNativeFixtureExecution(
+  runNativeFixture(
     image,
+    () => {},
     () => admitUnderLldb(image),
     process.env,
     true,

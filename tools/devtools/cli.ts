@@ -56,12 +56,14 @@ export interface DevToolsSession {
 /** Starts the adapter, the bridge and the CDP server. */
 export async function startDevTools(
   options: DevToolsOptions,
+  onAdmitted?: () => void,
 ): Promise<DevToolsSession> {
   const release =
     options.program === undefined
       ? () => {}
-      : beginDarwinFixtureExecution(options.program);
+      : await beginDarwinFixtureExecution(options.program);
   try {
+    onAdmitted?.();
     const session = await openDevTools(options);
     return {
       ...session,
