@@ -625,6 +625,53 @@ export function emitSysVDynamicCall(request: CallSite): void {
   emit({ op: "movsd", dst: mem(11, layout.floats + 8), src: x1 });
 }
 
+/** Only the classified GP/SSE and stack locations appear in this stub. */
+export function emitSysVFixedScalarCall(
+  request: CallSite,
+  layout: SysVCallLayout,
+): void {
+  const emit = request.emit;
+  const shape = dynamicScalarFrame;
+  byteData(
+    emit,
+    request.argument(0),
+    shape.size + layout.stackBytes,
+    request.trap,
+  );
+  emit({ op: "mov", dst: request.staging(8), src: r11 });
+  for (let offset = 0; offset < layout.stackBytes; offset += 8) {
+    emit({ op: "mov", dst: rax, src: mem(11, shape.size + offset) });
+    emit({ op: "mov", dst: mem(4, offset), src: rax });
+  }
+  for (const location of layout.arguments) {
+    if (location === undefined) throw "fixed SysV argument invariant";
+    if (location.gp >= 0) {
+      const register = argumentRegisters[location.gp];
+      if (register === undefined) throw "fixed SysV register invariant";
+      emit({
+        op: "mov",
+        dst: gpr(register),
+        src: mem(11, shape.registers + location.gp * 8),
+      });
+    } else if (location.fp >= 0)
+      emit({
+        op: "movsd",
+        dst: xmm(location.fp),
+        src: mem(11, shape.floats + location.fp * 8),
+      });
+  }
+  emit({ op: "cmp", dst: mem(11, shape.target), src: imm(0) });
+  branch(emit, "e", request.trap);
+  emit({ op: "call", target: mem(11, shape.target) });
+  if (layout.result.class !== "void") {
+    emit({ op: "mov", dst: r11, src: request.staging(8) });
+    if (layout.result.class === "float")
+      emit({ op: "movsd", dst: mem(11, shape.floats), src: x0 });
+    else emit({ op: "mov", dst: mem(11, shape.registers), src: rax });
+  }
+  emit({ op: "mov", dst: eax, src: imm(1) });
+}
+
 /** The scalar ABI frame has a variable stack image and an exact target. */
 export function emitSysVScalarDynamicCall(
   request: CallSite,

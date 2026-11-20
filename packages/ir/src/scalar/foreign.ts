@@ -39,6 +39,9 @@ export interface ForeignCall {
   /** The growable scalar frame has an exact target and no borrowed operands.
    * Its boolean result reports whether the outgoing stack window fit. */
   readonly dynamicScalar?: true | undefined;
+  /** A runtime-selected, compile-time classified scalar trampoline. The
+   * same validated exact-word frame reaches it, without frame dispatch. */
+  readonly staticScalar?: CSignature | undefined;
   /** The callee is an address, not an import: the first operand is that
    * address (a nonzero number, else trap) and the remaining operands are
    * the prototype's (docs/native-ffi.md, "Optional libraries"). `symbol`
@@ -159,7 +162,10 @@ export const dynamicScalarFrame = {
 };
 
 /** Use the shared callback transition without scoped callback operands. */
-export function dynamicScalarCall(callbacks: boolean): ForeignCall {
+export function dynamicScalarCall(
+  callbacks: boolean,
+  staticScalar?: CSignature,
+): ForeignCall {
   const pointer: CType = { kind: "pointer", pointee: { kind: "void" } };
   const parameters: CType[] = callbacks
     ? [pointer, pointer, pointer]
@@ -180,6 +186,7 @@ export function dynamicScalarCall(callbacks: boolean): ForeignCall {
     result: "boolean",
     dynamic: true,
     dynamicScalar: true,
+    ...(staticScalar === undefined ? {} : { staticScalar }),
   };
   return callbacks ? { ...call, mayCallback: true } : call;
 }
@@ -226,6 +233,22 @@ export function dynamicForeignCall(callbacks: boolean = false): ForeignCall {
 }
 /** Whether `call` is exactly the universal trampoline's shape. */
 function dynamicShape(call: ForeignCall): boolean {
+  const specialized = call.staticScalar;
+  if (
+    specialized !== undefined &&
+    (call.dynamicScalar !== true ||
+      call.mayCallback === true ||
+      specialized.callClass !== "leaf" ||
+      specialized.errno !== "none" ||
+      specialized.fixedParameters !== specialized.parameters.length ||
+      specialized.parameters.some(
+        (type) => type?.kind !== "scalar" && type?.kind !== "pointer",
+      ) ||
+      (specialized.result.kind !== "scalar" &&
+        specialized.result.kind !== "pointer" &&
+        specialized.result.kind !== "void"))
+  )
+    return false;
   const expected =
     call.dynamicScalar === true
       ? dynamicScalarCall(call.mayCallback === true)
@@ -299,8 +322,8 @@ export function foreignCallTypes(call: ForeignCall): ForeignCallTypesResult {
       },
     };
   }
-  if (call.dynamicScalar === true)
-    return { ok: false, error: "dynamic scalar call requires a trampoline" };
+  if (call.dynamicScalar === true || call.staticScalar !== undefined)
+    return { ok: false, error: "scalar call requires a trampoline" };
   if (!validSymbol(call.symbol))
     return { ok: false, error: "invalid foreign symbol" };
   if (call.mayCallback === true) {

@@ -37,14 +37,18 @@ export function planForeignCall(
   call: ForeignCall,
   target: CTarget,
 ): ForeignCallPlanResult {
-  const classified = classifyCCall(call.signature, target);
+  const classified = classifyCCall(call.staticScalar ?? call.signature, target);
   if (!classified.ok) return classified;
   const layout = classified.value;
   // The universal trampoline copies up to its frame's stack capacity into
   // the outgoing argument area; its own operands are never copied.
   if (call.dynamic === true) {
     const transition =
-      call.dynamicScalar === true ? 0 : dynamicCallFrame.stackCapacity;
+      call.staticScalar !== undefined
+        ? layout.stackBytes
+        : call.dynamicScalar === true
+          ? 0
+          : dynamicCallFrame.stackCapacity;
     const scoped =
       call.dynamicScalar === true ? 0 : dynamicCallFrame.callbackOperands;
     return {

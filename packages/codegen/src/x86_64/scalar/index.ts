@@ -119,6 +119,7 @@ import {
 import {
   emitSysVCall,
   emitSysVDynamicCall,
+  emitSysVFixedScalarCall,
   emitSysVScalarDynamicCall,
   emitSysVMemory,
   sysVDynamicStackBytes,
@@ -678,16 +679,21 @@ export function emitModule(
             transitions.set(op, transition);
             transitionCapacity = Math.max(transitionCapacity, transition.bytes);
           }
-          const layout = classifyCCall(op.call.signature, linuxX86_64CTarget);
+          const layout = classifyCCall(
+            op.call.staticScalar ?? op.call.signature,
+            linuxX86_64CTarget,
+          );
           if (!layout.ok) fail("UNSUPPORTED", layout.error);
           plans.set(op, layout.value);
           outgoing = Math.max(
             outgoing,
-            op.call.dynamic === true
-              ? op.call.dynamicScalar === true
-                ? 0
-                : sysVDynamicStackBytes
-              : sysVOutgoingBytes(layout.value),
+            op.call.staticScalar !== undefined
+              ? layout.value.stackBytes
+              : op.call.dynamic === true
+                ? op.call.dynamicScalar === true
+                  ? 0
+                  : sysVDynamicStackBytes
+                : sysVOutgoingBytes(layout.value),
           );
           needsForeign = true;
         }
@@ -1875,7 +1881,9 @@ export function emitModule(
             trap: trapLabel,
             ...(transition === undefined ? {} : { transition }),
           };
-          if (op.call.dynamicScalar === true)
+          if (op.call.staticScalar !== undefined)
+            emitSysVFixedScalarCall(site, layout);
+          else if (op.call.dynamicScalar === true)
             emitSysVScalarDynamicCall(site, frame(savedContext));
           else if (op.call.dynamic === true) emitSysVDynamicCall(site);
           else emitSysVCall(site, layout);

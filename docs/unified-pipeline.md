@@ -488,6 +488,23 @@ typed-array ABI crossings. A raw array header would retain stale storage
 after a realm resize or detach. The byte-range interface supplies the
 projection needed by a scoped lending consumer.
 
+### Node FFI call plans (slice 4a)
+
+The trusted `node:ffi` module uses the program realm for function identity,
+errors, callbacks and Buffer views. A binding owns the resolved symbol and
+validated signature. A call frame carries exact pointer and integer words, and
+borrowed byte ranges keep their storage owners live until the native call
+returns. Materializing an escaping address promotes the shared storage owner
+to address-stable backing so aliases continue to see the same bytes.
+
+The compiler records canonical scalar signatures from literal definitions on
+resolved `node:ffi` imports. The binding selects a matching native call stub
+after ordinary definition validation and symbol lookup. Its fixed ABI layout
+determines register moves and outgoing stack space. Runtime definitions use a
+runtime-classified call plan. Libraries with registered callbacks enter through
+the rooted native transition. Callback registration classifies the declared
+signature and allocates an executable entry with the same library lifetime.
+
 ### Captured bindings across function fallback (slice 3)
 
 When a nested function needs the realm, an eligible arithmetic sibling can
@@ -752,7 +769,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | `toLowerCase` and other unlisted String methods; `Math.pow`/`log2`/`fround`; `JSON`                                                                                                                                                                                                                                                                    | `string-methods`, `math`, `json`                                                                        | 4                                        |
 | (Removed by 2b: checked downcasts) `x as Uint8Array` from a general value                                                                                                                                                                                                                                                                              | `general-value-casts`                                                                                   | 2 (projection), 4                        |
 | Typed-array views over another buffer                                                                                                                                                                                                                                                                                                                  | `typed-array-buffer-views`                                                                              | 4                                        |
-| Forward references to unannotated module constants can use hosted fallback with the original diagnostic location. Native specialization requires module binding inference. | `forward-inferred-const` | Open module binding inference |
+| Forward references to unannotated module constants can use hosted fallback with the original diagnostic location. Native specialization requires module binding inference.                                                                                                                                                                             | `forward-inferred-const`                                                                                | Open module binding inference            |
 | (Removed by 4a) Typed rest parameters and spreads in the rest position                                                                                                                                                                                                                                                                                 | `rest-default-parameters`, `rest-spread`                                                                | 4a                                       |
 | (Removed by 4a) Value-returning functions rejected in void callback slots                                                                                                                                                                                                                                                                              | `void-callbacks`                                                                                        | 4a                                       |
 | (Removed by 4a C3) Consuming the value returned through a void-typed callback                                                                                                                                                                                                                                                                          | `void-callback-result`                                                                                  | 4a C3                                    |

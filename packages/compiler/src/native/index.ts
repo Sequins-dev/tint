@@ -117,6 +117,12 @@ import {
   type BuildStorage,
 } from "../spill-files.ts";
 import type { FunctionStore } from "@tint/ir/storage";
+import {
+  recognizeStaticFfi,
+  makeStaticFfiModule,
+  staticFfiEntry,
+  staticFfiModule,
+} from "./foreign/static-ffi.ts";
 import { bindModule } from "@tint/typescript/binding";
 import {
   checkClosureModule,
@@ -150,6 +156,8 @@ import {
   requestModules,
   type ModuleRequest,
   type SourcePosition,
+  type SourceModuleLoader,
+  type LoadResult,
 } from "@tint/typescript/modules";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import {
@@ -603,7 +611,10 @@ type TypedLowering =
  * lowering; the fallback is reported in `general`. */
 /** Loaded C binding modules are trusted runtimes (their stubs are bound
  * below); unloaded ones add nothing to the program. */
-function withForeignRuntimes(request: CompileRequest): CompileRequest {
+function withForeignRuntimes(
+  request: CompileRequest,
+  signedChar: boolean = request.hostABI?.os !== "linux",
+): CompileRequest {
   const libraries = request.foreignLibraries ?? [];
   const loader = request.moduleLoader;
   const ids = new Set<string>();
@@ -668,9 +679,89 @@ function withForeignRuntimes(request: CompileRequest): CompileRequest {
       retainedExports: retained,
     });
   }
-  return nodeFfi || nodeBuffer
-    ? withNodeRuntimes(request, ids, runtimes, nodeFfi, nodeBuffer)
-    : { ...request, runtimes };
+  if (!nodeFfi && !nodeBuffer) return { ...request, runtimes };
+  const included = withNodeRuntimes(
+    request,
+    ids,
+    runtimes,
+    nodeFfi,
+    nodeBuffer,
+  );
+  return nodeFfi ? withStaticFfiRuntimes(included, signedChar) : included;
+}
+
+function withStaticFfiRuntimes(
+  request: CompileRequest,
+  signedChar: boolean,
+): CompileRequest {
+  const loader = request.moduleLoader;
+  const direct = (
+    dependencies: ReadonlyMap<string, string> | undefined,
+  ): boolean => {
+    return dependencies?.get("node:ffi") === foreignRuntimeModules.nodeFfi;
+  };
+  const edges = loader?.sourceDependencies;
+  const sources =
+    loader !== undefined && edges !== undefined
+      ? requestModules(
+          request,
+          loader.ids.filter((id) => id !== undefined && direct(edges(id))),
+        )
+      : requestModules(request).filter(
+          (source) => source !== undefined && direct(source.dependencies),
+        );
+  const plans = recognizeStaticFfi(sources, signedChar);
+  if (plans.length === 0) return request;
+  const generated = makeStaticFfiModule(plans);
+  function replace(modules: readonly SourceModule[]): SourceModule[] {
+    return modules.map((source) =>
+      source?.id === generated.id ? generated : source,
+    );
+  }
+  let moduleLoader: SourceModuleLoader | undefined;
+  if (loader !== undefined) {
+    const loadWithRoot = loader.loadWithRoot;
+    moduleLoader = {
+      ids: loader.ids,
+      load: (ids): readonly SourceModule[] => replace(loader.load(ids)),
+      ...(edges === undefined ? {} : { sourceDependencies: edges }),
+      ...(loadWithRoot === undefined
+        ? {}
+        : {
+            loadWithRoot: (root: string): LoadResult | undefined => {
+              const loaded = loadWithRoot(root);
+              return loaded?.ok === true
+                ? { ok: true, value: replace(loaded.value) }
+                : loaded;
+            },
+          }),
+    };
+  }
+  const runtime: RuntimeSource = {
+    module: staticFfiModule,
+    namespace: "node-ffi-static",
+    retainedExports: plans.map((_plan, index) => staticFfiEntry(index)),
+  };
+  const runtimes = request.runtimes.slice();
+  runtimes.push(runtime);
+  const bindings = request.foreignMemoryBindings?.slice() ?? [];
+  for (let index = 0; index < plans.length; index++) {
+    const plan = plans[index];
+    if (plan === undefined) throw "static FFI plan invariant";
+    bindings.push({
+      module: staticFfiModule,
+      name: staticFfiEntry(index),
+      operation: "call-static-scalar",
+      staticSignature: plan.signature,
+    });
+  }
+  return {
+    ...request,
+    modules: replace(request.modules),
+    moduleLoader,
+    runtimes,
+    foreignMemoryBindings: bindings,
+  };
 }
 
 /** Resolve the reviewed runtime surfaces only when loaded. Their values pass
@@ -2836,6 +2927,19 @@ function lowerTypedProgram(
           binding.name,
       );
     const operation = binding.operation;
+    if (operation === "call-static-scalar") {
+      const signature = binding.staticSignature;
+      if (signature === undefined)
+        return stageFailure(
+          "host",
+          "static FFI call requires a fixed prototype",
+        );
+      foreignBindings.push({
+        function: index,
+        call: dynamicScalarCall(false, signature),
+      });
+      continue;
+    }
     foreignBindings.push(
       operation === "call" ||
         operation === "call-callbacks" ||
@@ -3213,12 +3317,15 @@ export function compileX64HostedProgram(
     options.runtime === true ? request : selectX64ForeignRuntime(request);
   if (typeof selected === "string") return stageFailure("foreign", selected);
   const lowered = lowerTypedProgram(
-    withForeignRuntimes({
-      ...request,
-      moduleLoader: selected.moduleLoader,
-      modules: selected.modules,
-      symbols: true,
-    }),
+    withForeignRuntimes(
+      {
+        ...request,
+        moduleLoader: selected.moduleLoader,
+        modules: selected.modules,
+        symbols: true,
+      },
+      true,
+    ),
     undefined,
     options.runtime !== true && options.threaded !== true,
   );

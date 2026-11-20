@@ -3,7 +3,7 @@ import type {
   CFunctionDeclaration,
   CLibraryDeclaration,
 } from "./declarations.ts";
-import type { CTarget, CType } from "./types.ts";
+import type { CScalar, CTarget, CType } from "./types.ts";
 /** A runtime struct layout descriptor: the same layout computation the
  * compiler uses for direct calls, as data for dynamic consumers. */
 export interface CLayoutDescriptor {
@@ -70,6 +70,74 @@ export function cLayoutDescriptor(
     },
   };
 }
+/** Canonical scalar spelling for Node's public signature vocabulary. */
+export type NodeFfiType = CScalar | "void" | "pointer";
+export function canonicalNodeFfiType(
+  name: string,
+  charSigned: boolean,
+): NodeFfiType | undefined {
+  switch (name) {
+    case "void":
+      return "void";
+    case "char":
+      return charSigned ? "i8" : "u8";
+    case "int8":
+    case "i8":
+      return "i8";
+    case "uint8":
+    case "u8":
+    case "bool":
+      return "u8";
+    case "int16":
+    case "i16":
+      return "i16";
+    case "uint16":
+    case "u16":
+      return "u16";
+    case "int32":
+    case "i32":
+      return "i32";
+    case "uint32":
+    case "u32":
+      return "u32";
+    case "int64":
+    case "i64":
+      return "i64";
+    case "uint64":
+    case "u64":
+      return "u64";
+    case "float32":
+    case "f32":
+    case "float":
+      return "f32";
+    case "float64":
+    case "f64":
+    case "double":
+      return "f64";
+    case "pointer":
+    case "ptr":
+    case "string":
+    case "str":
+    case "buffer":
+    case "arraybuffer":
+    case "function":
+      return "pointer";
+    default:
+      return undefined;
+  }
+}
+export function nodeFfiCType(type: NodeFfiType): CType {
+  if (type === "void") return { kind: "void" };
+  if (type === "pointer") return { kind: "pointer", pointee: { kind: "void" } };
+  return { kind: "scalar", scalar: type };
+}
+export function nodeFfiSignatureKey(
+  result: NodeFfiType,
+  parameters: readonly NodeFfiType[],
+): string {
+  return result + "(" + parameters.join(",") + ")";
+}
+
 /** One `node:ffi` `dlopen` definition: `{ arguments, return }`. */
 export interface NodeFfiDefinition {
   readonly name: string;

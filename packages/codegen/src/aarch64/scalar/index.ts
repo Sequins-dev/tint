@@ -6659,6 +6659,63 @@ function emitModuleForms(
             offset: frame.floats + 16,
           });
         }
+        /** A fixed prototype has ordinary outgoing space and emitted
+         * register moves, while the binding still owns the exact target. */
+        function fixedScalarCall(
+          call: ForeignCall,
+          frame: number,
+          result: number,
+        ): void {
+          const layout = foreignPlan(call).layout;
+          const shape = dynamicScalarFrame;
+          dataPointer(frame, 12, false, shape.size + layout.stackBytes);
+          for (let offset = 0; offset < layout.stackBytes; offset += 8) {
+            emit({
+              op: "ldr",
+              width: 64,
+              rt: 14,
+              rn: 12,
+              offset: shape.size + offset,
+            });
+            rawStore(14, offset);
+          }
+          emit({ op: "ldr", width: 64, rt: 15, rn: 12, offset: shape.target });
+          trapIf({ op: "cbz", width: 64, rt: 15 });
+          for (const location of layout.arguments) {
+            if (location === undefined) throw "fixed FFI argument invariant";
+            if (location.gp >= 0)
+              emit({
+                op: "ldr",
+                width: 64,
+                rt: location.gp,
+                rn: 12,
+                offset: shape.registers + location.gp * 8,
+              });
+            else if (location.fp >= 0)
+              emit({
+                op: "ldr-d",
+                rt: location.fp,
+                rn: 12,
+                offset: shape.floats + location.fp * 8,
+              });
+          }
+          emit({ op: "blr", rn: 15 });
+          if (layout.result.class !== "void") {
+            dataPointer(frame, 12, false, 0);
+            if (layout.result.class === "float")
+              emit({ op: "str-d", rt: 0, rn: 12, offset: shape.floats });
+            else
+              emit({
+                op: "str",
+                width: 64,
+                rt: 0,
+                rn: 12,
+                offset: shape.registers,
+              });
+          }
+          imm(9, 1);
+          saveRaw(9, result);
+        }
         /** Copy the classified stack image below the managed frame. The
          * saved transition and its roots stay at their normal frame offsets. */
         function scalarDynamicCall(
@@ -10824,7 +10881,14 @@ function emitModuleForms(
                   const result = op.id;
                   if (result === undefined)
                     throw "scalar dynamic status invariant";
-                  scalarDynamicCall(op.call, op.arguments, result);
+                  if (op.call.staticScalar === undefined)
+                    scalarDynamicCall(op.call, op.arguments, result);
+                  else {
+                    const frame = op.arguments[0];
+                    if (frame === undefined)
+                      throw "fixed scalar frame invariant";
+                    fixedScalarCall(op.call, frame, result);
+                  }
                   break;
                 }
                 if (op.call.dynamic === true) {

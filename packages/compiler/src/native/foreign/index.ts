@@ -4,12 +4,12 @@ import {
   cLibraryImage,
   linuxArm64CTarget,
   type CFunctionDeclaration,
+  type CSignature,
   type CLibraryDeclaration,
   type CLibraryImage,
   type CLibraryManifestEntry,
   type CTarget,
 } from "@tint/abi/c";
-import {} from "@tint/ir/scalar";
 import type { ImportMapping } from "@tint/source/resolver";
 import { createSourceTextView } from "@tint/source/text";
 import {
@@ -80,7 +80,9 @@ export interface NativeForeignMemoryBinding {
     | "call-callbacks"
     | "call-scalar"
     | "call-scalar-callbacks"
-    | "runtime-callback-address";
+    | "runtime-callback-address"
+    | "call-static-scalar";
+  readonly staticSignature?: CSignature;
 }
 /** The `tint:ffi` runtime: its trusted primitives and the weak-storage and
  * collection intrinsics its collector-registered storage uses. */

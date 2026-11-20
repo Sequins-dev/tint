@@ -1,11 +1,13 @@
 import {
+  canonicalNodeFfiType,
+  nodeFfiCType,
   classifyCCall,
   darwinArm64CTarget,
   linuxArm64CTarget,
   type CCallLayout,
 } from "@tint/abi/c";
 import { classifySysVCCall, linuxX86_64CTarget } from "@tint/abi/c/sysv";
-import type { CScalar, CSignature, CType } from "@tint/abi/c";
+import type { CSignature, CType, NodeFfiType } from "@tint/abi/c";
 import { TARGET_AAPCS64 } from "tint:c/dl";
 import {
   createCodedRuntimeError,
@@ -18,7 +20,7 @@ import {
 } from "@tint/js-runtime/objects";
 
 export type FfiObject = OrdinaryObject<ScriptPropertyKey, unknown>;
-export type FfiType = CScalar | "void" | "pointer";
+export type FfiType = NodeFfiType;
 export interface FfiSignature {
   readonly abi: CSignature;
   readonly result: FfiType;
@@ -85,66 +87,15 @@ function ffiType(
   name: string,
   charSigned: boolean,
 ): FfiType {
-  switch (name) {
-    case "void":
-      return "void";
-    case "char":
-      return charSigned ? "i8" : "u8";
-    case "int8":
-    case "i8":
-      return "i8";
-    case "uint8":
-    case "u8":
-    case "bool":
-      return "u8";
-    case "int16":
-    case "i16":
-      return "i16";
-    case "uint16":
-    case "u16":
-      return "u16";
-    case "int32":
-    case "i32":
-      return "i32";
-    case "uint32":
-    case "u32":
-      return "u32";
-    case "int64":
-    case "i64":
-      return "i64";
-    case "uint64":
-    case "u64":
-      return "u64";
-    case "float32":
-    case "f32":
-    case "float":
-      return "f32";
-    case "float64":
-    case "f64":
-    case "double":
-      return "f64";
-    case "pointer":
-    case "ptr":
-    case "string":
-    case "str":
-    case "buffer":
-    case "arraybuffer":
-    case "function":
-      return "pointer";
-    default:
-      return ffiError(
-        core,
-        "type",
-        "ERR_INVALID_ARG_VALUE",
-        "Unsupported FFI type: " + name,
-      );
-  }
-}
-
-function cType(type: FfiType): CType {
-  if (type === "void") return { kind: "void" };
-  if (type === "pointer") return { kind: "pointer", pointee: { kind: "void" } };
-  return { kind: "scalar", scalar: type };
+  const type = canonicalNodeFfiType(name, charSigned);
+  if (type === undefined)
+    return ffiError(
+      core,
+      "type",
+      "ERR_INVALID_ARG_VALUE",
+      "Unsupported FFI type: " + name,
+    );
+  return type;
 }
 
 export function parseFfiSignature(
@@ -220,12 +171,12 @@ export function parseFfiSignature(
             " must not be 'void'; use an empty array for no-argument functions",
         );
       parameters.push(type);
-      abiParameters.push(cType(type));
+      abiParameters.push(nodeFfiCType(type));
     }
   }
   const abi: CSignature = {
     parameters: abiParameters,
-    result: cType(result),
+    result: nodeFfiCType(result),
     fixedParameters: abiParameters.length,
     callClass: "leaf",
     errno: "none",

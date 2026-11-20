@@ -1,4 +1,4 @@
-import type { CCallLayout } from "@tint/abi/c";
+import { nodeFfiSignatureKey, type CCallLayout } from "@tint/abi/c";
 import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
 import {
   builtinAccessor,
@@ -79,11 +79,14 @@ import {
 
 import { createFfiCallbacks, type FfiCallback } from "./ffi-callbacks.ts";
 
+import { staticFfiCall, staticFfiIndex } from "./ffi-static.ts";
+
 interface Binding {
   readonly name: string;
   readonly signature: FfiSignature;
   readonly address: SymbolAddress;
   readonly frame: ForeignFunction | undefined;
+  readonly staticCall: number;
   wideLayout: CCallLayout | undefined;
   wrapper: unknown;
 }
@@ -358,10 +361,13 @@ function invokeScalar(
       for (let byte = 0; byte < width; byte++)
         frame[offset + byte] = bytes[byte] ?? 0;
     }
+    const fixed = binding.staticCall;
     const completed =
-      dispatcher === undefined
-        ? callScalarForeign(frame)
-        : callScalarForeignCallbacks(callbackState(), dispatcher, frame);
+      dispatcher !== undefined
+        ? callScalarForeignCallbacks(callbackState(), dispatcher, frame)
+        : fixed < 0
+          ? callScalarForeign(frame)
+          : staticFfiCall(fixed, frame);
     if (!completed)
       return ffiError(
         core,
@@ -568,7 +574,11 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     let pointers = 0;
     for (const type of signature.parameters) if (type === "pointer") pointers++;
     // Keep the existing scalar leaf trampoline for signatures it can carry.
+    const staticCall = staticFfiIndex(
+      nodeFfiSignatureKey(signature.result, signature.parameters),
+    );
     const wide =
+      staticCall >= 0 ||
       signature.parameters.length > 64 ||
       pointers > 8 ||
       (address.high >= 2097152 && !Number.isSafeInteger(numeric));
@@ -578,7 +588,15 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
         : foreignFunction(numeric, signature.abi);
     const wideLayout =
       numeric === 0 || !wide ? undefined : classifyScalarCall(core, signature);
-    return { name, signature, address, frame, wideLayout, wrapper: undefined };
+    return {
+      name,
+      signature,
+      address,
+      frame,
+      staticCall,
+      wideLayout,
+      wrapper: undefined,
+    };
   }
   function wrapper(owner: FfiObject, binding: Binding): unknown {
     const slot = binding.wrapper;

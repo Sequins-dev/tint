@@ -315,6 +315,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "compiler",
     },
     {
+      id: "packages/compiler/src/native/foreign/static-ffi.ts",
+      packageId: "compiler",
+    },
+    {
       id: "packages/compiler/src/native/foreign/views.ts",
       packageId: "compiler",
     },
@@ -2848,6 +2852,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/node/ffi-signature.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/ffi-static.ts",
       packageId: "native-runtime",
     },
     {

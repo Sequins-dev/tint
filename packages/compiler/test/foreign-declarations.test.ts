@@ -15,7 +15,7 @@ import {
   type CLibraryDeclaration,
   type CTarget,
 } from "@tint/abi/c";
-import { createSourceText } from "@tint/source/text";
+import { createSourceText, createSourceTextView } from "@tint/source/text";
 import { dynamicCallFrame } from "@tint/ir/scalar";
 import { parseModule } from "@tint/typescript/syntax";
 import { loadSourceGraph } from "@tint/typescript/modules";
@@ -28,6 +28,8 @@ import {
   foreignViews,
   foreignViewRegistry,
 } from "../src/native/foreign/index.ts";
+
+import { recognizeStaticFfi } from "../src/native/foreign/static-ffi.ts";
 
 const root = new URL("../../native-runtime/src/c/", import.meta.url);
 const commonCrypto = readFileSync(new URL("commoncrypto.d.ts", root), "utf8");
@@ -1320,4 +1322,49 @@ test("callback parameters make may-callback calls; callback types register funct
     ),
     /async calls take no callbacks/,
   );
+});
+
+test("literal Node FFI definitions contribute canonical static ABI plans", () => {
+  const parsed = parseModule(
+    createSourceTextView(
+      `import { dlopen as open } from "node:ffi";
+import ffi from "node:ffi";
+const names = ["i32"];
+open(null, {
+  first: { arguments: ["ptr", "float"], return: "int8" },
+  same: { arguments: ["string", "f32"], return: "i8" },
+  dynamic: { arguments: names, return: "i32" },
+  get lazy() { return { arguments: ["uint64"] }; },
+  ["computed"]: { arguments: ["uint8"] },
+});
+ffi.dlopen(null, { no_args: {}, char: { return: "char" } });`,
+    ),
+  );
+  assert.ok(parsed.ok, !parsed.ok ? parsed.error.message : undefined);
+  const plans = recognizeStaticFfi(
+    [
+      {
+        id: "fixture",
+        module: parsed.value,
+        dependencies: new Map([
+          ["node:ffi", "packages/native-runtime/src/node/ffi.ts"],
+        ]),
+      },
+    ],
+    false,
+  );
+  assert.deepEqual(
+    plans.map((plan) => plan.key),
+    ["i8(pointer,f32)", "void()", "u8()"],
+  );
+  assert.deepEqual(plans[0]?.signature, {
+    parameters: [
+      { kind: "pointer", pointee: { kind: "void" } },
+      { kind: "scalar", scalar: "f32" },
+    ],
+    result: { kind: "scalar", scalar: "i8" },
+    fixedParameters: 2,
+    callClass: "leaf",
+    errno: "none",
+  });
 });
