@@ -5882,6 +5882,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "platform",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
+    },
+    {
+      packageId: "platform",
       specifier: "@tint/native-runtime",
       target: "packages/native-runtime/src/index.ts",
     },
