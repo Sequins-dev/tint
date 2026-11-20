@@ -268,3 +268,34 @@ test("precise stack maps keep references across many collections", async () => {
     },
   );
 });
+
+test("wide stack maps stream into final storage on a bounded native heap", () => {
+  verifyHostedFixture(
+    `import { planWideStackMapTable, type SafepointEntry } from "stack-maps";
+export function run(): number {
+  const entries: SafepointEntry[] = [];
+  const count = 128;
+  const roots = 3072;
+  for (let i = 0; i < count; i++) {
+    const map: number[] = [roots * 16, roots];
+    for (let j = 0; j < roots; j++) map.push((j + i) * 8);
+    map.push(0);
+    map.push(0);
+    entries.push({ offset: i * 3, start: 0, map });
+  }
+  const table = planWideStackMapTable(entries);
+  const words = new Float64Array(table.wordLength);
+  let cursor = 0;
+  table.forEachWord((word: number): void => { words[cursor] = word; cursor++; });
+  return cursor === 3 + count * (roots + 6) &&
+    words[2] === count && words[4] === 3 + count * 2 &&
+    words[cursor - 3] === (roots + count - 2) * 8 ? 42 : 1;
+}`,
+    "wide-stack-map-stream",
+    [["stack-maps", "packages/codegen/src/scalar/stack-maps.ts"]],
+    [],
+    [],
+    [],
+    { managedBytes: 24 * 1024 * 1024, allocationCapacity: 1048576 },
+  );
+});

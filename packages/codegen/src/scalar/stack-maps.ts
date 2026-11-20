@@ -1,4 +1,5 @@
 import type { FunctionIR } from "@tint/ir/scalar";
+import { createKeyIndex } from "@tint/foundation/collections/key-index";
 import {
   nativeStackMapMagic,
   nativeStackMapVersion,
@@ -528,41 +529,78 @@ export function encodeStackMapTable(
 export function encodeWideStackMapTable(
   sorted: readonly SafepointEntry[],
 ): number[] {
-  const mapIndices = new Map<string, number>(),
-    maps: number[] = [],
-    /** Each safepoint's map, as a word offset into `maps`. */
-    mapOffsets: number[] = [];
+  const words: number[] = [];
+  planWideStackMapTable(sorted).forEachWord((word) => {
+    words.push(word);
+  });
+  return words;
+}
+
+function mapHash(map: readonly number[]): number {
+  let hash = map.length;
+  for (const word of map) {
+    if (word === undefined) throw "safepoint map invariant";
+    hash = Math.imul(hash ^ (word >>> 0), 16777619);
+    hash = Math.imul(hash ^ Math.floor(word / 4294967296), 16777619);
+  }
+  return hash >>> 0;
+}
+
+function sameMap(left: readonly number[], right: readonly number[]): boolean {
+  if (left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index++)
+    if (left[index] !== right[index]) return false;
+  return true;
+}
+
+export interface WideStackMapPlan {
+  readonly wordLength: number;
+  readonly forEachWord: (write: (value: number) => void) => void;
+}
+
+/** Retain one numeric map per distinct frame shape and write the table into
+ * its final image storage. Planning needs neither decimal keys nor a second
+ * copy of the flattened maps. */
+export function planWideStackMapTable(
+  sorted: readonly SafepointEntry[],
+): WideStackMapPlan {
+  const mapIndices = createKeyIndex<readonly number[], number>(
+    mapHash,
+    sameMap,
+  );
+  const maps: (readonly number[])[] = [];
+  const directory = new Float64Array(sorted.length * 2);
+  const first = nativeStackMapTableHeaderBytes / 8 + directory.length;
+  let end = first;
+  let offset = 0;
   for (const entry of sorted) {
     if (entry === undefined) throw "safepoint entry invariant";
-    const key = entry.map.join(",");
-    const known = mapIndices.get(key);
-    if (known !== undefined) {
-      mapOffsets.push(known);
-      continue;
+    let at = mapIndices.get(entry.map);
+    if (at === undefined) {
+      at = end;
+      end += entry.map.length;
+      mapIndices.set(entry.map, at);
+      maps.push(entry.map);
     }
-    mapIndices.set(key, maps.length);
-    mapOffsets.push(maps.length);
-    for (const word of entry.map) {
-      if (word === undefined) throw "safepoint map invariant";
-      maps.push(word);
-    }
+    directory[offset++] = entry.offset;
+    directory[offset++] = at;
   }
-  const header = nativeStackMapTableHeaderBytes / 8,
-    first = header + sorted.length * 2,
-    words: number[] = [
-      nativeStackMapMagic,
-      nativeStackMapWideVersion,
-      sorted.length,
-    ];
-  for (let index = 0; index < sorted.length; index++) {
-    const entry = sorted[index],
-      at = mapOffsets[index];
-    if (entry === undefined || at === undefined)
-      throw "safepoint entry invariant";
-    words.push(entry.offset, first + at);
-  }
-  for (const word of maps) if (word !== undefined) words.push(word);
-  return words;
+  return {
+    wordLength: end,
+    forEachWord(write) {
+      write(nativeStackMapMagic);
+      write(nativeStackMapWideVersion);
+      write(directory.length / 2);
+      for (const word of directory) write(word);
+      for (const map of maps) {
+        if (map === undefined) throw "safepoint table invariant";
+        for (const word of map) {
+          if (word === undefined) throw "safepoint map invariant";
+          write(word);
+        }
+      }
+    },
+  };
 }
 
 /** A decoded safepoint (tests and tools): its return offset in the module,
