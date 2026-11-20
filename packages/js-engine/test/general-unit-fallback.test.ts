@@ -86,6 +86,40 @@ test("unit fallback requires successful original source validation", () => {
   assert.equal(lower(text, false).functions, undefined);
 });
 
+test("validated general functions carry primitive parameter and result contracts", () => {
+  const source = `function read(value: number = 21): number {
+  if (arguments.length > 1) throw { value };
+  return value * 2;
+}
+export function run(): number { return read(); }`;
+  for (const validated of [true, false]) {
+    const lowered = lower(source, validated);
+    const general = lowered.modules.find(({ id }) => id === "$general:main");
+    const helpers = general?.module.imports.flatMap(({ bindings }) =>
+      bindings.map(({ imported }) => imported),
+    );
+    assert.equal(helpers?.includes("checkPrimitiveContract"), validated);
+    assert.equal(helpers?.includes("createCheckedSourceFunction"), validated);
+  }
+});
+
+test("a mixed unit with defaults keeps omitted and explicit arguments distinct", () => {
+  const mixed = lower(`function kernel(): number { return 20; }
+function read(value: number = kernel()): number {
+  const observed = arguments.length;
+  return value + observed;
+}
+export function run(): number { return read() + read(undefined) + 1; }`);
+  assert.equal(mixed.functions?.[0]?.name, "read");
+  const host = mixed.modules.find(({ id }) => id === mixed.entry);
+  const adapters = host?.module.statements.filter(
+    (statement) =>
+      statement.kind === "function" &&
+      /^\$tintCallUnit\d$/.test(statement.name),
+  );
+  assert.equal(adapters?.length, 2);
+});
+
 test("a reassignable typed callee retains the whole-module path", () => {
   const result = lower(
     body +

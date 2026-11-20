@@ -27,6 +27,7 @@ export {
   type ScriptRuntimeSurfaceEntry,
 } from "./runtime-imports.ts";
 import { generatorContinuation } from "./generators.ts";
+import { primitiveContractBit } from "@tint/js-runtime/objects";
 import {
   isOptionalChain,
   isDirectEvalCandidate,
@@ -197,6 +198,7 @@ interface ScriptResourceScope {
   readonly position: number;
 }
 interface CallableOptions {
+  readonly resultType?: TypeNode | undefined;
   readonly sourceStart?: number | undefined;
   readonly generator?: boolean | undefined;
   readonly async?: boolean | undefined;
@@ -273,6 +275,7 @@ export function lowerSourceTextModule(
   module: Module,
   sourceText?: string,
   numericCalls?: readonly NumericCallSite[],
+  checkContracts: boolean = false,
 ): ScriptLoweringResult {
   return lowerScriptEntry(
     module,
@@ -282,6 +285,7 @@ export function lowerSourceTextModule(
     undefined,
     false,
     numericCalls,
+    checkContracts,
   );
 }
 /** Indirect eval uses fresh lexical storage and eval declaration admission. */
@@ -336,6 +340,7 @@ function lowerScriptEntry(
   directContext: EvalBindingContext | undefined = undefined,
   compactResults: boolean = false,
   numericCalls?: readonly NumericCallSite[],
+  checkContracts: boolean = false,
 ): ScriptLoweringResult {
   const bound =
     entryKind === "module"
@@ -368,6 +373,38 @@ function lowerScriptEntry(
   if (moduleShape !== undefined && !moduleShape.ok)
     return { ok: false, error: { ...moduleShape.error, code: "UNSUPPORTED" } };
   const directEvalOwners = bound.value.directEvalOwners ?? [];
+  if (checkContracts && directEvalOwners.length !== 0) {
+    const first = directEvalOwners[0];
+    if (first === undefined) throw "DIRECT_EVAL_OWNER_INVARIANT";
+    const site = first.owner ?? script;
+    return {
+      ok: false,
+      error: {
+        start: site.start,
+        end: site.end,
+        code: "UNSUPPORTED",
+        message:
+          "direct eval requires the hosted evaluator and shared binding contracts",
+      },
+    };
+  }
+  const parameterWrites = new Map<number, number>();
+  const parameterContracts = new Map<number, number>();
+  if (checkContracts) {
+    for (const reference of bound.value.references) {
+      if (reference.access === "read" || reference.binding === undefined)
+        continue;
+      const binding = bound.value.bindings[reference.binding];
+      if (binding?.kind === "parameter")
+        parameterWrites.set(reference.node.start, binding.node.start);
+    }
+    for (const alias of bound.value.aliases ?? []) {
+      if (alias === undefined) throw "BINDING_ALIAS_INVARIANT";
+      const binding = bound.value.bindings[alias.binding];
+      if (binding?.kind === "parameter")
+        parameterWrites.set(alias.node.start, binding.node.start);
+    }
+  }
   const argumentsOwners = bound.value.argumentsOwners;
   /** Identifier sites that can reach the global record: names the binder
    * left unresolved and Script-level var/function bindings, which live on the
@@ -555,6 +592,7 @@ function lowerScriptEntry(
   let functionDepth = 0;
   let tailEnds: ReadonlyMap<number, number> = new Map<number, number>();
   let usesTailCalls = false;
+  let usesPrimitiveContracts = false;
   let suspensionInput: string | undefined =
     entryKind === "module" ? "$moduleInput" : undefined;
   let moduleSuspends = false;
@@ -875,6 +913,17 @@ function lowerScriptEntry(
     );
   }
   function write(target: Expression, value: Expression, span: Span): void {
+    const declaration = parameterWrites.get(span.start);
+    const mask =
+      declaration === undefined
+        ? undefined
+        : parameterContracts.get(declaration);
+    if (mask !== undefined) {
+      const assigned = temporary(value, true);
+      // PutValue checks the binding's initialization after evaluating the RHS.
+      expression(read(target, span));
+      value = checkedContract(assigned, mask, span);
+    }
     checkedRuntimeCompletion("putBindingReference", [target, value], span);
   }
   function read(
@@ -1659,6 +1708,36 @@ function lowerScriptEntry(
       ? fn
       : runtimeCall("retainFunctionSource", [fn, retainedSource(span)], span);
   }
+  /** The first executable contracts use the built-in primitive categories. */
+  function contract(type: TypeNode | undefined): number {
+    if (!checkContracts || type === undefined) return 0;
+    if (type.kind === "group") return contract(type.type);
+    if (type.kind === "named" && (type.arguments?.length ?? 0) === 0)
+      return primitiveContractBit(type.name);
+    if (type.kind !== "union") return 0;
+    let mask = 0;
+    for (const member of type.members) {
+      const bit = contract(member);
+      if (bit === 0) return 0;
+      mask |= bit;
+    }
+    return mask;
+  }
+  function contractValue(mask: number, span: Span): Expression {
+    usesPrimitiveContracts = true;
+    return { ...at(span), kind: "number", value: mask, raw: String(mask) };
+  }
+  function checkedContract(
+    value: Expression,
+    mask: number,
+    span: Span,
+  ): Expression {
+    return runtimeCall(
+      "checkPrimitiveContract",
+      [id("$errors"), value, contractValue(mask, span)],
+      span,
+    );
+  }
   function callable(
     parameters: readonly Parameter[],
     body: Expression | BlockStatement,
@@ -1669,6 +1748,7 @@ function lowerScriptEntry(
     const derived = options.derived ?? false;
     const generator = options.generator ?? false;
     const suspending = generator || (options.async ?? false);
+    const resultContract = suspending ? 0 : contract(options.resultType);
     const outerSuspensionInput = suspensionInput;
     const outerAsyncGeneratorBody = asyncGeneratorBody;
     const outerDisposalScope = disposalScope;
@@ -1688,7 +1768,7 @@ function lowerScriptEntry(
       homeObject = options.homeObject;
     const outerTailEnds = tailEnds;
     const localTailEnds = new Map<number, number>();
-    if (!raw && !suspending)
+    if (!raw && !suspending && resultContract === 0)
       for (const candidate of collectTailCalls(body, { strict: codeStrict })) {
         if (candidate === undefined) throw "TAIL_POSITION_CALL_INVARIANT";
         if (numericCallAt(candidate) === undefined)
@@ -1943,6 +2023,16 @@ function lowerScriptEntry(
     const parameterNames: Expression[] = [];
     for (const parameter of parameters) {
       if (parameter === undefined) throw "SCRIPT_PARAMETER_INVARIANT";
+      if (parameter.kind !== "pattern-parameter" && !parameter.rest) {
+        const mask = contract(parameter.type);
+        if (mask !== 0)
+          parameterContracts.set(
+            parameter.start,
+            parameter.optional
+              ? mask | primitiveContractBit("undefined")
+              : mask,
+          );
+      }
       for (const identifier of parameterIdentifiers(parameter)) {
         if (identifier === undefined)
           throw "SCRIPT_PARAMETER_IDENTIFIER_INVARIANT";
@@ -2025,6 +2115,23 @@ function lowerScriptEntry(
         value: i,
         raw: "" + i,
       };
+      const annotation = parameter.type;
+      if (parameter.rest && annotation?.kind === "array") {
+        const mask = contract(annotation.element);
+        if (mask !== 0)
+          expression(
+            runtimeCall(
+              "checkPrimitiveRestArguments",
+              [
+                id("$errors"),
+                id(argsName, parameter),
+                offset,
+                contractValue(mask, parameter),
+              ],
+              parameter,
+            ),
+          );
+      }
       const argumentValue: Expression = parameter.rest
         ? runtimeCall(
             "createArrayFromList",
@@ -2073,6 +2180,9 @@ function lowerScriptEntry(
         initializePattern(parameter.pattern, initialized, "let", false);
         continue;
       }
+      const mask = parameterContracts.get(parameter.start);
+      if (mask !== undefined)
+        initialized = checkedContract(initialized, mask, parameter);
       if (initializedParameters.has(parameter.name)) {
         write(reference(parameter.name, parameter), initialized, parameter);
       } else {
@@ -2227,6 +2337,7 @@ function lowerScriptEntry(
           declaration,
           {
             generator: declaration.generator,
+            resultType: declaration.returnType,
             async: declaration.async,
             codeStrict: declaration.strict ?? strict,
             functionName: text(declaration.name, declaration),
@@ -2499,7 +2610,12 @@ function lowerScriptEntry(
       span,
     );
     // One call names, creates and retains the source of each function.
-    if (compactResults && sourceText !== undefined && !tailEnabled)
+    if (
+      compactResults &&
+      sourceText !== undefined &&
+      !tailEnabled &&
+      resultContract === 0
+    )
       return runtimeCall(
         "createRetainedSourceFunction",
         [
@@ -2515,27 +2631,34 @@ function lowerScriptEntry(
         ],
         span,
       );
+    const functionArguments: Expression[] = [
+      callback,
+      constructible,
+      id("$errors"),
+      member(id("$global"), "hooks", span),
+      runtimeCall(
+        "propertyFunctionName",
+        [functionName ?? text("", span)],
+        span,
+      ),
+      { ...at(span), kind: "number", value: length, raw: "" + length },
+      homeObject ?? id("undefined"),
+      callerPolicy,
+    ];
+    if (resultContract !== 0)
+      functionArguments.push(contractValue(resultContract, span));
     return retainSource(
       {
         ...at(span),
         kind: "call",
         callee: id(
-          tailEnabled ? "createTailSourceFunction" : "createSourceFunction",
+          resultContract !== 0
+            ? "createCheckedSourceFunction"
+            : tailEnabled
+              ? "createTailSourceFunction"
+              : "createSourceFunction",
         ),
-        arguments: [
-          callback,
-          constructible,
-          id("$errors"),
-          member(id("$global"), "hooks", span),
-          runtimeCall(
-            "propertyFunctionName",
-            [functionName ?? text("", span)],
-            span,
-          ),
-          { ...at(span), kind: "number", value: length, raw: "" + length },
-          homeObject ?? id("undefined"),
-          callerPolicy,
-        ],
+        arguments: functionArguments,
         typeArguments: [],
       },
       retainedSpan,
@@ -3682,6 +3805,7 @@ function lowerScriptEntry(
         if (selfName === undefined)
           return callable(node.parameters, node.body, false, node, {
             generator: node.generator,
+            resultType: node.returnType,
             async: node.async,
             codeStrict: node.strict ?? strict,
             functionName: inferredName,
@@ -3707,6 +3831,7 @@ function lowerScriptEntry(
         const fn = temporary(
           callable(node.parameters, node.body, false, node, {
             generator: node.generator,
+            resultType: node.returnType,
             async: node.async,
             codeStrict: node.strict ?? strict,
             functionName: text(selfName, node),
@@ -3721,6 +3846,7 @@ function lowerScriptEntry(
       }
       case "arrow":
         return callable(node.parameters, node.body, true, node, {
+          resultType: node.returnType,
           async: node.async,
           codeStrict: node.strict ?? strict,
           functionName: inferredName,
@@ -4277,6 +4403,7 @@ function lowerScriptEntry(
       fail(body, "Script function body must be a block");
     return callable(declaration.parameters, body, false, declaration, {
       sourceStart: declaration.sourceStart,
+      resultType: declaration.returnType,
       generator: declaration.generator,
       async: declaration.async,
       codeStrict: declaration.strict ?? strict,
@@ -4289,6 +4416,7 @@ function lowerScriptEntry(
     const node = declaration.value;
     return callable(node.parameters, node.body, false, node, {
       generator: node.generator,
+      resultType: node.returnType,
       async: node.async,
       codeStrict: node.strict ?? true,
       functionName: text(
@@ -6133,6 +6261,7 @@ function lowerScriptEntry(
     usesEngineAborts,
     compactResults,
     compactResults,
+    usesPrimitiveContracts,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,

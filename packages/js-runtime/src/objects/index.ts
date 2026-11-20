@@ -188,6 +188,9 @@ export {
   objectValueTypeof,
   objectTypeof,
   generalValueTypeof,
+  primitiveContractBit,
+  checkPrimitiveContract,
+  checkPrimitiveRestArguments,
   viewTypeofObject,
   scriptBoolean,
   scriptStrictEqual,
@@ -249,6 +252,7 @@ export {
 export {
   createSourceFunction,
   createTailSourceFunction,
+  createCheckedSourceFunction,
   requestSourceTailCall,
   constructorPrototype,
   retainFunctionSource,

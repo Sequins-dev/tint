@@ -72,6 +72,7 @@ export function scriptRuntimeImports(
   usesEngineAborts: boolean = false,
   usesFusedResults: boolean = false,
   usesRetainedFunctions: boolean = false,
+  usesPrimitiveContracts: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -216,6 +217,13 @@ export function scriptRuntimeImports(
           : []),
         "finishScriptExecution",
         "createRuntimeError",
+        ...(usesPrimitiveContracts
+          ? [
+              "checkPrimitiveContract",
+              "checkPrimitiveRestArguments",
+              "createCheckedSourceFunction",
+            ]
+          : []),
         "objectValueTypeof",
         "stringValue",
         "TemplateSite",

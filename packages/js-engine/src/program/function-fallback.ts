@@ -30,6 +30,15 @@ export interface FunctionFallbackPlan {
   readonly arity: number;
   readonly numericCalls: readonly NumericCallSite[];
   readonly numericImports: Module | undefined;
+  /** Exact source argument count for ordinary entries with parameter effects. */
+  readonly ordinaryEntries?: readonly OrdinaryFunctionEntry[];
+}
+
+interface OrdinaryFunctionEntry {
+  readonly adapter: string;
+  readonly parameters: readonly string[];
+  readonly result: string;
+  readonly rest?: string;
 }
 
 function numberType(type: TypeNode | undefined): boolean {
@@ -41,13 +50,28 @@ function numberType(type: TypeNode | undefined): boolean {
 }
 
 function ordinaryNumber(statement: FunctionDeclaration): boolean {
+  return ordinaryFunction(statement) && numberType(statement.returnType);
+}
+
+function ordinaryFunction(statement: FunctionDeclaration): boolean {
   return (
     statement.receiver === undefined &&
     statement.async !== true &&
     statement.generator !== true &&
-    typeParameterCount(statement.typeParameters) === 0 &&
-    numberType(statement.returnType)
+    typeParameterCount(statement.typeParameters) === 0
   );
+}
+
+function ordinaryEntryType(type: TypeNode | undefined): string | undefined {
+  if (type?.kind !== "named" || (type.arguments?.length ?? 0) !== 0)
+    return undefined;
+  const name = type.name;
+  return name === "number" ||
+    name === "string" ||
+    name === "boolean" ||
+    name === "unknown"
+    ? name
+    : undefined;
 }
 
 function fixedNumericParameters(
@@ -113,9 +137,8 @@ function primitiveCompletion(
   );
 }
 
-/** Admit a closed, private arguments-observing function whose callers can only
- * make direct calls. Fixed numeric and numeric-rest calls check the result.
- * Other owners still use the enclosing module's original fallback. */
+/** Prefer the fixed numeric entry for a private, directly called function.
+ * Ordinary entries preserve parameter effects and the actual argument list. */
 export function planFunctionFallback(
   request: GeneralProgramRequest,
   typedId: string,
@@ -126,7 +149,8 @@ export function planFunctionFallback(
   if (
     request.sourceValidated !== true ||
     request.start === "$tintCallUnit" ||
-    trigger?.capability !== "arguments-object" ||
+    (trigger?.capability !== "arguments-object" &&
+      trigger?.capability !== "regexp-literal") ||
     trigger.owner.kind !== "function" ||
     request.modules.length !== 1 ||
     original?.id !== request.entry ||
@@ -143,17 +167,48 @@ export function planFunctionFallback(
   const selected = declarations.find(
     (fn) => fn.start === trigger.owner.start && fn.end === trigger.owner.end,
   );
-  const entry = declarations.find((fn) => fn.name === request.start);
   if (
     selected === undefined ||
     selected.exported ||
-    !ordinaryNumber(selected) ||
+    !ordinaryFunction(selected)
+  )
+    return undefined;
+  const entry = declarations.find((fn) => fn.name === request.start);
+  if (
     entry === undefined ||
     !entry.exported ||
     entry.parameters.length !== 0 ||
     !ordinaryNumber(entry)
   )
     return undefined;
+  return (
+    (trigger.capability === "arguments-object"
+      ? planFixedArgumentsFallback(
+          original,
+          declarations,
+          selected,
+          typedId,
+          hostId,
+        )
+      : undefined) ??
+    planOrdinaryFunctionFallback(
+      original,
+      declarations,
+      selected,
+      typedId,
+      hostId,
+    )
+  );
+}
+
+function planFixedArgumentsFallback(
+  original: SourceModule,
+  declarations: readonly FunctionDeclaration[],
+  selected: FunctionDeclaration,
+  typedId: string,
+  hostId: string,
+): FunctionFallbackPlan | undefined {
+  if (!ordinaryNumber(selected)) return undefined;
   const fixed = fixedNumericParameters(selected);
   const rest = fixed === undefined;
   const arity = fixed?.length ?? 0;
@@ -424,6 +479,214 @@ export function planFunctionFallback(
               kind: "function",
               parameters: callee.parameters.map(() => boundaryNumber),
             })),
+    },
+  };
+}
+
+/** A private ordinary declaration keeps its real arguments object and parameter
+ * evaluation. Each typed call targets the entry for its supplied arity. */
+function planOrdinaryFunctionFallback(
+  original: SourceModule,
+  siblings: readonly FunctionDeclaration[],
+  sourceFunction: FunctionDeclaration,
+  typedId: string,
+  hostId: string,
+): FunctionFallbackPlan | undefined {
+  const declarations = new Map<string, FunctionDeclaration>();
+  for (const statement of siblings) declarations.set(statement.name, statement);
+  const result = ordinaryEntryType(sourceFunction.returnType);
+  if (result === undefined) return undefined;
+  const parameterKinds: string[] = [];
+  let minimum = 0,
+    rest: string | undefined;
+  for (const parameter of sourceFunction.parameters) {
+    if (parameter.kind === "pattern-parameter") return undefined;
+    if (parameter.rest) {
+      if (parameter.type?.kind !== "array") return undefined;
+      rest = ordinaryEntryType(parameter.type.element);
+      if (rest === undefined) return undefined;
+      continue;
+    }
+    const type = ordinaryEntryType(parameter.type);
+    if (type === undefined) return undefined;
+    const optional =
+      parameter.optional === true || parameter.initializer !== undefined;
+    parameterKinds.push(
+      optional && type !== "unknown" ? type + "|undefined" : type,
+    );
+    if (!optional) minimum = parameterKinds.length;
+  }
+
+  const bound = bindJavaScriptModule(eraseTypeSyntax(original.module));
+  if (!bound.ok || (bound.value.directEvalOwners?.length ?? 0) !== 0)
+    return undefined;
+  const calls = new Map<number, number>();
+  const spreads = new Map<number, number>();
+  rewriteModule(original.module, {
+    expression: (mapped, source) => {
+      if (
+        source.kind === "call" &&
+        source.optional !== true &&
+        source.callee.kind === "identifier"
+      ) {
+        calls.set(source.callee.start, source.arguments.length);
+        const spread = source.arguments.findIndex(
+          (argument) => argument.kind === "spread",
+        );
+        if (spread >= 0) spreads.set(source.callee.start, spread);
+      }
+      return mapped;
+    },
+  });
+  const names = new Set(bound.value.bindings.map((binding) => binding.name));
+  const usedCallees = new Map<string, readonly string[]>();
+  const entryAt = new Map<number, string>();
+  const entries = new Map<number, OrdinaryFunctionEntry>();
+  function within(node: {
+    readonly start: number;
+    readonly end: number;
+  }): boolean {
+    return node.start >= sourceFunction.start && node.end <= sourceFunction.end;
+  }
+  for (const reference of bound.value.references) {
+    const binding =
+      reference.binding === undefined
+        ? undefined
+        : bound.value.bindings[reference.binding];
+    if (binding?.scope !== 0) continue;
+    const inside = within(reference.node);
+    if (binding.name === sourceFunction.name) {
+      if (reference.access !== "read") return undefined;
+      if (inside) continue;
+      const count = calls.get(reference.node.start);
+      const spread = spreads.get(reference.node.start);
+      if (
+        count === undefined ||
+        count < minimum ||
+        (count > parameterKinds.length && rest === undefined) ||
+        (spread !== undefined &&
+          (rest === undefined || spread < parameterKinds.length))
+      )
+        return undefined;
+      const shape = spread === undefined ? count : -1;
+      let entry = entries.get(shape);
+      if (entry === undefined) {
+        let adapter =
+          "$tintCallUnit" + (spread === undefined ? String(count) : "Rest");
+        while (names.has(adapter)) adapter += "$";
+        names.add(adapter);
+        const parameters: string[] = [];
+        const fixedCount = spread === undefined ? count : parameterKinds.length;
+        for (let i = 0; i < fixedCount; i++) {
+          const type = parameterKinds[i] ?? rest;
+          if (type === undefined) throw "ordinary function argument invariant";
+          parameters.push(type);
+        }
+        entry =
+          spread === undefined || rest === undefined
+            ? { adapter, parameters, result }
+            : { adapter, parameters, result, rest };
+        entries.set(shape, entry);
+      }
+      entryAt.set(reference.node.start, entry.adapter);
+      continue;
+    }
+    if (!inside) continue;
+    const callee = declarations.get(binding.name);
+    if (
+      callee === undefined ||
+      !ordinaryNumber(callee) ||
+      reference.access !== "read"
+    )
+      return undefined;
+    const parameters = fixedNumericParameters(callee);
+    if (
+      parameters === undefined ||
+      calls.get(reference.node.start) !== parameters.length ||
+      spreads.has(reference.node.start)
+    )
+      return undefined;
+    usedCallees.set(binding.name, parameters);
+  }
+  if (entries.size === 0) return undefined;
+  for (const reference of bound.value.references) {
+    if (reference.access === "read" || reference.binding === undefined)
+      continue;
+    const binding = bound.value.bindings[reference.binding];
+    if (binding?.scope === 0 && usedCallees.has(binding.name)) return undefined;
+  }
+  const ordinaryEntries = [...entries.values()];
+  const imports = parseImport(
+    "import {" +
+      ordinaryEntries.map((entry) => entry.adapter).join(",") +
+      "} from " +
+      JSON.stringify(hostId) +
+      ";",
+  );
+  const generalImports = parseImport(
+    usedCallees.size === 0
+      ? ""
+      : "import {" +
+          [...usedCallees.keys()].join(",") +
+          "} from " +
+          JSON.stringify(typedId) +
+          ";",
+  );
+  const typed = rewriteModule(
+    {
+      ...original.module,
+      imports: imports.imports,
+      statements: [
+        ...imports.statements,
+        ...[...declarations.values()]
+          .filter((fn) => fn !== sourceFunction)
+          .map((fn) =>
+            usedCallees.has(fn.name) ? { ...fn, exported: true } : fn,
+          ),
+      ],
+    },
+    {
+      expression: (mapped, source) => {
+        if (mapped.kind !== "identifier") return mapped;
+        const adapter = entryAt.get(source.start);
+        return adapter === undefined ? mapped : { ...mapped, name: adapter };
+      },
+    },
+  );
+  return {
+    name: sourceFunction.name,
+    arity: 0,
+    rest: false,
+    numericCalls: [],
+    numericImports: undefined,
+    ordinaryEntries,
+    typed: {
+      ...original,
+      id: typedId,
+      module: typed,
+      dependencies: new Map([[hostId, hostId]]),
+    },
+    general: {
+      ...original,
+      dependencies:
+        usedCallees.size === 0 ? new Map() : new Map([[typedId, typedId]]),
+      module: {
+        ...original.module,
+        imports: generalImports.imports,
+        statements: [
+          ...generalImports.statements,
+          { ...sourceFunction, exported: true },
+        ],
+      },
+    },
+    boundary: {
+      id: typedId,
+      exports: [...usedCallees].map(([name, parameters]) => ({
+        name,
+        local: name,
+        kind: "function",
+        parameters: parameters.map(() => boundaryNumber),
+      })),
     },
   };
 }

@@ -18,6 +18,7 @@ export interface Construct {
   readonly untyped: string;
   /** Source modules the forms import as "./<file>". */
   readonly helpers?: Readonly<Record<string, string>>;
+  readonly helperImports?: Readonly<Record<string, readonly string[]>>;
   /** Node's result where Tint's semantics intentionally differ from
    * type-erased execution (enforced annotations); otherwise 42. */
   readonly node?: { readonly typed?: number; readonly untyped?: number };
@@ -987,6 +988,127 @@ export function run(): number { return read(4); }`,
     untyped: `function kernel(left, right) { return left * 10 + right; }
 function read(value) { return kernel(value, arguments.length) + 1; }
 export function run() { return read(4); }`,
+  },
+  {
+    name: "function-fallback-primitive-contracts",
+    node: { typed: 1 },
+    typed: `let defaults = 0;
+let finalizers = 0;
+const marker = { value: 42 };
+function subject(this: { base: number }, value: number = ++defaults): number {
+  if (arguments.length > 1) throw marker;
+  if (value === -1) value = "bad" as unknown as number;
+  return this.base + value;
+}
+function invalid(): number {
+  try { return "bad" as unknown as number; }
+  finally { finalizers++; }
+}
+export function run(): number {
+  const receiver = { base: 40, subject };
+  if (receiver.subject() !== 41 || receiver.subject(undefined) !== 42 || defaults !== 2) return 2;
+  let rejected = 0;
+  try { receiver.subject("bad" as unknown as number); } catch (error) { if (error instanceof TypeError) rejected++; }
+  try { receiver.subject(-1); } catch (error) { if (error instanceof TypeError) rejected++; }
+  try { receiver.subject(...([1, 2] as unknown as [number])); } catch (error) { if (error === marker) rejected++; }
+  try { invalid(); } catch (error) { if (error instanceof TypeError && finalizers === 1) rejected++; }
+  return rejected === 4 ? 42 : 1;
+}`,
+    untyped: `let defaults = 0;
+let finalizers = 0;
+const marker = { value: 42 };
+function subject(value = ++defaults) {
+  if (arguments.length > 1) throw marker;
+  return this.base + value;
+}
+function invalid() { try { return "bad"; } finally { finalizers++; } }
+export function run() {
+  const receiver = { base: 40, subject };
+  if (receiver.subject() !== 41 || receiver.subject(undefined) !== 42 || defaults !== 2) return 2;
+  let throwsSame = false;
+  try { receiver.subject(1, 2); } catch (error) { throwsSame = error === marker; }
+  return throwsSame && receiver.subject("bad") === "40bad" && invalid() === "bad" && finalizers === 1 ? 42 : 1;
+}`,
+  },
+  {
+    name: "function-fallback-defaults-mixed",
+    typed: `function kernel(): number { return observe(2); }
+function observe(value: number = kernel() + 17): number {
+  const count = arguments.length;
+  if (count === 0) return value;
+  return value * 2 + count;
+}
+export function run(): number { return observe() + observe(undefined) - 25; }`,
+    untyped: `function kernel() { return observe(2); }
+function observe(value = kernel() + 17) {
+  const count = arguments.length;
+  if (count === 0) return value;
+  return value * 2 + count;
+}
+export function run() { return observe() + observe(undefined) - 25; }`,
+  },
+  {
+    name: "function-fallback-reexport-identity",
+    helperImports: { "reexport.ts": ["kernel.ts"] },
+    helpers: {
+      "kernel.ts": `function kernel(value: number): number { return value + 1; }
+export { kernel as first, kernel as second };`,
+      "reexport.ts": `export { second as third } from "./kernel.ts";`,
+    },
+    typed: `import { first, second } from "./kernel.ts";
+import { third } from "./reexport.ts";
+function size(): number { return arguments.length; }
+export function run(): number {
+  return first === second && first === third && size() === 0 ? third(41) : 1;
+}`,
+    untyped: `import { first, second } from "./kernel.ts";
+import { third } from "./reexport.ts";
+function size() { return arguments.length; }
+export function run() {
+  return first === second && first === third && size() === 0 ? third(41) : 1;
+}`,
+  },
+  {
+    name: "function-fallback-mixed-throw-object",
+    typed: `function exchange(value?: unknown): unknown {
+  if (arguments.length !== 0) throw value;
+  return { message: "same object" };
+}
+export function run(): number {
+  const marker = exchange();
+  try { exchange(marker); return 1; }
+  catch (caught) { return caught === marker ? 42 : 2; }
+}`,
+    untyped: `function exchange(value) {
+  if (arguments.length !== 0) throw value;
+  return { message: "same object" };
+}
+export function run() {
+  const marker = exchange();
+  try { exchange(marker); return 1; }
+  catch (caught) { return caught === marker ? 42 : 2; }
+}`,
+  },
+  {
+    name: "function-fallback-rest-spread",
+    typed: `function read(base: number, ...values: number[]): number {
+  let total = base + arguments.length;
+  for (const value of values) total += value;
+  return total;
+}
+export function run(): number {
+  const tail: number[] = [10, 11];
+  return read(1) === 2 ? read(18, ...tail) : 1;
+}`,
+    untyped: `function read(base, ...values) {
+  let total = base + arguments.length;
+  for (const value of values) total += value;
+  return total;
+}
+export function run() {
+  const tail = [10, 11];
+  return read(1) === 2 ? read(18, ...tail) : 1;
+}`,
   },
   {
     name: "tagged-templates",

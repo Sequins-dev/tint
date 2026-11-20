@@ -23,6 +23,63 @@ import {
   type PropertyEnumeration,
 } from "./enumeration.ts";
 
+/** A bit per primitive category, shared by hosted lowering and its guards. */
+export function primitiveContractBit(name: string): number {
+  switch (name) {
+    case "undefined":
+      return 1;
+    case "null":
+      return 2;
+    case "boolean":
+      return 4;
+    case "number":
+      return 8;
+    case "string":
+      return 16;
+    case "bigint":
+      return 32;
+    case "symbol":
+      return 64;
+    case "never":
+      return 128;
+    default:
+      return 0;
+  }
+}
+
+export function checkPrimitiveContract(
+  realm: ErrorRealm,
+  value: unknown,
+  allowed: number,
+): unknown {
+  let kind = value === null ? "null" : typeof value;
+  if (kind === "object") {
+    if (
+      (allowed & primitiveContractBit("bigint")) !== 0 &&
+      viewBigIntValue(value) !== undefined
+    )
+      kind = "bigint";
+    else if (
+      (allowed & primitiveContractBit("symbol")) !== 0 &&
+      viewSymbolValue(value) !== undefined
+    )
+      kind = "symbol";
+  }
+  if ((allowed & primitiveContractBit(kind)) === 0)
+    throw createRuntimeError(realm, "type");
+  return value;
+}
+
+export function checkPrimitiveRestArguments(
+  realm: ErrorRealm,
+  args: readonly unknown[],
+  offset: number,
+  allowed: number,
+): void {
+  for (let i = offset; i < args.length; i++)
+    checkPrimitiveContract(realm, args[i], allowed);
+}
+
 /** Literal prototype setters bypass named properties and ignore primitive values. */
 export function setObjectLiteralPrototype(
   object: OrdinaryObject<ScriptPropertyKey, unknown>,

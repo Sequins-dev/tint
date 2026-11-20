@@ -176,6 +176,8 @@ function lowerGeneralProgram(
       erased,
       undefined,
       mixed?.numericCalls,
+      request.sourceValidated === true &&
+        (mixed === undefined || mixed.ordinaryEntries !== undefined),
     );
     if (!lowered.ok)
       return {
@@ -270,6 +272,7 @@ function lowerGeneralProgram(
     if (boundary === undefined) throw "general boundary invariant";
     const index = request.modules.length + k;
     const exportNames: string[] = [];
+    const callableViews = new Map<string, string>();
     let body = "";
     for (let i = 0; i < boundary.exports.length; i++) {
       const item = boundary.exports[i];
@@ -286,6 +289,16 @@ function lowerGeneralProgram(
       exportNames.push(item.name);
       let value = "toRealmError(" + local + ")";
       if (item.kind === "function") {
+        const existing = callableViews.get(item.local);
+        if (existing !== undefined) {
+          body +=
+            "setSyntheticModuleExport(module," +
+            JSON.stringify(item.name) +
+            "," +
+            existing +
+            ");";
+          continue;
+        }
         const checks: string[] = [];
         for (let p = 0; p < item.parameters.length; p++) {
           const classes = item.parameters[p];
@@ -305,6 +318,10 @@ function lowerGeneralProgram(
             adapters.index,
           ) +
           ";}catch(error){throw toRealmError(error);}},realm.executionContext)";
+        const view = "view" + i;
+        body += "const " + view + ":unknown=" + value + ";";
+        callableViews.set(item.local, view);
+        value = view;
       }
       body +=
         "setSyntheticModuleExport(module," +
@@ -854,10 +871,28 @@ function generalHostSource(
       : argumentNames
           .map((name, index) => "mixedArguments[" + index + "]=" + name + ";")
           .join("");
+  const ordinaryAdapters = mixed?.ordinaryEntries?.map((entry) => {
+    const arguments_ = entry.parameters.map((_, i) => "arg" + i);
+    const parameters = arguments_.map(
+      (name, i) => name + ":" + entry.parameters[i],
+    );
+    if (entry.rest !== undefined)
+      parameters.push("...values:" + entry.rest + "[]");
+    return `export function ${entry.adapter}(${parameters.join(",")}):${entry.result} {
+ const program=programRealm();
+ const args:unknown[]=[${arguments_.join(",")}];
+ ${entry.rest === undefined ? "" : "for(let i=0;i<values.length;i++)args.push(values[i]);"}
+ const value=callObjectValue(mixedCallable,undefined,args,program.object).value;
+ ${entry.result === "unknown" ? "" : "if(typeof value!==" + JSON.stringify(entry.result) + ")rejectArgument(program.realm);"}
+ return value;
+}`;
+  });
   const mixedAdapter =
     mixed === undefined
       ? ""
-      : `
+      : ordinaryAdapters !== undefined
+        ? "let mixedCallable:unknown=undefined;\n" + ordinaryAdapters.join("\n")
+        : `
 let mixedCallable:unknown=undefined;
 ${argumentsSource}
 export function $tintCallUnit(${signature}):number {

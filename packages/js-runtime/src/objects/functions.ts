@@ -1,6 +1,6 @@
 import type { TypedArrayElementKind } from "./typed-array-data.ts";
 import { getFunctionRealm } from "./function-realms.ts";
-import { scriptBoolean } from "./values.ts";
+import { checkPrimitiveContract, scriptBoolean } from "./values.ts";
 import {
   createSourceExecutionContext,
   createFunctionRealmContext,
@@ -245,6 +245,37 @@ export function createSourceFunction(
     length,
     home,
     false,
+    callerPolicy,
+  );
+}
+
+/** Use the ordinary function's identity, receiver and construct path. A
+ * return contract sees only the final normal completion after any finally. */
+export function createCheckedSourceFunction(
+  implementation: SourceFunctionCall,
+  constructible: boolean,
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+  name: string,
+  length: number,
+  home: OrdinaryObject<ScriptPropertyKey, unknown> | undefined,
+  callerPolicy: SourceCallerPolicy,
+  contract: number,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const checked: SourceFunctionCall = (receiver, args, callee, newTarget) =>
+    checkPrimitiveContract(
+      realm,
+      implementation(receiver, args, callee, newTarget),
+      contract,
+    );
+  return createSourceFunction(
+    checked,
+    constructible,
+    realm,
+    hooks,
+    name,
+    length,
+    home,
     callerPolicy,
   );
 }

@@ -32,7 +32,12 @@ for (const [file, text] of Object.entries(construct.helpers ?? {})) {
   sources.push({
     id,
     text,
-    dependencies: new Map<string, string>(),
+    dependencies: new Map(
+      (construct.helperImports?.[file] ?? []).map((target) => [
+        "./" + target,
+        "construct-helper:" + target,
+      ]),
+    ),
     unchecked: file === "untyped.ts" || form === "untyped",
   } satisfies HostedValidationSource);
 }
