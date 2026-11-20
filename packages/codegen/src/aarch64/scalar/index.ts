@@ -42,22 +42,9 @@ import {
   nativeSignatureResultOffset,
   nativeSignatureParametersOffset,
   nativeSignatureParameterByteLength,
-  nativeSignatureVoidCode,
-  nativeSignatureGeneralCode,
-  nativeSignatureOptionalBooleanCode,
-  nativeSignaturePrimitiveCode,
-  nativeSignatureStringCode,
-  nativeSignatureReferenceCode,
-  nativeSignatureOptionalReferenceCode,
-  nativeSignatureOptionalStringCode,
-  nativeSignatureNumberCode,
-  nativeSignatureBooleanCode,
-  nativeSignatureUint8ArrayCode,
-  nativeSignatureUint16ArrayCode,
-  nativeSignatureUint32ArrayCode,
-  nativeSignatureFloat64ArrayCode,
-  nativeSignatureOptionalNumberCode,
 } from "@tint/abi/function";
+import { nativeSignatureTypeCode } from "../../scalar/signature.ts";
+export { nativeSignatureTypeCode } from "../../scalar/signature.ts";
 import {
   temporaryRegisters,
   nonAllocatingBlocks,
@@ -709,41 +696,6 @@ function listWriteShape(fn: FunctionIR): ListWriteShape | undefined {
     } else if (t.kind === "record-cell" || t.kind === "cell") return undefined;
   }
   return header >= 0 && vectorWrite && lengthWrite ? { header } : undefined;
-}
-
-export function nativeSignatureTypeCode(type: ScalarType | "void"): number {
-  switch (type) {
-    case "void":
-      return nativeSignatureVoidCode;
-    case "general":
-      return nativeSignatureGeneralCode;
-    case "optional-boolean":
-      return nativeSignatureOptionalBooleanCode;
-    case "primitive":
-      return nativeSignaturePrimitiveCode;
-    case "string":
-      return nativeSignatureStringCode;
-    case "reference":
-      return nativeSignatureReferenceCode;
-    case "optional-reference":
-      return nativeSignatureOptionalReferenceCode;
-    case "optional-string":
-      return nativeSignatureOptionalStringCode;
-    case "number":
-      return nativeSignatureNumberCode;
-    case "boolean":
-      return nativeSignatureBooleanCode;
-    case "Uint8Array":
-      return nativeSignatureUint8ArrayCode;
-    case "Uint16Array":
-      return nativeSignatureUint16ArrayCode;
-    case "Uint32Array":
-      return nativeSignatureUint32ArrayCode;
-    case "Float64Array":
-      return nativeSignatureFloat64ArrayCode;
-    case "optional-number":
-      return nativeSignatureOptionalNumberCode;
-  }
 }
 
 export interface ManagedIdentityImport {

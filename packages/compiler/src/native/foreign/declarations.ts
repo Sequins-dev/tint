@@ -244,6 +244,10 @@ export function parseForeignDeclarations(
     position++;
     const args: TypeReference[] = [];
     if (token.value === "ByTarget") return targetChoice(token.start);
+    if (token.value === "long" && at("double")) {
+      fail("long double has no binding type", token.start);
+      return undefined;
+    }
     if (eat("<")) {
       for (;;) {
         const argument = typeReference();

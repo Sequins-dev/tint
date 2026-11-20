@@ -9,13 +9,16 @@ import {
   linuxArm64CTarget,
   type CTarget,
 } from "@tint/abi/c";
+import { linuxX86_64CTarget } from "@tint/abi/c/sysv";
 
-export type TargetName = "darwin-arm64" | "linux-arm64";
+export type TargetName = "darwin-arm64" | "linux-arm64" | "linux-x86_64";
 export const targetNames: readonly TargetName[] = [
   "darwin-arm64",
   "linux-arm64",
+  "linux-x86_64",
 ];
 export function cTargetOf(name: TargetName): CTarget {
+  if (name === "linux-x86_64") return linuxX86_64CTarget;
   return name === "darwin-arm64" ? darwinArm64CTarget : linuxArm64CTarget;
 }
 
@@ -98,6 +101,12 @@ export interface BindingSpec {
    * uses it). */
   readonly summary: readonly string[];
   readonly targets: readonly TargetName[];
+  /** This spec's selected Linux declarations use the same LP64 data model
+   * on arm64 and x86-64. Emit x86-64 choices from the Linux facts, with
+   * any authored target marker constants specified here. */
+  readonly linuxX86_64?: {
+    readonly constants?: Readonly<Record<string, string>>;
+  };
   /** Headers to include, for every target or per target. */
   readonly headers:
     | readonly string[]

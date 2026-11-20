@@ -152,14 +152,36 @@ test("x86-64 hosted compilation pinpoints deferred runtime operations", () => {
     build(
       "export function run(): number { return 42; }",
       {},
-      { runtimeEntry: "initializeGenerationalRuntime" },
+      { runtimeEntry: "initializeCopyingRuntime" },
     ),
     {
       ok: false,
       error: {
         stage: "target",
         message:
-          "linux-x86_64: unsupported operation initializeGenerationalRuntime (requires slice 7)",
+          "linux-x86_64: unsupported operation initializeCopyingRuntime (requires slice 7)",
+      },
+    },
+  );
+});
+
+test("x86-64 rejects a parallel collection requirement with a target diagnostic", () => {
+  assert.equal(linuxX86_64Target.parallelCollection, false);
+  assert.deepEqual(
+    build(
+      "export function run(): number { return 42; }",
+      {},
+      {
+        runtimeEntry: "initializeGenerationalRuntime",
+        requireParallelCollection: true,
+      },
+    ),
+    {
+      ok: false,
+      error: {
+        stage: "target",
+        message:
+          "linux-x86_64: parallel collection is unavailable until slice 8; the collector uses one worker",
       },
     },
   );
@@ -505,6 +527,218 @@ test(
       return 42;
     }
     `,
+      {},
+      { optimization: "none" },
+    );
+    assert.ok(built.ok, JSON.stringify(built));
+    assert.equal(run(built.value).status, 42);
+  },
+);
+
+test(
+  "x86-64 record fields preserve nullable links and optional scalars",
+  native,
+  () => {
+    const built = build(
+      `
+    interface Link {
+      value: number;
+      next: Link | undefined;
+      enabled: boolean | undefined;
+      measure: number | undefined;
+    }
+    function value(link: Link | undefined): number {
+      return link ? link.value : 0;
+    }
+    function same(left: Link, right: Link): boolean {
+      return left.enabled === right.enabled && left.measure === right.measure;
+    }
+    export function run(): number {
+      const tail: Link = { value: 13, next: undefined, enabled: false, measure: -0 };
+      const head: Link = { value: 0, next: tail, enabled: undefined, measure: undefined };
+      if (head.next !== tail || value(head.next) !== 13 || same(head, tail)) return 1;
+      if (!same(head, head) || (tail.enabled ?? true) !== false) return 2;
+      head.enabled = false;
+      head.measure = 0;
+      if (!same(head, tail) || 1 / (tail.measure ?? 1) !== -1 / 0) return 3;
+      head.measure = 0 / 0;
+      if (same(head, head) || (head.measure ?? 1) === 1) return 4;
+      head.next = undefined;
+      if (head.next || value(head.next) !== 0) return 5;
+      tail.value = 42;
+      head.next = tail;
+      return value(head.next);
+    }
+    `,
+      {},
+      { optimization: "none" },
+    );
+    assert.ok(built.ok, JSON.stringify(built));
+    assert.equal(run(built.value).status, 42);
+  },
+);
+
+test(
+  "x86-64 C memory adopts and retargets borrowed array storage",
+  native,
+  () => {
+    const built = build(
+      `import { adoptExternal, externalAddress, retargetExternal, stableBytes } from "ffi";
+    export function run(): number {
+      const empty = new Uint8Array(0);
+      if (externalAddress(empty) !== -1 || stableBytes(empty)) return 11;
+      const borrowed = adoptExternal(empty, 4096, 3);
+      if (externalAddress(borrowed) !== 4096 || !stableBytes(borrowed) ||
+          borrowed.length !== 3) return 12;
+      retargetExternal(borrowed, 8192);
+      if (externalAddress(borrowed) !== 8192 || borrowed.length !== 3) return 13;
+      return 42;
+    }`,
+      {
+        ffi: {
+          text: `
+        export function adoptExternal(empty: Uint8Array, address: number, length: number): Uint8Array { throw "HOST_UNAVAILABLE"; }
+        export function externalAddress(view: Uint8Array): number { throw "HOST_UNAVAILABLE"; }
+        export function retargetExternal(view: Uint8Array, address: number): void { throw "HOST_UNAVAILABLE"; }
+        export function stableBytes(view: Uint8Array): boolean { throw "HOST_UNAVAILABLE"; }`,
+          bindings: {},
+        },
+      },
+      {
+        foreignMemoryBindings: [
+          { module: "ffi", name: "adoptExternal", operation: "adopt" },
+          { module: "ffi", name: "externalAddress", operation: "address" },
+          { module: "ffi", name: "retargetExternal", operation: "retarget" },
+          { module: "ffi", name: "stableBytes", operation: "stable" },
+        ],
+      },
+    );
+    assert.ok(built.ok, JSON.stringify(built));
+    assert.equal(run(built.value).status, 42);
+  },
+);
+
+test(
+  "x86-64 escaping closures share writes across indirect calls",
+  native,
+  () => {
+    const built = build(
+      `
+    interface Counter {
+      add: (n: number) => number;
+      read: () => number;
+    }
+    function counter(start: number): Counter {
+      let value = start;
+      function bump(n: number): number { value += n; return value; }
+      function add(n: number): number { return bump(n); }
+      return { add, read: (): number => value };
+    }
+    export function run(): number {
+      const first = counter(10);
+      const other = counter(8);
+      if (first.add(20) !== 30) return 1;
+      if (other.add(3) !== 11) return 2;
+      if (first.read() !== 30) return 3;
+      return first.add(12);
+    }
+    `,
+      {},
+      { optimization: "none" },
+    );
+    assert.ok(built.ok, JSON.stringify(built));
+    assert.equal(run(built.value).status, 42);
+  },
+);
+
+test(
+  "x86-64 indirect calls forward stack arguments and propagate throws",
+  native,
+  () => {
+    const built = build(
+      `
+    type F = (a: boolean, b: boolean, c: boolean, d: number, e: number,
+      f: number, g: number, h: number, i: number, j: number, k: number,
+      l: number) => number;
+    function choose(base: number): F {
+      return (a, b, c, d, e, f, g, h, i, j, k, l): number => {
+        if (!a || b || !c) throw "bad flags";
+        return base + d + e + f + g + h + i + j + k + l;
+      };
+    }
+    export function run(): number {
+      const fn = choose(6);
+      try {
+        fn(false, false, true, 0, 1, 2, 3, 4, 5, 6, 7, 8);
+        return 2;
+      } catch (e) {
+        return fn(true, false, true, 0, 1, 2, 3, 4, 5, 6, 7, 8);
+      }
+    }
+    `,
+      {},
+      { optimization: "none" },
+    );
+    assert.ok(built.ok, JSON.stringify(built));
+    assert.equal(run(built.value).status, 42);
+  },
+);
+
+test(
+  "x86-64 allocates UTF-16 strings with JavaScript slice bounds",
+  native,
+  () => {
+    const built = build(
+      `function units(a: number, b: number, c: number): string {
+      return String.fromCharCode(a, b, c);
+    }
+    function tail(text: string, start: number, end?: number): string {
+      return text.slice(start, end);
+    }
+    export function run(): number {
+      const left = units(65601, -1, 55296);
+      const right = units(0 / 0, 66.9, 1 / 0);
+      const text = left + right;
+      if (text.length !== 6 || text.charCodeAt(1) !== 65535 ||
+          text.charCodeAt(2) !== 55296 || text.charCodeAt(4) !== 66) return 1;
+      if (tail(text, -2.8) !== "B\\0" ||
+          tail(text, -0.75, 1) !== "A" ||
+          tail(text, -1 / 0, -5) !== "A" ||
+          tail(text, 0 / 0, 1 / 0) !== text ||
+          tail(text, 1 / 0, 0) !== "") return 2;
+      return 42;
+    }`,
+      {},
+      { optimization: "none" },
+    );
+    assert.ok(built.ok, JSON.stringify(built));
+    assert.equal(run(built.value).status, 42);
+  },
+);
+
+test(
+  "x86-64 hosted general completion preserves tags and JavaScript equality",
+  native,
+  () => {
+    const built = build(
+      `function same(a: unknown, b: unknown): boolean { return a === b; }
+    function kind(value: unknown): string { return typeof value; }
+    export function run(): unknown {
+      const joined = "native" + String.fromCharCode(33);
+      const object = { value: 42 };
+      const fn = (): number => 42;
+      if (!same(joined, "native!") || !same(0, -0) || same(0 / 0, 0 / 0) ||
+          same(undefined, null) || same(false, 0) || !same(object, object) ||
+          same(object, { value: 42 })) return 2;
+      if (kind(fn) !== "function" || kind(object) !== "object" ||
+          kind(null) !== "object" || kind(joined) !== "string") return 3;
+      try { throw new RangeError("range"); }
+      catch (caught) {
+        if (!(caught instanceof RangeError) || !(caught instanceof Error) ||
+            caught instanceof TypeError || caught.message !== "range") return 4;
+      }
+      return 42;
+    }`,
       {},
       { optimization: "none" },
     );

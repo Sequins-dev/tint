@@ -176,6 +176,8 @@ import {
   foreignDeclaration,
   foreignCall,
   foreignViewRegistry,
+  x64ForeignDiagnostic,
+  selectX64ForeignRuntime,
   type ForeignLibrary,
   type NativeForeignBinding,
   type NativeForeignMemoryBinding,
@@ -1247,7 +1249,20 @@ function checkApplication(
     application = linkedProgram.application,
     hasDynamicRuntime = helpers.has("dynamic-object:create");
   const dynamic = usesDynamicObjectRuntime(checked.value, mixed);
-  const realmInstanceof = usesRealmInstanceof(checked.value, mixed || dynamic);
+  // Retained runtime functions can dispatch through attached error views
+  // without capturing the program instance's realm closures.
+  function canCaptureErrorRealm(site: Span): boolean {
+    const origin = locateSourceRange(linkedProgram.ranges, site);
+    return (
+      origin === undefined ||
+      !linkedProgram.retainedRuntimeModules.has(origin.module)
+    );
+  }
+  const realmInstanceof = usesRealmInstanceof(
+    checked.value,
+    mixed || dynamic,
+    canCaptureErrorRealm,
+  );
   if (!hasDynamicRuntime && (dynamic || realmInstanceof))
     return {
       ok: false,
@@ -1269,6 +1284,7 @@ function checkApplication(
         helpers,
         realmInstanceof,
         mixed,
+        canCaptureErrorRealm,
       )
     : application;
   let callsGeneral = false;
@@ -2541,27 +2557,80 @@ function emitProgram(
 export function compileX64HostedProgram(
   request: CompileRequest,
   host: PosixHostFacts,
+  options: {
+    readonly runtime?: true;
+    readonly generational?: boolean;
+    readonly inlineAllocation?: boolean;
+  } = {},
 ):
   | CompilationFailure
   | {
       readonly ok: true;
       readonly native: X64Module;
       readonly invocation: number;
-      readonly returnType: "number" | "boolean" | "void";
+      readonly returnType:
+        "number" | "boolean" | "void" | "reference" | "general";
     } {
-  const lowered = lowerTypedProgram(request, undefined, true);
+  const selected =
+    options.runtime === true ? request : selectX64ForeignRuntime(request);
+  if (typeof selected === "string") return stageFailure("foreign", selected);
+  const lowered = lowerTypedProgram(
+    withForeignRuntimes({
+      ...request,
+      moduleLoader: selected.moduleLoader,
+      modules: selected.modules,
+      symbols: true,
+    }),
+    undefined,
+    options.runtime !== true,
+  );
   if (!lowered.ok) return lowered;
   const program = lowered.value;
+  const lists = program.referenceLists;
+  if (lists !== undefined)
+    lowerProgramReferenceLists(
+      program,
+      lists,
+      undefined,
+      (_stats, _module) => false,
+    );
   const first = program.ir.module;
-  const returnType = first.functions[program.invocation]?.returnType;
-  if (
+  const entry = first.functions[program.invocation];
+  if (entry === undefined)
+    return stageFailure("entry", "linux-x86_64: missing entry");
+  const returnType = entry.returnType;
+  if (options.runtime === true) {
+    const workspaces: readonly ScalarType[] = [
+      "Uint32Array",
+      "Uint32Array",
+      "Uint32Array",
+      "Float64Array",
+      "Uint8Array",
+      "Uint32Array",
+      "Float64Array",
+    ];
+    if (
+      returnType !== "reference" ||
+      entry.parameters.length !== 8 + workspaces.length ||
+      entry.parameters.some(
+        (slot, index) =>
+          slot === undefined ||
+          entry.slots[slot] !== (index < 8 ? "number" : workspaces[index - 8]),
+      )
+    )
+      return stageFailure(
+        "entry",
+        "linux-x86_64: invalid collector initializer signature",
+      );
+  } else if (
     returnType !== "number" &&
     returnType !== "boolean" &&
-    returnType !== "void"
+    returnType !== "void" &&
+    returnType !== "general"
   )
     return stageFailure(
       "entry",
-      "linux-x86_64: expected a Number, Boolean or void entry",
+      "linux-x86_64: expected a Number, Boolean, void or general entry",
     );
   const roots = [program.invocation];
   const reachable = pruneModuleReferences(first, roots, unboundedWork);
@@ -2578,12 +2647,29 @@ export function compileX64HostedProgram(
         }).module;
   request.onScalarIR?.("lowered", initial);
   request.onScalarIR?.("optimized", optimized);
-  const emitted = emitX64(optimized, host);
+  const sourceNames = program.sourceNames;
+  if (sourceNames === undefined) throw "x64 foreign source names invariant";
+  const deferred = x64ForeignDiagnostic(
+    initial,
+    optimized,
+    sourceNames.names,
+    request.foreignLibraries ?? [],
+  );
+  if (deferred !== undefined) return stageFailure("foreign", deferred);
+  const emitted = emitX64(
+    optimized,
+    host,
+    options.generational === true,
+    options.inlineAllocation !== false,
+  );
   if (!emitted.ok) {
     const message = emitted.error.message;
     return stageFailure(
       "emit",
-      "linux-x86_64: " + message.slice("x86-64 scalar: ".length),
+      "linux-x86_64: " +
+        (message.startsWith("x86-64 scalar: ")
+          ? message.slice("x86-64 scalar: ".length)
+          : message),
     );
   }
   return { ok: true, native: emitted.value, invocation, returnType };

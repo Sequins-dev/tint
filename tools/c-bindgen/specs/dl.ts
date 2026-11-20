@@ -10,6 +10,7 @@ export default {
     "(libc.so.6, which holds dlopen since 2.34) on Linux.",
   ],
   targets: ["darwin-arm64", "linux-arm64"],
+  linuxX86_64: { constants: { TARGET_AAPCS64: "2" } },
   headers: ["dlfcn.h", "pthread.h", "stdint.h"],
   // Records Tint defines: a handle as its two 32-bit halves (Darwin's
   // dlopen(NULL) handle has high bits set, which no number holds), and the

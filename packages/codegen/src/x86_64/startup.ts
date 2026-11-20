@@ -1,4 +1,11 @@
 import {
+  nativeFunctionEntryOffset,
+  nativeFunctionEnvironmentOffset,
+} from "@tint/abi/function";
+import {
+  nativeArrayDataOffset,
+  nativeArrayLengthOffset,
+  nativeHeaderFlagUnit,
   nativeStackLimitOffset,
   nativeStackMapRegistryEntryBytes,
   nativeStackMapRegistryHeaderBytes,
@@ -18,6 +25,9 @@ import {
 } from "./isa.ts";
 import type { X64Module } from "./scalar/index.ts";
 import {
+  allocationStateOffset,
+  allocatorEntryOffset,
+  allocatorEnvironmentOffset,
   argumentCountOffset,
   argumentsOffset,
   contextBytes,
@@ -28,12 +38,15 @@ import {
   imageRelocations,
   imm,
   label,
+  managedBaseOffset,
+  managedLengthOffset,
   mem,
   normal,
   resultBytes,
   resultPayload,
   rip,
   word,
+  xmm,
   type ImageRelocations,
 } from "./scalar/machine.ts";
 
@@ -41,7 +54,14 @@ interface HostedEntry {
   readonly native: X64Module;
   readonly host: PosixHostFacts;
   readonly invocation: number;
-  readonly returnType: "number" | "boolean" | "void";
+  readonly runtime?: {
+    readonly native: X64Module;
+    readonly entry: number;
+    readonly controlBytes: number;
+    readonly allocationCapacity: number;
+    readonly rootCapacity: number;
+  };
+  readonly returnType: "number" | "boolean" | "void" | "general";
   readonly stackBytes: number;
   readonly managedBytes: number;
   readonly pageBytes: number;
@@ -61,8 +81,9 @@ interface HostedImage extends ImageRelocations {
   readonly symbols: readonly ImageSymbol[];
 }
 
-/** One process-local, non-collecting runtime. The guarded stack and zero-filled
- * allocation arena share a mapping, released after the managed entry returns. */
+/** A hosted stack, collector control storage and managed region live in
+ * one guarded mapping. The optional collector initializer runs on a
+ * permanent control bump arena before managed allocation is published. */
 export function appendHostedEntry(request: HostedEntry): HostedImage {
   const native = request.native,
     host = request.host,
@@ -72,12 +93,77 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   const processStart = host.processStart;
   if (processStart === undefined) throw "glibc startup policy required";
   const stackEnd = pageBytes + stackBytes;
+  const app = native;
+  const runtime = request.runtime;
+  const runtimeCode = runtime?.native;
+  const codeOffset =
+    runtimeCode === undefined
+      ? app.code.length
+      : Math.ceil(app.code.length / 8) * 8;
+  const dataOffset =
+    runtimeCode === undefined
+      ? app.data.length
+      : Math.ceil(app.data.length / 8) * 8;
+  const imageLength = codeOffset + (runtimeCode?.code.length ?? 0);
+  const stackMaps = app.stackMaps.slice();
+  if (runtimeCode !== undefined)
+    for (const table of runtimeCode.stackMaps) {
+      if (table === undefined) throw "runtime stack map invariant";
+      stackMaps.push({
+        codeOffset: codeOffset + table.codeOffset,
+        codeLength: table.codeLength,
+        tableOffset: codeOffset + table.tableOffset,
+      });
+    }
   const registryStart = stackEnd + pageBytes;
   const registryBytes =
     nativeStackMapRegistryHeaderBytes +
-    native.stackMaps.length * nativeStackMapRegistryEntryBytes;
-  const heapStart = registryStart + Math.ceil(registryBytes / 16) * 16;
-  const mappingBytes = heapStart + managedBytes;
+    stackMaps.length * nativeStackMapRegistryEntryBytes;
+  const afterRegistry = registryStart + registryBytes;
+  const heapAlignment = runtime === undefined ? 16 : pageBytes;
+  const heapStart = Math.ceil(afterRegistry / heapAlignment) * heapAlignment;
+  const controlStart = Math.ceil((heapStart + managedBytes) / 16) * 16;
+  const arrays: {
+    kind: number;
+    length: number;
+    width: number;
+    data: number;
+  }[] = [];
+  let controlCursor = controlStart;
+  let controlEnd = heapStart + managedBytes;
+  if (runtime !== undefined) {
+    if (
+      !Number.isSafeInteger(runtime.controlBytes) ||
+      runtime.controlBytes < 16 ||
+      !Number.isSafeInteger(runtime.rootCapacity) ||
+      runtime.rootCapacity < 1
+    )
+      throw "invalid collector control or root capacity";
+    const capacity = runtime.allocationCapacity;
+    arrays.push(
+      { kind: 4, length: capacity * 3 + 96, width: 4, data: 0 },
+      { kind: 4, length: capacity, width: 4, data: 0 },
+      { kind: 4, length: capacity, width: 4, data: 0 },
+      {
+        kind: 5,
+        length: capacity + Math.ceil(managedBytes / 4096) + 1,
+        width: 8,
+        data: 0,
+      },
+      { kind: 2, length: capacity, width: 1, data: 0 },
+      { kind: 4, length: capacity, width: 4, data: 0 },
+      { kind: 5, length: runtime.rootCapacity, width: 8, data: 0 },
+    );
+    controlCursor += arrays.length * 24;
+    for (const array of arrays) {
+      if (array === undefined) throw "collector workspace invariant";
+      array.data = Math.ceil(controlCursor / 16) * 16;
+      controlCursor = array.data + array.length * array.width;
+    }
+    controlCursor = Math.ceil(controlCursor / 16) * 16;
+    controlEnd = controlCursor + runtime.controlBytes;
+  }
+  const mappingBytes = controlEnd;
   if (mappingBytes > 0x7fffffff) throw "invalid hosted mapping size";
   const rsp = gpr(4),
     rbp = gpr(5),
@@ -94,6 +180,10 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   const machine: Instruction[] = [];
   const imports = new Map<string, ImageAddressTarget>();
   const importNames = native.imports.slice();
+  if (runtimeCode !== undefined)
+    for (const symbol of runtimeCode.imports)
+      if (symbol !== undefined && !importNames.includes(symbol))
+        importNames.push(symbol);
   const emit = (insn: Instruction): void => {
     machine.push(insn);
   };
@@ -167,10 +257,10 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   local.set("invoke", request.invocation);
   emit({ op: "lea", dst: rax, src: mem(13, registryStart) });
   emit({ op: "mov", dst: mem(12, nativeStackMapRegistryOffset), src: rax });
-  emit({ op: "mov", dst: mem(0, 0), src: imm(native.stackMaps.length) });
-  emit({ op: "mov", dst: mem(0, 8), src: imm(native.stackMaps.length) });
-  for (let index = 0; index < native.stackMaps.length; index++) {
-    const table = native.stackMaps[index];
+  emit({ op: "mov", dst: mem(0, 0), src: imm(stackMaps.length) });
+  emit({ op: "mov", dst: mem(0, 8), src: imm(stackMaps.length) });
+  for (let index = 0; index < stackMaps.length; index++) {
+    const table = stackMaps[index];
     if (table === undefined) throw "stack map registry entry invariant";
     const codeName = "stack-maps-code:" + String(index);
     const tableName = "stack-maps-table:" + String(index);
@@ -186,7 +276,11 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     emit({ op: "mov", dst: mem(0, entry + 16), src: gpr(11) });
   }
 
-  emit({ op: "lea", dst: rax, src: mem(13, heapStart) });
+  emit({
+    op: "lea",
+    dst: rax,
+    src: mem(13, runtime === undefined ? heapStart : controlCursor),
+  });
   emit({ op: "mov", dst: mem(12, heapCursorOffset), src: rax });
   emit({ op: "lea", dst: rax, src: mem(13, mappingBytes) });
   emit({ op: "mov", dst: mem(12, heapEndOffset), src: rax });
@@ -194,6 +288,89 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   // system frame separately because it is outside the managed stack region.
   emit({ op: "lea", dst: rbp, src: mem(13, stackEnd - 16) });
   emit({ op: "lea", dst: rsp, src: mem(5, -resultBytes) });
+
+  if (runtime !== undefined) {
+    const pointer = gpr(11);
+    const outgoing = 48;
+    local.set("runtime", codeOffset + runtime.entry);
+    local.set("image", 0);
+    emit({ op: "sub", dst: rsp, src: imm(outgoing) });
+    const extents = [
+      heapStart,
+      managedBytes,
+      controlStart,
+      controlEnd - controlStart,
+      0,
+      imageLength,
+      pageBytes,
+      stackBytes,
+    ];
+    for (let index = 0; index < extents.length; index++) {
+      const value = extents[index];
+      if (value === undefined) throw "runtime window invariant";
+      if (index === 4) emit({ op: "lea", dst: rax, src: rip("image") });
+      else if (index % 2 === 0)
+        emit({ op: "lea", dst: rax, src: mem(13, value) });
+      else emit({ op: "mov", dst: rax, src: imm(value) });
+      if (index === 0)
+        emit({ op: "mov", dst: mem(12, managedBaseOffset), src: rax });
+      if (index === 1)
+        emit({ op: "mov", dst: mem(12, managedLengthOffset), src: rax });
+      emit({ op: "cvtsi2sd", dst: xmm(index), src: rax });
+    }
+    for (let index = 0; index < arrays.length; index++) {
+      const array = arrays[index];
+      if (array === undefined) throw "runtime array invariant";
+      const header = controlStart + index * 24;
+      emit({
+        op: "mov",
+        dst: rax,
+        src: bits(array.kind, nativeHeaderFlagUnit / 4294967296),
+      });
+      emit({ op: "mov", dst: mem(13, header), src: rax });
+      emit({
+        op: "mov",
+        dst: mem(13, header + nativeArrayLengthOffset),
+        src: imm(array.length),
+      });
+      emit({ op: "lea", dst: pointer, src: mem(13, array.data) });
+      emit({
+        op: "mov",
+        dst: mem(13, header + nativeArrayDataOffset),
+        src: pointer,
+      });
+      if (index < 2)
+        emit({ op: "lea", dst: gpr(8 + index), src: mem(13, header) });
+      else {
+        emit({ op: "lea", dst: rax, src: mem(13, header) });
+        emit({ op: "mov", dst: mem(4, (index - 2) * 8), src: rax });
+      }
+    }
+    emit({ op: "mov", dst: rdi, src: r12 });
+    emit({ op: "xor", dst: esi, src: esi });
+    emit({ op: "xor", dst: edx, src: edx });
+    emit({ op: "lea", dst: gpr(1), src: mem(4, outgoing) });
+    emit({ op: "call", target: label("runtime") });
+    emit({ op: "add", dst: rsp, src: imm(outgoing) });
+    emit({ op: "cmp", dst: eax, src: imm(normal) });
+    emit({ op: "jcc", cc: "ne", target: label("program-failed") });
+    emit({ op: "mov", dst: rax, src: mem(4, resultPayload) });
+    emit({ op: "test", dst: rax, src: rax });
+    emit({ op: "jcc", cc: "e", target: label("guard-failed") });
+    emit({ op: "cmp", dst: mem(12, allocationStateOffset), src: imm(0) });
+    emit({ op: "jcc", cc: "e", target: label("guard-failed") });
+    emit({ op: "mov", dst: pointer, src: mem(0, nativeFunctionEntryOffset) });
+    emit({ op: "mov", dst: mem(12, allocatorEntryOffset), src: pointer });
+    emit({
+      op: "mov",
+      dst: pointer,
+      src: mem(0, nativeFunctionEnvironmentOffset),
+    });
+    emit({ op: "mov", dst: mem(12, allocatorEnvironmentOffset), src: pointer });
+    // A collector constructor after startup violates its non-allocating contract.
+    emit({ op: "mov", dst: mem(12, heapCursorOffset), src: imm(0) });
+    emit({ op: "mov", dst: mem(12, heapEndOffset), src: imm(0) });
+  }
 
   emit({ op: "mov", dst: rdi, src: r12 });
   emit({ op: "xor", dst: esi, src: esi });
@@ -205,13 +382,35 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   emit({ op: "cmp", dst: eax, src: imm(normal) });
   emit({ op: "jcc", cc: "ne", target: label("program-failed") });
 
-  if (request.returnType === "number") {
-    emit({ op: "cvttsd2si", dst: rax, src: mem(4, resultPayload) });
+  const general = request.returnType === "general";
+  if (general) {
+    emit({ op: "mov", dst: rax, src: mem(4, resultPayload) });
+    emit({ op: "test", dst: rax, src: rax });
+    emit({ op: "jcc", cc: "e", target: label("unmap") });
+    emit({ op: "cmp", dst: rax, src: imm(2) });
+    emit({ op: "jcc", cc: "e", target: label("boolean-status") });
+    emit({ op: "cmp", dst: rax, src: imm(1) });
+    emit({ op: "jcc", cc: "ne", target: label("program-failed") });
+  }
+  if (request.returnType === "number" || general) {
+    const payload = mem(4, resultPayload + (general ? 8 : 0));
+    emit({ op: "cvttsd2si", dst: rax, src: payload });
     emit({ op: "cmp", dst: rax, src: imm(255) });
     emit({ op: "jcc", cc: "a", target: label("program-failed") });
-  } else if (request.returnType === "boolean")
-    emit({ op: "mov", dst: rax, src: mem(4, resultPayload) });
-  else emit({ op: "xor", dst: eax, src: eax });
+    emit({ op: "cvtsi2sd", dst: xmm(0), src: rax });
+    emit({ op: "ucomisd", dst: xmm(0), src: payload });
+    emit({ op: "jcc", cc: "ne", target: label("program-failed") });
+    if (general) emit({ op: "jmp", target: label("unmap") });
+  }
+  if (request.returnType === "boolean" || general) {
+    emit({ op: "label", name: "boolean-status" });
+    emit({
+      op: "mov",
+      dst: rax,
+      src: mem(4, resultPayload + (general ? 8 : 0)),
+    });
+  } else if (request.returnType === "void")
+    emit({ op: "xor", dst: eax, src: eax });
   emit({ op: "jmp", target: label("unmap") });
   emit({ op: "label", name: "program-failed" });
   emit({ op: "mov", dst: eax, src: imm(1) });
@@ -240,9 +439,16 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     machine,
     (name) => local.has(name) || imports.has(name),
   );
-  const base = native.code.length;
+  const base = imageLength;
   const code = new Uint8Array(base + stub.bytes.length);
   code.set(native.code);
+  let data = native.data;
+  if (runtimeCode !== undefined) {
+    code.set(runtimeCode.code, codeOffset);
+    data = new Uint8Array(dataOffset + runtimeCode.data.length);
+    data.set(native.data);
+    data.set(runtimeCode.data, dataOffset);
+  }
   code.set(stub.bytes, base);
   const external: NearFixup[] = [];
   for (const fixup of stub.externalFixups) {
@@ -264,23 +470,33 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
       });
   }
   const relocations = imageRelocations(external, imports);
-  const nativeFixups = native.addressFixups.length;
+  const appFixups = native.addressFixups.length;
+  const runtimeFixups = runtimeCode?.addressFixups.length ?? 0;
   const patchAddress: ImageAddressPatcher = (
     bytes,
     index,
     site,
     target,
     address,
-  ) =>
-    index < nativeFixups
-      ? native.patchAddress(bytes, index, site, target, address)
-      : relocations.patchAddress(
-          bytes,
-          index - nativeFixups,
-          site,
-          target,
-          address,
-        );
+  ) => {
+    if (index < appFixups)
+      return native.patchAddress(bytes, index, site, target, address);
+    if (runtimeCode !== undefined && index < appFixups + runtimeFixups)
+      return runtimeCode.patchAddress(
+        bytes,
+        index - appFixups,
+        site,
+        target,
+        address,
+      );
+    return relocations.patchAddress(
+      bytes,
+      index - appFixups - runtimeFixups,
+      site,
+      target,
+      address,
+    );
+  };
   const main = stub.labels.get("main");
   if (main === undefined) throw "startup label invariant";
   const symbols: ImageSymbol[] = [];
@@ -288,9 +504,27 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     if (fn === undefined) throw "program symbol invariant";
     symbols.push({ name: fn.name, offset: fn.offset });
   }
+  if (runtimeCode !== undefined)
+    for (const fn of runtimeCode.functions) {
+      if (fn === undefined) throw "runtime symbol invariant";
+      symbols.push({ name: fn.name, offset: codeOffset + fn.offset });
+    }
   symbols.push({ name: "_start", offset: base });
   symbols.push({ name: "main", offset: base + main });
   const addressFixups: ImageAddressReference[] = native.addressFixups.slice();
+  if (runtimeCode !== undefined)
+    for (const reference of runtimeCode.addressFixups) {
+      if (reference === undefined) throw "runtime address fixup invariant";
+      const target = reference.target;
+      addressFixups.push({
+        ...reference,
+        offset: codeOffset + reference.offset,
+        target:
+          target.kind === "data"
+            ? { kind: "data", offset: dataOffset + target.offset }
+            : target,
+      });
+    }
   for (const reference of relocations.addressFixups) {
     if (reference === undefined) throw "startup address fixup invariant";
     addressFixups.push(reference);
@@ -298,7 +532,7 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   return {
     code,
     entryOffset: base,
-    data: native.data,
+    data,
     maxByteLength: Number.MAX_SAFE_INTEGER,
     imports: importNames,
     symbols,

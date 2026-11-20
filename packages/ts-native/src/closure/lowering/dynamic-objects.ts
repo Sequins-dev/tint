@@ -128,19 +128,25 @@ export function arrayFlowReceiver(
       return undefined;
   }
 }
-function isNativeRealmGuard(intrinsic: string): boolean {
+function isNativeRealmGuard(
+  intrinsic: string,
+  site: Span,
+  canCaptureErrorRealm: (site: Span) => boolean,
+): boolean {
   return (
     intrinsic === "array-instanceof" ||
-    intrinsic === "error-is" ||
-    intrinsic === "type-error-is" ||
-    intrinsic === "range-error-is" ||
-    intrinsic === "error-property"
+    ((intrinsic === "error-is" ||
+      intrinsic === "type-error-is" ||
+      intrinsic === "range-error-is" ||
+      intrinsic === "error-property") &&
+      canCaptureErrorRealm(site))
   );
 }
 
 export function usesRealmInstanceof(
   checked: CheckedClosures,
   realmGuards: boolean,
+  canCaptureErrorRealm: (site: Span) => boolean,
 ): boolean {
   let used = false;
   checked.intrinsics.forEach((intrinsic, node) => {
@@ -148,7 +154,8 @@ export function usesRealmInstanceof(
       intrinsic.startsWith("realm-library-") ||
       intrinsic === "realm-global" ||
       intrinsic === "realm-instanceof" ||
-      (realmGuards && isNativeRealmGuard(intrinsic)) ||
+      (realmGuards &&
+        isNativeRealmGuard(intrinsic, node, canCaptureErrorRealm)) ||
       arrayFlowReceiver(checked, node, intrinsic) === "realm"
     )
       used = true;
@@ -444,7 +451,8 @@ export function insertDynamicObjectRuntime(
   checked: CheckedClosures,
   helpers: ReadonlyMap<string, string>,
   realmInstanceof: boolean,
-  speculativeFlow?: boolean,
+  speculativeFlow: boolean,
+  canCaptureErrorRealm: (site: Span) => boolean,
 ): Module {
   const uses: Span[] = [];
   const patterns: Span[] = [];
@@ -463,7 +471,7 @@ export function insertDynamicObjectRuntime(
         (intrinsic.startsWith("realm-library-") ||
           intrinsic === "realm-global" ||
           intrinsic === "realm-instanceof" ||
-          isNativeRealmGuard(intrinsic) ||
+          isNativeRealmGuard(intrinsic, node, canCaptureErrorRealm) ||
           arrayFlowReceiver(checked, node, intrinsic) !== undefined))
     )
       uses.push(node);

@@ -677,6 +677,15 @@ general code whose scopes cannot be observed dynamically (no direct eval or
 `with`), replacing name-based `resolveBinding` per identifier. Untyped code
 is only competitive once its locals are slots.
 
+### SysV leaf FFI
+
+Linux x86-64 uses the same foreign binding declarations, C layouts and leaf
+`c-call` and `c-memory` IR as arm64. Its emitter assigns System V register
+and stack locations and executes the shared leaf-call contract. Public
+`foreignFunction` and wrappers that allocate managed records use the
+x86-64 managed runtime. The target rejects callback signatures
+pending F2. See [Linux x86-64 FFI](native-ffi.md#linux-x86-64).
+
 ### Known typed-only gaps and the slice that removes them
 
 FFI phase 1 marks its workarounds `KNOWN DEFECT` (see the known-defects table

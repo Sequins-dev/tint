@@ -8,6 +8,7 @@ export default {
     "Darwin resolves them through libSystem, Linux through glibc (libc.so.6).",
   ],
   targets: ["darwin-arm64", "linux-arm64"],
+  linuxX86_64: {},
   headers: ["sys/mman.h", "unistd.h", "string.h"],
   constants: [
     "PROT_NONE",
