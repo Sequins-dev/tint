@@ -1719,8 +1719,8 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
   };
 }
 
-/** The root isolate's application module body runs after its host installed the
- * Worker bindings. Guest isolates enter only their own module evaluation. */
+/** Evaluate Worker-dependent root modules once their host has installed the
+ * isolate's Worker bindings. */
 function deferWorkerEvaluation(
   module: Module,
   exports: readonly LinkedExport[],

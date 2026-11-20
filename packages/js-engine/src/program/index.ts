@@ -197,6 +197,29 @@ function lowerGeneralProgram(
     : undefined;
   if (typedGraph !== undefined && !typedGraph.has("node:worker_threads"))
     return { ok: false, error: "entry graph does not use node:worker_threads" };
+  // Only the modules that depend on the worker bindings need to move into
+  // the checked entry's evaluation scope. Shared runtime modules such as
+  // source text and syntax must remain accessible to the host too.
+  const typedWorkerModules = new Set<string>();
+  if (typedGraph !== undefined) {
+    const importers = new Map<string, string[]>();
+    for (const source of original.modules) {
+      if (source === undefined || !typedGraph.has(source.id)) continue;
+      for (const [, dependency] of source.dependencies) {
+        const found = importers.get(dependency);
+        if (found === undefined) importers.set(dependency, [source.id]);
+        else found.push(source.id);
+      }
+    }
+    const pending = ["node:worker_threads"];
+    for (let index = 0; index < pending.length; index++) {
+      const id = pending[index];
+      if (id === undefined || typedWorkerModules.has(id)) continue;
+      typedWorkerModules.add(id);
+      for (const importer of importers.get(id) ?? [])
+        if (importer !== undefined) pending.push(importer);
+    }
+  }
   const guestGraph = typedWorkerEntry
     ? applicationGraph(original.workerEntries ?? [])
     : undefined;
@@ -625,6 +648,8 @@ function lowerGeneralProgram(
   }
   if (typedBindings !== undefined)
     hostDependencies.set("typed-worker-bindings", typedBindings);
+  if (typedEntry !== undefined)
+    hostDependencies.set(typedEntry.id, typedEntry.id);
   for (const module of generated)
     if (module !== undefined) hostDependencies.set(module.id, module.id);
   for (const boundary of request.boundaries)
@@ -681,12 +706,7 @@ function lowerGeneralProgram(
               workerEvaluation: {
                 entry: typedEntry.id,
                 start: request.start,
-                modules: original.modules
-                  .filter(
-                    (source) =>
-                      source !== undefined && typedGraph.has(source.id),
-                  )
-                  .map((source) => source.id),
+                modules: [...typedWorkerModules],
               },
               moduleConstructors: [
                 {
