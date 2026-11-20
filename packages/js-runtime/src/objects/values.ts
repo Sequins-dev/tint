@@ -1,3 +1,4 @@
+import { primitiveContractBit } from "@tint/foundation/values/primitive-contract";
 import { viewSymbolValue } from "./symbols.ts";
 import {
   viewBigIntValue,
@@ -22,30 +23,6 @@ import {
   createPropertyEnumeration,
   type PropertyEnumeration,
 } from "./enumeration.ts";
-
-/** A bit per primitive category, shared by hosted lowering and its guards. */
-export function primitiveContractBit(name: string): number {
-  switch (name) {
-    case "undefined":
-      return 1;
-    case "null":
-      return 2;
-    case "boolean":
-      return 4;
-    case "number":
-      return 8;
-    case "string":
-      return 16;
-    case "bigint":
-      return 32;
-    case "symbol":
-      return 64;
-    case "never":
-      return 128;
-    default:
-      return 0;
-  }
-}
 
 export function checkPrimitiveContract(
   realm: ErrorRealm,

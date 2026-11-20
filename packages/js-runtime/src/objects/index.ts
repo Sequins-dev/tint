@@ -196,7 +196,6 @@ export {
   objectValueTypeof,
   objectTypeof,
   generalValueTypeof,
-  primitiveContractBit,
   checkPrimitiveContract,
   checkPrimitiveRestArguments,
   viewTypeofObject,

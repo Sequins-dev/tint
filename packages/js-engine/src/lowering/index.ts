@@ -27,7 +27,7 @@ export {
   type ScriptRuntimeSurfaceEntry,
 } from "./runtime-imports.ts";
 import { generatorContinuation } from "./generators.ts";
-import { primitiveContractBit } from "@tint/js-runtime/objects";
+import { primitiveContractBit } from "@tint/foundation/values/primitive-contract";
 import {
   isOptionalChain,
   isDirectEvalCandidate,

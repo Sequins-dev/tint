@@ -791,6 +791,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "foundation",
     },
     {
+      id: "packages/foundation/src/values/primitive-contract.ts",
+      packageId: "foundation",
+    },
+    {
       id: "packages/image/src/darwin/dyld-fixups.ts",
       packageId: "image",
     },
@@ -3455,6 +3459,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "codegen",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/ir/optimization",
       target: "packages/ir/src/optimization/index.ts",
     },
@@ -3777,6 +3786,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/foundation/unicode/segmentation",
       target: "packages/foundation/src/unicode/segmentation/index.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
     },
     {
       packageId: "compiler",
@@ -4354,6 +4368,11 @@ export function projectMappings(): ImportMapping[] {
       target: "packages/foundation/src/unicode/segmentation/index.ts",
     },
     {
+      packageId: "image",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
+    },
+    {
       packageId: "ir",
       specifier: "@tint/abi/c",
       target: "packages/abi/src/c/index.ts",
@@ -4587,6 +4606,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "ir",
       specifier: "@tint/foundation/unicode/segmentation",
       target: "packages/foundation/src/unicode/segmentation/index.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
     },
     {
       packageId: "js-engine",
@@ -4857,6 +4881,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-engine",
       specifier: "@tint/foundation/unicode/segmentation",
       target: "packages/foundation/src/unicode/segmentation/index.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
     },
     {
       packageId: "js-engine",
@@ -5229,6 +5258,11 @@ export function projectMappings(): ImportMapping[] {
       target: "packages/foundation/src/unicode/segmentation/index.ts",
     },
     {
+      packageId: "js-runtime",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
+    },
+    {
       packageId: "native-runtime",
       specifier: "@tint/abi/c",
       target: "packages/abi/src/c/index.ts",
@@ -5462,6 +5496,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "native-runtime",
       specifier: "@tint/foundation/unicode/segmentation",
       target: "packages/foundation/src/unicode/segmentation/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
     },
     {
       packageId: "native-runtime",
@@ -5860,6 +5899,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "ts-native",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
+    },
+    {
+      packageId: "ts-native",
       specifier: "@tint/ir/optimization",
       target: "packages/ir/src/optimization/index.ts",
     },
@@ -6132,6 +6176,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "typescript",
       specifier: "@tint/foundation/unicode/segmentation",
       target: "packages/foundation/src/unicode/segmentation/index.ts",
+    },
+    {
+      packageId: "typescript",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
     },
     {
       packageId: "typescript",
