@@ -1214,19 +1214,21 @@ function exportEntry(symbol: string, address: number): Uint8Array | undefined {
   const encoded = new TextEncoder().encode("_" + symbol);
   if (encoded.length >= 124 || symbol.length === 0 || symbol.includes("\0"))
     return undefined;
-  const terminal: number[] = [0];
+  // Flags plus up to eight ULEB128 bytes for an exact Number address.
+  const terminal = new Uint8Array(9);
+  let length = 1;
   let cursor = address;
   do {
     const low = cursor % 128;
     cursor = Math.floor(cursor / 128);
-    terminal.push(low + (cursor === 0 ? 0 : 128));
+    terminal[length++] = low + (cursor === 0 ? 0 : 128);
   } while (cursor > 0);
   const child = encoded.length + 4;
-  const bytes = new Uint8Array(child + 2 + terminal.length);
+  const bytes = new Uint8Array(child + 2 + length);
   bytes[1] = 1;
   bytes.set(encoded, 2);
   bytes[child - 1] = child;
-  bytes[child] = terminal.length;
-  bytes.set(terminal, child + 1);
+  bytes[child] = length;
+  bytes.set(terminal.subarray(0, length), child + 1);
   return bytes;
 }
