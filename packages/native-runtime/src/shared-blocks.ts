@@ -206,6 +206,7 @@ export function attachNativeSharedBlockService(
 export interface NativeSharedBlockService extends SharedBlockService {
   readonly registry: NativeSharedBlockRegistry;
   readonly waitRegistry: NativeSharedBlockRegistry | undefined;
+  readonly waitEvents: NativeWaitRegistry | undefined;
 }
 function sharedFacade(
   host: NativeSharedMemoryHost,
@@ -744,6 +745,7 @@ function sharedFacade(
     engineId: registry.engineId,
     registry,
     waitRegistry: waiters?.registry,
+    waitEvents: waiters,
     waiting,
     notifications,
     atomics,

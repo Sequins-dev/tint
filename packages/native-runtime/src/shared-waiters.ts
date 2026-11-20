@@ -16,13 +16,14 @@ import {
  * belong to one managed context; only scalar table contents cross agents. */
 export interface NativeWaiterParkingHost {
   park(address: number, expected: number, timeoutNanoseconds: number): number;
-  wake(address: number): number;
+  wake(address: number, all?: boolean): number;
 }
 export function nativeWaiterParkingHost(): NativeWaiterParkingHost {
   return {
     park: (address, expected, timeout): number =>
       parkNativeWord(address, expected, timeout),
-    wake: (address): number => wakeNativeWord(address, 0),
+    wake: (address, all): number =>
+      wakeNativeWord(address, all === true ? 1 : 0),
   };
 }
 export interface NativeWaitLocation {
@@ -40,7 +41,14 @@ export interface NativeWaitRegistration {
   /** Zero for immediate results; otherwise a never-reissued registration token. */
   readonly ticket: number;
 }
-export interface NativeWaitRegistry {
+export interface NativeWaitEvents {
+  /** Sample before checking completion records, then park on that version. */
+  eventVersion(): number;
+  parkEvents(version: number, timeoutNanoseconds: number): SharedResult<number>;
+  /** Wake checkpoints to observe an embedding event such as worker failure. */
+  interruptEvents(): void;
+}
+export interface NativeWaitRegistry extends NativeWaitEvents {
   notifyOrdered(
     blockId: number,
     offset: number,
@@ -76,7 +84,8 @@ const LOCK = 0,
   CAPACITY = 16,
   NEXT = 24,
   ENGINE = 32,
-  NEXT_COMPLETION = 40;
+  NEXT_COMPLETION = 40,
+  EVENT_VERSION = 48;
 const STATE = 0,
   TICKET = 8,
   BLOCK = 16,
@@ -300,6 +309,7 @@ function facade(
       notified++;
     }
     const last = readNumber(host, registry, NEXT_COMPLETION, scratch);
+    if (notified > 0) signalEvents(scratch);
     unlock();
     return {
       ok: true,
@@ -357,6 +367,42 @@ function facade(
     writeNumber(host, registry, NEXT_COMPLETION, sequence);
     writeNumber(host, registry, row + COMPLETION, sequence);
   }
+  function signalEvents(scratch: Uint32Array): void {
+    const next = readNumber(host, registry, EVENT_VERSION, scratch) + 1;
+    writeNumber(host, registry, EVENT_VERSION, next % 4294967296);
+    parking.wake(registry.base + EVENT_VERSION, true);
+  }
+  function eventVersion(): number {
+    const version = host.readSharedUnsigned(
+      registry.base,
+      registry.byteLength,
+      EVENT_VERSION,
+      4,
+      1,
+    );
+    if (version < 0) throw "NATIVE_WAITER_EVENT_VERSION";
+    return version;
+  }
+  function interruptEvents(): void {
+    const scratch = new Uint32Array(2);
+    lock(scratch);
+    try {
+      signalEvents(scratch);
+    } finally {
+      unlock();
+    }
+  }
+  function parkEvents(version: number, timeout: number): SharedResult<number> {
+    if (!word(version) || !integer(timeout))
+      return { ok: false, error: "invalid-value" };
+    return {
+      ok: true,
+      value:
+        version !== eventVersion()
+          ? 0
+          : parking.park(registry.base + EVENT_VERSION, version, timeout),
+    };
+  }
   function order(ticket: number): SharedResult<number> {
     if (!validTicket(ticket)) return { ok: false, error: "invalid-handle" };
     const scratch = new Uint32Array(2);
@@ -392,5 +438,8 @@ function facade(
     take: (ticket) => inspect(ticket, true),
     expire,
     park,
+    eventVersion,
+    parkEvents,
+    interruptEvents,
   };
 }
