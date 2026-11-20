@@ -61,7 +61,12 @@ export interface ImageOperationRange extends NativeOperationRange {
   /** Image offset of the function's first instruction. */
   readonly functionOffset: number;
 }
-import type { DebugFrame, DebugGlobal, FunctionRange } from "@tint/image/dwarf";
+import type {
+  DebugFrame,
+  DebugGlobal,
+  DebugVariable,
+  FunctionRange,
+} from "@tint/image/dwarf";
 import { heapDebugRecordVariablePrefix } from "@tint/abi/heap-debug";
 import {
   createDebugTypeTable,
@@ -84,11 +89,12 @@ import { unwindRanges } from "@tint/codegen/aarch64/unwind";
 import type { UnwindRange } from "@tint/abi/unwind";
 import type {
   ExecutableImageRequest,
+  ImageDebugInfo,
   ImageLibrary,
   ImageSymbol,
   ReadOnlySection,
 } from "@tint/image/executable";
-import type { X64Module } from "@tint/codegen/x86_64/scalar";
+import type { X64Module, X64SignpostSite } from "@tint/codegen/x86_64/scalar";
 import { appendHostedEntry } from "@tint/codegen/x86_64/startup";
 import { nativeCStackReserveBytes } from "@tint/abi/host";
 import { writeExecutableImage } from "./image-writer.ts";
@@ -309,9 +315,7 @@ function buildX64HostedProgram(
     return deferred(request.runtimeEntry);
   if (request.allowJit === true) return deferred("executable-map");
   if (
-    request.debugSymbols === true ||
     request.stackTraces === true ||
-    request.signposts === true ||
     request.heapIntrospection === true ||
     request.jitDebugInterface === true
   )
@@ -360,6 +364,9 @@ function buildX64HostedProgram(
   let runtime:
     | {
         native: X64Module;
+        lines: readonly SourceLineRange[];
+        functionNames: ReadonlyMap<string, string>;
+        parameterNames: ReadonlyMap<string, string>;
         entry: number;
         controlBytes: number;
         allocationCapacity: number;
@@ -387,10 +394,16 @@ function buildX64HostedProgram(
         hostBindings,
         closedProgram: true,
         optimization: "basic",
+        debugSymbols: request.debugSymbols === true,
         maxSpecializations: request.maxSpecializations ?? 4096,
       },
       target.hostABI,
-      { runtime: true },
+      {
+        runtime: true,
+        ...(request.signposts === true
+          ? { signposts: collectorSignpostNames(request) }
+          : {}),
+      },
     );
     if (!loweredRuntime.ok)
       return failure(
@@ -403,6 +416,9 @@ function buildX64HostedProgram(
       return failure("runtime", "missing collector initializer");
     runtime = {
       native: loweredRuntime.native,
+      lines: loweredRuntime.lines,
+      functionNames: loweredRuntime.functionNames,
+      parameterNames: loweredRuntime.parameterNames,
       entry,
       controlBytes: request.controlBytes,
       allocationCapacity: request.allocationCapacity,
@@ -431,6 +447,7 @@ function buildX64HostedProgram(
         : { denseReferenceLists: request.denseReferenceLists }),
       closedProgram: true,
       optimization: request.optimization ?? "basic",
+      debugSymbols: request.debugSymbols === true,
       maxSpecializations: request.maxSpecializations ?? 4096,
       onScalarIR: (stage, module) => {
         if (reportIR !== undefined) reportIR(stage, module);
@@ -441,6 +458,7 @@ function buildX64HostedProgram(
       generational,
       inlineAllocation: request.inlineAllocation !== false,
       threaded: request.threaded === true,
+      allocationProbes: request.signposts === true,
     },
   );
   if (!compiled.ok) return compiled;
@@ -483,6 +501,17 @@ function buildX64HostedProgram(
       maxByteLength: image.maxByteLength,
       data: image.data,
       symbols: image.symbols,
+      unwind: image.unwind,
+      probes: image.probes,
+      debug:
+        request.debugSymbols === true
+          ? x64DebugInfo(
+              request.debugDirectory ?? ".",
+              compiled,
+              runtime,
+              image.runtimeOffset,
+            )
+          : undefined,
       imports: image.imports,
       addressFixups: image.addressFixups,
       patchAddress: image.patchAddress,
@@ -501,6 +530,97 @@ function buildX64HostedProgram(
       typeof caught === "string" ? caught : "x86-64 startup failed",
     );
   }
+}
+
+interface X64DebugUnit {
+  readonly native: X64Module;
+  readonly lines: readonly SourceLineRange[];
+  readonly functionNames: ReadonlyMap<string, string>;
+  readonly parameterNames: ReadonlyMap<string, string>;
+}
+
+function x64DebugInfo(
+  directory: string,
+  program: X64DebugUnit,
+  runtime: X64DebugUnit | undefined,
+  runtimeOffset: number,
+): ImageDebugInfo {
+  const functions: FunctionRange[] = [];
+  const lines: SourceLineRange[] = [];
+  function describe(unit: X64DebugUnit, base: number): void {
+    for (const range of unit.lines) {
+      if (range === undefined) throw "x64 debug line invariant";
+      lines.push({ ...range, offset: base + range.offset });
+    }
+    for (const fn of unit.native.functions) {
+      if (fn === undefined) throw "x64 debug function invariant";
+      const frame = fn.frame;
+      const name = unit.functionNames.get(fn.name) ?? fn.name;
+      if (frame === undefined) {
+        functions.push({
+          name,
+          offset: base + fn.offset,
+          byteLength: fn.byteLength,
+        });
+        continue;
+      }
+      const range = {
+        offset: base + frame.offset,
+        byteLength: frame.byteLength,
+      };
+      const variables: DebugVariable[] = [];
+      for (const parameter of frame.parameters) {
+        if (parameter === undefined) throw "x64 debug parameter invariant";
+        variables.push({
+          name:
+            unit.parameterNames.get(
+              String(fn.id) + ":" + String(parameter.frameOffset),
+            ) ?? parameter.name,
+          type: parameter.type === "number" ? 0 : 1,
+          parameter: true,
+          locations: [
+            {
+              ...range,
+              pieces: [
+                {
+                  part: {
+                    kind: "memory",
+                    register: 6,
+                    offset: parameter.frameOffset,
+                  },
+                },
+              ],
+            },
+          ],
+        });
+      }
+      functions.push({
+        name,
+        offset: base + fn.offset,
+        byteLength: fn.byteLength,
+        variables,
+        frame: {
+          register: 6, // RBP
+          ranges: [range],
+          variables: [
+            { name: "__tint_context", offset: -8 },
+            { name: "__tint_result", offset: -16 },
+          ],
+        },
+      });
+    }
+  }
+  describe(program, 0);
+  if (runtime !== undefined) describe(runtime, runtimeOffset);
+  return {
+    directory,
+    functions,
+    lines,
+    types: [
+      { kind: "base", name: "number", byteSize: 8, encoding: "float" },
+      { kind: "base", name: "boolean", byteSize: 8, encoding: "boolean" },
+    ],
+  };
 }
 
 function sourceFunctionNames(request: ModuleRequest, id: string): Set<string> {
@@ -1692,10 +1812,9 @@ function returnedMethodStart(
 }
 /** Collector phase functions of the runtime, by source name. Absent functions
  * (another collector) are skipped; finding none is an error. */
-function collectorSignposts(
-  compiled: CompiledMacOSProgram,
+function collectorSignpostNames(
   request: BuildRequest,
-): HostSignpostSite[] | string {
+): readonly X64SignpostSite[] {
   const runtimeModule = request.runtimeModule,
     root = runtimeModule.slice(0, runtimeModule.lastIndexOf("/") + 1),
     cheney = root + "tracing/cheney.ts",
@@ -1708,15 +1827,7 @@ function collectorSignposts(
         : returnedMethodStart(source.module, factory, name);
     return start === undefined ? "" : id + ":closure@" + String(start);
   }
-  const wanted: {
-    readonly name: string;
-    readonly interval: string;
-    readonly alternate?: string;
-    readonly parameter?: number;
-    readonly metrics?: boolean;
-    /** With metrics: the parameter that forces a major collection. */
-    readonly force?: number;
-  }[] = [
+  return [
     {
       name: root + "generational.ts:collect",
       interval: "gc.collect",
@@ -1759,6 +1870,12 @@ function collectorSignposts(
     { name: root + "tracing/scan.ts:walkNativeStack", interval: "gc.roots" },
     { name: parallel + ":scanRemembered", interval: "gc.remembered" },
   ];
+}
+function collectorSignposts(
+  compiled: CompiledMacOSProgram,
+  request: BuildRequest,
+): HostSignpostSite[] | string {
+  const wanted = collectorSignpostNames(request);
   const functions = compiled.runtime.native.functions,
     sites: HostSignpostSite[] = [];
   for (const symbol of compiled.runtime.symbols) {

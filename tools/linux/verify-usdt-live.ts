@@ -51,8 +51,6 @@ import {
 } from "../verify-hosted-signposts.ts";
 
 const PROVIDER = "tint";
-/** AArch64 `nop`, the instruction at every probe site. */
-const NOP = 0xd503201f;
 const SKIPPED = 77;
 const FIXTURE_EXIT_CODE = 42;
 
@@ -134,7 +132,9 @@ export function stapsdtProbes(image: Buffer): StapsdtProbe[] {
 
 /** Interval probes carry the interval id; gc__end the collection metrics;
  * alloc__sample (heap introspection) the allocation. */
-function expectedArguments(name: string): string {
+function expectedArguments(name: string, x64: boolean): string {
+  if (x64)
+    return name === "gc__end" ? "8@%r8 8@%r9 8@%r10 8@%r11 8@%rbp" : "8@%rbp";
   if (name === "gc__end") return "8@x10 8@x11 8@x12 8@x13 8@x9";
   if (name === "alloc__sample") return "8@x0 8@x1 8@x2";
   return "8@x9";
@@ -191,6 +191,8 @@ export function perfListedProbeNames(list: string, shortId: string): string[] {
 /** The image's own notes, then readelf, perf and bpftrace listings. */
 function verifyStatic(image: string, output: string): StaticResult {
   const bytes = readFileSync(image);
+  const x64 = bytes.readUInt16LE(18) === 62;
+  const nopBytes = x64 ? 1 : 4;
   const probes = stapsdtProbes(bytes);
   assert.ok(probes.length > 0, "the image has no USDT probes");
   const base = sections(bytes).find(
@@ -203,17 +205,22 @@ function verifyStatic(image: string, output: string): StaticResult {
     assert.equal(probe.provider, PROVIDER, label);
     assert.equal(probe.semaphore, 0, label + " has no semaphore");
     assert.equal(probe.base, base.address, label + " base");
-    assert.equal(probe.arguments, expectedArguments(probe.name), label);
+    assert.equal(probe.arguments, expectedArguments(probe.name, x64), label);
     const segment = segments.find(
       (entry) =>
         probe.location >= entry.address &&
-        probe.location + 4 <= entry.address + entry.fileSize,
+        probe.location + nopBytes <= entry.address + entry.fileSize,
     );
     assert.ok(segment !== undefined, label + " site is mapped");
-    const instruction = bytes.readUInt32LE(
-      segment.fileOffset + probe.location - segment.address,
+    const offset = segment.fileOffset + probe.location - segment.address;
+    const instruction = x64
+      ? bytes.readUInt8(offset)
+      : bytes.readUInt32LE(offset);
+    assert.equal(
+      instruction,
+      x64 ? 0x90 : 0xd503201f,
+      label + " site is a nop",
     );
-    assert.equal(instruction, NOP, label + " site is a nop");
   }
   const names = [...new Set(probes.map((probe) => probe.name))].sort();
   assert.equal(names.length, probes.length, "one site per probe");

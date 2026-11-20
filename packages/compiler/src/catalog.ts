@@ -211,6 +211,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/x86_64/probes.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/x86_64/scalar/exit-entry.ts",
       packageId: "codegen",
     },
@@ -240,6 +244,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/codegen/src/x86_64/startup.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/x86_64/unwind.ts",
       packageId: "codegen",
     },
     {

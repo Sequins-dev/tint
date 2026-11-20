@@ -70,6 +70,7 @@ import {
 import {
   emitModule as emitX64,
   type X64Module,
+  type X64SignpostSite,
 } from "@tint/codegen/x86_64/scalar";
 import type { PosixHostFacts } from "@tint/abi/host";
 import { bindingIdentifiers, rewriteModule } from "@tint/typescript/syntax";
@@ -2498,12 +2499,17 @@ export function compileX64HostedProgram(
     readonly generational?: boolean;
     readonly inlineAllocation?: boolean;
     readonly threaded?: boolean;
+    readonly signposts?: readonly X64SignpostSite[];
+    readonly allocationProbes?: boolean;
   } = {},
 ):
   | CompilationFailure
   | {
       readonly ok: true;
       readonly native: X64Module;
+      readonly lines: readonly SourceLineRange[];
+      readonly functionNames: ReadonlyMap<string, string>;
+      readonly parameterNames: ReadonlyMap<string, string>;
       readonly invocation: number;
       readonly returnType:
         "number" | "boolean" | "void" | "reference" | "general";
@@ -2602,11 +2608,29 @@ export function compileX64HostedProgram(
     request.foreignLibraries ?? [],
   );
   if (deferred !== undefined) return stageFailure("foreign", deferred);
+  const signposts: X64SignpostSite[] = [];
+  if (request.debugSymbols === true || options.signposts !== undefined)
+    for (const fn of optimized.functions) {
+      if (fn === undefined) throw "x64 signpost function invariant";
+      // Devirtualization gives a closure a direct twin with the same source
+      // and the same positional arguments, followed by its environment.
+      const name = fn.name.endsWith("$direct") ? fn.name.slice(0, -7) : fn.name;
+      const source = sourceNames.names.get(name);
+      if (source === undefined) continue;
+      sourceNames.names.set(fn.name, source);
+      const site = options.signposts?.find(
+        (item) => item !== undefined && item.name === source,
+      );
+      if (site !== undefined) signposts.push({ ...site, name: fn.name });
+    }
   const emitted = emitX64(
     optimized,
     host,
     options.generational === true,
     options.inlineAllocation !== false,
+    request.debugSymbols === true,
+    signposts,
+    options.allocationProbes === true,
   );
   if (!emitted.ok) {
     const message = emitted.error.message;
@@ -2618,7 +2642,49 @@ export function compileX64HostedProgram(
           : message),
     );
   }
-  return { ok: true, native: emitted.value, invocation, returnType };
+  const lines: SourceLineRange[] = [];
+  const parameterNames = new Map<string, string>();
+  if (request.debugSymbols === true)
+    for (const fn of emitted.value.functions) {
+      if (fn === undefined) throw "x64 debug function invariant";
+      for (const parameter of fn.frame?.parameters ?? []) {
+        if (parameter === undefined) throw "x64 debug parameter invariant";
+        const origin = locateSourceRange(program.ranges, parameter);
+        if (origin === undefined) continue;
+        const name = sourceNames.variables.get(
+          origin.module + ":" + origin.start + ":" + origin.end,
+        );
+        if (name !== undefined)
+          parameterNames.set(
+            String(fn.id) + ":" + String(parameter.frameOffset),
+            name,
+          );
+      }
+    }
+  for (const span of emitted.value.sourceRanges) {
+    if (span === undefined) throw "x64 source range invariant";
+    const origin = locateSourceRange(program.ranges, span);
+    if (origin === undefined) continue;
+    const locate = sourceNames.positions.get(origin.module);
+    const position = locate === undefined ? undefined : locate(origin.start);
+    if (position === undefined) continue;
+    lines.push({
+      offset: span.offset,
+      byteLength: span.byteLength,
+      file: origin.module,
+      line: position.line,
+      column: position.column,
+    });
+  }
+  return {
+    ok: true,
+    native: emitted.value,
+    invocation,
+    returnType,
+    lines,
+    functionNames: sourceNames.names,
+    parameterNames,
+  };
 }
 
 function compileTypedProgram(

@@ -164,7 +164,6 @@ export type ElfError =
   | "INVALID_LIMIT"
   | "INVALID_SYMBOL"
   | "INVALID_UNWIND"
-  | "UNSUPPORTED_UNWIND"
   | "INVALID_IMPORT"
   | "INVALID_LIBRARY"
   | "INVALID_REFERENCE"
@@ -233,6 +232,13 @@ const ARM64_FRAME_TARGET: CallFrameTarget = {
   framePointer: 29,
   returnAddress: 30,
   dataAlignment: 8,
+};
+const X64_FRAME_TARGET: CallFrameTarget = {
+  stackPointer: 7,
+  framePointer: 6,
+  returnAddress: 16,
+  dataAlignment: 8,
+  stackReturnAddress: true,
 };
 
 interface ProgramHeader {
@@ -489,8 +495,6 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   }
 
   const unwindRanges = request.unwind ?? [];
-  if (arch === "x86_64" && unwindRanges.length > 0)
-    return { ok: false, error: "UNSUPPORTED_UNWIND" };
   let unwindEnd = 0;
   const unwound: UnwindRange[] = [];
   for (const range of unwindRanges) {
@@ -644,7 +648,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       const built = buildEhFrame(
         descriptions,
         ehFrameAddress,
-        ARM64_FRAME_TARGET,
+        arch === "x86_64" ? X64_FRAME_TARGET : ARM64_FRAME_TARGET,
       );
       // A zero-length entry terminates the section for unwinders that walk it.
       ehFrame = new Uint8Array(built.bytes.length + 4);

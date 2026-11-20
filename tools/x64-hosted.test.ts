@@ -24,6 +24,17 @@ function parse(text: string) {
   return parsed.value;
 }
 
+function sourcePosition(text: string) {
+  const bytes = new TextEncoder().encode(text);
+  const source = createSourceText(bytes, bytes.length);
+  assert.ok(source.ok);
+  const provider = source.value;
+  return (offset: number) => {
+    const position = provider.positionAt(offset);
+    return position.ok ? position.value : undefined;
+  };
+}
+
 function intrinsic(name: string, bindings: HostModule["bindings"]): HostModule {
   return {
     text: readFileSync(
@@ -49,6 +60,7 @@ function build(
       {
         id: "smoke",
         module: parse(text),
+        sourcePosition: sourcePosition(text),
         dependencies: new Map(dependencies.map(([name]) => [name, name])),
       },
       ...dependencies.map(([id, source]) => ({
@@ -125,6 +137,45 @@ test("x86-64 hosted entry links the glibc 2.34 process entry", () => {
     stringAt(dynstr + image.readUInt32LE(fileOffset(dynsym) + symbol * 24)),
     "__libc_start_main",
   );
+});
+
+test("x86-64 hosted entry and managed frames have indexed unwind ranges", () => {
+  const built = build(
+    `function nested(x: number): number { return x + 23; }
+     export function run(): number { return nested(19); }`,
+    {},
+    { optimization: "none" },
+  );
+  assert.ok(built.ok, JSON.stringify(built));
+  const image = Buffer.from(built.value);
+  const programHeaders = Number(image.readBigUInt64LE(32));
+  const count = image.readUInt16LE(56);
+  const size = image.readUInt16LE(54);
+  const header = Array.from(
+    { length: count },
+    (_, i) => programHeaders + i * size,
+  ).find((offset) => image.readUInt32LE(offset) === 0x6474e550);
+  assert.ok(header !== undefined, "PT_GNU_EH_FRAME");
+  const contents = Number(image.readBigUInt64LE(header + 8));
+  assert.ok(
+    image.readUInt32LE(contents + 8) >= 4,
+    "managed functions, main and _start",
+  );
+});
+
+test("x86-64 debug images describe TypeScript source lines and stack parameters", () => {
+  const built = build(
+    `function inspect(value: number): number {
+       return value + 23;
+     }
+     export function run(): number { return inspect(19); }`,
+    {},
+    { optimization: "none", debugSymbols: true },
+  );
+  assert.ok(built.ok, JSON.stringify(built));
+  const bytes = Buffer.from(built.value);
+  for (const text of [".debug_line\0", ".debug_info\0", "smoke\0", "value\0"])
+    assert.ok(bytes.includes(text), text);
 });
 
 test("x86-64 hosted compilation pinpoints deferred runtime operations", () => {

@@ -26,6 +26,15 @@ import {
   type NearFixup,
 } from "./isa.ts";
 import type { X64Module } from "./scalar/index.ts";
+import type { X64Probe } from "./probes.ts";
+import type { UnwindRange } from "@tint/abi/unwind";
+import {
+  dwarfStackPointer,
+  frameRows,
+  frameSave,
+  returnSave,
+  resolveUnwind,
+} from "./unwind.ts";
 import {
   allocationStateOffset,
   allocatorEntryOffset,
@@ -83,6 +92,9 @@ interface HostedImage extends ImageRelocations {
   readonly maxByteLength: number;
   readonly imports: readonly string[];
   readonly symbols: readonly ImageSymbol[];
+  readonly runtimeOffset: number;
+  readonly unwind: readonly UnwindRange[];
+  readonly probes: readonly X64Probe[];
 }
 
 /** A hosted stack, collector control storage and managed region live in
@@ -215,6 +227,13 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   emit({ op: "ud2" });
 
   emit({ op: "label", name: "main" });
+  const cfi = frameRows(emit, "main");
+  const savedFrame = [returnSave, frameSave];
+  const save12 = { register: 12, offset: -24 };
+  const save13 = { register: 13, offset: -32 };
+  const saved12 = [returnSave, frameSave, save12];
+  const saved = [returnSave, frameSave, save12, save13];
+  const contextFrameBytes = contextBytes + (threaded ? 32 : 16);
   const threadArgumentOffset = contextBytes + 16;
   const threadModeOffset = threadArgumentOffset + 8;
   if (threaded) {
@@ -230,11 +249,16 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     emit({ op: "label", name: hostedRun });
   }
   emit({ op: "push", src: rbp });
+  cfi.record(dwarfStackPointer, 16, savedFrame);
   emit({ op: "mov", dst: rbp, src: rsp });
   emit({ op: "push", src: r12 });
+  cfi.record(dwarfStackPointer, 24, saved12);
   emit({ op: "push", src: r13 });
-  emit({ op: "sub", dst: rsp, src: imm(contextBytes + (threaded ? 32 : 16)) });
+  cfi.record(dwarfStackPointer, 32, saved);
+  emit({ op: "sub", dst: rsp, src: imm(contextFrameBytes) });
+  cfi.record(dwarfStackPointer, contextFrameBytes + 32, saved);
   emit({ op: "mov", dst: r12, src: rsp });
+  cfi.record(12, contextFrameBytes + 32, saved);
   emit({ op: "mov", dst: mem(12, contextBytes + 8), src: rbp });
   for (let offset = 0; offset < contextBytes; offset += 8)
     emit({ op: "mov", dst: mem(12, offset), src: imm(0) });
@@ -497,10 +521,15 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   emit({ op: "label", name: "return" });
   emit({ op: "mov", dst: rbp, src: mem(12, contextBytes + 8) });
   emit({ op: "lea", dst: rsp, src: mem(5, -16) });
+  cfi.record(dwarfStackPointer, 32, saved);
   emit({ op: "pop", dst: r13 });
+  cfi.record(dwarfStackPointer, 24, saved12);
   emit({ op: "pop", dst: r12 });
+  cfi.record(dwarfStackPointer, 16, savedFrame);
   emit({ op: "pop", dst: rbp });
+  cfi.record(dwarfStackPointer, 8, [returnSave]);
   emit({ op: "ret" });
+  emit({ op: "label", name: "main:end" });
 
   const stub = encodeLayout(
     machine,
@@ -584,15 +613,37 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   const main = stub.labels.get("main");
   if (main === undefined) throw "startup label invariant";
   const symbols: ImageSymbol[] = [];
+  const unwind = native.unwind.slice();
+  const probes = native.probes.slice();
   for (const fn of native.functions) {
     if (fn === undefined) throw "program symbol invariant";
     symbols.push({ name: fn.name, offset: fn.offset });
   }
-  if (runtimeCode !== undefined)
+  if (runtimeCode !== undefined) {
     for (const fn of runtimeCode.functions) {
       if (fn === undefined) throw "runtime symbol invariant";
       symbols.push({ name: fn.name, offset: codeOffset + fn.offset });
     }
+    for (const range of runtimeCode.unwind) {
+      if (range === undefined) throw "runtime unwind range invariant";
+      unwind.push({ ...range, offset: codeOffset + range.offset });
+    }
+    for (const probe of runtimeCode.probes) {
+      if (probe === undefined) throw "runtime probe invariant";
+      probes.push({ ...probe, offset: codeOffset + probe.offset });
+    }
+  }
+  const startupUnwind = resolveUnwind(
+    [
+      { start: "_start", end: "main", rule: "outermost", rows: [] },
+      { start: "main", end: "main:end", rule: "rows", rows: cfi.rows },
+    ],
+    stub.labels,
+  );
+  for (const range of startupUnwind) {
+    if (range === undefined) throw "startup unwind range invariant";
+    unwind.push({ ...range, offset: base + range.offset });
+  }
   symbols.push({ name: "_start", offset: base });
   symbols.push({ name: "main", offset: base + main });
   const addressFixups: ImageAddressReference[] = native.addressFixups.slice();
@@ -620,6 +671,9 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     maxByteLength: Number.MAX_SAFE_INTEGER,
     imports: importNames,
     symbols,
+    runtimeOffset: codeOffset,
+    unwind,
+    probes,
     addressFixups,
     patchAddress,
   };

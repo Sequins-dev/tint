@@ -68,6 +68,25 @@ import {
   type Gpr,
   type Memory,
 } from "../isa.ts";
+import type { UnwindRange } from "@tint/abi/unwind";
+import {
+  collectionAfter,
+  collectionBefore,
+  collectionMetricBytes,
+  collectionProbeArguments,
+  createProbeEmission,
+  type X64Probe,
+  type X64SignpostSite,
+} from "../probes.ts";
+import {
+  dwarfFramePointer,
+  dwarfStackPointer,
+  frameRows,
+  frameSave,
+  returnSave,
+  resolveUnwind,
+  type LabeledUnwind,
+} from "../unwind.ts";
 import {
   allocationStateOffset,
   allocatorEntryOffset,
@@ -121,11 +140,28 @@ import {
 
 export { imageRelocations } from "./machine.ts";
 export { appendExitEntry } from "./exit-entry.ts";
+export type { X64SignpostSite } from "../probes.ts";
 
 export interface X64Function {
   readonly id: number;
   readonly name: string;
   readonly offset: number;
+  readonly byteLength: number;
+  readonly frame?: X64DebugFrame;
+}
+interface X64DebugFrame {
+  readonly offset: number;
+  readonly byteLength: number;
+  readonly parameters: readonly X64DebugParameter[];
+}
+interface X64DebugParameter extends Span {
+  readonly name: string;
+  readonly type: "number" | "boolean";
+  readonly frameOffset: number;
+}
+interface X64SourceRange extends Span {
+  readonly offset: number;
+  readonly byteLength: number;
 }
 export interface X64Module extends ImageRelocations {
   readonly code: Uint8Array;
@@ -133,6 +169,9 @@ export interface X64Module extends ImageRelocations {
   readonly functions: readonly X64Function[];
   readonly imports: readonly string[];
   readonly hostedThreadFixups: readonly NearFixup[];
+  readonly unwind: readonly UnwindRange[];
+  readonly sourceRanges: readonly X64SourceRange[];
+  readonly probes: readonly X64Probe[];
   readonly stackMaps: readonly {
     readonly codeOffset: number;
     readonly codeLength: number;
@@ -243,6 +282,9 @@ export function emitModule(
   host?: PosixHostFacts,
   generational: boolean = false,
   inlineAllocation: boolean = true,
+  debugSpans: boolean = false,
+  signposts: readonly X64SignpostSite[] = [],
+  allocationProbes: boolean = false,
 ): X64Emission {
   const verified = verify(module);
   if (!verified.ok)
@@ -273,10 +315,24 @@ export function emitModule(
   }
 
   const machine: MachineInstruction[] = [];
+  const unwind: LabeledUnwind[] = [];
+  const sourceLabels: { readonly name: string; readonly span: Span }[] = [];
+  const debugFrames = new Map<number, readonly X64DebugParameter[]>();
   const pendingMaps: PendingSafepoint[] = [];
   const emit: Emit = (insn) => {
     machine.push(insn);
   };
+  const policy = host?.signposts;
+  const probes = createProbeEmission(
+    emit,
+    policy?.kind === "elf-usdt" ? policy.provider : "tint",
+  );
+  function markSource(span: Span): void {
+    if (!debugSpans) return;
+    const name = "source:" + String(sourceLabels.length);
+    emit({ op: "label", name });
+    sourceLabels.push({ name, span });
+  }
   const numbers = createNumberEmission(emit);
   const constants: Word64[] = [];
   const strings = new Map<
@@ -399,6 +455,7 @@ export function emitModule(
 
   function body(fn: FunctionIR): void {
     const fnLabel = functionLabel(fn.id);
+    const fnEnd = fnLabel + ":end";
     const done = fnLabel + ":return";
     const slots: number[] = [];
     const homes = new Map<number, number>();
@@ -411,6 +468,9 @@ export function emitModule(
         ? callResult - 8
         : undefined;
     const savedAllocationSize = (savedEnvironment ?? callResult) - 8;
+    const signpost = signposts.find(
+      (site) => site !== undefined && site.name === fn.name,
+    );
     let depth = -(generational
       ? savedAllocationSize
       : (savedEnvironment ?? callResult));
@@ -459,6 +519,9 @@ export function emitModule(
         }
       }
     }
+    if (signpost !== undefined && signpost.metrics === true)
+      depth += collectionMetricBytes;
+    const metricOffset = -depth;
     const staging = -(depth + sysVStagingBytes);
     const frameBytes = align16(
       depth + (needsForeign ? sysVStagingBytes : 0) + outgoing,
@@ -472,6 +535,29 @@ export function emitModule(
       const offset = slots[id];
       if (offset === undefined) throw "slot invariant";
       return offset;
+    }
+    function metric(offset: number): Memory<64> {
+      return frame(metricOffset + offset);
+    }
+    function interval(site: X64SignpostSite, ending: boolean): void {
+      const alternate = site.alternate;
+      const parameter = site.parameter;
+      if (alternate === undefined || parameter === undefined) {
+        probes.interval(site.interval, ending);
+        return;
+      }
+      const arg = fn.parameters[parameter];
+      if (arg === undefined) throw "x86-64 probe argument invariant";
+      const useAlternate =
+        fnLabel + ":probe-alternate:" + String(machine.length);
+      const next = useAlternate + ":next";
+      emit({ op: "cmp", dst: frame(slot(arg)), src: imm(0) });
+      branch(emit, "e", useAlternate);
+      probes.interval(site.interval, ending);
+      emit({ op: "jmp", target: label(next) });
+      emit({ op: "label", name: useAlternate });
+      probes.interval(alternate, ending);
+      emit({ op: "label", name: next });
     }
     function home(id: number): number {
       const offset = homes.get(id);
@@ -641,8 +727,10 @@ export function emitModule(
       emit({ op: "xor", dst: receiver, src: receiver });
       emit({ op: "lea", dst: result, src: frame(callResult) });
       emit({ op: "cvtsi2sd", dst: x0, src: r10 });
+      if (allocationProbes) probes.interval("alloc.slow", false);
       emit({ op: "call", target: mem(7, allocatorEntryOffset) });
       safepoint(block, index);
+      if (allocationProbes) probes.interval("alloc.slow", true);
       const received = site + ":allocator-returned";
       emit({ op: "cmp", dst: eax, src: imm(normal) });
       branch(emit, "e", received);
@@ -2631,6 +2719,8 @@ export function emitModule(
     }
 
     emit({ op: "label", name: fnLabel });
+    const cfi = frameRows(emit, fnLabel);
+    const saved = [returnSave, frameSave];
     if (host !== undefined) {
       const enter = fnLabel + ":enter";
       // Test the subtraction before touching the frame, with libc headroom.
@@ -2661,7 +2751,9 @@ export function emitModule(
       emit({ op: "label", name: enter });
     }
     emit({ op: "push", src: rbp });
+    if (host !== undefined) cfi.record(dwarfStackPointer, 16, saved);
     emit({ op: "mov", dst: rbp, src: rsp });
+    if (host !== undefined) cfi.record(dwarfFramePointer, 16, saved);
     emit({ op: "sub", dst: rsp, src: imm(frameBytes) });
     emit({ op: "mov", dst: frame(savedResult), src: result });
     emit({ op: "mov", dst: frame(savedContext), src: context });
@@ -2699,8 +2791,60 @@ export function emitModule(
         }
       }
     }
+    if (signpost !== undefined) {
+      if (signpost.metrics === true) {
+        const arg =
+          signpost.force === undefined
+            ? undefined
+            : fn.parameters[signpost.force];
+        collectionBefore(
+          emit,
+          fnLabel,
+          frame(savedContext),
+          metric,
+          arg === undefined ? undefined : frame(slot(arg)),
+        );
+      }
+      interval(signpost, false);
+    }
     if (fn.entry !== 0)
       emit({ op: "jmp", target: label(blockLabel(fn.id, fn.entry)) });
+    if (debugSpans) {
+      const debug = fn.debug;
+      const parameters: X64DebugParameter[] = [];
+      if (debug !== undefined) {
+        const overwritten = new Set<number>();
+        for (const block of fn.blocks) {
+          if (block === undefined) throw "debug block invariant";
+          if (block.exception !== undefined)
+            overwritten.add(block.exception.slot);
+          for (const op of block.instructions)
+            if (op?.kind === "store") overwritten.add(op.slot);
+        }
+        for (const binding of debug.slots) {
+          if (binding === undefined) throw "debug slot invariant";
+          const variable = debug.variables[binding.variable];
+          const type = fn.slots[binding.slot];
+          if (
+            variable !== undefined &&
+            variable.parameter === true &&
+            variable.inline === undefined &&
+            fn.parameters.includes(binding.slot) &&
+            !overwritten.has(binding.slot) &&
+            (type === "number" || type === "boolean")
+          )
+            parameters.push({
+              name: variable.name,
+              start: variable.start,
+              end: variable.end,
+              type,
+              frameOffset: slot(binding.slot),
+            });
+        }
+      }
+      debugFrames.set(fn.id, parameters);
+      emit({ op: "label", name: fnLabel + ":debug-body" });
+    }
     for (const block of fn.blocks) {
       if (block === undefined) throw "block invariant";
       blockId = block.id;
@@ -2709,16 +2853,30 @@ export function emitModule(
         const op = block.instructions[index];
         if (op === undefined) throw "instruction invariant";
         span = { start: op.start, end: op.end };
+        markSource(span);
         instruction(op, block, index);
       }
       const op = block.terminator;
       span = { start: op.start, end: op.end };
+      markSource(span);
       terminate(op, block);
     }
     emit({ op: "label", name: done });
+    if (debugSpans) markSource({ start: 0, end: 0 });
+    if (signpost !== undefined) {
+      if (signpost.metrics === true) {
+        collectionAfter(emit, frame(savedContext), metric);
+        probes.probe("gc__end", collectionProbeArguments);
+      }
+      interval(signpost, true);
+    }
     emit({ op: "mov", dst: rsp, src: rbp });
     emit({ op: "pop", dst: rbp });
+    if (host !== undefined) cfi.record(dwarfStackPointer, 8, [returnSave]);
     emit({ op: "ret" });
+    emit({ op: "label", name: fnEnd });
+    if (host !== undefined)
+      unwind.push({ start: fnLabel, end: fnEnd, rule: "rows", rows: cfi.rows });
     if (callSites.length > 0)
       for (const map of frameStackMaps(
         fn,
@@ -2857,8 +3015,15 @@ export function emitModule(
     functionId = undefined;
     blockId = undefined;
     span = undefined;
+    const leafStart = "tint:leaf-helpers";
+    const leafEnd = leafStart + ":end";
+    emit({ op: "label", name: leafStart });
     numbers.helpers();
     if (generational) collectorLeaves();
+    probes.emitStubs();
+    emit({ op: "label", name: leafEnd });
+    if (host !== undefined)
+      unwind.push({ start: leafStart, end: leafEnd, rule: "leaf", rows: [] });
     if (needsCollectorWorker) {
       // SysV void*(void*) entry. The permanent work closure gets its own
       // bounded, nonallocating context, with no mutator stack or root chain.
@@ -2870,9 +3035,15 @@ export function emitModule(
       const rcx = gpr(1);
       const entry = gpr(11);
       const done = collectorWorker + ":done";
+      const end = collectorWorker + ":end";
+      const bytes = contextBytes + resultBytes;
+      const cfi = frameRows(emit, collectorWorker);
+      const saved = [returnSave, frameSave];
       emit({ op: "label", name: collectorWorker });
       emit({ op: "push", src: rbp });
-      emit({ op: "sub", dst: rsp, src: imm(contextBytes + resultBytes) });
+      cfi.record(dwarfStackPointer, 16, saved);
+      emit({ op: "sub", dst: rsp, src: imm(bytes) });
+      cfi.record(dwarfStackPointer, bytes + 16, saved);
       for (let offset = 0; offset < contextBytes; offset += 8)
         emit({ op: "mov", dst: mem(4, offset), src: imm(0) });
       emit({ op: "lea", dst: rax, src: mem(4, -262144) });
@@ -2899,9 +3070,18 @@ export function emitModule(
         src: mem(4, contextBytes + resultPayload),
       });
       emit({ op: "label", name: done });
-      emit({ op: "add", dst: rsp, src: imm(contextBytes + resultBytes) });
+      emit({ op: "add", dst: rsp, src: imm(bytes) });
+      cfi.record(dwarfStackPointer, 16, saved);
       emit({ op: "pop", dst: rbp });
+      cfi.record(dwarfStackPointer, 8, [returnSave]);
       emit({ op: "ret" });
+      emit({ op: "label", name: end });
+      unwind.push({
+        start: collectorWorker,
+        end,
+        rule: "rows",
+        rows: cfi.rows,
+      });
     }
     emit({ op: "label", name: trapLabel });
     emit({ op: "ud2" });
@@ -2916,9 +3096,28 @@ export function emitModule(
     const functions: X64Function[] = [];
     for (const fn of module.functions) {
       if (fn === undefined) throw "function invariant";
-      const offset = encoded.labels.get(functionLabel(fn.id));
-      if (offset === undefined) throw "function label invariant";
-      functions.push({ id: fn.id, name: fn.name, offset });
+      const name = functionLabel(fn.id);
+      const offset = encoded.labels.get(name);
+      const end = encoded.labels.get(name + ":end");
+      if (offset === undefined || end === undefined)
+        throw "function label invariant";
+      const body = encoded.labels.get(name + ":debug-body");
+      const leave = encoded.labels.get(name + ":return");
+      const parameters = debugFrames.get(fn.id);
+      const frame =
+        body === undefined ||
+        leave === undefined ||
+        parameters === undefined ||
+        body >= leave
+          ? undefined
+          : { offset: body, byteLength: leave - body, parameters };
+      functions.push({
+        id: fn.id,
+        name: fn.name,
+        offset,
+        byteLength: end - offset,
+        ...(frame === undefined ? {} : { frame }),
+      });
     }
     const poolBase = Math.ceil(encoded.bytes.length / 8) * 8;
     let code = encoded.bytes;
@@ -3034,6 +3233,20 @@ export function emitModule(
         throw "binary64 data invariant";
     }
     const relocations = imageRelocations(imageFixups, external);
+    const sourceRanges: X64SourceRange[] = [];
+    for (let index = 0; index + 1 < sourceLabels.length; index++) {
+      const row = sourceLabels[index],
+        next = sourceLabels[index + 1];
+      if (row === undefined || next === undefined)
+        throw "debug label invariant";
+      if (row.span.start >= row.span.end) continue;
+      const offset = encoded.labels.get(row.name);
+      const end = encoded.labels.get(next.name);
+      if (offset === undefined || end === undefined)
+        throw "debug source boundary invariant";
+      if (end > offset)
+        sourceRanges.push({ ...row.span, offset, byteLength: end - offset });
+    }
     return {
       ok: true,
       value: {
@@ -3042,6 +3255,9 @@ export function emitModule(
         functions,
         imports: [...imports],
         hostedThreadFixups,
+        unwind: resolveUnwind(unwind, encoded.labels),
+        sourceRanges,
+        probes: probes.resolve(encoded.labels),
         stackMaps,
         addressFixups: relocations.addressFixups,
         patchAddress: relocations.patchAddress,

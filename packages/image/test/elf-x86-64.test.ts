@@ -186,18 +186,30 @@ test("x86-64 JIT objects use EM_X86_64 and preserve byte-granular symbols", () =
   });
 });
 
-test("x86-64 PIE rejects unwind rules until x86-64 frame emission is available", () => {
-  assert.deepEqual(
-    buildElfExecutable({
-      ...executableRequest(),
-      unwind: [
-        {
-          offset: entryOffset,
-          byteLength: code.length - entryOffset,
-          rule: { kind: "outermost" },
-        },
-      ],
-    }),
-    { ok: false, error: "UNSUPPORTED_UNWIND" },
+test("x86-64 PIE identifies RIP as the return column in indexed unwind data", () => {
+  const built = buildElfExecutable({
+    ...executableRequest(),
+    unwind: [
+      { offset: 0, byteLength: entryOffset, rule: { kind: "leaf" } },
+      {
+        offset: entryOffset,
+        byteLength: code.length - entryOffset,
+        rule: { kind: "outermost" },
+      },
+    ],
+  });
+  assert.ok(built.ok, JSON.stringify(built));
+  const { bytes } = built.value;
+  const elf = readElf(bytes);
+  const frames = elf.section(".eh_frame");
+  const header = elf.section(".eh_frame_hdr");
+  assert.equal(bytes[frames.offset + 14], 16); // RIP
+  assert.equal(bytes[frames.offset + 18], 7); // RSP
+  assert.equal(elf.view.getUint32(header.offset + 8, true), 2);
+  assert.ok(
+    elf.segments.some(
+      (segment) =>
+        segment.type === 0x6474e550 && segment.offset === header.offset,
+    ),
   );
 });

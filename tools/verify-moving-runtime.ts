@@ -368,6 +368,7 @@ const built = buildMacOSProgram({
       ? "initializeCopyingRuntime"
       : "initializeRuntime",
   inlineAllocation: copying && process.env.TINT_INLINE_ALLOCATION !== "0",
+  ...(process.env.TINT_SIGNPOSTS === "1" ? { signposts: true } : {}),
   ...(parallel ? { requireParallelCollection: true } : {}),
   ...(parallelThreads ? { threaded: true } : {}),
   entry: "fixture",
