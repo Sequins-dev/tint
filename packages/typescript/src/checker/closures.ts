@@ -4488,8 +4488,17 @@ function checkClosureModuleLayout(
             )
               return type.element;
             if (isArray(iterable)) return number;
-            if (isList(iterable))
-              return listIterationElement(iterable, element);
+            if (isList(iterable)) {
+              if (context !== undefined && expected !== undefined) {
+                const item = listIterationElement(iterable, element);
+                if (
+                  system.assignable(item, number) &&
+                  system.assignable(context, number)
+                )
+                  return item;
+              }
+              return listReadType(iterable, element);
+            }
             fail(
               element,
               "UNSUPPORTED",

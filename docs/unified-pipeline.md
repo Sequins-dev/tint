@@ -586,10 +586,11 @@ the callee's checked native signature before reading its result. Direct
 forwarding propagates that result even through a function declared to
 return `void`. Unused results retain the result-discarding ABI path.
 
-Numeric list literals use the iteration element type for each spread.
-Their elements and spread sources evaluate in source order, and spreading
-a hole creates an explicit `undefined` element. The typed fixture
-includes the original x64 stack-map list shape.
+A contextual `number[]` literal uses the numeric iteration element type
+for a numeric list spread. Inferred spread results continue to include
+`undefined` for possible holes. Elements and spread sources evaluate in
+source order, and spreading a hole creates an explicit `undefined`
+element. The typed fixture includes the original x64 stack-map list shape.
 
 ### Native binding patterns (slice 4a)
 
