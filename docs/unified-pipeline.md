@@ -777,6 +777,20 @@ The [focused ledger](results/unified-pipeline-ledger-slice3-source-validation-fo
 has eight native passes and two expected TS2322 rejections. The
 previously misclassified indexed read passes through general lowering.
 
+### Source-backed module retry (slice 3)
+
+The hosted corpus can pass a source-backed loader with
+`TINT_SOURCE_REPLAY=1`. The loader captures resolved import edges and serves
+fresh syntax with the original UTF-16 positions. The general engine
+accumulates installer requirements as each erased module is lowered. The
+legacy partition still selects whole modules and holds syntax for the
+current invocation.
+
+The [focused Linux replay comparison](results/slice3-source-replay-open-variable.md)
+produced identical images from owned syntax and replay. The hosted manifest
+counts loader calls, returned modules and UTF-16 units. The dense-graph
+wall-time and peak RSS budgets still need measurements.
+
 ## Status
 
 Slice 0: `requireTyped` guards the compiler self-build, frozen workloads and

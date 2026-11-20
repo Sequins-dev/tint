@@ -34,6 +34,11 @@ interface Entry {
   readonly reason?: string;
   readonly error?: string;
   readonly sourceSnapshot?: string;
+  readonly sourceReplay?: {
+    readonly loads: number;
+    readonly modules: number;
+    readonly utf16Units: number;
+  };
   readonly seconds: number;
 }
 interface Ledger {
@@ -104,11 +109,16 @@ function verify(construct: string, form: Form): Promise<Entry> {
           (line) => line.startsWith("/") && existsSync(line + ".manifest.json"),
         );
       let sourceSnapshot: string | undefined;
+      let sourceReplay: Entry["sourceReplay"];
       if (image !== undefined) {
         const manifest = JSON.parse(
           readFileSync(image + ".manifest.json", "utf8"),
-        ) as { sourceSnapshot: { sha256: string } };
+        ) as {
+          sourceSnapshot: { sha256: string };
+          sourceReplay?: Entry["sourceReplay"];
+        };
         sourceSnapshot = manifest.sourceSnapshot.sha256;
+        sourceReplay = manifest.sourceReplay;
         rmSync(dirname(image), { recursive: true, force: true });
       }
       // A build that fails before compiling (the hosted builder asserts its
@@ -162,6 +172,7 @@ function verify(construct: string, form: Form): Promise<Entry> {
             }),
         ...(outcome === "pass" ? {} : { error: stderr.slice(-1200) }),
         ...(sourceSnapshot === undefined ? {} : { sourceSnapshot }),
+        ...(sourceReplay === undefined ? {} : { sourceReplay }),
         seconds,
       });
     });

@@ -17,11 +17,10 @@ import {
   eraseTypeSyntax,
   parseModule,
   typeOnlyDeclarations,
-  type Module,
 } from "@tint/typescript/syntax";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import { lowerSourceTextModule } from "../lowering/index.ts";
-import { generalIntrinsics } from "./intrinsics.ts";
+import { createGeneralIntrinsicPlan } from "./intrinsics.ts";
 
 /** Module IDs of the JavaScript runtime the general lowering targets. */
 export interface GeneralRuntimeModules {
@@ -137,8 +136,7 @@ function lowerGeneralProgram(
     return id;
   }
   const generated: SourceModule[] = [];
-  const names: string[] = [],
-    erasedModules: Module[] = [];
+  const installers = createGeneralIntrinsicPlan();
   let imports = "",
     creates = "",
     edges = "";
@@ -152,7 +150,6 @@ function lowerGeneralProgram(
         return typeNames(target)?.has(name) ?? false;
       },
     });
-    erasedModules.push(erased);
     const lowered = lowerSourceTextModule(erased);
     if (!lowered.ok)
       return {
@@ -166,6 +163,7 @@ function lowerGeneralProgram(
           ": " +
           lowered.error.message,
       };
+    installers.addModule(erased);
     const id = fresh("$general:" + source.id);
     generated.push({
       id,
@@ -175,7 +173,6 @@ function lowerGeneralProgram(
         ? {}
         : { sourcePosition: source.sourcePosition }),
     });
-    names.push(source.id);
     imports +=
       "import {create as create" +
       index +
@@ -294,11 +291,11 @@ function lowerGeneralProgram(
     imports,
     creates,
     edges,
-    names.length + request.boundaries.length,
+    request.modules.length + request.boundaries.length,
     entryIndex,
     request.start,
     output !== undefined,
-    generalIntrinsics(erasedModules),
+    installers.installers(),
     adapters.functions + errors.functions,
   );
   const parsed = parseModule(createSourceTextView(text));

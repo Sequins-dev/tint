@@ -182,3 +182,46 @@ test("a generator fallback carries its original function owner and capability", 
     },
   });
 });
+
+test("source replay preserves dependency bindings and emitted bytes", () => {
+  const text = '// 😀\nimport { offset } from "./offset.ts";\n' + generatorText;
+  const dependencies = new Map([["./offset.ts", "offset"]]);
+  const dependencyText = "export const offset: number = 42;";
+  const loader = createSourceModuleLoader([
+    { id: "main", text, dependencies },
+    { id: "offset", text: dependencyText, dependencies: new Map() },
+  ]);
+  const owned = loader.load();
+  dependencies.set("./offset.ts", "edited");
+  const observed: (number | undefined)[] = [];
+  const lowering: GeneralLowering = {
+    ...recordingLowering().lowering,
+    lower: (request) => {
+      assert.equal(
+        request.modules[0]?.dependencies.get("./offset.ts"),
+        "offset",
+      );
+      observed.push(request.trigger?.owner.start);
+      const host = source(
+        "general-host",
+        'import { offset } from "offset"; export function run(): number { return offset; }',
+      );
+      host.dependencies.set("offset", "offset");
+      return { ok: true, value: { modules: [host], entry: host.id } };
+    },
+  };
+  const fromOwned = compileArm64Program({
+    ...generatorProgram(lowering),
+    modules: owned,
+  });
+  const fromLoader = compileArm64Program({
+    ...generatorProgram(lowering),
+    modules: [],
+    moduleLoader: loader,
+  });
+  assert.ok(fromOwned.ok, JSON.stringify(fromOwned));
+  assert.ok(fromLoader.ok, JSON.stringify(fromLoader));
+  assert.deepEqual(fromLoader.value.native.code, fromOwned.value.native.code);
+  const start = text.indexOf("function*");
+  assert.deepEqual(observed, [start, start]);
+});

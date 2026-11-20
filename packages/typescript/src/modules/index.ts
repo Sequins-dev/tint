@@ -106,10 +106,13 @@ export function createSourceModuleLoader(
   const decoded: DecodedModule[] = [];
   for (const input of inputs) {
     if (input === undefined) throw "source module invariant";
+    const dependencies = new Map<string, string>();
+    for (const [specifier, target] of input.dependencies)
+      dependencies.set(specifier, target);
     decoded.push({
       id: input.id,
       source: createSourceTextView(input.text),
-      dependencies: input.dependencies,
+      dependencies,
     });
   }
   return decodedModuleLoader(decoded);
