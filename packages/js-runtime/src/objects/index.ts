@@ -520,3 +520,4 @@ export {
   type ObjectShapeContract,
   type PropertyValueRule,
 } from "./property-contracts.ts";
+export { primitiveContractBit } from "@tint/foundation/values/primitive-contract";
