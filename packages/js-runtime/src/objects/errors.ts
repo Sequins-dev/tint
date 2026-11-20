@@ -716,6 +716,12 @@ function attachTypedErrorAccess(
     return getProperty<ScriptPropertyKey, unknown>(object, key, value, hooks);
   }
   object.internalTypedErrorAccess = (operation: string): unknown => {
+    if (operation.startsWith("has:"))
+      return hasProperty<ScriptPropertyKey, unknown>(
+        object,
+        operation.slice(4),
+      );
+    if (operation.startsWith("get:")) return get(operation.slice(4));
     switch (operation) {
       case "identity":
         return identity;
@@ -787,6 +793,135 @@ export function createNativeErrorView(
   const object = createRuntimeError(realm, kind);
   if (hasMessage)
     builtinProperty(object, "message", message, true, true, hooks);
+  attachTypedErrorAccess(object, object, native, realm, hooks, global);
+  return object;
+}
+/** Node's coded errors use ordinary data properties. The producer supplies
+ * the ordering used by its own constructor or native error callback. */
+export function createNativeCodedErrorView(
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+  kind: string,
+  message: string,
+  code: string,
+  errno: number | undefined,
+  codeFirst: boolean,
+  native: unknown,
+  global: OrdinaryObject<ScriptPropertyKey, unknown>,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const object = createRuntimeError(realm, kind);
+  if (codeFirst)
+    createDataProperty<ScriptPropertyKey, unknown>(object, "code", code, hooks);
+  builtinProperty(object, "message", message, true, true, hooks);
+  if (errno !== undefined)
+    createDataProperty<ScriptPropertyKey, unknown>(
+      object,
+      "errno",
+      errno,
+      hooks,
+    );
+  if (!codeFirst)
+    createDataProperty<ScriptPropertyKey, unknown>(object, "code", code, hooks);
+  attachTypedErrorAccess(object, object, native, realm, hooks, global);
+  return object;
+}
+
+export function createNativeSystemErrorView(
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+  message: string,
+  errno: number,
+  code: string,
+  text: string,
+  syscall: string,
+  native: unknown,
+  global: OrdinaryObject<ScriptPropertyKey, unknown>,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const key = "node:system-error";
+  const errorPrototype = realm.prototypes.get("error");
+  if (errorPrototype === undefined) throw "ERROR_PROTOTYPE_INVARIANT";
+  const existing = realm.prototypes.get(key);
+  const prototype =
+    existing ?? createObject<ScriptPropertyKey, unknown>(errorPrototype);
+  if (existing === undefined) realm.prototypes.set(key, prototype);
+  const object = errorFromPrototype(prototype, realm.agent, "SystemError");
+  const info = createObject<ScriptPropertyKey, unknown>(realm.objectPrototype);
+  createDataProperty<ScriptPropertyKey, unknown>(info, "errno", errno, hooks);
+  createDataProperty<ScriptPropertyKey, unknown>(info, "code", code, hooks);
+  createDataProperty<ScriptPropertyKey, unknown>(info, "message", text, hooks);
+  createDataProperty<ScriptPropertyKey, unknown>(
+    info,
+    "syscall",
+    syscall,
+    hooks,
+  );
+  createDataProperty<ScriptPropertyKey, unknown>(
+    object,
+    "code",
+    "ERR_SYSTEM_ERROR",
+    hooks,
+  );
+  builtinProperty(object, "name", "SystemError", true, true, hooks);
+  builtinProperty(object, "message", message, true, true, hooks);
+  defineOwnProperty<ScriptPropertyKey, unknown>(
+    object,
+    "info",
+    {
+      fields: 51,
+      value: info,
+      writable: false,
+      enumerable: true,
+      configurable: true,
+      get: undefined,
+      set: undefined,
+    },
+    hooks,
+  );
+  function alias(key: string): void {
+    const get = builtinFunction(
+      realm.functionPrototype,
+      "get",
+      0,
+      (receiver, args): unknown =>
+        getProperty<ScriptPropertyKey, unknown>(info, key, info, hooks),
+      hooks,
+    );
+    const set = builtinFunction(
+      realm.functionPrototype,
+      "set",
+      1,
+      (receiver, args): unknown => {
+        if (
+          !setProperty<ScriptPropertyKey, unknown>(
+            info,
+            key,
+            args[0],
+            { object: info, value: info },
+            hooks,
+          )
+        )
+          throw createRuntimeError(realm, "type");
+        return undefined;
+      },
+      hooks,
+    );
+    defineOwnProperty<ScriptPropertyKey, unknown>(
+      object,
+      key,
+      {
+        fields: 60,
+        value: undefined,
+        writable: false,
+        enumerable: true,
+        configurable: true,
+        get,
+        set,
+      },
+      hooks,
+    );
+  }
+  alias("errno");
+  alias("syscall");
   attachTypedErrorAccess(object, object, native, realm, hooks, global);
   return object;
 }

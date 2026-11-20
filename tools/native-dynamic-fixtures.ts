@@ -153,6 +153,14 @@ function throwsType(f: () => void): boolean {
   try { f(); } catch (error) { return error instanceof TypeError; }
   return false;
 }
+function throwsLoaderError(f: () => void, prefix: string): boolean {
+  try { f(); } catch (error) {
+    if (!(error instanceof Error) || error instanceof TypeError || error.name !== "Error") return false;
+    if (!("code" in error) || error.code !== "ERR_FFI_CALL_FAILED") return false;
+    return error.message.slice(0, prefix.length) === prefix;
+  }
+  return false;
+}
 function throwsRange(f: () => void): boolean {
   try { f(); } catch (error) { return error instanceof RangeError; }
   return false;
@@ -322,8 +330,8 @@ export function run(): number {
   if (!throwsType(() => { invoke(unset); })) return 27;
   if (!throwsType(() => { setNumber(negate, 0, 1); })) return 28;
   if (!throwsType(() => { setBytes(narrow, 0, buffer); })) return 29;
-  if (!throwsType(() => { findSymbol(library, "tint_no_such_symbol"); })) return 30;
-  if (!throwsType(() => { openLibrary("/nonexistent/libtint-missing.so"); })) return 31;
+  if (!throwsLoaderError(() => { findSymbol(library, "tint_no_such_symbol"); }, "dlsym failed: ")) return 30;
+  if (!throwsLoaderError(() => { openLibrary("/nonexistent/libtint-missing.so"); }, "dlopen failed: ")) return 31;
   if (!throwsType(() => { foreignFunction(0, signature([], v, 0)); })) return 32;
   if (!throwsRange(() => { setRecord(bigSum, 0, new Uint8Array(8)); })) return 33;
   // Dynamic callbacks: libc's qsort with a TypeScript comparator through a

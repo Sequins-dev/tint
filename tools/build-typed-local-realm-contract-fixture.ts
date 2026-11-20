@@ -23,6 +23,20 @@ export function run(): number {
     return 4;
   } catch (error) {}
   if (values[0] !== 42 || values[1] !== 17 || values.length !== 2) return 5;
+  try {
+    values.fill("bad");
+    return 9;
+  } catch (error) {
+    if (!(error instanceof TypeError)) return 10;
+  }
+  if (values[0] !== 42 || values[1] !== 17 || values.length !== 2) return 11;
+  try {
+    values.splice(0, 1, "bad");
+    return 12;
+  } catch (error) {
+    if (!(error instanceof TypeError)) return 13;
+  }
+  if (values[0] !== 42 || values[1] !== 17 || values.length !== 2) return 14;
   const records: Record<string, { value: number }> = { record: { value: 42 } };
   const erased: unknown = records;
   const broad = erased as Record<string, { value: unknown }>;

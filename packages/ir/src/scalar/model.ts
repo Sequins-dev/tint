@@ -31,7 +31,13 @@ export interface DebugOrigin {
 export type NativeTypedArray =
   "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array";
 export type GeneralTest =
-  "undefined" | "number" | "boolean" | "string" | "null" | NativeTypedArray;
+  | "undefined"
+  | "number"
+  | "boolean"
+  | "string"
+  | "null"
+  | NativeTypedArray
+  | "object";
 export type Instruction = Span &
   DebugOrigin &
   (

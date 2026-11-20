@@ -80,14 +80,15 @@ test("numeric typed-array spread checks element compatibility and infers a numer
   }
   for (const source of [
     "function copy(source:Uint8Array):string[]{return [...source];}",
-    "function copy(source:number[]):number[]{return [...source];}",
     "function copy(source:string):string[]{return [...source];}",
   ])
     assert.ok(!checkClosureModule(parse(source)).ok, source);
 });
 
-test("numeric array spread includes undefined in its result type", () => {
+test("numeric array spread preserves inferred holes and accepts a compatible written result", () => {
   for (const source of [
+    "function copy(source:number[]):number[]{return [...source];}",
+    "function copy(source:number[]):number[]{return [1,...source,2];}",
     "function copy(source:number[]):(number|undefined)[]{return [...source];}",
     "function copy(source:number[]):number{const result=[...source];result.push(undefined);return result.length;}",
     "function copy():(number|undefined)[]{return [undefined,1];}",
@@ -95,7 +96,9 @@ test("numeric array spread includes undefined in its result type", () => {
     assert.ok(checkClosureModule(parse(source)).ok, source);
   assert.ok(
     !checkClosureModule(
-      parse("function copy(source:number[]):number[]{return [...source];}"),
+      parse(
+        "function copy(source:(number|undefined)[]):number[]{return [...source];}",
+      ),
     ).ok,
   );
   assert.ok(

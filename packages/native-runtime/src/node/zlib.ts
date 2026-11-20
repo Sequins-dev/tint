@@ -11,11 +11,7 @@
  * z_stream's members are read and written as properties of a C view of the
  * block (docs/native-ffi.md, "C views"). The block is released (and the
  * stream ended) on every exit.
- *
- * KNOWN DEFECT (typed-pipeline gap, docs/native-ffi.md#known-defects): Node
- * throws Errors carrying `code` and `errno` for zlib failures; the typed
- * pipeline constructs only TypeError and RangeError, so these failures are
- * TypeErrors with Node's messages. */
+ */
 import {
   z_stream,
   zlibVersion,
@@ -31,6 +27,11 @@ import { memcpy, memcpy$into, memcpy$bytes } from "tint:c/memory";
 import { allocate, release, address, type View } from "tint:ffi";
 import { cStringAt } from "tint:ffi/unsafe";
 import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
+import {
+  codedError,
+  codedRangeError,
+  type NativeCodedError,
+} from "./errors.ts";
 
 /** Node's options for the synchronous codecs. */
 export interface ZlibOptions {
@@ -72,14 +73,15 @@ function option(
 ): number {
   if (value === undefined || value !== value) return fallback;
   if (value === Infinity || value === -Infinity)
-    throw new RangeError(
+    throw codedRangeError(
       'The value of "' +
         name +
         '" is out of range. It must be a finite number. Received ' +
         String(value),
+      "ERR_OUT_OF_RANGE",
     );
   if (value < lower || value > upper)
-    throw new RangeError(
+    throw codedRangeError(
       'The value of "' +
         name +
         '" is out of range. It must be >= ' +
@@ -88,6 +90,7 @@ function option(
         String(upper) +
         ". Received " +
         String(value),
+      "ERR_OUT_OF_RANGE",
     );
   return value;
 }
@@ -96,9 +99,37 @@ function int32(value: number): number {
   return value < 0 ? Math.ceil(value) : Math.floor(value);
 }
 /** Node's message for a failed call: zlib's own message when it set one. */
-function failure(stream: View<z_stream>, fallback: string): TypeError {
+function statusCode(status: number): string {
+  switch (status) {
+    case 2:
+      return "Z_NEED_DICT";
+    case -1:
+      return "Z_ERRNO";
+    case -2:
+      return "Z_STREAM_ERROR";
+    case -3:
+      return "Z_DATA_ERROR";
+    case -4:
+      return "Z_MEM_ERROR";
+    case -5:
+      return "Z_BUF_ERROR";
+    case -6:
+      return "Z_VERSION_ERROR";
+    default:
+      return "Z_UNKNOWN";
+  }
+}
+function failure(
+  stream: View<z_stream>,
+  status: number,
+  fallback: string,
+): NativeCodedError {
   const message = stream.msg;
-  return new TypeError(message === 0 ? fallback : cStringAt(message));
+  return codedError(
+    message === 0 ? fallback : cStringAt(message),
+    statusCode(status),
+    status,
+  );
 }
 
 function process(
@@ -145,14 +176,16 @@ function process(
   const requestedChunk = settings.chunkSize;
   if (requestedChunk !== undefined && requestedChunk === requestedChunk) {
     if (requestedChunk === Infinity || requestedChunk === -Infinity)
-      throw new RangeError(
+      throw codedRangeError(
         'The value of "options.chunkSize" is out of range. It must be a finite number. Received ' +
           String(requestedChunk),
+        "ERR_OUT_OF_RANGE",
       );
     if (requestedChunk < 64)
-      throw new RangeError(
+      throw codedRangeError(
         'The value of "options.chunkSize" is out of range. It must be >= 64. Received ' +
           String(requestedChunk),
+        "ERR_OUT_OF_RANGE",
       );
     chunkSize = Math.floor(requestedChunk);
   }
@@ -193,7 +226,8 @@ function process(
           zlibVersion(),
           z_stream.size,
         );
-    if (initialized !== ok) throw new TypeError("Initialization failed");
+    if (initialized !== ok)
+      throw failure(stream, initialized, "Initialization failed");
     started = true;
     const chunks: Uint8Array[] = [];
     let produced = 0,
@@ -221,10 +255,15 @@ function process(
       const availableOut = stream.avail_out;
       if (status === ok || status === bufferError) {
         if (availableOut !== 0 && finishFlush === finish)
-          throw failure(stream, "unexpected end of file");
+          throw codedError(
+            "unexpected end of file",
+            "Z_BUF_ERROR",
+            bufferError,
+          );
       } else if (status === needDictionary)
-        throw failure(stream, "Missing dictionary");
-      else if (status !== streamEnd) throw failure(stream, "Zlib error");
+        throw codedError("Missing dictionary", "Z_NEED_DICT", status);
+      else if (status !== streamEnd)
+        throw failure(stream, status, "Zlib error");
       const remaining = stream.avail_in;
       consumed += availableIn - remaining;
       availableIn = remaining;
@@ -235,10 +274,11 @@ function process(
         chunks.push(chunk);
         produced += have;
         if (produced > maxOutput)
-          throw new RangeError(
+          throw codedRangeError(
             "Cannot create a Buffer larger than " +
               String(maxOutput) +
               " bytes",
+            "ERR_BUFFER_TOO_LARGE",
           );
       }
       // An exhausted output window means zlib has more to write.

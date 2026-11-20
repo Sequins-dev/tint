@@ -258,10 +258,9 @@ function make():Counter { let count=0;
   );
   assert.ok(check("function f():void { return undefined; }").ok);
 });
-test("void results cannot become values and loop completion stays conservative", () => {
+test("void result checking and loop completion stay conservative", () => {
   for (const source of [
     "function f():void {} function g():number { return f(); }",
-    "function f():void {} function g():void { let x=f(); }",
     "function f(x:void):void {}",
     "interface Bad { value:void }",
     "function f():void { return 1; }",
@@ -287,13 +286,13 @@ test("compound assignments snapshot reads before RHS writes and preserve guards"
   );
 });
 
-test("void calls cannot supply conditions or equality operands", () => {
+test("void calls cannot supply conditions or equality operands of incompatible types", () => {
   for (const body of [
     "if(h()) return;",
     "while(h()) break;",
     "for(;h();) break;",
     "const x=!h();",
-    "const x=h()===h();",
+    "const x=h()===1;",
     "const x=h()?1:2;",
   ]) {
     const r = check("function h():void {} function f():void {" + body + "}");
@@ -3178,39 +3177,43 @@ test("selects realm allocations through local aliases and array insertion", () =
   if (type?.kind === "array") assert.equal(type.realmArray, true);
 });
 
-test("keeps native payloads with unmodeled escapes or joins", () => {
-  for (const [setup, value, kind] of [
-    ["const list = [42]; consume(list);", "list", "native list"],
-    [
-      "const record = { count: 42 }; const holder = { record };",
-      "record",
-      "native record",
-    ],
-    ["const list = flag ? [1] : [2];", "list", "native list"],
-    ["let list = [1]; list = [2];", "list", "native list"],
-    [
-      "const list = [42]; function escape(): number[] { return list; }",
-      "list",
-      "native list",
-    ],
-  ]) {
-    const result = check(`
-      function consume(xs: number[]): void {}
-      function f(flag: boolean): void {
-        ${setup}
-        const object: Record<string, unknown> = { payload: ${value} };
-      }
-    `);
-    assert.equal(result.ok, false, setup);
-    if (!result.ok) {
-      assert.equal(result.error.preventsFallback, true);
-      assert.equal(
-        result.error.message,
-        "UNSUPPORTED: " +
-          kind +
-          " values in dynamic-key objects need slice 2b list/record views",
-      );
+test("realm demand follows calls, captures, typed fields and joins", () => {
+  const result = check(`
+    function identity(input: number[]): number[] { return input; }
+    function f(flag: boolean): void {
+      const items: number[] = [39];
+      const holder: { items: number[] } = { items };
+      let selected = flag ? identity(holder.items) : [0];
+      if (!flag) selected = [1];
+      const append = (): void => { selected.push(3); };
+      const object: Record<string, number[]> = { selected };
+      append();
     }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+  const items = result.value.bindings.bindings.find((b) => b.name === "items");
+  assert.ok(items);
+  const type = result.value.types[result.value.bindingTypes[items.id] ?? -1];
+  assert.ok(type?.kind === "array" && type.realmArray === true);
+});
+
+test("indirect native aggregate calls still require views", () => {
+  const result = check(`
+    function consume(xs: number[]): void {}
+    function f(): void {
+      const list = [42];
+      const callback: (xs: number[]) => void = consume;
+      callback(list);
+      const object: Record<string, unknown> = { payload: list };
+    }
+  `);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.preventsFallback, true);
+    assert.equal(
+      result.error.message,
+      "UNSUPPORTED: native list values in dynamic-key objects need slice 2b list/record views",
+    );
   }
 });
 
@@ -3281,9 +3284,9 @@ test("unannotated computed literals keep open storage", () => {
   assert.ok(result.ok, JSON.stringify(result));
 });
 
-test("known native aggregate values do not box into a dynamic property", () => {
+test("external native aggregate inputs do not box into a dynamic property", () => {
   const result = check(`
-    function f(value: number[]): void {
+    export function f(value: number[]): void {
       const object: Record<string, unknown> = {};
       object.value = value;
     }
@@ -3324,6 +3327,59 @@ test("literal presence narrows a dynamic property read", () => {
     }
   `);
   assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("literal in introduces an unknown property on a narrowed Error", () => {
+  const accepted = check(`function code(e: unknown): string {
+    if (e instanceof Error && "code" in e && typeof e.code === "string") {
+      const code: string = e.code;
+      return code;
+    }
+    return "";
+  }`);
+  assert.ok(accepted.ok, JSON.stringify(accepted));
+  assert.equal(
+    check(`function code(e: Error): string {
+    if ("code" in e) return e.code;
+    return "";
+  }`).ok,
+    false,
+  );
+  assert.equal(
+    check(`function code(e: Error): unknown {
+    if (!("code" in e)) return e.code;
+    return undefined;
+  }`).ok,
+    false,
+  );
+  assert.equal(
+    check('function has(e: string): boolean { return "code" in e; }').ok,
+    false,
+  );
+  assert.ok(
+    check(`function value(o: { value: number }): number {
+    if ("value" in o) return o.value;
+    return 0;
+  }`).ok,
+  );
+  assert.ok(
+    check(`function errno(e: Error): number {
+    if ("errno" in e && e.errno === -5) return e.errno;
+    return 0;
+  }`).ok,
+  );
+});
+
+test("a checked property fact can cross a call on an uncaptured Error", () => {
+  const accepted = check(`function touch(e: Error): void {}
+function code(e: Error): string {
+  if ("code" in e && typeof e["code"] === "string") {
+    touch(e);
+    return e.code;
+  }
+  return "";
+}`);
+  assert.ok(accepted.ok, JSON.stringify(accepted));
 });
 
 test("instanceof uses the checked constructor type through aliases and stable properties", () => {
@@ -3481,4 +3537,179 @@ test("callable facts retain concrete signatures and obey invalidation", () => {
     assert.ok(!result.ok, source);
     assert.equal(result.error.code, "TYPE_MISMATCH", JSON.stringify(result));
   }
+});
+
+test("object binding declarations project annotated property types", () => {
+  const result =
+    check(`function f(input: { nested: { count: number }; label?: string }): number {
+    const { nested: { count: total }, label = "default" } = input;
+    return label.length + total;
+  }`);
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.equal(
+    check(`function f(input: { count: number }): number {
+      const { missing } = input;
+      return missing;
+    }`).ok,
+    false,
+  );
+});
+
+test("binding patterns check native array elements, defaults, and rest", () => {
+  const result = check(`function f(values: (number | undefined)[]): number {
+    const [first = 0, , ...rest] = values;
+    return first + (rest[0] ?? 0);
+  }`);
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.equal(
+    check("function f(values: number): void { const [x] = values; }").ok,
+    false,
+  );
+});
+
+test("patterns in parameters and for-of heads use their input types", () => {
+  const result = check(`
+    function project({ n = 20 }: { n?: number }, twice: number = n + n): number { return twice; }
+    function f(items: { x: number }[]): number {
+      const pick: (item: { x: number }) => number = ({ x }) => x;
+      let total = 0;
+      for (const { x } of items) { total += pick({ x }); }
+      return total + project({});
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("destructuring assignments preserve their source type and check target writes", () => {
+  const result = check(`
+    function f(): number {
+      let a: number = 1, b: number = 2;
+      [a, b] = [b, a];
+      const result = ({ a } = { a: 42 });
+      return result.a;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+  for (const source of [
+    'function f(): void { let a: number = 0; ({ a } = { a: "wrong" }); }',
+    "function f(xs: number[]): void { let a: number = 0; [a] = xs; }",
+  ])
+    assert.equal(check(source).ok, false);
+});
+
+test("module binding patterns publish leaf types to following declarations", () => {
+  const result = check(`
+    export const { value: answer }: { value: number } = { value: 42 };
+    export function run(): number { return answer; }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("binding defaults contextually type empty property and parameter literals", () => {
+  for (const source of [
+    "function f(o: { xs?: number[] }): number { const { xs = [] }: { xs?: number[] } = o; return xs.length; }",
+    "function f({ a = {} } = {}): number { return 42; }",
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify(result));
+  }
+});
+
+test("catch patterns with an any annotation project general values", () => {
+  const result = check(`
+    function f(value: unknown): number {
+      try { throw value; } catch ({ n }: any) { return n as number; }
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("inferred union leaves can change type while annotated leaves retain their contract", () => {
+  const source = `function f(input: { value: number | string }): boolean {
+    let { value } = input;
+    value = true;
+    return value;
+  }`;
+  assert.ok(check(source).ok);
+  assert.equal(
+    check(
+      source.replace(
+        "let { value }",
+        "let { value }: { value: number | string }",
+      ),
+    ).ok,
+    false,
+  );
+});
+
+test("realm iterator pattern parameters can initialize before later defaults", () => {
+  const result = check(`
+    function read([first = 20]: Iterable<number>, second: number = first): number {
+      return first + second;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("realm iterator values retain realm record layouts", () => {
+  const result = check(`
+    function read(input: Iterable<{ value: number }>): number {
+      const [entry] = input;
+      if (entry === undefined) return 0;
+      const { value } = entry;
+      return value;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+  const checked = result.value;
+  const entry = checked.bindings.bindings.find(
+    (binding) => binding.name === "entry",
+  );
+  assert.ok(entry);
+  const type = checked.types[checked.bindingTypes[entry.id] ?? -1];
+  assert.ok(type?.kind === "union");
+  assert.ok(
+    type.members.some((member) => {
+      const variant = checked.types[member];
+      return variant?.kind === "object" && variant.realmRecord === true;
+    }),
+  );
+});
+
+test("numeric spreads compose with surrounding elements in typed literals", () => {
+  const result = check(`
+    function f(references: number[], generals: number[], frameBytes: number): number[] {
+      return [frameBytes, references.length, ...references, generals.length, ...generals, 0];
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("updates share dynamic-key read and write checks", () => {
+  const accepted = check(`
+    function f(numbers: Record<string, number>, labels: Record<string, string>, key: string): number {
+      numbers[key] ??= 20;
+      labels.title ??= "Tint";
+      if ("title" in labels) labels.title += "!";
+      const old = "value" in numbers ? numbers.value++ : 0;
+      return "value" in numbers ? old + (numbers.value *= 2) : old;
+    }
+  `);
+  assert.ok(accepted.ok, JSON.stringify(accepted));
+  for (const source of [
+    "function f(x: { readonly [key: string]: number }): void { x.value ??= 1; }",
+    'function f(x: Record<string, number>): void { if ("value" in x) x.value += "x"; }',
+  ])
+    assert.equal(check(source).ok, false);
+});
+
+test("a statically void callback result can be evaluated in a value context", () => {
+  const result = check(`
+    function read(action: () => void): unknown {
+      const actual: unknown = action();
+      if (action() === undefined) return action();
+      return actual;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
 });

@@ -309,6 +309,7 @@ const generalTests: readonly GeneralTest[] = [
   "Uint16Array",
   "Uint32Array",
   "Float64Array",
+  "object",
 ];
 export function encodeInstruction(
   writer: ByteWriter,

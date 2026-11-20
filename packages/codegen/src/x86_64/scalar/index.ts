@@ -51,6 +51,7 @@ import {
   verify,
   type Block,
   type FunctionIR,
+  type GeneralTest,
   type Instruction,
   type ModuleIR,
   type RecordField,
@@ -272,7 +273,7 @@ function arrayWidth(type: ScalarType): ElementBytes {
 function arrayMarker(width: ElementBytes): number {
   return width === 8 ? 5 : width === 4 ? 4 : width === 2 ? 3 : 2;
 }
-function typedArrayMarker(type: ScalarType): number {
+function typedArrayMarker(type: ScalarType | GeneralTest): number {
   return type === "Uint8Array"
     ? 2
     : type === "Uint16Array"
@@ -2745,10 +2746,7 @@ export function emitModule(
           const type = op.type;
           const targetTag =
             type === "undefined" ? 0 : type === "null" ? 4 : generalTag(type);
-          const array =
-            type === "undefined" || type === "null"
-              ? 0
-              : typedArrayMarker(type);
+          const array = typedArrayMarker(type);
           emit({ op: "cmp", dst: frame(home(op.value)), src: imm(targetTag) });
           if (array === 0) setBoolean(emit, "e", 0);
           else {

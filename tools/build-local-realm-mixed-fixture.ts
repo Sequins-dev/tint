@@ -39,6 +39,15 @@ export function inferredLocal(key: string): Record<string, unknown> {
 export function admit(input: unknown): Record<string, number[][]> {
   return input as Record<string, number[][]>;
 }
+export function method(input: unknown): string {
+  const record = input as Record<string, number[]>;
+  const values = record.items;
+  return values === undefined ? "missing" : values.join(":");
+}
+export function update(input: unknown): number {
+  const record = input as Record<string, number>;
+  return "count" in record ? record.count++ : -1;
+}
 `),
 );
 assert.ok(producer.ok, JSON.stringify(producer));
@@ -46,7 +55,7 @@ let fallback = false;
 verifyHostedFixture(
   `
 import { networkInterfaces } from "node:os";
-import { synthetic, explicitLocal, inferredLocal, admit } from "./producer";
+import { synthetic, explicitLocal, inferredLocal, admit, method, update } from "./producer";
 function rejects(operation) {
   try { operation(); } catch (error) { return error instanceof TypeError; }
   return false;
@@ -94,6 +103,23 @@ export function run() {
   const admitted = { nested };
   if (admit(admitted) !== admitted || admitted.nested !== nested ||
       !rejects(() => nested[0].push("bad")) || nested[0].length !== 1) return 13;
+  let order = "";
+  const items = [42];
+  Object.defineProperty(items, "join", {
+    get() {
+      order += "g";
+      return function (separator) {
+        order += "c";
+        return this === items && separator === ":" ? "live" : "wrong";
+      };
+    }
+  });
+  if (method({ items }) !== "live" || order !== "gc") return 14;
+  const child = Object.create({
+    get count() { order += "r"; return 41; },
+    set count(value) { order += "w"; this.updated = value; }
+  });
+  if (update(child) !== 41 || child.updated !== 42 || order !== "gcrw") return 15;
   return 42;
 }
 `,

@@ -2791,6 +2791,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/errors.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/os-darwin.ts",
       packageId: "native-runtime",
     },

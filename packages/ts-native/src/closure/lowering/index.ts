@@ -30,6 +30,7 @@ import {
   encodeDynamicContract,
   hasDynamicObject,
   dynamicObjectRuntime,
+  planFlowPropertyStorage,
   dynamicRuntimeAliasPrefix,
   type DynamicObjectRuntime,
 } from "./dynamic-objects.ts";
@@ -158,10 +159,17 @@ interface RealmErrorSources {
   readonly applies: (span: IRSpan) => boolean;
 }
 
+interface NodeErrorTypes {
+  readonly coded?: number | undefined;
+  readonly range?: number | undefined;
+  readonly system?: number | undefined;
+  readonly info?: number | undefined;
+}
 export interface ModuleEntryOptions {
   readonly realmTypeof?: RealmTypeof | undefined;
   readonly realmCall?: number | undefined;
   readonly realmErrors?: RealmErrorSources | undefined;
+  readonly nodeErrorTypes?: NodeErrorTypes | undefined;
   /** Caller-selected top-level managed functions supplied by the linker. Their
    * checked ABI is lowered, but their bodies and child closures are not. */
   readonly importedFunctions?: readonly number[];
@@ -290,6 +298,7 @@ export function lowerModuleEntries(
     realmTypeof: options?.realmTypeof,
     realmCall: options?.realmCall,
     realmErrors: options?.realmErrors,
+    nodeErrorTypes: options?.nodeErrorTypes,
     recordBindings: options?.recordBindings,
     recordTypes: options?.recordTypes,
     recordIdentity: options?.recordIdentity,
@@ -324,6 +333,7 @@ function lowerEntries(
     realmTypeof?: RealmTypeof | undefined;
     realmCall?: number | undefined;
     realmErrors?: RealmErrorSources | undefined;
+    nodeErrorTypes?: NodeErrorTypes | undefined;
     recordBindings?: readonly RecordBinding[] | undefined;
     recordTypes?: boolean | undefined;
     recordIdentity?: RecordIdentityResolver | undefined;
@@ -487,6 +497,16 @@ function lowerEntries(
         fail("view slot binding requires a record witness");
       viewed.add(type);
     }
+    const nodeErrorTypes = recordTarget?.nodeErrorTypes;
+    const branded =
+      nodeErrorTypes === undefined ? undefined : new Set<number>();
+    if (nodeErrorTypes !== undefined && branded !== undefined)
+      for (const type of [
+        nodeErrorTypes.coded,
+        nodeErrorTypes.range,
+        nodeErrorTypes.system,
+      ])
+        if (type !== undefined) branded.add(type);
     const recordContracts: RecordContracts | undefined =
       recordTarget === undefined
         ? undefined
@@ -501,6 +521,7 @@ function lowerEntries(
             validatedTypes.value,
             recordTarget.recordIdentity,
             viewed,
+            branded,
           );
     const constants = new Map<number, number | boolean | string>();
     if (layout === undefined) {
@@ -574,10 +595,12 @@ function lowerEntries(
         returnType:
           initializer?.function === id
             ? "boolean"
-            : checked.types[body.result]?.kind === "void" ||
-                checked.types[body.result]?.kind === "never"
-              ? "void"
-              : scalar(body.result),
+            : checked.voidValueReturns?.has(id) === true
+              ? "general"
+              : checked.types[body.result]?.kind === "void" ||
+                  checked.types[body.result]?.kind === "never"
+                ? "void"
+                : scalar(body.result),
       };
     });
     // The first signature with a given contract that is not an imported
@@ -631,6 +654,39 @@ function lowerEntries(
       signatures.push({ parameters, returnType: result });
       signatureIds.set(key, id);
       return id;
+    }
+    const voidResultsBySignature = new Map<number, readonly number[]>();
+    function voidCallResults(target: number): readonly number[] {
+      const known = voidResultsBySignature.get(target);
+      if (known !== undefined) return known;
+      if (semanticWitnesses !== undefined)
+        fail(
+          "observing a void callback result across managed signatures requires a result adapter",
+        );
+      const signature = signatures[target];
+      if (signature === undefined) throw "void callback signature invariant";
+      const parameters = signature.parameters;
+      const results = new Set<FunctionSignature["returnType"]>();
+      for (const candidate of signatures) {
+        if (candidate === undefined) throw "void result signature invariant";
+        if (
+          candidate.parameters.length === parameters.length &&
+          candidate.parameters.every(
+            (type, index) => type === parameters[index],
+          )
+        )
+          results.add(candidate.returnType);
+      }
+      const witnesses: number[] = [];
+      for (const result of results) {
+        if (result === undefined) throw "void callback result invariant";
+        witnesses.push(signatures.length);
+        // The stub supplies an environment-free signature address for the
+        // guard. Dispatch always calls the closure's own entry.
+        signatures.push({ parameters, returnType: result });
+      }
+      voidResultsBySignature.set(target, witnesses);
+      return witnesses;
     }
     function parameterType(id: number, index: number): number | undefined {
       const parameter = bodyByFunction[id]?.parameters[index],
@@ -971,6 +1027,25 @@ function lowerEntries(
             rangeError: errorRecord(realmErrorSources.rangeError),
             applies: realmErrorSources.applies,
           };
+    function nodeErrorRecord(type: number | undefined): number | undefined {
+      return type === undefined ? undefined : recordContracts?.forType(type);
+    }
+    const nodeErrors =
+      nodeErrorTypes === undefined
+        ? undefined
+        : {
+            coded: nodeErrorRecord(nodeErrorTypes.coded),
+            range: nodeErrorRecord(nodeErrorTypes.range),
+            system: nodeErrorRecord(nodeErrorTypes.system),
+            info: nodeErrorRecord(nodeErrorTypes.info),
+          };
+    const flowStorage =
+      realmErrors === undefined ? undefined : planFlowPropertyStorage(checked);
+    function bindingScalar(binding: number): SourceScalarType {
+      return flowStorage?.bindings.has(binding) === true
+        ? "general"
+        : scalar(checked.bindingTypes[binding]);
+    }
     function realmTypeofTarget(span: IRSpan): number | undefined {
       if (realmTypeof === undefined || !realmTypeof.applies(span))
         return undefined;
@@ -1556,7 +1631,7 @@ function lowerEntries(
           scope?.kind !== "for"
         )
           fail("unsupported owned capture scope");
-        const type = scalar(checked.bindingTypes[binding.id]);
+        const type = bindingScalar(binding.id);
         // Environment fields below occupy one word. Keep wider carriers in
         // cells; traced pointers retain their ordinary descriptor field type.
         if (valueCaptures[binding.id] === 1 && scalarByteLength(type) !== 8)
@@ -1688,12 +1763,9 @@ function lowerEntries(
       const sourceBody = body.body;
       const explicitResult =
         body.explicitResult === true ? body.result : undefined;
-      const returnType: SourceScalarType | "void" = initializing
-          ? "boolean"
-          : checked.types[body.result]?.kind === "void" ||
-              checked.types[body.result]?.kind === "never"
-            ? "void"
-            : scalar(body.result),
+      const functionSignature = signatures[functions.length];
+      if (functionSignature === undefined) throw "function signature invariant";
+      const returnType = functionSignature.returnType,
         locals: Local[] = [],
         localByBinding = new Map<number, Local>(),
         localByNode = createKeyIndex<Span, Local>(syntaxHash),
@@ -1728,7 +1800,7 @@ function lowerEntries(
         const local: Local = {
           id: locals.length,
           name: b.name,
-          type: scalar(checked.bindingTypes[b.id]),
+          type: bindingScalar(b.id),
           mutable: b.mutable,
           parameter: b.kind === "parameter" || b.owner !== sourceId,
           hoisted: b.kind === "var",
@@ -1768,6 +1840,7 @@ function lowerEntries(
         if (local === undefined) throw "parameter adapter invariant";
         declarations.set(p, local);
       }
+      const bindingIterationLocals = createKeyIndex<Span, Local>(syntaxHash);
       const dynamicAliases = new Map<string, number>();
       const dynamicSignatures: number[] = [];
       for (const binding of selected) {
@@ -1800,12 +1873,18 @@ function lowerEntries(
       const dynamicObjects: DynamicObjectRuntime | undefined =
         dynamicAliases.size === 0
           ? undefined
-          : dynamicObjectRuntime((name) => {
-              const local = dynamicAliases.get(name);
-              if (local === undefined)
-                fail("missing dynamic-object runtime helper: " + name);
-              return local;
-            });
+          : {
+              ...dynamicObjectRuntime((name) => {
+                const local = dynamicAliases.get(name);
+                if (local === undefined)
+                  fail("missing dynamic-object runtime helper: " + name);
+                return local;
+              }, dynamicAliases.has("bindingObject")),
+              update: dynamicAliases.get("update"),
+              speculativeBinary: dynamicAliases.get("speculativeBinary"),
+              speculativeString: dynamicAliases.get("speculativeString"),
+              speculativeUnary: dynamicAliases.get("speculativeUnary"),
+            };
       const expressions = createKeyIndex<Expression, ExpressionInfo>(
         syntaxHash,
       );
@@ -1880,14 +1959,18 @@ function lowerEntries(
         const chain = checked.chainValues.get(node);
         const receiverContract = checked.chainReceivers.get(node);
         const checkedType = checked.expressions.get(node);
+        const dynamicIntrinsic = checked.intrinsics.get(node);
+        const speculative = flowStorage?.values.has(node) === true;
         const type: SourceScalarType | "void" =
-          checkedType !== undefined &&
-          (checked.types[checkedType]?.kind === "void" ||
-            checked.types[checkedType]?.kind === "never")
-            ? "void"
-            : layout === undefined && stringExpression(node)
-              ? "string"
-              : scalar(checkedType);
+          speculative || dynamicIntrinsic === "flow-property-read-boxed"
+            ? "general"
+            : checkedType !== undefined &&
+                (checked.types[checkedType]?.kind === "void" ||
+                  checked.types[checkedType]?.kind === "never")
+              ? "void"
+              : layout === undefined && stringExpression(node)
+                ? "string"
+                : scalar(checkedType);
         let callee: number | undefined;
         let functionTarget: number | undefined;
         let indirect = false;
@@ -1935,13 +2018,30 @@ function lowerEntries(
         let viewTarget: CViewUse | undefined;
         let dynamicObject: ExpressionInfo["dynamicObject"];
         let dynamicContract: string | undefined;
+        let propertyKey: string | undefined;
+        function planProperty(
+          receiver: Expression,
+          key: string | undefined,
+        ): void {
+          if (
+            key === undefined ||
+            type === "void" ||
+            recordContracts === undefined
+          )
+            fail("literal property operation requires record lowering");
+          propertyKey = key;
+          const receiverType =
+            receiverContract ?? checked.expressions.get(receiver);
+          if (receiverType === undefined)
+            fail("literal property receiver invariant");
+          recordContracts.planProperty(node, receiverType, key, type);
+        }
         let realmGlobal: number | undefined;
         let realmInstaller: string | undefined;
         let realmMember = false;
         let realmInstanceOf: number | undefined;
         let arrayInstance: ExpressionInfo["arrayInstance"];
         let generalCall: ExpressionInfo["generalCall"];
-        const dynamicIntrinsic = checked.intrinsics.get(node);
         if (viewUse !== undefined) {
           if (node.kind === "member") expr(node.object);
           else if (node.kind === "index") {
@@ -2094,7 +2194,8 @@ function lowerEntries(
               if (
                 checkedType !== undefined &&
                 checked.types[checkedType]?.kind === "function" &&
-                local === undefined
+                local === undefined &&
+                checked.bindingValues?.has(node) !== true
               )
                 fail(
                   "named function values require managed hoisted initialization: " +
@@ -2107,6 +2208,28 @@ function lowerEntries(
                 );
               break;
             case "index":
+              if (flowStorage?.values.has(node.object) === true) {
+                builtin = "speculative-property-read";
+                expr(node.object);
+                expr(node.index);
+                break;
+              }
+              if (
+                dynamicIntrinsic === "flow-property-read" ||
+                dynamicIntrinsic === "flow-property-read-boxed"
+              ) {
+                builtin = dynamicIntrinsic;
+                planProperty(
+                  node.object,
+                  checkedPropertyName(
+                    node.index,
+                    checked.types[checked.expressions.get(node.index) ?? -1],
+                  ),
+                );
+                expr(node.object);
+                expr(node.index);
+                break;
+              }
               if (finiteAccess(node, node.object, type, false)) {
                 expr(node.object);
                 expr(node.index);
@@ -2157,6 +2280,21 @@ function lowerEntries(
               expr(node.index);
               break;
             case "member":
+              if (flowStorage?.values.has(node.object) === true) {
+                builtin = "speculative-property-read";
+                expr(node.object);
+
+                break;
+              }
+              if (
+                dynamicIntrinsic === "flow-property-read" ||
+                dynamicIntrinsic === "flow-property-read-boxed"
+              ) {
+                builtin = dynamicIntrinsic;
+                planProperty(node.object, node.property);
+                expr(node.object);
+                break;
+              }
               if (dynamicIntrinsic === "realm-library-read") {
                 realmMember = true;
                 expr(node.object);
@@ -2282,6 +2420,33 @@ function lowerEntries(
               expr(node.operand);
               break;
             case "binary": {
+              if (dynamicIntrinsic === "list-has") {
+                const element = representations.arrayElement(
+                  checked.expressions.get(node.right) ?? -1,
+                );
+                if (
+                  lists.find((list) => list?.element === element)?.runtime
+                    .has === undefined
+                )
+                  fail("array membership requires the list presence helper");
+                builtin = "list-has";
+                expr(node.left);
+                expr(node.right);
+                break;
+              }
+              if (dynamicIntrinsic === "literal-property-has") {
+                builtin = dynamicIntrinsic;
+                planProperty(
+                  node.right,
+                  checkedPropertyName(
+                    node.left,
+                    checked.types[checked.expressions.get(node.left) ?? -1],
+                  ),
+                );
+                expr(node.left);
+                expr(node.right);
+                break;
+              }
               if (dynamicIntrinsic === "dynamic-object-has") {
                 if (dynamicObjects === undefined)
                   fail(
@@ -2433,6 +2598,13 @@ function lowerEntries(
             case "assignment":
             case "compound":
             case "update": {
+              if (
+                node.kind === "assignment" &&
+                checked.bindingInitializations?.has(node)
+              ) {
+                bindingPlan(node);
+                break;
+              }
               let target = node.target;
               while (target.kind === "group" || target.kind === "satisfies")
                 target = target.expression;
@@ -2444,6 +2616,26 @@ function lowerEntries(
                 expr(target.object);
                 expr(target.index);
                 expr(node.value);
+                break;
+              }
+              if (
+                dynamicIntrinsic === "dynamic-object-update" ||
+                dynamicIntrinsic === "dynamic-object-compound"
+              ) {
+                if (
+                  dynamicObjects === undefined ||
+                  checkedType === undefined ||
+                  (target.kind !== "member" && target.kind !== "index")
+                )
+                  fail("realm property update requires the program realm");
+                dynamicObject =
+                  dynamicIntrinsic === "dynamic-object-update"
+                    ? "update"
+                    : "compound";
+                dynamicContract = encodeDynamicContract(checked, checkedType);
+                expr(target.object);
+                if (target.kind === "index") expr(target.index);
+                if (node.kind !== "update") expr(node.value);
                 break;
               }
               if (
@@ -2590,7 +2782,7 @@ function lowerEntries(
                 break;
               }
               if (
-                intrinsic === "dynamic-object-array-push" ||
+                intrinsic === "dynamic-object-array-method" ||
                 intrinsic === "dynamic-object-static-call"
               ) {
                 const target = node.callee;
@@ -2601,11 +2793,11 @@ function lowerEntries(
                 )
                   fail("realm method call requires the program realm");
                 dynamicObject =
-                  intrinsic === "dynamic-object-array-push"
-                    ? "array-push"
+                  intrinsic === "dynamic-object-array-method"
+                    ? "array-method"
                     : "static-call";
                 dynamicContract = encodeDynamicContract(checked, checkedType);
-                if (intrinsic === "dynamic-object-array-push")
+                if (intrinsic === "dynamic-object-array-method")
                   expr(target.object);
                 exprArguments(node.arguments);
                 break;
@@ -3109,7 +3301,8 @@ function lowerEntries(
         const generalTypeof =
           node.kind === "unary" &&
           node.operator === "typeof" &&
-          scalar(checked.expressions.get(node.operand)) === "general";
+          (flowStorage?.values.has(node.operand) === true ||
+            scalar(checked.expressions.get(node.operand)) === "general");
         const realmTypeof = generalTypeof ? realmTypeofTarget(node) : undefined;
         const restCall = checked.restCalls?.get(node);
         const restElement =
@@ -3119,6 +3312,7 @@ function lowerEntries(
         if (restCall !== undefined && restElement === undefined)
           fail("rest parameter requires a supported list runtime");
         expressions.set(node, {
+          ...(propertyKey === undefined ? {} : { propertyKey }),
           rest:
             restCall === undefined || restElement === undefined
               ? undefined
@@ -3153,15 +3347,30 @@ function lowerEntries(
             checked.types[checkedType]?.kind === "never",
           functionTarget,
           indirect,
+          voidValueCall: checked.voidValueCalls?.has(node),
+          voidCallResults:
+            indirect &&
+            callee !== undefined &&
+            checked.voidValueCalls?.has(node)
+              ? voidCallResults(callee)
+              : undefined,
           discardCallResult:
-            indirect && type === "void" && checked.voidResultDiscard === true,
+            indirect &&
+            type === "void" &&
+            (checked.voidResultDiscard === true ||
+              (checked.voidValueReturns?.size ?? 0) !== 0),
+          speculative,
           bigint:
+            !speculative &&
             checkedType !== undefined &&
             bigIntType(checked, checkedType) !== undefined,
           realmTypeof,
           generalCall,
           bigIntRecord:
-            generalTypeof && realmTypeof === undefined
+            (generalTypeof && realmTypeof === undefined) ||
+            (dynamicIntrinsic === "flow-property-read" &&
+              checkedType !== undefined &&
+              bigIntType(checked, checkedType) !== undefined)
               ? bigIntRecord()
               : undefined,
           typeofFunction:
@@ -3176,9 +3385,11 @@ function lowerEntries(
           mapKey: key,
           mapValue,
           nullValue:
+            !speculative &&
             checkedType !== undefined &&
             checked.types[checkedType]?.kind === "null",
           undefinedValue:
+            !speculative &&
             checkedType !== undefined &&
             checked.types[checkedType]?.kind === "undefined",
           type,
@@ -3275,6 +3486,35 @@ function lowerEntries(
         visit(target);
         return { tests, records, errors };
       }
+      function bindingPlan(site: Span): void {
+        const plan = checked.bindingInitializations?.get(site);
+        if (plan === undefined) fail("unchecked binding pattern");
+        if (plan.input !== undefined) expr(plan.input);
+        expr(plan.root);
+        for (const step of plan.steps) {
+          if (step === undefined) fail("binding step invariant");
+          expr(step.read);
+          if (step.array?.realm === true) {
+            const type = checked.expressions.get(step.read);
+            const metadata = expressions.get(step.read);
+            if (type === undefined || metadata === undefined)
+              fail("realm iterator projection invariant");
+            expressions.set(step.read, {
+              ...metadata,
+              dynamicContract: encodeDynamicContract(checked, type),
+            });
+          }
+          if (step.initializer !== undefined) expr(step.initializer);
+          expr(step.target);
+          if (step.assignment !== undefined) expr(step.assignment);
+          const binding = step.binding;
+          if (binding !== undefined) {
+            const local = localByNode.get(binding);
+            if (local === undefined) fail("missing binding pattern local");
+            declarations.set(binding, local);
+          }
+        }
+      }
       function stmt(input: Statement): void {
         const node = input;
         switch (node.kind) {
@@ -3287,8 +3527,10 @@ function lowerEntries(
           case "variable":
             for (const d of node.declarations) {
               if (d === undefined) fail("declaration array invariant");
-              if (d.kind === "object-binding" || d.kind === "array-binding")
-                fail("unchecked binding pattern");
+              if (d.kind === "object-binding" || d.kind === "array-binding") {
+                bindingPlan(d);
+                continue;
+              }
               const local = localByNode.get(d);
               if (local === undefined) fail("missing entry local");
               declarations.set(d, local);
@@ -3385,10 +3627,12 @@ function lowerEntries(
                   binding.kind === "object-binding" ||
                   binding.kind === "array-binding"
                 )
-                  fail("unchecked catch pattern");
-                const local = localByNode.get(binding);
-                if (local === undefined) fail("missing catch local");
-                declarations.set(binding, local);
+                  bindingPlan(binding);
+                else {
+                  const local = localByNode.get(binding);
+                  if (local === undefined) fail("missing catch local");
+                  declarations.set(binding, local);
+                }
               }
               stmt(handler.body);
             }
@@ -3433,9 +3677,12 @@ function lowerEntries(
           }
           case "for-of": {
             const iterationBinding = node.binding;
-            if (iterationBinding.kind === "object-binding")
-              fail("unchecked iteration pattern");
-            if (iterationBinding.kind === "array-binding") {
+            const pattern =
+              checked.bindingInitializations?.get(iterationBinding);
+            if (
+              iterationBinding.kind === "array-binding" &&
+              pattern === undefined
+            ) {
               expr(node.iterable);
               const iterableType = checked.expressions.get(node.iterable);
               const encoding =
@@ -3474,15 +3721,36 @@ function lowerEntries(
               stmt(node.body);
               break;
             }
-            const local = localByNode.get(iterationBinding);
+            const local: Local | undefined =
+              pattern === undefined
+                ? localByNode.get(iterationBinding)
+                : {
+                    id: locals.length,
+                    name: "",
+                    type: scalar(checked.expressions.get(pattern.root)),
+                    mutable: false,
+                    parameter: false,
+                    span: iterationBinding,
+                  };
             if (local === undefined) fail("missing iteration binding");
+            if (pattern !== undefined) {
+              locals.push(local);
+              bindingIterationLocals.set(iterationBinding, local);
+              bindingPlan(iterationBinding);
+            } else {
+              if (
+                iterationBinding.kind === "object-binding" ||
+                iterationBinding.kind === "array-binding"
+              )
+                fail("unchecked iteration pattern");
+              declarations.set(iterationBinding, local);
+            }
             const binding =
               checked.bindings.bindings[bindingId(iterationBinding)];
             if (binding?.captured && layout !== undefined)
               fail(
                 "captured for-of bindings require per-iteration environments",
               );
-            declarations.set(iterationBinding, local);
             expr(node.iterable);
             const iterableType = checked.expressions.get(node.iterable);
             if (
@@ -3509,7 +3777,9 @@ function lowerEntries(
                 ? undefined
                 : checked.types[iterableType];
             const elementType =
-              checked.bindingTypes[bindingId(iterationBinding)];
+              pattern === undefined
+                ? checked.bindingTypes[bindingId(iterationBinding)]
+                : checked.expressions.get(pattern.root);
             if (
               iteratedList?.kind === "array" &&
               elementType !== undefined &&
@@ -3558,8 +3828,22 @@ function lowerEntries(
       for (const p of parameters) {
         if (p === undefined) fail("parameter array invariant");
         if (p.initializer !== undefined) expr(p.initializer);
+        if (p.kind === "pattern-parameter") bindingPlan(p);
       }
       stmt(block);
+      let bindingPrologue: Statement | undefined;
+      if (
+        parameters.some(
+          (parameter) =>
+            parameter !== undefined &&
+            checked.bindingRealm?.has(parameter) === true,
+        )
+      ) {
+        const first = block.kind === "block" ? block.statements[0] : undefined;
+        if (first?.kind !== "variable" || !dynamicAliases.has("bindingObject"))
+          fail("realm binding parameter helper prologue is missing");
+        bindingPrologue = first;
+      }
       if (block.kind === "block")
         block = {
           ...block,
@@ -3630,6 +3914,9 @@ function lowerEntries(
         locals,
         expressions,
         declarations,
+        bindingInitializations: checked.bindingInitializations,
+        bindingPrologue,
+        bindingIterationLocals,
       };
       const incoming = ownedFunctions.get(sourceId);
       let owned: OwnedEnvironmentPlan | undefined;
@@ -3729,6 +4016,7 @@ function lowerEntries(
         dynamicObjects,
         dynamicSignatures,
         realmErrors,
+        nodeErrors,
       );
       recordContracts?.clearFunctionOperations();
       // Debug builds name the slots holding this function's own parameters

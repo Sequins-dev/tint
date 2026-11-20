@@ -1,5 +1,6 @@
 import { numericConstant } from "./numeric-constants.ts";
 export { numericConstant } from "./numeric-constants.ts";
+import type { BindingInitialization } from "./closures.ts";
 import type { CViewUse } from "./c-views.ts";
 import { typeParameterCount, syntaxHash } from "../syntax/index.ts";
 import {
@@ -61,6 +62,7 @@ export interface RestArguments {
   readonly admitsUndefined: boolean;
 }
 export interface ExpressionInfo {
+  readonly speculative?: boolean;
   readonly realmGlobal?: number | undefined;
   readonly realmInstaller?: string | undefined;
   readonly realmMember?: boolean | undefined;
@@ -72,15 +74,18 @@ export interface ExpressionInfo {
   readonly dynamicObject?:
     | "literal"
     | "array-literal"
-    | "array-push"
+    | "array-method"
     | "static-call"
     | "read"
     | "write"
+    | "update"
+    | "compound"
     | "has"
     | "delete"
     | "enroll"
     | "own-enumeration"
     | undefined;
+  readonly propertyKey?: string | undefined;
   readonly dynamicContract?: string | undefined;
   readonly dynamicEnrollment?: string | undefined;
   /** A checked downcast (`x as T` from unknown): the categories it accepts
@@ -95,6 +100,8 @@ export interface ExpressionInfo {
   readonly never?: boolean;
   readonly functionTarget?: number | undefined;
   readonly indirect?: boolean | undefined;
+  readonly voidValueCall?: boolean | undefined;
+  readonly voidCallResults?: readonly number[] | undefined;
   readonly discardCallResult?: boolean | undefined;
   readonly typeofFunction?: boolean | undefined;
   /** The value is a BigInt (a reference to js-runtime's BigIntValue record),
@@ -181,6 +188,10 @@ export interface ExpressionInfo {
     | "error-new"
     | "error-is"
     | "error-property"
+    | "literal-property-has"
+    | "flow-property-read"
+    | "flow-property-read-boxed"
+    | "speculative-property-read"
     | "range-error-new"
     | "range-error-is"
     | "type-error-new"
@@ -193,6 +204,7 @@ export interface ExpressionInfo {
     | "array-at"
     | "array-reverse"
     | "list-reverse"
+    | "list-has"
     | "list-resize"
     | "list-at"
     | "array-fill"
@@ -227,6 +239,7 @@ export interface ExpressionInfo {
   readonly callee: number | undefined;
 }
 export interface CheckedFunction {
+  readonly bindingPrologue?: Statement | undefined;
   /** This function reads its own incoming receiver, separately from parameters. */
   readonly receiver?: boolean;
   /** Typed local used to initialize an owned lexical receiver cell. */
@@ -239,6 +252,9 @@ export interface CheckedFunction {
   readonly locals: readonly Local[];
   readonly expressions: ReadonlyKeyIndex<Expression, ExpressionInfo>;
   readonly declarations: ReadonlyKeyIndex<Binding | Parameter, Local>;
+  readonly bindingIterationLocals?: ReadonlyKeyIndex<Span, Local>;
+  readonly bindingInitializations?:
+    ReadonlyKeyIndex<Span, BindingInitialization> | undefined;
 }
 export interface CheckedModule {
   readonly functions: readonly CheckedFunction[];
@@ -1479,6 +1495,8 @@ export {
 export { checkClosureModule, checkedPropertyName } from "./closures.ts";
 export type {
   ClosureBody,
+  BindingInitialization,
+  BindingInitializationStep,
   BindingOperation,
   ClosureIntrinsic,
   CheckedClosures,
