@@ -299,3 +299,31 @@ export function run(): number {
     { managedBytes: 24 * 1024 * 1024, allocationCapacity: 1048576 },
   );
 });
+
+test("x86-64 assembly releases local fixups before allocating the final image", () => {
+  verifyHostedFixture(
+    `import { createAssembler, type Instruction } from "x64-isa";
+export function run(): number {
+  const assembler = createAssembler();
+  const call: Instruction = { op: "call", target: { kind: "label", label: "end" } };
+  const count = 100000;
+  for (let i = 0; i < count; i++) assembler.instruction(call);
+  assembler.instruction({ op: "label", name: "end" });
+  const byteLength = 7 * 1024 * 1024;
+  const layout = assembler.finish(undefined, byteLength);
+  const last = (count - 1) * 5;
+  return layout.bytes.length === byteLength &&
+    layout.labels.get("end") === count * 5 &&
+    layout.bytes[0] === 232 && layout.bytes[1] === 27 &&
+    layout.bytes[2] === 161 && layout.bytes[3] === 7 &&
+    layout.bytes[last] === 232 && layout.bytes[last + 1] === 0 &&
+    layout.externalFixups.length === 0 ? 42 : 1;
+}`,
+    "x64-local-relocations-heap",
+    [["x64-isa", "packages/codegen/src/x86_64/isa.ts"]],
+    [],
+    [],
+    [],
+    { managedBytes: 24 * 1024 * 1024, allocationCapacity: 1048576 },
+  );
+});

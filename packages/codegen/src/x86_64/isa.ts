@@ -183,7 +183,7 @@ export interface RelativeFixup {
 
 interface Encoding {
   readonly bytes: ByteBuffer;
-  readonly fixups: RelativeFixup[];
+  fixups: RelativeFixup[];
   readonly far: boolean;
 }
 
@@ -453,6 +453,35 @@ export function patchRelative(
   ).ok
     ? "complete"
     : "invalid";
+}
+
+function patchChunkRelative(
+  buffer: ByteBuffer,
+  fixup: RelativeFixup,
+  target: number,
+  scratch: Uint8Array,
+): void {
+  const page = Math.floor(fixup.fieldOffset / codeChunkBytes);
+  const offset = fixup.fieldOffset % codeChunkBytes;
+  const chunk = buffer.chunks[page];
+  if (chunk === undefined) invalid("missing relative fixup chunk");
+  const first = codeChunkBytes - offset;
+  const spansChunks = fixup.byteLength > first;
+  const status = patchRelative(
+    spansChunks ? scratch : chunk,
+    fixup,
+    spansChunks ? 0 : offset,
+    target,
+    fixup.fieldOffset,
+  );
+  if (status === "range") invalid("rel32 displacement out of range");
+  if (status !== "complete") invalid("invalid relative fixup field");
+  if (spansChunks) {
+    const next = buffer.chunks[page + 1];
+    if (next === undefined) invalid("missing relative fixup chunk");
+    chunk.set(scratch.subarray(0, first), offset);
+    next.set(scratch.subarray(first, fixup.byteLength));
+  }
 }
 
 function lowBits(bytes: ByteBuffer, value: number, width: FieldWidth): void {
@@ -1244,10 +1273,8 @@ export function createAssembler(far: boolean = false): Assembler {
     if (!Number.isSafeInteger(byteLength) || byteLength < out.bytes.length)
       invalid("assembly output is smaller than instruction bytes or invalid");
     finished = true;
-    const bytes = encodedBytes(out.bytes, byteLength);
-    out.bytes.chunks.length = 0;
-    out.bytes.chunk = new Uint8Array(0);
     const externalFixups: RelativeFixup[] = [];
+    const scratch = new Uint8Array(8);
     for (const fixup of out.fixups) {
       if (fixup === undefined) throw "rel32 fixup invariant";
       const target = labels.get(fixup.ref.label);
@@ -1257,11 +1284,14 @@ export function createAssembler(far: boolean = false): Assembler {
         externalFixups.push(fixup);
         continue;
       }
-      const status = patchRelative(bytes, fixup, fixup.fieldOffset, target);
-      if (status === "range") invalid("rel32 displacement out of range");
-      if (status !== "complete") invalid("invalid relative fixup field");
+      patchChunkRelative(out.bytes, fixup, target, scratch);
     }
-    out.fixups.length = 0;
+    // The compiler can accumulate millions of local relocations. Drop their
+    // records and backing list before allocating the contiguous output.
+    out.fixups = [];
+    const bytes = encodedBytes(out.bytes, byteLength);
+    out.bytes.chunks.length = 0;
+    out.bytes.chunk = new Uint8Array(0);
     return { bytes, labels, externalFixups };
   }
   return {

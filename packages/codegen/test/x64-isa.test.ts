@@ -43,6 +43,25 @@ test("streamed rel32 fields patch across byte chunks", () => {
   assert.equal(hex(layout.bytes.subarray(65534)), "e80100000090c3");
 });
 
+test("streamed rel64 fields patch across byte chunks", () => {
+  const assembler = createAssembler(true);
+  for (let index = 0; index < 65524; index++)
+    assembler.instruction({ op: "nop" });
+  assembler.instruction({
+    op: "call",
+    target: { kind: "label", label: "callee" },
+  });
+  assembler.instruction({ op: "nop" });
+  assembler.instruction({ op: "label", name: "callee" });
+  assembler.instruction({ op: "ret" });
+  const layout = assembler.finish();
+  assert.equal(layout.labels.get("callee"), 65549);
+  assert.equal(
+    hex(layout.bytes.subarray(65524)),
+    "4c8d350000000049bf12000000000000004f8d343e41ffd690c3",
+  );
+});
+
 test("encoding failures identify the instruction and its operands", () => {
   assert.throws(
     () =>
