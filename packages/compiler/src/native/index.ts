@@ -1177,13 +1177,21 @@ function specializeApplication(
     return stageFailure("specialize", specialized.error.message);
   return { ok: true, value: specialized.value.module };
 }
-/** Owns the first specialization and checker result until collection
- * preparation takes over. The caller keeps only the replaceable observation. */
+/** Checks the first specialization and prepares the source for instantiation.
+ * The collection pass consumes the checked graph through its observation. */
 function checkApplication(
   linkedProgram: LinkedTypedProgram,
   request: CompileRequest,
+  callHelper: string | undefined,
 ):
-  | { readonly ok: true; readonly value: CollectionRuntimeObservation }
+  | {
+      readonly ok: true;
+      readonly value: {
+        readonly instanceSource: Module;
+        readonly observation: CollectionRuntimeObservation;
+        readonly callsGeneral: boolean;
+      };
+    }
   | CompilationFailure {
   const specialized = specializeApplication(
     linkedProgram.application,
@@ -1219,7 +1227,35 @@ function checkApplication(
       },
     };
   }
-  return { ok: true, value: { checked: checked.value } };
+  const helpers = linkedProgram.helpers,
+    application = linkedProgram.application,
+    hasDynamicRuntime = helpers.has("dynamic-object:create");
+  if (!hasDynamicRuntime && usesDynamicObjectRuntime(checked.value))
+    return {
+      ok: false,
+      error: {
+        stage: "lower",
+        message:
+          "UNSUPPORTED: dynamic-key objects require the program realm runtime",
+        needsDynamicRealm: true,
+      },
+    };
+  const instanceSource = hasDynamicRuntime
+    ? insertDynamicObjectRuntime(application, checked.value, helpers)
+    : application;
+  let callsGeneral = false;
+  if (callHelper !== undefined)
+    checked.value.intrinsics.forEach((intrinsic, _expression) => {
+      if (intrinsic === "general-call") callsGeneral = true;
+    });
+  return {
+    ok: true,
+    value: {
+      instanceSource,
+      observation: { checked: checked.value },
+      callsGeneral,
+    },
+  };
 }
 /** Specializes and checks the linked program; returns what lowering needs. */
 function checkTypedProgram(
@@ -1230,7 +1266,6 @@ function checkTypedProgram(
   if (!linking.ok) return { ok: false, error: linking.error };
   const linkedProgram = linking.value,
     globals = typedGlobals,
-    application = linkedProgram.application,
     exports = linkedProgram.exports,
     ranges = linkedProgram.ranges,
     helpers = linkedProgram.helpers,
@@ -1238,27 +1273,10 @@ function checkTypedProgram(
     retainedRuntimeExports = linkedProgram.retainedRuntimeExports,
     retainedRuntimeModules = linkedProgram.retainedRuntimeModules,
     surfacePlans = linkedProgram.surfacePlans;
-  const checked = checkApplication(linkedProgram, request);
-  if (!checked.ok) return { ok: false, error: checked.error };
-  if (
-    !helpers.has("dynamic-object:create") &&
-    usesDynamicObjectRuntime(checked.value.checked)
-  )
-    return {
-      ok: false,
-      error: {
-        stage: "lower",
-        message:
-          "UNSUPPORTED: dynamic-key objects require the program realm runtime",
-        needsDynamicRealm: true,
-      },
-    };
   const callHelper = helpers.get("general-object-views:callGeneralValue");
-  let callsGeneral = false;
-  if (callHelper !== undefined)
-    checked.value.checked.intrinsics.forEach((intrinsic, _expression) => {
-      if (intrinsic === "general-call") callsGeneral = true;
-    });
+  const checked = checkApplication(linkedProgram, request, callHelper);
+  if (!checked.ok) return { ok: false, error: checked.error };
+  const callsGeneral = checked.value.callsGeneral;
   let initializerName = "",
     entryName = "";
   const start = request.start;
@@ -1420,12 +1438,9 @@ function checkTypedProgram(
     }
     return { ok: true, value: instance.value.module };
   };
-  const instanceSource = helpers.has("dynamic-object:create")
-    ? insertDynamicObjectRuntime(application, checked.value.checked, helpers)
-    : application;
   const prepared = prepareObservedCollectionRuntimes(
-    instanceSource,
-    checked.value,
+    checked.value.instanceSource,
+    checked.value.observation,
     helpers,
     globals,
     transform,

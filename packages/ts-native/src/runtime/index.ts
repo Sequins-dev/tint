@@ -7,6 +7,7 @@ export {
 import {
   createRuntimeBindingContext,
   type RuntimeBindingContext,
+  type RuntimeBindingRecord,
   type RuntimeBindingSubject,
 } from "./context.ts";
 import {
@@ -43,6 +44,7 @@ const noDemand: RuntimeRequirements = {
 import {
   checkClosureModule,
   type CheckedClosures,
+  type CViewRegistry,
   type InterfaceResolutionCache,
 } from "@tint/typescript/checker";
 import {
@@ -104,10 +106,9 @@ export type RuntimeModuleTransform = (
 export type RuntimeTypeEquivalenceFactory = (
   types: readonly Type[],
 ) => (left: number, right: number) => boolean;
-/** The checked graph for the current collection pass. Replaced on retry so
- * an earlier graph can die before specializing and checking the next one. */
+/** The checked graph to consume. A pass publishes a new graph only on retry. */
 export interface CollectionRuntimeObservation {
-  checked: CheckedClosures;
+  checked: CheckedClosures | undefined;
 }
 /** Templates are linked alongside the source; helpers maps namespace:export to its linked name. */
 export function prepareCollectionRuntimes(
@@ -152,7 +153,7 @@ export function prepareObservedCollectionRuntimes(
   while (true) {
     const result = prepareCollectionPass(
       module,
-      observation.checked,
+      observation,
       helpers,
       globals,
       transform,
@@ -163,28 +164,7 @@ export function prepareObservedCollectionRuntimes(
       interfaceCache,
       eraseRecordLists,
     );
-    if (result.ok || result.retry === undefined) return result;
-    const next = result.retry;
-    const before = collectRuntimeRequirements(observation.checked),
-      after = collectRuntimeRequirements(next);
-    const previousCount =
-        before.lists.length +
-        before.sets.length +
-        before.maps.length +
-        before.sorts.length,
-      nextCount =
-        after.lists.length +
-        after.sets.length +
-        after.maps.length +
-        after.sorts.length;
-    // Every retry must discover another contract. The existing specialization
-    // budget bounds expanding helper graphs; a stalled graph is an error.
-    if (nextCount <= previousCount)
-      return {
-        ok: false,
-        error: "runtime requirements did not converge: " + result.error,
-      };
-    observation.checked = next;
+    if (result.ok || !result.retry) return result;
   }
 }
 // SparseList helpers only move their elements (no equality, typeof or
@@ -198,8 +178,25 @@ type CollectionPass =
   | {
       readonly ok: false;
       readonly error: string;
-      readonly retry?: CheckedClosures | undefined;
+      readonly retry: boolean;
     };
+interface CollectionPassInput {
+  readonly module: Module;
+  readonly plan: CollectionRuntimePlan;
+  readonly roots: readonly string[];
+  readonly records: readonly RuntimeBindingRecord[] | undefined;
+  readonly cViews: CViewRegistry | undefined;
+  readonly hasBigInt: boolean;
+  readonly demandCount: number;
+}
+function requirementCount(demand: RuntimeRequirements): number {
+  return (
+    demand.lists.length +
+    demand.sets.length +
+    demand.maps.length +
+    demand.sorts.length
+  );
+}
 export type CollectionPlanAttempt =
   | { readonly kind: "prepared"; readonly value: PreparedCollectionRuntime }
   | { readonly kind: "unusable" };
@@ -233,7 +230,7 @@ export function prepareCollectionRuntimesFromPlan(
 }
 function prepareCollectionPass(
   module: Module,
-  checked: CheckedClosures | undefined,
+  observation: CollectionRuntimeObservation | undefined,
   helpers: ReadonlyMap<string, string>,
   globals: readonly string[],
   transform: RuntimeModuleTransform | undefined,
@@ -244,24 +241,7 @@ function prepareCollectionPass(
   interfaceCache?: InterfaceResolutionCache,
   eraseRecordLists: boolean = false,
 ): CollectionPass {
-  let retry: CheckedClosures | undefined = undefined;
-  if (checked === undefined && (seed === undefined || transform !== undefined))
-    return {
-      ok: false,
-      error: "collection preparation requires an observed graph",
-    };
-  const demand =
-    checked === undefined ? undefined : collectRuntimeRequirements(checked);
-  const unsupported = demand === undefined ? undefined : demand.unsupported[0];
-  if (unsupported !== undefined)
-    return {
-      ok: false,
-      error:
-        "unsupported " +
-        unsupported.kind +
-        " runtime element at type " +
-        String(unsupported.type),
-    };
+  let retry = false;
   const abort = {};
   let error = "";
   function fail(message: string): never {
@@ -274,7 +254,26 @@ function prepareCollectionPass(
       fail("missing runtime helper: " + namespace + ":" + name);
     return found;
   }
-  try {
+  // Keep the observed checker indexes and the intermediate syntax in this
+  // frame. Only the finalized tree and binding facts go to the next checker.
+  function prepareInput(): CollectionPassInput {
+    const checked = observation?.checked;
+    if (observation !== undefined) observation.checked = undefined;
+    if (
+      checked === undefined &&
+      (seed === undefined || transform !== undefined)
+    )
+      fail("collection preparation requires an observed graph");
+    const demand =
+      checked === undefined ? noDemand : collectRuntimeRequirements(checked);
+    const unsupported = demand.unsupported[0];
+    if (unsupported !== undefined)
+      fail(
+        "unsupported " +
+          unsupported.kind +
+          " runtime element at type " +
+          String(unsupported.type),
+      );
     const types: Type[] = checked === undefined ? [] : checked.types.slice();
     function primitive(
       name: "number" | "string" | "boolean" | "undefined",
@@ -353,16 +352,15 @@ function prepareCollectionPass(
     const erasedClasses = new Set<string>();
     const observed = checked,
       sortedElements = new Set<number>();
-    for (const sort of demand === undefined ? noDemand.sorts : demand.sorts) {
+    for (const sort of demand.sorts) {
       if (sort === undefined) throw "sort demand invariant";
       const element = sort.element;
       if (typeof element === "number") sortedElements.add(element);
     }
     // Boolean-encoded elements narrower than boolean share one instantiation
     // for the whole encoding (see narrowBooleanListElement).
-    const demandedLists = demand === undefined ? noDemand.lists : demand.lists,
-      widenedBooleans = new Set<string>();
-    for (const list of demandedLists) {
+    const widenedBooleans = new Set<string>();
+    for (const list of demand.lists) {
       if (list === undefined) throw "list demand invariant";
       const demanded = list.element;
       if (
@@ -376,7 +374,7 @@ function prepareCollectionPass(
       }
     }
     let wideBooleanRequested = false;
-    for (const list of demandedLists) {
+    for (const list of demand.lists) {
       if (list === undefined) throw "list demand invariant";
       const demanded = list.element;
       if (demanded === "number") continue;
@@ -406,14 +404,14 @@ function prepareCollectionPass(
         ]),
       );
     }
-    for (const set of demand === undefined ? noDemand.sets : demand.sets) {
+    for (const set of demand.sets) {
       if (set === undefined) throw "set demand invariant";
       setStarts.push(
         request("linked-set", setNames, [elementType(set.element)]),
       );
     }
     const erasedMaps = new Set<string>();
-    for (const map of demand === undefined ? noDemand.maps : demand.maps) {
+    for (const map of demand.maps) {
       if (map === undefined) throw "map demand invariant";
       const erasure =
         eraseRecordLists && observed !== undefined
@@ -438,7 +436,7 @@ function prepareCollectionPass(
             ]),
       );
     }
-    for (const sort of demand === undefined ? noDemand.sorts : demand.sorts) {
+    for (const sort of demand.sorts) {
       if (sort === undefined) throw "sort demand invariant";
       if (sort.element !== "number")
         sortStarts.push(
@@ -510,21 +508,18 @@ function prepareCollectionPass(
         sortStarts: sortStarts.slice(),
       };
     }
-    function copyStarts(source: readonly number[], target: number[]): void {
-      for (const start of source) {
-        if (start === undefined) throw "collection plan start invariant";
-        target.push(start);
-      }
-    }
     // A seeded pass adopts the plan's requests in place of observed demand.
     const plan: CollectionRuntimePlan =
       seed !== undefined && checked === undefined ? seed : reifiedPlan();
-    if (plan === seed) {
-      copyStarts(plan.listStarts, listStarts);
-      copyStarts(plan.setStarts, setStarts);
-      copyStarts(plan.mapStarts, mapStarts);
-      copyStarts(plan.sortStarts, sortStarts);
-    }
+    if (plan === seed)
+      for (const starts of [
+        plan.listStarts,
+        plan.setStarts,
+        plan.mapStarts,
+        plan.sortStarts,
+      ])
+        for (const start of starts)
+          if (start === undefined) throw "collection plan start invariant";
     const named: { name: string; arguments: readonly TypeNode[] }[] = [];
     for (const root of plan.roots) {
       if (root === undefined) throw "collection plan root invariant";
@@ -539,10 +534,8 @@ function prepareCollectionPass(
       maxSpecializations,
     );
     if (!specialized.ok)
-      return {
-        ok: false,
-        error:
-          specialized.error.message +
+      fail(
+        specialized.error.message +
           " (runtime demand: " +
           String(plan.listStarts.length) +
           " lists, " +
@@ -554,7 +547,7 @@ function prepareCollectionPass(
           " roots, " +
           String(sharedRequests.length) +
           " shared)",
-      };
+      );
     const specializedValue = specialized.value;
     const control =
       transform === undefined || checked === undefined
@@ -582,10 +575,38 @@ function prepareCollectionPass(
         control.close();
       }
     })();
-    if (!transformed.ok) return { ok: false, error: transformed.error };
+    if (!transformed.ok) fail(transformed.error);
+
+    // Surface materialization adds syntax after specialization's hash pass.
+    // Stamp the completed tree before creating identity-keyed checker indexes.
+    const finalized =
+      transform === undefined
+        ? transformed.value
+        : rewriteModule(transformed.value, { hashes: true });
+    return {
+      module: finalized,
+      plan,
+      roots: specializedValue.roots,
+      records: control?.records,
+      cViews: checked?.cViews,
+      hasBigInt:
+        helpers.has("bigint:literal") &&
+        checked !== undefined &&
+        usesBigInt(checked),
+      demandCount: requirementCount(demand),
+    };
+  }
+  try {
+    const input = prepareInput(),
+      plan = input.plan,
+      records = input.records,
+      listStarts = plan.listStarts,
+      setStarts = plan.setStarts,
+      mapStarts = plan.mapStarts,
+      sortStarts = plan.sortStarts;
     const priorConsulted = consulted.slice();
-    if (control !== undefined)
-      for (const record of control.records) {
+    if (records !== undefined)
+      for (const record of records) {
         if (record === undefined) throw "runtime binding record invariant";
         if (
           !consulted.some(
@@ -597,24 +618,13 @@ function prepareCollectionPass(
         )
           consulted.push(record.subject);
       }
-
-    // Surface materialization adds syntax after specialization's hash pass.
-    // Stamp the completed tree before creating identity-keyed checker indexes.
-    const finalized =
-      transform === undefined
-        ? transformed.value
-        : rewriteModule(transformed.value, { hashes: true });
     // C views keep the registry the program was first checked with.
-    const result = checkClosureModule(finalized, {
+    const result = checkClosureModule(input.module, {
       interfaceCache,
-      cViews: checked === undefined ? undefined : checked.cViews,
+      cViews: input.cViews,
     });
-    if (!result.ok) return { ok: false, error: result.error.message };
+    if (!result.ok) fail(result.error.message);
     const prepared = result.value;
-    function missing(message: string): never {
-      retry = prepared;
-      fail(message);
-    }
     const bindingIndex = createPreparedBindingIndex(prepared);
     function functionId(name: string): number {
       const fn = bindingIndex.functionId(name);
@@ -622,7 +632,7 @@ function prepareCollectionPass(
       return fn;
     }
     function root(start: number, offset: number): number {
-      const name = specializedValue.roots[start + offset];
+      const name = input.roots[start + offset];
       if (name === undefined) throw "runtime root invariant";
       return functionId(name);
     }
@@ -647,6 +657,18 @@ function prepareCollectionPass(
         : undefined,
     ).matches;
     const current = collectRuntimeRequirements(prepared);
+    function missing(message: string): never {
+      const owner = observation;
+      if (owner !== undefined) {
+        // Each retry must discover another contract. The specialization
+        // budget bounds an expanding helper graph.
+        if (requirementCount(current) <= input.demandCount)
+          fail("runtime requirements did not converge: " + message);
+        owner.checked = prepared;
+        retry = true;
+      }
+      fail(message);
+    }
     const unsupported = current.unsupported[0];
     if (unsupported !== undefined)
       fail(
@@ -845,8 +867,8 @@ function prepareCollectionPass(
           : { key: map.key, value: map.value, runtime },
       );
     }
-    if (control !== undefined) {
-      for (const record of control.records) {
+    if (records !== undefined) {
+      for (const record of records) {
         if (record === undefined) throw "runtime binding record invariant";
         const subject = record.subject;
         const id = bindingIndex.functionId(subject.function);
@@ -931,7 +953,7 @@ function prepareCollectionPass(
       for (const subject of priorConsulted) {
         if (subject === undefined) throw "runtime binding subject invariant";
         if (
-          !control.records.some(
+          !records.some(
             (r) =>
               r !== undefined &&
               r.subject.function === subject.function &&
@@ -977,38 +999,35 @@ function prepareCollectionPass(
     function bigIntHelper(name: string): number {
       return functionId(helper("bigint", name));
     }
-    const bigints: BigIntRuntime | undefined =
-      helpers.has("bigint:literal") &&
-      checked !== undefined &&
-      usesBigInt(checked)
-        ? {
-            literal: bigIntHelper("literal"),
-            binary: {
-              "+": bigIntHelper("addBigInt"),
-              "-": bigIntHelper("subtractBigInt"),
-              "*": bigIntHelper("multiplyBigInt"),
-              "/": bigIntHelper("divideBigInt"),
-              "%": bigIntHelper("remainderBigInt"),
-              "**": bigIntHelper("exponentiateBigInt"),
-              "&": bigIntHelper("andBigInt"),
-              "|": bigIntHelper("orBigInt"),
-              "^": bigIntHelper("xorBigInt"),
-              "<<": bigIntHelper("leftShiftBigInt"),
-              ">>": bigIntHelper("rightShiftBigInt"),
-            },
-            negate: bigIntHelper("negateBigInt"),
-            not: bigIntHelper("notBigInt"),
-            compare: bigIntHelper("compareBigInt"),
-            compareNumber: bigIntHelper("compareBigIntNumber"),
-            equal: bigIntHelper("equalBigInt"),
-            truthy: bigIntHelper("truthyBigInt"),
-            toString: bigIntHelper("bigIntToString"),
-            toNumber: bigIntHelper("bigIntToNumber"),
-            fromNumber: bigIntHelper("bigIntFromNumber"),
-            fromBoolean: bigIntHelper("bigIntFromBoolean"),
-            asWidth: bigIntHelper("bigIntAsWidth"),
-          }
-        : undefined;
+    const bigints: BigIntRuntime | undefined = input.hasBigInt
+      ? {
+          literal: bigIntHelper("literal"),
+          binary: {
+            "+": bigIntHelper("addBigInt"),
+            "-": bigIntHelper("subtractBigInt"),
+            "*": bigIntHelper("multiplyBigInt"),
+            "/": bigIntHelper("divideBigInt"),
+            "%": bigIntHelper("remainderBigInt"),
+            "**": bigIntHelper("exponentiateBigInt"),
+            "&": bigIntHelper("andBigInt"),
+            "|": bigIntHelper("orBigInt"),
+            "^": bigIntHelper("xorBigInt"),
+            "<<": bigIntHelper("leftShiftBigInt"),
+            ">>": bigIntHelper("rightShiftBigInt"),
+          },
+          negate: bigIntHelper("negateBigInt"),
+          not: bigIntHelper("notBigInt"),
+          compare: bigIntHelper("compareBigInt"),
+          compareNumber: bigIntHelper("compareBigIntNumber"),
+          equal: bigIntHelper("equalBigInt"),
+          truthy: bigIntHelper("truthyBigInt"),
+          toString: bigIntHelper("bigIntToString"),
+          toNumber: bigIntHelper("bigIntToNumber"),
+          fromNumber: bigIntHelper("bigIntFromNumber"),
+          fromBoolean: bigIntHelper("bigIntFromBoolean"),
+          asWidth: bigIntHelper("bigIntAsWidth"),
+        }
+      : undefined;
     return {
       ok: true,
       value: {

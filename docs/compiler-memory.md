@@ -149,6 +149,13 @@ The second instance preparation drops from 2,571 to 1,967 MiB of live heap
 on matched source input. The check stage still returns about 1,100 MiB.
 See the [check-stage probes and snapshot](results/compiler-check-memory-2026-11-19.md).
 
+Collection preparation now consumes the observed graph before the checker
+binds the next instance. On the matched object suite, the highest sampled
+check-stage live heap fell from 2,742 to 2,063 MiB. The build reaches emission
+at a 2,880 MiB old-space cap and the retry specialization runs out of heap
+at 2,848 MiB. The byte-identical 4,096 MiB pair and the lower-cap deadlines
+are recorded in the [collection instance probes](results/compiler-check-memory-instances-2026-11-20.md).
+
 ### Managed surface layouts
 
 A build with multiple managed surfaces links the runtime closure once and
