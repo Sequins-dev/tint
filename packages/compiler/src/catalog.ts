@@ -2699,6 +2699,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/event-loop.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/external-memory.ts",
       packageId: "native-runtime",
     },

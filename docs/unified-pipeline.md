@@ -635,6 +635,20 @@ The [binding patterns ledger](results/unified-pipeline-ledger-slice4a-typed-bind
 records 146 forms. The typed `destructuring` construct now stays typed, and
 both forms of `destructuring-entry-points` pass.
 
+### Isolate checkpoints and timed turns
+
+The [event loop design](design-event-loop.md) describes the host policy for
+typed and general callbacks. The portable
+[turn driver](../packages/native-runtime/src/event-loop.ts) owns the timer heap,
+phase queues and liveness counts. Its host supplies monotonic time, readiness
+polling and the isolate's existing microtask checkpoint. A callback entry
+services ticks before microtasks, while ESM entry finishes the current
+microtask batch first.
+
+The [typed hosted fixture](../tools/build-event-loop-fixture.ts) exercises the
+driver without general fallback. [Node oracle traces](../tools/event-loop-oracle.test.ts)
+pin the public ordering that the application hosts need to reproduce.
+
 ### What happens to each front end
 
 - js-engine lowering becomes a library of construct lowerings callable for a
