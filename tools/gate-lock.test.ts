@@ -240,7 +240,7 @@ test(
   },
 );
 
-test("fixture preparation releases its memory slot before admission and records phases", () => {
+test("fixture preparation releases its memory slot before admission and records phases", async () => {
   if (process.platform !== "darwin") return;
   const directory = mkdtempSync(join(tmpdir(), "tint-fixture-phases-"));
   try {
@@ -270,7 +270,7 @@ test("fixture preparation releases its memory slot before admission and records 
       image,
     );
     for (let i = 0; i < 2; i++) {
-      const release = beginNativeFixtureExecution(
+      const release = await beginNativeFixtureExecution(
         image,
         () => {
           assert.equal(probe(slot), 0);
@@ -295,8 +295,10 @@ test("fixture preparation releases its memory slot before admission and records 
         "lock-wait",
         "admission",
         "execution",
+        "lock-release",
         "lock-wait",
         "execution",
+        "lock-release",
       ],
     );
     assert.ok(
@@ -320,6 +322,101 @@ test("fixture preparation releases its memory slot before admission and records 
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+});
+
+test(
+  "concurrent fixtures in one worker let the holder finish before the next launch",
+  { skip: process.platform !== "darwin" },
+  () => {
+    const directory = mkdtempSync(join(tmpdir(), "tint-native-contention-"));
+    try {
+      const journal = join(directory, "native-images.jsonl");
+      const images = [join(directory, "first"), join(directory, "second")];
+      for (const image of images) writeFileSync(image, "fixture");
+      const result = spawnSync(
+        process.execPath,
+        [
+          "--import=" +
+            new URL("./gate/native-worker.ts", import.meta.url).href,
+          "--input-type=module",
+          "-e",
+          `
+          import assert from "node:assert/strict";
+          import { setImmediate } from "node:timers/promises";
+          import { beginNativeFixtureExecution } from ${JSON.stringify(new URL("./gate/native-fixture.ts", import.meta.url).href)};
+          import { nativeBatchWaiting } from ${JSON.stringify(new URL("./gate/native-batch-clock.ts", import.meta.url).href)};
+          const [first, second] = process.argv.slice(1);
+          const waiting = nativeBatchWaiting(process.env.TINT_GATE_NATIVE_IMAGES);
+          const releaseFirst = await beginNativeFixtureExecution(first, undefined);
+          const next = beginNativeFixtureExecution(second, () => assert.ok(released));
+          let released = false;
+          await setImmediate();
+          assert.equal(waiting(), false, "the holder is still active");
+          releaseFirst();
+          released = true;
+          assert.equal(waiting(), true, "only the queued fixture remains");
+          const releaseSecond = await next;
+          assert.equal(waiting(), false, "the second fixture is now active");
+          releaseSecond();
+        `,
+          ...images,
+        ],
+        {
+          encoding: "utf8",
+          timeout: 5000,
+          killSignal: "SIGKILL",
+          env: {
+            ...process.env,
+            TINT_GATE_NATIVE_WORKER_PID: "",
+            TINT_GATE_NATIVE_IMAGES: journal,
+            TINT_GATE_EXCLUSIVE_LOCK: join(directory, "native.lock"),
+          },
+        },
+      );
+      assert.ifError(result.error);
+      assert.equal(result.status, 0, result.stderr);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  },
+);
+
+test("the native test deadline starts after admission", () => {
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    TINT_GATE_NATIVE_IMAGES: "enabled",
+  };
+  delete env.NODE_TEST_CONTEXT;
+  const result = spawnSync(
+    process.execPath,
+    [
+      "--input-type=module",
+      "-e",
+      `
+        import { setTimeout as delay } from "node:timers/promises";
+        import { testNativeLaunch } from ${JSON.stringify(new URL("./gate/native-launch-test.ts", import.meta.url).href)};
+
+        testNativeLaunch("queued", { timeout: 30 }, async (onAdmitted) => {
+          await delay(100);
+          onAdmitted();
+        });
+        testNativeLaunch("over deadline", { timeout: 30 }, async (onAdmitted) => {
+          onAdmitted();
+          await delay(100);
+        });
+        `,
+    ],
+    {
+      encoding: "utf8",
+      timeout: 5000,
+      env,
+    },
+  );
+  assert.ifError(result.error);
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(result.stdout, /✔ queued/);
+  assert.match(result.stdout, /✖ over deadline/);
+  assert.match(result.stdout, /Native launch test timed out after 30ms/);
 });
 
 test(
@@ -351,7 +448,7 @@ test(
           fileURLToPath(new URL("./gate/lock.ts", import.meta.url)),
           `
       import { beginNativeFixtureExecution } from ${JSON.stringify(new URL("./gate/native-fixture.ts", import.meta.url).href)};
-      const release = beginNativeFixtureExecution(${JSON.stringify(image)}, () => {});
+      const release = await beginNativeFixtureExecution(${JSON.stringify(image)}, () => {});
       release();
       console.log("fixture completed");
     `,
@@ -363,6 +460,7 @@ test(
           env: {
             ...process.env,
             TINT_GATE_STEP_TIMEOUT: "1",
+            TINT_GATE_NATIVE_WORKER_PID: "",
             TINT_GATE_EVIDENCE: directory,
             TINT_GATE_NATIVE_IMAGES: journal,
             TINT_GATE_EXCLUSIVE_LOCK: lock,
