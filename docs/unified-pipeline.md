@@ -505,6 +505,18 @@ runtime-classified call plan. Libraries with registered callbacks enter through
 the rooted native transition. Callback registration classifies the declared
 signature and allocates an executable entry with the same library lifetime.
 
+The public FFI exports are realm values. The typed-only checker currently
+rejects a direct call such as `dlopen(null, definitions)` with
+`callee must have a function type`. The native typed fixtures use the shared
+realm's callable and property operations.
+
+The pinned Node suite uses a test-only CommonJS adapter. Its diagnostics
+identify Node's CLI, permission, VFS and libuv requirements and V8's private
+ABI metadata. Shared byte views require a host-supplied native shared-block
+service. Generational and copying runtimes process weak references. The
+region collector retains its weak slots and still needs an explicit FFI
+capability diagnostic.
+
 ### Captured bindings across function fallback (slice 3)
 
 When a nested function needs the realm, an eligible arithmetic sibling can
