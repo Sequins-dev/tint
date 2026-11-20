@@ -6,8 +6,9 @@ process.env.TINT_GENERAL_FALLBACK = "0";
 
 const objects = "packages/js-runtime/src/objects/index.ts";
 const bytes = "packages/js-runtime/src/bytes/index.ts";
+const form = process.argv[2];
 
-if (process.argv[2] !== "bytes")
+if (form === undefined || form === "aggregates")
   verifyHostedFixture(
     `import { programRealmCore, viewObjectValue, isArrayValue, getOwnProperty, setObjectValueProperty, deleteObjectValueProperty, type ScriptPropertyKey } from "objects";
 export function run(): number {
@@ -40,7 +41,7 @@ export function run(): number {
     [["objects", objects]],
   );
 
-if (process.argv[2] !== "aggregates")
+if (form === undefined || form === "bytes")
   verifyHostedFixture(
     `import { createObject, createTypedArrayView, programRealmCore, projectArrayBufferViewRange, type ScriptPropertyKey } from "objects";
 import { createByteStorage, resizeByteStorage, detachByteStorage } from "bytes";
@@ -73,6 +74,65 @@ export function run(): number {
     [
       ["objects", objects],
       ["bytes", bytes],
+    ],
+    [],
+    [
+      { module: objects, name: "viewObjectValue", operation: "view" },
+      { module: objects, name: "viewSymbolValue", operation: "view" },
+      { module: objects, name: "viewBigIntValue", operation: "view" },
+    ],
+    [
+      {
+        module: objects,
+        namespace: "byte-range-witness",
+        retainedExports: [
+          "viewObjectValue",
+          "viewSymbolValue",
+          "viewBigIntValue",
+        ],
+      },
+    ],
+  );
+
+if (form === undefined || form === "adoption")
+  verifyHostedFixture(
+    `import { allocate, address, release } from "tint:ffi";
+import { bytesAt } from "tint:ffi/unsafe";
+import { adoptArrayBuffer, createTypedArrayView, getOwnProperty, programRealmCore, projectArrayBufferViewRange, type ScriptPropertyKey } from "objects";
+import { detachByteStorage, retargetByteStorage } from "bytes";
+
+export function run(): number {
+  const core = programRealmCore();
+  const original = new Uint8Array(8);
+  original[3] = 19;
+  const buffer = adoptArrayBuffer(original, core.realm);
+  const storage = buffer.internalArrayBufferData;
+  if (storage === undefined || storage.data !== original || storage.resizable) return 1;
+  const view = createTypedArrayView(core.realm.objectPrototype, { buffer, storage, byteOffset: 3, length: 1, kind: "Uint8", endian: "little" }, core.realm, core.hooks);
+  const native = allocate(8);
+  try {
+    if (retargetByteStorage(storage, original, new Uint8Array(7))) return 2;
+    if (storage.data !== original) return 3;
+    const loan = bytesAt(address(native), 8);
+    if (!retargetByteStorage(storage, original, loan)) return 4;
+    if (native[3] !== 19 || buffer.internalArrayBufferData !== storage || view.internalTypedArrayData?.buffer !== buffer) return 5;
+    native[3] = 42;
+    if (getOwnProperty<ScriptPropertyKey, unknown>(view, "0")?.value !== 42 || original[3] !== 19) return 6;
+    const range = projectArrayBufferViewRange(view);
+    if (range === undefined || range.bytes !== loan || range.byteOffset !== 3 || range.byteLength !== 1) return 7;
+    if (retargetByteStorage(storage, original, new Uint8Array(8))) return 8;
+    if (detachByteStorage(storage) !== "none" || retargetByteStorage(storage, loan, original)) return 9;
+    return projectArrayBufferViewRange(view)?.kind === "detached" ? 42 : 10;
+  } finally {
+    release(native);
+  }
+}`,
+    "ffi-array-buffer-adoption",
+    [
+      ["objects", objects],
+      ["bytes", bytes],
+      ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
+      ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
     ],
     [],
     [

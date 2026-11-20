@@ -77,6 +77,35 @@ export function byteStorageData(
 ): Uint8Array | undefined {
   return access === "write" && storage.immutable ? undefined : storage.data;
 }
+/** Attach an existing backing to a new, fixed-length storage owner. The
+ * producer controls the lifetime of borrowed memory represented by bytes. */
+export function adoptByteStorage(
+  bytes: Uint8Array,
+  allocationLimit: number,
+): ByteStorage {
+  return {
+    kind: "ordinary",
+    data: bytes,
+    maxByteLength: bytes.length,
+    resizable: false,
+    immutable: false,
+    allocationLimit,
+  };
+}
+
+/** Copy into a replacement backing and publish through the existing owner.
+ * A stale borrow or different extent leaves the owner untouched. */
+export function retargetByteStorage(
+  storage: ByteStorage,
+  previous: Uint8Array,
+  replacement: Uint8Array,
+): boolean {
+  if (storage.data !== previous || previous.length !== replacement.length)
+    return false;
+  replacement.set(previous);
+  storage.data = replacement;
+  return true;
+}
 export interface ByteStorageWindow {
   readonly bytes: Uint8Array;
   readonly length: number;

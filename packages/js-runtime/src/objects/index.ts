@@ -391,6 +391,7 @@ export { installReflectIntrinsics } from "./reflect-intrinsics.ts";
 export { getFunctionRealm } from "./function-realms.ts";
 
 export {
+  adoptArrayBuffer,
   installArrayBufferIntrinsics,
   detachArrayBuffer,
 } from "./array-buffer.ts";
