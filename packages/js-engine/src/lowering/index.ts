@@ -276,6 +276,7 @@ export function lowerSourceTextModule(
   sourceText?: string,
   numericCalls?: readonly NumericCallSite[],
   checkContracts: boolean = false,
+  checkMethodCalls: boolean = false,
 ): ScriptLoweringResult {
   return lowerScriptEntry(
     module,
@@ -286,6 +287,7 @@ export function lowerSourceTextModule(
     false,
     numericCalls,
     checkContracts,
+    checkMethodCalls,
   );
 }
 /** Indirect eval uses fresh lexical storage and eval declaration admission. */
@@ -341,6 +343,7 @@ function lowerScriptEntry(
   compactResults: boolean = false,
   numericCalls?: readonly NumericCallSite[],
   checkContracts: boolean = false,
+  checkMethodCalls: boolean = false,
 ): ScriptLoweringResult {
   const bound =
     entryKind === "module"
@@ -1257,13 +1260,24 @@ function lowerScriptEntry(
       span,
     );
   }
-  function callTarget(input: Expression): {
+  function callTarget(
+    input: Expression,
+    checkMethod: boolean = false,
+  ): {
     value: Expression;
     receiver: Expression;
+    contract: Expression | undefined;
   } {
     let node = input;
     while (node.kind === "group") node = node.expression;
-    if (isOptionalChain(node)) return optionalChainValue(node, false);
+    if (isOptionalChain(node)) {
+      const evaluated = optionalChainValue(node, false);
+      return {
+        value: evaluated.value,
+        receiver: evaluated.receiver,
+        contract: undefined,
+      };
+    }
     if (node.kind === "identifier") {
       // Declarative, module and global records have no base object; reading
       // the callee before its arguments preserves evaluation order.
@@ -1271,21 +1285,59 @@ function lowerScriptEntry(
         return {
           value: identifierValue(node.name, node),
           receiver: id("undefined", node),
+          contract: undefined,
         };
       const resolved = reference(node.name, node);
       return {
         value: read(resolved, node),
         receiver: temporary(call("getBindingThisValue", [resolved], node)),
+        contract: undefined,
       };
     }
     if (node.kind === "member" || node.kind === "index") {
       const reference = captureAssignment(node);
+      const property = reference.property;
+      if (checkMethod && property !== undefined) {
+        usesPrimitiveContracts = true;
+        const key = referenceKey(reference, property, node, false);
+        const superReceiver = reference.superReceiver;
+        const args: Expression[] = [reference.base, key];
+        if (superReceiver !== undefined) args.push(superReceiver);
+        args.push(member(id("$global"), "hooks", node), id("$errors"));
+        const callable = temporary(
+          checkedRuntimeValue(
+            superReceiver === undefined
+              ? "getObjectValueProperty"
+              : "getObjectValuePropertyWithReceiver",
+            args,
+            node,
+          ),
+          true,
+        );
+        const methodContract = temporary(
+          runtimeCall(
+            "findClassMethodContract",
+            [reference.base, key, id("$errors")],
+            node,
+          ),
+        );
+        return {
+          value: callable,
+          receiver: superReceiver ?? reference.base,
+          contract: methodContract,
+        };
+      }
       return {
         value: readAssignment(reference),
         receiver: reference.superReceiver ?? reference.base,
+        contract: undefined,
       };
     }
-    return { value: value(node), receiver: id("undefined", node) };
+    return {
+      value: value(node),
+      receiver: id("undefined", node),
+      contract: undefined,
+    };
   }
   function invokeEvalCandidate(
     callee: Expression,
@@ -2413,7 +2465,7 @@ function lowerScriptEntry(
             ),
             following,
           ];
-          if (!asyncGenerator && yieldContract !== 0) {
+          if (yieldContract !== 0) {
             delegateArguments.push(id("$errors"));
             delegateArguments.push(contractValue(yieldContract, body));
           }
@@ -2583,7 +2635,14 @@ function lowerScriptEntry(
         : named(suspending ? "GeneratorContinuation" : "unknown"),
       body: callbackBody,
     };
-    if (raw) return callback;
+    if (raw)
+      return resultContract === 0
+        ? callback
+        : runtimeCall(
+            "checkClassMethodResult",
+            [callback, id("$errors"), contractValue(resultContract, span)],
+            span,
+          );
     const retainedSpan: Span =
       options.sourceStart === undefined
         ? span
@@ -2602,10 +2661,7 @@ function lowerScriptEntry(
         { ...at(span), kind: "number", value: length, raw: "" + length },
         homeObject ?? id("undefined"),
       ];
-      if (
-        !asyncGenerator &&
-        (completionContract !== 0 || resumeContract !== 0)
-      ) {
+      if (completionContract !== 0 || resumeContract !== 0) {
         suspensionArguments.push(contractValue(completionContract, span));
         if (generator)
           suspensionArguments.push(contractValue(resumeContract, span));
@@ -3043,6 +3099,7 @@ function lowerScriptEntry(
           method = temporary(
             callable(element.parameters, element.body, false, methodSpan, {
               generator: element.generator,
+              resultType: element.returnType,
               async: element.async,
               method: true,
               codeStrict: true,
@@ -3056,7 +3113,13 @@ function lowerScriptEntry(
             element.body,
             false,
             element,
-            { method: true, raw: true, codeStrict: true, homeObject: home },
+            {
+              method: true,
+              raw: true,
+              codeStrict: true,
+              homeObject: home,
+              resultType: element.returnType,
+            },
           );
           const name = runtimeCall("propertyFunctionName", [key], element);
           const methodName: Expression =
@@ -3100,6 +3163,51 @@ function lowerScriptEntry(
           id("undefined"),
           id("undefined"),
         );
+        if (
+          checkContracts &&
+          element.kind === "method" &&
+          !element.private &&
+          (element.decorators?.length ?? 0) !== 0
+        ) {
+          const parameters: Expression[] = [];
+          let rest = 0;
+          for (const parameter of element.parameters) {
+            if (parameter === undefined) throw "SCRIPT_PARAMETER_INVARIANT";
+            const annotation = parameter.type;
+            if (parameter.rest) {
+              if (annotation?.kind === "array")
+                rest = contract(annotation.element);
+              continue;
+            }
+            let mask = contract(annotation);
+            if (
+              mask !== 0 &&
+              (parameter.optional || parameter.initializer !== undefined)
+            )
+              mask |= primitiveContractBit("undefined");
+            parameters.push(contractValue(mask, parameter));
+          }
+          expression(
+            runtimeCall(
+              "attachClassMethodContract",
+              [
+                home,
+                key,
+                object(
+                  ["parameters", "rest", "result"],
+                  [
+                    { ...at(element), kind: "array", elements: parameters },
+                    contractValue(rest, element),
+                    contractValue(contract(element.returnType), element),
+                  ],
+                  element,
+                ),
+                id("$errors"),
+              ],
+              element,
+            ),
+          );
+        }
         if (element.private)
           privateDefinition(
             element,
@@ -3118,6 +3226,7 @@ function lowerScriptEntry(
           const method = temporary(
             callable(element.parameters, element.body, false, methodSpan, {
               generator: element.generator,
+              resultType: element.returnType,
               async: element.async,
               method: true,
               codeStrict: true,
@@ -3162,6 +3271,7 @@ function lowerScriptEntry(
           {
             method: true,
             raw: true,
+            resultType: element.returnType,
             codeStrict: true,
             homeObject: element.static ? result : prototype,
           },
@@ -3277,6 +3387,15 @@ function lowerScriptEntry(
           accessorSet: Expression = id("undefined");
         const fieldNames = ["name", "initialize"];
         const fieldValues: Expression[] = [key, implementation];
+        const fieldContract = contract(element.type);
+        if (fieldContract !== 0) {
+          fieldNames.push("contract");
+          fieldValues.push(contractValue(fieldContract, element));
+          if (element.initializer === undefined) {
+            fieldNames.push("deferred");
+            fieldValues.push({ ...at(element), kind: "boolean", value: true });
+          }
+        }
         if (element.accessor) {
           usesAutoAccessors = true;
           const storage = temporary(
@@ -3932,8 +4051,21 @@ function lowerScriptEntry(
           check(member(result, "error", node), node);
           return member(result, "value", node);
         }
-        const evaluated = callTarget(node.callee);
+        const evaluated = callTarget(node.callee, checkMethodCalls);
         const callee = temporary(evaluated.value, true);
+        const methodContract = evaluated.contract;
+        if (methodContract !== undefined)
+          return checkedRuntimeValue(
+            "callWithClassMethodContract",
+            [
+              callee,
+              evaluated.receiver,
+              argumentList(node.arguments, node),
+              methodContract,
+              id("$errors"),
+            ],
+            node,
+          );
         return isDirectEvalCandidate(node)
           ? invokeEvalCandidate(
               callee,

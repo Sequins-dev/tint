@@ -222,6 +222,10 @@ export function scriptRuntimeImports(
               "checkPrimitiveContract",
               "checkPrimitiveRestArguments",
               "createCheckedSourceFunction",
+              "checkClassMethodResult",
+              "attachClassMethodContract",
+              "findClassMethodContract",
+              "callWithClassMethodContract",
             ]
           : []),
         "objectValueTypeof",

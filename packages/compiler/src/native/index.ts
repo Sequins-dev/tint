@@ -379,6 +379,7 @@ export type GeneralProgram =
         /** The generated host module; it exports `start(): number`. */
         readonly entry: string;
         readonly functions?: readonly GeneralFallbackFunction[];
+        readonly classes?: readonly GeneralFallbackClass[];
         /** Record bindings of generated runtime modules (record view
          * slots), and those runtime modules. */
         readonly recordBindings?: readonly NativeRecordBinding[];
@@ -390,10 +391,15 @@ export interface GeneralFallbackFunction extends Span {
   readonly module: string;
   readonly name: string;
 }
+export interface GeneralFallbackClass extends Span {
+  readonly module: string;
+  readonly name: string;
+}
 interface GeneralCompilation {
   readonly modules: readonly string[];
   readonly reason: string;
   readonly functions?: readonly GeneralFallbackFunction[];
+  readonly classes?: readonly GeneralFallbackClass[];
 }
 /** Lowers application modules to typed modules of runtime-helper calls that
  * implement JavaScript semantics, plus a typed host entry. Provided by the
@@ -976,10 +982,13 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       if (module !== undefined) generalIds.push(module.id);
     if (compiled.ok) {
       const functions = lowered.value.functions;
-      const general: GeneralCompilation =
-        functions === undefined
-          ? { modules: generalIds, reason }
-          : { modules: generalIds, reason, functions };
+      const classes = lowered.value.classes;
+      const general: GeneralCompilation = {
+        modules: generalIds,
+        reason,
+        ...(functions === undefined ? {} : { functions }),
+        ...(classes === undefined ? {} : { classes }),
+      };
       return {
         ok: true,
         value: {

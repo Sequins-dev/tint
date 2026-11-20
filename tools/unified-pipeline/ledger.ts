@@ -17,6 +17,7 @@ import { constructs } from "./corpus.ts";
 import type {
   FallbackTrigger,
   GeneralFallbackFunction,
+  GeneralFallbackClass,
   SourceDiagnostic,
 } from "@tint/compiler/native";
 import type { SourceAdvisory } from "../source-validation.ts";
@@ -38,6 +39,7 @@ interface Entry {
     | "unsupported";
   readonly generalModules?: readonly string[];
   readonly fallbackFunctions?: readonly GeneralFallbackFunction[];
+  readonly fallbackClasses?: readonly GeneralFallbackClass[];
   readonly fallbackTriggers?: readonly FallbackTrigger[];
   readonly sourceDiagnostics?: readonly SourceDiagnostic[];
   readonly sourceAdvisories?: readonly SourceAdvisory[];
@@ -121,6 +123,7 @@ function verify(construct: string, form: Form): Promise<Entry> {
       let sourceSnapshot: string | undefined;
       let sourceReplay: Entry["sourceReplay"];
       let fallbackFunctions: Entry["fallbackFunctions"];
+      let fallbackClasses: Entry["fallbackClasses"];
       if (image !== undefined) {
         const manifest = JSON.parse(
           readFileSync(image + ".manifest.json", "utf8"),
@@ -128,10 +131,12 @@ function verify(construct: string, form: Form): Promise<Entry> {
           sourceSnapshot: { sha256: string };
           sourceReplay?: Entry["sourceReplay"];
           fallbackFunctions?: Entry["fallbackFunctions"];
+          fallbackClasses?: Entry["fallbackClasses"];
         };
         sourceSnapshot = manifest.sourceSnapshot.sha256;
         sourceReplay = manifest.sourceReplay;
         fallbackFunctions = manifest.fallbackFunctions;
+        fallbackClasses = manifest.fallbackClasses;
         rmSync(dirname(image), { recursive: true, force: true });
       }
       // A build that fails before compiling (the hosted builder asserts its
@@ -205,7 +210,8 @@ function verify(construct: string, form: Form): Promise<Entry> {
               ? "none"
               : fallback === null
                 ? "typed"
-                : fallbackFunctions === undefined
+                : fallbackFunctions === undefined &&
+                    fallbackClasses === undefined
                   ? "general"
                   : "mixed",
         outcome,
@@ -221,6 +227,7 @@ function verify(construct: string, form: Form): Promise<Entry> {
         ...(sourceSnapshot === undefined ? {} : { sourceSnapshot }),
         ...(sourceReplay === undefined ? {} : { sourceReplay }),
         ...(fallbackFunctions === undefined ? {} : { fallbackFunctions }),
+        ...(fallbackClasses === undefined ? {} : { fallbackClasses }),
         ...(fallbackTriggers.length === 0 ? {} : { fallbackTriggers }),
         ...(sourceAdvisories.length === 0 ? {} : { sourceAdvisories }),
         ...(sourceDiagnostics.length === 0 ? {} : { sourceDiagnostics }),

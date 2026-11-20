@@ -219,6 +219,7 @@ export { copyDataProperties } from "./copy.ts";
 export {
   createBaseClass,
   createClassMethod,
+  checkClassMethodResult,
   prepareClassAutoAccessor,
   initializeClassPrivateMethods,
   type ClassPrivateMethod,
@@ -500,6 +501,9 @@ export {
   enrollObjectPropertyContract,
   finishObjectPropertyContract,
   projectPropertyContract,
+  attachClassMethodContract,
+  findClassMethodContract,
+  callWithClassMethodContract,
   type ContractField,
   type ObjectShapeContract,
   type PropertyValueRule,

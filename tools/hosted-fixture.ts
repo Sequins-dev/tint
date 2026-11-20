@@ -40,6 +40,7 @@ import {
   prepareForeignLibrary,
   type ForeignLibrary,
   type GeneralFallbackFunction,
+  type GeneralFallbackClass,
   type NativeForeignBinding,
   type NativeForeignMemoryBinding,
   type NativeHostBinding,
@@ -203,6 +204,7 @@ function buildHostedFixture(
     options.functionFallback === true && options.validateSource !== undefined;
   const general = workspaceGeneralLowering(functionFallback);
   let fallbackFunctions: readonly GeneralFallbackFunction[] | undefined;
+  let fallbackClasses: readonly GeneralFallbackClass[] | undefined;
   const replaySources = options.replaySources;
   const fixtureSource = "fixture";
   const original =
@@ -464,6 +466,9 @@ function buildHostedFixture(
                     fallbackFunctions = lowered.ok
                       ? lowered.value.functions
                       : undefined;
+                    fallbackClasses = lowered.ok
+                      ? lowered.value.classes
+                      : undefined;
                     return lowered;
                   },
                 }
@@ -588,6 +593,7 @@ function buildHostedFixture(
           .digest("hex"),
         ...(moduleLoader === undefined ? {} : { sourceReplay: replay }),
         ...(fallbackFunctions === undefined ? {} : { fallbackFunctions }),
+        ...(fallbackClasses === undefined ? {} : { fallbackClasses }),
         options: {
           ...manifestOptions,
           ...(serviceImage === undefined

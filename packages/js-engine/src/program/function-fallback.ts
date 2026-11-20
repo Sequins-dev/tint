@@ -697,3 +697,150 @@ function parseImport(text: string): Module {
     throw "generated function fallback import: " + parsed.error.message;
   return parsed.value;
 }
+
+export interface TypedCompanions {
+  readonly general: SourceModule;
+  readonly typed: SourceModule;
+  readonly boundary: TypedBoundaryModule;
+  readonly name: string;
+  readonly kind: "class" | "function";
+}
+
+/** An ordinary private numeric leaf has no capture, initialization effect or
+ * escaping function identity. It can keep its native entry when its lexical
+ * neighbors require class evaluation or suspension in the realm. */
+export function planTypedCompanions(
+  request: GeneralProgramRequest,
+  typedId: string,
+): TypedCompanions | undefined {
+  const trigger = request.trigger;
+  if (request.sourceValidated !== true || trigger === undefined)
+    return undefined;
+  const owner = trigger.owner;
+  if (
+    owner.kind !== "class" &&
+    trigger.capability !== "generator-suspension" &&
+    trigger.capability !== "async-suspension"
+  )
+    return undefined;
+  const source = request.modules.find((item) => item.id === owner.module);
+  if (source === undefined) return undefined;
+  const selected = source.module.statements.find(
+    (statement) =>
+      (statement.kind === "class" || statement.kind === "function") &&
+      statement.start === owner.start &&
+      statement.end === owner.end,
+  );
+  if (
+    selected === undefined ||
+    (selected.kind !== "class" && selected.kind !== "function")
+  )
+    return undefined;
+  const graph = bindJavaScriptModule(eraseTypeSyntax(source.module));
+  if (!graph.ok || (graph.value.directEvalOwners?.length ?? 0) !== 0)
+    return undefined;
+  const candidates = new Map<string, FunctionDeclaration>();
+  for (const statement of source.module.statements) {
+    if (
+      statement.kind === "function" &&
+      !statement.exported &&
+      ordinaryNumber(statement)
+    ) {
+      const params = fixedNumericParameters(statement);
+      if (params !== undefined && primitiveCompletion(statement, params))
+        candidates.set(statement.name, statement);
+    }
+  }
+  for (const statement of source.module.statements) {
+    if (
+      statement.kind === "export" &&
+      statement.declaration.source === undefined
+    )
+      for (const binding of statement.declaration.bindings ?? [])
+        candidates.delete(binding.local);
+    if (
+      statement.kind === "export-default" &&
+      statement.value.kind === "identifier"
+    )
+      candidates.delete(statement.value.name);
+  }
+  const direct = new Set<number>();
+  rewriteModule(source.module, {
+    expression: (mapped, original) => {
+      if (
+        original.kind === "call" &&
+        original.optional !== true &&
+        original.callee.kind === "identifier"
+      ) {
+        const candidate = candidates.get(original.callee.name);
+        if (
+          candidate !== undefined &&
+          candidate.parameters.length === original.arguments.length &&
+          original.arguments.every((arg) => arg.kind !== "spread")
+        )
+          direct.add(original.callee.start);
+      }
+      return mapped;
+    },
+  });
+  const called = new Set<string>();
+  for (const reference of graph.value.references) {
+    if (reference.binding === undefined) continue;
+    const binding = graph.value.bindings[reference.binding];
+    if (binding?.scope !== 0 || !candidates.has(binding.name)) continue;
+    if (reference.access === "read" && direct.has(reference.node.start))
+      called.add(binding.name);
+    else candidates.delete(binding.name);
+  }
+  const leaves = [...candidates.values()].filter((fn) => called.has(fn.name));
+  if (leaves.length === 0) return undefined;
+  const leavesByName = new Set(leaves.map((fn) => fn.name));
+  const imports = parseImport(
+    "import {" +
+      leaves.map((fn) => fn.name).join(",") +
+      "} from " +
+      JSON.stringify(typedId) +
+      ";",
+  );
+  const dependencies = new Map(source.dependencies);
+  dependencies.set(typedId, typedId);
+  return {
+    name: selected.name,
+    kind: selected.kind,
+    general: {
+      ...source,
+      dependencies,
+      module: {
+        ...source.module,
+        imports: [...imports.imports, ...source.module.imports],
+        statements: [
+          ...imports.statements,
+          ...source.module.statements.filter(
+            (statement) =>
+              statement.kind !== "function" ||
+              !leavesByName.has(statement.name),
+          ),
+        ],
+      },
+    },
+    typed: {
+      ...source,
+      id: typedId,
+      dependencies: new Map(),
+      module: {
+        ...source.module,
+        imports: [],
+        statements: leaves.map((fn) => ({ ...fn, exported: true })),
+      },
+    },
+    boundary: {
+      id: typedId,
+      exports: leaves.map((fn) => ({
+        kind: "function",
+        name: fn.name,
+        local: fn.name,
+        parameters: fn.parameters.map(() => boundaryNumber),
+      })),
+    },
+  };
+}

@@ -7,6 +7,7 @@ import {
   enqueueAsyncGenerator,
   type AsyncGeneratorContinuation,
   type AsyncGeneratorHooks,
+  type AsyncGeneratorContracts,
   type AsyncGeneratorOutcome,
   type GeneratorResumeKind,
 } from "../iterators/index.ts";
@@ -29,7 +30,11 @@ import { createIteratorResult } from "./iterator-intrinsics.ts";
 import { constructorPrototype } from "./functions.ts";
 import { makeMethod } from "./methods.ts";
 import { builtinFunction, builtinProperty } from "./intrinsics.ts";
-import { viewObjectValue } from "./values.ts";
+import {
+  checkPrimitiveContract,
+  primitiveContractPredicate,
+  viewObjectValue,
+} from "./values.ts";
 import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
 
 /** Take an unstarted hidden carrier; the outer generator owns all requests. */
@@ -69,8 +74,18 @@ export function createSourceAsyncGeneratorFunction(
   name: string = "",
   length: number = 0,
   home: OrdinaryObject<ScriptPropertyKey, unknown> | undefined = undefined,
+  returnContract: number = 0,
+  nextContract: number = 0,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const identity: { value: unknown } = { value: undefined };
+  const contracts: AsyncGeneratorContracts<unknown> | undefined =
+    returnContract === 0 && nextContract === 0
+      ? undefined
+      : {
+          acceptsNext: primitiveContractPredicate(nextContract),
+          acceptsReturn: primitiveContractPredicate(returnContract),
+          typeError: (): unknown => createRuntimeError(realm, "type"),
+        };
   const fn = createCallableObject<ScriptPropertyKey, unknown>(
     realm.asyncGeneratorFunctionPrototype,
     (receiver, args): unknown => {
@@ -81,7 +96,13 @@ export function createSourceAsyncGeneratorFunction(
         realm,
         hooks,
       );
-      return createAsyncGeneratorObject(continuation, realm, hooks, prototype);
+      return createAsyncGeneratorObject(
+        continuation,
+        realm,
+        hooks,
+        prototype,
+        contracts,
+      );
     },
     createSourceExecutionContext(realm),
   );
@@ -105,6 +126,7 @@ export function createAsyncGeneratorObject(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
   prototype: OrdinaryObject<ScriptPropertyKey, unknown> | undefined = undefined,
+  contracts?: AsyncGeneratorContracts<unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const generator = createObject<ScriptPropertyKey, unknown>(
     prototype === undefined ? realm.asyncGeneratorPrototype : prototype,
@@ -121,6 +143,7 @@ export function createAsyncGeneratorObject(
         context,
         (): AsyncGeneratorOutcome<unknown> => continuation(kind, value),
       ),
+    contracts,
   );
   const protocol: AsyncGeneratorHooks<unknown> = {
     undefinedValue: undefined,
@@ -292,6 +315,8 @@ export function installAsyncGeneratorIntrinsics(
 export function createAsyncDelegatingContinuation(
   iterator: ScriptIterator,
   following: AsyncGeneratorStep<unknown>,
+  realm?: ErrorRealm,
+  yieldContract: number = 0,
 ): AsyncGeneratorStep<unknown> {
   const resume = createAsyncYieldDelegate<unknown>(
     iterator.record,
@@ -308,8 +333,11 @@ export function createAsyncDelegatingContinuation(
       };
     if (outcome.kind === "await")
       return { kind: "await", value: outcome.value };
-    if (outcome.kind === "yield")
+    if (outcome.kind === "yield") {
+      if (realm !== undefined && yieldContract !== 0)
+        checkPrimitiveContract(realm, outcome.value, yieldContract);
       return { kind: "yield", value: outcome.value };
+    }
     return { kind: "return", value: outcome.value };
   };
 }

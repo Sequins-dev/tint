@@ -9,6 +9,57 @@ const hooks: objects.ObjectHooks<unknown> = {
     throw "unexpected hook";
   },
 };
+
+test("written field types guard ordinary, static and private storage", () => {
+  const realm = objects.createErrorRealm(
+    objects.createObject<ScriptPropertyKey, unknown>(undefined),
+    hooks,
+  );
+  const record = objects.createObject<ScriptPropertyKey, unknown>(
+    realm.objectPrototype,
+  );
+  const cls = objects.createBaseClass("Fields", 0, undefined, [], realm, hooks);
+  const contract = objects.primitiveContractBit("number");
+  const reject = (error: unknown) =>
+    (error as objects.OrdinaryObject<ScriptPropertyKey, unknown>).prototype ===
+    realm.prototypes.get("type");
+  for (const target of [record, cls]) {
+    objects.initializeClassFields(
+      target,
+      [{ name: "count", initialize: () => 1, contract }],
+      realm,
+      hooks,
+    );
+    assert.throws(
+      () =>
+        objects.setProperty(
+          target,
+          "count",
+          "wrong",
+          { value: target, object: target },
+          hooks,
+        ),
+      reject,
+    );
+    assert.equal(objects.getOwnProperty(target, "count")?.value, 1);
+  }
+  const privateName = objects.createPrivateName("count");
+  objects.initializeClassFields(
+    record,
+    [{ name: "", privateName, initialize: () => 1, contract }],
+    realm,
+    hooks,
+  );
+  const receiver = { value: record, object: record };
+  assert.equal(
+    objects.setPrivateElement(receiver, privateName, "wrong", hooks),
+    "type",
+  );
+  assert.equal(
+    objects.getPrivateElement(receiver, privateName, hooks).value,
+    1,
+  );
+});
 test("base classes have construct-only behavior and standard constructor/prototype attributes", () => {
   assert.equal(typeof objects.createBaseClass, "function");
   const realm = objects.createErrorRealm(

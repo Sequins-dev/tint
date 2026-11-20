@@ -36,6 +36,7 @@ export {
   type AsyncGeneratorCapability,
   type AsyncGeneratorHooks,
   type AsyncGeneratorRecord,
+  type AsyncGeneratorContracts,
 } from "./async-generator.ts";
 export {
   resumeAsyncFromSyncIterator,

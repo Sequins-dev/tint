@@ -23,6 +23,7 @@ import { lowerSourceTextModule } from "../lowering/index.ts";
 import { createGeneralIntrinsicPlan } from "./intrinsics.ts";
 import {
   planFunctionFallback,
+  planTypedCompanions,
   type FunctionFallbackPlan,
 } from "./function-fallback.ts";
 
@@ -123,9 +124,24 @@ function lowerGeneralProgram(
           hostId,
         )
       : undefined;
+  const companions =
+    mixed === undefined && options.functionFallback === true
+      ? planTypedCompanions(
+          original,
+          fresh("$typed:" + (original.trigger?.owner.module ?? original.entry)),
+        )
+      : undefined;
   const request: GeneralProgramRequest =
     mixed === undefined
-      ? original
+      ? companions === undefined
+        ? original
+        : {
+            ...original,
+            modules: original.modules.map((module) =>
+              module.id === companions.general.id ? companions.general : module,
+            ),
+            boundaries: [...original.boundaries, companions.boundary],
+          }
       : {
           ...original,
           modules: [mixed.general],
@@ -157,8 +173,23 @@ function lowerGeneralProgram(
     ["@tint/js-runtime/environments/global", runtime.globalEnvironment],
     ["@tint/js-runtime/environments/records", runtime.environmentRecords],
   ]);
-  const generated: SourceModule[] = mixed === undefined ? [] : [mixed.typed];
+  const generated: SourceModule[] = [];
+  if (mixed !== undefined) generated.push(mixed.typed);
+  if (companions !== undefined) generated.push(companions.typed);
   const installers = createGeneralIntrinsicPlan();
+  const checkMethodCalls =
+    request.sourceValidated === true &&
+    request.modules.some((module) =>
+      module.module.statements.some(
+        (statement) =>
+          statement.kind === "class" &&
+          statement.definition.elements.some(
+            (element) =>
+              element.kind === "method" &&
+              (element.decorators?.length ?? 0) !== 0,
+          ),
+      ),
+    );
   let imports = "",
     creates = "",
     edges = "";
@@ -178,6 +209,7 @@ function lowerGeneralProgram(
       mixed?.numericCalls,
       request.sourceValidated === true &&
         (mixed === undefined || mixed.ordinaryEntries !== undefined),
+      checkMethodCalls,
     );
     if (!lowered.ok)
       return {
@@ -399,23 +431,35 @@ function lowerGeneralProgram(
   });
   const records = request.records ?? [];
   const owner = original.trigger?.owner;
-  const functions =
-    mixed === undefined || owner === undefined
+  const unitName = mixed?.name ?? companions?.name;
+  const units =
+    unitName === undefined || owner === undefined
       ? {}
-      : {
-          functions: [
-            {
-              module: owner.module,
-              name: mixed.name,
-              start: owner.start,
-              end: owner.end,
-            },
-          ],
-        };
+      : companions?.kind === "class"
+        ? {
+            classes: [
+              {
+                module: owner.module,
+                name: unitName,
+                start: owner.start,
+                end: owner.end,
+              },
+            ],
+          }
+        : {
+            functions: [
+              {
+                module: owner.module,
+                name: unitName,
+                start: owner.start,
+                end: owner.end,
+              },
+            ],
+          };
   if (records.length === 0 && errors.stubs === "")
     return {
       ok: true,
-      value: { modules: generated, entry: hostId, ...functions },
+      value: { modules: generated, entry: hostId, ...units },
     };
   const viewsParsed = parseModule(
     createSourceTextView(adapters.stubs + errors.stubs),
@@ -459,7 +503,7 @@ function lowerGeneralProgram(
     value: {
       modules: generated,
       entry: hostId,
-      ...functions,
+      ...units,
       recordBindings: viewSlots,
       runtimes: [
         { module: viewsId, namespace: "general-record-views", retainedExports },
