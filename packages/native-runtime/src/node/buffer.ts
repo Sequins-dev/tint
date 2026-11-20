@@ -9,6 +9,7 @@ import {
   createObject,
   createRuntimeError,
   createTypedArrayView,
+  defineOwnProperty,
   getProperty,
   hasProperty,
   hasPrototype,
@@ -293,6 +294,29 @@ export function installNodeBuffer(core: ProgramRealmCore): RealmObject {
   method(constructor, "isBuffer", 1, (_receiver, args): unknown =>
     isNodeBuffer(core, args[0]),
   );
+  method(constructor, "byteLength", 2, (_receiver, args): unknown => {
+    const input = args[0];
+    if (typeof input === "string") {
+      const encoding = args[1];
+      const selected =
+        typeof encoding === "string" ? bufferEncoding(encoding) : undefined;
+      return bufferBytes(input, selected ?? "utf8").length;
+    }
+    const object = viewObjectValue(input, core.object);
+    if (object !== undefined) {
+      const range = projectArrayBufferViewRange(object);
+      if (range !== undefined) return range.byteLength;
+      const backing =
+        object.internalArrayBufferData ?? object.internalSharedArrayBufferData;
+      if (backing !== undefined) return bufferStorageByteLength(backing);
+    }
+    return bufferError(
+      core,
+      "type",
+      "The string must be a string, Buffer, or ArrayBuffer",
+      "ERR_INVALID_ARG_TYPE",
+    );
+  });
   method(prototype, "subarray", 2, subarray);
   method(prototype, "slice", 2, subarray);
   method(prototype, "toString", 0, (receiver, args): unknown => {
@@ -318,3 +342,33 @@ export function installNodeBuffer(core: ProgramRealmCore): RealmObject {
 }
 
 export const Buffer: unknown = installNodeBuffer(programRealmCore());
+
+function bufferConstants(core: ProgramRealmCore): RealmObject {
+  const object = createObject<ScriptPropertyKey, unknown>(
+    core.realm.objectPrototype,
+  );
+  function constant(name: string, value: number): void {
+    if (
+      defineOwnProperty<ScriptPropertyKey, unknown>(
+        object,
+        name,
+        {
+          fields: 51,
+          value,
+          writable: false,
+          enumerable: true,
+          configurable: false,
+          get: undefined,
+          set: undefined,
+        },
+        core.hooks,
+      ) !== "accepted"
+    )
+      throw "BUFFER_CONSTANT_INVARIANT";
+  }
+  constant("MAX_LENGTH", Number.MAX_SAFE_INTEGER);
+  constant("MAX_STRING_LENGTH", 536870888);
+  return object;
+}
+
+export const constants: unknown = bufferConstants(programRealmCore());
