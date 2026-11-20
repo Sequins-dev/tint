@@ -131,6 +131,7 @@ export interface Property {
 export async function tintSession(
   name: string,
   plugins: readonly BridgePlugin[],
+  onAdmitted: () => void,
 ): Promise<{
   session: DevToolsSession;
   client: CdpTestClient;
@@ -141,21 +142,24 @@ export async function tintSession(
   const dir = mkdtempSync(join(tmpdir(), "tint-devtools-tint-"));
   const sourceFile = join(dir, "fixture.ts");
   writeFileSync(sourceFile, devtoolsFixtureSource);
-  const session = await startDevTools({
-    program: image,
-    port: 0,
-    wait: true,
-    plugins,
-    sourceMap: new Map([["fixture", sourceFile]]),
-    trace: process.env.TINT_DEVTOOLS_TRACE === "1",
-    log:
-      process.env.TINT_DEVTOOLS_TRACE === "1"
-        ? (text) =>
-            process.stderr.write(
-              String(Date.now() % 1000000) + " " + text + "\n",
-            )
-        : () => {},
-  });
+  const session = await startDevTools(
+    {
+      program: image,
+      port: 0,
+      wait: true,
+      plugins,
+      sourceMap: new Map([["fixture", sourceFile]]),
+      trace: process.env.TINT_DEVTOOLS_TRACE === "1",
+      log:
+        process.env.TINT_DEVTOOLS_TRACE === "1"
+          ? (text) =>
+              process.stderr.write(
+                String(Date.now() % 1000000) + " " + text + "\n",
+              )
+          : () => {},
+    },
+    onAdmitted,
+  );
   const client = await CdpTestClient.connect(session.server.webSocketUrl);
   await client.send("Runtime.enable");
   await client.send("Debugger.enable");

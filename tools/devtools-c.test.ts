@@ -9,7 +9,7 @@ import { get } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import test from "node:test";
+import { testNativeLaunch } from "./gate/native-launch-test.ts";
 import { compileC, findLlvmTool } from "./host-tools.ts";
 import { findLldbDap } from "./devtools/backend.ts";
 import { startDevTools } from "./devtools/cli.ts";
@@ -60,10 +60,10 @@ interface Property {
   };
 }
 
-test(
+testNativeLaunch(
   "DevTools bridge debugs a clang -g C program",
   { skip: !available && "needs clang and lldb-dap", timeout: 180000 },
-  async () => {
+  async (onAdmitted) => {
     const dir = mkdtempSync(join(tmpdir(), "tint-devtools-c-"));
     const file = join(dir, "prog.c"),
       program = join(dir, "prog");
@@ -73,13 +73,16 @@ test(
       assert.equal(built.status, 0, built.stderr);
       return program;
     });
-    const session = await startDevTools({
-      program,
-      args: ["long"],
-      port: 0,
-      wait: true,
-      log: () => {},
-    });
+    const session = await startDevTools(
+      {
+        program,
+        args: ["long"],
+        port: 0,
+        wait: true,
+        log: () => {},
+      },
+      onAdmitted,
+    );
     let client: CdpTestClient | undefined;
     try {
       // Discovery, as chrome://inspect polls it.

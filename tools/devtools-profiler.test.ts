@@ -9,7 +9,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import test from "node:test";
+import { testNativeLaunch } from "./gate/native-launch-test.ts";
 import { compileC, findLlvmTool } from "./host-tools.ts";
 import { findLldbDap } from "./devtools/backend.ts";
 import { startDevTools } from "./devtools/cli.ts";
@@ -86,6 +86,7 @@ async function profileC(
   sampler: "pprofessor" | "perf" | "backend",
   interval: number,
   duration: number,
+  onAdmitted: () => void,
 ): Promise<{
   profile: CpuProfile;
   url: string;
@@ -101,13 +102,16 @@ async function profileC(
     assert.equal(built.status, 0, built.stderr);
     return program;
   });
-  const session = await startDevTools({
-    program,
-    port: 0,
-    wait: true,
-    plugins: [new CpuProfiler(sampler)],
-    log: () => {},
-  });
+  const session = await startDevTools(
+    {
+      program,
+      port: 0,
+      wait: true,
+      plugins: [new CpuProfiler(sampler)],
+      log: () => {},
+    },
+    onAdmitted,
+  );
   const client = await CdpTestClient.connect(session.server.webSocketUrl);
   try {
     await client.send("Runtime.enable");
@@ -143,7 +147,7 @@ async function profileC(
   }
 }
 
-test(
+testNativeLaunch(
   "CPU profiles from the external sampler (" +
     (external ?? "none") +
     ") carry DWARF source frames",
@@ -153,11 +157,12 @@ test(
       "needs clang, lldb-dap and pprofessor or perf",
     timeout: 180000,
   },
-  async () => {
+  async (onAdmitted) => {
     const { profile, url, scriptId, paused } = await profileC(
       external ?? "backend",
       1000,
       1500,
+      onAdmitted,
     );
     assert.ok(!paused);
     const { total, under } = checkProfile(profile, "spin");
@@ -197,11 +202,16 @@ test(
   },
 );
 
-test(
+testNativeLaunch(
   "CPU profiles from backend stack sampling",
   { skip: !debuggable && "needs clang and lldb-dap", timeout: 180000 },
-  async () => {
-    const { profile, url, paused } = await profileC("backend", 20000, 2000);
+  async (onAdmitted) => {
+    const { profile, url, paused } = await profileC(
+      "backend",
+      20000,
+      2000,
+      onAdmitted,
+    );
     assert.ok(!paused, "sampling stops are internal");
     const { total, under } = checkProfile(profile, "spin");
     assert.ok(total >= 5, `${total} samples`);
@@ -214,7 +224,7 @@ test(
   },
 );
 
-test(
+testNativeLaunch(
   "CPU profiles of a Tint debug build name source functions",
   {
     skip:
@@ -222,11 +232,12 @@ test(
       "needs lldb-dap and pprofessor or perf",
     timeout: 300000,
   },
-  async () => {
-    const { client, url, close } = await tintSession("devtools-cpu", [
-      new TintPlugin(),
-      new CpuProfiler(external),
-    ]);
+  async (onAdmitted) => {
+    const { client, url, close } = await tintSession(
+      "devtools-cpu",
+      [new TintPlugin(), new CpuProfiler(external)],
+      onAdmitted,
+    );
     try {
       await client.send("Profiler.enable");
       await client.send("Runtime.runIfWaitingForDebugger");
