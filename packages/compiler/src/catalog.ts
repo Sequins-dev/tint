@@ -2911,7 +2911,19 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/worker-backing.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/worker-lifecycle.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/worker-messages.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/worker-ports.ts",
       packageId: "native-runtime",
     },
     {

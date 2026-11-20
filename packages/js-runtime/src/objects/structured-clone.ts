@@ -44,7 +44,10 @@ export interface WorkerCloneAttachments {
   decode?(index: number): ScriptObject | undefined;
 }
 
-function dataCloneError(realm: ErrorRealm, message: string): never {
+export function throwWorkerCloneError(
+  realm: ErrorRealm,
+  message: string,
+): never {
   const error = createRuntimeError(realm, "error");
   builtinProperty(
     error,
@@ -181,7 +184,7 @@ export function serializeWorkerValue(
     }
     const object = viewObjectValue(value, realm.objectPrototype);
     if (object === undefined)
-      return dataCloneError(realm, "The value could not be cloned");
+      return throwWorkerCloneError(realm, "The value could not be cloned");
     if (object.internalIdentity === 0)
       object.internalIdentity = realm.agent.nextObjectIdentity++;
     const seen = objects.get(object.internalIdentity);
@@ -196,18 +199,21 @@ export function serializeWorkerValue(
       return number(grant);
     }
     if (unsupportedObject(object))
-      return dataCloneError(realm, "The object could not be cloned");
+      return throwWorkerCloneError(realm, "The object could not be cloned");
     const primitive = object.internalPrimitiveData;
     if (primitive !== undefined) {
       if (primitive.kind === "symbol")
-        return dataCloneError(realm, "A boxed Symbol could not be cloned");
+        return throwWorkerCloneError(
+          realm,
+          "A boxed Symbol could not be cloned",
+        );
       tag("w");
       return encode(primitive.value);
     }
     const typed = object.internalTypedArrayData;
     if (typed !== undefined) {
       if (typedArrayWindow(typed) === undefined)
-        return dataCloneError(realm, "The typed array is out of bounds");
+        return throwWorkerCloneError(realm, "The typed array is out of bounds");
       tag("T");
       field(typed.kind);
       tag(typed.endian === "little" ? "l" : "b");
@@ -225,7 +231,7 @@ export function serializeWorkerValue(
           1,
         ) === undefined
       )
-        return dataCloneError(realm, "The DataView is out of bounds");
+        return throwWorkerCloneError(realm, "The DataView is out of bounds");
       tag("V");
       number(view.byteOffset);
       number(view.byteLength ?? -1);
@@ -294,7 +300,7 @@ export function serializeWorkerValue(
     if (storage !== undefined) {
       const bytes = byteStorageData(storage);
       if (bytes === undefined)
-        return dataCloneError(realm, "The ArrayBuffer is detached");
+        return throwWorkerCloneError(realm, "The ArrayBuffer is detached");
       tag(storage.resizable ? "A" : "B");
       number(storage.maxByteLength);
       number(bytes.length);
@@ -340,7 +346,7 @@ export function deserializeWorkerValue(
   const hooks = realm.objectHooks;
   let next = 0;
   function invalid(): never {
-    return dataCloneError(realm, "Invalid worker clone payload");
+    return throwWorkerCloneError(realm, "Invalid worker clone payload");
   }
   function tag(): string {
     if (next >= packet.length) return invalid();
@@ -489,6 +495,7 @@ export function deserializeWorkerValue(
         maximum,
         kind === "A",
         realm.bufferMaxBytes,
+        realm.bufferAllocator,
       );
       if (!storage.ok) return invalid();
       const bytes = byteStorageData(storage.value);

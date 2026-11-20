@@ -29,6 +29,11 @@ import {
   type NativeWaiterParkingHost,
   type NativeWaitRegistry,
 } from "./shared-waiters.ts";
+import type {
+  NativeMessagePort,
+  NativeMessagePortGrant,
+  NativeMessagePorts,
+} from "./worker-ports.ts";
 
 export interface WorkerExitPipe {
   readonly input: number;
@@ -43,6 +48,7 @@ export interface WorkerControlPipe {
 
 export interface NativeWorkerThreadHost {
   readonly entry: number;
+  readonly wouldBlock: number;
   /** Both ends are nonblocking. The caller owns all three descriptors. */
   exitPipe(): WorkerExitPipe;
   /** Both ends are nonblocking and remain open until the child has exited. */
@@ -71,6 +77,8 @@ export interface NativeWorkerTurnControl {
   /** Stop is represented by undefined. The caller still consumes its ticket. */
   parkWait(ticket: number, timeout: number): SharedResult<number> | undefined;
   interruptibleWaiting(waiting: SharedBlockWaiting): SharedBlockWaiting;
+  /** Claim the parent channel only after the receiver can adopt it. */
+  claimParentPort(ports: NativeMessagePorts): NativeMessagePort | undefined;
 }
 
 export interface NativeWorkerRequest {
@@ -78,6 +86,8 @@ export interface NativeWorkerRequest {
   readonly moduleId: number;
   /** The owner keeps the wait registry alive until exit. */
   readonly waiters?: NativeWaitRegistry;
+  readonly parentPort?: NativeMessagePortGrant;
+  onUnclaimedParentPort?(grant: NativeMessagePortGrant): void;
   onError(message: string): void;
   onExit(status: number): void;
 }
@@ -94,6 +104,9 @@ const WAIT_REGISTRY = 80;
 const WAIT_REGISTRY_BYTES = 88;
 const WAIT_ENGINE = 96;
 const WAIT_TICKET = 104;
+const PARENT_PORT = 112;
+const PORT_SIDE = 120;
+const PORT_GENERATION = 128;
 
 /** Launch from the current image. The owner watches a nonblocking exit pipe.
  * Worker code uses its own hosted context and shares only scalar startup data. */
@@ -107,6 +120,11 @@ export function startNativeWorker(
   const { threadId, moduleId } = request;
   if (!integer(threadId) || threadId === 0 || !integer(moduleId))
     throw new RangeError("invalid worker identity");
+  if (
+    request.parentPort !== undefined &&
+    request.onUnclaimedParentPort === undefined
+  )
+    throw new Error("worker startup port requires an unclaimed-port handler");
   const base = memory.mapMemory(MAPPING_BYTES);
   if (base <= 0) throw new Error("worker startup mapping failed");
   const record = { base, byteLength: MAPPING_BYTES, engineId: base };
@@ -178,8 +196,13 @@ export function startNativeWorker(
       throw "NATIVE_WORKER_EXIT_RECORD";
     const failure = errors.receive();
     const entered = readNumber(memory, record, ENTERED, scratch) !== 0;
+    const port = request.parentPort;
+    const unclaimed =
+      port !== undefined &&
+      readNumber(memory, record, PARENT_PORT, scratch) !== 0;
     if (detachStatus !== 0) detachStatus = threads.detach(thread);
     release();
+    if (unclaimed && port !== undefined) request.onUnclaimedParentPort?.(port);
     if (detachStatus !== 0)
       runtime.loop.enqueuePending((): void =>
         request.onError("worker detach failed: " + String(detachStatus)),
@@ -215,6 +238,12 @@ export function startNativeWorker(
     writeNumber(memory, record, MODULE_ID, moduleId);
     writeNumber(memory, record, ERROR_QUEUE, errors.registry.base);
     writeNumber(memory, record, CONTROL_INPUT, signals.input);
+    const port = request.parentPort;
+    if (port !== undefined) {
+      writeNumber(memory, record, PARENT_PORT, port.base);
+      writeNumber(memory, record, PORT_SIDE, port.side);
+      writeNumber(memory, record, PORT_GENERATION, port.generation);
+    }
     const waiters = request.waiters;
     if (waiters !== undefined) {
       writeNumber(memory, record, WAIT_REGISTRY, waiters.registry.base);
@@ -355,6 +384,17 @@ export function runNativeWorker(
     waiters,
     parkWait,
     interruptibleWaiting,
+    claimParentPort: (ports): NativeMessagePort | undefined => {
+      const base = readNumber(memory, record, PARENT_PORT, scratch);
+      if (base === 0) return undefined;
+      const adopted = ports.adopt({
+        base,
+        side: readNumber(memory, record, PORT_SIDE, scratch),
+        generation: readNumber(memory, record, PORT_GENERATION, scratch),
+      });
+      writeNumber(memory, record, PARENT_PORT, 0);
+      return adopted;
+    },
   };
   writeNumber(memory, record, ENTERED, 1);
   if (stopRequested()) return 1;

@@ -503,5 +503,12 @@ export {
 export {
   deserializeWorkerValue,
   serializeWorkerValue,
+  throwWorkerCloneError,
   type WorkerCloneAttachments,
 } from "./structured-clone.ts";
+export {
+  builtinAccessor,
+  builtinFunction,
+  builtinFunctionMetadata,
+  builtinProperty,
+} from "./intrinsics.ts";

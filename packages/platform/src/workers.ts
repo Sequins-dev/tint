@@ -79,6 +79,7 @@ export function createNativeWorkerThreadHost(): NativeWorkerThreadHost {
 
   return {
     entry: hostedThreadEntry(),
+    wouldBlock: os === nativeTargetOSDarwin ? -35 : -11,
     controlPipe,
     exitPipe,
     read: (fd, bytes): number => read(fd, bytes),

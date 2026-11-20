@@ -19,8 +19,15 @@ import {
 export interface NativeAgentMailbox {
   readonly registry: NativeSharedBlockRegistry;
   send(message: string): SharedResult<undefined>;
+  /** Allocate and copy before entering the caller's publication lock. */
+  prepare(message: string): SharedResult<NativeAgentMessage>;
   /** Copies into the receiving heap and releases the detached raw payload. */
   receive(): string | undefined;
+}
+export interface NativeAgentMessage {
+  /** Notify inside the queue lock so a reader cannot miss the new payload. */
+  publish(notify?: () => void): void;
+  discard(): void;
 }
 // Mappings are sized in quanta of 16 KiB and always mapped and unmapped
 // whole, so the kernel rounding them to its own page (4, 16 or 64 KiB)
@@ -89,7 +96,7 @@ function mailbox(
     writeNumber(host, registry, 0, 0);
     parking.wake(registry.base);
   }
-  function send(message: string): SharedResult<undefined> {
+  function prepare(message: string): SharedResult<NativeAgentMessage> {
     if (message.length > MAX_UNITS)
       return { ok: false, error: "allocation-limit" };
     const length = messageBytes(message.length),
@@ -98,7 +105,7 @@ function mailbox(
       return { ok: false, error: "allocation-limit" };
     const payload = { base, byteLength: length, engineId: registry.engineId };
     // Payload preparation and every managed allocation precede publication.
-    let published = false;
+    let prepared = false;
     try {
       writeNumber(host, payload, 8, message.length);
       for (let i = 0; i < message.length; i++)
@@ -119,24 +126,52 @@ function mailbox(
         byteLength: MESSAGE_HEADER,
         engineId: registry.engineId,
       };
-      lock(scratch);
-      try {
-        const tail = readNumber(host, registry, TAIL, scratch);
-        if (tail === 0) writeNumber(host, registry, HEAD, base);
-        else {
-          // Only the fixed header of the previous payload is needed here.
-          previous.base = tail;
-          writeNumber(host, previous, 0, base);
-        }
-        writeNumber(host, registry, TAIL, base);
-        published = true;
-      } finally {
-        unlock();
-      }
+      let open = true;
+      const transfer: NativeAgentMessage = {
+        publish: (notify): void => {
+          if (!open) throw "NATIVE_AGENT_MESSAGE_NOT_OWNED";
+          lock(scratch);
+          try {
+            if (notify !== undefined) notify();
+            const tail = readNumber(host, registry, TAIL, scratch);
+            if (tail === 0) writeNumber(host, registry, HEAD, base);
+            else {
+              // Only the fixed header of the previous payload is needed here.
+              previous.base = tail;
+              writeNumber(host, previous, 0, base);
+            }
+            writeNumber(host, registry, TAIL, base);
+            open = false;
+          } finally {
+            unlock();
+          }
+        },
+        discard: (): void => {
+          if (!open) return;
+          open = false;
+          if (host.unmapMemory(base, length) !== 0)
+            throw "NATIVE_AGENT_MESSAGE_RELEASE";
+        },
+      };
+      const result: SharedResult<NativeAgentMessage> = {
+        ok: true,
+        value: transfer,
+      };
+      prepared = true;
+      return result;
     } finally {
-      if (!published) host.unmapMemory(base, length);
+      if (!prepared) host.unmapMemory(base, length);
     }
-    return { ok: true, value: undefined };
+  }
+  function send(message: string): SharedResult<undefined> {
+    const prepared = prepare(message);
+    if (!prepared.ok) return { ok: false, error: prepared.error };
+    try {
+      prepared.value.publish();
+      return { ok: true, value: undefined };
+    } finally {
+      prepared.value.discard();
+    }
   }
   function receive(): string | undefined {
     const scratch = new Uint32Array(2);
@@ -183,5 +218,5 @@ function mailbox(
         throw "NATIVE_AGENT_MESSAGE_RELEASE";
     }
   }
-  return { registry, send, receive };
+  return { registry, send, prepare, receive };
 }
