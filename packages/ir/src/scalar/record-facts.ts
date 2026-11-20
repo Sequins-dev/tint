@@ -37,6 +37,11 @@ function closedWorldHostOperation(operation: string): boolean {
     case "engine-range-error":
     case "root-head":
     case "memory-map":
+    // Fixed callback stubs hold only raw metadata and jump into a verified
+    // transition thunk. Their publication cannot open a managed entry.
+    case "executable-callback-map":
+    case "executable-callback-write":
+    case "executable-callback-unmap":
     case "memory-read-word":
     // A signature query reads immutable closure metadata. Only a separate
     // raw execution capability can use an address to open the call graph.

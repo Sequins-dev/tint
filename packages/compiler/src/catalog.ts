@@ -2691,6 +2691,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/c/ffi-callbacks.d.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/c/ffi-unsafe.d.ts",
       packageId: "native-runtime",
     },
@@ -2728,6 +2732,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/ffi/c-string.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/ffi/callback-stubs.ts",
       packageId: "native-runtime",
     },
     {
@@ -2828,6 +2836,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/node/errors.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/ffi-callbacks.ts",
       packageId: "native-runtime",
     },
     {

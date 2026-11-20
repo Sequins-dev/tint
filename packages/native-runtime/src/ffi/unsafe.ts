@@ -108,4 +108,13 @@ export {
   bytesAtWords,
   stableAddressWords,
   callScalarForeign,
+  callScalarForeignCallbacks,
 } from "./address-words.ts";
+
+export { allocateCallbackStub, releaseCallbackStub } from "./callback-stubs.ts";
+export {
+  callbackDispatcher,
+  hasRegisteredCallbacks,
+  rethrowCallbackFailure,
+  type CallbackDispatcher,
+} from "./index.ts";

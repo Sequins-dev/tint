@@ -513,6 +513,7 @@ export interface ForeignMemoryAccess {
     | "available"
     | "callback-key"
     | "callback-address"
+    | "runtime-callback-address"
     | "stable";
   /** Loads and stores: the field's C scalar or pointer type (else void,
    * with offset and minimum 0). */
@@ -541,6 +542,8 @@ export function foreignMemoryTypes(
   // callback state block is found by thunks. `stable`: whether an array's
   // data never moves (external storage, or a view of it such as foreign
   // memory): what C may hold across callbacks.
+  if (access.operation === "runtime-callback-address")
+    return { ok: true, value: { parameters: [], result: "number" } };
   if (access.operation === "callback-address") {
     const slot = access.slot;
     return access.callback !== undefined &&

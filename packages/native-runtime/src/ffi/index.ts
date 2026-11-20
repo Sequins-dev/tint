@@ -309,6 +309,11 @@ export function releaseCallback(address: number): void {
     }
   throw new TypeError("not a registered callback");
 }
+/** Whether these registered thunks can enter an FFI callee's transition. */
+export function hasRegisteredCallbacks(): boolean {
+  for (const fn of registry$.functions) if (fn !== undefined) return true;
+  return false;
+}
 /** The dispatcher may-callback calls pass for registered thunks. */
 export function callbackDispatcher(): CallbackDispatcher {
   const known = registry$.dispatcher;

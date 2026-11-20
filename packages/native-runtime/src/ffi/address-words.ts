@@ -1,5 +1,6 @@
 import { Cell } from "tint:c/dl";
 import { stableBytes } from "./primitives.ts";
+import type { CallbackDispatcher } from "./index.ts";
 
 /** Trusted word-preserving memory bindings used by the Node adapter. */
 export function adoptExternalWords(
@@ -50,5 +51,14 @@ export function stableAddressWords(bytes: Uint8Array): bigint {
 /** Invoke a call described by DynamicScalarFrame and its outgoing stack
  * image. The result overwrites its first GP and FP words. */
 export function callScalarForeign(frame: Uint8Array): boolean {
+  throw "HOST_UNAVAILABLE";
+}
+
+/** A scalar call through a rooted transition for registered callbacks. */
+export function callScalarForeignCallbacks(
+  state: Uint8Array,
+  dispatcher: CallbackDispatcher,
+  frame: Uint8Array,
+): boolean {
   throw "HOST_UNAVAILABLE";
 }

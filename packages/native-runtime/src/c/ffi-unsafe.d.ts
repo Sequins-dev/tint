@@ -25,6 +25,26 @@ declare module "tint:ffi/unsafe" {
   export function bytesAtWords(address: bigint, length: number): Uint8Array;
   export function stableAddressWords(bytes: Uint8Array): bigint;
   export function callScalarForeign(frame: Uint8Array): boolean;
+  export type CallbackDispatcher = (
+    id: number,
+    a0: number,
+    a1: number,
+    a2: number,
+    a3: number,
+    a4: number,
+    a5: number,
+    a6: number,
+  ) => number;
+  export function callScalarForeignCallbacks(
+    state: Uint8Array,
+    dispatcher: CallbackDispatcher,
+    frame: Uint8Array,
+  ): boolean;
+  export function allocateCallbackStub(id: number, owner: number): number;
+  export function releaseCallbackStub(address: number): void;
+  export function callbackDispatcher(): CallbackDispatcher;
+  export function hasRegisteredCallbacks(): boolean;
+  export function rethrowCallbackFailure(): void;
   /** A copy of the NUL-terminated UTF-8 text at `text` (`char *` results
    * and members; malformed sequences become U+FFFD). */
   export function cStringAt(text: Address<number>): string;

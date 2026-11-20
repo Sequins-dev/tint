@@ -59,6 +59,7 @@ import {
   type ScalarType,
   type Span,
   type Terminator,
+  executableHostOperation,
 } from "@tint/ir/scalar";
 import {
   createAssembler,
@@ -692,8 +693,8 @@ export function emitModule(
         }
         if (
           op.kind === "host-call" &&
-          (op.operation === "executable-map" ||
-            op.operation === "executable-write")
+          (executableHostOperation(op.operation) === "executable-map" ||
+            executableHostOperation(op.operation) === "executable-write")
         )
           needsExecutableMemory = true;
         if (op.kind === "call" || op.kind === "call-indirect") {
@@ -1767,13 +1768,20 @@ export function emitModule(
             );
           if (
             access.operation === "callback-key" ||
-            access.operation === "callback-address"
+            access.operation === "callback-address" ||
+            access.operation === "runtime-callback-address"
           ) {
             const id = op.id;
             if (id === undefined) throw "callback address result invariant";
             let address = rip(callbackKeyLabel);
             needsCallbackKey = true;
-            if (access.operation === "callback-address") {
+            if (access.operation === "runtime-callback-address")
+              address = thunkAddress({
+                signature: undefined,
+                ordinal: -1,
+                views: undefined,
+              });
+            else if (access.operation === "callback-address") {
               if (access.slot === undefined || access.callback === undefined)
                 throw "registered callback invariant";
               address = thunkAddress({
@@ -1906,7 +1914,7 @@ export function emitModule(
             if (arg === undefined) throw "host argument invariant";
             return frame(home(arg));
           }
-          const operation = op.operation;
+          const operation = executableHostOperation(op.operation);
           if (operation === "stack-overflow-is" && host !== undefined) {
             const input = args[0];
             if (id === undefined || input === undefined)

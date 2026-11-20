@@ -439,7 +439,11 @@ function buildHostedFixture(
           options.omittedHostOperations?.includes(binding.operation) !== true,
       ),
       ...(options.hostBindings ?? []),
-      ...ffi.hostBindings,
+      ...ffi.hostBindings.filter(
+        (binding) =>
+          options.allowJit === true ||
+          !binding.operation.startsWith("executable-"),
+      ),
     ],
     foreignBindings: [
       ...(request.foreignBindings ?? []),

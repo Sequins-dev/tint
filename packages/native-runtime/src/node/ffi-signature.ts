@@ -1,4 +1,12 @@
+import {
+  classifyCCall,
+  darwinArm64CTarget,
+  linuxArm64CTarget,
+  type CCallLayout,
+} from "@tint/abi/c";
+import { classifySysVCCall, linuxX86_64CTarget } from "@tint/abi/c/sysv";
 import type { CScalar, CSignature, CType } from "@tint/abi/c";
+import { TARGET_AAPCS64 } from "tint:c/dl";
 import {
   createCodedRuntimeError,
   getProperty,
@@ -231,4 +239,49 @@ export function sameFfiSignature(a: FfiSignature, b: FfiSignature): boolean {
   for (let index = 0; index < a.parameters.length; index++)
     if (a.parameters[index] !== b.parameters[index]) return false;
   return true;
+}
+
+/** The scalar memory codec also handles the native-endian register image. */
+export function scalarKind(type: FfiType): number {
+  switch (type) {
+    case "i8":
+      return 0;
+    case "u8":
+      return 1;
+    case "i16":
+      return 2;
+    case "u16":
+      return 3;
+    case "i32":
+      return 4;
+    case "u32":
+      return 5;
+    case "i64":
+      return 6;
+    case "pointer":
+    case "u64":
+      return 7;
+    case "f32":
+      return 8;
+    case "f64":
+      return 9;
+    default:
+      throw "FFI_SCALAR_KIND_INVARIANT";
+  }
+}
+
+export function classifyScalarCall(
+  core: ProgramRealmCore,
+  signature: FfiSignature,
+): CCallLayout {
+  const layout =
+    TARGET_AAPCS64 === 2
+      ? classifySysVCCall(signature.abi, linuxX86_64CTarget)
+      : classifyCCall(
+          signature.abi,
+          TARGET_AAPCS64 === 0 ? darwinArm64CTarget : linuxArm64CTarget,
+        );
+  if (!layout.ok)
+    return ffiError(core, "error", "ERR_FFI_CALL_FAILED", layout.error);
+  return layout.value;
 }

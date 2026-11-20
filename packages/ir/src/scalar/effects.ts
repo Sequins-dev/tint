@@ -66,7 +66,8 @@ export function instructionEffects(op: Instruction): number {
       return op.access.operation === "available" ||
         op.access.operation === "fits" ||
         op.access.operation === "callback-key" ||
-        op.access.operation === "callback-address"
+        op.access.operation === "callback-address" ||
+        op.access.operation === "runtime-callback-address"
         ? 0
         : op.access.operation === "store"
           ? effectWriteHeap

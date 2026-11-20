@@ -1,3 +1,4 @@
+import type { HostOperation } from "@tint/ir/scalar";
 import type { RuntimeSource } from "../runtime-contracts.ts";
 import {
   cLibraryImage,
@@ -77,7 +78,9 @@ export interface NativeForeignMemoryBinding {
     | "callback-key"
     | "call"
     | "call-callbacks"
-    | "call-scalar";
+    | "call-scalar"
+    | "call-scalar-callbacks"
+    | "runtime-callback-address";
 }
 /** The `tint:ffi` runtime: its trusted primitives and the weak-storage and
  * collection intrinsics its collector-registered storage uses. */
@@ -92,6 +95,7 @@ export const foreignRuntimeModules = {
   sysv: "packages/native-runtime/src/ffi/dynamic-sysv.ts",
   primitives: "packages/native-runtime/src/ffi/primitives.ts",
   addressWords: "packages/native-runtime/src/ffi/address-words.ts",
+  callbackStubs: "packages/native-runtime/src/ffi/callback-stubs.ts",
   weak: "packages/native-runtime/src/intrinsics/weak.ts",
   memory: "packages/native-runtime/src/intrinsics/memory.ts",
 };
@@ -111,7 +115,7 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
   readonly hostBindings: readonly {
     readonly module: string;
     readonly name: string;
-    readonly operation: "collect-garbage";
+    readonly operation: HostOperation;
   }[];
 } {
   const modules = foreignRuntimeModules;
@@ -160,6 +164,17 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
     { module: modules.weak, namespace: "ffi-weak" },
     { module: modules.memory, namespace: "ffi-memory" },
   ];
+  const hostBindings: {
+    module: string;
+    name: string;
+    operation: HostOperation;
+  }[] = [
+    {
+      module: modules.memory,
+      name: "collectGarbage",
+      operation: "collect-garbage",
+    },
+  ];
   if (loaded.has(modules.nodeFfi))
     weakBindings.push({
       module: modules.weak,
@@ -174,6 +189,7 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
         "adoptExternalWords",
         "byteAddressInto",
         "callScalarForeign",
+        "callScalarForeignCallbacks",
       ],
     });
     bindings.push(
@@ -192,20 +208,48 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
         name: "callScalarForeign",
         operation: "call-scalar",
       },
+      {
+        module: modules.addressWords,
+        name: "callScalarForeignCallbacks",
+        operation: "call-scalar-callbacks",
+      },
     );
   }
-  return {
-    runtimes,
-    memoryBindings: bindings,
-    weakBindings,
-    hostBindings: [
+  if (loaded.has(modules.nodeFfi) && loaded.has(modules.callbackStubs)) {
+    runtimes.push({
+      module: modules.callbackStubs,
+      namespace: "ffi-callback-stubs",
+      retainedExports: [
+        "runtimeCallbackAddress",
+        "mapCallbackMemory",
+        "writeCallbackMemory",
+        "unmapCallbackMemory",
+      ],
+    });
+    bindings.push({
+      module: modules.callbackStubs,
+      name: "runtimeCallbackAddress",
+      operation: "runtime-callback-address",
+    });
+    hostBindings.push(
       {
-        module: modules.memory,
-        name: "collectGarbage",
-        operation: "collect-garbage",
+        module: modules.callbackStubs,
+        name: "mapCallbackMemory",
+        operation: "executable-callback-map",
       },
-    ],
-  };
+      {
+        module: modules.callbackStubs,
+        name: "writeCallbackMemory",
+        operation: "executable-callback-write",
+      },
+      {
+        module: modules.callbackStubs,
+        name: "unmapCallbackMemory",
+        operation: "executable-callback-unmap",
+      },
+    );
+  }
+  return { runtimes, memoryBindings: bindings, weakBindings, hostBindings };
 }
 /** How `target` loads binding module `module`: the library manifest
  * (`cLibraryManifest`, plus a build's `additional` entries) is the only

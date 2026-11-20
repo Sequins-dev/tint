@@ -227,7 +227,8 @@ export function emitCallbackThunk(site: ThunkSite): LabeledUnwind {
     name = site.site;
   const signature = thunk.signature;
   const direct = thunk.views !== undefined,
-    registered = thunk.ordinal < 0;
+    registered = thunk.ordinal < 0,
+    runtimeRegistered = registered && signature === undefined;
   const classified =
     signature === undefined
       ? undefined
@@ -250,6 +251,14 @@ export function emitCallbackThunk(site: ThunkSite): LabeledUnwind {
   const noteInvalid = name + ":note-invalid";
   const noteFailed = name + ":note-failed";
   const end = name + ":end";
+  const wrongThread = runtimeRegistered ? name + ":wrong-thread" : site.trap;
+  const missingTransition = runtimeRegistered
+    ? name + ":missing-transition"
+    : site.trap;
+  const brokenDispatcher = runtimeRegistered
+    ? name + ":broken-dispatcher"
+    : site.trap;
+  const converted = 240;
   const cfi = frameRows(emit, name);
   const saves = [returnSave, frameSave];
   emit({ op: "label", name });
@@ -258,6 +267,10 @@ export function emitCallbackThunk(site: ThunkSite): LabeledUnwind {
   emit({ op: "sub", dst: rsp, src: imm(frameBytes) });
   cfi.record(dwarfStackPointer, frameBytes + 16, saves);
   emit({ op: "lea", dst: rbp, src: mem(4, outgoing) });
+  if (runtimeRegistered) {
+    emit({ op: "mov", dst: mem(5, converted), src: r10 });
+    emit({ op: "mov", dst: mem(5, converted + 8), src: rax });
+  }
   if (site.far) {
     // The reserved scratch saves fit between the completion and arguments.
     emit({ op: "mov", dst: mem(5, 224), src: gpr(14) });
@@ -289,6 +302,11 @@ export function emitCallbackThunk(site: ThunkSite): LabeledUnwind {
       src: xmm(index),
     });
 
+  if (runtimeRegistered) {
+    site.call("pthread_self");
+    emit({ op: "cmp", dst: rax, src: mem(5, converted + 8) });
+    branch(emit, "ne", wrongThread);
+  }
   emit({
     op: "mov",
     dst: word(7),
@@ -296,15 +314,15 @@ export function emitCallbackThunk(site: ThunkSite): LabeledUnwind {
   });
   site.call("pthread_getspecific");
   emit({ op: "test", dst: rax, src: rax });
-  branch(emit, "e", site.trap);
+  branch(emit, "e", wrongThread);
   emit({ op: "mov", dst: r11, src: mem(0, callbackState.current) });
   emit({ op: "test", dst: r11, src: r11 });
-  branch(emit, "e", site.trap);
+  branch(emit, "e", missingTransition);
   emit({ op: "mov", dst: transition, src: r11 });
   site.call("pthread_self");
   emit({ op: "mov", dst: r11, src: transition });
   emit({ op: "cmp", dst: rax, src: mem(11, layout.thread) });
-  branch(emit, "ne", site.trap);
+  branch(emit, "ne", wrongThread);
   emit({
     op: "cmp",
     dst: mem(11, layout.entered),
@@ -316,7 +334,7 @@ export function emitCallbackThunk(site: ThunkSite): LabeledUnwind {
     dst: mem(11, layout.entered),
     src: imm(callbackEntered.idle),
   });
-  branch(emit, "ne", site.trap);
+  branch(emit, "ne", missingTransition);
   emit({
     op: "mov",
     dst: mem(11, layout.entered),
@@ -324,13 +342,19 @@ export function emitCallbackThunk(site: ThunkSite): LabeledUnwind {
   });
 
   // Convert into disjoint homes before loading the managed calling convention.
-  const converted = 240;
   let numbers = registered ? 1 : 0,
     references = 0;
   if (registered) {
-    emit({ op: "mov", dst: rax, src: imm(-1 - thunk.ordinal) });
+    if (runtimeRegistered)
+      emit({ op: "mov", dst: rax, src: mem(5, converted) });
+    else emit({ op: "mov", dst: rax, src: imm(-1 - thunk.ordinal) });
     emit({ op: "cvtsi2sd", dst: x0, src: rax });
     emit({ op: "movsd", dst: mem(5, converted), src: x0 });
+    if (runtimeRegistered) {
+      emit({ op: "cvtsi2sd", dst: x0, src: rbp });
+      emit({ op: "movsd", dst: mem(5, converted + 8), src: x0 });
+      numbers++;
+    }
   }
   for (let index = 0; index < locations.length; index++) {
     const location = locations[index];
@@ -396,7 +420,8 @@ export function emitCallbackThunk(site: ThunkSite): LabeledUnwind {
     emit({ op: "mov", dst: r10, src: mem(4, index * 8) });
     emit({ op: "mov", dst: mem(4, (index - 2) * 8), src: r10 });
   }
-  if (signature === undefined) emit({ op: "cvtsi2sd", dst: x0, src: rbp });
+  if (signature === undefined && !runtimeRegistered)
+    emit({ op: "cvtsi2sd", dst: x0, src: rbp });
 
   function callFunction(offset: number): void {
     emit({ op: "mov", dst: r11, src: transition });
@@ -415,7 +440,7 @@ export function emitCallbackThunk(site: ThunkSite): LabeledUnwind {
     registered ? layout.registered : layout.callbacks + thunk.ordinal * 8,
   );
   emit({ op: "cmp", dst: eax, src: imm(normal) });
-  branch(emit, "ne", direct ? onThrow : site.trap);
+  branch(emit, "ne", direct ? onThrow : brokenDispatcher);
   const result = signature?.result;
   if (result === undefined) {
     // The SysV adapter returns one when it wrote the result words.
@@ -492,6 +517,37 @@ export function emitCallbackThunk(site: ThunkSite): LabeledUnwind {
   emit({ op: "pop", dst: rbp });
   cfi.record(dwarfStackPointer, 8, [returnSave]);
   emit({ op: "ret" });
+  if (runtimeRegistered) {
+    function fatal(target: string, message: string): void {
+      emit({ op: "label", name: target });
+      cfi.record(dwarfStackPointer, frameBytes + 16, saves);
+      for (let i = 0; i < message.length; i += 4) {
+        let data = 0;
+        let scale = 1;
+        for (let byte = 0; byte < 4 && i + byte < message.length; byte++) {
+          data += message.charCodeAt(i + byte) * scale;
+          scale *= 256;
+        }
+        emit({
+          op: "mov",
+          dst: { ...mem(5, physical.registers + i), width: 32 },
+          src: imm(data),
+        });
+      }
+      emit({ op: "mov", dst: word(7), src: imm(2) });
+      emit({ op: "lea", dst: rsi, src: mem(5, physical.registers) });
+      emit({ op: "mov", dst: word(2), src: imm(message.length) });
+      site.call("write");
+      site.call("abort");
+      emit({ op: "jmp", target: label(site.trap) });
+    }
+    fatal(brokenDispatcher, "node:ffi callback dispatcher failed\n");
+    fatal(
+      wrongThread,
+      "Callbacks can only be invoked on the system thread they were created on\n",
+    );
+    fatal(missingTransition, "node:ffi callback outside an FFI transition\n");
+  }
   emit({ op: "label", name: end });
   return { start: name, end, rule: "rows", rows: cfi.rows };
 }

@@ -289,3 +289,112 @@ test("node:ffi calls a wide scalar signature with many borrowed views", () => {
     "clang is required",
   );
 });
+
+const callbackLibrary = `
+typedef uint64_t (*TintCallback)(uint64_t, double, uint8_t *, uint64_t,
+                               uint64_t, uint64_t, uint64_t, uint64_t,
+                               uint64_t, uint64_t, uint64_t);
+static TintCallback saved_callback;
+void tint_store_callback(TintCallback callback) { saved_callback = callback; }
+uint64_t tint_invoke_saved(uint64_t level, uint8_t *bytes) {
+  return saved_callback(level, 0.5, bytes, 7, 11, 13, 17, 19, 23, 29,
+                        UINT64_C(0xfedcba9876543210));
+}
+void tint_invoke_void(void (*callback)(void)) { callback(); }
+`;
+
+function callbacksSource(library: string): string {
+  return `
+import ffi from "node:ffi";
+export function run() {
+  const path = ${JSON.stringify(library)};
+  const { lib, functions } = ffi.dlopen(path, {
+    tint_store_callback: { arguments: ["function"] },
+    tint_invoke_saved: { arguments: ["uint64", "buffer"], return: "uint64" },
+    tint_invoke_void: { arguments: ["function"] },
+  });
+  const separateOwner = new ffi.DynamicLibrary(path);
+  try {
+    let visits = 0;
+    const voidCallbacks = [];
+    for (let i = 0; i < 24; i++) {
+      voidCallbacks.push(separateOwner.registerCallback(() => { visits += i; return 123; }));
+    }
+    functions.tint_invoke_void(voidCallbacks[0]);
+    functions.tint_invoke_void(voidCallbacks[23]);
+    if (visits !== 23) return 1;
+    try { lib.unregisterCallback(voidCallbacks[0]); return 2; }
+    catch (error) { if (error.code !== "ERR_INVALID_ARG_VALUE") return 2; }
+    for (let i = 0; i < voidCallbacks.length; i++)
+      separateOwner.unregisterCallback(voidCallbacks[i]);
+
+    const callbacks = separateOwner;
+    const bytes = new Uint8Array([0, 8, 0]);
+    const alias = bytes.subarray(1);
+    const signature = {
+      arguments: ["uint64", "double", "pointer", "uint64", "uint64", "uint64",
+                  "uint64", "uint64", "uint64", "uint64", "uint64"],
+      return: "uint64",
+    };
+    function callback(level, fraction, pointer, a0, a1, a2, a3, a4, a5, a6, wide) {
+      if (this !== undefined || fraction !== 0.5 || pointer !== ffi.getRawPointer(alias) ||
+          ffi.getUint8(pointer) !== bytes[1] ||
+          a0 + a1 + a2 + a3 + a4 + a5 + a6 !== 119n ||
+          wide !== 0xfedcba9876543210n) throw new Error("callback ABI");
+      ffi.setUint8(pointer, 0, bytes[1] + 1);
+      return level === 0n ? wide : functions.tint_invoke_saved(level - 1n, alias) + 1n;
+    }
+    const pointer = callbacks.registerCallback(signature, callback);
+    callbacks.unrefCallback(pointer);
+    callbacks.refCallback(pointer);
+    // C stores the pointer in a previous call. The invocation does not
+    // take a callback argument and runs from a different library owner.
+    functions.tint_store_callback(pointer);
+    if (functions.tint_invoke_saved(2n, alias) !== 0xfedcba9876543212n ||
+        bytes[1] !== 11) return 3;
+    callbacks.unregisterCallback(pointer);
+    try { callbacks.refCallback(pointer); return 4; }
+    catch (error) { if (error.code !== "ERR_INVALID_ARG_VALUE") return 4; }
+    return 42;
+  } finally {
+    separateOwner.close();
+    lib.close();
+  }
+}`;
+}
+
+test(
+  "the callback fixture agrees with the pinned Node reference",
+  { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
+  () =>
+    assert.ok(
+      withDynamicLibrary((library) => {
+        runOracle(callbacksSource(library));
+        return true;
+      }, callbackLibrary),
+      "clang is required",
+    ),
+);
+
+test("node:ffi registers runtime signatures without a fixed callback pool", () => {
+  assert.ok(
+    withDynamicLibrary(
+      (library) =>
+        verifyHostedFixture(
+          callbacksSource(library),
+          "node-ffi-registered-callbacks",
+          [["node:ffi", "packages/native-runtime/src/node/ffi.ts"]],
+          [],
+          [],
+          [],
+          {
+            allowJit: true,
+            managedBytes: 67108864,
+            allocationCapacity: 1048576,
+          },
+        ),
+      callbackLibrary,
+    ),
+    "clang is required",
+  );
+});

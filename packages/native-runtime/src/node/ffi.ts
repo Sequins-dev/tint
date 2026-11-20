@@ -1,10 +1,4 @@
-import {
-  classifyCCall,
-  darwinArm64CTarget,
-  linuxArm64CTarget,
-  type CCallLayout,
-} from "@tint/abi/c";
-import { classifySysVCCall, linuxX86_64CTarget } from "@tint/abi/c/sysv";
+import type { CCallLayout } from "@tint/abi/c";
 import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
 import {
   builtinAccessor,
@@ -31,16 +25,24 @@ import {
   type ScriptPropertyKey,
 } from "@tint/js-runtime/objects";
 import { Cell, DynamicScalarFrame, TARGET_AAPCS64 } from "tint:c/dl";
-import { external } from "tint:ffi";
+import { abort, pthread_self } from "tint:c/ffi-callbacks";
+import { callbackState, external } from "tint:ffi";
+import { consoleError } from "../intrinsics/console.ts";
 import {
+  allocateCallbackStub,
   bytesAtWords,
+  callbackDispatcher,
   callScalarForeign,
+  callScalarForeignCallbacks,
   closeLibrary,
   findSymbolWords,
   foreignFunction,
+  hasRegisteredCallbacks,
   invoke,
   openLibrary,
   openProgram,
+  releaseCallbackStub,
+  rethrowCallbackFailure,
   resultHigh,
   resultLow,
   resultNumber,
@@ -48,6 +50,7 @@ import {
   setNumber,
   setWords,
   stableAddressWords,
+  type CallbackDispatcher,
   type ForeignFunction,
   type LibraryHandle,
   type SymbolAddress,
@@ -58,22 +61,26 @@ import {
   weakSlotKey,
 } from "../intrinsics/weak.ts";
 import {
+  classifyScalarCall,
   ffiError,
   ffiObject,
   ffiString,
   parseFfiSignature,
   sameFfiSignature,
+  scalarKind,
   type FfiObject,
   type FfiSignature,
   type FfiType,
 } from "./ffi-signature.ts";
+
+import { createFfiCallbacks, type FfiCallback } from "./ffi-callbacks.ts";
 
 interface Binding {
   readonly name: string;
   readonly signature: FfiSignature;
   readonly address: SymbolAddress;
   readonly frame: ForeignFunction | undefined;
-  readonly wideLayout: CCallLayout | undefined;
+  wideLayout: CCallLayout | undefined;
   wrapper: unknown;
 }
 interface DynamicLibraryState {
@@ -82,6 +89,7 @@ interface DynamicLibraryState {
   handle: LibraryHandle | undefined;
   readonly symbols: Map<string, SymbolAddress>;
   readonly bindings: Map<string, Binding>;
+  readonly callbacks: Map<number, FfiCallback>;
 }
 interface NodeFfi {
   readonly constructor: FfiObject;
@@ -287,59 +295,18 @@ function unmarshal(frame: ForeignFunction, type: FfiType): unknown {
   return resultNumber(frame);
 }
 
-/** The scalar memory codec also handles the native-endian register image. */
-function scalarKind(type: FfiType): number {
-  switch (type) {
-    case "i8":
-      return 0;
-    case "u8":
-      return 1;
-    case "i16":
-      return 2;
-    case "u16":
-      return 3;
-    case "i32":
-      return 4;
-    case "u32":
-      return 5;
-    case "i64":
-      return 6;
-    case "pointer":
-    case "u64":
-      return 7;
-    case "f32":
-      return 8;
-    case "f64":
-      return 9;
-    default:
-      throw "FFI_SCALAR_KIND_INVARIANT";
-  }
-}
-
-function classifyScalarCall(
-  core: ProgramRealmCore,
-  signature: FfiSignature,
-): CCallLayout {
-  const layout =
-    TARGET_AAPCS64 === 2
-      ? classifySysVCCall(signature.abi, linuxX86_64CTarget)
-      : classifyCCall(
-          signature.abi,
-          TARGET_AAPCS64 === 0 ? darwinArm64CTarget : linuxArm64CTarget,
-        );
-  if (!layout.ok)
-    return ffiError(core, "error", "ERR_FFI_CALL_FAILED", layout.error);
-  return layout.value;
-}
-
 function invokeScalar(
   core: ProgramRealmCore,
   binding: Binding,
   layout: CCallLayout,
   args: readonly unknown[],
+  dispatcher: CallbackDispatcher | undefined,
 ): unknown {
   const header = DynamicScalarFrame.size;
-  const frame = new Uint8Array(header + layout.stackBytes);
+  const frame =
+    dispatcher === undefined
+      ? new Uint8Array(header + layout.stackBytes)
+      : external(header + layout.stackBytes);
   const view = DynamicScalarFrame.view(frame);
   view.target.low = binding.address.low;
   view.target.high = binding.address.high;
@@ -380,13 +347,18 @@ function invokeScalar(
       for (let byte = 0; byte < width; byte++)
         frame[offset + byte] = bytes[byte] ?? 0;
     }
-    if (!callScalarForeign(frame))
+    const completed =
+      dispatcher === undefined
+        ? callScalarForeign(frame)
+        : callScalarForeignCallbacks(callbackState(), dispatcher, frame);
+    if (!completed)
       return ffiError(
         core,
         "range",
         "ERR_FFI_CALL_FAILED",
         "Insufficient native stack for FFI arguments",
       );
+    if (dispatcher !== undefined) rethrowCallbackFailure();
     const result = binding.signature.result;
     if (result === "void") return undefined;
     const offset = result === "f32" || result === "f64" ? 64 : 0;
@@ -472,6 +444,29 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
   );
   const dispose = wellKnownSymbol(realm.symbolRegistry, "dispose");
   const charSigned = TARGET_AAPCS64 !== 1;
+  const callbacks = createFfiCallbacks(core, {
+    allocate: (id): number => allocateCallbackStub(id, pthread_self()),
+    release: releaseCallbackStub,
+    view: bytesAtWords,
+    abort: (message: string): never => {
+      consoleError(message);
+      abort();
+      throw "FFI_ABORT_RETURNED";
+    },
+  });
+  const dispatcher: CallbackDispatcher = (
+    id,
+    a0,
+    a1,
+    a2,
+    a3,
+    a4,
+    a5,
+    a6,
+  ): number =>
+    id < 0
+      ? callbacks.dispatch(id, a0)
+      : callbackDispatcher()(id, a0, a1, a2, a3, a4, a5, a6);
 
   function closed(): never {
     return ffiError(
@@ -498,7 +493,17 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
   function close(state: DynamicLibraryState): void {
     const handle = state.handle;
     if (handle === undefined) return;
+    for (const [, callback] of state.callbacks)
+      if (callback.executing !== 0)
+        return ffiError(
+          core,
+          "type",
+          "ERR_INVALID_ARG_VALUE",
+          "Cannot close a library with an active FFI callback",
+        );
     state.handle = undefined;
+    for (const [, callback] of state.callbacks) callbacks.release(callback);
+    state.callbacks.clear();
     state.symbols.clear();
     state.bindings.clear();
     try {
@@ -574,7 +579,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       (_receiver, args): unknown => {
         requireOpen(requireState(owner));
         const frame = binding.frame;
-        const wideLayout = binding.wideLayout;
+        let wideLayout = binding.wideLayout;
         if (frame === undefined && wideLayout === undefined) return closed();
         const parameters = binding.signature.parameters;
         if (args.length !== parameters.length)
@@ -587,8 +592,19 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
               ", got " +
               args.length,
           );
-        if (wideLayout !== undefined)
-          return invokeScalar(core, binding, wideLayout, args);
+        const mayCallback = callbacks.active() || hasRegisteredCallbacks();
+        if (mayCallback && wideLayout === undefined) {
+          wideLayout = classifyScalarCall(core, binding.signature);
+          binding.wideLayout = wideLayout;
+        }
+        if ((mayCallback || frame === undefined) && wideLayout !== undefined)
+          return invokeScalar(
+            core,
+            binding,
+            wideLayout,
+            args,
+            mayCallback ? dispatcher : undefined,
+          );
         if (frame === undefined) throw "FFI_SCALAR_BINDING_INVARIANT";
         try {
           for (let index = 0; index < parameters.length; index++) {
@@ -740,6 +756,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       handle,
       symbols: new Map<string, SymbolAddress>(),
       bindings: new Map<string, Binding>(),
+      callbacks: new Map<number, FfiCallback>(),
     });
     getter(
       object,
@@ -826,6 +843,85 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
   getter(prototype, "functions", (receiver, _args): unknown =>
     functions(receiver, undefined),
   );
+
+  function callableCallback(value: unknown): boolean {
+    return viewObjectValue(value, core.object)?.internalCall !== undefined;
+  }
+  builtinProperty(
+    prototype,
+    "registerCallback",
+    method("registerCallback", 0, (receiver, args): unknown => {
+      const state = requireState(receiver);
+      const first = args[0];
+      const implicit = callableCallback(first);
+      const definition = implicit
+        ? createObject<ScriptPropertyKey, unknown>(undefined)
+        : ffiObject(core, first, "First callback argument");
+      const callback = implicit ? first : args[1];
+      if (!implicit && !callableCallback(callback))
+        return ffiError(
+          core,
+          "type",
+          "ERR_INVALID_ARG_TYPE",
+          "Second argument must be a function",
+        );
+      const signature = parseFfiSignature(
+        core,
+        definition,
+        "<callback>",
+        charSigned,
+      );
+      requireOpen(state);
+      const entry = callbacks.register(signature, callback);
+      state.callbacks.set(entry.address, entry);
+      return BigInt(entry.address);
+    }),
+    true,
+    true,
+    hooks,
+  );
+  for (const name of ["unregisterCallback", "refCallback", "unrefCallback"]) {
+    if (name === undefined) throw "FFI_CALLBACK_METHOD_INVARIANT";
+    builtinProperty(
+      prototype,
+      name,
+      method(name, 0, (receiver, args): unknown => {
+        const state = requireState(receiver);
+        requireOpen(state);
+        const address = args[0];
+        if (typeof address !== "bigint")
+          return ffiError(
+            core,
+            "type",
+            "ERR_INVALID_ARG_TYPE",
+            "The first argument must be a bigint",
+          );
+        if (address < 0n || address > maxPointer)
+          return ffiError(
+            core,
+            "type",
+            "ERR_INVALID_ARG_VALUE",
+            "The first argument must be a non-negative bigint",
+          );
+        const entry = state.callbacks.get(Number(address));
+        if (entry === undefined || BigInt(entry.address) !== address)
+          return ffiError(
+            core,
+            "type",
+            "ERR_INVALID_ARG_VALUE",
+            "Callback not found",
+          );
+        if (name === "unregisterCallback") {
+          callbacks.release(entry);
+          state.callbacks.delete(entry.address);
+        } else callbacks.ref(entry, name === "refCallback");
+        return undefined;
+      }),
+      true,
+      true,
+      hooks,
+    );
+  }
 
   const dlopen = method("dlopen", 2, (_receiver, args): unknown => {
     const lib = load(args[0], prototype);

@@ -2825,12 +2825,14 @@ function lowerTypedProgram(
     foreignBindings.push(
       operation === "call" ||
         operation === "call-callbacks" ||
-        operation === "call-scalar"
+        operation === "call-scalar" ||
+        operation === "call-scalar-callbacks"
         ? {
             function: index,
             call:
-              operation === "call-scalar"
-                ? dynamicScalarCall(false)
+              operation === "call-scalar" ||
+              operation === "call-scalar-callbacks"
+                ? dynamicScalarCall(operation === "call-scalar-callbacks")
                 : dynamicForeignCall(operation === "call-callbacks"),
           }
         : {

@@ -184,6 +184,7 @@ import {
   visitTerminatorOperands,
   planTemporarySlots,
   hostReturnType,
+  executableHostOperation,
   foreignCallTypes,
   foreignMemoryTypes,
   dynamicCallFrame,
@@ -1730,13 +1731,14 @@ function emitModuleForms(
         ? []
         : classified.value.arguments;
     const registered = ordinal < 0,
+      runtimeRegistered = registered && signature === undefined,
       first = registered ? 1 : 0;
     if (locations.length + first > 8)
       fail("UNSUPPORTED", "callbacks take at most eight arguments");
     const frame = 192;
-    const traps: { at: number; branch: Branch }[] = [];
-    function trapBranch(branch: Branch): void {
-      traps.push({ at: instructions.length, branch });
+    const traps: { at: number; branch: Branch; reason: number }[] = [];
+    function trapBranch(branch: Branch, reason: number = 0): void {
+      traps.push({ at: instructions.length, branch, reason });
       emit({ ...branch, displacement: 0 });
     }
     const t = callbackTransition;
@@ -1758,21 +1760,40 @@ function emitModuleForms(
       shift: 0,
       setFlags: false,
     });
+    if (runtimeRegistered) {
+      emit({ op: "str", width: 64, rt: 16, rn: 29, offset: 56 });
+      emit({ op: "str", width: 64, rt: 15, rn: 29, offset: 40 });
+    }
     saveArgumentRegisters(signature === undefined ? undefined : locations);
+    if (runtimeRegistered) {
+      importCall(host().symbolPrefix + "pthread_self");
+      emit({ op: "ldr", width: 64, rt: 12, rn: 29, offset: 40 });
+      emit({
+        op: "sub-reg",
+        width: 64,
+        rd: "zr",
+        rn: 0,
+        rm: 12,
+        shift: "lsl",
+        amount: 0,
+        setFlags: true,
+      });
+      trapBranch({ op: "b.cond", condition: "ne" }, 1);
+    }
     // This thread's callback state block.
     importAddress(9, 17, "tint:callback-key");
     emit({ op: "ldr", width: 64, rt: 0, rn: 9, offset: 0 });
     importCall(host().symbolPrefix + "pthread_getspecific");
-    trapBranch({ op: "cbz", width: 64, rt: 0 });
+    trapBranch({ op: "cbz", width: 64, rt: 0 }, 1);
     // The innermost transition: present, not already running a callback,
     // and entered on this very thread.
     emit({ op: "ldr", width: 64, rt: 11, rn: 0, offset: 0 });
-    trapBranch({ op: "cbz", width: 64, rt: 11 });
+    trapBranch({ op: "cbz", width: 64, rt: 11 }, 2);
     // A callback already running under this record (a leaf call that called
     // back) traps; a failed direct callback's record (2) does not.
     emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.entered });
     emit({ op: "ubfm", width: 64, rd: 12, rn: 12, immr: 0, imms: 0 });
-    trapBranch({ op: "cbnz", width: 64, rt: 12 });
+    trapBranch({ op: "cbnz", width: 64, rt: 12 }, 2);
     emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.thread });
     emit({ op: "mrs-thread", rt: 13, readOnly: host().os === "darwin" });
     emit({
@@ -1785,7 +1806,7 @@ function emitModuleForms(
       amount: 0,
       setFlags: true,
     });
-    trapBranch({ op: "b.cond", condition: "ne" });
+    trapBranch({ op: "b.cond", condition: "ne" }, 1);
     emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset: t.entered });
     emit({
       op: "add-imm",
@@ -1849,11 +1870,15 @@ function emitModuleForms(
     }
     for (let index = 0; index < locations.length; index++)
       emit({ op: "fmov-d-d", rd: first + index, rn: 16 + index });
-    if (registered) {
+    if (runtimeRegistered) {
+      emit({ op: "ldr", width: 64, rt: 14, rn: 29, offset: 56 });
+      emit({ op: "scvtf-d-x", rd: 0, rn: 14 });
+      emit({ op: "scvtf-d-x", rd: 1, rn: 29 });
+    } else if (registered) {
       imm(14, -1 - ordinal);
       emit({ op: "scvtf-d-x", rd: 0, rn: 14 });
-    }
-    if (signature === undefined) emit({ op: "scvtf-d-x", rd: 0, rn: 29 });
+    } else if (signature === undefined)
+      emit({ op: "scvtf-d-x", rd: 0, rn: 29 });
     // Call the function value with the caller's context.
     emit({ op: "ldr", width: 64, rt: 11, rn: 29, offset: 48 });
     emit({
@@ -1946,12 +1971,49 @@ function emitModuleForms(
     // while a callback already runs (a leaf call that called back): a
     // contract violation, so trap loudly.
     const trap = instructions.length;
-    emit({ op: "brk", immediate: 3 });
+    const reasons: number[] = [];
+    if (runtimeRegistered) {
+      const messages = [
+        "node:ffi callback dispatcher failed\n",
+        "Callbacks can only be invoked on the system thread they were created on\n",
+        "node:ffi callback outside an FFI transition\n",
+      ];
+      for (const message of messages) {
+        if (message === undefined) throw "callback diagnostic invariant";
+        reasons.push(instructions.length);
+        // Reuse the saved arguments as a temporary raw diagnostic buffer.
+        for (let i = 0; i < message.length; i += 4) {
+          let bits = 0;
+          let scale = 1;
+          for (let byte = 0; byte < 4 && i + byte < message.length; byte++) {
+            bits += message.charCodeAt(i + byte) * scale;
+            scale *= 256;
+          }
+          imm(9, bits);
+          emit({ op: "str", width: 32, rt: 9, rn: 29, offset: 64 + i });
+        }
+        imm(0, 2);
+        emit({
+          op: "add-imm",
+          width: 64,
+          rd: 1,
+          rn: 29,
+          immediate: 64,
+          shift: 0,
+          setFlags: false,
+        });
+        imm(2, message.length);
+        importCall(host().symbolPrefix + "write");
+        importCall(host().symbolPrefix + "abort");
+        emit({ op: "brk", immediate: 3 });
+      }
+    } else emit({ op: "brk", immediate: 3 });
     for (const site of traps) {
       if (site === undefined) throw "callback trap invariant";
+      const destination = reasons[site.reason] ?? trap;
       patchInstruction(site.at, {
         ...site.branch,
-        displacement: (trap - site.at) * 4,
+        displacement: (destination - site.at) * 4,
       });
     }
   }
@@ -10279,6 +10341,19 @@ function emitModuleForms(
                   saveRaw(9, resultId);
                   break;
                 }
+                if (access.operation === "runtime-callback-address") {
+                  if (resultId === undefined)
+                    throw "runtime callback address invariant";
+                  importAddress(
+                    9,
+                    10,
+                    "tint:callback-thunk:" +
+                      String(callbackThunk(undefined, -1)),
+                  );
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                  floatStore(0, resultId);
+                  break;
+                }
                 if (access.operation === "callback-address") {
                   // A registered callback thunk's entry.
                   const prototype = access.callback,
@@ -11405,7 +11480,7 @@ function emitModuleForms(
                   emit({ op: "str-q", qt: 1, rn: 12, offset: 16 });
                 }
                 const foreign = importCall;
-                const operation = op.operation;
+                const operation = executableHostOperation(op.operation);
                 /** Inline control flow with named labels for host
                  * sequences built outside this emitter; `finish` patches
                  * the branches. A label forgets forwarded stack words,
