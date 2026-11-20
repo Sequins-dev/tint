@@ -7,10 +7,16 @@ import {
   openSync,
   statSync,
 } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { runWithWatchdog } from "./watchdog.ts";
+import {
+  killGateProcess,
+  runWithDeadline,
+  runWithWatchdog,
+  stageInferior,
+} from "./watchdog.ts";
 
 const sleep = new Int32Array(new SharedArrayBuffer(4));
 
@@ -38,12 +44,11 @@ function tryAcquire(file: string): number | undefined {
   }
 }
 
-export function withGateLock<T>(
+export function acquireGateLock(
   files: readonly string[],
   label: string,
   timing: string | undefined,
-  run: (fd: number) => T,
-): T {
+): { fd: number; release: () => void } {
   if (files.length === 0) throw Error("No gate locks configured");
   for (;;) {
     for (const file of files) {
@@ -51,21 +56,47 @@ export function withGateLock<T>(
       if (fd === undefined) continue;
       const startedAt = Date.now();
       const start = performance.now();
-      try {
-        return run(fd);
-      } finally {
-        const elapsed = Math.round(performance.now() - start);
-        closeSync(fd);
-        if (timing)
-          appendFileSync(
-            timing,
-            [label, file, startedAt, elapsed].join("\t") + "\n",
-          );
-      }
+      return {
+        fd,
+        release() {
+          const elapsed = Math.round(performance.now() - start);
+          closeSync(fd);
+          if (timing)
+            appendFileSync(
+              timing,
+              [label, file, startedAt, elapsed].join("\t") + "\n",
+            );
+        },
+      };
     }
     // Probe once per memory slot and sleep while every slot is occupied.
     Atomics.wait(sleep, 0, 0, 250);
   }
+}
+
+export function withGateLock<T>(
+  files: readonly string[],
+  label: string,
+  timing: string | undefined,
+  run: (fd: number) => T,
+): T {
+  const lock = acquireGateLock(files, label, timing);
+  try {
+    return run(lock.fd);
+  } finally {
+    lock.release();
+  }
+}
+
+export function gateMemorySlots(env: NodeJS.ProcessEnv): string[] {
+  const directory = env.TINT_GATE_MEMORY_DIRECTORY;
+  const count = env.TINT_GATE_MEMORY_SLOTS ?? "3";
+  if (!directory || !/^[1-9][0-9]?$/.test(count))
+    throw Error("Expected a gate memory directory and 1–99 slots");
+  mkdirSync(directory, { recursive: true });
+  return Array.from({ length: Number(count) }, (_, i) =>
+    join(directory, "slot-" + (i + 1) + ".lock"),
+  );
 }
 
 export function gateLaunch<T>(label: string, tool: string, args: string[]): T {
@@ -100,12 +131,82 @@ function runGateCommand(command: string, args: string[], fd?: number): number {
   return result.status ?? 1;
 }
 
+function runMacGateBudget(command: string, args: string[]): Promise<number> {
+  const budget = Number(process.env.TINT_GATE_BUDGET ?? "3600");
+  if (!Number.isInteger(budget) || budget < 1 || budget > 2_147_483)
+    throw Error("Expected TINT_GATE_BUDGET (1–2147483 seconds)");
+
+  let step = "admission";
+  let evidence: string | undefined;
+  function stopGate(pid: number) {
+    let inferior: number | undefined;
+    try {
+      if (evidence && (step === "stage2" || step === "stage3"))
+        inferior = stageInferior(join(evidence, step + ".pid"));
+    } finally {
+      killGateProcess(pid, inferior);
+    }
+  }
+  return runWithDeadline(
+    process.execPath,
+    [
+      fileURLToPath(import.meta.url),
+      "mac-admission",
+      "mac-gate",
+      command,
+      ...args,
+    ],
+    budget,
+    {
+      onTimeout: (pid) => {
+        const message = `BUDGET step=${step} timeout-seconds=${budget}`;
+        console.error(message + (evidence ? " evidence=" + evidence : ""));
+        try {
+          if (evidence)
+            appendFileSync(
+              join(evidence, "budget.tsv"),
+              `${step}\t${budget}\n`,
+            );
+        } finally {
+          stopGate(pid);
+        }
+      },
+      onInterrupt: stopGate,
+      onLine: (line) => {
+        const gate = /^head=[a-f0-9]+ evidence=(.+)$/.exec(line);
+        const started = /^\S+ start ([a-zA-Z0-9_-]+) resource=/.exec(line);
+        if (gate) {
+          evidence = gate[1];
+          step = "setup";
+        } else if (started) {
+          step = started[1]!;
+        } else if (/^\S+ finish [a-zA-Z0-9_-]+ exit=/.test(line)) {
+          step = "between-steps";
+        }
+      },
+    },
+  );
+}
+
 if (import.meta.main) {
   const [resource, label, command, ...args] = process.argv.slice(2);
   if (!resource || !label || !command)
     throw Error("Expected resource, label and command");
   const timing = process.env.TINT_GATE_LOCK_TIMING;
-  if (resource === "watchdog") {
+  if (resource === "mac-budget") {
+    process.exitCode = await runMacGateBudget(command, args);
+  } else if (resource === "mac-admission") {
+    const directory =
+      process.env.TINT_GATE_ADMISSION_DIRECTORY ??
+      join(homedir(), ".t3", "tint-gate-admission");
+    mkdirSync(directory, { recursive: true });
+    const files = ["slot-1.lock", "slot-2.lock"].map((slot) =>
+      join(directory, slot),
+    );
+    process.exitCode = withGateLock(files, label, undefined, (fd) =>
+      runGateCommand(command, args, fd),
+    );
+  } else if (resource === "watchdog") {
     process.exitCode = await runWithWatchdog(label, command, args);
   } else if (resource === "timed") {
     const startedAt = Date.now();
@@ -125,16 +226,11 @@ if (import.meta.main) {
         );
     }
   } else if (resource === "memory") {
-    const directory = process.env.TINT_GATE_MEMORY_DIRECTORY;
-    const count = process.env.TINT_GATE_MEMORY_SLOTS ?? "3";
-    if (!directory || !/^[1-9][0-9]?$/.test(count))
-      throw Error("Expected a gate memory directory and 1–99 slots");
-    mkdirSync(directory, { recursive: true });
-    const files = Array.from({ length: Number(count) }, (_, i) =>
-      join(directory, "slot-" + (i + 1) + ".lock"),
-    );
-    process.exitCode = withGateLock(files, label, timing, (fd) =>
-      runGateCommand(command, args, fd),
+    process.exitCode = withGateLock(
+      gateMemorySlots(process.env),
+      label,
+      timing,
+      (fd) => runGateCommand(command, args, fd),
     );
   } else {
     throw Error("Unknown gate resource: " + resource);

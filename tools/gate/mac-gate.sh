@@ -5,10 +5,16 @@ if [ "$(uname -s)/$(uname -m)" != Darwin/arm64 ]; then
   exit 1
 fi
 gate_tools=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ "${1:-}" != --admitted ]; then
+  exec node "$gate_tools/lock.ts" mac-budget mac-gate sh "$0" --admitted
+fi
 . "$gate_tools/common.sh"
 
 export TINT_GATE_EXCLUSIVE_LOCK="${TINT_GATE_EXCLUSIVE_LOCK:-$HOME/.t3/tint-gate.lock}"
 export TINT_GATE_MEMORY_DIRECTORY="${TINT_GATE_MEMORY_DIRECTORY:-$HOME/.t3/tint-gate-memory}"
+TINT_GATE_NATIVE_CONCURRENCY=$(node tools/check-test-files.ts native-concurrency)
+export TINT_GATE_NATIVE_CONCURRENCY
+printf "check-native-concurrency=%s\n" "$TINT_GATE_NATIVE_CONCURRENCY" | tee "$gate_output/check-native-concurrency.txt"
 test262_link="$gate_root/.tint-bootstrap/test262"
 test262=${TINT_GATE_TEST262:-$test262_link}
 if [ ! -d "$test262/test" ] && [ -z "${TINT_GATE_TEST262:-}" ]; then
@@ -44,7 +50,15 @@ run_check_step() {
 }
 run_check_step check-concurrent unlocked env -u TZ pnpm check:concurrent
 run_check_step check-memory memory env -u TZ node tools/check-test-files.ts memory
-gate_step_timeout=${TINT_GATE_NATIVE_TIMEOUT:-1800} run_check_step check-native exclusive env -u TZ node tools/check-test-files.ts native
+native_status=0
+native_images="$gate_output/native-images.jsonl"
+TINT_GATE_NATIVE_IMAGES="$native_images" gate_step_timeout=${TINT_GATE_NATIVE_TIMEOUT:-1800} \
+  run_step check-native watchdog env -u TZ node tools/check-test-files.ts native || native_status=$?
+node tools/gate/native-fixture.ts "$native_images"
+if [ "$native_status" -ne 0 ]; then
+  echo "check=$native_status"
+  exit "$native_status"
+fi
 awk '/^ℹ pass / { pass += $3 } /^ℹ fail / { fail += $3 } END { printf "check=0 ℹ pass %d ℹ fail %d\n", pass, fail }' \
   "$gate_output"/check-*.log
 storage_tests

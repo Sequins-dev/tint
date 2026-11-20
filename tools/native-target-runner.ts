@@ -14,6 +14,7 @@ import {
 import { constants, homedir, version } from "node:os";
 import { join, resolve } from "node:path";
 import type { NativeTarget } from "@tint/platform/target";
+import { runNativeFixture } from "./gate/native-fixture.ts";
 import { admitUnderLldb } from "./native-admission.ts";
 
 type TargetName = NativeTarget["name"] | "linux-x86_64";
@@ -457,6 +458,33 @@ export function runNativeBatch(
             const admission = new Map<string, Observation | undefined>();
             return invocations.map((job) => {
               const { path } = job.artifact;
+              if (env.TINT_GATE_NATIVE_IMAGES) {
+                const failureBeforeLaunch = admission.get(path);
+                if (failureBeforeLaunch !== undefined)
+                  return failureBeforeLaunch;
+                let admitted = false;
+                try {
+                  return runNativeFixture(
+                    path,
+                    () => {
+                      admitted = true;
+                      return localDarwinRun(job, env);
+                    },
+                    () => admitUnderLldb(path, env),
+                    env,
+                  );
+                } catch (error) {
+                  if (admitted) throw error;
+                  const outcome = failure(
+                    (error as NodeJS.ErrnoException).code === "ENOENT"
+                      ? "execution-unavailable"
+                      : "runner-error",
+                    String(error),
+                  );
+                  admission.set(path, outcome);
+                  return outcome;
+                }
+              }
               if (!admission.has(path)) {
                 try {
                   admitUnderLldb(path, env);

@@ -1,3 +1,4 @@
+import { buildNativeFixture } from "./gate/native-fixture.ts";
 // The DevTools bridge on a plain C program built with clang -g: discovery,
 // scripts, breakpoints by url, inlined frames, scopes and locals, stepping,
 // pause, console output, unsupported methods and process exit, all through
@@ -67,8 +68,11 @@ test(
     const file = join(dir, "prog.c"),
       program = join(dir, "prog");
     writeFileSync(file, source);
-    const built = compileC(["-g", "-O0", file, "-o", program]);
-    assert.equal(built.status, 0, built.stderr);
+    buildNativeFixture(program, () => {
+      const built = compileC(["-g", "-O0", file, "-o", program]);
+      assert.equal(built.status, 0, built.stderr);
+      return program;
+    });
     const session = await startDevTools({
       program,
       args: ["long"],
