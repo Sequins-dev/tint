@@ -8,6 +8,7 @@ import { nativeFixtureTarget } from "./native-host-target.ts";
 if (process.env.TINT_BUILD_ONLY !== "1")
   throw Error("The Worker suite must run under LLDB on native Tint");
 const target = nativeFixtureTarget();
+const nodeHosted = process.env.TINT_NODE_HOSTED_WORKERS === "1";
 const moduleId = "worker-threads-suite.mjs";
 const suite = readFileSync(
   new URL("./worker-threads-suite.mjs", import.meta.url),
@@ -88,6 +89,7 @@ export function run():unknown { return suite("${moduleId}"); }
     threadExitPipe: true,
     workerModules: [moduleId],
     nodeWorkers: true,
+    nodeWorkerLibrary: nodeHosted,
     runtimeEntry:
       target.arch === "x86_64"
         ? "initializeGenerationalRuntime"

@@ -4,6 +4,11 @@ import type { CTarget } from "./c/types.ts";
  * teardown, so virtual-address reuse cannot make stale code match a new heap.
  * Realms within one context share this token; it is not an agent identifier. */
 export const nativeContextDomainOffset = 88;
+
+/** One atomic pipe write from a Tint isolate to the Node launch broker.
+ * The argument is an unsigned little-endian word, followed by a reply fd. */
+export const nodeWorkerLaunchRecordBytes = 12;
+export const nodeWorkerLaunchReplyOffset = 8;
 export const nativeHostedContextByteLength = 96;
 /** The hosted entry sends this to its allocator only after the mutator
  * has returned, before reclaiming the collector's permanent storage. */

@@ -86,6 +86,7 @@ interface HostedEntry {
   readonly returnType: "number" | "boolean" | "void" | "general";
   readonly stackBytes: number;
   readonly threaded?: boolean;
+  readonly nodeWorkerLibrary?: boolean;
   readonly threadExitPipe?: boolean;
   readonly workerSafepoints?: boolean;
   readonly allowJit?: boolean;
@@ -105,6 +106,7 @@ interface HostedImage extends ImageRelocations {
   readonly codePlan: CodePlan;
   readonly data: Uint8Array;
   readonly entryOffset: number;
+  readonly workerEntryOffset: number | undefined;
   readonly maxByteLength: number;
   readonly imports: readonly string[];
   readonly symbols: readonly ImageSymbol[];
@@ -328,7 +330,13 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     emit({ op: "label", name: hostedThreadEntryLabel });
     emit({ op: "mov", dst: rdx, src: rdi });
     emit({ op: "xor", dst: edi, src: edi });
-    emit({ op: "xor", dst: esi, src: esi });
+    if (request.nodeWorkerLibrary === true) {
+      emit({ op: "xor", dst: word(1), src: word(1) });
+      emit({ op: "test", dst: rdx, src: rdx });
+      emit({ op: "jcc", cc: "e", target: label(hostedRun) });
+    } else {
+      emit({ op: "xor", dst: esi, src: esi });
+    }
     emit({ op: "mov", dst: word(1), src: imm(1) });
     emit({ op: "label", name: hostedRun });
   }
@@ -609,6 +617,8 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
       dst: xmm(0),
       src: mem(12, threadArgumentOffset),
     });
+  if (request.nodeWorkerLibrary === true)
+    emit({ op: "cvtsi2sd", dst: xmm(1), src: mem(12, argumentsOffset) });
   emit({ op: "call", target: label("invoke") });
   emit({ op: "cmp", dst: eax, src: imm(normal) });
   emit({ op: "jcc", cc: "ne", target: label("program-failed") });
@@ -903,9 +913,11 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     if (reference === undefined) throw "startup address fixup invariant";
     addressFixups.push(reference);
   }
+  const worker = threaded ? stub.labels.get(hostedThreadEntryLabel) : undefined;
   return {
     codePlan,
     entryOffset: base,
+    workerEntryOffset: worker === undefined ? undefined : base + worker,
     data,
     maxByteLength: Number.MAX_SAFE_INTEGER,
     imports: importNames,

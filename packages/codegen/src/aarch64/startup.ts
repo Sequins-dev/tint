@@ -130,6 +130,7 @@ export interface HostedDiagnostics {
 export interface HostRequest {
   /** Opt in to a raw pthread entry and a one-number application entry. */
   readonly threaded?: boolean;
+  readonly nodeWorkerLibrary?: boolean;
   readonly threadExitPipe?: boolean;
   readonly workerSafepoints?: boolean;
   readonly forceFarReach?: boolean | undefined;
@@ -318,9 +319,14 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
     allocate.signature.parameters.length !== 1 ||
     initialize.signature.parameters.length !== 15 ||
     (request.threaded === true
-      ? main.signature.parameters.length !== 1 ||
-        main.signature.parameters[0]?.kind !== "float" ||
-        main.signature.parameters[0]?.index !== 0
+      ? main.signature.parameters.length !==
+          (request.nodeWorkerLibrary === true ? 2 : 1) ||
+        main.signature.parameters.some(
+          (parameter, index) =>
+            parameter === undefined ||
+            parameter.kind !== "float" ||
+            parameter.index !== index,
+        )
       : main.signature.parameters.length !== 0) ||
     initialize.signature.stackBytes !== 32
   )
@@ -706,7 +712,7 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
     workerEntryOffset = instructions.length * 4;
     move(2, 0);
     imm(0, 0);
-    imm(1, 0);
+    if (request.nodeWorkerLibrary !== true) imm(1, 0);
     label("host-start");
   }
   // Preserve the system frame and all callee-saved registers used by startup.
@@ -1104,6 +1110,10 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
   else imm(9, request.managedBytes);
   store(9, 128);
   if (request.threaded === true) emit({ op: "scvtf-d-x", rd: 0, rn: 27 });
+  if (request.nodeWorkerLibrary === true) {
+    load(9, 144);
+    emit({ op: "scvtf-d-x", rd: 1, rn: 9 });
+  }
   if (diagnostics?.stackTraces === true) {
     // An uncaught throw reports its value and recorded trace, then exits as
     // any runtime failure does.

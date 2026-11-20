@@ -59,6 +59,7 @@ export interface GeneralNodeWorkers {
   readonly shared: string;
   readonly stackBytes: number;
   readonly managedBytes: number;
+  readonly nodeHosted?: boolean;
 }
 const workerExports: readonly string[] = [
   "Worker",
@@ -1042,12 +1043,16 @@ import {createReactorEventLoop,type ReactorEventLoop} from "node-event-driver";
 import {monotonicMilliseconds} from "node-event-clock";
 import {createReactor${workers === undefined ? "" : ",signalReactor"}} from "node-event-reactor";`
     : "";
+  const hostedByNode = workers?.nodeHosted === true;
+  const threadHostFactory = hostedByNode
+    ? "createNodeHostedWorkerThreadHost"
+    : "createNativeWorkerThreadHost";
   const workerImports =
     workers === undefined
       ? ""
       : `
 import {startNodeWorkerHost,type NodeWorkerSession} from "worker-host";
-import {createNativeWorkerThreadHost} from "worker-platform";
+import {${threadHostFactory}} from "worker-platform";
 import {runNativeWorker,type NativeWorkerTurnControl} from "worker-lifecycle";
 import {nativeSharedMemoryHost,nativeWaiterParkingHost,type NativeSharedMemoryHost,type NativeWaiterParkingHost} from "worker-shared";`;
   const workerRegistry =
@@ -1056,7 +1061,7 @@ import {nativeSharedMemoryHost,nativeWaiterParkingHost,type NativeSharedMemoryHo
       : `
  const workerNames:readonly string[]=${JSON.stringify(names)};
  const session=startNodeWorkerHost({global:object,realm,reactor:events,
-  memory,parking,threads:createNativeWorkerThreadHost(),threadId,control,
+  memory,parking,threads:${threadHostFactory}(${hostedByNode ? "broker" : ""}),threadId,control,
   managedBytes:${workers.managedBytes},stackBytes:${workers.stackBytes},
   now:():number=>monotonicMilliseconds(),
   lookup:(filename:string):number|undefined=>{
@@ -1090,14 +1095,14 @@ import {nativeSharedMemoryHost,nativeWaiterParkingHost,type NativeSharedMemoryHo
   const entryWrapper =
     workers === undefined
       ? `export function ${start}():number {`
-      : `export function ${start}(argument:number):number {
+      : `export function ${start}(argument:number${hostedByNode ? ",broker:number" : ""}):number {
  const memory=nativeSharedMemoryHost(),parking=nativeWaiterParkingHost(signalReactor);
- if(argument===0)return runIsolate(${entry},0,undefined,memory,parking);
+ if(argument===0)return runIsolate(${entry},0,undefined,memory,parking${hostedByNode ? ",broker" : ""});
  return runNativeWorker(memory,parking,argument,
   (moduleId:number,threadId:number,control:NativeWorkerTurnControl):number=>
-   runIsolate(moduleId,threadId,control,memory,parking));
+   runIsolate(moduleId,threadId,control,memory,parking${hostedByNode ? ",broker" : ""}));
 }
-function runIsolate(moduleId:number,threadId:number,control:NativeWorkerTurnControl|undefined,memory:NativeSharedMemoryHost,parking:NativeWaiterParkingHost):number{`;
+function runIsolate(moduleId:number,threadId:number,control:NativeWorkerTurnControl|undefined,memory:NativeSharedMemoryHost,parking:NativeWaiterParkingHost${hostedByNode ? ",broker:number" : ""}):number{`;
   const workerError =
     workers === undefined
       ? ""

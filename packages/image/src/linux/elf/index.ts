@@ -119,6 +119,7 @@ export interface ElfExecutableRequest {
   readonly codePlan?: CodePlan | undefined;
   /** Process entry (the ELF `e_entry`), following the target startup ABI. */
   readonly entryOffset: number;
+  readonly sharedEntry?: ElfCodeSymbol | undefined;
   readonly maxByteLength: number;
   readonly symbols?: readonly ElfCodeSymbol[] | undefined;
   /** Symbols naming offsets in `data`. */
@@ -527,6 +528,17 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   }
   const hasProbes = probes.length > 0;
   const hasRelocations = imports.length > 0;
+  const sharedEntry = request.sharedEntry;
+  if (
+    sharedEntry !== undefined &&
+    (!validName(sharedEntry.name) ||
+      importIndex.has(sharedEntry.name) ||
+      !uint(sharedEntry.offset, instructionEnd - 1) ||
+      sharedEntry.offset % instructionAlignment !== 0)
+  )
+    return { ok: false, error: "INVALID_SYMBOL" };
+  const dynamicSymbolCount =
+    imports.length + (sharedEntry === undefined ? 1 : 2);
 
   // Dynamic string and symbol tables: libraries then imports.
   const dynamicStrings = stringTable();
@@ -536,7 +548,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
     neededOffsets.push(intern(dynamicStrings, soname));
   }
   const importNames: Uint8Array[] = [];
-  const dynamicSymbols = new Uint8Array((imports.length + 1) * SYMBOL_SIZE);
+  const dynamicSymbols = new Uint8Array(dynamicSymbolCount * SYMBOL_SIZE);
   for (let index = 0; index < imports.length; index++) {
     const name = imports[index];
     if (name === undefined) throw "ELF import invariant";
@@ -552,9 +564,14 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       0,
     );
   }
+  let exportName = 0;
+  if (sharedEntry !== undefined) {
+    importNames.push(new TextEncoder().encode(sharedEntry.name));
+    exportName = intern(dynamicStrings, sharedEntry.name);
+  }
   const libcVersion = options?.libcVersion;
   const versions = new Uint8Array(
-    libcVersion === undefined ? 0 : (imports.length + 1) * 2,
+    libcVersion === undefined ? 0 : dynamicSymbolCount * 2,
   );
   const requirements = new Uint8Array(libcVersion === undefined ? 0 : 32);
   if (libcVersion !== undefined) {
@@ -565,8 +582,8 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       !validName(libcVersion.version)
     )
       return { ok: false, error: "INVALID_IMPORT" };
-    for (let i = 0; i < imports.length; i++)
-      put16(versions, (i + 1) * 2, i === index ? 2 : 1);
+    for (let i = 1; i < dynamicSymbolCount; i++)
+      put16(versions, i * 2, i === index + 1 ? 2 : 1);
     // Elf64_Verneed followed by one Elf64_Vernaux. Indices 0 and 1
     // are reserved for local and unversioned global symbols.
     put16(requirements, 0, 1);
@@ -979,7 +996,10 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   }
   dynamicEntry(DT_DEBUG, 0);
   dynamicEntry(DT_FLAGS, DF_BIND_NOW);
-  dynamicEntry(DT_FLAGS_1, DF_1_NOW + DF_1_PIE);
+  dynamicEntry(
+    DT_FLAGS_1,
+    DF_1_NOW + (sharedEntry === undefined ? DF_1_PIE : 0),
+  );
   dynamicEntry(DT_NULL, 0);
   if (dynamicTags.length !== dynamicCount) throw "ELF dynamic table invariant";
   for (let index = 0; index < dynamicTags.length; index++)
@@ -1298,6 +1318,17 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
     );
   }
 
+  if (sharedEntry !== undefined)
+    writeSymbol(
+      bytes,
+      dynsymAt.fileOffset + (imports.length + 1) * SYMBOL_SIZE,
+      exportName,
+      STB_GLOBAL * 16 + STT_FUNC,
+      textIndex,
+      codeAddress + sharedEntry.offset,
+      0,
+    );
+
   if (symbolCount > 0) {
     const codeSizes = symbolSizes(codeSymbols, instructionEnd),
       dataSizes = symbolSizes(dataSymbols, data.length);
@@ -1340,7 +1371,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       alignment: 8,
     },
     {
-      type: PT_INTERP,
+      type: sharedEntry === undefined ? PT_INTERP : 0,
       flags: PF_R,
       offset: interpAt.fileOffset,
       address: interpAt.fileOffset,
@@ -1430,7 +1461,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   writeElfHeader(bytes, {
     machine: machine.id,
     type: ET_DYN,
-    entry: codeAddress + request.entryOffset,
+    entry: sharedEntry === undefined ? codeAddress + request.entryOffset : 0,
     programHeaderCount,
     sectionHeaderOffset: sectionHeadersAt.fileOffset,
     sectionCount: sections.length,

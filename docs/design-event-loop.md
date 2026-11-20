@@ -89,7 +89,7 @@ Each isolate thread runs this loop:
   - An allocation-free, call-free tight loop can't be interrupted without a dedicated check. Section 11 lists this as an open item.
 
   Termination never kills a thread inside C. It waits for C to return, as Node does.
-- **Node-hosted version (verified):** no product pool of Tint isolates exists inside Node today. The proposed adapter: each Tint `Worker` in a Node embedder is one real Node `worker_threads` Worker that loads the Tint AOT artifact. Both hosts share one Worker test suite covering lifecycle, ports, clone/transfer, SAB and termination.
+- **Node-hosted version.** Each Tint `Worker` in a Node embedder is one real Node `worker_threads` Worker that loads the Tint AOT artifact. Both hosts share one Worker test suite covering lifecycle, ports, clone and transfer, SAB and termination. The AOT build request selects a loadable image with `nodeWorkerLibrary`. Load it with `node --experimental-ffi tools/node-hosted-image.mjs <image>` on Node 26.13.1, or call `runNodeHostedImage` from a Node embedder. The Node adapter owns thread creation while Tint retains its isolate, port and shared-memory runtime.
 
 ## 7. C interop
 

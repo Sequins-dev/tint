@@ -3104,6 +3104,7 @@ export function compileX64HostedProgram(
     readonly generational?: boolean;
     readonly inlineAllocation?: boolean;
     readonly threaded?: boolean;
+    readonly nodeWorkerLibrary?: boolean;
     readonly signposts?: readonly X64SignpostSite[];
     readonly allocationProbes?: boolean;
     readonly report?: (stage: string) => void;
@@ -3207,12 +3208,14 @@ export function compileX64HostedProgram(
     );
   if (
     options.threaded === true &&
-    (entry.parameters.length !== 1 ||
-      entry.slots[entry.parameters[0] ?? -1] !== "number")
+    (entry.parameters.length !== (options.nodeWorkerLibrary === true ? 2 : 1) ||
+      entry.parameters.some(
+        (slot) => slot === undefined || entry.slots[slot] !== "number",
+      ))
   )
     return stageFailure(
       "entry",
-      "linux-x86_64: a threaded entry must take one Number argument",
+      "linux-x86_64: threaded entry parameters must match the selected worker host",
     );
   const managed =
     program.serviceImports.length !== 0 || program.surfacePlans.length !== 0;

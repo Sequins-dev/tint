@@ -135,6 +135,8 @@ export interface BuildRequest extends ModuleRequest {
    * frozen project sources predate it). */
   readonly target?: NativeTarget;
   readonly threaded?: boolean;
+  /** Emit a loadable image whose worker entry accepts a broker descriptor. */
+  readonly nodeWorkerLibrary?: boolean;
   /** Tagged worker arguments carry the post-teardown pipe notification ABI. */
   readonly threadExitPipe?: boolean;
   /** Application modules whose managed code can be stopped in a worker. */
@@ -299,6 +301,14 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
     return failure("startup", "thread exit records require threaded startup");
   if (request.workerModules !== undefined && request.threadExitPipe !== true)
     return failure("startup", "worker safepoints require thread exit records");
+  if (
+    request.nodeWorkerLibrary === true &&
+    (request.threaded !== true || request.threadExitPipe !== true)
+  )
+    return failure(
+      "startup",
+      "Node worker libraries require threaded startup and exit records",
+    );
   const target = buildTarget(request);
   if (target.arch === "x86_64") {
     const built = buildX64HostedProgram(request, target);
@@ -505,6 +515,7 @@ function buildX64HostedProgram(
       jitDebugInterface: request.jitDebugInterface === true,
       inlineAllocation: request.inlineAllocation !== false,
       threaded: request.threaded === true,
+      nodeWorkerLibrary: request.nodeWorkerLibrary === true,
       allocationProbes: request.signposts === true,
       report: request.report,
       ...(request.onGeneralFallback === undefined
@@ -604,6 +615,7 @@ function buildX64HostedProgram(
       ...(runtime === undefined ? {} : { runtime }),
       stackBytes,
       threaded: request.threaded === true,
+      nodeWorkerLibrary: request.nodeWorkerLibrary === true,
       threadExitPipe: request.threadExitPipe === true,
       workerSafepoints: request.workerModules !== undefined,
       allowJit: request.allowJit === true,
@@ -617,11 +629,22 @@ function buildX64HostedProgram(
       target.hostABI.symbolPrefix,
     );
     if (typeof libraries === "string") return failure("image", libraries);
+    const workerEntry = image.workerEntryOffset;
+    if (request.nodeWorkerLibrary === true && workerEntry === undefined)
+      return failure("startup", "Node worker entry is missing");
     const executable: ExecutableImageRequest = {
       libraries,
       code: new Uint8Array(0),
       codePlan: image.codePlan,
       entryOffset: image.entryOffset,
+      ...(request.nodeWorkerLibrary !== true || workerEntry === undefined
+        ? {}
+        : {
+            sharedEntry: {
+              name: "tint_node_worker_entry",
+              offset: workerEntry,
+            },
+          }),
       maxByteLength: image.maxByteLength,
       data: image.data,
       symbols: image.symbols,
@@ -1338,6 +1361,7 @@ function linkHostedImage(
   const hosted = planHostedEntry({
     diagnostics,
     threaded: request.threaded ?? false,
+    nodeWorkerLibrary: request.nodeWorkerLibrary === true,
     threadExitPipe: request.threadExitPipe === true,
     workerSafepoints: request.workerModules !== undefined,
     abi: hostABI,
@@ -1742,6 +1766,9 @@ function linkHostedImage(
       return error;
     },
   };
+  const workerEntry = hosted.value.workerEntryOffset;
+  if (request.nodeWorkerLibrary === true && workerEntry === undefined)
+    return failure("startup", "Node worker entry is missing");
   const image = writeExecutableImage(
     target,
     {
@@ -1766,6 +1793,14 @@ function linkHostedImage(
       code: new Uint8Array(0),
       codePlan,
       entryOffset: hosted.value.processStartOffset ?? hosted.value.entryOffset,
+      ...(request.nodeWorkerLibrary !== true || workerEntry === undefined
+        ? {}
+        : {
+            sharedEntry: {
+              name: "tint_node_worker_entry",
+              offset: workerEntry,
+            },
+          }),
       maxByteLength: Number.MAX_SAFE_INTEGER,
       imports,
       libraries,

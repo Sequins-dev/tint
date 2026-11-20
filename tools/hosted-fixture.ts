@@ -107,7 +107,11 @@ const eventLoopClockModule = "packages/native-runtime/src/intrinsics/clock.ts";
 export function workspaceGeneralLowering(
   functionFallback = false,
   nodeEventLoop = false,
-  workerImage?: { readonly managedBytes: number; readonly stackBytes: number },
+  workerImage?: {
+    readonly managedBytes: number;
+    readonly stackBytes: number;
+    readonly nodeHosted: boolean;
+  },
 ): GeneralLowering | undefined {
   if (process.env.TINT_GENERAL_FALLBACK === "0") return undefined;
   const cached = nodeEventLoop ? nodeGeneralLowering : generalLowering;
@@ -146,6 +150,7 @@ export function workspaceGeneralLowering(
             lifecycle: "packages/native-runtime/src/worker-lifecycle.ts",
             threadHost: "packages/platform/src/workers.ts",
             managedBytes: workerImage.managedBytes,
+            nodeHosted: workerImage.nodeHosted,
             stackBytes: workerImage.stackBytes,
           },
         }),
@@ -198,6 +203,7 @@ function buildHostedFixture(
     readonly requireTyped?: boolean;
     readonly nodeEventLoop?: boolean;
     readonly nodeWorkers?: boolean;
+    readonly nodeWorkerLibrary?: boolean;
     /** Host validation over captured application sources, when supplied. */
     readonly validateSource?: GeneralLowering["validateSource"];
     readonly functionFallback?: boolean;
@@ -241,6 +247,7 @@ function buildHostedFixture(
     options.nodeWorkers === true
       ? {
           managedBytes: options.managedBytes,
+          nodeHosted: options.nodeWorkerLibrary === true,
           stackBytes: options.stackBytes ?? 16777216,
         }
       : undefined;
@@ -453,6 +460,7 @@ function buildHostedFixture(
       ? {}
       : { optimization: options.optimization }),
     threaded: options.threaded ?? false,
+    nodeWorkerLibrary: options.nodeWorkerLibrary === true,
     threadExitPipe: options.threadExitPipe ?? false,
     ...(options.workerModules === undefined
       ? {}
@@ -734,7 +742,8 @@ export function verifyHostedFixture(
   if (mode === "defer-admission") return path;
   if (mode === "1") {
     // Admit build-only Darwin images before callers launch their own LLDB.
-    if (fixtureTarget.os === "darwin") admitDarwinFixture(path);
+    if (fixtureTarget.os === "darwin" && args[6]?.nodeWorkerLibrary !== true)
+      admitDarwinFixture(path);
   } else
     try {
       const artifact = nativeArtifact(
