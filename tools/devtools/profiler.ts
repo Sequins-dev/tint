@@ -109,6 +109,12 @@ export class CpuProfiler implements BridgePlugin {
     this.context = context;
   }
 
+  /** Completed samples in the current backend recording. */
+  get backendSampleCount(): number {
+    const running = this.running;
+    return running?.kind === "backend" ? running.samples.length : 0;
+  }
+
   private get bridge(): BridgeContext {
     if (this.context === undefined) throw Error("profiler not attached");
     return this.context;
