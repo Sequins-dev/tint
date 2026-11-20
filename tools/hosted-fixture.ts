@@ -337,6 +337,9 @@ function buildHostedFixture(
           );
           return {
             ids,
+            sourceDependencies: (id: string) =>
+              fixture.sourceDependencies?.(id) ??
+              workspace.sourceDependencies?.(id),
             load: (selected?: readonly string[]) => {
               const loaded = [
                 ...workspace.load(selected),

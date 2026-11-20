@@ -107,7 +107,7 @@ function lowerGeneralProgram(
     if (module === undefined) throw "general module invariant";
     available.set(module.id, module);
   }
-  const used = new Set(available.keys());
+  const used = new Set(original.availableIds ?? available.keys());
   function fresh(base: string): string {
     let id = base;
     while (used.has(id)) id += "$";
@@ -238,7 +238,9 @@ function lowerGeneralProgram(
   // value bridge): one view per record, cached in the record's view slot.
   const adapters = recordAdapters(request.records ?? []);
   const nodeErrorModule = "packages/native-runtime/src/node/errors.ts";
-  const hasNodeErrors = available.has(nodeErrorModule);
+  const hasNodeErrors =
+    original.availableIds?.includes(nodeErrorModule) ??
+    available.has(nodeErrorModule);
   const errors = errorAdapters(request.boundaries.length !== 0, hasNodeErrors);
   boundaryImports += adapters.imports + errors.imports;
   const dynamicDeclarations = new Set<string>();

@@ -139,6 +139,7 @@ import {
   type SourceRange,
 } from "@tint/ts-native/modules";
 import {
+  appendSourceModules,
   requestModules,
   type ModuleRequest,
   type SourcePosition,
@@ -328,8 +329,11 @@ export interface ProgramOptimizationObserver {
 export interface GeneralProgramRequest {
   /** The application modules, as parsed (TypeScript syntax retained). */
   readonly modules: readonly SourceModule[];
-  /** Every module of the request, for resolving imports. */
+  /** Modules reachable from the application for resolving imports. With an
+   * owned-syntax request this may include all modules. */
   readonly available: readonly SourceModule[];
+  /** All original IDs when syntax was selectively replayed. */
+  readonly availableIds?: readonly string[];
   readonly entry: string;
   /** The entry export the generated host calls; it returns the exit status. */
   readonly start: string;
@@ -764,7 +768,13 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       typed.error.stage,
       typed.error.message + " (general fallback requires a start export)",
     );
-  const available = requestModules(request);
+  const loader = request.moduleLoader;
+  const sourceDependencies = loader?.sourceDependencies;
+  const replayIds =
+    sourceDependencies === undefined
+      ? undefined
+      : sourceDependencyClosure([request.entry], sourceDependencies);
+  const available = requestModules(request, replayIds);
   const application = generalApplicationModules(request, available);
   if (!application.ok)
     return failure(
@@ -815,20 +825,27 @@ export function compileArm64Program(original: CompileRequest): Compilation {
   const byId = new Map<string, SourceModule>();
   for (const module of available)
     if (module !== undefined) byId.set(module.id, module);
-  const pending = lowering.runtimeModules.slice();
-  for (let i = 0; i < pending.length; i++) {
-    const id = pending[i];
-    if (id === undefined || rawTypeofModules.has(id)) continue;
-    rawTypeofModules.add(id);
-    const module = byId.get(id);
-    if (module === undefined) continue;
-    for (const [, dependency] of module.dependencies) pending.push(dependency);
-  }
+  const rawIds = sourceDependencyClosure(
+    lowering.runtimeModules,
+    sourceDependencies ??
+      ((id: string): ReadonlyMap<string, string> | undefined =>
+        byId.get(id)?.dependencies),
+  );
+  for (const id of rawIds) if (id !== undefined) rawTypeofModules.add(id);
+  const availableIds =
+    sourceDependencies === undefined ? undefined : loader?.ids;
   const realmTypeofModules = new Set<string>();
-  for (const module of available)
-    if (module !== undefined && !rawTypeofModules.has(module.id))
-      realmTypeofModules.add(module.id);
+  if (availableIds === undefined) {
+    for (const module of available)
+      if (module !== undefined && !rawTypeofModules.has(module.id))
+        realmTypeofModules.add(module.id);
+  } else {
+    for (const id of availableIds)
+      if (id !== undefined && !rawTypeofModules.has(id))
+        realmTypeofModules.add(id);
+  }
   let error = typed.error;
+  const checkedBoundaries = new Set<string>();
   for (let attempt = 0; attempt <= application.value.length; attempt++) {
     const culprit = error.module;
     if (
@@ -838,12 +855,42 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     )
       for (const id of applicationIds) seed.add(id);
     else seed.add(culprit);
-    const partition = closeGeneralPartition(
+    let partition = closeGeneralPartition(
       application.value,
       seed,
       application.trusted,
       available,
     );
+    // The linker binds every declaration of an imported leaf. A structured
+    // implicit-arguments rejection in that leaf will survive partitioning, so
+    // close all such edges before replaying the full typed runtime graph.
+    if (replayIds !== undefined) {
+      for (;;) {
+        if (partition.blocked !== undefined) break;
+        let grew = false;
+        for (const boundary of partition.boundaries) {
+          if (boundary === undefined || checkedBoundaries.has(boundary.id))
+            continue;
+          checkedBoundaries.add(boundary.id);
+          if (!applicationIds.has(boundary.id)) continue;
+          const source = byId.get(boundary.id);
+          if (source === undefined || source.module.imports.length !== 0)
+            continue;
+          const bound = bindModule(source.module, typedGlobals);
+          if (!bound.ok && bound.error.implicitArgumentsOwner !== undefined) {
+            seed.add(boundary.id);
+            grew = true;
+          }
+        }
+        if (!grew) break;
+        partition = closeGeneralPartition(
+          application.value,
+          seed,
+          application.trusted,
+          available,
+        );
+      }
+    }
     if (partition.blocked !== undefined)
       return failure(
         "general",
@@ -860,6 +907,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     const lowered = lowering.lower({
       modules: partition.general,
       available,
+      ...(availableIds === undefined ? {} : { availableIds }),
       entry: request.entry,
       start,
       boundaries: partition.boundaries,
@@ -871,11 +919,18 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     });
     if (!lowered.ok)
       return failure("general", lowered.error + " (typed: " + reason + ")");
+    const generated = lowered.value.modules;
     const modules: SourceModule[] = [];
-    for (const module of available)
-      if (module !== undefined) modules.push(module);
-    for (const module of lowered.value.modules)
-      if (module !== undefined) modules.push(module);
+    const replay =
+      replayIds === undefined || loader === undefined
+        ? undefined
+        : appendSourceModules(loader, generated);
+    if (replay === undefined) {
+      for (const module of available)
+        if (module !== undefined) modules.push(module);
+      for (const module of generated)
+        if (module !== undefined) modules.push(module);
+    }
     const programBindings = recordBindings.slice(),
       programRuntimes = runtimes.slice();
     for (const binding of lowered.value.recordBindings ?? [])
@@ -888,7 +943,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
         recordBindings: programBindings,
         runtimes: programRuntimes,
         modules,
-        moduleLoader: undefined,
+        moduleLoader: replay,
         entry: lowered.value.entry,
         exports: [start],
       },
@@ -920,6 +975,25 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     error = compiled.error;
   }
   throw "general partition did not converge";
+}
+
+function sourceDependencyClosure(
+  roots: readonly string[],
+  dependenciesOf: (id: string) => ReadonlyMap<string, string> | undefined,
+): readonly string[] {
+  const seen = new Set<string>(),
+    queue = roots.slice(),
+    order: string[] = [];
+  for (let index = 0; index < queue.length; index++) {
+    const id = queue[index];
+    if (id === undefined || seen.has(id)) continue;
+    seen.add(id);
+    order.push(id);
+    const dependencies = dependenciesOf(id);
+    if (dependencies === undefined) continue;
+    for (const [, dependency] of dependencies) queue.push(dependency);
+  }
+  return order;
 }
 /** The modules reachable from the entry that the general lowering may
  * replace, and the trusted runtime and host-bound modules they import. Trusted

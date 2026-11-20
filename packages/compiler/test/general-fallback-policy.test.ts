@@ -190,10 +190,16 @@ test("source replay preserves dependency bindings and emitted bytes", () => {
   const loader = createSourceModuleLoader([
     { id: "main", text, dependencies },
     { id: "offset", text: dependencyText, dependencies: new Map() },
+    {
+      id: "unused",
+      text: "export const unrelated: number = 1;",
+      dependencies: new Map(),
+    },
   ]);
   const owned = loader.load();
   dependencies.set("./offset.ts", "edited");
   const observed: (number | undefined)[] = [];
+  const available: string[][] = [];
   const lowering: GeneralLowering = {
     ...recordingLowering().lowering,
     lower: (request) => {
@@ -202,6 +208,7 @@ test("source replay preserves dependency bindings and emitted bytes", () => {
         "offset",
       );
       observed.push(request.trigger?.owner.start);
+      available.push(request.available.map(({ id }) => id));
       const host = source(
         "general-host",
         'import { offset } from "offset"; export function run(): number { return offset; }',
@@ -224,6 +231,10 @@ test("source replay preserves dependency bindings and emitted bytes", () => {
   assert.deepEqual(fromLoader.value.native.code, fromOwned.value.native.code);
   const start = text.indexOf("function*");
   assert.deepEqual(observed, [start, start]);
+  assert.deepEqual(available, [
+    ["main", "offset", "unused"],
+    ["main", "offset"],
+  ]);
 });
 
 test("linking attributes implicit arguments to its receiver-owning function", () => {
@@ -248,4 +259,38 @@ export function run(): number { return size(); }`;
       end: text.indexOf("\nexport function"),
     },
   });
+});
+
+test("replay closes known arguments capabilities before generating a retry", () => {
+  const { lowering, requests } = recordingLowering();
+  const loader = createSourceModuleLoader([
+    {
+      id: "main",
+      text: 'import { first } from "first"; import { second } from "second"; export function run(): number { return first() + second(); }',
+      dependencies: new Map([
+        ["first", "first"],
+        ["second", "second"],
+      ]),
+    },
+    {
+      id: "first",
+      text: "export function first(): number { return arguments.length; }",
+      dependencies: new Map(),
+    },
+    {
+      id: "second",
+      text: "export function second(): number { return arguments.length; }",
+      dependencies: new Map(),
+    },
+  ]);
+  compileArm64Program({
+    ...generatorProgram(lowering),
+    modules: [],
+    moduleLoader: loader,
+  });
+  assert.deepEqual(
+    requests[0]?.modules.map(({ id }) => id),
+    ["main", "first", "second"],
+  );
+  assert.deepEqual(requests[0]?.boundaries, []);
 });

@@ -25,6 +25,10 @@ export type SourcePosition = (
 export interface SourceModuleLoader {
   readonly ids: readonly string[];
   load(ids?: readonly string[]): readonly SourceModule[];
+  /** Captured resolved edges, without parsing the module. */
+  readonly sourceDependencies?: (
+    id: string,
+  ) => ReadonlyMap<string, string> | undefined;
   /** Resolve the whole graph with a deferred root without changing this loader.
    * Returns undefined if the requested root is unavailable. */
   readonly loadWithRoot?: (root: string) => LoadResult | undefined;
@@ -69,6 +73,12 @@ function decodedModuleLoader(
   }
   return {
     ids,
+    sourceDependencies: (
+      id: string,
+    ): ReadonlyMap<string, string> | undefined => {
+      const index = indexes.get(id);
+      return index === undefined ? undefined : inputs[index]?.dependencies;
+    },
     load: (selected?: readonly string[]): readonly SourceModule[] => {
       const modules: SourceModule[] = [];
       if (selected === undefined) {
@@ -134,6 +144,43 @@ export function requestModules(
   for (const module of request.modules)
     if (module !== undefined && wanted.has(module.id)) selected.push(module);
   return selected;
+}
+
+/** Add generated modules while leaving the original graph source-backed. */
+export function appendSourceModules(
+  loader: SourceModuleLoader,
+  generated: readonly SourceModule[],
+): SourceModuleLoader {
+  const ids = loader.ids.slice();
+  for (const module of generated) if (module !== undefined) ids.push(module.id);
+  function append(
+    modules: readonly SourceModule[],
+    selected?: readonly string[],
+  ): readonly SourceModule[] {
+    const combined = modules.slice();
+    for (const module of generated)
+      if (
+        module !== undefined &&
+        (selected === undefined || selected.includes(module.id))
+      )
+        combined.push(module);
+    return combined;
+  }
+  const loadWithRoot = loader.loadWithRoot;
+  return {
+    ids,
+    load: (selected?: readonly string[]): readonly SourceModule[] =>
+      append(loader.load(selected), selected),
+    ...(loadWithRoot === undefined
+      ? {}
+      : {
+          loadWithRoot: (root: string): LoadResult | undefined => {
+            const result = loadWithRoot(root);
+            if (result === undefined || !result.ok) return result;
+            return { ok: true, value: append(result.value) };
+          },
+        }),
+  };
 }
 
 export interface SourceInput {

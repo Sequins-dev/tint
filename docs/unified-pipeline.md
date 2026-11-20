@@ -783,13 +783,17 @@ The hosted corpus can pass a source-backed loader with
 `TINT_SOURCE_REPLAY=1`. The loader captures resolved import edges and serves
 fresh syntax with the original UTF-16 positions. The general engine
 accumulates installer requirements as each erased module is lowered. The
-legacy partition still selects whole modules and holds syntax for the
-current invocation.
+legacy partition still selects whole modules. It replays the application
+dependency closure for partitioning and loads the remaining graph when the
+typed retry needs it. Imported leaves with an implicit-`arguments` binder
+rejection enter the partition together before the retry.
 
 The [focused Linux replay comparison](results/slice3-source-replay-open-variable.md)
 produced identical images from owned syntax and replay. The hosted manifest
-counts loader calls, returned modules and UTF-16 units. The dense-graph
-wall-time and peak RSS budgets still need measurements.
+counts loader calls, returned modules and UTF-16 units. The
+[dense replay comparison](results/slice3-source-replay-dense.md) produced
+identical images and observed 4.1% higher compile wall time and 5.7% lower
+peak RSS on the 144-function fixture.
 
 ### Private function fallback prototype (slice 3)
 
