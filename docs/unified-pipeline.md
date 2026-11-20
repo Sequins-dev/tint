@@ -559,6 +559,49 @@ and own enumerable, writable, configurable group properties. IPv6 entries
 add an own `scopeid` field. Synthetic `__proto__` and `constructor` names
 produce normal groups.
 
+### Native binding patterns (slice 4a)
+
+The closure checker projects the input's property and element types into an
+ordered binding plan. Local declarations, parameters, and typed `for…of`
+heads initialize the same checked leaf slots. Assignment plans reuse normal
+assignment lowering, including reference evaluation before the projected
+value and default. The assignment expression yields the original input.
+Parameter patterns run at their position in the prologue, so subsequent
+parameter defaults can refer to the initialized bindings.
+
+Fixed-record reads reuse native member and index access. Rest uses the
+record spread planner and requires known own enumerable fields. Native
+lists and numeric typed arrays step their indexed storage because these
+representations expose no custom iterator. The plan remembers exhaustion
+across defaults, skips elisions, and creates a fresh list for array rest.
+Defaults test only for `undefined`. An indexed read which can go past the
+end includes `undefined` in its checked type.
+
+Module instances initialize whole patterns in source order, and the linker
+publishes each exported leaf. Realm object patterns and catch patterns
+with an explicit `any` annotation check object coercibility and use realm
+Get. Computed keys are converted before assignment target evaluation.
+Realm rest passes those canonical keys to CopyDataProperties and creates
+an ordinary realm object. Local native values thrown directly into a
+patterned catch can select realm storage when local representation analysis
+proves the conversion safe.
+
+Realm strings, realm arrays and `Iterable<T>` sources use the realm
+iterator helpers. Each nested iterator region closes on normal early exit
+or abrupt completion. The runtime determines whether the cursor is done
+and preserves a pending throw when IteratorClose also throws. Inferred
+mutable union leaves with writes use general storage. Flow facts allow
+specialized reads after proven writes. An explicit annotation retains the
+binding's projected type contract.
+
+The typed hosted fixture and the Node references live in
+`tools/typed-binding-patterns-fixture-source.ts`. A fixture provider supplies
+realm getters, symbol and non-enumerable properties, and custom iterators
+to the same consumer used by the Node reference.
+The [binding patterns ledger](results/unified-pipeline-ledger-slice4a-typed-binding-patterns-v4.json)
+records 146 forms. The typed `destructuring` construct now stays typed, and
+both forms of `destructuring-entry-points` pass.
+
 ### What happens to each front end
 
 - js-engine lowering becomes a library of construct lowerings callable for a
@@ -622,6 +665,12 @@ the ledger corpus reproduce the ones expressible in a single application.
 | (Removed by 4a) Typed rest parameters and spreads in the rest position                                                                                                                                                                                                                                                                                 | `rest-default-parameters`, `rest-spread`                                                                        | 4a                                       |
 | (Removed by 4a) Value-returning functions rejected in void callback slots                                                                                                                                                                                                                                                                              | `void-callbacks`                                                                                                | 4a                                       |
 | Reading the result of a call through a void-typed callback, as in `const r: unknown = cb()`, `return cb()` from an `unknown` function, `[cb()]`, or `cb() === undefined`, fails at build time. TypeScript accepts these expressions and JavaScript yields the callee's actual return value.                                                            | `invalid binding operation`, `value does not match its declared type`, `void result cannot be a binary operand` | Not yet scheduled                        |
+| Native aggregates that escape before a patterned catch need realm views. A caught aggregate with a statically known unsupported representation receives the dynamic payload diagnostic.                                                                                                                                                                | Binding pattern fixtures                                                                                        | Realm views                              |
+| Typed source construction of realm getters and custom symbol methods needs broader accessor and symbol support. Native Set and Map operands cannot use iterable binding patterns outside the Map-entry loop path.                                                                                                                                      | Binding pattern fixtures, `iterator-protocol`                                                                   | Realm views and symbols                  |
+| Closed native records require known own enumerable fields for rest. `typed object rest requires known own enumerable fields` identifies layouts that cannot use the record path.                                                                                                                                                                       | `destructuring`                                                                                                 | Native record views                      |
+| Defaults in empty sources use explicit context or a context inferred from simple literal defaults. More complex inferred defaults still require explicit typing.                                                                                                                                                                                       | Binding pattern fixtures                                                                                        | Contextual checking                      |
+| Inferred leaves backed by general storage need narrowing for specialized operations after an uncertain join.                                                                                                                                                                                                                                           | Binding pattern fixtures                                                                                        | Open-slot flow                           |
+| Module exports provide linked value bindings. Direct compiled-image export selection requires a concrete function.                                                                                                                                                                                                                                     | Binding pattern fixtures                                                                                        | Native value export ABI                  |
 | Tuple annotations parse. Typed lowering supports `[string, T]` entry pairs. Other tuple shapes need lowering, and `implements` clauses still fail to parse.                                                                                                                                                                                            | `tuple-types`, `spread`, `iterator-protocol`                                                                    | tuple lowering, parser fix               |
 | Nested type declarations; ternary over union discriminants in an object literal                                                                                                                                                                                                                                                                        | `nested-type-declarations`, `union-object-ternary`                                                              | 5                                        |
 | `for (const x of list)` followed by a property read of `x` (in runtime modules)                                                                                                                                                                                                                                                                        | `for-of-record-reads`                                                                                           | 5                                        |

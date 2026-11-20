@@ -1808,6 +1808,7 @@ function lowerEntries(
         if (local === undefined) throw "parameter adapter invariant";
         declarations.set(p, local);
       }
+      const bindingIterationLocals = createKeyIndex<Span, Local>(syntaxHash);
       const dynamicAliases = new Map<string, number>();
       const dynamicSignatures: number[] = [];
       for (const binding of selected) {
@@ -1846,7 +1847,7 @@ function lowerEntries(
                 if (local === undefined)
                   fail("missing dynamic-object runtime helper: " + name);
                 return local;
-              }),
+              }, dynamicAliases.has("bindingObject")),
               speculativeBinary: dynamicAliases.get("speculativeBinary"),
               speculativeString: dynamicAliases.get("speculativeString"),
               speculativeUnary: dynamicAliases.get("speculativeUnary"),
@@ -2160,7 +2161,8 @@ function lowerEntries(
               if (
                 checkedType !== undefined &&
                 checked.types[checkedType]?.kind === "function" &&
-                local === undefined
+                local === undefined &&
+                checked.bindingValues?.has(node) !== true
               )
                 fail(
                   "named function values require managed hoisted initialization: " +
@@ -2549,6 +2551,13 @@ function lowerEntries(
             case "assignment":
             case "compound":
             case "update": {
+              if (
+                node.kind === "assignment" &&
+                checked.bindingInitializations?.has(node)
+              ) {
+                bindingPlan(node);
+                break;
+              }
               let target = node.target;
               while (target.kind === "group" || target.kind === "satisfies")
                 target = target.expression;
@@ -3400,6 +3409,35 @@ function lowerEntries(
         visit(target);
         return { tests, records, errors };
       }
+      function bindingPlan(site: Span): void {
+        const plan = checked.bindingInitializations?.get(site);
+        if (plan === undefined) fail("unchecked binding pattern");
+        if (plan.input !== undefined) expr(plan.input);
+        expr(plan.root);
+        for (const step of plan.steps) {
+          if (step === undefined) fail("binding step invariant");
+          expr(step.read);
+          if (step.array?.realm === true) {
+            const type = checked.expressions.get(step.read);
+            const metadata = expressions.get(step.read);
+            if (type === undefined || metadata === undefined)
+              fail("realm iterator projection invariant");
+            expressions.set(step.read, {
+              ...metadata,
+              dynamicContract: encodeDynamicContract(checked, type),
+            });
+          }
+          if (step.initializer !== undefined) expr(step.initializer);
+          expr(step.target);
+          if (step.assignment !== undefined) expr(step.assignment);
+          const binding = step.binding;
+          if (binding !== undefined) {
+            const local = localByNode.get(binding);
+            if (local === undefined) fail("missing binding pattern local");
+            declarations.set(binding, local);
+          }
+        }
+      }
       function stmt(input: Statement): void {
         const node = input;
         switch (node.kind) {
@@ -3412,8 +3450,10 @@ function lowerEntries(
           case "variable":
             for (const d of node.declarations) {
               if (d === undefined) fail("declaration array invariant");
-              if (d.kind === "object-binding" || d.kind === "array-binding")
-                fail("unchecked binding pattern");
+              if (d.kind === "object-binding" || d.kind === "array-binding") {
+                bindingPlan(d);
+                continue;
+              }
               const local = localByNode.get(d);
               if (local === undefined) fail("missing entry local");
               declarations.set(d, local);
@@ -3510,10 +3550,12 @@ function lowerEntries(
                   binding.kind === "object-binding" ||
                   binding.kind === "array-binding"
                 )
-                  fail("unchecked catch pattern");
-                const local = localByNode.get(binding);
-                if (local === undefined) fail("missing catch local");
-                declarations.set(binding, local);
+                  bindingPlan(binding);
+                else {
+                  const local = localByNode.get(binding);
+                  if (local === undefined) fail("missing catch local");
+                  declarations.set(binding, local);
+                }
               }
               stmt(handler.body);
             }
@@ -3558,9 +3600,12 @@ function lowerEntries(
           }
           case "for-of": {
             const iterationBinding = node.binding;
-            if (iterationBinding.kind === "object-binding")
-              fail("unchecked iteration pattern");
-            if (iterationBinding.kind === "array-binding") {
+            const pattern =
+              checked.bindingInitializations?.get(iterationBinding);
+            if (
+              iterationBinding.kind === "array-binding" &&
+              pattern === undefined
+            ) {
               expr(node.iterable);
               const iterableType = checked.expressions.get(node.iterable);
               const encoding =
@@ -3599,15 +3644,36 @@ function lowerEntries(
               stmt(node.body);
               break;
             }
-            const local = localByNode.get(iterationBinding);
+            const local: Local | undefined =
+              pattern === undefined
+                ? localByNode.get(iterationBinding)
+                : {
+                    id: locals.length,
+                    name: "",
+                    type: scalar(checked.expressions.get(pattern.root)),
+                    mutable: false,
+                    parameter: false,
+                    span: iterationBinding,
+                  };
             if (local === undefined) fail("missing iteration binding");
+            if (pattern !== undefined) {
+              locals.push(local);
+              bindingIterationLocals.set(iterationBinding, local);
+              bindingPlan(iterationBinding);
+            } else {
+              if (
+                iterationBinding.kind === "object-binding" ||
+                iterationBinding.kind === "array-binding"
+              )
+                fail("unchecked iteration pattern");
+              declarations.set(iterationBinding, local);
+            }
             const binding =
               checked.bindings.bindings[bindingId(iterationBinding)];
             if (binding?.captured && layout !== undefined)
               fail(
                 "captured for-of bindings require per-iteration environments",
               );
-            declarations.set(iterationBinding, local);
             expr(node.iterable);
             const iterableType = checked.expressions.get(node.iterable);
             if (
@@ -3634,7 +3700,9 @@ function lowerEntries(
                 ? undefined
                 : checked.types[iterableType];
             const elementType =
-              checked.bindingTypes[bindingId(iterationBinding)];
+              pattern === undefined
+                ? checked.bindingTypes[bindingId(iterationBinding)]
+                : checked.expressions.get(pattern.root);
             if (
               iteratedList?.kind === "array" &&
               elementType !== undefined &&
@@ -3683,8 +3751,22 @@ function lowerEntries(
       for (const p of parameters) {
         if (p === undefined) fail("parameter array invariant");
         if (p.initializer !== undefined) expr(p.initializer);
+        if (p.kind === "pattern-parameter") bindingPlan(p);
       }
       stmt(block);
+      let bindingPrologue: Statement | undefined;
+      if (
+        parameters.some(
+          (parameter) =>
+            parameter !== undefined &&
+            checked.bindingRealm?.has(parameter) === true,
+        )
+      ) {
+        const first = block.kind === "block" ? block.statements[0] : undefined;
+        if (first?.kind !== "variable" || !dynamicAliases.has("bindingObject"))
+          fail("realm binding parameter helper prologue is missing");
+        bindingPrologue = first;
+      }
       if (block.kind === "block")
         block = {
           ...block,
@@ -3755,6 +3837,9 @@ function lowerEntries(
         locals,
         expressions,
         declarations,
+        bindingInitializations: checked.bindingInitializations,
+        bindingPrologue,
+        bindingIterationLocals,
       };
       const incoming = ownedFunctions.get(sourceId);
       let owned: OwnedEnvironmentPlan | undefined;

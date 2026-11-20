@@ -6,13 +6,14 @@ import type { BoundModule } from "@tint/typescript/binding";
 import {
   typeParameterCount,
   rewriteModule,
+  bindingIdentifiers,
   syntaxHash,
   type Module,
   type Statement,
   type TypeNode,
   type PropertySignature,
   type ObjectProperty,
-  type Binding,
+  type VariableBinding,
   type Expression,
 } from "@tint/typescript/syntax";
 
@@ -90,20 +91,25 @@ export function prepareModuleInstance(
         body.push({ ...statement, exported: false });
         break;
       case "variable": {
-        const kept: Binding[] = [],
-          moved: Binding[] = [];
+        const kept: VariableBinding[] = [],
+          moved: VariableBinding[] = [];
         for (const declaration of statement.declarations) {
           if (declaration === undefined) throw "missing retained declaration";
-          if (
-            declaration.kind === "object-binding" ||
-            declaration.kind === "array-binding"
-          )
+          let retained = false,
+            instance = false;
+          for (const leaf of bindingIdentifiers(declaration)) {
+            if (leaf === undefined) throw "module binding pattern invariant";
+            names.set(leaf.name, 1);
+            if (keep.has(leaf.name)) retained = true;
+            else instance = true;
+          }
+          if (retained && instance)
             return {
               ok: false,
-              error: "typed binding patterns are not implemented",
+              error:
+                "module binding pattern cannot mix retained and instance declarations",
             };
-          names.set(declaration.name, 1);
-          if (keep.has(declaration.name)) kept.push(declaration);
+          if (retained) kept.push(declaration);
           else moved.push(declaration);
         }
         if (kept.length > 0) {
@@ -114,15 +120,6 @@ export function prepareModuleInstance(
         if (moved.length === 0) break;
         for (const binding of statement.declarations) {
           if (binding === undefined) throw "missing declaration";
-          if (
-            binding.kind === "object-binding" ||
-            binding.kind === "array-binding"
-          )
-            return {
-              ok: false,
-              error: "typed binding patterns are not implemented",
-            };
-          names.set(binding.name, 1);
           if (binding.initializer === undefined)
             return {
               ok: false,

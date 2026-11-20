@@ -66,6 +66,7 @@ export type Type =
       readonly properties: readonly Property[];
       readonly stringIndex?: StringIndex;
       readonly realmRecord?: boolean;
+      readonly iteratorElement?: number | undefined;
       /** An interface without an index does not imply one from its fields. */
       readonly interfaceDeclaration?: boolean;
       /** Function-signature IDs for independent internal call/construct capabilities. */
@@ -520,6 +521,13 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     if (source.kind !== "object" || target.kind !== "object") return undefined;
     if ((source.realmRecord === true) !== (target.realmRecord === true))
       return false;
+    const offered = source.iteratorElement,
+      required = target.iteratorElement;
+    if (
+      (required !== undefined && offered === undefined) ||
+      (exact && offered !== undefined && required === undefined)
+    )
+      return false;
     const sourceIndex = source.stringIndex,
       targetIndex = target.stringIndex,
       indexed = sourceIndex !== undefined || targetIndex !== undefined;
@@ -544,7 +552,10 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
       constructs = signaturePresence(source.construct, target.construct, exact);
     if (calls === false || constructs === false) return false;
     let known =
-      calls === true && constructs === true && targetIndex === undefined;
+      calls === true &&
+      constructs === true &&
+      targetIndex === undefined &&
+      required === undefined;
     for (const property of target.properties) {
       if (property === undefined) throw "property invariant";
       let matched = false;
@@ -823,6 +834,13 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
           dependency(
             beginClause(i),
             pair(sourceConstruct, targetConstruct, exact),
+          );
+        const sourceIterator = source.iteratorElement,
+          targetIterator = target.iteratorElement;
+        if (sourceIterator !== undefined && targetIterator !== undefined)
+          dependency(
+            beginClause(i),
+            pair(sourceIterator, targetIterator, exact),
           );
         if (targetIndex !== undefined) {
           if (sourceIndex !== undefined)
@@ -1543,6 +1561,7 @@ function copyType(
         else names.add(p.name);
       }
       const objectRefs = t.properties.map((p) => p.type);
+      if (t.iteratorElement !== undefined) objectRefs.push(t.iteratorElement);
       const index = t.stringIndex;
       if (index !== undefined) objectRefs.push(index.type);
       for (const signature of [t.call, t.construct]) {
@@ -1560,6 +1579,7 @@ function copyType(
       copy = {
         kind: t.kind,
         ...(t.realmRecord === true ? { realmRecord: true } : {}),
+        iteratorElement: t.iteratorElement,
         ...(t.interfaceDeclaration === true
           ? { interfaceDeclaration: true }
           : {}),

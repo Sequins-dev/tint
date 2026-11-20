@@ -38,10 +38,18 @@ export interface DynamicObjectRuntime {
   readonly speculativeBinary?: number | undefined;
   readonly speculativeString?: number | undefined;
   readonly speculativeUnary?: number | undefined;
+  readonly bindingObject?: number;
+  readonly bindingIterator?: number;
+  readonly bindingNext?: number;
+  readonly bindingSkip?: number;
+  readonly bindingTail?: number;
+  readonly bindingClose?: number;
+  readonly bindingRest?: number;
 }
 
 export function dynamicObjectRuntime(
   resolve: (name: string) => number,
+  patterns: boolean = false,
 ): DynamicObjectRuntime {
   return {
     create: resolve("create"),
@@ -62,6 +70,17 @@ export function dynamicObjectRuntime(
     advance: resolve("advance"),
     objectConstructor: resolve("objectConstructor"),
     invokeEnumeration: resolve("invokeEnumeration"),
+    ...(patterns
+      ? {
+          bindingObject: resolve("bindingObject"),
+          bindingIterator: resolve("bindingIterator"),
+          bindingNext: resolve("bindingNext"),
+          bindingSkip: resolve("bindingSkip"),
+          bindingTail: resolve("bindingTail"),
+          bindingClose: resolve("bindingClose"),
+          bindingRest: resolve("bindingRest"),
+        }
+      : {}),
   };
 }
 
@@ -290,6 +309,7 @@ export function usesDynamicObjectRuntime(
   speculativeFlow?: boolean,
 ): boolean {
   if (speculativeFlow === true && hasFlowReads(checked)) return true;
+  if (checked.needsBindingRealm === true) return true;
   if (
     !checked.types.some(
       (type) =>
@@ -416,6 +436,11 @@ export function insertDynamicObjectRuntime(
   speculativeFlow?: boolean,
 ): Module {
   const uses: Span[] = [];
+  const patterns: Span[] = [];
+  checked.bindingRealm?.forEach((_value, site) => {
+    patterns.push(site);
+    uses.push(site);
+  });
   checked.intrinsics.forEach((intrinsic, node) => {
     if (
       intrinsic.startsWith("dynamic-object-") ||
@@ -492,7 +517,7 @@ export function insertDynamicObjectRuntime(
         return false;
     }
   }
-  function aliasesAt(scope: Span): Statement {
+  function aliasesAt(scope: Span, includePatterns: boolean = false): Statement {
     const declarations: Binding[] = [];
     function alias(name: string): number {
       const linked = helpers.get("dynamic-object:" + name);
@@ -511,7 +536,15 @@ export function insertDynamicObjectRuntime(
       });
       return 0;
     }
-    dynamicObjectRuntime(alias);
+    dynamicObjectRuntime(
+      alias,
+      patterns.some(
+        (site) =>
+          site !== undefined &&
+          site.start >= scope.start &&
+          site.end <= scope.end,
+      ) || includePatterns,
+    );
     if (
       flowUses.some(
         (use) =>
@@ -540,7 +573,19 @@ export function insertDynamicObjectRuntime(
     body: Statement,
     parameters: readonly Parameter[],
   ): BlockStatement {
-    const statements: Statement[] = [aliasesAt(body)];
+    // Rewriting creates new parameter nodes, while the checker indexes the
+    // original (possibly specialized) syntax. Runtime selection uses spans.
+    const realmParameters = parameters.some(
+      (parameter) =>
+        parameter !== undefined &&
+        patterns.some(
+          (site) =>
+            site !== undefined &&
+            site.start >= parameter.start &&
+            site.end <= parameter.end,
+        ),
+    );
+    const statements: Statement[] = [aliasesAt(body, realmParameters)];
     for (const parameter of parameters) {
       if (parameter === undefined || parameter.kind === "pattern-parameter")
         continue;
@@ -619,7 +664,8 @@ export function insertDynamicObjectRuntime(
     for (let index = 0; index < rewritten.statements.length; index++) {
       const item = rewritten.statements[index];
       if (item === undefined) throw "dynamic module statement invariant";
-      if (index === first) statements.push(aliasesAt(item));
+      if (index === first)
+        statements.push(aliasesAt(item, patterns.length !== 0));
       statements.push(item);
     }
     return { ...rewritten, statements };

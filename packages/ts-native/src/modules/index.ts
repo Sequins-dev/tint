@@ -228,13 +228,14 @@ export function linkModules(
           for (const declaration of statement.declarations) {
             if (declaration === undefined) throw "missing declaration";
             if (
-              declaration.kind === "object-binding" ||
-              declaration.kind === "array-binding"
+              options?.evaluation !== "instance" &&
+              (declaration.kind === "object-binding" ||
+                declaration.kind === "array-binding")
             )
               fail(
                 source.id,
                 declaration,
-                "typed binding patterns are not implemented",
+                "module evaluation is required for binding patterns",
               );
             const value = declaration.initializer;
             if (

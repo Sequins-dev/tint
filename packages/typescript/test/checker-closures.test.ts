@@ -3535,3 +3535,140 @@ test("callable facts retain concrete signatures and obey invalidation", () => {
     assert.equal(result.error.code, "TYPE_MISMATCH", JSON.stringify(result));
   }
 });
+
+test("object binding declarations project annotated property types", () => {
+  const result =
+    check(`function f(input: { nested: { count: number }; label?: string }): number {
+    const { nested: { count: total }, label = "default" } = input;
+    return label.length + total;
+  }`);
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.equal(
+    check(`function f(input: { count: number }): number {
+      const { missing } = input;
+      return missing;
+    }`).ok,
+    false,
+  );
+});
+
+test("binding patterns check native array elements, defaults, and rest", () => {
+  const result = check(`function f(values: (number | undefined)[]): number {
+    const [first = 0, , ...rest] = values;
+    return first + (rest[0] ?? 0);
+  }`);
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.equal(
+    check("function f(values: number): void { const [x] = values; }").ok,
+    false,
+  );
+});
+
+test("patterns in parameters and for-of heads use their input types", () => {
+  const result = check(`
+    function project({ n = 20 }: { n?: number }, twice: number = n + n): number { return twice; }
+    function f(items: { x: number }[]): number {
+      const pick: (item: { x: number }) => number = ({ x }) => x;
+      let total = 0;
+      for (const { x } of items) { total += pick({ x }); }
+      return total + project({});
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("destructuring assignments preserve their source type and check target writes", () => {
+  const result = check(`
+    function f(): number {
+      let a: number = 1, b: number = 2;
+      [a, b] = [b, a];
+      const result = ({ a } = { a: 42 });
+      return result.a;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+  for (const source of [
+    'function f(): void { let a: number = 0; ({ a } = { a: "wrong" }); }',
+    "function f(xs: number[]): void { let a: number = 0; [a] = xs; }",
+  ])
+    assert.equal(check(source).ok, false);
+});
+
+test("module binding patterns publish leaf types to following declarations", () => {
+  const result = check(`
+    export const { value: answer }: { value: number } = { value: 42 };
+    export function run(): number { return answer; }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("binding defaults contextually type empty property and parameter literals", () => {
+  for (const source of [
+    "function f(o: { xs?: number[] }): number { const { xs = [] }: { xs?: number[] } = o; return xs.length; }",
+    "function f({ a = {} } = {}): number { return 42; }",
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify(result));
+  }
+});
+
+test("catch patterns with an any annotation project general values", () => {
+  const result = check(`
+    function f(value: unknown): number {
+      try { throw value; } catch ({ n }: any) { return n as number; }
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("inferred union leaves can change type while annotated leaves retain their contract", () => {
+  const source = `function f(input: { value: number | string }): boolean {
+    let { value } = input;
+    value = true;
+    return value;
+  }`;
+  assert.ok(check(source).ok);
+  assert.equal(
+    check(
+      source.replace(
+        "let { value }",
+        "let { value }: { value: number | string }",
+      ),
+    ).ok,
+    false,
+  );
+});
+
+test("realm iterator pattern parameters can initialize before later defaults", () => {
+  const result = check(`
+    function read([first = 20]: Iterable<number>, second: number = first): number {
+      return first + second;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("realm iterator values retain realm record layouts", () => {
+  const result = check(`
+    function read(input: Iterable<{ value: number }>): number {
+      const [entry] = input;
+      if (entry === undefined) return 0;
+      const { value } = entry;
+      return value;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+  const checked = result.value;
+  const entry = checked.bindings.bindings.find(
+    (binding) => binding.name === "entry",
+  );
+  assert.ok(entry);
+  const type = checked.types[checked.bindingTypes[entry.id] ?? -1];
+  assert.ok(type?.kind === "union");
+  assert.ok(
+    type.members.some((member) => {
+      const variant = checked.types[member];
+      return variant?.kind === "object" && variant.realmRecord === true;
+    }),
+  );
+});

@@ -1258,6 +1258,7 @@ export function createRecordContracts(
   function spreadProperties(
     source: Expression,
     fieldNames: readonly string[],
+    excluded?: readonly string[],
   ): { name: string; access: RecordAccess; alwaysPresent: boolean }[] {
     const sourceType = checked.expressions.get(source);
     if (sourceType === undefined) fail("missing spread source type");
@@ -1286,6 +1287,21 @@ export function createRecordContracts(
         continue;
       for (const shape of shapesForType(id)) {
         if (shape === undefined) throw "spread shape invariant";
+        if (excluded !== undefined) {
+          const excludedNames = excluded;
+
+          if (nonEnumerable[shape] === 1)
+            fail("typed object rest requires known own enumerable fields");
+          const fields = names[shape];
+          if (fields === undefined) throw "spread shape fields invariant";
+          for (const name of fields)
+            if (
+              name !== undefined &&
+              !fieldNames.includes(name) &&
+              !excludedNames.includes(name)
+            )
+              fail("typed object rest requires known own enumerable fields");
+        }
         if (nonEnumerable[shape] !== 1)
           candidates.push({ type: id, record: shape });
       }
@@ -1748,7 +1764,14 @@ export function createRecordContracts(
           const copied = fields.filter(
             (name) => name !== undefined && !overwritten.has(name),
           );
-          spreads.set(property.value, spreadProperties(property.value, copied));
+          spreads.set(
+            property.value,
+            spreadProperties(
+              property.value,
+              copied,
+              checked.bindingRestExclusions?.get(node),
+            ),
+          );
         } else overwritten.add(property.name);
       }
       constructions.set(node, construction);
