@@ -598,6 +598,7 @@ function lowerScriptEntry(
   let moduleSuspends = false;
   let moduleContinuation: BlockStatement | undefined;
   let asyncGeneratorBody = false;
+  let yieldContract = 0;
   let disposalScope: Expression | undefined;
   let usesDirectEval = false;
   let usesImportCall = false;
@@ -1757,6 +1758,23 @@ function lowerScriptEntry(
     disposalScope = undefined;
     const asyncGenerator = generator && (options.async ?? false);
     asyncGeneratorBody = asyncGenerator;
+    const annotation = options.resultType;
+    const suspendedArguments =
+      annotation?.kind === "named" &&
+      annotation.name ===
+        (generator
+          ? asyncGenerator
+            ? "AsyncGenerator"
+            : "Generator"
+          : "Promise")
+        ? annotation.arguments
+        : undefined;
+    const outerYieldContract = yieldContract;
+    yieldContract = generator ? contract(suspendedArguments?.[0]) : 0;
+    const completionContract = contract(
+      suspendedArguments?.[generator ? 1 : 0],
+    );
+    const resumeContract = generator ? contract(suspendedArguments?.[2]) : 0;
     const inputName = "$resumeValue" + serial++;
     const kindName = "$resumeKind" + serial++;
     suspensionInput = suspending ? inputName : undefined;
@@ -2386,21 +2404,27 @@ function lowerScriptEntry(
                 ],
                 body,
               ),
-        (value, following) =>
-          runtimeCall(
+        (value, following) => {
+          const delegateArguments: Expression[] = [
+            runtimeCall(
+              asyncGenerator ? "getScriptAsyncIterator" : "getScriptIterator",
+              [value, id("$errors"), member(id("$global"), "hooks", body)],
+              body,
+            ),
+            following,
+          ];
+          if (!asyncGenerator && yieldContract !== 0) {
+            delegateArguments.push(id("$errors"));
+            delegateArguments.push(contractValue(yieldContract, body));
+          }
+          return runtimeCall(
             asyncGenerator
               ? "createAsyncDelegatingContinuation"
               : "createDelegatingContinuation",
-            [
-              runtimeCall(
-                asyncGenerator ? "getScriptAsyncIterator" : "getScriptIterator",
-                [value, id("$errors"), member(id("$global"), "hooks", body)],
-                body,
-              ),
-              following,
-            ],
+            delegateArguments,
             body,
-          ),
+          );
+        },
         (node) =>
           fail(
             node,
@@ -2495,6 +2519,7 @@ function lowerScriptEntry(
     functionDepth--;
     suspensionInput = outerSuspensionInput;
     asyncGeneratorBody = outerAsyncGeneratorBody;
+    yieldContract = outerYieldContract;
     disposalScope = outerDisposalScope;
     annexVariableRecord = outerAnnexVariableRecord;
     const callbackParameters: Parameter[] = [
@@ -2564,7 +2589,27 @@ function lowerScriptEntry(
         ? span
         : { start: options.sourceStart, end: span.end };
     const length = options.packed ? 0 : expectedArgumentCount(parameters);
-    if (generator || options.async)
+    if (generator || options.async) {
+      const suspensionArguments: Expression[] = [
+        callback,
+        id("$errors"),
+        member(id("$global"), "hooks", span),
+        runtimeCall(
+          "propertyFunctionName",
+          [functionName ?? text("", span)],
+          span,
+        ),
+        { ...at(span), kind: "number", value: length, raw: "" + length },
+        homeObject ?? id("undefined"),
+      ];
+      if (
+        !asyncGenerator &&
+        (completionContract !== 0 || resumeContract !== 0)
+      ) {
+        suspensionArguments.push(contractValue(completionContract, span));
+        if (generator)
+          suspensionArguments.push(contractValue(resumeContract, span));
+      }
       return retainSource(
         runtimeCall(
           asyncGenerator
@@ -2572,27 +2617,12 @@ function lowerScriptEntry(
             : generator
               ? "createSourceGeneratorFunction"
               : "createSourceAsyncContinuationFunction",
-          [
-            callback,
-            id("$errors"),
-            member(id("$global"), "hooks", span),
-            runtimeCall(
-              "propertyFunctionName",
-              [functionName ?? text("", span)],
-              span,
-            ),
-            {
-              ...at(span),
-              kind: "number",
-              value: length,
-              raw: "" + length,
-            },
-            homeObject ?? id("undefined"),
-          ],
+          suspensionArguments,
           span,
         ),
         retainedSpan,
       );
+    }
     const canConstruct = !arrow && !method && !options.packed;
     const constructible: Expression = {
       ...at(span),
@@ -4188,10 +4218,15 @@ function lowerScriptEntry(
             ? id("undefined")
             : temporary(value(node.expression), true);
         if (node.kind === "await") return awaitLoweredValue(operand, node);
-        const yielded =
+        let yielded =
           asyncGeneratorBody && !node.delegate
             ? awaitLoweredValue(operand, node)
             : operand;
+        if (!node.delegate && yieldContract !== 0)
+          yielded = temporary(
+            checkedContract(yielded, yieldContract, node),
+            true,
+          );
         statements.push({
           ...at(node),
           kind: "expression",

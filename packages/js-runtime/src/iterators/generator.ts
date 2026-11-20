@@ -35,11 +35,16 @@ export function runGeneratorSteps<Value>(
 }
 export interface GeneratorRecord<Value> {
   state: GeneratorState;
+  readonly contracts?: GeneratorContracts<Value>;
   /** A native continuation captures the frame. Clear it on completion so a
    * retained exhausted generator does not keep its execution state alive. */
   continuation:
     | ((kind: GeneratorResumeKind, value: Value) => GeneratorOutcome<Value>)
     | undefined;
+}
+export interface GeneratorContracts<Value> {
+  readonly acceptsNext: ((value: Value) => boolean) | undefined;
+  readonly acceptsReturn: ((value: Value) => boolean) | undefined;
 }
 export interface GeneratorHooks<Value> {
   readonly undefinedValue: Value;
@@ -52,8 +57,11 @@ export function createGeneratorRecord<Value>(
     kind: GeneratorResumeKind,
     value: Value,
   ) => GeneratorOutcome<Value>,
+  contracts?: GeneratorContracts<Value>,
 ): GeneratorRecord<Value> {
-  return { state: "suspended-start", continuation };
+  return contracts === undefined
+    ? { state: "suspended-start", continuation }
+    : { state: "suspended-start", continuation, contracts };
 }
 
 /** The caller validates the receiver and generator brand. The continuation
@@ -76,6 +84,13 @@ export function resumeGenerator<Value>(
   }
   if (record.state === "completed") {
     if (kind === "throw") throw value;
+    const acceptsReturn = record.contracts?.acceptsReturn;
+    if (
+      kind === "return" &&
+      acceptsReturn !== undefined &&
+      !acceptsReturn(value)
+    )
+      throw hooks.typeError();
     return hooks.iteratorResult(
       kind === "return" ? value : hooks.undefinedValue,
       true,
@@ -85,6 +100,16 @@ export function resumeGenerator<Value>(
   if (continuation === undefined) throw "generator continuation invariant";
   record.state = "executing";
   try {
+    const acceptsNext = record.contracts?.acceptsNext;
+    if (
+      state === "suspended-yield" &&
+      kind === "next" &&
+      acceptsNext !== undefined &&
+      !acceptsNext(value)
+    ) {
+      kind = "throw";
+      value = hooks.typeError();
+    }
     const outcome = continuation(
       kind,
       state === "suspended-start" ? hooks.undefinedValue : value,
@@ -95,6 +120,9 @@ export function resumeGenerator<Value>(
     }
     record.state = "completed";
     record.continuation = undefined;
+    const acceptsReturn = record.contracts?.acceptsReturn;
+    if (acceptsReturn !== undefined && !acceptsReturn(outcome.value))
+      throw hooks.typeError();
     return hooks.iteratorResult(outcome.value, true);
   } catch (error) {
     record.state = "completed";

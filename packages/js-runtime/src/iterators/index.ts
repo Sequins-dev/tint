@@ -20,6 +20,7 @@ export {
   type GeneratorResumeKind,
   type GeneratorOutcome,
   type GeneratorRecord,
+  type GeneratorContracts,
   type GeneratorHooks,
 } from "./generator.ts";
 export {

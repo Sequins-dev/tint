@@ -18,6 +18,7 @@ import { makeMethod } from "./methods.ts";
 import type { SourceFunctionCall } from "./functions.ts";
 import type { ErrorRealm } from "./errors.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
+import { primitiveContractPredicate } from "./values.ts";
 
 type AsyncBody = (
   receiver: unknown,
@@ -90,6 +91,7 @@ export function createSourceAsyncContinuationFunction(
   name: string = "",
   length: number = 0,
   home: OrdinaryObject<ScriptPropertyKey, unknown> | undefined = undefined,
+  fulfillmentContract: number = 0,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   return createAsyncFunction(
     (receiver, args, callee, functions, protocol): void => {
@@ -112,6 +114,7 @@ export function createSourceAsyncContinuationFunction(
     length,
     home,
     undefined,
+    fulfillmentContract,
   );
 }
 
@@ -180,6 +183,7 @@ function createAsyncFunction(
         callee: unknown,
       ) => OrdinaryObject<ScriptPropertyKey, unknown> | undefined)
     | undefined,
+  fulfillmentContract: number = 0,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const protocol = createScriptPromiseHooks(
     realm,
@@ -188,6 +192,7 @@ function createAsyncFunction(
       realm.promiseRejectionTracker(promise, operation),
   );
   const identity: { value: unknown } = { value: undefined };
+  const acceptsFulfillment = primitiveContractPredicate(fulfillmentContract);
   const fn = createCallableObject<ScriptPropertyKey, unknown>(
     realm.asyncFunctionPrototype,
     (receiver, args): unknown => {
@@ -205,7 +210,11 @@ function createAsyncFunction(
       const promise = createPromiseObject(realm.promisePrototype);
       const record = promise.internalPromiseData;
       if (record === undefined) throw "ASYNC_PROMISE_INVARIANT";
-      const functions = createResolvingFunctions<unknown>(record, protocol);
+      const functions = createResolvingFunctions<unknown>(
+        record,
+        protocol,
+        acceptsFulfillment,
+      );
       try {
         if (failed) functions.reject(failure);
         else body(receiver, args, identity.value, functions, protocol);

@@ -52,6 +52,15 @@ export function checkPrimitiveContract(
   value: unknown,
   allowed: number,
 ): unknown {
+  if (!acceptsPrimitiveContract(value, allowed))
+    throw createRuntimeError(realm, "type");
+  return value;
+}
+
+export function acceptsPrimitiveContract(
+  value: unknown,
+  allowed: number,
+): boolean {
   let kind = value === null ? "null" : typeof value;
   if (kind === "object") {
     if (
@@ -65,9 +74,14 @@ export function checkPrimitiveContract(
     )
       kind = "symbol";
   }
-  if ((allowed & primitiveContractBit(kind)) === 0)
-    throw createRuntimeError(realm, "type");
-  return value;
+  return (allowed & primitiveContractBit(kind)) !== 0;
+}
+
+export function primitiveContractPredicate(
+  allowed: number,
+): ((value: unknown) => boolean) | undefined {
+  if (allowed === 0) return undefined;
+  return (value: unknown): boolean => acceptsPrimitiveContract(value, allowed);
 }
 
 export function checkPrimitiveRestArguments(
