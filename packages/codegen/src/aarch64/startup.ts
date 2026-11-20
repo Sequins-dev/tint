@@ -15,6 +15,8 @@ import {
   nativeStackMapTransitionTable,
   nativeStackMapRegistryOffset,
   nativeThreadExitReadOffset,
+  nativeWorkerStopPointerOffset,
+  nativeWorkerStopStateOffset,
   nativeThreadExitWriteOffset,
   type PosixHostABI,
 } from "@tint/abi/host";
@@ -127,6 +129,7 @@ export interface HostRequest {
   /** Opt in to a raw pthread entry and a one-number application entry. */
   readonly threaded?: boolean;
   readonly threadExitPipe?: boolean;
+  readonly workerSafepoints?: boolean;
   readonly forceFarReach?: boolean | undefined;
   readonly allocator: {
     readonly native: NativeModule;
@@ -398,7 +401,7 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
       staticStackMaps.length +
       (request.diagnostics === undefined ? 0 : 1) +
       (request.stackMapCapacity ?? 16384),
-    stackMapRegistry = align(cursor, 16);
+    stackMapRegistry = align(cursor + (request.workerSafepoints ? 8 : 0), 16);
   if (!uint(stackMapCapacity) || stackMapCapacity > 1048576)
     return { ok: false, error: "invalid stack map capacity" };
   cursor =
@@ -844,6 +847,17 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
   // Publish the registry before any managed code runs. Mapped control
   // storage is zero: the walk start and unused entries need no stores.
   address(10, 20, stackMapRegistry);
+  if (request.workerSafepoints === true) {
+    imm(11, 1);
+    emit({ op: "and-reg", width: 64, rd: 12, rn: 27, rm: 11 });
+    imm(11, 0);
+    compare(12, 11);
+    branch("worker-stop-pointer-ready", "eq");
+    address(12, 27, nativeWorkerStopStateOffset - 1);
+    address(11, 20, stackMapRegistry + nativeWorkerStopPointerOffset);
+    emit({ op: "str", width: 64, rt: 12, rn: 11, offset: 0 });
+    label("worker-stop-pointer-ready");
+  }
   imm(11, staticStackMaps.length + (diagnostics === undefined ? 0 : 1));
   emit({ op: "str", width: 64, rt: 11, rn: 10, offset: 0 });
   imm(11, stackMapCapacity);

@@ -1,6 +1,9 @@
 import {
   nativeThreadExitReadOffset,
   nativeThreadExitWriteOffset,
+  nativeWorkerStopObserved,
+  nativeWorkerStopRequested,
+  nativeWorkerStopStateOffset,
 } from "@tint/abi/host";
 import type {
   SharedBlockWaiting,
@@ -16,6 +19,7 @@ import type { EventLoopHandle } from "./event-loop.ts";
 import type { ReactorEventLoop } from "./event-loop-reactor.ts";
 import {
   integer,
+  compareNumber,
   readNumber,
   writeNumber,
   type NativeSharedMemoryHost,
@@ -86,7 +90,6 @@ const MODULE_ID = 40;
 const ERROR_QUEUE = 48;
 const ENTERED = 56;
 const CONTROL_INPUT = 64;
-const STOP_REQUESTED = 72;
 const WAIT_REGISTRY = 80;
 const WAIT_REGISTRY_BYTES = 88;
 const WAIT_ENGINE = 96;
@@ -151,7 +154,14 @@ export function startNativeWorker(
     if (released || stopSignalled) return;
     const signals = control;
     if (signals === undefined) throw "NATIVE_WORKER_CONTROL_PIPE";
-    writeNumber(memory, record, STOP_REQUESTED, 1);
+    compareNumber(
+      memory,
+      record,
+      nativeWorkerStopStateOffset,
+      0,
+      nativeWorkerStopRequested,
+      scratch,
+    );
     const ticket = readNumber(memory, record, WAIT_TICKET, scratch);
     if (ticket !== 0 && request.waiters !== undefined)
       request.waiters.expire(ticket);
@@ -271,7 +281,9 @@ export function runNativeWorker(
   const moduleId = readNumber(memory, record, MODULE_ID, scratch);
   const threadId = readNumber(memory, record, THREAD_ID, scratch);
   function stopRequested(): boolean {
-    return readNumber(memory, record, STOP_REQUESTED, scratch) !== 0;
+    return (
+      readNumber(memory, record, nativeWorkerStopStateOffset, scratch) !== 0
+    );
   }
   let waiters: NativeWaitRegistry | undefined;
   const waitRegistry = readNumber(memory, record, WAIT_REGISTRY, scratch);
@@ -351,7 +363,12 @@ export function runNativeWorker(
     if (!integer(status) || status > 255) throw "invalid worker exit status";
     return stopRequested() ? 1 : status;
   } catch (error) {
-    if (error === waitInterrupted) return 1;
+    if (
+      error === waitInterrupted ||
+      readNumber(memory, record, nativeWorkerStopStateOffset, scratch) ===
+        nativeWorkerStopObserved
+    )
+      return 1;
     const text =
       typeof error === "string" ? error : "uncaught worker exception";
     if (errors.value.send(text).ok) return 1;

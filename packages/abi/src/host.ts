@@ -15,6 +15,14 @@ export const nativeAllocatorShutdownRequest = -1;
  * consumes the status from another wake and closes its own descriptors. */
 export const nativeThreadExitWriteOffset = 8;
 export const nativeThreadExitReadOffset = 16;
+/** Worker-capable startup reserves a word just before the stack-map registry.
+ * It points at the worker's stop state, or is zero in the main isolate. */
+export const nativeWorkerStopPointerOffset = -8;
+export const nativeWorkerStopStateOffset = 72;
+export const nativeWorkerStopRequested = 1;
+export const nativeWorkerStopObserved = 2;
+/** A tag-zero general payload reserved for managed worker interruption. */
+export const nativeWorkerStopPayload = 0x54e;
 /** Lowest stack pointer a managed frame may establish: the stack's low guard
  * page plus headroom. A stack overflow saves it in the engine-throw word and
  * sets it to 0 (emergency mode: no check, the guard page is the last resort)

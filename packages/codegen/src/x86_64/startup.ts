@@ -14,6 +14,8 @@ import {
   nativeStackMapRegistryOffset,
   nativeStackMapTransitionTable,
   nativeThreadExitReadOffset,
+  nativeWorkerStopPointerOffset,
+  nativeWorkerStopStateOffset,
   nativeThreadExitWriteOffset,
   type PosixHostFacts,
 } from "@tint/abi/host";
@@ -83,6 +85,7 @@ interface HostedEntry {
   readonly stackBytes: number;
   readonly threaded?: boolean;
   readonly threadExitPipe?: boolean;
+  readonly workerSafepoints?: boolean;
   readonly allowJit?: boolean;
   readonly managedBytes: number;
   readonly pageBytes: number;
@@ -152,7 +155,8 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
             : codeOffset + table.tableOffset,
       });
     }
-  const registryStart = stackEnd + pageBytes;
+  const registryStart =
+    stackEnd + pageBytes + (request.workerSafepoints ? 16 : 0);
   const registryCapacity = stackMaps.length + (live ? 16384 : 0);
   const registryBytes =
     nativeStackMapRegistryHeaderBytes +
@@ -397,6 +401,22 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     if (threaded) emit({ op: "label", name: keyReady });
   }
   emit({ op: "lea", dst: rax, src: mem(13, registryStart) });
+  if (request.workerSafepoints === true) {
+    emit({ op: "mov", dst: gpr(10), src: mem(12, threadArgumentOffset) });
+    emit({ op: "test", dst: gpr(10), src: imm(1) });
+    emit({ op: "jcc", cc: "e", target: label("worker-stop-pointer-ready") });
+    emit({
+      op: "lea",
+      dst: gpr(10),
+      src: mem(10, nativeWorkerStopStateOffset - 1),
+    });
+    emit({
+      op: "mov",
+      dst: mem(0, nativeWorkerStopPointerOffset),
+      src: gpr(10),
+    });
+    emit({ op: "label", name: "worker-stop-pointer-ready" });
+  }
   emit({ op: "mov", dst: mem(12, nativeStackMapRegistryOffset), src: rax });
   emit({ op: "mov", dst: mem(0, 0), src: imm(stackMaps.length) });
   emit({ op: "mov", dst: mem(0, 8), src: imm(registryCapacity) });

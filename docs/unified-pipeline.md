@@ -682,8 +682,15 @@ between turns and after reactor polling, and reports status 1 through the same
 teardown path. If a worker is parked on a registered Atomics waiter, the stop
 request also wakes that ticket. The worker consumes its ticket before exiting.
 Worker realms that attach shared memory with the worker wait control propagate
-the interruption through the engine-abort boundary in `Atomics.wait`. Checks
-at managed allocation and call safepoints remain open.
+the interruption through the engine-abort boundary in `Atomics.wait`.
+Hosted builds can designate worker application modules for interruption at
+managed allocation and call safepoints. The native backends read the worker's
+stop word and propagate a reserved completion through managed frames. Worker
+application handlers bypass that completion. Trusted runtime handlers and C
+callback boundaries use their existing cleanup paths. Worker-capable builds
+keep the managed module boundaries through optimization so runtime helpers
+retain that distinction. Allocation-free, call-free loops remain the gap
+documented in the [event loop design](design-event-loop.md).
 
 ### What happens to each front end
 

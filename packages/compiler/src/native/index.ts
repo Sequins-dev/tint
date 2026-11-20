@@ -230,6 +230,7 @@ export interface NativeServiceImport {
   readonly surface?: string;
 }
 export interface CompileRequest extends ModuleRequest {
+  readonly workerModules?: readonly string[];
   readonly storage?: BuildStorage;
   readonly serviceImports?: readonly NativeServiceImport[];
   readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
@@ -462,6 +463,7 @@ interface ReferenceListPlan {
  * hosts keep a frame's dead locals alive until it returns). Later stages
  * replace `ir.module`, so only its current version stays reachable. */
 interface TypedProgram {
+  readonly workerFunctions?: ReadonlySet<string>;
   readonly ir: ModuleVersion;
   initializer: number;
   invocation: number;
@@ -2334,6 +2336,28 @@ function lowerTypedProgram(
   if (!hosted.ok) return stageFailure("host", hosted.error);
   const weak = bindWeakOperations(hosted.value, weakBindings);
   if (!weak.ok) return stageFailure("weak", weak.error);
+  const workerModules = request.workerModules;
+  const workerFunctions =
+    workerModules === undefined ? undefined : new Set<string>();
+  if (workerModules !== undefined && workerFunctions !== undefined) {
+    for (const fn of nativeChecked.bindings.functions) {
+      if (fn === undefined) throw "worker function invariant";
+      const origin = locateSourceRange(ranges, fn.node);
+      if (origin === undefined || !workerModules.includes(origin.module))
+        continue;
+      const binding = nativeChecked.bindings.bindings.find(
+        (candidate) =>
+          candidate !== undefined &&
+          candidate.kind === "function" &&
+          candidate.node === fn.node,
+      );
+      workerFunctions.add(
+        binding === undefined ? "closure_" + fn.id : binding.name + "$" + fn.id,
+      );
+    }
+    if (workerFunctions.size === 0)
+      return stageFailure("worker", "worker modules have no managed functions");
+  }
   /** `module:sourceName` (closures: `module:closure@offset`) of each
    * generated function name, for debug symbols and diagnostics. */
   function functionSourceNames(): FunctionSourceNames {
@@ -2459,6 +2483,7 @@ function lowerTypedProgram(
       surfacePlans,
       surfaceRuntimes,
       sourceNames: describeSources ? functionSourceNames() : undefined,
+      ...(workerFunctions === undefined ? {} : { workerFunctions }),
       referenceLists,
     },
   };
@@ -2736,6 +2761,7 @@ export function compileX64HostedProgram(
       closedRecords: !managed,
       closedCalls: !managed,
       devirtualizeClosures: true,
+      inlining: program.workerFunctions === undefined ? "small" : "none",
     });
   const invocation = program.invocation,
     optimized = program.ir.module;
@@ -2792,6 +2818,7 @@ export function compileX64HostedProgram(
         }
       : undefined,
     options.jitDebugInterface === true,
+    program.workerFunctions,
   );
   if (!emitted.ok) {
     const message = emitted.error.message;
@@ -3098,6 +3125,7 @@ function compileTypedProgram(
       devirtualizeClosures: request.closedProgram === true,
       closedRecords: closedWorld,
       closedCalls: closedWorld,
+      inlining: program.workerFunctions === undefined ? "small" : "none",
       ...(optimizationObserver === undefined
         ? {}
         : { observer: optimizationObserver }),
@@ -3158,6 +3186,7 @@ function compileTypedProgram(
     formHints: request.emissionFormHints,
     pageAlignedCode: request.pageAlignedCode ?? false,
     forceFarReach: request.forceFarReach === true ? true : undefined,
+    workerFunctions: program.workerFunctions,
   });
   const optimizedModule = program.ir.module;
   if (!native.ok) {

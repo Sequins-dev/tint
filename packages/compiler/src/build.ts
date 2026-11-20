@@ -137,6 +137,8 @@ export interface BuildRequest extends ModuleRequest {
   readonly threaded?: boolean;
   /** Tagged worker arguments carry the post-teardown pipe notification ABI. */
   readonly threadExitPipe?: boolean;
+  /** Application modules whose managed code can be stopped in a worker. */
+  readonly workerModules?: readonly string[];
   /** Verification of the large code model (docs/large-images.md): emit
    * every module with all far-reach forms, which large images select
    * automatically only where reach requires them. */
@@ -295,6 +297,8 @@ function compileFailure(
 export function buildMacOSProgram(request: BuildRequest): BuildResult {
   if (request.threadExitPipe === true && request.threaded !== true)
     return failure("startup", "thread exit records require threaded startup");
+  if (request.workerModules !== undefined && request.threadExitPipe !== true)
+    return failure("startup", "worker safepoints require thread exit records");
   const target = buildTarget(request);
   if (target.arch === "x86_64") {
     const built = buildX64HostedProgram(request, target);
@@ -470,6 +474,9 @@ function buildX64HostedProgram(
           binding !== undefined && binding.operation !== "sha256-rounds",
       ),
       foreignBindings: request.foreignBindings ?? [],
+      ...(request.workerModules === undefined
+        ? {}
+        : { workerModules: request.workerModules }),
       foreignMemoryBindings: request.foreignMemoryBindings ?? [],
       foreignLibraries: request.foreignLibraries ?? [],
       serviceImports: serviceImportsForRequest(request),
@@ -598,6 +605,7 @@ function buildX64HostedProgram(
       stackBytes,
       threaded: request.threaded === true,
       threadExitPipe: request.threadExitPipe === true,
+      workerSafepoints: request.workerModules !== undefined,
       allowJit: request.allowJit === true,
       managedBytes,
       pageBytes,
@@ -1151,6 +1159,9 @@ export function compileMacOSProgram(
       modules: request.modules,
       moduleLoader: request.moduleLoader,
       entry: request.entry,
+      ...(request.workerModules === undefined
+        ? {}
+        : { workerModules: request.workerModules }),
       exports: [request.start],
       start: request.start,
       runtimes: request.runtimes,
@@ -1328,6 +1339,7 @@ function linkHostedImage(
     diagnostics,
     threaded: request.threaded ?? false,
     threadExitPipe: request.threadExitPipe === true,
+    workerSafepoints: request.workerModules !== undefined,
     abi: hostABI,
     allocator: {
       native: compiled.allocator,
