@@ -131,6 +131,37 @@ test("a retained handle with no timers waits for readiness without a deadline", 
   assert.deepEqual(timeouts, [Infinity]);
 });
 
+for (const deadline of [2 ** 31 - 1, 2 ** 31, 2 ** 31 + 0.5])
+  test("internal deadlines survive capped polls at " + deadline, () => {
+    const timerLimit = 2 ** 31 - 1;
+    let now = 0;
+    const timeouts: number[] = [];
+    const loop = createEventLoop({
+      now: () => now,
+      poll: (timeout) => {
+        assert(timeouts.length < 2, "the deadline must not poll in 1 ms steps");
+        timeouts.push(timeout);
+        now += Math.min(timerLimit, Math.ceil(timeout));
+      },
+      drainMicrotasks: () => {},
+    });
+    let completedAt = -1;
+    loop.scheduleDeadline(() => (completedAt = now), deadline);
+    loop.run("callback");
+    assert.equal(completedAt, Math.ceil(deadline));
+    assert.deepEqual(
+      timeouts,
+      deadline <= timerLimit ? [deadline] : [deadline, deadline - timerLimit],
+    );
+  });
+
+test("public timeouts retain Node's out-of-range delay handling", () => {
+  const { loop, pollTimeouts } = fixture();
+  loop.setTimeout(() => {}, 2 ** 31);
+  loop.run("callback");
+  assert.deepEqual(pollTimeouts, [1]);
+});
+
 test("timer order is stable and an overdue interval runs once per timers pass", () => {
   const { loop, advance, pollTimeouts } = fixture();
   const trace: string[] = [];

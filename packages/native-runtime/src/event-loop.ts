@@ -33,6 +33,8 @@ export interface EventLoop {
   setImmediate(callback: Callback): EventLoopHandle;
   clearImmediate(handle: EventLoopHandle | undefined): void;
   setTimeout(callback: Callback, delay?: number): EventLoopHandle;
+  /** Schedule an internal, finite deadline on the host's monotonic clock. */
+  scheduleDeadline(callback: Callback, deadline: number): EventLoopHandle;
   clearTimeout(handle: EventLoopHandle | undefined): void;
   setInterval(callback: Callback, delay?: number): EventLoopHandle;
   clearInterval(handle: EventLoopHandle | undefined): void;
@@ -130,8 +132,8 @@ export function createEventLoop(host: EventLoopHost): EventLoop {
     }
     place(index, timer);
   }
-  function push(timer: Timer, started: number): void {
-    timer.deadline = started + timer.delay;
+  function push(timer: Timer, deadline: number): void {
+    timer.deadline = deadline;
     timer.sequence = nextSequence++;
     const index = timers.length;
     timers.push(timer);
@@ -181,13 +183,13 @@ export function createEventLoop(host: EventLoopHost): EventLoop {
   }
   function scheduleTimer(
     callback: Callback,
-    delay: number | undefined,
+    delay: number,
     repeat: boolean,
+    deadline: number,
   ): EventLoopHandle {
-    const started = now();
     const timer: Timer = {
       repeat,
-      delay: timerDelay(delay),
+      delay,
       callback,
       handle: undefined,
       deadline: 0,
@@ -199,7 +201,7 @@ export function createEventLoop(host: EventLoopHost): EventLoop {
       remove(timer);
     });
     timer.handle = handle;
-    push(timer, started);
+    push(timer, deadline);
     return handle;
   }
   function clearTimeout(handle: EventLoopHandle | undefined): void {
@@ -236,7 +238,8 @@ export function createEventLoop(host: EventLoopHost): EventLoop {
         callback();
       } finally {
         if (!timer.repeat) handle.close();
-        else if (timer.callback !== undefined) push(timer, started);
+        else if (timer.callback !== undefined)
+          push(timer, started + timer.delay);
       }
       checkpoint("callback");
     }
@@ -325,10 +328,14 @@ export function createEventLoop(host: EventLoopHost): EventLoop {
       if (handle !== undefined && handle.kind === "immediate") handle.close();
     },
     setTimeout: (callback, delay): EventLoopHandle =>
-      scheduleTimer(callback, delay, false),
+      scheduleTimer(callback, 0, false, now() + timerDelay(delay)),
+    scheduleDeadline: (callback, deadline): EventLoopHandle =>
+      scheduleTimer(callback, 0, false, deadline),
     clearTimeout,
-    setInterval: (callback, delay): EventLoopHandle =>
-      scheduleTimer(callback, delay, true),
+    setInterval: (callback, delay): EventLoopHandle => {
+      const interval = timerDelay(delay);
+      return scheduleTimer(callback, interval, true, now() + interval);
+    },
     clearInterval: clearTimeout,
     checkpoint: (entry): void => {
       enter();

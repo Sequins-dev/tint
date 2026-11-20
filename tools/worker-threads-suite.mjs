@@ -207,7 +207,7 @@ async function verifyWaitAsync(filename) {
   let deadline;
   try {
     const exit = once(worker, "exit");
-    const wait = Atomics.waitAsync(words, 0, 0);
+    const wait = Atomics.waitAsync(words, 0, 0, 2147483648);
     if (!wait.async) return 16;
     const timeout = new Promise((resolve) => {
       deadline = setTimeout(() => resolve("missing wake"), 3000);

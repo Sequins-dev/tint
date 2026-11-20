@@ -239,12 +239,9 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
       timeout?.close();
       timeout = undefined;
       if (deadline !== Infinity)
-        timeout = reactor.loop.setTimeout(
-          (): void => {
-            deadline = Infinity;
-          },
-          Math.ceil(deadline - host.now()),
-        );
+        timeout = reactor.loop.scheduleDeadline((): void => {
+          deadline = Infinity;
+        }, deadline);
     }
     return completed;
   }
