@@ -273,7 +273,7 @@ self-build reached optimization and hit its one-hour watchdog.
 | Guest end to end | Debian 13 x86-64 QEMU TCG VM via `~/.t3/vms/start-x64.sh`, SSH 2223, 8 emulated vCPUs. Batch transfers and tests. Verify the guest loader, page protections, threads, futex, USDT, GDB and JIT. Shut down with `~/.t3/vms/stop.sh`.                                                                                                                                                                                                                 |
 | Darwin later     | Host Rosetta can run x86-64 Mach-O. Direct macOS execution requires Mach-O. Linux ELF translation through a virtualization service would require separate configuration and verification. Keep Linux x86-64 verification independent of the Darwin port.                                                                                                                                                                                            |
 | Conformance      | Run unchanged pinned Test262 selections against both backends under the same variant/negative-phase policy. Start with calls, abrupt completion, numeric edges, object/array behavior, then live eval and shared/atomic behavior. Store immutable per-target reports with the actual denominator, unsupported and failed variants, heartbeat/stall records and no whole-suite extrapolation.                                                        |
-| Support gate     | Run end-to-end checks in the Debian x86-64 VM and per-binary checks under QEMU user mode. The gate covers the pinned Test262 selection (22/22 in the VM), glibc 2.34, the collector, live code, and F1/F2. Native x86-64 CI and timing will follow on a GitHub Actions x64 runner after the repository is pushed.                                                                                                                                   |
+| Support gate     | Run end-to-end checks in the Debian x86-64 VM and per-binary checks under QEMU user mode. The gate covers the pinned Test262 selection (22/22 in the VM), glibc 2.34, the collector, live code, and F1/F2. The [Linux x86-64 CI job](../.github/workflows/ci.yml) runs the native bootstrap gate on GitHub's `ubuntu-24.04` x64 runner.                                                                                  |
 
 ## Running hosted fixtures and bootstrap images
 
@@ -344,9 +344,10 @@ for shared atomics, agent waiting, `Function` and direct eval.
 
 Linux x86-64 is supported. The Debian x86-64 VM and QEMU user-mode runs
 pass the support gate, including Test262 (22/22 in the VM), glibc 2.34,
-the collector, live code, and F1/F2. Native x86-64 CI and timing
-comparisons for compiler self-builds and matched JavaScript workloads will
-follow on a GitHub Actions x64 runner after the repository is pushed.
+the collector, live code, and F1/F2. The [Linux x86-64 CI
+job](../.github/workflows/ci.yml) runs [the Linux gate](../tools/gate/linux-gate.sh)
+on an x64 host. It builds the `linux-x86_64` bootstrap image, runs its
+native self-build stages, and checks that all three images match byte for byte.
 
 ## Performance stance
 
@@ -428,5 +429,6 @@ core support gate.
   deployment profile. Choose whether to advertise baseline SSE2 compatibility
   separately if the finished emitted closure stays within it.
 - Validate Linux x86-64 support with the Debian x86-64 VM and QEMU user mode,
-  including F1 and F2. Add native x86-64 CI and timing on a GitHub Actions x64
-  runner after the repository is pushed.
+  including F1 and F2. Use the [Linux x86-64 CI job](../.github/workflows/ci.yml)
+  for native self-build validation. Timing comparisons for compiler
+  self-builds and matched JavaScript workloads remain follow-up work.

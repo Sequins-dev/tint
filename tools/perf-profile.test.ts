@@ -209,7 +209,23 @@ test("process measurement reports parse per OS", () => {
   const run = measureProcess(process.execPath, ["-e", "process.exit(3)"]);
   assert.equal(run.status, 3);
   assert.ok(run.wallSeconds >= 0 && run.maxResidentBytes > 1000000);
-  if (process.platform === "darwin") assert.ok((run.cycles ?? 0) > 0);
+});
+
+test("macOS process measurement reports hardware CPU cycles", (t) => {
+  if (process.platform !== "darwin") return t.skip("requires macOS BSD time");
+  // Probe the OS output directly so a regression in parseBsdTime cannot
+  // make the live counter test skip on a host that supplies counters.
+  const probe = spawnSync("/usr/bin/time", ["-l", process.execPath, "-e", ""], {
+    encoding: "utf8",
+  });
+  assert.ifError(probe.error);
+  assert.equal(probe.status, 0, probe.stderr);
+  if (!/^\s*[1-9]\d*\s+cycles elapsed\s*$/m.test(probe.stderr))
+    return t.skip("hardware CPU counters unavailable from BSD time");
+
+  const run = measureProcess(process.execPath, ["-e", "process.exit(3)"]);
+  assert.equal(run.status, 3);
+  assert.ok((run.cycles ?? 0) > 0);
 });
 
 const perfAvailable =
