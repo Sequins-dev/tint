@@ -20,7 +20,7 @@ export interface PendingSafepoint {
   readonly map: readonly number[];
 }
 
-function traced(type: ScalarType): boolean {
+export function isRootType(type: ScalarType): boolean {
   return (
     type !== "number" &&
     type !== "boolean" &&
@@ -46,7 +46,7 @@ export function frameStackMaps(
   const tracked = new Uint8Array(slots.length);
   for (let slot = 0; slot < slots.length; slot++) {
     const type = fn.slots[slot];
-    if (type !== undefined && traced(type)) {
+    if (type !== undefined && isRootType(type)) {
       tracked[slot] = 1;
       trackedSlots.push(slot);
     }
@@ -86,7 +86,7 @@ export function frameStackMaps(
         const id = instructionResult(op);
         if (id !== undefined) {
           const type = types.get(id);
-          if (type !== undefined && traced(type)) definitions.push(index);
+          if (type !== undefined && isRootType(type)) definitions.push(index);
         }
         visitInstructionOperands(op, (operand) => {
           lastUse.set(operand, index);

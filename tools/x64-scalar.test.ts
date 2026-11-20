@@ -693,11 +693,14 @@ function overlappingArrayCopyImage(): Uint8Array {
     });
     return f.binary("===", id, f.constant(expected));
   });
+  return hostedFixtureImage({
+    functions: [f.check([copied, rejected, ...contents])],
+  });
+}
+
+function hostedFixtureImage(module: ModuleIR): Uint8Array {
   const target = linuxX86_64Target;
-  const compiled = emitX64Module(
-    { functions: [f.check([copied, rejected, ...contents])] },
-    target.hostABI,
-  );
+  const compiled = emitX64Module(module, target.hostABI);
   assert.ok(compiled.ok, JSON.stringify(compiled));
   const image = appendHostedEntry({
     native: compiled.value,
@@ -711,6 +714,81 @@ function overlappingArrayCopyImage(): Uint8Array {
   const written = buildElfExecutable({ ...image, linux: { arch: "x86_64" } });
   assert.ok(written.ok, JSON.stringify(written));
   return written.value.bytes;
+}
+
+function guardedRecordImage(): Uint8Array {
+  const f = new Fixture();
+  const objectSlot = f.ir.slot("reference");
+  const transfer = f.ir.slot("number");
+  const failed = f.ir.block();
+  const uninitialized = f.ir.block();
+  const initialized = f.ir.block();
+  const alreadyInitialized = f.ir.block();
+  const rejectedLayout = f.ir.block();
+  const read = f.ir.block();
+  const object = f.ir.next();
+  f.ir.emit({
+    ...span,
+    kind: "record-new",
+    id: object,
+    record: 0,
+    arguments: [undefined],
+  });
+  f.ir.save(objectSlot, object);
+  f.ir.save(transfer, f.constant(42));
+  function cell(
+    operation: "read" | "initialize",
+    consequent: number,
+    alternate: number,
+  ): void {
+    f.ir.end({
+      ...span,
+      kind: "record-cell",
+      operation,
+      object: f.ir.load(objectSlot),
+      record: 0,
+      field: 0,
+      slot: transfer,
+      consequent,
+      alternate,
+    });
+  }
+  cell("read", failed, uninitialized);
+  f.ir.at(uninitialized);
+  cell("initialize", initialized, failed);
+  f.ir.at(initialized);
+  f.ir.save(transfer, f.constant(1));
+  cell("initialize", failed, alreadyInitialized);
+  f.ir.at(alreadyInitialized);
+  f.ir.end({
+    ...span,
+    kind: "record",
+    operation: "write",
+    object: f.ir.load(objectSlot),
+    record: 1,
+    field: 0,
+    slot: transfer,
+    consequent: failed,
+    alternate: rejectedLayout,
+  });
+  f.ir.at(rejectedLayout);
+  cell("read", read, failed);
+  f.ir.at(failed);
+  f.ir.end({ ...span, kind: "return", value: f.constant(1) });
+  f.ir.at(read);
+  return hostedFixtureImage({
+    records: [
+      {
+        byteLength: 24,
+        fields: [{ type: "number", offset: 8, stateOffset: 16, mutable: true }],
+      },
+      {
+        byteLength: 24,
+        fields: [{ type: "number", offset: 8, mutable: true }],
+      },
+    ],
+    functions: [f.finish(f.ir.load(transfer))],
+  });
 }
 
 const runnerFixtures = [
@@ -727,6 +805,11 @@ const runnerFixtures = [
       return image.value;
     },
   })),
+  {
+    name: "guarded record and cell operations",
+    status: 42,
+    bytes: guardedRecordImage,
+  },
   { name: "RIP-relative GOT import", status: 42, bytes: gotImportImage },
   {
     name: "overlapping hosted typed-array copy",

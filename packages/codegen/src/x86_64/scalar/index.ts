@@ -31,6 +31,7 @@ import {
   type FunctionIR,
   type Instruction,
   type ModuleIR,
+  type RecordField,
   type ScalarType,
   type Span,
   type Terminator,
@@ -71,7 +72,11 @@ import {
   rootHeadBinding,
   type SafepointEntry,
 } from "../../scalar/stack-maps.ts";
-import { frameStackMaps, type PendingSafepoint } from "./stack-maps.ts";
+import {
+  frameStackMaps,
+  isRootType,
+  type PendingSafepoint,
+} from "./stack-maps.ts";
 
 export { imageRelocations } from "./machine.ts";
 export { appendExitEntry } from "./exit-entry.ts";
@@ -212,12 +217,39 @@ export function emitModule(
     string,
     { readonly value: string; readonly offset: number }
   >();
-  let stringBytes = 0;
+  const descriptors = new Map<
+    string,
+    { readonly offset: number; readonly words: readonly number[] }
+  >();
+  let poolBytes = 0;
+  function descriptor(record: number): Memory<64> {
+    const name = "record:" + String(record);
+    if (!descriptors.has(name)) {
+      const layout = module.records?.[record];
+      if (layout === undefined) throw "x86-64 record layout invariant";
+      const references: number[] = [];
+      const generals: number[] = [];
+      for (const field of layout.fields) {
+        if (field === undefined) throw "x86-64 record field invariant";
+        if (field.type === "general") generals.push(field.offset);
+        else if (isRootType(field.type)) references.push(field.offset);
+      }
+      const words = [layout.byteLength, references.length];
+      for (const offset of references)
+        if (offset !== undefined) words.push(offset);
+      words.push(generals.length);
+      for (const offset of generals)
+        if (offset !== undefined) words.push(offset);
+      descriptors.set(name, { offset: poolBytes, words });
+      poolBytes += words.length * 8;
+    }
+    return rip(name);
+  }
   function literal(value: string): Memory<64> {
     const name = "literal:" + value;
     if (!strings.has(name)) {
-      strings.set(name, { value, offset: stringBytes });
-      stringBytes +=
+      strings.set(name, { value, offset: poolBytes });
+      poolBytes +=
         Math.ceil((nativeStringDataOffset + value.length * 2) / 8) * 8;
     }
     return rip(name);
@@ -829,6 +861,133 @@ export function emitModule(
       define(op.id, "boolean");
     }
 
+    function recordField(record: number, index: number): RecordField {
+      const field = module.records?.[record]?.fields[index];
+      if (field === undefined) throw "x86-64 record field invariant";
+      if (
+        field.offset + scalarByteLength(field.type) > 0x80000000 ||
+        (field.presenceOffset ?? 0) >= 0x80000000
+      )
+        fail("FRAME_LIMIT", "record field exceeds signed displacement");
+      return field;
+    }
+
+    function constructRecord(
+      op: {
+        readonly id: number;
+        readonly record: number;
+        readonly arguments: readonly (number | undefined)[];
+        readonly presence?: readonly (number | undefined)[];
+      },
+      block: Block,
+    ): void {
+      const layout = module.records?.[op.record];
+      if (layout === undefined) throw "x86-64 record constructor invariant";
+      const site = fnLabel + ":record:" + String(op.id);
+      emit({ op: "mov", dst: word(10), src: imm(layout.byteLength) });
+      allocate(block, site, site + ":denied");
+      emit({ op: "mov", dst: r9, src: rax });
+      emit({ op: "lea", dst: scratch, src: descriptor(op.record) });
+      emit({ op: "mov", dst: mem(9, 0), src: scratch });
+      for (let index = 0; index < layout.fields.length; index++) {
+        const field = recordField(op.record, index);
+        const value = op.arguments[index];
+        for (
+          let offset = 0;
+          offset < scalarByteLength(field.type);
+          offset += 8
+        ) {
+          const destination = mem(9, field.offset + offset);
+          if (value !== undefined)
+            copy(emit, frame(home(value) + offset), destination);
+          else if (field.type === "optional-number") {
+            emit({ op: "mov", dst: rax, src: absent });
+            emit({ op: "mov", dst: destination, src: rax });
+          } else emit({ op: "mov", dst: destination, src: imm(0) });
+        }
+        const state = field.stateOffset ?? field.presenceOffset;
+        if (state !== undefined) {
+          const presence = op.presence?.[index];
+          if (presence === undefined)
+            emit({
+              op: "mov",
+              dst: eax,
+              src: imm(value === undefined ? 0 : 1),
+            });
+          else emit({ op: "mov", dst: rax, src: frame(home(presence)) });
+          emit({
+            op: "mov",
+            dst: { ...mem(9, state), width: 8 },
+            src: byte(0),
+          });
+        }
+      }
+      emit({ op: "mov", dst: rax, src: r9 });
+      define(op.id, "reference");
+    }
+
+    function guardRecord(
+      object: number,
+      record: number,
+      alternate: string,
+    ): void {
+      emit({ op: "mov", dst: r9, src: frame(home(object)) });
+      emit({ op: "test", dst: r9, src: r9 });
+      branch(emit, "e", alternate);
+      emit({ op: "lea", dst: scratch, src: descriptor(record) });
+      emit({ op: "cmp", dst: mem(9, 0), src: scratch });
+      branch(emit, "ne", alternate);
+    }
+
+    function transferField(
+      field: RecordField,
+      destination: number,
+      read: boolean,
+    ): void {
+      for (let offset = 0; offset < scalarByteLength(field.type); offset += 8) {
+        const member = mem(9, field.offset + offset);
+        const wordHome = frame(destination + offset);
+        if (read) copy(emit, member, wordHome);
+        else copy(emit, wordHome, member);
+      }
+    }
+
+    function optionalEqual(
+      type: ScalarType,
+      leftHome: number,
+      rightHome: number,
+      equal: boolean,
+      site: string,
+    ): void {
+      const left = frame(leftHome),
+        right = frame(rightHome);
+      const scalar = site + ":scalar";
+      const done = site + ":done";
+      if (type === "optional-boolean") {
+        emit({ op: "mov", dst: rax, src: frame(leftHome + 8) });
+        emit({ op: "cmp", dst: rax, src: frame(rightHome + 8) });
+        branch(emit, "ne", done);
+        emit({ op: "test", dst: rax, src: rax });
+        branch(emit, "e", done);
+        emit({ op: "mov", dst: rax, src: left });
+        emit({ op: "cmp", dst: rax, src: right });
+        emit({ op: "label", name: done });
+        setBoolean(emit, equal ? "e" : "ne", 0);
+        return;
+      }
+
+      emit({ op: "mov", dst: scratch, src: absent });
+      emit({ op: "cmp", dst: left, src: scratch });
+      branch(emit, "ne", scalar);
+      emit({ op: "cmp", dst: right, src: scratch });
+      setBoolean(emit, equal ? "e" : "ne", 0);
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: scalar });
+      if (!numbers.binary(equal ? "===" : "!==", left, right))
+        throw "x86-64 number equality invariant";
+      emit({ op: "label", name: done });
+    }
+
     function instruction(op: Instruction, block: Block, index: number): void {
       switch (op.kind) {
         case "host-call": {
@@ -1007,6 +1166,72 @@ export function emitModule(
           define(op.id, "number");
           return;
         }
+        case "record-new":
+          if (host === undefined) break;
+          constructRecord(op, block);
+          return;
+        case "record-read": {
+          const field = recordField(op.record, op.field);
+          emit({ op: "mov", dst: r9, src: frame(home(op.object)) });
+          transferField(field, home(op.id), true);
+          types.set(op.id, field.type);
+          return;
+        }
+        case "record-has": {
+          const field = recordField(op.record, op.field);
+          const site = fnLabel + ":record-has:" + String(op.id);
+          const done = site + ":done";
+          emit({ op: "xor", dst: eax, src: eax });
+          guardRecord(op.object, op.record, done);
+          const presence = field.presenceOffset;
+          if (presence === undefined)
+            emit({ op: "mov", dst: eax, src: imm(1) });
+          else
+            emit({
+              op: "movzx",
+              dst: eax,
+              src: { ...mem(9, presence), width: 8 },
+            });
+          emit({ op: "label", name: done });
+          define(op.id, "boolean");
+          return;
+        }
+        case "reference-none":
+          emit({ op: "xor", dst: eax, src: eax });
+          define(op.id, "optional-reference");
+          return;
+        case "reference-wrap":
+        case "reference-value":
+          emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
+          emit({ op: "test", dst: rax, src: rax });
+          branch(emit, "e", trapLabel);
+          define(
+            op.id,
+            op.kind === "reference-wrap"
+              ? "optional-reference"
+              : (op.type ?? "reference"),
+          );
+          return;
+        case "boolean-none":
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "mov", dst: frame(home(op.id) + 8), src: rax });
+          define(op.id, "optional-boolean");
+          return;
+        case "boolean-wrap":
+          emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
+          emit({ op: "mov", dst: frame(home(op.id) + 8), src: imm(1) });
+          define(op.id, "optional-boolean");
+          return;
+        case "boolean-present":
+          emit({ op: "mov", dst: rax, src: frame(home(op.value) + 8) });
+          define(op.id, "boolean");
+          return;
+        case "boolean-value":
+          emit({ op: "cmp", dst: frame(home(op.value) + 8), src: imm(0) });
+          branch(emit, "e", trapLabel);
+          emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
+          define(op.id, "boolean");
+          return;
         case "undefined":
           emit({ op: "mov", dst: rax, src: absent });
           define(op.id, "optional-number");
@@ -1089,7 +1314,8 @@ export function emitModule(
             type !== "number" &&
             type !== "boolean" &&
             type !== "string" &&
-            type !== "Uint8Array"
+            type !== "Uint8Array" &&
+            type !== "reference"
           )
             break;
           copy(emit, frame(home(op.value)), frame(home(op.id) + 8));
@@ -1130,7 +1356,12 @@ export function emitModule(
           const src = frame(home(op.operand));
           const truth = op.operator === "!" || op.operator === "truthy";
           const predicate = truth || op.operator === "is-integer";
-          if (type === "boolean" && predicate) {
+          if (
+            (type === "boolean" ||
+              type === "reference" ||
+              type === "optional-reference") &&
+            predicate
+          ) {
             if (op.operator === "is-integer")
               emit({ op: "xor", dst: eax, src: eax });
             else {
@@ -1183,6 +1414,17 @@ export function emitModule(
             emit({ op: "cmp", dst: rax, src: right });
             setBoolean(emit, equal ? "e" : "ne", 0);
           } else if (
+            (type === "optional-number" || type === "optional-boolean") &&
+            (equal || unequal)
+          ) {
+            optionalEqual(
+              type,
+              home(op.left),
+              home(op.right),
+              equal,
+              fnLabel + ":optional:" + String(op.id),
+            );
+          } else if (
             type !== "number" ||
             !numbers.binary(op.operator, left, right)
           ) {
@@ -1210,6 +1452,46 @@ export function emitModule(
           const id = op.value;
           if (id === undefined) publish(normal, 0, 0);
           else publish(normal, home(id), scalarByteLength(typeOf(id)));
+          return;
+        }
+        case "record":
+        case "record-cell": {
+          const alternate = blockLabel(fn.id, op.alternate);
+          const field = recordField(op.record, op.field);
+          const state = field.stateOffset;
+          if (
+            op.kind === "record-cell" &&
+            op.operation === "write" &&
+            !field.mutable
+          ) {
+            emit({ op: "jmp", target: label(alternate) });
+            return;
+          }
+          guardRecord(op.object, op.record, alternate);
+          if (op.kind === "record-cell") {
+            if (state === undefined) throw "x86-64 record cell state invariant";
+            if (op.initialized !== true) {
+              emit({
+                op: "cmp",
+                dst: { ...mem(9, state), width: 8 },
+                src: {
+                  kind: "imm8",
+                  value: op.operation === "initialize" ? 0 : 1,
+                },
+              });
+              branch(emit, "ne", alternate);
+            }
+          }
+          transferField(field, slot(op.slot), op.operation === "read");
+          const publishState =
+            op.operation === "initialize" ? state : field.presenceOffset;
+          if (op.operation !== "read" && publishState !== undefined)
+            emit({
+              op: "mov",
+              dst: { ...mem(9, publishState), width: 8 },
+              src: { kind: "imm8", value: 1 },
+            });
+          emit({ op: "jmp", target: label(blockLabel(fn.id, op.consequent)) });
           return;
         }
         case "throw-literal":
@@ -1371,7 +1653,8 @@ export function emitModule(
     emit({ op: "ud2" });
     const encoded = encodeLayout(
       machine,
-      (name) => external.has(name) || strings.has(name),
+      (name) =>
+        external.has(name) || strings.has(name) || descriptors.has(name),
     );
     const functions: X64Function[] = [];
     for (const fn of module.functions) {
@@ -1380,14 +1663,14 @@ export function emitModule(
       if (offset === undefined) throw "function label invariant";
       functions.push({ id: fn.id, name: fn.name, offset });
     }
-    const stringBase = Math.ceil(encoded.bytes.length / 8) * 8;
+    const poolBase = Math.ceil(encoded.bytes.length / 8) * 8;
     let code = encoded.bytes;
-    if (stringBytes !== 0) {
-      code = new Uint8Array(stringBase + stringBytes);
+    if (poolBytes !== 0) {
+      code = new Uint8Array(poolBase + poolBytes);
       code.set(encoded.bytes);
       for (const [, item] of strings) {
         if (item === undefined) throw "x86-64 literal invariant";
-        const start = stringBase + item.offset;
+        const start = poolBase + item.offset;
         code[start] = 1;
         if (
           !writeUnsigned(
@@ -1412,17 +1695,35 @@ export function emitModule(
             throw "x86-64 literal unit invariant";
       }
     }
+    for (const [, item] of descriptors) {
+      if (item === undefined) throw "x86-64 descriptor invariant";
+      for (let index = 0; index < item.words.length; index++) {
+        const value = item.words[index];
+        if (
+          value === undefined ||
+          !writeWord64(
+            code,
+            poolBase + item.offset + index * 8,
+            { lo: value, hi: 0 },
+            "little",
+          ).ok
+        )
+          throw "x86-64 descriptor word invariant";
+      }
+    }
     const imageFixups: NearFixup[] = [];
     for (const fixup of encoded.externalFixups) {
       if (fixup === undefined) throw "x86-64 fixup invariant";
-      const item = strings.get(fixup.ref.label);
-      if (item === undefined) imageFixups.push(fixup);
+      const offset =
+        strings.get(fixup.ref.label)?.offset ??
+        descriptors.get(fixup.ref.label)?.offset;
+      if (offset === undefined) imageFixups.push(fixup);
       else
         writeRel32(
           code,
           fixup.fieldOffset,
           fixup.nextOffset,
-          stringBase + item.offset,
+          poolBase + offset,
         );
     }
     const stackMaps: X64Module["stackMaps"][number][] = [];

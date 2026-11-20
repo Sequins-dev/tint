@@ -512,3 +512,46 @@ test(
     assert.equal(run(built.value).status, 42);
   },
 );
+
+test(
+  "x86-64 record fields preserve nullable links and optional scalars",
+  native,
+  () => {
+    const built = build(
+      `
+    interface Link {
+      value: number;
+      next: Link | undefined;
+      enabled: boolean | undefined;
+      measure: number | undefined;
+    }
+    function value(link: Link | undefined): number {
+      return link ? link.value : 0;
+    }
+    function same(left: Link, right: Link): boolean {
+      return left.enabled === right.enabled && left.measure === right.measure;
+    }
+    export function run(): number {
+      const tail: Link = { value: 13, next: undefined, enabled: false, measure: -0 };
+      const head: Link = { value: 0, next: tail, enabled: undefined, measure: undefined };
+      if (head.next !== tail || value(head.next) !== 13 || same(head, tail)) return 1;
+      if (!same(head, head) || (tail.enabled ?? true) !== false) return 2;
+      head.enabled = false;
+      head.measure = 0;
+      if (!same(head, tail) || 1 / (tail.measure ?? 1) !== -1 / 0) return 3;
+      head.measure = 0 / 0;
+      if (same(head, head) || (head.measure ?? 1) === 1) return 4;
+      head.next = undefined;
+      if (head.next || value(head.next) !== 0) return 5;
+      tail.value = 42;
+      head.next = tail;
+      return value(head.next);
+    }
+    `,
+      {},
+      { optimization: "none" },
+    );
+    assert.ok(built.ok, JSON.stringify(built));
+    assert.equal(run(built.value).status, 42);
+  },
+);
