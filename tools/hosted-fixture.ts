@@ -150,6 +150,8 @@ function buildHostedFixture(
     /** Fail instead of falling back to general semantics (benchmarks whose
      * measurements must be of typed code). */
     readonly requireTyped?: boolean;
+    /** Host validation over captured application sources, when supplied. */
+    readonly validateSource?: GeneralLowering["validateSource"];
     readonly optimization?: BuildRequest["optimization"];
     /** Receives the general fallback when one was used (also reported on
      * stderr). */
@@ -374,7 +376,10 @@ function buildHostedFixture(
     ...(general === undefined
       ? {}
       : {
-          generalLowering: general,
+          generalLowering:
+            options.validateSource === undefined
+              ? general
+              : { ...general, validateSource: options.validateSource },
           ...(options.requireTyped === true ? { requireTyped: true } : {}),
           onGeneralFallback: (modules: readonly string[], reason: string) => {
             options.onGeneralFallback?.(modules, reason);

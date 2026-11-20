@@ -1502,6 +1502,7 @@ export type {
   CheckedClosures,
   CheckedTypeSystem,
   ClosureDiagnostic,
+  ClosureFallback,
   ClosureResult,
   ClosureCheckOptions,
 } from "./closures.ts";

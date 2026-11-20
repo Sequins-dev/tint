@@ -23,7 +23,7 @@ export interface Construct {
   readonly node?: { readonly typed?: number; readonly untyped?: number };
   /** The typed form is ill-typed under the program's compiler options and
    * must be rejected at compile time, exactly as tsc reports it. */
-  readonly typedError?: boolean;
+  readonly typedError?: string;
   /** Compiler options the forms assume (Tint's defaults follow the
    * workspace tsconfig, which sets noUncheckedIndexedAccess). */
   readonly options?: { readonly noUncheckedIndexedAccess?: boolean };
@@ -353,7 +353,7 @@ export function run() {
 }
 class Square extends Shape {
   constructor(private side: number) { super("square"); }
-  area(): number { return this.side * this.side; }
+  override area(): number { return this.side * this.side; }
 }
 export function run(): number {
   const shape: Shape = new Square(3);
@@ -1403,11 +1403,8 @@ export function run() {
 }`,
   },
   {
-    // With noUncheckedIndexedAccess (the workspace default) an element read
-    // has type number | undefined, so storing it into a number slot is a
-    // compile-time type error, as tsc reports it.
+    // The preceding write proves the constant indexed read.
     name: "typed-array-index",
-    typedError: true,
     typed: `export function run(): number {
   const bytes = new Uint8Array(2);
   bytes[1] = 42;
@@ -1421,6 +1418,36 @@ export function run() {
   const value = bytes[1];
   const missing = bytes[5];
   return value === 42 && missing === undefined ? 42 : 1;
+}`,
+  },
+  {
+    name: "typed-array-index-unproven",
+    typedError: "TS2322",
+    typed: `export function run(): number {
+  const bytes = new Uint8Array(2);
+  const value: number = bytes[5];
+  return value === undefined ? 42 : 1;
+}`,
+    untyped: `export function run() {
+  const bytes = new Uint8Array(2);
+  const value = bytes[5];
+  return value === undefined ? 42 : 1;
+}`,
+  },
+  {
+    name: "type-error-after-generator",
+    typedError: "TS2322",
+    typed: `function* count(): Generator<number, void, unknown> { yield 42; }
+export function run(): number {
+  const invalid: number = "wrong";
+  for (const value of count()) if (typeof invalid === "string") return value;
+  return 1;
+}`,
+    untyped: `function* count() { yield 42; }
+export function run() {
+  const invalid = "wrong";
+  for (const value of count()) if (typeof invalid === "string") return value;
+  return 1;
 }`,
   },
   {

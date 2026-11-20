@@ -118,6 +118,7 @@ import {
   checkClosureModule,
   withRealmGlobals,
   type CheckedClosures,
+  type ClosureFallback,
 } from "@tint/typescript/checker";
 import {
   closeGeneralPartition,
@@ -338,6 +339,19 @@ export interface GeneralProgramRequest {
   readonly boundaries: readonly TypedBoundaryModule[];
   /** Record types the boundaries use; they cross as JavaScript views. */
   readonly records?: readonly BoundaryRecord[];
+  /** Source capability that seeded this retry, where classified. */
+  readonly trigger?: FallbackTrigger;
+}
+export interface FallbackTrigger {
+  readonly phase: "check";
+  readonly code: string;
+  readonly capability: ClosureFallback["capability"];
+  readonly owner: {
+    readonly kind: ClosureFallback["ownerKind"];
+    readonly module: string;
+    readonly start: number;
+    readonly end: number;
+  };
 }
 export type GeneralProgram =
   | {
@@ -363,7 +377,15 @@ export interface GeneralLowering {
   /** Representation views and runtime exports the generated code needs. */
   readonly recordBindings: readonly NativeRecordBinding[];
   readonly runtimes: readonly RuntimeSource[];
+  /** Optional host oracle for the captured original source graph. The host
+   * supplies source goals, options and module resolution for this entry. */
+  readonly validateSource?: (entry: string) => readonly SourceDiagnostic[];
   readonly lower: (request: GeneralProgramRequest) => GeneralProgram;
+}
+export interface SourceDiagnostic extends Span {
+  readonly code: string;
+  readonly message: string;
+  readonly module: string;
 }
 export interface SourceLineRange {
   readonly offset: number;
@@ -430,6 +452,8 @@ interface CompilationError {
   /** The module the failure is attributed to, when known. */
   readonly module?: string;
   readonly diagnostic?: string;
+  readonly sourceDiagnostics?: readonly SourceDiagnostic[];
+  readonly fallback?: FallbackTrigger;
   readonly preventsFallback?: boolean;
   readonly needsDynamicRealm?: boolean;
   readonly needsBindingRealm?: boolean;
@@ -684,6 +708,31 @@ function compileTypedWithProgramRealm(
   );
 }
 export function compileArm64Program(original: CompileRequest): Compilation {
+  const validateSource = original.generalLowering?.validateSource;
+  if (validateSource !== undefined && original.requireTyped !== true) {
+    const diagnostics = validateSource(original.entry);
+    const first = diagnostics[0];
+    if (first !== undefined)
+      return {
+        ok: false,
+        error: {
+          stage: "source",
+          diagnostic: first.code,
+          module: first.module,
+          message:
+            first.module +
+            ":" +
+            String(first.start) +
+            ":" +
+            String(first.end) +
+            ": " +
+            first.code +
+            ": " +
+            first.message,
+          sourceDiagnostics: diagnostics,
+        },
+      };
+  }
   const request = withForeignRuntimes(original);
   const typed = compileTypedWithProgramRealm(request);
   const lowering = request.generalLowering;
@@ -805,6 +854,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       entry: request.entry,
       start,
       boundaries: partition.boundaries,
+      ...(error.fallback === undefined ? {} : { trigger: error.fallback }),
       ...(partition.records === undefined
         ? {}
         : { records: partition.records }),
@@ -1233,12 +1283,32 @@ function checkApplication(
           ":" +
           String(location.end) +
           ": ") + checked.error.message;
+    const fallback = checked.error.fallback;
+    const owner =
+      fallback === undefined
+        ? undefined
+        : locateSourceRange(linkedProgram.ranges, fallback.owner);
+    const trigger: FallbackTrigger | undefined =
+      fallback === undefined || owner === undefined
+        ? undefined
+        : {
+            phase: "check",
+            code: checked.error.code,
+            capability: fallback.capability,
+            owner: {
+              kind: fallback.ownerKind,
+              module: owner.module,
+              start: owner.start,
+              end: owner.end,
+            },
+          };
     return {
       ok: false,
       error: {
         stage: "check",
         message,
         ...(location === undefined ? {} : { module: location.module }),
+        ...(trigger === undefined ? {} : { fallback: trigger }),
         ...(checked.error.preventsFallback === true
           ? { diagnostic: checked.error.code, preventsFallback: true }
           : {}),

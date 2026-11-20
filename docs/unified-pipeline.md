@@ -745,17 +745,37 @@ the ledger corpus reproduce the ones expressible in a single application.
 
 Indexed reads follow TypeScript under the program's compiler options
 (coordinator decision, 2026-11-17). With `noUncheckedIndexedAccess`, which
-the workspace sets, a `Uint8Array` element read has type
-`number | undefined`, and `const value: number = bytes[1]` is a compile-time
-type error exactly as tsc reports it, not a runtime TypeError
-(`typed-array-index`; `?? 0` is the checked form,
-`typed-array-index-checked`). Without it the read is `number`, inferred and
+the workspace sets, an unproven `Uint8Array` element read has type
+`number | undefined`. Assigning that read to a `number` slot produces
+TS2322 in the hosted validator (`typed-array-index-unproven`). A preceding
+write can prove the constant indexed read in TypeScript (`typed-array-index`).
+The explicit `?? 0` guard stays on the typed native path
+(`typed-array-index-checked`). Without the option the read is `number`, inferred and
 therefore speculative; only a later write into an explicitly annotated slot
-is a contract check (`typed-array-index-unchecked`). Two gaps follow: the
-typed path turns this type error into a general fallback instead of a
-diagnostic (genuine type errors must stay errors when slice 4 turns
-rejections into general representations), and Tint has no per-program
-compiler options yet, so the unchecked setting is recorded as unsupported.
+is a contract check (`typed-array-index-unchecked`). The compiler still
+lacks per-program compiler options, so the unchecked setting is recorded as
+unsupported.
+
+### Hosted source validation (slice 3)
+
+The hosted composition root can inject a pinned TypeScript 6.0.3 validator
+with the captured source text, import edges, and checking policy. It checks
+the original reachable graph before the compiler attempts either native
+representation. Diagnostics use the original UTF-16 ranges. The validator
+keeps a verdict per entry in the captured graph. A writable inferred local
+or contextual parameter can accept an assignment that TypeScript rejects
+solely because of inference. Explicit destinations still report type errors.
+
+This route is opt-in. The corpus uses it for the two source-error contracts,
+and `TINT_SOURCE_VALIDATION=1` enables it for the rest of the corpus.
+Open aggregate fields and list elements still need profile rules before
+the validator can become the default. Generator and async suspension and
+class static blocks carry structured owner ranges into the legacy module
+retry. Other typed rejections still use the legacy retry policy.
+
+The [focused ledger](results/unified-pipeline-ledger-slice3-source-validation-focused-v1.json)
+has eight native passes and two expected TS2322 rejections. The
+previously misclassified indexed read passes through general lowering.
 
 ## Status
 

@@ -118,3 +118,67 @@ test("general fallback reparses loader input after the typed attempt", () => {
   assert.equal(requests[0]?.available, parses[1]);
   assert.notEqual(parses[0]?.[0]?.module, parses[1]?.[0]?.module);
 });
+
+test("an original source diagnostic prevents fallback and preserves its location", () => {
+  const { lowering, requests } = recordingLowering();
+  const diagnostic = {
+    code: "TS2322",
+    message: "Type 'string' is not assignable to type 'number'.",
+    module: "main",
+    start: 118,
+    end: 123,
+  };
+  const compiled = compileArm64Program(
+    generatorProgram({ ...lowering, validateSource: () => [diagnostic] }),
+  );
+  assert.equal(requests.length, 0);
+  assert.ok(!compiled.ok);
+  assert.equal(compiled.error.stage, "source");
+  assert.deepEqual(compiled.error.sourceDiagnostics, [diagnostic]);
+});
+
+test("source validation precedes a successful typed attempt", () => {
+  const { lowering } = recordingLowering();
+  const entries: string[] = [];
+  const compiled = compileArm64Program({
+    ...generatorProgram({
+      ...lowering,
+      validateSource: (entry: string) => {
+        entries.push(entry);
+        return [];
+      },
+    }),
+    modules: [source("main", "export function run(): number { return 42; }")],
+  });
+  assert.deepEqual(entries, ["main"]);
+  assert.ok(compiled.ok);
+});
+
+test("requireTyped bypasses the hosted source validator", () => {
+  const { lowering } = recordingLowering();
+  const compiled = compileArm64Program({
+    ...generatorProgram({
+      ...lowering,
+      validateSource: () => assert.fail("unexpected hosted validation"),
+    }),
+    requireTyped: true,
+  });
+  assert.ok(!compiled.ok);
+  assert.equal(compiled.error.stage, "check");
+});
+
+test("a generator fallback carries its original function owner and capability", () => {
+  const { lowering, requests } = recordingLowering();
+  compileArm64Program(generatorProgram(lowering));
+  assert.deepEqual(requests[0]?.trigger, {
+    phase: "check",
+    code: "UNSUPPORTED",
+    capability: "generator-suspension",
+    owner: {
+      module: "main",
+      kind: "function",
+      start: 0,
+      end: generatorText.indexOf("\n"),
+    },
+  });
+});

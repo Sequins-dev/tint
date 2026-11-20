@@ -116,16 +116,20 @@ function verify(construct: string, form: Form): Promise<Entry> {
       const assertion = /AssertionError \[ERR_ASSERTION\]: (\{.*\})\n/.exec(
         stderr,
       )?.[1];
-      const expectsTypeError =
-        form === "typed" &&
-        constructs.find((item) => item.name === construct)?.typedError === true;
+      const expectedTypeError =
+        form === "typed"
+          ? constructs.find((item) => item.name === construct)?.typedError
+          : undefined;
+      const sourceDiagnostic =
+        image === undefined && assertion !== undefined
+          ? /^.*"stage":"source".*?: (TS\d+): /.exec(assertion)?.[1]
+          : undefined;
       const rejected =
-        image === undefined &&
-        assertion !== undefined &&
-        assertion.includes('"stage":"check"');
+        expectedTypeError !== undefined &&
+        sourceDiagnostic === expectedTypeError;
       const outcome: Entry["outcome"] = stdout.includes("UNSUPPORTED_OPTION")
         ? "unsupported"
-        : expectsTypeError
+        : expectedTypeError !== undefined
           ? rejected
             ? "pass"
             : image === undefined
@@ -140,7 +144,7 @@ function verify(construct: string, form: Form): Promise<Entry> {
         construct,
         form,
         path:
-          expectsTypeError && rejected
+          sourceDiagnostic !== undefined
             ? "type-error"
             : image === undefined
               ? "none"

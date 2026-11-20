@@ -330,6 +330,13 @@ export interface ClosureDiagnostic extends Span {
   readonly code: string;
   readonly message: string;
   readonly preventsFallback?: boolean;
+  readonly fallback?: ClosureFallback;
+}
+export interface ClosureFallback {
+  readonly capability:
+    "generator-suspension" | "async-suspension" | "class-static-block";
+  readonly ownerKind: "function" | "class";
+  readonly owner: Span;
 }
 export type ClosureResult =
   | { readonly ok: true; readonly value: CheckedClosures }
@@ -426,6 +433,7 @@ function checkClosureModuleLayout(
     code: string,
     message: string,
     definitive: boolean = false,
+    fallback?: ClosureFallback,
   ): never {
     error = {
       start: node.start,
@@ -433,6 +441,7 @@ function checkClosureModuleLayout(
       code,
       message,
       ...(definitive ? { preventsFallback: true } : {}),
+      ...(fallback === undefined ? {} : { fallback }),
     };
     throw abort;
   }
@@ -663,18 +672,36 @@ function checkClosureModuleLayout(
                 member,
                 "UNSUPPORTED",
                 "typed class static blocks require initialization lowering",
+                false,
+                {
+                  capability: "class-static-block",
+                  ownerKind: "class",
+                  owner: node,
+                },
               );
             if (member.kind !== "field" && member.async)
               fail(
                 member,
                 "UNSUPPORTED",
                 "typed async method lowering is not implemented",
+                false,
+                {
+                  capability: "async-suspension",
+                  ownerKind: "class",
+                  owner: node,
+                },
               );
             if (member.kind !== "field" && member.generator)
               fail(
                 member,
                 "UNSUPPORTED",
                 "generator suspension lowering is not implemented",
+                false,
+                {
+                  capability: "generator-suspension",
+                  ownerKind: "class",
+                  owner: node,
+                },
               );
             if (
               member.kind !== "field" &&
@@ -704,12 +731,24 @@ function checkClosureModuleLayout(
               node,
               "UNSUPPORTED",
               "typed async function lowering is not implemented",
+              false,
+              {
+                capability: "async-suspension",
+                ownerKind: "function",
+                owner: node,
+              },
             );
           if (node.generator)
             fail(
               node,
               "UNSUPPORTED",
               "generator suspension lowering is not implemented",
+              false,
+              {
+                capability: "generator-suspension",
+                ownerKind: "function",
+                owner: node,
+              },
             );
           if (typeParameterCount(node.typeParameters))
             fail(
@@ -739,12 +778,24 @@ function checkClosureModuleLayout(
               node,
               "UNSUPPORTED",
               "typed async function lowering is not implemented",
+              false,
+              {
+                capability: "async-suspension",
+                ownerKind: "function",
+                owner: node,
+              },
             );
           if (node.kind === "function-expression" && node.generator)
             fail(
               node,
               "UNSUPPORTED",
               "generator suspension lowering is not implemented",
+              false,
+              {
+                capability: "generator-suspension",
+                ownerKind: "function",
+                owner: node,
+              },
             );
           collectFunction(
             node,
@@ -1030,7 +1081,21 @@ function checkClosureModuleLayout(
     options.interfaceCache,
     options.cViews,
   );
-  if (!resolved.ok) return resolved;
+  if (!resolved.ok) {
+    const diagnostic = resolved.error;
+    return {
+      ok: false,
+      error: {
+        start: diagnostic.start,
+        end: diagnostic.end,
+        code: diagnostic.code,
+        message: diagnostic.message,
+        ...(diagnostic.preventsFallback === true
+          ? { preventsFallback: true }
+          : {}),
+      },
+    };
+  }
   const contracts = resolved.value;
   const classContracts = createKeyIndex<ClassDefinition, ClassContract>(
     syntaxHash,
