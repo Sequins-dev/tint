@@ -251,7 +251,7 @@ slots (Phase 3 b4).
 
 ## Struct layout and classification
 
-Layouts (`cLayout`) use the arm64 data model: natural alignment equal to scalar
+Layouts (`cLayout`) use the supported LP64 data model: natural alignment equal to scalar
 size, members in order at their alignment (1 when packed), record alignment the
 largest member alignment raised by `Aligned<N>`, size rounded to it; unions place
 every member at offset 0. Empty records and zero-length arrays are rejected.
@@ -292,6 +292,39 @@ need not extend narrow arguments, so extension bits are checked only for Apple)
 and skips with a visible reason without clang. Header layout checks compare the
 `CC_SHA256_CTX` (Darwin) and `z_stream` (both targets) declarations with the
 system headers.
+
+### Linux x86-64
+
+`classifySysVCCall` uses the same C layouts as AAPCS64 for the supported
+LP64 scalars, records and unions. Plain `char` is signed. Use `ByTarget`
+when a C alias or header constant differs. The binding language rejects
+`long double` and bitfields.
+
+System V classifies each of at most two eightbytes as INTEGER, SSE or
+padding. INTEGER wins when fields of both classes overlap an eightbyte,
+including in unions. Larger records and records with unaligned fields
+pass on the stack. If an argument cannot fit in the remaining six integer
+and eight SSE argument registers, it consumes registers from neither
+bank. The caller copies stack arguments by value into an aligned area.
+A memory result is written into aligned caller storage passed as the first
+integer argument, and C returns that address in RAX. Variadic calls use C
+default promotions and pass the occupied vector register count in AL.
+
+F1 supports static leaf imports and the public dynamic `foreignFunction`
+API. Static bindings support scalar and pointer arguments, CString
+conversion, record arguments and results, and Layout views. Optional
+libraries and symbols resolve lazily. The dynamic API classifies the
+signature with the SysV classifier and reuses the existing leaf
+trampoline. Borrowed byte operands are resolved in the trampoline, so a
+collection before the call can move the views and their owners. C views
+and stable external storage use the shared managed representation.
+
+The C oracle in `tools/native-x64-ffi.test.ts` checks generated static
+bindings and the public dynamic API under QEMU with the pinned x86
+sysroot. Its fixtures cover scalar and variadic calls, mixed aggregates,
+register exhaustion, stack arguments, aligned memory results, layout
+and padding, and borrowed buffers moved between calls. C callback
+signatures and callback runtime operations report the F2 diagnostic.
 
 ## The `c-call` instruction
 

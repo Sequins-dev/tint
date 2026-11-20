@@ -16,8 +16,14 @@ import type {
   NativeForeignBinding,
   ForeignLibrary,
 } from "./native/index.ts";
-import { dynamicObjectRuntimeModule } from "./native/runtime-contracts.ts";
-import { foreignDeclaration } from "./native/foreign/index.ts";
+import {
+  dynamicObjectRuntimeModule,
+  serialCollectorModule,
+} from "./native/runtime-contracts.ts";
+import {
+  foreignDeclaration,
+  foreignRuntimeModules,
+} from "./native/foreign/index.ts";
 /** Capability of the project request constructor for frozen bootstraps. */
 export const projectModuleLoader: boolean = true;
 
@@ -94,6 +100,7 @@ export function projectRoots(): string[] {
     "packages/compiler/src/cli.ts",
     "packages/native-runtime/src/index.ts",
     "packages/native-runtime/src/allocators/region/index.ts",
+    serialCollectorModule,
     dynamicObjectRuntimeModule,
   ];
   for (const source of runtimeSources()) {
@@ -120,11 +127,15 @@ export function loadCompilerSourceGraph(
     value: {
       ids: loader.ids,
       load: loader.load,
-      loadWithRoot: (root) =>
-        root === dynamicObjectRuntimeModule &&
-        inputs.some((input) => input?.id === root)
-          ? loadSourceGraph(inputs, mappings, roots)
-          : undefined,
+      loadWithRoot: (root) => {
+        if (!inputs.some((input) => input?.id === root)) return undefined;
+        if (root === dynamicObjectRuntimeModule)
+          return loadSourceGraph(inputs, mappings, roots);
+        if (root !== foreignRuntimeModules.sysv) return undefined;
+        const additional = loader.ids.slice();
+        additional.push(root);
+        return loadSourceGraph(inputs, mappings, additional);
+      },
     },
   };
 }

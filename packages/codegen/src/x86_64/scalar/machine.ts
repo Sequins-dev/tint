@@ -22,8 +22,14 @@ export const resultPayload = 16;
 export const normal = 1;
 export const thrown = 2;
 
+export const managedBaseOffset = 8;
+export const allocatorEntryOffset = 16;
+export const allocatorEnvironmentOffset = 24;
+export const managedLengthOffset = 32;
 export const argumentCountOffset = 40;
 export const argumentsOffset = 48;
+export const allocationStateOffset = 56;
+export const externalMemoryOffset = 64;
 export const heapCursorOffset = nativeHostedContextByteLength;
 export const heapEndOffset = heapCursorOffset + 8;
 export const contextBytes = heapEndOffset + 8;

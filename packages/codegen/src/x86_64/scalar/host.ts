@@ -10,12 +10,17 @@ import {
 import type { HostOperation } from "@tint/ir/scalar";
 import type { Condition, Gpr, Memory } from "../isa.ts";
 import {
+  allocationStateOffset,
   argumentCountOffset,
   argumentsOffset,
   bits,
+  byte,
+  externalMemoryOffset,
   gpr,
   imm,
   label,
+  managedBaseOffset,
+  managedLengthOffset,
   mem,
   word,
   xmm,
@@ -187,6 +192,235 @@ export function emitHostCall(request: HostCall): boolean {
       emit({ op: "mov", dst: rax, src: imm(-1) });
       emit({ op: "label", name: done });
       numberResult(rax);
+      return true;
+    }
+    case "generational-state": {
+      const invalid = site + ":invalid-state";
+      const done = site + ":state-published";
+      const old = gpr(8);
+      const young = gpr(9);
+      emit({ op: "mov", dst: r11, src: context });
+      emit({ op: "cmp", dst: mem(11, allocationStateOffset), src: imm(0) });
+      branch(emit, "ne", invalid);
+      array(0);
+      emit({ op: "cmp", dst: edx, src: imm(16) });
+      branch(emit, "b", invalid);
+      emit({ op: "cmp", dst: { ...mem(10, 0), width: 32 }, src: imm(0) });
+      branch(emit, "ne", invalid);
+      emit({ op: "cmp", dst: { ...mem(10, 12), width: 32 }, src: imm(0) });
+      branch(emit, "ne", invalid);
+      emit({ op: "mov", dst: word(8), src: { ...mem(10, 28), width: 32 } });
+      emit({ op: "cmp", dst: old, src: imm(512) });
+      branch(emit, "b", invalid);
+      emit({ op: "test", dst: old, src: imm(511) });
+      branch(emit, "ne", invalid);
+      emit({ op: "cmp", dst: { ...mem(10, 8), width: 32 }, src: word(8) });
+      branch(emit, "ne", invalid);
+      emit({ op: "mov", dst: word(9), src: { ...mem(10, 4), width: 32 } });
+      emit({ op: "cmp", dst: young, src: imm(16) });
+      branch(emit, "b", invalid);
+      emit({ op: "test", dst: young, src: imm(7) });
+      branch(emit, "ne", invalid);
+      emit({ op: "mov", dst: rax, src: old });
+      emit({ op: "add", dst: rax, src: young });
+      emit({ op: "cmp", dst: rax, src: imm(0x7ffffff0) });
+      branch(emit, "a", invalid);
+      emit({ op: "cmp", dst: rax, src: mem(11, managedLengthOffset) });
+      branch(emit, "a", invalid);
+
+      // Compute the required bitmap capacities before any publication.
+      emit({ op: "mov", dst: rdi, src: r10 });
+      array(1);
+      emit({ op: "add", dst: young, src: imm(255) });
+      emit({ op: "shr", dst: young, count: 8 });
+      emit({ op: "cmp", dst: rdx, src: young });
+      branch(emit, "b", invalid);
+      emit({ op: "mov", dst: rsi, src: r10 });
+      array(2);
+      emit({ op: "shr", dst: old, count: 6 });
+      emit({ op: "cmp", dst: rdx, src: old });
+      branch(emit, "b", invalid);
+      emit({ op: "mov", dst: old, src: r10 });
+      array(3);
+      emit({ op: "test", dst: edx, src: edx });
+      branch(emit, "e", invalid);
+      emit({ op: "mov", dst: mem(7, 16), src: rsi });
+      emit({ op: "mov", dst: { ...mem(7, 24), width: 32 }, src: imm(1) });
+      emit({ op: "mov", dst: mem(7, 32), src: old });
+      emit({ op: "mov", dst: mem(7, 40), src: r10 });
+      emit({ op: "mov", dst: { ...mem(7, 48), width: 32 }, src: imm(0) });
+      emit({ op: "mov", dst: { ...mem(7, 52), width: 32 }, src: edx });
+      emit({ op: "mov", dst: mem(7, 56), src: imm(0) });
+      emit({ op: "mov", dst: mem(11, allocationStateOffset), src: rdi });
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: invalid });
+      emit({ op: "mov", dst: rax, src: imm(-1) });
+      emit({ op: "label", name: done });
+      numberResult(rax);
+      return true;
+    }
+    case "external-memory-configure": {
+      const invalid = site + ":registrar-invalid";
+      const done = site + ":registrar-done";
+      emit({ op: "mov", dst: r11, src: context });
+      emit({ op: "cmp", dst: mem(11, externalMemoryOffset), src: imm(0) });
+      branch(emit, "ne", invalid);
+      emit({ op: "mov", dst: rax, src: argument(0) });
+      emit({ op: "test", dst: rax, src: rax });
+      branch(emit, "e", invalid);
+      emit({ op: "mov", dst: mem(11, externalMemoryOffset), src: rax });
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: invalid });
+      emit({ op: "mov", dst: rax, src: imm(-1) });
+      emit({ op: "label", name: done });
+      numberResult(rax);
+      return true;
+    }
+    case "memory-move": {
+      const invalid = site + ":move-invalid";
+      const done = site + ":move-done";
+      const base = gpr(8);
+      const length = gpr(9);
+      const numbers = [base, length, rdi, rsi, rdx];
+      emit({ op: "mov", dst: r11, src: bits(0xffffffff, 0x1fffff) });
+      for (let i = 0; i < numbers.length; i++) {
+        const register = numbers[i];
+        if (register === undefined) throw "memory move argument invariant";
+        exactInteger(emit, argument(i), register, invalid);
+        emit({ op: "cmp", dst: register, src: r11 });
+        branch(emit, "a", invalid);
+      }
+      emit({ op: "test", dst: base, src: base });
+      branch(emit, "e", invalid);
+      emit({ op: "sub", dst: r11, src: base });
+      emit({ op: "cmp", dst: length, src: r11 });
+      branch(emit, "a", invalid);
+      emit({ op: "sub", dst: length, src: rdx });
+      branch(emit, "b", invalid);
+      emit({ op: "cmp", dst: rdi, src: length });
+      branch(emit, "a", invalid);
+      emit({ op: "cmp", dst: rsi, src: length });
+      branch(emit, "a", invalid);
+      emit({ op: "add", dst: rdi, src: base });
+      emit({ op: "add", dst: rsi, src: base });
+      libc("memmove");
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: invalid });
+      emit({ op: "mov", dst: rax, src: imm(-1) });
+      emit({ op: "label", name: done });
+      numberResult(rax);
+      return true;
+    }
+    case "memory-map":
+    case "memory-unmap":
+    case "memory-release": {
+      const invalid = site + ":mapping-invalid";
+      const failed = site + ":mapping-failed";
+      const done = site + ":mapping-done";
+      const mapping = operation === "memory-map";
+      const release = operation === "memory-release";
+      const fixed = policy.fixedMappingFlag;
+      if (release && fixed === undefined) return false;
+      exactInteger(emit, argument(mapping ? 0 : 1), rsi, invalid);
+      emit({ op: "test", dst: rsi, src: rsi });
+      branch(emit, "le", invalid);
+      if (mapping) emit({ op: "xor", dst: edi, src: edi });
+      else {
+        exactInteger(emit, argument(0), rdi, invalid);
+        emit({ op: "test", dst: rdi, src: rdi });
+        branch(emit, "le", invalid);
+      }
+      if (release) {
+        // MAP_FIXED is allowed only within the managed mapping.
+        const page = policy.pageSize;
+        if (page.kind !== "fixed") return false;
+        emit({ op: "test", dst: rdi, src: imm(page.bytes - 1) });
+        branch(emit, "ne", invalid);
+        emit({ op: "test", dst: rsi, src: imm(page.bytes - 1) });
+        branch(emit, "ne", invalid);
+        emit({ op: "mov", dst: r11, src: context });
+        emit({ op: "mov", dst: rax, src: rdi });
+        emit({ op: "sub", dst: rax, src: mem(11, managedBaseOffset) });
+        branch(emit, "b", invalid);
+        emit({ op: "mov", dst: r10, src: mem(11, managedLengthOffset) });
+        emit({ op: "sub", dst: r10, src: rsi });
+        branch(emit, "b", invalid);
+        emit({ op: "cmp", dst: rax, src: r10 });
+        branch(emit, "a", invalid);
+      }
+      if (mapping || release) {
+        emit({ op: "mov", dst: edx, src: imm(3) });
+        emit({
+          op: "mov",
+          dst: word(1),
+          src: imm(policy.anonymousPrivateFlags | (release ? (fixed ?? 0) : 0)),
+        });
+        emit({ op: "mov", dst: word(8), src: imm(-1) });
+        emit({ op: "xor", dst: word(9), src: word(9) });
+        libc("mmap");
+        emit({ op: "cmp", dst: rax, src: imm(-1) });
+        branch(emit, "e", failed);
+        if (release) emit({ op: "xor", dst: eax, src: eax });
+      } else {
+        libc("munmap");
+        emit({ op: "test", dst: eax, src: eax });
+        branch(emit, "ne", failed);
+      }
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: failed });
+      call(policy.errnoSymbol);
+      emit({ op: "mov", dst: eax, src: { ...mem(0, 0), width: 32 } });
+      emit({ op: "neg", dst: rax });
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: invalid });
+      emit({ op: "mov", dst: rax, src: imm(-1) });
+      emit({ op: "label", name: done });
+      numberResult(rax);
+      return true;
+    }
+    case "processor-count": {
+      const processor = policy.processors;
+      if (processor.kind !== "affinity") return false;
+      const done = site + ":affinity-done";
+      const loop = site + ":affinity-loop";
+      const bits = site + ":affinity-bits";
+      const next = site + ":affinity-next";
+      const area = Math.ceil(processor.maskBytes / 16) * 16;
+      emit({ op: "sub", dst: gpr(4), src: imm(area) });
+      emit({ op: "xor", dst: edi, src: edi });
+      emit({ op: "mov", dst: word(6), src: imm(processor.maskBytes) });
+      emit({ op: "mov", dst: rdx, src: gpr(4) });
+      libc(processor.symbol);
+      emit({ op: "test", dst: eax, src: eax });
+      emit({ op: "mov", dst: eax, src: imm(0) });
+      branch(emit, "ne", done);
+      emit({ op: "xor", dst: word(9), src: word(9) });
+      emit({ op: "label", name: loop });
+      emit({
+        op: "movzx",
+        dst: word(8),
+        src: {
+          kind: "mem",
+          width: 8,
+          address: { kind: "base", base: 4, index: 9, disp: 0 },
+        },
+      });
+      emit({ op: "label", name: bits });
+      emit({ op: "test", dst: byte(8), src: byte(8) });
+      branch(emit, "e", next);
+      emit({ op: "shr", dst: word(8), count: 1 });
+      emit({ op: "adc", dst: eax, src: imm(0) });
+      emit({ op: "jmp", target: label(bits) });
+      emit({ op: "label", name: next });
+      emit({ op: "inc", dst: word(9) });
+      emit({ op: "cmp", dst: word(9), src: imm(processor.maskBytes) });
+      branch(emit, "b", loop);
+      emit({ op: "label", name: done });
+      emit({ op: "add", dst: gpr(4), src: imm(area) });
+      numberResult(eax);
       return true;
     }
     case "target-os":
