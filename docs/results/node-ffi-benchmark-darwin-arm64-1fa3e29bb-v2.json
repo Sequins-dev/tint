@@ -1,0 +1,876 @@
+{
+  "head": "1fa3e29bbc5f61b9cc8d635d7711a840eba6657c",
+  "iterations": 5000,
+  "warm": 1000,
+  "rounds": 5,
+  "target": "darwin-aarch64",
+  "cpu": "Apple M5 Max",
+  "node": "26.13.1",
+  "nodeSha256": "266dec4dce3a6cdcf5cdc38722a00cf5ae6a12cc51068d2a227655bbb75751ec",
+  "dsoSha256": "e5313bb5d6bb4d637b8ec8135ce6ef1a6279fbc9136906cc4e20f2b8a2209efc",
+  "sourceSha256": "6a6a5fc7d6af035783b3f6d668559580f67105527cebd171792972ee18c55366",
+  "native": [
+    {
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-bSp4N3/node-ffi-benchmark-literal\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-bSp4N3/node-ffi-benchmark-literal' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 87118 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-bSp4N3/node-ffi-benchmark-literal' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_a999969b-6ecb-4cd4-a829-f3078747208b AT_ENTRY')\nTINT_NATIVE_a999969b-6ecb-4cd4-a829-f3078747208b AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 0 4.08116602897644 5000\r\nTINT_FFI_BENCH arity-0 1 3.8314168453216553 5000\r\nTINT_FFI_BENCH arity-0 2 7.372875213623047 5000\r\nTINT_FFI_BENCH arity-0 3 3.6171247959136963 5000\r\nTINT_FFI_BENCH arity-0 4 3.8680419921875 5000\r\nTINT_FFI_BENCH arity-1 0 4.267250061035156 10000\r\nTINT_FFI_BENCH arity-1 1 4.153333902359009 10000\r\nTINT_FFI_BENCH arity-1 2 4.762042045593262 10000\r\nTINT_FFI_BENCH arity-1 3 4.149040937423706 10000\r\nTINT_FFI_BENCH arity-1 4 4.122541904449463 10000\r\nTINT_FFI_BENCH arity-2 0 5.221874952316284 15000\r\nTINT_FFI_BENCH arity-2 1 5.067042112350464 15000\r\nTINT_FFI_BENCH arity-2 2 7.583625078201294 15000\r\nTINT_FFI_BENCH arity-2 3 5.004415988922119 15000\r\nTINT_FFI_BENCH arity-2 4 8.300708055496216 15000\r\nTINT_FFI_BENCH arity-4 0 5.669832944869995 25000\r\nTINT_FFI_BENCH arity-4 1 20.728332996368408 25000\r\nTINT_FFI_BENCH arity-4 2 6.014584064483643 25000\r\nTINT_FFI_BENCH arity-4 3 16.66279101371765 25000\r\nTINT_FFI_BENCH arity-4 4 6.633583068847656 25000\r\nTINT_FFI_BENCH arity-8 0 22.95029091835022 45000\r\nTINT_FFI_BENCH arity-8 1 10.41395902633667 45000\r\nTINT_FFI_BENCH arity-8 2 10.622166872024536 45000\r\nTINT_FFI_BENCH arity-8 3 8.570749998092651 45000\r\nTINT_FFI_BENCH arity-8 4 12.488832950592041 45000\r\nTINT_FFI_BENCH arity-12 0 26.320333003997803 65000\r\nTINT_FFI_BENCH arity-12 1 14.338000059127808 65000\r\nTINT_FFI_BENCH arity-12 2 11.553791999816895 65000\r\nTINT_FFI_BENCH arity-12 3 13.404791831970215 65000\r\nTINT_FFI_BENCH arity-12 4 11.232916116714478 65000\r\nTINT_FFI_BENCH arity-24 0 19.975625038146973 125000\r\nTINT_FFI_BENCH arity-24 1 17.450083017349243 125000\r\nTINT_FFI_BENCH arity-24 2 18.233166933059692 125000\r\nTINT_FFI_BENCH arity-24 3 16.420125007629395 125000\r\nTINT_FFI_BENCH arity-24 4 18.95804214477539 125000\r\nTINT_FFI_BENCH buffer 0 25.799166917800903 210000\r\nTINT_FFI_BENCH buffer 1 32.09587502479553 210000\r\nTINT_FFI_BENCH buffer 2 25.520999908447266 210000\r\nTINT_FFI_BENCH buffer 3 25.931166887283325 210000\r\nTINT_FFI_BENCH buffer 4 25.612791061401367 210000\r\nTINT_FFI_BENCH callback 0 51.41995811462402 210000\r\nTINT_FFI_BENCH callback 1 90.25349998474121 210000\r\nTINT_FFI_BENCH callback 2 59.790250062942505 210000\r\nTINT_FFI_BENCH callback 3 51.91137504577637 210000\r\nTINT_FFI_BENCH callback 4 49.14162492752075 210000\r\nProcess 87118 resuming\nProcess 87118 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_a999969b-6ecb-4cd4-a829-f3078747208b EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_a999969b-6ecb-4cd4-a829-f3078747208b SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_a999969b-6ecb-4cd4-a829-f3078747208b EXIT 42\n",
+      "stderr": "",
+      "kind": "exited",
+      "status": 42,
+      "artifact": {
+        "target": "darwin-aarch64",
+        "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-bSp4N3/node-ffi-benchmark-literal",
+        "imageSha256": "22cf691f7a4ebcc47f5a9db7d55463e724310716f31649835846f0d0ac7abea1",
+        "buildManifest": {
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-literal-bSp4N3/node-ffi-benchmark-literal.manifest.json",
+          "sha256": "a3ebecf42d552672f4f1a96a90555a42c4fd76090e008270c85e601ed7569f27"
+        }
+      },
+      "executor": {
+        "runner": "darwin-local",
+        "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+      }
+    },
+    {
+      "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-ejptz4/node-ffi-benchmark-runtime\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-ejptz4/node-ffi-benchmark-runtime' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 87352 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-ejptz4/node-ffi-benchmark-runtime' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_a353e79e-bf2a-4e94-9f1e-bd3f9d09da6f AT_ENTRY')\nTINT_NATIVE_a353e79e-bf2a-4e94-9f1e-bd3f9d09da6f AT_ENTRY\n(lldb) continue\nTINT_FFI_BENCH arity-0 0 6.709290981292725 5000\r\nTINT_FFI_BENCH arity-0 1 8.533708810806274 5000\r\nTINT_FFI_BENCH arity-0 2 5.751917123794556 5000\r\nTINT_FFI_BENCH arity-0 3 6.046666860580444 5000\r\nTINT_FFI_BENCH arity-0 4 5.922541856765747 5000\r\nTINT_FFI_BENCH arity-1 0 7.547667026519775 10000\r\nTINT_FFI_BENCH arity-1 1 7.158082962036133 10000\r\nTINT_FFI_BENCH arity-1 2 6.997833013534546 10000\r\nTINT_FFI_BENCH arity-1 3 7.408208131790161 10000\r\nTINT_FFI_BENCH arity-1 4 6.918166875839233 10000\r\nTINT_FFI_BENCH arity-2 0 8.456624984741211 15000\r\nTINT_FFI_BENCH arity-2 1 7.8720409870147705 15000\r\nTINT_FFI_BENCH arity-2 2 8.5228750705719 15000\r\nTINT_FFI_BENCH arity-2 3 8.247041940689087 15000\r\nTINT_FFI_BENCH arity-2 4 8.495374917984009 15000\r\nTINT_FFI_BENCH arity-4 0 10.094666957855225 25000\r\nTINT_FFI_BENCH arity-4 1 9.788583040237427 25000\r\nTINT_FFI_BENCH arity-4 2 10.381625175476074 25000\r\nTINT_FFI_BENCH arity-4 3 9.914374828338623 25000\r\nTINT_FFI_BENCH arity-4 4 10.24008297920227 25000\r\nTINT_FFI_BENCH arity-8 0 13.238667011260986 45000\r\nTINT_FFI_BENCH arity-8 1 13.853332996368408 45000\r\nTINT_FFI_BENCH arity-8 2 13.38349986076355 45000\r\nTINT_FFI_BENCH arity-8 3 13.807957887649536 45000\r\nTINT_FFI_BENCH arity-8 4 13.732249975204468 45000\r\nTINT_FFI_BENCH arity-12 0 16.511332988739014 65000\r\nTINT_FFI_BENCH arity-12 1 17.403666973114014 65000\r\nTINT_FFI_BENCH arity-12 2 17.395083904266357 65000\r\nTINT_FFI_BENCH arity-12 3 16.72879195213318 65000\r\nTINT_FFI_BENCH arity-12 4 17.047584056854248 65000\r\nTINT_FFI_BENCH arity-24 0 25.961124897003174 125000\r\nTINT_FFI_BENCH arity-24 1 25.660791873931885 125000\r\nTINT_FFI_BENCH arity-24 2 26.291457891464233 125000\r\nTINT_FFI_BENCH arity-24 3 26.83174991607666 125000\r\nTINT_FFI_BENCH arity-24 4 26.121124982833862 125000\r\nTINT_FFI_BENCH buffer 0 12.467041969299316 210000\r\nTINT_FFI_BENCH buffer 1 12.53233289718628 210000\r\nTINT_FFI_BENCH buffer 2 12.607249975204468 210000\r\nTINT_FFI_BENCH buffer 3 12.225332975387573 210000\r\nTINT_FFI_BENCH buffer 4 12.19349980354309 210000\r\nTINT_FFI_BENCH callback 0 43.05562496185303 210000\r\nTINT_FFI_BENCH callback 1 46.05574989318848 210000\r\nTINT_FFI_BENCH callback 2 45.21362495422363 210000\r\nTINT_FFI_BENCH callback 3 43.256667137145996 210000\r\nTINT_FFI_BENCH callback 4 43.05279207229614 210000\r\nProcess 87352 resuming\nProcess 87352 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_a353e79e-bf2a-4e94-9f1e-bd3f9d09da6f EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_a353e79e-bf2a-4e94-9f1e-bd3f9d09da6f SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_a353e79e-bf2a-4e94-9f1e-bd3f9d09da6f EXIT 42\n",
+      "stderr": "",
+      "kind": "exited",
+      "status": 42,
+      "artifact": {
+        "target": "darwin-aarch64",
+        "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-ejptz4/node-ffi-benchmark-runtime",
+        "imageSha256": "36d5f6b85f0ed49cc7ba5fb8d38bf05ba84cd12e651bdb2d61502f45c50afb1a",
+        "buildManifest": {
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-runtime-ejptz4/node-ffi-benchmark-runtime.manifest.json",
+          "sha256": "06478eb04b9da2f0752fb4920d3212052fb73201eae3104b95d35cd5aca275ab"
+        }
+      },
+      "executor": {
+        "runner": "darwin-local",
+        "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+      }
+    }
+  ],
+  "results": {
+    "node": {
+      "samples": [
+        {
+          "case": "arity-0",
+          "round": 0,
+          "milliseconds": 0.5307919979095459,
+          "checksum": 5000
+        },
+        {
+          "case": "arity-0",
+          "round": 1,
+          "milliseconds": 0.33129215240478516,
+          "checksum": 5000
+        },
+        {
+          "case": "arity-0",
+          "round": 2,
+          "milliseconds": 2.8897500038146973,
+          "checksum": 5000
+        },
+        {
+          "case": "arity-0",
+          "round": 3,
+          "milliseconds": 0.36487507820129395,
+          "checksum": 5000
+        },
+        {
+          "case": "arity-0",
+          "round": 4,
+          "milliseconds": 0.2715420722961426,
+          "checksum": 5000
+        },
+        {
+          "case": "arity-1",
+          "round": 0,
+          "milliseconds": 1.5878751277923584,
+          "checksum": 10000
+        },
+        {
+          "case": "arity-1",
+          "round": 1,
+          "milliseconds": 3.385958194732666,
+          "checksum": 10000
+        },
+        {
+          "case": "arity-1",
+          "round": 2,
+          "milliseconds": 1.0916249752044678,
+          "checksum": 10000
+        },
+        {
+          "case": "arity-1",
+          "round": 3,
+          "milliseconds": 1.2641668319702148,
+          "checksum": 10000
+        },
+        {
+          "case": "arity-1",
+          "round": 4,
+          "milliseconds": 1.171875,
+          "checksum": 10000
+        },
+        {
+          "case": "arity-2",
+          "round": 0,
+          "milliseconds": 3.765082836151123,
+          "checksum": 15000
+        },
+        {
+          "case": "arity-2",
+          "round": 1,
+          "milliseconds": 1.0321660041809082,
+          "checksum": 15000
+        },
+        {
+          "case": "arity-2",
+          "round": 2,
+          "milliseconds": 1.1154999732971191,
+          "checksum": 15000
+        },
+        {
+          "case": "arity-2",
+          "round": 3,
+          "milliseconds": 1.0095000267028809,
+          "checksum": 15000
+        },
+        {
+          "case": "arity-2",
+          "round": 4,
+          "milliseconds": 0.8565828800201416,
+          "checksum": 15000
+        },
+        {
+          "case": "arity-4",
+          "round": 0,
+          "milliseconds": 2.0489578247070312,
+          "checksum": 25000
+        },
+        {
+          "case": "arity-4",
+          "round": 1,
+          "milliseconds": 1.6674590110778809,
+          "checksum": 25000
+        },
+        {
+          "case": "arity-4",
+          "round": 2,
+          "milliseconds": 1.5348341464996338,
+          "checksum": 25000
+        },
+        {
+          "case": "arity-4",
+          "round": 3,
+          "milliseconds": 1.4240000247955322,
+          "checksum": 25000
+        },
+        {
+          "case": "arity-4",
+          "round": 4,
+          "milliseconds": 1.3289999961853027,
+          "checksum": 25000
+        },
+        {
+          "case": "arity-8",
+          "round": 0,
+          "milliseconds": 3.178499937057495,
+          "checksum": 45000
+        },
+        {
+          "case": "arity-8",
+          "round": 1,
+          "milliseconds": 3.4006659984588623,
+          "checksum": 45000
+        },
+        {
+          "case": "arity-8",
+          "round": 2,
+          "milliseconds": 1.6816251277923584,
+          "checksum": 45000
+        },
+        {
+          "case": "arity-8",
+          "round": 3,
+          "milliseconds": 1.6571249961853027,
+          "checksum": 45000
+        },
+        {
+          "case": "arity-8",
+          "round": 4,
+          "milliseconds": 1.7450828552246094,
+          "checksum": 45000
+        },
+        {
+          "case": "arity-12",
+          "round": 0,
+          "milliseconds": 7.466166973114014,
+          "checksum": 65000
+        },
+        {
+          "case": "arity-12",
+          "round": 1,
+          "milliseconds": 3.241499900817871,
+          "checksum": 65000
+        },
+        {
+          "case": "arity-12",
+          "round": 2,
+          "milliseconds": 2.145124912261963,
+          "checksum": 65000
+        },
+        {
+          "case": "arity-12",
+          "round": 3,
+          "milliseconds": 1.9296250343322754,
+          "checksum": 65000
+        },
+        {
+          "case": "arity-12",
+          "round": 4,
+          "milliseconds": 1.8805420398712158,
+          "checksum": 65000
+        },
+        {
+          "case": "arity-24",
+          "round": 0,
+          "milliseconds": 3.8127079010009766,
+          "checksum": 125000
+        },
+        {
+          "case": "arity-24",
+          "round": 1,
+          "milliseconds": 3.7046661376953125,
+          "checksum": 125000
+        },
+        {
+          "case": "arity-24",
+          "round": 2,
+          "milliseconds": 4.054458141326904,
+          "checksum": 125000
+        },
+        {
+          "case": "arity-24",
+          "round": 3,
+          "milliseconds": 3.750667095184326,
+          "checksum": 125000
+        },
+        {
+          "case": "arity-24",
+          "round": 4,
+          "milliseconds": 3.511667013168335,
+          "checksum": 125000
+        },
+        {
+          "case": "buffer",
+          "round": 0,
+          "milliseconds": 0.7720000743865967,
+          "checksum": 210000
+        },
+        {
+          "case": "buffer",
+          "round": 1,
+          "milliseconds": 0.7543749809265137,
+          "checksum": 210000
+        },
+        {
+          "case": "buffer",
+          "round": 2,
+          "milliseconds": 0.754457950592041,
+          "checksum": 210000
+        },
+        {
+          "case": "buffer",
+          "round": 3,
+          "milliseconds": 0.7982499599456787,
+          "checksum": 210000
+        },
+        {
+          "case": "buffer",
+          "round": 4,
+          "milliseconds": 0.7491669654846191,
+          "checksum": 210000
+        },
+        {
+          "case": "callback",
+          "round": 0,
+          "milliseconds": 1.3360419273376465,
+          "checksum": 210000
+        },
+        {
+          "case": "callback",
+          "round": 1,
+          "milliseconds": 1.409208059310913,
+          "checksum": 210000
+        },
+        {
+          "case": "callback",
+          "round": 2,
+          "milliseconds": 1.396333932876587,
+          "checksum": 210000
+        },
+        {
+          "case": "callback",
+          "round": 3,
+          "milliseconds": 0.9712080955505371,
+          "checksum": 210000
+        },
+        {
+          "case": "callback",
+          "round": 4,
+          "milliseconds": 0.9453749656677246,
+          "checksum": 210000
+        }
+      ]
+    },
+    "tintLiteral": {
+      "samples": [
+        {
+          "case": "arity-0",
+          "round": 0,
+          "milliseconds": 4.08116602897644,
+          "checksum": 5000
+        },
+        {
+          "case": "arity-0",
+          "round": 1,
+          "milliseconds": 3.8314168453216553,
+          "checksum": 5000
+        },
+        {
+          "case": "arity-0",
+          "round": 2,
+          "milliseconds": 7.372875213623047,
+          "checksum": 5000
+        },
+        {
+          "case": "arity-0",
+          "round": 3,
+          "milliseconds": 3.6171247959136963,
+          "checksum": 5000
+        },
+        {
+          "case": "arity-0",
+          "round": 4,
+          "milliseconds": 3.8680419921875,
+          "checksum": 5000
+        },
+        {
+          "case": "arity-1",
+          "round": 0,
+          "milliseconds": 4.267250061035156,
+          "checksum": 10000
+        },
+        {
+          "case": "arity-1",
+          "round": 1,
+          "milliseconds": 4.153333902359009,
+          "checksum": 10000
+        },
+        {
+          "case": "arity-1",
+          "round": 2,
+          "milliseconds": 4.762042045593262,
+          "checksum": 10000
+        },
+        {
+          "case": "arity-1",
+          "round": 3,
+          "milliseconds": 4.149040937423706,
+          "checksum": 10000
+        },
+        {
+          "case": "arity-1",
+          "round": 4,
+          "milliseconds": 4.122541904449463,
+          "checksum": 10000
+        },
+        {
+          "case": "arity-2",
+          "round": 0,
+          "milliseconds": 5.221874952316284,
+          "checksum": 15000
+        },
+        {
+          "case": "arity-2",
+          "round": 1,
+          "milliseconds": 5.067042112350464,
+          "checksum": 15000
+        },
+        {
+          "case": "arity-2",
+          "round": 2,
+          "milliseconds": 7.583625078201294,
+          "checksum": 15000
+        },
+        {
+          "case": "arity-2",
+          "round": 3,
+          "milliseconds": 5.004415988922119,
+          "checksum": 15000
+        },
+        {
+          "case": "arity-2",
+          "round": 4,
+          "milliseconds": 8.300708055496216,
+          "checksum": 15000
+        },
+        {
+          "case": "arity-4",
+          "round": 0,
+          "milliseconds": 5.669832944869995,
+          "checksum": 25000
+        },
+        {
+          "case": "arity-4",
+          "round": 1,
+          "milliseconds": 20.728332996368408,
+          "checksum": 25000
+        },
+        {
+          "case": "arity-4",
+          "round": 2,
+          "milliseconds": 6.014584064483643,
+          "checksum": 25000
+        },
+        {
+          "case": "arity-4",
+          "round": 3,
+          "milliseconds": 16.66279101371765,
+          "checksum": 25000
+        },
+        {
+          "case": "arity-4",
+          "round": 4,
+          "milliseconds": 6.633583068847656,
+          "checksum": 25000
+        },
+        {
+          "case": "arity-8",
+          "round": 0,
+          "milliseconds": 22.95029091835022,
+          "checksum": 45000
+        },
+        {
+          "case": "arity-8",
+          "round": 1,
+          "milliseconds": 10.41395902633667,
+          "checksum": 45000
+        },
+        {
+          "case": "arity-8",
+          "round": 2,
+          "milliseconds": 10.622166872024536,
+          "checksum": 45000
+        },
+        {
+          "case": "arity-8",
+          "round": 3,
+          "milliseconds": 8.570749998092651,
+          "checksum": 45000
+        },
+        {
+          "case": "arity-8",
+          "round": 4,
+          "milliseconds": 12.488832950592041,
+          "checksum": 45000
+        },
+        {
+          "case": "arity-12",
+          "round": 0,
+          "milliseconds": 26.320333003997803,
+          "checksum": 65000
+        },
+        {
+          "case": "arity-12",
+          "round": 1,
+          "milliseconds": 14.338000059127808,
+          "checksum": 65000
+        },
+        {
+          "case": "arity-12",
+          "round": 2,
+          "milliseconds": 11.553791999816895,
+          "checksum": 65000
+        },
+        {
+          "case": "arity-12",
+          "round": 3,
+          "milliseconds": 13.404791831970215,
+          "checksum": 65000
+        },
+        {
+          "case": "arity-12",
+          "round": 4,
+          "milliseconds": 11.232916116714478,
+          "checksum": 65000
+        },
+        {
+          "case": "arity-24",
+          "round": 0,
+          "milliseconds": 19.975625038146973,
+          "checksum": 125000
+        },
+        {
+          "case": "arity-24",
+          "round": 1,
+          "milliseconds": 17.450083017349243,
+          "checksum": 125000
+        },
+        {
+          "case": "arity-24",
+          "round": 2,
+          "milliseconds": 18.233166933059692,
+          "checksum": 125000
+        },
+        {
+          "case": "arity-24",
+          "round": 3,
+          "milliseconds": 16.420125007629395,
+          "checksum": 125000
+        },
+        {
+          "case": "arity-24",
+          "round": 4,
+          "milliseconds": 18.95804214477539,
+          "checksum": 125000
+        },
+        {
+          "case": "buffer",
+          "round": 0,
+          "milliseconds": 25.799166917800903,
+          "checksum": 210000
+        },
+        {
+          "case": "buffer",
+          "round": 1,
+          "milliseconds": 32.09587502479553,
+          "checksum": 210000
+        },
+        {
+          "case": "buffer",
+          "round": 2,
+          "milliseconds": 25.520999908447266,
+          "checksum": 210000
+        },
+        {
+          "case": "buffer",
+          "round": 3,
+          "milliseconds": 25.931166887283325,
+          "checksum": 210000
+        },
+        {
+          "case": "buffer",
+          "round": 4,
+          "milliseconds": 25.612791061401367,
+          "checksum": 210000
+        },
+        {
+          "case": "callback",
+          "round": 0,
+          "milliseconds": 51.41995811462402,
+          "checksum": 210000
+        },
+        {
+          "case": "callback",
+          "round": 1,
+          "milliseconds": 90.25349998474121,
+          "checksum": 210000
+        },
+        {
+          "case": "callback",
+          "round": 2,
+          "milliseconds": 59.790250062942505,
+          "checksum": 210000
+        },
+        {
+          "case": "callback",
+          "round": 3,
+          "milliseconds": 51.91137504577637,
+          "checksum": 210000
+        },
+        {
+          "case": "callback",
+          "round": 4,
+          "milliseconds": 49.14162492752075,
+          "checksum": 210000
+        }
+      ]
+    },
+    "tintRuntime": {
+      "samples": [
+        {
+          "case": "arity-0",
+          "round": 0,
+          "milliseconds": 6.709290981292725,
+          "checksum": 5000
+        },
+        {
+          "case": "arity-0",
+          "round": 1,
+          "milliseconds": 8.533708810806274,
+          "checksum": 5000
+        },
+        {
+          "case": "arity-0",
+          "round": 2,
+          "milliseconds": 5.751917123794556,
+          "checksum": 5000
+        },
+        {
+          "case": "arity-0",
+          "round": 3,
+          "milliseconds": 6.046666860580444,
+          "checksum": 5000
+        },
+        {
+          "case": "arity-0",
+          "round": 4,
+          "milliseconds": 5.922541856765747,
+          "checksum": 5000
+        },
+        {
+          "case": "arity-1",
+          "round": 0,
+          "milliseconds": 7.547667026519775,
+          "checksum": 10000
+        },
+        {
+          "case": "arity-1",
+          "round": 1,
+          "milliseconds": 7.158082962036133,
+          "checksum": 10000
+        },
+        {
+          "case": "arity-1",
+          "round": 2,
+          "milliseconds": 6.997833013534546,
+          "checksum": 10000
+        },
+        {
+          "case": "arity-1",
+          "round": 3,
+          "milliseconds": 7.408208131790161,
+          "checksum": 10000
+        },
+        {
+          "case": "arity-1",
+          "round": 4,
+          "milliseconds": 6.918166875839233,
+          "checksum": 10000
+        },
+        {
+          "case": "arity-2",
+          "round": 0,
+          "milliseconds": 8.456624984741211,
+          "checksum": 15000
+        },
+        {
+          "case": "arity-2",
+          "round": 1,
+          "milliseconds": 7.8720409870147705,
+          "checksum": 15000
+        },
+        {
+          "case": "arity-2",
+          "round": 2,
+          "milliseconds": 8.5228750705719,
+          "checksum": 15000
+        },
+        {
+          "case": "arity-2",
+          "round": 3,
+          "milliseconds": 8.247041940689087,
+          "checksum": 15000
+        },
+        {
+          "case": "arity-2",
+          "round": 4,
+          "milliseconds": 8.495374917984009,
+          "checksum": 15000
+        },
+        {
+          "case": "arity-4",
+          "round": 0,
+          "milliseconds": 10.094666957855225,
+          "checksum": 25000
+        },
+        {
+          "case": "arity-4",
+          "round": 1,
+          "milliseconds": 9.788583040237427,
+          "checksum": 25000
+        },
+        {
+          "case": "arity-4",
+          "round": 2,
+          "milliseconds": 10.381625175476074,
+          "checksum": 25000
+        },
+        {
+          "case": "arity-4",
+          "round": 3,
+          "milliseconds": 9.914374828338623,
+          "checksum": 25000
+        },
+        {
+          "case": "arity-4",
+          "round": 4,
+          "milliseconds": 10.24008297920227,
+          "checksum": 25000
+        },
+        {
+          "case": "arity-8",
+          "round": 0,
+          "milliseconds": 13.238667011260986,
+          "checksum": 45000
+        },
+        {
+          "case": "arity-8",
+          "round": 1,
+          "milliseconds": 13.853332996368408,
+          "checksum": 45000
+        },
+        {
+          "case": "arity-8",
+          "round": 2,
+          "milliseconds": 13.38349986076355,
+          "checksum": 45000
+        },
+        {
+          "case": "arity-8",
+          "round": 3,
+          "milliseconds": 13.807957887649536,
+          "checksum": 45000
+        },
+        {
+          "case": "arity-8",
+          "round": 4,
+          "milliseconds": 13.732249975204468,
+          "checksum": 45000
+        },
+        {
+          "case": "arity-12",
+          "round": 0,
+          "milliseconds": 16.511332988739014,
+          "checksum": 65000
+        },
+        {
+          "case": "arity-12",
+          "round": 1,
+          "milliseconds": 17.403666973114014,
+          "checksum": 65000
+        },
+        {
+          "case": "arity-12",
+          "round": 2,
+          "milliseconds": 17.395083904266357,
+          "checksum": 65000
+        },
+        {
+          "case": "arity-12",
+          "round": 3,
+          "milliseconds": 16.72879195213318,
+          "checksum": 65000
+        },
+        {
+          "case": "arity-12",
+          "round": 4,
+          "milliseconds": 17.047584056854248,
+          "checksum": 65000
+        },
+        {
+          "case": "arity-24",
+          "round": 0,
+          "milliseconds": 25.961124897003174,
+          "checksum": 125000
+        },
+        {
+          "case": "arity-24",
+          "round": 1,
+          "milliseconds": 25.660791873931885,
+          "checksum": 125000
+        },
+        {
+          "case": "arity-24",
+          "round": 2,
+          "milliseconds": 26.291457891464233,
+          "checksum": 125000
+        },
+        {
+          "case": "arity-24",
+          "round": 3,
+          "milliseconds": 26.83174991607666,
+          "checksum": 125000
+        },
+        {
+          "case": "arity-24",
+          "round": 4,
+          "milliseconds": 26.121124982833862,
+          "checksum": 125000
+        },
+        {
+          "case": "buffer",
+          "round": 0,
+          "milliseconds": 12.467041969299316,
+          "checksum": 210000
+        },
+        {
+          "case": "buffer",
+          "round": 1,
+          "milliseconds": 12.53233289718628,
+          "checksum": 210000
+        },
+        {
+          "case": "buffer",
+          "round": 2,
+          "milliseconds": 12.607249975204468,
+          "checksum": 210000
+        },
+        {
+          "case": "buffer",
+          "round": 3,
+          "milliseconds": 12.225332975387573,
+          "checksum": 210000
+        },
+        {
+          "case": "buffer",
+          "round": 4,
+          "milliseconds": 12.19349980354309,
+          "checksum": 210000
+        },
+        {
+          "case": "callback",
+          "round": 0,
+          "milliseconds": 43.05562496185303,
+          "checksum": 210000
+        },
+        {
+          "case": "callback",
+          "round": 1,
+          "milliseconds": 46.05574989318848,
+          "checksum": 210000
+        },
+        {
+          "case": "callback",
+          "round": 2,
+          "milliseconds": 45.21362495422363,
+          "checksum": 210000
+        },
+        {
+          "case": "callback",
+          "round": 3,
+          "milliseconds": 43.256667137145996,
+          "checksum": 210000
+        },
+        {
+          "case": "callback",
+          "round": 4,
+          "milliseconds": 43.05279207229614,
+          "checksum": 210000
+        }
+      ]
+    }
+  }
+}

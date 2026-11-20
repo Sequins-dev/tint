@@ -172,10 +172,25 @@ test("weak capability requires both captured installer and the complete public n
   );
   const id = "packages/js-runtime/src/objects/index.ts",
     input = snapshot.inputs.find((item) => item.id === id)!;
+  const installers = new Set([
+    "installWeakCollectionIntrinsics",
+    "installWeakRefIntrinsics",
+    "installFinalizationRegistryIntrinsics",
+  ]);
   const original = new TextDecoder().decode(input.bytes),
     text = original.replace(
-      /export \{ install(?:WeakCollection|WeakRef|FinalizationRegistry)Intrinsics \} from "\.\/[^"\n]+";\n/g,
-      "",
+      /export \{([^{}]+)\} from ("\.\/[^"\n]+");\n/g,
+      (statement: string, bindings: string, specifier: string): string => {
+        const names = bindings
+          .split(",")
+          .map((name) => name.trim())
+          .filter(Boolean);
+        const remaining = names.filter((name) => !installers.has(name));
+        if (remaining.length === names.length) return statement;
+        return remaining.length === 0
+          ? ""
+          : "export { " + remaining.join(", ") + " } from " + specifier + ";\n";
+      },
     );
   assert.notEqual(text, original);
   const historical = {
