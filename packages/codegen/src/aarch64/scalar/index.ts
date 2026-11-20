@@ -121,10 +121,11 @@ import {
 } from "@tint/abi/host";
 import {
   encodeStackMapTable,
+  rootHeadBinding,
   safepointLiveSlots,
   type SafepointEntry,
   type SafepointSite,
-} from "./stack-maps.ts";
+} from "../../scalar/stack-maps.ts";
 import {
   encodeFloat64,
   writeUnsigned,
@@ -324,7 +325,7 @@ export {
   encodeStackMapTable,
   type DecodedSafepoint,
   type SafepointEntry,
-} from "./stack-maps.ts";
+} from "../../scalar/stack-maps.ts";
 export interface NativeStackMapTable {
   readonly codeOffset: number;
   readonly codeLength: number;
@@ -927,18 +928,6 @@ function rawWordOperation(operation: string): boolean {
     operation === "memory-load-acquire-word" ||
     operation === "memory-store-release-word"
   );
-}
-/** A root-head binding's own body: one block that only loads slots and
- * reads the root head. Its frame is popped before the walk it starts. */
-function rootHeadBinding(fn: FunctionIR): boolean {
-  const block = fn.blocks.length === 1 ? fn.blocks[0] : undefined;
-  if (block === undefined) return false;
-  let reads = false;
-  for (const op of block.instructions) {
-    if (op?.kind === "host-call" && op.operation === "root-head") reads = true;
-    else if (op?.kind !== "load") return false;
-  }
-  return reads;
 }
 /** Frame preparation may replace bodies with compacted slot layouts. */
 export interface EmissionBodies extends FunctionBodySource {

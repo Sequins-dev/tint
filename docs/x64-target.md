@@ -66,6 +66,12 @@ Keep machine IR as a later investment based on the two backends.
 | Atomics                   | For aligned ordinary write-back memory, acquire loads and release stores use plain size-matched MOV and preserve compiler ordering. Drop the arm64 fences used only for those edges. TSO still allows Store→Load reorder: establish a coherent SC mapping across all access paths, for example MOV loads and XCHG stores, with locked CMPXCHG/XADD or CAS loops for RMW and MFENCE for an explicit full fence. CAS mismatch retains SC order. Preserve alignment and bounds checks, publication and futex wake/recheck semantics. Use PAUSE in spin loops.                                                                              |
 | CPU profile               | Recommend x86-64-v2 as the deployment contract. It avoids AVX/OSXSAVE bring-up and is sufficient for mainstream Linux x86-64 environments. Keep initial emission within baseline integer/SSE2 where practical. A fixed profile needs no per-op detection. Verify the actual guest CPUID model and loader compatibility. If later dispatching AVX or BMI paths, use CPUID with OSXSAVE/XGETBV for AVX and include chosen ISA policy in JIT/compiled artifact identity.                                                                                                                                                                   |
 
+Hosted x86-64 images register wide v3 tables at startup. Direct
+managed calls record the byte offset immediately after the call, with
+reference and tagged homes relative to the suspended stack pointer.
+`root-head` publishes the frame chain for the shared walker. Callback thunks
+use the same registry sentinel and transition record as arm64.
+
 The physical SysV rules and relocation formulas come from the
 [x86-64 psABI](https://gitlab.com/x86-psABIs/x86-64-ABI). Instruction encoding,
 ordering and self-modifying code rules follow the

@@ -1,3 +1,4 @@
+import { runDarwinFixture } from "./native-admission.ts";
 // Native evidence for symbolicated uncaught-throw traces
 // (docs/runtime-diagnostics.md). Builds typed and JavaScript (general
 // fallback) fixtures with stackTraces, runs each under LLDB and checks the
@@ -44,22 +45,24 @@ export function runCapturingStandardError(image: string): {
   const directory = mkdtempSync(join(tmpdir(), "tint-stack-trace-"));
   const capture = join(directory, "stderr.txt");
   try {
-    const result = spawnSync(
-      "lldb",
-      [
-        "--no-lldbinit",
-        "--batch",
-        "-o",
-        `process launch --stop-at-entry --stderr ${capture}`,
-        "-o",
-        "script assert lldb.process.GetState() == lldb.eStateStopped",
-        "-o",
-        "continue",
-        "-o",
-        "script print('exit-status', lldb.process.GetExitStatus() if lldb.process.GetState() == lldb.eStateExited else -1)",
-        image,
-      ],
-      { encoding: "utf8", timeout: 120000 },
+    const result = runDarwinFixture(image, () =>
+      spawnSync(
+        "lldb",
+        [
+          "--no-lldbinit",
+          "--batch",
+          "-o",
+          `process launch --stop-at-entry --stderr ${capture}`,
+          "-o",
+          "script assert lldb.process.GetState() == lldb.eStateStopped",
+          "-o",
+          "continue",
+          "-o",
+          "script print('exit-status', lldb.process.GetExitStatus() if lldb.process.GetState() == lldb.eStateExited else -1)",
+          image,
+        ],
+        { encoding: "utf8", timeout: 120000 },
+      ),
     );
     assert.equal(result.error, undefined);
     const match = /exit-status (-?\d+)/.exec(result.stdout);

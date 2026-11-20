@@ -9,6 +9,10 @@
 // Nothing runs past the entry point, so images that crash by design (the
 // callback contract traps) never reach their fault or a Problem Report.
 import assert from "node:assert/strict";
+import {
+  beginNativeFixtureExecution,
+  runNativeFixture,
+} from "./gate/native-fixture.ts";
 import { spawnSync } from "node:child_process";
 
 /** Admit `binary` (a darwin image on a darwin host; elsewhere a no-op).
@@ -43,5 +47,30 @@ export function admitUnderLldb(binary: string, env = process.env): void {
       ":\n" +
       result.stdout +
       result.stderr,
+  );
+}
+
+/** Run an existing Darwin fixture, admitting its original file when gated. */
+export function runDarwinFixture<T>(image: string, execute: () => T): T {
+  return process.env.TINT_GATE_NATIVE_IMAGES
+    ? runNativeFixture(image, execute, () => admitUnderLldb(image))
+    : execute();
+}
+
+export function beginDarwinFixtureExecution(image: string): () => void {
+  return beginNativeFixtureExecution(
+    image,
+    process.env.TINT_GATE_NATIVE_IMAGES
+      ? () => admitUnderLldb(image)
+      : undefined,
+  );
+}
+
+export function admitDarwinFixture(image: string): void {
+  beginNativeFixtureExecution(
+    image,
+    () => admitUnderLldb(image),
+    process.env,
+    true,
   );
 }

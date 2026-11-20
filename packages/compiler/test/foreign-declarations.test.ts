@@ -1,3 +1,5 @@
+import { buildNativeFixture } from "../../../tools/gate/native-fixture.ts";
+import { runDarwinFixture } from "../../../tools/native-admission.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -488,11 +490,16 @@ int main(void) {
 }
 `,
       );
-      const compiled = spawnSync("clang", ["-o", binary, source], {
-        encoding: "utf8",
+      buildNativeFixture(binary, () => {
+        const compiled = spawnSync("clang", ["-o", binary, source], {
+          encoding: "utf8",
+        });
+        assert.equal(compiled.status, 0, compiled.stderr);
+        return binary;
       });
-      assert.equal(compiled.status, 0, compiled.stderr);
-      const run = spawnSync(binary, [], { encoding: "utf8" });
+      const run = runDarwinFixture(binary, () =>
+        spawnSync(binary, [], { encoding: "utf8" }),
+      );
       assert.equal(run.status, 0, run.stderr);
       const record = parsed(commonCrypto).records[0]!;
       const layout = cLayout(record.type, darwinArm64CTarget);
@@ -818,11 +825,16 @@ ${fields.map((name) => `  printf(" %zu", offsetof(z_stream, ${name}));`).join("\
 }
 `,
       );
-      const compiled = spawnSync("clang", ["-o", binary, source], {
-        encoding: "utf8",
+      buildNativeFixture(binary, () => {
+        const compiled = spawnSync("clang", ["-o", binary, source], {
+          encoding: "utf8",
+        });
+        assert.equal(compiled.status, 0, compiled.stderr);
+        return binary;
       });
-      assert.equal(compiled.status, 0, compiled.stderr);
-      const run = spawnSync(binary, [], { encoding: "utf8" });
+      const run = runDarwinFixture(binary, () =>
+        spawnSync(binary, [], { encoding: "utf8" }),
+      );
       assert.equal(run.status, 0, run.stderr);
       const layout = cLayout(record.type, target);
       if (!layout.ok) assert.fail(layout.error);
@@ -905,11 +917,16 @@ ${lines.join("\n")}
 }
 `,
       );
-      const compiled = spawnSync("clang", ["-o", binary, source], {
-        encoding: "utf8",
+      buildNativeFixture(binary, () => {
+        const compiled = spawnSync("clang", ["-o", binary, source], {
+          encoding: "utf8",
+        });
+        assert.equal(compiled.status, 0, compiled.stderr);
+        return binary;
       });
-      assert.equal(compiled.status, 0, compiled.stderr);
-      const run = spawnSync(binary, [], { encoding: "utf8" });
+      const run = runDarwinFixture(binary, () =>
+        spawnSync(binary, [], { encoding: "utf8" }),
+      );
       assert.equal(run.status, 0, run.stderr);
       assert.equal(run.stdout, expected.map((line) => line + "\n").join(""));
     } finally {
@@ -982,11 +999,16 @@ ${lines.join("\n")}
 }
 `,
       );
-      const compiled = spawnSync("clang", ["-o", binary, source], {
-        encoding: "utf8",
+      buildNativeFixture(binary, () => {
+        const compiled = spawnSync("clang", ["-o", binary, source], {
+          encoding: "utf8",
+        });
+        assert.equal(compiled.status, 0, compiled.stderr);
+        return binary;
       });
-      assert.equal(compiled.status, 0, compiled.stderr);
-      const run = spawnSync(binary, [], { encoding: "utf8" });
+      const run = runDarwinFixture(binary, () =>
+        spawnSync(binary, [], { encoding: "utf8" }),
+      );
       assert.equal(run.status, 0, run.stderr);
       assert.equal(run.stdout, expected.map((line) => line + "\n").join(""));
     } finally {

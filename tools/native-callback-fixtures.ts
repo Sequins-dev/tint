@@ -1,3 +1,8 @@
+import {
+  nativeFixtureBuildOnlyMode,
+  withNativeFixtureMemory,
+} from "./gate/native-fixture.ts";
+import { runDarwinFixture } from "./native-admission.ts";
 // Native callbacks (docs/native-ffi.md, "Callbacks"): C calling back into
 // TypeScript through AOT thunks during may-callback calls.
 import assert from "node:assert/strict";
@@ -296,7 +301,8 @@ export function verifyCallbackTrap(
 ): string {
   const declarations = callbackTrapDeclarations(library);
   const previous = process.env.TINT_BUILD_ONLY;
-  if (scenario !== "ok") process.env.TINT_BUILD_ONLY = "1";
+  if (scenario !== "ok")
+    process.env.TINT_BUILD_ONLY = nativeFixtureBuildOnlyMode();
   let binary: string;
   try {
     binary = verifyHostedFixture(
@@ -321,24 +327,26 @@ export function verifyCallbackTrap(
   }
   if (scenario === "ok") return binary;
   try {
-    const result = spawnSync(
-      "lldb",
-      [
-        "--no-lldbinit",
-        "--batch",
-        "-o",
-        "process launch --stop-at-entry",
-        "-o",
-        "script assert lldb.process.GetState() == lldb.eStateStopped",
-        "-o",
-        "continue",
-        "-o",
-        "script assert lldb.process.GetState() == lldb.eStateStopped",
-        "-o",
-        "kill",
-        binary,
-      ],
-      { encoding: "utf8", timeout: 60000 },
+    const result = runDarwinFixture(binary, () =>
+      spawnSync(
+        "lldb",
+        [
+          "--no-lldbinit",
+          "--batch",
+          "-o",
+          "process launch --stop-at-entry",
+          "-o",
+          "script assert lldb.process.GetState() == lldb.eStateStopped",
+          "-o",
+          "continue",
+          "-o",
+          "script assert lldb.process.GetState() == lldb.eStateStopped",
+          "-o",
+          "kill",
+          binary,
+        ],
+        { encoding: "utf8", timeout: 60000 },
+      ),
     );
     assert.equal(result.status, 0, result.stdout + result.stderr);
     assert.match(
@@ -369,10 +377,12 @@ export function withCallbackLibrary<T>(
           : "libtint-callback-traps.so",
       );
     writeFileSync(source, callbackLibrarySource);
-    const built = spawnSync(
-      "clang",
-      ["-O1", "-shared", "-fPIC", "-pthread", "-o", library, source],
-      { encoding: "utf8" },
+    const built = withNativeFixtureMemory(() =>
+      spawnSync(
+        "clang",
+        ["-O1", "-shared", "-fPIC", "-pthread", "-o", library, source],
+        { encoding: "utf8" },
+      ),
     );
     if (built.status !== 0) throw Error("clang failed:\n" + built.stderr);
     return body(library);

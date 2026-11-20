@@ -1,3 +1,4 @@
+import { buildNativeFixture } from "./gate/native-fixture.ts";
 // The DevTools bridge's Profiler domain: CPU profiles with source frames
 // from an external sampler (pprofessor on macOS, perf on Linux;
 // re-symbolised from DWARF, inlined frames included) and from backend stack
@@ -95,8 +96,11 @@ async function profileC(
   const file = join(dir, "spin.c"),
     program = join(dir, "spin");
   writeFileSync(file, source);
-  const built = compileC(["-g", "-O0", file, "-o", program]);
-  assert.equal(built.status, 0, built.stderr);
+  buildNativeFixture(program, () => {
+    const built = compileC(["-g", "-O0", file, "-o", program]);
+    assert.equal(built.status, 0, built.stderr);
+    return program;
+  });
   const session = await startDevTools({
     program,
     port: 0,

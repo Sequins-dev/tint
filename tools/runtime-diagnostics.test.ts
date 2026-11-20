@@ -1,3 +1,4 @@
+import { nativeFixtureBuildOnlyMode } from "./gate/native-fixture.ts";
 // Native runtime diagnostics (docs/runtime-diagnostics.md): each opted-in
 // image is built through the hosted pipeline and run under LLDB.
 import assert from "node:assert/strict";
@@ -20,7 +21,7 @@ import {
 } from "./verify-hosted-signposts.ts";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 
-process.env.TINT_BUILD_ONLY = "1";
+process.env.TINT_BUILD_ONLY = nativeFixtureBuildOnlyMode();
 
 test("an uncaught throw prints its value and a symbolicated origin trace", () => {
   const image = verifyHostedFixture(

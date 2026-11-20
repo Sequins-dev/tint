@@ -11,7 +11,7 @@ import {
   type DecodedSafepoint,
   type NativeModule,
 } from "../src/aarch64/scalar/index.ts";
-import { encodeStackMapTable } from "../src/aarch64/scalar/stack-maps.ts";
+import { encodeStackMapTable } from "../src/scalar/stack-maps.ts";
 import {
   nativeStackMapMagic,
   nativeStackMapCompactVersion,

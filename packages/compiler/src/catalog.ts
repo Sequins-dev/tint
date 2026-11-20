@@ -175,10 +175,6 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
-      id: "packages/codegen/src/aarch64/scalar/stack-maps.ts",
-      packageId: "codegen",
-    },
-    {
       id: "packages/codegen/src/aarch64/scalar/stack-registers.ts",
       packageId: "codegen",
     },
@@ -196,6 +192,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/codegen/src/aarch64/unwind.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/scalar/stack-maps.ts",
       packageId: "codegen",
     },
     {
@@ -220,6 +220,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/codegen/src/x86_64/scalar/numbers.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/x86_64/scalar/stack-maps.ts",
       packageId: "codegen",
     },
     {

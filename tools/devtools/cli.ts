@@ -1,3 +1,4 @@
+import { beginDarwinFixtureExecution } from "../native-admission.ts";
 // Chrome DevTools for native programs (docs/native-devtools.md): a CDP
 // server backed by a DAP debug adapter (lldb-dap by default).
 //
@@ -54,6 +55,31 @@ export interface DevToolsSession {
 
 /** Starts the adapter, the bridge and the CDP server. */
 export async function startDevTools(
+  options: DevToolsOptions,
+): Promise<DevToolsSession> {
+  const release =
+    options.program === undefined
+      ? () => {}
+      : beginDarwinFixtureExecution(options.program);
+  try {
+    const session = await openDevTools(options);
+    return {
+      ...session,
+      close: async () => {
+        try {
+          await session.close();
+        } finally {
+          release();
+        }
+      },
+    };
+  } catch (error) {
+    release();
+    throw error;
+  }
+}
+
+async function openDevTools(
   options: DevToolsOptions,
 ): Promise<DevToolsSession> {
   const backend = new LldbDapBackend(options.adapter);
