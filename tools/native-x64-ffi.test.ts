@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -15,7 +22,11 @@ import { parseForeignDeclarations } from "@tint/compiler/native";
 import { createSourceText } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
-import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
+import {
+  nativeArtifact,
+  runNativeBatch,
+  x64SshArguments,
+} from "./native-target-runner.ts";
 import {
   callbackLibrarySource,
   verifyCallbackFixture,
@@ -140,7 +151,7 @@ const oracleDeclarations = `declare module "${oracleSpecifier}" {
 }`;
 
 function withOracle(
-  check: (library: string) => void,
+  check: (library: string, directory: string) => void,
   sourceText?: string,
 ): void {
   // The worktree is visible on dev and QEMU receives the absolute DSO path
@@ -187,7 +198,51 @@ function withOracle(
       { encoding: "utf8", timeout: 12000 },
     );
     assert.equal(built.status, 0, built.error?.message ?? built.stderr);
-    check(library);
+    if (
+      process.env.TINT_NATIVE_RUNNER !== "x64-ssh" ||
+      process.env.TINT_BUILD_ONLY === "1" ||
+      process.env.TINT_BUILD_ONLY === "defer-admission"
+    ) {
+      check(library, directory);
+      return;
+    }
+    // DT_NEEDED and dlopen both use this interpreter's path to the oracle.
+    const bytes = readFileSync(library);
+    const ssh = x64SshArguments();
+    const uploaded = spawnSync(
+      "ssh",
+      [
+        ...ssh,
+        `set -eu
+d=$(mktemp -d /tmp/tint-x64-oracle.XXXXXXXX)
+trap 'rm -rf "$d"' EXIT
+cat > "$d/oracle.so"
+sha256sum "$d/oracle.so"
+trap - EXIT`,
+      ],
+      { input: bytes, encoding: "utf8", timeout: 30000 },
+    );
+    assert.equal(
+      uploaded.status,
+      0,
+      uploaded.error?.message ?? uploaded.stderr,
+    );
+    const [digest, guest] = uploaded.stdout.trim().split(/\s+/);
+    assert.ok(
+      guest &&
+        /^\/tmp\/tint-x64-oracle\.[a-zA-Z0-9]{8}\/oracle\.so$/.test(guest),
+    );
+    try {
+      assert.equal(digest, createHash("sha256").update(bytes).digest("hex"));
+      check(guest, directory);
+    } finally {
+      const cleaned = spawnSync(
+        "ssh",
+        [...ssh, `rm -f -- '${guest}' && rmdir -- '${dirname(guest)}'`],
+        { encoding: "utf8", timeout: 30000 },
+      );
+      assert.equal(cleaned.status, 0, cleaned.error?.message ?? cleaned.stderr);
+    }
   } finally {
     if (
       process.env.TINT_BUILD_ONLY !== "1" &&
@@ -723,7 +778,7 @@ test(
       managedBytes: 4096,
       pageBytes: target.memoryPageBytes,
     });
-    withOracle((library) => {
+    withOracle((library, directory) => {
       const built = buildElfExecutable({
         ...image,
         code: new Uint8Array(0),
@@ -739,7 +794,7 @@ test(
         },
       });
       assert.ok(built.ok, JSON.stringify(built));
-      const path = join(dirname(library), "signed-fields");
+      const path = join(directory, "signed-fields");
       writeFileSync(path, built.value.bytes, { mode: 0o755 });
       console.log(path);
       if (process.env.TINT_BUILD_ONLY === "1") return;

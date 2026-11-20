@@ -190,6 +190,28 @@ function quote(argument: string): string {
 const batchScript = new URL("./native-target-runner.sh", import.meta.url);
 const sysrootManifest = new URL("./x64-sysroot.sha256", import.meta.url);
 
+export function x64SshArguments(
+  env: NodeJS.ProcessEnv = process.env,
+): string[] {
+  return [
+    "-T",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "ConnectTimeout=5",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "-i",
+    env.TINT_X64_SSH_KEY ?? join(homedir(), ".t3/vms/tint-vm-key"),
+    "-p",
+    env.TINT_X64_SSH_PORT ?? "2223",
+    "--",
+    env.TINT_X64_SSH_HOST ?? "tint@127.0.0.1",
+  ];
+}
+
 function linuxBatch(
   runner: Exclude<NativeRunnerName, "darwin-local">,
   invocations: readonly NativeInvocation[],
@@ -285,21 +307,7 @@ function linuxBatch(
         result = spawnSync(
           "ssh",
           [
-            "-T",
-            "-o",
-            "BatchMode=yes",
-            "-o",
-            "ConnectTimeout=5",
-            "-o",
-            "ServerAliveInterval=5",
-            "-o",
-            "ServerAliveCountMax=2",
-            "-i",
-            env.TINT_X64_SSH_KEY ?? join(scratch, "vms/tint-vm-key"),
-            "-p",
-            env.TINT_X64_SSH_PORT ?? "2223",
-            "--",
-            host,
+            ...x64SshArguments(env),
             'set -eu; d=$(mktemp -d); trap \'rm -rf "$d"\' EXIT; cd "$d"; tar -xf -; sh run.sh',
           ],
           { ...options, stdio: [fd, "pipe", "pipe"] },
