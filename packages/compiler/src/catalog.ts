@@ -791,6 +791,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "foundation",
     },
     {
+      id: "packages/foundation/src/values/primitive-contract.ts",
+      packageId: "foundation",
+    },
+    {
       id: "packages/image/src/darwin/dyld-fixups.ts",
       packageId: "image",
     },
@@ -1191,11 +1195,19 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-engine",
     },
     {
+      id: "packages/js-engine/src/program/function-fallback.ts",
+      packageId: "js-engine",
+    },
+    {
       id: "packages/js-engine/src/program/index.ts",
       packageId: "js-engine",
     },
     {
       id: "packages/js-engine/src/program/intrinsics.ts",
+      packageId: "js-engine",
+    },
+    {
+      id: "packages/js-engine/src/program/nested-fallback.ts",
       packageId: "js-engine",
     },
     {
@@ -1356,6 +1368,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-runtime/src/objects/arithmetic.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/array-buffer-view.ts",
       packageId: "js-runtime",
     },
     {
@@ -2000,6 +2016,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-runtime/src/objects/named-time-zones.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/native-views.ts",
       packageId: "js-runtime",
     },
     {
@@ -2783,6 +2803,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/intrinsics/value-views.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/intrinsics/weak.ts",
       packageId: "native-runtime",
     },
@@ -2984,6 +3008,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ts-native/src/closure/lowering/record-layout.ts",
+      packageId: "ts-native",
+    },
+    {
+      id: "packages/ts-native/src/closure/lowering/record-view.ts",
       packageId: "ts-native",
     },
     {
@@ -3431,6 +3459,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "codegen",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/ir/optimization",
       target: "packages/ir/src/optimization/index.ts",
     },
@@ -3753,6 +3786,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/foundation/unicode/segmentation",
       target: "packages/foundation/src/unicode/segmentation/index.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
     },
     {
       packageId: "compiler",
@@ -4330,6 +4368,11 @@ export function projectMappings(): ImportMapping[] {
       target: "packages/foundation/src/unicode/segmentation/index.ts",
     },
     {
+      packageId: "image",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
+    },
+    {
       packageId: "ir",
       specifier: "@tint/abi/c",
       target: "packages/abi/src/c/index.ts",
@@ -4563,6 +4606,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "ir",
       specifier: "@tint/foundation/unicode/segmentation",
       target: "packages/foundation/src/unicode/segmentation/index.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
     },
     {
       packageId: "js-engine",
@@ -4833,6 +4881,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-engine",
       specifier: "@tint/foundation/unicode/segmentation",
       target: "packages/foundation/src/unicode/segmentation/index.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
     },
     {
       packageId: "js-engine",
@@ -5205,6 +5258,11 @@ export function projectMappings(): ImportMapping[] {
       target: "packages/foundation/src/unicode/segmentation/index.ts",
     },
     {
+      packageId: "js-runtime",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
+    },
+    {
       packageId: "native-runtime",
       specifier: "@tint/abi/c",
       target: "packages/abi/src/c/index.ts",
@@ -5438,6 +5496,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "native-runtime",
       specifier: "@tint/foundation/unicode/segmentation",
       target: "packages/foundation/src/unicode/segmentation/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
     },
     {
       packageId: "native-runtime",
@@ -5836,6 +5899,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "ts-native",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
+    },
+    {
+      packageId: "ts-native",
       specifier: "@tint/ir/optimization",
       target: "packages/ir/src/optimization/index.ts",
     },
@@ -6108,6 +6176,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "typescript",
       specifier: "@tint/foundation/unicode/segmentation",
       target: "packages/foundation/src/unicode/segmentation/index.ts",
+    },
+    {
+      packageId: "typescript",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
     },
     {
       packageId: "typescript",

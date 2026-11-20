@@ -212,7 +212,13 @@ const entries = cases.map((construct) => {
   const dependencies = new Map<string, string>();
   for (const [file, text] of Object.entries(construct.helpers ?? {})) {
     const id = "construct-helper:" + file;
-    const parsed = parse(id, text, new Map());
+    const edges = new Map(
+      (construct.helperImports?.[file] ?? []).map((target) => [
+        "./" + target,
+        "construct-helper:" + target,
+      ]),
+    );
+    const parsed = parse(id, text, edges);
     if (!parsed.ok) throw Error(JSON.stringify(parsed));
     helpers.push(parsed.module);
     dependencies.set("./" + file, id);

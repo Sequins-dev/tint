@@ -33,7 +33,11 @@ import type {
   ClassDefinition,
   ClassElement,
 } from "@tint/typescript/syntax";
-import { bindModule, type BoundModule } from "@tint/typescript/binding";
+import {
+  bindModule,
+  type BoundModule,
+  type BindingFallback,
+} from "@tint/typescript/binding";
 export interface LinkedExport {
   readonly module: string;
   readonly name: string;
@@ -59,6 +63,7 @@ export interface LinkedProgram {
   readonly origins: ReadonlyKeyIndex<Span, SourceOrigin>;
   /** Linker-owned ranges ordered by start, disjoint including their endpoints. */
   readonly ranges: readonly SourceRange[];
+  readonly sourceNames?: ReadonlyMap<string, string> | undefined;
 }
 export function locateSource(
   program: LinkedProgram,
@@ -100,13 +105,22 @@ export type LinkResult =
   | { readonly ok: true; readonly value: LinkedProgram }
   | {
       readonly ok: false;
-      readonly error: {
-        readonly module: string;
-        readonly message: string;
-        readonly start: number;
-        readonly end: number;
-      };
+      readonly error: LinkDiagnostic;
     };
+interface LinkDiagnostic extends Span {
+  readonly module: string;
+  readonly message: string;
+  readonly fallback?: LinkFallback;
+  readonly code?: string;
+}
+export interface LinkFallback {
+  readonly capability:
+    | BindingFallback["capability"]
+    | "module-evaluation"
+    | "nested-type-declaration";
+  readonly ownerKind: BindingFallback["ownerKind"];
+  readonly owner: Span;
+}
 interface ModuleState {
   readonly source: SourceModule;
   readonly bound: BoundModule;
@@ -122,6 +136,8 @@ export interface LinkOptions {
    * input node reachable for as long as the linked program is; compilers that
    * locate spans through `ranges` pass false. */
   readonly origins?: boolean;
+  /** Preserve source spellings when callable views expose Function#name. */
+  readonly sourceNames?: boolean;
 }
 /** Most modules one link accepts. */
 export const maxLinkedModules = 1048576;
@@ -138,11 +154,59 @@ export function linkModules(
     order: SourceModule[] = [],
     origins = createKeyIndex<Span, SourceOrigin>(syntaxHash),
     recordOrigins = options?.origins !== false;
-  let error:
-    { module: string; message: string; start: number; end: number } | undefined;
-  function fail(module: string, node: Span, message: string): never {
-    error = { module, message, start: node.start, end: node.end };
+  const sourceNames =
+    options?.sourceNames === true ? new Map<string, string>() : undefined;
+  let error: LinkDiagnostic | undefined;
+  function reject(
+    module: string,
+    node: Span,
+    message: string,
+    fallback: LinkFallback | undefined,
+  ): never {
+    error = {
+      module,
+      message,
+      start: node.start,
+      end: node.end,
+      ...(fallback === undefined ? {} : { fallback }),
+    };
     throw abort;
+  }
+  function fail(module: string, node: Span, message: string): never {
+    return reject(module, node, message, undefined);
+  }
+  function unsupportedEvaluation(
+    source: SourceModule,
+    node: Span,
+    message: string,
+  ): never {
+    return reject(source.id, node, message, {
+      capability: "module-evaluation",
+      ownerKind: "module",
+      owner: source.module,
+    });
+  }
+  function unsupportedNestedType(state: ModuleState, node: Span): never {
+    let owner: Span | undefined;
+    for (const frame of state.bound.functions)
+      if (
+        frame !== undefined &&
+        frame.node.start <= node.start &&
+        node.end <= frame.node.end &&
+        (owner === undefined ||
+          frame.node.end - frame.node.start < owner.end - owner.start)
+      )
+        owner = frame.node;
+    return reject(
+      state.source.id,
+      node,
+      "nested type declarations are not supported",
+      {
+        capability: "nested-type-declaration",
+        ownerKind: owner === undefined ? "module" : "function",
+        owner: owner ?? state.source.module,
+      },
+    );
   }
   try {
     // A sanity bound on the input graph, not a representation limit: one
@@ -179,7 +243,22 @@ export function linkModules(
         }
       }
       const bound = bindModule(source.module, globals);
-      if (!bound.ok) fail(source.id, bound.error, bound.error.message);
+      if (!bound.ok) {
+        const diagnostic = bound.error;
+        const fallback = diagnostic.fallback;
+        if (fallback === undefined)
+          fail(source.id, diagnostic, diagnostic.message);
+        const located: LinkDiagnostic = {
+          module: source.id,
+          message: diagnostic.message,
+          start: diagnostic.start,
+          end: diagnostic.end,
+          fallback,
+          code: diagnostic.code,
+        };
+        error = located;
+        throw abort;
+      }
       const names = new Map<number, string>(),
         valueNames = new Map<string, string>(),
         typeNames = new Map<string, string>();
@@ -188,6 +267,7 @@ export function linkModules(
         if (binding === undefined) throw "missing binding";
         const name = "@" + String(i) + ":value:" + String(binding.id);
         names.set(binding.id, name);
+        sourceNames?.set(name, binding.name);
         if (binding.scope === 0 && binding.kind !== "import")
           valueNames.set(binding.name, name);
       }
@@ -213,15 +293,15 @@ export function linkModules(
         if (statement === undefined) throw "missing statement";
         if (statement.kind === "class") {
           if (options?.evaluation !== "instance")
-            fail(
-              source.id,
+            unsupportedEvaluation(
+              source,
               statement,
               "module evaluation is required for class definitions",
             );
         } else if (statement.kind === "variable") {
           if (statement.mode !== "const" && options?.evaluation !== "instance")
-            fail(
-              source.id,
+            unsupportedEvaluation(
+              source,
               statement,
               "module evaluation is required for mutable declarations",
             );
@@ -232,8 +312,8 @@ export function linkModules(
               (declaration.kind === "object-binding" ||
                 declaration.kind === "array-binding")
             )
-              fail(
-                source.id,
+              unsupportedEvaluation(
+                source,
                 declaration,
                 "module evaluation is required for binding patterns",
               );
@@ -249,8 +329,8 @@ export function linkModules(
                   value.elements.every(isPureNumericInitializer)
                 ))
             )
-              fail(
-                source.id,
+              unsupportedEvaluation(
+                source,
                 declaration,
                 "module evaluation is required for this initializer",
               );
@@ -268,8 +348,8 @@ export function linkModules(
           statement.kind !== "empty" &&
           statement.kind !== "debugger"
         )
-          fail(
-            source.id,
+          unsupportedEvaluation(
+            source,
             statement,
             "module evaluation is required for this statement",
           );
@@ -1235,11 +1315,7 @@ export function linkModules(
               return block(node);
             case "interface": {
               if (!source.module.statements.includes(node))
-                fail(
-                  source.id,
-                  node,
-                  "nested type declarations are not supported",
-                );
+                unsupportedNestedType(state, node);
               const name = state.types.get(node.name);
               if (name === undefined)
                 fail(
@@ -1281,11 +1357,7 @@ export function linkModules(
             }
             case "type-alias": {
               if (!source.module.statements.includes(node))
-                fail(
-                  source.id,
-                  node,
-                  "nested type declarations are not supported",
-                );
+                unsupportedNestedType(state, node);
               const name = state.types.get(node.name);
               if (name === undefined)
                 fail(
@@ -1520,6 +1592,7 @@ export function linkModules(
         module: { statements, imports: [], start: 0, end: cursor },
         exports,
         origins,
+        sourceNames,
         ranges,
       },
     };
@@ -1539,6 +1612,7 @@ export {
   specializeModule,
   type FunctionSpecialization,
   type SpecializationResult,
+  type SpecializationCapability,
   type SpecializationOptions,
 } from "./specialization.ts";
 
@@ -1546,6 +1620,7 @@ export {
   prepareModuleInstance,
   type ModuleInstance,
   type ModuleInstanceResult,
+  type ModuleInstanceFallback,
   type ModuleInstanceExport,
 } from "./instance.ts";
 export {

@@ -44,6 +44,7 @@ const noDemand: RuntimeRequirements = {
 import {
   checkClosureModule,
   type CheckedClosures,
+  type ClosureDiagnostic,
   type CViewRegistry,
   type InterfaceResolutionCache,
 } from "@tint/typescript/checker";
@@ -89,12 +90,17 @@ interface PreparedCollectionRuntime {
   readonly options: ModuleEntryOptions;
   readonly plan: CollectionRuntimePlan;
 }
+interface RuntimePreparationError {
+  readonly ok: false;
+  readonly error: string;
+  readonly diagnostic?: ClosureDiagnostic;
+}
 export type RuntimePreparation =
   | {
       readonly ok: true;
       readonly value: PreparedCollectionRuntime;
     }
-  | { readonly ok: false; readonly error: string };
+  | RuntimePreparationError;
 export type RuntimeModuleTransform = (
   module: Module,
   context: RuntimeBindingContext,
@@ -175,11 +181,7 @@ export function prepareObservedCollectionRuntimes(
 // element first seen inside a specialized helper needs no retry pass.
 type CollectionPass =
   | { readonly ok: true; readonly value: PreparedCollectionRuntime }
-  | {
-      readonly ok: false;
-      readonly error: string;
-      readonly retry: boolean;
-    };
+  | (RuntimePreparationError & { readonly retry: boolean });
 interface CollectionPassInput {
   readonly module: Module;
   readonly plan: CollectionRuntimePlan;
@@ -623,7 +625,13 @@ function prepareCollectionPass(
       interfaceCache,
       cViews: input.cViews,
     });
-    if (!result.ok) fail(result.error.message);
+    if (!result.ok)
+      return {
+        ok: false,
+        error: result.error.message,
+        diagnostic: result.error,
+        retry: false,
+      };
     const prepared = result.value;
     const bindingIndex = createPreparedBindingIndex(prepared);
     function functionId(name: string): number {

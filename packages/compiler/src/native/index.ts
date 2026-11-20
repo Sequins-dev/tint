@@ -34,6 +34,8 @@ import { materializeManagedRuntimeProviders } from "./managed-runtimes.ts";
 import {
   validRuntimeNamespace,
   dynamicObjectRuntimeSource,
+  nativeValueViewsModule,
+  nativeWeakModule,
   type RuntimeSource,
 } from "./runtime-contracts.ts";
 import {
@@ -114,12 +116,12 @@ import {
   type BuildStorage,
 } from "../spill-files.ts";
 import type { FunctionStore } from "@tint/ir/storage";
-import { nativeClosureCallMessage } from "@tint/ts-native/scalar";
 import { bindModule } from "@tint/typescript/binding";
 import {
   checkClosureModule,
   withRealmGlobals,
   type CheckedClosures,
+  type ClosureFallback,
 } from "@tint/typescript/checker";
 import {
   closeGeneralPartition,
@@ -136,10 +138,14 @@ import {
   prepareNativeGlobals,
   type NativeConstructor,
   type ModuleInstanceExport,
+  type ModuleInstanceFallback,
+  type LinkFallback,
   type LinkedExport,
   type SourceRange,
+  type SpecializationCapability,
 } from "@tint/ts-native/modules";
 import {
+  appendSourceModules,
   requestModules,
   type ModuleRequest,
   type SourcePosition,
@@ -328,8 +334,11 @@ export interface ProgramOptimizationObserver {
 export interface GeneralProgramRequest {
   /** The application modules, as parsed (TypeScript syntax retained). */
   readonly modules: readonly SourceModule[];
-  /** Every module of the request, for resolving imports. */
+  /** Modules reachable from the application for resolving imports. With an
+   * owned-syntax request this may include all modules. */
   readonly available: readonly SourceModule[];
+  /** All original IDs when syntax was selectively replayed. */
+  readonly availableIds?: readonly string[];
   readonly entry: string;
   /** The entry export the generated host calls; it returns the exit status. */
   readonly start: string;
@@ -339,6 +348,31 @@ export interface GeneralProgramRequest {
   readonly boundaries: readonly TypedBoundaryModule[];
   /** Record types the boundaries use; they cross as JavaScript views. */
   readonly records?: readonly BoundaryRecord[];
+  /** Source capability that seeded this retry, where classified. */
+  readonly trigger?: FallbackTrigger;
+  /** The original graph passed the host checker before representation choice. */
+  readonly sourceValidated?: boolean;
+}
+export interface FallbackTrigger {
+  readonly phase: "link" | "check" | "specialize" | "runtime" | "lower";
+  readonly code: string;
+  readonly capability:
+    | ClosureFallback["capability"]
+    | LinkFallback["capability"]
+    | SpecializationCapability
+    | ModuleInstanceFallback["capability"]
+    | "native-callable-view";
+  readonly location: {
+    readonly module: string;
+    readonly start: number;
+    readonly end: number;
+  };
+  readonly owner: {
+    readonly kind: ClosureFallback["ownerKind"];
+    readonly module: string;
+    readonly start: number;
+    readonly end: number;
+  };
 }
 export type GeneralProgram =
   | {
@@ -348,6 +382,10 @@ export type GeneralProgram =
         readonly modules: readonly SourceModule[];
         /** The generated host module; it exports `start(): number`. */
         readonly entry: string;
+        /** A proved primitive entry uses the general value ABI without the program realm. */
+        readonly usesRealm?: boolean;
+        readonly functions?: readonly GeneralFallbackFunction[];
+        readonly classes?: readonly GeneralFallbackClass[];
         /** Record bindings of generated runtime modules (record view
          * slots), and those runtime modules. */
         readonly recordBindings?: readonly NativeRecordBinding[];
@@ -355,6 +393,20 @@ export type GeneralProgram =
       };
     }
   | { readonly ok: false; readonly error: string };
+export interface GeneralFallbackFunction extends Span {
+  readonly module: string;
+  readonly name: string;
+}
+export interface GeneralFallbackClass extends Span {
+  readonly module: string;
+  readonly name: string;
+}
+interface GeneralCompilation {
+  readonly modules: readonly string[];
+  readonly reason: string;
+  readonly functions?: readonly GeneralFallbackFunction[];
+  readonly classes?: readonly GeneralFallbackClass[];
+}
 /** Lowers application modules to typed modules of runtime-helper calls that
  * implement JavaScript semantics, plus a typed host entry. Provided by the
  * JavaScript engine (it depends on this package). */
@@ -364,7 +416,15 @@ export interface GeneralLowering {
   /** Representation views and runtime exports the generated code needs. */
   readonly recordBindings: readonly NativeRecordBinding[];
   readonly runtimes: readonly RuntimeSource[];
+  /** Optional host oracle for the captured original source graph. The host
+   * supplies source goals, options and module resolution for this entry. */
+  readonly validateSource?: (entry: string) => readonly SourceDiagnostic[];
   readonly lower: (request: GeneralProgramRequest) => GeneralProgram;
+}
+export interface SourceDiagnostic extends Span {
+  readonly code: string;
+  readonly message: string;
+  readonly module: string;
 }
 export interface SourceLineRange {
   readonly offset: number;
@@ -407,10 +467,7 @@ export interface CompiledProgram {
   readonly exports: readonly string[];
   /** Present when application modules were compiled with general semantics
    * because the typed pipeline rejected them (visible fallback). */
-  readonly general?: {
-    readonly modules: readonly string[];
-    readonly reason: string;
-  };
+  readonly general?: GeneralCompilation;
 }
 export type Compilation =
   | { readonly ok: true; readonly value: CompiledProgram }
@@ -431,9 +488,12 @@ interface CompilationError {
   /** The module the failure is attributed to, when known. */
   readonly module?: string;
   readonly diagnostic?: string;
+  readonly sourceDiagnostics?: readonly SourceDiagnostic[];
+  readonly fallback?: FallbackTrigger;
   readonly preventsFallback?: boolean;
   readonly needsDynamicRealm?: boolean;
   readonly needsBindingRealm?: boolean;
+  readonly nativeProjections?: readonly string[];
 }
 /** A compiler-issued identity that foreign code binds by contract. */
 interface IdentityPlan {
@@ -518,6 +578,7 @@ interface LinkedTypedProgram {
   readonly application: Module;
   readonly exports: readonly LinkedExport[];
   readonly ranges: readonly SourceRange[];
+  readonly sourceNames: ReadonlyMap<string, string> | undefined;
   readonly helpers: Map<string, string>;
   readonly runtimeNamespacesByModule: Map<string, string>;
   readonly retainedRuntimeExports: readonly string[];
@@ -628,9 +689,11 @@ function compileTypedWithProgramRealm(
         };
   const initial = compileTypedProgram(without, realmTypeofModules);
   if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
+  const projections = initial.error.nativeProjections ?? [];
+  const callableViews = projections.includes("projectUnaryNumber");
   const runtime =
-    initial.error.needsBindingRealm === true
-      ? dynamicObjectRuntimeSource(true)
+    initial.error.needsBindingRealm === true || projections.length !== 0
+      ? dynamicObjectRuntimeSource(initial.error.needsBindingRealm, projections)
       : (explicit ?? dynamicObjectRuntimeSource());
   const module = runtime.module;
   const loader = request.moduleLoader;
@@ -663,13 +726,99 @@ function compileTypedWithProgramRealm(
   ];
   const runtimes = without.runtimes.slice();
   runtimes.push(runtime);
+  const weakBindings = (request.weakBindings ?? []).slice();
+  const bindings = (request.recordBindings ?? []).slice();
+  const retained = names.slice();
+  let realmModules = realmTypeofModules;
+  if (callableViews) {
+    names.push("viewTypeofObject");
+    retained.push("viewTypeofObject", "generalValueTypeof", "callGeneralValue");
+    if (realmModules === undefined) {
+      const dependencies = new Map<string, ReadonlyMap<string, string>>();
+      for (const source of expandedRequest.modules) {
+        if (source === undefined) throw "realm view source invariant";
+        dependencies.set(source.id, source.dependencies);
+      }
+      const resolve =
+        loader?.sourceDependencies ??
+        ((id: string): ReadonlyMap<string, string> | undefined =>
+          dependencies.get(id));
+      const application = new Set<string>();
+      for (const id of sourceDependencyClosure([request.entry], resolve))
+        if (id !== undefined) application.add(id);
+      const runtimeModules = sourceDependencyClosure(
+        runtimes.map((source) => source.module),
+        resolve,
+      );
+      for (const id of runtimeModules)
+        if (id !== undefined) application.delete(id);
+      realmModules = application;
+    }
+  }
+  if (projections.length !== 0) {
+    const witnesses: string[] = [];
+    if (callableViews) witnesses.push("viewUnaryNumberClosure");
+    if (projections.includes("projectNumberList"))
+      witnesses.push("viewNumberList");
+    const existing = runtimes.findIndex(
+      (source) => source?.module === nativeValueViewsModule,
+    );
+    if (existing < 0)
+      runtimes.push({
+        module: nativeValueViewsModule,
+        namespace: "native-value-views",
+        retainedExports: witnesses,
+      });
+    for (const name of witnesses) {
+      if (name === undefined) throw "native view witness invariant";
+      if (
+        !bindings.some(
+          (binding) =>
+            binding?.module === nativeValueViewsModule && binding.name === name,
+        )
+      )
+        bindings.push({
+          module: nativeValueViewsModule,
+          name,
+          operation: "view",
+        });
+    }
+    if (!runtimes.some((source) => source?.module === nativeWeakModule))
+      runtimes.push({
+        module: nativeWeakModule,
+        namespace: "native-view-weak",
+      });
+    const operations: readonly NativeWeakBinding[] = [
+      { module: nativeWeakModule, name: "createWeakSlot", operation: "new" },
+      { module: nativeWeakModule, name: "weakSlotKey", operation: "key" },
+      { module: nativeWeakModule, name: "weakSlotValue", operation: "value" },
+      {
+        module: nativeWeakModule,
+        name: "setWeakSlotValue",
+        operation: "set-value",
+      },
+      { module: nativeWeakModule, name: "clearWeakSlot", operation: "clear" },
+    ];
+    for (const operation of operations) {
+      if (operation === undefined) throw "native weak operation invariant";
+      if (
+        !weakBindings.some(
+          (binding) =>
+            binding?.module === operation.module &&
+            binding.name === operation.name,
+        )
+      )
+        weakBindings.push(operation);
+    }
+  }
   if (!runtimes.some((source) => source?.module === objects))
     runtimes.push({
       module: objects,
-      namespace: "dynamic-object-views",
-      retainedExports: names,
+      namespace: callableViews
+        ? "general-object-views"
+        : "dynamic-object-views",
+      retainedExports: retained,
     });
-  const bindings = (request.recordBindings ?? []).slice();
   for (const name of names) {
     if (name === undefined) throw "dynamic realm binding invariant";
     if (
@@ -680,11 +829,36 @@ function compileTypedWithProgramRealm(
       bindings.push({ module: objects, name, operation: "view" });
   }
   return compileTypedProgram(
-    { ...expandedRequest, runtimes, recordBindings: bindings },
-    realmTypeofModules,
+    { ...expandedRequest, runtimes, recordBindings: bindings, weakBindings },
+    realmModules,
   );
 }
 export function compileArm64Program(original: CompileRequest): Compilation {
+  const validateSource = original.generalLowering?.validateSource;
+  if (validateSource !== undefined && original.requireTyped !== true) {
+    const diagnostics = validateSource(original.entry);
+    const first = diagnostics[0];
+    if (first !== undefined)
+      return {
+        ok: false,
+        error: {
+          stage: "source",
+          diagnostic: first.code,
+          module: first.module,
+          message:
+            first.module +
+            ":" +
+            String(first.start) +
+            ":" +
+            String(first.end) +
+            ": " +
+            first.code +
+            ": " +
+            first.message,
+          sourceDiagnostics: diagnostics,
+        },
+      };
+  }
   const request = withForeignRuntimes(original);
   const typed = compileTypedWithProgramRealm(request);
   const lowering = request.generalLowering;
@@ -700,6 +874,8 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       typed.error.message + " (typed compilation required)",
       typed.error.module,
     );
+  if (validateSource !== undefined && typed.error.fallback === undefined)
+    return typed;
   const reason = typed.error.stage + ": " + typed.error.message;
   const start = request.start;
   if (start === undefined)
@@ -707,7 +883,13 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       typed.error.stage,
       typed.error.message + " (general fallback requires a start export)",
     );
-  const available = requestModules(request);
+  const loader = request.moduleLoader;
+  const sourceDependencies = loader?.sourceDependencies;
+  const replayIds =
+    sourceDependencies === undefined
+      ? undefined
+      : sourceDependencyClosure([request.entry], sourceDependencies);
+  const available = requestModules(request, replayIds);
   const application = generalApplicationModules(request, available);
   if (!application.ok)
     return failure(
@@ -723,6 +905,12 @@ export function compileArm64Program(original: CompileRequest): Compilation {
   const applicationIds = new Set<string>();
   for (const module of application.value)
     if (module !== undefined) applicationIds.add(module.id);
+  const owner = typed.error.fallback?.owner;
+  if (
+    validateSource !== undefined &&
+    (owner === undefined || !applicationIds.has(owner.module))
+  )
+    return typed;
   // The general runtime's representation views and retained exports join
   // the request's, without duplicates.
   const recordBindings: NativeRecordBinding[] = [],
@@ -758,20 +946,27 @@ export function compileArm64Program(original: CompileRequest): Compilation {
   const byId = new Map<string, SourceModule>();
   for (const module of available)
     if (module !== undefined) byId.set(module.id, module);
-  const pending = lowering.runtimeModules.slice();
-  for (let i = 0; i < pending.length; i++) {
-    const id = pending[i];
-    if (id === undefined || rawTypeofModules.has(id)) continue;
-    rawTypeofModules.add(id);
-    const module = byId.get(id);
-    if (module === undefined) continue;
-    for (const [, dependency] of module.dependencies) pending.push(dependency);
-  }
+  const rawIds = sourceDependencyClosure(
+    lowering.runtimeModules,
+    sourceDependencies ??
+      ((id: string): ReadonlyMap<string, string> | undefined =>
+        byId.get(id)?.dependencies),
+  );
+  for (const id of rawIds) if (id !== undefined) rawTypeofModules.add(id);
+  const availableIds =
+    sourceDependencies === undefined ? undefined : loader?.ids;
   const realmTypeofModules = new Set<string>();
-  for (const module of available)
-    if (module !== undefined && !rawTypeofModules.has(module.id))
-      realmTypeofModules.add(module.id);
+  if (availableIds === undefined) {
+    for (const module of available)
+      if (module !== undefined && !rawTypeofModules.has(module.id))
+        realmTypeofModules.add(module.id);
+  } else {
+    for (const id of availableIds)
+      if (id !== undefined && !rawTypeofModules.has(id))
+        realmTypeofModules.add(id);
+  }
   let error = typed.error;
+  const checkedBoundaries = new Set<string>();
   for (let attempt = 0; attempt <= application.value.length; attempt++) {
     const culprit = error.module;
     if (
@@ -781,12 +976,45 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     )
       for (const id of applicationIds) seed.add(id);
     else seed.add(culprit);
-    const partition = closeGeneralPartition(
+    let partition = closeGeneralPartition(
       application.value,
       seed,
       application.trusted,
       available,
     );
+    // The linker binds every declaration of an imported leaf. A structured
+    // implicit-arguments rejection in that leaf will survive partitioning, so
+    // close all such edges before replaying the full typed runtime graph.
+    if (replayIds !== undefined) {
+      for (;;) {
+        if (partition.blocked !== undefined) break;
+        let grew = false;
+        for (const boundary of partition.boundaries) {
+          if (boundary === undefined || checkedBoundaries.has(boundary.id))
+            continue;
+          checkedBoundaries.add(boundary.id);
+          if (!applicationIds.has(boundary.id)) continue;
+          const source = byId.get(boundary.id);
+          if (source === undefined || source.module.imports.length !== 0)
+            continue;
+          const bound = bindModule(source.module, typedGlobals);
+          if (
+            !bound.ok &&
+            bound.error.fallback?.capability === "arguments-object"
+          ) {
+            seed.add(boundary.id);
+            grew = true;
+          }
+        }
+        if (!grew) break;
+        partition = closeGeneralPartition(
+          application.value,
+          seed,
+          application.trusted,
+          available,
+        );
+      }
+    }
     if (partition.blocked !== undefined)
       return failure(
         "general",
@@ -803,22 +1031,35 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     const lowered = lowering.lower({
       modules: partition.general,
       available,
+      ...(availableIds === undefined ? {} : { availableIds }),
       entry: request.entry,
       start,
       boundaries: partition.boundaries,
+      sourceValidated: validateSource !== undefined,
+      ...(error.fallback === undefined ? {} : { trigger: error.fallback }),
       ...(partition.records === undefined
         ? {}
         : { records: partition.records }),
     });
     if (!lowered.ok)
       return failure("general", lowered.error + " (typed: " + reason + ")");
+    const generated = lowered.value.modules;
     const modules: SourceModule[] = [];
-    for (const module of available)
-      if (module !== undefined) modules.push(module);
-    for (const module of lowered.value.modules)
-      if (module !== undefined) modules.push(module);
-    const programBindings = recordBindings.slice(),
-      programRuntimes = runtimes.slice();
+    const replay =
+      replayIds === undefined || loader === undefined
+        ? undefined
+        : appendSourceModules(loader, generated);
+    if (replay === undefined) {
+      for (const module of available)
+        if (module !== undefined) modules.push(module);
+      for (const module of generated)
+        if (module !== undefined) modules.push(module);
+    }
+    const usesRealm = lowered.value.usesRealm !== false;
+    const programBindings = usesRealm
+        ? recordBindings.slice()
+        : (request.recordBindings ?? []).slice(),
+      programRuntimes = usesRealm ? runtimes.slice() : request.runtimes.slice();
     for (const binding of lowered.value.recordBindings ?? [])
       if (binding !== undefined) programBindings.push(binding);
     for (const runtime of lowered.value.runtimes ?? [])
@@ -829,24 +1070,42 @@ export function compileArm64Program(original: CompileRequest): Compilation {
         recordBindings: programBindings,
         runtimes: programRuntimes,
         modules,
-        moduleLoader: undefined,
+        moduleLoader: replay,
         entry: lowered.value.entry,
         exports: [start],
       },
-      realmTypeofModules,
+      usesRealm ? realmTypeofModules : undefined,
     );
     const generalIds: string[] = [];
     for (const module of partition.general)
       if (module !== undefined) generalIds.push(module.id);
-    if (compiled.ok)
+    if (compiled.ok) {
+      const functions = lowered.value.functions;
+      const classes = lowered.value.classes;
+      const general: GeneralCompilation = {
+        modules: generalIds,
+        reason,
+        ...(functions === undefined ? {} : { functions }),
+        ...(classes === undefined ? {} : { classes }),
+      };
       return {
         ok: true,
         value: {
           ...compiled.value,
-          general: { modules: generalIds, reason },
+          general,
         },
       };
+    }
     if (compiled.error.preventsFallback === true) return compiled;
+    if (validateSource !== undefined) {
+      const trigger = compiled.error.fallback;
+      if (
+        trigger === undefined ||
+        !applicationIds.has(trigger.owner.module) ||
+        seed.has(trigger.owner.module)
+      )
+        return compiled;
+    }
     if (seed.size === applicationIds.size)
       return failure(
         "general " + compiled.error.stage,
@@ -855,6 +1114,25 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     error = compiled.error;
   }
   throw "general partition did not converge";
+}
+
+function sourceDependencyClosure(
+  roots: readonly string[],
+  dependenciesOf: (id: string) => ReadonlyMap<string, string> | undefined,
+): readonly string[] {
+  const seen = new Set<string>(),
+    queue = roots.slice(),
+    order: string[] = [];
+  for (let index = 0; index < queue.length; index++) {
+    const id = queue[index];
+    if (id === undefined || seen.has(id)) continue;
+    seen.add(id);
+    order.push(id);
+    const dependencies = dependenciesOf(id);
+    if (dependencies === undefined) continue;
+    for (const [, dependency] of dependencies) queue.push(dependency);
+  }
+  return order;
 }
 /** The modules reachable from the entry that the general lowering may
  * replace, and the trusted runtime and host-bound modules they import. Trusted
@@ -1089,7 +1367,11 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
     pruneUnusedModules(modules, entry, rootExports),
     entry,
     globals,
-    { evaluation: "instance", origins: false },
+    {
+      evaluation: "instance",
+      origins: false,
+      sourceNames: runtimeNamespacesByModule.has(nativeValueViewsModule),
+    },
   );
   // Managed-surface layouts link only the runtimes; the application's input
   // syntax is otherwise dead here and must not stay reachable through the
@@ -1102,8 +1384,36 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
           request.runtimes.map((runtime) => runtime.module),
         );
   modules.length = 0;
-  if (!linked.ok)
-    return stageFailure("link", linked.error.message, linked.error.module);
+  if (!linked.ok) {
+    const diagnostic = linked.error;
+    const fallback = diagnostic.fallback;
+    if (fallback === undefined)
+      return stageFailure("link", diagnostic.message, diagnostic.module);
+    return {
+      ok: false,
+      error: {
+        stage: "link",
+        message: diagnostic.message,
+        module: diagnostic.module,
+        fallback: {
+          phase: "link",
+          code: diagnostic.code ?? "UNSUPPORTED",
+          capability: fallback.capability,
+          location: {
+            module: diagnostic.module,
+            start: diagnostic.start,
+            end: diagnostic.end,
+          },
+          owner: {
+            kind: fallback.ownerKind,
+            module: diagnostic.module,
+            start: fallback.owner.start,
+            end: fallback.owner.end,
+          },
+        },
+      },
+    };
+  }
   const retainedRuntimeExports: string[] = [];
   for (const runtime of request.runtimes) {
     if (runtime === undefined) throw "runtime source invariant";
@@ -1172,6 +1482,7 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
       application: surfaces.value.module,
       exports: linked.value.exports,
       ranges: linked.value.ranges,
+      sourceNames: linked.value.sourceNames,
       helpers,
       runtimeNamespacesByModule,
       retainedRuntimeExports,
@@ -1184,14 +1495,44 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
 function specializeApplication(
   application: Module,
   maxSpecializations: number,
+  ranges: readonly SourceRange[],
 ): { readonly ok: true; readonly value: Module } | CompilationFailure {
   const bound = bindModule(application, typedGlobals);
   if (!bound.ok) return stageFailure("bind", bound.error.message);
   const specialized = specializeModule(application, bound.value, {
     maxSpecializations,
   });
-  if (!specialized.ok)
-    return stageFailure("specialize", specialized.error.message);
+  if (!specialized.ok) {
+    const diagnostic = specialized.error;
+    const fallback = diagnostic.fallback;
+    const location = locateSourceRange(ranges, diagnostic);
+    const owner =
+      fallback === undefined
+        ? undefined
+        : locateSourceRange(ranges, fallback.owner);
+    if (fallback === undefined || location === undefined || owner === undefined)
+      return stageFailure("specialize", diagnostic.message, location?.module);
+    return {
+      ok: false,
+      error: {
+        stage: "specialize",
+        message: diagnostic.message,
+        module: owner.module,
+        fallback: {
+          phase: "specialize",
+          code: "UNSUPPORTED",
+          capability: fallback.capability,
+          location,
+          owner: {
+            kind: fallback.ownerKind,
+            module: owner.module,
+            start: owner.start,
+            end: owner.end,
+          },
+        },
+      },
+    };
+  }
   return { ok: true, value: specialized.value.module };
 }
 /** Checks the first specialization and prepares the source for instantiation.
@@ -1215,6 +1556,7 @@ function checkApplication(
   const specialized = specializeApplication(
     linkedProgram.application,
     request.maxSpecializations ?? 8192,
+    linkedProgram.ranges,
   );
   if (!specialized.ok) return { ok: false, error: specialized.error };
   const checked = checkClosureModule(specialized.value, {
@@ -1234,12 +1576,33 @@ function checkApplication(
           ":" +
           String(location.end) +
           ": ") + checked.error.message;
+    const fallback = checked.error.fallback;
+    const owner =
+      fallback === undefined
+        ? undefined
+        : locateSourceRange(linkedProgram.ranges, fallback.owner);
+    const trigger: FallbackTrigger | undefined =
+      fallback === undefined || location === undefined || owner === undefined
+        ? undefined
+        : {
+            phase: "check",
+            code: checked.error.code,
+            capability: fallback.capability,
+            location,
+            owner: {
+              kind: fallback.ownerKind,
+              module: owner.module,
+              start: owner.start,
+              end: owner.end,
+            },
+          };
     return {
       ok: false,
       error: {
         stage: "check",
         message,
         ...(location === undefined ? {} : { module: location.module }),
+        ...(trigger === undefined ? {} : { fallback: trigger }),
         ...(checked.error.preventsFallback === true
           ? { diagnostic: checked.error.code, preventsFallback: true }
           : {}),
@@ -1250,6 +1613,19 @@ function checkApplication(
     application = linkedProgram.application,
     hasDynamicRuntime = helpers.has("dynamic-object:create");
   const dynamic = usesDynamicObjectRuntime(checked.value, mixed);
+  const nativeProjections: string[] = [];
+  checked.value.nativeCallableViews?.forEach((_value, _site) => {
+    if (!nativeProjections.includes("projectUnaryNumber"))
+      nativeProjections.push("projectUnaryNumber");
+  });
+  checked.value.nativeListViews?.forEach((_value, _site) => {
+    if (!nativeProjections.includes("projectNumberList"))
+      nativeProjections.push("projectNumberList");
+  });
+  checked.value.nativeRecordViews?.forEach((_value, _site) => {
+    if (!nativeProjections.includes("projectNativeRecord"))
+      nativeProjections.push("projectNativeRecord");
+  });
   // Retained runtime functions can dispatch through attached error views
   // without capturing the program instance's realm closures.
   function canCaptureErrorRealm(site: Span): boolean {
@@ -1264,7 +1640,10 @@ function checkApplication(
     mixed || dynamic,
     canCaptureErrorRealm,
   );
-  if (!hasDynamicRuntime && (dynamic || realmInstanceof))
+  if (
+    !hasDynamicRuntime &&
+    (dynamic || realmInstanceof || nativeProjections.length !== 0)
+  )
     return {
       ok: false,
       error: {
@@ -1273,6 +1652,7 @@ function checkApplication(
           ? "UNSUPPORTED: instanceof requires the program realm runtime"
           : "UNSUPPORTED: dynamic-key objects require the program realm runtime",
         needsDynamicRealm: true,
+        ...(nativeProjections.length > 0 ? { nativeProjections } : {}),
         ...(checked.value.needsBindingRealm === true
           ? { needsBindingRealm: true }
           : {}),
@@ -1286,6 +1666,7 @@ function checkApplication(
         realmInstanceof,
         mixed,
         canCaptureErrorRealm,
+        linkedProgram.sourceNames,
       )
     : application;
   let callsGeneral = false;
@@ -1339,6 +1720,12 @@ function checkTypedProgram(
     retainedRuntimeModules = linkedProgram.retainedRuntimeModules,
     surfacePlans = linkedProgram.surfacePlans;
   const callHelper = helpers.get("general-object-views:callGeneralValue");
+  const classifierHelper = helpers.get(
+    "general-object-views:generalValueTypeof",
+  );
+  const retainClassifier =
+    classifierHelper !== undefined &&
+    helpers.has("dynamic-object:projectUnaryNumber");
   const checked = checkApplication(linkedProgram, request, callHelper, mixed);
   if (!checked.ok) return { ok: false, error: checked.error };
   const callsGeneral = checked.value.callsGeneral,
@@ -1348,6 +1735,7 @@ function checkTypedProgram(
   const start = request.start;
   let surfaceFunctions: readonly (readonly string[])[] = [];
   let surfaceRuntimes: readonly ManagedSurfaceRuntimeExports[] = [];
+  let instanceFallback: ModuleInstanceFallback | undefined;
   const transform: RuntimeModuleTransform = (inputModule, context) => {
     let generatedRetain: readonly string[] = [],
       generatedExclude: readonly string[] = [];
@@ -1440,9 +1828,9 @@ function checkTypedProgram(
     }
     const bound = bindModule(module, globals);
     if (!bound.ok) return { ok: false, error: bound.error.message };
-    if (callsGeneral && callHelper !== undefined) {
-      // The stateless call entry uses a specialized callObject dependency.
-      // Retain its concrete function dependencies after specialization.
+    if ((callsGeneral && callHelper !== undefined) || retainClassifier) {
+      // Realm calls use specialized dependencies. Close the stateless
+      // classifier and call entries after specialization.
       const functionNames = new Map<Span, string>();
       for (const statement of module.statements)
         if (statement?.kind === "function")
@@ -1467,9 +1855,11 @@ function checkTypedProgram(
         names.add(target.name);
         if (known === undefined) dependencies.set(name, names);
       }
-      const pending: string[] = [callHelper],
-        seen = new Set<string>();
-      seen.add(callHelper);
+      const pending: string[] = [];
+      if (callsGeneral && callHelper !== undefined) pending.push(callHelper);
+      if (retainClassifier && classifierHelper !== undefined)
+        pending.push(classifierHelper);
+      const seen = new Set(pending);
       for (let index = 0; index < pending.length; index++) {
         const root = pending[index];
         if (root === undefined) throw "realm call dependency invariant";
@@ -1490,7 +1880,10 @@ function checkTypedProgram(
       retained,
       invokeDirectly,
     );
-    if (!instance.ok) return instance;
+    if (!instance.ok) {
+      instanceFallback = instance.fallback;
+      return { ok: false, error: instance.error };
+    }
     initializerName = instance.value.initializer.name;
     if (invokeDirectly) {
       entryName = initializerName;
@@ -1525,7 +1918,47 @@ function checkTypedProgram(
     (request.managedSurfaces?.length ?? 0) === 0 &&
       (request.serviceImports?.length ?? 0) === 0,
   );
-  if (!prepared.ok) return stageFailure("runtime", prepared.error);
+  if (!prepared.ok) {
+    const diagnostic = prepared.diagnostic;
+    const site = instanceFallback?.location ?? diagnostic;
+    const fallback = instanceFallback ?? diagnostic?.fallback;
+    if (diagnostic !== undefined && diagnostic.preventsFallback === true)
+      return {
+        ok: false,
+        error: {
+          stage: "runtime",
+          message: prepared.error,
+          diagnostic: diagnostic.code,
+          preventsFallback: true,
+        },
+      };
+    if (site !== undefined && fallback !== undefined) {
+      const location = locateSourceRange(ranges, site);
+      const owner = locateSourceRange(ranges, fallback.owner);
+      if (location !== undefined && owner !== undefined)
+        return {
+          ok: false,
+          error: {
+            stage: "runtime",
+            message: prepared.error,
+            module: location.module,
+            fallback: {
+              phase: "runtime",
+              code: diagnostic?.code ?? "UNSUPPORTED",
+              capability: fallback.capability,
+              location,
+              owner: {
+                kind: fallback.ownerKind,
+                module: owner.module,
+                start: owner.start,
+                end: owner.end,
+              },
+            },
+          },
+        };
+    }
+    return stageFailure("runtime", prepared.error);
+  }
   return {
     ok: true,
     value: {
@@ -1898,7 +2331,48 @@ function lowerTypedProgram(
     },
   );
   if (!lowered.ok) {
-    const nativeClosure = lowered.error.startsWith(nativeClosureCallMessage);
+    const fallback = lowered.fallback;
+    if (fallback !== undefined) {
+      const location = locateSourceRange(ranges, fallback.location);
+      const owner = locateSourceRange(ranges, fallback.owner);
+      if (location !== undefined && owner !== undefined)
+        return {
+          ok: false,
+          error: {
+            stage: "lower",
+            message:
+              location.module +
+              ":" +
+              String(location.start) +
+              ":" +
+              String(location.end) +
+              ": " +
+              lowered.error,
+            module: location.module,
+            preventsFallback: true,
+            fallback: {
+              phase: "lower",
+              code: "UNSUPPORTED",
+              capability: fallback.capability,
+              location,
+              owner: {
+                kind: "function",
+                module: owner.module,
+                start: owner.start,
+                end: owner.end,
+              },
+            },
+          },
+        };
+      return {
+        ok: false,
+        error: {
+          stage: "lower",
+          message: lowered.error,
+          preventsFallback: true,
+        },
+      };
+    }
     let message = lowered.error,
       culprit: string | undefined;
     const marker = message.lastIndexOf("(source "),
@@ -1926,16 +2400,6 @@ function lowerTypedProgram(
             message;
       }
     }
-    if (nativeClosure)
-      return {
-        ok: false,
-        error: {
-          stage: "lower",
-          message,
-          preventsFallback: true,
-          ...(culprit === undefined ? {} : { module: culprit }),
-        },
-      };
     return stageFailure("lower", message, culprit);
   }
   const serviceImports: ManagedFunctionEntryBinding[] = [];

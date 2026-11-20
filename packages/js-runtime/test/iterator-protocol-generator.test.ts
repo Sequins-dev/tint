@@ -65,6 +65,40 @@ test("return and throw before starting never execute the body", () => {
   }
 });
 
+test("next contracts inject a throw after suspension and return contracts check completion", () => {
+  let calls = 0;
+  const record = createGeneratorRecord<unknown>(
+    (kind, value) => {
+      if (calls++ === 0) {
+        assert.equal(value, undefined);
+        return { kind: "yield", result: { value: 1, done: false } };
+      }
+      assert.equal(kind, "throw");
+      assert.ok(value instanceof TypeError);
+      return { kind: "return", value: "wrong" };
+    },
+    {
+      acceptsNext: (value) => typeof value === "string",
+      acceptsReturn: (value) => typeof value === "number",
+    },
+  );
+  assert.deepEqual(resumeGenerator(record, "next", 11, hooks), {
+    value: 1,
+    done: false,
+  });
+  assert.throws(() => resumeGenerator(record, "next", 11, hooks), TypeError);
+  assert.equal(calls, 2);
+  assert.equal(record.state, "completed");
+  assert.deepEqual(resumeGenerator(record, "next", 11, hooks), {
+    value: undefined,
+    done: true,
+  });
+  assert.throws(
+    () => resumeGenerator(record, "return", "wrong", hooks),
+    TypeError,
+  );
+});
+
 test("completed generators preserve each new abrupt completion and allocate fresh results", () => {
   const record = createGeneratorRecord<unknown>(() => ({
     kind: "return",

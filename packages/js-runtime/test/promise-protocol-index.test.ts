@@ -98,6 +98,32 @@ test("settlement is synchronous but reactions wait for FIFO jobs", () => {
   assert.deepEqual(f.callbacks, [handler, handler]);
 });
 
+test("a fulfillment contract checks the assimilated value on the original promise", () => {
+  const f = fixture();
+  const p = f.promise();
+  const seen: unknown[] = [];
+  const { resolve } = createResolvingFunctions(p.record, f.hooks, (value) => {
+    seen.push(value);
+    return typeof value === "number";
+  });
+  resolve({
+    then(resolve: (value: unknown) => void) {
+      resolve({
+        then(resolve: (value: unknown) => void) {
+          resolve("wrong");
+        },
+      });
+    },
+  });
+  assert.equal(p.record.state, "pending");
+  assert.deepEqual(seen, []);
+  assert.equal(f.drain(), 2);
+  assert.deepEqual(seen, ["wrong"]);
+  assert.equal(p.record.state, "rejected");
+  assert.ok(p.record.result instanceof TypeError);
+  assert.deepEqual(f.notifications, ["reject"]);
+});
+
 test("resolve and reject share an already-resolved cell, even during a then getter", () => {
   const f = fixture(),
     p = f.promise();

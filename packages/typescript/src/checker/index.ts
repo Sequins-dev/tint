@@ -272,6 +272,31 @@ export interface Diagnostic extends Span {
     | "MISSING_RETURN"
     | "LIMIT";
   readonly message: string;
+  readonly fallback?: ScalarFallback;
+}
+export interface ScalarFallback {
+  readonly capability:
+    | "scalar-annotation"
+    | "scalar-module-evaluation"
+    | "async-suspension"
+    | "generator-suspension"
+    | "scalar-generic-signature"
+    | "scalar-parameter-pattern"
+    | "scalar-rest"
+    | "scalar-default-parameter"
+    | "scalar-function-value"
+    | "scalar-optional-chain"
+    | "scalar-operator"
+    | "scalar-property"
+    | "scalar-assignment-target"
+    | "scalar-void-value"
+    | "scalar-construction"
+    | "scalar-call-target"
+    | "scalar-binding-pattern"
+    | "scalar-declaration"
+    | "scalar-iteration";
+  readonly ownerKind: "module" | "function";
+  readonly owner: Span;
 }
 export type CheckResult =
   | { readonly ok: true; readonly value: CheckedModule }
@@ -292,8 +317,29 @@ export function checkModule(module: Module): CheckResult {
     signatures = new Map<string, Signature>(),
     functions: CheckedFunction[] = [];
   let failure: Diagnostic | undefined;
+  let owner: FunctionDeclaration | undefined;
   function fail(node: Span, code: Diagnostic["code"], message: string): never {
     failure = { start: node.start, end: node.end, code, message };
+    throw abort;
+  }
+  function unsupported(
+    node: Span,
+    capability: ScalarFallback["capability"],
+    message: string,
+  ): never {
+    const frame = owner ?? module;
+    const location: Span = { start: frame.start, end: frame.end };
+    const fallback: ScalarFallback =
+      owner === undefined
+        ? { capability, ownerKind: "module", owner: location }
+        : { capability, ownerKind: "function", owner: location };
+    failure = {
+      start: node.start,
+      end: node.end,
+      code: "UNSUPPORTED",
+      message,
+      fallback,
+    };
     throw abort;
   }
   function bindingName(name: string, node: Span): void {
@@ -327,7 +373,11 @@ export function checkModule(module: Module): CheckResult {
       node.kind !== "named" ||
       (node.arguments?.length ?? 0) !== 0
     )
-      return fail(span, "UNSUPPORTED", "explicit scalar annotation required");
+      return unsupported(
+        span,
+        "scalar-annotation",
+        "explicit scalar annotation required",
+      );
     if (
       node.name === "number" ||
       node.name === "boolean" ||
@@ -338,9 +388,9 @@ export function checkModule(module: Module): CheckResult {
     )
       return node.name;
     if (allowVoid && node.name === "void") return "void";
-    return fail(
+    return unsupported(
       node,
-      "UNSUPPORTED",
+      "scalar-annotation",
       "type is outside the scalar checking slice",
     );
   }
@@ -373,27 +423,32 @@ export function checkModule(module: Module): CheckResult {
   try {
     for (const node of module.statements) {
       if (node === undefined) throw "missing module statement";
+      owner = node.kind === "function" ? node : undefined;
       if (node.kind === "empty" || node.kind === "debugger") continue;
       if (node.kind !== "function")
-        fail(
+        unsupported(
           node,
-          "UNSUPPORTED",
+          "scalar-module-evaluation",
           "only top-level function declarations are implemented",
         );
       if (node.async)
-        fail(
+        unsupported(
           node,
-          "UNSUPPORTED",
+          "async-suspension",
           "typed async function lowering is not implemented",
         );
       if (node.generator)
-        fail(
+        unsupported(
           node,
-          "UNSUPPORTED",
+          "generator-suspension",
           "generator suspension lowering is not implemented",
         );
       if (typeParameterCount(node.typeParameters))
-        fail(node, "UNSUPPORTED", "generic functions require specialization");
+        unsupported(
+          node,
+          "scalar-generic-signature",
+          "generic functions require specialization",
+        );
       bindingName(node.name, node);
       if (signatures.has(node.name))
         fail(node, "DUPLICATE_NAME", "duplicate function " + node.name);
@@ -402,20 +457,24 @@ export function checkModule(module: Module): CheckResult {
       const parameters = node.parameters.map((p, i): ScalarType => {
         if (p === undefined) throw "missing parameter";
         if (p.kind === "pattern-parameter")
-          fail(
+          unsupported(
             p,
-            "UNSUPPORTED",
+            "scalar-parameter-pattern",
             "scalar parameter destructuring is not supported yet",
           );
         if (p.rest)
-          fail(p, "UNSUPPORTED", "scalar rest parameters are not implemented");
+          unsupported(
+            p,
+            "scalar-rest",
+            "scalar rest parameters are not implemented",
+          );
         const type = scalar(p.type, p);
         if (p.optional || p.initializer !== undefined) {
           if (p.optional) seenOptional = true;
           if (type !== "number" && type !== "optional-number")
-            fail(
+            unsupported(
               p,
-              "UNSUPPORTED",
+              "scalar-default-parameter",
               "optional and default parameters currently require numeric types",
             );
           return "optional-number";
@@ -438,6 +497,7 @@ export function checkModule(module: Module): CheckResult {
       });
     }
     for (const [name, signature] of signatures) {
+      owner = signature.node;
       const locals: Local[] = [],
         expressions = createKeyIndex<Expression, ExpressionInfo>(syntaxHash),
         declarations = createKeyIndex<Binding | Parameter, Local>(syntaxHash);
@@ -471,7 +531,11 @@ export function checkModule(module: Module): CheckResult {
         const e = lookup(name);
         if (e === undefined) {
           if (signatures.has(name))
-            fail(node, "UNSUPPORTED", "function values are not implemented");
+            unsupported(
+              node,
+              "scalar-function-value",
+              "function values are not implemented",
+            );
           return fail(node, "UNKNOWN_NAME", "unknown binding " + name);
         }
         const value = e.local;
@@ -609,9 +673,9 @@ export function checkModule(module: Module): CheckResult {
             node.kind === "call") &&
           node.optional === true
         )
-          fail(
+          unsupported(
             node,
-            "UNSUPPORTED",
+            "scalar-optional-chain",
             "optional chaining requires short-circuit checking and lowering",
           );
         enter(node);
@@ -669,9 +733,9 @@ export function checkModule(module: Module): CheckResult {
                 same(operand, "number", node.operand);
                 type = "number";
               } else
-                return fail(
+                return unsupported(
                   node,
-                  "UNSUPPORTED",
+                  "scalar-operator",
                   "unary operator not implemented",
                 );
               break;
@@ -696,9 +760,9 @@ export function checkModule(module: Module): CheckResult {
               }
               array(expression(node.object), node.object);
               if (node.property !== "length")
-                return fail(
+                return unsupported(
                   node,
-                  "UNSUPPORTED",
+                  "scalar-property",
                   "only Uint32Array.length is implemented",
                 );
               type = "number";
@@ -720,9 +784,9 @@ export function checkModule(module: Module): CheckResult {
                   (left !== "number" && left !== "optional-number") ||
                   (right !== "number" && right !== "optional-number")
                 )
-                  fail(
+                  unsupported(
                     node,
-                    "UNSUPPORTED",
+                    "scalar-operator",
                     "nullish operands currently require numbers or optional numbers",
                   );
                 type = left === "number" ? "number" : right;
@@ -780,9 +844,9 @@ export function checkModule(module: Module): CheckResult {
                   ? "boolean"
                   : "number";
               } else
-                return fail(
+                return unsupported(
                   node,
-                  "UNSUPPORTED",
+                  "scalar-operator",
                   "binary operator not implemented",
                 );
               break;
@@ -792,9 +856,9 @@ export function checkModule(module: Module): CheckResult {
               let target = node.target;
               while (target.kind === "group") target = target.expression;
               if (target.kind !== "identifier")
-                return fail(
+                return unsupported(
                   target,
-                  "UNSUPPORTED",
+                  "scalar-assignment-target",
                   "updates currently require a numeric local",
                 );
               const l = local(target.name, target);
@@ -875,9 +939,9 @@ export function checkModule(module: Module): CheckResult {
                 break;
               }
               if (target.kind !== "identifier")
-                return fail(
+                return unsupported(
                   target,
-                  "UNSUPPORTED",
+                  "scalar-assignment-target",
                   "only locals and Uint32Array elements are assignable",
                 );
               const l = local(target.name, target);
@@ -914,9 +978,9 @@ export function checkModule(module: Module): CheckResult {
                 type = "optional-number";
               } else same(alternate, type, node.alternate);
               if (type === "void")
-                fail(
+                unsupported(
                   node,
-                  "UNSUPPORTED",
+                  "scalar-void-value",
                   "void conditional values are not implemented",
                 );
               break;
@@ -932,9 +996,9 @@ export function checkModule(module: Module): CheckResult {
                   target.name !== "Uint32Array" &&
                   target.name !== "Float64Array")
               )
-                fail(
+                unsupported(
                   node,
-                  "UNSUPPORTED",
+                  "scalar-construction",
                   "only unshadowed supported typed-array constructors are supported",
                 );
               if (node.typeArguments.length !== 0 || node.arguments.length > 1)
@@ -973,9 +1037,9 @@ export function checkModule(module: Module): CheckResult {
             }
             case "call": {
               if (node.typeArguments?.length)
-                fail(
+                unsupported(
                   node,
-                  "UNSUPPORTED",
+                  "scalar-generic-signature",
                   "generic calls require specialization",
                 );
               let target = node.callee;
@@ -1042,9 +1106,9 @@ export function checkModule(module: Module): CheckResult {
                   )
                     same(argType, "number", argument);
                   else if (argType === "void")
-                    fail(
+                    unsupported(
                       argument,
-                      "UNSUPPORTED",
+                      "scalar-void-value",
                       "void argument is not represented",
                     );
                   type =
@@ -1126,11 +1190,15 @@ export function checkModule(module: Module): CheckResult {
                 }
               }
               if (target.kind !== "identifier")
-                return fail(target, "UNSUPPORTED", "unsupported method call");
-              if (lookup(target.name) !== undefined)
-                fail(
+                return unsupported(
                   target,
-                  "UNSUPPORTED",
+                  "scalar-call-target",
+                  "unsupported method call",
+                );
+              if (lookup(target.name) !== undefined)
+                unsupported(
+                  target,
+                  "scalar-call-target",
                   "local callable values are not implemented",
                 );
               const fn = signatures.get(target.name);
@@ -1192,9 +1260,9 @@ export function checkModule(module: Module): CheckResult {
               for (const d of node.declarations) {
                 if (d === undefined) throw "missing declaration";
                 if (d.kind === "object-binding" || d.kind === "array-binding")
-                  fail(
+                  unsupported(
                     d,
-                    "UNSUPPORTED",
+                    "scalar-binding-pattern",
                     "typed binding patterns are not implemented",
                   );
                 reserve(d.name, d);
@@ -1222,23 +1290,23 @@ export function checkModule(module: Module): CheckResult {
               return 1;
             case "variable":
               if (node.mode === "var")
-                fail(
+                unsupported(
                   node,
-                  "UNSUPPORTED",
+                  "scalar-declaration",
                   "var declarations require the closure checking pipeline",
                 );
               for (const d of node.declarations) {
                 if (d === undefined) throw "missing declaration";
                 if (d.kind === "object-binding" || d.kind === "array-binding")
-                  fail(
+                  unsupported(
                     d,
-                    "UNSUPPORTED",
+                    "scalar-binding-pattern",
                     "typed binding patterns are not implemented",
                   );
                 if (d.initializer === undefined)
-                  fail(
+                  unsupported(
                     d,
-                    "UNSUPPORTED",
+                    "scalar-declaration",
                     "locals currently require an initializer",
                   );
                 const value = expression(d.initializer);
@@ -1288,15 +1356,15 @@ export function checkModule(module: Module): CheckResult {
             }
             case "for-of": {
               if (node.await)
-                fail(
+                unsupported(
                   node,
-                  "UNSUPPORTED",
+                  "async-suspension",
                   "typed for-await lowering is not implemented",
                 );
               if (node.mode === "var")
-                fail(
+                unsupported(
                   node,
-                  "UNSUPPORTED",
+                  "scalar-declaration",
                   "var declarations require the closure checking pipeline",
                 );
               const loopBinding = node.binding;
@@ -1304,9 +1372,9 @@ export function checkModule(module: Module): CheckResult {
                 loopBinding.kind === "array-binding" ||
                 loopBinding.kind === "object-binding"
               )
-                fail(
+                unsupported(
                   loopBinding,
-                  "UNSUPPORTED",
+                  "scalar-iteration",
                   "destructured iteration requires iterable element contracts",
                 );
               scopes.push({ names: new Map<string, Entry>() });
@@ -1321,9 +1389,9 @@ export function checkModule(module: Module): CheckResult {
                     "Float64Array",
                   ].includes(iterable)
                 )
-                  fail(
+                  unsupported(
                     node.iterable,
-                    "UNSUPPORTED",
+                    "scalar-iteration",
                     "native for-of currently requires a typed array",
                   );
                 const entry = scope().get(loopBinding.name);
@@ -1366,9 +1434,9 @@ export function checkModule(module: Module): CheckResult {
                         d.kind === "object-binding" ||
                         d.kind === "array-binding"
                       )
-                        fail(
+                        unsupported(
                           d,
-                          "UNSUPPORTED",
+                          "scalar-binding-pattern",
                           "typed binding patterns are not implemented",
                         );
                       reserve(d.name, d);
@@ -1492,7 +1560,11 @@ export {
   resolveInterfaceTypes,
   createInterfaceResolutionCache,
 } from "./interfaces.ts";
-export { checkClosureModule, checkedPropertyName } from "./closures.ts";
+export {
+  checkClosureModule,
+  checkedPropertyName,
+  nativeCallableProjectionAlias,
+} from "./closures.ts";
 export type {
   ClosureBody,
   BindingInitialization,
@@ -1500,8 +1572,10 @@ export type {
   BindingOperation,
   ClosureIntrinsic,
   CheckedClosures,
+  NativeRecordViewField,
   CheckedTypeSystem,
   ClosureDiagnostic,
+  ClosureFallback,
   ClosureResult,
   ClosureCheckOptions,
 } from "./closures.ts";

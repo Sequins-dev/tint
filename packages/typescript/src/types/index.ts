@@ -1715,10 +1715,15 @@ function copyType(
 
 /** C1 uses the general value's existing payload representation. Native
  * aggregate references require a live view or realm-backed allocation. */
+export interface DynamicPayloadRejection {
+  readonly capability:
+    "native-callable-view" | "realm-aggregate-view" | "realm-payload-layout";
+  readonly message: string;
+}
 export function unsupportedDynamicPayload(
   types: readonly Type[],
   id: number,
-): string | undefined {
+): DynamicPayloadRejection | undefined {
   const type = types[id];
   if (type === undefined) throw "dynamic property type invariant";
   switch (type.kind) {
@@ -1753,11 +1758,19 @@ export function unsupportedDynamicPayload(
       : type.kind === "array"
         ? "native list"
         : type.kind;
-  return (
+  const message =
     "UNSUPPORTED: " +
     name +
-    " values in dynamic-key objects need slice 2b list/record views"
-  );
+    " values in dynamic-key objects need slice 2b list/record views";
+  if (
+    type.kind === "function" ||
+    (type.kind === "object" &&
+      (type.call !== undefined || type.construct !== undefined))
+  )
+    return { capability: "native-callable-view", message };
+  if (type.kind === "object" || type.kind === "array")
+    return { capability: "realm-aggregate-view", message };
+  return { capability: "realm-payload-layout", message };
 }
 
 /** Declared indexed values may describe realm arrays and data records, even
@@ -1766,7 +1779,7 @@ export function unsupportedDynamicContract(
   types: readonly Type[],
   id: number,
   seen: Set<number> = new Set<number>(),
-): string | undefined {
+): DynamicPayloadRejection | undefined {
   if (seen.has(id)) return undefined;
   seen.add(id);
   const type = types[id];

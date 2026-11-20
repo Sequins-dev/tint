@@ -72,6 +72,44 @@ test("typed-array indexed access preserves negative zero distinction", () => {
   assert.equal(o.preventExtensions(fixed), false);
 });
 
+test("byte-range projection uses internal slots and shares the real backing", () => {
+  const { fixed, tracking, storage } = setup();
+  const data = fixed.internalTypedArrayData!;
+  const view = o.createObject<o.ScriptPropertyKey, unknown>(undefined);
+  view.internalDataViewData = {
+    buffer: data.buffer,
+    storage,
+    byteOffset: 3,
+    byteLength: 2,
+  };
+  const precise = o.projectArrayBufferViewRange(fixed)!;
+  const alias = o.projectArrayBufferViewRange(view)!;
+  assert.equal(precise.byteOffset, 2);
+  assert.equal(precise.byteLength, 4);
+  assert.equal(alias.byteOffset, 3);
+  assert.equal(alias.byteLength, 2);
+  assert.equal(precise.bytes, alias.bytes);
+  alias.bytes![3] = 1;
+  assert.equal(o.getOwnProperty(fixed, "0")?.value, 256);
+  assert.equal(resizeByteStorage(storage, 2), "none");
+  const outside = o.projectArrayBufferViewRange(fixed)!;
+  assert.equal(outside.kind, "ordinary");
+  assert.equal(outside.byteLength, 0);
+  assert.equal(outside.byteOffset, 0);
+  assert.equal(outside.bytes?.length, 2);
+  const empty = o.projectArrayBufferViewRange(tracking)!;
+  assert.equal(empty.byteLength, 0);
+  assert.equal(empty.byteOffset, 2);
+  assert.equal(resizeByteStorage(storage, 8), "none");
+  assert.equal(o.projectArrayBufferViewRange(fixed)!.byteLength, 4);
+  assert.equal(detachByteStorage(storage), "none");
+  const detached = o.projectArrayBufferViewRange(fixed)!;
+  assert.equal(detached.kind, "detached");
+  assert.equal(detached.bytes, undefined);
+  assert.equal(detached.writable, false);
+  assert.equal(o.projectArrayBufferViewRange(data.buffer), undefined);
+});
+
 test("immutable typed-array indices remain readable and reject writes without coercion", () => {
   const mutable = createByteStorage(2, 2, false, 16);
   assert.ok(mutable.ok);
