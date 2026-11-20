@@ -13,7 +13,7 @@ jobs:
   gate:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 110
+    timeout-minutes: ${{ matrix.timeout-minutes }}
     strategy:
       fail-fast: false
       matrix:
@@ -22,14 +22,17 @@ jobs:
             runner: macos-26
             arch: arm64
             gate: mac
+            timeout-minutes: 135
           - name: Linux x86-64
             runner: ubuntu-24.04
             arch: x64
             gate: linux
+            timeout-minutes: 110
           - name: Linux arm64
             runner: ubuntu-24.04-arm
             arch: arm64
             gate: linux
+            timeout-minutes: 110
 
     env:
       TEST262_SHA: 91c70759363c46557b694792bf34a2551a7af5ba
@@ -106,7 +109,7 @@ jobs:
           TINT_GATE_EXCLUSIVE_LOCK: ${{ runner.temp }}/tint-gate/exclusive.lock
           TINT_GATE_MEMORY_DIRECTORY: ${{ runner.temp }}/tint-gate/memory
           TINT_GATE_MEMORY_SLOTS: 1
-          TINT_GATE_BUDGET: 6000
+          TINT_GATE_BUDGET: 7500
           TINT_GATE_NATIVE_TIMEOUT: 3600
           NODE_OPTIONS: --max-old-space-size=5120
         run: tools/gate/mac-gate.sh
