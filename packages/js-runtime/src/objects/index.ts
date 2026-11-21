@@ -203,6 +203,7 @@ export {
   scriptStrictEqual,
   scriptSameValue,
   callObjectValue,
+  callRegisterObjectValue,
   callGeneralValue,
   getObjectValueProperty,
   readObjectValueProperty,
@@ -259,6 +260,7 @@ export {
 } from "./errors.ts";
 export {
   createSourceFunction,
+  createRegisterSourceFunction,
   createTailSourceFunction,
   createCheckedSourceFunction,
   requestSourceTailCall,

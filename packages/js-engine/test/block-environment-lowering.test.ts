@@ -721,3 +721,58 @@ test("general truthiness and equality preserve primitive and slow cases", () => 
   );
   assert.deepEqual(realm.printed, ["TFFFFFFTFTFTT", "false"]);
 });
+
+test("known ordinary signatures use a positional entry with an exotic fallback", () => {
+  const source = "function add(x, y) { return x + y; } add(1, 2);";
+  assert.equal(runtimeCalls(source, "createRegisterSourceFunction"), 1);
+  assert.equal(runtimeCalls(source, "callRegisterObjectValue"), 1);
+});
+
+test("positional source calls preserve receiver, legacy arguments and unwinding", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+    let order = "";
+    function observed(a, b) {
+      order += "f";
+      const args = observed.arguments;
+      if (a === "throw") throw "boom";
+      return [this.label, a, b, args.length, args[2]].join("/");
+    }
+    const obj = {
+      label: "receiver",
+      get method() { order += "g"; return observed; },
+    };
+    function argument() { order += "a"; return 7; }
+    print(obj.method(argument()));
+    print(String(order));
+    print(obj.method(1, 2, 3));
+    print(String(observed.arguments));
+    try { obj.method("throw"); } catch (error) { print(error); }
+    print(String(observed.arguments));
+    const proxy = new Proxy(observed, {
+      apply(target, receiver, args) {
+        order += "p";
+        return Reflect.apply(target, receiver, args);
+      }
+    });
+    obj.callProxy = proxy;
+    print(obj.callProxy(4, 5));
+    print(String(order));
+    function Constructor(a) { this.result = (new.target === Constructor) ? a : 0; }
+    print(String(new Constructor(42).result));
+  `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "receiver/7//1/",
+    "gaf",
+    "receiver/1/2/3/3",
+    "null",
+    "boom",
+    "null",
+    "receiver/4/5/2/",
+    "gafgfgfpf",
+    "42",
+  ]);
+});

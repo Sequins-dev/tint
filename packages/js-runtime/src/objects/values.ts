@@ -210,6 +210,39 @@ export function callObjectValue(
   );
 }
 
+/** Positional call sites have evaluated every operand before dispatch. The
+ * generic path handles foreign realms, proxies, bound functions and hosts. */
+export function callRegisterObjectValue(
+  realm: ErrorRealm,
+  count: number,
+  value: unknown,
+  receiver: unknown,
+  first: unknown,
+  second: unknown,
+): unknown {
+  const object = viewObjectValue(value, realm.objectPrototype);
+  if (object === undefined) throw createRuntimeError(realm, "type");
+  const entry = object.internalRegisterCall;
+  const active = realm.agent.activeContext;
+  if (
+    entry !== undefined &&
+    active !== undefined &&
+    active.realm === entry.context.realm &&
+    active.scriptOrModule === entry.context.scriptOrModule
+  )
+    return entry.invoke(value, receiver, undefined, count, first, second);
+  const args: readonly unknown[] =
+    count === 0 ? [] : count === 1 ? [first] : [first, second];
+  const result = callObject<ScriptPropertyKey, unknown>(
+    object,
+    receiver,
+    args,
+    undefined,
+  );
+  if (result.error !== "none") throw createRuntimeError(realm, "type");
+  return result.value;
+}
+
 /** Calls from typed source already carry a receiver and an evaluated list. */
 export function callGeneralValue(
   value: unknown,

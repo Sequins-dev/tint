@@ -5,7 +5,10 @@ import {
   createSourceExecutionContext,
   createFunctionRealmContext,
   enterSourceCall,
+  enterRegisterSourceCall,
   exitSourceCall,
+  enterExecutionName,
+  leaveExecutionName,
   visibleSourceCaller,
   activeSourceArguments,
 } from "./jobs.ts";
@@ -24,6 +27,7 @@ import {
   hasPrototype,
   type ObjectCall,
   type ObjectCallDispatch,
+  type ObjectRegisterCall,
   type ObjectExecutionContext,
   type ObjectHooks,
   type OrdinaryObject,
@@ -247,6 +251,71 @@ export function createSourceFunction(
     false,
     callerPolicy,
   );
+}
+
+/** A source body that needs at most two fixed parameters and does not read
+ * its arguments binding. The general entry still supports apply, construct,
+ * extra arguments and callers with a different execution context. */
+export function createRegisterSourceFunction(
+  implementation: ObjectRegisterCall<unknown>,
+  constructible: boolean,
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+  name: string,
+  length: number,
+  home: OrdinaryObject<ScriptPropertyKey, unknown> | undefined,
+  callerPolicy: SourceCallerPolicy,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const agent = realm.agent;
+  const active = agent.activeContext;
+  const fn = createSourceFunction(
+    (receiver, args, callee, newTarget): unknown =>
+      implementation(
+        callee,
+        receiver,
+        newTarget,
+        args.length,
+        args[0],
+        args[1],
+      ),
+    constructible,
+    realm,
+    hooks,
+    name,
+    length,
+    home,
+    callerPolicy,
+  );
+  fn.internalRegisterCall = {
+    context: {
+      realm,
+      scriptOrModule: active === undefined ? undefined : active.scriptOrModule,
+    },
+    invoke: (callee, receiver, newTarget, count, first, second): unknown => {
+      const trace = enterExecutionName(agent, name);
+      const depth = enterRegisterSourceCall(
+        agent,
+        callerPolicy === "opaque" ? undefined : callee,
+        callerPolicy === "legacy" ? count : -1,
+        first,
+        second,
+      );
+      try {
+        return implementation(
+          callee,
+          receiver,
+          newTarget,
+          count,
+          first,
+          second,
+        );
+      } finally {
+        exitSourceCall(agent, depth);
+        leaveExecutionName(agent, trace);
+      }
+    },
+  };
+  return fn;
 }
 
 /** Use the ordinary function's identity, receiver and construct path. A

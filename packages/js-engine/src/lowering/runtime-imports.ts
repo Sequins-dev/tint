@@ -74,6 +74,7 @@ export function scriptRuntimeImports(
   usesRetainedFunctions: boolean = false,
   usesPrimitiveContracts: boolean = false,
   usesFixedCells: boolean = false,
+  usesRegisterCalls: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -164,6 +165,9 @@ export function scriptRuntimeImports(
         "updateObjectValue",
         "unaryObjectValueOperation",
         "createSourceFunction",
+        ...(usesRegisterCalls || declarations === "all"
+          ? ["createRegisterSourceFunction"]
+          : []),
         "retainFunctionSource",
         "runScriptContext",
         "createSourceAsyncGeneratorFunction",
@@ -237,6 +241,9 @@ export function scriptRuntimeImports(
         ...(usesTemplateSites ? ["getScriptTemplateSite"] : []),
         ...(usesLiteralTable ? ["getScriptLiteral"] : []),
         "callObjectValue",
+        ...(usesRegisterCalls || declarations === "all"
+          ? ["callRegisterObjectValue"]
+          : []),
         "getObjectValueProperty",
         "readObjectValueProperty",
         "readObjectValuePropertyKey",

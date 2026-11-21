@@ -87,6 +87,7 @@ export interface OrdinaryObject<Key, Value> {
   internalPrivateElements: PrivateElement<Value>[] | undefined;
   /** Internal [[Call]], never a named/inherited JavaScript property. */
   readonly internalCall: ObjectCall<Value> | undefined;
+  internalRegisterCall: ObjectRegisterEntry<Value> | undefined;
   /** Compiler/runtime-owned call steps. Each step owns and restores its context
    * before returning a transfer; JavaScript return values never select a step. */
   internalTailDispatch: ObjectTailDispatch<Key, Value> | undefined;
@@ -273,6 +274,18 @@ export type ObjectCall<Value> = (
   receiver: Value,
   arguments_: readonly Value[],
 ) => Value;
+export type ObjectRegisterCall<Value> = (
+  callee: Value,
+  receiver: Value,
+  newTarget: Value,
+  count: number,
+  first: Value,
+  second: Value,
+) => Value;
+export interface ObjectRegisterEntry<Value> {
+  readonly context: ScriptExecutionContext;
+  readonly invoke: ObjectRegisterCall<Value>;
+}
 export type ObjectCallDispatch<Key, Value> =
   | { readonly kind: "return"; readonly value: Value }
   | {
@@ -435,6 +448,7 @@ function allocateObject<Key, Value>(
     internalPropertyEpoch: 0,
     internalPropertyContract: undefined,
     internalCall,
+    internalRegisterCall: undefined,
     internalTailDispatch: undefined,
     internalInitialName: undefined,
     internalSourceText: undefined,

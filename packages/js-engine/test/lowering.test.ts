@@ -439,7 +439,11 @@ test("object methods and accessors capture the literal home while function prope
   assert.ok(result.ok, JSON.stringify(result));
   const calls: Expression[] = [];
   JSON.stringify(result.value, (key, value) => {
-    if (value?.kind === "call" && value.callee?.name === "createSourceFunction")
+    if (
+      value?.kind === "call" &&
+      (value.callee?.name === "createSourceFunction" ||
+        value.callee?.name === "createRegisterSourceFunction")
+    )
       calls.push(value);
     return value;
   });

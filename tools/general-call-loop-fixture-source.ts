@@ -96,6 +96,54 @@ export function run() {
   if (next((next = replace, 2)) !== 3 || next(2) !== 20) return 18;
   const identity = value => value;
   if (1 / identity(-0) !== -Infinity) return 19;
+
+  let value = -0;
+  const before = value++;
+  if (value !== 1 || 1 / before !== -Infinity || NaN === NaN) return 20;
+  let wide = 1n;
+  if (wide++ !== 1n || wide !== 2n || 0n || !wide) return 21;
+
+  function add(a, b) {
+    if (a === "throw") throw sentinel;
+    return a + b;
+  }
+  if (add(20, 22, 13) !== 42 || add(42) === add(42)) return 22;
+  try { add("throw", 2); return 23; }
+  catch (error) { if (error !== sentinel) return 24; }
+  const bound = add.bind(null, 20);
+  const proxy = new Proxy(add, {
+    apply(target, base, values) { return Reflect.apply(target, base, values); },
+  });
+  if (bound(22) !== 42 || proxy(20, 22) !== 42) return 25;
+
+  const first = { method() { return this.current + 1; } };
+  const second = { method() { return this.current + 2; } };
+  const subject = Object.create(first);
+  subject.current = 40;
+  function method(value) { return value.method(); }
+  function read(value) { return value.current; }
+  function write(value, next) { value.current = next; }
+  if (method(subject) !== 41 || read(subject) !== 40) return 26;
+  Object.setPrototypeOf(subject, second);
+  write(subject, 41);
+  if (method(subject) !== 43 || read(subject) !== 41) return 27;
+  subject.method = () => 7;
+  if (method(subject) !== 7) return 28;
+  delete subject.method;
+  if (method(subject) !== 43) return 29;
+  let calls = "";
+  Object.defineProperty(subject, "current", {
+    get() { calls += "get"; return 42; },
+    set(value) { calls += "set" + value; },
+  });
+  write(subject, 5);
+  const observed = new Proxy(subject, {
+    get(target, key, originalReceiver) {
+      calls += "trap";
+      return Reflect.get(target, key, originalReceiver);
+    },
+  });
+  if (read(observed) !== 42 || calls !== "set5trapget") return 30;
   return 42;
 }
 `;

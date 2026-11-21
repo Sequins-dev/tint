@@ -107,6 +107,9 @@ export interface ScriptAgent {
 export interface SourceCallFrame {
   callee: unknown;
   legacyArguments: readonly unknown[] | undefined;
+  argumentCount: number;
+  firstArgument: unknown;
+  secondArgument: unknown;
   readonly previous: SourceCallFrame | undefined;
   next: SourceCallFrame | undefined;
 }
@@ -122,6 +125,9 @@ function sourceCallFrame(
   return {
     callee: undefined,
     legacyArguments: undefined,
+    argumentCount: -1,
+    firstArgument: undefined,
+    secondArgument: undefined,
     previous,
     next: undefined,
   };
@@ -173,6 +179,22 @@ export function enterSourceCall(
   agent.sourceCallDepth = depth + 1;
   return depth;
 }
+export function enterRegisterSourceCall(
+  agent: ScriptAgent,
+  visibleCallee: unknown,
+  argumentCount: number,
+  firstArgument: unknown,
+  secondArgument: unknown,
+): number {
+  const depth = enterSourceCall(agent, visibleCallee);
+  if (argumentCount >= 0) {
+    const frame = agent.sourceCallTop;
+    frame.argumentCount = argumentCount;
+    frame.firstArgument = firstArgument;
+    frame.secondArgument = secondArgument;
+  }
+  return depth;
+}
 export function exitSourceCall(agent: ScriptAgent, depth: number): void {
   // Clearing keeps returned callees collectable once their invocation ends.
   while (agent.sourceCallDepth > depth) {
@@ -181,6 +203,11 @@ export function exitSourceCall(agent: ScriptAgent, depth: number): void {
     if (previous === undefined) throw "SOURCE_CALL_FRAME_INVARIANT";
     frame.callee = undefined;
     frame.legacyArguments = undefined;
+    if (frame.argumentCount >= 0) {
+      frame.argumentCount = -1;
+      frame.firstArgument = undefined;
+      frame.secondArgument = undefined;
+    }
     agent.sourceCallTop = previous;
     agent.sourceCallDepth = agent.sourceCallDepth - 1;
   }
@@ -211,9 +238,35 @@ export function activeSourceArguments(
   for (;;) {
     const previous = frame.previous;
     if (previous === undefined) return undefined;
-    if (frame.callee === callee) return frame.legacyArguments;
+    if (frame.callee === callee) {
+      if (frame.argumentCount < 0) return frame.legacyArguments;
+      if (frame.argumentCount === 0) return [];
+      if (frame.argumentCount === 1) return [frame.firstArgument];
+      return [frame.firstArgument, frame.secondArgument];
+    }
     frame = previous;
   }
+}
+
+/** Reuse the named frame while a same-Script register entry executes inline. */
+export function enterExecutionName(
+  agent: ScriptAgent,
+  name: string,
+): ExecutionNameFrame {
+  const top = agent.executionNameTop;
+  const reused = top.next;
+  const frame = reused === undefined ? executionNameFrame(top) : reused;
+  if (reused === undefined) top.next = frame;
+  frame.name = name;
+  agent.executionNameTop = frame;
+  return top;
+}
+export function leaveExecutionName(
+  agent: ScriptAgent,
+  previous: ExecutionNameFrame,
+): void {
+  agent.executionNameTop.name = undefined;
+  agent.executionNameTop = previous;
 }
 /** The agent state `enterScriptContext` replaced, for `leaveScriptContext`. */
 export interface ScriptContextFrame {

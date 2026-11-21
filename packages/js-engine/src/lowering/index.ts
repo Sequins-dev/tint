@@ -930,6 +930,7 @@ function lowerScriptEntry(
   let functionDepth = 0;
   let tailEnds: ReadonlyMap<number, number> = new Map<number, number>();
   let usesTailCalls = false;
+  let usesRegisterCalls = false;
   let usesPrimitiveContracts = false;
   let suspensionInput: string | undefined =
     entryKind === "module" ? "$moduleInput" : undefined;
@@ -2374,6 +2375,34 @@ function lowerScriptEntry(
     args: readonly Expression[],
     span: Span,
   ): Expression {
+    if (
+      !compactResults &&
+      !isTailCall(span) &&
+      args.length <= 2 &&
+      !args.some((argument) => argument?.kind === "spread")
+    ) {
+      usesRegisterCalls = true;
+      const values: Expression[] = [];
+      for (const argument of args) {
+        if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+        values.push(temporary(value(argument), true));
+      }
+      return temporary(
+        runtimeCall(
+          "callRegisterObjectValue",
+          [
+            id("$errors"),
+            scalarNumber(args.length, span),
+            callee,
+            receiver,
+            values[0] ?? id("undefined", span),
+            values[1] ?? id("undefined", span),
+          ],
+          span,
+        ),
+        true,
+      );
+    }
     return invokeList(callee, receiver, argumentList(args, span), span);
   }
   function invokeNumericLeaf(
@@ -3333,6 +3362,22 @@ function lowerScriptEntry(
         : undefined;
     const numericImplementation =
       numericBody === undefined ? undefined : temporary(numericBody);
+    const hasArguments = !arrow && observesArguments(span);
+    const register =
+      !compactResults &&
+      !raw &&
+      !suspending &&
+      !options.packed &&
+      !tailEnabled &&
+      !hasArguments &&
+      resultContract === 0 &&
+      numericImplementation === undefined &&
+      parameters.length <= 2 &&
+      !parameters.some((parameter) => parameter?.rest);
+    const registerCount = register ? "$count" + serial++ : "",
+      registerFirst = register ? "$first" + serial++ : "",
+      registerSecond = register ? "$second" + serial++ : "";
+    if (register) usesRegisterCalls = true;
     // Capture the environment at function creation, even when a loop advances
     // its current environment through a mutable generated variable.
     const capturedScope = temporary(scope);
@@ -3539,7 +3584,6 @@ function lowerScriptEntry(
               declaration !== undefined &&
               frameLexicalBinding(declaration) === undefined,
           );
-    const hasArguments = !arrow && observesArguments(span);
     const hoistedSlots: number[] = [];
     const hoistedNames = new Set<string>();
     if (
@@ -3812,24 +3856,26 @@ function lowerScriptEntry(
             ),
           );
       }
-      const argumentValue: Expression = parameter.rest
-        ? runtimeCall(
-            "createArrayFromList",
-            [
-              id(argsName, parameter),
-              offset,
-              member(id("$errors"), "arrayPrototype", parameter),
-              id("$errors"),
-              member(id("$global"), "hooks", parameter),
-            ],
-            parameter,
-          )
-        : {
-            ...at(parameter),
-            kind: "index",
-            object: id(argsName, parameter),
-            index: offset,
-          };
+      const argumentValue: Expression = register
+        ? id(i === 0 ? registerFirst : registerSecond, parameter)
+        : parameter.rest
+          ? runtimeCall(
+              "createArrayFromList",
+              [
+                id(argsName, parameter),
+                offset,
+                member(id("$errors"), "arrayPrototype", parameter),
+                id("$errors"),
+                member(id("$global"), "hooks", parameter),
+              ],
+              parameter,
+            )
+          : {
+              ...at(parameter),
+              kind: "index",
+              object: id(argsName, parameter),
+              index: offset,
+            };
       const binding = directSimpleParameters
         ? localBindingDeclarations.get(parameter.start)
         : undefined;
@@ -4293,6 +4339,16 @@ function lowerScriptEntry(
         : named(suspending ? "GeneratorContinuation" : "unknown"),
       body: callbackBody,
     };
+    if (register) {
+      callbackParameters.length = 0;
+      for (const name of [calleeName, receiverName, newTargetName])
+        callbackParameters.push({ ...at(span), name, type: named("unknown") });
+      callbackParameters.push(
+        { ...at(span), name: registerCount, type: named("number") },
+        { ...at(span), name: registerFirst, type: named("unknown") },
+        { ...at(span), name: registerSecond, type: named("unknown") },
+      );
+    }
     if (raw)
       return resultContract === 0
         ? callback
@@ -4400,7 +4456,9 @@ function lowerScriptEntry(
             ? "createCheckedSourceFunction"
             : tailEnabled
               ? "createTailSourceFunction"
-              : "createSourceFunction",
+              : register
+                ? "createRegisterSourceFunction"
+                : "createSourceFunction",
         ),
         arguments: functionArguments,
         typeArguments: [],
@@ -8283,6 +8341,7 @@ function lowerScriptEntry(
     compactResults,
     usesPrimitiveContracts,
     fixedCellNames.length !== 0,
+    usesRegisterCalls,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,

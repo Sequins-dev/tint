@@ -13,12 +13,12 @@ const corpus = [
   {
     // A `with` body keeps reference-based identifier callees (base object).
     source: "var o={m(){return this}};with(o){m();}",
-    sha256: "cf5e675f9473cd86ad5402df726c792bfa0e92ee036f19c303ec5a2abc5ceddc",
+    sha256: "fd6d9a33d12c50d6419f0254d2d469489f3b7a73bc43b5ffd35dbe97d98fe487",
   },
   {
     source:
       "var a=1;let b={x:a,get y(){return 1},[a]:2};for(var k in b){} delete b.x;delete missing;typeof zz;",
-    sha256: "d8b82200c7b4ebff00dcb6ede8cad79fc1dcf33e9cafebf56f40eb503018424c",
+    sha256: "c40bb531c0f5502fce4c4ff7043b73f1317e83739a61790944fb2e40e4f00cb0",
   },
   {
     source:
@@ -28,7 +28,7 @@ const corpus = [
   {
     source:
       "function* g(){yield 1;yield* [2]}async function f(){await 1;for await(const x of [2]){}}async function* h(){yield await 2}var arr=[...g()];",
-    sha256: "f1c9addb900777cafcc3b16789dceb4f7745d36a05425ec46156b9ce2e8e00ce",
+    sha256: "f5126756faa0aa7c85baec2cfe54fe16d6c6578b4bebc27f072d645d18f7822c",
   },
   {
     source:
@@ -38,7 +38,7 @@ const corpus = [
   {
     source:
       "function p(a,b=1,...c){return arguments.length}(()=>this)();new p();`a${1}`;tag`x`;",
-    sha256: "d0894ae8ba2bd5d180a0952cba4691cc88097556e89d2a35a6750536a4704c93",
+    sha256: "73b6be731d9d40e222ce3273b98fb6dafc07f5da2c867126bb3f48ac27361c78",
   },
   {
     source:
@@ -48,7 +48,7 @@ const corpus = [
   {
     source:
       "if(true)function globalFn(){}function outer(){if(true)function inner(){};{function local(){}}for(let i=0;i<2;i++){(()=>i)();}}",
-    sha256: "c7f753906975d0cd6d69dbf5058cf1bb415cd013634b178a6dc58e97e401f175",
+    sha256: "ddf9f1d037cb46a9de53576039712b28d45aded75c63aa29d260910bbfad13e7",
   },
   {
     source: "const pattern=/(?<name>x)/u;const number=1n;number+2n;",
@@ -57,9 +57,9 @@ const corpus = [
 ];
 test("managed Script surface declares fixed instantiations and preserves lowered output", () => {
   const surface = lowering.scriptRuntimeSurface();
-  assert.equal(surface.length, 167);
+  assert.equal(surface.length, 169);
   const names = new Map(surface.map((entry) => [entry.name, entry]));
-  assert.equal(names.size, 167);
+  assert.equal(names.size, 169);
   assert.equal(
     surface.filter((entry) => entry.typeArguments.length > 0).length,
     46,
