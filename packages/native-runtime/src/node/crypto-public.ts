@@ -1,14 +1,18 @@
 import { byteStorageData } from "@tint/js-runtime/bytes";
 import {
-  builtinFunction,
+  addPrivateField,
   builtinAccessor,
+  builtinFunction,
   builtinProperty,
   callObjectValue,
   createCodedRuntimeError,
   createObject,
+  createPrivateName,
+  createRuntimeError,
+  getPrivateElement,
   getProperty,
-  isCallableObject,
   isArrayValue,
+  isCallableObject,
   programRealmCore,
   projectArrayBufferView,
   stringValueOrThrow,
@@ -85,11 +89,14 @@ function inputBytes(
   const range = projectArrayBufferView(input, core.object);
   if (range !== undefined) {
     const bytes = range.bytes;
-    if (bytes !== undefined)
+    if (bytes !== undefined) {
+      if (range.byteOffset === 0 && range.byteLength === bytes.length)
+        return bytes;
       return bytes.subarray(
         range.byteOffset,
         range.byteOffset + range.byteLength,
       );
+    }
   }
   if (allowArrayBuffer) {
     const object = viewObjectValue(input, core.object);
@@ -135,41 +142,59 @@ function unsupportedProperty(
   builtinAccessor(object, key, getter, undefined, core.hooks);
 }
 
+interface DigestState {
+  readonly hash: Hash;
+  finalized: boolean;
+}
+
+const digestState = createPrivateName("node:crypto digest");
+
+function viewDigestState(
+  core: ProgramRealmCore,
+  receiver: unknown,
+): DigestState {
+  let object = viewObjectValue(receiver, core.object);
+  // Shared methods can be borrowed, including by an object with a digest
+  // instance on its prototype chain.
+  while (object !== undefined) {
+    const field = getPrivateElement<ScriptPropertyKey, unknown>(
+      { object, value: receiver },
+      digestState,
+      core.hooks,
+    );
+    if (field.error === "none") return field.value as DigestState;
+    object = object.prototype;
+  }
+  let message =
+    "Cannot read properties of undefined (reading 'Symbol(kFinalized)')";
+  if (receiver === undefined)
+    message = "Cannot read properties of undefined (reading 'Symbol(kState)')";
+  else if (receiver === null)
+    message = "Cannot read properties of null (reading 'Symbol(kState)')";
+  const error = createRuntimeError(core.realm, "type");
+  builtinProperty(error, "message", message, true, true, core.hooks);
+  throw error;
+}
+
+function requireActive(core: ProgramRealmCore, state: DigestState): void {
+  if (state.finalized)
+    fail(core, "error", "Digest already called", "ERR_CRYPTO_HASH_FINALIZED");
+}
+
 function digestView(
   core: ProgramRealmCore,
   hash: Hash,
   hmac: boolean,
-): unknown {
+): RealmObject {
   const object = createObject<ScriptPropertyKey, unknown>(
     digestPrototype(core, hmac),
   );
-  let finalized = false;
-  function requireActive(): void {
-    if (finalized)
-      fail(core, "error", "Digest already called", "ERR_CRYPTO_HASH_FINALIZED");
-  }
-  method(core, object, "update", 2, (receiver, args): unknown => {
-    if (receiver !== object)
-      throw new TypeError("Incompatible digest receiver");
-    requireActive();
-    const data = inputBytes(core, args[0], "data", false);
-    const encoding = args[1];
-    hash.update(data, typeof encoding === "string" ? encoding : undefined);
-    return object;
-  });
-  method(core, object, "digest", 1, (receiver, args): unknown => {
-    if (receiver !== object)
-      throw new TypeError("Incompatible digest receiver");
-    if (!hmac) requireActive();
-    const encoding = args[0];
-    const text = encoding
-      ? stringValueOrThrow(encoding, core.hooks, core.realm)
-      : undefined;
-    const result = hash.digest(text);
-    finalized = true;
-    if (typeof result === "string") return result;
-    return adoptNodeBuffer(core, result);
-  });
+  const state: DigestState = { hash, finalized: false };
+  if (
+    addPrivateField<ScriptPropertyKey, unknown>(object, digestState, state) !==
+    "none"
+  )
+    throw "CRYPTO_DIGEST_STATE_INVARIANT";
   return object;
 }
 
@@ -203,6 +228,43 @@ function digestPrototype(core: ProgramRealmCore, hmac: boolean): RealmObject {
   const prototype = createObject<ScriptPropertyKey, unknown>(
     core.realm.objectPrototype,
   );
+  if (hmac) {
+    const hashPrototype = digestPrototype(core, false);
+    const update = getProperty<ScriptPropertyKey, unknown>(
+      hashPrototype,
+      "update",
+      hashPrototype,
+      core.hooks,
+    );
+    builtinProperty(prototype, "update", update, true, true, core.hooks);
+  } else {
+    method(core, prototype, "update", 2, (receiver, args): unknown => {
+      const state = viewDigestState(core, receiver);
+      requireActive(core, state);
+      const data = inputBytes(core, args[0], "data", false);
+      const encoding = args[1];
+      state.hash.update(
+        data,
+        typeof encoding === "string" ? encoding : undefined,
+      );
+      return receiver;
+    });
+  }
+  method(core, prototype, "digest", 1, (receiver, args): unknown => {
+    const state = viewDigestState(core, receiver);
+    const encoding = args[0];
+    if (hmac && state.finalized)
+      return encoding && encoding !== "buffer"
+        ? ""
+        : adoptNodeBuffer(core, new Uint8Array(0));
+    requireActive(core, state);
+    const text = encoding
+      ? stringValueOrThrow(encoding, core.hooks, core.realm)
+      : undefined;
+    const result = state.hash.digest(text);
+    state.finalized = true;
+    return typeof result === "string" ? result : adoptNodeBuffer(core, result);
+  });
   for (const stream of streamProperties)
     unsupportedProperty(core, prototype, stream, kind + "." + stream);
   if (!hmac) unsupportedProperty(core, prototype, "copy", "Hash.copy");

@@ -128,6 +128,21 @@ export async function run() {
   const bytes = crypto.randomBytes(16);
   if (!(bytes instanceof Buffer) || !Buffer.isBuffer(bytes) || bytes.constructor !== Buffer) return 3;
   const hash = createHash("sha256");
+  const borrowed = createHash("sha256");
+  const hmac = crypto.createHmac("sha256", "key");
+  if (Object.hasOwn(hash, "update") || hash.update !== borrowed.update ||
+      hash.digest !== borrowed.digest || hash.update !== hmac.update) return 7;
+  if (hash.update.call(borrowed, "abc") !== borrowed ||
+      hash.digest.call(borrowed, "hex") !==
+      "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad") return 8;
+  const empty = hmac.digest.call(borrowed);
+  if (!(empty instanceof Buffer) || empty.length !== 0 ||
+      hmac.digest.call(borrowed, "hex") !== "") return 9;
+  try { hash.digest.call(undefined); return 10; }
+  catch (error) {
+    if (!(error instanceof TypeError) || error.message !==
+        "Cannot read properties of undefined (reading 'Symbol(kState)')") return 11;
+  }
   for (const operation of [
     () => hash.copy(),
     () => hash.pipe({}),
