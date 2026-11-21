@@ -38,6 +38,23 @@ test("encodeInto counts UTF-16 units and never splits a scalar", () => {
       assert.deepEqual(actual, expected);
     }
 });
+test("encodeInto resumes at a UTF-16 offset using the same destination", () => {
+  const encoder = new TextEncoder();
+  const text = "ascii\0\u007f\u0080é\u07ff\u0800雪😀\ud800x\udc00";
+  for (let size = 0; size <= 9; size++) {
+    const actual = new Uint8Array(size);
+    const expected = new Uint8Array(size);
+    for (let start = 0; start <= text.length; start++) {
+      actual.fill(0xcc);
+      expected.fill(0xcc);
+      assert.deepEqual(
+        encodeUTF8Into(text, actual, start),
+        encoder.encodeInto(text.slice(start), expected),
+      );
+      assert.deepEqual(actual, expected);
+    }
+  }
+});
 test("decoder follows UTF-8 error recovery and stream boundaries", () => {
   const cases = [
     [0xef, 0xbb, 0xbf, 65],

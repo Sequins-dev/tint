@@ -197,3 +197,39 @@ test("code-unit conversions agree with Node at integer and double boundaries", a
 test("typed native code units preserve conversions and evaluation order", () => {
   verifyHostedFixture(fromCharCodeSource, "string-code-unit-integer");
 });
+
+test("typed native UTF-8 encoding resumes without splitting a surrogate pair", () => {
+  const text = "abé😀\ud800!\udc00\0雪";
+  const expected = new TextEncoder().encode(text);
+  verifyHostedFixture(
+    `import { encodeUTF8Into } from "text-encoding";
+     export function run(): number {
+       const text = ${JSON.stringify(text)};
+       const expected = new Uint8Array([${expected.join(",")}]);
+       const scratch = new Uint8Array(4);
+       let offset = 0;
+       let written = 0;
+       while (offset < text.length) {
+         const chunk = encodeUTF8Into(text, scratch, offset);
+         if (chunk.read === 0) return 1;
+         for (let i = 0; i < chunk.written; i++) {
+           if (scratch[i] !== expected[written + i]) return 2;
+         }
+         offset += chunk.read;
+         written += chunk.written;
+       }
+       return written === expected.length ? 42 : 3;
+     }`,
+    "string-utf8-chunks",
+    [["text-encoding", "packages/foundation/src/text/text-encoding/index.ts"]],
+    [],
+    [],
+    [],
+    {
+      requireTyped: true,
+      managedBytes: 67108864,
+      allocationCapacity: 1048576,
+      rootCapacity: 65536,
+    },
+  );
+});

@@ -4,10 +4,33 @@
 // Run paired rounds under tools/gate/with-lock.sh both.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { createHash as referenceHash } from "node:crypto";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 
 const clock = "packages/native-runtime/src/intrinsics/clock.ts";
-const cases = [
+interface BenchCase {
+  readonly name: string;
+  readonly setup: string;
+  readonly expression: string;
+  readonly iterations: number;
+  readonly expected?: string;
+}
+
+function stringCase(size: number, ascii: boolean): BenchCase {
+  const pattern = "aé雪😀"; // 10 UTF-8 bytes, with a surrogate pair.
+  const input = ascii
+    ? "a".repeat(size)
+    : pattern.repeat(Math.floor(size / 10)) + "a".repeat(size % 10);
+  return {
+    name: `sha512-string-${ascii ? "ascii" : "unicode"}-${size}`,
+    setup: `const input = ${JSON.stringify(input)};`,
+    expression: 'createHash("sha512").update(input).digest("hex")',
+    iterations: size === 64 ? 20000 : 4000,
+    expected: referenceHash("sha512").update(input).digest("hex"),
+  };
+}
+
+const cases: readonly BenchCase[] = [
   {
     name: "sha256-64",
     setup: "const bytes = new Uint8Array(64);",
@@ -20,6 +43,10 @@ const cases = [
     expression: 'createHash("sha512").update(bytes).digest("hex")',
     iterations: 20000,
   },
+  stringCase(64, true),
+  stringCase(64, false),
+  stringCase(1024, true),
+  stringCase(1024, false),
   {
     name: "hmac-sha256-64",
     setup: "const bytes = new Uint8Array(64); const key = new Uint8Array(32);",
@@ -65,7 +92,7 @@ const typedLength =
 const branded =
   typedLength || (process.argv[2] === "build" && process.argv[3] === "branded");
 const body = cases
-  .map(({ name, setup, expression, iterations }) => {
+  .map(({ name, setup, expression, iterations, expected }) => {
     const randomBuffer = branded && name.startsWith("random-");
     const call = randomBuffer
       ? expression.replace("randomBytes", "randomBuffer")
@@ -75,6 +102,7 @@ const body = cases
       : 'typeof result==="string"?result.length:result.length';
     return `{
   ${setup}
+  ${expected === undefined ? "" : `if (${call} !== ${JSON.stringify(expected)}) throw "Wrong hash for ${name}";`}
   let checksum=0;
   for(let i=0;i<${Math.max(64, Math.floor(iterations / 4))};i++){
     const result=${call};

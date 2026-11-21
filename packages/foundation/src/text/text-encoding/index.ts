@@ -12,9 +12,14 @@ import {
 } from "../string-builder.ts";
 /** Native implementations behind standard encoding globals. Node hosts keep their
  * built-in TextEncoder/TextDecoder; these functions are the native runtime core. */
-function scalarAt(value: string, index: number): number {
-  const point = value.codePointAt(index) ?? 0xfffd;
-  return point >= 0xd800 && point <= 0xdfff ? 0xfffd : point;
+function scalarAt(value: string, index: number, first: number): number {
+  if (first < 0xd800 || first > 0xdfff) return first;
+  if (first < 0xdc00 && index + 1 < value.length) {
+    const second = value.charCodeAt((index + 1) >>> 0) & 0xffff;
+    if (second >= 0xdc00 && second <= 0xdfff)
+      return 0x10000 + ((first - 0xd800) << 10) + (second - 0xdc00);
+  }
+  return 0xfffd;
 }
 function width(point: number): number {
   if (point < 0x80) return 1;
@@ -26,18 +31,40 @@ export interface EncodeResult {
   readonly read: number;
   readonly written: number;
 }
+
+function copyAsciiPrefix(value: string, destination: Uint8Array): number {
+  const capacity = destination.length;
+  for (let index = 0; index < value.length; index++) {
+    if (index >= capacity) return index;
+    const byte = value.charCodeAt(index) & 0xffff;
+    if (byte >= 0x80) return index;
+    destination[index] = byte;
+  }
+  return value.length;
+}
+
+/** Start at a UTF-16 offset within the input. Counts are relative to that
+ * offset. A scalar that does not fit is left for the next call. */
 export function encodeUTF8Into(
   value: string,
   destination: Uint8Array,
+  start: number = 0,
 ): EncodeResult {
-  let read = 0,
-    written = 0;
-  while (read < value.length) {
-    const point = scalarAt(value, read),
-      bytes = width(point);
-    if (bytes > destination.length - written) break;
-    if (bytes === 1) destination[written] = point;
-    else if (bytes === 2) {
+  const end = value.length;
+  const capacity = destination.length;
+  let written = start === 0 ? copyAsciiPrefix(value, destination) : 0;
+  let read = start + written;
+  for (; read < end && written < capacity; read++) {
+    const first = value.charCodeAt(read >>> 0) & 0xffff;
+    if (first < 0x80) {
+      destination[written] = first;
+      written++;
+      continue;
+    }
+    const point = scalarAt(value, read, first);
+    const bytes = width(point);
+    if (bytes > capacity - written) break;
+    if (bytes === 2) {
       destination[written] = 0xc0 | (point >>> 6);
       destination[written + 1] = 0x80 | (point & 63);
     } else if (bytes === 3) {
@@ -50,17 +77,23 @@ export function encodeUTF8Into(
       destination[written + 2] = 0x80 | ((point >>> 6) & 63);
       destination[written + 3] = 0x80 | (point & 63);
     }
-    read += point > 0xffff ? 2 : 1;
+    if (point > 0xffff) read++;
     written += bytes;
   }
-  return { read, written };
+  return { read: read - start, written };
 }
 export function encodeUTF8(value: string): Uint8Array {
   let bytes = 0;
-  for (let index = 0; index < value.length;) {
-    const point = scalarAt(value, index);
-    bytes += width(point);
-    index += point > 0xffff ? 2 : 1;
+  let highSurrogate = false;
+  for (let index = 0; index < value.length; index++) {
+    const unit = value.charCodeAt(index) & 0xffff;
+    if (unit < 0x80) bytes++;
+    else if (unit < 0x800) bytes += 2;
+    // The high surrogate already contributed three bytes. A matching low
+    // surrogate brings the pair to four instead of encoding a replacement.
+    else if (highSurrogate && unit >= 0xdc00 && unit <= 0xdfff) bytes++;
+    else bytes += 3;
+    highSurrogate = unit >= 0xd800 && unit < 0xdc00;
   }
   const output = new Uint8Array(bytes);
   encodeUTF8Into(value, output);

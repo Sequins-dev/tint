@@ -91,6 +91,13 @@ held after a leaf returns must refer to stable owned storage. Validate
 actual byte offsets and lengths, including subviews, and preserve Node's
 result brands and input encodings.
 
+Hash and HMAC pass existing byte windows straight to OpenSSL. Tint stores
+native strings as UTF-16. For UTF-8 updates, the shared encoder writes into a
+4 KiB isolate-local scratch window in one pass. OpenSSL consumes each window
+synchronously. The encoder resumes between Unicode scalars and replaces
+unpaired surrogates. Buffer and TextEncoder use the same encoder for their
+owned byte results.
+
 For PBKDF2, validate digest, iterations, length, callback and input types
 on the isolate. Snapshot password and salt into job-owned native storage.
 Submit work through the existing bounded blocking pool and post completion
@@ -163,7 +170,8 @@ in PBKDF2 and provider failure in digest initialization.
   [Typed Buffer comparison](results/node-crypto-darwin-arm64-branded-shared-methods-v1.json) ·
   [Typed byte lookup and Buffer length controls](results/node-crypto-darwin-arm64-typed-byte-hex-v1.md) ·
   [General method-call control](results/node-crypto-darwin-arm64-call-control-v1.md) ·
-  [Short SHA-512 call and allocation breakdown](results/node-crypto-darwin-arm64-sha512-breakdown.md)
+  [Short SHA-512 call and allocation breakdown](results/node-crypto-darwin-arm64-sha512-breakdown.md) ·
+  [UTF-8 string input comparison](results/node-crypto-darwin-arm64-utf8.md)
 
 ## PoC phases
 

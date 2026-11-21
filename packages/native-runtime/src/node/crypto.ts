@@ -1,5 +1,8 @@
 /** Node crypto over the system OpenSSL 3 default provider. */
-import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
+import {
+  encodeUTF8,
+  encodeUTF8Into,
+} from "@tint/foundation/text/text-encoding";
 import {
   ERR_clear_error,
   EVP_get_digestbyname,
@@ -29,7 +32,12 @@ import {
 } from "./openssl.ts";
 import { codedError, codedRangeError } from "./errors.ts";
 import { createWeakSlot, weakSlotKey } from "../intrinsics/weak.ts";
-import { bufferBytes, bufferEncoding, bufferText } from "./buffer-codecs.ts";
+import {
+  bufferBytes,
+  bufferEncoding,
+  bufferText,
+  type NodeBufferEncoding,
+} from "./buffer-codecs.ts";
 export { pbkdf2 } from "./crypto-jobs.ts";
 
 export interface Hash {
@@ -52,6 +60,7 @@ let recentAlgorithm: string | undefined = undefined;
 let recentDigest = 0;
 const encodedDigest = new Uint8Array(64);
 const finalizedSize = new Uint8Array(4);
+const updateScratch = new Uint8Array(4096);
 let spareHash = 0;
 let spareHashDigest = 0;
 let spareHmac = 0;
@@ -149,8 +158,39 @@ function failure(message: string): Error {
   return new Error(message);
 }
 
-function encodeUpdate(data: string, encoding: string | undefined): Uint8Array {
-  const name = encoding === undefined ? undefined : bufferEncoding(encoding);
+function updateBytes(
+  address: number,
+  hmac: boolean,
+  bytes: Uint8Array,
+  length: number,
+): void {
+  const status = hmac
+    ? HMAC_Update(address, bytes, length)
+    : EVP_DigestUpdate(address, bytes, length);
+  if (status !== 1) throw failure("Hash update failed");
+}
+
+function updateString(
+  address: number,
+  hmac: boolean,
+  data: string,
+  encoding: string | undefined,
+): void {
+  const name: NodeBufferEncoding =
+    encoding === undefined || encoding === "utf8"
+      ? "utf8"
+      : (bufferEncoding(encoding) ?? "utf8");
+  if (name === "utf8") {
+    // The encoder splits only between scalars. OpenSSL consumes the scratch
+    // window synchronously and cannot reenter JavaScript.
+    let read = 0;
+    do {
+      const result = encodeUTF8Into(data, updateScratch, read);
+      updateBytes(address, hmac, updateScratch, result.written);
+      read += result.read;
+    } while (read < data.length);
+    return;
+  }
   if (name === "hex" && data.length % 2 !== 0)
     throw codedError(
       "The argument 'encoding' is invalid for data of length " +
@@ -160,7 +200,8 @@ function encodeUpdate(data: string, encoding: string | undefined): Uint8Array {
         "'",
       "ERR_INVALID_ARG_VALUE",
     );
-  return bufferBytes(data, name ?? "utf8");
+  const bytes = bufferBytes(data, name);
+  updateBytes(address, hmac, bytes, bytes.length);
 }
 
 function hexDigit(value: number): number {
@@ -462,12 +503,9 @@ function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
   const hash: Hash = {
     update(data: string | Uint8Array, encoding?: string): Hash {
       const address = activeContext(lifetime);
-      const bytes =
-        typeof data === "string" ? encodeUpdate(data, encoding) : data;
-      const status = lifetime.hmac
-        ? HMAC_Update(address, bytes, bytes.length)
-        : EVP_DigestUpdate(address, bytes, bytes.length);
-      if (status !== 1) throw failure("Hash update failed");
+      if (typeof data === "string")
+        updateString(address, lifetime.hmac, data, encoding);
+      else updateBytes(address, lifetime.hmac, data, data.length);
       return hash;
     },
     digest(encoding?: string): string | Uint8Array {
