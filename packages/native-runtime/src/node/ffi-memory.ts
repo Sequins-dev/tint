@@ -80,6 +80,7 @@ export interface TypedFfiCall {
   readonly address: number;
   readonly mode: () => number;
   readonly numbersOnly: boolean;
+  readonly unaryPointerLeaf: ((input: unknown) => number) | undefined;
   readonly workspace: (mayCallback: boolean) => TypedFfiWorkspace;
   readonly checkNumber: (kind: number, input: number, index: number) => number;
   readonly writeNumber: (

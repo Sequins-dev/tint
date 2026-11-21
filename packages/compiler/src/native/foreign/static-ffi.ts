@@ -256,6 +256,10 @@ function fixedFfiSource(
     arity +
     ")return undefined;\n" +
     "const mode=plan.mode();if(mode===0)return undefined;\n";
+  if (mixed && arity === 1)
+    body +=
+      "const pointerLeaf=plan.unaryPointerLeaf;" +
+      "if(mode===1&&pointerLeaf!==undefined)return pointerLeaf(p0);\n";
   if (!mixed)
     for (let i = 0; i < plans.length; i++) {
       const plan = plans[i];

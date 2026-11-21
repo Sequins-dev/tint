@@ -450,6 +450,25 @@ function invokeScalar(
   }
 }
 
+function invokeUnaryPointerLeaf(
+  core: ProgramRealmCore,
+  binding: Binding,
+  plan: ScalarCallPlan,
+  input: unknown,
+): number {
+  const workspace = acquireScalarWorkspace(binding, plan, false);
+  try {
+    const bytes = workspace.cells[0];
+    if (bytes === undefined) throw "FFI_SCALAR_ARGUMENT_INVARIANT";
+    const loan = writePointerArgument(core, 0, input, bytes);
+    if (loan !== undefined) workspace.loans.push(loan);
+    runScalarFrame(core, binding, workspace.frame, undefined);
+    return readTypedFfiNumber(workspace.result, plan.resultKind);
+  } finally {
+    releaseScalarWorkspace(binding, workspace);
+  }
+}
+
 function nodeFfiTypeTable(core: ProgramRealmCore): FfiObject {
   const object = createObject<ScriptPropertyKey, unknown>(undefined);
   const pairs: string[] = [
@@ -735,6 +754,11 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
                 parameter.kind === 6 ||
                 parameter.kind === 7,
             ),
+            unaryPointerLeaf:
+              plan.parameters.length === 1 && plan.parameters[0]?.pointer
+                ? (input): number =>
+                    invokeUnaryPointerLeaf(core, binding, plan, input)
+                : undefined,
             mode: (): number => {
               if (
                 state.handle === undefined ||

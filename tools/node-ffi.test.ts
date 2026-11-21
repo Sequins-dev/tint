@@ -121,6 +121,7 @@ export function run(): number {
 
   const { lib: leaf, functions: numeric } = dlopen(null, {
     abs: { return: "int32", arguments: ["int32"] },
+    atoi: { return: "int32", arguments: ["buffer"] },
   });
   const definition = { tolower: { return: "int32", arguments: ["int32"] } };
   const runtime = dlopen(null, definition);
@@ -128,6 +129,8 @@ export function run(): number {
   const invalid = (): number => { evaluations++; return 2147483648; };
   try {
     if (numeric.abs(-42) !== 42) return 7;
+    if (numeric.atoi("42") !== 42) return 19;
+    if (numeric.atoi(Buffer.from([0, 52, 51, 0]).subarray(1)) !== 43) return 20;
     if (callNumber(numeric.abs, -41) !== 41) return 10;
     if (callNumber(runtime.functions.tolower, 65) !== 97) return 11;
     if (callNumber(numeric.abs, -40) !== 40) return 12;
