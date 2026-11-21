@@ -1,4 +1,5 @@
 import { nodeFfiSignatureKey, type CCallLayout } from "@tint/abi/c";
+import type { ByteStorage } from "@tint/js-runtime/bytes";
 import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
 import {
   builtinAccessor,
@@ -31,6 +32,7 @@ import {
 import { Cell, DynamicScalarFrame, TARGET_AAPCS64 } from "tint:c/dl";
 import { abort, pthread_self } from "tint:c/ffi-callbacks";
 import { callbackState, external } from "tint:ffi";
+import { byteAddressInto } from "../ffi/address-words.ts";
 import { consoleError } from "../intrinsics/console.ts";
 import {
   allocateCallbackStub,
@@ -133,12 +135,11 @@ import {
   installFfiMemory,
   readScalar,
   stableFfiBacking,
+  writeFfiBigInt,
   writeScalar,
 } from "./ffi-memory.ts";
 
-const wordMask = 0xffffffffn;
 const maxPointer = 0xffffffffffffffffn;
-const maxSigned = 0x7fffffffffffffffn;
 
 function word(low: number, high: number): bigint {
   return (BigInt(high) << 32n) | BigInt(low);
@@ -155,48 +156,72 @@ function invalidArgument(
     "Argument " + index + " " + detail,
   );
 }
-interface FfiPointer {
-  readonly low: number;
-  readonly high: number;
-  readonly bytes: Uint8Array | undefined;
+function lendPointer(
+  core: ProgramRealmCore,
+  storage: ByteStorage,
+  bytes: Uint8Array,
+  offset: number,
+  destination: Uint8Array,
+): Uint8Array {
+  const backing = stableFfiBacking(core, storage, bytes);
+  byteAddressInto(backing, destination);
+  if (offset !== 0) {
+    const cell = Cell.view(destination);
+    const low = cell.halves.low + offset;
+    cell.halves.low = low % 4294967296;
+    if (low >= 4294967296) cell.halves.high = cell.halves.high + 1;
+  }
+  return backing;
 }
 
-function ffiPointer(bits: bigint, bytes: Uint8Array | undefined): FfiPointer {
-  return {
-    low: Number(bits & wordMask),
-    high: Number((bits >> 32n) & wordMask),
-    bytes,
-  };
-}
-
-function pointerArgument(
+/** Keep the storage owner rooted through the call. The native frame gets
+ * the exact backing address and offset, without constructing a subview or
+ * routing through a JavaScript BigInt. */
+function writePointerArgument(
   core: ProgramRealmCore,
   index: number,
   argument: unknown,
-  stable: boolean,
-): FfiPointer {
-  if (argument === undefined || argument === null)
-    return ffiPointer(0n, undefined);
+  destination: Uint8Array,
+): Uint8Array | undefined {
+  const cell = Cell.view(destination);
+  if (argument === undefined || argument === null) {
+    cell.u64 = 0;
+    return undefined;
+  }
   if (typeof argument === "bigint") {
-    if (argument < 0n || argument > maxPointer)
+    if (!writeFfiBigInt(cell, argument, false))
       return invalidArgument(
         core,
         index,
         "must be a non-negative pointer bigint",
       );
-    return ffiPointer(argument, undefined);
+    return undefined;
   }
   if (typeof argument === "string") {
     ffiString(core, argument, "Argument " + index);
     const encoded = encodeUTF8(argument);
-    const terminated = stable
-      ? external(encoded.length + 1)
-      : new Uint8Array(encoded.length + 1);
+    const terminated = external(encoded.length + 1);
     terminated.set(encoded);
-    return ffiPointer(0n, terminated);
+    byteAddressInto(terminated, destination);
+    return terminated;
   }
   const object = viewObjectValue(argument, core.object);
   if (object !== undefined) {
+    const array = object.internalTypedArrayData;
+    if (array !== undefined && array.kind === "Uint8") {
+      const storage = array.storage;
+      if (storage.kind === "ordinary") {
+        const bytes = storage.data,
+          length = array.length,
+          offset = array.byteOffset;
+        if (
+          bytes !== undefined &&
+          length !== undefined &&
+          offset + length <= bytes.length
+        )
+          return lendPointer(core, storage, bytes, offset, destination);
+      }
+    }
     const window = projectArrayBufferViewRange(object);
     if (window !== undefined) {
       if (window.kind === "detached")
@@ -207,28 +232,32 @@ function pointerArgument(
         );
       const bytes = window.bytes,
         storage = window.storage;
-      if (storage.kind === "shared")
-        return ffiPointer(
-          ffiSharedAddress(core, storage, window.byteOffset, window.byteLength),
-          undefined,
+      if (storage.kind === "shared") {
+        const address = ffiSharedAddress(
+          core,
+          storage,
+          window.byteOffset,
+          window.byteLength,
         );
-      if (bytes !== undefined) {
-        const backing = stableFfiBacking(core, storage, bytes);
-        return ffiPointer(
-          0n,
-          backing.subarray(
-            window.byteOffset,
-            window.byteOffset + window.byteLength,
-          ),
-        );
+        if (!writeFfiBigInt(cell, address, false))
+          throw "FFI_SHARED_ADDRESS_INVARIANT";
+        return undefined;
       }
+      if (bytes !== undefined)
+        return lendPointer(
+          core,
+          storage,
+          bytes,
+          window.byteOffset,
+          destination,
+        );
     }
     const storage = object.internalArrayBufferData;
     if (storage !== undefined) {
       const bytes = storage.data;
       if (bytes === undefined)
         return invalidArgument(core, index, "is a detached ArrayBuffer");
-      return ffiPointer(0n, stableFfiBacking(core, storage, bytes));
+      return lendPointer(core, storage, bytes, 0, destination);
     }
   }
   return invalidArgument(
@@ -331,17 +360,13 @@ function invokeScalar(
         bytes = cells[index];
       if (parameter === undefined || bytes === undefined)
         throw "FFI_SCALAR_ARGUMENT_INVARIANT";
-      const cell = Cell.view(bytes);
-      let argument = args[index];
+      const argument = args[index];
       if (parameter.pointer) {
-        const pointer = pointerArgument(core, index, argument, true);
-        const loan = pointer.bytes;
-        if (loan === undefined) argument = word(pointer.low, pointer.high);
-        else {
-          loans.push(loan);
-          argument = stableAddressWords(loan);
-        }
+        const loan = writePointerArgument(core, index, argument, bytes);
+        if (loan !== undefined) loans.push(loan);
+        continue;
       }
+      const cell = Cell.view(bytes);
       // A narrow stack value shares the cell with neighbouring operands.
       // Register cells own all eight bytes and may hold a prior result.
       if (parameter.register) cell.u64 = 0;

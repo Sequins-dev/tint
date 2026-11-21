@@ -5,6 +5,7 @@ import {
   builtinFunction,
   createDataProperty,
   projectArrayBufferViewRange,
+  viewBigIntValue,
   viewObjectValue,
   type ObjectCall,
   type ProgramRealmCore,
@@ -115,6 +116,36 @@ export function checkedFfiNumber(
   return value;
 }
 
+/** Write an in-range BigInt directly from its canonical base-2^26 digits.
+ * Converting the halves through JS bitwise BigInt operators would allocate
+ * intermediate values on every pointer or 64-bit argument. */
+export function writeFfiBigInt(
+  cell: View<Cell>,
+  input: unknown,
+  signed: boolean,
+): boolean {
+  const value = viewBigIntValue(input);
+  if (value === undefined) return false;
+  const integer = value.integer;
+  const digits = integer.digits;
+  const negative = integer.negative;
+  if (digits.length > 3 || (negative && !signed)) return false;
+  const third = digits[2] ?? 0;
+  if (third >= 4096) return false;
+  const second = digits[1] ?? 0;
+  const low = (digits[0] ?? 0) + (second % 64) * 67108864;
+  const high = Math.floor(second / 64) + third * 1048576;
+  if (
+    signed &&
+    high >= 2147483648 &&
+    (!negative || high !== 2147483648 || low !== 0)
+  )
+    return false;
+  cell.halves.low = negative ? (4294967296 - low) % 4294967296 : low;
+  cell.halves.high = negative ? 4294967295 - high + (low === 0 ? 1 : 0) : high;
+  return true;
+}
+
 export function writeScalar(
   core: ProgramRealmCore,
   cell: View<Cell>,
@@ -123,21 +154,15 @@ export function writeScalar(
   argumentIndex: number = -1,
 ): void {
   if (kind === 6 || kind === 7) {
-    const bits =
-      typeof input === "bigint"
-        ? input
-        : typeof input === "number" && Number.isSafeInteger(input)
-          ? BigInt(input)
-          : undefined;
     const signed = kind === 6;
-    if (
-      bits === undefined ||
-      bits < (signed ? -0x8000000000000000n : 0n) ||
-      bits > (signed ? 0x7fffffffffffffffn : maxPointer)
-    )
+    if (typeof input === "number") {
+      if (!Number.isSafeInteger(input) || (!signed && input < 0))
+        return invalidScalar(core, kind, argumentIndex);
+      const high = Math.floor(input / 4294967296);
+      cell.halves.low = input - high * 4294967296;
+      cell.halves.high = high < 0 ? high + 4294967296 : high;
+    } else if (!writeFfiBigInt(cell, input, signed))
       return invalidScalar(core, kind, argumentIndex);
-    cell.halves.low = Number(bits & 0xffffffffn);
-    cell.halves.high = Number((bits >> 32n) & 0xffffffffn);
     return;
   }
   const value = checkedFfiNumber(core, kind, input, argumentIndex);
