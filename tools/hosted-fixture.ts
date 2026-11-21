@@ -104,6 +104,7 @@ type GeneralLowering = ReturnType<typeof createGeneralLowering>;
 let generalLowering: GeneralLowering | undefined;
 let nodeGeneralLowering: GeneralLowering | undefined;
 const eventLoopClockModule = "packages/native-runtime/src/intrinsics/clock.ts";
+const nodeIsolateStackBytes = 16777216;
 /** General (JavaScript-semantics) lowering for application code the typed
  * pipeline rejects, with console output through the hosted fs binding.
  * TINT_GENERAL_FALLBACK=0 disables retries while retaining the worker image
@@ -276,7 +277,7 @@ function buildHostedFixture(
       ? {
           managedBytes: options.managedBytes,
           nodeHosted: options.nodeWorkerLibrary === true,
-          stackBytes: options.stackBytes ?? 16777216,
+          stackBytes: options.stackBytes ?? nodeIsolateStackBytes,
         }
       : undefined;
   const needsNodeLoop =
@@ -635,7 +636,11 @@ function buildHostedFixture(
     // Copying GC metadata needs a forwarding word per semispace allocation unit.
     allocationCapacity: options.allocationCapacity,
     rootCapacity: options.rootCapacity ?? 4096,
-    stackBytes: options.stackBytes ?? 1048576,
+    // The Node realm's module initializer needs more stack on x86-64 than
+    // the compact typed fixture default. Use the Node isolate stack budget.
+    stackBytes:
+      options.stackBytes ??
+      (options.nodeCrypto === undefined ? 1048576 : nodeIsolateStackBytes),
     identifier: "tint-hosted-" + name,
     ...(options.maxSpecializations === undefined
       ? {}
