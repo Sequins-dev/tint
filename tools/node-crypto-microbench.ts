@@ -104,20 +104,19 @@ function parse(text: string): { name: string; ns: number; checksum: number }[] {
 
 if (process.argv[2] === "build") {
   const publicDriver = process.argv[3] === "public";
+  const dependencies: [string, string][] = [["clock", clock]];
+  if (!publicDriver)
+    dependencies.push([
+      "node:crypto",
+      "packages/native-runtime/src/node/crypto.ts",
+    ]);
   process.env.TINT_BUILD_ONLY = "1";
   if (!publicDriver) process.env.TINT_GENERAL_FALLBACK = "0";
   verifyHostedFixture(
     `${imports}\nimport {monotonicMilliseconds} from "clock";
      export function run():number { ${body} return 42; }`,
     publicDriver ? "node-crypto-public-microbench" : "node-crypto-microbench",
-    [
-      ["clock", clock],
-      ...(publicDriver
-        ? []
-        : ([
-            ["node:crypto", "packages/native-runtime/src/node/crypto.ts"],
-          ] as const)),
-    ],
+    dependencies,
     [],
     [],
     publicDriver

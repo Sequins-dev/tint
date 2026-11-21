@@ -1338,7 +1338,6 @@ import {createCryptoJobHost,runCryptoBlockingHelper,type CryptoJobs} from "node-
     crypto === undefined
       ? ""
       : `const nodeCrypto=createNodeCryptoModules(programRealmCore(),toRealmError);
- createDataProperty<ScriptPropertyKey,unknown>(object,"Buffer",nodeCrypto.exportValue(nodeCrypto.buffer,"Buffer"),hooks);
  ${crypto.commonJS ? 'createDataProperty<ScriptPropertyKey,unknown>(object,"require",nodeCrypto.require,hooks);' : ""}`;
   const builtinResolution =
     crypto === undefined

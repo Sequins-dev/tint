@@ -9,14 +9,12 @@ import {
   createObject,
   createRuntimeError,
   createTypedArrayView,
-  defineOwnProperty,
   getProperty,
   hasProperty,
   hasPrototype,
   installProgramTypedArrayIntrinsics,
   lengthOfArrayLike,
   numberValue,
-  programRealmCore,
   projectArrayBufferViewRange,
   rejectUnsupportedExecution,
   viewObjectValue,
@@ -340,35 +338,3 @@ export function installNodeBuffer(core: ProgramRealmCore): RealmObject {
   builtinProperty(core.object, "Buffer", constructor, true, true, hooks);
   return constructor;
 }
-
-export const Buffer: unknown = installNodeBuffer(programRealmCore());
-
-function bufferConstants(core: ProgramRealmCore): RealmObject {
-  const object = createObject<ScriptPropertyKey, unknown>(
-    core.realm.objectPrototype,
-  );
-  function constant(name: string, value: number): void {
-    if (
-      defineOwnProperty<ScriptPropertyKey, unknown>(
-        object,
-        name,
-        {
-          fields: 51,
-          value,
-          writable: false,
-          enumerable: true,
-          configurable: false,
-          get: undefined,
-          set: undefined,
-        },
-        core.hooks,
-      ) !== "accepted"
-    )
-      throw "BUFFER_CONSTANT_INVARIANT";
-  }
-  constant("MAX_LENGTH", Number.MAX_SAFE_INTEGER);
-  constant("MAX_STRING_LENGTH", 536870888);
-  return object;
-}
-
-export const constants: unknown = bufferConstants(programRealmCore());
