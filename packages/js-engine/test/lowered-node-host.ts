@@ -56,12 +56,22 @@ export function printExpression(node: Expression): string {
           .map((property) => {
             if (property.kind === "spread")
               return "..." + printExpression(property.value);
-            if (property.accessor !== undefined || property.method === true)
-              fail("object method");
             const key =
               property.keyExpression === undefined
                 ? stringLiteral(property.name)
                 : "[" + printExpression(property.keyExpression) + "]";
+            if (property.accessor !== undefined) fail("object accessor");
+            if (property.method === true) {
+              const method = property.value;
+              if (method.kind !== "function-expression") fail("object method");
+              return (
+                key +
+                "(" +
+                method.parameters.map(parameterName).join(",") +
+                ")" +
+                printBlock(method.body.statements)
+              );
+            }
             return key + ":" + printExpression(property.value);
           })
           .join(",") +

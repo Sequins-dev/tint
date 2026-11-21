@@ -51,6 +51,7 @@ import {
   type Span,
   type TypeNode,
   type PropertySignature,
+  type ObjectProperty,
   type ClassDefinition,
   type ClassElement,
 } from "@tint/typescript/syntax";
@@ -91,7 +92,73 @@ interface NumericLeaf {
   readonly mutable: boolean;
 }
 
-type NumericBinding = "mutable" | "constant" | number;
+interface NumericRecord {
+  readonly kind: "numeric-record";
+  readonly fields: ReadonlySet<string>;
+  readonly methods: ReadonlyMap<string, number>;
+}
+type NumericBinding =
+  | "mutable"
+  | "constant"
+  | "string"
+  | number
+  | { readonly kind: "numeric-array"; readonly length: number }
+  | {
+      readonly kind: "numeric-factory";
+      readonly arguments: number;
+      readonly closureArguments: number;
+    }
+  | NumericRecord;
+
+function numericRecord(
+  object: Expression,
+  bindings: ReadonlyMap<string, NumericBinding>,
+): NumericRecord | undefined {
+  if (object.kind !== "identifier") return undefined;
+  const binding = bindings.get(object.name);
+  return typeof binding === "object" && binding.kind === "numeric-record"
+    ? binding
+    : undefined;
+}
+function numericMember(
+  node: Expression,
+  bindings: ReadonlyMap<string, NumericBinding>,
+): boolean {
+  return (
+    node.kind === "member" &&
+    !node.optional &&
+    !node.private &&
+    numericRecord(node.object, bindings)?.fields.has(node.property) === true
+  );
+}
+function numericArrayRead(
+  node: Expression,
+  bindings: ReadonlyMap<string, NumericBinding>,
+): boolean {
+  if (node.kind !== "index" || node.optional) return false;
+  const object = node.object;
+  if (object.kind !== "identifier") return false;
+  const array = bindings.get(object.name);
+  if (typeof array !== "object" || array.kind !== "numeric-array") return false;
+  let index = node.index;
+  while (index.kind === "group") index = index.expression;
+  if (index.kind === "number")
+    return (
+      Number.isInteger(index.value) &&
+      index.value >= 0 &&
+      index.value < array.length
+    );
+  if (index.kind !== "binary" || index.operator !== "&") return false;
+  const mask = index.right;
+  return (
+    mask.kind === "number" &&
+    Number.isInteger(mask.value) &&
+    mask.value >= 0 &&
+    mask.value <= 2147483647 &&
+    mask.value < array.length &&
+    numericLeafExpression(index.left, bindings)
+  );
+}
 
 /** These expressions cannot call user code once the parameters are numbers. */
 function numericLeafExpression(
@@ -107,24 +174,47 @@ function numericLeafExpression(
     }
     case "group":
       return numericLeafExpression(node.expression, bindings);
+    case "member":
+      return numericMember(node, bindings);
+    case "index":
+      return numericArrayRead(node, bindings);
     case "unary":
       return (
         (node.operator === "+" || node.operator === "-") &&
         numericLeafExpression(node.operand, bindings)
       );
     case "binary":
+      if (node.operator === "??")
+        return (
+          numericArrayRead(node.left, bindings) &&
+          numericLeafExpression(node.right, bindings)
+        );
       return (
         (node.operator === "+" ||
           node.operator === "-" ||
           node.operator === "*" ||
-          node.operator === "/") &&
+          node.operator === "/" ||
+          node.operator === "%" ||
+          node.operator === "&" ||
+          node.operator === "|" ||
+          node.operator === "^" ||
+          node.operator === "<<" ||
+          node.operator === ">>" ||
+          node.operator === ">>>") &&
         numericLeafExpression(node.left, bindings) &&
         numericLeafExpression(node.right, bindings)
       );
     case "call": {
       const callee = node.callee;
-      if (callee.kind !== "identifier" || node.optional) return false;
-      const arity = bindings.get(callee.name);
+      if (node.optional) return false;
+      const arity =
+        callee.kind === "identifier"
+          ? bindings.get(callee.name)
+          : callee.kind === "member" && !callee.optional && !callee.private
+            ? numericRecord(callee.object, bindings)?.methods.get(
+                callee.property,
+              )
+            : undefined;
       return (
         typeof arity === "number" &&
         node.arguments.length === arity &&
@@ -1657,15 +1747,18 @@ function lowerScriptEntry(
   }
   function numericLeaf(
     initializer: Expression | undefined,
+    outer: ReadonlyMap<string, NumericBinding> | undefined = undefined,
   ): (Expression & { readonly kind: "arrow" }) | undefined {
     if (initializer === undefined) return undefined;
     let node = initializer;
     while (node.kind === "group") node = node.expression;
+    if (node.kind !== "arrow" && node.kind !== "function-expression")
+      return undefined;
+    const typeParameters = node.typeParameters;
     if (
-      (node.kind !== "arrow" && node.kind !== "function-expression") ||
       node.async ||
       node.returnType !== undefined ||
-      node.typeParameters !== undefined ||
+      (typeParameters !== undefined && typeParameters.length !== 0) ||
       (node.kind === "function-expression" &&
         (node.generator ||
           node.receiver !== undefined ||
@@ -1679,17 +1772,29 @@ function lowerScriptEntry(
       const statement = body.statements[0];
       if (statement?.kind === "return") returned = statement.expression;
     }
-    if (returned === undefined) return undefined;
+    const result = returned;
+    if (result === undefined) return undefined;
     const bindings = new Map<string, NumericBinding>();
     const parameters = numericParameters(node.parameters, bindings);
-    if (parameters === undefined || !numericLeafExpression(returned, bindings))
+    if (parameters === undefined) return undefined;
+    if (outer !== undefined)
+      for (const [name, binding] of outer)
+        if (
+          !bindings.has(name) &&
+          (node.kind === "arrow" || name !== "arguments")
+        )
+          bindings.set(name, binding);
+    if (
+      !numericLeafExpression(result, bindings) ||
+      collectTailCalls(body, { strict: true }).size !== 0
+    )
       return undefined;
     return {
       ...at(node),
       kind: "arrow",
       parameters,
       returnType: named("number"),
-      body: returned,
+      body: result,
     };
   }
   function numericParameters(
@@ -1724,7 +1829,12 @@ function lowerScriptEntry(
     )
       return false;
     const target = node.target;
-    if (target.kind !== "identifier" || bindings.get(target.name) !== "mutable")
+    if (
+      !(
+        target.kind === "identifier" && bindings.get(target.name) === "mutable"
+      ) &&
+      !numericMember(target, bindings)
+    )
       return false;
     if (node.kind === "update") return true;
     if (
@@ -1736,6 +1846,101 @@ function lowerScriptEntry(
     )
       return false;
     return numericLeafExpression(node.value, bindings);
+  }
+  /** Infer a record layout only for fresh, nonescaping literals whose fields
+   * remain numeric and whose methods can only observe that fixed receiver. */
+  function numericObjectLiteral(
+    node: Expression & { readonly kind: "object" },
+    outer: ReadonlyMap<string, NumericBinding>,
+  ):
+    | { readonly value: Expression; readonly binding: NumericRecord }
+    | undefined {
+    const seen = new Set<string>();
+    const fields = new Set<string>();
+    const methods = new Map<string, number>();
+    const properties: PropertySignature[] = [];
+    for (const property of node.properties) {
+      if (
+        property === undefined ||
+        property.kind === "spread" ||
+        property.keyExpression !== undefined ||
+        property.prototypeSetter ||
+        property.accessor !== undefined ||
+        seen.has(property.name)
+      )
+        return undefined;
+      seen.add(property.name);
+      if (property.method) continue;
+      if (!numericLeafExpression(property.value, outer)) return undefined;
+      fields.add(property.name);
+      properties.push({
+        ...at(property),
+        name: property.name,
+        type: named("number"),
+        readonly: false,
+      });
+    }
+    const receiverType: TypeNode = { ...at(node), kind: "object", properties };
+    const typedProperties: ObjectProperty[] = [];
+    for (const property of node.properties) {
+      if (property === undefined || property.kind === "spread")
+        throw "SCRIPT_NUMERIC_RECORD_PROPERTY_INVARIANT";
+      if (!property.method) {
+        typedProperties.push(property);
+        continue;
+      }
+      const method = property.value;
+      if (method.kind !== "function-expression") return undefined;
+      const typeParameters = method.typeParameters;
+      if (
+        method.generator ||
+        method.async ||
+        method.returnType !== undefined ||
+        (typeParameters !== undefined && typeParameters.length !== 0)
+      )
+        return undefined;
+      const bindings = new Map<string, NumericBinding>();
+      const parameters = numericParameters(method.parameters, bindings);
+      if (parameters === undefined) return undefined;
+      for (const [name, binding] of outer)
+        if (name !== "arguments" && !bindings.has(name))
+          bindings.set(name, binding);
+      const receiver = "\0numericReceiver";
+      bindings.set(receiver, {
+        kind: "numeric-record",
+        fields,
+        methods: new Map<string, number>(),
+      });
+      const checked = rewriteModule(
+        { ...at(method), imports: [], statements: [method.body] },
+        {
+          expression: (value, _original) =>
+            value.kind === "this" ? id(receiver, value) : value,
+        },
+      ).statements[0];
+      const statements = method.body.statements;
+      if (
+        checked === undefined ||
+        statements[statements.length - 1]?.kind !== "return" ||
+        !numericReturnTree(checked, bindings) ||
+        collectTailCalls(method.body, { strict: true }).size !== 0
+      )
+        return undefined;
+      methods.set(property.name, parameters.length);
+      typedProperties.push({
+        ...property,
+        value: {
+          ...method,
+          receiver: receiverType,
+          parameters,
+          returnType: named("number"),
+        },
+      });
+    }
+    return {
+      value: { ...node, properties: typedProperties },
+      binding: { kind: "numeric-record", fields, methods },
+    };
   }
   function numericDeclarations(
     node: Statement,
@@ -1759,7 +1964,60 @@ function lowerScriptEntry(
         return undefined;
       const initial = declaration.initializer;
       if (initial === undefined) return undefined;
-      const leaf = node.mode === "const" ? numericLeaf(initial) : undefined;
+      if (node.mode === "const" && numericString(initial, bindings)) {
+        bindings.set(declaration.name, "string");
+        declarations.push({ ...declaration, type: named("string") });
+        continue;
+      }
+      if (
+        node.mode === "const" &&
+        initial.kind === "call" &&
+        !initial.optional
+      ) {
+        const callee = initial.callee;
+        const factory =
+          callee.kind === "identifier" ? bindings.get(callee.name) : undefined;
+        if (
+          typeof factory === "object" &&
+          factory.kind === "numeric-factory" &&
+          initial.arguments.length === factory.arguments &&
+          initial.arguments.every(
+            (item) =>
+              item !== undefined && numericLeafExpression(item, bindings),
+          )
+        ) {
+          bindings.set(declaration.name, factory.closureArguments);
+          declarations.push(declaration);
+          continue;
+        }
+      }
+      if (node.mode === "const" && initial.kind === "array") {
+        if (
+          !initial.elements.every(
+            (item) =>
+              item !== undefined && numericLeafExpression(item, bindings),
+          )
+        )
+          return undefined;
+        bindings.set(declaration.name, {
+          kind: "numeric-array",
+          length: initial.elements.length,
+        });
+        declarations.push({
+          ...declaration,
+          type: { ...at(initial), kind: "array", element: named("number") },
+        });
+        continue;
+      }
+      if (node.mode === "const" && initial.kind === "object") {
+        const numeric = numericObjectLiteral(initial, bindings);
+        if (numeric === undefined) return undefined;
+        bindings.set(declaration.name, numeric.binding);
+        declarations.push({ ...declaration, initializer: numeric.value });
+        continue;
+      }
+      const leaf =
+        node.mode === "const" ? numericLeaf(initial, bindings) : undefined;
       if (leaf !== undefined) {
         bindings.set(declaration.name, leaf.parameters.length);
         declarations.push({ ...declaration, initializer: leaf });
@@ -1774,9 +2032,629 @@ function lowerScriptEntry(
     }
     return { ...node, declarations };
   }
+  function numericString(
+    node: Expression,
+    bindings: ReadonlyMap<string, NumericBinding>,
+  ): boolean {
+    switch (node.kind) {
+      case "string":
+        return true;
+      case "identifier":
+        return bindings.get(node.name) === "string";
+      case "group":
+        return numericString(node.expression, bindings);
+      case "conditional":
+        return (
+          numericTest(node.test, bindings) &&
+          numericString(node.consequent, bindings) &&
+          numericString(node.alternate, bindings)
+        );
+      default:
+        return false;
+    }
+  }
+  function numericTest(
+    node: Expression,
+    bindings: ReadonlyMap<string, NumericBinding>,
+  ): boolean {
+    if (node.kind === "group") return numericTest(node.expression, bindings);
+    if (node.kind !== "binary") return false;
+    const equality = node.operator === "===" || node.operator === "!==";
+    if (
+      equality &&
+      numericString(node.left, bindings) &&
+      numericString(node.right, bindings)
+    )
+      return true;
+    return (
+      (equality || ["<", "<=", ">", ">="].includes(node.operator)) &&
+      numericLeafExpression(node.left, bindings) &&
+      numericLeafExpression(node.right, bindings)
+    );
+  }
+  function numericLoopAction(
+    node: Statement,
+    bindings: Map<string, NumericBinding>,
+  ): Statement | undefined {
+    if (node.kind === "expression")
+      return numericWrite(node.expression, bindings) ? node : undefined;
+    if (node.kind === "variable") return numericDeclarations(node, bindings);
+    if (node.kind === "if") {
+      if (!numericTest(node.test, bindings)) return undefined;
+      const consequent = numericLoopAction(node.consequent, bindings);
+      if (consequent === undefined) return undefined;
+      if (node.alternate === undefined) return { ...node, consequent };
+      const alternate = numericLoopAction(node.alternate, bindings);
+      return alternate === undefined
+        ? undefined
+        : { ...node, consequent, alternate };
+    }
+    if (node.kind !== "block") return undefined;
+    const local = new Map<string, NumericBinding>();
+    for (const [name, binding] of bindings) local.set(name, binding);
+    const statements: Statement[] = [];
+    for (const child of node.statements) {
+      if (child === undefined) return undefined;
+      const step = numericLoopAction(child, local);
+      if (step === undefined) return undefined;
+      statements.push(step);
+    }
+    return { ...node, statements };
+  }
+  function numericReturnTree(
+    node: Statement,
+    bindings: ReadonlyMap<string, NumericBinding>,
+  ): boolean {
+    switch (node.kind) {
+      case "return":
+        return (
+          node.expression !== undefined &&
+          numericLeafExpression(node.expression, bindings)
+        );
+      case "block":
+        return node.statements.every(
+          (child) => child !== undefined && numericReturnTree(child, bindings),
+        );
+      case "if":
+        return (
+          numericTest(node.test, bindings) &&
+          numericReturnTree(node.consequent, bindings) &&
+          (node.alternate === undefined ||
+            numericReturnTree(node.alternate, bindings))
+        );
+      default:
+        return false;
+    }
+  }
+  function numericRestArguments(
+    declaration: Statement & { readonly kind: "function" },
+    rest: Parameter,
+    owner: BlockStatement,
+    body: BlockStatement,
+    parameters: Parameter[],
+    bindings: Map<string, NumericBinding>,
+    outer: ReadonlyMap<string, NumericBinding>,
+  ): BlockStatement | undefined {
+    if (
+      rest.kind === "pattern-parameter" ||
+      rest.type !== undefined ||
+      bindings.has(rest.name)
+    )
+      return undefined;
+    const restName = rest.name;
+    const counts = new Set<number>();
+    rewriteModule(
+      { ...at(owner), imports: [], statements: owner.statements },
+      {
+        expression: (value, _original) => {
+          if (value.kind !== "call") return value;
+          const callee = value.callee;
+          if (callee.kind === "identifier" && callee.name === declaration.name)
+            counts.add(
+              value.arguments.some((argument) => argument?.kind === "spread")
+                ? -1
+                : value.arguments.length,
+            );
+          return value;
+        },
+      },
+    );
+    if (counts.size !== 1) return undefined;
+    let count = -1;
+    for (const observed of counts) count = observed;
+    const length = count - parameters.length;
+    if (length < 0 || length > 8) return undefined;
+    const slots: string[] = [];
+    for (let i = 0; i < length; i++) {
+      let name = "$restValue" + serial++;
+      while (bindings.has(name) || outer.has(name) || name === restName)
+        name = "$restValue" + serial++;
+      slots.push(name);
+      bindings.set(name, "constant");
+      parameters.push({
+        ...at(rest),
+        name,
+        type: named("number"),
+        rest: false,
+        optional: false,
+      });
+    }
+    function slot(value: Expression): string | undefined {
+      if (value.kind !== "index" || value.optional) return undefined;
+      const object = value.object,
+        index = value.index;
+      if (
+        object.kind !== "identifier" ||
+        object.name !== restName ||
+        index.kind !== "number" ||
+        !Number.isInteger(index.value) ||
+        index.value < 0
+      )
+        return undefined;
+      return slots[index.value];
+    }
+    // Packed numeric arguments have an own element at every index before
+    // length. Other accesses keep the normal rest object and its prototype.
+    const rewritten = rewriteModule(
+      { ...at(body), imports: [], statements: [body] },
+      {
+        hashes: true,
+        expression: (value, original) => {
+          const name = slot(original);
+          if (name !== undefined) return id(name, original);
+          if (value.kind === "member" && !value.optional) {
+            const object = value.object;
+            if (
+              object.kind === "identifier" &&
+              object.name === restName &&
+              value.property === "length"
+            )
+              return scalarNumber(length, value);
+          }
+          if (
+            value.kind === "binary" &&
+            value.operator === "??" &&
+            original.kind === "binary" &&
+            slot(original.left) !== undefined
+          )
+            return value.left;
+          return value;
+        },
+      },
+    ).statements[0];
+    return rewritten?.kind === "block" ? rewritten : undefined;
+  }
+  /** Infer a native signature when all inputs, captures and return paths
+   * stay numeric, including calls to the function's own unchanged binding. */
+  function numericClosedFunction(
+    node: Statement,
+    outer: Map<string, NumericBinding>,
+    owner: BlockStatement,
+  ): Statement | undefined {
+    if (node.kind !== "function") return undefined;
+    const typeParameters = node.typeParameters;
+    if (
+      node.generator ||
+      node.async ||
+      node.returnType !== undefined ||
+      (typeParameters !== undefined && typeParameters.length !== 0) ||
+      node.name === "arguments" ||
+      outer.has(node.name)
+    )
+      return undefined;
+    const body = node.body;
+    if (
+      body.kind !== "block" ||
+      body.statements[body.statements.length - 1]?.kind !== "return" ||
+      collectTailCalls(body, { strict: true }).size !== 0
+    )
+      return undefined;
+    const bindings = new Map<string, NumericBinding>();
+    const last = node.parameters[node.parameters.length - 1];
+    const rest = last?.rest ? last : undefined;
+    let restName: string | undefined;
+    if (rest !== undefined) {
+      if (rest.kind === "pattern-parameter") return undefined;
+      restName = rest.name;
+    }
+    const parameters = numericParameters(
+      rest === undefined ? node.parameters : node.parameters.slice(0, -1),
+      bindings,
+    );
+    if (parameters === undefined || bindings.has(node.name)) return undefined;
+    const implementation =
+      rest === undefined
+        ? body
+        : numericRestArguments(
+            node,
+            rest,
+            owner,
+            body,
+            parameters,
+            bindings,
+            outer,
+          );
+    if (implementation === undefined) return undefined;
+    for (const [name, binding] of outer)
+      if (!bindings.has(name) && name !== "arguments" && name !== restName)
+        bindings.set(name, binding);
+    const returned = implementation.statements[0];
+    if (
+      rest === undefined &&
+      implementation.statements.length === 1 &&
+      returned?.kind === "return"
+    ) {
+      const closure = numericLeaf(returned.expression, bindings);
+      if (closure !== undefined) {
+        outer.set(node.name, {
+          kind: "numeric-factory",
+          arguments: parameters.length,
+          closureArguments: closure.parameters.length,
+        });
+        const returnedClosure: Statement = { ...returned, expression: closure };
+        const factoryBody: BlockStatement = {
+          ...implementation,
+          statements: [returnedClosure],
+        };
+        return {
+          ...node,
+          parameters,
+          returnType: {
+            ...at(closure),
+            kind: "function",
+            parameters: closure.parameters,
+            returnType: named("number"),
+          },
+          body: factoryBody,
+        };
+      }
+    }
+    bindings.set(node.name, parameters.length);
+    if (!numericReturnTree(implementation, bindings)) return undefined;
+    outer.set(node.name, parameters.length);
+    return {
+      ...node,
+      parameters,
+      body: implementation,
+      returnType: named("number"),
+    };
+  }
+  /** Counted loops use a word counter when the bound is an exact nonnegative
+   * int32. A four-lane block preserves order, with the original loop for any
+   * Number bound outside that lane. The surrounding analysis proves the
+   * body cannot call user code or expose its iteration binding. */
+  function unrollNumericLoop(
+    node: Statement & { readonly kind: "for" },
+    initializer: Statement,
+    bindings: ReadonlyMap<string, NumericBinding>,
+    earlier: readonly Statement[],
+  ): Statement | undefined {
+    if (
+      initializer.kind !== "variable" ||
+      initializer.declarations.length !== 1
+    )
+      return undefined;
+    const variable = initializer.declarations[0];
+    if (
+      variable === undefined ||
+      variable.kind === "array-binding" ||
+      variable.kind === "object-binding"
+    )
+      return undefined;
+    const start = variable.initializer;
+    if (start?.kind !== "number" || start.value !== 0) return undefined;
+    const name = variable.name;
+    const test = node.test;
+    const update = node.update;
+    if (
+      test?.kind !== "binary" ||
+      test.operator !== "<" ||
+      update?.kind !== "update" ||
+      update.operator !== "++"
+    )
+      return undefined;
+    const bound = test.right;
+    const index = test.left,
+      target = update.target;
+    if (
+      index.kind !== "identifier" ||
+      index.name !== name ||
+      (bound.kind !== "identifier" && bound.kind !== "number") ||
+      target.kind !== "identifier" ||
+      target.name !== name
+    )
+      return undefined;
+    const body = node.body;
+    const items = body.kind === "block" ? body.statements : [body];
+    for (const child of items) {
+      if (child?.kind !== "expression") return undefined;
+      const op = child.expression;
+      if (
+        op.kind !== "update" &&
+        op.kind !== "assignment" &&
+        op.kind !== "compound"
+      )
+        return undefined;
+      const written = op.target;
+      if (
+        written.kind !== "identifier" ||
+        written.name === name ||
+        (bound.kind === "identifier" && written.name === bound.name)
+      )
+        return undefined;
+    }
+    function fresh(): string {
+      let candidate = "$counted" + serial++;
+      while (bindings.has(candidate)) candidate = "$counted" + serial++;
+      return candidate;
+    }
+    function constant(name: string, value: Expression): Statement {
+      return {
+        ...at(node),
+        kind: "variable",
+        mode: "const",
+        exported: false,
+        declarations: [
+          { ...at(node), name, type: named("number"), initializer: value },
+        ],
+      };
+    }
+    function word(value: Expression): Expression {
+      return scalarBinary(">>>", value, scalarNumber(0, node), node);
+    }
+    function counter(): Expression {
+      return id(name, node);
+    }
+    function loop(
+      initial: Expression,
+      end: Expression,
+      stride: number,
+      body: Statement,
+    ): Statement {
+      return {
+        ...node,
+        initializer: {
+          ...at(initializer),
+          kind: "variable",
+          mode: "let",
+          exported: false,
+          declarations: [
+            { ...at(node), name, type: undefined, initializer: initial },
+          ],
+        },
+        test: scalarBinary("<", counter(), end, node),
+        update: {
+          ...at(node),
+          kind: "assignment",
+          target: counter(),
+          value: word(
+            scalarBinary("+", counter(), scalarNumber(stride, node), node),
+          ),
+        },
+        body,
+      };
+    }
+    function lane(offset: number): Statement {
+      const copied = rewriteModule(
+        { ...at(body), imports: [], statements: [body] },
+        {
+          hashes: true,
+          expression: (value, _original) =>
+            offset !== 0 && value.kind === "identifier" && value.name === name
+              ? scalarBinary("+", value, scalarNumber(offset, value), value)
+              : value,
+        },
+      ).statements[0];
+      if (copied === undefined) throw "SCRIPT_COUNTED_LOOP_BODY_INVARIANT";
+      return copied;
+    }
+    const lengthName = fresh(),
+      wideName = fresh();
+    const length = id(lengthName, node),
+      wide = id(wideName, node);
+    const first = items[0];
+    const reduction =
+      items.length === 1 && first?.kind === "expression"
+        ? signedIntegerReduction(first.expression, earlier)
+        : undefined;
+    const hot: Statement[] = [
+      constant(
+        wideName,
+        scalarBinary("&", length, scalarNumber(-4, node), node),
+      ),
+    ];
+    if (reduction === undefined) {
+      const group: BlockStatement = {
+        ...at(body),
+        kind: "block",
+        statements: [lane(0), lane(1), lane(2), lane(3)],
+      };
+      hot.push(
+        loop(scalarNumber(0, node), wide, 4, group),
+        loop(wide, length, 1, lane(0)),
+      );
+    } else {
+      const target = id(reduction.name, node);
+      const accumulatorName = fresh();
+      const accumulator = id(accumulatorName, node);
+      function signed(value: Expression): Expression {
+        return scalarBinary("|", value, scalarNumber(0, node), node);
+      }
+      function advance(delta: number): Statement {
+        return {
+          ...at(body),
+          kind: "expression",
+          expression: {
+            ...at(body),
+            kind: "assignment",
+            target: accumulator,
+            value: signed(
+              scalarBinary("+", accumulator, scalarNumber(delta, node), node),
+            ),
+          },
+        };
+      }
+      hot.push(
+        {
+          ...at(node),
+          kind: "variable",
+          mode: "let",
+          exported: false,
+          declarations: [
+            {
+              ...at(node),
+              name: accumulatorName,
+              type: named("number"),
+              initializer: signed(target),
+            },
+          ],
+        },
+        loop(scalarNumber(0, node), wide, 4, advance(reduction.delta * 4)),
+        loop(wide, length, 1, advance(reduction.delta)),
+        {
+          ...at(node),
+          kind: "expression",
+          expression: {
+            ...at(node),
+            kind: "assignment",
+            target,
+            value: accumulator,
+          },
+        },
+      );
+    }
+    return {
+      ...at(node),
+      kind: "block",
+      statements: [
+        constant(lengthName, word(bound)),
+        {
+          ...at(node),
+          kind: "if",
+          test: scalarBinary(
+            "&&",
+            scalarBinary("===", length, bound, node),
+            scalarBinary(
+              "<=",
+              length,
+              scalarNumber(reduction?.count ?? 2147483647, node),
+              node,
+            ),
+            node,
+          ),
+          consequent: {
+            ...at(node),
+            kind: "block",
+            statements: hot,
+          },
+          alternate: { ...node, initializer },
+        },
+      ],
+    };
+  }
+  function signedIntegerLiteral(
+    node: Expression | undefined,
+  ): number | undefined {
+    if (node === undefined) return undefined;
+    if (node.kind === "group") return signedIntegerLiteral(node.expression);
+    if (
+      node.kind === "unary" &&
+      (node.operator === "-" || node.operator === "+")
+    ) {
+      const operand = signedIntegerLiteral(node.operand);
+      return operand === undefined
+        ? undefined
+        : node.operator === "-"
+          ? -operand
+          : operand;
+    }
+    return node.kind === "number" && Number.isInteger(node.value)
+      ? node.value
+      : undefined;
+  }
+  /** An exact signed range makes four additions equivalent to a single
+   * word addition. A double continuation covers all other loop bounds. */
+  function signedIntegerReduction(
+    operation: Expression,
+    earlier: readonly Statement[],
+  ):
+    | { readonly name: string; readonly delta: number; readonly count: number }
+    | undefined {
+    if (
+      operation.kind !== "compound" ||
+      (operation.operator !== "+" && operation.operator !== "-")
+    )
+      return undefined;
+    const target = operation.target;
+    if (target.kind !== "identifier") return undefined;
+    const name = target.name;
+    const term = operation.value;
+    const called =
+      term.kind === "call" && term.arguments.length === 0
+        ? term.callee
+        : undefined;
+    const callee = called?.kind === "identifier" ? called.name : undefined;
+    let initial: number | undefined = undefined;
+    let operand = signedIntegerLiteral(term);
+    for (const statement of earlier) {
+      if (statement?.kind === "function") {
+        const body = statement.body;
+        if (
+          statement.name === callee &&
+          body.kind === "block" &&
+          body.statements.length === 1
+        ) {
+          const returned = body.statements[0];
+          if (returned?.kind === "return")
+            operand = signedIntegerLiteral(returned.expression);
+        }
+        continue;
+      }
+      if (statement?.kind !== "variable") return undefined;
+      for (const binding of statement.declarations) {
+        if (
+          binding === undefined ||
+          binding.kind === "object-binding" ||
+          binding.kind === "array-binding"
+        )
+          return undefined;
+        const value = binding.initializer;
+        if (binding.name === name) initial = signedIntegerLiteral(value);
+        if (
+          binding.name !== callee ||
+          statement.mode !== "const" ||
+          value?.kind !== "arrow"
+        )
+          continue;
+        const body = value.body;
+        if (body.kind !== "block") operand = signedIntegerLiteral(body);
+        else if (body.statements.length === 1) {
+          const returned = body.statements[0];
+          if (returned?.kind === "return")
+            operand = signedIntegerLiteral(returned.expression);
+        }
+      }
+    }
+    if (
+      initial === undefined ||
+      (initial === 0 && 1 / initial < 0) ||
+      initial > 2147483647 ||
+      initial < -2147483648 ||
+      operand === undefined ||
+      operand === 0 ||
+      Math.abs(operand) > 536870911
+    )
+      return undefined;
+    const delta = operation.operator === "+" ? operand : -operand;
+    const span = delta > 0 ? 2147483647 - initial : initial + 2147483648;
+    return {
+      name,
+      delta,
+      count: Math.min(2147483647, Math.floor(span / Math.abs(delta))),
+    };
+  }
   /** Accept a closed numeric program with at least one loop. Once the entry
-   * operands are numbers, local writes preserve that fact. The only calls
-   * are to immutable leaves that cannot observe JavaScript call state. */
+   * operands are numbers, local writes and closed calls preserve that fact. */
   function numericLoopImplementation(
     source: readonly Parameter[],
     body: Expression | BlockStatement,
@@ -1795,6 +2673,12 @@ function lowerScriptEntry(
     let loops = 0;
     for (let index = 0; index < body.statements.length - 1; index++) {
       const node = body.statements[index];
+      if (node?.kind === "function") {
+        const local = numericClosedFunction(node, bindings, body);
+        if (local === undefined) return undefined;
+        result.push(local);
+        continue;
+      }
       if (node?.kind === "variable") {
         const local = numericDeclarations(node, bindings);
         if (local === undefined) return undefined;
@@ -1805,46 +2689,41 @@ function lowerScriptEntry(
       const test = node.test,
         update = node.update,
         initial = node.initializer;
-      if (
-        initial === undefined ||
-        test?.kind !== "binary" ||
-        !["<", "<=", ">", ">=", "===", "!=="].includes(test.operator) ||
-        update === undefined
-      )
+      if (initial === undefined || test === undefined || update === undefined)
         return undefined;
       const loopBindings = new Map<string, NumericBinding>();
       for (const [name, binding] of bindings) loopBindings.set(name, binding);
       const initializer = numericDeclarations(initial, loopBindings);
       if (
         initializer === undefined ||
-        !numericLeafExpression(test.left, loopBindings) ||
-        !numericLeafExpression(test.right, loopBindings) ||
+        !numericTest(test, loopBindings) ||
         !numericWrite(update, loopBindings)
       )
         return undefined;
-      const loopBody = node.body;
-      const items =
-        loopBody.kind === "block" ? loopBody.statements : [loopBody];
-      if (
-        !items.every(
-          (item) =>
-            item?.kind === "expression" &&
-            numericWrite(item.expression, loopBindings),
-        )
-      )
-        return undefined;
+      const loopBody = numericLoopAction(node.body, loopBindings);
+      if (loopBody === undefined) return undefined;
       loops++;
-      result.push({ ...node, initializer });
+      const numericLoop: Statement & { readonly kind: "for" } = {
+        ...node,
+        body: loopBody,
+      };
+      result.push(
+        unrollNumericLoop(numericLoop, initializer, loopBindings, result) ?? {
+          ...numericLoop,
+          initializer,
+        },
+      );
     }
     if (loops === 0 || !numericLeafExpression(returned, bindings))
       return undefined;
     result.push(finish);
+    const implementationBody: BlockStatement = { ...body, statements: result };
     return {
       ...at(span),
       kind: "arrow",
       parameters,
       returnType: named("number"),
-      body: { ...body, statements: result },
+      body: implementationBody,
     };
   }
   /** ToPropertyKey of a constant string key is the key itself, and its only
@@ -3375,6 +4254,7 @@ function lowerScriptEntry(
       !compactResults &&
       !raw &&
       !suspending &&
+      !tailEnabled &&
       !derived &&
       !options.packed &&
       !options.classFieldInitializer &&
