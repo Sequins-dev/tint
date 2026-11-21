@@ -2,9 +2,8 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { cpus, homedir, tmpdir } from "node:os";
+import { cpus, homedir, loadavg, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { Worker } from "node:worker_threads";
 import { withGateLock } from "./gate/lock.ts";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
@@ -13,12 +12,7 @@ import {
   runNativeBatch,
   type NativeResult,
 } from "./native-target-runner.ts";
-import {
-  cpuTimes,
-  cpuIdlePercent,
-  idleMonitor,
-  idleThreshold,
-} from "./node-ffi-benchmark-idle.ts";
+import { cpuTimes, cpuIdlePercent } from "./node-ffi-benchmark-idle.ts";
 
 export { cpuIdlePercent } from "./node-ffi-benchmark-idle.ts";
 
@@ -29,17 +23,14 @@ const measuredCases = [
   "buffer",
   "callback",
 ];
-const engines = [
-  "node",
+const tintEngines = [
   "tintUntypedLiteral",
   "tintUntypedRuntime",
   "tintTypedLiteral",
   "tintTypedRuntime",
 ] as const;
-type Engine = (typeof engines)[number];
-type TintEngine = Exclude<Engine, "node">;
+type TintEngine = (typeof tintEngines)[number];
 type NativeArtifact = ReturnType<typeof nativeArtifact>;
-type NativeLaunch = { engine: TintEngine; result: NativeResult };
 
 const definitions = Object.fromEntries([
   ...arities.map((arity) => [
@@ -134,14 +125,53 @@ type Measurement = {
   milliseconds: number;
   checksum: number;
 };
-function median(samples: number[]): number {
-  samples.sort((left, right) => left - right);
-  const index = Math.floor(samples.length / 2);
-  const upper = samples[index];
-  if (upper === undefined) throw Error("empty benchmark sample");
-  return samples.length % 2 === 0
-    ? ((samples[index - 1] ?? upper) + upper) / 2
-    : upper;
+function distribution(samples: readonly number[]) {
+  const sorted = samples.slice().sort((left, right) => left - right);
+  function percentile(p: number): number {
+    const index = (sorted.length - 1) * p;
+    const lower = sorted[Math.floor(index)],
+      upper = sorted[Math.ceil(index)];
+    if (lower === undefined || upper === undefined)
+      throw Error("empty benchmark sample");
+    return lower + (upper - lower) * (index - Math.floor(index));
+  }
+  return {
+    median: percentile(0.5),
+    q1: percentile(0.25),
+    q3: percentile(0.75),
+  };
+}
+
+function casePairs(
+  samples: readonly Measurement[],
+  name: string,
+  iterations: number,
+  rounds: number,
+) {
+  const cases = new Map(
+    samples
+      .filter((sample) => sample.case === name)
+      .map((sample) => [sample.round, sample.milliseconds]),
+  );
+  const controls = new Map(
+    samples
+      .filter((sample) => sample.case === controlCase)
+      .map((sample) => [sample.round, sample.milliseconds]),
+  );
+  if (cases.size !== rounds || controls.size !== rounds)
+    throw Error("incomplete paired samples");
+  const scale = 1e6 / iterations;
+  return Array.from({ length: rounds }, (_, round) => {
+    const call = cases.get(round),
+      control = controls.get(round);
+    if (call === undefined || control === undefined)
+      throw Error("missing case or control for round " + round);
+    return {
+      call: call * scale,
+      control: control * scale,
+      overhead: (call - control) * scale,
+    };
+  });
 }
 
 export function caseTiming(
@@ -149,30 +179,34 @@ export function caseTiming(
   name: string,
   iterations: number,
   rounds: number,
-): { callNs: number; controlNs: number; overheadNs: number } {
-  const controls = new Map(
-    samples
-      .filter((sample) => sample.case === controlCase)
-      .map((sample) => [sample.round, sample.milliseconds]),
-  );
-  const calls = samples.filter((sample) => sample.case === name);
-  if (calls.length !== rounds || controls.size !== rounds)
-    throw Error("incomplete paired samples");
-  const scale = 1e6 / iterations;
+) {
+  const pairs = casePairs(samples, name, iterations, rounds);
   return {
-    callNs: median(calls.map((sample) => sample.milliseconds * scale)),
-    controlNs: median(
-      [...controls.values()].map((milliseconds) => milliseconds * scale),
-    ),
-    overheadNs: median(
-      calls.map((sample) => {
-        const control = controls.get(sample.round);
-        if (control === undefined)
-          throw Error("missing control for round " + sample.round);
-        return (sample.milliseconds - control) * scale;
-      }),
-    ),
+    callNs: distribution(pairs.map(({ call }) => call)).median,
+    controlNs: distribution(pairs.map(({ control }) => control)).median,
+    overheadNs: distribution(pairs.map(({ overhead }) => overhead)),
   };
+}
+
+export function pairedOverheadChange(
+  candidate: readonly number[],
+  reference: readonly number[],
+) {
+  if (candidate.length !== reference.length)
+    throw Error("unmatched benchmark rounds");
+  return distribution(
+    candidate.map((value, round) => {
+      const before = reference[round];
+      if (before === undefined)
+        throw Error("missing reference for round " + round);
+      return value - before;
+    }),
+  );
+}
+
+export function roundOrder<T>(workloads: readonly T[], round: number): T[] {
+  const first = round % workloads.length;
+  return [...workloads.slice(first), ...workloads.slice(0, first)];
 }
 
 function parse(
@@ -235,7 +269,9 @@ interface PreparedBenchmark {
   readonly target: string;
   readonly iterations: number;
   readonly warm: number;
-  readonly artifacts: Readonly<Record<TintEngine, NativeArtifact>>;
+  readonly artifacts: Readonly<Partial<Record<TintEngine, NativeArtifact>>>;
+  readonly label?: string;
+  readonly sourcePatchSha256?: string;
 }
 
 function prepare(node: string, iterations: number): PreparedBenchmark {
@@ -298,15 +334,37 @@ ${benchmarkBody(dso, true, false, iterations, warm)}
 if (run() !== 42) process.exitCode = 1;
 `,
   );
+  return prepareImages(
+    {
+      head: execute("git", ["rev-parse", "HEAD"]),
+      node,
+      nodeSha256: hashes(node),
+      benchmark,
+      sourceSha256: hashes(benchmark),
+      dso,
+      dsoSha256: hashes(dso),
+      target,
+      iterations,
+      warm,
+      artifacts: {},
+    },
+    tintEngines,
+  );
+}
+
+function prepareImages(
+  prepared: PreparedBenchmark,
+  engines: readonly TintEngine[],
+  label?: string,
+): PreparedBenchmark {
+  const { dso, iterations, warm, target } = prepared;
   process.env.TZ = "UTC";
   process.env.TINT_BUILD_ONLY = "defer-admission";
   delete process.env.TINT_GENERAL_FALLBACK;
   const clock = "packages/native-runtime/src/intrinsics/clock.ts";
-  function build(
-    engine: TintEngine,
-    literal: boolean,
-    typed: boolean,
-  ): NativeArtifact {
+  function build(engine: TintEngine): NativeArtifact {
+    const literal = engine.endsWith("Literal");
+    const typed = engine.startsWith("tintTyped");
     const image = verifyHostedFixture(
       `import { dlopen } from "node:ffi";
 import { Buffer } from "node:buffer";
@@ -339,89 +397,59 @@ ${benchmarkBody(dso, literal, typed, iterations, warm)}`,
     return nativeArtifact(target, image, image + ".manifest.json");
   }
   return {
+    ...prepared,
     head: execute("git", ["rev-parse", "HEAD"]),
-    node,
-    nodeSha256: hashes(node),
-    benchmark,
-    sourceSha256: hashes(benchmark),
-    dso,
-    dsoSha256: hashes(dso),
-    target,
-    iterations,
-    warm,
-    artifacts: {
-      tintUntypedLiteral: build("tintUntypedLiteral", true, false),
-      tintUntypedRuntime: build("tintUntypedRuntime", false, false),
-      tintTypedLiteral: build("tintTypedLiteral", true, true),
-      tintTypedRuntime: build("tintTypedRuntime", false, true),
-    },
+    sourcePatchSha256: createHash("sha256")
+      .update(execute("git", ["diff", "--binary", "HEAD", "--", "packages"]))
+      .digest("hex"),
+    label,
+    artifacts: Object.fromEntries(
+      engines.map((engine) => [engine, build(engine)]),
+    ),
   };
 }
 
-const sleepBuffer = new Int32Array(new SharedArrayBuffer(4));
-function pause(ms: number): void {
-  Atomics.wait(sleepBuffer, 0, 0, ms);
-}
-function preflightIdle(): number {
-  const start = cpuTimes();
-  pause(1000);
-  return cpuIdlePercent(start, cpuTimes());
+function readPrepared(path: string): PreparedBenchmark {
+  return JSON.parse(readFileSync(path, "utf8")) as PreparedBenchmark;
 }
 
-function measureRound(
+type Workload = {
+  name: string;
+  engine?: TintEngine;
+  artifact?: NativeArtifact;
+};
+
+function runWorkload(
   prepared: PreparedBenchmark,
+  workload: Workload,
   round: number,
-): {
-  idle: number[];
-  samples: Record<Engine, Measurement[]>;
-  native: NativeLaunch[];
-} {
-  const state = new Int32Array(new SharedArrayBuffer(4096 * 4));
-  const sampler = new Worker(
-    new URL("./node-ffi-benchmark-idle.ts", import.meta.url),
-    {
-      workerData: state.buffer,
-    },
-  );
-  const samples = {} as Record<Engine, Measurement[]>;
-  const native: NativeLaunch[] = [];
-  try {
-    if (Atomics.wait(state, idleMonitor.lifecycle, 0, 10000) === "timed-out")
-      throw Error("CPU idle monitor did not start");
-    const first = round % engines.length;
-    const order = [...engines.slice(first), ...engines.slice(0, first)];
-    for (const engine of order) {
-      if (Atomics.load(state, idleMonitor.busy) !== 0) break;
-      let output: string;
-      if (engine === "node")
-        output = execute(prepared.node, [prepared.benchmark]);
-      else {
-        const [result] = runNativeBatch([
-          { artifact: prepared.artifacts[engine], timeoutMs: 120000 },
-        ]);
-        if (result?.kind !== "exited" || result.status !== 42)
-          throw Error(
-            "native benchmark did not exit 42: " + JSON.stringify(result),
-          );
-        native.push({ engine, result });
-        output = result.stdout;
-      }
-      samples[engine] = parse(output, round, prepared.iterations);
-    }
-  } finally {
-    Atomics.store(state, idleMonitor.stop, 1);
-    if (Atomics.wait(state, idleMonitor.lifecycle, 1, 5000) === "timed-out") {
-      void sampler.terminate();
-      throw Error("CPU idle monitor did not finish");
-    }
+) {
+  const before = cpuTimes();
+  const loadBefore = loadavg();
+  let output: string;
+  let native: NativeResult | undefined;
+  if (workload.artifact === undefined) {
+    output = execute(prepared.node, [prepared.benchmark]);
+  } else {
+    [native] = runNativeBatch([
+      { artifact: workload.artifact, timeoutMs: 120000 },
+    ]);
+    if (native?.kind !== "exited" || native.status !== 42)
+      throw Error(
+        `${workload.name} did not exit 42: ${JSON.stringify(native)}`,
+      );
+    output = native.stdout;
   }
-  const count = Atomics.load(state, idleMonitor.count);
-  const idle = Array.from(
-    state.subarray(idleMonitor.samples, idleMonitor.samples + count),
-    (value) => value / 100,
-  );
-  if (idle.length === 0) throw Error("CPU idle monitor recorded no samples");
-  return { idle, samples, native };
+  return {
+    telemetry: {
+      workload: workload.name,
+      idle: cpuIdlePercent(before, cpuTimes()),
+      loadBefore,
+      loadAfter: loadavg(),
+    },
+    samples: parse(output, round, prepared.iterations),
+    native,
+  };
 }
 
 function writeReport(file: string, report: unknown): void {
@@ -430,7 +458,7 @@ function writeReport(file: string, report: unknown): void {
   });
 }
 
-function measure(prepared: PreparedBenchmark, file: string): void {
+function verifyPrepared(prepared: PreparedBenchmark): void {
   if (
     prepared.target !== nativeFixtureTarget().name ||
     hashes(prepared.node) !== prepared.nodeSha256 ||
@@ -446,117 +474,171 @@ function measure(prepared: PreparedBenchmark, file: string): void {
     )
       throw Error("prepared native image or manifest changed");
   }
+}
+
+function measure(
+  prepared: PreparedBenchmark,
+  file: string,
+  candidates: PreparedBenchmark[] = [],
+): void {
+  verifyPrepared(prepared);
+  const workloads: Workload[] = [{ name: "node" }];
+  for (const engine of tintEngines) {
+    const artifact = prepared.artifacts[engine];
+    if (artifact === undefined)
+      throw Error("missing baseline workload " + engine);
+    workloads.push({ name: engine, engine, artifact });
+  }
+  const labels = new Set<string>();
+  for (const candidate of candidates) {
+    verifyPrepared(candidate);
+    const label = candidate.label;
+    if (
+      label === undefined ||
+      !/^[a-z][a-z0-9-]*$/.test(label) ||
+      labels.has(label)
+    )
+      throw Error("candidate requires a unique label");
+    if (
+      candidate.target !== prepared.target ||
+      candidate.nodeSha256 !== prepared.nodeSha256 ||
+      candidate.sourceSha256 !== prepared.sourceSha256 ||
+      candidate.dso !== prepared.dso ||
+      candidate.dsoSha256 !== prepared.dsoSha256 ||
+      candidate.iterations !== prepared.iterations ||
+      candidate.warm !== prepared.warm
+    )
+      throw Error("candidate must share the baseline benchmark inputs");
+    labels.add(label);
+    for (const engine of tintEngines) {
+      const artifact = candidate.artifacts[engine];
+      if (artifact !== undefined)
+        workloads.push({ name: label + "." + engine, engine, artifact });
+    }
+  }
 
   const timingLock =
     process.env.TINT_FFI_BENCH_TIMING_LOCK ??
     join(homedir(), ".t3", "tint-timing.lock");
-  const maximumWait = Number(process.env.TINT_FFI_BENCH_IDLE_TIMEOUT_MS ?? "0");
-  if (!Number.isSafeInteger(maximumWait) || maximumWait < 0)
-    throw Error("invalid idle wait timeout");
-  const started = Date.now();
-  // Two complete rotations give each engine equal launch positions.
-  const rounds = engines.length * 2;
-  const results = Object.fromEntries(
-    engines.map((engine) => [engine, [] as Measurement[]]),
-  ) as Record<Engine, Measurement[]>;
-  const native: ({ round: number } & NativeLaunch)[] = [];
-  const host: { before: number; during: number[] }[] = [];
-  let rejectedRounds = 0;
-  for (let round = 0; round < rounds;) {
-    const accepted = withGateLock(
-      [timingLock],
-      "node-ffi-benchmark",
-      undefined,
-      () => {
-        const before = preflightIdle();
-        if (before <= idleThreshold) return false;
-        const trial = measureRound(prepared, round);
-        if (trial.idle.some((sample) => sample <= idleThreshold)) {
-          console.error(
-            "Discarded round " +
-              (round + 1) +
-              " after idle fell to " +
-              Math.min(...trial.idle).toFixed(2) +
-              "%",
-          );
-          return false;
-        }
-        for (const engine of engines)
-          results[engine].push(...trial.samples[engine]);
-        native.push(...trial.native.map((launch) => ({ round, ...launch })));
-        host.push({ before, during: trial.idle });
-        return true;
-      },
-    );
-    if (accepted) {
-      round++;
-      console.error("Accepted quiet round " + round + "/" + rounds);
-      continue;
+  // Complete rotations give each workload the same number of starts in every position.
+  const rounds = Math.ceil(15 / workloads.length) * workloads.length;
+  const results = new Map(
+    workloads.map(({ name }) => [name, [] as Measurement[]]),
+  );
+  const host: {
+    round: number;
+    launches: ReturnType<typeof runWorkload>["telemetry"][];
+  }[] = [];
+  const native: { round: number; workload: string; result: NativeResult }[] =
+    [];
+  withGateLock([timingLock], "node-ffi-benchmark", undefined, () => {
+    for (let round = 0; round < rounds; round++) {
+      const launches: ReturnType<typeof runWorkload>["telemetry"][] = [];
+      for (const workload of roundOrder(workloads, round)) {
+        const trial = runWorkload(prepared, workload, round);
+        results.get(workload.name)?.push(...trial.samples);
+        launches.push(trial.telemetry);
+        if (trial.native !== undefined)
+          native.push({ round, workload: workload.name, result: trial.native });
+      }
+      host.push({ round, launches });
+      console.error(`Finished interleaved round ${round + 1}/${rounds}`);
     }
-    rejectedRounds++;
-    if (maximumWait > 0 && Date.now() - started >= maximumWait)
-      throw Error(
-        "quiet CPU requirement was not met. Accepted " +
-          round +
-          "/" +
-          rounds +
-          " rounds",
-      );
-    if (rejectedRounds === 1 || rejectedRounds % 6 === 0)
-      console.error(
-        "Waiting for CPU idle above 95%. Accepted " +
-          round +
-          "/" +
-          rounds +
-          " rounds",
-      );
-    pause(5000);
-  }
-  const medians = measuredCases.map((name) => {
+  });
+  const cases = measuredCases.map((name) => {
     const timing = Object.fromEntries(
-      engines.map((engine) => [
-        engine,
-        caseTiming(results[engine], name, prepared.iterations, rounds),
+      workloads.map(({ name: workload }) => [
+        workload,
+        caseTiming(
+          results.get(workload) ?? [],
+          name,
+          prepared.iterations,
+          rounds,
+        ),
       ]),
-    ) as Record<Engine, ReturnType<typeof caseTiming>>;
-    return {
-      case: name,
-      ...timing,
-      typedParity:
-        timing.tintTypedLiteral.overheadNs <= timing.node.overheadNs &&
-        timing.tintTypedRuntime.overheadNs <= timing.node.overheadNs,
-    };
+    );
+    const overhead = (workload: string) =>
+      casePairs(
+        results.get(workload) ?? [],
+        name,
+        prepared.iterations,
+        rounds,
+      ).map((pair) => pair.overhead);
+    const node = overhead("node");
+    const comparisons = Object.fromEntries(
+      workloads.flatMap(({ name: workload, engine }) => {
+        if (engine === undefined) return [];
+        const paired = overhead(workload);
+        return [
+          [
+            workload,
+            {
+              versusNodeNs: pairedOverheadChange(paired, node),
+              ...(workload === engine
+                ? {}
+                : {
+                    versusBaselineNs: pairedOverheadChange(
+                      paired,
+                      overhead(engine),
+                    ),
+                  }),
+            },
+          ],
+        ];
+      }),
+    );
+    const typedParity =
+      (comparisons.tintTypedLiteral?.versusNodeNs.median ?? Infinity) <= 0 &&
+      (comparisons.tintTypedRuntime?.versusNodeNs.median ?? Infinity) <= 0;
+    return { case: name, timing, comparisons, typedParity };
   });
   writeReport(file, {
     ...prepared,
+    candidates,
     cpu: cpus()[0]?.model,
     rounds,
     timingLock,
-    idleThreshold,
     host,
-    rejectedRounds,
     native,
-    results,
-    medians,
+    results: Object.fromEntries(results),
+    cases,
   });
   if (
     process.env.TINT_FFI_BENCH_REQUIRE_PARITY === "1" &&
-    medians.some((sample) => !sample.typedParity)
+    cases.some((sample) => !sample.typedParity)
   )
     process.exitCode = 2;
 }
 
 if (import.meta.main) {
-  const [command, destination, optional] = process.argv.slice(2);
+  const [command, destination, optional, ...more] = process.argv.slice(2);
   if (
     command === "--measure" &&
     destination !== undefined &&
     optional !== undefined
   ) {
-    measure(
-      JSON.parse(readFileSync(destination, "utf8")) as PreparedBenchmark,
-      optional,
-    );
+    measure(readPrepared(destination), optional, more.map(readPrepared));
+  } else if (
+    command === "--prepare-candidate" &&
+    destination !== undefined &&
+    optional !== undefined
+  ) {
+    const [label, ...requested] = more;
+    if (
+      label === undefined ||
+      !/^[a-z][a-z0-9-]*$/.test(label) ||
+      requested.length === 0 ||
+      new Set(requested).size !== requested.length ||
+      !requested.every((engine): engine is TintEngine =>
+        tintEngines.some((known) => known === engine),
+      )
+    )
+      throw Error(
+        "usage: --prepare-candidate BASE_JSON NEW_JSON LABEL TINT_ENGINE...",
+      );
+    const prepared = readPrepared(destination);
+    verifyPrepared(prepared);
+    writeReport(optional, prepareImages(prepared, requested, label));
   } else {
     const iterations = Number(optional ?? "100000");
     if (

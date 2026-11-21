@@ -4,6 +4,8 @@ import {
   benchmarkBody,
   caseTiming,
   cpuIdlePercent,
+  pairedOverheadChange,
+  roundOrder,
 } from "./node-ffi-benchmark.ts";
 
 test("typed literal and runtime workloads retain the typed loop and call result", () => {
@@ -40,7 +42,31 @@ test("overhead subtracts the control from the same round", () => {
     1000000,
     3,
   );
-  assert.deepEqual(timing, { callNs: 35, controlNs: 40, overheadNs: 10 });
+  assert.deepEqual(timing, {
+    callNs: 35,
+    controlNs: 40,
+    overheadNs: { median: 10, q1: 2.5, q3: 10 },
+  });
+});
+
+test("candidate comparisons pair overheads in the same round", () => {
+  assert.deepEqual(pairedOverheadChange([10, 50, 40], [40, 50, 100]), {
+    median: -30,
+    q1: -45,
+    q3: -15,
+  });
+});
+
+test("each workload occupies each launch position in a rotation", () => {
+  const workloads = ["node", "typed", "candidate"];
+  assert.deepEqual(
+    workloads.map((_, round) => roundOrder(workloads, round)),
+    [
+      ["node", "typed", "candidate"],
+      ["typed", "candidate", "node"],
+      ["candidate", "node", "typed"],
+    ],
+  );
 });
 
 test("idle percentages use deltas rather than cumulative idle", () => {
