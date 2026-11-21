@@ -88,6 +88,12 @@ put 52.94 s into register-home analysis, which can run with frozen
 call summaries and function-local frame inputs.
 [Ordered AArch64 worker fragments](results/parallel-bounded-compile-codegen-fragments-v1.md)
 
+Native register-home workers reproduced all 31 result batches at one,
+two, and six workers. The two-worker kernel replay saved 38.16 s in
+median wall time. Its live compiler integration produced the same ELF
+but spent 65.83 s more end to end, so that sidecar stays experimental.
+[Native register-home workers and self-compile integration](results/parallel-bounded-compile-native-register-homes-v1.md)
+
 In a separate Object compilation pair with a 4,096 MiB V8 old-space setting,
 the optimizer candidate built the same signed image in 524.22 s versus
 899.40 s. Its observed peak RSS was 5,195.6 MiB versus 4,760.7 MiB.
