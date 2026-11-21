@@ -1074,7 +1074,7 @@ slice 1c targets.
   `built-ins/Error`.
 - **Frozen v3.** Output byte-identical to `.tint-bootstrap/workload-v3/out-sdisp`
   and no cycles or wall regression beyond noise:
-  `lockf /Users/stephenbelanger/.t3/tint-timing.lock node tools/frozen-workload.ts run v3 <base> <variant> --rounds 6`.
+  `tools/gate/with-lock.sh both frozen-v3 node tools/frozen-workload.ts run v3 <base> <variant> --rounds 6`.
   Slices that must not change typed output (0, 1 for typed-only programs) also
   compare images byte for byte.
 

@@ -3,7 +3,7 @@
 // Each native loop times itself with the monotonic clock and prints
 // ns/call; images are built with TINT_BUILD_ONLY semantics and run under
 // LLDB (stopped at entry, exit status 42 asserted). Run under
-//   lockf /Users/stephenbelanger/.t3/tint-timing.lock node tools/ffi-microbench.ts
+//   tools/gate/with-lock.sh both ffi-microbench node tools/ffi-microbench.ts
 // node:ffi needs Node 26 (NODE26=<path to node> selects it).
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
