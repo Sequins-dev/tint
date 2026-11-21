@@ -95,6 +95,7 @@ function writeElfImage(
     code: image.code,
     codePlan: image.codePlan,
     entryOffset: image.entryOffset,
+    sharedEntry: image.sharedEntry,
     maxByteLength: image.maxByteLength,
     symbols: image.symbols,
     dataSymbols: image.dataSymbols,

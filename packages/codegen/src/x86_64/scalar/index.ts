@@ -25,8 +25,13 @@ import {
   nativeStringLengthOffset,
   nativeCStackReserveBytes,
   nativeStackMapFooterMagic,
+  nativeStackMapRegistryOffset,
   nativeStackLimitOffset,
   nativeStackOverflowPayload,
+  nativeWorkerStopObserved,
+  nativeWorkerStopPayload,
+  nativeWorkerStopPointerOffset,
+  nativeWorkerStopRequested,
   type PosixHostFacts,
 } from "@tint/abi/host";
 import {
@@ -345,6 +350,7 @@ export function emitModule(
   far: boolean = false,
   managed?: X64ManagedOptions,
   jitDebug: boolean = false,
+  workerFunctions?: ReadonlySet<string>,
 ): X64Emission {
   const verified = verify(module);
   if (!verified.ok)
@@ -632,6 +638,10 @@ export function emitModule(
 
   function body(fn: FunctionIR): void {
     const fnLabel = functionLabel(fn.id);
+    const interruptible =
+      workerFunctions?.has(
+        fn.name.endsWith("$direct") ? fn.name.slice(0, -7) : fn.name,
+      ) === true;
     const fnEnd = fnLabel + ":end";
     const done = fnLabel + ":return";
     const slots: number[] = [];
@@ -786,9 +796,52 @@ export function emitModule(
       const handler = block.exception;
       if (handler === undefined) publish(thrown, from, 16);
       else {
+        if (interruptible) {
+          const ordinary =
+            fnLabel + ":ordinary-throw:" + String(instructionCount);
+          emit({ op: "cmp", dst: frame(from), src: imm(0) });
+          branch(emit, "ne", ordinary);
+          emit({
+            op: "cmp",
+            dst: frame(from + 8),
+            src: imm(nativeWorkerStopPayload),
+          });
+          branch(emit, "ne", ordinary);
+          publish(thrown, from, 16);
+          emit({ op: "label", name: ordinary });
+        }
         copyFrame(from, slot(handler.slot), 16);
         emit({ op: "jmp", target: label(blockLabel(fn.id, handler.target)) });
       }
+    }
+    function pollWorkerStop(): void {
+      if (!interruptible) return;
+      const resumed = fnLabel + ":worker-resumed:" + String(instructionCount);
+      emit({ op: "mov", dst: scratch, src: frame(savedContext) });
+      emit({
+        op: "mov",
+        dst: scratch,
+        src: mem(11, nativeStackMapRegistryOffset),
+      });
+      emit({
+        op: "mov",
+        dst: scratch,
+        src: mem(11, nativeWorkerStopPointerOffset),
+      });
+      emit({ op: "test", dst: scratch, src: scratch });
+      branch(emit, "e", resumed);
+      // Aligned loads and stores on x86 have acquire and release ordering.
+      emit({ op: "cmp", dst: mem(11, 0), src: imm(nativeWorkerStopRequested) });
+      branch(emit, "ne", resumed);
+      emit({ op: "mov", dst: mem(11, 0), src: imm(nativeWorkerStopObserved) });
+      emit({ op: "mov", dst: frame(callResult), src: imm(0) });
+      emit({
+        op: "mov",
+        dst: frame(callResult + 8),
+        src: imm(nativeWorkerStopPayload),
+      });
+      publish(thrown, callResult, 16);
+      emit({ op: "label", name: resumed });
     }
 
     const callSites: {
@@ -823,6 +876,7 @@ export function emitModule(
     function call(op: Instruction, block: Block, index: number): void {
       if (op.kind !== "call" && op.kind !== "call-indirect")
         throw "call invariant";
+      pollWorkerStop();
       const args = argumentsByFunction[op.target];
       const callee = module.functions[op.target];
       if (args === undefined || callee === undefined) throw "callee invariant";
@@ -897,6 +951,7 @@ export function emitModule(
             : label(functionLabel(op.target)),
       });
       safepoint(block, index);
+      pollWorkerStop();
       const received = fnLabel + ":call:" + String(instructionCount);
       emit({ op: "cmp", dst: eax, src: imm(normal) });
       emit({ op: "jcc", cc: "e", target: label(received) });
@@ -931,6 +986,7 @@ export function emitModule(
       block: Block,
       index: number,
     ): void {
+      if (operation === "executable-call-managed") pollWorkerStop();
       serializeCode(emit);
       exactInteger(emit, entry, r10, trapLabel);
       emit({ op: "test", dst: r10, src: r10 });
@@ -1012,6 +1068,7 @@ export function emitModule(
       site: string,
       denied: string,
     ): void {
+      pollWorkerStop();
       emit({ op: "mov", dst: rdx, src: frame(savedContext) });
       const fits = site + ":fits";
       if (!generational) {
@@ -1894,6 +1951,7 @@ export function emitModule(
         }
         case "host-call": {
           if (generational && op.operation === "collect-garbage") {
+            pollWorkerStop();
             const site = fnLabel + ":collect:" + String(instructionCount);
             emit({ op: "xor", dst: word(10), src: word(10) });
             callAllocator(block, index, site);

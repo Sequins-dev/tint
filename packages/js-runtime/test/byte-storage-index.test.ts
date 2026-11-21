@@ -133,6 +133,33 @@ test("element windows track resize, trailing bytes, recovery and detachment", ()
   assert.equal(storage.byteStorageWindow(value, 0, 0, 1), undefined);
 });
 
+test("a buffer keeps its backing allocation policy through resize and transfer", () => {
+  const allocations: number[] = [];
+  const created = storage.createByteStorage(4, 16, true, 16, (length) => {
+    allocations.push(length);
+    return length === 12 ? undefined : new Uint8Array(length);
+  });
+  assert.ok(created.ok);
+  storage.byteStorageData(created.value, "write")?.set([10, 20, 30, 40]);
+  assert.equal(storage.resizeByteStorage(created.value, 8), "none");
+  assert.equal(
+    storage.resizeByteStorage(created.value, 12),
+    "allocation-limit",
+  );
+  const transfer = storage.transferByteStorage(
+    created.value,
+    6,
+    "fixed-length",
+  );
+  assert.ok(transfer.ok);
+  assert.deepEqual(allocations, [4, 8, 12, 6]);
+  assert.deepEqual(
+    storage.byteStorageData(transfer.value),
+    Uint8Array.of(10, 20, 30, 40, 0, 0),
+  );
+  assert.equal(storage.byteStorageData(created.value), undefined);
+});
+
 test("immutable transfer publishes independent fixed bytes and rejects later mutation", () => {
   const source = create(4, 8, true, 16);
   const original = storage.byteStorageData(source, "write")!;

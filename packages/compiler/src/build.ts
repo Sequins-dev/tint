@@ -135,6 +135,12 @@ export interface BuildRequest extends ModuleRequest {
    * frozen project sources predate it). */
   readonly target?: NativeTarget;
   readonly threaded?: boolean;
+  /** Emit a loadable image whose worker entry accepts a broker descriptor. */
+  readonly nodeWorkerLibrary?: boolean;
+  /** Tagged worker arguments carry the post-teardown pipe notification ABI. */
+  readonly threadExitPipe?: boolean;
+  /** Application modules whose managed code can be stopped in a worker. */
+  readonly workerModules?: readonly string[] | undefined;
   /** Verification of the large code model (docs/large-images.md): emit
    * every module with all far-reach forms, which large images select
    * automatically only where reach requires them. */
@@ -291,6 +297,18 @@ function compileFailure(
 }
 /** Pure artifact composition shared by Node bootstrap and the native compiler. */
 export function buildMacOSProgram(request: BuildRequest): BuildResult {
+  if (request.threadExitPipe === true && request.threaded !== true)
+    return failure("startup", "thread exit records require threaded startup");
+  if (request.workerModules !== undefined && request.threadExitPipe !== true)
+    return failure("startup", "worker safepoints require thread exit records");
+  if (
+    request.nodeWorkerLibrary === true &&
+    (request.threaded !== true || request.threadExitPipe !== true)
+  )
+    return failure(
+      "startup",
+      "Node worker libraries require threaded startup and exit records",
+    );
   const target = buildTarget(request);
   if (target.arch === "x86_64") {
     const built = buildX64HostedProgram(request, target);
@@ -466,6 +484,9 @@ function buildX64HostedProgram(
           binding !== undefined && binding.operation !== "sha256-rounds",
       ),
       foreignBindings: request.foreignBindings ?? [],
+      ...(request.workerModules === undefined
+        ? {}
+        : { workerModules: request.workerModules }),
       foreignMemoryBindings: request.foreignMemoryBindings ?? [],
       foreignLibraries: request.foreignLibraries ?? [],
       serviceImports: serviceImportsForRequest(request),
@@ -473,6 +494,12 @@ function buildX64HostedProgram(
       recordBindings: request.recordBindings ?? [],
       weakBindings: request.weakBindings ?? [],
       nodeFfiWeakProcessing: generational,
+      ...(request.generalLowering === undefined
+        ? {}
+        : { generalLowering: request.generalLowering }),
+      ...(request.requireTyped === undefined
+        ? {}
+        : { requireTyped: request.requireTyped }),
       ...(request.denseReferenceLists === undefined
         ? {}
         : { denseReferenceLists: request.denseReferenceLists }),
@@ -489,8 +516,12 @@ function buildX64HostedProgram(
       jitDebugInterface: request.jitDebugInterface === true,
       inlineAllocation: request.inlineAllocation !== false,
       threaded: request.threaded === true,
+      nodeWorkerLibrary: request.nodeWorkerLibrary === true,
       allocationProbes: request.signposts === true,
       report: request.report,
+      ...(request.onGeneralFallback === undefined
+        ? {}
+        : { onGeneralFallback: request.onGeneralFallback }),
     },
   );
   if (!compiled.ok) return compiled;
@@ -585,6 +616,9 @@ function buildX64HostedProgram(
       ...(runtime === undefined ? {} : { runtime }),
       stackBytes,
       threaded: request.threaded === true,
+      nodeWorkerLibrary: request.nodeWorkerLibrary === true,
+      threadExitPipe: request.threadExitPipe === true,
+      workerSafepoints: request.workerModules !== undefined,
       allowJit: request.allowJit === true,
       managedBytes,
       pageBytes,
@@ -596,11 +630,22 @@ function buildX64HostedProgram(
       target.hostABI.symbolPrefix,
     );
     if (typeof libraries === "string") return failure("image", libraries);
+    const workerEntry = image.workerEntryOffset;
+    if (request.nodeWorkerLibrary === true && workerEntry === undefined)
+      return failure("startup", "Node worker entry is missing");
     const executable: ExecutableImageRequest = {
       libraries,
       code: new Uint8Array(0),
       codePlan: image.codePlan,
       entryOffset: image.entryOffset,
+      ...(request.nodeWorkerLibrary !== true || workerEntry === undefined
+        ? {}
+        : {
+            sharedEntry: {
+              name: "tint_node_worker_entry",
+              offset: workerEntry,
+            },
+          }),
       maxByteLength: image.maxByteLength,
       data: image.data,
       symbols: image.symbols,
@@ -1141,6 +1186,9 @@ export function compileMacOSProgram(
       modules: request.modules,
       moduleLoader: request.moduleLoader,
       entry: request.entry,
+      ...(request.workerModules === undefined
+        ? {}
+        : { workerModules: request.workerModules }),
       exports: [request.start],
       start: request.start,
       runtimes: request.runtimes,
@@ -1317,6 +1365,9 @@ function linkHostedImage(
   const hosted = planHostedEntry({
     diagnostics,
     threaded: request.threaded ?? false,
+    nodeWorkerLibrary: request.nodeWorkerLibrary === true,
+    threadExitPipe: request.threadExitPipe === true,
+    workerSafepoints: request.workerModules !== undefined,
     abi: hostABI,
     allocator: {
       native: compiled.allocator,
@@ -1719,6 +1770,9 @@ function linkHostedImage(
       return error;
     },
   };
+  const workerEntry = hosted.value.workerEntryOffset;
+  if (request.nodeWorkerLibrary === true && workerEntry === undefined)
+    return failure("startup", "Node worker entry is missing");
   const image = writeExecutableImage(
     target,
     {
@@ -1743,6 +1797,14 @@ function linkHostedImage(
       code: new Uint8Array(0),
       codePlan,
       entryOffset: hosted.value.processStartOffset ?? hosted.value.entryOffset,
+      ...(request.nodeWorkerLibrary !== true || workerEntry === undefined
+        ? {}
+        : {
+            sharedEntry: {
+              name: "tint_node_worker_entry",
+              offset: workerEntry,
+            },
+          }),
       maxByteLength: Number.MAX_SAFE_INTEGER,
       imports,
       libraries,

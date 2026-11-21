@@ -198,6 +198,13 @@ an executing Script job. Pending unobserved root waits do not keep a completed s
 alive. Worker pending waits are pumped in their own context until completion or
 leaving; unhandled worker rejections are reported as failures.
 
+When the Test262 checkpoint has pending waits and no runnable jobs, it samples
+the wait registry's event version, checks for completions and parks on that
+version until the nearest monotonic deadline. Notify publishes its completion
+before changing the version and waking checkpoints. A worker failure also
+changes the version so a parked parent can observe it. Synchronous waits
+continue to park on the individual ticket's state.
+
 Copied mailbox payloads are detached under the raw queue mutex and reconstructed
 outside its critical section. No managed allocation, user callback or moving heap
 pointer occurs inside that section. The foundation string builder bounds copying

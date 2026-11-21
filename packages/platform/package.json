@@ -39,6 +39,10 @@
     "./host": {
       "types": "./dist/host.d.ts",
       "import": "./dist/host.js"
+    },
+    "./workers": {
+      "types": "./dist/workers.d.ts",
+      "import": "./dist/workers.js"
     }
   },
   "files": [
@@ -46,6 +50,7 @@
   ],
   "dependencies": {
     "@tint/native-runtime": "workspace:*",
-    "@tint/abi": "workspace:*"
+    "@tint/abi": "workspace:*",
+    "@tint/foundation": "workspace:*"
   }
 }

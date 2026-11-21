@@ -4,7 +4,7 @@ import {
   copyByteStorage,
   copyImmutableByteStorage,
   createByteStorage,
-  adoptByteStorage,
+  adoptFixedByteStorage,
   byteStorageData,
   resizeByteStorage,
   transferByteStorage,
@@ -74,7 +74,7 @@ export function adoptArrayBuffer(
   const object = createObject<ScriptPropertyKey, unknown>(
     realm.arrayBufferPrototype,
   );
-  object.internalArrayBufferData = adoptByteStorage(
+  object.internalArrayBufferData = adoptFixedByteStorage(
     bytes,
     realm.bufferMaxBytes,
   );
@@ -122,6 +122,7 @@ export function installArrayBufferIntrinsics(
         maximum,
         resizable,
         realm.bufferMaxBytes,
+        realm.bufferAllocator,
       );
       if (!storage.ok) return storageFailure(storage.error, realm);
       return wrap(storage.value, parent);

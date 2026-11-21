@@ -719,6 +719,63 @@ The [binding patterns ledger](results/unified-pipeline-ledger-slice4a-typed-bind
 records 146 forms. The typed `destructuring` construct now stays typed, and
 both forms of `destructuring-entry-points` pass.
 
+### Isolate checkpoints and timed turns
+
+The [event loop design](design-event-loop.md) describes the host policy for
+typed and general callbacks. The portable
+[turn driver](../packages/native-runtime/src/event-loop.ts) owns the timer heap,
+phase queues and liveness counts. Its host supplies monotonic time, readiness
+polling and the isolate's existing microtask checkpoint. A callback entry
+services ticks before microtasks, while ESM entry finishes the current
+microtask batch first.
+
+The [typed hosted fixture](../tools/build-event-loop-fixture.ts) exercises the
+driver without general fallback. [Node oracle traces](../tools/event-loop-oracle.test.ts)
+pin the public ordering that the application hosts need to reproduce.
+
+The [Darwin reactor](../packages/platform/src/darwin/reactor.ts) uses kqueue
+with an `EVFILT_USER` wake. The
+[Linux reactor](../packages/platform/src/linux/reactor.ts) uses epoll with
+eventfd. [The reactor fixture](../tools/build-event-loop-reactor-fixture.ts)
+exercises a pre-posted wake, a cross-thread wake and a nonblocking pipe
+through the same phases on Darwin arm64, Linux arm64 and Linux x86-64.
+
+The Node personality of the general AOT host can
+[install scheduling globals](../packages/native-runtime/src/node/event-loop-globals.ts)
+and drive their callbacks after module evaluation. The clock and reactor are
+explicit capabilities. Immediate-only and synchronous programs can complete
+without opening a reactor. The
+[blocking pool](../packages/native-runtime/src/blocking-pool.ts) starts a
+bounded set of helpers on its first submission. The
+[pool fixture](../tools/build-event-loop-blocking-pool-fixture.ts) exercises
+file reads, capacity enforcement and completion turns through the control wake.
+
+Threaded images can opt in to the
+[worker exit record ABI](../packages/abi/src/host.ts). A tagged startup
+argument identifies a raw record. After managed teardown, the startup thunk
+publishes the status and wakes the owner's nonblocking pipe. The
+[worker exit fixture](../tools/build-worker-exit-fixture.ts) launches a detached
+isolate from the same image and observes completion without joining it.
+The [POSIX worker host](../packages/platform/src/workers.ts) supplies
+nonblocking close-on-exec pipes and detached thread ownership on both backends.
+The [native lifecycle](../packages/native-runtime/src/worker-lifecycle.ts)
+uses that record for exit and error delivery, and holds the owner alive
+through its referenced pipe watcher. A worker stop request updates its shared
+record and signals a separate nonblocking pipe. The worker checks the request
+between turns and after reactor polling, and reports status 1 through the same
+teardown path. If a worker is parked on a registered Atomics waiter, the stop
+request also wakes that ticket. The worker consumes its ticket before exiting.
+Worker realms that attach shared memory with the worker wait control propagate
+the interruption through the engine-abort boundary in `Atomics.wait`.
+Hosted builds can designate worker application modules for interruption at
+managed allocation and call safepoints. The native backends read the worker's
+stop word and propagate a reserved completion through managed frames. Worker
+application handlers bypass that completion. Trusted runtime handlers and C
+callback boundaries use their existing cleanup paths. Worker-capable builds
+keep the managed module boundaries through optimization so runtime helpers
+retain that distinction. Allocation-free, call-free loops remain the gap
+documented in the [event loop design](design-event-loop.md).
+
 ### What happens to each front end
 
 - js-engine lowering becomes a library of construct lowerings callable for a

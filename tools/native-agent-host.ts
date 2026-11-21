@@ -98,7 +98,12 @@ export function runNativeAgent(argument:number):number {
   host.evaluate(source);checkNativeAgentRealms(realms);
   let failed=false;pumpNativeAgentJobs(host,(error):void=>{failed=true;},():boolean=>failed||nativeWorkerLeaving);if(failed||unhandledNativeAgentRejections!==0)throw "NATIVE_AGENT_JOB_FAILURE";checkNativeAgentRealms(realms);
   if(!nativeWorkerLeaving){worker.leaving();nativeWorkerLeaving=true;}return 0;
- }catch(error){worker.failed("Uncaught native agent exception");return 70;}
+ }catch(error){
+  worker.failed("Uncaught native agent exception");
+  const service=sharedBlocks,registry=service===undefined?undefined:service.waitEvents;
+  if(registry!==undefined)registry.interruptEvents();
+  return 70;
+ }
 }
 function checkNativeAgentRealms(realms:readonly ErrorRealm[]):void {
  if(scriptFaultExit()!==0)throw "NATIVE_AGENT_SCRIPT_FAULT";
@@ -109,7 +114,19 @@ function pumpNativeAgentJobs(host:RealmHost,reportError:(error:unknown)=>void,co
  while(true){
   drainScriptJobs(agent,reportError,():void=>{processAtomicWaitEvents(agent,true);});
   if(complete()||agent.pendingAtomicWaits.length===0)return;
-  if(processAtomicWaitEvents(agent,true)===0)agentSleep(1);
+  const service=sharedBlocks,registry=service===undefined?undefined:service.waitEvents;
+  if(registry===undefined)throw "NATIVE_AGENT_WAIT_AUTHORITY";
+  const version=registry.eventVersion();
+  const cluster=rootNativeCluster;if(cluster!==undefined)cluster.check();
+  if(processAtomicWaitEvents(agent,true)!==0)continue;
+  let deadline=Infinity;
+  for(let i=0;i<agent.pendingAtomicWaits.length;i++){
+   const entry=agent.pendingAtomicWaits[i];
+   if(entry===undefined)throw "NATIVE_AGENT_WAIT_PENDING";
+   deadline=Math.min(deadline,entry.deadline);
+  }
+  const timeout=deadline===Infinity?0:Math.min(Number.MAX_SAFE_INTEGER,Math.max(1,Math.ceil((deadline-monotonicMilliseconds())*1000000)));
+  if(!registry.parkEvents(version,timeout).ok)throw "NATIVE_AGENT_WAIT_PARK";
  }
 }
 export function finishNativeAgents():void {const cluster=rootNativeCluster;if(cluster!==undefined)cluster.joinAll();}

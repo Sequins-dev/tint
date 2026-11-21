@@ -239,7 +239,10 @@ function buildLayout(
   largeCodeAddress: number | undefined,
 ): MachOResult {
   const large = largeCodeAddress !== undefined;
-  const baseHigh = large ? LARGE_BASE_HIGH : 1;
+  const sharedEntry = request.sharedEntry;
+  if (large && sharedEntry !== undefined)
+    return { ok: false, error: "SIZE_LIMIT" };
+  const baseHigh = sharedEntry !== undefined ? 0 : large ? LARGE_BASE_HIGH : 1;
   const base = baseHigh * 0x100000000;
   const compactLimit = request.compactVMLimit ?? COMPACT_VM_LIMIT;
   const chunkBytes = request.signedChunkBytes ?? CHUNK_BYTES;
@@ -402,8 +405,13 @@ function buildLayout(
     }
     dylibBytes += dylibCommandSize(installName);
   }
+  const installName =
+    sharedEntry === undefined ? "" : request.identifier + ".dylib";
+  const libraryCommand =
+    sharedEntry === undefined ? 0 : dylibCommandSize(installName);
   const headerSize =
     HEADER_SIZE +
+    (libraryCommand === 0 ? 0 : libraryCommand - 112) +
     dylibBytes +
     (large ? chunkCommands : tail.length * 80) +
     (hasData ? 152 : 0) +
@@ -416,6 +424,20 @@ function buildLayout(
   if (!large && expectedCodeOffset + codeLength >= compactLimit)
     return buildLayout(request, 0);
   const codeAddress = largeCodeAddress ?? expectedCodeOffset;
+  let exports: Uint8Array = new Uint8Array(0);
+  if (sharedEntry !== undefined) {
+    if (
+      !uint(sharedEntry.offset, instructionEnd - 1) ||
+      sharedEntry.offset % 4 !== 0
+    )
+      return { ok: false, error: "INVALID_SYMBOL" };
+    const encoded = exportEntry(
+      sharedEntry.name,
+      codeAddress + sharedEntry.offset,
+    );
+    if (encoded === undefined) return { ok: false, error: "INVALID_SYMBOL" };
+    exports = encoded;
+  }
   const textCode = large ? signatureLoader() : code;
   const textCodeLength = large ? textCode.length : codeLength;
   const metadataLimit = Math.min(
@@ -522,8 +544,12 @@ function buildLayout(
   const built = buildImportFixups({
     imports: bindings,
     segmentOffset: hasData ? dataStart : 0,
-    segmentIndex: hasData ? 2 : 0,
-    segmentCount: (hasData ? 4 : 3) + (hasDebug ? 1 : 0) + chunks.length,
+    segmentIndex: hasData ? (sharedEntry === undefined ? 2 : 1) : 0,
+    segmentCount:
+      (hasData ? 4 : 3) -
+      (sharedEntry === undefined ? 0 : 1) +
+      (hasDebug ? 1 : 0) +
+      chunks.length,
     maxByteLength: Math.min(request.maxByteLength, UINT32_MAX),
   });
   if (!built.ok)
@@ -533,6 +559,12 @@ function buildLayout(
     };
   const slots = built.value.slots,
     chains = built.value.metadata;
+  let linkedit = chains;
+  if (sharedEntry !== undefined) {
+    linkedit = new Uint8Array(chains.length + exports.length);
+    linkedit.set(chains);
+    linkedit.set(exports, chains.length);
+  }
   const fragments: Fragment[] = [
     {
       id: "headers",
@@ -549,7 +581,7 @@ function buildLayout(
       bytes: textCode,
       byteLength: textCodeLength,
     },
-    { id: "chains", order: 12, alignment: PAGE, bytes: chains },
+    { id: "chains", order: 12, alignment: PAGE, bytes: linkedit },
     { id: "symbol-table", order: 13, alignment: 8, bytes: symbolBytes },
     { id: "signature", order: 14, alignment: 16, bytes: new Uint8Array(0) },
   ];
@@ -768,21 +800,24 @@ function buildLayout(
   put32(prefix, 0, 0xfeedfacf);
   put32(prefix, 4, 0x100000c);
   put32(prefix, 8, 0);
-  put32(prefix, 12, 2);
+  put32(prefix, 12, sharedEntry === undefined ? 2 : 6);
   put32(
     prefix,
     16,
-    (hasData ? 11 : 10) +
+    (hasData ? 11 : 10) -
+      (sharedEntry === undefined ? 0 : 1) +
       (hasSymbols ? 1 : 0) +
       (hasDebug ? 1 : 0) +
       dylibs.length +
       chunks.length,
   );
   put32(prefix, 20, headerSize - 32);
-  put32(prefix, 24, 0x200085);
+  put32(prefix, 24, sharedEntry === undefined ? 0x200085 : 0x85);
   let o = 32;
-  segment(prefix, o, "__PAGEZERO", 0, 0, 0, 1, 0, 0, 0, 0);
-  o += 72;
+  if (sharedEntry === undefined) {
+    segment(prefix, o, "__PAGEZERO", 0, 0, 0, 1, 0, 0, 0, 0);
+    o += 72;
+  }
   const textSections = 1 + unwindSections + (large ? 0 : tail.length);
   segment(
     prefix,
@@ -811,7 +846,7 @@ function buildLayout(
     if (item === undefined) throw "Mach-O text section invariant";
     name(prefix, at, textSectionName(item.kind));
     name(prefix, at + 16, "__TEXT");
-    put64(prefix, at + 32, codeOffset + item.offset, 1);
+    put64(prefix, at + 32, codeOffset + item.offset, baseHigh);
     put64(prefix, at + 40, item.byteLength);
     put32(prefix, at + 48, codeOffset + item.offset);
     // S_CSTRING_LITERALS for C strings; regular read-only data otherwise.
@@ -833,7 +868,7 @@ function buildLayout(
       const info = frames + 80;
       name(prefix, info, "__unwind_info");
       name(prefix, info + 16, "__TEXT");
-      put64(prefix, info + 32, unwindInfoOffset, 1);
+      put64(prefix, info + 32, unwindInfoOffset, baseHigh);
       put64(prefix, info + 40, unwind.unwindInfo.length);
       put32(prefix, info + 48, unwindInfoOffset);
       put32(prefix, info + 52, 2);
@@ -984,10 +1019,17 @@ function buildLayout(
       o += 80;
     }
   }
-  command(prefix, o, 0xe, 32);
-  put32(prefix, o + 8, 12);
-  name(prefix, o + 12, "/usr/lib/dyld");
-  o += 32;
+  if (sharedEntry === undefined) {
+    command(prefix, o, 0xe, 32);
+    put32(prefix, o + 8, 12);
+    name(prefix, o + 12, "/usr/lib/dyld");
+    o += 32;
+  } else {
+    command(prefix, o, 0xd, libraryCommand);
+    put32(prefix, o + 8, 24);
+    name(prefix, o + 24, installName);
+    o += libraryCommand;
+  }
   command(prefix, o, 0xc, 56);
   put32(prefix, o + 8, 24);
   put32(prefix, o + 16, 0x10000);
@@ -1008,9 +1050,16 @@ function buildLayout(
     name(prefix, o + 24, dylib.name);
     o += size;
   }
-  command(prefix, o, 0x80000028, 24);
-  put64(prefix, o + 8, entryOffset);
-  o += 24;
+  if (sharedEntry === undefined) {
+    command(prefix, o, 0x80000028, 24);
+    put64(prefix, o + 8, entryOffset);
+    o += 24;
+  } else {
+    command(prefix, o, 0x80000033, 16);
+    put32(prefix, o + 8, linkeditOffset + chains.length);
+    put32(prefix, o + 12, exports.length);
+    o += 16;
+  }
   command(prefix, o, 0x32, 24);
   put32(prefix, o + 8, 1);
   put32(prefix, o + 12, minimumOS);
@@ -1157,4 +1206,29 @@ function buildLayout(
       signatureFileOffset: signatureOffset,
     },
   };
+}
+
+/** The dyld export trie for one ordinary function. The root has one edge to
+ * a terminal with flags zero and its image-relative code address. */
+function exportEntry(symbol: string, address: number): Uint8Array | undefined {
+  const encoded = new TextEncoder().encode("_" + symbol);
+  if (encoded.length >= 124 || symbol.length === 0 || symbol.includes("\0"))
+    return undefined;
+  // Flags plus up to eight ULEB128 bytes for an exact Number address.
+  const terminal = new Uint8Array(9);
+  let length = 1;
+  let cursor = address;
+  do {
+    const low = cursor % 128;
+    cursor = Math.floor(cursor / 128);
+    terminal[length++] = low + (cursor === 0 ? 0 : 128);
+  } while (cursor > 0);
+  const child = encoded.length + 4;
+  const bytes = new Uint8Array(child + 2 + length);
+  bytes[1] = 1;
+  bytes.set(encoded, 2);
+  bytes[child - 1] = child;
+  bytes[child] = length;
+  bytes.set(terminal.subarray(0, length), child + 1);
+  return bytes;
 }

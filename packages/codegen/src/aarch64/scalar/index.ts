@@ -13,6 +13,10 @@ import {
   nativeContextDomainOffset,
   nativeEngineThrowOffset,
   nativeStackOverflowPayload,
+  nativeWorkerStopObserved,
+  nativeWorkerStopPayload,
+  nativeWorkerStopPointerOffset,
+  nativeWorkerStopRequested,
   nativeStackLimitOffset,
   nativeCStackReserveBytes,
   nativeHeaderFlagUnit,
@@ -739,6 +743,7 @@ export type CodegenAnalysis =
   | "safepoint-liveness";
 
 export interface EmissionOptions {
+  readonly workerFunctions?: ReadonlySet<string> | undefined;
   readonly maxByteLength?: number | undefined;
   /** Ahead-of-time builds: lift the work limits of codegen analyses (each
    * of which otherwise falls back to slower, conservative code on large
@@ -5148,6 +5153,66 @@ function emitModuleForms(
             });
         }
         let throwExit = false;
+        const interruptible =
+          options.workerFunctions?.has(
+            fn.name.endsWith("$direct") ? fn.name.slice(0, -7) : fn.name,
+          ) === true;
+        // Use IP registers before allocating or setting up a managed call.
+        // The exceptional edge publishes the usual two-word thrown value.
+        function pollWorkerStop(): void {
+          if (!interruptible) return;
+          rawLoad(17, contextOffset);
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 17,
+            rn: 17,
+            offset: nativeStackMapRegistryOffset,
+          });
+          emit({
+            op: "sub-imm",
+            width: 64,
+            rd: 17,
+            rn: 17,
+            immediate: -nativeWorkerStopPointerOffset,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({ op: "ldr", width: 64, rt: 17, rn: 17, offset: 0 });
+          const noWorker = instructions.length;
+          emit({ op: "cbz", width: 64, rt: 17, displacement: 0 });
+          emit({ op: "ldar", width: 64, rt: 16, rn: 17 });
+          emit({
+            op: "sub-imm",
+            width: 64,
+            rd: "zr",
+            rn: 16,
+            immediate: nativeWorkerStopRequested,
+            shift: 0,
+            setFlags: true,
+          });
+          const running = instructions.length;
+          emit({ op: "b.cond", condition: "ne", displacement: 0 });
+          imm(16, nativeWorkerStopObserved);
+          emit({ op: "stlr", width: 64, rt: 16, rn: 17 });
+          rawStore("zr", resultOffset + 16);
+          imm(9, nativeWorkerStopPayload);
+          rawStore(9, resultOffset + 24);
+          imm(0, 2);
+          throwExit = true;
+          branch({ op: "b" }, fn.id, -1);
+          patchInstruction(noWorker, {
+            op: "cbz",
+            width: 64,
+            rt: 17,
+            displacement: (instructions.length - noWorker) * 4,
+          });
+          patchInstruction(running, {
+            op: "b.cond",
+            condition: "ne",
+            displacement: (instructions.length - running) * 4,
+          });
+        }
         function exceptionalBranch(condition: Branch): void {
           const handler =
             blockId === undefined ? undefined : fn.blocks[blockId]?.exception;
@@ -7570,6 +7635,7 @@ function emitModuleForms(
           prepare: () => void,
           size: (rd: number) => void,
         ): void {
+          pollWorkerStop();
           prepare();
           let fastDone = -1;
           if (linearAllocation) {
@@ -11639,6 +11705,7 @@ function emitModuleForms(
                   break;
                 }
                 if (operation === "collect-garbage") {
+                  pollWorkerStop();
                   // Allocation slow-path ABI with request size 0, which the
                   // runtime allocators reserve for a forced full collection
                   // (no allocation producer passes 0). Exhaustion throws through
@@ -11768,6 +11835,7 @@ function emitModuleForms(
                   break;
                 }
                 if (operation === "executable-call-managed") {
+                  pollWorkerStop();
                   if (host().executableMemory === undefined)
                     fail("UNSUPPORTED", "target has no executable-memory ABI");
                   zeroWords([
@@ -15077,6 +15145,7 @@ function emitModuleForms(
               }
               case "call-indirect":
               case "call": {
+                pollWorkerStop();
                 const target = signatures[op.target];
                 if (target === undefined) throw "call signature invariant";
                 // Dense list reads: the vector fast path inline, the
@@ -15769,6 +15838,7 @@ function emitModuleForms(
                   emit({ op: "blr", rn: 16 });
                 } else branch({ op: "bl" }, op.target, undefined);
                 safepoint();
+                pollWorkerStop();
                 emit({
                   op: "sub-imm",
                   width: 32,
@@ -16288,6 +16358,29 @@ function emitModuleForms(
           emit({ op: "brk", immediate: 0 });
           rawLoad(9, resultOffset + 16);
           rawLoad(10, resultOffset + 24);
+          if (interruptible) {
+            // Interruptions bypass handlers in worker-owned application code.
+            // Trusted runtime frames retain their cleanup on the ordinary edge.
+            const ordinary = instructions.length;
+            emit({ op: "cbnz", width: 64, rt: 9, displacement: 0 });
+            emit({
+              op: "sub-imm",
+              width: 64,
+              rd: "zr",
+              rn: 10,
+              immediate: nativeWorkerStopPayload,
+              shift: 0,
+              setFlags: true,
+            });
+            throwExit = true;
+            branch({ op: "b.cond", condition: "eq" }, fn.id, -1);
+            patchInstruction(ordinary, {
+              op: "cbnz",
+              width: 64,
+              rt: 9,
+              displacement: (instructions.length - ordinary) * 4,
+            });
+          }
           rawStore(9, slotOffset(handler.slot));
           rawStore(10, slotOffset(handler.slot) + 8);
           // A handler frame predates the overflow, so it fits the normal limit:

@@ -98,16 +98,27 @@ export interface FixtureForeignDeclaration {
 
 type GeneralLowering = ReturnType<typeof createGeneralLowering>;
 let generalLowering: GeneralLowering | undefined;
+let nodeGeneralLowering: GeneralLowering | undefined;
+const eventLoopClockModule = "packages/native-runtime/src/intrinsics/clock.ts";
 /** General (JavaScript-semantics) lowering for application code the typed
  * pipeline rejects, with console output through the hosted fs binding.
- * TINT_GENERAL_FALLBACK=0 disables it. Read per build, not at import:
- * fixtures set the variable after their (hoisted) imports. */
+ * TINT_GENERAL_FALLBACK=0 disables retries while retaining the worker image
+ * composition used by the typed path. Read per build: fixtures can set the
+ * variable after importing this module. */
 export function workspaceGeneralLowering(
   functionFallback = false,
+  nodeEventLoop = false,
+  workerImage?: {
+    readonly managedBytes: number;
+    readonly stackBytes: number;
+    readonly nodeHosted: boolean;
+  },
 ): GeneralLowering | undefined {
-  if (process.env.TINT_GENERAL_FALLBACK === "0") return undefined;
-  if (!functionFallback && generalLowering !== undefined)
-    return generalLowering;
+  if (process.env.TINT_GENERAL_FALLBACK === "0" && workerImage === undefined)
+    return undefined;
+  const cached = nodeEventLoop ? nodeGeneralLowering : generalLowering;
+  if (!functionFallback && workerImage === undefined && cached !== undefined)
+    return cached;
   const lowering = createGeneralLowering({
     functionFallback,
     runtime: {
@@ -121,8 +132,37 @@ export function workspaceGeneralLowering(
       module: "packages/native-runtime/src/intrinsics/fs.ts",
       name: "write",
     },
+    ...(nodeEventLoop
+      ? {
+          nodeEventLoop: {
+            globals: "packages/native-runtime/src/node/event-loop-globals.ts",
+            driver: "packages/native-runtime/src/event-loop-reactor.ts",
+            clock: eventLoopClockModule,
+            reactor:
+              "packages/platform/src/" + fixtureTarget.os + "/reactor.ts",
+          },
+        }
+      : {}),
+    ...(workerImage === undefined
+      ? {}
+      : {
+          nodeWorkers: {
+            host: "packages/native-runtime/src/node/worker-host.ts",
+            shared: "packages/native-runtime/src/shared-blocks.ts",
+            lifecycle: "packages/native-runtime/src/worker-lifecycle.ts",
+            threadHost: "packages/platform/src/workers.ts",
+            typedBindings:
+              "packages/native-runtime/src/node/worker-threads-native.ts",
+            managedBytes: workerImage.managedBytes,
+            nodeHosted: workerImage.nodeHosted,
+            stackBytes: workerImage.stackBytes,
+          },
+        }),
   });
-  if (!functionFallback) generalLowering = lowering;
+  if (!functionFallback && workerImage === undefined) {
+    if (nodeEventLoop) nodeGeneralLowering = lowering;
+    else generalLowering = lowering;
+  }
   return lowering;
 }
 
@@ -139,6 +179,8 @@ function buildHostedFixture(
   options: {
     readonly allowJit?: boolean;
     readonly threaded?: boolean;
+    readonly threadExitPipe?: boolean;
+    readonly workerModules?: readonly string[];
     readonly hostBindings?: readonly NativeHostBinding[];
     /** Project bindings to leave out, so the bound functions keep their
      * portable bodies (e.g. cpu-sha256, forcing the portable SHA-256). */
@@ -163,6 +205,9 @@ function buildHostedFixture(
     /** Fail instead of falling back to general semantics (benchmarks whose
      * measurements must be of typed code). */
     readonly requireTyped?: boolean;
+    readonly nodeEventLoop?: boolean;
+    readonly nodeWorkers?: boolean;
+    readonly nodeWorkerLibrary?: boolean;
     /** Host validation over captured application sources, when supplied. */
     readonly validateSource?: GeneralLowering["validateSource"];
     readonly functionFallback?: boolean;
@@ -202,7 +247,22 @@ function buildHostedFixture(
   const bytes = new TextEncoder().encode(text);
   const functionFallback =
     options.functionFallback === true && options.validateSource !== undefined;
-  const general = workspaceGeneralLowering(functionFallback);
+  const workerImage =
+    options.nodeWorkers === true
+      ? {
+          managedBytes: options.managedBytes,
+          nodeHosted: options.nodeWorkerLibrary === true,
+          stackBytes: options.stackBytes ?? 16777216,
+        }
+      : undefined;
+  const general = workspaceGeneralLowering(
+    functionFallback,
+    options.nodeEventLoop === true || workerImage !== undefined,
+    workerImage,
+  );
+  const eventLoop =
+    (options.nodeEventLoop === true || workerImage !== undefined) &&
+    general !== undefined;
   let fallbackFunctions: readonly GeneralFallbackFunction[] | undefined;
   let fallbackClasses: readonly GeneralFallbackClass[] | undefined;
   const replaySources = options.replaySources;
@@ -321,7 +381,11 @@ function buildHostedFixture(
     ...(general?.runtimeModules ?? []),
     ...dependencies
       .map((dependency) => dependency[1])
-      .filter((id) => !localModuleIds.has(id)),
+      .filter(
+        (id) =>
+          !localModuleIds.has(id) &&
+          general?.syntheticModules?.includes(id) !== true,
+      ),
     ...dependencyIds,
     ...(sysvDynamic ? [foreignRuntimeModules.sysv] : []),
   ];
@@ -405,6 +469,11 @@ function buildHostedFixture(
       ? {}
       : { optimization: options.optimization }),
     threaded: options.threaded ?? false,
+    nodeWorkerLibrary: options.nodeWorkerLibrary === true,
+    threadExitPipe: options.threadExitPipe ?? false,
+    ...(options.workerModules === undefined
+      ? {}
+      : { workerModules: options.workerModules }),
     forceFarReach:
       options.forceFarReach ?? process.env.TINT_FORCE_FAR_REACH === "1",
     machOLayout:
@@ -417,6 +486,15 @@ function buildHostedFixture(
       ...request.runtimes,
       ...additionalRuntimes,
       ...ffi.runtimes,
+      ...(eventLoop
+        ? [
+            {
+              module: eventLoopClockModule,
+              namespace: "node-event-loop-clock",
+              retainedExports: ["monotonicMilliseconds"],
+            },
+          ]
+        : []),
       ...(serviceImage?.runtimes ?? []),
     ],
     recordBindings: [
@@ -444,6 +522,15 @@ function buildHostedFixture(
           options.allowJit === true ||
           !binding.operation.startsWith("executable-"),
       ),
+      ...(eventLoop
+        ? [
+            {
+              module: eventLoopClockModule,
+              name: "monotonicMilliseconds",
+              operation: "monotonic-time" as const,
+            },
+          ]
+        : []),
     ],
     foreignBindings: [
       ...(request.foreignBindings ?? []),
@@ -453,6 +540,10 @@ function buildHostedFixture(
     ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
     entry: fixtureSource,
     start: "run",
+    ...(options.requireTyped === true ||
+    process.env.TINT_GENERAL_FALLBACK === "0"
+      ? { requireTyped: true }
+      : {}),
     ...(general === undefined
       ? {}
       : {
@@ -478,7 +569,6 @@ function buildHostedFixture(
                 }
               : {}),
           },
-          ...(options.requireTyped === true ? { requireTyped: true } : {}),
           onGeneralFallback: (modules: readonly string[], reason: string) => {
             options.onGeneralFallback?.(modules, reason);
             process.stderr.write(
@@ -668,7 +758,8 @@ export function verifyHostedFixture(
   if (mode === "defer-admission") return path;
   if (mode === "1") {
     // Admit build-only Darwin images before callers launch their own LLDB.
-    if (fixtureTarget.os === "darwin") admitDarwinFixture(path);
+    if (fixtureTarget.os === "darwin" && args[6]?.nodeWorkerLibrary !== true)
+      admitDarwinFixture(path);
   } else
     try {
       const artifact = nativeArtifact(

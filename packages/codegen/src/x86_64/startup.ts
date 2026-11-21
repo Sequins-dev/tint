@@ -13,6 +13,12 @@ import {
   nativeStackMapRegistryHeaderBytes,
   nativeStackMapRegistryOffset,
   nativeStackMapTransitionTable,
+  nativeThreadExitReadOffset,
+  nativeWorkerStopPointerOffset,
+  nativeWorkerStopStateOffset,
+  nativeWorkerStackBytesOffset,
+  nativeWorkerHeapBytesOffset,
+  nativeThreadExitWriteOffset,
   type PosixHostFacts,
 } from "@tint/abi/host";
 import type {
@@ -80,6 +86,9 @@ interface HostedEntry {
   readonly returnType: "number" | "boolean" | "void" | "general";
   readonly stackBytes: number;
   readonly threaded?: boolean;
+  readonly nodeWorkerLibrary?: boolean;
+  readonly threadExitPipe?: boolean;
+  readonly workerSafepoints?: boolean;
   readonly allowJit?: boolean;
   readonly managedBytes: number;
   readonly pageBytes: number;
@@ -97,6 +106,7 @@ interface HostedImage extends ImageRelocations {
   readonly codePlan: CodePlan;
   readonly data: Uint8Array;
   readonly entryOffset: number;
+  readonly workerEntryOffset: number | undefined;
   readonly maxByteLength: number;
   readonly imports: readonly string[];
   readonly symbols: readonly ImageSymbol[];
@@ -149,7 +159,8 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
             : codeOffset + table.tableOffset,
       });
     }
-  const registryStart = stackEnd + pageBytes;
+  const registryStart =
+    stackEnd + pageBytes + (request.workerSafepoints ? 16 : 0);
   const registryCapacity = stackMaps.length + (live ? 16384 : 0);
   const registryBytes =
     nativeStackMapRegistryHeaderBytes +
@@ -286,6 +297,28 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   const contextFrameBytes = saveOffset + (far ? 16 : 0);
   const threadArgumentOffset = contextBytes + 16;
   const threadModeOffset = threadArgumentOffset + 8;
+  function workerBytes(
+    offset: number,
+    maximum: number,
+    minimum: number,
+    site: string,
+  ): void {
+    constantAddress(rax, maximum);
+    const ready = "worker-limit-ready-" + site;
+    const actual = gpr(10);
+    emit({ op: "mov", dst: actual, src: mem(12, threadArgumentOffset) });
+    emit({ op: "test", dst: actual, src: imm(1) });
+    emit({ op: "jcc", cc: "e", target: label(ready) });
+    emit({ op: "mov", dst: actual, src: mem(10, offset - 1) });
+    emit({ op: "test", dst: actual, src: actual });
+    emit({ op: "jcc", cc: "e", target: label(ready) });
+    emit({ op: "cmp", dst: actual, src: rax });
+    emit({ op: "jcc", cc: "a", target: label("guard-failed") });
+    emit({ op: "cmp", dst: actual, src: imm(minimum) });
+    emit({ op: "jcc", cc: "b", target: label("guard-failed") });
+    emit({ op: "mov", dst: rax, src: actual });
+    emit({ op: "label", name: ready });
+  }
   if (threaded) {
     const hostedRun = "hosted-run";
     emit({ op: "xor", dst: edx, src: edx });
@@ -297,7 +330,13 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     emit({ op: "label", name: hostedThreadEntryLabel });
     emit({ op: "mov", dst: rdx, src: rdi });
     emit({ op: "xor", dst: edi, src: edi });
-    emit({ op: "xor", dst: esi, src: esi });
+    if (request.nodeWorkerLibrary === true) {
+      emit({ op: "xor", dst: word(1), src: word(1) });
+      emit({ op: "test", dst: rdx, src: rdx });
+      emit({ op: "jcc", cc: "e", target: label(hostedRun) });
+    } else {
+      emit({ op: "xor", dst: esi, src: esi });
+    }
     emit({ op: "mov", dst: word(1), src: imm(1) });
     emit({ op: "label", name: hostedRun });
   }
@@ -357,7 +396,17 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     emit({ op: "test", dst: eax, src: eax });
     emit({ op: "jcc", cc: "ne", target: label("guard-failed") });
   }
-  emit({ op: "lea", dst: rax, src: mem(13, pageBytes) });
+  if (request.workerSafepoints === true) {
+    workerBytes(
+      nativeWorkerStackBytesOffset,
+      stackBytes,
+      131072,
+      "stack-limit",
+    );
+    mappedAddress(gpr(11), stackEnd);
+    emit({ op: "sub", dst: gpr(11), src: rax });
+    emit({ op: "mov", dst: rax, src: gpr(11) });
+  } else emit({ op: "lea", dst: rax, src: mem(13, pageBytes) });
   emit({ op: "mov", dst: mem(12, nativeStackLimitOffset), src: rax });
   if (threaded || live) {
     // The inaccessible identity page outlives this heap and prevents address
@@ -394,6 +443,22 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     if (threaded) emit({ op: "label", name: keyReady });
   }
   emit({ op: "lea", dst: rax, src: mem(13, registryStart) });
+  if (request.workerSafepoints === true) {
+    emit({ op: "mov", dst: gpr(10), src: mem(12, threadArgumentOffset) });
+    emit({ op: "test", dst: gpr(10), src: imm(1) });
+    emit({ op: "jcc", cc: "e", target: label("worker-stop-pointer-ready") });
+    emit({
+      op: "lea",
+      dst: gpr(10),
+      src: mem(10, nativeWorkerStopStateOffset - 1),
+    });
+    emit({
+      op: "mov",
+      dst: mem(0, nativeWorkerStopPointerOffset),
+      src: gpr(10),
+    });
+    emit({ op: "label", name: "worker-stop-pointer-ready" });
+  }
   emit({ op: "mov", dst: mem(12, nativeStackMapRegistryOffset), src: rax });
   emit({ op: "mov", dst: mem(0, 0), src: imm(stackMaps.length) });
   emit({ op: "mov", dst: mem(0, 8), src: imm(registryCapacity) });
@@ -448,7 +513,29 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     for (let index = 0; index < extents.length; index++) {
       const value = extents[index];
       if (value === undefined) throw "runtime window invariant";
-      if (index === 4) emit({ op: "lea", dst: rax, src: rip("image") });
+      if (request.workerSafepoints === true && index === 1)
+        workerBytes(
+          nativeWorkerHeapBytesOffset,
+          managedBytes,
+          pageBytes * 4,
+          "heap-window",
+        );
+      else if (
+        request.workerSafepoints === true &&
+        (index === 6 || index === 7)
+      ) {
+        workerBytes(
+          nativeWorkerStackBytesOffset,
+          stackBytes,
+          131072,
+          index === 6 ? "stack-base" : "stack-size",
+        );
+        if (index === 6) {
+          mappedAddress(gpr(11), stackEnd);
+          emit({ op: "sub", dst: gpr(11), src: rax });
+          emit({ op: "mov", dst: rax, src: gpr(11) });
+        }
+      } else if (index === 4) emit({ op: "lea", dst: rax, src: rip("image") });
       else if (index % 2 === 0) mappedAddress(rax, value);
       else constantAddress(rax, value);
       if (index === 0)
@@ -530,6 +617,8 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
       dst: xmm(0),
       src: mem(12, threadArgumentOffset),
     });
+  if (request.nodeWorkerLibrary === true)
+    emit({ op: "cvtsi2sd", dst: xmm(1), src: mem(12, argumentsOffset) });
   emit({ op: "call", target: label("invoke") });
   emit({ op: "cmp", dst: eax, src: imm(normal) });
   emit({ op: "jcc", cc: "ne", target: label("program-failed") });
@@ -603,6 +692,40 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   emit({ op: "label", name: "mapping-failed" });
   emit({ op: "mov", dst: eax, src: imm(71) });
   emit({ op: "label", name: "return" });
+  if (threaded && request.threadExitPipe === true) {
+    emit({ op: "mov", dst: rdx, src: mem(12, threadArgumentOffset) });
+    emit({ op: "test", dst: rdx, src: imm(1) });
+    emit({ op: "jcc", cc: "e", target: label("thread-exit-done") });
+    emit({ op: "mov", dst: rsp, src: r12 });
+    emit({ op: "mov", dst: mem(12, contextBytes), src: rax });
+    emit({ op: "sub", dst: rdx, src: imm(1) });
+    // Copy the descriptors into dead system-frame slots before publishing.
+    emit({ op: "mov", dst: gpr(8), src: mem(2, nativeThreadExitWriteOffset) });
+    emit({ op: "mov", dst: gpr(9), src: mem(2, nativeThreadExitReadOffset) });
+    emit({ op: "mov", dst: mem(12, threadArgumentOffset), src: gpr(8) });
+    emit({ op: "mov", dst: mem(12, threadModeOffset), src: gpr(9) });
+    emit({ op: "add", dst: rax, src: imm(1) });
+    emit({ op: "mov", dst: mem(2, 0), src: rax });
+    emit({ op: "mov", dst: mem(12, argumentCountOffset), src: imm(1) });
+
+    emit({ op: "label", name: "thread-exit-write" });
+    emit({ op: "mov", dst: rdi, src: mem(12, threadArgumentOffset) });
+    emit({ op: "lea", dst: rsi, src: mem(12, argumentCountOffset) });
+    emit({ op: "mov", dst: edx, src: imm(1) });
+    call(host.symbolPrefix + "write");
+    emit({ op: "cmp", dst: rax, src: imm(0) });
+    emit({ op: "jcc", cc: "ge", target: label("thread-exit-close") });
+    call(host.errnoSymbol);
+    emit({ op: "cmp", dst: { ...mem(0, 0), width: 32 }, src: imm(4) });
+    emit({ op: "jcc", cc: "e", target: label("thread-exit-write") });
+    emit({ op: "label", name: "thread-exit-close" });
+    emit({ op: "mov", dst: rdi, src: mem(12, threadArgumentOffset) });
+    call(host.symbolPrefix + "close");
+    emit({ op: "mov", dst: rdi, src: mem(12, threadModeOffset) });
+    call(host.symbolPrefix + "close");
+    emit({ op: "mov", dst: rax, src: mem(12, contextBytes) });
+    emit({ op: "label", name: "thread-exit-done" });
+  }
   if (far) {
     emit({ op: "mov", dst: gpr(14), src: mem(12, saveOffset) });
     emit({ op: "mov", dst: gpr(15), src: mem(12, saveOffset + 8) });
@@ -790,9 +913,11 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     if (reference === undefined) throw "startup address fixup invariant";
     addressFixups.push(reference);
   }
+  const worker = threaded ? stub.labels.get(hostedThreadEntryLabel) : undefined;
   return {
     codePlan,
     entryOffset: base,
+    workerEntryOffset: worker === undefined ? undefined : base + worker,
     data,
     maxByteLength: Number.MAX_SAFE_INTEGER,
     imports: importNames,

@@ -7,15 +7,15 @@ async function fixture(capacity = 4) {
   const create = api.createNativeWaitRegistry;
   assert.equal(typeof create, "function", "native waiter registry must exist");
   const host = new NodeSharedMemoryHost(),
-    wakes: number[] = [],
+    wakes: { address: number; all: boolean }[] = [],
     parks: number[] = [];
   const parking = {
     park: (address: number, _expected: number, _timeout: number) => {
       parks.push(address);
       return 0;
     },
-    wake: (address: number) => {
-      wakes.push(address);
+    wake: (address: number, all = false) => {
+      wakes.push({ address, all });
       return 0;
     },
   };
@@ -121,4 +121,39 @@ test("terminal completion order follows notifications across different locations
   value(r.notify(1, 0, 4, 1));
   assert.ok(value(r.order(other.ticket)) < value(r.order(first.ticket)));
   assert.ok(value(r.order(other.ticket)) > 0);
+});
+test("a cross-agent completion wakes the checkpoint regardless of which ticket it owns", async () => {
+  const f = await fixture();
+  const attached = f.api.attachNativeWaitRegistry(
+    new NodeSharedMemoryHost(f.host.kernel),
+    f.parking,
+    f.registry.registry,
+  );
+  assert.ok(attached.ok);
+  const registry = f.registry;
+  const first = value(registry.register(f.location, 7, 0, false));
+  const other = value(
+    registry.register({ ...f.location, byteOffset: 8 }, 0, 0, false),
+  );
+  const before = registry.eventVersion();
+  assert.equal(value(attached.value.notify(1, 8, 4, 1)), 1);
+  assert.equal(value(registry.parkEvents(before, 0)), 0);
+  assert.equal(f.parks.length, 0, "publication before park must skip the wait");
+  assert.notEqual(registry.eventVersion(), before);
+  assert.equal(value(registry.poll(first.ticket)), "waiting");
+  assert.equal(value(registry.take(other.ticket)), "notified");
+
+  const current = registry.eventVersion();
+  assert.equal(value(registry.parkEvents(current, 0)), 0);
+  const eventCell = f.parks[0];
+  assert.notEqual(eventCell, undefined);
+  assert.ok(f.wakes.some(({ address, all }) => address === eventCell && all));
+  const wakes = f.wakes.length;
+  attached.value.interruptEvents();
+  assert.notEqual(registry.eventVersion(), current);
+  assert.ok(
+    f.wakes
+      .slice(wakes)
+      .some(({ address, all }) => address === eventCell && all),
+  );
 });

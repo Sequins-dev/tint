@@ -13,6 +13,10 @@ export interface NativeConstructor {
   readonly global: string;
   readonly factory: string;
 }
+export interface LinkedConstructor {
+  readonly name: string;
+  readonly factory: string;
+}
 export type NativeGlobalsResult =
   | { readonly ok: true; readonly value: Module }
   | { readonly ok: false; readonly error: string };
@@ -28,6 +32,7 @@ export function prepareNativeGlobals(
   bound: BoundModule,
   constructors: readonly NativeConstructor[],
   nativeConsole: NativeConsole | undefined = undefined,
+  linkedConstructors: readonly LinkedConstructor[] = [],
 ): NativeGlobalsResult {
   const factories = new Map<string, string>();
   for (const constructor of constructors) {
@@ -52,6 +57,38 @@ export function prepareNativeGlobals(
       };
     factories.set(constructor.global, constructor.factory);
   }
+  const linked =
+    linkedConstructors.length === 0
+      ? undefined
+      : createKeyIndex<Expression, string>(syntaxHash);
+  for (const constructor of linkedConstructors) {
+    if (constructor === undefined || linked === undefined)
+      throw "linked constructor invariant";
+    const value = bound.bindings.find(
+      (binding) =>
+        binding !== undefined &&
+        binding.scope === 0 &&
+        binding.name === constructor.name,
+    );
+    if (value === undefined)
+      return { ok: false, error: "missing linked constructor binding" };
+    const factories = bound.bindings.filter(
+      (binding) =>
+        binding !== undefined && binding.name === constructor.factory,
+    );
+    const factory = factories[0];
+    if (
+      factories.length !== 1 ||
+      factory === undefined ||
+      factory.scope !== 0 ||
+      factory.kind !== "function"
+    )
+      return { ok: false, error: "missing linked constructor factory" };
+    for (const reference of bound.references) {
+      if (reference !== undefined && reference.binding === value.id)
+        linked.set(reference.node, constructor.factory);
+    }
+  }
   const globals = createKeyIndex<Expression, string>(syntaxHash);
   for (const reference of bound.references) {
     if (reference === undefined) throw "global reference invariant";
@@ -73,8 +110,9 @@ export function prepareNativeGlobals(
         if (original.kind !== "new" || mapped.kind !== "new") return mapped;
         let target = original.callee;
         while (target.kind === "group") target = target.expression;
-        const global = globals.get(target),
-          factory = global === undefined ? undefined : factories.get(global);
+        const global = globals.get(target);
+        const factory =
+          global === undefined ? linked?.get(target) : factories.get(global);
         if (factory === undefined) return mapped;
         return {
           kind: "call",

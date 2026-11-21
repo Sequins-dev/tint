@@ -48,6 +48,38 @@ test("factory names cannot be captured by a source local", () => {
   );
 });
 
+test("a linked constructor is resolved by binding identity", () => {
+  const bytes = new TextEncoder().encode(
+    "function Imported(){} function factory(n:number){return n;} new (Imported)(42); function shadow(Imported:number){return new Imported(1);}",
+  );
+  const text = createSourceText(bytes, bytes.length);
+  assert.ok(text.ok);
+  const parsed = parseModule(text.value);
+  assert.ok(parsed.ok);
+  const bound = bindModule(parsed.value, []);
+  assert.ok(bound.ok);
+  const linked = prepareNativeGlobals(
+    parsed.value,
+    bound.value,
+    [],
+    undefined,
+    [{ name: "Imported", factory: "factory" }],
+  );
+  assert.ok(linked.ok);
+  const construct = linked.value.statements[2];
+  assert.ok(
+    construct?.kind === "expression" && construct.expression.kind === "call",
+  );
+  assert.ok(construct.expression.callee.kind === "identifier");
+  assert.equal(construct.expression.callee.name, "factory");
+  const shadow = linked.value.statements[3];
+  assert.ok(shadow?.kind === "function" && shadow.body.kind === "block");
+  const statement = shadow.body.statements[0];
+  assert.ok(
+    statement?.kind === "return" && statement.expression?.kind === "new",
+  );
+});
+
 function consoleCalls(text: string): string[] {
   const bytes = new TextEncoder().encode(text),
     source = createSourceText(bytes, bytes.length);

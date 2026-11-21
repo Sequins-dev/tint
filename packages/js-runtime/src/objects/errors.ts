@@ -1,4 +1,5 @@
 import type { RealmReferrer } from "../modules/referrer.ts";
+import type { ByteAllocator } from "../bytes/index.ts";
 import type { ModuleLoader } from "../modules/loading.ts";
 import { installModuleSourceIntrinsic } from "./module-source.ts";
 import type { NamedTimeZoneProvider } from "./named-time-zones.ts";
@@ -161,6 +162,7 @@ export interface ErrorRealm {
     unknown
   >;
   bufferMaxBytes: number;
+  bufferAllocator: ByteAllocator | undefined;
   readonly typedArrayPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly typedArrayPrototypes: Map<
     string,
@@ -591,6 +593,7 @@ export function createErrorRealm(
     // RangeError). 32 MiB covers every pinned Test262 allocation that must
     // succeed (staging/sm/extensions/dataview.js: 20 MiB).
     bufferMaxBytes: 33554432,
+    bufferAllocator: undefined,
     arrayBufferPrototype: createObject<ScriptPropertyKey, unknown>(
       objectPrototype,
     ),
