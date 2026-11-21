@@ -5,6 +5,7 @@ export type StaticFfiNumberCall = (
   target: number,
   args: readonly unknown[],
 ) => unknown;
+export type StaticFfiBytesCall = (target: number, bytes: Uint8Array) => number;
 
 /** Hosts may supply fixed scalar call stubs and select the weak-slot policy. */
 export function ffiWeakProcessing(): boolean {
@@ -26,5 +27,11 @@ export function staticFfiCall(index: number, frame: Uint8Array): boolean {
 export function staticFfiNumberCall(
   index: number,
 ): StaticFfiNumberCall | undefined {
+  return undefined;
+}
+
+export function staticFfiBytesCall(
+  _index: number,
+): StaticFfiBytesCall | undefined {
   return undefined;
 }

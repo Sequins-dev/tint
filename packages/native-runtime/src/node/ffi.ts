@@ -40,7 +40,7 @@ import {
 } from "@tint/js-runtime/objects";
 import { Cell, DynamicScalarFrame, TARGET_AAPCS64 } from "tint:c/dl";
 import { abort, pthread_self } from "tint:c/ffi-callbacks";
-import { callbackState, external } from "tint:ffi";
+import { callbackState, external, stableBytes } from "tint:ffi";
 import { byteAddressInto } from "../ffi/address-words.ts";
 import { consoleError } from "../intrinsics/console.ts";
 import {
@@ -85,10 +85,12 @@ import { createFfiCallbacks, type FfiCallback } from "./ffi-callbacks.ts";
 
 import {
   ffiWeakProcessing,
+  staticFfiBytesCall,
   staticFfiCall,
   staticFfiIndex,
   staticFfiNumberCall,
   typedFfiIndex,
+  type StaticFfiBytesCall,
   type StaticFfiNumberCall,
 } from "./ffi-static.ts";
 
@@ -107,6 +109,7 @@ interface Binding {
   readonly staticCall: number;
   readonly typedCall: number;
   readonly staticNumberCall: StaticFfiNumberCall | undefined;
+  readonly staticBytesCall: StaticFfiBytesCall | undefined;
   readonly numericAddress: number;
   leafWorkspace: TypedFfiWorkspace | undefined;
   callbackWorkspace: TypedFfiWorkspace | undefined;
@@ -460,6 +463,23 @@ function invokeUnaryPointerLeaf(
   plan: ScalarCallPlan,
   input: unknown,
 ): number {
+  const direct = binding.staticBytesCall;
+  if (direct !== undefined) {
+    const view = viewObjectValue(input, core.object)?.internalTypedArrayData;
+    const length = view?.length;
+    const storage = view?.storage;
+    if (
+      view?.kind === "Uint8" &&
+      view.byteOffset === 0 &&
+      length !== undefined &&
+      length !== 0 &&
+      storage?.kind === "ordinary"
+    ) {
+      const bytes = storage.data;
+      if (bytes !== undefined && length <= bytes.length && stableBytes(bytes))
+        return direct(binding.numericAddress, bytes);
+    }
+  }
   const workspace = acquireScalarWorkspace(binding, plan, false);
   try {
     const bytes = workspace.cells[0];
@@ -722,8 +742,14 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
         ? undefined
         : planScalarCall(signature, classifyScalarCall(core, signature));
     const numericAddress = address.high * 4294967296 + address.low;
+    const addressFits = Number.isSafeInteger(numericAddress);
+    const typedIndex = addressFits
+      ? staticCall >= 0
+        ? staticCall
+        : typedFfiIndex(key)
+      : -1;
     const staticNumberCall =
-      staticCall >= 0 && Number.isSafeInteger(numericAddress)
+      staticCall >= 0 && addressFits
         ? staticFfiNumberCall(staticCall)
         : undefined;
     return {
@@ -731,12 +757,9 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       signature,
       address,
       staticCall,
-      typedCall: !Number.isSafeInteger(numericAddress)
-        ? -1
-        : staticNumberCall === undefined
-          ? typedFfiIndex(key)
-          : staticCall,
+      typedCall: typedIndex,
       staticNumberCall,
+      staticBytesCall: staticFfiBytesCall(typedIndex),
       numericAddress,
       plan,
       leafWorkspace: undefined,

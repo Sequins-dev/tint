@@ -172,6 +172,20 @@ export function staticFfiNumberEntry(index: number): string {
   return "callStaticFfiNumber" + String(index);
 }
 
+export function hasStaticFfiBytesEntry(plan: StaticFfiPlan): boolean {
+  const signature = plan.signature;
+  return (
+    signature.parameters.length === 1 &&
+    signature.parameters[0]?.kind === "pointer" &&
+    signature.result.kind === "scalar" &&
+    signature.result.scalar === "i32"
+  );
+}
+
+export function staticFfiBytesEntry(index: number): string {
+  return "callStaticFfiBytes" + String(index);
+}
+
 export function fixedFfiCallArities(
   modules: readonly SourceModule[],
 ): number[] {
@@ -197,8 +211,8 @@ export function fixedFfiCallArities(
   return ordered;
 }
 
-/** Reuse a direct i32 prototype when a runtime definition validates to it. */
-export function addFixedI32Plans(
+/** Supply typed entries for common prototypes selected at binding time. */
+export function addFixedFfiPlans(
   plans: readonly StaticFfiPlan[],
   arities: readonly number[],
 ): StaticFfiPlan[] {
@@ -225,6 +239,21 @@ export function addFixedI32Plans(
         errno: "none",
       },
     });
+  }
+  if (arities.includes(1)) {
+    const key = nodeFfiSignatureKey("i32", ["pointer"]);
+    if (!seen.has(key))
+      combined.push({
+        key,
+        typedOnly: true,
+        signature: {
+          parameters: [nodeFfiCType("pointer")],
+          result: nodeFfiCType("i32"),
+          fixedParameters: 1,
+          callClass: "leaf",
+          errno: "none",
+        },
+      });
   }
   return combined;
 }
@@ -420,6 +449,7 @@ export function makeStaticFfiModule(
     'import type { ProgramRealmCore } from "objects";\n' +
     'import { checkedFfiNumber } from "memory";\n' +
     "export type StaticFfiNumberCall=(core:ProgramRealmCore,target:number,args:readonly unknown[])=>unknown;\n" +
+    "export type StaticFfiBytesCall=(target:number,bytes:Uint8Array)=>number;\n" +
     "export function ffiWeakProcessing():boolean { return " +
     String(weakProcessing) +
     "; }\n";
@@ -429,11 +459,28 @@ export function makeStaticFfiModule(
     "export function staticFfiCall(index:number,frame:Uint8Array):boolean {\n";
   let numbers =
     "export function staticFfiNumberCall(index:number):StaticFfiNumberCall|undefined {\n";
+  let bytes =
+    "export function staticFfiBytesCall(index:number):StaticFfiBytesCall|undefined {\n";
   for (let index = 0; index < plans.length; index++) {
     const plan = plans[index];
     if (plan === undefined) throw "static FFI plan invariant";
+    const byteEntry = fixedArities.includes(1) && hasStaticFfiBytesEntry(plan);
+    if (byteEntry) {
+      const name = staticFfiBytesEntry(index);
+      text +=
+        "export function " +
+        name +
+        "(target:number,bytes:Uint8Array):number { throw 'UNBOUND_STATIC_FFI'; }\n";
+      text +=
+        "function invoke" +
+        name +
+        "(target:number,bytes:Uint8Array):number {return " +
+        name +
+        "(target,bytes);}\n";
+      bytes += "if(index===" + index + ")return invoke" + name + ";\n";
+    }
     if (plan.typedOnly) {
-      text += numericFfiSource(plan, index);
+      if (!byteEntry) text += numericFfiSource(plan, index);
       typed += 'if(key==="' + plan.key + '")return ' + String(index) + ";\n";
       continue;
     }
@@ -476,6 +523,8 @@ export function makeStaticFfiModule(
         dispatch +
         "return false;\n}" +
         numbers +
+        "return undefined;\n}" +
+        bytes +
         "return undefined;\n}",
     ),
   );

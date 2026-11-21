@@ -81,6 +81,7 @@ export interface NativeForeignMemoryBinding {
     | "call-scalar"
     | "call-scalar-callbacks"
     | "runtime-callback-address"
+    | "call-direct-bytes"
     | "call-static-scalar"
     | "call-direct-scalar";
   readonly staticSignature?: CSignature;

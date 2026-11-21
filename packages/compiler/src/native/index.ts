@@ -119,7 +119,7 @@ import {
 } from "../spill-files.ts";
 import type { FunctionStore } from "@tint/ir/storage";
 import {
-  addFixedI32Plans,
+  addFixedFfiPlans,
   ffiMemoryModule,
   fixedFfiCallArities,
   fixedFfiCallEntry,
@@ -129,7 +129,9 @@ import {
   staticFfiEntry,
   staticFfiModule,
   staticFfiNumberEntry,
+  hasStaticFfiBytesEntry,
   hasStaticFfiNumberEntry,
+  staticFfiBytesEntry,
 } from "./foreign/static-ffi.ts";
 import { bindModule } from "@tint/typescript/binding";
 import {
@@ -770,7 +772,7 @@ function withStaticFfiRuntimes(
       : [];
   if (weakProcessing && literalPlans.length === 0 && arities.length === 0)
     return request;
-  const plans = addFixedI32Plans(literalPlans, arities);
+  const plans = addFixedFfiPlans(literalPlans, arities);
   const generated = makeStaticFfiModule(plans, weakProcessing, arities);
   function replace(modules: readonly SourceModule[]): SourceModule[] {
     return modules.map((source) =>
@@ -818,6 +820,16 @@ function withStaticFfiRuntimes(
         module: staticFfiModule,
         name,
         operation: "call-direct-scalar",
+        staticSignature: plan.signature,
+      });
+    }
+    if (arities.includes(1) && hasStaticFfiBytesEntry(plan)) {
+      const name = staticFfiBytesEntry(index);
+      entries.push(name);
+      bindings.push({
+        module: staticFfiModule,
+        name,
+        operation: "call-direct-bytes",
         staticSignature: plan.signature,
       });
     }
@@ -3470,7 +3482,10 @@ function lowerTypedProgram(
           binding.name,
       );
     const operation = binding.operation;
-    if (operation === "call-direct-scalar") {
+    if (
+      operation === "call-direct-scalar" ||
+      operation === "call-direct-bytes"
+    ) {
       const signature = binding.staticSignature;
       if (signature === undefined)
         return stageFailure(
@@ -3478,7 +3493,8 @@ function lowerTypedProgram(
           "direct FFI call requires a fixed prototype",
         );
       const operands: ForeignOperand[] = signature.parameters.map(
-        (_parameter): ForeignOperand => "number",
+        (_parameter): ForeignOperand =>
+          operation === "call-direct-bytes" ? "bytes" : "number",
       );
       foreignBindings.push({
         function: index,

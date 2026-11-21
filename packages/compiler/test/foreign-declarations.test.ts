@@ -32,7 +32,7 @@ import {
 } from "../src/native/foreign/index.ts";
 
 import {
-  addFixedI32Plans,
+  addFixedFfiPlans,
   fixedFfiCallArities,
   makeStaticFfiModule,
   recognizeStaticFfi,
@@ -1405,7 +1405,7 @@ export function consume(fn: Function, args: number[]): number {
 });
 
 test("runtime i32 definitions get direct typed entries without replacing the generic adapter", () => {
-  const plans = addFixedI32Plans([], [0, 2]);
+  const plans = addFixedFfiPlans([], [0, 2]);
   assert.deepEqual(
     plans.map(({ signature, typedOnly }) => [
       signature.parameters.length,
@@ -1417,7 +1417,7 @@ test("runtime i32 definitions get direct typed entries without replacing the gen
       [2, { kind: "scalar", scalar: "i32" }, true],
     ],
   );
-  assert.deepEqual(addFixedI32Plans(plans, [2]), plans);
+  assert.deepEqual(addFixedFfiPlans(plans, [2]), plans);
   const generated = makeStaticFfiModule(plans, true, [0, 2]);
   const emitted = generated.module.statements.flatMap((statement) =>
     statement?.kind === "function" ? [statement.name] : [],
@@ -1462,4 +1462,20 @@ test("Node FFI binds a precompiled runtime-registered i32 callback prototype", (
     callClass: "leaf",
     errno: "none",
   });
+});
+
+test("fixed unary Buffer calls can borrow a stable backing through a typed entry", () => {
+  const plans = addFixedFfiPlans([], [1]);
+  const bytePlan = plans.find(
+    (plan) => plan.signature.parameters[0]?.kind === "pointer",
+  );
+  assert.equal(bytePlan?.typedOnly, true);
+  const generated = makeStaticFfiModule(plans, true, [1]);
+  assert.ok(
+    generated.module.statements.some(
+      (statement) =>
+        statement?.kind === "function" &&
+        statement.name === "staticFfiBytesCall",
+    ),
+  );
 });
