@@ -164,7 +164,10 @@ if (process.argv[2] === "build") {
     );
   const node = () =>
     parse(command(oracle, ["--input-type=module", "-e", nodeSource]));
-  const rounds = [];
+  const rounds: {
+    tint: ReturnType<typeof parse>;
+    node: ReturnType<typeof parse>;
+  }[] = [];
   for (let round = 0; round < 5; round++) {
     const measured =
       round % 2 === 0
