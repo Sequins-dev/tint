@@ -53,6 +53,12 @@ if (execute(node, ["--version"]) !== "v26.13.1")
   throw Error("expected Node v26.13.1");
 
 const arities = [0, 1, 2, 4, 8, 12, 24];
+const measuredCases = [
+  ...arities.map((arity) => "arity-" + arity),
+  "buffer",
+  "callback",
+];
+const controlCase = "js-only-control";
 const scalar = arities
   .map((arity) => {
     const parameters = Array.from({ length: arity }, (_, i) => "a" + i);
@@ -148,6 +154,7 @@ export function run() {
     const callback = lib.registerCallback({ arguments: ["i32"], return: "i32" }, (value) => value + 1);
     const callbackCall = functions.bench_callback;
     measure("callback", () => callbackCall(callback, 41), 42);
+    measure(${JSON.stringify(controlCase)}, () => 42, 42);
   } finally { lib.close(); }
   return 42;
 }
@@ -224,9 +231,13 @@ function parse(output: string, round: number): Measurement[] {
     });
   }
   if (
-    values.length !== arities.length + 2 ||
+    values.length !== measuredCases.length + 1 ||
     new Set(values.map((value) => value.case)).size !== values.length ||
-    values.some((entry) => !(entry.milliseconds > 0))
+    values.some(
+      (entry) =>
+        !(entry.milliseconds > 0) ||
+        (entry.case !== controlCase && !measuredCases.includes(entry.case)),
+    )
   )
     throw Error("incomplete benchmark output");
   return values;
@@ -285,11 +296,7 @@ function median(engine: Engine, name: string): number | undefined {
     .sort((left, right) => left - right);
   return times.length === rounds ? times[Math.floor(rounds / 2)] : undefined;
 }
-const medians = [
-  ...arities.map((arity) => "arity-" + arity),
-  "buffer",
-  "callback",
-].map((name) => {
+const medians = measuredCases.map((name) => {
   const node = median("node", name),
     tintLiteral = median("tintLiteral", name),
     tintRuntime = median("tintRuntime", name);
@@ -327,6 +334,11 @@ writeFileSync(
       native,
       failures,
       results,
+      jsControl: {
+        node: median("node", controlCase),
+        tintLiteral: median("tintLiteral", controlCase),
+        tintRuntime: median("tintRuntime", controlCase),
+      },
       medians,
     },
     null,

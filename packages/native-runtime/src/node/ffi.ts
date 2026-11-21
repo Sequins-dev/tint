@@ -36,6 +36,7 @@ import { byteAddressInto } from "../ffi/address-words.ts";
 import { consoleError } from "../intrinsics/console.ts";
 import {
   allocateCallbackStub,
+  bytesAt,
   bytesAtWords,
   callbackDispatcher,
   callScalarForeign,
@@ -77,6 +78,8 @@ import {
   ffiWeakProcessing,
   staticFfiCall,
   staticFfiIndex,
+  staticFfiNumberCall,
+  type StaticFfiNumberCall,
 } from "./ffi-static.ts";
 
 interface ScalarWorkspace {
@@ -107,6 +110,8 @@ interface Binding {
   readonly address: SymbolAddress;
   readonly plan: ScalarCallPlan | undefined;
   readonly staticCall: number;
+  readonly staticNumberCall: StaticFfiNumberCall | undefined;
+  readonly numericAddress: number;
   leafWorkspace: ScalarWorkspace | undefined;
   callbackWorkspace: ScalarWorkspace | undefined;
   scalarDepth: number;
@@ -475,7 +480,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
   const callbacks = createFfiCallbacks(core, {
     allocate: (id): number => allocateCallbackStub(id, pthread_self()),
     release: releaseCallbackStub,
-    view: bytesAtWords,
+    view: bytesAt,
     abort: (message: string): never => {
       consoleError(message);
       abort();
@@ -587,11 +592,18 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       address.low === 0 && address.high === 0
         ? undefined
         : planScalarCall(signature, classifyScalarCall(core, signature));
+    const numericAddress = address.high * 4294967296 + address.low;
+    const staticNumberCall =
+      staticCall >= 0 && Number.isSafeInteger(numericAddress)
+        ? staticFfiNumberCall(staticCall)
+        : undefined;
     return {
       name,
       signature,
       address,
       staticCall,
+      staticNumberCall,
+      numericAddress,
       plan,
       leafWorkspace: undefined,
       callbackWorkspace: undefined,
@@ -631,6 +643,10 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
               args.length,
           );
         const mayCallback = callbacks.active() || hasRegisteredCallbacks();
+        const numberCall = binding.staticNumberCall;
+        if (!mayCallback && numberCall !== undefined)
+          return numberCall(core, binding.numericAddress, args);
+
         return invokeScalar(
           core,
           binding,

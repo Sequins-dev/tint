@@ -99,6 +99,7 @@ import {
   bindForeignCalls,
   dynamicForeignCall,
   dynamicScalarCall,
+  type ForeignOperand,
   type ForeignBinding,
   bindWeakOperations,
   type WeakOperation,
@@ -122,6 +123,8 @@ import {
   makeStaticFfiModule,
   staticFfiEntry,
   staticFfiModule,
+  staticFfiNumberEntry,
+  hasStaticFfiNumberEntry,
 } from "./foreign/static-ffi.ts";
 import { bindModule } from "@tint/typescript/binding";
 import {
@@ -741,24 +744,37 @@ function withStaticFfiRuntimes(
           }),
     };
   }
-  const runtime: RuntimeSource = {
-    module: staticFfiModule,
-    namespace: "node-ffi-static",
-    retainedExports: plans.map((_plan, index) => staticFfiEntry(index)),
-  };
-  const runtimes = request.runtimes.slice();
-  runtimes.push(runtime);
+  const entries: string[] = [];
   const bindings = request.foreignMemoryBindings?.slice() ?? [];
   for (let index = 0; index < plans.length; index++) {
     const plan = plans[index];
     if (plan === undefined) throw "static FFI plan invariant";
+    const name = staticFfiEntry(index);
+    entries.push(name);
     bindings.push({
       module: staticFfiModule,
-      name: staticFfiEntry(index),
+      name,
       operation: "call-static-scalar",
       staticSignature: plan.signature,
     });
+    if (hasStaticFfiNumberEntry(plan)) {
+      const name = staticFfiNumberEntry(index);
+      entries.push(name);
+      bindings.push({
+        module: staticFfiModule,
+        name,
+        operation: "call-direct-scalar",
+        staticSignature: plan.signature,
+      });
+    }
   }
+  const runtime: RuntimeSource = {
+    module: staticFfiModule,
+    namespace: "node-ffi-static",
+    retainedExports: entries,
+  };
+  const runtimes = request.runtimes.slice();
+  runtimes.push(runtime);
   return {
     ...request,
     modules: replace(request.modules),
@@ -3057,6 +3073,28 @@ function lowerTypedProgram(
           binding.name,
       );
     const operation = binding.operation;
+    if (operation === "call-direct-scalar") {
+      const signature = binding.staticSignature;
+      if (signature === undefined)
+        return stageFailure(
+          "host",
+          "direct FFI call requires a fixed prototype",
+        );
+      const operands: ForeignOperand[] = signature.parameters.map(
+        (_parameter): ForeignOperand => "number",
+      );
+      foreignBindings.push({
+        function: index,
+        call: {
+          symbol: binding.name,
+          signature,
+          operands,
+          result: signature.result.kind === "void" ? "void" : "number",
+          indirect: true,
+        },
+      });
+      continue;
+    }
     if (operation === "call-static-scalar") {
       const signature = binding.staticSignature;
       if (signature === undefined)

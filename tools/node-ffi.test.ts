@@ -114,6 +114,21 @@ export function run(): number {
     program.close();
   }
 
+  const { lib: leaf, functions: numeric } = dlopen(null, {
+    abs: { return: "int32", arguments: ["int32"] },
+  });
+  try {
+    if (numeric.abs(-42) !== 42) return 7;
+    try {
+      numeric.abs(2147483648);
+      return 8;
+    } catch (error) {
+      if (!(error instanceof TypeError)) return 8;
+    }
+  } finally {
+    leaf.close();
+  }
+
   const { lib, functions } = dlopen(null, {
     qsort: { arguments: ["buffer", "uint64", "uint64", "function"] },
   });

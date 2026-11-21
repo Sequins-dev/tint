@@ -81,7 +81,8 @@ export interface NativeForeignMemoryBinding {
     | "call-scalar"
     | "call-scalar-callbacks"
     | "runtime-callback-address"
-    | "call-static-scalar";
+    | "call-static-scalar"
+    | "call-direct-scalar";
   readonly staticSignature?: CSignature;
 }
 /** The `tint:ffi` runtime: its trusted primitives and the weak-storage and

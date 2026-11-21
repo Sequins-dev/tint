@@ -6,7 +6,7 @@ import {
   type ProgramRealmCore,
 } from "@tint/js-runtime/objects";
 import { Cell, TARGET_AAPCS64 } from "tint:c/dl";
-import { callbackState } from "tint:ffi";
+import { callbackGuard, callbackState, retargetCallbackView } from "tint:ffi";
 import {
   clearWeakSlot,
   createWeakSlot,
@@ -23,14 +23,28 @@ import {
 export interface FfiCallbackHost {
   readonly allocate: (id: number) => number;
   readonly release: (address: number) => void;
-  readonly view: (address: bigint, length: number) => Uint8Array;
+  readonly view: (address: number, length: number) => Uint8Array;
   readonly abort: (message: string) => never;
 }
+interface CallbackArgument {
+  readonly kind: number;
+  readonly offset: number;
+  readonly width: number;
+}
+
+interface CallbackWorkspace {
+  readonly frame: Uint8Array;
+  readonly scratch: Uint8Array;
+}
+
 export interface FfiCallback {
   readonly id: number;
   readonly address: number;
   readonly signature: FfiSignature;
   readonly layout: CCallLayout;
+  readonly parameters: CallbackArgument[];
+  readonly guard: number;
+  readonly workspaces: CallbackWorkspace[];
   readonly weak: unknown;
   strong: unknown;
   executing: number;
@@ -56,6 +70,13 @@ export function createFfiCallbacks(
   const floats = TARGET_AAPCS64 === 2 ? sysVCallbackFrame.floats : 128;
   const stack = TARGET_AAPCS64 === 2 ? sysVCallbackFrame.stack : 192;
 
+  function newWorkspace(guard: number, stackBytes: number): CallbackWorkspace {
+    return {
+      frame: host.view(guard, stack + stackBytes),
+      scratch: new Uint8Array(Cell.size),
+    };
+  }
+
   function register(signature: FfiSignature, callback: unknown): FfiCallback {
     const layout = classifyScalarCall(core, signature);
     callbackState();
@@ -67,6 +88,25 @@ export function createFfiCallbacks(
         "ERR_FFI_CALL_FAILED",
         "FFI callback identity space exhausted",
       );
+    const parameters: CallbackArgument[] = [];
+    for (let index = 0; index < signature.parameters.length; index++) {
+      const parameter = signature.parameters[index],
+        location = layout.arguments[index];
+      if (parameter === undefined || location === undefined)
+        throw "FFI_CALLBACK_LAYOUT_INVARIANT";
+      parameters.push({
+        kind: scalarKind(parameter),
+        offset:
+          location.stackOffset >= 0
+            ? stack + location.stackOffset
+            : location.gp >= 0
+              ? registers + location.gp * 8
+              : floats + location.fp * 8,
+        width: location.size,
+      });
+    }
+    const guard = callbackGuard();
+    const workspace = newWorkspace(guard, layout.stackBytes);
     const address = host.allocate(id);
     if (address <= 0)
       return ffiError(
@@ -83,6 +123,9 @@ export function createFfiCallbacks(
       address,
       signature,
       layout,
+      parameters,
+      guard,
+      workspaces: [workspace],
       weak: createWeakSlot(callback, undefined, false),
       strong: callback,
       executing: 0,
@@ -121,37 +164,34 @@ export function createFfiCallbacks(
       return host.abort("Unknown FFI callback registration");
     const strong = callback.strong;
     const fn = strong === undefined ? weakSlotKey(callback.weak) : strong;
-    // SysV consumes the status as zero for a collected callback. Both ABIs
-    // load their result registers from the same capture when present.
-    const raw = host.view(BigInt(address), stack + callback.layout.stackBytes);
-    if (fn === undefined) {
-      for (let byte = 0; byte < 8; byte++) {
-        raw[registers + byte] = 0;
-        raw[floats + byte] = 0;
-      }
-      return 0;
+    const depth = callback.executing;
+    let workspace = callback.workspaces[depth];
+    if (workspace === undefined) {
+      // Recursive entry needs a different view of the register capture.
+      workspace = newWorkspace(callback.guard, callback.layout.stackBytes);
+      callback.workspaces.push(workspace);
     }
-    const args: unknown[] = [];
-    const scratch = new Uint8Array(Cell.size);
+    const raw = workspace.frame,
+      scratch = workspace.scratch;
     const cell = Cell.view(scratch);
-    const parameters = callback.signature.parameters;
-    for (let index = 0; index < parameters.length; index++) {
-      const parameter = parameters[index],
-        location = callback.layout.arguments[index];
-      if (parameter === undefined || location === undefined)
-        throw "FFI_CALLBACK_LAYOUT_INVARIANT";
-      const offset =
-        location.stackOffset >= 0
-          ? stack + location.stackOffset
-          : location.gp >= 0
-            ? registers + location.gp * 8
-            : floats + location.fp * 8;
-      for (let byte = 0; byte < location.size; byte++)
-        scratch[byte] = raw[offset + byte] ?? 0;
-      args.push(readScalar(cell, scalarKind(parameter)));
-    }
-    callback.executing++;
+    callback.executing = depth + 1;
+    retargetCallbackView(raw, address);
     try {
+      // SysV consumes the status as zero for a collected callback. Both
+      // ABIs load their result registers from the same capture when present.
+      if (fn === undefined) {
+        for (let byte = 0; byte < 8; byte++) {
+          raw[registers + byte] = 0;
+          raw[floats + byte] = 0;
+        }
+        return 0;
+      }
+      const args: unknown[] = [];
+      for (const parameter of callback.parameters) {
+        for (let byte = 0; byte < parameter.width; byte++)
+          scratch[byte] = raw[parameter.offset + byte] ?? 0;
+        args.push(readScalar(cell, parameter.kind));
+      }
       let value: unknown;
       try {
         value = callObjectValueOrThrow(
@@ -194,7 +234,8 @@ export function createFfiCallbacks(
         raw[offset + byte] = scratch[byte] ?? 0;
       return 1;
     } finally {
-      callback.executing--;
+      retargetCallbackView(raw, callback.guard);
+      callback.executing = depth;
     }
   }
   return { register, release, ref, dispatch, active: () => entries.size !== 0 };
