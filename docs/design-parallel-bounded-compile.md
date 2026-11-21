@@ -94,6 +94,15 @@ median wall time. Its live compiler integration produced the same ELF
 but spent 65.83 s more end to end, so that sidecar stays experimental.
 [Native register-home workers and self-compile integration](results/parallel-bounded-compile-native-register-homes-v1.md)
 
+Releasing frame plans after each function made six-worker emission
+faster in both orders of a native comparison. Whole-build wall time
+improved in one order and regressed in the other. All ELF images
+from the native sidecar rotation matched at one, two, and six workers.
+The six-worker run peaked at about 6.1 GiB RSS. A separate kernel
+profile found 87.5% of the measured kernel time in 234 of the 5,910 requests.
+That identifies a smaller candidate set for worker admission.
+[Native register-home rotation](results/parallel-bounded-compile-register-home-lifetimes-v1.md)
+
 Preparing the module's emission facts once made the AArch64 fragment
 replay faster at two and six workers. Ordered placement assigned
 dispatch IDs and selected branch forms without a serial seed. At six
