@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 import { testNativeLaunch } from "./gate/native-launch-test.ts";
 import { compileC, findLlvmTool } from "./host-tools.ts";
@@ -50,6 +51,8 @@ const external =
     : perfAvailable()
       ? ("perf" as const)
       : undefined;
+const minimumBackendSamples = 5;
+const backendSamplingBudgetMs = 30_000;
 
 /** Structural checks DevTools' CPU profile model relies on; returns the
  * hit count under nodes named `name` (inclusive). */
@@ -85,7 +88,6 @@ function checkProfile(
 async function profileC(
   sampler: "pprofessor" | "perf" | "backend",
   interval: number,
-  duration: number,
   onAdmitted: () => void,
 ): Promise<{
   profile: CpuProfile;
@@ -102,18 +104,33 @@ async function profileC(
     assert.equal(built.status, 0, built.stderr);
     return program;
   });
+  const profiler = new CpuProfiler(sampler);
   const session = await startDevTools(
     {
       program,
       port: 0,
       wait: true,
-      plugins: [new CpuProfiler(sampler)],
+      plugins: [profiler],
       log: () => {},
     },
     onAdmitted,
   );
   const client = await CdpTestClient.connect(session.server.webSocketUrl);
   try {
+    if (sampler === "backend") {
+      const backend = session.bridge.backend;
+      const stack = backend.stack?.bind(backend);
+      assert.ok(stack);
+      let first = true;
+      backend.stack = async (threadId) => {
+        // One slow debugger round trip can consume the old two-second window.
+        if (first) {
+          first = false;
+          await delay(2100);
+        }
+        return stack(threadId);
+      };
+    }
     await client.send("Runtime.enable");
     await client.send("Debugger.enable");
     const url = pathToFileURL(file).href;
@@ -128,7 +145,15 @@ async function profileC(
     await client.send("Runtime.runIfWaitingForDebugger");
     const mark = client.events.length;
     await client.send("Profiler.start");
-    await new Promise((resolve) => setTimeout(resolve, duration));
+    if (sampler === "backend") {
+      const deadline = performance.now() + backendSamplingBudgetMs;
+      while (
+        profiler.backendSampleCount < minimumBackendSamples &&
+        session.bridge.state() !== "exited" &&
+        performance.now() < deadline
+      )
+        await delay(20);
+    } else await delay(1500);
     const { profile } = await client.send<{ profile: CpuProfile }>(
       "Profiler.stop",
     );
@@ -161,7 +186,6 @@ testNativeLaunch(
     const { profile, url, scriptId, paused } = await profileC(
       external ?? "backend",
       1000,
-      1500,
       onAdmitted,
     );
     assert.ok(!paused);
@@ -209,12 +233,11 @@ testNativeLaunch(
     const { profile, url, paused } = await profileC(
       "backend",
       20000,
-      2000,
       onAdmitted,
     );
     assert.ok(!paused, "sampling stops are internal");
     const { total, under } = checkProfile(profile, "spin");
-    assert.ok(total >= 5, `${total} samples`);
+    assert.ok(total >= minimumBackendSamples, `${total} samples`);
     assert.ok(under > total * 0.6, `${under} of ${total} under spin`);
     assert.equal(
       profile.nodes.find((node) => node.callFrame.functionName === "spin")

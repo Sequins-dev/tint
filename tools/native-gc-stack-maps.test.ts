@@ -265,6 +265,9 @@ test("precise stack maps keep references across many collections", async () => {
       managedBytes: 4194304,
       allocationCapacity: 1048576,
       rootCapacity: 65536,
+      // The 300-deep walk needs more than the default 1 MiB stack on x86-64.
+      // Keep the heap small so the same workload still forces collections.
+      stackBytes: 2097152,
     },
   );
 });
