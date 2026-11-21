@@ -29,10 +29,12 @@ interface CallbackArgument {
   readonly kind: number;
   readonly offset: number;
   readonly width: number;
+  readonly directlyReadable: boolean;
 }
 
 interface CallbackWorkspace {
   readonly frame: Uint8Array;
+  readonly cellBytes: Uint8Array;
   readonly scratch: Uint8Array;
 }
 
@@ -72,6 +74,7 @@ export function createFfiCallbacks(
   function newWorkspace(guard: number, stackBytes: number): CallbackWorkspace {
     return {
       frame: host.view(guard, stack + stackBytes),
+      cellBytes: host.view(guard, Cell.size),
       scratch: new Uint8Array(Cell.size),
     };
   }
@@ -93,15 +96,17 @@ export function createFfiCallbacks(
         location = layout.arguments[index];
       if (parameter === undefined || location === undefined)
         throw "FFI_CALLBACK_LAYOUT_INVARIANT";
+      const offset =
+        location.stackOffset >= 0
+          ? stack + location.stackOffset
+          : location.gp >= 0
+            ? registers + location.gp * 8
+            : floats + location.fp * 8;
       parameters.push({
         kind: nodeFfiScalarKind(parameter),
-        offset:
-          location.stackOffset >= 0
-            ? stack + location.stackOffset
-            : location.gp >= 0
-              ? registers + location.gp * 8
-              : floats + location.fp * 8,
+        offset,
         width: location.size,
+        directlyReadable: offset + Cell.size <= stack + layout.stackBytes,
       });
     }
     const guard = callbackGuard();
@@ -171,8 +176,9 @@ export function createFfiCallbacks(
       callback.workspaces.push(workspace);
     }
     const raw = workspace.frame,
+      cellBytes = workspace.cellBytes,
       scratch = workspace.scratch;
-    const cell = Cell.view(scratch);
+    const cell = Cell.view(cellBytes);
     callback.executing = depth + 1;
     retargetCallbackView(raw, address);
     try {
@@ -187,9 +193,15 @@ export function createFfiCallbacks(
       }
       const args: unknown[] = [];
       for (const parameter of callback.parameters) {
-        for (let byte = 0; byte < parameter.width; byte++)
-          scratch[byte] = raw[parameter.offset + byte] ?? 0;
-        args.push(readScalar(cell, parameter.kind));
+        if (parameter.directlyReadable) {
+          retargetCallbackView(cellBytes, address + parameter.offset);
+          args.push(readScalar(cell, parameter.kind));
+        } else {
+          // A narrow trailing stack argument may have less than one cell left.
+          for (let byte = 0; byte < parameter.width; byte++)
+            scratch[byte] = raw[parameter.offset + byte] ?? 0;
+          args.push(readScalar(Cell.view(scratch), parameter.kind));
+        }
       }
       let value: unknown;
       try {
@@ -218,6 +230,8 @@ export function createFfiCallbacks(
         return host.abort(
           "Callback returned invalid value for declared FFI type",
         );
+      const offset = result === "f32" || result === "f64" ? floats : registers;
+      retargetCallbackView(cellBytes, address + offset);
       cell.u64 = 0;
       try {
         writeScalar(core, cell, nodeFfiScalarKind(result), value);
@@ -228,11 +242,9 @@ export function createFfiCallbacks(
       }
       if (callback.layout.result.extend === "sign" && typeof value === "number")
         cell.i64 = value;
-      const offset = result === "f32" || result === "f64" ? floats : registers;
-      for (let byte = 0; byte < Cell.size; byte++)
-        raw[offset + byte] = scratch[byte] ?? 0;
       return 1;
     } finally {
+      retargetCallbackView(cellBytes, callback.guard);
       retargetCallbackView(raw, callback.guard);
       callback.executing = depth;
     }
