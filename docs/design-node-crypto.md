@@ -174,7 +174,8 @@ in PBKDF2 and provider failure in digest initialization.
   [Typed byte lookup and Buffer length controls](results/node-crypto-darwin-arm64-typed-byte-hex-v1.md) ·
   [General method-call control](results/node-crypto-darwin-arm64-call-control-v1.md) ·
   [Short SHA-512 call and allocation breakdown](results/node-crypto-darwin-arm64-sha512-breakdown.md) ·
-  [UTF-8 string input comparison](results/node-crypto-darwin-arm64-utf8.md)
+  [Scalar UTF-8 comparison](results/node-crypto-darwin-arm64-utf8.md) ·
+  [Word-at-a-time UTF-8 comparison](results/node-crypto-darwin-arm64-utf8-simd.md)
 
 ## PoC phases
 
