@@ -69,11 +69,12 @@ emitted identical compiler outputs in all six runs. The observed paired
 median was 17.677 s lower wall time and 262,144 B higher peak RSS.
 [Frozen v7 comparison](general-call-frozen-v7-darwin-arm64-final.md)
 
-The 200-form Linux dev ledger for the measured candidate had zero regressions
-against the 198-form reference. All seven nonpassing forms had the same
-outcomes in the reference. The runtime-compiled Script host and test-only
-surface changes used a later snapshot. Both native Test262 smoke modes on
-that source snapshot passed 2/2.
+The final 200-form Linux dev ledger had zero regressions against the
+198-form reference. It recorded 193 passes. All seven other outcomes matched
+the reference. The measured candidate and final source produced identical
+paths and outcomes across the ledger. Both native Test262 smoke modes on the
+final source passed 2/2.
+[Final ledger](unified-pipeline-ledger-general-integrated-replay-verified-dev-v1.json),
 [Measured candidate ledger](unified-pipeline-ledger-general-final-candidate-replay-verified-dev-v1.json),
 [Linked-unit smoke](general-call-final-test262-units.json),
 [Whole-program smoke](general-call-final-test262-program.json)
