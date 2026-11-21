@@ -608,10 +608,21 @@ function bindProgram(
       varInitializerTargets.push({ node, binding: caught });
   }
   function localBinding(name: string, s: ScopeState): number | undefined {
+    const implicitArguments = javascript && name === "arguments";
     let cursor: ScopeState | undefined = s;
     while (cursor !== undefined) {
       const id = cursor.names.get(name);
       if (id !== undefined) return id;
+      // The runtime creates each ordinary function's implicit arguments
+      // binding. Arrows can continue through their own frame to find it.
+      const owner = cursor.owner;
+      if (
+        implicitArguments &&
+        cursor.kind === "function" &&
+        owner !== undefined &&
+        functions[owner]?.receiver === owner
+      )
+        return undefined;
       cursor = cursor.parent === undefined ? undefined : scopes[cursor.parent];
     }
     return undefined;

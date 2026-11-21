@@ -639,3 +639,23 @@ test("defaults, destructuring and rest share initialized parameter slots", () =>
   );
   assert.deepEqual(realm.printed, ["42", "ReferenceError"]);
 });
+
+test("ordinary functions and arrows resolve the nearest arguments binding", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+      function outer(arguments) {
+        function inner(ignored) {
+          return (() => arguments[0])();
+        }
+        return inner(42);
+      }
+      print(outer(7));
+      function explicit(arguments) { return (() => arguments)(); }
+      print(explicit(7));
+      { let arguments = 9; print((() => arguments)()); }
+    `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["42", "7", "9"]);
+});
