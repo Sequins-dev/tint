@@ -111,6 +111,63 @@ export function run(argument:number):number {
   );
 }
 
+export function verifyCryptoPublicFixture(): string {
+  return verifyHostedFixture(
+    `
+import { createHash, pbkdf2 } from "node:crypto";
+import { Buffer as BufferExport } from "node:buffer";
+
+export async function run() {
+  const esm = await import("node:crypto");
+  const crypto = require("node:crypto");
+  if (esm.default !== crypto || esm.createHash !== createHash ||
+      crypto.createHash !== createHash || require("crypto") !== crypto) return 1;
+  const buffer = await import("node:buffer");
+  if (BufferExport !== Buffer || buffer.Buffer !== Buffer ||
+      require("node:buffer").Buffer !== Buffer) return 2;
+  const bytes = crypto.randomBytes(16);
+  if (!(bytes instanceof Buffer) || !Buffer.isBuffer(bytes) || bytes.constructor !== Buffer) return 3;
+  const hash = createHash("sha256");
+  for (const operation of [
+    () => hash.copy(),
+    () => hash.pipe({}),
+    () => createHash("shake256", {outputLength:16}),
+    () => crypto.KeyObject,
+    () => crypto.pbkdf2Sync(),
+    () => crypto.randomFillSync(bytes),
+    () => crypto.randomBytes(1, () => {}),
+  ]) {
+    try { operation(); return 4; }
+    catch (error) {
+      if (error.code !== "ERR_CRYPTO_UNSUPPORTED_OPERATION" ||
+          !error.message.includes("outside")) return 5;
+    }
+  }
+  let returned = false;
+  const completed = new Promise((resolve) => {
+    pbkdf2("password", "salt", 2, 20, "sha1", (error, key) => {
+      resolve(returned && error === null && key instanceof Buffer &&
+        key.constructor === Buffer && key.toString("hex") ===
+        "ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957");
+    });
+  });
+  returned = true;
+  return await completed ? 42 : 6;
+}
+`,
+    "node-crypto-public",
+    [],
+    [],
+    [],
+    [],
+    {
+      nodeCrypto: "commonjs",
+      managedBytes: 33554432,
+      allocationCapacity: 524288,
+    },
+  );
+}
+
 if (import.meta.main) {
   process.env.TINT_BUILD_ONLY = "1";
   verifyCryptoAsyncFixture();

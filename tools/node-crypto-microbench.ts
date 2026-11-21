@@ -103,36 +103,47 @@ function parse(text: string): { name: string; ns: number; checksum: number }[] {
 }
 
 if (process.argv[2] === "build") {
+  const publicDriver = process.argv[3] === "public";
   process.env.TINT_BUILD_ONLY = "1";
-  process.env.TINT_GENERAL_FALLBACK = "0";
+  if (!publicDriver) process.env.TINT_GENERAL_FALLBACK = "0";
   verifyHostedFixture(
     `${imports}\nimport {monotonicMilliseconds} from "clock";
      export function run():number { ${body} return 42; }`,
-    "node-crypto-microbench",
+    publicDriver ? "node-crypto-public-microbench" : "node-crypto-microbench",
     [
-      ["node:crypto", "packages/native-runtime/src/node/crypto.ts"],
       ["clock", clock],
+      ...(publicDriver
+        ? []
+        : ([
+            ["node:crypto", "packages/native-runtime/src/node/crypto.ts"],
+          ] as const)),
     ],
     [],
     [],
-    [
-      {
-        module: clock,
-        namespace: "crypto-bench-clock",
-        retainedExports: ["monotonicMilliseconds"],
-      },
-    ],
+    publicDriver
+      ? []
+      : [
+          {
+            module: clock,
+            namespace: "crypto-bench-clock",
+            retainedExports: ["monotonicMilliseconds"],
+          },
+        ],
     {
-      requireTyped: true,
-      managedBytes: 67108864,
-      allocationCapacity: 1048576,
-      hostBindings: [
-        {
-          module: clock,
-          name: "monotonicMilliseconds",
-          operation: "monotonic-time",
-        },
-      ],
+      ...(publicDriver
+        ? { nodeCrypto: "esm" as const }
+        : { requireTyped: true }),
+      managedBytes: publicDriver ? 268435456 : 67108864,
+      allocationCapacity: publicDriver ? 4194304 : 1048576,
+      hostBindings: publicDriver
+        ? []
+        : [
+            {
+              module: clock,
+              name: "monotonicMilliseconds",
+              operation: "monotonic-time",
+            },
+          ],
     },
   );
 } else {

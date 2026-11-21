@@ -112,7 +112,9 @@ in PBKDF2 and provider failure in digest initialization.
   The manifest currently selects 41 case groups and lists 39 exclusion
   ranges. A case group can contain a loop over several upstream inputs.
   Run the Node reference extraction with
-  `node tools/node-crypto-conformance.ts <node-source> <node-oracle>`.
+  `node tools/node-crypto-conformance.ts <node-source> <node-oracle>`
+  and the native extraction with
+  `node tools/node-crypto-native-conformance.ts <node-source> <report-path>`.
 - Exercise the real built-in import with typed and untyped native fixtures.
   Cover digest and HMAC vectors, output and error behavior, GC across
   updates, missing/incompatible library selection and callback ordering.
