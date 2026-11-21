@@ -54,6 +54,10 @@ import { writeNodeExecutable } from "./node-file-host.ts";
 import { buildNativeFixture } from "./gate/native-fixture.ts";
 import { admitDarwinFixture } from "./native-admission.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
+import {
+  cryptoHostBindings,
+  cryptoHostRuntimes,
+} from "./node-crypto-host-options.ts";
 /** Build target and execution runner are selected independently. */
 const fixtureTarget = nativeFixtureTarget();
 import type { CLibraryManifestEntry } from "@tint/abi/c";
@@ -113,11 +117,17 @@ export function workspaceGeneralLowering(
     readonly stackBytes: number;
     readonly nodeHosted: boolean;
   },
+  nodeCrypto?: "esm" | "commonjs",
 ): GeneralLowering | undefined {
   if (process.env.TINT_GENERAL_FALLBACK === "0" && workerImage === undefined)
     return undefined;
   const cached = nodeEventLoop ? nodeGeneralLowering : generalLowering;
-  if (!functionFallback && workerImage === undefined && cached !== undefined)
+  if (
+    !functionFallback &&
+    workerImage === undefined &&
+    nodeCrypto === undefined &&
+    cached !== undefined
+  )
     return cached;
   const lowering = createGeneralLowering({
     functionFallback,
@@ -132,6 +142,15 @@ export function workspaceGeneralLowering(
       module: "packages/native-runtime/src/intrinsics/fs.ts",
       name: "write",
     },
+    ...(nodeCrypto === undefined
+      ? {}
+      : {
+          nodeCrypto: {
+            module: "packages/native-runtime/src/node/crypto-public.ts",
+            jobs: "packages/native-runtime/src/node/crypto-host.ts",
+            commonJS: nodeCrypto === "commonjs",
+          },
+        }),
     ...(nodeEventLoop
       ? {
           nodeEventLoop: {
@@ -159,7 +178,11 @@ export function workspaceGeneralLowering(
           },
         }),
   });
-  if (!functionFallback && workerImage === undefined) {
+  if (
+    !functionFallback &&
+    workerImage === undefined &&
+    nodeCrypto === undefined
+  ) {
     if (nodeEventLoop) nodeGeneralLowering = lowering;
     else generalLowering = lowering;
   }
@@ -207,6 +230,7 @@ function buildHostedFixture(
     readonly requireTyped?: boolean;
     readonly nodeEventLoop?: boolean;
     readonly nodeWorkers?: boolean;
+    readonly nodeCrypto?: "esm" | "commonjs";
     readonly nodeWorkerLibrary?: boolean;
     /** Host validation over captured application sources, when supplied. */
     readonly validateSource?: GeneralLowering["validateSource"];
@@ -255,14 +279,17 @@ function buildHostedFixture(
           stackBytes: options.stackBytes ?? 16777216,
         }
       : undefined;
+  const needsNodeLoop =
+    options.nodeEventLoop === true ||
+    workerImage !== undefined ||
+    options.nodeCrypto !== undefined;
   const general = workspaceGeneralLowering(
     functionFallback,
-    options.nodeEventLoop === true || workerImage !== undefined,
+    needsNodeLoop,
     workerImage,
+    options.nodeCrypto,
   );
-  const eventLoop =
-    (options.nodeEventLoop === true || workerImage !== undefined) &&
-    general !== undefined;
+  const eventLoop = needsNodeLoop && general !== undefined;
   let fallbackFunctions: readonly GeneralFallbackFunction[] | undefined;
   let fallbackClasses: readonly GeneralFallbackClass[] | undefined;
   const replaySources = options.replaySources;
@@ -451,10 +478,18 @@ function buildHostedFixture(
     foreignLibraries,
     moduleLoader,
   );
+  const cryptoRuntime =
+    options.nodeCrypto === undefined
+      ? undefined
+      : fixtureTarget.arch === "x86_64"
+        ? "initializeGenerationalRuntime"
+        : "initializeCopyingRuntime";
   const runtimeEntry =
-    fixtureTarget.arch === "x86_64"
-      ? options.runtimeEntry
-      : (options.runtimeEntry ?? defaultRuntimeEntry ?? "initializeRuntime");
+    options.runtimeEntry ??
+    cryptoRuntime ??
+    (fixtureTarget.arch === "x86_64"
+      ? undefined
+      : (defaultRuntimeEntry ?? "initializeRuntime"));
   // The tint:ffi runtime's capabilities when the program loads it.
   const ffi = foreignRuntimeBindings(
     new Set(moduleLoader?.ids ?? modules.map((module) => module.id)),
@@ -477,7 +512,7 @@ function buildHostedFixture(
     ...(options.optimization === undefined
       ? {}
       : { optimization: options.optimization }),
-    threaded: options.threaded ?? false,
+    threaded: options.threaded ?? options.nodeCrypto !== undefined,
     nodeWorkerLibrary: options.nodeWorkerLibrary === true,
     threadExitPipe: options.threadExitPipe ?? false,
     ...(options.workerModules === undefined
@@ -495,6 +530,7 @@ function buildHostedFixture(
       ...request.runtimes,
       ...additionalRuntimes,
       ...ffi.runtimes,
+      ...(options.nodeCrypto === undefined ? [] : cryptoHostRuntimes),
       ...(eventLoop
         ? [
             {
@@ -527,6 +563,16 @@ function buildHostedFixture(
       ),
       ...(options.hostBindings ?? []),
       ...ffi.hostBindings,
+      ...(options.nodeCrypto === undefined
+        ? []
+        : cryptoHostBindings.filter(
+            (binding) =>
+              options.hostBindings?.some(
+                (requested) =>
+                  requested.module === binding.module &&
+                  requested.name === binding.name,
+              ) !== true,
+          )),
       ...(eventLoop
         ? [
             {

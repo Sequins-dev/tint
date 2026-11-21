@@ -2835,7 +2835,19 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/buffer.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/crypto-host.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/crypto-jobs.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/crypto-public.ts",
       packageId: "native-runtime",
     },
     {
