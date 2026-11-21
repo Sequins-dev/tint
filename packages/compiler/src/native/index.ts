@@ -699,10 +699,14 @@ export function compileNativeProgram(
   return compileArm64Program({ ...request, hostABI: backend.target.hostABI });
 }
 
-function compileTypedWithProgramRealm(
+function compileTypedWithProgramRealm<T>(
   request: CompileRequest,
+  compile: (
+    request: CompileRequest,
+    realmTypeofModules: ReadonlySet<string> | undefined,
+  ) => { readonly ok: true; readonly value: T } | CompilationFailure,
   realmTypeofModules?: ReadonlySet<string>,
-): Compilation {
+): { readonly ok: true; readonly value: T } | CompilationFailure {
   const explicit = request.runtimes.find(
     (source) => source?.namespace === "dynamic-object",
   );
@@ -713,7 +717,7 @@ function compileTypedWithProgramRealm(
           ...request,
           runtimes: request.runtimes.filter((source) => source !== explicit),
         };
-  const initial = compileTypedProgram(without, realmTypeofModules);
+  const initial = compile(without, realmTypeofModules);
   if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
   const projections = initial.error.nativeProjections ?? [];
   const callableViews = projections.includes("projectUnaryNumber");
@@ -854,7 +858,7 @@ function compileTypedWithProgramRealm(
     )
       bindings.push({ module: objects, name, operation: "view" });
   }
-  return compileTypedProgram(
+  return compile(
     { ...expandedRequest, runtimes, recordBindings: bindings, weakBindings },
     realmModules,
   );
@@ -888,7 +892,11 @@ export function compileArm64Program(original: CompileRequest): Compilation {
   const request = withForeignRuntimes(original);
   const typed = compileWithTypedWorkerEntry<CompiledProgram>(
     request,
-    (source): Compilation => compileTypedWithProgramRealm(source),
+    (source): Compilation =>
+      compileTypedWithProgramRealm<CompiledProgram>(
+        source,
+        compileTypedProgram,
+      ),
   );
   const lowering = request.generalLowering;
   if (
@@ -902,7 +910,11 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     lowering,
     typed.error,
     (source, realmTypeofModules): Compilation =>
-      compileTypedWithProgramRealm(source, realmTypeofModules),
+      compileTypedWithProgramRealm<CompiledProgram>(
+        source,
+        compileTypedProgram,
+        realmTypeofModules,
+      ),
   );
   if (!general.ok) return general;
   return {
@@ -3379,7 +3391,11 @@ export function compileX64HostedProgram(
     const typed = compileWithTypedWorkerEntry<TypedProgram>(
       source,
       (prepared): TypedLowering =>
-        lowerTypedProgram(prepared, undefined, invokeDirectly),
+        compileTypedWithProgramRealm<TypedProgram>(
+          prepared,
+          (program, realmTypeofModules): TypedLowering =>
+            lowerTypedProgram(program, realmTypeofModules, invokeDirectly),
+        ),
     );
     const lowering = source.generalLowering;
     if (
@@ -3393,7 +3409,12 @@ export function compileX64HostedProgram(
       lowering,
       typed.error,
       (program, realmTypeofModules): TypedLowering =>
-        lowerTypedProgram(program, realmTypeofModules),
+        compileTypedWithProgramRealm<TypedProgram>(
+          program,
+          (prepared, realmModules): TypedLowering =>
+            lowerTypedProgram(prepared, realmModules),
+          realmTypeofModules,
+        ),
     );
     if (!general.ok) return general;
     const report = options.onGeneralFallback;
