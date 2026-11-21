@@ -34,7 +34,7 @@ evaluate the pool against the improved kernel before integration.
 [Merged-main screen](results/parallel-bounded-compile-screening-v1.md) ·
 [Native profile and cap trials](results/parallel-bounded-compile-hot-passes-v1.md)
 
-## Implemented optimizer candidates
+## Implemented optimizer changes
 
 LICM computes the record proof summary on the first eligible loop in a round.
 All loops in that round read the same function version. A subsequent round
@@ -43,8 +43,27 @@ computes its own summary after the rewrites from the preceding round.
 SSA constant propagation skips the incoming edges of block parameters that
 have reached the unknown state in an unbounded run. Further joins leave
 those parameters unknown. Bounded runs retain their existing work accounting.
-Both candidates use the current serial pass order and function IDs while the
-native self-build and paired comparisons run.
+Both changes use the existing serial pass order and function IDs. The native
+candidate reaches a fixed point on macOS arm64 and Linux arm64. Linux
+x86-64 passes the CI fixed-point gate. On the first matched native run,
+the combined compiler took 137.8 s versus 263.9 s and produced the same
+signed image.
+
+With settled SSA joins skipped, the four-worker spill prototype saved
+1.21–1.26 s of pass wall time on Node and raised whole-process peak RSS
+by 1.20–1.36 GiB. Structured clone took longer than the improved serial
+kernel in both orders. The branch uses the serial kernels for the whole
+compiler. The worker entry probe exercised typed SSA in a native isolate.
+
+In a separate Object compilation pair with a 4,096 MiB V8 old-space setting,
+the optimizer candidate built the same signed image in 524.22 s versus
+899.40 s. Its observed peak RSS was 5,195.6 MiB versus 4,760.7 MiB.
+Packing function bodies during lowering removed the full decoded IR from
+that frame. The optimizer still exhausted memory after those bodies were
+rehydrated. Moving the first reachability scan onto stored bodies deferred
+the same pressure to the retained result. The full selection remains the
+acceptance workload for the opt-in whole-build budget.
+[Streaming and fixed-point probes](results/parallel-bounded-compile-streaming-probes-v1.md)
 
 ## Work and dependencies
 
@@ -268,9 +287,8 @@ After each step, record one fresh immutable result with both hosts' wall time,
 CPU, cycles where available, and peak RSS on matched inputs. Use repeated
 interleaved runs for throughput acceptance. Attribute regressions to serial
 work, collection, spill I/O or scheduling where measurements permit. At
-the end run the macOS gate, Linux gate on the shared `dev` machine, and
-the x86-64 VM self-build,
-then wait for CI green before marking the PR ready.
+the end run the macOS gate, the Linux gate on the shared `dev` machine,
+and the Linux x86-64 self-build in CI before marking the PR ready.
 [Workspace validation](validation-gate.md)
 
 ## Review questions and risks
@@ -291,8 +309,8 @@ then wait for CI green before marking the PR ready.
   exceed a stage's normal work unit. Exercise the largest observed examples
   before relying on a per-worker estimate. Preserve explicit reporting for any
   stage that still needs a whole-program allocation.
-- Native worker startup currently depends on PR #2's product isolate API and
-  on a worker entrypoint that the native checker can compile. Test transfer
+- The worker API from PR #2 is available. The compiler needs a typed worker
+  entrypoint and a way to join results from its synchronous compile path. Test transfer
   detachment, read-only summary publication, shutdown and collector CPU
   contention before raising the default pool width.
 - Codegen fragment placement is a correctness dependency for branch relaxation,
