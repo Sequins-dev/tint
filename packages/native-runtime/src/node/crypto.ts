@@ -1,36 +1,50 @@
 /** Node crypto over the system OpenSSL 3 default provider. */
 import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
-import { encodeHex, encodeBase64 } from "@tint/foundation/text/base-encoding";
+import { encodeHex } from "@tint/foundation/text/base-encoding";
 import {
-  invoke,
-  resultNumber,
-  setBytes,
-  setNumber,
-  type ForeignFunction,
-} from "tint:ffi/unsafe";
+  ERR_clear_error,
+  EVP_MD_CTX_new,
+  EVP_MD_CTX_free,
+  EVP_DigestInit_ex2,
+  EVP_DigestUpdate,
+  EVP_DigestFinal_ex,
+  HMAC_CTX_new,
+  HMAC_CTX_free,
+  HMAC_Init_ex,
+  HMAC_Update,
+  HMAC_Final,
+  RAND_bytes_ex,
+} from "tint:c/openssl3";
 import {
+  digestName,
   disposeAddress,
   fetchDigest,
   systemOpenSSL,
-  type OpenSSL,
 } from "./openssl.ts";
 import { codedError, codedRangeError } from "./errors.ts";
 import { createWeakSlot, weakSlotKey } from "../intrinsics/weak.ts";
+import { bufferBytes, bufferEncoding, bufferText } from "./buffer-codecs.ts";
 export { pbkdf2 } from "./crypto-jobs.ts";
 
 export interface Hash {
-  update(data: string | Uint8Array): Hash;
+  update(data: string | Uint8Array, encoding?: string): Hash;
   digest(encoding?: string): string | Uint8Array;
 }
 
 interface DigestLifetime {
   address: number;
-  readonly free: ForeignFunction;
+  readonly hmac: boolean;
   readonly owner: unknown;
 }
 
 let lifetimes: DigestLifetime[] = [];
 let sweepAt = 256;
+const digests = new Map<string, number>();
+
+function disposeContext(address: number, hmac: boolean): void {
+  if (hmac) HMAC_CTX_free(address);
+  else EVP_MD_CTX_free(address);
+}
 
 function sweepDigests(): void {
   if (lifetimes.length < sweepAt) return;
@@ -39,7 +53,7 @@ function sweepDigests(): void {
     if (lifetime === undefined) throw "digest lifetime invariant";
     if (lifetime.address === 0) continue;
     if (weakSlotKey(lifetime.owner) === undefined)
-      disposeAddress(lifetime.free, lifetime.address);
+      disposeContext(lifetime.address, lifetime.hmac);
     else live.push(lifetime);
   }
   lifetimes = live;
@@ -57,15 +71,31 @@ export function createHmac(algorithm: string, key: string | Uint8Array): Hash {
   );
 }
 
-function failure(ffi: OpenSSL, message: string): Error {
-  invoke(ffi.clearErrors);
+function failure(message: string): Error {
+  ERR_clear_error();
   return new Error(message);
+}
+
+function encodeUpdate(data: string, encoding: string | undefined): Uint8Array {
+  const name = encoding === undefined ? undefined : bufferEncoding(encoding);
+  if (name === "hex" && data.length % 2 !== 0)
+    throw codedError(
+      "The argument 'encoding' is invalid for data of length " +
+        String(data.length) +
+        ". Received '" +
+        (encoding ?? "") +
+        "'",
+      "ERR_INVALID_ARG_VALUE",
+    );
+  return bufferBytes(data, name ?? "utf8");
 }
 
 function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
   sweepDigests();
   const ffi = systemOpenSSL();
-  const digest = fetchDigest(ffi, algorithm);
+  const name = digestName(algorithm);
+  const cached = digests.get(name);
+  const digest = cached ?? fetchDigest(ffi, name);
   if (digest === 0) {
     if (key !== undefined)
       throw codedError(
@@ -74,88 +104,63 @@ function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
       );
     throw new Error("Digest method not supported");
   }
+  const cacheNew = cached === undefined && digests.size < 64;
+  if (cacheNew) digests.set(name, digest);
+  const releaseDigest = cached === undefined && !cacheNew;
 
   const hmac = key !== undefined;
-  const create = hmac ? ffi.hmacNew : ffi.contextNew;
-  const free = hmac ? ffi.hmacFree : ffi.contextFree;
-  const update = hmac ? ffi.hmacUpdate : ffi.digestUpdate;
-  const final = hmac ? ffi.hmacFinal : ffi.digestFinal;
   let context = 0;
   try {
-    invoke(create);
-    context = resultNumber(create);
-    if (context === 0) throw failure(ffi, "Failed to allocate digest context");
-    if (key === undefined) {
-      setNumber(ffi.digestInit, 0, context);
-      setNumber(ffi.digestInit, 1, digest);
-      setNumber(ffi.digestInit, 2, 0);
-      invoke(ffi.digestInit);
-      if (resultNumber(ffi.digestInit) !== 1)
-        throw failure(ffi, "Digest method not supported");
-    } else {
-      setNumber(ffi.hmacInit, 0, context);
-      // An empty key still needs a non-null address to request a fresh key.
-      setBytes(ffi.hmacInit, 1, key.length === 0 ? new Uint8Array(1) : key);
-      setNumber(ffi.hmacInit, 2, key.length);
-      setNumber(ffi.hmacInit, 3, digest);
-      setNumber(ffi.hmacInit, 4, 0);
-      try {
-        invoke(ffi.hmacInit);
-        if (resultNumber(ffi.hmacInit) !== 1)
-          throw failure(ffi, "HMAC initialization failed");
-      } finally {
-        setNumber(ffi.hmacInit, 1, 0);
-      }
-    }
+    context = hmac ? HMAC_CTX_new() : EVP_MD_CTX_new();
+    if (context === 0) throw failure("Failed to allocate digest context");
+    const status =
+      key === undefined
+        ? EVP_DigestInit_ex2(context, digest, 0)
+        : HMAC_Init_ex(
+            context,
+            key.length === 0 ? new Uint8Array(1) : key,
+            key.length,
+            digest,
+            0,
+          );
+    if (status !== 1)
+      throw failure(
+        hmac ? "HMAC initialization failed" : "Digest method not supported",
+      );
   } catch (error) {
-    if (context !== 0) disposeAddress(free, context);
+    if (context !== 0) disposeContext(context, hmac);
     throw error;
   } finally {
-    disposeAddress(ffi.digestFree, digest);
+    if (releaseDigest) disposeAddress(ffi.digestFree, digest);
   }
 
   const hash: Hash = {
-    update(data: string | Uint8Array): Hash {
+    update(data: string | Uint8Array, encoding?: string): Hash {
       requireActive();
-      const bytes = typeof data === "string" ? encodeUTF8(data) : data;
-      setNumber(update, 0, context);
-      setBytes(update, 1, bytes);
-      setNumber(update, 2, bytes.length);
-      try {
-        invoke(update);
-        if (resultNumber(update) !== 1)
-          throw failure(ffi, "Hash update failed");
-        return hash;
-      } finally {
-        setNumber(update, 1, 0);
-      }
+      const bytes =
+        typeof data === "string" ? encodeUpdate(data, encoding) : data;
+      const status = hmac
+        ? HMAC_Update(context, bytes, bytes.length)
+        : EVP_DigestUpdate(context, bytes, bytes.length);
+      if (status !== 1) throw failure("Hash update failed");
+      return hash;
     },
     digest(encoding?: string): string | Uint8Array {
       if (!hmac) requireActive();
       const bytes = lifetime.address === 0 ? new Uint8Array(0) : finish();
-      if (
-        encoding !== "hex" &&
-        encoding !== "base64" &&
-        encoding !== "base64url"
-      )
-        return bytes;
-      const output =
-        encoding === "hex"
-          ? encodeHex(bytes, 0, bytes.length)
-          : encodeBase64(
-              bytes,
-              0,
-              bytes.length,
-              encoding,
-              encoding === "base64url",
-            );
-      if (output === undefined) throw new Error("digest encoding invariant");
-      return output;
+      if (encoding === "hex") {
+        const output = encodeHex(bytes, 0, bytes.length);
+        if (output === undefined) throw new Error("digest encoding invariant");
+        return output;
+      }
+      const name =
+        encoding === undefined ? undefined : bufferEncoding(encoding);
+      return name === undefined ? bytes : bufferText(bytes, name);
     },
   };
   const lifetime: DigestLifetime = {
     address: context,
-    free,
+    hmac,
     owner: createWeakSlot(hash, undefined, false),
   };
   lifetimes.push(lifetime);
@@ -167,16 +172,13 @@ function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
     const bytes = new Uint8Array(64);
     const size = new Uint8Array(4);
     try {
-      setNumber(final, 0, context);
-      setBytes(final, 1, bytes);
-      setBytes(final, 2, size);
-      invoke(final);
-      if (resultNumber(final) !== 1) throw failure(ffi, "Hash digest failed");
+      const status = hmac
+        ? HMAC_Final(context, bytes, size)
+        : EVP_DigestFinal_ex(context, bytes, size);
+      if (status !== 1) throw failure("Hash digest failed");
       return bytes.subarray(0, size[0] ?? 0);
     } finally {
-      setNumber(final, 1, 0);
-      setNumber(final, 2, 0);
-      disposeAddress(free, lifetime.address);
+      disposeContext(lifetime.address, hmac);
       lifetime.address = 0;
     }
   }
@@ -193,17 +195,7 @@ export function randomBytes(size: number): Uint8Array {
   const ffi = systemOpenSSL();
   const bytes = new Uint8Array(Math.floor(size));
   if (bytes.length === 0) return bytes;
-  invoke(ffi.clearErrors);
-  setNumber(ffi.random, 0, ffi.libraryContext);
-  setBytes(ffi.random, 1, bytes);
-  setNumber(ffi.random, 2, bytes.length);
-  setNumber(ffi.random, 3, 0);
-  try {
-    invoke(ffi.random);
-    if (resultNumber(ffi.random) !== 1)
-      throw failure(ffi, "Random generation failed");
-    return bytes;
-  } finally {
-    setNumber(ffi.random, 1, 0);
-  }
+  if (RAND_bytes_ex(ffi.libraryContext, bytes, bytes.length, 0) !== 1)
+    throw failure("Random generation failed");
+  return bytes;
 }

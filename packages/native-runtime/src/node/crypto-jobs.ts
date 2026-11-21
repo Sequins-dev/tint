@@ -12,7 +12,12 @@ import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
 import type { NativeBlockingPool } from "../blocking-pool.ts";
 import type { EventLoop, EventLoopHandle } from "../event-loop.ts";
 import { codedError, codedRangeError } from "./errors.ts";
-import { disposeAddress, fetchDigest, systemOpenSSL } from "./openssl.ts";
+import {
+  digestName,
+  disposeAddress,
+  fetchDigest,
+  systemOpenSSL,
+} from "./openssl.ts";
 
 type Callback = (error: unknown, result: Uint8Array | undefined) => void;
 interface Job {
@@ -152,7 +157,7 @@ export function pbkdf2(
   const passBytes =
     typeof password === "string" ? encodeUTF8(password) : password;
   const saltBytes = typeof salt === "string" ? encodeUTF8(salt) : salt;
-  const digestBytes = encodeUTF8(digest + String.fromCharCode(0));
+  const digestBytes = encodeUTF8(digestName(digest) + String.fromCharCode(0));
   const saltOffset = headerSize + digestBytes.length + passBytes.length;
   const resultOffset = saltOffset + saltBytes.length;
   const payload = allocate(resultOffset + keyLength);

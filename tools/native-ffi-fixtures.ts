@@ -143,6 +143,13 @@ ${cases}
   if (mac.update("a") !== mac || mac.update("bc").digest("hex") !== "9c196e32dc0175f86f4b1cb89289d6619de6bee699e4c378e68309ed97a1a6ab") return 98;
   if (mac.digest("hex") !== "") return 99;
   if (randomBytes(0).length !== 0 || randomBytes(32.5).length !== 32) return 100;
+  if (createHash("sha256").update("616263", "hex").digest("HEX") !== ${JSON.stringify(abcHex)}) return 101;
+  const acrossSweep = createHash("sha256").update("a");
+  for (let i = 0; i < 300; i++) createHash("sha256").update("temporary");
+  churn();
+  const sweep = createHash("sha256").digest("hex");
+  if (typeof sweep !== "string") return 102;
+  if (acrossSweep.update("bc").digest("hex") !== ${JSON.stringify(abcHex)}) return 103;
   return 42;
 }
 `;

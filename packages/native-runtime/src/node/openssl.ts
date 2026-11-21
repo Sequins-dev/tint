@@ -9,6 +9,7 @@ import {
   invoke,
   openLibrary,
   openProgram,
+  registerOptionalLibrary,
   resultNumber,
   setBytes,
   setNumber,
@@ -26,7 +27,6 @@ import { codedError } from "./errors.ts";
 const voidType: ForeignType = { kind: "void" };
 const pointer: ForeignType = { kind: "pointer", pointee: voidType };
 const integer: ForeignType = { kind: "scalar", scalar: "i32" };
-const size: ForeignType = { kind: "scalar", scalar: "usize" };
 const major: ForeignType = { kind: "scalar", scalar: "u32" };
 
 function bind(
@@ -98,18 +98,7 @@ export interface OpenSSL {
   readonly libraryContext: number;
   readonly digestFetch: ForeignFunction;
   readonly digestFree: ForeignFunction;
-  readonly contextNew: ForeignFunction;
-  readonly contextFree: ForeignFunction;
-  readonly digestInit: ForeignFunction;
-  readonly digestUpdate: ForeignFunction;
-  readonly digestFinal: ForeignFunction;
   readonly clearErrors: ForeignFunction;
-  readonly hmacNew: ForeignFunction;
-  readonly hmacFree: ForeignFunction;
-  readonly hmacInit: ForeignFunction;
-  readonly hmacUpdate: ForeignFunction;
-  readonly hmacFinal: ForeignFunction;
-  readonly random: ForeignFunction;
   readonly pbkdf2: ForeignFunction;
   readonly setThreadContext: ForeignFunction;
 }
@@ -129,6 +118,22 @@ function loadLibrary(path: string): OpenSSL {
       pointer,
       pointer,
     ]);
+    for (const symbol of [
+      "RAND_bytes_ex",
+      "EVP_MD_CTX_new",
+      "EVP_MD_CTX_free",
+      "EVP_DigestInit_ex2",
+      "EVP_DigestUpdate",
+      "EVP_DigestFinal_ex",
+      "HMAC_CTX_new",
+      "HMAC_CTX_free",
+      "HMAC_Init_ex",
+      "HMAC_Update",
+      "HMAC_Final",
+    ]) {
+      if (symbol === undefined || findSymbol(library, symbol) === 0)
+        throw new Error("OpenSSL symbol is unavailable");
+    }
     const backend: OpenSSL = {
       libraryContext: 0,
       digestFetch: bind(library, "EVP_MD_fetch", pointer, [
@@ -137,49 +142,7 @@ function loadLibrary(path: string): OpenSSL {
         pointer,
       ]),
       digestFree: bind(library, "EVP_MD_free", voidType, [pointer]),
-      contextNew: bind(library, "EVP_MD_CTX_new", pointer, []),
-      contextFree: bind(library, "EVP_MD_CTX_free", voidType, [pointer]),
-      digestInit: bind(library, "EVP_DigestInit_ex2", integer, [
-        pointer,
-        pointer,
-        pointer,
-      ]),
-      digestUpdate: bind(library, "EVP_DigestUpdate", integer, [
-        pointer,
-        pointer,
-        size,
-      ]),
-      digestFinal: bind(library, "EVP_DigestFinal_ex", integer, [
-        pointer,
-        pointer,
-        pointer,
-      ]),
       clearErrors: bind(library, "ERR_clear_error", voidType, []),
-      hmacNew: bind(library, "HMAC_CTX_new", pointer, []),
-      hmacFree: bind(library, "HMAC_CTX_free", voidType, [pointer]),
-      hmacInit: bind(library, "HMAC_Init_ex", integer, [
-        pointer,
-        pointer,
-        integer,
-        pointer,
-        pointer,
-      ]),
-      hmacUpdate: bind(library, "HMAC_Update", integer, [
-        pointer,
-        pointer,
-        size,
-      ]),
-      hmacFinal: bind(library, "HMAC_Final", integer, [
-        pointer,
-        pointer,
-        pointer,
-      ]),
-      random: bind(library, "RAND_bytes_ex", integer, [
-        pointer,
-        pointer,
-        size,
-        major,
-      ]),
       pbkdf2: bind(library, "PKCS5_PBKDF2_HMAC", integer, [
         pointer,
         integer,
@@ -210,6 +173,7 @@ function loadLibrary(path: string): OpenSSL {
       disposeAddress(contextFree, context);
       throw error;
     }
+    registerOptionalLibrary("tint:system-openssl3", library);
     return { ...backend, libraryContext: context };
   } catch (error) {
     closeLibrary(library);
@@ -270,7 +234,6 @@ export function disposeAddress(fn: ForeignFunction, address: number): void {
 
 export function fetchDigest(ffi: OpenSSL, algorithm: string): number {
   invoke(ffi.clearErrors);
-  if (algorithm.includes(String.fromCharCode(0))) return 0;
   setNumber(ffi.digestFetch, 0, ffi.libraryContext);
   setBytes(ffi.digestFetch, 1, encodeUTF8(algorithm + String.fromCharCode(0)));
   setBytes(ffi.digestFetch, 2, encodeUTF8("provider=default\0"));
@@ -280,4 +243,10 @@ export function fetchDigest(ffi: OpenSSL, algorithm: string): number {
   setNumber(ffi.digestFetch, 2, 0);
   if (digest === 0) invoke(ffi.clearErrors);
   return digest;
+}
+
+/** Node's OpenSSL bindings pass digest names as C strings. */
+export function digestName(value: string): string {
+  const end = value.indexOf(String.fromCharCode(0));
+  return end === -1 ? value : value.slice(0, end);
 }

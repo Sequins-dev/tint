@@ -97,6 +97,12 @@ export function createNativeBlockingPool(
       if (joined < 0) throw new Error("could not join blocking helper");
       if (joined !== 0) failed = true;
     }
+    while (pool.requests.receive() !== undefined) {
+      // Each receive detaches and releases one canceled mailbox record.
+    }
+    while (pool.replies.receive() !== undefined) {
+      // A helper may have published a completion while shutdown waited.
+    }
     release(pool.requests.registry.base);
     release(pool.replies.registry.base);
     release(pool.record.base);

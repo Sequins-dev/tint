@@ -2719,6 +2719,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/c/openssl3.d.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/c/zlib.d.ts",
       packageId: "native-runtime",
     },
@@ -2824,6 +2828,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/intrinsics/weak.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/buffer-codecs.ts",
       packageId: "native-runtime",
     },
     {
