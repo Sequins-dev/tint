@@ -25,6 +25,8 @@ export interface Construct {
   /** Source modules the forms import as "./<file>". */
   readonly helpers?: Readonly<Record<string, string>>;
   readonly helperImports?: Readonly<Record<string, readonly string[]>>;
+  /** Prelinked worker entry modules the program starts by filename. */
+  readonly workers?: readonly string[];
   /** Node's result where Tint's semantics intentionally differ from
    * type-erased execution (enforced annotations); otherwise 42. */
   readonly node?: { readonly typed?: number; readonly untyped?: number };
@@ -44,6 +46,49 @@ export function call(fn, value) { return fn(value); }
 };
 
 export const constructs: readonly Construct[] = [
+  {
+    name: "worker-construction",
+    workers: ["peer.ts"],
+    helpers: {
+      "peer.ts": `import { parentPort, workerData } from "node:worker_threads";
+const port = parentPort;
+if (port === null || typeof workerData !== "number") throw "invalid worker context";
+port.once("message", (value) => {
+  port.postMessage(workerData + value);
+  port.close();
+});`,
+    },
+    typed: `import { Worker } from "node:worker_threads";
+const worker: Worker = new Worker("./worker-construction/peer.ts", { workerData: 41 });
+export function run(): number {
+  if (worker.threadId <= 0) return 1;
+  let received: boolean = false;
+  worker.once("message", (value: unknown): void => {
+    if (value !== 42) throw "wrong worker response";
+    received = true;
+  });
+  worker.once("exit", (status: unknown): void => {
+    if (status !== 0 || !received || worker.threadId !== -1) throw "unexpected worker exit";
+  });
+  worker.postMessage(1);
+  return 42;
+}`,
+    untyped: `import { Worker } from "node:worker_threads";
+const worker = new Worker("./worker-construction/peer.ts", { workerData: 41 });
+export function run() {
+  if (worker.threadId <= 0) return 1;
+  let received = false;
+  worker.once("message", (value) => {
+    if (value !== 42) throw "wrong worker response";
+    received = true;
+  });
+  worker.once("exit", (status) => {
+    if (status !== 0 || !received || worker.threadId !== -1) throw "unexpected worker exit";
+  });
+  worker.postMessage(1);
+  return 42;
+}`,
+  },
   {
     name: "numeric-loop",
     typed: `export function run(): number {

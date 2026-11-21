@@ -276,7 +276,7 @@ test("complete native compiler pipeline passes checking after specialization", (
     [
       "tools/selfhost-coverage.ts",
       "--entry",
-      "packages/compiler/src/native/index.ts",
+      "packages/compiler/src/build.ts",
       "--specialize",
     ],
     { encoding: "utf8" },

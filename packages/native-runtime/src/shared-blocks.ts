@@ -61,6 +61,7 @@ export interface NativeSharedWaitAttachment {
   readonly parking: NativeWaiterParkingHost;
   readonly now: () => number;
   readonly registry: NativeSharedBlockRegistry;
+  readonly wrapWaiting?: (waiting: SharedBlockWaiting) => SharedBlockWaiting;
 }
 export interface NativeSharedBlockPolicy {
   /** Reservation granule: block reservations are rounded up to it. */
@@ -197,7 +198,14 @@ export function attachNativeSharedBlockService(
   }
   return {
     ok: true,
-    value: sharedFacade(host, registry, atomicHost, waiters, waitHost?.now),
+    value: sharedFacade(
+      host,
+      registry,
+      atomicHost,
+      waiters,
+      waitHost?.now,
+      waitHost?.wrapWaiting,
+    ),
   };
 }
 /** Moving managed facade; all mutable authority is scalar native registry data.
@@ -206,6 +214,7 @@ export function attachNativeSharedBlockService(
 export interface NativeSharedBlockService extends SharedBlockService {
   readonly registry: NativeSharedBlockRegistry;
   readonly waitRegistry: NativeSharedBlockRegistry | undefined;
+  readonly waitEvents: NativeWaitRegistry | undefined;
 }
 function sharedFacade(
   host: NativeSharedMemoryHost,
@@ -213,6 +222,7 @@ function sharedFacade(
   atomicHost: NativeSharedAtomicMemoryHost | undefined,
   waiters: NativeWaitRegistry | undefined,
   clock: (() => number) | undefined,
+  wrapWaiting?: (waiting: SharedBlockWaiting) => SharedBlockWaiting,
 ): NativeSharedBlockService {
   function location(
     handle: number,
@@ -734,16 +744,21 @@ function sharedFacade(
       },
     };
   }
-  const waiting =
+  const nativeWaiting =
     waiters === undefined || clock === undefined
       ? undefined
       : configureWaiting(waiters, clock);
+  const waiting =
+    nativeWaiting === undefined || wrapWaiting === undefined
+      ? nativeWaiting
+      : wrapWaiting(nativeWaiting);
   const notifications =
     waiters === undefined ? undefined : configureNotifications(waiters);
   return {
     engineId: registry.engineId,
     registry,
     waitRegistry: waiters?.registry,
+    waitEvents: waiters,
     waiting,
     notifications,
     atomics,

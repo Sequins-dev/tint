@@ -3631,6 +3631,7 @@ export function lowerFunction(
           "primitive",
           "optional-string",
           "optional-reference",
+          "general",
         ].includes(parameters[argumentsSlots.length] ?? "")
       )
         throw "omitted argument representation invariant";

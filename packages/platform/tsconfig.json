@@ -6,13 +6,20 @@
     "rootDir": "src",
     "outDir": "dist"
   },
-  "include": ["src/**/*.ts", "../../types/text-encoding.d.ts"],
+  "include": [
+    "src/**/*.ts",
+    "../../types/text-encoding.d.ts",
+    "../native-runtime/src/c/ffi.d.ts"
+  ],
   "references": [
     {
       "path": "../native-runtime"
     },
     {
       "path": "../abi"
+    },
+    {
+      "path": "../foundation"
     }
   ]
 }

@@ -4,10 +4,34 @@ import type { CTarget } from "./c/types.ts";
  * teardown, so virtual-address reuse cannot make stale code match a new heap.
  * Realms within one context share this token; it is not an agent identifier. */
 export const nativeContextDomainOffset = 88;
+
+/** One atomic pipe write from a Tint isolate to the Node launch broker.
+ * The argument is an unsigned little-endian word, followed by a reply fd. */
+export const nodeWorkerLaunchRecordBytes = 12;
+export const nodeWorkerLaunchReplyOffset = 8;
 export const nativeHostedContextByteLength = 96;
 /** The hosted entry sends this to its allocator only after the mutator
  * has returned, before reclaiming the collector's permanent storage. */
 export const nativeAllocatorShutdownRequest = -1;
+/** Threaded images may accept a tagged startup record (aligned address + 1).
+ * Its first word starts at zero, then startup publishes exit status + 1 after
+ * releasing the worker's managed storage. Both descriptors are duplicates
+ * owned by the worker. Keeping a read end prevents SIGPIPE if the parent
+ * consumes the status from another wake and closes its own descriptors. */
+export const nativeThreadExitWriteOffset = 8;
+export const nativeThreadExitReadOffset = 16;
+/** Worker-capable startup reserves a word just before the stack-map registry.
+ * It points at the worker's stop state, or is zero in the main isolate. */
+export const nativeWorkerStopPointerOffset = -8;
+export const nativeWorkerStopStateOffset = 72;
+/** Optional size ceilings in a worker startup record. Zero uses the image
+ * default. The image retains its reserved virtual address layout. */
+export const nativeWorkerStackBytesOffset = 136;
+export const nativeWorkerHeapBytesOffset = 144;
+export const nativeWorkerStopRequested = 1;
+export const nativeWorkerStopObserved = 2;
+/** A tag-zero general payload reserved for managed worker interruption. */
+export const nativeWorkerStopPayload = 0x54e;
 /** Lowest stack pointer a managed frame may establish: the stack's low guard
  * page plus headroom. A stack overflow saves it in the engine-throw word and
  * sets it to 0 (emergency mode: no check, the guard page is the last resort)
