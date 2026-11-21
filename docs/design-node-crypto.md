@@ -10,12 +10,12 @@ validation rules. [Native FFI](native-ffi.md) ·
 
 ## Approved scope
 
-| API | Supported behavior | Native implementation |
-| --- | --- | --- |
-| `createHash` | Incremental `update` and `digest`, including Node byte and string inputs, result encodings and finalized-state errors. Cover MD5, SHA-1, SHA-224/256/384/512 and SHA3-224/256/384/512 with their common aliases. | EVP digest operations in the default provider. |
-| `createHmac` | Incremental `update` and `digest`, with string and byte keys and the same digest families. Match Node's HMAC-specific behavior after finalization. | OpenSSL HMAC operations in the default provider. |
-| `randomBytes` | Synchronous overload with Node size validation and a Buffer result. | OpenSSL CSPRNG. |
-| `pbkdf2` | Callback overload, including synchronous validation and asynchronous completion. | PBKDF2 on the blocking helper pool. |
+| API           | Supported behavior                                                                                                                                                                                               | Native implementation                            |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `createHash`  | Incremental `update` and `digest`, including Node byte and string inputs, result encodings and finalized-state errors. Cover MD5, SHA-1, SHA-224/256/384/512 and SHA3-224/256/384/512 with their common aliases. | EVP digest operations in the default provider.   |
+| `createHmac`  | Incremental `update` and `digest`, with string and byte keys and the same digest families. Match Node's HMAC-specific behavior after finalization.                                                               | OpenSSL HMAC operations in the default provider. |
+| `randomBytes` | Synchronous overload with Node size validation and a Buffer result.                                                                                                                                              | OpenSSL CSPRNG.                                  |
+| `pbkdf2`      | Callback overload, including synchronous validation and asynchronous completion.                                                                                                                                 | PBKDF2 on the blocking helper pool.              |
 
 Use the same Buffer and byte-window primitives for typed and untyped callers.
 Expose the supported operations through the built-in resolver. Report
@@ -96,13 +96,23 @@ in PBKDF2 and provider failure in digest initialization.
 - Pin the Node source to `v26.13.1`
   (`e9c277643b0249c50f6e6de5413be8a88ea11b6a`). Its full
   `test/parallel/test-crypto-*` population is 166 files. The PoC selection
-  is four direct API suites under `test/parallel/`:
+  uses four direct API suites under `test/parallel/`:
   `test-crypto-hash.js`, `test-crypto-hmac.js`,
   `test-crypto-pbkdf2.js`, and `test-crypto-random.js`. Each exercises
-  a public entry point in the PoC. Each also mixes scoped behavior with
-  other calls, such as stream methods, KeyObjects, sync PBKDF2, or other
-  random APIs. Run the original files and report out-of-scope calls,
-  failures, skips and harness gaps in the denominator of four per target.
+  a public entry point in the PoC. Extract every case or assertion that
+  exercises only the approved API slice verbatim. Record the source file
+  and line for each extraction and reuse the same extracted bodies under
+  Node and native Tint. The readiness denominator is the extracted case
+  count per target. Publish the rest of the pinned files' cases separately,
+  with source locations and the APIs that put them outside the PoC.
+  Out-of-scope cases earn no passes. The original whole-file attempts
+  remain historical evidence.
+  [Extraction manifest](../tools/node-crypto-cases.json) ·
+  [Whole-file attempt](results/node-crypto-v26.13.1-poc-v1.md)
+  The manifest currently selects 41 case groups and lists 39 exclusion
+  ranges. A case group can contain a loop over several upstream inputs.
+  Run the Node reference extraction with
+  `node tools/node-crypto-conformance.ts <node-source> <node-oracle>`.
 - Exercise the real built-in import with typed and untyped native fixtures.
   Cover digest and HMAC vectors, output and error behavior, GC across
   updates, missing/incompatible library selection and callback ordering.

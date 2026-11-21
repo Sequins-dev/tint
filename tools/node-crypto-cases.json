@@ -1,0 +1,448 @@
+{
+  "version": "26.13.1",
+  "files": {
+    "test-crypto-hash.js": {
+      "sha256": "ca959fa4125e1390ffadbb86fd9456d18e3b0ff1929670c487ef1fc3c79a4b9e",
+      "cases": [
+        {
+          "name": "MD5 latin1",
+          "ranges": [
+            [26, 27],
+            [57, 64]
+          ]
+        },
+        {
+          "name": "SHA-1 hex",
+          "ranges": [
+            [26, 27],
+            [30, 30],
+            [66, 71]
+          ]
+        },
+        {
+          "name": "SHA-256 base64",
+          "ranges": [
+            [26, 27],
+            [31, 31],
+            [72, 77]
+          ]
+        },
+        {
+          "name": "SHA-512 Buffer",
+          "ranges": [
+            [26, 27],
+            [32, 32],
+            [78, 89]
+          ]
+        },
+        {
+          "name": "Explicit buffer encoding",
+          "ranges": [
+            [26, 27],
+            [33, 33],
+            [90, 96]
+          ]
+        },
+        {
+          "name": "Multiple updates",
+          "ranges": [[105, 107]]
+        },
+        {
+          "name": "Unknown digest",
+          "ranges": [[124, 126]]
+        },
+        {
+          "name": "Throwing digest encoding",
+          "ranges": [[130, 137]]
+        },
+        {
+          "name": "Missing update data",
+          "ranges": [[141, 146]]
+        },
+        {
+          "name": "UTF-8 encoding",
+          "ranges": [[149, 153]]
+        },
+        {
+          "name": "Latin1 input differs from UTF-8",
+          "ranges": [
+            [149, 149],
+            [155, 157]
+          ]
+        },
+        {
+          "name": "Digest after finalization",
+          "ranges": [[159, 167]]
+        },
+        {
+          "name": "Update after finalization",
+          "ranges": [
+            [159, 160],
+            [169, 174]
+          ]
+        },
+        {
+          "name": "UCS-2 encoding",
+          "ranges": [[176, 178]]
+        },
+        {
+          "name": "Missing algorithm",
+          "ranges": [[180, 188]]
+        },
+        {
+          "name": "SHA-512 digest after finalization",
+          "ranges": [
+            [281, 282],
+            [284, 284]
+          ]
+        }
+      ],
+      "outside": [
+        {
+          "range": [35, 54],
+          "needs": "Hash stream end, write and read"
+        },
+        {
+          "range": [99, 102],
+          "needs": "Hash stream end, write and read"
+        },
+        {
+          "range": [110, 120],
+          "needs": "fs.createReadStream and stream events"
+        },
+        {
+          "range": [190, 195],
+          "needs": "Hash constructor"
+        },
+        {
+          "range": [198, 278],
+          "needs": "SHAKE, XOF options and Hash.copy"
+        },
+        {
+          "range": [283, 283],
+          "needs": "Hash.copy"
+        },
+        {
+          "range": [287, 294],
+          "needs": "Hash.copy"
+        },
+        {
+          "range": [296, 298],
+          "needs": "Hash constructor and its deprecation warning"
+        },
+        {
+          "range": [56, 56],
+          "needs": "FIPS mode query that gates MD5 on Node"
+        }
+      ]
+    },
+    "test-crypto-hmac.js": {
+      "sha256": "b74d28dd149e09503a09b2ce50bb7e9eb9406aafbe14c7aadd11db347ee6c1a2",
+      "cases": [
+        {
+          "name": "Null algorithm",
+          "ranges": [[20, 26]]
+        },
+        {
+          "name": "Throwing digest encoding",
+          "ranges": [[29, 36]]
+        },
+        {
+          "name": "Null key",
+          "ranges": [[38, 43]]
+        },
+        {
+          "name": "Multiple updates",
+          "ranges": [
+            [55, 56],
+            [65, 69]
+          ],
+          "setup": "const keyWrapper = (key) => key;\nfunction testHmac(algo, key, data, expected) {",
+          "after": "}",
+          "tail": [[73, 77]]
+        },
+        {
+          "name": "DSS1 legacy alias for SHA-1",
+          "ranges": [[79, 90]]
+        },
+        {
+          "name": "String key vectors",
+          "ranges": [
+            [55, 56],
+            [65, 69]
+          ],
+          "setup": "const keyWrapper = (key) => key;\nfunction testHmac(algo, key, data, expected) {",
+          "after": "}",
+          "tail": [[93, 139]]
+        },
+        {
+          "name": "RFC 4231 incremental vectors",
+          "ranges": [
+            [142, 289],
+            [293, 297],
+            [299, 305],
+            [312, 313]
+          ]
+        },
+        {
+          "name": "UCS-2 encoding",
+          "ranges": [[451, 456]]
+        },
+        {
+          "name": "Repeat digest after update",
+          "ranges": [[459, 473]]
+        },
+        {
+          "name": "Repeat digest without update",
+          "ranges": [[477, 491]]
+        },
+        {
+          "name": "Unknown HMAC digest",
+          "ranges": [[493, 497]]
+        },
+        {
+          "name": "RFC 2202 MD5 raw-key vectors",
+          "setup": "const keyWrapper = (key) => key;\nfunction testHmac(algo, key, data, expected) {",
+          "ranges": [
+            [55, 56],
+            [65, 69]
+          ],
+          "after": "}",
+          "tail": [[336, 391]]
+        },
+        {
+          "name": "RFC 2202 SHA-1 raw-key vectors",
+          "setup": "const keyWrapper = (key) => key;\nfunction testHmac(algo, key, data, expected) {",
+          "ranges": [
+            [55, 56],
+            [65, 69]
+          ],
+          "after": "}",
+          "tail": [[393, 449]]
+        }
+      ],
+      "outside": [
+        {
+          "range": [13, 18],
+          "needs": "Hmac constructor"
+        },
+        {
+          "range": [46, 53],
+          "needs": "FIPS provider for the conditional failure assertion"
+        },
+        {
+          "range": [58, 69],
+          "needs": "KeyObject variant of the helper for Buffer keys"
+        },
+        {
+          "range": [290, 292],
+          "needs": "Hmac stream end and read"
+        },
+        {
+          "range": [298, 298],
+          "needs": "Hmac stream result"
+        },
+        {
+          "range": [306, 311],
+          "needs": "Hmac stream result"
+        },
+        {
+          "range": [319, 333],
+          "needs": "Hmac stream end and read"
+        },
+        {
+          "range": [336, 391],
+          "needs": "RFC 2202 MD5 loop also invokes createSecretKey; raw-key path tracked separately"
+        },
+        {
+          "range": [393, 449],
+          "needs": "RFC 2202 SHA-1 loop also invokes createSecretKey; raw-key path tracked separately"
+        },
+        {
+          "range": [499, 506],
+          "needs": "createSecretKey and KeyObject comparison"
+        },
+        {
+          "range": [508, 516],
+          "needs": "Hmac constructor and its deprecation warning"
+        }
+      ]
+    },
+    "test-crypto-pbkdf2.js": {
+      "sha256": "49d96218f9e3c17405b1cb1e391967381932a6010611f46ef3a922a10eb3c17b",
+      "cases": [
+        {
+          "name": "Missing callback",
+          "ranges": [
+            [13, 17],
+            [109, 116]
+          ]
+        },
+        {
+          "name": "Non-integer key length",
+          "ranges": [
+            [13, 17],
+            [142, 153]
+          ]
+        },
+        {
+          "name": "Out-of-range key length",
+          "ranges": [
+            [13, 17],
+            [155, 164]
+          ]
+        },
+        {
+          "name": "Negative zero key length",
+          "ranges": [
+            [13, 17],
+            [194, 196]
+          ]
+        },
+        {
+          "name": "Empty password and salt",
+          "ranges": [[204, 204]]
+        },
+        {
+          "name": "Missing digest",
+          "ranges": [
+            [13, 17],
+            [207, 215]
+          ]
+        },
+        {
+          "name": "Invalid password and salt types",
+          "ranges": [
+            [13, 17],
+            [234, 252],
+            [271, 271]
+          ]
+        },
+        {
+          "name": "Invalid iteration types",
+          "ranges": [
+            [13, 17],
+            [273, 283],
+            [293, 293]
+          ]
+        },
+        {
+          "name": "Unknown digest",
+          "ranges": [
+            [13, 17],
+            [317, 326]
+          ]
+        }
+      ],
+      "outside": [
+        {
+          "range": [19, 56],
+          "needs": "pbkdf2Sync as operation and expected callback result"
+        },
+        {
+          "range": [63, 106],
+          "needs": "pbkdf2Sync as expected callback result or FIPS policy"
+        },
+        {
+          "range": [118, 140],
+          "needs": "pbkdf2Sync"
+        },
+        {
+          "range": [171, 192],
+          "needs": "pbkdf2Sync comparison for negative zero"
+        },
+        {
+          "range": [201, 202],
+          "needs": "FIPS provider and pbkdf2Sync"
+        },
+        {
+          "range": [217, 233],
+          "needs": "pbkdf2Sync"
+        },
+        {
+          "range": [254, 270],
+          "needs": "pbkdf2Sync"
+        },
+        {
+          "range": [285, 292],
+          "needs": "pbkdf2Sync"
+        },
+        {
+          "range": [295, 315],
+          "needs": "FIPS policy or pbkdf2Sync as callback oracle"
+        },
+        {
+          "range": [328, 358],
+          "needs": "pbkdf2Sync and getHashes"
+        }
+      ]
+    },
+    "test-crypto-random.js": {
+      "sha256": "8d80b123772f70916f47f87f0f0c08f5a47486603516fad5488161295c614600",
+      "cases": [
+        {
+          "name": "Invalid synchronous size types",
+          "setup": "const f = crypto.randomBytes;",
+          "ranges": [
+            [41, 48],
+            [50, 50]
+          ]
+        },
+        {
+          "name": "Out-of-range synchronous sizes",
+          "setup": "const f = crypto.randomBytes;",
+          "ranges": [
+            [31, 34],
+            [52, 59],
+            [61, 61]
+          ]
+        },
+        {
+          "name": "Synchronous size greater than uint32",
+          "ranges": [
+            [31, 34],
+            [341, 349]
+          ]
+        }
+      ],
+      "outside": [
+        {
+          "range": [36, 70],
+          "needs": "pseudoRandomBytes alias and warning, callback randomBytes"
+        },
+        {
+          "range": [73, 102],
+          "needs": "randomFillSync"
+        },
+        {
+          "range": [103, 113],
+          "needs": "global crypto.getRandomValues"
+        },
+        {
+          "range": [115, 336],
+          "needs": "randomFill, randomFillSync and getRandomValues"
+        },
+        {
+          "range": [351, 373],
+          "needs": "randomFill and randomFillSync"
+        },
+        {
+          "range": [375, 383],
+          "needs": "randomBytes callback overload validation"
+        },
+        {
+          "range": [385, 390],
+          "needs": "pseudoRandomBytes, prng and rng export descriptors"
+        },
+        {
+          "range": [393, 570],
+          "needs": "randomInt sync and callback forms"
+        },
+        {
+          "range": [572, 577],
+          "needs": "randomFill callback overload"
+        }
+      ]
+    }
+  }
+}
