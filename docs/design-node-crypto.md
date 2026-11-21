@@ -81,7 +81,8 @@ for hash and HMAC operations in the isolate. On recycle, reset the context
 and clear HMAC key state. Release active and spare contexts with the cached
 digest references at isolate exit. Encoded hexadecimal digests borrow
 scratch storage within one synchronous operation. Buffer results own
-their bytes. Any address
+their bytes and reuse the realm's integer-indexed typed-array methods.
+Any address
 held after a leaf returns must refer to stable owned storage. Validate
 actual byte offsets and lengths, including subviews, and preserve Node's
 result brands and input encodings.
@@ -149,11 +150,13 @@ in PBKDF2 and provider failure in digest initialization.
   and wall time where available. Keep the PR in draft until Tint wins most
   cases and all required checks pass. The module's implementation remains
   typed and independent of the `perf/general-calls` stream.
+  [Performance comparison](results/node-crypto-darwin-arm64-performance.md) ·
   [Profile captures](results/node-crypto-darwin-arm64-profiles-v1.md) ·
   [Public profile](results/node-crypto-darwin-arm64-public-profile-v1.md) ·
   [Public API baseline](results/node-crypto-darwin-arm64-public-v1.json) ·
   [Typed hexadecimal conversion experiment](results/node-crypto-darwin-arm64-hex-v1.json) ·
   [Typed digest context experiment](results/node-crypto-darwin-arm64-contexts-v1.json) ·
+  [Typed Buffer comparison](results/node-crypto-darwin-arm64-branded-shared-methods-v1.json) ·
   [General method-call control](results/node-crypto-darwin-arm64-call-control-v1.md)
 
 ## PoC phases
