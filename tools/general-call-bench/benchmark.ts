@@ -1,0 +1,329 @@
+/** Prepare outside the shared timing lock, then measure in rotated rounds. */
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { cpus, homedir, loadavg, tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { stripTypeScriptTypes } from "node:module";
+import { verifyHostedFixture } from "../hosted-fixture.ts";
+import { nativeFixtureTarget } from "../native-host-target.ts";
+import { nativeArtifact, runNativeBatch } from "../native-target-runner.ts";
+import * as kernels from "./kernels.ts";
+
+const clock = "packages/native-runtime/src/intrinsics/clock.ts";
+type Kernel = keyof typeof kernels;
+type Artifact = ReturnType<typeof nativeArtifact>;
+interface Prepared {
+  head: string;
+  patchSha256: string;
+  node: string;
+  nodeSha256: string;
+  script: string;
+  scriptSha256: string;
+  native: Record<string, Artifact>;
+  checksums: Record<string, { sum: number; iterations: number; warm: number }>;
+}
+
+function execute(command: string, args: string[]): string {
+  const result = spawnSync(command, args, {
+    encoding: "utf8",
+    timeout: 120_000,
+    env: { ...process.env, TZ: "UTC" },
+  });
+  if (result.error !== undefined) throw result.error;
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  return result.stdout;
+}
+
+function hash(bytes: string | Uint8Array): string {
+  return createHash("sha256").update(bytes).digest("hex");
+}
+
+function fileHash(file: string): string {
+  return hash(readFileSync(file));
+}
+
+function writeReport(path: string, report: unknown): void {
+  writeFileSync(path, JSON.stringify(report, null, 2) + "\n", { flag: "wx" });
+}
+
+function prepare(
+  node: string,
+  selected: string | undefined,
+  scale: number,
+): Prepared {
+  node = resolve(node);
+  assert.equal(execute(node, ["--version"]).trim(), "v26.13.1");
+  assert.ok(Number.isSafeInteger(scale) && scale > 0);
+  const names = (Object.keys(kernels) as Kernel[]).filter(
+    (name) => selected === undefined || selected === name,
+  );
+  assert.ok(names.length > 0, "unknown benchmark case");
+  const checksums: Prepared["checksums"] = {};
+  const cases = names.map((name) => {
+    const iterations = (name === "recursive" ? 2_000 : 100_000) * scale;
+    const warm = name === "recursive" ? 2_000 : 20_000;
+    const sum = kernels[name](iterations);
+    checksums[name] = { sum, iterations, warm };
+    return `{
+      if (${name}(${warm}) !== ${kernels[name](warm)}) return 1;
+      const started = now();
+      const sum = ${name}(${iterations});
+      const elapsed = now() - started;
+      if (sum !== ${sum}) return 2;
+      console.log("TINT_GENERAL_BENCH ${name} " + elapsed + " " + sum);
+    }`;
+  });
+  const source = readFileSync(new URL("./kernels.ts", import.meta.url), "utf8");
+  const workload = `${source}
+export function run(): number {
+  ${cases.join("\n")}
+  return 42;
+}
+`;
+  const general = stripTypeScriptTypes(workload);
+  const work = mkdtempSync(join(tmpdir(), "tint-general-call-bench-"));
+  const script = join(work, "benchmark.mjs");
+  writeFileSync(
+    script,
+    "const now = () => Number(process.hrtime.bigint()) / 1e6;\n" +
+      general +
+      "\nif (run() !== 42) process.exitCode = 1;\n",
+  );
+  const target = nativeFixtureTarget().name;
+  process.env.TZ = "UTC";
+  process.env.TINT_BUILD_ONLY = "defer-admission";
+  delete process.env.TINT_GENERAL_FALLBACK;
+  function build(typed: boolean): Artifact {
+    let fellBack = false;
+    // Force realm lowering even when the typed checker can infer a kernel.
+    const realmGuard = "if (typeof Reflect !== 'object') return 3;";
+    const body = typed
+      ? workload
+      : general.replace(
+          /export function run\(\)\s*\{/,
+          (entry) => entry + realmGuard,
+        );
+    const path = verifyHostedFixture(
+      'import { monotonicMilliseconds as now } from "clock";\n' + body,
+      "general-call-bench-" + (typed ? "typed" : "untyped"),
+      [["clock", clock]],
+      [],
+      [],
+      [{ module: clock, namespace: "general-call-bench-clock" }],
+      {
+        requireTyped: typed,
+        hostBindings: [
+          {
+            module: clock,
+            name: "monotonicMilliseconds",
+            operation: "monotonic-time",
+          },
+        ],
+        managedBytes: 128 * 1024 * 1024,
+        allocationCapacity: 1_048_576,
+        stackBytes: 4_194_304,
+        onGeneralFallback: () => {
+          fellBack = true;
+        },
+      },
+    );
+    assert.equal(fellBack, !typed);
+    return nativeArtifact(target, path, path + ".manifest.json");
+  }
+  return {
+    head: execute("git", ["rev-parse", "HEAD"]).trim(),
+    patchSha256: hash(
+      execute("git", ["diff", "--binary", "HEAD", "--", "packages"]),
+    ),
+    node,
+    nodeSha256: fileHash(node),
+    script,
+    scriptSha256: fileHash(script),
+    native: { untyped: build(false), typed: build(true) },
+    checksums,
+  };
+}
+
+function distribution(values: number[]) {
+  const sorted = values.slice().sort((left, right) => left - right);
+  function quantile(p: number): number {
+    const index = (sorted.length - 1) * p;
+    const lower = sorted[Math.floor(index)]!;
+    return lower + (sorted[Math.ceil(index)]! - lower) * (index % 1);
+  }
+  return { median: quantile(0.5), q1: quantile(0.25), q3: quantile(0.75) };
+}
+
+function cpuTimes() {
+  let idle = 0,
+    total = 0;
+  for (const { times } of cpus()) {
+    idle += times.idle;
+    total += times.idle + times.user + times.nice + times.sys + times.irq;
+  }
+  return { idle, total };
+}
+
+function measure(
+  prepared: Prepared,
+  path: string,
+  rounds: number,
+  candidate?: Prepared,
+) {
+  assert.equal(fileHash(prepared.node), prepared.nodeSha256);
+  assert.equal(fileHash(prepared.script), prepared.scriptSha256);
+  if (candidate !== undefined) {
+    assert.deepEqual(candidate.checksums, prepared.checksums);
+    assert.equal(candidate.scriptSha256, prepared.scriptSha256);
+    assert.equal(candidate.nodeSha256, prepared.nodeSha256);
+  }
+  const artifacts: Record<string, Artifact> = {
+    ...prepared.native,
+    ...(candidate === undefined
+      ? {}
+      : {
+          candidateUntyped: candidate.native.untyped!,
+          candidateTyped: candidate.native.typed!,
+        }),
+  };
+  for (const artifact of Object.values(artifacts)) {
+    assert.equal(fileHash(artifact.path), artifact.imageSha256);
+    const manifest = artifact.buildManifest;
+    assert.ok(manifest);
+    assert.equal(fileHash(manifest.path), manifest.sha256);
+  }
+  const engines = ["node", ...Object.keys(artifacts)];
+  assert.ok(
+    Number.isInteger(rounds) && rounds >= 15 && rounds % engines.length === 0,
+  );
+  const samples: {
+    round: number;
+    engine: string;
+    position: number;
+    values: Record<string, number>;
+    exit: number;
+    loadBefore: number[];
+    loadAfter: number[];
+    idlePercent: number | null;
+  }[] = [];
+  for (let round = 0; round < rounds; round++) {
+    for (let position = 0; position < engines.length; position++) {
+      const engine = engines[(round + position) % engines.length]!;
+      const artifact = artifacts[engine];
+      const before = cpuTimes();
+      const loadBefore = loadavg();
+      const native =
+        artifact === undefined
+          ? undefined
+          : runNativeBatch([{ artifact, timeoutMs: 120_000 }])[0];
+      if (artifact !== undefined)
+        assert.ok(
+          native?.kind === "exited" && native.status === 42,
+          JSON.stringify(native),
+        );
+      const output =
+        native?.stdout ?? execute(prepared.node, [prepared.script]);
+      const after = cpuTimes();
+      const total = after.total - before.total;
+      const values: Record<string, number> = {};
+      for (const match of output.matchAll(
+        /^TINT_GENERAL_BENCH (\w+) ([0-9.eE+-]+) (\d+)\r?$/gm,
+      )) {
+        const name = match[1]!;
+        const expected = prepared.checksums[name];
+        const elapsed = Number(match[2]);
+        assert.ok(
+          expected &&
+            Number(match[3]) === expected.sum &&
+            Number.isFinite(elapsed) &&
+            elapsed > 0,
+        );
+        assert.equal(values[name], undefined, "duplicate benchmark sample");
+        values[name] = (elapsed * 1e6) / expected.iterations;
+      }
+      assert.deepEqual(
+        Object.keys(values).sort(),
+        Object.keys(prepared.checksums).sort(),
+      );
+      samples.push({
+        round,
+        engine,
+        position,
+        values,
+        exit: native?.kind === "exited" ? native.status : 0,
+        loadBefore,
+        loadAfter: loadavg(),
+        idlePercent:
+          total === 0 ? null : (100 * (after.idle - before.idle)) / total,
+      });
+    }
+    console.error(`completed round ${round + 1}/${rounds}`);
+  }
+  const summary = Object.fromEntries(
+    Object.keys(prepared.checksums).map((name) => {
+      const node = samples.filter((row) => row.engine === "node");
+      const changes = samples.filter((row) => row.engine === "untyped");
+      return [
+        name,
+        Object.fromEntries(
+          engines.map((engine) => {
+            const rows = samples.filter((row) => row.engine === engine);
+            return [
+              engine,
+              {
+                ns: distribution(rows.map((row) => row.values[name]!)),
+                deltaFromNodeNs: distribution(
+                  rows.map(
+                    (row, i) => row.values[name]! - node[i]!.values[name]!,
+                  ),
+                ),
+                ...(engine === "candidateUntyped"
+                  ? {
+                      deltaFromBaseNs: distribution(
+                        rows.map(
+                          (row, i) =>
+                            row.values[name]! - changes[i]!.values[name]!,
+                        ),
+                      ),
+                    }
+                  : {}),
+              },
+            ];
+          }),
+        ),
+      ];
+    }),
+  );
+  writeReport(path, {
+    prepared,
+    candidate,
+    cpu: cpus()[0]?.model,
+    rounds,
+    summary,
+    samples,
+  });
+}
+
+function readPrepared(path: string): Prepared {
+  return JSON.parse(readFileSync(path, "utf8")) as Prepared;
+}
+
+const [mode, input, output, extra, additional] = process.argv.slice(2);
+if (mode === "prepare" && input && output) {
+  writeReport(output, prepare(input, extra, Number(additional ?? 1)));
+} else if (mode === "measure" && input && output) {
+  assert.equal(process.platform, "darwin", "expected Darwin timing host");
+  // The lock wrapper enters this process only after owning the shared lock.
+  measure(
+    readPrepared(input),
+    output,
+    Number(extra ?? 15),
+    additional === undefined ? undefined : readPrepared(additional),
+  );
+} else {
+  throw Error(`Usage:
+  node tools/general-call-bench/benchmark.ts prepare NODE26 PREPARED.json [CASE] [SCALE]
+  /usr/bin/lockf -k ${join(homedir(), ".t3", "tint-timing.lock")} node tools/general-call-bench/benchmark.ts measure PREPARED.json REPORT.json [ROUNDS] [CANDIDATE.json]`);
+}
