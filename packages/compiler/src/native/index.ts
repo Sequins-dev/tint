@@ -894,7 +894,6 @@ export function compileArm64Program(original: CompileRequest): Compilation {
   if (
     typed.ok ||
     lowering === undefined ||
-    request.requireTyped === true ||
     typed.error.preventsFallback === true
   )
     return typed;
@@ -3386,7 +3385,6 @@ export function compileX64HostedProgram(
     if (
       typed.ok ||
       lowering === undefined ||
-      source.requireTyped === true ||
       typed.error.preventsFallback === true
     )
       return typed;
