@@ -84,6 +84,10 @@ results, including fractional, non-finite, negative and very large indices.
 The first measurements did not demonstrate an overall benchmark speedup from
 that local instruction change. Larger code-generation and allocation costs remain.
 
+On the shared Mac, use `tools/gate/with-lock.sh both` for native measurements
+that need timing isolation and the native launch lock. See the
+[shared lock recipe](validation-gate.md#timing-and-profiling-on-the-shared-mac).
+
 ## Full self-build profiles
 
 Choose the next performance change from a complete self-build profile. Preserve a

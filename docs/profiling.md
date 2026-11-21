@@ -58,7 +58,7 @@ cmp "$verified" "$profiled"
 go tool pprof -top checking.pb.gz
 ```
 
-Use pprofessor as the sole tracer on the profiling run. Attaching it to an
+Use `with-lock.sh both` for the capture and pprofessor as the sole tracer. Attaching it to an
 LLDB inferior while resuming from entry races debugserver at dyld
 shared-library notifications. That race can leave the inferior stopped
 long after the profiler has written its profile. Keep the verified image,

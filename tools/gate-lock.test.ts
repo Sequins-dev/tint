@@ -676,3 +676,136 @@ test(
     }
   },
 );
+
+function runDualLockScenario(script: string) {
+  const evidence = mkdtempSync(join(tmpdir(), "tint-dual-lock-queue-"));
+  try {
+    const wrapper = fileURLToPath(
+      new URL("./gate/with-lock.sh", import.meta.url),
+    );
+    const result = spawnSync(
+      "sh",
+      ["-eu", "-c", script, "dual-lock-test", wrapper],
+      {
+        encoding: "utf8",
+        timeout: 15_000,
+        env: {
+          ...process.env,
+          TINT_GATE_EXCLUSIVE_LOCK: join(evidence, "launch.lock"),
+          TINT_GATE_TIMING_LOCK: join(evidence, "timing.lock"),
+          TINT_GATE_EVIDENCE: evidence,
+          TINT_GATE_STEP_TIMEOUT: "10",
+          TINT_GATE_IDLE_TIMEOUT: "5",
+        },
+        cwd: evidence,
+      },
+    );
+    assert.ifError(result.error);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+  } finally {
+    rmSync(evidence, { recursive: true, force: true });
+  }
+}
+
+const dualLockScenario = `
+  wrapper=$1
+  hold() {
+    /usr/bin/lockf -k "$1" sh -eu -c '
+      touch "$1.ready"
+      for i in $(seq 400); do
+        test ! -e "$1.release" || exit 0
+        sleep 0.02
+      done
+      exit 1
+    ' holder "$2"
+  }
+  await_file() {
+    for i in $(seq 100); do
+      test ! -e "$1" || return 0
+      sleep 0.02
+    done
+    echo "Did not see $1" >&2
+    return 1
+  }
+  await_queue() {
+    for i in $(seq 100); do
+      queued_pid=$(ps -axww -o pid=,ppid=,command= | awk -v pid="\${2:-$waiter}" -v lock="$1" '
+        $2 == pid && $3 == "/usr/bin/lockf" && $(NF-1) == lock && $NF == "/usr/bin/true" { print $1 }')
+      test -z "$queued_pid" || return 0
+      sleep 0.02
+    done
+    echo "Dual-lock job did not queue on $1" >&2
+    return 1
+  }
+  trap 'touch launch.release timing.release' EXIT
+`;
+
+test(
+  "a dual-lock request releases launch while it queues behind a separate timing holder",
+  { skip: process.platform !== "darwin" },
+  () => {
+    runDualLockScenario(
+      dualLockScenario +
+        `
+      hold "$TINT_GATE_EXCLUSIVE_LOCK" launch &
+      launch_holder=$!
+      hold "$TINT_GATE_TIMING_LOCK" timing &
+      timing_holder=$!
+      await_file launch.ready
+      await_file timing.ready
+      "$wrapper" both dual touch ran &
+      waiter=$!
+      await_queue "$TINT_GATE_EXCLUSIVE_LOCK"
+      touch launch.release
+      wait "$launch_holder"
+      await_queue "$TINT_GATE_TIMING_LOCK"
+      /usr/bin/lockf -k -t 0 "$TINT_GATE_EXCLUSIVE_LOCK" /usr/bin/true
+      test ! -e ran
+      touch timing.release
+      wait "$timing_holder"
+      wait "$waiter"
+      test -e ran
+    `,
+    );
+  },
+);
+
+test(
+  "a queued dual-lock request progresses amid repeated single-lock contenders",
+  { skip: process.platform !== "darwin" },
+  () => {
+    runDualLockScenario(
+      dualLockScenario +
+        `
+      hold "$TINT_GATE_EXCLUSIVE_LOCK" launch &
+      holder=$!
+      await_file launch.ready
+      "$wrapper" both dual touch ran &
+      waiter=$!
+      await_queue "$TINT_GATE_EXCLUSIVE_LOCK"
+      first_waiter=$queued_pid
+      # Single-lock traffic begins before the current launch holder releases.
+      (
+        /usr/bin/lockf -k "$TINT_GATE_EXCLUSIVE_LOCK" /usr/bin/true
+        for i in $(seq 40); do
+          /usr/bin/lockf -k "$TINT_GATE_EXCLUSIVE_LOCK" sleep 0.035
+          test ! -e ran || exit 0
+          sleep 0.02
+        done
+        echo "Single-lock traffic drained before the dual request ran" >&2
+        exit 1
+      ) &
+      contenders=$!
+      await_queue "$TINT_GATE_EXCLUSIVE_LOCK" "$contenders"
+      # The initial dual-lock waiter keeps its queue position across long holds.
+      sleep 2.5
+      kill -0 "$first_waiter"
+      touch launch.release
+      wait "$holder"
+      wait "$contenders"
+      wait "$waiter"
+      test -e ran
+    `,
+    );
+  },
+);

@@ -92,12 +92,14 @@ failed step.
 
 ## Timing and profiling on the shared Mac
 
-Use the watched lock wrapper for commands that used to acquire either shared
-lock directly. Prepare images and unrelated inputs before entering the wrapper.
+Use the watched lock wrapper for commands that need either shared lock.
+Every job that needs both locks must use `with-lock.sh both`. Nesting
+`lockf` commands holds the first lock for the entire wait on the second.
+Prepare images and unrelated inputs before entering the wrapper.
 Pass the complete foreground command so the watchdog owns its descendants.
 
 ```sh
-tools/gate/with-lock.sh timing frozen-v7 \
+tools/gate/with-lock.sh both frozen-v7 \
   node tools/frozen-workload.ts run v7 base candidate --rounds 3
 
 tools/gate/with-lock.sh both profile-stage \
@@ -106,9 +108,12 @@ tools/gate/with-lock.sh both profile-stage \
 
 `launch` uses the native launch lock, `timing` uses the timing lock, and
 `both` runs only when it can acquire both. Single-lock calls join the blocking
-`lockf -k` queue. Dual-lock calls try launch first and release it immediately
-if timing is busy. A job queued for launch leaves timing available. The wrapper
-starts both deadlines after acquisition. Set `TINT_GATE_IDLE_TIMEOUT` for a
+`lockf -k` queue. Dual-lock calls probe launch and then timing without
+blocking. If a probe fails, they release all acquired locks and join the
+busy lock's blocking pathname queue, then retry the complete set.
+A queued job keeps its place until the busy lock is available or the wrapper
+is interrupted. The wakeup does not reserve either lock for the next probe.
+The wrapper starts both deadlines after acquisition. Set `TINT_GATE_IDLE_TIMEOUT` for a
 workload that intentionally goes without CPU progress for longer than 120
 seconds. The hard holder deadline is `TINT_GATE_STEP_TIMEOUT` and defaults to
 3,600 seconds. `TINT_GATE_EVIDENCE` can name an existing directory. By default

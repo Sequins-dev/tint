@@ -1,4 +1,5 @@
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
+import { once } from "node:events";
 import {
   appendFileSync,
   closeSync,
@@ -105,35 +106,58 @@ export function acquireGateLockSync(
   }
 }
 
-async function acquireTimingAndLaunch(
-  launch: string,
-  timing: string,
-  label: string,
-): Promise<() => void> {
-  if (timing === launch)
-    throw Error("Expected distinct timing and launch lock paths");
+async function waitForGateLock(file: string): Promise<130 | 143 | undefined> {
+  // A pathname wait retains its position through long holds and does not spin
+  // as blocking descriptor-mode lockf can on Darwin.
+  const child = spawn("/usr/bin/lockf", ["-k", "-s", file, "/usr/bin/true"], {
+    stdio: ["ignore", "ignore", "inherit"],
+  });
+  let interrupted: 130 | 143 | undefined;
+  const stop = (signal: NodeJS.Signals) => {
+    interrupted ??= signal === "SIGINT" ? 130 : 143;
+    child.kill();
+  };
+  process.once("SIGINT", stop);
+  process.once("SIGTERM", stop);
+  try {
+    const [status, signal] = await once(child, "exit");
+    if (interrupted !== undefined) return interrupted;
+    if (status !== 0)
+      throw Error("lockf wait failed for " + file + ": " + (signal ?? status));
+  } finally {
+    process.off("SIGINT", stop);
+    process.off("SIGTERM", stop);
+  }
+}
+
+async function acquireGateLockSet(
+  files: readonly string[],
+): Promise<(() => void) | 130 | 143> {
+  if (new Set(files).size !== files.length)
+    throw Error("Expected distinct paths for every lock in the set");
+
   for (;;) {
-    const launchLock = probeGateLocks([launch], label, undefined);
-    if (launchLock) {
-      let timingLock: GateLock | undefined;
-      try {
-        timingLock = probeGateLocks([timing], label, undefined);
-        const acquired = timingLock;
-        if (acquired)
-          return () => {
-            try {
-              acquired.release();
-            } finally {
-              launchLock.release();
-            }
-          };
-      } finally {
-        if (!timingLock) launchLock.release();
+    const descriptors: number[] = [];
+    const release = () => {
+      while (descriptors.length > 0) closeSync(descriptors.pop()!);
+    };
+    let busy: string | undefined;
+    try {
+      // All callers use launch before timing, including after a queue wakeup.
+      for (const file of files) {
+        const fd = tryAcquire(file);
+        if (fd === undefined) {
+          busy = file;
+          break;
+        }
+        descriptors.push(fd);
       }
+      if (busy === undefined) return release;
+    } finally {
+      if (descriptors.length !== files.length) release();
     }
-    // A legacy caller can hold timing while waiting for launch. Only probe
-    // timing, and release launch before retrying, so neither side deadlocks.
-    await delay(250);
+    const interrupted = await waitForGateLock(busy);
+    if (interrupted !== undefined) return interrupted;
   }
 }
 
@@ -352,16 +376,20 @@ if (import.meta.main) {
     const timingLock = process.env.TINT_GATE_TIMING_LOCK;
     if (!launch || !timingLock)
       throw Error("Expected timing and launch lock paths");
-    const release = await acquireTimingAndLaunch(launch, timingLock, label);
-    try {
-      process.exitCode = await runTimed(
-        [launch, timingLock],
-        label,
-        command,
-        args,
-      );
-    } finally {
-      release();
+    const release = await acquireGateLockSet([launch, timingLock]);
+    if (typeof release === "number") {
+      process.exitCode = release;
+    } else {
+      try {
+        process.exitCode = await runTimed(
+          [launch, timingLock],
+          label,
+          command,
+          args,
+        );
+      } finally {
+        release();
+      }
     }
   } else if (resource === "memory") {
     process.exitCode = withGateLock(
