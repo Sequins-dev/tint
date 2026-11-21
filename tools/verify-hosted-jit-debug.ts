@@ -171,6 +171,9 @@ const path = buildNativeFixture("jit-debug", () => {
   const built = buildMacOSProgram({
     ...request,
     target,
+    // The debugger assertions cover the JIT output. Optimizing the outer
+    // Darwin fixture can exhaust the test budget before LLDB runs.
+    ...(target.os === "darwin" ? { optimization: "none" as const } : {}),
     allowDebugger: true,
     debugSymbols: true,
     allowJit: true,

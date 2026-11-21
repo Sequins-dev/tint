@@ -6,6 +6,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { testNativeLaunch } from "./gate/native-launch-test.ts";
 import { findLldbDap } from "./devtools/backend.ts";
+import { Bridge } from "./devtools/bridge.ts";
+import { DapClient } from "./devtools/dap-client.ts";
 import { TintPlugin, tintFrameName } from "./devtools/tint-plugin.ts";
 import {
   fixtureLines,
@@ -34,6 +36,59 @@ test("Tint frame names drop module prefixes and suffixes", () => {
   );
   assert.equal(tintFrameName("tint:process-entry"), "tint:process-entry");
   assert.equal(tintFrameName("start"), "start");
+});
+
+test("an internal heap operation waits for an inspectable stop", async () => {
+  const dap = new DapClient(process.execPath, ["-e", "process.stdin.resume()"]);
+  let pauseRequests = 0;
+  let inspectable = false;
+  dap.request = async <T>(command: string): Promise<T> => {
+    if (command === "attach") {
+      dap.emit("event:initialized", {});
+      dap.emit("event", {
+        event: "thread",
+        body: { reason: "started", threadId: 1 },
+      });
+    }
+    if (command === "pause") {
+      // The debugger makes the same stop inspectable without another event.
+      inspectable = ++pauseRequests > 1;
+      if (pauseRequests === 1)
+        dap.emit("event", {
+          event: "stopped",
+          body: { reason: "pause", threadId: 1 },
+        });
+    }
+    return {} as T;
+  };
+  const bridge = new Bridge({
+    attachPid: 1,
+    backend: {
+      name: "scripted adapter",
+      dap,
+      launchArguments: () => ({}),
+      attachArguments: () => ({}),
+      command: async () => {
+        assert.ok(inspectable, "the debugger cannot read a running process");
+        return "disarmed";
+      },
+      close: () => dap.kill(),
+    },
+  });
+  try {
+    await bridge.ready;
+    assert.equal(
+      await bridge.internal(
+        (operation) => operation.command("tint-heap sample-stop"),
+        async () => inspectable,
+      ),
+      "disarmed",
+    );
+    assert.equal(pauseRequests, 2);
+    assert.equal(bridge.state(), "running");
+  } finally {
+    await bridge.close();
+  }
 });
 
 testNativeLaunch(

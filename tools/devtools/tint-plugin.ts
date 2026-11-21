@@ -425,17 +425,20 @@ export class TintPlugin implements BridgePlugin {
     const out = " --out " + quote(sampling.file);
     if (!stop) await this.bridge.command("tint-heap sample-flush" + out);
     else {
-      this.sampling = undefined;
-      if (this.bridge.state() === "exited")
+      if (this.bridge.state() === "exited") {
         await this.bridge.command("tint-heap sample-stop" + out);
-      else
+        this.sampling = undefined;
+      } else
         await this.bridge.internal(async (operation) => {
+          if (this.sampling !== sampling)
+            throw new CdpError(-32000, "Sampling profiler is not started");
+          await operation.command("tint-heap sample-stop" + out);
+          this.sampling = undefined;
           await this.bridge.setPersistentFunctionBreakpoints(
             "tint-sampling",
             [],
           );
-          await operation.command("tint-heap sample-stop" + out);
-        });
+        }, this.bridge.backend.inspectableStop);
     }
     try {
       const { profile } = readAllocationSamples(sampling.file);
