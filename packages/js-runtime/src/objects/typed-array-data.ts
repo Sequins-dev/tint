@@ -21,10 +21,15 @@ import {
 } from "./numeric-element.ts";
 import { readBigIntBytes, writeBigIntBytes } from "./bigint-bytes.ts";
 import { coerceBigInt } from "./bigint-coercion.ts";
-import { createIntegerIndexedObject } from "./integer-indexed.ts";
+import { createIntegerIndexedMethods } from "./integer-indexed.ts";
 import { canonicalNumericIndex } from "./integer-index.ts";
 import { scriptPropertyKeyOrder, type ScriptPropertyKey } from "./symbols.ts";
-import type { OrdinaryObject, ObjectHooks } from "./operations.ts";
+import {
+  createExoticObject,
+  type OrdinaryObject,
+  type ObjectHooks,
+  type ObjectInternalMethods,
+} from "./operations.ts";
 import { numberValue } from "./coercion.ts";
 import {
   createRuntimeError,
@@ -180,39 +185,61 @@ export function setTypedArrayElement(
   writeTypedArrayNumber(data, index, converted.value, window);
 }
 /** Internal creation after constructor validation; no observable property reads. */
+function integerIndexedMethods(
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+): ObjectInternalMethods<ScriptPropertyKey, unknown> {
+  const cached = realm.typedArrayIntegerIndexed;
+  if (cached !== undefined && cached.hooks === hooks) return cached.methods;
+  const methods = createIntegerIndexedMethods<
+    ScriptPropertyKey,
+    unknown,
+    TypedArrayData
+  >(
+    (object): TypedArrayData => {
+      const data = object.internalTypedArrayData;
+      if (data === undefined) throw "TYPED_ARRAY_DATA_INVARIANT";
+      return data;
+    },
+    {
+      mutable: (data): boolean => !bufferStorageImmutable(data.storage),
+      numericIndex: (key): number | undefined =>
+        typeof key === "string" ? canonicalNumericIndex(key) : undefined,
+      valid: (data, index): boolean => validIndex(data, index),
+      read: (data, index): unknown => {
+        const window = typedArrayWindow(data, "read", "unordered");
+        if (window === undefined) throw "TYPED_ARRAY_READ_INVARIANT";
+        return readTypedArrayElement(data, index, window);
+      },
+      write: (data, index, value): void => {
+        setTypedArrayElement(data, index, value, realm, hooks);
+      },
+      length: (data): number => {
+        const window = typedArrayWindow(data);
+        return window === undefined ? 0 : window.length;
+      },
+      fromIndex: (index): ScriptPropertyKey => String(index),
+      keyOrder: scriptPropertyKeyOrder,
+      canPreventExtensions: (data): boolean =>
+        data.length !== undefined &&
+        (data.storage.kind === "shared" ||
+          !bufferStorageResizable(data.storage)),
+    },
+    hooks,
+  );
+  realm.typedArrayIntegerIndexed = { hooks, methods };
+  return methods;
+}
+
 export function createTypedArrayView(
   prototype: OrdinaryObject<ScriptPropertyKey, unknown> | undefined,
   data: TypedArrayData,
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
-  const object = createIntegerIndexedObject<ScriptPropertyKey, unknown>(
+  const object = createExoticObject<ScriptPropertyKey, unknown>(
     prototype,
-    {
-      mutable: (): boolean => !bufferStorageImmutable(data.storage),
-      numericIndex: (key): number | undefined =>
-        typeof key === "string" ? canonicalNumericIndex(key) : undefined,
-      valid: (index): boolean => validIndex(data, index),
-      read: (index): unknown => {
-        const window = typedArrayWindow(data, "read", "unordered");
-        if (window === undefined) throw "TYPED_ARRAY_READ_INVARIANT";
-        return readTypedArrayElement(data, index, window);
-      },
-      write: (index, value): void => {
-        setTypedArrayElement(data, index, value, realm, hooks);
-      },
-      length: (): number => {
-        const window = typedArrayWindow(data);
-        return window === undefined ? 0 : window.length;
-      },
-      fromIndex: (index): ScriptPropertyKey => String(index),
-      keyOrder: scriptPropertyKeyOrder,
-      canPreventExtensions: (): boolean =>
-        data.length !== undefined &&
-        (data.storage.kind === "shared" ||
-          !bufferStorageResizable(data.storage)),
-    },
-    hooks,
+    integerIndexedMethods(realm, hooks),
   );
   object.internalTypedArrayData = data;
   object.internalArrayBufferView = true;

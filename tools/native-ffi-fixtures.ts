@@ -78,7 +78,7 @@ ${updates}
     })
     .join("\n");
   const abcHex = nodeDigest(["abc"], "hex");
-  const source = `import { createHash } from "node:crypto";
+  const source = `import { createHash, createHmac, randomBytes } from "node:crypto";
 function pattern(length: number, seed: number): Uint8Array {
   const bytes = new Uint8Array(length);
   for (let i = 0; i < length; i++) bytes[i] = (seed * 131 + i * 7 + (i >> 8)) & 255;
@@ -132,6 +132,24 @@ ${cases}
       error.message === "Digest method not supported" && !("code" in error);
   }
   if (!unsupported) return 94;
+  try {
+    const sha512 = createHash("SHA512").update("abc").digest("hex");
+    if (sha512 !== "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f") return 97;
+  } catch (error) {
+    if (error instanceof Error && error.message === "Digest method not supported") return 96;
+    throw error;
+  }
+  const mac = createHmac("sha256", "key");
+  if (mac.update("a") !== mac || mac.update("bc").digest("hex") !== "9c196e32dc0175f86f4b1cb89289d6619de6bee699e4c378e68309ed97a1a6ab") return 98;
+  if (mac.digest("hex") !== "") return 99;
+  if (randomBytes(0).length !== 0 || randomBytes(32.5).length !== 32) return 100;
+  if (createHash("sha256").update("616263", "hex").digest("HEX") !== ${JSON.stringify(abcHex)}) return 101;
+  const acrossSweep = createHash("sha256").update("a");
+  for (let i = 0; i < 300; i++) createHash("sha256").update("temporary");
+  churn();
+  const sweep = createHash("sha256").digest("hex");
+  if (typeof sweep !== "string") return 102;
+  if (acrossSweep.update("bc").digest("hex") !== ${JSON.stringify(abcHex)}) return 103;
   return 42;
 }
 `;
@@ -145,7 +163,13 @@ export function verifyCryptoFixture(): string {
     [],
     [],
     [],
-    { managedBytes: 8388608, allocationCapacity: 131072 },
+    {
+      managedBytes: 8388608,
+      allocationCapacity: 131072,
+      ...(nativeFixtureTarget().arch === "x86_64"
+        ? { runtimeEntry: "initializeGenerationalRuntime" }
+        : {}),
+    },
   );
 }
 

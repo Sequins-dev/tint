@@ -33,6 +33,8 @@ export type ModuleStatus =
 export interface ModuleRecord {
   readonly kind: "module";
   readonly synthetic: boolean;
+  /** A built-in can diagnose access to known exports outside its host surface. */
+  readonly reportMissingNamespaceExport: ((name: string) => void) | undefined;
   readonly realm: ErrorRealm;
   readonly hostDefined: unknown;
   readonly shape: SourceModuleShape;
@@ -91,6 +93,7 @@ export function createSyntheticModuleRecord(
   declare: (environment: DeclarativeEnvironment<unknown>) => void,
   instantiate: () => void,
   execute: () => void,
+  reportMissingNamespaceExport?: (name: string) => void,
 ): ModuleRecord {
   if (
     shape.requests.length !== 0 ||
@@ -109,6 +112,7 @@ export function createSyntheticModuleRecord(
     execute,
     undefined,
     true,
+    reportMissingNamespaceExport,
   );
 }
 
@@ -121,6 +125,7 @@ function createModuleRecord(
   execute: () => void,
   executeAsync: ((capability: ModuleCapability) => void) | undefined,
   synthetic: boolean,
+  reportMissingNamespaceExport?: (name: string) => void,
 ): ModuleRecord {
   // ParseModule normalizes every re-exported import, including namespaces,
   // into an indirect entry. Only actual local declarations own shared cells.
@@ -141,6 +146,7 @@ function createModuleRecord(
   return {
     kind: "module",
     synthetic,
+    reportMissingNamespaceExport,
     realm,
     hostDefined,
     shape,

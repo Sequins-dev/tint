@@ -42,6 +42,7 @@ import {
   type OrdinaryObject,
   type ObjectHooks,
   type ObjectExecutionContext,
+  type ObjectInternalMethods,
 } from "./operations.ts";
 import { viewObjectValue, viewTypeofObject } from "./values.ts";
 import { instanceOfValue } from "./functions.ts";
@@ -168,6 +169,12 @@ export interface ErrorRealm {
     string,
     OrdinaryObject<ScriptPropertyKey, unknown>
   >;
+  typedArrayIntegerIndexed:
+    | {
+        readonly hooks: ObjectHooks<unknown>;
+        readonly methods: ObjectInternalMethods<ScriptPropertyKey, unknown>;
+      }
+    | undefined;
   readonly dataViewPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly arrayBufferPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly sharedArrayBufferPrototype: OrdinaryObject<
@@ -586,6 +593,7 @@ export function createErrorRealm(
       string,
       OrdinaryObject<ScriptPropertyKey, unknown>
     >(),
+    typedArrayIntegerIndexed: undefined,
     dataViewPrototype: createObject<ScriptPropertyKey, unknown>(
       objectPrototype,
     ),
@@ -801,7 +809,7 @@ export function createNativeErrorView(
 }
 /** Node's coded errors use ordinary data properties. The producer supplies
  * the ordering used by its own constructor or native error callback. */
-export function createNativeCodedErrorView(
+export function createCodedRuntimeError(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
   kind: string,
@@ -809,8 +817,6 @@ export function createNativeCodedErrorView(
   code: string,
   errno: number | undefined,
   codeFirst: boolean,
-  native: unknown,
-  global: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const object = createRuntimeError(realm, kind);
   if (codeFirst)
@@ -825,6 +831,29 @@ export function createNativeCodedErrorView(
     );
   if (!codeFirst)
     createDataProperty<ScriptPropertyKey, unknown>(object, "code", code, hooks);
+  return object;
+}
+
+export function createNativeCodedErrorView(
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+  kind: string,
+  message: string,
+  code: string,
+  errno: number | undefined,
+  codeFirst: boolean,
+  native: unknown,
+  global: OrdinaryObject<ScriptPropertyKey, unknown>,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const object = createCodedRuntimeError(
+    realm,
+    hooks,
+    kind,
+    message,
+    code,
+    errno,
+    codeFirst,
+  );
   attachTypedErrorAccess(object, object, native, realm, hooks, global);
   return object;
 }

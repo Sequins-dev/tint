@@ -60,6 +60,14 @@ jobs:
           sudo apt-get install -y lldb
           lldb --version
 
+      - name: Ensure macOS OpenSSL 3 is installed
+        if: matrix.gate == 'mac'
+        run: |
+          if ! brew list --versions openssl@3; then
+            brew install openssl@3
+          fi
+          test -f "$(brew --prefix openssl@3)/lib/libcrypto.3.dylib"
+
       - name: Prepare macOS SDK and debugger
         if: matrix.gate == 'mac'
         run: |
@@ -97,6 +105,29 @@ jobs:
         with:
           path: ${{ runner.temp }}/test262
           key: ${{ steps.test262-cache.outputs.cache-primary-key }}
+
+      - name: Run pinned Node crypto cases
+        env:
+          TINT_GATE_EXCLUSIVE_LOCK: ${{ runner.temp }}/tint-gate/exclusive.lock
+          TZ: UTC
+        run: |
+          set -eu
+          archive="$RUNNER_TEMP/node-v26.13.1.tar.gz"
+          curl -fsSL --retry 4 https://nodejs.org/dist/v26.13.1/node-v26.13.1.tar.gz -o "$archive"
+          printf '%s  %s\n' 60c6cdf11c3e9d5932fccd0eafae77f1152661584e129047684cb8646f228d3e "$archive" | shasum -a 256 -c
+          for suite in hash hmac pbkdf2 random; do
+            tar -xzf "$archive" -C "$RUNNER_TEMP" "node-v26.13.1/test/parallel/test-crypto-$suite.js"
+          done
+          mkdir -p "$RUNNER_TEMP/tint-gate"
+          pnpm build
+          node tools/node-crypto-native-conformance.ts "$RUNNER_TEMP/node-v26.13.1" "$RUNNER_TEMP/crypto-conformance.json"
+
+      - name: Upload pinned Node crypto case results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: crypto-conformance-${{ matrix.runner }}
+          path: ${{ runner.temp }}/crypto-conformance.json
 
       - name: Run macOS gate
         if: matrix.gate == 'mac'

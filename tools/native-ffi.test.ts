@@ -11,6 +11,10 @@ import {
 } from "./native-ffi-fixtures.ts";
 import { verifyDylibProbe } from "./ffi-dylib-probe.ts";
 import {
+  verifyCryptoAsyncFixture,
+  verifyCryptoPublicFixture,
+} from "./build-node-crypto-async-fixture.ts";
+import {
   verifyCallbackFixture,
   verifyCallbackTrap,
   verifyZlibCallbackFixture,
@@ -40,8 +44,14 @@ const optionalLibraries =
 test("C library ABI probes observe every C call shape natively", () => {
   verifyAbiProbeFixture();
 });
-test("createHash('sha256') matches Node's digests under GC churn", () => {
+test("node:crypto hashes, HMAC and random bytes use system OpenSSL", () => {
   verifyCryptoFixture();
+});
+test("node:crypto PBKDF2 returns through the blocking pool and reactor wake", () => {
+  verifyCryptoAsyncFixture();
+});
+test("node:crypto imports share Buffer identity and reject unsupported operations", () => {
+  verifyCryptoPublicFixture();
 });
 test(
   "images load libraries beyond libSystem and bind absent optional symbols as 0",

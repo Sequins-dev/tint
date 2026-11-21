@@ -302,7 +302,13 @@ export function headerText(
   );
 }
 export function clangArguments(spec: BindingSpec): string[] {
-  return (spec.defines ?? []).map((define) => "-D" + define);
+  return [
+    ...(spec.defines ?? []).map((define) => "-D" + define),
+    ...(spec.includeDirectories ?? []).flatMap((directory) => [
+      "-I",
+      directory,
+    ]),
+  ];
 }
 /** clang's first diagnostic without its file location. */
 function firstError(stderr: string): string {
