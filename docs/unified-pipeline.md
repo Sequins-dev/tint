@@ -236,12 +236,12 @@ points, so closures and aliases observe the same values in the same order.
 
 ### Integer storage for UTF-16 construction
 
-On AArch64, `String.fromCharCode` can consume the low 16 bits of an
-exact integer held in an int64 register or slot. The integer-use
-analysis still requires every consumer of that value to accept the
-representation. Double operands follow the existing ToUint32 helper
-before the halfword store, preserving truncation, wrapping and the
-zero result for non-finite inputs. See the
+On AArch64, `String.fromCharCode` can consume a bitwise result directly
+from word-only storage. The representation analysis requires all
+uses of that result to observe only its low bits. Double operands
+follow the existing ToUint32 helper before the halfword store,
+preserving truncation, wrapping and the zero result for non-finite
+inputs. See the
 [conversion-site audit](results/integer-uses-audit-v1.md).
 
 ### The value bridge

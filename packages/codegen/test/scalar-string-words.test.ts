@@ -67,7 +67,7 @@ test("from-code-units stores an exact integer without a conversion helper", () =
   const units = result.value.operationRanges?.find(
     ({ operation }) => operation === "string-from-code-units",
   );
-  assert.match(units?.operands ?? "", /^int@/);
+  assert.match(units?.operands ?? "", /^word@/);
   assert.equal(
     result.value.helpers.some(({ kind }) => kind === "to-uint32"),
     false,

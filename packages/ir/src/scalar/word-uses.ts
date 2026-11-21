@@ -17,10 +17,10 @@ function bitwise(op: Instruction): boolean {
         op.operator === "imul"))
   );
 }
-/** Verified IR only. A bitwise result observed solely by other bitwise operations
- * needs only its modulo-2^32 bits. Any other use (including a slot store, call,
- * return or boxing) retains the ordinary numeric representation. Dense bounded
- * value-ID flags; sparse/oversized functions conservatively publish no plan. */
+/** Verified IR only. A bitwise result used solely by other bitwise operations
+ * or UTF-16 code-unit stores needs only its modulo-2^32 bits. Other uses
+ * retain the ordinary numeric representation. Dense bounded value-ID flags;
+ * sparse/oversized functions conservatively publish no plan. */
 export function wordOnlyValues(
   fn: FunctionIR,
   maxWork: number = 1000000,
@@ -62,7 +62,7 @@ export function wordOnlyValues(
     if (block === undefined) throw "word use block invariant";
     for (const op of block.instructions) {
       if (op === undefined) throw "word use instruction invariant";
-      wordUse = bitwise(op);
+      wordUse = bitwise(op) || op.kind === "string-from-code-units";
       visitInstructionOperands(op, consume);
       if (++work > maxWork) return undefined;
     }
