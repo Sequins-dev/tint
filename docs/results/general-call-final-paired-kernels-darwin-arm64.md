@@ -61,3 +61,19 @@ Node. The paired median was **−0.386 ns**, with an IQR of **−0.494 to
   continuation preserves sequential floating-point additions for other bounds.
   [Signed reduction rounds](general-call-integer-reductions-darwin-arm64.json),
   [Final instruction traces](general-call-final-kernel-traces-darwin-arm64.md)
+
+## Native validation
+
+The baseline and branch frozen v7 images executed byte-identical code and
+emitted identical compiler outputs in all six runs. The observed paired
+median was 17.677 s lower wall time and 262,144 B higher peak RSS.
+[Frozen v7 comparison](general-call-frozen-v7-darwin-arm64-final.md)
+
+The 200-form Linux dev ledger for the measured candidate had zero regressions
+against the 198-form reference. All seven nonpassing forms had the same
+outcomes in the reference. The runtime-compiled Script host and test-only
+surface changes used a later snapshot. Both native Test262 smoke modes on
+that source snapshot passed 2/2.
+[Measured candidate ledger](unified-pipeline-ledger-general-final-candidate-replay-verified-dev-v1.json),
+[Linked-unit smoke](general-call-final-test262-units.json),
+[Whole-program smoke](general-call-final-test262-program.json)
