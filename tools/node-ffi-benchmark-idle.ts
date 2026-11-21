@@ -12,10 +12,12 @@ export function cpuTimes(): CpuTimes {
   return { idle, total };
 }
 
-export function cpuIdlePercent(before: CpuTimes, after: CpuTimes): number {
+export function cpuIdlePercent(
+  before: CpuTimes,
+  after: CpuTimes,
+): number | null {
   const elapsed = after.total - before.total;
   const idle = after.idle - before.idle;
-  if (elapsed <= 0 || idle < 0 || idle > elapsed)
-    throw Error("invalid CPU time sample");
+  if (elapsed <= 0 || idle < 0 || idle > elapsed) return null;
   return (idle * 100) / elapsed;
 }

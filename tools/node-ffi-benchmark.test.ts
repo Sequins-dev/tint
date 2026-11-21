@@ -78,7 +78,8 @@ test("idle percentages use deltas rather than cumulative idle", () => {
     cpuIdlePercent({ idle: 1000, total: 1000 }, { idle: 1095, total: 1100 }),
     95,
   );
-  assert.throws(() =>
+  assert.equal(
     cpuIdlePercent({ idle: 1000, total: 1000 }, { idle: 1000, total: 1000 }),
+    null,
   );
 });
