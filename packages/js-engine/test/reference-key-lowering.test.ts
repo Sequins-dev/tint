@@ -195,7 +195,13 @@ test("only read-modify-write references store the converted key", () => {
       statement: (node) => {
         if (node.kind !== "variable") return node;
         for (const declaration of node.declarations) {
-          const value = declaration?.initializer;
+          if (
+            declaration === undefined ||
+            declaration.kind === "array-binding" ||
+            declaration.kind === "object-binding"
+          )
+            continue;
+          const value = declaration.initializer;
           if (
             value?.kind === "call" &&
             value.callee.kind === "identifier" &&
