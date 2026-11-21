@@ -1673,6 +1673,7 @@ function emitModuleForms(
     /** Undefined: a universal thunk (dynamic callbacks). */
     readonly signature: CSignature | undefined;
     readonly ordinal: number;
+    readonly runtimePrototype: boolean;
     /** A direct callback's thunk (calls the TypeScript function itself):
      * the parameters delivered as record views and their views' record
      * offsets; undefined for an adapter's. */
@@ -1684,6 +1685,7 @@ function emitModuleForms(
     ordinal: number,
     views: readonly number[] | undefined = undefined,
     viewOffsets: readonly number[] = [],
+    runtimePrototype: boolean = false,
   ): number {
     const names: string[] = [];
     for (const parameter of signature?.parameters ?? []) {
@@ -1696,6 +1698,7 @@ function emitModuleForms(
       (signature === undefined
         ? "universal"
         : cTypeName(signature.result) + "(" + names.join(",") + ")") +
+      (runtimePrototype ? ":runtime" : "") +
       (views === undefined
         ? ""
         : ":direct:" + views.join(",") + "@" + viewOffsets.join(","));
@@ -1705,6 +1708,7 @@ function emitModuleForms(
       key,
       signature,
       ordinal,
+      runtimePrototype,
       views,
       viewOffsets,
     });
@@ -1723,6 +1727,7 @@ function emitModuleForms(
   function emitCallbackThunk(
     signature: CSignature | undefined,
     ordinal: number,
+    runtimePrototype: boolean,
   ): void {
     // A universal thunk (no prototype) passes the callback its frame's
     // address instead: the dynamic layer reads the saved C arguments there
@@ -1736,7 +1741,8 @@ function emitModuleForms(
         ? []
         : classified.value.arguments;
     const registered = ordinal < 0,
-      runtimeRegistered = registered && signature === undefined,
+      runtimeRegistered =
+        registered && (signature === undefined || runtimePrototype),
       first = registered ? 1 : 0;
     if (locations.length + first > 8)
       fail("UNSUPPORTED", "callbacks take at most eight arguments");
@@ -1878,7 +1884,7 @@ function emitModuleForms(
     if (runtimeRegistered) {
       emit({ op: "ldr", width: 64, rt: 14, rn: 29, offset: 56 });
       emit({ op: "scvtf-d-x", rd: 0, rn: 14 });
-      emit({ op: "scvtf-d-x", rd: 1, rn: 29 });
+      if (signature === undefined) emit({ op: "scvtf-d-x", rd: 1, rn: 29 });
     } else if (registered) {
       imm(14, -1 - ordinal);
       emit({ op: "scvtf-d-x", rd: 0, rn: 14 });
@@ -10471,7 +10477,15 @@ function emitModuleForms(
                     9,
                     10,
                     "tint:callback-thunk:" +
-                      String(callbackThunk(undefined, -1)),
+                      String(
+                        callbackThunk(
+                          access.callback,
+                          -1,
+                          undefined,
+                          [],
+                          access.callback !== undefined,
+                        ),
+                      ),
                   );
                   emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
                   floatStore(0, resultId);
@@ -16877,7 +16891,12 @@ function emitModuleForms(
           thunk.views,
           thunk.viewOffsets,
         );
-      else emitCallbackThunk(thunk.signature, thunk.ordinal);
+      else
+        emitCallbackThunk(
+          thunk.signature,
+          thunk.ordinal,
+          thunk.runtimePrototype,
+        );
     }
     const thunkEnd = instructions.length * 4;
     let codeLength = instructions.length * 4;

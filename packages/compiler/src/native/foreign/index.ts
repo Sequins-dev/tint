@@ -228,16 +228,31 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
       namespace: "ffi-callback-stubs",
       retainedExports: [
         "runtimeCallbackAddress",
+        "runtimeI32CallbackAddress",
         "mapCallbackMemory",
         "writeCallbackMemory",
         "unmapCallbackMemory",
       ],
     });
-    bindings.push({
-      module: modules.callbackStubs,
-      name: "runtimeCallbackAddress",
-      operation: "runtime-callback-address",
-    });
+    bindings.push(
+      {
+        module: modules.callbackStubs,
+        name: "runtimeCallbackAddress",
+        operation: "runtime-callback-address",
+      },
+      {
+        module: modules.callbackStubs,
+        name: "runtimeI32CallbackAddress",
+        operation: "runtime-callback-address",
+        staticSignature: {
+          parameters: [{ kind: "scalar", scalar: "i32" }],
+          result: { kind: "scalar", scalar: "i32" },
+          fixedParameters: 1,
+          callClass: "leaf",
+          errno: "none",
+        },
+      },
+    );
     hostBindings.push(
       {
         module: modules.callbackStubs,

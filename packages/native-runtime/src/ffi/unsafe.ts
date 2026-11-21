@@ -115,6 +115,8 @@ export { allocateCallbackStub, releaseCallbackStub } from "./callback-stubs.ts";
 export {
   callbackDispatcher,
   hasRegisteredCallbacks,
+  registeredCallbackActivity,
   rethrowCallbackFailure,
+  type CallbackActivity,
   type CallbackDispatcher,
 } from "./index.ts";

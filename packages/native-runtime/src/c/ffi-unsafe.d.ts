@@ -40,10 +40,18 @@ declare module "tint:ffi/unsafe" {
     dispatcher: CallbackDispatcher,
     frame: Uint8Array,
   ): boolean;
-  export function allocateCallbackStub(id: number, owner: number): number;
+  export function allocateCallbackStub(
+    id: number,
+    owner: number,
+    unaryI32: boolean,
+  ): number;
   export function releaseCallbackStub(address: number): void;
   export function callbackDispatcher(): CallbackDispatcher;
   export function hasRegisteredCallbacks(): boolean;
+  export interface CallbackActivity {
+    active: boolean;
+  }
+  export function registeredCallbackActivity(): CallbackActivity;
   export function rethrowCallbackFailure(): void;
   /** A copy of the NUL-terminated UTF-8 text at `text` (`char *` results
    * and members; malformed sequences become U+FFFD). */

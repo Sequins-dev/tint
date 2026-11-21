@@ -243,23 +243,23 @@ function fixedFfiSource(
   mixed: boolean,
 ): string {
   const parameters: string[] = ["callee:unknown"];
+  const argumentsList: string[] = [];
   let numbers = "",
     general = "";
   for (let i = 0; i < arity; i++) {
+    argumentsList.push("p" + i);
     parameters.push("p" + i + (mixed ? ":unknown" : ":number"));
     numbers += "plan.writeNumber(frame," + i + ",p" + i + ");\n";
     general += "plan.writeArgument(frame," + i + ",p" + i + ");\n";
   }
   let body =
-    "const plan=projectTypedFfiCall(callee);\n" +
+    "const readRecord=viewTypeofObject(callee)?.internalMethods?.typedRecord;\n" +
+    "if(readRecord===undefined)return undefined;\n" +
+    "const plan=viewTypedFfiCall(readRecord());\n" +
     "if(plan===undefined||plan.arity!==" +
     arity +
-    ")return undefined;\n" +
-    "const mode=plan.mode();if(mode===0)return undefined;\n";
-  if (mixed && arity === 1)
-    body +=
-      "const pointerLeaf=plan.unaryPointerLeaf;" +
-      "if(mode===1&&pointerLeaf!==undefined)return pointerLeaf(p0);\n";
+    ")return undefined;\n";
+  let direct = mixed && arity === 1;
   if (!mixed)
     for (let i = 0; i < plans.length; i++) {
       const plan = plans[i];
@@ -270,6 +270,7 @@ function fixedFfiSource(
         !hasStaticFfiNumberEntry(plan)
       )
         continue;
+      direct = true;
       const args = ["plan.address"];
       for (let p = 0; p < arity; p++) {
         const type = plan.signature.parameters[p];
@@ -300,29 +301,67 @@ function fixedFfiSource(
         );
       }
       body +=
-        "if(mode===1&&plan.staticIndex===" +
+        "if(plan.staticIndex===" +
         i +
+        "&&plan.lifetime.open&&!plan.nodeCallbacks.active&&!plan.nativeCallbacks.active" +
         ")return " +
         staticFfiNumberEntry(i) +
         "(" +
         args.join(",") +
         ");\n";
     }
+  body += "const mode=plan.mode();if(mode===0)return undefined;\n";
+  if (mixed && arity === 1)
+    body +=
+      "const pointerLeaf=plan.unaryPointerLeaf;" +
+      "if(mode===1&&pointerLeaf!==undefined)return pointerLeaf(p0);\n";
+  if (mixed && arity === 2) {
+    direct = true;
+    body +=
+      "const callback=plan.pointerI32Callback;" +
+      "if(mode===2&&callback!==undefined&&typeof p1==='number'&&(p1|0)===p1){" +
+      "const result=callback(p0,p1);if(result!==undefined)return result;}\n";
+  }
   const name = mixed ? mixedFfiCallEntry(arity) : fixedFfiCallEntry(arity);
-  return (
-    "export function " +
-    name +
-    "(" +
-    parameters.join(",") +
-    "):number|undefined{\n" +
-    body +
+  const frameBody =
     "const mayCallback=mode===2;const frame=plan.workspace(mayCallback);try{\n" +
     (arity === 0
       ? ""
       : mixed
         ? general
         : "if(plan.numbersOnly){\n" + numbers + "}else{\n" + general + "}\n") +
-    "return plan.complete(frame,mayCallback);\n}finally{plan.release(frame);}}\n"
+    "return plan.complete(frame,mayCallback);\n}finally{plan.release(frame);}\n";
+  const guarded =
+    "export function " +
+    name +
+    "(" +
+    parameters.join(",") +
+    "):number|undefined{\n" +
+    body;
+  if (!direct) return guarded + frameBody + "}\n";
+  // Keep workspace cleanup and its root slots out of the managed frame of
+  // a successful direct call.
+  const invoke =
+    "invoke" + (mixed ? "TryMixedFfi" : "TryFixedFfi") + arity + "Frame";
+  const frameParameters = [
+    "plan:TypedFfiCall",
+    "mode:number",
+    ...parameters.slice(1),
+  ];
+  return (
+    guarded +
+    "return " +
+    invoke +
+    "(" +
+    ["plan", "mode", ...argumentsList].join(",") +
+    ");\n}\n" +
+    "function " +
+    invoke +
+    "(" +
+    frameParameters.join(",") +
+    "):number{\n" +
+    frameBody +
+    "}\n"
   );
 }
 
@@ -417,7 +456,10 @@ export function makeStaticFfiModule(
       "if(index===" + String(index) + ")return " + entry + "(frame);\n";
   }
   if (fixedArities.length !== 0) {
-    text = 'import { projectTypedFfiCall } from "memory";\n' + text;
+    text =
+      'import { viewTypeofObject } from "objects";\n' +
+      'import { viewTypedFfiCall, type TypedFfiCall } from "memory";\n' +
+      text;
     for (const arity of fixedArities) {
       if (arity === undefined) throw "fixed FFI arity invariant";
       text += fixedFfiSource(plans, arity, false);

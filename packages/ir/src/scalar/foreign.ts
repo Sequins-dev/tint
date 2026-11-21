@@ -548,8 +548,8 @@ export interface ForeignMemoryAccess {
   /** Element loads and stores: bytes between elements and their count. */
   readonly stride?: number | undefined;
   readonly length?: number | undefined;
-  /** `callback-address`: the C prototype and id of a registered callback
-   * thunk, whose entry address the access yields. */
+  /** Callback entry prototype. `callback-address` also takes a static slot.
+   * `runtime-callback-address` instead reads the id supplied by its stub. */
   readonly callback?: CSignature | undefined;
   readonly slot?: number | undefined;
 }
@@ -565,8 +565,24 @@ export function foreignMemoryTypes(
   // callback state block is found by thunks. `stable`: whether an array's
   // data never moves (external storage, or a view of it such as foreign
   // memory): what C may hold across callbacks.
-  if (access.operation === "runtime-callback-address")
+  if (access.operation === "runtime-callback-address") {
+    const prototype = access.callback;
+    if (prototype !== undefined) {
+      const parameter = prototype.parameters[0];
+      if (
+        prototype.parameters.length !== 1 ||
+        prototype.fixedParameters !== 1 ||
+        prototype.callClass !== "leaf" ||
+        prototype.errno !== "none" ||
+        parameter?.kind !== "scalar" ||
+        parameter.scalar !== "i32" ||
+        prototype.result.kind !== "scalar" ||
+        prototype.result.scalar !== "i32"
+      )
+        return { ok: false, error: "malformed runtime callback prototype" };
+    }
     return { ok: true, value: { parameters: [], result: "number" } };
+  }
   if (access.operation === "callback-address") {
     const slot = access.slot;
     return access.callback !== undefined &&

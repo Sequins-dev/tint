@@ -461,7 +461,69 @@ uint64_t tint_invoke_saved(uint64_t level, uint8_t *bytes) {
                         UINT64_C(0xfedcba9876543210));
 }
 void tint_invoke_void(void (*callback)(void)) { callback(); }
+int32_t tint_call_i32(int32_t (*callback)(int32_t), int32_t value) {
+  return callback(value);
+}
 `;
+
+function typedI32CallbackSource(library: string): string {
+  return `import { dlopen } from "node:ffi";
+export function run(): number {
+  const { lib, functions } = dlopen(${JSON.stringify(library)}, {
+    tint_call_i32: { arguments: ["function", "i32"], return: "i32" },
+  });
+  const fn = (input: number): number => input - 1;
+  const pointer: bigint = lib.registerCallback(
+    { arguments: ["i32"], return: "i32" }, fn,
+  );
+  const call = functions.tint_call_i32;
+  try {
+    if ((call(pointer, -41) as number) !== -42) return 1;
+    lib.unrefCallback(pointer);
+    if ((call(pointer, -41) as number) !== -42) return 2;
+    lib.refCallback(pointer);
+    if ((call(pointer, -41) as number) !== fn(-41)) return 3;
+    return 42;
+  } finally {
+    lib.unregisterCallback(pointer);
+    lib.close();
+  }
+}`;
+}
+
+test("typed i32 callbacks preserve signed arguments, results, and ref changes", () => {
+  assert.ok(
+    withDynamicLibrary((library) => {
+      const fixture = typedI32CallbackSource(library);
+      if (oracle !== "")
+        runOracle(
+          ts.transpileModule(fixture, {
+            compilerOptions: {
+              module: ts.ModuleKind.ESNext,
+              target: ts.ScriptTarget.ESNext,
+            },
+          }).outputText,
+        );
+      return verifyHostedFixture(
+        fixture,
+        "node-ffi-typed-i32-callback",
+        [["node:ffi", "packages/native-runtime/src/node/ffi.ts"]],
+        [],
+        [],
+        [],
+        {
+          requireTyped: true,
+          runtimeEntry: "initializeGenerationalRuntime",
+          allowJit: true,
+          stackBytes: 4194304,
+          managedBytes: 67108864,
+          allocationCapacity: 1048576,
+        },
+      );
+    }, callbackLibrary),
+    "clang is required",
+  );
+});
 
 function callbacksSource(library: string): string {
   return `

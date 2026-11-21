@@ -1840,8 +1840,9 @@ export function emitModule(
             needsCallbackKey = true;
             if (access.operation === "runtime-callback-address")
               address = thunkAddress({
-                signature: undefined,
+                signature: access.callback,
                 ordinal: -1,
+                runtimePrototype: access.callback !== undefined,
                 views: undefined,
               });
             else if (access.operation === "callback-address") {

@@ -5,16 +5,15 @@ import {
   builtinFunction,
   createDataProperty,
   projectArrayBufferViewRange,
-  typedRecordOf,
   viewBigIntValue,
   viewObjectValue,
-  viewTypeofObject,
   type ObjectCall,
   type ProgramRealmCore,
   type ScriptPropertyKey,
 } from "@tint/js-runtime/objects";
 import { Cell } from "tint:c/dl";
 import { external, stableBytes, type View } from "tint:ffi";
+import type { CallbackActivity } from "../ffi/index.ts";
 import { adoptNodeBuffer, isNodeBuffer } from "./buffer.ts";
 import { bufferBytes, bufferEncoding, bufferText } from "./buffer-codecs.ts";
 import { ffiError, type FfiObject } from "./ffi-signature.ts";
@@ -72,15 +71,24 @@ export interface TypedFfiWorkspace {
   readonly loans: Uint8Array[];
 }
 
+export interface FfiLibraryLifetime {
+  open: boolean;
+}
+
 /** A private reciprocal view of one validated bound function. JavaScript
  * properties, bound functions, and proxies cannot supply this witness. */
 export interface TypedFfiCall {
   readonly arity: number;
   readonly staticIndex: number;
   readonly address: number;
+  readonly lifetime: FfiLibraryLifetime;
+  readonly nodeCallbacks: CallbackActivity;
+  readonly nativeCallbacks: CallbackActivity;
   readonly mode: () => number;
   readonly numbersOnly: boolean;
   readonly unaryPointerLeaf: ((input: unknown) => number) | undefined;
+  readonly pointerI32Callback:
+    ((address: unknown, input: number) => number | undefined) | undefined;
   readonly workspace: (mayCallback: boolean) => TypedFfiWorkspace;
   readonly checkNumber: (kind: number, input: number, index: number) => number;
   readonly writeNumber: (
@@ -104,11 +112,16 @@ export function viewTypedFfiCall(value: unknown): TypedFfiCall | undefined {
   throw "UNBOUND_TYPED_FFI_VIEW";
 }
 
-export function projectTypedFfiCall(value: unknown): TypedFfiCall | undefined {
-  const callable = viewTypeofObject(value);
-  return callable === undefined
-    ? undefined
-    : viewTypedFfiCall(typedRecordOf(callable));
+/** Small pointer BigInts fit exactly in the typed address representation. */
+export function projectFfiPointerAddress(input: unknown): number | undefined {
+  const value = viewBigIntValue(input);
+  if (value === undefined || value.integer.negative) return undefined;
+  const digits = value.integer.digits;
+  const high = digits[2] ?? 0;
+  if (digits.length > 3 || high > 1) return undefined;
+  return (
+    (digits[0] ?? 0) + (digits[1] ?? 0) * 67108864 + high * 4503599627370496
+  );
 }
 
 export function readTypedFfiNumber(bytes: Uint8Array, kind: number): number {

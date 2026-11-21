@@ -19,6 +19,9 @@ export function unmapCallbackMemory(address: number, size: number): number {
 export function runtimeCallbackAddress(): number {
   throw "HOST_UNAVAILABLE";
 }
+export function runtimeI32CallbackAddress(): number {
+  throw "HOST_UNAVAILABLE";
+}
 
 // Each owned mapping contains just a tail jump and three raw words. The thunk
 // owns the native frame and guards the thread before touching any managed state.
@@ -29,9 +32,15 @@ function writeWord(code: Uint8Array, offset: number, value: bigint): void {
     code[offset + index] = Number((value >> BigInt(index * 8)) & 255n);
 }
 
-export function allocateCallbackStub(id: number, owner: number): number {
+export function allocateCallbackStub(
+  id: number,
+  owner: number,
+  unaryI32: boolean,
+): number {
   const code = new Uint8Array(bytesPerStub);
-  const target = BigInt(runtimeCallbackAddress());
+  const target = BigInt(
+    unaryI32 ? runtimeI32CallbackAddress() : runtimeCallbackAddress(),
+  );
   const thread = BigInt(owner);
   if (TARGET_AAPCS64 === 2) {
     // movabs r10, id; movabs rax, thread; movabs r11, entry; jmp r11

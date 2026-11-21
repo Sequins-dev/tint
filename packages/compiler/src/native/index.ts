@@ -3525,6 +3525,7 @@ function lowerTypedProgram(
               type: { kind: "void" },
               offset: 0,
               minimum: 0,
+              callback: binding.staticSignature,
             },
           },
     );

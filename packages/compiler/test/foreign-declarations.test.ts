@@ -17,7 +17,7 @@ import {
 } from "@tint/abi/c";
 import { createSourceText, createSourceTextView } from "@tint/source/text";
 import { dynamicCallFrame } from "@tint/ir/scalar";
-import { parseModule } from "@tint/typescript/syntax";
+import { parseModule, rewriteModule } from "@tint/typescript/syntax";
 import { loadSourceGraph } from "@tint/typescript/modules";
 import { linuxX86_64CTarget } from "@tint/abi/c/sysv";
 import {
@@ -27,6 +27,8 @@ import {
   expandForeignInputs,
   foreignViews,
   foreignViewRegistry,
+  foreignRuntimeBindings,
+  foreignRuntimeModules,
 } from "../src/native/foreign/index.ts";
 
 import {
@@ -1423,6 +1425,41 @@ test("runtime i32 definitions get direct typed entries without replacing the gen
   assert.ok(emitted.includes("callStaticFfiNumber0"));
   assert.ok(emitted.includes("callStaticFfiNumber1"));
   assert.ok(emitted.includes("typedFfiIndex"));
+  assert.ok(emitted.includes("invokeTryFixedFfi0Frame"));
+  assert.ok(emitted.includes("invokeTryFixedFfi2Frame"));
+  assert.ok(emitted.includes("invokeTryMixedFfi2Frame"));
   assert.ok(!emitted.includes("invokeCallStaticFfiNumber0"));
   assert.ok(!emitted.includes("callStaticFfi0"));
+  const guards = new Set<string>();
+  rewriteModule(generated.module, {
+    expression: (expression) => {
+      if (expression.kind === "member") guards.add(expression.property);
+      return expression;
+    },
+  });
+  assert.ok(
+    guards.has("lifetime") &&
+      guards.has("nodeCallbacks") &&
+      guards.has("nativeCallbacks") &&
+      guards.has("pointerI32Callback") &&
+      guards.has("typedRecord"),
+  );
+});
+
+test("Node FFI binds a precompiled runtime-registered i32 callback prototype", () => {
+  const modules = foreignRuntimeModules;
+  const bindings = foreignRuntimeBindings(
+    new Set([modules.primitives, modules.nodeFfi, modules.callbackStubs]),
+  );
+  const binding = bindings.memoryBindings.find(
+    (entry) => entry.name === "runtimeI32CallbackAddress",
+  );
+  assert.equal(binding?.operation, "runtime-callback-address");
+  assert.deepEqual(binding?.staticSignature, {
+    parameters: [{ kind: "scalar", scalar: "i32" }],
+    result: { kind: "scalar", scalar: "i32" },
+    fixedParameters: 1,
+    callClass: "leaf",
+    errno: "none",
+  });
 });

@@ -14,6 +14,7 @@ import {
   weakSlotKey,
 } from "../intrinsics/weak.ts";
 import { viewUnaryNumberClosure } from "../intrinsics/value-views.ts";
+import type { CallbackActivity } from "../ffi/index.ts";
 import {
   readFfiNumberCell,
   readScalar,
@@ -27,7 +28,7 @@ import {
 } from "./ffi-signature.ts";
 
 export interface FfiCallbackHost {
-  readonly allocate: (id: number) => number;
+  readonly allocate: (id: number, unaryI32: boolean) => number;
   readonly release: (address: number) => void;
   readonly view: (address: number, length: number) => Uint8Array;
   readonly abort: (message: string) => never;
@@ -57,6 +58,7 @@ export interface FfiCallback {
   readonly id: number;
   readonly address: number;
   readonly signature: FfiSignature;
+  readonly runtimeI32: boolean;
   readonly layout: CCallLayout;
   readonly parameters: CallbackArgument[];
   readonly guard: number;
@@ -67,13 +69,14 @@ export interface FfiCallback {
   executing: number;
 }
 export interface FfiCallbacks {
+  readonly activity: CallbackActivity;
   readonly register: (
     signature: FfiSignature,
     callback: unknown,
   ) => FfiCallback;
   readonly release: (callback: FfiCallback) => void;
   readonly ref: (callback: FfiCallback, enabled: boolean) => void;
-  readonly dispatch: (id: number, frame: number) => number;
+  readonly dispatch: (id: number, input: number) => number;
   readonly active: () => boolean;
 }
 
@@ -82,6 +85,8 @@ export function createFfiCallbacks(
   host: FfiCallbackHost,
 ): FfiCallbacks {
   const entries = new Map<number, FfiCallback>();
+  const activity: CallbackActivity = { active: false };
+  let lastDispatched: FfiCallback | undefined;
   let currentId = 0;
   const registers = TARGET_AAPCS64 === 2 ? sysVCallbackFrame.registers : 64;
   const floats = TARGET_AAPCS64 === 2 ? sysVCallbackFrame.floats : 128;
@@ -160,7 +165,12 @@ export function createFfiCallbacks(
     }
     const guard = callbackGuard();
     const workspace = newWorkspace(guard, layout.stackBytes);
-    const address = host.allocate(id);
+    const unary = unaryCallback(signature, layout, parameters, callback);
+    const runtimeI32 =
+      unary !== undefined &&
+      signature.parameters[0] === "i32" &&
+      signature.result === "i32";
+    const address = host.allocate(id, runtimeI32);
     if (address <= 0)
       return ffiError(
         core,
@@ -175,16 +185,18 @@ export function createFfiCallbacks(
       id,
       address,
       signature,
+      runtimeI32,
       layout,
       parameters,
       guard,
       workspaces: [workspace],
       weak: createWeakSlot(callback, undefined, false),
       strong: callback,
-      unary: unaryCallback(signature, layout, parameters, callback),
+      unary,
       executing: 0,
     };
     entries.set(id, entry);
+    activity.active = true;
     return entry;
   }
   function release(callback: FfiCallback): void {
@@ -196,6 +208,8 @@ export function createFfiCallbacks(
         "Cannot unregister an active FFI callback",
       );
     entries.delete(callback.id);
+    activity.active = entries.size !== 0;
+    if (lastDispatched === callback) lastDispatched = undefined;
     clearWeakSlot(callback.weak);
     callback.strong = undefined;
     callback.unary = undefined;
@@ -221,12 +235,72 @@ export function createFfiCallbacks(
         )
       : undefined;
   }
-  function dispatch(id: number, address: number): number {
-    const callback = entries.get(id);
+  /** The i32 trampoline delivers the sign-extended input and accepts the
+   * actual numeric result. Its transport survives ref/unref changes. */
+  function dispatchI32(callback: FfiCallback, input: number): number {
+    const depth = callback.executing;
+    callback.executing = depth + 1;
+    try {
+      const agent = core.realm.agent;
+      const direct = callback.unary;
+      let result: number;
+      if (direct !== undefined && agent.activeContext?.realm === core.realm) {
+        const contextDepth = agent.executionContextDepth;
+        agent.executionContextDepth = contextDepth + 1;
+        try {
+          result = direct.target(input);
+        } catch (error) {
+          return host.abort("Callbacks cannot throw an exception");
+        } finally {
+          agent.executionContextDepth = contextDepth;
+        }
+      } else {
+        const strong = callback.strong;
+        const fn = strong === undefined ? weakSlotKey(callback.weak) : strong;
+        if (fn === undefined) return 0;
+        let value: unknown;
+        try {
+          value = callObjectValueOrThrow(
+            fn,
+            undefined,
+            [input],
+            core.object,
+            core.realm,
+          );
+        } catch (error) {
+          return host.abort("Callbacks cannot throw an exception");
+        }
+        if (typeof value !== "number") {
+          const promise = viewObjectValue(
+            value,
+            core.object,
+          )?.internalPromiseData;
+          return host.abort(
+            promise === undefined
+              ? "Callback returned invalid value for declared FFI type"
+              : "Callbacks cannot return promises",
+          );
+        }
+        result = value;
+      }
+      if ((result | 0) !== result)
+        return host.abort(
+          "Callback returned invalid value for declared FFI type",
+        );
+      return result;
+    } finally {
+      callback.executing = depth;
+    }
+  }
+
+  function dispatch(id: number, input: number): number {
+    const previous = lastDispatched;
+    const callback = previous?.id === id ? previous : entries.get(id);
     if (callback === undefined)
       return host.abort("Unknown FFI callback registration");
-    const strong = callback.strong;
-    const fn = strong === undefined ? weakSlotKey(callback.weak) : strong;
+    if (callback !== previous) lastDispatched = callback;
+    if (callback.runtimeI32) return dispatchI32(callback, input);
+    const address = input;
     const depth = callback.executing;
     let workspace = callback.workspaces[depth];
     if (workspace === undefined) {
@@ -234,25 +308,15 @@ export function createFfiCallbacks(
       workspace = newWorkspace(callback.guard, callback.layout.stackBytes);
       callback.workspaces.push(workspace);
     }
-    const raw = workspace.frame,
-      cellBytes = workspace.cellBytes,
-      scratch = workspace.scratch;
+    const cellBytes = workspace.cellBytes;
     const cell = Cell.view(cellBytes);
     callback.executing = depth + 1;
-    retargetCallbackView(raw, address);
-    try {
-      // SysV consumes the status as zero for a collected callback. Both
-      // ABIs load their result registers from the same capture when present.
-      if (fn === undefined) {
-        for (let byte = 0; byte < 8; byte++) {
-          raw[registers + byte] = 0;
-          raw[floats + byte] = 0;
-        }
-        return 0;
-      }
-      const native = callback.unary;
-      const agent = core.realm.agent;
-      if (native !== undefined && agent.activeContext?.realm === core.realm) {
+    const native = callback.unary;
+    const agent = core.realm.agent;
+    if (native !== undefined && agent.activeContext?.realm === core.realm) {
+      // A strong unary callback fits in the cell. Keep the full frame view
+      // at its guard while invoking the typed target.
+      try {
         retargetCallbackView(cellBytes, address + native.argument.offset);
         const input = readFfiNumberCell(cell, native.argument.kind);
         const previousDepth = agent.executionContextDepth;
@@ -276,6 +340,25 @@ export function createFfiCallbacks(
         }
         if (native.signExtend) cell.i64 = value;
         return 1;
+      } finally {
+        retargetCallbackView(cellBytes, callback.guard);
+        callback.executing = depth;
+      }
+    }
+    const raw = workspace.frame,
+      scratch = workspace.scratch;
+    retargetCallbackView(raw, address);
+    try {
+      const strong = callback.strong;
+      const fn = strong === undefined ? weakSlotKey(callback.weak) : strong;
+      // SysV consumes the status as zero for a collected callback. Both
+      // ABIs load their result registers from the same capture when present.
+      if (fn === undefined) {
+        for (let byte = 0; byte < 8; byte++) {
+          raw[registers + byte] = 0;
+          raw[floats + byte] = 0;
+        }
+        return 0;
       }
       const args: unknown[] = [];
       for (const parameter of callback.parameters) {
@@ -335,5 +418,12 @@ export function createFfiCallbacks(
       callback.executing = depth;
     }
   }
-  return { register, release, ref, dispatch, active: () => entries.size !== 0 };
+  return {
+    register,
+    release,
+    ref,
+    dispatch,
+    activity,
+    active: () => entries.size !== 0,
+  };
 }

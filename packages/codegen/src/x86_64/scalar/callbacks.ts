@@ -82,6 +82,7 @@ interface CallbackView {
 export interface CallbackThunk {
   readonly signature: CSignature | undefined;
   readonly ordinal: number;
+  readonly runtimePrototype?: boolean;
   readonly views: readonly CallbackView[] | undefined;
 }
 interface CallbackRoot {
@@ -196,6 +197,7 @@ export function endTransition(site: TransitionSite): void {
 export function callbackThunkKey(thunk: CallbackThunk): string {
   const signature = thunk.signature;
   let key = String(thunk.ordinal);
+  if (thunk.runtimePrototype === true) key += ":runtime";
   if (signature !== undefined) {
     key += ":" + cTypeName(signature.result);
     for (const type of signature.parameters) {
@@ -228,7 +230,10 @@ export function emitCallbackThunk(site: ThunkSite): LabeledUnwind {
   const signature = thunk.signature;
   const direct = thunk.views !== undefined,
     registered = thunk.ordinal < 0,
-    runtimeRegistered = registered && signature === undefined;
+    runtimeRegistered =
+      registered &&
+      (signature === undefined || thunk.runtimePrototype === true),
+    runtimeI32 = runtimeRegistered && signature !== undefined;
   const classified =
     signature === undefined
       ? undefined
@@ -286,7 +291,11 @@ export function emitCallbackThunk(site: ThunkSite): LabeledUnwind {
   emit({ op: "mov", dst: mem(5, 0), src: rax });
   emit({ op: "mov", dst: rax, src: mem(4, frameBytes + 8) });
   emit({ op: "mov", dst: mem(5, 8), src: rax });
-  for (let index = 0; index < argumentRegisters.length; index++) {
+  for (
+    let index = 0;
+    index < (runtimeI32 ? 1 : argumentRegisters.length);
+    index++
+  ) {
     const register = argumentRegisters[index];
     if (register === undefined) throw "SysV callback register invariant";
     emit({
@@ -295,7 +304,7 @@ export function emitCallbackThunk(site: ThunkSite): LabeledUnwind {
       src: gpr(register),
     });
   }
-  for (let index = 0; index < 8; index++)
+  for (let index = 0; index < (runtimeI32 ? 0 : 8); index++)
     emit({
       op: "movsd",
       dst: mem(5, physical.floats + index * 8),
@@ -350,7 +359,7 @@ export function emitCallbackThunk(site: ThunkSite): LabeledUnwind {
     else emit({ op: "mov", dst: rax, src: imm(-1 - thunk.ordinal) });
     emit({ op: "cvtsi2sd", dst: x0, src: rax });
     emit({ op: "movsd", dst: mem(5, converted), src: x0 });
-    if (runtimeRegistered) {
+    if (runtimeRegistered && signature === undefined) {
       emit({ op: "cvtsi2sd", dst: x0, src: rbp });
       emit({ op: "movsd", dst: mem(5, converted + 8), src: x0 });
       numbers++;

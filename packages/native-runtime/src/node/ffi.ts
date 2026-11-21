@@ -55,6 +55,7 @@ import {
   hasRegisteredCallbacks,
   openLibrary,
   openProgram,
+  registeredCallbackActivity,
   releaseCallbackStub,
   rethrowCallbackFailure,
   stableAddressWords,
@@ -117,6 +118,7 @@ interface DynamicLibraryState {
   readonly identity: unknown;
   readonly path: string;
   handle: LibraryHandle | undefined;
+  readonly lifetime: FfiLibraryLifetime;
   readonly symbols: Map<string, SymbolAddress>;
   readonly bindings: Map<string, Binding>;
   readonly callbacks: Map<number, FfiCallback>;
@@ -135,11 +137,13 @@ import {
   readTypedFfiNumber,
   ffiSharedAddress,
   installFfiMemory,
+  projectFfiPointerAddress,
   readScalar,
   stableFfiBacking,
   writeFfiBigInt,
   writeScalar,
   writeTypedFfiNumber,
+  type FfiLibraryLifetime,
   type FfiScalarParameter,
   type TypedFfiCall,
   type TypedFfiWorkspace,
@@ -560,7 +564,8 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
   const dispose = wellKnownSymbol(realm.symbolRegistry, "dispose");
   const charSigned = TARGET_AAPCS64 !== 1;
   const callbacks = createFfiCallbacks(core, {
-    allocate: (id): number => allocateCallbackStub(id, pthread_self()),
+    allocate: (id, unaryI32): number =>
+      allocateCallbackStub(id, pthread_self(), unaryI32),
     release: releaseCallbackStub,
     view: bytesAt,
     abort: (message: string): never => {
@@ -569,6 +574,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       throw "FFI_ABORT_RETURNED";
     },
   });
+  const nativeCallbacks = registeredCallbackActivity();
   const dispatcher: CallbackDispatcher = (
     id,
     a0,
@@ -582,6 +588,47 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     id < 0
       ? callbacks.dispatch(id, a0)
       : callbackDispatcher()(id, a0, a1, a2, a3, a4, a5, a6);
+
+  function invokeCallbackFrame(binding: Binding, frame: Uint8Array): void {
+    const caller = agent.activeContext;
+    const depth = agent.executionContextDepth;
+    agent.activeContext =
+      caller === undefined
+        ? nativeCaller
+        : caller.realm === realm
+          ? caller
+          : { realm, scriptOrModule: caller.scriptOrModule };
+    agent.executionContextDepth = depth + 1;
+    try {
+      runScalarFrame(core, binding, frame, dispatcher);
+    } finally {
+      agent.activeContext = caller;
+      agent.executionContextDepth = depth;
+    }
+  }
+
+  function invokePointerI32Callback(
+    binding: Binding,
+    plan: ScalarCallPlan,
+    pointer: unknown,
+    input: number,
+  ): number | undefined {
+    const address = projectFfiPointerAddress(pointer);
+    if (address === undefined) return undefined;
+    const workspace = acquireScalarWorkspace(binding, plan, true);
+    try {
+      const first = workspace.cells[0],
+        second = workspace.cells[1];
+      if (first === undefined || second === undefined)
+        throw "FFI_SCALAR_ARGUMENT_INVARIANT";
+      Cell.view(first).u64 = address;
+      Cell.view(second).i64 = input;
+      invokeCallbackFrame(binding, workspace.frame);
+      return Cell.view(workspace.result).i32;
+    } finally {
+      releaseScalarWorkspace(binding, workspace);
+    }
+  }
 
   function closed(): never {
     return ffiError(
@@ -616,6 +663,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
           "ERR_INVALID_ARG_VALUE",
           "Cannot close a library with an active FFI callback",
         );
+    state.lifetime.open = false;
     state.handle = undefined;
     for (const [, callback] of state.callbacks) callbacks.release(callback);
     state.callbacks.clear();
@@ -748,6 +796,9 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
             arity: plan.parameters.length,
             staticIndex: binding.typedCall,
             address: binding.numericAddress,
+            lifetime: state.lifetime,
+            nodeCallbacks: callbacks.activity,
+            nativeCallbacks,
             numbersOnly: !plan.parameters.some(
               (parameter) =>
                 parameter.pointer ||
@@ -758,6 +809,14 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
               plan.parameters.length === 1 && plan.parameters[0]?.pointer
                 ? (input): number =>
                     invokeUnaryPointerLeaf(core, binding, plan, input)
+                : undefined,
+            pointerI32Callback:
+              binding.signature.result === "i32" &&
+              plan.parameters.length === 2 &&
+              binding.signature.parameters[0] === "pointer" &&
+              binding.signature.parameters[1] === "i32"
+                ? (pointer, input): number | undefined =>
+                    invokePointerI32Callback(binding, plan, pointer, input)
                 : undefined,
             mode: (): number => {
               if (
@@ -785,24 +844,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
             complete: (workspace, mayCallback): number => {
               if (!mayCallback)
                 runScalarFrame(core, binding, workspace.frame, undefined);
-              else {
-                const caller = agent.activeContext;
-                const depth = agent.executionContextDepth;
-                agent.activeContext =
-                  caller?.realm === realm
-                    ? caller
-                    : {
-                        realm,
-                        scriptOrModule: caller?.scriptOrModule,
-                      };
-                agent.executionContextDepth = depth + 1;
-                try {
-                  runScalarFrame(core, binding, workspace.frame, dispatcher);
-                } finally {
-                  agent.activeContext = caller;
-                  agent.executionContextDepth = depth;
-                }
-              }
+              else invokeCallbackFrame(binding, workspace.frame);
               return readTypedFfiNumber(workspace.result, plan.resultKind);
             },
             release: (workspace): void =>
@@ -999,6 +1041,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       identity,
       path: text,
       handle,
+      lifetime: { open: true },
       symbols: new Map<string, SymbolAddress>(),
       bindings: new Map<string, Binding>(),
       callbacks: new Map<number, FfiCallback>(),
