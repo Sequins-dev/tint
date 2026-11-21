@@ -10,6 +10,7 @@ import {
   type SSAEdge,
 } from "../scalar/index.ts";
 import { unary, binary, type Constant } from "./constants.ts";
+import { unbounded } from "./budget.ts";
 export interface SSAOptimization {
   readonly fn: FunctionIR;
   readonly visited: number;
@@ -41,6 +42,7 @@ export function foldSSAConstants(
     predecessors: number[][] = [];
   let work = ssa.work,
     exhausted = false;
+  const skipSettledJoins = unbounded(budget);
   for (const block of ssa.blocks) {
     if (block === undefined) return undefined;
     successors.push([]);
@@ -100,6 +102,10 @@ export function foldSSAConstants(
       for (let index = 0; index < block.parameters.length; index++) {
         const param = block.parameters[index];
         if (param === undefined) throw "SSA solver parameter invariant";
+        // A settled unknown is the top of the lattice. Reading incoming
+        // arguments again cannot change the parameter or enqueue successors.
+        // Bounded runs keep their existing budget accounting.
+        if (skipSettledJoins && states[param.id] === 2) continue;
         for (
           let predecessorIndex = 0;
           predecessorIndex < incoming.length;

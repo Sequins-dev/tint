@@ -1,6 +1,7 @@
 # Parallel and bounded-memory AOT compilation
 
-Phase 1 proposal for review. Implementation begins after approval.
+Approved for experimentation. The stage and ownership model below guides
+the prototypes. Measured native wall time decides which changes to retain.
 
 ## Baseline and priorities
 
@@ -17,12 +18,33 @@ The Object Test262 suite exhausted V8 old space at 2,848 MiB during retry
 helper specialization and reached emission at 2,880 MiB. The minimum cap
 for a complete build remains unknown. These are old-space limits for that
 suite.
-The first target is to remove the retry peak and complete a matched build
-at or below the previously failing cap. The optimizer is next. The
-eventual throughput target is native self-compile beating the Node-hosted
-compiler on wall time, with cycles and peak RSS reported alongside it.
-Memory takes precedence when it determines whether compilation can finish.
+The current priority is the fastest native self-compile on a matched input.
+The memory target is a complete Object suite build within 2.8 GiB. Record
+RSS independently of the V8 old-space setting. Keep storage opt-in until
+admission estimates have been validated on both hosts.
 [Object suite cap trials](results/compiler-check-memory-instances-2026-11-20.md)
+
+After workers landed, the revised 821-file control spent 81.6 s in LICM,
+31.0 s in SSA constants and 84.9 s in codegen. The first LICM experiment
+reused one record-proof summary across the loops of an immutable round.
+Its first native comparison returned the same signed image 57.2 s sooner.
+A four-worker SSA transport screen on Node showed lower wall time and
+higher CPU and RSS. A cheaper serial join changes that tradeoff, so
+evaluate the pool against the improved kernel before integration.
+[Merged-main screen](results/parallel-bounded-compile-screening-v1.md) ·
+[Native profile and cap trials](results/parallel-bounded-compile-hot-passes-v1.md)
+
+## Implemented optimizer candidates
+
+LICM computes the record proof summary on the first eligible loop in a round.
+All loops in that round read the same function version. A subsequent round
+computes its own summary after the rewrites from the preceding round.
+
+SSA constant propagation skips the incoming edges of block parameters that
+have reached the unknown state in an unbounded run. Further joins leave
+those parameters unknown. Bounded runs retain their existing work accounting.
+Both candidates use the current serial pass order and function IDs while the
+native self-build and paired comparisons run.
 
 ## Work and dependencies
 
