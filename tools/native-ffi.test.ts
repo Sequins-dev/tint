@@ -90,13 +90,13 @@ test("node:os userInfo, networkInterfaces and loadavg match Node (copying)", () 
 /** Build `module` as node:os for `target` in a child process (the fixture
  * target is fixed when hosted-fixture.ts loads). */
 function buildOsFor(module: string, target: string) {
-  const script = `import { osFixtureSource } from ${JSON.stringify(
+  const script = `import { osFixtureDependencies, osFixtureSource } from ${JSON.stringify(
     new URL("./native-os-fixtures.ts", import.meta.url).href,
   )};
 import { verifyHostedFixture } from ${JSON.stringify(
     new URL("./hosted-fixture.ts", import.meta.url).href,
   )};
-verifyHostedFixture(osFixtureSource(""), "node-os-other", [["node:os", ${JSON.stringify(module)}]]);`;
+verifyHostedFixture(osFixtureSource(), "node-os-other", osFixtureDependencies(${JSON.stringify(module)}));`;
   return spawnSync(process.execPath, ["--input-type=module", "-e", script], {
     encoding: "utf8",
     env: { ...process.env, TINT_NATIVE_TARGET: target, TINT_BUILD_ONLY: "1" },

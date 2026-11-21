@@ -49,6 +49,8 @@ export interface DebugBackend {
   entered?(): Promise<boolean>;
   /** The stopped thread's stack as locations (backend sampling). */
   stack?(threadId: number): Promise<{ address: number; lines: RawLine[] }[]>;
+  /** Whether the debugger can inspect the stopped process. */
+  readonly inspectableStop?: () => Promise<boolean>;
   close(): void;
 }
 
@@ -213,6 +215,10 @@ export class LldbDapBackend implements DebugBackend {
   async entered(): Promise<boolean> {
     return devtoolsJson(await this.command("devtools entered")) === true;
   }
+
+  readonly inspectableStop = async (): Promise<boolean> =>
+    devtoolsJson(await this.command("devtools inspectable-stop", 30000)) ===
+    true;
 
   async stack(
     threadId: number,

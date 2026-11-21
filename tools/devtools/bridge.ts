@@ -718,31 +718,54 @@ export class Bridge implements BridgeContext {
    * while the adapter is still resuming the process can be lost, so it
    * is repeated until a stop arrives; a late duplicate stop is queued and
    * discarded before the next continue. */
-  private async pauseInternally(threadId: number): Promise<DapStoppedEvent> {
+  private async pauseInternally(
+    threadId: number,
+    verifyStop?: () => Promise<boolean>,
+  ): Promise<DapStoppedEvent> {
     const deadline = Date.now() + 30000;
-    let lastError = "";
+    let stopped = verifyStop === undefined ? undefined : this.pause?.stopped;
     for (;;) {
       const stop = this.nextInternalStop(1000, "pause");
       stop.catch(() => {});
-      lastError = await this.backend.dap.request("pause", { threadId }).then(
-        () => "",
-        (error: unknown) => String(error),
-      );
+      const lastError = await this.backend.dap
+        .request("pause", { threadId })
+        .then(
+          () => "",
+          (error: unknown) => String(error),
+        );
       try {
-        return await stop;
+        stopped = await stop;
       } catch (error) {
-        if (!(error instanceof StopTimeout) || Date.now() > deadline)
-          throw error instanceof StopTimeout
-            ? new CdpError(
-                -32000,
-                "the process did not stop within 30 s " + lastError,
-              )
-            : error;
+        if (!(error instanceof StopTimeout)) throw error;
+        // A notified stop can become readable without another notification.
+      }
+      if (
+        stopped !== undefined &&
+        (verifyStop === undefined || (await verifyStop()))
+      ) {
+        this.requireLive();
+        this.targetState = "paused";
+        return stopped;
+      }
+      if (Date.now() >= deadline)
+        throw new CdpError(
+          -32000,
+          stopped === undefined
+            ? "the process did not stop within 30 s " + lastError
+            : "the debugger could not inspect the stop within 30 s",
+        );
+      if (stopped !== undefined) {
+        this.requireLive();
+        this.pendingStops.length = 0;
+        this.targetState = "running";
       }
     }
   }
 
-  internal<T>(body: (operation: InternalOperation) => Promise<T>): Promise<T> {
+  internal<T>(
+    body: (operation: InternalOperation) => Promise<T>,
+    verifyStop?: () => Promise<boolean>,
+  ): Promise<T> {
     return this.exclusive(async () => {
       this.requireLive();
       const dap = this.backend.dap;
@@ -751,10 +774,16 @@ export class Bridge implements BridgeContext {
       let interrupted: DapStoppedEvent | undefined;
       this.internalDepth++;
       try {
-        if (this.targetState === "running") {
+        if (
+          this.targetState === "running" ||
+          (verifyStop !== undefined && !(await verifyStop()))
+        ) {
           // A stop a handler wants (a sampling stop) is recorded; the
           // process stays stopped for the operation.
-          const stopped = await this.pauseInternally(threadId);
+          this.requireLive();
+          this.targetState = "running";
+          if (verifyStop !== undefined) this.pendingStops.length = 0;
+          const stopped = await this.pauseInternally(threadId, verifyStop);
           await this.handleStop(stopped, false);
         }
         const operation: InternalOperation = {

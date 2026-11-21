@@ -114,8 +114,12 @@ export interface BridgeContext {
   /** A native debugger command (rejects when the backend has none). */
   command(text: string, timeoutMs?: number): Promise<string>;
   /** Runs `body` with the process stopped; afterwards the process resumes,
-   * or (if the frontend had it paused) is presented paused again. */
-  internal<T>(body: (operation: InternalOperation) => Promise<T>): Promise<T>;
+   * or (if the frontend had it paused) is presented paused again. An optional
+   * verifier confirms the debugger can inspect the process at that stop. */
+  internal<T>(
+    body: (operation: InternalOperation) => Promise<T>,
+    verifyStop?: () => Promise<boolean>,
+  ): Promise<T>;
   /** Sends a CDP event; resolves when the socket can take more. */
   emit(method: string, params: object): Promise<void>;
   /** The Debugger script id of a source file (as DWARF spells it). */

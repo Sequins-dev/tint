@@ -13,6 +13,7 @@ adds the `devtools` command, whose subcommands print one JSON line each:
     devtools watch-entry           before launch: note when the program's
                                    entry point runs (no visible stop)
     devtools entered               whether the entry point has run
+    devtools inspectable-stop      can LLDB inspect the stopped process?
 
 Nothing here knows a language runtime: it reads DWARF line tables and
 inlined-subroutine blocks only, so it serves any program built with
@@ -181,6 +182,15 @@ def devtools_command(debugger, command, result, internal_dict):
             result.AppendMessage("DEVTOOLS " + json.dumps(watch_entry(target)))
         elif args[0] == "entered":
             result.AppendMessage("DEVTOOLS " + json.dumps(_entry["entered"]))
+        elif args[0] == "inspectable-stop":
+            process = target.GetProcess()
+            # GetNumThreads takes the same run lock as ReadMemory. The
+            # reported process state alone does not guarantee access.
+            inspectable = (
+                lldb.SBDebugger.StateIsStoppedState(process.GetState())
+                and process.GetNumThreads() > 0
+            )
+            result.AppendMessage("DEVTOOLS " + json.dumps(inspectable))
         else:
             result.SetError("unknown devtools command %s" % args[0])
     except Exception as error:  # reported to the bridge as a failed command
