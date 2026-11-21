@@ -76,13 +76,16 @@ existing 16 MiB Node isolate stack budget. The x86-64 realm initializer
 exceeds the compact 1 MiB stack used by small typed fixtures.
 
 Synchronous calls borrow byte windows during direct leaf FFI calls on the
-isolate's thread. Cache fetched digests and retain one idle context each
-for hash and HMAC operations in the isolate. Reinitialize the hash context
-in place so the provider allocation can serve another hash. Reset the HMAC
-context to clear its key state. Release active and spare contexts with the cached
-digest references at isolate exit. Encoded hexadecimal digests borrow
-scratch storage within one synchronous operation. Buffer results own
-their bytes and reuse the realm's integer-indexed typed-array methods.
+isolate's thread. Hash and HMAC retain one fetched digest per algorithm and
+cache aliases to that handle. Retain one idle context each for hash and HMAC
+operations in the isolate. Reinitialize the hash context in place so the
+provider allocation can serve another hash. Reset the HMAC context to clear
+its key state. Release active and spare contexts with the cached digest
+references at isolate exit. Encoded hexadecimal digests borrow scratch
+storage within one synchronous operation. A 64-byte digest uses a packed
+integer lookup table and writes directly into one final string. Buffer
+results own their bytes and reuse the realm's integer-indexed typed-array
+methods.
 Any address
 held after a leaf returns must refer to stable owned storage. Validate
 actual byte offsets and lengths, including subviews, and preserve Node's
@@ -159,7 +162,8 @@ in PBKDF2 and provider failure in digest initialization.
   [Typed digest context experiment](results/node-crypto-darwin-arm64-contexts-v1.json) ·
   [Typed Buffer comparison](results/node-crypto-darwin-arm64-branded-shared-methods-v1.json) ·
   [Typed byte lookup and Buffer length controls](results/node-crypto-darwin-arm64-typed-byte-hex-v1.md) ·
-  [General method-call control](results/node-crypto-darwin-arm64-call-control-v1.md)
+  [General method-call control](results/node-crypto-darwin-arm64-call-control-v1.md) ·
+  [Short SHA-512 call and allocation breakdown](results/node-crypto-darwin-arm64-sha512-breakdown.md)
 
 ## PoC phases
 
