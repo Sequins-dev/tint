@@ -4,7 +4,7 @@
 // calls back once against a leaf call. Native loops time themselves with
 // the monotonic clock; the image runs under LLDB (stopped at entry, exit
 // status 42 asserted). Needs clang. Run under
-//   lockf /Users/stephenbelanger/.t3/tint-timing.lock node tools/ffi-callback-microbench.ts
+//   tools/gate/with-lock.sh both ffi-callback-microbench node tools/ffi-callback-microbench.ts
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
