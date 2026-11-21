@@ -80,6 +80,14 @@ includes slot sharing, register allocation, and liveness. It is a
 candidate for workers even when final instruction placement stays serial.
 [Native AArch64 function emission profile](results/parallel-bounded-compile-frame-plan-v1.md)
 
+The Node replay of ordered AArch64 fragments produced identical
+emission at one, two, and six workers. Two workers lowered emission
+and merge wall time in that screen. The replay needed the serial
+control's first-use dispatch numbering. The refined native profile
+put 52.94 s into register-home analysis, which can run with frozen
+call summaries and function-local frame inputs.
+[Ordered AArch64 worker fragments](results/parallel-bounded-compile-codegen-fragments-v1.md)
+
 In a separate Object compilation pair with a 4,096 MiB V8 old-space setting,
 the optimizer candidate built the same signed image in 524.22 s versus
 899.40 s. Its observed peak RSS was 5,195.6 MiB versus 4,760.7 MiB.
@@ -103,6 +111,12 @@ whole-build budget.
 [Packed Object emission](results/parallel-bounded-compile-object-emission-v1.md) ·
 [Object compilation with staged IR changes](results/parallel-bounded-compile-packed-delta-v1.md) ·
 [Typed streaming compiler at a 2,176 MiB heap setting](results/parallel-bounded-compile-typed-cap-v1.md)
+
+The typed streaming prototype completed the whole Object image at a
+4,096 MiB old-space setting, byte-identical to the earlier control.
+Its peak RSS was 4,798,824,448 bytes. Lower heap settings failed in
+collection-runtime preparation before packed lowering could help.
+[Typed streaming Object image comparison](results/parallel-bounded-compile-typed-object-image-v1.md)
 
 ## Work and dependencies
 
