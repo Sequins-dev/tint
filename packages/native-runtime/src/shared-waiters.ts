@@ -16,13 +16,18 @@ import {
  * belong to one managed context; only scalar table contents cross agents. */
 export interface NativeWaiterParkingHost {
   park(address: number, expected: number, timeoutNanoseconds: number): number;
-  wake(address: number): number;
+  wake(address: number, all?: boolean): number;
+  readonly wakeAsync?: ((target: number) => void) | undefined;
 }
-export function nativeWaiterParkingHost(): NativeWaiterParkingHost {
+export function nativeWaiterParkingHost(
+  wakeAsync?: (target: number) => void,
+): NativeWaiterParkingHost {
   return {
     park: (address, expected, timeout): number =>
       parkNativeWord(address, expected, timeout),
-    wake: (address): number => wakeNativeWord(address, 0),
+    wake: (address, all): number =>
+      wakeNativeWord(address, all === true ? 1 : 0),
+    wakeAsync,
   };
 }
 export interface NativeWaitLocation {
@@ -40,7 +45,14 @@ export interface NativeWaitRegistration {
   /** Zero for immediate results; otherwise a never-reissued registration token. */
   readonly ticket: number;
 }
-export interface NativeWaitRegistry {
+export interface NativeWaitEvents {
+  /** Sample before checking completion records, then park on that version. */
+  eventVersion(): number;
+  parkEvents(version: number, timeoutNanoseconds: number): SharedResult<number>;
+  /** Wake checkpoints to observe an embedding event such as worker failure. */
+  interruptEvents(): void;
+}
+export interface NativeWaitRegistry extends NativeWaitEvents {
   notifyOrdered(
     blockId: number,
     offset: number,
@@ -62,6 +74,8 @@ export interface NativeWaitRegistry {
   ): SharedResult<number>;
   poll(ticket: number): SharedResult<NativeWaitState>;
   order(ticket: number): SharedResult<number>;
+  /** Publish an owning reactor's wake target while the wait is live. */
+  setWakeTarget(ticket: number, target: number): SharedResult<undefined>;
   expire(ticket: number): SharedResult<boolean>;
   take(ticket: number): SharedResult<NativeWaitState>;
   park(ticket: number, timeoutNanoseconds: number): SharedResult<number>;
@@ -76,12 +90,14 @@ const LOCK = 0,
   CAPACITY = 16,
   NEXT = 24,
   ENGINE = 32,
-  NEXT_COMPLETION = 40;
+  NEXT_COMPLETION = 40,
+  EVENT_VERSION = 48;
 const STATE = 0,
   TICKET = 8,
   BLOCK = 16,
   OFFSET = 24,
-  COMPLETION = 32;
+  COMPLETION = 32,
+  WAKE_TARGET = 40;
 function word(value: number): boolean {
   return integer(value) && value <= 4294967295;
 }
@@ -248,6 +264,7 @@ function facade(
           writeNumber(host, registry, free + BLOCK, location.blockId);
           writeNumber(host, registry, free + OFFSET, location.byteOffset);
           writeNumber(host, registry, free + COMPLETION, 0);
+          writeNumber(host, registry, free + WAKE_TARGET, 0);
           writeNumber(host, registry, free + STATE, 1);
         }
       }
@@ -273,42 +290,52 @@ function facade(
       return { ok: false, error: "invalid-value" };
     const scratch = new Uint32Array(2);
     lock(scratch);
-    const firstCompletion =
-      readNumber(host, registry, NEXT_COMPLETION, scratch) + 1;
-    let notified = 0;
-    while (notified < count) {
-      let row = -1,
-        first = Infinity;
-      for (let i = 0; i < capacity; i++) {
-        const at = HEADER + i * ROW;
-        if (
-          readNumber(host, registry, at + STATE, scratch) === 1 &&
-          readNumber(host, registry, at + BLOCK, scratch) === block &&
-          readNumber(host, registry, at + OFFSET, scratch) === offset
-        ) {
-          const ticket = readNumber(host, registry, at + TICKET, scratch);
-          if (ticket < first) {
-            first = ticket;
-            row = at;
+    try {
+      const firstCompletion =
+        readNumber(host, registry, NEXT_COMPLETION, scratch) + 1;
+      let notified = 0;
+      while (notified < count) {
+        let row = -1,
+          first = Infinity;
+        for (let i = 0; i < capacity; i++) {
+          const at = HEADER + i * ROW;
+          if (
+            readNumber(host, registry, at + STATE, scratch) === 1 &&
+            readNumber(host, registry, at + BLOCK, scratch) === block &&
+            readNumber(host, registry, at + OFFSET, scratch) === offset
+          ) {
+            const ticket = readNumber(host, registry, at + TICKET, scratch);
+            if (ticket < first) {
+              first = ticket;
+              row = at;
+            }
           }
         }
+        if (row < 0) break;
+        complete(row, scratch);
+        writeNumber(host, registry, row + STATE, 2);
+        parking.wake(registry.base + row + STATE);
+        const target = readNumber(host, registry, row + WAKE_TARGET, scratch);
+        if (target !== 0) {
+          const wake = parking.wakeAsync;
+          if (wake === undefined) throw "NATIVE_WAITER_ASYNC_WAKE";
+          wake(target - 1);
+        }
+        notified++;
       }
-      if (row < 0) break;
-      complete(row, scratch);
-      writeNumber(host, registry, row + STATE, 2);
-      parking.wake(registry.base + row + STATE);
-      notified++;
+      const last = readNumber(host, registry, NEXT_COMPLETION, scratch);
+      if (notified > 0) signalEvents(scratch);
+      return {
+        ok: true,
+        value: {
+          count: notified,
+          first: notified === 0 ? 0 : firstCompletion,
+          last: notified === 0 ? 0 : last,
+        },
+      };
+    } finally {
+      unlock();
     }
-    const last = readNumber(host, registry, NEXT_COMPLETION, scratch);
-    unlock();
-    return {
-      ok: true,
-      value: {
-        count: notified,
-        first: notified === 0 ? 0 : firstCompletion,
-        last: notified === 0 ? 0 : last,
-      },
-    };
   }
   function notify(
     block: number,
@@ -357,6 +384,42 @@ function facade(
     writeNumber(host, registry, NEXT_COMPLETION, sequence);
     writeNumber(host, registry, row + COMPLETION, sequence);
   }
+  function signalEvents(scratch: Uint32Array): void {
+    const next = readNumber(host, registry, EVENT_VERSION, scratch) + 1;
+    writeNumber(host, registry, EVENT_VERSION, next % 4294967296);
+    parking.wake(registry.base + EVENT_VERSION, true);
+  }
+  function eventVersion(): number {
+    const version = host.readSharedUnsigned(
+      registry.base,
+      registry.byteLength,
+      EVENT_VERSION,
+      4,
+      1,
+    );
+    if (version < 0) throw "NATIVE_WAITER_EVENT_VERSION";
+    return version;
+  }
+  function interruptEvents(): void {
+    const scratch = new Uint32Array(2);
+    lock(scratch);
+    try {
+      signalEvents(scratch);
+    } finally {
+      unlock();
+    }
+  }
+  function parkEvents(version: number, timeout: number): SharedResult<number> {
+    if (!word(version) || !integer(timeout))
+      return { ok: false, error: "invalid-value" };
+    return {
+      ok: true,
+      value:
+        version !== eventVersion()
+          ? 0
+          : parking.park(registry.base + EVENT_VERSION, version, timeout),
+    };
+  }
   function order(ticket: number): SharedResult<number> {
     if (!validTicket(ticket)) return { ok: false, error: "invalid-handle" };
     const scratch = new Uint32Array(2);
@@ -368,6 +431,27 @@ function facade(
     return row < 0
       ? { ok: false, error: "invalid-handle" }
       : { ok: true, value: sequence };
+  }
+  function setWakeTarget(
+    ticket: number,
+    target: number,
+  ): SharedResult<undefined> {
+    if (!validTicket(ticket)) return { ok: false, error: "invalid-handle" };
+    const wake = parking.wakeAsync;
+    if (wake === undefined || !integer(target) || target >= 2147483647)
+      return { ok: false, error: "invalid-value" };
+    const scratch = new Uint32Array(2);
+    lock(scratch);
+    try {
+      const row = find(ticket, scratch);
+      if (row < 0) return { ok: false, error: "invalid-handle" };
+      if (readNumber(host, registry, row + STATE, scratch) === 1)
+        writeNumber(host, registry, row + WAKE_TARGET, target + 1);
+      else wake(target);
+      return { ok: true, value: undefined };
+    } finally {
+      unlock();
+    }
   }
   function park(ticket: number, timeout: number): SharedResult<number> {
     if (!validTicket(ticket)) return { ok: false, error: "invalid-handle" };
@@ -386,11 +470,15 @@ function facade(
     registry,
     register,
     order,
+    setWakeTarget,
     notify,
     notifyOrdered,
     poll: (ticket) => inspect(ticket, false),
     take: (ticket) => inspect(ticket, true),
     expire,
     park,
+    eventVersion,
+    parkEvents,
+    interruptEvents,
   };
 }

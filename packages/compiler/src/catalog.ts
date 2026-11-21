@@ -2307,6 +2307,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/structured-clone.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/substitution.ts",
       packageId: "js-runtime",
     },
@@ -2679,6 +2683,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/blocking-pool.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/c/commoncrypto.d.ts",
       packageId: "native-runtime",
     },
@@ -2716,6 +2724,14 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/copying.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/event-loop-reactor.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/event-loop.ts",
       packageId: "native-runtime",
     },
     {
@@ -2819,6 +2835,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/node/event-loop-globals.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/node/os-darwin.ts",
       packageId: "native-runtime",
     },
@@ -2828,6 +2848,18 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/node/os.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/worker-host.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/worker-threads-native.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/worker-threads.ts",
       packageId: "native-runtime",
     },
     {
@@ -2915,6 +2947,34 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/worker-backing.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/worker-lifecycle.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/worker-messages.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/worker-ports.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/platform/src/c/darwin-reactor.d.ts",
+      packageId: "platform",
+    },
+    {
+      id: "packages/platform/src/c/linux-reactor.d.ts",
+      packageId: "platform",
+    },
+    {
+      id: "packages/platform/src/c/worker-thread-host.d.ts",
+      packageId: "platform",
+    },
+    {
       id: "packages/platform/src/darwin/fs-errors.ts",
       packageId: "platform",
     },
@@ -2924,6 +2984,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/platform/src/darwin/host-abi.ts",
+      packageId: "platform",
+    },
+    {
+      id: "packages/platform/src/darwin/reactor.ts",
       packageId: "platform",
     },
     {
@@ -2955,7 +3019,15 @@ export function projectFiles(): ProjectFile[] {
       packageId: "platform",
     },
     {
+      id: "packages/platform/src/linux/reactor.ts",
+      packageId: "platform",
+    },
+    {
       id: "packages/platform/src/target.ts",
+      packageId: "platform",
+    },
+    {
+      id: "packages/platform/src/workers.ts",
       packageId: "platform",
     },
     {
@@ -3904,6 +3976,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "compiler",
+      specifier: "@tint/native-runtime/event-loop",
+      target: "packages/native-runtime/src/event-loop-reactor.ts",
+    },
+    {
+      packageId: "compiler",
       specifier: "@tint/native-runtime/graph",
       target: "packages/native-runtime/src/graph/index.ts",
     },
@@ -3984,6 +4061,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "compiler",
+      specifier: "@tint/native-runtime/workers",
+      target: "packages/native-runtime/src/worker-lifecycle.ts",
+    },
+    {
+      packageId: "compiler",
       specifier: "@tint/platform/darwin/fs",
       target: "packages/platform/src/darwin/fs.ts",
     },
@@ -4026,6 +4108,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/platform/target",
       target: "packages/platform/src/target.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/platform/workers",
+      target: "packages/platform/src/workers.ts",
     },
     {
       packageId: "compiler",
@@ -5609,6 +5696,201 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "platform",
+      specifier: "@tint/foundation/binary/bytes",
+      target: "packages/foundation/src/binary/bytes.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/binary/sha256",
+      target: "packages/foundation/src/binary/sha256.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/binary/sha256-stream",
+      target: "packages/foundation/src/binary/sha256-stream.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/binary/word-buffer",
+      target: "packages/foundation/src/binary/word-buffer.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/binary/word64",
+      target: "packages/foundation/src/binary/word64.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/chrono/gregorian-calendar",
+      target: "packages/foundation/src/chrono/gregorian-calendar/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/chrono/iso-date-time",
+      target: "packages/foundation/src/chrono/iso-date-time/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/chrono/temporal-duration",
+      target: "packages/foundation/src/chrono/temporal-duration/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/chrono/time-zone-identifiers",
+      target: "packages/foundation/src/chrono/time-zone-identifiers/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/chrono/tzif",
+      target: "packages/foundation/src/chrono/tzif/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/bit-vector",
+      target: "packages/foundation/src/collections/bit-vector.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/indexed-sort",
+      target: "packages/foundation/src/collections/indexed-sort.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/key-index",
+      target: "packages/foundation/src/collections/key-index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/linked-map",
+      target: "packages/foundation/src/collections/linked-map.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/linked-set",
+      target: "packages/foundation/src/collections/linked-set.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/list-sort",
+      target: "packages/foundation/src/collections/list-sort.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/number-list",
+      target: "packages/foundation/src/collections/number-list.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/collections/sparse-list",
+      target: "packages/foundation/src/collections/sparse-list.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/graph/dataflow",
+      target: "packages/foundation/src/graph/dataflow.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/layout",
+      target: "packages/foundation/src/layout/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/modules",
+      target: "packages/foundation/src/modules.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/numeric/big-integer",
+      target: "packages/foundation/src/numeric/big-integer.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/numeric/binary64-trigonometry",
+      target: "packages/foundation/src/numeric/binary64-trigonometry/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/numeric/exact-sum",
+      target: "packages/foundation/src/numeric/exact-sum.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/numeric/integer-rounding",
+      target: "packages/foundation/src/numeric/integer-rounding.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/numeric/number-text",
+      target: "packages/foundation/src/numeric/number-text/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/regexp/engine",
+      target: "packages/foundation/src/regexp/engine/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/regexp/syntax",
+      target: "packages/foundation/src/regexp/syntax/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/text/base-encoding",
+      target: "packages/foundation/src/text/base-encoding/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/text/json-syntax",
+      target: "packages/foundation/src/text/json-syntax.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/text/string-builder",
+      target: "packages/foundation/src/text/string-builder.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/text/text-encoding",
+      target: "packages/foundation/src/text/text-encoding/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/text/text-scanner",
+      target: "packages/foundation/src/text/text-scanner.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/unicode/casing",
+      target: "packages/foundation/src/unicode/casing/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/unicode/identifiers",
+      target: "packages/foundation/src/unicode/identifiers/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/unicode/normalization",
+      target: "packages/foundation/src/unicode/normalization/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/unicode/properties",
+      target: "packages/foundation/src/unicode/properties/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/unicode/segmentation",
+      target: "packages/foundation/src/unicode/segmentation/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/foundation/values/primitive-contract",
+      target: "packages/foundation/src/values/primitive-contract.ts",
+    },
+    {
+      packageId: "platform",
       specifier: "@tint/native-runtime",
       target: "packages/native-runtime/src/index.ts",
     },
@@ -5626,6 +5908,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "platform",
       specifier: "@tint/native-runtime/allocators/region",
       target: "packages/native-runtime/src/allocators/region/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/native-runtime/event-loop",
+      target: "packages/native-runtime/src/event-loop-reactor.ts",
     },
     {
       packageId: "platform",
@@ -5706,6 +5993,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "platform",
       specifier: "@tint/native-runtime/values",
       target: "packages/native-runtime/src/values/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/native-runtime/workers",
+      target: "packages/native-runtime/src/worker-lifecycle.ts",
     },
     {
       packageId: "ts-native",

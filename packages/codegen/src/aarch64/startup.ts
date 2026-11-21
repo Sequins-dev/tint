@@ -14,6 +14,12 @@ import {
   nativeStackMapRegistryHeaderBytes,
   nativeStackMapTransitionTable,
   nativeStackMapRegistryOffset,
+  nativeThreadExitReadOffset,
+  nativeWorkerStopPointerOffset,
+  nativeWorkerStopStateOffset,
+  nativeWorkerStackBytesOffset,
+  nativeWorkerHeapBytesOffset,
+  nativeThreadExitWriteOffset,
   type PosixHostABI,
 } from "@tint/abi/host";
 import {
@@ -124,6 +130,9 @@ export interface HostedDiagnostics {
 export interface HostRequest {
   /** Opt in to a raw pthread entry and a one-number application entry. */
   readonly threaded?: boolean;
+  readonly nodeWorkerLibrary?: boolean;
+  readonly threadExitPipe?: boolean;
+  readonly workerSafepoints?: boolean;
   readonly forceFarReach?: boolean | undefined;
   readonly allocator: {
     readonly native: NativeModule;
@@ -310,9 +319,14 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
     allocate.signature.parameters.length !== 1 ||
     initialize.signature.parameters.length !== 15 ||
     (request.threaded === true
-      ? main.signature.parameters.length !== 1 ||
-        main.signature.parameters[0]?.kind !== "float" ||
-        main.signature.parameters[0]?.index !== 0
+      ? main.signature.parameters.length !==
+          (request.nodeWorkerLibrary === true ? 2 : 1) ||
+        main.signature.parameters.some(
+          (parameter, index) =>
+            parameter === undefined ||
+            parameter.kind !== "float" ||
+            parameter.index !== index,
+        )
       : main.signature.parameters.length !== 0) ||
     initialize.signature.stackBytes !== 32
   )
@@ -395,7 +409,7 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
       staticStackMaps.length +
       (request.diagnostics === undefined ? 0 : 1) +
       (request.stackMapCapacity ?? 16384),
-    stackMapRegistry = align(cursor, 16);
+    stackMapRegistry = align(cursor + (request.workerSafepoints ? 8 : 0), 16);
   if (!uint(stackMapCapacity) || stackMapCapacity > 1048576)
     return { ok: false, error: "invalid stack map capacity" };
   cursor =
@@ -655,6 +669,41 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
     imm(9, value);
     emit({ op: "scvtf-d-x", rd: register, rn: 9 });
   }
+  /** x9 returns the configured ceiling. The startup record is a trusted
+   * scalar capability, present only in tagged worker invocations. */
+  function workerBytes(
+    offset: number,
+    maximum: number,
+    minimum: number,
+    site: string,
+  ): void {
+    imm(9, maximum);
+    const ready = "worker-limit-ready-" + site;
+    imm(11, 1);
+    emit({ op: "and-reg", width: 64, rd: 10, rn: 27, rm: 11 });
+    imm(11, 0);
+    compare(10, 11);
+    branch(ready, "eq");
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: 10,
+      rn: 27,
+      immediate: 1,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({ op: "ldr", width: 64, rt: 10, rn: 10, offset });
+    compare(10, 11);
+    branch(ready, "eq");
+    compare(10, 9);
+    branch("runtime-failure", "hi");
+    imm(11, minimum);
+    compare(10, 11);
+    branch("runtime-failure", "cc");
+    move(9, 10);
+    label(ready);
+  }
   let workerEntryOffset: number | undefined;
   if (request.threaded === true) {
     // Root process forwards zero; worker forwards only its raw scalar argument.
@@ -663,7 +712,7 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
     workerEntryOffset = instructions.length * 4;
     move(2, 0);
     imm(0, 0);
-    imm(1, 0);
+    if (request.nodeWorkerLibrary !== true) imm(1, 0);
     label("host-start");
   }
   // Preserve the system frame and all callee-saved registers used by startup.
@@ -793,7 +842,26 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
   // Managed prologues compare their new stack pointer against this limit and
   // throw instead of reaching the low guard page; the headroom above it runs
   // the throw path. Startup frames are not zeroed: clear the pending word.
-  address(9, 22, page + stackHeadroom);
+  if (request.workerSafepoints === true) {
+    workerBytes(
+      nativeWorkerStackBytesOffset,
+      request.stackBytes,
+      stackHeadroom * 2,
+      "stack-limit",
+    );
+    move(12, 9);
+    address(9, 22, page + request.stackBytes + stackHeadroom);
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: 9,
+      rn: 9,
+      rm: 12,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+  } else address(9, 22, page + stackHeadroom);
   store(9, 96 + nativeStackLimitOffset);
   imm(9, 0);
   store(9, 96 + nativeEngineThrowOffset);
@@ -841,6 +909,17 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
   // Publish the registry before any managed code runs. Mapped control
   // storage is zero: the walk start and unused entries need no stores.
   address(10, 20, stackMapRegistry);
+  if (request.workerSafepoints === true) {
+    imm(11, 1);
+    emit({ op: "and-reg", width: 64, rd: 12, rn: 27, rm: 11 });
+    imm(11, 0);
+    compare(12, 11);
+    branch("worker-stop-pointer-ready", "eq");
+    address(12, 27, nativeWorkerStopStateOffset - 1);
+    address(11, 20, stackMapRegistry + nativeWorkerStopPointerOffset);
+    emit({ op: "str", width: 64, rt: 12, rn: 11, offset: 0 });
+    label("worker-stop-pointer-ready");
+  }
   imm(11, staticStackMaps.length + (diagnostics === undefined ? 0 : 1));
   emit({ op: "str", width: 64, rt: 11, rn: 10, offset: 0 });
   imm(11, stackMapCapacity);
@@ -893,16 +972,47 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
   branch("runtime-failure", "ne");
   // Runtime factory: eight numeric windows, then seven borrowed typed arrays.
   emit({ op: "scvtf-d-x", rd: 0, rn: 21 });
-  number(1, request.managedBytes);
+  if (request.workerSafepoints === true) {
+    workerBytes(
+      nativeWorkerHeapBytesOffset,
+      request.managedBytes,
+      page * 4,
+      "heap-window",
+    );
+    emit({ op: "scvtf-d-x", rd: 1, rn: 9 });
+  } else number(1, request.managedBytes);
   emit({ op: "scvtf-d-x", rd: 2, rn: 20 });
   number(3, controlLength);
   local(26, -1, 0);
   emit({ op: "scvtf-d-x", rd: 4, rn: 26 });
   const imageLengthInstruction = instructions.length;
   number(5, 0);
-  address(9, 22, page);
-  emit({ op: "scvtf-d-x", rd: 6, rn: 9 });
-  number(7, request.stackBytes);
+  if (request.workerSafepoints === true) {
+    workerBytes(
+      nativeWorkerStackBytesOffset,
+      request.stackBytes,
+      stackHeadroom * 2,
+      "stack-window",
+    );
+    move(12, 9);
+    address(9, 22, page + request.stackBytes);
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: 9,
+      rn: 9,
+      rm: 12,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    emit({ op: "scvtf-d-x", rd: 6, rn: 9 });
+    emit({ op: "scvtf-d-x", rd: 7, rn: 12 });
+  } else {
+    address(9, 22, page);
+    emit({ op: "scvtf-d-x", rd: 6, rn: 9 });
+    number(7, request.stackBytes);
+  }
   for (let index = 0; index < 7; index++) {
     if (index < 4) address(index + 4, 20, 32 + index * 32);
     else {
@@ -990,9 +1100,20 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
   });
   store(9, 120);
   store(21, 104);
-  imm(9, request.managedBytes);
+  if (request.workerSafepoints === true)
+    workerBytes(
+      nativeWorkerHeapBytesOffset,
+      request.managedBytes,
+      page * 4,
+      "allocator-window",
+    );
+  else imm(9, request.managedBytes);
   store(9, 128);
   if (request.threaded === true) emit({ op: "scvtf-d-x", rd: 0, rn: 27 });
+  if (request.nodeWorkerLibrary === true) {
+    load(9, 144);
+    emit({ op: "scvtf-d-x", rd: 1, rn: 9 });
+  }
   if (diagnostics?.stackTraces === true) {
     // An uncaught throw reports its value and recorded trace, then exits as
     // any runtime failure does.
@@ -1062,6 +1183,93 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
     imm(1, length);
     foreign("munmap");
     label(skip);
+  }
+  if (request.threaded === true && request.threadExitPipe === true) {
+    imm(9, 1);
+    emit({
+      op: "and-reg",
+      width: 64,
+      rd: 9,
+      rn: 27,
+      rm: 9,
+    });
+    imm(10, 0);
+    compare(9, 10);
+    branch("thread-exit-done", "eq");
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: 27,
+      rn: 27,
+      immediate: 1,
+      shift: 0,
+      setFlags: false,
+    });
+    // The owner can release the record as soon as it sees the status.
+    // Copy both worker-owned descriptors before publication.
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 23,
+      rn: 27,
+      offset: nativeThreadExitWriteOffset,
+    });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 24,
+      rn: 27,
+      offset: nativeThreadExitReadOffset,
+    });
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 9,
+      rn: 25,
+      immediate: 1,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({ op: "stlr", width: 64, rt: 9, rn: 27 });
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: "sp",
+      rn: "sp",
+      immediate: 16,
+      shift: 0,
+      setFlags: false,
+    });
+    imm(9, 1);
+    store(9, 0);
+    label("thread-exit-write");
+    move(0, 23);
+    stackAddress(1, 0);
+    imm(2, 1);
+    foreign("write");
+    imm(9, 0);
+    compare(0, 9);
+    branch("thread-exit-close", "ge");
+    importCall(abi.errnoSymbol);
+    emit({ op: "ldr", width: 32, rt: 9, rn: 0, offset: 0 });
+    imm(10, 4); // EINTR. EAGAIN already has a readable notification.
+    compare(9, 10);
+    branch("thread-exit-write", "eq");
+    label("thread-exit-close");
+    move(0, 23);
+    foreign("close");
+    move(0, 24);
+    foreign("close");
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: "sp",
+      rn: 19,
+      immediate: 0,
+      shift: 0,
+      setFlags: false,
+    });
+    label("thread-exit-done");
   }
   move(0, 25);
   for (const first of [27, 25, 23, 21, 19, 29]) {

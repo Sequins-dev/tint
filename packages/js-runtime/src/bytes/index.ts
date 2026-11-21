@@ -6,7 +6,10 @@ export interface ByteStorage {
   readonly resizable: boolean;
   readonly immutable: boolean;
   readonly allocationLimit: number;
+  readonly allocator?: ByteAllocator | undefined;
 }
+/** Supplies a live, zero-initialized view of the requested length. */
+export type ByteAllocator = (length: number) => Uint8Array | undefined;
 export type StorageAccess = "read" | "write";
 export type StorageTransferMode =
   "preserve-resizability" | "fixed-length" | "immutable";
@@ -31,6 +34,7 @@ export function createByteStorage(
   maxByteLength: number,
   resizable: boolean,
   allocationLimit: number,
+  allocator?: ByteAllocator,
 ): StorageResult {
   return allocateStorage(
     length,
@@ -38,15 +42,15 @@ export function createByteStorage(
     resizable,
     allocationLimit,
     false,
+    allocator,
   );
 }
-function allocateStorage(
+function validAllocation(
   length: number,
   maxByteLength: number,
   resizable: boolean,
   allocationLimit: number,
-  immutable: boolean,
-): StorageResult {
+): StorageError | "none" {
   if (
     !validLength(length) ||
     !validLength(maxByteLength) ||
@@ -54,19 +58,80 @@ function allocateStorage(
     length > maxByteLength ||
     (!resizable && length !== maxByteLength)
   )
-    return { ok: false, error: "invalid-length" };
-  if (length > allocationLimit) return { ok: false, error: "allocation-limit" };
+    return "invalid-length";
+  return length > allocationLimit ? "allocation-limit" : "none";
+}
+function storageWithBytes(
+  data: Uint8Array,
+  maxByteLength: number,
+  resizable: boolean,
+  allocationLimit: number,
+  immutable: boolean,
+  allocator: ByteAllocator | undefined,
+): ByteStorage {
   return {
-    ok: true,
-    value: {
-      kind: "ordinary",
-      data: new Uint8Array(length),
-      maxByteLength,
-      resizable,
-      immutable,
-      allocationLimit,
-    },
+    kind: "ordinary",
+    data,
+    maxByteLength,
+    resizable,
+    immutable,
+    allocationLimit,
+    allocator,
   };
+}
+/** Wrap an already-owned mutable view without copying. */
+export function adoptByteStorage(
+  data: Uint8Array,
+  maxByteLength: number,
+  resizable: boolean,
+  allocationLimit: number,
+  allocator: ByteAllocator,
+): StorageResult {
+  const error = validAllocation(
+    data.length,
+    maxByteLength,
+    resizable,
+    allocationLimit,
+  );
+  if (error !== "none") return { ok: false, error };
+  const value = storageWithBytes(
+    data,
+    maxByteLength,
+    resizable,
+    allocationLimit,
+    false,
+    allocator,
+  );
+  return { ok: true, value };
+}
+function allocateStorage(
+  length: number,
+  maxByteLength: number,
+  resizable: boolean,
+  allocationLimit: number,
+  immutable: boolean,
+  allocator: ByteAllocator | undefined,
+): StorageResult {
+  const error = validAllocation(
+    length,
+    maxByteLength,
+    resizable,
+    allocationLimit,
+  );
+  if (error !== "none") return { ok: false, error };
+  const data =
+    allocator === undefined ? new Uint8Array(length) : allocator(length);
+  if (data === undefined) return { ok: false, error: "allocation-limit" };
+  if (data.length !== length) throw "BYTE_STORAGE_ALLOCATION_LENGTH";
+  const value = storageWithBytes(
+    data,
+    maxByteLength,
+    resizable,
+    allocationLimit,
+    immutable,
+    allocator,
+  );
+  return { ok: true, value };
 }
 /** Borrowed storage; reacquire after any operation that can resize or detach.
  * Read borrows must not be mutated. Write borrows also reject immutable storage.
@@ -171,7 +236,11 @@ export function resizeByteStorage(
     return "invalid-length";
   if (length > storage.allocationLimit) return "allocation-limit";
   if (length === current.length) return "none";
-  const replacement = new Uint8Array(length);
+  const allocate = storage.allocator;
+  const replacement =
+    allocate === undefined ? new Uint8Array(length) : allocate(length);
+  if (replacement === undefined) return "allocation-limit";
+  if (replacement.length !== length) throw "BYTE_STORAGE_ALLOCATION_LENGTH";
   copyPrefix(current, replacement);
   storage.data = replacement;
   return "none";
@@ -193,6 +262,7 @@ export function transferByteStorage(
     resizable,
     storage.allocationLimit,
     mode === "immutable",
+    storage.allocator,
   );
   if (!destination.ok) return destination;
   const bytes = destination.value.data;
@@ -227,6 +297,7 @@ export function copyImmutableByteStorage(
     false,
     source.allocationLimit,
     true,
+    source.allocator,
   );
   if (!destination.ok) return destination;
   const target = destination.value.data;

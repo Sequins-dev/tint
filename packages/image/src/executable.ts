@@ -90,5 +90,7 @@ export interface ExecutableImageRequest {
   /** Deferred placement. When present, code must be empty. */
   readonly codePlan?: CodePlan | undefined;
   readonly entryOffset: number;
+  /** A C ABI symbol exported from a loadable image. */
+  readonly sharedEntry?: ImageSymbol | undefined;
   readonly maxByteLength: number;
 }

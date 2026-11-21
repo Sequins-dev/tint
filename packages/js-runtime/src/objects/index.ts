@@ -505,6 +505,7 @@ export {
   installProgramConstructorGroup,
   installProgramArrayBufferIntrinsics,
   installProgramTypedArrayIntrinsics,
+  installProgramPromiseIntrinsics,
   installProgramArrayIntrinsics,
   type ProgramRealmCore,
 } from "./program-realm.ts";
@@ -520,4 +521,16 @@ export {
   type ObjectShapeContract,
   type PropertyValueRule,
 } from "./property-contracts.ts";
+export {
+  deserializeWorkerValue,
+  serializeWorkerValue,
+  throwWorkerCloneError,
+  type WorkerCloneAttachments,
+} from "./structured-clone.ts";
+export {
+  builtinAccessor,
+  builtinFunction,
+  builtinFunctionMetadata,
+  builtinProperty,
+} from "./intrinsics.ts";
 export { primitiveContractBit } from "@tint/foundation/values/primitive-contract";

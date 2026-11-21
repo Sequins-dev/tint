@@ -39,6 +39,7 @@ export function allocateTypedArray(
     length * width,
     false,
     realm.bufferMaxBytes,
+    realm.bufferAllocator,
   );
   if (!allocated.ok) throw createRuntimeError(realm, "range");
   const buffer = createObject<ScriptPropertyKey, unknown>(
