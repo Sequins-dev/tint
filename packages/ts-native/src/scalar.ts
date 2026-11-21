@@ -4999,6 +4999,7 @@ export function lowerFunction(
         const object = value(node.object),
           key = dynamicKey(node);
         const raw = dynamicResult(runtime.read, [object, key], node);
+        if (metadata.downcast !== undefined) return raw;
         const schema = metadata.dynamicContract;
         const type = metadata.type;
         if (schema === undefined || type === "void")
@@ -5131,9 +5132,20 @@ export function lowerFunction(
     }
   }
   function generalCall(
-    node: Expression & { readonly kind: "call" },
+    node: Expression & { readonly kind: "call" | "new" },
     call: { readonly target: number | undefined },
   ): number {
+    if (node.kind === "new") {
+      const callee = value(node.callee);
+      const rest = info(node).rest;
+      const constructor = call.target;
+      if (rest === undefined || constructor === undefined)
+        throw "general construction invariant";
+      const argumentsList = packCallArguments(node.arguments, rest, node);
+      const result = runtimeCall(constructor, [callee, argumentsList], node);
+      if (result === undefined) throw "general construction result invariant";
+      return result;
+    }
     const target = ungroup(node.callee);
     const base =
       target.kind === "member" || target.kind === "index"
@@ -5499,6 +5511,8 @@ export function lowerFunction(
         return list;
       }
       case "new": {
+        const general = metadata.generalCall;
+        if (general !== undefined) return generalCall(node, general);
         const construction = records?.constructors?.get(node);
         if (construction !== undefined) {
           if (

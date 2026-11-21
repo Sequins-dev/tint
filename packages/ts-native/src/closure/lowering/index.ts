@@ -178,6 +178,7 @@ interface NodeErrorTypes {
 export interface ModuleEntryOptions {
   readonly realmTypeof?: RealmTypeof | undefined;
   readonly realmCall?: number | undefined;
+  readonly realmConstruct?: number | undefined;
   readonly realmErrors?: RealmErrorSources | undefined;
   readonly nodeErrorTypes?: NodeErrorTypes | undefined;
   /** Caller-selected top-level managed functions supplied by the linker. Their
@@ -307,6 +308,7 @@ export function lowerModuleEntries(
     bigIntRepresentation: options?.bigIntRepresentation,
     realmTypeof: options?.realmTypeof,
     realmCall: options?.realmCall,
+    realmConstruct: options?.realmConstruct,
     realmErrors: options?.realmErrors,
     nodeErrorTypes: options?.nodeErrorTypes,
     recordBindings: options?.recordBindings,
@@ -342,6 +344,7 @@ function lowerEntries(
     bigIntRepresentation?: number | undefined;
     realmTypeof?: RealmTypeof | undefined;
     realmCall?: number | undefined;
+    realmConstruct?: number | undefined;
     realmErrors?: RealmErrorSources | undefined;
     nodeErrorTypes?: NodeErrorTypes | undefined;
     recordBindings?: readonly RecordBinding[] | undefined;
@@ -2746,6 +2749,21 @@ function lowerEntries(
             }
             case "new": {
               const intrinsic = checked.intrinsics.get(node);
+              if (intrinsic === "general-construct") {
+                const source = recordTarget?.realmConstruct;
+                if (source === undefined)
+                  fail("general construction requires the program realm");
+                generalCall = {
+                  target: generalRuntimeHelper(
+                    source,
+                    ["general", "reference"],
+                    "invalid realm construct helper signature",
+                  ),
+                };
+                expr(node.callee);
+                exprArguments(node.arguments);
+                break;
+              }
               if (
                 intrinsic === "type-error-new" ||
                 intrinsic === "range-error-new" ||

@@ -257,6 +257,7 @@ export interface CompileRequest extends ModuleRequest {
   readonly weakBindings?: readonly NativeWeakBinding[];
   /** Executable hosts select whether the runtime processes weak slots. */
   readonly nodeFfiWeakProcessing?: boolean;
+  readonly nodeFfiRealmModules?: ReadonlySet<string>;
   /** Require the hosted context's optional linear-allocation state at byte 56. */
   readonly linearAllocation?: boolean;
   readonly generationalBarriers?: boolean;
@@ -884,6 +885,71 @@ function withNodeRuntimes(
     weakBindings,
   };
 }
+function withTypedNodeFfiRealm(request: CompileRequest): CompileRequest {
+  if (!request.runtimes.some((runtime) => runtime?.namespace === "node-ffi"))
+    return request;
+  const values = "packages/js-runtime/src/objects/values.ts";
+  const objects = "packages/js-runtime/src/objects/index.ts";
+  const views = ["viewObjectValue", "viewSymbolValue", "viewBigIntValue"];
+  const runtimes: RuntimeSource[] = request.runtimes.map((runtime) => {
+    if (runtime?.module !== values) return runtime;
+    return {
+      module: values,
+      namespace: "general-object-views",
+      retainedExports: [
+        "viewWeakRegistryOwner",
+        "viewTypeofObject",
+        "generalValueTypeof",
+        "callGeneralValue",
+        "constructGeneralValue",
+      ],
+    };
+  });
+  if (!runtimes.some((runtime) => runtime?.module === objects))
+    runtimes.push({
+      module: objects,
+      namespace: "node-object-views",
+      retainedExports: views,
+    });
+  const recordBindings = request.recordBindings?.slice() ?? [];
+  for (const name of views) {
+    if (name === undefined) throw "node runtime view invariant";
+    if (
+      !recordBindings.some(
+        (binding) => binding?.module === objects && binding.name === name,
+      )
+    )
+      recordBindings.push({ module: objects, name, operation: "view" });
+  }
+  recordBindings.push({
+    module: values,
+    name: "viewTypeofObject",
+    operation: "view",
+  });
+  const dependencies = new Map<string, ReadonlyMap<string, string>>();
+  for (const source of request.modules) {
+    if (source === undefined) throw "node FFI source invariant";
+    dependencies.set(source.id, source.dependencies);
+  }
+  const resolve =
+    request.moduleLoader?.sourceDependencies ??
+    ((id: string): ReadonlyMap<string, string> | undefined =>
+      dependencies.get(id));
+  const application = new Set<string>();
+  for (const id of sourceDependencyClosure([request.entry], resolve))
+    if (id !== undefined) application.add(id);
+  const runtimeModules = sourceDependencyClosure(
+    runtimes.map((source) => source.module),
+    resolve,
+  );
+  for (const id of runtimeModules) if (id !== undefined) application.delete(id);
+  return {
+    ...request,
+    runtimes,
+    recordBindings,
+    nodeFfiRealmModules: application,
+  };
+}
 export type NativeBackendSelection =
   | { readonly ok: true; readonly target: AArch64Target }
   | { readonly ok: false; readonly error: CompilationError };
@@ -912,10 +978,14 @@ export function compileNativeProgram(
   return compileArm64Program({ ...request, hostABI: backend.target.hostABI });
 }
 
-function compileTypedWithProgramRealm(
+function compileWithProgramRealm<T>(
   request: CompileRequest,
-  realmTypeofModules?: ReadonlySet<string>,
-): Compilation {
+  realmTypeofModules: ReadonlySet<string> | undefined,
+  compile: (
+    request: CompileRequest,
+    realmTypeofModules: ReadonlySet<string> | undefined,
+  ) => { readonly ok: true; readonly value: T } | CompilationFailure,
+): { readonly ok: true; readonly value: T } | CompilationFailure {
   const explicit = request.runtimes.find(
     (source) => source?.namespace === "dynamic-object",
   );
@@ -926,7 +996,7 @@ function compileTypedWithProgramRealm(
           ...request,
           runtimes: request.runtimes.filter((source) => source !== explicit),
         };
-  const initial = compileTypedProgram(without, realmTypeofModules);
+  const initial = compile(without, realmTypeofModules);
   if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
   const projections = initial.error.nativeProjections ?? [];
   const callableViews = projections.includes("projectUnaryNumber");
@@ -969,7 +1039,7 @@ function compileTypedWithProgramRealm(
   const bindings = (request.recordBindings ?? []).slice();
   const retained = names.slice();
   let realmModules = realmTypeofModules;
-  if (callableViews) {
+  if (callableViews && request.nodeFfiRealmModules === undefined) {
     names.push("viewTypeofObject");
     retained.push("viewTypeofObject", "generalValueTypeof", "callGeneralValue");
     if (realmModules === undefined) {
@@ -1067,9 +1137,19 @@ function compileTypedWithProgramRealm(
     )
       bindings.push({ module: objects, name, operation: "view" });
   }
-  return compileTypedProgram(
+  return compile(
     { ...expandedRequest, runtimes, recordBindings: bindings, weakBindings },
     realmModules,
+  );
+}
+function compileTypedWithProgramRealm(
+  request: CompileRequest,
+  realmTypeofModules?: ReadonlySet<string>,
+): Compilation {
+  return compileWithProgramRealm<CompiledProgram>(
+    request,
+    realmTypeofModules,
+    compileTypedProgram,
   );
 }
 export function compileArm64Program(original: CompileRequest): Compilation {
@@ -1099,7 +1179,11 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       };
   }
   const request = withForeignRuntimes(original);
-  const typed = compileTypedWithProgramRealm(request);
+  const typedRequest = withTypedNodeFfiRealm(request);
+  const typed = compileTypedWithProgramRealm(
+    typedRequest,
+    typedRequest.nodeFfiRealmModules,
+  );
   const lowering = request.generalLowering;
   if (
     typed.ok ||
@@ -1798,7 +1882,32 @@ function checkApplication(
     linkedProgram.ranges,
   );
   if (!specialized.ok) return { ok: false, error: specialized.error };
+  const realmImports = new Map<string, "callable" | "value">();
+  for (const exported of request.nodeFfiRealmModules === undefined
+    ? []
+    : linkedProgram.exports) {
+    if (exported === undefined || exported.namespace !== "value") continue;
+    if (exported.module === foreignRuntimeModules.nodeFfi) {
+      if (exported.name !== "suffix")
+        realmImports.set(
+          exported.linkedName,
+          exported.name === "default" ||
+            exported.name === "types" ||
+            exported.name === "DynamicLibrary"
+            ? "value"
+            : "callable",
+        );
+    } else if (exported.module === foreignRuntimeModules.nodeBuffer) {
+      if (exported.name === "Buffer" || exported.name === "constants")
+        realmImports.set(
+          exported.linkedName,
+          exported.name === "Buffer" ? "callable" : "value",
+        );
+    }
+  }
   const checked = checkClosureModule(specialized.value, {
+    realmImports:
+      request.nodeFfiRealmModules === undefined ? undefined : realmImports,
     cViews: foreignViewRegistry(
       request.foreignLibraries ?? [],
       linkedProgram.exports,
@@ -1857,6 +1966,10 @@ function checkApplication(
     if (!nativeProjections.includes("projectUnaryNumber"))
       nativeProjections.push("projectUnaryNumber");
   });
+  checked.value.nativeCallbackViews?.forEach((_value, _site) => {
+    if (!nativeProjections.includes("projectNativeCallback"))
+      nativeProjections.push("projectNativeCallback");
+  });
   checked.value.nativeListViews?.forEach((_value, _site) => {
     if (!nativeProjections.includes("projectNumberList"))
       nativeProjections.push("projectNumberList");
@@ -1911,7 +2024,8 @@ function checkApplication(
   let callsGeneral = false;
   if (callHelper !== undefined)
     checked.value.intrinsics.forEach((intrinsic, _expression) => {
-      if (intrinsic === "general-call") callsGeneral = true;
+      if (intrinsic === "general-call" || intrinsic === "general-construct")
+        callsGeneral = true;
     });
   // Carry only linked names across collection preparation. The final checker
   // assigns fresh type IDs, and the observation releases the first graph.
@@ -1969,12 +2083,16 @@ function checkTypedProgram(
     retainedRuntimeModules = linkedProgram.retainedRuntimeModules,
     surfacePlans = linkedProgram.surfacePlans;
   const callHelper = helpers.get("general-object-views:callGeneralValue");
+  const constructHelper = helpers.get(
+    "general-object-views:constructGeneralValue",
+  );
   const classifierHelper = helpers.get(
     "general-object-views:generalValueTypeof",
   );
   const retainClassifier =
     classifierHelper !== undefined &&
-    helpers.has("dynamic-object:projectUnaryNumber");
+    (helpers.has("dynamic-object:projectUnaryNumber") ||
+      request.nodeFfiRealmModules !== undefined);
   const checked = checkApplication(linkedProgram, request, callHelper, mixed);
   if (!checked.ok) return { ok: false, error: checked.error };
   const callsGeneral = checked.value.callsGeneral,
@@ -2016,7 +2134,9 @@ function checkTypedProgram(
     }
     const retained: string[] = callsGeneral
         ? retainedRuntimeExports.slice()
-        : retainedRuntimeExports.filter((name) => name !== callHelper),
+        : retainedRuntimeExports.filter(
+            (name) => name !== callHelper && name !== constructHelper,
+          ),
       generatedNames = new Set<string>();
     for (const name of generatedRetain) {
       if (name === undefined) throw "surface retain invariant";
@@ -2106,6 +2226,8 @@ function checkTypedProgram(
       }
       const pending: string[] = [];
       if (callsGeneral && callHelper !== undefined) pending.push(callHelper);
+      if (callsGeneral && constructHelper !== undefined)
+        pending.push(constructHelper);
       if (retainClassifier && classifierHelper !== undefined)
         pending.push(classifierHelper);
       const seen = new Set(pending);
@@ -2507,6 +2629,10 @@ function lowerTypedProgram(
     "general-object-views",
   );
   const callSource = realmHelper("callGeneralValue", "general-object-views");
+  const constructSource = realmHelper(
+    "constructGeneralValue",
+    "general-object-views",
+  );
   const errorView = realmHelper("nativeErrorReceiver", "general-record-views");
   const errorOperation = realmHelper(
     "realmErrorOperation",
@@ -2548,6 +2674,7 @@ function lowerTypedProgram(
               applies: realmTypeofSourcePredicate(ranges, realmTypeofModules),
             },
       realmCall: callSource,
+      realmConstruct: constructSource,
       realmErrors:
         realmTypeofModules === undefined ||
         errorView === undefined ||
@@ -3319,7 +3446,7 @@ export function compileX64HostedProgram(
   const selected =
     options.runtime === true ? request : selectX64ForeignRuntime(request);
   if (typeof selected === "string") return stageFailure("foreign", selected);
-  const lowered = lowerTypedProgram(
+  const prepared = withTypedNodeFfiRealm(
     withForeignRuntimes(
       {
         ...request,
@@ -3329,9 +3456,16 @@ export function compileX64HostedProgram(
       },
       true,
     ),
-    undefined,
-    options.runtime !== true && options.threaded !== true,
   );
+  const invoke = options.runtime !== true && options.threaded !== true;
+  const lowered =
+    prepared.nodeFfiRealmModules === undefined
+      ? lowerTypedProgram(prepared, undefined, invoke)
+      : compileWithProgramRealm<TypedProgram>(
+          prepared,
+          prepared.nodeFfiRealmModules,
+          (input, modules) => lowerTypedProgram(input, modules, invoke),
+        );
   if (!lowered.ok) return lowered;
   const program = lowered.value;
   const lists = program.referenceLists;

@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { rmSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import test from "node:test";
+import ts from "typescript";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 import { withDynamicLibrary } from "./native-dynamic-fixtures.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
@@ -97,6 +98,100 @@ function runOracle(text: string): void {
   );
   assert.equal(result.status, 42, result.error?.message ?? result.stderr);
 }
+
+const typedBridgeSource = `
+import ffi, { DynamicLibrary, dlopen } from "node:ffi";
+import { Buffer } from "node:buffer";
+
+export function run(): number {
+  const program = new DynamicLibrary(null);
+  try {
+    if (!(program instanceof DynamicLibrary) || ffi.dlopen !== dlopen) return 6;
+    const getpid = program.getFunction("getpid", { return: "int32", arguments: [] });
+    const pid: number = getpid();
+    if (pid <= 0) return 1;
+  } finally {
+    program.close();
+  }
+
+  const { lib, functions } = dlopen(null, {
+    qsort: { arguments: ["buffer", "uint64", "uint64", "function"] },
+  });
+  const bytes: Uint8Array = new Uint8Array(3);
+  const slice = bytes.subarray(1);
+  const address: bigint = ffi.getRawPointer(slice);
+  ffi.setUint8(address, 0, 9);
+  slice[1] = 3;
+  const callback: bigint = lib.registerCallback(
+    { return: "int32", arguments: ["pointer", "pointer"] },
+    (left: bigint, right: bigint): number => {
+      const a: number = ffi.getUint8(left);
+      const b: number = ffi.getUint8(right);
+      return a - b;
+    },
+  );
+  try {
+    const name: string = "qsort";
+    const sort = functions[name];
+    sort.pointer = 0n;
+    sort(slice, 2n, 1n, callback);
+    if (bytes[1] !== 3 || bytes[2] !== 9) return 2;
+    const current: bigint = ffi.getRawPointer(slice);
+    if (current !== address) return 3;
+    const buffer = Buffer.alloc(2, 42);
+    const pointer: bigint = ffi.getRawPointer(buffer.subarray(1));
+    ffi.setUint8(pointer, 0, 44);
+    const edited: number = buffer[1];
+    if (edited !== 44) return 4;
+    const owner = new ArrayBuffer(3);
+    const data = new DataView(owner, 1, 1);
+    const viewPointer: bigint = ffi.getRawPointer(data);
+    ffi.setUint8(viewPointer, 0, 45);
+    const view = new Uint8Array(owner);
+    if (view[1] !== 45) return 5;
+    return 42;
+  } finally {
+    lib.unregisterCallback(callback);
+    lib.close();
+  }
+}
+`;
+
+test(
+  "the typed Node FFI bridge fixture agrees with the pinned reference",
+  { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
+  () =>
+    runOracle(
+      ts.transpileModule(typedBridgeSource, {
+        compilerOptions: {
+          module: ts.ModuleKind.ESNext,
+          target: ts.ScriptTarget.ESNext,
+        },
+      }).outputText,
+    ),
+);
+
+test("the typed Node FFI bridge preserves array aliases and callback contracts", () => {
+  verifyHostedFixture(
+    typedBridgeSource,
+    "node-ffi-typed-bridge",
+    [
+      ["node:ffi", "packages/native-runtime/src/node/ffi.ts"],
+      ["node:buffer", "packages/native-runtime/src/node/buffer.ts"],
+    ],
+    [],
+    [],
+    [],
+    {
+      requireTyped: true,
+      runtimeEntry: "initializeGenerationalRuntime",
+      allowJit: true,
+      stackBytes: 4194304,
+      managedBytes: 67108864,
+      allocationCapacity: 1048576,
+    },
+  );
+});
 
 test(
   "the Node FFI scalar fixture agrees with the pinned reference",

@@ -8,9 +8,8 @@
  * argument state. Callers set each argument in a typed form (numbers,
  * booleans, exact 64-bit words, borrowed byte arrays, record images), call
  * `invoke`, then read the result in a typed form. This is the interface a
- * `node:ffi` layer adapts (its BigInt and union conversions wait for the
- * typed/untyped convergence): it never needs to know registers or stack
- * slots.
+ * `node:ffi` adapts, converting its public values without knowing native
+ * registers or stack slots.
  *
  * Borrowed byte arrays never have their (movable) addresses computed here:
  * the frame names them through patches, which the trampoline resolves

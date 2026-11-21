@@ -505,10 +505,17 @@ runtime-classified call plan. Libraries with registered callbacks enter through
 the rooted native transition. Callback registration classifies the declared
 signature and allocates an executable entry with the same library lifetime.
 
-The public FFI exports are realm values. The typed-only checker currently
-rejects a direct call such as `dlopen(null, definitions)` with
-`callee must have a function type`. The native typed fixtures use the shared
-realm's callable and property operations.
+Typed programs call the same public realm functions, constructors and
+property operations as general code. The compiler links the realm helpers
+when an application uses the reviewed FFI exports. It projects primitive
+typed callbacks through checked parameter conversions and caches their
+realm callable views.
+
+Local typed arrays that cross into the realm select the backing storage for
+the allocation and its aliases together. The existing flow analysis requires
+a known allocation site and checks every use before changing representation.
+Escaping arrays supplied through the raw native typed-array ABI still need a
+lifetime-aware projection. Unsupported crossings fail during checking.
 
 The pinned Node suite uses a test-only CommonJS adapter. Its diagnostics
 identify Node's CLI, permission, VFS and libuv requirements and V8's private

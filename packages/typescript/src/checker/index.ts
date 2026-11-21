@@ -1573,6 +1573,7 @@ export type {
   ClosureIntrinsic,
   CheckedClosures,
   NativeRecordViewField,
+  NativeCallbackView,
   CheckedTypeSystem,
   ClosureDiagnostic,
   ClosureFallback,

@@ -16,7 +16,7 @@ import {
   type ObjectHooks,
   type OrdinaryObject,
 } from "./operations.ts";
-import { callObject } from "./call.ts";
+import { callObject, constructObject } from "./call.ts";
 import { toObjectValue } from "./boxing.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import {
@@ -222,6 +222,24 @@ export function callGeneralValue(
   const result = callObjectValue(value, receiver, arguments_, object);
   if (result.error !== "none")
     throw new TypeError("Called value is not a function");
+  return result.value;
+}
+
+export function constructGeneralValue(
+  value: unknown,
+  arguments_: readonly unknown[],
+): unknown {
+  const object = viewTypeofObject(value);
+  if (object === undefined)
+    throw new TypeError("Called value is not a constructor");
+  const result = constructObject<ScriptPropertyKey, unknown>(
+    object,
+    arguments_,
+    { value, object },
+    undefined,
+  );
+  if (result.error !== "none")
+    throw new TypeError("Called value is not a constructor");
   return result.value;
 }
 

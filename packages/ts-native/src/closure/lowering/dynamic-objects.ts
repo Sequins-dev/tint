@@ -15,6 +15,7 @@ import { nativeCallableProjectionAlias } from "@tint/typescript/checker";
 import type {
   CheckedClosures,
   NativeRecordViewField,
+  NativeCallbackView,
   NativeTypedArray,
 } from "@tint/typescript/checker";
 import { projectRecordExpression } from "./record-view.ts";
@@ -449,6 +450,109 @@ export function encodeDynamicContract(
  * visible to ordinary closure planning before the scalar operations call them. */
 export const dynamicRuntimeAliasPrefix: string = "$tint$dynamic$";
 
+function projectCallbackExpression(
+  node: Expression,
+  view: NativeCallbackView,
+  name: string,
+): Expression {
+  const span = { start: node.start, end: node.end };
+  function identifier(name: string): Expression {
+    return { ...span, kind: "identifier", name };
+  }
+  function named(name: string): TypeNode {
+    return { ...span, kind: "named", name };
+  }
+  function parameter(name: string, type: TypeNode): Parameter {
+    return { ...span, name, type, initializer: undefined };
+  }
+  function number(value: number): Expression {
+    return { ...span, kind: "number", value, raw: String(value) };
+  }
+  function call(callee: Expression, args: readonly Expression[]): Expression {
+    return {
+      ...span,
+      kind: "call",
+      callee,
+      arguments: args,
+      typeArguments: [],
+    };
+  }
+  const parameters: Parameter[] = [];
+  const arguments_: Expression[] = [];
+  for (let index = 0; index < view.parameters.length; index++) {
+    const kind = view.parameters[index];
+    if (kind === undefined) throw "callback view signature invariant";
+    const type = named(kind);
+    parameters.push(parameter("$parameter" + String(index), type));
+    const value: Expression = {
+      ...span,
+      kind: "index",
+      object: identifier("$args"),
+      index: number(index),
+    };
+    arguments_.push(
+      kind === "unknown"
+        ? value
+        : {
+            ...span,
+            kind: "satisfies",
+            assertion: "as",
+            expression: value,
+            type,
+          },
+    );
+  }
+  const target = identifier("$callback");
+  const signature: TypeNode = {
+    ...span,
+    kind: "function",
+    parameters,
+    returnType: named(view.result),
+  };
+  const invoke = call(target, arguments_);
+  const dispatch: Expression = {
+    ...span,
+    kind: "arrow",
+    parameters: [
+      parameter("$receiver", named("unknown")),
+      parameter("$args", {
+        ...span,
+        kind: "array",
+        element: named("unknown"),
+        readonly: true,
+      }),
+    ],
+    returnType: named("unknown"),
+    body:
+      view.result === "void"
+        ? {
+            ...span,
+            kind: "block",
+            statements: [
+              { ...span, kind: "expression", expression: invoke },
+              { ...span, kind: "return", expression: identifier("undefined") },
+            ],
+          }
+        : invoke,
+  };
+  const project: Expression = {
+    ...span,
+    kind: "arrow",
+    parameters: [parameter("$callback", signature)],
+    returnType: named("unknown"),
+    body: call(
+      identifier(dynamicRuntimeAliasPrefix + "projectNativeCallback"),
+      [
+        target,
+        dispatch,
+        { ...span, kind: "string", value: name },
+        number(view.minimumArguments),
+      ],
+    ),
+  };
+  return call(project, [node]);
+}
+
 export function insertDynamicObjectRuntime(
   module: Module,
   checked: CheckedClosures,
@@ -463,11 +567,13 @@ export function insertDynamicObjectRuntime(
   const compoundUses: Span[] = [],
     updates: Span[] = [];
   const callableViews: Span[] = [];
+  const callbackViews: Span[] = [];
   const listViews: Span[] = [];
   const recordViews: Span[] = [];
   // These expressions were checked in the specialized copy. The rewrite
   // consumes the linked source, before additional runtime specialization.
   const callableSites = new Set<string>();
+  const callbackSites = new Map<string, NativeCallbackView>();
   const listSites = new Set<string>();
   const recordSites = new Map<string, readonly NativeRecordViewField[]>();
   function sourceSite(node: Expression): string {
@@ -476,6 +582,11 @@ export function insertDynamicObjectRuntime(
   checked.nativeCallableViews?.forEach((_value, site) => {
     callableViews.push(site);
     callableSites.add(sourceSite(site));
+    uses.push(site);
+  });
+  checked.nativeCallbackViews?.forEach((view, site) => {
+    callbackViews.push(site);
+    callbackSites.set(sourceSite(site), view);
     uses.push(site);
   });
   checked.nativeListViews?.forEach((_value, site) => {
@@ -615,6 +726,7 @@ export function insertDynamicObjectRuntime(
     }
     if (contains(updates)) alias("update");
     if (contains(callableViews)) alias("projectUnaryNumber");
+    if (contains(callbackViews)) alias("projectNativeCallback");
     if (contains(listViews)) alias("projectNumberList");
     if (contains(recordViews)) alias("projectNativeRecord");
     if (realmInstanceof)
@@ -692,6 +804,26 @@ export function insertDynamicObjectRuntime(
     } else statements.push(body);
     return { kind: "block", statements, start: body.start, end: body.end };
   }
+  function withExpressionRuntime(
+    node: Expression,
+    original: Expression,
+  ): Expression {
+    if (
+      (node.kind !== "arrow" && node.kind !== "function-expression") ||
+      !usesRuntime(original)
+    )
+      return node;
+    const body = node.body;
+    if (body.kind === "block")
+      return { ...node, body: bodyWithRuntime(body, node.parameters) };
+    const returned: Statement = {
+      kind: "return",
+      expression: body,
+      start: body.start,
+      end: body.end,
+    };
+    return { ...node, body: bodyWithRuntime(returned, node.parameters) };
+  }
   const rewritten = rewriteModule(module, {
     statement: (node, original) =>
       node.kind === "function" && usesRuntime(original)
@@ -699,7 +831,11 @@ export function insertDynamicObjectRuntime(
         : node,
     expression: (node, original) => {
       const site =
-        callableSites.size + listSites.size + recordSites.size === 0
+        callableSites.size +
+          callbackSites.size +
+          listSites.size +
+          recordSites.size ===
+        0
           ? ""
           : sourceSite(original);
       const record = recordSites.get(site);
@@ -709,12 +845,29 @@ export function insertDynamicObjectRuntime(
           record,
           dynamicRuntimeAliasPrefix + "projectNativeRecord",
         );
+      const callback = callbackSites.get(site);
+      if (callback !== undefined) {
+        let source = original;
+        while (source.kind === "group" || source.kind === "satisfies")
+          source = source.expression;
+        const name =
+          source.kind === "identifier"
+            ? (sourceNames?.get(source.name) ?? "")
+            : source.kind === "function-expression"
+              ? (source.name ?? "")
+              : "";
+        return projectCallbackExpression(
+          withExpressionRuntime(node, original),
+          callback,
+          name,
+        );
+      }
       const callable = callableSites.has(site);
       if (callable || listSites.has(site)) {
         const start = node.start,
           end = node.end;
         const helper = callable ? "projectUnaryNumber" : "projectNumberList";
-        const args: Expression[] = [node];
+        const args: Expression[] = [withExpressionRuntime(node, original)];
         if (callable) {
           let source = original;
           while (source.kind === "group" || source.kind === "satisfies")
@@ -743,21 +896,7 @@ export function insertDynamicObjectRuntime(
           end,
         };
       }
-      if (
-        (node.kind !== "arrow" && node.kind !== "function-expression") ||
-        !usesRuntime(original)
-      )
-        return node;
-      const body = node.body;
-      if (body.kind === "block")
-        return { ...node, body: bodyWithRuntime(body, node.parameters) };
-      const returned: Statement = {
-        kind: "return",
-        expression: body,
-        start: body.start,
-        end: body.end,
-      };
-      return { ...node, body: bodyWithRuntime(returned, node.parameters) };
+      return withExpressionRuntime(node, original);
     },
   });
   const first = module.statements.findIndex(
