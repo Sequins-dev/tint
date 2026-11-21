@@ -33,6 +33,7 @@ import {
   pbkdf2 as nativePbkdf2,
   type Hash,
 } from "./crypto.ts";
+export { closeDigestContexts } from "./crypto.ts";
 
 type RealmObject = OrdinaryObject<ScriptPropertyKey, unknown>;
 

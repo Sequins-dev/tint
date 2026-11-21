@@ -160,6 +160,7 @@ export async function run() {
     () => hash.copy(),
     () => hash.pipe({}),
     () => createHash("shake256", {outputLength:16}),
+    () => createHash("2.16.840.1.101.3.4.2.12"),
     () => crypto.KeyObject,
     () => crypto.pbkdf2Sync(),
     () => esm.pbkdf2Sync(),

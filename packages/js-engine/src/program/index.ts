@@ -1325,16 +1325,16 @@ import {nativeSharedMemoryHost,nativeWaiterParkingHost,type NativeSharedMemoryHo
     ? `} catch(error){report(error);return 1;} finally{${
         crypto === undefined
           ? closeWorkers + "events.close();"
-          : "try{cryptoJobs?.close();}finally{try{" +
+          : "try{cryptoJobs?.close();}finally{try{closeDigestContexts();}finally{try{" +
             closeWorkers +
-            "}finally{events.close();}}"
+            "}finally{events.close();}}}"
       }}`
     : "";
   const supportsAsyncEntry = workers !== undefined || crypto !== undefined;
   const nodeCryptoImport =
     crypto === undefined
       ? ""
-      : `import {createNodeCryptoModules} from "node-crypto";
+      : `import {createNodeCryptoModules,closeDigestContexts} from "node-crypto";
 import {createCryptoJobHost,runCryptoBlockingHelper,type CryptoJobs} from "node-crypto-jobs";`;
   const nodeCryptoSetup =
     crypto === undefined

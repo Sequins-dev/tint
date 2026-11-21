@@ -6,6 +6,8 @@ declare module "tint:c/openssl3" {
   export function EVP_md_null(): Address<void>;
   export function EVP_MD_CTX_new(): Address<void>;
   export function EVP_MD_CTX_free(context: Address<void>): void;
+  export function EVP_MD_CTX_reset(context: Address<void>): i32;
+  export function EVP_MD_get_flags(digest: Address<void>): usize;
   export function EVP_DigestInit_ex2(
     context: Address<void>,
     digest: Address<void>,
@@ -23,6 +25,7 @@ declare module "tint:c/openssl3" {
   ): i32;
   export function HMAC_CTX_new(): Address<void>;
   export function HMAC_CTX_free(context: Address<void>): void;
+  export function HMAC_CTX_reset(context: Address<void>): i32;
   export function HMAC_Init_ex(
     context: Address<void>,
     key: Ptr<void>,
