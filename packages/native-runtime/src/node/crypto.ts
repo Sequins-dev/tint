@@ -8,6 +8,7 @@ import {
   EVP_MD_CTX_free,
   EVP_MD_CTX_reset,
   EVP_MD_get_flags,
+  EVP_MD_FLAG_XOF,
   EVP_DigestInit_ex2,
   EVP_DigestUpdate,
   EVP_DigestFinal_ex,
@@ -44,7 +45,6 @@ interface DigestLifetime {
 let lifetimes: DigestLifetime[] = [];
 let sweepAt = 256;
 let digests = new Map<string, number>();
-const evpMdFlagXof = 2;
 const encodedDigest = new Uint8Array(64);
 const finalizedSize = new Uint8Array(4);
 let spareHash = 0;
@@ -213,7 +213,10 @@ function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
       );
     throw new Error("Digest method not supported");
   }
-  if (cached === undefined && (EVP_MD_get_flags(digest) & evpMdFlagXof) !== 0) {
+  if (
+    cached === undefined &&
+    (EVP_MD_get_flags(digest) & EVP_MD_FLAG_XOF) !== 0
+  ) {
     disposeAddress(ffi.digestFree, digest);
     throw codedError(
       "node:crypto XOF hashing is outside Tint's crypto proof of concept",

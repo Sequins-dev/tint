@@ -1,0 +1,363 @@
+{
+  "spec": "openssl3",
+  "target": "linux-arm64",
+  "clang": "Debian clang version 19.1.7",
+  "aliases": [],
+  "types": [],
+  "records": [],
+  "functions": [
+    {
+      "name": "ERR_clear_error",
+      "parameters": [],
+      "result": { "kind": "void" },
+      "variadic": false
+    },
+    {
+      "name": "EVP_get_digestbyname",
+      "parameters": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": true
+          }
+        }
+      ],
+      "result": {
+        "kind": "pointer",
+        "pointee": { "kind": "record", "name": "evp_md_st" },
+        "constPointee": true
+      },
+      "variadic": false
+    },
+    {
+      "name": "EVP_md_null",
+      "parameters": [],
+      "result": {
+        "kind": "pointer",
+        "pointee": { "kind": "record", "name": "evp_md_st" },
+        "constPointee": true
+      },
+      "variadic": false
+    },
+    {
+      "name": "EVP_MD_CTX_new",
+      "parameters": [],
+      "result": {
+        "kind": "pointer",
+        "pointee": { "kind": "record", "name": "evp_md_ctx_st" },
+        "constPointee": false
+      },
+      "variadic": false
+    },
+    {
+      "name": "EVP_MD_CTX_free",
+      "parameters": [
+        {
+          "name": "ctx",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "evp_md_ctx_st" },
+            "constPointee": false
+          }
+        }
+      ],
+      "result": { "kind": "void" },
+      "variadic": false
+    },
+    {
+      "name": "EVP_MD_CTX_reset",
+      "parameters": [
+        {
+          "name": "ctx",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "evp_md_ctx_st" },
+            "constPointee": false
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "EVP_MD_get_flags",
+      "parameters": [
+        {
+          "name": "md",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "evp_md_st" },
+            "constPointee": true
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "u64", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "EVP_DigestInit_ex2",
+      "parameters": [
+        {
+          "name": "ctx",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "evp_md_ctx_st" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "type",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "evp_md_st" },
+            "constPointee": true
+          }
+        },
+        {
+          "name": "params",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "ossl_param_st" },
+            "constPointee": true
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "EVP_DigestUpdate",
+      "parameters": [
+        {
+          "name": "ctx",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "evp_md_ctx_st" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "d",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": true
+          }
+        },
+        {
+          "name": "cnt",
+          "type": { "kind": "scalar", "scalar": "usize", "aliases": ["size_t"] }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "EVP_DigestFinal_ex",
+      "parameters": [
+        {
+          "name": "ctx",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "evp_md_ctx_st" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "md",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "u8", "aliases": [] },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "s",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "u32", "aliases": [] },
+            "constPointee": false
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "HMAC_CTX_new",
+      "parameters": [],
+      "result": {
+        "kind": "pointer",
+        "pointee": { "kind": "record", "name": "hmac_ctx_st" },
+        "constPointee": false
+      },
+      "variadic": false
+    },
+    {
+      "name": "HMAC_CTX_free",
+      "parameters": [
+        {
+          "name": "ctx",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "hmac_ctx_st" },
+            "constPointee": false
+          }
+        }
+      ],
+      "result": { "kind": "void" },
+      "variadic": false
+    },
+    {
+      "name": "HMAC_CTX_reset",
+      "parameters": [
+        {
+          "name": "ctx",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "hmac_ctx_st" },
+            "constPointee": false
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "HMAC_Init_ex",
+      "parameters": [
+        {
+          "name": "ctx",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "hmac_ctx_st" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "key",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": true
+          }
+        },
+        {
+          "name": "len",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        },
+        {
+          "name": "md",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "evp_md_st" },
+            "constPointee": true
+          }
+        },
+        {
+          "name": "impl",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "engine_st" },
+            "constPointee": false
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "HMAC_Update",
+      "parameters": [
+        {
+          "name": "ctx",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "hmac_ctx_st" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "data",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "u8", "aliases": [] },
+            "constPointee": true
+          }
+        },
+        {
+          "name": "len",
+          "type": { "kind": "scalar", "scalar": "usize", "aliases": ["size_t"] }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "HMAC_Final",
+      "parameters": [
+        {
+          "name": "ctx",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "hmac_ctx_st" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "md",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "u8", "aliases": [] },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "len",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "u32", "aliases": [] },
+            "constPointee": false
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "RAND_bytes_ex",
+      "parameters": [
+        {
+          "name": "ctx",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "ossl_lib_ctx_st" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "buf",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "u8", "aliases": [] },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "num",
+          "type": { "kind": "scalar", "scalar": "usize", "aliases": ["size_t"] }
+        },
+        {
+          "name": "strength",
+          "type": { "kind": "scalar", "scalar": "u32", "aliases": [] }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    }
+  ],
+  "constants": [{ "name": "EVP_MD_FLAG_XOF", "value": "2" }],
+  "skipped": []
+}

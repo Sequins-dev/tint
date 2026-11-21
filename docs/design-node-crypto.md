@@ -62,6 +62,11 @@ depending on the distro release). On macOS, use the runner's Homebrew
 `openssl@3` and install it when absent. Distribution and security updates
 follow the system package. [OpenSSL provider documentation](https://docs.openssl.org/3.5/man7/provider/)
 
+The C binding generator selects the leaf ABI from installed OpenSSL 3
+headers. Its checked-in facts cover Darwin arm64 and Linux LP64. Use
+`TINT_OPENSSL_INCLUDE` to refresh the facts with headers in a custom
+location. Application compilation consumes the generated declarations.
+
 ## Execution and errors
 
 The Node host registers `node:crypto` and `node:buffer` in the realm's
