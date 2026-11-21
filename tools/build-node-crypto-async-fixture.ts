@@ -134,6 +134,7 @@ export async function run() {
     () => createHash("shake256", {outputLength:16}),
     () => crypto.KeyObject,
     () => crypto.pbkdf2Sync(),
+    () => esm.pbkdf2Sync(),
     () => crypto.randomFillSync(bytes),
     () => crypto.randomBytes(1, () => {}),
   ]) {

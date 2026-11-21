@@ -19,6 +19,7 @@ export function createSyntheticModule(
   exportNames: readonly string[],
   evaluate: (module: ModuleRecord) => void,
   hostDefined: unknown,
+  reportMissingNamespaceExport?: (name: string) => void,
 ): ModuleRecord {
   const names: string[] = [],
     seen = new Set<string>();
@@ -72,6 +73,7 @@ export function createSyntheticModule(
       if (current === undefined) throw "MODULE_SYNTHETIC_EXPORT_INVARIANT";
       evaluate(current);
     },
+    reportMissingNamespaceExport,
   );
   state.module = module;
   return module;

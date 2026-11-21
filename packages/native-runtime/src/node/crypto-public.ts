@@ -310,7 +310,7 @@ export function pbkdf2(
   );
 }
 
-const cryptoExportNames: readonly string[] = [
+const unsupportedCryptoExports: readonly string[] = [
   "Certificate",
   "Cipheriv",
   "Decipheriv",
@@ -391,6 +391,7 @@ export interface NodeCryptoModules {
   readonly buffer: RealmObject;
   readonly exportValue: (module: RealmObject, name: string) => unknown;
   readonly require: RealmObject;
+  readonly reportMissingExport: (name: string) => void;
 }
 
 /** CommonJS and ESM get the same functions and Buffer in this realm. */
@@ -450,7 +451,7 @@ export function createNodeCryptoModules(
     pbkdf2(args[0], args[1], args[2], args[3], args[4], args[5]);
     return undefined;
   });
-  for (const key of cryptoExportNames)
+  for (const key of unsupportedCryptoExports)
     unsupportedProperty(core, crypto, key, key);
   const constructor = installNodeBuffer(core);
   builtinProperty(buffer, "Buffer", constructor, true, true, core.hooks);
@@ -467,6 +468,9 @@ export function createNodeCryptoModules(
     buffer,
     exportValue: (module: RealmObject, name: string): unknown =>
       getProperty<ScriptPropertyKey, unknown>(module, name, module, core.hooks),
+    reportMissingExport: (name: string): void => {
+      if (unsupportedCryptoExports.includes(name)) unsupported(core, name);
+    },
     require: builtinFunction(
       core.realm.functionPrototype,
       "require",

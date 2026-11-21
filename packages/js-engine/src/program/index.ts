@@ -647,7 +647,9 @@ function lowerGeneralProgram(
               "));",
           )
           .join("") +
-        "},undefined);\n"
+        "},undefined" +
+        (name === "crypto" ? ",nodeCrypto.reportMissingExport" : "") +
+        ");\n"
       );
     };
     creates += addBuiltin(builtinStart, "crypto", cryptoExports);
