@@ -126,6 +126,7 @@ function hoistRound(
   // Loops whose blocks another loop already rewrote this round wait for the
   // next round (they would see stale block contents).
   const touched = new Set<number>();
+  let recordProof: RecordProof | undefined;
   for (const loop of forest.loops) {
     if (loop === undefined) throw "licm loop invariant";
     let stale = false;
@@ -161,6 +162,10 @@ function hoistRound(
         );
       continue;
     }
+    // This round reads the original function for every loop. Recompute the
+    // proof summary only after committing a round that rewrites it.
+    const proofs = recordProof ?? recordProofs(fn);
+    recordProof = proofs;
     const motion = hoistLoop(
       loop,
       preheader,
@@ -171,6 +176,7 @@ function hoistRound(
       () => nextValue++,
       () => nextBlock++,
       budget - visited,
+      proofs,
       remarks,
     );
     if (motion === undefined) return undefined;
@@ -252,51 +258,36 @@ function readHoistRefusal(
     return "an unchecked access relies on this check's layout proof";
   return "not selected";
 }
-function hoistLoop(
-  loop: NaturalLoop,
-  preheader: Block,
-  byId: ReadonlyMap<number, Block>,
-  slots: ScalarType[],
-  module: ModuleIR,
-  fn: FunctionIR,
-  newValue: () => number,
-  newBlock: () => number,
-  budget: number,
-  remarks: RemarkSink | undefined,
-): LoopMotion | undefined {
-  let visited = 0;
-  // Instructions appended to the preheader, and the value each moved
-  // (original) value has there.
-  const preheaderCode: Instruction[] = [];
-  let preheaderTerminator: Terminator = preheader.terminator;
-  const added: Block[] = [];
-  const blocks: Block[] = [];
-  let hoisted = 0,
-    readHoisted = false;
-  // The slot a block-local value derives from (through unwraps and
-  // environment reads), which identifies the object a record access uses.
-  const origin = (block: Block, value: number): number | undefined => {
-    let current = value;
-    for (let depth = 0; depth < 8; depth++) {
-      let definition: Instruction | undefined;
-      for (const op of block.instructions)
-        if (op !== undefined && instructionResult(op) === current)
-          definition = op;
-      if (definition === undefined) return undefined;
-      if (definition.kind === "load") return definition.slot;
-      if (definition.kind === "reference-value") current = definition.value;
-      else if (definition.kind === "function-environment")
-        current = definition.callee;
-      else return undefined;
-    }
-    return undefined;
-  };
-  const constructedIn = (block: Block, value: number): boolean => {
+interface RecordProof {
+  readonly provenOrigins: ReadonlySet<number>;
+  readonly failureTargets: ReadonlySet<number>;
+  readonly unknownProven: boolean;
+}
+// The slot a block-local value derives from (through unwraps and
+// environment reads), which identifies the object a record access uses.
+function recordObjectOrigin(block: Block, value: number): number | undefined {
+  let current = value;
+  for (let depth = 0; depth < 8; depth++) {
+    let definition: Instruction | undefined;
     for (const op of block.instructions)
-      if (op !== undefined && op.kind === "record-new" && op.id === value)
-        return true;
-    return false;
-  };
+      if (op !== undefined && instructionResult(op) === current)
+        definition = op;
+    if (definition === undefined) return undefined;
+    if (definition.kind === "load") return definition.slot;
+    if (definition.kind === "reference-value") current = definition.value;
+    else if (definition.kind === "function-environment")
+      current = definition.callee;
+    else return undefined;
+  }
+  return undefined;
+}
+function constructedIn(block: Block, value: number): boolean {
+  for (const op of block.instructions)
+    if (op !== undefined && op.kind === "record-new" && op.id === value)
+      return true;
+  return false;
+}
+function recordProofs(fn: FunctionIR): RecordProof {
   // Objects of unchecked record operations anywhere in the function, whose
   // layout proof may rest on a checked read in the loop: such reads stay in
   // place.
@@ -319,7 +310,7 @@ function hoistLoop(
     for (const op of block.instructions) {
       if (op === undefined) continue;
       if (op.kind === "record-read" || op.kind === "record-has") {
-        const slot = origin(block, op.object);
+        const slot = recordObjectOrigin(block, op.object);
         if (slot !== undefined) provenOrigins.add(slot);
         // An object constructed in the same block has its layout from the
         // construction, not from any check a hoist could move.
@@ -327,6 +318,32 @@ function hoistLoop(
       }
     }
   }
+  return { provenOrigins, failureTargets, unknownProven };
+}
+
+function hoistLoop(
+  loop: NaturalLoop,
+  preheader: Block,
+  byId: ReadonlyMap<number, Block>,
+  slots: ScalarType[],
+  module: ModuleIR,
+  fn: FunctionIR,
+  newValue: () => number,
+  newBlock: () => number,
+  budget: number,
+  proofs: RecordProof,
+  remarks: RemarkSink | undefined,
+): LoopMotion | undefined {
+  let visited = 0;
+  // Instructions appended to the preheader, and the value each moved
+  // (original) value has there.
+  const preheaderCode: Instruction[] = [];
+  let preheaderTerminator: Terminator = preheader.terminator;
+  const added: Block[] = [];
+  const blocks: Block[] = [];
+  let hoisted = 0,
+    readHoisted = false;
+  const { provenOrigins, failureTargets, unknownProven } = proofs;
   for (const id of loop.body) {
     const block = byId.get(id);
     if (block === undefined) throw "licm block invariant";
@@ -364,7 +381,7 @@ function hoistLoop(
     if (term.kind === "record" && term.operation === "read") {
       const failure = byId.get(term.alternate);
       const field = module.records?.[term.record]?.fields[term.field];
-      const objectOrigin = origin(block, term.object);
+      const objectOrigin = recordObjectOrigin(block, term.object);
       readHoist =
         !readHoisted &&
         !unknownProven &&
