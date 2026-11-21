@@ -74,6 +74,12 @@ profile also put AArch64 emission first, at 53.6% of reported pass time.
 [End-to-end SSA sidecar](results/parallel-bounded-compile-ssa-sidecar-v1.md) ·
 [Native macOS profile](results/parallel-bounded-compile-packed-delta-v1.md#native-self-compile-profile-on-macos)
 
+Within function emission, the Linux profile attributed 68.49 s to
+frame planning and 21.51 s to instruction emission. The frame work
+includes slot sharing, register allocation, and liveness. It is a
+candidate for workers even when final instruction placement stays serial.
+[Native AArch64 function emission profile](results/parallel-bounded-compile-frame-plan-v1.md)
+
 In a separate Object compilation pair with a 4,096 MiB V8 old-space setting,
 the optimizer candidate built the same signed image in 524.22 s versus
 899.40 s. Its observed peak RSS was 5,195.6 MiB versus 4,760.7 MiB.
@@ -95,7 +101,8 @@ whole-build budget.
 [Full timing rotation and further streaming probes](results/parallel-bounded-compile-rotation-v1.md) ·
 [Loop-cell promotion and the next hydration boundary](results/parallel-bounded-compile-streaming-cells-v1.md) ·
 [Packed Object emission](results/parallel-bounded-compile-object-emission-v1.md) ·
-[Object compilation with staged IR changes](results/parallel-bounded-compile-packed-delta-v1.md)
+[Object compilation with staged IR changes](results/parallel-bounded-compile-packed-delta-v1.md) ·
+[Typed streaming compiler at a 2,176 MiB heap setting](results/parallel-bounded-compile-typed-cap-v1.md)
 
 ## Work and dependencies
 
