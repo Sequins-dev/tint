@@ -45,9 +45,10 @@ have reached the unknown state in an unbounded run. Further joins leave
 those parameters unknown. Bounded runs retain their existing work accounting.
 Both changes use the existing serial pass order and function IDs. The native
 candidate reaches a fixed point on macOS arm64 and Linux arm64. Linux
-x86-64 passes the CI fixed-point gate. On the first matched native run,
-the combined compiler took 137.8 s versus 263.9 s and produced the same
-signed image.
+x86-64 passes the CI fixed-point gate. On the matched 821-file input, the
+combined compiler took 137.8 s and 91.5 s. The controls took 263.9 s and
+291.7 s. Median wall time fell 58.7% and median cycles fell 39.5%. All eight
+measured native builds produced the same signed image.
 
 With settled SSA joins skipped, the four-worker spill prototype saved
 1.21–1.26 s of pass wall time on Node and raised whole-process peak RSS
@@ -61,9 +62,13 @@ the optimizer candidate built the same signed image in 524.22 s versus
 Packing function bodies during lowering removed the full decoded IR from
 that frame. The optimizer still exhausted memory after those bodies were
 rehydrated. Moving the first reachability scan onto stored bodies deferred
-the same pressure to the retained result. The full selection remains the
+the same pressure to the retained result. Keeping the first optimizer
+generations packed reduced live heap before module-wide work. The remaining
+whole-module passes still needed decoded IR, and the lowest peak RSS in
+the final Object trials was 3,364.8 MiB. The full selection remains the
 acceptance workload for the opt-in whole-build budget.
-[Streaming and fixed-point probes](results/parallel-bounded-compile-streaming-probes-v1.md)
+[Streaming and fixed-point probes](results/parallel-bounded-compile-streaming-probes-v1.md) ·
+[Full timing rotation and further streaming probes](results/parallel-bounded-compile-rotation-v1.md)
 
 ## Work and dependencies
 
