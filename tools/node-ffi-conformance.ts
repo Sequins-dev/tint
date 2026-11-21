@@ -15,6 +15,10 @@ import { basename, join, resolve } from "node:path";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
+import {
+  workerFixtureOptions,
+  workerFixtureRuntimes,
+} from "./worker-fixture-options.ts";
 
 const version = "26.13.1";
 const revision = "e9c277643b0249c50f6e6de5413be8a88ea11b6a";
@@ -161,10 +165,6 @@ for (const name of ["kFastArguments", "kSbInvokeSlow", "kSbArguments", "kSbRetur
     [Symbol.toPrimitive]() { unavailable("node-fast-api", "Node/V8 private FFI symbol " + name); }
   };
 }
-Object.defineProperty(globalThis, "SharedArrayBuffer", {
-  configurable: true,
-  get() { return unavailable("node-shared", "SharedArrayBuffer backing requires an embedding with native shared mappings"); },
-});
 
 function unavailable(kind, message) {
   throw { token: limitToken, kind, message };
@@ -431,6 +431,10 @@ for (const entry of inventory) {
   console.error("Node " + version + " FFI " + entry.name);
   const flags = /^\/\/ Flags: (.*)$/m.exec(source)?.[1]?.split(/ +/) ?? [];
   const metadata = { file: entry.name, sha256: sha256(source), flags };
+  // Use the worker host's mapped shared-block registry for shared byte views.
+  const sharedHost = source.includes("SharedArrayBuffer")
+    ? workerFixtureOptions([])
+    : undefined;
   try {
     const image = verifyHostedFixture(
       "const testFlags = " +
@@ -448,13 +452,19 @@ for (const entry of inventory) {
       ],
       [],
       [],
-      [],
+      sharedHost === undefined
+        ? []
+        : [
+            ...workerFixtureRuntimes,
+            { module: bridge.id, namespace: "node-ffi-conformance-native" },
+          ],
       {
+        ...sharedHost,
         replaySources: [bridge],
         allowJit: !flags.includes("--jitless"),
         managedBytes: 128 * 1024 * 1024,
         allocationCapacity: 1048576,
-        stackBytes: 4194304,
+        stackBytes: sharedHost?.stackBytes ?? 4194304,
       },
     );
     const artifact = nativeArtifact(target, image, image + ".manifest.json");
