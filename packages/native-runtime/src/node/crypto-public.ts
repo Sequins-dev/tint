@@ -5,6 +5,7 @@ import {
   builtinFunction,
   builtinProperty,
   callObjectValue,
+  createCallableObject,
   createCodedRuntimeError,
   createObject,
   createPrivateName,
@@ -142,17 +143,12 @@ function unsupportedProperty(
   builtinAccessor(object, key, getter, undefined, core.hooks);
 }
 
-interface DigestState {
-  readonly hash: Hash;
-  finalized: boolean;
-}
-
 const digestState = createPrivateName("node:crypto digest");
 
 function viewDigestState(
   core: ProgramRealmCore,
   receiver: unknown,
-): DigestState {
+): ObjectCall<unknown> {
   let object = viewObjectValue(receiver, core.object);
   // Shared methods can be borrowed, including by an object with a digest
   // instance on its prototype chain.
@@ -162,7 +158,13 @@ function viewDigestState(
       digestState,
       core.hooks,
     );
-    if (field.error === "none") return field.value as DigestState;
+    if (field.error === "none") {
+      const handle = viewObjectValue(field.value, core.object);
+      if (handle === undefined) throw "CRYPTO_DIGEST_STATE_INVARIANT";
+      const call = handle.internalCall;
+      if (call === undefined) throw "CRYPTO_DIGEST_STATE_INVARIANT";
+      return call;
+    }
     object = object.prototype;
   }
   let message =
@@ -176,11 +178,6 @@ function viewDigestState(
   throw error;
 }
 
-function requireActive(core: ProgramRealmCore, state: DigestState): void {
-  if (state.finalized)
-    fail(core, "error", "Digest already called", "ERR_CRYPTO_HASH_FINALIZED");
-}
-
 function digestView(
   core: ProgramRealmCore,
   hash: Hash,
@@ -189,7 +186,41 @@ function digestView(
   const object = createObject<ScriptPropertyKey, unknown>(
     digestPrototype(core, hmac),
   );
-  const state: DigestState = { hash, finalized: false };
+  let finalized = false;
+  const state = createCallableObject<ScriptPropertyKey, unknown>(
+    undefined,
+    (operation, args): unknown => {
+      if (finalized) {
+        if (operation === "hmac") {
+          const encoding = args[0];
+          return encoding && encoding !== "buffer"
+            ? ""
+            : adoptNodeBuffer(core, new Uint8Array(0));
+        }
+        return fail(
+          core,
+          "error",
+          "Digest already called",
+          "ERR_CRYPTO_HASH_FINALIZED",
+        );
+      }
+      if (operation === "update") {
+        const data = inputBytes(core, args[0], "data", false);
+        const encoding = args[1];
+        hash.update(data, typeof encoding === "string" ? encoding : undefined);
+        return undefined;
+      }
+      const encoding = args[0];
+      const text = encoding
+        ? stringValueOrThrow(encoding, core.hooks, core.realm)
+        : undefined;
+      const result = hash.digest(text);
+      finalized = true;
+      return typeof result === "string"
+        ? result
+        : adoptNodeBuffer(core, result);
+    },
+  );
   if (
     addPrivateField<ScriptPropertyKey, unknown>(object, digestState, state) !==
     "none"
@@ -239,32 +270,13 @@ function digestPrototype(core: ProgramRealmCore, hmac: boolean): RealmObject {
     builtinProperty(prototype, "update", update, true, true, core.hooks);
   } else {
     method(core, prototype, "update", 2, (receiver, args): unknown => {
-      const state = viewDigestState(core, receiver);
-      requireActive(core, state);
-      const data = inputBytes(core, args[0], "data", false);
-      const encoding = args[1];
-      state.hash.update(
-        data,
-        typeof encoding === "string" ? encoding : undefined,
-      );
+      viewDigestState(core, receiver)("update", args);
       return receiver;
     });
   }
-  method(core, prototype, "digest", 1, (receiver, args): unknown => {
-    const state = viewDigestState(core, receiver);
-    const encoding = args[0];
-    if (hmac && state.finalized)
-      return encoding && encoding !== "buffer"
-        ? ""
-        : adoptNodeBuffer(core, new Uint8Array(0));
-    requireActive(core, state);
-    const text = encoding
-      ? stringValueOrThrow(encoding, core.hooks, core.realm)
-      : undefined;
-    const result = state.hash.digest(text);
-    state.finalized = true;
-    return typeof result === "string" ? result : adoptNodeBuffer(core, result);
-  });
+  method(core, prototype, "digest", 1, (receiver, args): unknown =>
+    viewDigestState(core, receiver)(hmac ? "hmac" : "hash", args),
+  );
   for (const stream of streamProperties)
     unsupportedProperty(core, prototype, stream, kind + "." + stream);
   if (!hmac) unsupportedProperty(core, prototype, "copy", "Hash.copy");
