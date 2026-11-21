@@ -13,12 +13,18 @@ import {
   setProperty,
   deleteProperty,
   setPrototype,
+  lookupCachedScriptProperty,
+  type ScriptPropertyCache,
   type ObjectHooks,
   type OrdinaryObject,
 } from "./operations.ts";
 import { callObject } from "./call.ts";
 import { toObjectValue } from "./boxing.ts";
-import { createRuntimeError, type ErrorRealm } from "./errors.ts";
+import {
+  createRuntimeError,
+  throwIfRuntimeError,
+  type ErrorRealm,
+} from "./errors.ts";
 import {
   createPropertyEnumeration,
   type PropertyEnumeration,
@@ -346,6 +352,54 @@ export function readObjectValueProperty(
   if (base === null || base === undefined)
     throw createRuntimeError(realm, "type");
   return propertyValueOf(base, key, base, hooks, realm);
+}
+
+export function readCachedObjectValueProperty(
+  base: unknown,
+  key: string,
+  hooks: ObjectHooks<unknown>,
+  realm: ErrorRealm,
+  cache: ScriptPropertyCache,
+): unknown {
+  const object = viewObjectValue(base, realm.objectPrototype);
+  if (object !== undefined) {
+    const cell = lookupCachedScriptProperty<ScriptPropertyKey, unknown>(
+      object,
+      key,
+      cache,
+      false,
+    );
+    if (cell !== undefined) return cell.value;
+  }
+  return readObjectValueProperty(base, key, hooks, realm);
+}
+
+export function writeCachedObjectValueProperty(
+  base: unknown,
+  key: string,
+  value: unknown,
+  strict: boolean,
+  hooks: ObjectHooks<unknown>,
+  realm: ErrorRealm,
+  cache: ScriptPropertyCache,
+): void {
+  const object = viewObjectValue(base, realm.objectPrototype);
+  if (object !== undefined) {
+    const cell = lookupCachedScriptProperty<ScriptPropertyKey, unknown>(
+      object,
+      key,
+      cache,
+      true,
+    );
+    if (cell !== undefined && cell.writable) {
+      cell.value = value;
+      return;
+    }
+  }
+  throwIfRuntimeError(
+    realm,
+    setObjectValueProperty(base, key, value, strict, hooks, realm),
+  );
 }
 
 /** The realm prototype ToObject would give a String, Number or Boolean

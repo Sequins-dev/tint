@@ -776,3 +776,64 @@ test("positional source calls preserve receiver, legacy arguments and unwinding"
     "42",
   ]);
 });
+
+test("constant-name reads and writes get their own property cache", () => {
+  const source =
+    "function read(o) { return o.x; } function write(o, value) { o.x = value; }";
+  assert.equal(runtimeCalls(source, "createScriptPropertyCache"), 2);
+  assert.equal(runtimeCalls(source, "readCachedObjectValueProperty"), 1);
+  assert.equal(runtimeCalls(source, "writeCachedObjectValueProperty"), 1);
+});
+
+test("cached property and method sites follow shadowing, replacement and proxies", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+    const first = {method() { return this.value + 1; }};
+    const second = {method() { return this.value + 2; }};
+    const base = Object.create(first);
+    base.value = 40;
+    function call(o) { return o.method(); }
+    function read(o) { return o.value; }
+    function write(o, value) { o.value = value; }
+    print(String(call(base)));
+    Object.setPrototypeOf(base, second);
+    print(String(call(base)));
+    base.method = () => 7;
+    print(String(call(base)));
+    delete base.method;
+    print(String(call(base)));
+    print(String(read(base)));
+    write(base, 41);
+    print(String(read(base)));
+    let order = "";
+    Object.defineProperty(base, "value", {
+      configurable: true,
+      get() { order += "g"; return 8; },
+      set(value) { order += "s" + value; }
+    });
+    write(base, 9);
+    print(String(read(base)));
+    const proxy = new Proxy(base, {
+      get(target, key, receiver) { order += "p"; return Reflect.get(target, key, receiver); },
+    });
+    print(String(read(proxy)));
+    print(order);
+    Object.defineProperty(base, "value", { get() { throw "boom"; } });
+    try { read(base); } catch (error) { print(error); }
+  `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "41",
+    "42",
+    "7",
+    "42",
+    "40",
+    "41",
+    "8",
+    "8",
+    "s9gpg",
+    "boom",
+  ]);
+});

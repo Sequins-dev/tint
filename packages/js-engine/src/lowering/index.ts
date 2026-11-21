@@ -718,6 +718,7 @@ function lowerScriptEntry(
   }
   const globalIdentifierCaches = new Map<string, number>();
   const globalCacheInitializers: Expression[] = [];
+  const propertyCacheInitializers: Expression[] = [];
   // Fixed record fields work in AOT and managed entries. Each closure
   // captures the groups it uses, and one large host harness cannot exceed a
   // native record's field limit.
@@ -777,7 +778,16 @@ function lowerScriptEntry(
     return result;
   }
   function globalCacheDeclarations(): Statement[] {
-    return slotTable("$gc", globalCacheInitializers);
+    const tables = slotTable("$gc", globalCacheInitializers);
+    appendStatements(tables, slotTable("$pc", propertyCacheInitializers));
+    return tables;
+  }
+  function propertyCache(span: Span): Expression {
+    const index = propertyCacheInitializers.length;
+    propertyCacheInitializers.push(
+      runtimeCall("createScriptPropertyCache", [], generated),
+    );
+    return slotField("$pc", index, span);
   }
   function withGlobalIdentifierCache(
     args: readonly Expression[],
@@ -1854,10 +1864,25 @@ function lowerScriptEntry(
     span: Span,
   ): Expression {
     const key = convertedKey(base, property, span);
+    return readProperty(base, key, span);
+  }
+  function readProperty(
+    base: Expression,
+    key: Expression,
+    span: Span,
+  ): Expression {
+    const cached = key.kind === "string" && !compactResults;
+    const args = [
+      base,
+      key,
+      member(id("$global"), "hooks", span),
+      id("$errors"),
+    ];
+    if (cached) args.push(propertyCache(span));
     return temporary(
       runtimeCall(
-        "readObjectValueProperty",
-        [base, key, member(id("$global"), "hooks", span), id("$errors")],
+        cached ? "readCachedObjectValueProperty" : "readObjectValueProperty",
+        args,
         span,
       ),
       true,
@@ -2059,19 +2084,7 @@ function lowerScriptEntry(
       );
     const key = referenceKey(target, property, target, true);
     if (superReceiver === undefined)
-      return temporary(
-        runtimeCall(
-          "readObjectValueProperty",
-          [
-            target.base,
-            key,
-            member(id("$global"), "hooks", target),
-            id("$errors"),
-          ],
-          target,
-        ),
-        true,
-      );
+      return readProperty(target.base, key, target);
     return checkedRuntimeValue(
       "getObjectValuePropertyWithReceiver",
       [
@@ -2155,6 +2168,15 @@ function lowerScriptEntry(
       member(id("$global"), "hooks", target),
       id("$errors"),
     );
+    if (
+      superReceiver === undefined &&
+      key.kind === "string" &&
+      !compactResults
+    ) {
+      args.push(propertyCache(target));
+      expression(runtimeCall("writeCachedObjectValueProperty", args, target));
+      return;
+    }
     checkedRuntimeCompletion(
       superReceiver === undefined
         ? "setObjectValueProperty"
@@ -8342,6 +8364,7 @@ function lowerScriptEntry(
     usesPrimitiveContracts,
     fixedCellNames.length !== 0,
     usesRegisterCalls,
+    propertyCacheInitializers.length !== 0,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,

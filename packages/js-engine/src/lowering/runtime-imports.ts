@@ -75,6 +75,7 @@ export function scriptRuntimeImports(
   usesPrimitiveContracts: boolean = false,
   usesFixedCells: boolean = false,
   usesRegisterCalls: boolean = false,
+  usesPropertyCaches: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -246,6 +247,13 @@ export function scriptRuntimeImports(
           : []),
         "getObjectValueProperty",
         "readObjectValueProperty",
+        ...(usesPropertyCaches || declarations === "all"
+          ? [
+              "createScriptPropertyCache",
+              "readCachedObjectValueProperty",
+              "writeCachedObjectValueProperty",
+            ]
+          : []),
         "readObjectValuePropertyKey",
         "getObjectValuePropertyWithReceiver",
         "setObjectValueProperty",
