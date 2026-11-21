@@ -6,7 +6,6 @@ import {
   EVP_md_null,
   EVP_MD_CTX_new,
   EVP_MD_CTX_free,
-  EVP_MD_CTX_reset,
   EVP_MD_get_flags,
   EVP_MD_FLAG_XOF,
   EVP_DigestInit_ex2,
@@ -39,15 +38,19 @@ export interface Hash {
 interface DigestLifetime {
   address: number;
   readonly hmac: boolean;
+  readonly digest: number;
   readonly owner: unknown;
 }
 
 let lifetimes: DigestLifetime[] = [];
 let sweepAt = 256;
 let digests = new Map<string, number>();
+let recentAlgorithm: string | undefined = undefined;
+let recentDigest: number | undefined = undefined;
 const encodedDigest = new Uint8Array(64);
 const finalizedSize = new Uint8Array(4);
 let spareHash = 0;
+let spareHashDigest = 0;
 let spareHmac = 0;
 
 function disposeContext(address: number, hmac: boolean): void {
@@ -66,18 +69,24 @@ function borrowContext(hmac: boolean): number {
   return context === 0 ? EVP_MD_CTX_new() : context;
 }
 
-function recycleContext(address: number, hmac: boolean): void {
+function recycleContext(address: number, hmac: boolean, digest: number): void {
   if ((hmac ? spareHmac : spareHash) !== 0) {
     disposeContext(address, hmac);
     return;
   }
-  // Reset the provider state and HMAC key before keeping an idle context.
-  const reset = hmac ? HMAC_CTX_reset(address) : EVP_MD_CTX_reset(address);
+  // Reinitialize the same digest in place to keep its provider allocation.
+  // HMAC must discard its key before its context can become idle.
+  const reset = hmac
+    ? HMAC_CTX_reset(address)
+    : EVP_DigestInit_ex2(address, 0, 0);
   if (reset !== 1) {
     ERR_clear_error();
     disposeContext(address, hmac);
   } else if (hmac) spareHmac = address;
-  else spareHash = address;
+  else {
+    spareHash = address;
+    spareHashDigest = digest;
+  }
 }
 
 export function closeDigestContexts(): void {
@@ -92,7 +101,10 @@ export function closeDigestContexts(): void {
   if (spareHash !== 0) EVP_MD_CTX_free(spareHash);
   if (spareHmac !== 0) HMAC_CTX_free(spareHmac);
   spareHash = 0;
+  spareHashDigest = 0;
   spareHmac = 0;
+  recentAlgorithm = undefined;
+  recentDigest = undefined;
   if (digests.size !== 0) {
     const ffi = systemOpenSSL();
     for (const [_name, digest] of digests) {
@@ -151,51 +163,83 @@ function hexDigit(value: number): number {
   return value < 10 ? value + 48 : value + 87;
 }
 
+function createHexPairs(): Uint16Array {
+  const pairs = new Uint16Array(256);
+  for (let byte = 0; byte < pairs.length; byte++)
+    pairs[byte] = hexDigit(byte >>> 4) | (hexDigit(byte & 15) << 8);
+  return pairs;
+}
+
+const hexPairs = createHexPairs();
+
 /** A digest has at most 64 bytes. Emit several code units per string
  * allocation, with at most eight concatenations before the short tail. */
 function digestHex(bytes: Uint8Array, length: number): string {
   let text = "";
   let i = 0;
   for (; i + 8 <= length; i += 8) {
-    const a = bytes[i] ?? 0,
-      b = bytes[i + 1] ?? 0;
-    const c = bytes[i + 2] ?? 0,
-      d = bytes[i + 3] ?? 0;
-    const e = bytes[i + 4] ?? 0,
-      f = bytes[i + 5] ?? 0;
-    const g = bytes[i + 6] ?? 0,
-      h = bytes[i + 7] ?? 0;
+    const a = hexPairs[bytes[i] ?? 0] ?? 0,
+      b = hexPairs[bytes[i + 1] ?? 0] ?? 0;
+    const c = hexPairs[bytes[i + 2] ?? 0] ?? 0,
+      d = hexPairs[bytes[i + 3] ?? 0] ?? 0;
+    const e = hexPairs[bytes[i + 4] ?? 0] ?? 0,
+      f = hexPairs[bytes[i + 5] ?? 0] ?? 0;
+    const g = hexPairs[bytes[i + 6] ?? 0] ?? 0,
+      h = hexPairs[bytes[i + 7] ?? 0] ?? 0;
     text += String.fromCharCode(
-      hexDigit(a >>> 4),
-      hexDigit(a & 15),
-      hexDigit(b >>> 4),
-      hexDigit(b & 15),
-      hexDigit(c >>> 4),
-      hexDigit(c & 15),
-      hexDigit(d >>> 4),
-      hexDigit(d & 15),
-      hexDigit(e >>> 4),
-      hexDigit(e & 15),
-      hexDigit(f >>> 4),
-      hexDigit(f & 15),
-      hexDigit(g >>> 4),
-      hexDigit(g & 15),
-      hexDigit(h >>> 4),
-      hexDigit(h & 15),
+      a & 255,
+      a >>> 8,
+      b & 255,
+      b >>> 8,
+      c & 255,
+      c >>> 8,
+      d & 255,
+      d >>> 8,
+      e & 255,
+      e >>> 8,
+      f & 255,
+      f >>> 8,
+      g & 255,
+      g >>> 8,
+      h & 255,
+      h >>> 8,
     );
   }
   for (; i < length; i++) {
-    const byte = bytes[i] ?? 0;
-    text += String.fromCharCode(hexDigit(byte >>> 4), hexDigit(byte & 15));
+    const pair = hexPairs[bytes[i] ?? 0] ?? 0;
+    text += String.fromCharCode(pair & 255, pair >>> 8);
   }
   return text;
+}
+
+function activeContext(lifetime: DigestLifetime): number {
+  const address = lifetime.address;
+  if (address === 0)
+    throw codedError("Digest already called", "ERR_CRYPTO_HASH_FINALIZED");
+  return address;
+}
+
+function finishDigest(lifetime: DigestLifetime, bytes: Uint8Array): number {
+  const address = lifetime.address;
+  const hmac = lifetime.hmac;
+  try {
+    const status = hmac
+      ? HMAC_Final(address, bytes, finalizedSize)
+      : EVP_DigestFinal_ex(address, bytes, finalizedSize);
+    if (status !== 1) throw failure("Hash digest failed");
+    return finalizedSize[0] ?? 0;
+  } finally {
+    recycleContext(address, hmac, lifetime.digest);
+    lifetime.address = 0;
+  }
 }
 
 function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
   sweepDigests();
   const ffi = systemOpenSSL();
-  const name = digestName(algorithm);
-  const cached = digests.get(name);
+  const recent = algorithm === recentAlgorithm;
+  const name = recent ? algorithm : digestName(algorithm);
+  const cached = recent ? recentDigest : digests.get(name);
   const digest = cached ?? fetchDigest(ffi, name);
   if (digest === 0) {
     // The name registry also recognizes algorithms unavailable in the
@@ -226,23 +270,28 @@ function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
   const cacheNew = cached === undefined && digests.size < 64;
   if (cacheNew) digests.set(name, digest);
   const releaseDigest = cached === undefined && !cacheNew;
+  if (!recent && !releaseDigest && name === algorithm) {
+    recentAlgorithm = algorithm;
+    recentDigest = digest;
+  }
 
   const hmac = key !== undefined;
   let context = 0;
   try {
+    const ready = !hmac && spareHash !== 0 && spareHashDigest === digest;
     context = borrowContext(hmac);
     if (context === 0) throw failure("Failed to allocate digest context");
-    const status =
+    const initialized =
       key === undefined
-        ? EVP_DigestInit_ex2(context, digest, 0)
+        ? ready || EVP_DigestInit_ex2(context, digest, 0) === 1
         : HMAC_Init_ex(
             context,
             key.length === 0 ? new Uint8Array(1) : key,
             key.length,
             digest,
             0,
-          );
-    if (status !== 1)
+          ) === 1;
+    if (!initialized)
       throw failure(
         hmac ? "HMAC initialization failed" : "Digest method not supported",
       );
@@ -255,26 +304,28 @@ function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
 
   const hash: Hash = {
     update(data: string | Uint8Array, encoding?: string): Hash {
-      requireActive();
+      const address = activeContext(lifetime);
       const bytes =
         typeof data === "string" ? encodeUpdate(data, encoding) : data;
-      const status = hmac
-        ? HMAC_Update(context, bytes, bytes.length)
-        : EVP_DigestUpdate(context, bytes, bytes.length);
+      const status = lifetime.hmac
+        ? HMAC_Update(address, bytes, bytes.length)
+        : EVP_DigestUpdate(address, bytes, bytes.length);
       if (status !== 1) throw failure("Hash update failed");
       return hash;
     },
     digest(encoding?: string): string | Uint8Array {
-      if (!hmac) requireActive();
+      if (!lifetime.hmac) activeContext(lifetime);
       if (encoding === "hex") {
         if (lifetime.address === 0) return "";
         // Leaf calls cannot re-enter JavaScript. The string owns its data.
-        return digestHex(encodedDigest, finish(encodedDigest));
+        return digestHex(encodedDigest, finishDigest(lifetime, encodedDigest));
       }
       const bytes =
         lifetime.address === 0 ? new Uint8Array(0) : new Uint8Array(64);
       const output =
-        bytes.length === 0 ? bytes : bytes.subarray(0, finish(bytes));
+        bytes.length === 0
+          ? bytes
+          : bytes.subarray(0, finishDigest(lifetime, bytes));
       const name =
         encoding === undefined ? undefined : bufferEncoding(encoding);
       return name === undefined ? output : bufferText(output, name);
@@ -283,25 +334,10 @@ function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
   const lifetime: DigestLifetime = {
     address: context,
     hmac,
+    digest,
     owner: createWeakSlot(hash, undefined, false),
   };
   lifetimes.push(lifetime);
-  function requireActive(): void {
-    if (lifetime.address === 0)
-      throw codedError("Digest already called", "ERR_CRYPTO_HASH_FINALIZED");
-  }
-  function finish(bytes: Uint8Array): number {
-    try {
-      const status = hmac
-        ? HMAC_Final(context, bytes, finalizedSize)
-        : EVP_DigestFinal_ex(context, bytes, finalizedSize);
-      if (status !== 1) throw failure("Hash digest failed");
-      return finalizedSize[0] ?? 0;
-    } finally {
-      recycleContext(lifetime.address, hmac);
-      lifetime.address = 0;
-    }
-  }
   return hash;
 }
 

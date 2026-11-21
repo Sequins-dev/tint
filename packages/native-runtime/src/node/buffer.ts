@@ -129,9 +129,13 @@ export function adoptNodeBuffer(
   core: ProgramRealmCore,
   bytes: Uint8Array,
 ): RealmObject {
-  installNodeBuffer(core);
-  const prototype = core.realm.prototypes.get(bufferBrand);
-  const buffer = adoptArrayBuffer(bytes, core.realm);
+  const realm = core.realm;
+  let prototype = realm.prototypes.get(bufferBrand);
+  if (prototype === undefined) {
+    installNodeBuffer(core);
+    prototype = realm.prototypes.get(bufferBrand);
+  }
+  const buffer = adoptArrayBuffer(bytes, realm);
   const storage = buffer.internalArrayBufferData;
   if (prototype === undefined || storage === undefined)
     throw "BUFFER_ADOPTION_INVARIANT";

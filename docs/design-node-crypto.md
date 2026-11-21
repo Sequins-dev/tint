@@ -76,9 +76,10 @@ existing 16 MiB Node isolate stack budget. The x86-64 realm initializer
 exceeds the compact 1 MiB stack used by small typed fixtures.
 
 Synchronous calls borrow byte windows during direct leaf FFI calls on the
-isolate's thread. Cache fetched digests and retain one reset context each
-for hash and HMAC operations in the isolate. On recycle, reset the context
-and clear HMAC key state. Release active and spare contexts with the cached
+isolate's thread. Cache fetched digests and retain one idle context each
+for hash and HMAC operations in the isolate. Reinitialize the hash context
+in place so the provider allocation can serve another hash. Reset the HMAC
+context to clear its key state. Release active and spare contexts with the cached
 digest references at isolate exit. Encoded hexadecimal digests borrow
 scratch storage within one synchronous operation. Buffer results own
 their bytes and reuse the realm's integer-indexed typed-array methods.
