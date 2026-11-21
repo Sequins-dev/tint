@@ -131,6 +131,8 @@ export {
   bindForeignCalls,
   dynamicForeignCall,
   dynamicCallFrame,
+  dynamicScalarCall,
+  dynamicScalarFrame,
   callbackTransition,
   callbackEntered,
   directCallbackExtras,
@@ -147,6 +149,7 @@ export {
 export {
   hostParameters,
   hostReturnType,
+  executableHostOperation,
   bindHostOperations,
   type HostOperation,
   type HostBinding,

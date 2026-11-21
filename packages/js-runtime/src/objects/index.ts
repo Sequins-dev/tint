@@ -1,6 +1,9 @@
 export { viewWeakRegistryOwner } from "./values.ts";
 export { createModuleSourceObject } from "./module-source.ts";
-export { installFinalizationRegistryIntrinsics } from "./finalization-registry.ts";
+export {
+  installFinalizationRegistryIntrinsics,
+  hostFinalizationRegistry,
+} from "./finalization-registry.ts";
 export { installWeakRefIntrinsics } from "./weak-ref.ts";
 export { installWeakCollectionIntrinsics } from "./weak-collections.ts";
 export { canBeHeldWeakly, type WeakStorageService } from "./weak-storage.ts";
@@ -241,6 +244,7 @@ export {
   createErrorRealm,
   installErrorIntrinsics,
   createRuntimeError,
+  createCodedRuntimeError,
   createNativeErrorView,
   createNativeCodedErrorView,
   createNativeSystemErrorView,
@@ -391,9 +395,20 @@ export { installReflectIntrinsics } from "./reflect-intrinsics.ts";
 export { getFunctionRealm } from "./function-realms.ts";
 
 export {
+  adoptArrayBuffer,
   installArrayBufferIntrinsics,
   detachArrayBuffer,
 } from "./array-buffer.ts";
+export {
+  bufferStorageByteLength,
+  type BufferStorage,
+} from "./buffer-storage.ts";
+export {
+  builtinAccessor,
+  builtinFunction,
+  builtinFunctionMetadata,
+  builtinProperty,
+} from "./intrinsics.ts";
 
 export { installSharedArrayBufferIntrinsics } from "./shared-array-buffer.ts";
 export {
@@ -527,10 +542,4 @@ export {
   throwWorkerCloneError,
   type WorkerCloneAttachments,
 } from "./structured-clone.ts";
-export {
-  builtinAccessor,
-  builtinFunction,
-  builtinFunctionMetadata,
-  builtinProperty,
-} from "./intrinsics.ts";
 export { primitiveContractBit } from "@tint/foundation/values/primitive-contract";

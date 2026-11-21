@@ -64,6 +64,7 @@ import {
   type ScalarType,
   type Span,
   type Terminator,
+  executableHostOperation,
 } from "@tint/ir/scalar";
 import {
   createAssembler,
@@ -123,6 +124,8 @@ import {
 import {
   emitSysVCall,
   emitSysVDynamicCall,
+  emitSysVFixedScalarCall,
+  emitSysVScalarDynamicCall,
   emitSysVMemory,
   sysVDynamicStackBytes,
   type CallSite,
@@ -686,21 +689,28 @@ export function emitModule(
             transitions.set(op, transition);
             transitionCapacity = Math.max(transitionCapacity, transition.bytes);
           }
-          const layout = classifyCCall(op.call.signature, linuxX86_64CTarget);
+          const layout = classifyCCall(
+            op.call.staticScalar ?? op.call.signature,
+            linuxX86_64CTarget,
+          );
           if (!layout.ok) fail("UNSUPPORTED", layout.error);
           plans.set(op, layout.value);
           outgoing = Math.max(
             outgoing,
-            op.call.dynamic === true
-              ? sysVDynamicStackBytes
-              : sysVOutgoingBytes(layout.value),
+            op.call.staticScalar !== undefined
+              ? layout.value.stackBytes
+              : op.call.dynamic === true
+                ? op.call.dynamicScalar === true
+                  ? 0
+                  : sysVDynamicStackBytes
+                : sysVOutgoingBytes(layout.value),
           );
           needsForeign = true;
         }
         if (
           op.kind === "host-call" &&
-          (op.operation === "executable-map" ||
-            op.operation === "executable-write")
+          (executableHostOperation(op.operation) === "executable-map" ||
+            executableHostOperation(op.operation) === "executable-write")
         )
           needsExecutableMemory = true;
         if (op.kind === "call" || op.kind === "call-indirect") {
@@ -1821,13 +1831,21 @@ export function emitModule(
             );
           if (
             access.operation === "callback-key" ||
-            access.operation === "callback-address"
+            access.operation === "callback-address" ||
+            access.operation === "runtime-callback-address"
           ) {
             const id = op.id;
             if (id === undefined) throw "callback address result invariant";
             let address = rip(callbackKeyLabel);
             needsCallbackKey = true;
-            if (access.operation === "callback-address") {
+            if (access.operation === "runtime-callback-address")
+              address = thunkAddress({
+                signature: access.callback,
+                ordinal: -1,
+                runtimePrototype: access.callback !== undefined,
+                views: undefined,
+              });
+            else if (access.operation === "callback-address") {
               if (access.slot === undefined || access.callback === undefined)
                 throw "registered callback invariant";
               address = thunkAddress({
@@ -1921,7 +1939,11 @@ export function emitModule(
             trap: trapLabel,
             ...(transition === undefined ? {} : { transition }),
           };
-          if (op.call.dynamic === true) emitSysVDynamicCall(site);
+          if (op.call.staticScalar !== undefined)
+            emitSysVFixedScalarCall(site, layout);
+          else if (op.call.dynamicScalar === true)
+            emitSysVScalarDynamicCall(site, frame(savedContext));
+          else if (op.call.dynamic === true) emitSysVDynamicCall(site);
           else emitSysVCall(site, layout);
           const id = op.id;
           if (id !== undefined)
@@ -1959,7 +1981,7 @@ export function emitModule(
             if (arg === undefined) throw "host argument invariant";
             return frame(home(arg));
           }
-          const operation = op.operation;
+          const operation = executableHostOperation(op.operation);
           if (operation === "stack-overflow-is" && host !== undefined) {
             const input = args[0];
             if (id === undefined || input === undefined)

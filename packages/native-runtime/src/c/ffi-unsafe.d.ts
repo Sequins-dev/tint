@@ -22,6 +22,37 @@ declare module "tint:ffi/unsafe" {
     address: Address<unknown>,
     length: number,
   ): Uint8Array;
+  export function bytesAtWords(address: bigint, length: number): Uint8Array;
+  export function stableAddressWords(bytes: Uint8Array): bigint;
+  export function callScalarForeign(frame: Uint8Array): boolean;
+  export type CallbackDispatcher = (
+    id: number,
+    a0: number,
+    a1: number,
+    a2: number,
+    a3: number,
+    a4: number,
+    a5: number,
+    a6: number,
+  ) => number;
+  export function callScalarForeignCallbacks(
+    state: Uint8Array,
+    dispatcher: CallbackDispatcher,
+    frame: Uint8Array,
+  ): boolean;
+  export function allocateCallbackStub(
+    id: number,
+    owner: number,
+    unaryI32: boolean,
+  ): number;
+  export function releaseCallbackStub(address: number): void;
+  export function callbackDispatcher(): CallbackDispatcher;
+  export function hasRegisteredCallbacks(): boolean;
+  export interface CallbackActivity {
+    active: boolean;
+  }
+  export function registeredCallbackActivity(): CallbackActivity;
+  export function rethrowCallbackFailure(): void;
   /** A copy of the NUL-terminated UTF-8 text at `text` (`char *` results
    * and members; malformed sequences become U+FFFD). */
   export function cStringAt(text: Address<number>): string;
@@ -145,6 +176,15 @@ declare module "tint:ffi/unsafe" {
     handle: LibraryHandle,
     name: string,
   ): Address<void>;
+  /** The exact address returned by dlsym, including absolute symbols. */
+  export interface SymbolAddress {
+    readonly low: number;
+    readonly high: number;
+  }
+  export function findSymbolWords(
+    handle: LibraryHandle,
+    name: string,
+  ): SymbolAddress;
   export function closeLibrary(handle: LibraryHandle): void;
   /** The address of `name` in optional library `image` (dlopen'd once, at
    * first use), or -1 when either is absent: optional libraries on ELF. */

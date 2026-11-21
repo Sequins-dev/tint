@@ -1,0 +1,24 @@
+{
+  "spec": "ffi-callbacks",
+  "target": "linux-arm64",
+  "clang": "Debian clang version 19.1.7",
+  "aliases": [],
+  "types": [],
+  "records": [],
+  "functions": [
+    {
+      "name": "pthread_self",
+      "parameters": [],
+      "result": { "kind": "scalar", "scalar": "u64", "aliases": ["pthread_t"] },
+      "variadic": false
+    },
+    {
+      "name": "abort",
+      "parameters": [],
+      "result": { "kind": "void" },
+      "variadic": false
+    }
+  ],
+  "constants": [],
+  "skipped": []
+}

@@ -48,6 +48,11 @@ export type HostOperation =
    * registry: (code address, code byte length, table address) -> 0 or -1. */
   | "stack-maps-register"
   | "memory-map"
+  /** Registration-stub storage. Only the reviewed FFI runtime owns these
+   * windows and publishes fixed native thunks through this capability. */
+  | "executable-callback-map"
+  | "executable-callback-write"
+  | "executable-callback-unmap"
   | "executable-map"
   | "executable-write"
   | "executable-call-number"
@@ -117,12 +122,27 @@ export type HostOperation =
    * exactly as foundation's compressSha256RoundsPortable: schedule words 16-63 are
    * written and the block is added into state. Short views trap. */
   | "sha256-rounds";
+/** Code generation shares the executable mapping ABI with callback stubs. */
+export function executableHostOperation(
+  operation: HostOperation,
+): HostOperation {
+  switch (operation) {
+    case "executable-callback-map":
+      return "executable-map";
+    case "executable-callback-write":
+      return "executable-write";
+    case "executable-callback-unmap":
+      return "executable-unmap";
+    default:
+      return operation;
+  }
+}
 /** Internal filesystem ABI: failures return -errno captured immediately. Paths
  * are NUL-terminated UTF-8 byte arrays; read/write cover the supplied view. */
 export function hostParameters(
   operation: HostOperation,
 ): readonly ScalarType[] | undefined {
-  switch (operation) {
+  switch (executableHostOperation(operation)) {
     case "word-park":
       return ["number", "number", "number"];
     case "word-wake":

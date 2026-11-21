@@ -133,6 +133,7 @@ function localDarwinRun(
   env: NodeJS.ProcessEnv,
 ): Observation {
   const marker = "TINT_NATIVE_" + randomUUID();
+  const report = `script p = lldb.process; t = p.GetSelectedThread(); print('${marker} EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('${marker} SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None`;
   const result = spawnSync(
     "lldb",
     [
@@ -143,11 +144,13 @@ function localDarwinRun(
       "-o",
       "process launch --stop-at-entry",
       "-o",
-      "script assert lldb.process.GetState() == lldb.eStateStopped",
+      `script assert lldb.process.GetState() == lldb.eStateStopped; print('${marker} AT_ENTRY')`,
       "-o",
       "continue",
       "-o",
-      `script p = lldb.process; t = p.GetSelectedThread(); print('${marker} EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('${marker} SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None`,
+      report,
+      "-k",
+      report,
       "--",
       invocation.artifact.path,
       ...(invocation.args ?? []),
@@ -163,6 +166,13 @@ function localDarwinRun(
       reason: "darwin-local: lldb is missing",
     };
   if (code === "ETIMEDOUT") return { ...streams, kind: "timed-out" };
+  const entered = new RegExp(`^${marker} AT_ENTRY$`, "m").test(streams.stdout);
+  if (!entered)
+    return {
+      ...streams,
+      kind: "runner-error",
+      reason: "darwin-local: LLDB launch failed before confirmed entry",
+    };
   const exit = new RegExp(`^${marker} EXIT (\\d+)$`, "m").exec(streams.stdout);
   if (result.status === 0 && exit?.[1] !== undefined)
     return { ...streams, kind: "exited", status: Number(exit[1]) };

@@ -78,6 +78,68 @@ test(
   },
 );
 
+test("SysV Node FFI specializes a fixed scalar frame", { skip: !x64 }, () => {
+  verifyHostedFixture(
+    `import { Cell, DynamicScalarFrame } from "tint:c/dl";
+import { findSymbolWords, openProgram } from "tint:ffi/unsafe";
+import { invokeFixed } from "./stub.ts";
+export function run(): number {
+  const address = findSymbolWords(openProgram(), "difftime");
+  const bytes = new Uint8Array(DynamicScalarFrame.size);
+  const frame = DynamicScalarFrame.view(bytes);
+  frame.target.low = address.low;
+  frame.target.high = address.high;
+  bytes[0] = 84;
+  bytes[8] = 42;
+  if (!invokeFixed(bytes)) return 1;
+  return Cell.view(bytes.subarray(64, 72)).f64;
+}`,
+    "sysv-node-ffi-fixed-frame",
+    [
+      ["tint:c/dl", "packages/native-runtime/src/c/dl.d.ts"],
+      ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
+      ["./stub.ts", "node-ffi-fixed-stub"],
+    ],
+    [],
+    [],
+    [
+      {
+        module: "node-ffi-fixed-stub",
+        namespace: "node-ffi-fixed-fixture",
+        retainedExports: ["invokeFixed"],
+      },
+    ],
+    {
+      replaySources: [
+        {
+          id: "node-ffi-fixed-stub",
+          text: 'export function invokeFixed(frame: Uint8Array): boolean { throw "FIXED_CALL_UNBOUND"; }',
+          dependencies: new Map<string, string>(),
+        },
+      ],
+      requireTyped: true,
+      runtimeEntry: "initializeGenerationalRuntime",
+      managedBytes: 67108864,
+      allocationCapacity: 1048576,
+      stackBytes: 4194304,
+      foreignMemoryBindings: [
+        {
+          module: "node-ffi-fixed-stub",
+          name: "invokeFixed",
+          operation: "call-static-scalar",
+          staticSignature: {
+            parameters: [cScalar("i64"), cScalar("i64")],
+            result: cScalar("f64"),
+            fixedParameters: 2,
+            callClass: "leaf",
+            errno: "none",
+          },
+        },
+      ],
+    },
+  );
+});
+
 test(
   "SysV public foreignFunction calls a glibc function",
   { skip: !x64 },
@@ -1172,6 +1234,104 @@ test(
         managedBytes: 4194304,
         allocationCapacity: 65536,
       },
+    );
+  },
+);
+
+test(
+  "SysV typed Node FFI binds and invokes a runtime-signature callback",
+  {
+    skip: !x64,
+  },
+  (context) => {
+    const previous = process.env.TINT_GENERAL_FALLBACK;
+    process.env.TINT_GENERAL_FALLBACK = "0";
+    context.after(() => {
+      if (previous === undefined) delete process.env.TINT_GENERAL_FALLBACK;
+      else process.env.TINT_GENERAL_FALLBACK = previous;
+    });
+    withOracle(
+      (library) => {
+        verifyHostedFixture(
+          `import { dlopen } from "node:ffi";
+import {
+  callObjectValueOrThrow, createArrayFromList, createDataProperty,
+  createNativeCallableView, createObject, getObjectValuePropertyOrThrow,
+  installProgramArrayIntrinsics, programRealmCore, type ScriptPropertyKey,
+} from "objects";
+export function run(): number {
+  const core = programRealmCore(), realm = core.realm, hooks = core.hooks;
+  installProgramArrayIntrinsics(core);
+  function signature(types: readonly unknown[], result: string): unknown {
+    const definition = createObject<ScriptPropertyKey, unknown>(realm.objectPrototype);
+    const arguments_ = createArrayFromList(types, 0, realm.arrayPrototype, realm, hooks);
+    createDataProperty<ScriptPropertyKey, unknown>(definition, "arguments", arguments_, hooks);
+    createDataProperty<ScriptPropertyKey, unknown>(definition, "return", result, hooks);
+    return definition;
+  }
+  function get(receiver: unknown, name: string): unknown {
+    return getObjectValuePropertyOrThrow(receiver, name, hooks, realm);
+  }
+  function call(receiver: unknown, name: string, args: readonly unknown[]): unknown {
+    return callObjectValueOrThrow(get(receiver, name), receiver, args, core.object, realm);
+  }
+  const definitions = createObject<ScriptPropertyKey, unknown>(undefined);
+  const callSignature = signature(["function", "uint64"], "uint64");
+  createDataProperty<ScriptPropertyKey, unknown>(definitions, "tint_invoke_node_callback", callSignature, hooks);
+  const opened = callObjectValueOrThrow(dlopen, undefined, [${JSON.stringify(library)}, definitions], core.object, realm);
+  const lib = get(opened, "lib"), functions = get(opened, "functions");
+  const fn = get(functions, "tint_invoke_node_callback");
+  if (fn !== call(lib, "getFunction", ["tint_invoke_node_callback", callSignature])) return 1;
+  function bigintEquals(value: unknown, expected: bigint): boolean {
+    return typeof value === "bigint" && value === expected;
+  }
+  const callback = createNativeCallableView(
+    undefined,
+    (receiver: unknown, args: readonly unknown[]): unknown => {
+      if (receiver !== undefined || args.length !== 10 ||
+          !bigintEquals(args[0], 0x8000000000000001n) || args[1] !== 0.5 ||
+          !bigintEquals(args[2], 2n) || !bigintEquals(args[3], 3n) || !bigintEquals(args[4], 4n) ||
+          !bigintEquals(args[5], 5n) || !bigintEquals(args[6], 6n) || !bigintEquals(args[7], 7n) ||
+          !bigintEquals(args[8], 8n) || !bigintEquals(args[9], 0xfedcba9876543210n))
+        throw "CALLBACK_ABI";
+      return args[9];
+    },
+    undefined, "oracle", 10, realm, hooks,
+  );
+  const callbackType = signature(
+    ["uint64", "double", "uint64", "uint64", "uint64", "uint64",
+      "uint64", "uint64", "uint64", "uint64"], "uint64",
+  );
+  const pointer = call(lib, "registerCallback", [callbackType, callback]);
+  const value = call(functions, "tint_invoke_node_callback", [pointer, 0x8000000000000001n]);
+  call(lib, "unregisterCallback", [pointer]);
+  call(lib, "close", []);
+  return bigintEquals(value, 0xfedcba9876543210n) ? 42 : 2;
+}`,
+          "sysv-node-ffi-runtime-callback",
+          [
+            ["node:ffi", "packages/native-runtime/src/node/ffi.ts"],
+            ["objects", "packages/js-runtime/src/objects/index.ts"],
+          ],
+          [],
+          [],
+          [],
+          {
+            requireTyped: true,
+            allowJit: true,
+            runtimeEntry: "initializeGenerationalRuntime",
+            managedBytes: 67108864,
+            allocationCapacity: 1048576,
+            stackBytes: 4194304,
+          },
+        );
+      },
+      `#include <stdint.h>
+typedef uint64_t (*Callback)(uint64_t, double, uint64_t, uint64_t, uint64_t,
+                              uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
+uint64_t tint_invoke_node_callback(Callback fn, uint64_t input) {
+  return fn(input, 0.5, 2, 3, 4, 5, 6, 7, 8, UINT64_C(0xfedcba9876543210));
+}`,
     );
   },
 );

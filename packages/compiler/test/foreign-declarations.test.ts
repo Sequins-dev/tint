@@ -15,9 +15,11 @@ import {
   type CLibraryDeclaration,
   type CTarget,
 } from "@tint/abi/c";
-import { createSourceText } from "@tint/source/text";
+import { createSourceText, createSourceTextView } from "@tint/source/text";
 import { dynamicCallFrame } from "@tint/ir/scalar";
-import { parseModule } from "@tint/typescript/syntax";
+import { parseModule, rewriteModule } from "@tint/typescript/syntax";
+import { loadSourceGraph } from "@tint/typescript/modules";
+import { linuxX86_64CTarget } from "@tint/abi/c/sysv";
 import {
   parseForeignDeclarations,
   prepareForeignLibrary,
@@ -25,11 +27,78 @@ import {
   expandForeignInputs,
   foreignViews,
   foreignViewRegistry,
+  foreignRuntimeBindings,
+  foreignRuntimeModules,
 } from "../src/native/foreign/index.ts";
+
+import {
+  addFixedFfiPlans,
+  fixedFfiCallArities,
+  makeStaticFfiModule,
+  recognizeStaticFfi,
+} from "../src/native/foreign/static-ffi.ts";
 
 const root = new URL("../../native-runtime/src/c/", import.meta.url);
 const commonCrypto = readFileSync(new URL("commoncrypto.d.ts", root), "utf8");
 const libSystem = readFileSync(new URL("libsystem.d.ts", root), "utf8");
+
+test("the application resolver grants native Node FFI only on supported targets", () => {
+  const entry = "application/main.ts";
+  const ffi = "packages/native-runtime/src/node/ffi.ts";
+  const buffer = "packages/native-runtime/src/node/buffer.ts";
+  const encoder = new TextEncoder();
+  const inputs = [
+    {
+      id: entry,
+      packageId: "application",
+      bytes: encoder.encode(
+        'import { dlopen } from "node:ffi"; import { Buffer } from "node:buffer";',
+      ),
+    },
+    {
+      id: ffi,
+      packageId: "native-runtime",
+      bytes: encoder.encode("export const dlopen = 1;"),
+    },
+    {
+      id: buffer,
+      packageId: "native-runtime",
+      bytes: encoder.encode("export const Buffer = 1;"),
+    },
+  ];
+  for (const target of [
+    darwinArm64CTarget,
+    linuxArm64CTarget,
+    linuxX86_64CTarget,
+  ]) {
+    const expanded = expandForeignInputs(inputs, target);
+    assert.ok(expanded.ok);
+    const loaded = loadSourceGraph(
+      expanded.value.inputs,
+      expanded.value.mappings,
+      [entry],
+    );
+    assert.ok(loaded.ok, JSON.stringify(loaded));
+    assert.deepEqual(
+      loaded.value.find((module) => module.id === entry)?.dependencies,
+      new Map([
+        ["node:ffi", ffi],
+        ["node:buffer", buffer],
+      ]),
+    );
+  }
+  const unsupported = expandForeignInputs(inputs, {
+    ...linuxArm64CTarget,
+    name: "other",
+  });
+  assert.ok(unsupported.ok);
+  const rejected = loadSourceGraph(
+    unsupported.value.inputs,
+    unsupported.value.mappings,
+    [entry],
+  );
+  assert.equal(rejected.ok, false);
+});
 
 function parsed(
   text: string,
@@ -1259,5 +1328,154 @@ test("callback parameters make may-callback calls; callback types register funct
       "i32, Callback, Async",
     ),
     /async calls take no callbacks/,
+  );
+});
+
+test("literal Node FFI definitions contribute canonical static ABI plans", () => {
+  const parsed = parseModule(
+    createSourceTextView(
+      `import { dlopen as open } from "node:ffi";
+import ffi from "node:ffi";
+const names = ["i32"];
+open(null, {
+  first: { arguments: ["ptr", "float"], return: "int8" },
+  same: { arguments: ["string", "f32"], return: "i8" },
+  dynamic: { arguments: names, return: "i32" },
+  get lazy() { return { arguments: ["uint64"] }; },
+  ["computed"]: { arguments: ["uint8"] },
+});
+
+ffi.dlopen(null, { no_args: {}, char: { return: "char" } });`,
+    ),
+  );
+  assert.ok(parsed.ok, !parsed.ok ? parsed.error.message : undefined);
+  const plans = recognizeStaticFfi(
+    [
+      {
+        id: "fixture",
+        module: parsed.value,
+        dependencies: new Map([
+          ["node:ffi", "packages/native-runtime/src/node/ffi.ts"],
+        ]),
+      },
+    ],
+    false,
+  );
+  assert.deepEqual(
+    plans.map((plan) => plan.key),
+    ["i8(pointer,f32)", "void()", "u8()"],
+  );
+  assert.deepEqual(plans[0]?.signature, {
+    parameters: [
+      { kind: "pointer", pointee: { kind: "void" } },
+      { kind: "scalar", scalar: "f32" },
+    ],
+    result: { kind: "scalar", scalar: "i8" },
+    fixedParameters: 2,
+    callClass: "leaf",
+    errno: "none",
+  });
+});
+
+test("typed FFI calls enroll fixed arities without literal definitions", () => {
+  const parsed = parseModule(
+    createSourceTextView(`
+export function consume(fn: Function, args: number[]): number {
+  fn(...args);
+  fn?.(1);
+  fn();
+  return fn(1, 2) as number;
+}`),
+  );
+  assert.ok(parsed.ok);
+  const arities = fixedFfiCallArities([
+    { id: "consumer", module: parsed.value, dependencies: new Map() },
+  ]);
+  assert.deepEqual(arities, [0, 2]);
+  const generated = makeStaticFfiModule([], true, arities);
+  const entries = generated.module.statements.flatMap((statement) =>
+    statement?.kind === "function" && statement.name.startsWith("tryFixedFfi")
+      ? [[statement.name, statement.parameters.length]]
+      : [],
+  );
+  assert.deepEqual(entries, [
+    ["tryFixedFfi0", 1],
+    ["tryFixedFfi2", 3],
+  ]);
+});
+
+test("runtime i32 definitions get direct typed entries without replacing the generic adapter", () => {
+  const plans = addFixedFfiPlans([], [0, 2]);
+  assert.deepEqual(
+    plans.map(({ signature, typedOnly }) => [
+      signature.parameters.length,
+      signature.result,
+      typedOnly,
+    ]),
+    [
+      [0, { kind: "scalar", scalar: "i32" }, true],
+      [2, { kind: "scalar", scalar: "i32" }, true],
+    ],
+  );
+  assert.deepEqual(addFixedFfiPlans(plans, [2]), plans);
+  const generated = makeStaticFfiModule(plans, true, [0, 2]);
+  const emitted = generated.module.statements.flatMap((statement) =>
+    statement?.kind === "function" ? [statement.name] : [],
+  );
+  assert.ok(emitted.includes("callStaticFfiNumber0"));
+  assert.ok(emitted.includes("callStaticFfiNumber1"));
+  assert.ok(emitted.includes("typedFfiIndex"));
+  assert.ok(emitted.includes("invokeTryFixedFfi0Frame"));
+  assert.ok(emitted.includes("invokeTryFixedFfi2Frame"));
+  assert.ok(emitted.includes("invokeTryMixedFfi2Frame"));
+  assert.ok(!emitted.includes("invokeCallStaticFfiNumber0"));
+  assert.ok(!emitted.includes("callStaticFfi0"));
+  const guards = new Set<string>();
+  rewriteModule(generated.module, {
+    expression: (expression) => {
+      if (expression.kind === "member") guards.add(expression.property);
+      return expression;
+    },
+  });
+  assert.ok(
+    guards.has("lifetime") &&
+      guards.has("nodeCallbacks") &&
+      guards.has("nativeCallbacks") &&
+      guards.has("pointerI32Callback") &&
+      guards.has("typedRecord"),
+  );
+});
+
+test("Node FFI binds a precompiled runtime-registered i32 callback prototype", () => {
+  const modules = foreignRuntimeModules;
+  const bindings = foreignRuntimeBindings(
+    new Set([modules.primitives, modules.nodeFfi, modules.callbackStubs]),
+  );
+  const binding = bindings.memoryBindings.find(
+    (entry) => entry.name === "runtimeI32CallbackAddress",
+  );
+  assert.equal(binding?.operation, "runtime-callback-address");
+  assert.deepEqual(binding?.staticSignature, {
+    parameters: [{ kind: "scalar", scalar: "i32" }],
+    result: { kind: "scalar", scalar: "i32" },
+    fixedParameters: 1,
+    callClass: "leaf",
+    errno: "none",
+  });
+});
+
+test("fixed unary Buffer calls can borrow a stable backing through a typed entry", () => {
+  const plans = addFixedFfiPlans([], [1]);
+  const bytePlan = plans.find(
+    (plan) => plan.signature.parameters[0]?.kind === "pointer",
+  );
+  assert.equal(bytePlan?.typedOnly, true);
+  const generated = makeStaticFfiModule(plans, true, [1]);
+  assert.ok(
+    generated.module.statements.some(
+      (statement) =>
+        statement?.kind === "function" &&
+        statement.name === "staticFfiBytesCall",
+    ),
   );
 });

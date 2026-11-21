@@ -1,0 +1,2365 @@
+{
+  "runs": {
+    "typed-buffer-wrapper-locked": {
+      "head": "23624bc111ec27675adcd53c96975d90840b063f",
+      "node": "/private/tmp/tint-node-v26.13.1.eiNCe7/node-v26.13.1-darwin-arm64/bin/node",
+      "nodeSha256": "266dec4dce3a6cdcf5cdc38722a00cf5ae6a12cc51068d2a227655bbb75751ec",
+      "benchmark": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-node-ffi-bench-ZLjhHg/benchmark.mjs",
+      "sourceSha256": "9982661afed1dcbdd5e2641c72bfa8b14326e678e20909a0e31af8e9f0fd283a",
+      "dso": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-node-ffi-bench-ZLjhHg/library.dylib",
+      "dsoSha256": "0a584ea5eb449a67104857fc34f393d3eaa11b7eade505f9ba8a33f6c6f93c66",
+      "target": "darwin-aarch64",
+      "iterations": 100000,
+      "warm": 20000,
+      "artifacts": {
+        "tintTypedLiteral": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-tintTypedLiteral-C5BmWX/node-ffi-benchmark-tintTypedLiteral",
+          "imageSha256": "90be8361216ec2fc35b986f6bb62f2825f8a539b92182c4e494203cebbeaca0f",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-tintTypedLiteral-C5BmWX/node-ffi-benchmark-tintTypedLiteral.manifest.json",
+            "sha256": "742d80450ed6c65d6900026fa1d39843e9f90e50da7583b3b9e0e6ebc08d9ad9"
+          }
+        },
+        "tintTypedRuntime": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-tintTypedRuntime-op250l/node-ffi-benchmark-tintTypedRuntime",
+          "imageSha256": "cad27a79581f5b432ed7145ef6988504039062d7a6904ba399a4c29f43a1a9aa",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-tintTypedRuntime-op250l/node-ffi-benchmark-tintTypedRuntime.manifest.json",
+            "sha256": "d8a5aa7c90da73777c0fa38a6b4b4a74aa42a81d93be465d7448e311b435117a"
+          }
+        }
+      },
+      "sourcePatchSha256": "d06bdbc10a21b56934acb4724ef341519f4b4c759a50847a71d6e1ba95a3f926",
+      "label": "typed-i32-thunk",
+      "candidates": [
+        {
+          "head": "23624bc111ec27675adcd53c96975d90840b063f",
+          "node": "/private/tmp/tint-node-v26.13.1.eiNCe7/node-v26.13.1-darwin-arm64/bin/node",
+          "nodeSha256": "266dec4dce3a6cdcf5cdc38722a00cf5ae6a12cc51068d2a227655bbb75751ec",
+          "benchmark": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-node-ffi-bench-ZLjhHg/benchmark.mjs",
+          "sourceSha256": "9982661afed1dcbdd5e2641c72bfa8b14326e678e20909a0e31af8e9f0fd283a",
+          "dso": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-node-ffi-bench-ZLjhHg/library.dylib",
+          "dsoSha256": "0a584ea5eb449a67104857fc34f393d3eaa11b7eade505f9ba8a33f6c6f93c66",
+          "target": "darwin-aarch64",
+          "iterations": 100000,
+          "warm": 20000,
+          "artifacts": {
+            "tintTypedLiteral": {
+              "target": "darwin-aarch64",
+              "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-tintTypedLiteral-RWPzVQ/node-ffi-benchmark-tintTypedLiteral",
+              "imageSha256": "47f044c908b464d10fb4eec5f971e58a89e9ed4b11fe7ec471e2a1e4b6122858",
+              "buildManifest": {
+                "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-tintTypedLiteral-RWPzVQ/node-ffi-benchmark-tintTypedLiteral.manifest.json",
+                "sha256": "45e928ae97fb6f8543184643e0385a87c7a784373b5bd1647afbec2ad0f9d429"
+              }
+            },
+            "tintTypedRuntime": {
+              "target": "darwin-aarch64",
+              "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-tintTypedRuntime-9Gd0r7/node-ffi-benchmark-tintTypedRuntime",
+              "imageSha256": "fdf7eb5b4fce9897461fabe7ba6ed3d7c7667f1a79d4842a70a0fd350965bba3",
+              "buildManifest": {
+                "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-benchmark-tintTypedRuntime-9Gd0r7/node-ffi-benchmark-tintTypedRuntime.manifest.json",
+                "sha256": "4777e8c6ee9559af55c6a095caae71acf31b73ddc8264fd1fcc5c676aa3def08"
+              }
+            }
+          },
+          "sourcePatchSha256": "6ad7d21fb96bc8700f2bcbbd0cfb5028f001250e9e3749b4f4d363f99348453b",
+          "label": "typed-buffer-wrapper"
+        }
+      ],
+      "cpu": "Apple M5 Max",
+      "rounds": 15,
+      "timingLock": "/Users/stephenbelanger/.t3/tint-timing.lock",
+      "host": [
+        {
+          "round": 0,
+          "launches": [
+            {
+              "workload": "node",
+              "idle": 3.6199095022624435,
+              "loadBefore": [22.42919921875, 25.0380859375, 24.2646484375],
+              "loadAfter": [22.42919921875, 25.0380859375, 24.2646484375]
+            },
+            {
+              "workload": "tintTypedLiteral",
+              "idle": 5.99731154999483,
+              "loadBefore": [22.42919921875, 25.0380859375, 24.2646484375],
+              "loadAfter": [22.234375, 24.9541015625, 24.2392578125]
+            },
+            {
+              "workload": "tintTypedRuntime",
+              "idle": 3.7735849056603774,
+              "loadBefore": [22.234375, 24.9541015625, 24.2392578125],
+              "loadAfter": [22.69580078125, 25.00439453125, 24.26123046875]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedLiteral",
+              "idle": 12.467561773665802,
+              "loadBefore": [22.69580078125, 25.00439453125, 24.26123046875],
+              "loadAfter": [22.8798828125, 25.00390625, 24.26513671875]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedRuntime",
+              "idle": 11.966677924124733,
+              "loadBefore": [22.8798828125, 25.00390625, 24.26513671875],
+              "loadAfter": [22.64892578125, 24.92041015625, 24.23974609375]
+            }
+          ]
+        },
+        {
+          "round": 1,
+          "launches": [
+            {
+              "workload": "tintTypedLiteral",
+              "idle": 6.413677240834074,
+              "loadBefore": [22.64892578125, 24.92041015625, 24.23974609375],
+              "loadAfter": [22.1962890625, 24.78857421875, 24.197265625]
+            },
+            {
+              "workload": "tintTypedRuntime",
+              "idle": 2.1108663729809103,
+              "loadBefore": [22.1962890625, 24.78857421875, 24.197265625],
+              "loadAfter": [22.3798828125, 24.7451171875, 24.1884765625]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedLiteral",
+              "idle": 4.839697774147437,
+              "loadBefore": [22.3798828125, 24.7451171875, 24.1884765625],
+              "loadAfter": [23.14990234375, 24.865234375, 24.23388671875]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedRuntime",
+              "idle": 8.304916950830492,
+              "loadBefore": [23.14990234375, 24.865234375, 24.23388671875],
+              "loadAfter": [22.8974609375, 24.7841796875, 24.208984375]
+            },
+            {
+              "workload": "node",
+              "idle": 1.477832512315271,
+              "loadBefore": [22.8974609375, 24.7841796875, 24.208984375],
+              "loadAfter": [22.8974609375, 24.7841796875, 24.208984375]
+            }
+          ]
+        },
+        {
+          "round": 2,
+          "launches": [
+            {
+              "workload": "tintTypedRuntime",
+              "idle": 6.543863220028496,
+              "loadBefore": [22.8974609375, 24.7841796875, 24.208984375],
+              "loadAfter": [22.5849609375, 24.68798828125, 24.17822265625]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedLiteral",
+              "idle": 6.992195739295507,
+              "loadBefore": [22.5849609375, 24.68798828125, 24.17822265625],
+              "loadAfter": [22.8583984375, 24.70947265625, 24.1884765625]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedRuntime",
+              "idle": 7.958172812328013,
+              "loadBefore": [22.8583984375, 24.70947265625, 24.1884765625],
+              "loadAfter": [22.30908203125, 24.564453125, 24.14013671875]
+            },
+            {
+              "workload": "node",
+              "idle": 0.3110419906687403,
+              "loadBefore": [22.30908203125, 24.564453125, 24.14013671875],
+              "loadAfter": [22.30908203125, 24.564453125, 24.14013671875]
+            },
+            {
+              "workload": "tintTypedLiteral",
+              "idle": 11.910160889752726,
+              "loadBefore": [22.30908203125, 24.564453125, 24.14013671875],
+              "loadAfter": [21.4833984375, 24.35546875, 24.06884765625]
+            }
+          ]
+        },
+        {
+          "round": 3,
+          "launches": [
+            {
+              "workload": "typed-buffer-wrapper.tintTypedLiteral",
+              "idle": 9.41834451901566,
+              "loadBefore": [21.4833984375, 24.35546875, 24.06884765625],
+              "loadAfter": [21.0439453125, 24.21630859375, 24.021484375]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedRuntime",
+              "idle": 6.763024484953079,
+              "loadBefore": [21.0439453125, 24.21630859375, 24.021484375],
+              "loadAfter": [20.5595703125, 24.06298828125, 23.96826171875]
+            },
+            {
+              "workload": "node",
+              "idle": 10.133333333333333,
+              "loadBefore": [20.5595703125, 24.06298828125, 23.96826171875],
+              "loadAfter": [20.5595703125, 24.06298828125, 23.96826171875]
+            },
+            {
+              "workload": "tintTypedLiteral",
+              "idle": 10.599765633322681,
+              "loadBefore": [20.5595703125, 24.06298828125, 23.96826171875],
+              "loadAfter": [19.9541015625, 23.87890625, 23.90380859375]
+            },
+            {
+              "workload": "tintTypedRuntime",
+              "idle": 6.696078431372549,
+              "loadBefore": [19.9541015625, 23.87890625, 23.90380859375],
+              "loadAfter": [19.95751953125, 23.814453125, 23.880859375]
+            }
+          ]
+        },
+        {
+          "round": 4,
+          "launches": [
+            {
+              "workload": "typed-buffer-wrapper.tintTypedRuntime",
+              "idle": 5.734612482483562,
+              "loadBefore": [19.95751953125, 23.814453125, 23.880859375],
+              "loadAfter": [20.11083984375, 23.72119140625, 23.8466796875]
+            },
+            {
+              "workload": "node",
+              "idle": 2.2988505747126435,
+              "loadBefore": [20.11083984375, 23.72119140625, 23.8466796875],
+              "loadAfter": [20.181640625, 23.67578125, 23.82958984375]
+            },
+            {
+              "workload": "tintTypedLiteral",
+              "idle": 11.401187746222144,
+              "loadBefore": [20.181640625, 23.67578125, 23.82958984375],
+              "loadAfter": [20.0068359375, 23.58154296875, 23.79541015625]
+            },
+            {
+              "workload": "tintTypedRuntime",
+              "idle": 22.15281650864473,
+              "loadBefore": [20.0068359375, 23.58154296875, 23.79541015625],
+              "loadAfter": [19.765625, 23.47216796875, 23.75537109375]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedLiteral",
+              "idle": 22.116689280868385,
+              "loadBefore": [19.765625, 23.47216796875, 23.75537109375],
+              "loadAfter": [19.6240234375, 23.380859375, 23.72119140625]
+            }
+          ]
+        },
+        {
+          "round": 5,
+          "launches": [
+            {
+              "workload": "node",
+              "idle": 18.48906560636183,
+              "loadBefore": [19.6240234375, 23.380859375, 23.72119140625],
+              "loadAfter": [19.17333984375, 23.22509765625, 23.6640625]
+            },
+            {
+              "workload": "tintTypedLiteral",
+              "idle": 20.377273240709364,
+              "loadBefore": [19.17333984375, 23.22509765625, 23.6640625],
+              "loadAfter": [18.7587890625, 23.07177734375, 23.607421875]
+            },
+            {
+              "workload": "tintTypedRuntime",
+              "idle": 22.599123890823318,
+              "loadBefore": [18.7587890625, 23.07177734375, 23.607421875],
+              "loadAfter": [18.7587890625, 23.07177734375, 23.607421875]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedLiteral",
+              "idle": 19.542053956019043,
+              "loadBefore": [18.7587890625, 23.07177734375, 23.607421875],
+              "loadAfter": [19.01806640625, 23.0537109375, 23.59765625]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedRuntime",
+              "idle": 17.4107642385588,
+              "loadBefore": [19.01806640625, 23.0537109375, 23.59765625],
+              "loadAfter": [18.4560546875, 22.8701171875, 23.529296875]
+            }
+          ]
+        },
+        {
+          "round": 6,
+          "launches": [
+            {
+              "workload": "tintTypedLiteral",
+              "idle": 6.32201488732538,
+              "loadBefore": [18.4560546875, 22.8701171875, 23.529296875],
+              "loadAfter": [17.91162109375, 22.60986328125, 23.42919921875]
+            },
+            {
+              "workload": "tintTypedRuntime",
+              "idle": 3.4861509073543457,
+              "loadBefore": [17.91162109375, 22.60986328125, 23.42919921875],
+              "loadAfter": [17.67822265625, 22.4833984375, 23.37939453125]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedLiteral",
+              "idle": 6.29125825165033,
+              "loadBefore": [17.67822265625, 22.4833984375, 23.37939453125],
+              "loadAfter": [17.70361328125, 22.40869140625, 23.34765625]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedRuntime",
+              "idle": 12.953483196082795,
+              "loadBefore": [17.70361328125, 22.40869140625, 23.34765625],
+              "loadAfter": [17.48681640625, 22.28564453125, 23.29833984375]
+            },
+            {
+              "workload": "node",
+              "idle": 6.902985074626866,
+              "loadBefore": [17.48681640625, 22.28564453125, 23.29833984375],
+              "loadAfter": [17.48681640625, 22.28564453125, 23.29833984375]
+            }
+          ]
+        },
+        {
+          "round": 7,
+          "launches": [
+            {
+              "workload": "tintTypedRuntime",
+              "idle": 15.558260484674118,
+              "loadBefore": [17.48681640625, 22.28564453125, 23.29833984375],
+              "loadAfter": [17.04736328125, 22.11474609375, 23.23193359375]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedLiteral",
+              "idle": 7.814583119680033,
+              "loadBefore": [17.04736328125, 22.11474609375, 23.23193359375],
+              "loadAfter": [17.60400390625, 22.14599609375, 23.236328125]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedRuntime",
+              "idle": 3.9297825653301417,
+              "loadBefore": [17.60400390625, 22.14599609375, 23.236328125],
+              "loadAfter": [17.47509765625, 22.0439453125, 23.19384765625]
+            },
+            {
+              "workload": "node",
+              "idle": 1.225114854517611,
+              "loadBefore": [17.47509765625, 22.0439453125, 23.19384765625],
+              "loadAfter": [17.47509765625, 22.0439453125, 23.19384765625]
+            },
+            {
+              "workload": "tintTypedLiteral",
+              "idle": 3.562268452550584,
+              "loadBefore": [17.47509765625, 22.0439453125, 23.19384765625],
+              "loadAfter": [17.51708984375, 21.9765625, 23.1630859375]
+            }
+          ]
+        },
+        {
+          "round": 8,
+          "launches": [
+            {
+              "workload": "typed-buffer-wrapper.tintTypedLiteral",
+              "idle": 6.518046709129512,
+              "loadBefore": [17.51708984375, 21.9765625, 23.1630859375],
+              "loadAfter": [17.7958984375, 21.9599609375, 23.150390625]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedRuntime",
+              "idle": 6.898740873981589,
+              "loadBefore": [17.7958984375, 21.9599609375, 23.150390625],
+              "loadAfter": [18.05224609375, 21.94384765625, 23.1376953125]
+            },
+            {
+              "workload": "node",
+              "idle": 2.1702838063439067,
+              "loadBefore": [18.05224609375, 21.94384765625, 23.1376953125],
+              "loadAfter": [18.8486328125, 22.0439453125, 23.166015625]
+            },
+            {
+              "workload": "tintTypedLiteral",
+              "idle": 11.26567604594794,
+              "loadBefore": [18.8486328125, 22.0439453125, 23.166015625],
+              "loadAfter": [18.7001953125, 21.9599609375, 23.1298828125]
+            },
+            {
+              "workload": "tintTypedRuntime",
+              "idle": 21.534457395043567,
+              "loadBefore": [18.7001953125, 21.9599609375, 23.1298828125],
+              "loadAfter": [18.40380859375, 21.84423828125, 23.08203125]
+            }
+          ]
+        },
+        {
+          "round": 9,
+          "launches": [
+            {
+              "workload": "typed-buffer-wrapper.tintTypedRuntime",
+              "idle": 13.527342500799488,
+              "loadBefore": [18.40380859375, 21.84423828125, 23.08203125],
+              "loadAfter": [18.291015625, 21.763671875, 23.04638671875]
+            },
+            {
+              "workload": "node",
+              "idle": 3.3989266547406083,
+              "loadBefore": [18.291015625, 21.763671875, 23.04638671875],
+              "loadAfter": [18.291015625, 21.763671875, 23.04638671875]
+            },
+            {
+              "workload": "tintTypedLiteral",
+              "idle": 12.674650698602795,
+              "loadBefore": [18.291015625, 21.763671875, 23.04638671875],
+              "loadAfter": [18.267578125, 21.701171875, 23.0166015625]
+            },
+            {
+              "workload": "tintTypedRuntime",
+              "idle": 14.323754576722513,
+              "loadBefore": [18.267578125, 21.701171875, 23.0166015625],
+              "loadAfter": [18.005859375, 21.58984375, 22.96923828125]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedLiteral",
+              "idle": 14.997232982844494,
+              "loadBefore": [18.005859375, 21.58984375, 22.96923828125],
+              "loadAfter": [17.76513671875, 21.47998046875, 22.92236328125]
+            }
+          ]
+        },
+        {
+          "round": 10,
+          "launches": [
+            {
+              "workload": "node",
+              "idle": 13.717693836978132,
+              "loadBefore": [17.76513671875, 21.47998046875, 22.92236328125],
+              "loadAfter": [17.76513671875, 21.47998046875, 22.92236328125]
+            },
+            {
+              "workload": "tintTypedLiteral",
+              "idle": 21.987172274108246,
+              "loadBefore": [17.76513671875, 21.47998046875, 22.92236328125],
+              "loadAfter": [17.46337890625, 21.35546875, 22.86962890625]
+            },
+            {
+              "workload": "tintTypedRuntime",
+              "idle": 17.742110400173516,
+              "loadBefore": [17.46337890625, 21.35546875, 22.86962890625],
+              "loadAfter": [17.42626953125, 21.28271484375, 22.8349609375]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedLiteral",
+              "idle": 16.475770925110133,
+              "loadBefore": [17.42626953125, 21.28271484375, 22.8349609375],
+              "loadAfter": [17.47216796875, 21.22802734375, 22.80615234375]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedRuntime",
+              "idle": 6.658509228102376,
+              "loadBefore": [17.47216796875, 21.22802734375, 22.80615234375],
+              "loadAfter": [17.03369140625, 21.07470703125, 22.74267578125]
+            }
+          ]
+        },
+        {
+          "round": 11,
+          "launches": [
+            {
+              "workload": "tintTypedLiteral",
+              "idle": 4.988249564096733,
+              "loadBefore": [17.03369140625, 21.07470703125, 22.74267578125],
+              "loadAfter": [19.26708984375, 21.35205078125, 22.8115234375]
+            },
+            {
+              "workload": "tintTypedRuntime",
+              "idle": 7.526661197703035,
+              "loadBefore": [19.26708984375, 21.35205078125, 22.8115234375],
+              "loadAfter": [19.4658203125, 21.32421875, 22.7841796875]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedLiteral",
+              "idle": 5.628180820277417,
+              "loadBefore": [19.4658203125, 21.32421875, 22.7841796875],
+              "loadAfter": [19.10791015625, 21.21875, 22.73828125]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedRuntime",
+              "idle": 0.8969759097898513,
+              "loadBefore": [19.10791015625, 21.21875, 22.73828125],
+              "loadAfter": [19.77294921875, 21.29296875, 22.74658203125]
+            },
+            {
+              "workload": "node",
+              "idle": 0.09433962264150944,
+              "loadBefore": [19.77294921875, 21.29296875, 22.74658203125],
+              "loadAfter": [19.77294921875, 21.29296875, 22.74658203125]
+            }
+          ]
+        },
+        {
+          "round": 12,
+          "launches": [
+            {
+              "workload": "tintTypedRuntime",
+              "idle": 0.4508724675020494,
+              "loadBefore": [19.77294921875, 21.29296875, 22.74658203125],
+              "loadAfter": [21.03759765625, 21.513671875, 22.8076171875]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedLiteral",
+              "idle": 3.3977470464328237,
+              "loadBefore": [21.03759765625, 21.513671875, 22.8076171875],
+              "loadAfter": [21.67822265625, 21.62939453125, 22.8330078125]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedRuntime",
+              "idle": 3.4910174943123873,
+              "loadBefore": [21.67822265625, 21.62939453125, 22.8330078125],
+              "loadAfter": [20.85888671875, 21.458984375, 22.7587890625]
+            },
+            {
+              "workload": "node",
+              "idle": 5.064782096584216,
+              "loadBefore": [20.85888671875, 21.458984375, 22.7587890625],
+              "loadAfter": [20.85888671875, 21.458984375, 22.7587890625]
+            },
+            {
+              "workload": "tintTypedLiteral",
+              "idle": 7.035482640213659,
+              "loadBefore": [20.85888671875, 21.458984375, 22.7587890625],
+              "loadAfter": [20.9501953125, 21.4677734375, 22.75390625]
+            }
+          ]
+        },
+        {
+          "round": 13,
+          "launches": [
+            {
+              "workload": "typed-buffer-wrapper.tintTypedLiteral",
+              "idle": 3.00607822410148,
+              "loadBefore": [20.9501953125, 21.4677734375, 22.75390625],
+              "loadAfter": [20.3427734375, 21.3203125, 22.68603515625]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedRuntime",
+              "idle": 10.408314773570899,
+              "loadBefore": [20.3427734375, 21.3203125, 22.68603515625],
+              "loadAfter": [20.03662109375, 21.22607421875, 22.63623046875]
+            },
+            {
+              "workload": "node",
+              "idle": 18.019257221458048,
+              "loadBefore": [20.03662109375, 21.22607421875, 22.63623046875],
+              "loadAfter": [20.03662109375, 21.22607421875, 22.63623046875]
+            },
+            {
+              "workload": "tintTypedLiteral",
+              "idle": 14.853672004417449,
+              "loadBefore": [20.03662109375, 21.22607421875, 22.63623046875],
+              "loadAfter": [19.47265625, 21.08935546875, 22.57958984375]
+            },
+            {
+              "workload": "tintTypedRuntime",
+              "idle": 1.9915292421375146,
+              "loadBefore": [19.47265625, 21.08935546875, 22.57958984375],
+              "loadAfter": [20.28369140625, 21.2158203125, 22.607421875]
+            }
+          ]
+        },
+        {
+          "round": 14,
+          "launches": [
+            {
+              "workload": "typed-buffer-wrapper.tintTypedRuntime",
+              "idle": 6.030927835051546,
+              "loadBefore": [20.28369140625, 21.2158203125, 22.607421875],
+              "loadAfter": [19.9404296875, 21.12890625, 22.568359375]
+            },
+            {
+              "workload": "node",
+              "idle": 6.335616438356165,
+              "loadBefore": [19.9404296875, 21.12890625, 22.568359375],
+              "loadAfter": [19.9404296875, 21.12890625, 22.568359375]
+            },
+            {
+              "workload": "tintTypedLiteral",
+              "idle": 7.966730133279888,
+              "loadBefore": [19.9404296875, 21.12890625, 22.568359375],
+              "loadAfter": [19.78466796875, 21.07666015625, 22.54150390625]
+            },
+            {
+              "workload": "tintTypedRuntime",
+              "idle": 10.960629921259843,
+              "loadBefore": [19.78466796875, 21.07666015625, 22.54150390625],
+              "loadAfter": [20.3623046875, 21.1748046875, 22.5673828125]
+            },
+            {
+              "workload": "typed-buffer-wrapper.tintTypedLiteral",
+              "idle": 6.048028461310406,
+              "loadBefore": [20.3623046875, 21.1748046875, 22.5673828125],
+              "loadAfter": [19.388671875, 20.92041015625, 22.45166015625]
+            }
+          ]
+        }
+      ],
+      "native": [
+        {
+          "round": 0,
+          "workload": "tintTypedLiteral",
+          "imageSha256": "90be8361216ec2fc35b986f6bb62f2825f8a539b92182c4e494203cebbeaca0f",
+          "status": 42
+        },
+        {
+          "round": 0,
+          "workload": "tintTypedRuntime",
+          "imageSha256": "cad27a79581f5b432ed7145ef6988504039062d7a6904ba399a4c29f43a1a9aa",
+          "status": 42
+        },
+        {
+          "round": 0,
+          "workload": "typed-buffer-wrapper.tintTypedLiteral",
+          "imageSha256": "47f044c908b464d10fb4eec5f971e58a89e9ed4b11fe7ec471e2a1e4b6122858",
+          "status": 42
+        },
+        {
+          "round": 0,
+          "workload": "typed-buffer-wrapper.tintTypedRuntime",
+          "imageSha256": "fdf7eb5b4fce9897461fabe7ba6ed3d7c7667f1a79d4842a70a0fd350965bba3",
+          "status": 42
+        },
+        {
+          "round": 1,
+          "workload": "tintTypedLiteral",
+          "imageSha256": "90be8361216ec2fc35b986f6bb62f2825f8a539b92182c4e494203cebbeaca0f",
+          "status": 42
+        },
+        {
+          "round": 1,
+          "workload": "tintTypedRuntime",
+          "imageSha256": "cad27a79581f5b432ed7145ef6988504039062d7a6904ba399a4c29f43a1a9aa",
+          "status": 42
+        },
+        {
+          "round": 1,
+          "workload": "typed-buffer-wrapper.tintTypedLiteral",
+          "imageSha256": "47f044c908b464d10fb4eec5f971e58a89e9ed4b11fe7ec471e2a1e4b6122858",
+          "status": 42
+        },
+        {
+          "round": 1,
+          "workload": "typed-buffer-wrapper.tintTypedRuntime",
+          "imageSha256": "fdf7eb5b4fce9897461fabe7ba6ed3d7c7667f1a79d4842a70a0fd350965bba3",
+          "status": 42
+        },
+        {
+          "round": 2,
+          "workload": "tintTypedRuntime",
+          "imageSha256": "cad27a79581f5b432ed7145ef6988504039062d7a6904ba399a4c29f43a1a9aa",
+          "status": 42
+        },
+        {
+          "round": 2,
+          "workload": "typed-buffer-wrapper.tintTypedLiteral",
+          "imageSha256": "47f044c908b464d10fb4eec5f971e58a89e9ed4b11fe7ec471e2a1e4b6122858",
+          "status": 42
+        },
+        {
+          "round": 2,
+          "workload": "typed-buffer-wrapper.tintTypedRuntime",
+          "imageSha256": "fdf7eb5b4fce9897461fabe7ba6ed3d7c7667f1a79d4842a70a0fd350965bba3",
+          "status": 42
+        },
+        {
+          "round": 2,
+          "workload": "tintTypedLiteral",
+          "imageSha256": "90be8361216ec2fc35b986f6bb62f2825f8a539b92182c4e494203cebbeaca0f",
+          "status": 42
+        },
+        {
+          "round": 3,
+          "workload": "typed-buffer-wrapper.tintTypedLiteral",
+          "imageSha256": "47f044c908b464d10fb4eec5f971e58a89e9ed4b11fe7ec471e2a1e4b6122858",
+          "status": 42
+        },
+        {
+          "round": 3,
+          "workload": "typed-buffer-wrapper.tintTypedRuntime",
+          "imageSha256": "fdf7eb5b4fce9897461fabe7ba6ed3d7c7667f1a79d4842a70a0fd350965bba3",
+          "status": 42
+        },
+        {
+          "round": 3,
+          "workload": "tintTypedLiteral",
+          "imageSha256": "90be8361216ec2fc35b986f6bb62f2825f8a539b92182c4e494203cebbeaca0f",
+          "status": 42
+        },
+        {
+          "round": 3,
+          "workload": "tintTypedRuntime",
+          "imageSha256": "cad27a79581f5b432ed7145ef6988504039062d7a6904ba399a4c29f43a1a9aa",
+          "status": 42
+        },
+        {
+          "round": 4,
+          "workload": "typed-buffer-wrapper.tintTypedRuntime",
+          "imageSha256": "fdf7eb5b4fce9897461fabe7ba6ed3d7c7667f1a79d4842a70a0fd350965bba3",
+          "status": 42
+        },
+        {
+          "round": 4,
+          "workload": "tintTypedLiteral",
+          "imageSha256": "90be8361216ec2fc35b986f6bb62f2825f8a539b92182c4e494203cebbeaca0f",
+          "status": 42
+        },
+        {
+          "round": 4,
+          "workload": "tintTypedRuntime",
+          "imageSha256": "cad27a79581f5b432ed7145ef6988504039062d7a6904ba399a4c29f43a1a9aa",
+          "status": 42
+        },
+        {
+          "round": 4,
+          "workload": "typed-buffer-wrapper.tintTypedLiteral",
+          "imageSha256": "47f044c908b464d10fb4eec5f971e58a89e9ed4b11fe7ec471e2a1e4b6122858",
+          "status": 42
+        },
+        {
+          "round": 5,
+          "workload": "tintTypedLiteral",
+          "imageSha256": "90be8361216ec2fc35b986f6bb62f2825f8a539b92182c4e494203cebbeaca0f",
+          "status": 42
+        },
+        {
+          "round": 5,
+          "workload": "tintTypedRuntime",
+          "imageSha256": "cad27a79581f5b432ed7145ef6988504039062d7a6904ba399a4c29f43a1a9aa",
+          "status": 42
+        },
+        {
+          "round": 5,
+          "workload": "typed-buffer-wrapper.tintTypedLiteral",
+          "imageSha256": "47f044c908b464d10fb4eec5f971e58a89e9ed4b11fe7ec471e2a1e4b6122858",
+          "status": 42
+        },
+        {
+          "round": 5,
+          "workload": "typed-buffer-wrapper.tintTypedRuntime",
+          "imageSha256": "fdf7eb5b4fce9897461fabe7ba6ed3d7c7667f1a79d4842a70a0fd350965bba3",
+          "status": 42
+        },
+        {
+          "round": 6,
+          "workload": "tintTypedLiteral",
+          "imageSha256": "90be8361216ec2fc35b986f6bb62f2825f8a539b92182c4e494203cebbeaca0f",
+          "status": 42
+        },
+        {
+          "round": 6,
+          "workload": "tintTypedRuntime",
+          "imageSha256": "cad27a79581f5b432ed7145ef6988504039062d7a6904ba399a4c29f43a1a9aa",
+          "status": 42
+        },
+        {
+          "round": 6,
+          "workload": "typed-buffer-wrapper.tintTypedLiteral",
+          "imageSha256": "47f044c908b464d10fb4eec5f971e58a89e9ed4b11fe7ec471e2a1e4b6122858",
+          "status": 42
+        },
+        {
+          "round": 6,
+          "workload": "typed-buffer-wrapper.tintTypedRuntime",
+          "imageSha256": "fdf7eb5b4fce9897461fabe7ba6ed3d7c7667f1a79d4842a70a0fd350965bba3",
+          "status": 42
+        },
+        {
+          "round": 7,
+          "workload": "tintTypedRuntime",
+          "imageSha256": "cad27a79581f5b432ed7145ef6988504039062d7a6904ba399a4c29f43a1a9aa",
+          "status": 42
+        },
+        {
+          "round": 7,
+          "workload": "typed-buffer-wrapper.tintTypedLiteral",
+          "imageSha256": "47f044c908b464d10fb4eec5f971e58a89e9ed4b11fe7ec471e2a1e4b6122858",
+          "status": 42
+        },
+        {
+          "round": 7,
+          "workload": "typed-buffer-wrapper.tintTypedRuntime",
+          "imageSha256": "fdf7eb5b4fce9897461fabe7ba6ed3d7c7667f1a79d4842a70a0fd350965bba3",
+          "status": 42
+        },
+        {
+          "round": 7,
+          "workload": "tintTypedLiteral",
+          "imageSha256": "90be8361216ec2fc35b986f6bb62f2825f8a539b92182c4e494203cebbeaca0f",
+          "status": 42
+        },
+        {
+          "round": 8,
+          "workload": "typed-buffer-wrapper.tintTypedLiteral",
+          "imageSha256": "47f044c908b464d10fb4eec5f971e58a89e9ed4b11fe7ec471e2a1e4b6122858",
+          "status": 42
+        },
+        {
+          "round": 8,
+          "workload": "typed-buffer-wrapper.tintTypedRuntime",
+          "imageSha256": "fdf7eb5b4fce9897461fabe7ba6ed3d7c7667f1a79d4842a70a0fd350965bba3",
+          "status": 42
+        },
+        {
+          "round": 8,
+          "workload": "tintTypedLiteral",
+          "imageSha256": "90be8361216ec2fc35b986f6bb62f2825f8a539b92182c4e494203cebbeaca0f",
+          "status": 42
+        },
+        {
+          "round": 8,
+          "workload": "tintTypedRuntime",
+          "imageSha256": "cad27a79581f5b432ed7145ef6988504039062d7a6904ba399a4c29f43a1a9aa",
+          "status": 42
+        },
+        {
+          "round": 9,
+          "workload": "typed-buffer-wrapper.tintTypedRuntime",
+          "imageSha256": "fdf7eb5b4fce9897461fabe7ba6ed3d7c7667f1a79d4842a70a0fd350965bba3",
+          "status": 42
+        },
+        {
+          "round": 9,
+          "workload": "tintTypedLiteral",
+          "imageSha256": "90be8361216ec2fc35b986f6bb62f2825f8a539b92182c4e494203cebbeaca0f",
+          "status": 42
+        },
+        {
+          "round": 9,
+          "workload": "tintTypedRuntime",
+          "imageSha256": "cad27a79581f5b432ed7145ef6988504039062d7a6904ba399a4c29f43a1a9aa",
+          "status": 42
+        },
+        {
+          "round": 9,
+          "workload": "typed-buffer-wrapper.tintTypedLiteral",
+          "imageSha256": "47f044c908b464d10fb4eec5f971e58a89e9ed4b11fe7ec471e2a1e4b6122858",
+          "status": 42
+        },
+        {
+          "round": 10,
+          "workload": "tintTypedLiteral",
+          "imageSha256": "90be8361216ec2fc35b986f6bb62f2825f8a539b92182c4e494203cebbeaca0f",
+          "status": 42
+        },
+        {
+          "round": 10,
+          "workload": "tintTypedRuntime",
+          "imageSha256": "cad27a79581f5b432ed7145ef6988504039062d7a6904ba399a4c29f43a1a9aa",
+          "status": 42
+        },
+        {
+          "round": 10,
+          "workload": "typed-buffer-wrapper.tintTypedLiteral",
+          "imageSha256": "47f044c908b464d10fb4eec5f971e58a89e9ed4b11fe7ec471e2a1e4b6122858",
+          "status": 42
+        },
+        {
+          "round": 10,
+          "workload": "typed-buffer-wrapper.tintTypedRuntime",
+          "imageSha256": "fdf7eb5b4fce9897461fabe7ba6ed3d7c7667f1a79d4842a70a0fd350965bba3",
+          "status": 42
+        },
+        {
+          "round": 11,
+          "workload": "tintTypedLiteral",
+          "imageSha256": "90be8361216ec2fc35b986f6bb62f2825f8a539b92182c4e494203cebbeaca0f",
+          "status": 42
+        },
+        {
+          "round": 11,
+          "workload": "tintTypedRuntime",
+          "imageSha256": "cad27a79581f5b432ed7145ef6988504039062d7a6904ba399a4c29f43a1a9aa",
+          "status": 42
+        },
+        {
+          "round": 11,
+          "workload": "typed-buffer-wrapper.tintTypedLiteral",
+          "imageSha256": "47f044c908b464d10fb4eec5f971e58a89e9ed4b11fe7ec471e2a1e4b6122858",
+          "status": 42
+        },
+        {
+          "round": 11,
+          "workload": "typed-buffer-wrapper.tintTypedRuntime",
+          "imageSha256": "fdf7eb5b4fce9897461fabe7ba6ed3d7c7667f1a79d4842a70a0fd350965bba3",
+          "status": 42
+        },
+        {
+          "round": 12,
+          "workload": "tintTypedRuntime",
+          "imageSha256": "cad27a79581f5b432ed7145ef6988504039062d7a6904ba399a4c29f43a1a9aa",
+          "status": 42
+        },
+        {
+          "round": 12,
+          "workload": "typed-buffer-wrapper.tintTypedLiteral",
+          "imageSha256": "47f044c908b464d10fb4eec5f971e58a89e9ed4b11fe7ec471e2a1e4b6122858",
+          "status": 42
+        },
+        {
+          "round": 12,
+          "workload": "typed-buffer-wrapper.tintTypedRuntime",
+          "imageSha256": "fdf7eb5b4fce9897461fabe7ba6ed3d7c7667f1a79d4842a70a0fd350965bba3",
+          "status": 42
+        },
+        {
+          "round": 12,
+          "workload": "tintTypedLiteral",
+          "imageSha256": "90be8361216ec2fc35b986f6bb62f2825f8a539b92182c4e494203cebbeaca0f",
+          "status": 42
+        },
+        {
+          "round": 13,
+          "workload": "typed-buffer-wrapper.tintTypedLiteral",
+          "imageSha256": "47f044c908b464d10fb4eec5f971e58a89e9ed4b11fe7ec471e2a1e4b6122858",
+          "status": 42
+        },
+        {
+          "round": 13,
+          "workload": "typed-buffer-wrapper.tintTypedRuntime",
+          "imageSha256": "fdf7eb5b4fce9897461fabe7ba6ed3d7c7667f1a79d4842a70a0fd350965bba3",
+          "status": 42
+        },
+        {
+          "round": 13,
+          "workload": "tintTypedLiteral",
+          "imageSha256": "90be8361216ec2fc35b986f6bb62f2825f8a539b92182c4e494203cebbeaca0f",
+          "status": 42
+        },
+        {
+          "round": 13,
+          "workload": "tintTypedRuntime",
+          "imageSha256": "cad27a79581f5b432ed7145ef6988504039062d7a6904ba399a4c29f43a1a9aa",
+          "status": 42
+        },
+        {
+          "round": 14,
+          "workload": "typed-buffer-wrapper.tintTypedRuntime",
+          "imageSha256": "fdf7eb5b4fce9897461fabe7ba6ed3d7c7667f1a79d4842a70a0fd350965bba3",
+          "status": 42
+        },
+        {
+          "round": 14,
+          "workload": "tintTypedLiteral",
+          "imageSha256": "90be8361216ec2fc35b986f6bb62f2825f8a539b92182c4e494203cebbeaca0f",
+          "status": 42
+        },
+        {
+          "round": 14,
+          "workload": "tintTypedRuntime",
+          "imageSha256": "cad27a79581f5b432ed7145ef6988504039062d7a6904ba399a4c29f43a1a9aa",
+          "status": 42
+        },
+        {
+          "round": 14,
+          "workload": "typed-buffer-wrapper.tintTypedLiteral",
+          "imageSha256": "47f044c908b464d10fb4eec5f971e58a89e9ed4b11fe7ec471e2a1e4b6122858",
+          "status": 42
+        }
+      ],
+      "cases": [
+        {
+          "case": "arity-0",
+          "timing": {
+            "node": {
+              "callNs": 27.469158172607422,
+              "controlNs": 5.057499408721924,
+              "overheadNs": {
+                "median": 22.367496490478516,
+                "q1": 18.452296257019043,
+                "q3": 49.113749265670776
+              }
+            },
+            "tintTypedLiteral": {
+              "callNs": 22.70292043685913,
+              "controlNs": 3.017091751098633,
+              "overheadNs": {
+                "median": 20.002501010894775,
+                "q1": 18.599796295166016,
+                "q3": 21.22937321662903
+              }
+            },
+            "tintTypedRuntime": {
+              "callNs": 22.56500005722046,
+              "controlNs": 3.039579391479492,
+              "overheadNs": {
+                "median": 19.605000019073486,
+                "q1": 18.9943790435791,
+                "q3": 20.883125066757202
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "callNs": 22.014999389648438,
+              "controlNs": 3.019580841064453,
+              "overheadNs": {
+                "median": 19.0874981880188,
+                "q1": 18.50270986557007,
+                "q3": 20.529791116714478
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "callNs": 22.62458086013794,
+              "controlNs": 3.106250762939453,
+              "overheadNs": {
+                "median": 19.607081413269043,
+                "q1": 18.818544149398804,
+                "q3": 20.21396040916443
+              }
+            }
+          },
+          "comparisons": {
+            "tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": -5.06166934967041,
+                "q1": -28.35374355316162,
+                "q3": 1.3693737983703613
+              }
+            },
+            "tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": -3.14791202545166,
+                "q1": -28.6243736743927,
+                "q3": 2.479374408721924
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": -4.401252269744873,
+                "q1": -27.726248502731323,
+                "q3": 0.5654025077819824
+              },
+              "versusBaselineNs": {
+                "median": 0.12123823165893555,
+                "q1": -2.2129082679748535,
+                "q3": 0.7958376407623291
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": -1.9774961471557617,
+                "q1": -30.272088050842285,
+                "q3": 0.9852027893066406
+              },
+              "versusBaselineNs": {
+                "median": -0.242919921875,
+                "q1": -0.8354222774505615,
+                "q3": 0.8810389041900635
+              }
+            }
+          },
+          "typedParity": true,
+          "totalVersusNodeNs": {
+            "tintTypedLiteral": {
+              "median": -6.489169597625732,
+              "q1": -30.05666494369507,
+              "q3": -0.8125054836273193
+            },
+            "tintTypedRuntime": {
+              "median": -4.904158115386963,
+              "q1": -30.26437520980835,
+              "q3": 1.068328619003296
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "median": -5.599579811096191,
+              "q1": -29.173126220703125,
+              "q3": -1.6931307315826416
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "median": -4.062488079071045,
+              "q1": -31.870421171188354,
+              "q3": -0.6214606761932373
+            }
+          }
+        },
+        {
+          "case": "arity-1",
+          "timing": {
+            "node": {
+              "callNs": 61.716670989990234,
+              "controlNs": 5.057499408721924,
+              "overheadNs": {
+                "median": 57.097508907318115,
+                "q1": 46.487295627593994,
+                "q3": 84.05083060264587
+              }
+            },
+            "tintTypedLiteral": {
+              "callNs": 23.62542152404785,
+              "controlNs": 3.017091751098633,
+              "overheadNs": {
+                "median": 20.728332996368408,
+                "q1": 19.318336248397827,
+                "q3": 22.22603440284729
+              }
+            },
+            "tintTypedRuntime": {
+              "callNs": 22.685420513153076,
+              "controlNs": 3.039579391479492,
+              "overheadNs": {
+                "median": 19.927918910980225,
+                "q1": 19.37145471572876,
+                "q3": 23.707715272903442
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "callNs": 22.752089500427246,
+              "controlNs": 3.019580841064453,
+              "overheadNs": {
+                "median": 20.17042875289917,
+                "q1": 19.27417516708374,
+                "q3": 23.108962774276733
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "callNs": 22.888329029083252,
+              "controlNs": 3.106250762939453,
+              "overheadNs": {
+                "median": 19.772498607635498,
+                "q1": 19.02666449546814,
+                "q3": 21.440623998641968
+              }
+            }
+          },
+          "comparisons": {
+            "tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": -34.85584735870361,
+                "q1": -63.51062297821045,
+                "q3": -26.073124408721924
+              }
+            },
+            "tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": -32.20625162124634,
+                "q1": -62.86624193191528,
+                "q3": -25.10812520980835
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": -36.53001070022583,
+                "q1": -61.32457137107849,
+                "q3": -23.344794511795044
+              },
+              "versusBaselineNs": {
+                "median": 1.297910213470459,
+                "q1": -1.7225003242492676,
+                "q3": 2.72832989692688
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": -38.193349838256836,
+                "q1": -63.217711448669434,
+                "q3": -26.390211582183838
+              },
+              "versusBaselineNs": {
+                "median": -0.655827522277832,
+                "q1": -2.7595901489257812,
+                "q3": 2.0495712757110596
+              }
+            }
+          },
+          "typedParity": true,
+          "totalVersusNodeNs": {
+            "tintTypedLiteral": {
+              "median": -36.457509994506836,
+              "q1": -67.63166427612305,
+              "q3": -28.28708529472351
+            },
+            "tintTypedRuntime": {
+              "median": -33.640830516815186,
+              "q1": -66.90541625022888,
+              "q3": -27.15229630470276
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "median": -38.53875160217285,
+              "q1": -65.62812089920044,
+              "q3": -25.16229510307312
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "median": -39.66126203536987,
+              "q1": -67.20417022705078,
+              "q3": -28.148131370544434
+            }
+          }
+        },
+        {
+          "case": "arity-2",
+          "timing": {
+            "node": {
+              "callNs": 61.12833023071289,
+              "controlNs": 5.057499408721924,
+              "overheadNs": {
+                "median": 55.49165964126587,
+                "q1": 43.91791582107544,
+                "q3": 68.84875059127808
+              }
+            },
+            "tintTypedLiteral": {
+              "callNs": 26.58792018890381,
+              "controlNs": 3.017091751098633,
+              "overheadNs": {
+                "median": 23.58875036239624,
+                "q1": 20.644373893737793,
+                "q3": 23.830621242523193
+              }
+            },
+            "tintTypedRuntime": {
+              "callNs": 25.24125099182129,
+              "controlNs": 3.039579391479492,
+              "overheadNs": {
+                "median": 22.26917266845703,
+                "q1": 20.493756532669067,
+                "q3": 23.598545789718628
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "callNs": 24.236669540405273,
+              "controlNs": 3.019580841064453,
+              "overheadNs": {
+                "median": 21.14665985107422,
+                "q1": 20.484789609909058,
+                "q3": 24.93541955947876
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "callNs": 24.9208402633667,
+              "controlNs": 3.106250762939453,
+              "overheadNs": {
+                "median": 21.902918815612793,
+                "q1": 19.744789600372314,
+                "q3": 23.790829181671143
+              }
+            }
+          },
+          "comparisons": {
+            "tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": -31.74332618713379,
+                "q1": -46.80063009262085,
+                "q3": -21.750411987304688
+              }
+            },
+            "tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": -31.838738918304443,
+                "q1": -46.68313145637512,
+                "q3": -22.753336429595947
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": -30.987491607666016,
+                "q1": -47.247294187545776,
+                "q3": -21.38353943824768
+              },
+              "versusBaselineNs": {
+                "median": 0.4837369918823242,
+                "q1": -2.373124361038208,
+                "q3": 2.1170854568481445
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": -31.222498416900635,
+                "q1": -43.035844564437866,
+                "q3": -24.222290515899658
+              },
+              "versusBaselineNs": {
+                "median": 0.1424884796142578,
+                "q1": -2.8460347652435303,
+                "q3": 1.530827283859253
+              }
+            }
+          },
+          "typedParity": true,
+          "totalVersusNodeNs": {
+            "tintTypedLiteral": {
+              "median": -35.50707817077637,
+              "q1": -49.66979503631592,
+              "q3": -23.608745336532593
+            },
+            "tintTypedRuntime": {
+              "median": -35.739169120788574,
+              "q1": -49.95333909988403,
+              "q3": -24.29521083831787
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "median": -34.886250495910645,
+              "q1": -50.322505235672,
+              "q3": -23.35874915122986
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "median": -32.5112509727478,
+              "q1": -45.47271490097046,
+              "q3": -26.133954524993896
+            }
+          }
+        },
+        {
+          "case": "arity-4",
+          "timing": {
+            "node": {
+              "callNs": 309.8937487602234,
+              "controlNs": 5.057499408721924,
+              "overheadNs": {
+                "median": 305.21250009536743,
+                "q1": 279.281245470047,
+                "q3": 315.4622948169708
+              }
+            },
+            "tintTypedLiteral": {
+              "callNs": 27.052500247955322,
+              "controlNs": 3.017091751098633,
+              "overheadNs": {
+                "median": 24.352080821990967,
+                "q1": 22.868748903274536,
+                "q3": 25.98249912261963
+              }
+            },
+            "tintTypedRuntime": {
+              "callNs": 28.694591522216797,
+              "controlNs": 3.039579391479492,
+              "overheadNs": {
+                "median": 25.58709144592285,
+                "q1": 22.910205125808716,
+                "q3": 26.817715167999268
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "callNs": 26.8845796585083,
+              "controlNs": 3.019580841064453,
+              "overheadNs": {
+                "median": 23.791658878326416,
+                "q1": 22.702914476394653,
+                "q3": 26.69145941734314
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "callNs": 28.99625062942505,
+              "controlNs": 3.106250762939453,
+              "overheadNs": {
+                "median": 24.260001182556152,
+                "q1": 23.01853895187378,
+                "q3": 26.78770899772644
+              }
+            }
+          },
+          "comparisons": {
+            "tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": -281.49458169937134,
+                "q1": -291.6927146911621,
+                "q3": -254.64061498641968
+              }
+            },
+            "tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": -283.20416927337646,
+                "q1": -291.13916277885437,
+                "q3": -252.72228002548218
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": -277.43293285369873,
+                "q1": -286.6527056694031,
+                "q3": -255.35749316215515
+              },
+              "versusBaselineNs": {
+                "median": 0.008342266082763672,
+                "q1": -1.299375295639038,
+                "q3": 2.4879097938537598
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": -276.5858507156372,
+                "q1": -287.84124970436096,
+                "q3": -248.47333908081055
+              },
+              "versusBaselineNs": {
+                "median": 0.4975008964538574,
+                "q1": -1.468139886856079,
+                "q3": 2.1864569187164307
+              }
+            }
+          },
+          "typedParity": true,
+          "totalVersusNodeNs": {
+            "tintTypedLiteral": {
+              "median": -283.3299994468689,
+              "q1": -295.75833082199097,
+              "q3": -256.3827049732208
+            },
+            "tintTypedRuntime": {
+              "median": -284.4770884513855,
+              "q1": -295.57812452316284,
+              "q3": -254.4316601753235
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "median": -279.2849898338318,
+              "q1": -292.12020993232727,
+              "q3": -256.81833386421204
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "median": -278.00167083740234,
+              "q1": -291.62312626838684,
+              "q3": -249.91291999816895
+            }
+          }
+        },
+        {
+          "case": "arity-8",
+          "timing": {
+            "node": {
+              "callNs": 251.40167236328125,
+              "controlNs": 5.057499408721924,
+              "overheadNs": {
+                "median": 244.08875942230225,
+                "q1": 230.66375494003296,
+                "q3": 252.3102045059204
+              }
+            },
+            "tintTypedLiteral": {
+              "callNs": 31.340830326080322,
+              "controlNs": 3.017091751098633,
+              "overheadNs": {
+                "median": 28.461661338806152,
+                "q1": 27.944586277008057,
+                "q3": 31.303125619888306
+              }
+            },
+            "tintTypedRuntime": {
+              "callNs": 31.468751430511475,
+              "controlNs": 3.039579391479492,
+              "overheadNs": {
+                "median": 28.592078685760498,
+                "q1": 26.74958109855652,
+                "q3": 31.193746328353882
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "callNs": 32.03958034515381,
+              "controlNs": 3.019580841064453,
+              "overheadNs": {
+                "median": 28.910000324249268,
+                "q1": 27.476242780685425,
+                "q3": 32.268961668014526
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "callNs": 33.60749959945679,
+              "controlNs": 3.106250762939453,
+              "overheadNs": {
+                "median": 30.590829849243164,
+                "q1": 28.098125457763672,
+                "q3": 31.311248540878296
+              }
+            }
+          },
+          "comparisons": {
+            "tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": -216.22333765029907,
+                "q1": -222.3091685771942,
+                "q3": -200.59396386146545
+              }
+            },
+            "tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": -216.17708921432495,
+                "q1": -221.68415546417236,
+                "q3": -202.017502784729
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": -215.30585050582886,
+                "q1": -220.45395255088806,
+                "q3": -201.3270902633667
+              },
+              "versusBaselineNs": {
+                "median": 0.7729315757751465,
+                "q1": -0.003757476806640625,
+                "q3": 1.8381357192993164
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": -216.15000009536743,
+                "q1": -220.88395714759827,
+                "q3": -202.27624535560608
+              },
+              "versusBaselineNs": {
+                "median": 1.0454082489013672,
+                "q1": -2.0047950744628906,
+                "q3": 2.8010404109954834
+              }
+            }
+          },
+          "typedParity": true,
+          "totalVersusNodeNs": {
+            "tintTypedLiteral": {
+              "median": -219.0595817565918,
+              "q1": -225.6125009059906,
+              "q3": -202.41021037101746
+            },
+            "tintTypedRuntime": {
+              "median": -217.78542041778564,
+              "q1": -226.44708037376404,
+              "q3": -203.53021025657654
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "median": -218.87709140777588,
+              "q1": -223.50874543190002,
+              "q3": -203.07812690734863
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "median": -220.48042058944702,
+              "q1": -225.84312558174133,
+              "q3": -203.6147916316986
+            }
+          }
+        },
+        {
+          "case": "arity-12",
+          "timing": {
+            "node": {
+              "callNs": 354.5099997520447,
+              "controlNs": 5.057499408721924,
+              "overheadNs": {
+                "median": 349.40833806991577,
+                "q1": 324.0527045726776,
+                "q3": 364.9875044822693
+              }
+            },
+            "tintTypedLiteral": {
+              "callNs": 43.25167179107666,
+              "controlNs": 3.017091751098633,
+              "overheadNs": {
+                "median": 40.10332107543945,
+                "q1": 38.63603949546814,
+                "q3": 40.641454458236694
+              }
+            },
+            "tintTypedRuntime": {
+              "callNs": 42.88042068481445,
+              "controlNs": 3.039579391479492,
+              "overheadNs": {
+                "median": 40.06875038146973,
+                "q1": 37.595205307006836,
+                "q3": 40.97187042236328
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "callNs": 41.30875110626221,
+              "controlNs": 3.019580841064453,
+              "overheadNs": {
+                "median": 38.8383412361145,
+                "q1": 36.23396396636963,
+                "q3": 44.25395488739014
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "callNs": 43.828749656677246,
+              "controlNs": 3.106250762939453,
+              "overheadNs": {
+                "median": 40.81082820892334,
+                "q1": 38.19749593734741,
+                "q3": 41.93145513534546
+              }
+            }
+          },
+          "comparisons": {
+            "tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": -310.13585090637207,
+                "q1": -323.9416742324829,
+                "q3": -283.1945788860321
+              }
+            },
+            "tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": -309.4900107383728,
+                "q1": -326.3112509250641,
+                "q3": -286.4785397052765
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": -309.5854115486145,
+                "q1": -315.6339621543884,
+                "q3": -287.9602098464966
+              },
+              "versusBaselineNs": {
+                "median": -3.0929088592529297,
+                "q1": -4.897075891494751,
+                "q3": 7.2316670417785645
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": -307.8325080871582,
+                "q1": -322.2268807888031,
+                "q3": -285.5268657207489
+              },
+              "versusBaselineNs": {
+                "median": 1.2054109573364258,
+                "q1": -2.8810441493988037,
+                "q3": 3.829789161682129
+              }
+            }
+          },
+          "typedParity": true,
+          "totalVersusNodeNs": {
+            "tintTypedLiteral": {
+              "median": -311.7079186439514,
+              "q1": -327.49271035194397,
+              "q3": -285.11208415031433
+            },
+            "tintTypedRuntime": {
+              "median": -311.3008403778076,
+              "q1": -330.3504252433777,
+              "q3": -288.0606257915497
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "median": -312.60082960128784,
+              "q1": -318.1762456893921,
+              "q3": -289.7252094745636
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "median": -309.9175000190735,
+              "q1": -325.74458956718445,
+              "q3": -286.8370807170868
+            }
+          }
+        },
+        {
+          "case": "arity-24",
+          "timing": {
+            "node": {
+              "callNs": 653.3616709709167,
+              "controlNs": 5.057499408721924,
+              "overheadNs": {
+                "median": 648.7725114822388,
+                "q1": 609.3966615200043,
+                "q3": 692.1193838119507
+              }
+            },
+            "tintTypedLiteral": {
+              "callNs": 72.92375087738037,
+              "controlNs": 3.017091751098633,
+              "overheadNs": {
+                "median": 70.22333145141602,
+                "q1": 64.52625036239624,
+                "q3": 71.54853940010071
+              }
+            },
+            "tintTypedRuntime": {
+              "callNs": 74.02875185012817,
+              "controlNs": 3.039579391479492,
+              "overheadNs": {
+                "median": 70.92125177383423,
+                "q1": 65.4783296585083,
+                "q3": 75.51188588142395
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "callNs": 67.54875183105469,
+              "controlNs": 3.019580841064453,
+              "overheadNs": {
+                "median": 64.02082920074463,
+                "q1": 62.696874141693115,
+                "q3": 70.37166476249695
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "callNs": 69.93499994277954,
+              "controlNs": 3.106250762939453,
+              "overheadNs": {
+                "median": 66.62374973297119,
+                "q1": 63.725829124450684,
+                "q3": 70.28895258903503
+              }
+            }
+          },
+          "comparisons": {
+            "tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": -577.6554322242737,
+                "q1": -613.5037529468536,
+                "q3": -541.6143667697906
+              }
+            },
+            "tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": -578.2483410835266,
+                "q1": -622.9610395431519,
+                "q3": -536.0416603088379
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": -586.0241723060608,
+                "q1": -623.3437430858612,
+                "q3": -544.4199919700623
+              },
+              "versusBaselineNs": {
+                "median": -3.999159336090088,
+                "q1": -7.967914342880249,
+                "q3": 1.205838918685913
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": -583.4229111671448,
+                "q1": -618.9216804504395,
+                "q3": -543.3939564228058
+              },
+              "versusBaselineNs": {
+                "median": -3.426673412322998,
+                "q1": -6.539175510406494,
+                "q3": 2.868751287460327
+              }
+            }
+          },
+          "typedParity": true,
+          "totalVersusNodeNs": {
+            "tintTypedLiteral": {
+              "median": -579.227499961853,
+              "q1": -616.6974997520447,
+              "q3": -543.3720755577087
+            },
+            "tintTypedRuntime": {
+              "median": -580.1266694068909,
+              "q1": -625.4983294010162,
+              "q3": -537.547914981842
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "median": -587.4416708946228,
+              "q1": -626.419997215271,
+              "q3": -546.189786195755
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "median": -586.2116599082947,
+              "q1": -621.1175060272217,
+              "q3": -545.0756204128265
+            }
+          }
+        },
+        {
+          "case": "buffer",
+          "timing": {
+            "node": {
+              "callNs": 151.82333946228027,
+              "controlNs": 5.057499408721924,
+              "overheadNs": {
+                "median": 147.03958988189697,
+                "q1": 132.98187971115112,
+                "q3": 162.75187611579895
+              }
+            },
+            "tintTypedLiteral": {
+              "callNs": 167.03999996185303,
+              "controlNs": 3.017091751098633,
+              "overheadNs": {
+                "median": 164.33958053588867,
+                "q1": 155.8691644668579,
+                "q3": 169.63249564170837
+              }
+            },
+            "tintTypedRuntime": {
+              "callNs": 170.7212495803833,
+              "controlNs": 3.039579391479492,
+              "overheadNs": {
+                "median": 167.31292009353638,
+                "q1": 161.21229529380798,
+                "q3": 177.67333507537842
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "callNs": 65.96625089645386,
+              "controlNs": 3.019580841064453,
+              "overheadNs": {
+                "median": 62.87333011627197,
+                "q1": 60.36188364028931,
+                "q3": 68.80791544914246
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "callNs": 65.43292045593262,
+              "controlNs": 3.106250762939453,
+              "overheadNs": {
+                "median": 62.703750133514404,
+                "q1": 60.432915687561035,
+                "q3": 69.73687529563904
+              }
+            }
+          },
+          "comparisons": {
+            "tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": 15.691671371459961,
+                "q1": 1.1058282852172852,
+                "q3": 24.138551950454712
+              }
+            },
+            "tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": 24.50751304626465,
+                "q1": 9.895833730697632,
+                "q3": 34.61333751678467
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": -83.8483476638794,
+                "q1": -98.9647912979126,
+                "q3": -70.65875768661499
+              },
+              "versusBaselineNs": {
+                "median": -100.76083898544312,
+                "q1": -105.81394553184509,
+                "q3": -92.02708840370178
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": -75.70542097091675,
+                "q1": -97.08812952041626,
+                "q3": -69.44979906082153
+              },
+              "versusBaselineNs": {
+                "median": -104.60916996002197,
+                "q1": -111.5754246711731,
+                "q3": -92.22062110900879
+              }
+            }
+          },
+          "typedParity": false,
+          "totalVersusNodeNs": {
+            "tintTypedLiteral": {
+              "median": 11.927919387817383,
+              "q1": -3.094378709793091,
+              "q3": 22.221046686172485
+            },
+            "tintTypedRuntime": {
+              "median": 22.730839252471924,
+              "q1": 7.706875801086426,
+              "q3": 32.90395736694336
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "median": -85.85708856582642,
+              "q1": -102.01958417892456,
+              "q3": -72.41104125976562
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "median": -77.57667064666748,
+              "q1": -102.78479933738708,
+              "q3": -71.2262511253357
+            }
+          }
+        },
+        {
+          "case": "callback",
+          "timing": {
+            "node": {
+              "callNs": 196.27624988555908,
+              "controlNs": 5.057499408721924,
+              "overheadNs": {
+                "median": 191.59500122070312,
+                "q1": 185.73436975479126,
+                "q3": 203.6660385131836
+              }
+            },
+            "tintTypedLiteral": {
+              "callNs": 166.88583135604858,
+              "controlNs": 3.017091751098633,
+              "overheadNs": {
+                "median": 164.18541193008423,
+                "q1": 157.5070858001709,
+                "q3": 173.48978996276855
+              }
+            },
+            "tintTypedRuntime": {
+              "callNs": 169.96249914169312,
+              "controlNs": 3.039579391479492,
+              "overheadNs": {
+                "median": 166.9283390045166,
+                "q1": 160.6568694114685,
+                "q3": 179.7056257724762
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "callNs": 166.00584030151367,
+              "controlNs": 3.019580841064453,
+              "overheadNs": {
+                "median": 163.3991575241089,
+                "q1": 160.44082880020142,
+                "q3": 172.02458143234253
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "callNs": 172.85250186920166,
+              "controlNs": 3.106250762939453,
+              "overheadNs": {
+                "median": 169.70125198364258,
+                "q1": 160.19105076789856,
+                "q3": 190.4014539718628
+              }
+            }
+          },
+          "comparisons": {
+            "tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": -28.254172801971436,
+                "q1": -31.718753576278687,
+                "q3": -20.719796419143677
+              }
+            },
+            "tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": -23.54665994644165,
+                "q1": -32.18624949455261,
+                "q3": -13.437714576721191
+              }
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "versusNodeNs": {
+                "median": -28.067080974578857,
+                "q1": -34.88334655761719,
+                "q3": -19.628539085388184
+              },
+              "versusBaselineNs": {
+                "median": 4.1312479972839355,
+                "q1": -10.88124394416809,
+                "q3": 7.51478910446167
+              }
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "versusNodeNs": {
+                "median": -21.78205966949463,
+                "q1": -31.694588661193848,
+                "q3": -0.9635508060455322
+              },
+              "versusBaselineNs": {
+                "median": 1.8437600135803223,
+                "q1": -14.208537340164185,
+                "q3": 21.31667137145996
+              }
+            }
+          },
+          "typedParity": true,
+          "totalVersusNodeNs": {
+            "tintTypedLiteral": {
+              "median": -30.135421752929688,
+              "q1": -33.87062430381775,
+              "q3": -24.872080087661743
+            },
+            "tintTypedRuntime": {
+              "median": -25.429580211639404,
+              "q1": -37.60812520980835,
+              "q3": -14.81229543685913
+            },
+            "typed-buffer-wrapper.tintTypedLiteral": {
+              "median": -29.660000801086426,
+              "q1": -38.44729423522949,
+              "q3": -23.263325691223145
+            },
+            "typed-buffer-wrapper.tintTypedRuntime": {
+              "median": -27.802917957305908,
+              "q1": -34.30854320526123,
+              "q3": -3.8958394527435303
+            }
+          }
+        }
+      ],
+      "sampleMillisecondsByRound": {
+        "node": {
+          "arity-0": [
+            4.763291120529175, 2.1180830001831055, 4.3227081298828125,
+            5.54029107093811, 5.992624998092651, 2.194957971572876,
+            1.7399170398712158, 2.5189170837402344, 2.746915817260742,
+            2.2457921504974365, 2.6498749256134033, 6.582249879837036,
+            6.270334005355835, 5.194833993911743, 2.4452080726623535
+          ],
+          "arity-1": [
+            5.374334096908569, 6.242875099182129, 10.782208919525146,
+            5.095667123794556, 9.074333190917969, 3.114874839782715,
+            3.5803749561309814, 7.682374954223633, 6.118375062942505,
+            10.868791818618774, 3.2709999084472656, 11.750624895095825,
+            9.145541906356812, 6.171667098999023, 5.184667110443115
+          ],
+          "arity-2": [
+            4.840082883834839, 8.795333862304688, 8.181833028793335,
+            6.46987509727478, 4.319957971572876, 5.4967498779296875,
+            4.6465418338775635, 7.352709054946899, 7.522166967391968,
+            4.917375087738037, 6.112833023071289, 9.061749935150146,
+            6.240999937057495, 4.668874979019165, 6.059499979019165
+          ],
+          "arity-4": [
+            31.322499990463257, 30.438833951950073, 32.15637493133545,
+            28.09358310699463, 35.02912497520447, 27.566708087921143,
+            28.685374975204468, 32.9679160118103, 32.084750175476074,
+            30.98937487602234, 26.440541982650757, 33.32424998283386,
+            32.20970892906189, 27.589874982833862, 30.679917097091675
+          ],
+          "arity-8": [
+            25.140167236328125, 24.509209156036377, 25.48675012588501,
+            22.858625173568726, 30.143874883651733, 23.046542167663574,
+            22.809541940689087, 26.48687505722046, 24.919042110443115,
+            25.142917156219482, 22.660666942596436, 29.649708032608032,
+            26.19541597366333, 24.000250101089478, 25.490875005722046
+          ],
+          "arity-12": [
+            35.17312502861023, 35.54004192352295, 41.16779184341431,
+            32.61912488937378, 37.65808391571045, 32.468250036239624,
+            33.11412501335144, 38.929084062576294, 35.45099997520447,
+            31.773500204086304, 32.20204210281372, 39.584625005722046,
+            36.35741710662842, 33.69658279418945, 36.58970808982849
+          ],
+          "arity-24": [
+            66.25699996948242, 65.33616709709167, 64.61604189872742,
+            63.15462517738342, 78.6637499332428, 58.923500061035156,
+            63.29558300971985, 67.95291590690613, 71.29745888710022,
+            59.643290996551514, 59.13387489318848, 76.03379201889038,
+            72.54633378982544, 58.04058289527893, 68.1690001487732
+          ],
+          "buffer": [
+            14.082750082015991, 15.162874937057495, 16.617791891098022,
+            13.072457790374756, 20.14175009727478, 12.93370795249939,
+            13.997541904449463, 17.564584016799927, 15.182333946228027,
+            16.03454089164734, 13.521209001541138, 20.3596248626709,
+            17.990000009536743, 13.243333101272583, 15.549208164215088
+          ],
+          "callback": [
+            20.97612500190735, 19.518874883651733, 21.4469997882843,
+            18.55045795440674, 25.338040828704834, 18.09708309173584,
+            19.51912498474121, 21.682250022888184, 19.600125074386597,
+            19.627624988555908, 18.151916027069092, 20.68095898628235,
+            21.749249935150146, 18.460792064666748, 20.074875116348267
+          ],
+          "js-only-control": [
+            0.5057499408721924, 0.45891594886779785, 1.1841671466827393,
+            0.45045900344848633, 0.7178750038146973, 0.45212507247924805,
+            0.47224998474121094, 0.5806248188018799, 0.5101661682128906,
+            0.4681248664855957, 0.45012497901916504, 1.1892919540405273,
+            0.6918339729309082, 0.4619162082672119, 0.5324161052703857
+          ]
+        },
+        "tintTypedLiteral": {
+          "arity-0": [
+            2.476750135421753, 2.413707971572876, 2.1051251888275146,
+            2.154917001724243, 2.2992918491363525, 2.0646660327911377,
+            2.4167919158935547, 2.486707925796509, 2.1275410652160645,
+            2.248667001724243, 2.00095796585083, 2.435166835784912,
+            2.267625093460083, 2.5688750743865967, 2.270292043685913
+          ],
+          "arity-1": [
+            2.5234999656677246, 2.684041976928711, 2.1433751583099365,
+            2.2603750228881836, 2.3052501678466797, 2.0650408267974854,
+            2.552999973297119, 2.6560001373291016, 2.1187918186187744,
+            2.280582904815674, 2.093416929244995, 2.5228748321533203,
+            2.388292074203491, 2.52591609954834, 2.362542152404785
+          ],
+          "arity-2": [
+            2.658792018890381, 2.704582929611206, 2.3065829277038574,
+            2.417083978652954, 3.0306670665740967, 2.259415864944458,
+            2.6696248054504395, 2.704292058944702, 2.2366249561309814,
+            2.3769168853759766, 2.184708833694458, 2.693125009536743,
+            2.6902921199798584, 2.9450831413269043, 2.6289169788360596
+          ],
+          "arity-4": [
+            2.8752920627593994, 2.5464999675750732, 2.7052500247955322,
+            2.5989999771118164, 2.8551251888275146, 2.4262077808380127,
+            2.9034171104431152, 3.22933292388916, 2.384208917617798,
+            2.656374931335449, 2.5127081871032715, 2.8991668224334717,
+            2.9785408973693848, 3.643915891647339, 2.6298329830169678
+          ],
+          "arity-8": [
+            3.1590421199798584, 2.9675419330596924, 3.0901660919189453,
+            3.072416067123413, 3.5300838947296143, 3.1340830326080322,
+            3.028165817260742, 3.479707956314087, 3.0799171924591064,
+            3.2369589805603027, 3.045750141143799, 3.433542013168335,
+            3.4694998264312744, 3.4306671619415283, 3.116208076477051
+          ],
+          "arity-12": [
+            4.373457908630371, 4.369250059127808, 3.8765408992767334,
+            3.907208204269409, 4.820333003997803, 4.157749891281128,
+            4.286416053771973, 4.341541051864624, 4.111875057220459,
+            4.306333065032959, 4.401000022888184, 4.362584114074707,
+            4.325167179107666, 6.142333984375, 3.9289169311523438
+          ],
+          "arity-24": [
+            7.84279203414917, 7.413417100906372, 6.841291904449463,
+            6.60404109954834, 7.468041896820068, 6.540208101272583,
+            7.2749998569488525, 7.37975001335144, 6.235874891281128,
+            6.989459037780762, 6.52791690826416, 7.381624937057495,
+            10.08345890045166, 8.258291959762573, 7.292375087738037
+          ],
+          "buffer": [
+            17.741874933242798, 16.689666986465454, 16.30525016784668,
+            14.871999979019165, 16.774291038513184, 15.578375101089478,
+            17.30370807647705, 17.25824999809265, 14.707374811172485,
+            16.129082918167114, 15.28516697883606, 17.102916955947876,
+            19.18279194831848, 18.84291696548462, 16.703999996185303
+          ],
+          "callback": [
+            17.96258282661438, 16.78758406639099, 16.308500051498413,
+            15.530125141143799, 15.188291072845459, 15.853957891464233,
+            16.13129210472107, 17.641417026519775, 16.417792081832886,
+            16.712957859039307, 15.981750011444092, 17.689584016799927,
+            21.89491605758667, 23.88433289527893, 16.68858313560486
+          ],
+          "js-only-control": [
+            0.3176250457763672, 0.3017091751098633, 0.27004194259643555,
+            0.27004098892211914, 0.27004194259643555, 0.24904203414916992,
+            0.30425000190734863, 0.3312089443206787, 0.29337501525878906,
+            0.28458309173583984, 0.3073749542236328, 0.3018341064453125,
+            0.3154587745666504, 0.30174994468688965, 0.27004194259643555
+          ]
+        },
+        "tintTypedRuntime": {
+          "arity-0": [
+            2.143167018890381, 2.4756250381469727, 2.122833013534546,
+            2.1989169120788574, 2.175084114074707, 2.3136658668518066,
+            2.2246670722961426, 2.2306251525878906, 2.256500005722046,
+            2.340749979019165, 2.2142088413238525, 2.495875120162964,
+            2.2897911071777344, 2.483333110809326, 2.6156249046325684
+          ],
+          "arity-1": [
+            2.2352919578552246, 2.8787920475006104, 2.255666971206665,
+            2.2628748416900635, 2.0785000324249268, 2.0667500495910645,
+            3.050541877746582, 2.31170916557312, 2.2685420513153076,
+            2.45562481880188, 2.2578749656677246, 2.2475411891937256,
+            2.760291814804077, 3.034917116165161, 2.5870001316070557
+          ],
+          "arity-2": [
+            2.3712499141693115, 3.405750036239624, 2.3830409049987793,
+            2.1735000610351562, 2.236417055130005, 2.524125099182129,
+            2.656291961669922, 2.522083044052124, 2.3621251583099365,
+            2.5271658897399902, 2.3790841102600098, 3.35783314704895,
+            2.6670830249786377, 2.6687090396881104, 2.68733286857605
+          ],
+          "arity-4": [
+            2.5162081718444824, 2.8859591484069824, 2.5581250190734863,
+            3.0231668949127197, 2.7373340129852295, 3.368875026702881,
+            2.8694591522216797, 2.825958013534546, 2.5673751831054688,
+            2.541666030883789, 2.6231250762939453, 3.0740418434143066,
+            2.91225004196167, 2.875124931335449, 3.06154203414917
+          ],
+          "arity-8": [
+            2.9897091388702393, 3.4315831661224365, 2.9548330307006836,
+            2.81583309173584, 2.8373329639434814, 2.903834104537964,
+            3.4994170665740967, 3.129333019256592, 3.00249981880188,
+            3.364375114440918, 3.1468751430511475, 3.301208972930908,
+            3.4379169940948486, 3.4369161128997803, 4.315124988555908
+          ],
+          "arity-12": [
+            4.043040990829468, 4.322333097457886, 4.049375057220459,
+            4.288042068481445, 3.59108304977417, 3.5987088680267334,
+            4.3715410232543945, 4.183207988739014, 4.178416013717651,
+            4.549665927886963, 4.068875074386597, 4.853582859039307,
+            4.35433292388916, 4.447875022888184, 5.580749988555908
+          ],
+          "arity-24": [
+            6.895708084106445, 7.367875099182129, 6.60337495803833,
+            7.925042152404785, 6.39366602897644, 7.62262487411499,
+            7.402875185012817, 6.701416969299316, 7.449291944503784,
+            7.391708850860596, 6.853874921798706, 8.385416984558105,
+            7.749208927154541, 8.109750032424927, 9.914583206176758
+          ],
+          "buffer": [
+            16.355834007263184, 18.66558289527893, 15.935166120529175,
+            16.481374979019165, 17.89708399772644, 15.229542016983032,
+            17.169416189193726, 18.06837511062622, 16.524874925613403,
+            17.07212495803833, 15.97658395767212, 18.038292169570923,
+            21.868916988372803, 18.641083002090454, 16.943125009536743
+          ],
+          "callback": [
+            17.750583171844482, 17.999541997909546, 16.217541933059692,
+            16.007499933242798, 16.99291706085205, 21.69195795059204,
+            18.463000059127808, 14.758082866668701, 16.12754201889038,
+            18.12970805168152, 16.513041019439697, 16.631916999816895,
+            19.00454092025757, 16.99624991416931, 19.42675018310547
+          ],
+          "js-only-control": [
+            0.32466697692871094, 0.3154580593109131, 0.2699589729309082,
+            0.270082950592041, 0.3000831604003906, 0.2972078323364258,
+            0.31075000762939453, 0.270125150680542, 0.31320786476135254,
+            0.3408329486846924, 0.3292500972747803, 0.30187511444091797,
+            0.3017909526824951, 0.31429195404052734, 0.3039579391479492
+          ]
+        },
+        "typed-buffer-wrapper.tintTypedLiteral": {
+          "arity-0": [
+            2.126999855041504, 2.1714580059051514, 2.3312909603118896,
+            2.3940420150756836, 2.0068750381469727, 2.1671669483184814,
+            2.2406251430511475, 2.2014999389648438, 2.1930418014526367,
+            2.0382080078125, 2.089916944503784, 2.4979169368743896,
+            2.4661247730255127, 2.506457805633545, 2.3141660690307617
+          ],
+          "arity-1": [
+            2.1635000705718994, 2.252042055130005, 2.532417058944702,
+            2.5530831813812256, 2.2640838623046875, 2.2442500591278076,
+            2.4270830154418945, 2.2752089500427246, 2.2644999027252197,
+            2.0331668853759766, 2.101332902908325, 3.1581249237060547,
+            2.830167055130005, 2.691709041595459, 2.6947920322418213
+          ],
+          "arity-2": [
+            2.3846659660339355, 2.4189579486846924, 2.590625047683716,
+            2.854249954223633, 2.274416923522949, 2.275125026702881,
+            2.430208921432495, 2.3867080211639404, 2.4236669540405273,
+            2.312541961669922, 2.255999803543091, 2.965625047683716,
+            2.7523748874664307, 3.04070782661438, 5.285542011260986
+          ],
+          "arity-4": [
+            2.5802500247955322, 2.553790807723999, 2.9462499618530273,
+            2.798375129699707, 2.5514578819274902, 2.386124849319458,
+            2.6169161796569824, 5.039417028427124, 2.68845796585083,
+            2.408416986465454, 2.5341670513153076, 2.9000000953674316,
+            2.9957919120788574, 4.133166790008545, 3.1947498321533203
+          ],
+          "arity-8": [
+            3.0867919921875, 3.0179591178894043, 3.426084041595459,
+            3.9920828342437744, 2.9196250438690186, 2.897749900817871,
+            3.203958034515381, 3.5810420513153076, 3.1875829696655273,
+            2.980041980743408, 3.092540979385376, 3.466125011444092,
+            3.6565420627593994, 3.533416986465454, 3.603165864944458
+          ],
+          "arity-12": [
+            3.9130420684814453, 3.920916795730591, 4.744708061218262,
+            5.319250106811523, 4.130875110626221, 3.6514999866485596,
+            3.985833168029785, 3.926374912261963, 4.262333154678345,
+            4.034375190734863, 3.806457996368408, 7.829416990280151,
+            5.009000062942505, 4.421833038330078, 4.709666967391968
+          ],
+          "arity-24": [
+            6.6443328857421875, 6.5920000076293945, 7.286375045776367,
+            7.2447919845581055, 6.0937910079956055, 6.522958040237427,
+            6.883791923522949, 6.754875183105469, 6.711374998092651,
+            6.31516695022583, 6.578667163848877, 7.555375099182129,
+            8.4603750705719, 7.505249977111816, 7.391541957855225
+          ],
+          "buffer": [
+            6.3812079429626465, 6.304166793823242, 6.650959014892578,
+            7.343457937240601, 6.332417011260986, 6.211416959762573,
+            6.56850004196167, 6.913334131240845, 6.596625089645386,
+            6.015458106994629, 6.2789998054504395, 7.075582981109619,
+            7.605165958404541, 7.29325008392334, 8.309209108352661
+          ],
+          "callback": [
+            16.658958911895752, 15.88279104232788, 17.470500230789185,
+            16.345624923706055, 16.824041843414307, 16.59833288192749,
+            16.55312490463257, 18.289083003997803, 17.54550004005432,
+            15.149625062942505, 15.704083919525146, 18.11537480354309,
+            18.835167169570923, 16.600584030151367, 16.361915826797485
+          ],
+          "js-only-control": [
+            0.26999998092651367, 0.3171660900115967, 0.3017919063568115,
+            0.3175828456878662, 0.2470409870147705, 0.25841712951660156,
+            0.3129580020904541, 0.35524988174438477, 0.3092920780181885,
+            0.24704217910766602, 0.3302922248840332, 0.3018331527709961,
+            0.3019580841064453, 0.3054168224334717, 0.3017921447753906
+          ]
+        },
+        "typed-buffer-wrapper.tintTypedRuntime": {
+          "arity-0": [
+            2.112833023071289, 2.2499170303344727, 2.1136248111724854,
+            2.1912498474121094, 2.305584192276001, 2.486208915710449,
+            2.3255419731140137, 2.262458086013794, 2.3406670093536377,
+            2.174916982650757, 2.5964579582214355, 2.5185840129852295,
+            2.2294578552246094, 2.1697909832000732, 2.28725004196167
+          ],
+          "arity-1": [
+            2.1636672019958496, 2.2154998779296875, 2.230875015258789,
+            2.288832902908325, 2.3346660137176514, 2.456125020980835,
+            2.262667179107666, 2.498791217803955, 2.278916835784912,
+            2.1605417728424072, 2.6886661052703857, 2.587625026702881,
+            2.4443750381469727, 2.205540895462036, 2.361875057220459
+          ],
+          "arity-2": [
+            2.2286670207977295, 2.310499906539917, 2.2795000076293945,
+            2.387415885925293, 2.49208402633667, 2.680375099182129,
+            2.2647500038146973, 2.6600420475006104, 3.120290994644165,
+            2.302000045776367, 3.01408314704895, 2.666332960128784,
+            2.6901659965515137, 2.2543752193450928, 2.8083748817443848
+          ],
+          "arity-4": [
+            2.648291826248169, 2.638666868209839, 2.5829999446868896,
+            2.6119158267974854, 2.6945831775665283, 2.902208089828491,
+            3.8926661014556885, 2.9073328971862793, 3.0209169387817383,
+            2.5489158630371094, 2.899625062942505, 8.770792007446289,
+            2.9489169120788574, 2.3999998569488525, 3.3585000038146973
+          ],
+          "arity-8": [
+            3.088207960128784, 3.1609160900115967, 3.011291027069092,
+            3.1272079944610596, 3.674207925796509, 3.4322919845581055,
+            3.3204171657562256, 3.433457851409912, 3.3607499599456787,
+            3.0948750972747803, 3.578958034515381, 3.546875, 3.5022499561309814,
+            3.008708953857422, 3.4081249237060547
+          ],
+          "arity-12": [
+            4.284584045410156, 4.11537504196167, 4.118833065032959,
+            3.9120419025421143, 4.382874965667725, 5.073499917984009,
+            4.453791856765747, 4.374916076660156, 4.459249973297119,
+            4.114375114440918, 4.686832904815674, 5.644999980926514,
+            4.483708143234253, 3.9358339309692383, 4.772792100906372
+          ],
+          "arity-24": [
+            6.66112494468689, 6.649416923522949, 6.769792079925537,
+            6.622708082199097, 6.704457998275757, 7.284499883651733,
+            6.993499994277954, 9.33174991607666, 7.866166830062866,
+            6.930249929428101, 7.2629170417785645, 9.848917007446289,
+            7.170542001724243, 6.617208003997803, 7.376791000366211
+          ],
+          "buffer": [
+            6.325083017349243, 6.310959100723267, 6.405708074569702,
+            6.290499925613403, 6.46399998664856, 7.001416921615601,
+            6.411250114440918, 7.21970796585083, 8.117208003997803,
+            6.543292045593262, 7.6614580154418945, 7.331208944320679,
+            6.891041994094849, 6.063208818435669, 8.080000162124634
+          ],
+          "callback": [
+            16.163208961486816, 16.178333044052124, 18.66670799255371,
+            16.251333951950073, 16.104125022888184, 19.30758309364319,
+            16.447542190551758, 16.65762495994568, 19.3761248588562,
+            16.801416873931885, 19.813709020614624, 20.3096661567688,
+            18.22808313369751, 17.285250186920166, 19.66700005531311
+          ],
+          "js-only-control": [
+            0.31862497329711914, 0.3173339366912842, 0.32370805740356445,
+            0.3295409679412842, 0.3017921447753906, 0.30175018310546875,
+            0.33112502098083496, 0.30174994468688965, 0.3016669750213623,
+            0.2729170322418213, 0.47362494468688965, 0.3017919063568115,
+            0.3106250762939453, 0.3151249885559082, 0.30175018310546875
+          ]
+        }
+      },
+      "rawReportSha256": "d7d39c5b1003cbe3094c0caaef7f3313607566fb79416a81db9dbdc3d5491ee5",
+      "verifiedChecksums": 750
+    }
+  },
+  "outputBudgets": {
+    "leafImageSha256": "9100616df7d3978a91d1dd21f89b562aa261b4faca907d59588461fcb8868753",
+    "frozenV7EmittedWorkloadSha256": "68c11052966f4a851b875c23b6a3413abc74262cec1460532dba09c624d17846"
+  },
+  "nativeBufferFixture": {
+    "artifact": {
+      "target": "darwin-aarch64",
+      "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-typed-bridge-8WfhiC/node-ffi-typed-bridge",
+      "imageSha256": "20018d9385ec7f7d2610895411f182eec5007cd5cbe643df83a08d8fe5dbbd13",
+      "buildManifest": {
+        "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-node-ffi-typed-bridge-8WfhiC/node-ffi-typed-bridge.manifest.json",
+        "sha256": "efec0225b74514a9ddbd6bd54fc4ac854c1e7f07ef71e61bbbeffb489a249fdf"
+      }
+    },
+    "verifiedEntryAndExit42": 2
+  }
+}

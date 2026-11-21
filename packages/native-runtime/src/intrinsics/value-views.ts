@@ -79,6 +79,17 @@ export function publishNativeCallable(
   return view;
 }
 
+export function projectNativeCallback(
+  native: unknown,
+  invoke: ObjectCall<unknown>,
+  name: string,
+  length: number,
+): unknown {
+  const existing = nativeView(native);
+  if (existing !== undefined) return existing;
+  return publishNativeCallable(native, native, invoke, undefined, name, length);
+}
+
 export interface UnaryNumberClosure {
   readonly target: (value: number) => number;
 }

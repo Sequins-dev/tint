@@ -456,7 +456,13 @@ function lowerGeneralProgram(
   const hasNodeErrors =
     original.availableIds?.includes(nodeErrorModule) ??
     available.has(nodeErrorModule);
-  const errors = errorAdapters(request.boundaries.length !== 0, hasNodeErrors);
+  const nodeTypeErrorModule = "packages/native-runtime/src/node/type-error.ts";
+  const hasNodeTypeErrors = available.has(nodeTypeErrorModule);
+  const errors = errorAdapters(
+    request.boundaries.length !== 0,
+    hasNodeErrors,
+    hasNodeTypeErrors,
+  );
   boundaryImports += adapters.imports + errors.imports;
   const dynamicDeclarations = new Set<string>();
   for (let k = 0; k < request.boundaries.length; k++) {
@@ -729,6 +735,8 @@ function lowerGeneralProgram(
     };
   const viewsDependencies = new Map<string, string>();
   if (hasNodeErrors) viewsDependencies.set("node-errors", nodeErrorModule);
+  if (hasNodeTypeErrors)
+    viewsDependencies.set("node-type-error", nodeTypeErrorModule);
   for (const record of records)
     if (record !== undefined)
       viewsDependencies.set(record.module, record.module);
@@ -776,6 +784,7 @@ function lowerGeneralProgram(
 function errorAdapters(
   enabled: boolean,
   nodeErrors: boolean,
+  nodeTypeErrors: boolean,
 ): {
   imports: string;
   functions: string;
@@ -830,8 +839,9 @@ export function ${set}(error:${layout}, view:unknown):void { throw "UNBOUND_ERRO
     );
   }
   let factories = "createNativeErrorView,prepareRealmErrorArgument";
+  if (nodeErrors || nodeTypeErrors) factories += ",createNativeCodedErrorView";
   if (nodeErrors) {
-    factories += ",createNativeCodedErrorView,createNativeSystemErrorView";
+    factories += ",createNativeSystemErrorView";
     stubs +=
       'import type {NativeCodedError,NativeCodedRangeError,NativeSystemError} from "node-errors";\n';
     adapter(
@@ -848,6 +858,14 @@ export function ${set}(error:${layout}, view:unknown):void { throw "UNBOUND_ERRO
       "NativeSystemError",
       "NativeSystemError",
       "createNativeSystemErrorView(program.realm,program.hooks,native.message,native.info.errno,native.info.code,native.info.message,native.info.syscall,value,program.object)",
+    );
+  }
+  if (nodeTypeErrors) {
+    stubs += 'import type {NativeCodedTypeError} from "node-type-error";\n';
+    adapter(
+      "NativeCodedTypeError",
+      "NativeCodedTypeError",
+      'createNativeCodedErrorView(program.realm,program.hooks,"type",native.message,native.code,undefined,false,value,program.object)',
     );
   }
   stubs += `export function nativeErrorReceiver(value:unknown):unknown {

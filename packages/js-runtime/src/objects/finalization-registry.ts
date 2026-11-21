@@ -26,6 +26,7 @@ import {
 import {
   canBeHeldWeakly,
   type WeakRegistryData,
+  type WeakStorageService,
   type RegistryCell,
 } from "./weak-storage.ts";
 import type { ScriptAgent } from "./jobs.ts";
@@ -112,6 +113,46 @@ export function enqueueFinalizationCleanupJobs(
     );
   }
 }
+function attachRegistry(
+  realm: ErrorRealm,
+  storage: WeakStorageService,
+  owner: OrdinaryObject<ScriptPropertyKey, unknown>,
+  cleanup: unknown,
+): void {
+  owner.internalWeakData = {
+    kind: "registry",
+    storage,
+    realm,
+    cleanup,
+    cells: [],
+    scheduled: false,
+  };
+  realm.agent.registries.push({
+    storage,
+    cell: storage.create(owner, undefined, false),
+  });
+}
+
+/** A non-public registry retained by the embedding's tracking function. */
+export function hostFinalizationRegistry(
+  realm: ErrorRealm,
+  storage: WeakStorageService,
+  cleanup: unknown,
+): (target: unknown, held: unknown) => void {
+  const owner = createObject<ScriptPropertyKey, unknown>(
+    realm.finalizationRegistryPrototype,
+  );
+  attachRegistry(realm, storage, owner, cleanup);
+  return (target, held): void => {
+    const data = requireRegistry(owner, realm);
+    data.cells.push({
+      target: storage.create(target, undefined, false),
+      held,
+      token: undefined,
+    });
+  };
+}
+
 export function installFinalizationRegistryIntrinsics(
   global: OrdinaryObject<ScriptPropertyKey, unknown>,
   realm: ErrorRealm,
@@ -135,18 +176,7 @@ export function installFinalizationRegistryIntrinsics(
       );
       const storage = realm.agent.weakStorage;
       if (storage === undefined) return rejectUnsupportedExecution(realm);
-      object.internalWeakData = {
-        kind: "registry",
-        storage,
-        realm,
-        cleanup: args[0],
-        cells: [],
-        scheduled: false,
-      };
-      realm.agent.registries.push({
-        storage,
-        cell: storage.create(object, undefined, false),
-      });
+      attachRegistry(realm, storage, object, args[0]);
       return object;
     },
   );

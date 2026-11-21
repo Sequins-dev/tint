@@ -1,4 +1,6 @@
 import { nativeFixtureBuildOnlyMode } from "./gate/native-fixture.ts";
+import { nativeFixtureMemoryWaiting } from "./gate/native-batch-clock.ts";
+import { killGateProcess, runWithDeadline } from "./gate/watchdog.ts";
 // Native runtime diagnostics (docs/runtime-diagnostics.md): each opted-in
 // image is built through the hosted pipeline and run under LLDB.
 import assert from "node:assert/strict";
@@ -89,26 +91,33 @@ test("signposted collector phases keep the generational runtime correct", () => 
   }
 });
 
-test(
-  "LLDB loads registered JIT code: breakpoints, backtrace, lines and perf map",
-  { timeout: 600000 },
-  () => {
-    const directory = mkdtempSync(join(tmpdir(), "tint-jit-debug-test-"));
-    try {
-      const result = spawnSync(
-        process.execPath,
-        ["tools/verify-hosted-jit-debug.ts", join(directory, "out")],
-        {
-          encoding: "utf8",
-          timeout: 600000,
-          env: { ...process.env, TINT_BUILD_ONLY: "" },
+test("LLDB loads registered JIT code: breakpoints, backtrace, lines and perf map", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "tint-jit-debug-test-"));
+  try {
+    const journal = process.env.TINT_GATE_NATIVE_IMAGES;
+    const worker = Number(process.env.TINT_GATE_NATIVE_WORKER_PID);
+    let verified = false;
+    const status = await runWithDeadline(
+      process.execPath,
+      ["tools/verify-hosted-jit-debug.ts", join(directory, "out")],
+      600,
+      {
+        env: { ...process.env, TINT_BUILD_ONLY: "" },
+        onTimeout: killGateProcess,
+        onInterrupt: killGateProcess,
+        onLine: (line) => {
+          if (line.includes("Verified JIT debugger registration"))
+            verified = true;
         },
-      );
-      assert.ifError(result.error);
-      assert.equal(result.status, 0, result.stdout + result.stderr);
-      assert.match(result.stdout, /Verified JIT debugger registration/);
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
-    }
-  },
-);
+        waiting:
+          journal && Number.isSafeInteger(worker)
+            ? nativeFixtureMemoryWaiting(journal, worker)
+            : undefined,
+      },
+    );
+    assert.equal(status, 0);
+    assert.ok(verified, "expected the JIT debugger registration marker");
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});

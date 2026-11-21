@@ -1,0 +1,1188 @@
+{
+  "node": {
+    "version": "26.13.1",
+    "revision": "e9c277643b0249c50f6e6de5413be8a88ea11b6a",
+    "archiveSha256": "a7f6204ff63b6a2cd274d48903285abb86ed53a99070e532d4c2fd787457d9e6",
+    "dsoSha256": "d53bfb96b75759f2d5d79d3ca10fda6115cd7a35c28583f2ea9d2384d809ed16",
+    "helperSha256": "96b328cbba93891317b4f60411eb376591e304d3242cf7614af3ea48f19cb6d4",
+    "abortHelperSha256": "0234e765f4f5f7ba961de3f8999a2a6f5718cf0a689bc8dcd30956e9168895cd"
+  },
+  "compilerHeadAtStart": "450379509d53d82c8144fed7ad64883ff6e7a2f4",
+  "target": "darwin-aarch64",
+  "runtimeSourceCommit": "f40ca39a0c08b4e3e48242496e27d80080f2fdab",
+  "started": "2026-11-20T21:57:53.005Z",
+  "finished": "2026-11-20T22:13:01.802Z",
+  "suiteDenominator": 25,
+  "additionalControlFiles": 1,
+  "completeInventory": true,
+  "shardExitStatuses": [1, 1, 1, 1],
+  "cases": {
+    "limit": 16,
+    "passed": 34,
+    "failed": 9,
+    "skipped": 3
+  },
+  "observations": [
+    {
+      "file": "test-ffi-callback-abort-cross-thread.js",
+      "sha256": "d108c9f877bd18a60b7ac5a93f61739c128c496901687b6ca972c105222e5ed6",
+      "flags": [],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-cross-thread-l1oqIg/test-ffi-callback-abort-cross-thread\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-cross-thread-l1oqIg/test-ffi-callback-abort-cross-thread' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 48174 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-cross-thread-l1oqIg/test-ffi-callback-abort-cross-thread' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_80877663-c9af-4c72-9dc5-b7e67ded91a5 AT_ENTRY')\nTINT_NATIVE_80877663-c9af-4c72-9dc5-b7e67ded91a5 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|limit|node-cli|Node%20child%20executable%20and%20CLI%20processing\r\nTINT_FFI_DONE\r\nProcess 48174 resuming\nProcess 48174 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_80877663-c9af-4c72-9dc5-b7e67ded91a5 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_80877663-c9af-4c72-9dc5-b7e67ded91a5 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_80877663-c9af-4c72-9dc5-b7e67ded91a5 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-cross-thread-l1oqIg/test-ffi-callback-abort-cross-thread",
+          "imageSha256": "b1cefe2386f9ecf60937a3109e2bed584385e1f984605cc7ef8083519e11949b",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-cross-thread-l1oqIg/test-ffi-callback-abort-cross-thread.manifest.json",
+            "sha256": "911ba79b1f0c313cac2f50239a831d3828d2c741215389db10b91d9eb71df4bd"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "limit",
+          "kind": "node-cli",
+          "message": "Node child executable and CLI processing"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-callback-abort-fractional-return.js",
+      "sha256": "159d906e7b9cdc04a301e758272eacaf6a43fdaa7ca7b8e2db7e579248675ed2",
+      "flags": [],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-fractional-return-n0iGh0/test-ffi-callback-abort-fractional-return\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-fractional-return-n0iGh0/test-ffi-callback-abort-fractional-return' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 47996 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-fractional-return-n0iGh0/test-ffi-callback-abort-fractional-return' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_6248329e-a97c-436c-909f-c0b908882ec2 AT_ENTRY')\nTINT_NATIVE_6248329e-a97c-436c-909f-c0b908882ec2 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|limit|node-cli|Node%20child%20executable%20and%20CLI%20processing\r\nTINT_FFI_DONE\r\nProcess 47996 resuming\nProcess 47996 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_6248329e-a97c-436c-909f-c0b908882ec2 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_6248329e-a97c-436c-909f-c0b908882ec2 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_6248329e-a97c-436c-909f-c0b908882ec2 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-fractional-return-n0iGh0/test-ffi-callback-abort-fractional-return",
+          "imageSha256": "2f417261323c597767f4c08db88bab26cdb94119f6ec9a273664ec81bfaafc4e",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-fractional-return-n0iGh0/test-ffi-callback-abort-fractional-return.manifest.json",
+            "sha256": "b401ddf7df3baf09f148e879c27bdd133b1aa27392c7101cb760a82291fd29ea"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "limit",
+          "kind": "node-cli",
+          "message": "Node child executable and CLI processing"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-callback-abort-out-of-range-return.js",
+      "sha256": "c236a9c880f6960437dce830dc002908eecc17d4f7f1d3dd93cdccaa626245fa",
+      "flags": [],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-out-of-range-return-DO6ivn/test-ffi-callback-abort-out-of-range-return\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-out-of-range-return-DO6ivn/test-ffi-callback-abort-out-of-range-return' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 47928 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-out-of-range-return-DO6ivn/test-ffi-callback-abort-out-of-range-return' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_2faff635-11b5-4022-a697-57ac2818bc90 AT_ENTRY')\nTINT_NATIVE_2faff635-11b5-4022-a697-57ac2818bc90 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|limit|node-cli|Node%20child%20executable%20and%20CLI%20processing\r\nTINT_FFI_DONE\r\nProcess 47928 resuming\nProcess 47928 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_2faff635-11b5-4022-a697-57ac2818bc90 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_2faff635-11b5-4022-a697-57ac2818bc90 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_2faff635-11b5-4022-a697-57ac2818bc90 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-out-of-range-return-DO6ivn/test-ffi-callback-abort-out-of-range-return",
+          "imageSha256": "3e538f471ec440743625470c67336c54cf06f8f437131996d733373d35c9a9ca",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-out-of-range-return-DO6ivn/test-ffi-callback-abort-out-of-range-return.manifest.json",
+            "sha256": "26c6ea7813cc0b1a14a9278df66f6091c9d1f446c943623bfa96f813cb282da9"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "limit",
+          "kind": "node-cli",
+          "message": "Node child executable and CLI processing"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-callback-abort-promise.js",
+      "sha256": "267bea6aaadcda5d5175d360eed085efca7f2cd5632c8952c65772d4e8e71be6",
+      "flags": [],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-promise-JQcxDY/test-ffi-callback-abort-promise\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-promise-JQcxDY/test-ffi-callback-abort-promise' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 48146 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-promise-JQcxDY/test-ffi-callback-abort-promise' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_b40237a1-a345-4952-a1bf-598258db1d5a AT_ENTRY')\nTINT_NATIVE_b40237a1-a345-4952-a1bf-598258db1d5a AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|limit|node-cli|Node%20child%20executable%20and%20CLI%20processing\r\nTINT_FFI_DONE\r\nProcess 48146 resuming\nProcess 48146 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_b40237a1-a345-4952-a1bf-598258db1d5a EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_b40237a1-a345-4952-a1bf-598258db1d5a SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_b40237a1-a345-4952-a1bf-598258db1d5a EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-promise-JQcxDY/test-ffi-callback-abort-promise",
+          "imageSha256": "04ac53a5a1a943deba1c4edfd74d7e1fce72c5cd681f3fdbfca91a909153c6be",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-promise-JQcxDY/test-ffi-callback-abort-promise.manifest.json",
+            "sha256": "6bf1b3923df18931f83307485ad87b32b220186d9073819def02e86f7f8efb70"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "limit",
+          "kind": "node-cli",
+          "message": "Node child executable and CLI processing"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-callback-abort-throw.js",
+      "sha256": "d5f43776416236cb398311d2bcb4f135c31c01ebe35582ebb17e9f3b2a53fd74",
+      "flags": [],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-throw-BZLxXt/test-ffi-callback-abort-throw\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-throw-BZLxXt/test-ffi-callback-abort-throw' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 49099 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-throw-BZLxXt/test-ffi-callback-abort-throw' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_78cd8137-da0f-41fc-b7eb-912f0679a41c AT_ENTRY')\nTINT_NATIVE_78cd8137-da0f-41fc-b7eb-912f0679a41c AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|limit|node-cli|Node%20child%20executable%20and%20CLI%20processing\r\nTINT_FFI_DONE\r\nProcess 49099 resuming\nProcess 49099 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_78cd8137-da0f-41fc-b7eb-912f0679a41c EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_78cd8137-da0f-41fc-b7eb-912f0679a41c SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_78cd8137-da0f-41fc-b7eb-912f0679a41c EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-throw-BZLxXt/test-ffi-callback-abort-throw",
+          "imageSha256": "c726254b1587546d9dba92c077c2e273b8c64a22208ef3b59621f20d108d7811",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-abort-throw-BZLxXt/test-ffi-callback-abort-throw.manifest.json",
+            "sha256": "aec1bfa435ca276afba9fdcceb038f45aa912b6b2b5583e373072a16692dd5c3"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "limit",
+          "kind": "node-cli",
+          "message": "Node child executable and CLI processing"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-callback-worker-termination.js",
+      "sha256": "2b7433919366109bb7cb77c5543a50d6786cb275332701dc4a2e35ebe1baefc1",
+      "flags": [],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-worker-termination-TgQ7Ms/test-ffi-callback-worker-termination\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-worker-termination-TgQ7Ms/test-ffi-callback-worker-termination' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 48990 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-worker-termination-TgQ7Ms/test-ffi-callback-worker-termination' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_fb77f5a9-867b-47a7-868a-3be65ca375b9 AT_ENTRY')\nTINT_NATIVE_fb77f5a9-867b-47a7-868a-3be65ca375b9 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|limit|node-cli|Node%20child%20executable%20and%20CLI%20processing\r\nTINT_FFI_DONE\r\nProcess 48990 resuming\nProcess 48990 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_fb77f5a9-867b-47a7-868a-3be65ca375b9 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_fb77f5a9-867b-47a7-868a-3be65ca375b9 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_fb77f5a9-867b-47a7-868a-3be65ca375b9 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-worker-termination-TgQ7Ms/test-ffi-callback-worker-termination",
+          "imageSha256": "7e24ec09d861e843ce9418301c6497d5298fb3768c7bcd1545e21e84969e5627",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callback-worker-termination-TgQ7Ms/test-ffi-callback-worker-termination.manifest.json",
+            "sha256": "d131e22ae4959ef0c5390cbba8ac084c7a249791ba200d24ae834c03530cf931"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "limit",
+          "kind": "node-cli",
+          "message": "Node child executable and CLI processing"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-callbacks.js",
+      "sha256": "f69888e22f2570747342426b07e7599283a009fb9605115652e36d2c3c7d75bb",
+      "flags": [],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callbacks-WJ43EK/test-ffi-callbacks\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callbacks-WJ43EK/test-ffi-callbacks' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 48986 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callbacks-WJ43EK/test-ffi-callbacks' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_6e9c463a-f298-44e7-99a8-cab3c2fea754 AT_ENTRY')\nTINT_NATIVE_6e9c463a-f298-44e7-99a8-cab3c2fea754 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE ffi%20callbacks%20can%20be%20registered%20and%20invoked|passed||\r\nTINT_FFI_CASE ffi%20callback%20ref%20and%20unref%20APIs%20work|passed||\r\nTINT_FFI_DONE\r\nProcess 48986 resuming\nProcess 48986 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_6e9c463a-f298-44e7-99a8-cab3c2fea754 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_6e9c463a-f298-44e7-99a8-cab3c2fea754 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_6e9c463a-f298-44e7-99a8-cab3c2fea754 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callbacks-WJ43EK/test-ffi-callbacks",
+          "imageSha256": "467c0b8220c2ab4798dc7ee9bb3d4b92c85ea8c874eced367606017d4259a33e",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-callbacks-WJ43EK/test-ffi-callbacks.manifest.json",
+            "sha256": "4dabe21663f6f9dd9ba844a3d62dd5ddbdd1d9c519bad68625c47304d6249398"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "ffi callbacks can be registered and invoked",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi callback ref and unref APIs work",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-calls.js",
+      "sha256": "fc36ccecd047504764486e3d18e26cacbc75b9888c87703d4b1facc9674a9d24",
+      "flags": ["--allow-natives-syntax"],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-calls-bbOT24/test-ffi-calls\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-calls-bbOT24/test-ffi-calls' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 48994 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-calls-bbOT24/test-ffi-calls' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_1991480a-7edc-4d9d-830f-22c0cb621e32 AT_ENTRY')\nTINT_NATIVE_1991480a-7edc-4d9d-830f-22c0cb621e32 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE ffi%20calls%20support%20integer%20arithmetic%20and%20char%20semantics|passed||\r\nTINT_FFI_CASE ffi%20calls%20support%20floating%20point%20and%20mixed%20signatures|passed||\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(callBoolAdder)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(callBoolAdder)\r\nTINT_FFI_CASE ffi%20bool%20signatures%20use%20uint8%20values|passed||\r\nTINT_FFI_CASE ffi%20pointer%20identity%20conversions%20work|passed||\r\nTINT_FFI_CASE ffi%20strings%20and%20buffers%20cross%20the%20boundary%20correctly|passed||\r\nTINT_FFI_CASE ffi%20string%20signatures%20convert%20strings%20to%20temporary%20pointers|passed||\r\nTINT_FFI_CASE ffi%20buffer%20and%20ArrayBuffer%20signatures%20pass%20backing-store%20pointers|passed||\r\nTINT_FFI_CASE ffi%20typed%20array%20accessors%20work|passed||\r\nTINT_FFI_CASE ffi%20global%20state%20helpers%20work|passed||\r\nTINT_FFI_CASE ffi%20validates%20invalid%20arguments|passed||\r\nTINT_FFI_CASE ffi%20division%20helpers%20behave%20as%20expected|passed||\r\nTINT_FFI_DONE\r\nProcess 48994 resuming\nProcess 48994 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_1991480a-7edc-4d9d-830f-22c0cb621e32 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_1991480a-7edc-4d9d-830f-22c0cb621e32 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_1991480a-7edc-4d9d-830f-22c0cb621e32 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-calls-bbOT24/test-ffi-calls",
+          "imageSha256": "b61023438182511021d8e17e88e7fe0d822b71e8e94a7a7a3d29c1f436165bd6",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-calls-bbOT24/test-ffi-calls.manifest.json",
+            "sha256": "a2f7e859108515c612dbb2752abb63358cdf8d89bc09d101df3f4921a9e9c98c"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "ffi calls support integer arithmetic and char semantics",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi calls support floating point and mixed signatures",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi bool signatures use uint8 values",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi pointer identity conversions work",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi strings and buffers cross the boundary correctly",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi string signatures convert strings to temporary pointers",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi buffer and ArrayBuffer signatures pass backing-store pointers",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi typed array accessors work",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi global state helpers work",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi validates invalid arguments",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi division helpers behave as expected",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        }
+      ],
+      "nodeDetails": [
+        "%PrepareFunctionForOptimization(callBoolAdder)",
+        "%OptimizeFunctionOnNextCall(callBoolAdder)"
+      ],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-dynamic-library.js",
+      "sha256": "1e9b4c114cfde6c399523366b43ba63ebb70c6c6e52bb991c1b5b7ec3ffcb605",
+      "flags": ["--expose-gc", "--allow-natives-syntax"],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-dynamic-library-7wMlqV/test-ffi-dynamic-library\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-dynamic-library-7wMlqV/test-ffi-dynamic-library' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 57184 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-dynamic-library-7wMlqV/test-ffi-dynamic-library' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_129092e0-7f6f-44d9-8e99-2cbd2abf2e8b AT_ENTRY')\nTINT_NATIVE_129092e0-7f6f-44d9-8e99-2cbd2abf2e8b AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE dlopen%20without%20definitions%20returns%20empty%20function%20map|passed||\r\nTINT_FFI_CASE dlopen%20resolves%20symbols%20from%20the%20current%20process%20with%20null%20path|failed|ERR_FFI_CALL_FAILED|Error%3A%20dlsym%20failed%3A%20dlsym(RTLD_DEFAULT%2C%20uv_os_getpid)%3A%20symbol%20not%20found\r\nTINT_FFI_CASE dlopen%20resolves%20functions%20from%20definitions|failed||Error%3A%20strictEqual%200%20expected%202\r\nTINT_FFI_CASE FFI%20functions%20are%20not%20constructible|passed||\r\nTINT_FFI_CASE DynamicLibrary%20exposes%20functions%20and%20symbols|passed||\r\nTINT_FFI_CASE DynamicLibrary%20getters%20reject%20incompatible%20receivers|passed||\r\nTINT_FFI_CASE DynamicLibrary%20evaluates%20function%20signatures%20once|passed||\r\nTINT_FFI_CASE getFunction%20caches%20signatures%20consistently|passed||\r\nTINT_FFI_CASE resolving%20the%20same%20symbol%20reuses%20one%20function|passed||\r\nProcess 57184 resuming\nProcess 57184 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x1055c75b8)\n    frame #0: 0x00000001055c75b8 test-ffi-dynamic-library`\n->  0x1055c75b8: brk    #0\n    0x1055c75bc: cmp    w0, #0x2\n    0x1055c75c0: b.eq   0x1055c75c8\n    0x1055c75c4: brk    #0\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_129092e0-7f6f-44d9-8e99-2cbd2abf2e8b EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_129092e0-7f6f-44d9-8e99-2cbd2abf2e8b SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\n",
+        "stderr": "",
+        "kind": "runner-error",
+        "reason": "darwin-local: LLDB did not report an inferior exit or signal: 0",
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-dynamic-library-7wMlqV/test-ffi-dynamic-library",
+          "imageSha256": "f33bde26dadd0176b5d2e4b90d0e2a72cce3df3b9d26735b95bcdd8c6aae0f04",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-dynamic-library-7wMlqV/test-ffi-dynamic-library.manifest.json",
+            "sha256": "8fc9f4c9afa852d1bfa91b565b310706e7a85d48ec3c880692adfcb294690478"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "dlopen without definitions returns empty function map",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "dlopen resolves symbols from the current process with null path",
+          "status": "failed",
+          "kind": "ERR_FFI_CALL_FAILED",
+          "message": "Error: dlsym failed: dlsym(RTLD_DEFAULT, uv_os_getpid): symbol not found"
+        },
+        {
+          "name": "dlopen resolves functions from definitions",
+          "status": "failed",
+          "kind": "",
+          "message": "Error: strictEqual 0 expected 2"
+        },
+        {
+          "name": "FFI functions are not constructible",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "DynamicLibrary exposes functions and symbols",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "DynamicLibrary getters reject incompatible receivers",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "DynamicLibrary evaluates function signatures once",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "getFunction caches signatures consistently",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "resolving the same symbol reuses one function",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        }
+      ],
+      "nodeDetails": [],
+      "complete": false
+    },
+    {
+      "file": "test-ffi-fast-buffer.js",
+      "sha256": "a2fbf3c79d73d42614fb2700608cfd10cce1fb146673dee37622acaf91a65084",
+      "flags": ["--expose-internals", "--allow-natives-syntax"],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-fast-buffer-XDPBAt/test-ffi-fast-buffer\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-fast-buffer-XDPBAt/test-ffi-fast-buffer' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 54559 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-fast-buffer-XDPBAt/test-ffi-fast-buffer' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_e9a6a225-461e-4e49-9c45-46793537d9f4 AT_ENTRY')\nTINT_NATIVE_e9a6a225-461e-4e49-9c45-46793537d9f4 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|limit|node-fast-api|Node%2FV8%20internalBinding(ffi)%20symbols\r\nTINT_FFI_DONE\r\nProcess 54559 resuming\nProcess 54559 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_e9a6a225-461e-4e49-9c45-46793537d9f4 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_e9a6a225-461e-4e49-9c45-46793537d9f4 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_e9a6a225-461e-4e49-9c45-46793537d9f4 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-fast-buffer-XDPBAt/test-ffi-fast-buffer",
+          "imageSha256": "2ae0b006e9255a5b79b367ab8f5cf6eea2fd5fdb6a63f4509e4d161700ffe935",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-fast-buffer-XDPBAt/test-ffi-fast-buffer.manifest.json",
+            "sha256": "c4bba4f1aeca971132061b5e02f46862befa3740ca482892036a07acc55360fb"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "limit",
+          "kind": "node-fast-api",
+          "message": "Node/V8 internalBinding(ffi) symbols"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-fast-integer-validation.js",
+      "sha256": "4c92ce2b29e0d201e744335ca4c83e411b50ec25cd9f1fccda30b6b8fd570d4a",
+      "flags": ["--allow-natives-syntax"],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-fast-integer-validation-DiJJXy/test-ffi-fast-integer-validation\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-fast-integer-validation-DiJJXy/test-ffi-fast-integer-validation' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 56742 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-fast-integer-validation-DiJJXy/test-ffi-fast-integer-validation' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_79f33850-779c-4997-a5b4-39b50e1b33ee AT_ENTRY')\nTINT_NATIVE_79f33850-779c-4997-a5b4-39b50e1b33ee AT_ENTRY\n(lldb) continue\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_CASE fast%20FFI%20validates%20integer%20argument%20ranges|failed||undefined\r\nTINT_FFI_CASE fast%20FFI%20converts%20single%20i64%2Fu64%20Number%20arguments%20before%20and%20after%20optimization|failed||undefined\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_NODE_DETAIL %PrepareFunctionForOptimization(fn)\r\nTINT_FFI_NODE_DETAIL %OptimizeFunctionOnNextCall(fn)\r\nTINT_FFI_CASE fast%20FFI%20validates%20pointer%20BigInt%20ranges|failed||undefined\r\nTINT_FFI_DONE\r\nProcess 56742 resuming\nProcess 56742 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_79f33850-779c-4997-a5b4-39b50e1b33ee EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_79f33850-779c-4997-a5b4-39b50e1b33ee SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_79f33850-779c-4997-a5b4-39b50e1b33ee EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-fast-integer-validation-DiJJXy/test-ffi-fast-integer-validation",
+          "imageSha256": "325836e995c5da6fa84b0716276141f7e361fdee1d7385433d4fc8892c75aa15",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-fast-integer-validation-DiJJXy/test-ffi-fast-integer-validation.manifest.json",
+            "sha256": "e206964e79654f8bb484b17c0fc778be80cb9ff2f30e1e582dc2b1481b6b3bdb"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "fast FFI validates integer argument ranges",
+          "status": "failed",
+          "kind": "",
+          "message": "undefined"
+        },
+        {
+          "name": "fast FFI converts single i64/u64 Number arguments before and after optimization",
+          "status": "failed",
+          "kind": "",
+          "message": "undefined"
+        },
+        {
+          "name": "fast FFI validates pointer BigInt ranges",
+          "status": "failed",
+          "kind": "",
+          "message": "undefined"
+        }
+      ],
+      "nodeDetails": [
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)",
+        "%PrepareFunctionForOptimization(fn)",
+        "%OptimizeFunctionOnNextCall(fn)"
+      ],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-invoke-string-storage.js",
+      "sha256": "4717de154aea06f3a58cea2100e6cc36d99ab0b70830788aa67b815f15c26eae",
+      "flags": ["--expose-internals"],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-invoke-string-storage-9zsheL/test-ffi-invoke-string-storage\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-invoke-string-storage-9zsheL/test-ffi-invoke-string-storage' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 54571 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-invoke-string-storage-9zsheL/test-ffi-invoke-string-storage' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_866d22c4-0b83-4d23-9187-1bb69637d2a8 AT_ENTRY')\nTINT_NATIVE_866d22c4-0b83-4d23-9187-1bb69637d2a8 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|limit|node-fast-api|Node%2FV8%20internalBinding(ffi)%20symbols\r\nTINT_FFI_DONE\r\nProcess 54571 resuming\nProcess 54571 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_866d22c4-0b83-4d23-9187-1bb69637d2a8 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_866d22c4-0b83-4d23-9187-1bb69637d2a8 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_866d22c4-0b83-4d23-9187-1bb69637d2a8 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-invoke-string-storage-9zsheL/test-ffi-invoke-string-storage",
+          "imageSha256": "13e433cc9483af74788af9ba61053e026424621b294fefa0cd654774ea4e68af",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-invoke-string-storage-9zsheL/test-ffi-invoke-string-storage.manifest.json",
+            "sha256": "1aafc1ee683aa1f80dd1d6595d262b0105d385f8100cc42ca47d7a29e2f2c343"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "limit",
+          "kind": "node-fast-api",
+          "message": "Node/V8 internalBinding(ffi) symbols"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-jitless.js",
+      "sha256": "4404623818ec387b30620b9c8358f287493463b604932dba9fc99c9b0fe51c19",
+      "flags": ["--jitless"],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-jitless-gnWDTx/test-ffi-jitless\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-jitless-gnWDTx/test-ffi-jitless' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 58103 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-jitless-gnWDTx/test-ffi-jitless' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_b3c82198-28f3-4734-8543-49514c15c4b8 AT_ENTRY')\nTINT_NATIVE_b3c82198-28f3-4734-8543-49514c15c4b8 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|passed||\r\nTINT_FFI_DONE\r\nProcess 58103 resuming\nProcess 58103 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_b3c82198-28f3-4734-8543-49514c15c4b8 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_b3c82198-28f3-4734-8543-49514c15c4b8 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_b3c82198-28f3-4734-8543-49514c15c4b8 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-jitless-gnWDTx/test-ffi-jitless",
+          "imageSha256": "d376f603a6cc115ea39169830e1567ab1455de167e9c8b8cd6ef0e32e78e2f31",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-jitless-gnWDTx/test-ffi-jitless.manifest.json",
+            "sha256": "80965b981b28a4f0ec6d2d36d6ebf97295d2bf6511835726af0cc9dff1c14987"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-memory.js",
+      "sha256": "70b9af3065335b659bf522cc8bda229fc62158c899a41f8e0237ebd758d66ee3",
+      "flags": [],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-memory-S2iqdw/test-ffi-memory\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-memory-S2iqdw/test-ffi-memory' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 58095 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-memory-S2iqdw/test-ffi-memory' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_3888d61f-7d2f-400b-80eb-2f9d5a548055 AT_ENTRY')\nTINT_NATIVE_3888d61f-7d2f-400b-80eb-2f9d5a548055 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE ffi%20reads%20and%20writes%20integer%20and%20float%20values|passed||\r\nTINT_FFI_CASE ffi%20supports%20unaligned%20memory%20access|passed||\r\nTINT_FFI_CASE ffi%20toBuffer%20supports%20copy%20and%20zero-copy%20views|passed||\r\nTINT_FFI_CASE ffi%20toArrayBuffer%20supports%20copy%20and%20zero-copy%20views|passed||\r\nTINT_FFI_CASE ffi%20zero-copy%20views%20throw%20with%20the%20V8%20sandbox|skipped|upstream-skip|true\r\nTINT_FFI_CASE ffi%20toBuffer%20and%20toArrayBuffer%20require%20a%20boolean%20copy%20argument|passed||\r\nTINT_FFI_CASE ffi%20getRawPointer%20returns%20raw%20addresses%20for%20byte%20sources|failed||ReferenceError\r\nTINT_FFI_CASE ffi%20rejects%20detached%20array%20buffers%20and%20views%20as%20pointers|failed||Error%3A%20strictEqual%20ArrayBuffer%20is%20detached%20expected%20ArrayBufferView%20is%20backed%20by%20a%20detached%20ArrayBuffer\r\nTINT_FFI_CASE ffi%20exportString%20and%20exportBuffer%20copy%20data%20into%20native%20memory|passed||\r\nTINT_FFI_CASE ffi%20toString%20returns%20null%20for%20a%20null%20pointer|passed||\r\nTINT_FFI_CASE ffi%20accepts%20zero-length%20copies%20through%20a%20null%20pointer|passed||\r\nTINT_FFI_CASE ffi%20validates%20memory%20access%20arguments|failed||Error%3A%20match%20TypeError%3A%20The%20pointer%20must%20be%20a%20bigint%20expected%20%2FThe%20first%20argument%20must%20be%20a%20bigint%2F\r\nTINT_FFI_CASE ffi%20rejects%20unsafe%20integers%20as%20an%20offset%20or%20length|passed||\r\nTINT_FFI_CASE ffi%20toBuffer%20and%20toArrayBuffer%20throw%20when%20the%20copy%20cannot%20be%20allocated|passed||\r\nTINT_FFI_CASE ffi%20memory%20helpers%20reject%20missing%20required%20arguments|passed||\r\nTINT_FFI_CASE ffi%20memory%20helpers%20distinguish%20wrong-typed%20from%20invalid%20arguments|passed||\r\nTINT_FFI_DONE\r\nProcess 58095 resuming\nProcess 58095 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_3888d61f-7d2f-400b-80eb-2f9d5a548055 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_3888d61f-7d2f-400b-80eb-2f9d5a548055 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_3888d61f-7d2f-400b-80eb-2f9d5a548055 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-memory-S2iqdw/test-ffi-memory",
+          "imageSha256": "ea9222b99a28f1736cf49c2ab7963b5b5c96306b66a43ad6f60863985b14df89",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-memory-S2iqdw/test-ffi-memory.manifest.json",
+            "sha256": "4d2402e429af6f2a71b6de55f6bd91dff7d089f610b28d00f18ad5c202678ce9"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "ffi reads and writes integer and float values",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi supports unaligned memory access",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi toBuffer supports copy and zero-copy views",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi toArrayBuffer supports copy and zero-copy views",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi zero-copy views throw with the V8 sandbox",
+          "status": "skipped",
+          "kind": "upstream-skip",
+          "message": "true"
+        },
+        {
+          "name": "ffi toBuffer and toArrayBuffer require a boolean copy argument",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi getRawPointer returns raw addresses for byte sources",
+          "status": "failed",
+          "kind": "",
+          "message": "ReferenceError"
+        },
+        {
+          "name": "ffi rejects detached array buffers and views as pointers",
+          "status": "failed",
+          "kind": "",
+          "message": "Error: strictEqual ArrayBuffer is detached expected ArrayBufferView is backed by a detached ArrayBuffer"
+        },
+        {
+          "name": "ffi exportString and exportBuffer copy data into native memory",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi toString returns null for a null pointer",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi accepts zero-length copies through a null pointer",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi validates memory access arguments",
+          "status": "failed",
+          "kind": "",
+          "message": "Error: match TypeError: The pointer must be a bigint expected /The first argument must be a bigint/"
+        },
+        {
+          "name": "ffi rejects unsafe integers as an offset or length",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi toBuffer and toArrayBuffer throw when the copy cannot be allocated",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi memory helpers reject missing required arguments",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        },
+        {
+          "name": "ffi memory helpers distinguish wrong-typed from invalid arguments",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-missing-build.js",
+      "sha256": "2e2f6f4f24e39530623426b28be324f17acbc34831f1cde097e14a70ba1a266e",
+      "flags": [],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-missing-build-pe1Sid/test-ffi-missing-build\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-missing-build-pe1Sid/test-ffi-missing-build' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 71166 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-missing-build-pe1Sid/test-ffi-missing-build' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_f4c93fda-6ac5-4bb6-8dfa-bde7cbefcc52 AT_ENTRY')\nTINT_NATIVE_f4c93fda-6ac5-4bb6-8dfa-bde7cbefcc52 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|skipped|upstream-skip|requires%20a%20build%20without%20FFI%20support\r\nTINT_FFI_DONE\r\nProcess 71166 resuming\nProcess 71166 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_f4c93fda-6ac5-4bb6-8dfa-bde7cbefcc52 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_f4c93fda-6ac5-4bb6-8dfa-bde7cbefcc52 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_f4c93fda-6ac5-4bb6-8dfa-bde7cbefcc52 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-missing-build-pe1Sid/test-ffi-missing-build",
+          "imageSha256": "93d72205ff6390ba4de030a39f9d2c2c2d2152777b4d75f67b8e7973d73d095b",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-missing-build-pe1Sid/test-ffi-missing-build.manifest.json",
+            "sha256": "9a3cea77906d3c3d84be3eeece3bbb3e70016db3c3ee38cb256971c7c794e7fb"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "skipped",
+          "kind": "upstream-skip",
+          "message": "requires a build without FFI support"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-module.js",
+      "sha256": "9a897a23ec1857454a106c6fd0e2a6c6bc3014ec7a3725197671ab359fab9cbc",
+      "flags": [],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-module-fgPife/test-ffi-module\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-module-fgPife/test-ffi-module' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 58107 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-module-fgPife/test-ffi-module' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_0ab06dbe-a111-4026-b21c-59dc4c670583 AT_ENTRY')\nTINT_NATIVE_0ab06dbe-a111-4026-b21c-59dc4c670583 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|limit|node-cli|Node%20child%20executable%20and%20CLI%20processing\r\nTINT_FFI_DONE\r\nProcess 58107 resuming\nProcess 58107 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_0ab06dbe-a111-4026-b21c-59dc4c670583 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_0ab06dbe-a111-4026-b21c-59dc4c670583 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_0ab06dbe-a111-4026-b21c-59dc4c670583 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-module-fgPife/test-ffi-module",
+          "imageSha256": "12bad79cac2d3369ea38dee25f41c7552d3486005de4f11a1559ebef1cd2277e",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-module-fgPife/test-ffi-module.manifest.json",
+            "sha256": "f8ed968324f35fb2e9fdf548408f869704942b8f0a50538379e01261b157a2e0"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "limit",
+          "kind": "node-cli",
+          "message": "Node child executable and CLI processing"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-no-rx-memory.js",
+      "sha256": "eabb75dbfc0123d8c2f19b8f383c285eefdc2b73e3727158cbfbce834db5d251",
+      "flags": ["--jitless"],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-no-rx-memory-1ORnCZ/test-ffi-no-rx-memory\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-no-rx-memory-1ORnCZ/test-ffi-no-rx-memory' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 58098 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-no-rx-memory-1ORnCZ/test-ffi-no-rx-memory' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_c4ed29d8-d45b-435d-bf21-b7db323d597a AT_ENTRY')\nTINT_NATIVE_c4ed29d8-d45b-435d-bf21-b7db323d597a AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|skipped|upstream-skip|This%20test%20requires%20Linux%20seccomp\r\nTINT_FFI_DONE\r\nProcess 58098 resuming\nProcess 58098 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_c4ed29d8-d45b-435d-bf21-b7db323d597a EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_c4ed29d8-d45b-435d-bf21-b7db323d597a SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_c4ed29d8-d45b-435d-bf21-b7db323d597a EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-no-rx-memory-1ORnCZ/test-ffi-no-rx-memory",
+          "imageSha256": "290dae3ecda95c56973cfb23a677a2f680b09b6f19f0558ba7ce3c571710bf80",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-no-rx-memory-1ORnCZ/test-ffi-no-rx-memory.manifest.json",
+            "sha256": "14a48ec975deb21738305caa9e2dc5436d524d90e096ab28edb936527a8ff672"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "skipped",
+          "kind": "upstream-skip",
+          "message": "This test requires Linux seccomp"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-permission-allow-cli.js",
+      "sha256": "e84712bfc76b3f67f3cc718d4f20304f2cd5c15e99fe51c77a0ff092792dc2c4",
+      "flags": [
+        "--permission",
+        "--allow-ffi",
+        "--allow-child-process",
+        "--allow-fs-read=*",
+        "--allow-fs-write=*"
+      ],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permission-allow-cli-5u2JT9/test-ffi-permission-allow-cli\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permission-allow-cli-5u2JT9/test-ffi-permission-allow-cli' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 59116 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permission-allow-cli-5u2JT9/test-ffi-permission-allow-cli' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_3f017bd9-cdec-4899-8ca0-cb973094e5b8 AT_ENTRY')\nTINT_NATIVE_3f017bd9-cdec-4899-8ca0-cb973094e5b8 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|limit|node-cli|Node%20child%20executable%20and%20CLI%20processing\r\nTINT_FFI_DONE\r\nProcess 59116 resuming\nProcess 59116 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_3f017bd9-cdec-4899-8ca0-cb973094e5b8 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_3f017bd9-cdec-4899-8ca0-cb973094e5b8 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_3f017bd9-cdec-4899-8ca0-cb973094e5b8 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permission-allow-cli-5u2JT9/test-ffi-permission-allow-cli",
+          "imageSha256": "60297c8bc19b43fbe79b49ed908ca54f14036a8e277205002aad95b128af31ae",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permission-allow-cli-5u2JT9/test-ffi-permission-allow-cli.manifest.json",
+            "sha256": "5c8c672337d55b1b3ec44e127c3dd649eb092794996157a11a11e5af2ac14f08"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "limit",
+          "kind": "node-cli",
+          "message": "Node child executable and CLI processing"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-permission-audit.js",
+      "sha256": "8014edc0c97bf1a29ab436e3e4806d2072b664407b354f02c9bfce0a66c76651",
+      "flags": [],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permission-audit-acemZ3/test-ffi-permission-audit\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permission-audit-acemZ3/test-ffi-permission-audit' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 59086 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permission-audit-acemZ3/test-ffi-permission-audit' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_204a0f5a-8227-4e41-bc8d-67ac35e918ee AT_ENTRY')\nTINT_NATIVE_204a0f5a-8227-4e41-bc8d-67ac35e918ee AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|limit|node-cli|Node%20child%20executable%20and%20CLI%20processing\r\nTINT_FFI_DONE\r\nProcess 59086 resuming\nProcess 59086 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_204a0f5a-8227-4e41-bc8d-67ac35e918ee EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_204a0f5a-8227-4e41-bc8d-67ac35e918ee SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_204a0f5a-8227-4e41-bc8d-67ac35e918ee EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permission-audit-acemZ3/test-ffi-permission-audit",
+          "imageSha256": "6c7e27f455f09c843004d827ccd73c90f2026ba048c88e7b15ade2c35d43f209",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permission-audit-acemZ3/test-ffi-permission-audit.manifest.json",
+            "sha256": "492771aadacb2bc181ca44e7f85f86b26dabcd58ea60d64cb3a45644b6a4e42f"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "limit",
+          "kind": "node-cli",
+          "message": "Node child executable and CLI processing"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-permission-drop.js",
+      "sha256": "28d681383e79bf90a6659ac2db770f741b42269e72d5979b3e95c7ebbe2282cd",
+      "flags": ["--permission", "--allow-ffi", "--allow-fs-read=*"],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permission-drop-e8kI5j/test-ffi-permission-drop\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permission-drop-e8kI5j/test-ffi-permission-drop' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 59090 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permission-drop-e8kI5j/test-ffi-permission-drop' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_de6583eb-42d4-4280-a042-4e96f2e59c6b AT_ENTRY')\nTINT_NATIVE_de6583eb-42d4-4280-a042-4e96f2e59c6b AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|limit|node-permission|Node%20process.permission\r\nTINT_FFI_DONE\r\nProcess 59090 resuming\nProcess 59090 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_de6583eb-42d4-4280-a042-4e96f2e59c6b EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_de6583eb-42d4-4280-a042-4e96f2e59c6b SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_de6583eb-42d4-4280-a042-4e96f2e59c6b EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permission-drop-e8kI5j/test-ffi-permission-drop",
+          "imageSha256": "012dbc0fef7728bd28b15b2612f1741d339976098884ba0cf5720eff39ddb103",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permission-drop-e8kI5j/test-ffi-permission-drop.manifest.json",
+            "sha256": "62897025c09f75129277c8fc87de4c27abbc80cccb821ab5497944105baa6bb2"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "limit",
+          "kind": "node-permission",
+          "message": "Node process.permission"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-permissions.js",
+      "sha256": "8540a6598726c59a730585ed3bbca89e5d32a717509d1011535ffe9c05b7985f",
+      "flags": ["--permission", "--allow-fs-read=*"],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permissions-JzMeMq/test-ffi-permissions\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permissions-JzMeMq/test-ffi-permissions' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 59094 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permissions-JzMeMq/test-ffi-permissions' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_502bfc7c-2c28-4786-85f1-ec63334f7e88 AT_ENTRY')\nTINT_NATIVE_502bfc7c-2c28-4786-85f1-ec63334f7e88 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE process.permission%20reports%20ffi%20denied%20by%20default|limit|node-permission|Node%20process.permission\r\nTINT_FFI_CASE permission%20model%20blocks%20dynamic%20library%20access|failed||Error%3A%20strictEqual%20ERR_FFI_CALL_FAILED%20expected%20ERR_ACCESS_DENIED\r\nProcess 59094 resuming\nProcess 59094 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BAD_ACCESS (code=1, address=0x4)\n    frame #0: 0x0000000102df0104 test-ffi-permissions`\n->  0x102df0104: ldrb   w9, [x3]\n    0x102df0108: strb   w9, [x2]\n    0x102df010c: sub    x4, x4, #0x1\n    0x102df0110: b      0x102df00f0\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_502bfc7c-2c28-4786-85f1-ec63334f7e88 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_502bfc7c-2c28-4786-85f1-ec63334f7e88 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\n",
+        "stderr": "",
+        "kind": "runner-error",
+        "reason": "darwin-local: LLDB did not report an inferior exit or signal: 0",
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permissions-JzMeMq/test-ffi-permissions",
+          "imageSha256": "40c222a78f783970df5c68aa5bfd107f6d11004a25a629edba2661eb601d2901",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-permissions-JzMeMq/test-ffi-permissions.manifest.json",
+            "sha256": "25051379bd3ff0e92a77fb7c1450300e27a3f2f6088286186296f98019147b44"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "process.permission reports ffi denied by default",
+          "status": "limit",
+          "kind": "node-permission",
+          "message": "Node process.permission"
+        },
+        {
+          "name": "permission model blocks dynamic library access",
+          "status": "failed",
+          "kind": "",
+          "message": "Error: strictEqual ERR_FFI_CALL_FAILED expected ERR_ACCESS_DENIED"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": false
+    },
+    {
+      "file": "test-ffi-readonly-write.js",
+      "sha256": "61ba60038d1a7510e483cfddba484c5dbf00d3c95dde1ca1564a8a4723eeeaa1",
+      "flags": [],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-readonly-write-daaUnD/test-ffi-readonly-write\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-readonly-write-daaUnD/test-ffi-readonly-write' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 62652 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-readonly-write-daaUnD/test-ffi-readonly-write' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_af90330b-17af-4b84-a142-97a764295f04 AT_ENTRY')\nTINT_NATIVE_af90330b-17af-4b84-a142-97a764295f04 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|limit|node-cli|Node%20child%20executable%20and%20CLI%20processing\r\nTINT_FFI_DONE\r\nProcess 62652 resuming\nProcess 62652 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_af90330b-17af-4b84-a142-97a764295f04 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_af90330b-17af-4b84-a142-97a764295f04 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_af90330b-17af-4b84-a142-97a764295f04 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-readonly-write-daaUnD/test-ffi-readonly-write",
+          "imageSha256": "2b56a884bf2c8f6cdd9c4df5a49777c34e4a7ff869c545e58a051b3f924bcc83",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-readonly-write-daaUnD/test-ffi-readonly-write.manifest.json",
+            "sha256": "e53bf87b75567ba88c46303ecb9d04a3a60fbc29921cd16cabec765fea1c9a0b"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "limit",
+          "kind": "node-cli",
+          "message": "Node child executable and CLI processing"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-shared-buffer.js",
+      "sha256": "eaa54699806213d4d9977f78f61c26fcadb3ce5301c80b2a299a0ac638b3dc4e",
+      "flags": ["--expose-internals"],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-shared-buffer-LephJN/test-ffi-shared-buffer\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-shared-buffer-LephJN/test-ffi-shared-buffer' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 62661 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-shared-buffer-LephJN/test-ffi-shared-buffer' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_b85317ef-422f-44c6-8ec0-32097c4906d6 AT_ENTRY')\nTINT_NATIVE_b85317ef-422f-44c6-8ec0-32097c4906d6 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|limit|node-fast-api|Node%2FV8%20internalBinding(ffi)%20symbols\r\nTINT_FFI_DONE\r\nProcess 62661 resuming\nProcess 62661 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_b85317ef-422f-44c6-8ec0-32097c4906d6 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_b85317ef-422f-44c6-8ec0-32097c4906d6 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_b85317ef-422f-44c6-8ec0-32097c4906d6 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-shared-buffer-LephJN/test-ffi-shared-buffer",
+          "imageSha256": "ce60e1e11cf4f3efd157b7e7ef84b3295e6dc8b315a64c6f92a40873cb5e669c",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-shared-buffer-LephJN/test-ffi-shared-buffer.manifest.json",
+            "sha256": "7460f1d0ee43bff19166219aa1890b093fd5b6177b4d7ae170b3581d35c53e3a"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "limit",
+          "kind": "node-fast-api",
+          "message": "Node/V8 internalBinding(ffi) symbols"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-vfs.js",
+      "sha256": "1d07900b2b814466b7e64c95a73cc2756e7d1f4d8ac0a5a9ddb66b5f587f46a9",
+      "flags": ["--experimental-vfs"],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-vfs-G416FU/test-ffi-vfs\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-vfs-G416FU/test-ffi-vfs' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 62597 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-vfs-G416FU/test-ffi-vfs' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_da8c40d5-4576-4d87-b383-c69f25a0c7c6 AT_ENTRY')\nTINT_NATIVE_da8c40d5-4576-4d87-b383-c69f25a0c7c6 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|limit|node-vfs|Node%20VFS%20loader\r\nTINT_FFI_DONE\r\nProcess 62597 resuming\nProcess 62597 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_da8c40d5-4576-4d87-b383-c69f25a0c7c6 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_da8c40d5-4576-4d87-b383-c69f25a0c7c6 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_da8c40d5-4576-4d87-b383-c69f25a0c7c6 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-vfs-G416FU/test-ffi-vfs",
+          "imageSha256": "12cd7bc1ec06ffcc4669c321d52ed446f9529eabe1f2de13d6471ac609781829",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-vfs-G416FU/test-ffi-vfs.manifest.json",
+            "sha256": "851bd8a6b7b370afa98b6596ebaeb9964a8bfd08847c6b8ba0bb97b839d868e3"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "limit",
+          "kind": "node-vfs",
+          "message": "Node VFS loader"
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-void-parameter.js",
+      "sha256": "f4650c34419b91344d2580fd4e40b4b62565f69a3dd37f189208f5514d7a2e43",
+      "flags": [],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-void-parameter-ln0Mmc/test-ffi-void-parameter\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-void-parameter-ln0Mmc/test-ffi-void-parameter' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 62657 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-void-parameter-ln0Mmc/test-ffi-void-parameter' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_7370c30a-ffc8-4a8f-81cc-4b43fd2e4329 AT_ENTRY')\nTINT_NATIVE_7370c30a-ffc8-4a8f-81cc-4b43fd2e4329 AT_ENTRY\n(lldb) continue\nTINT_FFI_CASE %3Ctop-level%3E|passed||\r\nTINT_FFI_DONE\r\nProcess 62657 resuming\nProcess 62657 exited with status = 42 (0x0000002a)\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_7370c30a-ffc8-4a8f-81cc-4b43fd2e4329 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_7370c30a-ffc8-4a8f-81cc-4b43fd2e4329 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\nTINT_NATIVE_7370c30a-ffc8-4a8f-81cc-4b43fd2e4329 EXIT 42\n",
+        "stderr": "",
+        "kind": "exited",
+        "status": 42,
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-void-parameter-ln0Mmc/test-ffi-void-parameter",
+          "imageSha256": "b37ea36683d3d2910ded07acfe1ebdb60cca7910bc38e08b9537c0eaabbc16c6",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-void-parameter-ln0Mmc/test-ffi-void-parameter.manifest.json",
+            "sha256": "efca8842a0a4189445c0473f2843b94f2ed6ac76e0b78ee8510f3a12f4717d9c"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [
+        {
+          "name": "<top-level>",
+          "status": "passed",
+          "kind": "",
+          "message": ""
+        }
+      ],
+      "nodeDetails": [],
+      "complete": true
+    },
+    {
+      "file": "test-ffi-weakref-calls.js",
+      "sha256": "c3abffefb704808ab9552734bf6a57dbf7c71c1a6ede0007727bc1b88540cb53",
+      "flags": ["--expose-gc"],
+      "result": {
+        "stdout": "(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-weakref-calls-oA757A/test-ffi-weakref-calls\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-weakref-calls-oA757A/test-ffi-weakref-calls' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) process launch --stop-at-entry\nProcess 71170 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-weakref-calls-oA757A/test-ffi-weakref-calls' (arm64)\n(lldb) script assert lldb.process.GetState() == lldb.eStateStopped; print('TINT_NATIVE_db91bbfa-447c-4331-a50f-8c21355ff4a1 AT_ENTRY')\nTINT_NATIVE_db91bbfa-447c-4331-a50f-8c21355ff4a1 AT_ENTRY\n(lldb) continue\nProcess 71170 resuming\nProcess 71170 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x104de07c4)\n    frame #0: 0x0000000104de07c4 test-ffi-weakref-calls`\n->  0x104de07c4: brk    #0\n    0x104de07c8: cmp    w0, #0x2\n    0x104de07cc: b.eq   0x104de07d4\n    0x104de07d0: brk    #0\n(lldb) script p = lldb.process; t = p.GetSelectedThread(); print('TINT_NATIVE_db91bbfa-447c-4331-a50f-8c21355ff4a1 EXIT', p.GetExitStatus()) if p.GetState() == lldb.eStateExited else print('TINT_NATIVE_db91bbfa-447c-4331-a50f-8c21355ff4a1 SIGNAL', t.GetStopReasonDataAtIndex(0)) if t.GetStopReason() == lldb.eStopReasonSignal else None\n",
+        "stderr": "",
+        "kind": "runner-error",
+        "reason": "darwin-local: LLDB did not report an inferior exit or signal: 0",
+        "artifact": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-weakref-calls-oA757A/test-ffi-weakref-calls",
+          "imageSha256": "d78167b68d77475135399d1375a33efbca23dee144c8e332a3f7c2dc8bc09b46",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-test-ffi-weakref-calls-oA757A/test-ffi-weakref-calls.manifest.json",
+            "sha256": "ab5ea9152091bf48b2584c464db54f173aefece2dd3666988e6fcde31cb102dc"
+          }
+        },
+        "executor": {
+          "runner": "darwin-local",
+          "identity": "Darwin Kernel Version 25.6.0: Fri Jul 31 19:19:08 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6050"
+        }
+      },
+      "cases": [],
+      "nodeDetails": [],
+      "complete": false
+    }
+  ]
+}

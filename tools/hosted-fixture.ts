@@ -371,6 +371,7 @@ function buildHostedFixture(
     (dependencyIds.includes(foreignRuntimeModules.unsafe) ||
       dependencies.some(
         (dependency) =>
+          dependency[1] === foreignRuntimeModules.nodeFfi ||
           dependency[1] === foreignRuntimeModules.unsafe ||
           dependency[1] === foreignRuntimeModules.index,
       ));
@@ -516,7 +517,11 @@ function buildHostedFixture(
           options.omittedHostOperations?.includes(binding.operation) !== true,
       ),
       ...(options.hostBindings ?? []),
-      ...ffi.hostBindings,
+      ...ffi.hostBindings.filter(
+        (binding) =>
+          options.allowJit === true ||
+          !binding.operation.startsWith("executable-"),
+      ),
       ...(eventLoop
         ? [
             {

@@ -1,7 +1,7 @@
 {
   "spec": "dl",
   "target": "darwin-arm64",
-  "clang": "Apple clang version 17.0.0",
+  "clang": "Apple clang version 21.0.0",
   "aliases": [],
   "types": [],
   "records": [
@@ -252,6 +252,49 @@
             "length": 512
           },
           "offset": 1152
+        }
+      ]
+    },
+    {
+      "name": "DynamicScalarFrame",
+      "c": "struct DynamicScalarFrame",
+      "union": false,
+      "packed": false,
+      "alignment": 0,
+      "size": 144,
+      "align": 8,
+      "fields": [
+        {
+          "name": "x",
+          "type": {
+            "kind": "array",
+            "element": { "kind": "record", "name": "Word" },
+            "length": 8
+          },
+          "offset": 0
+        },
+        {
+          "name": "d",
+          "type": {
+            "kind": "array",
+            "element": { "kind": "record", "name": "Word" },
+            "length": 8
+          },
+          "offset": 64
+        },
+        {
+          "name": "stackBytes",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u64",
+            "aliases": ["uint64_t"]
+          },
+          "offset": 128
+        },
+        {
+          "name": "target",
+          "type": { "kind": "record", "name": "Handle" },
+          "offset": 136
         }
       ]
     },

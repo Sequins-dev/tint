@@ -119,6 +119,13 @@ export interface SharedBlockService {
   ): SharedResult<SharedBlockDescriptor>;
   describe(handle: number): SharedResult<SharedBlockDescriptor>;
   length(handle: number, order: SharedOrder): SharedResult<number>;
+  /** Native embeddings may lend a byte range in the stable payload to C.
+   * Mapping ownership stays in the service and this grant stays internal. */
+  readonly foreignAddress?: (
+    handle: number,
+    offset: number,
+    length: number,
+  ) => SharedResult<number>;
   /** Atomically revalidate current <= target <= maximum and publish target.
    * Equality also follows the ordered publication path. Never copy or shrink. */
   grow(handle: number, target: number): SharedStatus;

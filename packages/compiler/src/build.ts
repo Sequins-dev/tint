@@ -493,6 +493,7 @@ function buildX64HostedProgram(
       managedSurfaces: request.managedSurfaces ?? [],
       recordBindings: request.recordBindings ?? [],
       weakBindings: request.weakBindings ?? [],
+      nodeFfiWeakProcessing: generational,
       ...(request.generalLowering === undefined
         ? {}
         : { generalLowering: request.generalLowering }),
@@ -1161,6 +1162,9 @@ export function compileMacOSProgram(
         (request.runtimeEntry === "initializeCopyingRuntime" ||
           request.runtimeEntry === "initializeGenerationalRuntime"),
       generationalBarriers:
+        request.runtimeEntry === "initializeGenerationalRuntime",
+      nodeFfiWeakProcessing:
+        request.runtimeEntry === "initializeCopyingRuntime" ||
         request.runtimeEntry === "initializeGenerationalRuntime",
       optimization: request.optimization ?? "basic",
       debugSymbols: request.debugSymbols ?? false,

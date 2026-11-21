@@ -189,9 +189,12 @@ export function boundCountedLoops(
 }
 
 /** Whether every record read `before` proves (as the verifier does, with
- * or without module-stable layouts) is still proven in `after`, which only
- * adds blocks and values. */
-function recordReadsKept(before: FunctionIR, after: FunctionIR): boolean {
+ * or without module-stable layouts) is still proven in `after`, where
+ * existing record reads keep their result IDs. */
+export function recordReadsKept(
+  before: FunctionIR,
+  after: FunctionIR,
+): boolean {
   for (let pass = 0; pass < 2; pass++) {
     const stable = pass === 1;
     const kept = provenRecordReads(before, verifierRecordWork, stable);

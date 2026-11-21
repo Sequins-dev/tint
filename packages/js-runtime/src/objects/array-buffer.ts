@@ -4,6 +4,7 @@ import {
   copyByteStorage,
   copyImmutableByteStorage,
   createByteStorage,
+  adoptFixedByteStorage,
   byteStorageData,
   resizeByteStorage,
   transferByteStorage,
@@ -64,6 +65,20 @@ function storageFailure(error: StorageError, realm: ErrorRealm): never {
 export function detachArrayBuffer(value: unknown, realm: ErrorRealm): void {
   const result = detachByteStorage(requireArrayBuffer(value, realm));
   if (result !== "none") storageFailure(result, realm);
+}
+/** Wrap an existing byte extent with the realm's intrinsic ArrayBuffer brand. */
+export function adoptArrayBuffer(
+  bytes: Uint8Array,
+  realm: ErrorRealm,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const object = createObject<ScriptPropertyKey, unknown>(
+    realm.arrayBufferPrototype,
+  );
+  object.internalArrayBufferData = adoptFixedByteStorage(
+    bytes,
+    realm.bufferMaxBytes,
+  );
+  return object;
 }
 export function installArrayBufferIntrinsics(
   global: OrdinaryObject<ScriptPropertyKey, unknown>,
