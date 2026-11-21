@@ -278,6 +278,26 @@ The bridge is also what lets general code import typed, trusted runtime and
 FFI modules: their exports cross as boxed values with typed adapters instead
 of being refused.
 
+### Numeric calls and loops in general code
+
+General lowering can give a local source closure a native entry when its
+result uses only numeric literals, parameters and primitive arithmetic. A
+fixed-arity call reads the callee before evaluating its arguments. An immutable
+binding proves the target. A writable binding compares the already-read
+callee with the original closure. The native entry receives primitive numbers
+in registers. It cannot observe the receiver, arguments, calling realm or
+Script identity. If the callee or argument checks fail, the same evaluated
+operands enter the general call path.
+
+An AOT function whose loops and returns operate solely on numeric locals
+and immutable numeric leaves can check its incoming operands once. The
+success branch runs through the ordinary scalar pipeline with unboxed local
+values. The proof excludes dynamic bindings, coercion hooks and escaping
+locals. Non-number operands enter the original function body before any
+source initialization or loop work. These internal types are guarded
+representations for unannotated code. Written annotations still use the
+source contract rules.
+
 ### Native errors and narrowing (slice 4a)
 
 The typed path accepts the `Error` annotation and allocates a plain Error

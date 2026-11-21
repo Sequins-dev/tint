@@ -202,3 +202,88 @@ test("a direct eval closure keeps its own for-let iteration environment", () => 
   assert.equal(realm.run(source), "none");
   assert.deepEqual(realm.printed, ["0", "1"]);
 });
+
+test("a local numeric leaf emits a direct typed closure and retains its general call", () => {
+  const source =
+    "function run(x) { let f = value => value + 1; return 0 + f(x); }";
+  assert.equal(
+    countExpressions(
+      source,
+      (node) =>
+        node.kind === "arrow" &&
+        node.returnType?.kind === "named" &&
+        node.returnType.name === "number",
+    ),
+    1,
+  );
+  assert.equal(runtimeCalls(source, "callObjectValue"), 1);
+});
+
+test("numeric leaf call guards preserve the evaluated callee and the general operands", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+      function run() {
+        let f = value => value + 1;
+        print(String(f(41)));
+        print(String(f("4")));
+        function replace() { return 11; }
+        f = replace;
+        print(String(f(2)));
+        let g = value => value + 1;
+        print(String(g((g = replace, 2))));
+        print(String(g(1)));
+      }
+      run();
+    `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["42", "41", "11", "3", "11"]);
+});
+
+test("numeric loops specialize whole functions behind an argument guard", () => {
+  const source = `
+    function sum(bound) {
+      const next = value => value + 1;
+      let result = 0;
+      for (let i = 0; i < bound; i++) result += next(i);
+      return result;
+    }
+  `;
+  let numericLoops = 0;
+  const parsed = parseScript(createSourceTextView(source));
+  assert.ok(parsed.ok);
+  const lowered = lowerScript(parsed.value, source);
+  assert.ok(lowered.ok);
+  rewriteModule(lowered.value, {
+    expression: (node) => {
+      if (
+        node.kind === "arrow" &&
+        node.returnType?.kind === "named" &&
+        node.returnType.name === "number" &&
+        node.body.kind === "block" &&
+        node.body.statements.some((statement) => statement?.kind === "for")
+      )
+        numericLoops++;
+      return node;
+    },
+  });
+  assert.equal(numericLoops, 1);
+
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(
+      source +
+        `
+      print(String(sum(3)));
+      print(String(sum("3")));
+      print(String(sum(NaN)));
+      let reads = 0;
+      print(String(sum({ valueOf() { reads++; return 2; } })));
+      print(String(reads));
+    `,
+    ),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["6", "6", "0", "3", "3"]);
+});

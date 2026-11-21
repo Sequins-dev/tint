@@ -28,7 +28,6 @@ interface Prepared {
 function execute(command: string, args: string[]): string {
   const result = spawnSync(command, args, {
     encoding: "utf8",
-    timeout: 120_000,
     env: { ...process.env, TZ: "UTC" },
   });
   if (result.error !== undefined) throw result.error;

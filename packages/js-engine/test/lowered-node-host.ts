@@ -98,7 +98,7 @@ export function printExpression(node: Expression): string {
         printExpression(node.target) +
         " " +
         node.operator +
-        " " +
+        "= " +
         printExpression(node.value) +
         ")"
       );

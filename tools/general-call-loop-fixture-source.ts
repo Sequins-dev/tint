@@ -68,6 +68,34 @@ export function run() {
     if (error !== sentinel) return 7;
   }
   if (order !== "get 1 2 call") return 8;
+
+  function numericSum(bound, step) {
+    const next = value => value + 1;
+    let total = 0;
+    for (let i = 0; i < bound; i++) total += next(i) * step;
+    return total;
+  }
+  if (numericSum(3, 2) !== 12 || numericSum("3", 2) !== 12 ||
+      numericSum(3, "2") !== 12 || numericSum(NaN, 2) !== 0 ||
+      numericSum(3) === numericSum(3) || numericSum(1, 2, 3) !== 2)
+    return 13;
+  let bounds = 0;
+  if (numericSum({ valueOf() { bounds++; return 2; } }, 2) !== 6 ||
+      bounds !== 3)
+    return 14;
+  try {
+    numericSum({ valueOf() { throw sentinel; } }, 2);
+    return 15;
+  } catch (error) {
+    if (error !== sentinel) return 16;
+  }
+
+  let next = value => value + 1;
+  if (next(2) !== 3 || next("2") !== "21") return 17;
+  function replace(value) { return value * 10; }
+  if (next((next = replace, 2)) !== 3 || next(2) !== 20) return 18;
+  const identity = value => value;
+  if (1 / identity(-0) !== -Infinity) return 19;
   return 42;
 }
 `;
