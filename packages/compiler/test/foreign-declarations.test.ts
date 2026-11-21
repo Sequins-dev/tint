@@ -30,6 +30,7 @@ import {
 } from "../src/native/foreign/index.ts";
 
 import {
+  addFixedI32Plans,
   fixedFfiCallArities,
   makeStaticFfiModule,
   recognizeStaticFfi,
@@ -1399,4 +1400,29 @@ export function consume(fn: Function, args: number[]): number {
     ["tryFixedFfi0", 1],
     ["tryFixedFfi2", 3],
   ]);
+});
+
+test("runtime i32 definitions get direct typed entries without replacing the generic adapter", () => {
+  const plans = addFixedI32Plans([], [0, 2]);
+  assert.deepEqual(
+    plans.map(({ signature, typedOnly }) => [
+      signature.parameters.length,
+      signature.result,
+      typedOnly,
+    ]),
+    [
+      [0, { kind: "scalar", scalar: "i32" }, true],
+      [2, { kind: "scalar", scalar: "i32" }, true],
+    ],
+  );
+  assert.deepEqual(addFixedI32Plans(plans, [2]), plans);
+  const generated = makeStaticFfiModule(plans, true, [0, 2]);
+  const emitted = generated.module.statements.flatMap((statement) =>
+    statement?.kind === "function" ? [statement.name] : [],
+  );
+  assert.ok(emitted.includes("callStaticFfiNumber0"));
+  assert.ok(emitted.includes("callStaticFfiNumber1"));
+  assert.ok(emitted.includes("typedFfiIndex"));
+  assert.ok(!emitted.includes("invokeCallStaticFfiNumber0"));
+  assert.ok(!emitted.includes("callStaticFfi0"));
 });

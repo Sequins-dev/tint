@@ -119,6 +119,7 @@ import {
 } from "../spill-files.ts";
 import type { FunctionStore } from "@tint/ir/storage";
 import {
+  addFixedI32Plans,
   ffiMemoryModule,
   fixedFfiCallArities,
   fixedFfiCallEntry,
@@ -748,7 +749,9 @@ function withStaticFfiRuntimes(
           (source) => source !== undefined && direct(source.dependencies),
         );
   const weakProcessing = request.nodeFfiWeakProcessing !== false;
-  const plans = weakProcessing ? recognizeStaticFfi(sources, signedChar) : [];
+  const literalPlans = weakProcessing
+    ? recognizeStaticFfi(sources, signedChar)
+    : [];
   const trusted = new Set(request.runtimes.map((runtime) => runtime?.module));
   const application = generalApplicationModules(
     request,
@@ -765,8 +768,9 @@ function withStaticFfiRuntimes(
     weakProcessing && application.ok
       ? fixedFfiCallArities(application.value)
       : [];
-  if (weakProcessing && plans.length === 0 && arities.length === 0)
+  if (weakProcessing && literalPlans.length === 0 && arities.length === 0)
     return request;
+  const plans = addFixedI32Plans(literalPlans, arities);
   const generated = makeStaticFfiModule(plans, weakProcessing, arities);
   function replace(modules: readonly SourceModule[]): SourceModule[] {
     return modules.map((source) =>
@@ -797,14 +801,16 @@ function withStaticFfiRuntimes(
   for (let index = 0; index < plans.length; index++) {
     const plan = plans[index];
     if (plan === undefined) throw "static FFI plan invariant";
-    const name = staticFfiEntry(index);
-    entries.push(name);
-    bindings.push({
-      module: staticFfiModule,
-      name,
-      operation: "call-static-scalar",
-      staticSignature: plan.signature,
-    });
+    if (!plan.typedOnly) {
+      const name = staticFfiEntry(index);
+      entries.push(name);
+      bindings.push({
+        module: staticFfiModule,
+        name,
+        operation: "call-static-scalar",
+        staticSignature: plan.signature,
+      });
+    }
     if (hasStaticFfiNumberEntry(plan)) {
       const name = staticFfiNumberEntry(index);
       entries.push(name);

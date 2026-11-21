@@ -87,6 +87,7 @@ import {
   staticFfiCall,
   staticFfiIndex,
   staticFfiNumberCall,
+  typedFfiIndex,
   type StaticFfiNumberCall,
 } from "./ffi-static.ts";
 
@@ -103,6 +104,7 @@ interface Binding {
   readonly address: SymbolAddress;
   readonly plan: ScalarCallPlan | undefined;
   readonly staticCall: number;
+  readonly typedCall: number;
   readonly staticNumberCall: StaticFfiNumberCall | undefined;
   readonly numericAddress: number;
   leafWorkspace: TypedFfiWorkspace | undefined;
@@ -646,9 +648,8 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       return existing;
     }
     const address = resolve(state, name);
-    const staticCall = staticFfiIndex(
-      nodeFfiSignatureKey(signature.result, signature.parameters),
-    );
+    const key = nodeFfiSignatureKey(signature.result, signature.parameters);
+    const staticCall = staticFfiIndex(key);
     const plan =
       address.low === 0 && address.high === 0
         ? undefined
@@ -663,6 +664,11 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       signature,
       address,
       staticCall,
+      typedCall: !Number.isSafeInteger(numericAddress)
+        ? -1
+        : staticNumberCall === undefined
+          ? typedFfiIndex(key)
+          : staticCall,
       staticNumberCall,
       numericAddress,
       plan,
@@ -721,8 +727,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
         ? undefined
         : {
             arity: plan.parameters.length,
-            staticIndex:
-              binding.staticNumberCall === undefined ? -1 : binding.staticCall,
+            staticIndex: binding.typedCall,
             address: binding.numericAddress,
             numbersOnly: !plan.parameters.some(
               (parameter) =>

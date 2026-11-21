@@ -131,6 +131,14 @@ export function run(): number {
     if (callNumber(numeric.abs, -41) !== 41) return 10;
     if (callNumber(runtime.functions.tolower, 65) !== 97) return 11;
     if (callNumber(numeric.abs, -40) !== 40) return 12;
+    for (const invalidI32 of [65.5, NaN, Infinity, -2147483649]) {
+      try {
+        callNumber(runtime.functions.tolower, invalidI32);
+        return 17;
+      } catch (error) {
+        if (!(error instanceof TypeError)) return 18;
+      }
+    }
     try {
       numeric.abs(invalid());
       return 8;

@@ -15,6 +15,10 @@ export function staticFfiIndex(key: string): number {
   return -1;
 }
 
+export function typedFfiIndex(key: string): number {
+  return -1;
+}
+
 export function staticFfiCall(index: number, frame: Uint8Array): boolean {
   return false;
 }

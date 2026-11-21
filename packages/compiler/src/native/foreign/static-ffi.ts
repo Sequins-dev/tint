@@ -24,6 +24,7 @@ const nodeFfiModule = "packages/native-runtime/src/node/ffi.ts";
 export interface StaticFfiPlan {
   readonly key: string;
   readonly signature: CSignature;
+  readonly typedOnly?: boolean;
 }
 
 function planSignature(
@@ -196,6 +197,38 @@ export function fixedFfiCallArities(
   return ordered;
 }
 
+/** Reuse a direct i32 prototype when a runtime definition validates to it. */
+export function addFixedI32Plans(
+  plans: readonly StaticFfiPlan[],
+  arities: readonly number[],
+): StaticFfiPlan[] {
+  const combined = plans.slice();
+  const seen = new Set(plans.map((plan) => plan.key));
+  for (const arity of arities) {
+    const spellings: NodeFfiType[] = [];
+    const parameters: CType[] = [];
+    for (let index = 0; index < arity; index++) {
+      spellings.push("i32");
+      parameters.push(nodeFfiCType("i32"));
+    }
+    const key = nodeFfiSignatureKey("i32", spellings);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    combined.push({
+      key,
+      typedOnly: true,
+      signature: {
+        parameters,
+        result: nodeFfiCType("i32"),
+        fixedParameters: arity,
+        callClass: "leaf",
+        errno: "none",
+      },
+    });
+  }
+  return combined;
+}
+
 export function fixedFfiCallEntry(arity: number): string {
   return "tryFixedFfi" + String(arity);
 }
@@ -237,14 +270,29 @@ function fixedFfiSource(
       for (let p = 0; p < arity; p++) {
         const type = plan.signature.parameters[p];
         if (type?.kind !== "scalar") throw "fixed FFI parameter invariant";
-        args.push(
+        const argument = "p" + p;
+        const checked =
           "plan.checkNumber(" +
-            nodeFfiScalarKind(type.scalar) +
-            ",p" +
-            p +
-            "," +
-            p +
-            ")",
+          nodeFfiScalarKind(type.scalar) +
+          "," +
+          argument +
+          "," +
+          p +
+          ")";
+        // An i32 round trip accepts exactly the signed integral Number range.
+        // The slow conversion still owns the coded error and its argument index.
+        args.push(
+          type.scalar === "i32"
+            ? "((" +
+                argument +
+                "|0)===" +
+                argument +
+                "?" +
+                argument +
+                ":" +
+                checked +
+                ")"
+            : checked,
         );
       }
       body +=
@@ -299,14 +347,17 @@ function numericFfiSource(plan: StaticFfiPlan, index: number): string {
     );
   }
   const returns = plan.signature.result.kind === "void" ? "void" : "number";
-  return (
+  const declaration =
     "export function " +
     name +
     "(" +
     parameters.join(",") +
     "):" +
     returns +
-    " { throw 'UNBOUND_STATIC_FFI'; }\n" +
+    " { throw 'UNBOUND_STATIC_FFI'; }\n";
+  if (plan.typedOnly) return declaration;
+  return (
+    declaration +
     "function invoke" +
     name +
     "(core:ProgramRealmCore,target:number,args:readonly unknown[]):unknown {" +
@@ -330,6 +381,7 @@ export function makeStaticFfiModule(
     String(weakProcessing) +
     "; }\n";
   let lookup = "export function staticFfiIndex(key:string):number {\n";
+  let typed = "export function typedFfiIndex(key:string):number {\n";
   let dispatch =
     "export function staticFfiCall(index:number,frame:Uint8Array):boolean {\n";
   let numbers =
@@ -337,6 +389,11 @@ export function makeStaticFfiModule(
   for (let index = 0; index < plans.length; index++) {
     const plan = plans[index];
     if (plan === undefined) throw "static FFI plan invariant";
+    if (plan.typedOnly) {
+      text += numericFfiSource(plan, index);
+      typed += 'if(key==="' + plan.key + '")return ' + String(index) + ";\n";
+      continue;
+    }
     const entry = staticFfiEntry(index);
     text +=
       "export function " +
@@ -367,6 +424,8 @@ export function makeStaticFfiModule(
     createSourceTextView(
       text +
         lookup +
+        "return -1;\n}" +
+        typed +
         "return -1;\n}" +
         dispatch +
         "return false;\n}" +
