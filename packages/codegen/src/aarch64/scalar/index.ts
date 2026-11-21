@@ -3657,6 +3657,7 @@ function emitModuleForms(
                 // Inline code units index with an int64 (the helper path
                 // converts with floatLoad).
                 op.kind === "string-code-unit" ||
+                op.kind === "string-from-code-units" ||
                 // Slice bounds load through floatLoad, and optional
                 // payloads are converted when wrapped.
                 op.kind === "string-slice" ||
@@ -9438,7 +9439,7 @@ function emitModuleForms(
                   if (input === undefined) throw "string code unit invariant";
                   rawValue(9, input);
                   // ToUint16 is ToUint32 modulo 65536; strh stores those low bits.
-                  callHelper("to-uint32");
+                  if (!storedAsInteger(input)) callHelper("to-uint32");
                   rawValue(10, op.id);
                   imm(11, nativeStringDataOffset + index * 2);
                   emit({
