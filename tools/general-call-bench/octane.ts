@@ -146,6 +146,7 @@ export function prepareOctane(
       {
         kind: "tint-octane-classic-script-build",
         target,
+        debugSymbols: process.env.TINT_DEBUG_SYMBOLS === "1",
         sourceSnapshot: workspaceSourceIdentity(snapshot),
         imageSha256: sha256(build.bytes),
         scripts: sources.map(({ filename, source }) => ({

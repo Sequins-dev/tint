@@ -400,6 +400,7 @@ export function lowerFunction(
   dynamicSignatures: readonly number[] = [],
   realmErrorBindings?: RealmErrorRuntime,
   nodeErrors?: NodeErrorRecords,
+  generalObjectViews: boolean = false,
 ): FunctionIR {
   const primitives = primitiveBindings,
     bigints = bigIntBindings,
@@ -6546,7 +6547,10 @@ export function lowerFunction(
           return nullishValue(value(node.left), node.left, node, () =>
             value(node.right),
           );
-        if (node.operator === "===" || node.operator === "!==") {
+        if (
+          generalObjectViews &&
+          (node.operator === "===" || node.operator === "!==")
+        ) {
           const literal =
             node.left.kind === "null" || node.left.kind === "string"
               ? node.left

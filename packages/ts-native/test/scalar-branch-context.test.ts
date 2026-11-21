@@ -4,7 +4,10 @@ import { createSourceTextView } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
 import { checkClosureModule } from "@tint/typescript/checker";
 import { verify } from "@tint/ir/scalar";
-import { lowerModuleEntries } from "../src/closure/lowering/index.ts";
+import {
+  lowerModuleEntries,
+  type ModuleEntryOptions,
+} from "../src/closure/lowering/index.ts";
 const target = {
   pointerSize: 8,
   wordSize: 8,
@@ -12,16 +15,42 @@ const target = {
   frameAlignment: 16,
   maxAlignment: 16,
 } as const;
-function lower(text: string) {
+function lower(text: string, entries = [0], options?: ModuleEntryOptions) {
   const parsed = parseModule(createSourceTextView(text));
   assert.ok(parsed.ok, JSON.stringify(parsed));
   const checked = checkClosureModule(parsed.value);
   assert.ok(checked.ok, JSON.stringify(checked));
-  const output = lowerModuleEntries(checked.value, [0], target, 4096);
+  const output = lowerModuleEntries(
+    checked.value,
+    entries,
+    target,
+    4096,
+    options,
+  );
   assert.ok(output.ok, JSON.stringify(output));
   assert.deepEqual(verify(output.value.module), { ok: true });
   return output.value.module.functions[0]!;
 }
+
+test("a module with a checked general record view emits literal tag tests", () => {
+  const fn = lower(
+    `interface Witness { marker: number }
+     function run(value: unknown): boolean {
+       return value === null || typeof value === "string";
+     }
+     function view(value: unknown, witness: Witness): Witness | undefined {
+       throw "unbound view";
+     }`,
+    [0, 1],
+    { recordBindings: [{ function: 1, operation: "view" }] },
+  );
+  const tags = fn.blocks.flatMap((block) =>
+    block.instructions.flatMap((operation) =>
+      operation.kind === "general-is" ? [operation.type] : [],
+    ),
+  );
+  assert.deepEqual(tags, ["null", "string"]);
+});
 for (const body of [
   "if(a&&(b||!c))return 1;return 0;",
   "while(a&&(b||!c)){return 1;}return 0;",
@@ -48,25 +77,25 @@ test("a logical expression returned as a value retains its result storage", () =
   assert.ok(fn.slots.filter((type) => type === "boolean").length > 6);
 });
 
-for (const [comparison, category] of [
-  ["value === null", "null"],
-  ["null !== value", "null"],
-  ['typeof value === "string"', "string"],
-  ['"number" !== typeof value', "number"],
-  ['typeof value === "boolean"', "boolean"],
-  ['typeof value === "undefined"', "undefined"],
+for (const [comparison, operand] of [
+  ["value === null", "general-null"],
+  ["null !== value", "general-null"],
+  ['typeof value === "string"', "general-kind"],
+  ['"number" !== typeof value', "general-kind"],
+  ['typeof value === "boolean"', "general-kind"],
+  ['typeof value === "undefined"', "general-kind"],
 ]) {
-  test("general comparison uses the tag directly: " + comparison, () => {
-    const fn = lower(
-      "function run(value: unknown): boolean {return " + comparison + ";}",
-    );
-    const operations = fn.blocks.flatMap((block) => block.instructions);
-    assert.equal(
-      operations.filter(
-        (operation) =>
-          operation.kind === "general-is" && operation.type === category,
-      ).length,
-      1,
-    );
-  });
+  test(
+    "typed literal comparison emits its general operand: " + comparison,
+    () => {
+      const fn = lower(
+        "function run(value: unknown): boolean {return " + comparison + ";}",
+      );
+      const operations = fn.blocks.flatMap((block) => block.instructions);
+      assert.equal(
+        operations.filter((operation) => operation.kind === operand).length,
+        1,
+      );
+    },
+  );
 }

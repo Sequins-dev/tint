@@ -6,6 +6,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { cpus, loadavg, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { stripTypeScriptTypes } from "node:module";
+import { imageText } from "../disasm/annotate.ts";
 import { verifyHostedFixture } from "../hosted-fixture.ts";
 import { nativeFixtureTarget } from "../native-host-target.ts";
 import { nativeArtifact } from "../native-target-runner.ts";
@@ -270,13 +271,24 @@ function measure(
       typedHashes.add(typed.imageSha256);
     }
   }
-  for (const artifact of [prepared, ...candidates].flatMap((build) =>
-    Object.values(build.native),
-  )) {
-    assert.equal(fileHash(artifact.path), artifact.imageSha256);
-    const manifest = artifact.buildManifest;
-    assert.ok(manifest);
-    assert.equal(fileHash(manifest.path), manifest.sha256);
+  const debugModes = new Map<string, boolean>();
+  for (const build of [prepared, ...candidates]) {
+    for (const [kind, artifact] of Object.entries(build.native)) {
+      const bytes = readFileSync(artifact.path);
+      assert.equal(hash(bytes), artifact.imageSha256);
+      const manifest = artifact.buildManifest;
+      assert.ok(manifest);
+      assert.equal(fileHash(manifest.path), manifest.sha256);
+      const debug = imageText(bytes).dwarf;
+      const expected = debugModes.get(kind);
+      if (expected === undefined) debugModes.set(kind, debug);
+      else
+        assert.equal(
+          debug,
+          expected,
+          "benchmark debug symbol mode differs for " + kind,
+        );
+    }
   }
   const engines = ["node", ...Object.keys(artifacts)];
   assert.ok(

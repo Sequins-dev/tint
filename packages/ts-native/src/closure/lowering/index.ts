@@ -355,6 +355,11 @@ function lowerEntries(
 ): Result {
   const recordTarget = recordOptions,
     layout = layoutInput;
+  // An authorized object projection selects the general value runtime.
+  const generalObjectViews =
+    recordTarget?.recordBindings?.some(
+      (binding): boolean => binding?.operation === "view",
+    ) === true;
   const representations = createRepresentationMemo(checked);
   const imported = new Set(recordOptions?.importedFunctions ?? []);
   const addressStubs = new Set<number>();
@@ -4031,6 +4036,7 @@ function lowerEntries(
         dynamicSignatures,
         realmErrors,
         nodeErrors,
+        generalObjectViews,
       );
       recordContracts?.clearFunctionOperations();
       // Debug builds name the slots holding this function's own parameters
