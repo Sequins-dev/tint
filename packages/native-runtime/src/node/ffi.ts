@@ -417,9 +417,28 @@ function invokeScalar(
     plan,
     dispatcher !== undefined,
   );
+  const cells = workspace.cells;
+  const loans = workspace.loans;
   try {
-    for (let index = 0; index < plan.parameters.length; index++)
-      writeScalarArgument(core, plan, workspace, index, args[index]);
+    // Keep the generic adapter's marshaling loop direct. The positional
+    // writer is used by typed callers with no argument list.
+    for (let index = 0; index < plan.parameters.length; index++) {
+      const parameter = plan.parameters[index],
+        bytes = cells[index];
+      if (parameter === undefined || bytes === undefined)
+        throw "FFI_SCALAR_ARGUMENT_INVARIANT";
+      const argument = args[index];
+      if (parameter.pointer) {
+        const loan = writePointerArgument(core, index, argument, bytes);
+        if (loan !== undefined) loans.push(loan);
+        continue;
+      }
+      const cell = Cell.view(bytes);
+      if (parameter.register) cell.u64 = 0;
+      writeScalar(core, cell, parameter.kind, argument, index);
+      if (parameter.signExtend && typeof argument === "number")
+        cell.i64 = argument;
+    }
     runScalarFrame(core, binding, workspace.frame, dispatcher);
     return plan.resultKind < 0
       ? undefined

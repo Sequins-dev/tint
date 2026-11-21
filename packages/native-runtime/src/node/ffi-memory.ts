@@ -187,9 +187,15 @@ export function checkedFfiNumber(
   value: unknown,
   argumentIndex: number,
 ): number {
-  if (typeof value !== "number")
+  if (
+    typeof value !== "number" ||
+    (kind < 6 &&
+      (!Number.isInteger(value) ||
+        value < (scalarMinimums[kind] ?? 0) ||
+        value > (scalarMaximums[kind] ?? 0)))
+  )
     return invalidScalar(core, kind, argumentIndex);
-  return checkedTypedFfiNumber(core, kind, value, argumentIndex);
+  return value;
 }
 
 export function checkedTypedFfiNumber(
