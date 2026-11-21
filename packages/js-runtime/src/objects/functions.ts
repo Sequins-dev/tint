@@ -28,6 +28,7 @@ import {
   type ObjectCall,
   type ObjectCallDispatch,
   type ObjectRegisterCall,
+  type ObjectWideRegisterCall,
   type ObjectExecutionContext,
   type ObjectHooks,
   type OrdinaryObject,
@@ -291,6 +292,7 @@ export function createRegisterSourceFunction(
       realm,
       scriptOrModule: active === undefined ? undefined : active.scriptOrModule,
     },
+    invokeWide: undefined,
     invoke: (callee, receiver, newTarget, count, first, second): unknown => {
       const trace = enterExecutionName(agent, name);
       const depth = enterRegisterSourceCall(
@@ -314,6 +316,97 @@ export function createRegisterSourceFunction(
         leaveExecutionName(agent, trace);
       }
     },
+  };
+  return fn;
+}
+
+/** A strict source body with up to six parameters and no arguments binding.
+ * The ordinary source entry handles exotic callers and spread. */
+export function createWideRegisterSourceFunction(
+  implementation: ObjectWideRegisterCall<unknown>,
+  constructible: boolean,
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+  name: string,
+  length: number,
+  home: OrdinaryObject<ScriptPropertyKey, unknown> | undefined,
+  callerPolicy: SourceCallerPolicy,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const agent = realm.agent;
+  const active = agent.activeContext;
+  const fn = createSourceFunction(
+    (receiver, args, callee, newTarget): unknown =>
+      implementation(
+        callee,
+        receiver,
+        newTarget,
+        args.length,
+        args[0],
+        args[1],
+        args[2],
+        args[3],
+        args[4],
+        args[5],
+      ),
+    constructible,
+    realm,
+    hooks,
+    name,
+    length,
+    home,
+    callerPolicy,
+  );
+  const invoke: ObjectWideRegisterCall<unknown> = (
+    callee,
+    receiver,
+    newTarget,
+    count,
+    first,
+    second,
+    third,
+    fourth,
+    fifth,
+    sixth,
+  ): unknown => {
+    const trace = enterExecutionName(agent, name);
+    const depth = enterSourceCall(agent, undefined);
+    try {
+      return implementation(
+        callee,
+        receiver,
+        newTarget,
+        count,
+        first,
+        second,
+        third,
+        fourth,
+        fifth,
+        sixth,
+      );
+    } finally {
+      exitSourceCall(agent, depth);
+      leaveExecutionName(agent, trace);
+    }
+  };
+  fn.internalRegisterCall = {
+    context: {
+      realm,
+      scriptOrModule: active === undefined ? undefined : active.scriptOrModule,
+    },
+    invoke: (callee, receiver, newTarget, count, first, second): unknown =>
+      invoke(
+        callee,
+        receiver,
+        newTarget,
+        count,
+        first,
+        second,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      ),
+    invokeWide: invoke,
   };
   return fn;
 }

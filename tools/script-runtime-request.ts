@@ -156,6 +156,8 @@ export function createScriptRuntimeRequest(
     for (const name of [
       "createRegisterSourceFunction",
       "callRegisterObjectValue",
+      "createWideRegisterSourceFunction",
+      "callWideRegisterObjectValue",
       "createScriptPropertyCache",
       "readCachedObjectValueProperty",
       "writeCachedObjectValueProperty",

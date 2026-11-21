@@ -23,7 +23,7 @@ const corpus = [
   {
     source:
       "class A{#p=1;static m(){return 1}get g(){return this.#p}}class B extends A{constructor(){super();this.q=super.g}}",
-    sha256: "be8768b8d9b16105fb606cbc16344ec1bf3a4311dfc32dfd117ef0c6d23db59a",
+    sha256: "56cee50733a647ac69a1c2e817f99fe320cbb96e802b1e031ad203bb1d503c53",
   },
   {
     source:
@@ -38,7 +38,7 @@ const corpus = [
   {
     source:
       "function p(a,b=1,...c){return arguments.length}(()=>this)();new p();`a${1}`;tag`x`;",
-    sha256: "e2ccc1fd302fbcdff8f04e3a9e1a8b10183ab92f23106a4a6d5bf1a7d30122a0",
+    sha256: "672a8b18efb702577bc71db106e75b4b89d833711a7f295a0fb27e8ddbd7796a",
   },
   {
     source:
@@ -52,14 +52,14 @@ const corpus = [
   },
   {
     source: "const pattern=/(?<name>x)/u;const number=1n;number+2n;",
-    sha256: "692455fcfae0c339ee17d12781ebd1e4c27b47e14aa6da4864bd8ee7ddabc942",
+    sha256: "a48c8597375c4e3dabed9c815eb2c5d9d8385c349f266b4326c713f5591a4f14",
   },
 ];
 test("managed Script surface declares fixed instantiations and preserves lowered output", () => {
   const surface = lowering.scriptRuntimeSurface();
-  assert.equal(surface.length, 172);
+  assert.equal(surface.length, 174);
   const names = new Map(surface.map((entry) => [entry.name, entry]));
-  assert.equal(names.size, 172);
+  assert.equal(names.size, 174);
   assert.equal(
     surface.filter((entry) => entry.typeArguments.length > 0).length,
     46,
@@ -188,6 +188,6 @@ test("direct-eval sites keep a stable typed lowering contract", () => {
   assert.ok(result.ok, JSON.stringify(result));
   assert.equal(
     createHash("sha256").update(syntaxShapeJSON(result.value)).digest("hex"),
-    "2d80c4f8449e4d7ad88bdee2e39f0269d18ba1c22300e89e642f1725b93fe30d",
+    "33c60cf020ebf5c6a3007ec8e07da56c31bee3696498b22b1d77ecb6da259401",
   );
 });

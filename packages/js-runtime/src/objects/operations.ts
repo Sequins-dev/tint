@@ -283,9 +283,22 @@ export type ObjectRegisterCall<Value> = (
   first: Value,
   second: Value,
 ) => Value;
+export type ObjectWideRegisterCall<Value> = (
+  callee: Value,
+  receiver: Value,
+  newTarget: Value,
+  count: number,
+  first: Value,
+  second: Value,
+  third: Value,
+  fourth: Value,
+  fifth: Value,
+  sixth: Value,
+) => Value;
 export interface ObjectRegisterEntry<Value> {
   readonly context: ScriptExecutionContext;
   readonly invoke: ObjectRegisterCall<Value>;
+  readonly invokeWide: ObjectWideRegisterCall<Value> | undefined;
 }
 interface OrdinaryPropertyShape {
   readonly keys: readonly string[];
@@ -679,6 +692,29 @@ export function createDataProperty<Key, Value>(
   value: Value,
   hooks: ObjectHooks<Value>,
 ): boolean {
+  // A new property on an ordinary extensible object already has a complete,
+  // valid descriptor. Existing properties and exotic objects still use
+  // DefineOwnProperty for redefinitions, aliases and length constraints.
+  if (
+    object.internalMethods === undefined &&
+    object.internalArrayElements === undefined &&
+    object.internalDataAliases === undefined &&
+    object.internalPropertyContract === undefined &&
+    object.extensible &&
+    !object.properties.has(key)
+  ) {
+    object.properties.set(key, {
+      accessor: false,
+      value,
+      writable: true,
+      get: hooks.undefinedValue,
+      set: hooks.undefinedValue,
+      enumerable: true,
+      configurable: true,
+    });
+    invalidatePropertyLayout<Key, Value>(object);
+    return true;
+  }
   return (
     defineOwnProperty<Key, Value>(
       object,

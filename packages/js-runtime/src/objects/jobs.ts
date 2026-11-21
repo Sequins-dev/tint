@@ -161,21 +161,27 @@ export function createScriptAgent(canSuspend: boolean = false): ScriptAgent {
     jobs: createJobQueue<QueuedScriptJob>(),
   };
 }
-/** Push a caller-reflection slot; `visibleCallee` is undefined for hidden
- * frames. Pair every entry with `exitSourceCall` in a finally block. */
+/** Track the visible caller. Hidden frames can share the nearest barrier.
+ * Pair every entry with `exitSourceCall` in a finally block. */
 export function enterSourceCall(
   agent: ScriptAgent,
   visibleCallee: unknown,
   legacyArguments: readonly unknown[] | undefined = undefined,
 ): number {
-  const top = agent.sourceCallTop,
-    reused = top.next,
+  const top = agent.sourceCallTop;
+  const depth = agent.sourceCallDepth;
+  if (
+    visibleCallee === undefined &&
+    legacyArguments === undefined &&
+    top.callee === undefined
+  )
+    return depth;
+  const reused = top.next,
     frame = reused === undefined ? sourceCallFrame(top) : reused;
   if (reused === undefined) top.next = frame;
   frame.callee = visibleCallee;
   frame.legacyArguments = legacyArguments;
   agent.sourceCallTop = frame;
-  const depth = agent.sourceCallDepth;
   agent.sourceCallDepth = depth + 1;
   return depth;
 }

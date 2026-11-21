@@ -144,6 +144,53 @@ export function run() {
     },
   });
   if (read(observed) !== 42 || calls !== "set5trapget") return 30;
+
+  {
+    let wideOrder = "";
+    const wide = {
+      get call() {
+        wideOrder += "g";
+        return function(a, b, c, d, e, f) {
+          return this === wide && arguments.length === 6 && a+b+c+d+e+f === 42;
+        };
+      }
+    };
+    function operandValue(value) {
+      wideOrder += value;
+      if (value === "x") throw value;
+      return value;
+    }
+    if (!wide.call(operandValue(2), operandValue(3), 5, 7, 11, 14)) return 31;
+    try { wide.call(operandValue(4), operandValue("x"), operandValue(9)); return 32; }
+    catch (error) { if (error !== "x" || wideOrder !== "g23g4x") return 33; }
+
+    const packed = [42, undefined];
+    const prototype = Object.create(Array.prototype);
+    Object.defineProperty(prototype, "1", {get() { return 7; }});
+    Object.setPrototypeOf(packed, prototype);
+    function readIndex(array, index) { return array[index]; }
+    if (readIndex(packed, -0) !== 42 || readIndex(packed, 1) !== undefined) return 34;
+    delete packed[1];
+    if (readIndex(packed, 1) !== 7) return 35;
+    const proxy = new Proxy(packed, {get(target, key) { return key; }});
+    if (readIndex(proxy, 0) !== "0") return 36;
+
+    function readShape(object) { return object.read(); }
+    let shapes = [{read() {return 1;}}, {a: 0, read() {return 2;}},
+      {b: 0, read() {return 3;}}, {c: 0, read() {return 4;}},
+      {d: 0, read() {return 5;}}];
+    for (let pass = 0; pass < 2; pass++)
+      for (let index = 0; index < shapes.length; index++)
+        if (readShape(shapes[index]) !== index + 1) return 37;
+    Object.defineProperty(shapes[0], "read", {get() {throw "getter";}});
+    try { readShape(shapes[0]); return 38; }
+    catch (error) { if (error !== "getter") return 39; }
+
+    function join(left, right) { return left + right; }
+    const joined = join("a", "🦉");
+    if (joined.length !== 3 || joined !== "a🦉") return 40;
+    if (join(2, 3) !== 5 || join({valueOf() {return "a";}}, true) !== "atrue") return 41;
+  }
   return 42;
 }
 `;
@@ -179,11 +226,17 @@ function capture() {
   return () => value.answer;
 }
 
+function keepWide(a, b, third, d, e, sixth) {
+  collectGarbage();
+  return third.answer + sixth.answer;
+}
+
 export function run() {
   if (typeof Reflect !== "object") return 2;
   const read = capture();
   collectGarbage();
   if (read() !== 42) return 3;
+  if (keepWide(0, 0, { answer: 15 }, 0, 0, { answer: 27 }) !== 42) return 4;
   return retain(0);
 }
 `;

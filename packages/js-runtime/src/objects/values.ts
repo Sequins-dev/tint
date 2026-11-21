@@ -249,6 +249,63 @@ export function callRegisterObjectValue(
   return result.value;
 }
 
+/** Same-Script calls to wide positional bodies keep all actual operands
+ * outside the managed heap. Other callees receive exactly the supplied list. */
+export function callWideRegisterObjectValue(
+  realm: ErrorRealm,
+  count: number,
+  value: unknown,
+  receiver: unknown,
+  first: unknown,
+  second: unknown,
+  third: unknown,
+  fourth: unknown,
+  fifth: unknown,
+  sixth: unknown,
+): unknown {
+  const object = viewObjectValue(value, realm.objectPrototype);
+  if (object === undefined) throw createRuntimeError(realm, "type");
+  const entry = object.internalRegisterCall;
+  const active = realm.agent.activeContext;
+  if (
+    entry !== undefined &&
+    active !== undefined &&
+    active.realm === entry.context.realm &&
+    active.scriptOrModule === entry.context.scriptOrModule
+  ) {
+    const invoke = entry.invokeWide;
+    if (invoke !== undefined)
+      return invoke(
+        value,
+        receiver,
+        undefined,
+        count,
+        first,
+        second,
+        third,
+        fourth,
+        fifth,
+        sixth,
+      );
+  }
+  const args: readonly unknown[] =
+    count === 3
+      ? [first, second, third]
+      : count === 4
+        ? [first, second, third, fourth]
+        : count === 5
+          ? [first, second, third, fourth, fifth]
+          : [first, second, third, fourth, fifth, sixth];
+  const result = callObject<ScriptPropertyKey, unknown>(
+    object,
+    receiver,
+    args,
+    undefined,
+  );
+  if (result.error !== "none") throw createRuntimeError(realm, "type");
+  return result.value;
+}
+
 /** Calls from typed source already carry a receiver and an evaluated list. */
 export function callGeneralValue(
   value: unknown,

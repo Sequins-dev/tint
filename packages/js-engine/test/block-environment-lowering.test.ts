@@ -785,6 +785,183 @@ test("constant-name reads and writes get their own property cache", () => {
   assert.equal(runtimeCalls(source, "writeCachedObjectValueProperty"), 1);
 });
 
+test("fixed-arity calls construct one argument list after evaluating operands", () => {
+  const count = countExpressions(
+    "unknownTarget(first(), 2, 3, 4, 5, 6, last());",
+    (node) => node.kind === "array" && node.elements.length === 7,
+  );
+  assert.equal(count, 1);
+});
+
+test("wide strict entries use positional dispatch and keep an exotic fallback", () => {
+  const source = `"use strict";
+    function select(a, b, c, d, e, f) { return f === undefined ? a : f; }
+    select(1, 2, 3, 4, 5, 6);
+  `;
+  assert.equal(runtimeCalls(source, "createWideRegisterSourceFunction"), 1);
+  assert.equal(runtimeCalls(source, "callWideRegisterObjectValue"), 1);
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+    "use strict";
+    let order = "";
+    const receiver = {name: "target", call(a,b,c,d,e,f) {
+      if (f === "throw") throw "abrupt";
+      return this.name + "/" + a + "/" + f;
+    }};
+    function value(n) { order += n; return n; }
+    print(receiver.call(value(1), value(2), value(3), value(4), value(5), value(6)));
+    print(receiver.call(7));
+    const bound = receiver.call.bind(receiver, 8);
+    print(bound(2, 3, 4, 5, "bound"));
+    try { receiver.call(1, 2, 3, 4, 5, "throw"); } catch (error) { print(error); }
+    print(receiver.call(9, 10, 11));
+    print(order);
+  `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "target/1/6",
+    "target/7/undefined",
+    "target/8/bound",
+    "abrupt",
+    "target/9/undefined",
+    "123456",
+  ]);
+});
+
+test("wide calls preserve receiver, operand order, and abrupt completion", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+    let order = "";
+    const object = {
+      name: "receiver",
+      get call() {
+        order += "g";
+        return function (a, b, c, d, e, f) {
+          order += "f";
+          return this.name + "/" + arguments.length + "/" + [a,b,c,d,e,f].join(",");
+        };
+      }
+    };
+    function arg(value) {
+      order += value;
+      if (value === "x") throw value;
+      return value;
+    }
+    print(object.call(arg(1), arg(2), arg(3), arg(4), arg(5), arg(6)));
+    try { object.call(arg(7), arg(8), arg("x"), arg(9)); }
+    catch (error) { print(error); }
+    print(object.call(arg(0), ...[1, 2], arg(3), 4, 5));
+    print(order);
+  `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "receiver/6/1,2,3,4,5,6",
+    "x",
+    "receiver/6/0,1,2,3,4,5",
+    "g123456fg78xg03f",
+  ]);
+});
+
+test("numeric array reads preserve holes, accessors, proxies, and key coercion", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+    let order = "";
+    function read(array, key) { return array[key]; }
+    const values = [42, undefined];
+    const prototype = Object.create(Array.prototype);
+    Object.defineProperty(prototype, "1", {get() { order += "h"; return 7; }});
+    Object.setPrototypeOf(values, prototype);
+    print(String(read(values, -0)));
+    print(String(read(values, 1)));
+    delete values[1];
+    print(String(read(values, 1)));
+    values["0.5"] = 11;
+    values.NaN = 12;
+    print(String(read(values, 0.5)));
+    print(String(read(values, NaN)));
+    Object.defineProperty(values, "0", {get() {
+      order += this === values ? "g" : "G";
+      throw "getter";
+    }});
+    try { read(values, 0); } catch (error) { print(error); }
+    const proxy = new Proxy([1], {get(target, key) { order += typeof key; return 8; }});
+    print(String(read(proxy, 0)));
+    print(String(read(proxy, {[Symbol.toPrimitive]() { order += "k"; return 0; }})));
+    print(order);
+  `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "42",
+    "undefined",
+    "7",
+    "11",
+    "12",
+    "getter",
+    "8",
+    "8",
+    "hgstringkstring",
+  ]);
+});
+
+test("primitive concatenation preserves coercion order and UTF-16 length", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+    function concat(left, right) { return left + right; }
+    let order = "";
+    function value(label, result) {
+      return {[Symbol.toPrimitive](hint) { order += label + hint; return result; }};
+    }
+    print(concat("a", "🦉"));
+    print(String(concat("a", "🦉").length));
+    print(concat(value("l", "left"), value("r", "right")));
+    print(String(concat(1, 2)));
+    try { concat("a", Symbol()); } catch (error) { print(error.name); }
+    try { concat({valueOf() { throw "left"; }}, value("x", "right")); }
+    catch (error) { print(error); }
+    print(order);
+  `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "a🦉",
+    "3",
+    "leftright",
+    "3",
+    "TypeError",
+    "left",
+    "ldefaultrdefault",
+  ]);
+});
+
+test("literal data properties keep their flags and skip inherited setters", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+    let order = "";
+    const proto = { set x(value) { throw "setter"; } };
+    const object = { __proto__: proto, x: 1, get y() { throw "getter"; },
+      [((order += "k"), "y")]: ((order += "v"), 2),
+      ...new Proxy({z: 3}, {
+        get(target, key) { order += key; return Reflect.get(target, key); }
+      })
+    };
+    const descriptor = Object.getOwnPropertyDescriptor(object, "x");
+    print(String(object.x + object.y + object.z));
+    print(String(descriptor.writable && descriptor.enumerable && descriptor.configurable));
+    print(order);
+  `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["6", "true", "kvz"]);
+});
+
 test("cached property and method sites follow shadowing, replacement and proxies", () => {
   const realm = createLoweredRealm();
   assert.equal(
@@ -835,6 +1012,48 @@ test("cached property and method sites follow shadowing, replacement and proxies
     "8",
     "s9gpg",
     "boom",
+  ]);
+});
+
+test("polymorphic sites keep receivers and follow a replaced prototype", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+    const prototypes = Array.from([1,2,3,4,5,6], n => ({call() { return this.value + n; }}));
+    const receivers = prototypes.map((prototype, index) => {
+      const object = Object.create(prototype);
+      object["own" + index] = true;
+      object.value = 10;
+      return object;
+    });
+    function invoke(object) { return object.call(); }
+    for (let round = 0; round < 2; round++)
+      for (const object of receivers) print(String(invoke(object)));
+    Object.setPrototypeOf(receivers[0], prototypes[5]);
+    print(String(invoke(receivers[0])));
+    prototypes[5].call = function () { return this.value; };
+    print(String(invoke(receivers[5])));
+    Object.defineProperty(prototypes[5], "call", { get() { throw "changed"; } });
+    try { invoke(receivers[0]); } catch (error) { print(error); }
+  `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "16",
+    "10",
+    "changed",
   ]);
 });
 

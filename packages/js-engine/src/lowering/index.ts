@@ -1031,6 +1031,7 @@ function lowerScriptEntry(
   let tailEnds: ReadonlyMap<number, number> = new Map<number, number>();
   let usesTailCalls = false;
   let usesRegisterCalls = false;
+  let usesWideRegisterCalls = false;
   let usesPrimitiveContracts = false;
   let suspensionInput: string | undefined =
     entryKind === "module" ? "$moduleInput" : undefined;
@@ -2755,14 +2756,22 @@ function lowerScriptEntry(
       id("$errors"),
     ];
     if (cached) args.push(propertyCache(span));
-    return temporary(
-      runtimeCall(
-        cached ? "readCachedObjectValueProperty" : "readObjectValueProperty",
-        args,
-        span,
-      ),
-      true,
+    const read = runtimeCall(
+      cached ? "readCachedObjectValueProperty" : "readObjectValueProperty",
+      args,
+      span,
     );
+    if (cached && key.kind === "string" && key.value === "length")
+      return temporary(
+        scalarBranch(
+          categoryOperand(base, "string", span),
+          member(base, "length", span),
+          read,
+          span,
+        ),
+        true,
+      );
+    return temporary(read, true);
   }
   function typedList(elementType: string, span: Span): Expression {
     return temporary(
@@ -3276,26 +3285,28 @@ function lowerScriptEntry(
     if (
       !compactResults &&
       !isTailCall(span) &&
-      args.length <= 2 &&
+      args.length <= 6 &&
       !args.some((argument) => argument?.kind === "spread")
     ) {
-      usesRegisterCalls = true;
-      const values: Expression[] = [];
+      const wide = args.length > 2;
+      if (wide) usesWideRegisterCalls = true;
+      else usesRegisterCalls = true;
+      const operands: Expression[] = [
+        id("$errors"),
+        scalarNumber(args.length, span),
+        callee,
+        receiver,
+      ];
       for (const argument of args) {
         if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
-        values.push(temporary(value(argument), true));
+        operands.push(temporary(value(argument), true));
       }
+      const width = wide ? 6 : 2;
+      while (operands.length < 4 + width) operands.push(id("undefined", span));
       return temporary(
         runtimeCall(
-          "callRegisterObjectValue",
-          [
-            id("$errors"),
-            scalarNumber(args.length, span),
-            callee,
-            receiver,
-            values[0] ?? id("undefined", span),
-            values[1] ?? id("undefined", span),
-          ],
+          wide ? "callWideRegisterObjectValue" : "callRegisterObjectValue",
+          operands,
           span,
         ),
         true,
@@ -3378,6 +3389,14 @@ function lowerScriptEntry(
     return result;
   }
   function argumentList(args: readonly Expression[], span: Span): Expression {
+    if (!args.some((argument) => argument?.kind === "spread")) {
+      const elements: Expression[] = [];
+      for (const argument of args) {
+        if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+        elements.push(temporary(value(argument), true));
+      }
+      return { ...at(span), kind: "array", elements };
+    }
     const list = temporary(
       { ...at(span), kind: "array", elements: [] },
       false,
@@ -3779,8 +3798,8 @@ function lowerScriptEntry(
       span,
     );
   }
-  /** Operand evaluation precedes either branch. Only primitive number pairs
-   * bypass ToPrimitive and overload dispatch. */
+  /** Already evaluated primitive pairs can bypass ToPrimitive and overload
+   * dispatch. String concatenation still uses the backend's string storage. */
   function binaryOperation(
     operator: string,
     left: Expression,
@@ -3829,6 +3848,21 @@ function lowerScriptEntry(
       ),
       alternate: slow,
     };
+    const nonNumeric: Statement =
+      operator === "+"
+        ? {
+            ...at(span),
+            kind: "if",
+            test: scalarBinary(
+              "&&",
+              categoryOperand(left, "string", span),
+              categoryOperand(right, "string", span),
+              span,
+            ),
+            consequent: assigned(scalarBinary("+", left, right, span)),
+            alternate: primitive,
+          }
+        : primitive;
     statements.push({
       ...at(span),
       kind: "if",
@@ -3839,7 +3873,7 @@ function lowerScriptEntry(
         span,
       ),
       consequent: assigned(scalarBinary(operator, left, right, span)),
-      alternate: primitive,
+      alternate: nonNumeric,
     });
     return result;
   }
@@ -4262,6 +4296,7 @@ function lowerScriptEntry(
     const numericImplementation =
       numericBody === undefined ? undefined : temporary(numericBody);
     const hasArguments = !arrow && observesArguments(span);
+    const wideRegister = codeStrict && parameters.length > 2;
     const register =
       !compactResults &&
       !raw &&
@@ -4271,12 +4306,19 @@ function lowerScriptEntry(
       !hasArguments &&
       resultContract === 0 &&
       numericImplementation === undefined &&
-      parameters.length <= 2 &&
+      parameters.length <= (wideRegister ? 6 : 2) &&
       !parameters.some((parameter) => parameter?.rest);
     const registerCount = register ? "$count" + serial++ : "",
       registerFirst = register ? "$first" + serial++ : "",
       registerSecond = register ? "$second" + serial++ : "";
-    if (register) usesRegisterCalls = true;
+    const registerArguments = [registerFirst, registerSecond];
+    if (register) {
+      if (wideRegister) {
+        usesWideRegisterCalls = true;
+        for (let index = 2; index < 6; index++)
+          registerArguments.push("$arg" + serial++);
+      } else usesRegisterCalls = true;
+    }
     // Capture the environment at function creation, even when a loop advances
     // its current environment through a mutable generated variable.
     const capturedScope = temporary(scope);
@@ -4756,7 +4798,10 @@ function lowerScriptEntry(
           );
       }
       const argumentValue: Expression = register
-        ? id(i === 0 ? registerFirst : registerSecond, parameter)
+        ? id(
+            registerArguments[i] ?? fail(parameter, "Missing positional slot"),
+            parameter,
+          )
         : parameter.rest
           ? runtimeCall(
               "createArrayFromList",
@@ -5242,11 +5287,15 @@ function lowerScriptEntry(
       callbackParameters.length = 0;
       for (const name of [calleeName, receiverName, newTargetName])
         callbackParameters.push({ ...at(span), name, type: named("unknown") });
-      callbackParameters.push(
-        { ...at(span), name: registerCount, type: named("number") },
-        { ...at(span), name: registerFirst, type: named("unknown") },
-        { ...at(span), name: registerSecond, type: named("unknown") },
-      );
+      callbackParameters.push({
+        ...at(span),
+        name: registerCount,
+        type: named("number"),
+      });
+      for (const name of registerArguments) {
+        if (name === undefined) throw "SCRIPT_REGISTER_ARGUMENT_INVARIANT";
+        callbackParameters.push({ ...at(span), name, type: named("unknown") });
+      }
     }
     if (raw)
       return resultContract === 0
@@ -5356,7 +5405,9 @@ function lowerScriptEntry(
             : tailEnabled
               ? "createTailSourceFunction"
               : register
-                ? "createRegisterSourceFunction"
+                ? wideRegister
+                  ? "createWideRegisterSourceFunction"
+                  : "createRegisterSourceFunction"
                 : "createSourceFunction",
         ),
         arguments: functionArguments,
@@ -9242,6 +9293,7 @@ function lowerScriptEntry(
     fixedCellNames.length !== 0,
     usesRegisterCalls,
     propertyCacheInitializers.length !== 0,
+    usesWideRegisterCalls,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { cpus, homedir, loadavg, tmpdir } from "node:os";
+import { cpus, loadavg, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { stripTypeScriptTypes } from "node:module";
 import { verifyHostedFixture } from "../hosted-fixture.ts";
@@ -53,7 +53,7 @@ function writeReport(path: string, report: unknown): void {
   writeFileSync(path, JSON.stringify(report, null, 2) + "\n", { flag: "wx" });
 }
 
-function preparationIdentity(node: string, script: string) {
+function preparationIdentity(node: string) {
   return {
     head: execute("git", ["rev-parse", "HEAD"]).trim(),
     patchSha256: hash(
@@ -61,8 +61,6 @@ function preparationIdentity(node: string, script: string) {
     ),
     node,
     nodeSha256: fileHash(node),
-    script,
-    scriptSha256: fileHash(script),
   };
 }
 
@@ -158,7 +156,9 @@ export function run(): number {
     return nativeArtifact(target, path, path + ".manifest.json");
   }
   return {
-    ...preparationIdentity(node, script),
+    ...preparationIdentity(node),
+    script,
+    scriptSha256: fileHash(script),
     native: {
       untyped: build(false),
       ...(suite === "kernels" ? { typed: build(true) } : {}),
@@ -210,11 +210,7 @@ function runNative(
     artifact.path,
     ...launch.args,
   ];
-  const lock = process.env.TINT_GATE_LAUNCH_LOCK;
-  const output =
-    lock === undefined
-      ? execute("lldb", args)
-      : execute("/usr/bin/lockf", ["-k", lock, "lldb", ...args]);
+  const output = execute("lldb", args);
   assert.match(output, /^TINT_BENCH_VERIFIED$/m);
   return output;
 }
@@ -391,10 +387,12 @@ if ((mode === "prepare" || mode === "prepare-generality") && input && output) {
   const { prepareOctane } = await import("./octane.ts");
   const node = resolve(input);
   assert.equal(execute(node, ["--version"]).trim(), "v26.13.1");
+  const identity = preparationIdentity(node);
   const prepared = prepareOctane(extra, additional[0], node);
   writeReport(output, {
+    ...identity,
     ...prepared,
-    ...preparationIdentity(node, prepared.script),
+    scriptSha256: fileHash(prepared.script),
   });
 } else if (mode === "smoke" && input) {
   const prepared = readPrepared(input);
@@ -425,6 +423,6 @@ if ((mode === "prepare" || mode === "prepare-generality") && input && output) {
   node tools/general-call-bench/benchmark.ts prepare-generality NODE26 PREPARED.json [CASE] [SCALE]
   node tools/general-call-bench/benchmark.ts fetch-octane DIRECTORY
   node tools/general-call-bench/benchmark.ts prepare-octane NODE26 PREPARED.json DIRECTORY [CASE]
-  node tools/general-call-bench/benchmark.ts smoke PREPARED.json
-  /usr/bin/lockf -k ${join(homedir(), ".t3", "tint-timing.lock")} node tools/general-call-bench/benchmark.ts measure PREPARED.json REPORT.json [ROUNDS] [CANDIDATE.json ...]`);
+  tools/gate/with-lock.sh launch general-calls-smoke node tools/general-call-bench/benchmark.ts smoke PREPARED.json
+  tools/gate/with-lock.sh both general-calls node tools/general-call-bench/benchmark.ts measure PREPARED.json REPORT.json [ROUNDS] [CANDIDATE.json ...]`);
 }

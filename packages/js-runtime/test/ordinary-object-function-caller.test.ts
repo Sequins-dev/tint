@@ -60,6 +60,29 @@ test("strict callers stay hidden and strict functions retain the poison accessor
   );
 });
 
+test("adjacent hidden callers share the reflection barrier through a throw", () => {
+  const { source, invoke, caller, realm } = fixture();
+  const failure = {};
+  const visible = source(() => {
+    assert.equal(caller(visible), null);
+    throw failure;
+  });
+  const hiddenInner = source(() => invoke(visible), "opaque");
+  const hiddenOuter = source(() => invoke(hiddenInner), "opaque");
+  const outer = source(() => {
+    assert.throws(
+      () => invoke(hiddenOuter),
+      (error) => error === failure,
+    );
+    assert.equal(realm.agent.sourceCallDepth, 1);
+  });
+  invoke(outer);
+  assert.equal(realm.agent.sourceCallDepth, 0);
+  const held = realm.agent.sourceCallBase.next?.next?.next;
+  assert.ok(held);
+  assert.equal(held.next, undefined);
+});
+
 test("recursive and abrupt invocations restore the previous caller", () => {
   const { source, invoke, caller } = fixture();
   let depth = 0;

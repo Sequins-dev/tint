@@ -64,6 +64,5 @@ results. [Tree licence](https://github.com/chromium/octane/blob/570ad1ccfe86e3ee
 mkdir "$octane_sources"
 node tools/general-call-bench/benchmark.ts fetch-octane "$octane_sources"
 node tools/general-call-bench/benchmark.ts prepare-octane "$node26" octane.json "$octane_sources"
-export TINT_GATE_LAUNCH_LOCK="$HOME/.t3/tint-gate.lock"
-/usr/bin/lockf -k "$HOME/.t3/tint-timing.lock" node tools/general-call-bench/benchmark.ts measure octane.json paired.json 16
+tools/gate/with-lock.sh both general-call-octane node tools/general-call-bench/benchmark.ts measure octane.json paired.json 16
 ```

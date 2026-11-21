@@ -76,6 +76,7 @@ export function scriptRuntimeImports(
   usesFixedCells: boolean = false,
   usesRegisterCalls: boolean = false,
   usesPropertyCaches: boolean = false,
+  usesWideRegisterCalls: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -169,6 +170,9 @@ export function scriptRuntimeImports(
         ...(usesRegisterCalls || declarations === "all"
           ? ["createRegisterSourceFunction"]
           : []),
+        ...(usesWideRegisterCalls || declarations === "all"
+          ? ["createWideRegisterSourceFunction"]
+          : []),
         "retainFunctionSource",
         "runScriptContext",
         "createSourceAsyncGeneratorFunction",
@@ -244,6 +248,9 @@ export function scriptRuntimeImports(
         "callObjectValue",
         ...(usesRegisterCalls || declarations === "all"
           ? ["callRegisterObjectValue"]
+          : []),
+        ...(usesWideRegisterCalls || declarations === "all"
+          ? ["callWideRegisterObjectValue"]
           : []),
         "getObjectValueProperty",
         "readObjectValueProperty",

@@ -624,6 +624,8 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   const fastPaths = [
     "createRegisterSourceFunction",
     "callRegisterObjectValue",
+    "createWideRegisterSourceFunction",
+    "callWideRegisterObjectValue",
     "createScriptPropertyCache",
     "readCachedObjectValueProperty",
     "writeCachedObjectValueProperty",
@@ -659,7 +661,7 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   const previous = createScriptRuntimeRequest(bind, true, old),
     current = createScriptRuntimeRequest(bind, true, snapshot);
   assert.equal(previous.values.length, 136);
-  assert.equal(current.values.length, 145);
+  assert.equal(current.values.length, 147);
   for (const name of fastPaths) {
     assert.ok(!previous.values.some((value) => value.name === name), name);
     assert.ok(

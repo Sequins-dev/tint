@@ -205,6 +205,7 @@ export {
   scriptSameValue,
   callObjectValue,
   callRegisterObjectValue,
+  callWideRegisterObjectValue,
   callGeneralValue,
   getObjectValueProperty,
   readObjectValueProperty,
@@ -264,6 +265,7 @@ export {
 export {
   createSourceFunction,
   createRegisterSourceFunction,
+  createWideRegisterSourceFunction,
   createTailSourceFunction,
   createCheckedSourceFunction,
   requestSourceTailCall,
