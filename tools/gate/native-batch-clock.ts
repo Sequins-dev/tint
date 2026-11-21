@@ -50,3 +50,29 @@ export function nativeBatchWaiting(journal: string): () => boolean {
     return waiting;
   };
 }
+
+/** A fixture's active budget starts once its scheduled build has a memory slot. */
+export function nativeFixtureMemoryWaiting(
+  journal: string,
+  worker: number,
+): () => boolean {
+  let priorSize: number | undefined;
+  let waiting = false;
+  return () => {
+    const size = statSync(journal, { throwIfNoEntry: false })?.size;
+    if (size === priorSize) return waiting;
+    priorSize = size;
+    waiting = false;
+    if (!size) return waiting;
+    const lines = readFileSync(journal, "utf8").split("\n").slice(0, -1);
+    for (const line of lines) {
+      if (!line) continue;
+      const row = JSON.parse(line) as { phase: string; worker?: number };
+      if (row.worker !== worker) continue;
+      if (row.phase === "memory-wait-start") waiting = true;
+      else if (row.phase === "build-start" || row.phase === "worker-end")
+        waiting = false;
+    }
+    return waiting;
+  };
+}
