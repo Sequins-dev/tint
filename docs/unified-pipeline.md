@@ -234,6 +234,16 @@ are explicit IR operations at the island's edges:
 No snapshot or copy-back exists: islands read and write at the original program
 points, so closures and aliases observe the same values in the same order.
 
+### Integer storage for UTF-16 construction
+
+On AArch64, `String.fromCharCode` can consume a bitwise result directly
+from word-only storage. The representation analysis requires all
+uses of that result to observe only its low bits. Double operands
+follow the existing ToUint32 helper before the halfword store,
+preserving truncation, wrapping and the zero result for non-finite
+inputs. See the
+[conversion-site audit](results/integer-uses-audit-v1.md).
+
 ### The value bridge
 
 Boxing must preserve identity, so reference values need JavaScript object

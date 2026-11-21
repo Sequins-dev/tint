@@ -9438,7 +9438,7 @@ function emitModuleForms(
                   if (input === undefined) throw "string code unit invariant";
                   rawValue(9, input);
                   // ToUint16 is ToUint32 modulo 65536; strh stores those low bits.
-                  callHelper("to-uint32");
+                  if (!storedAsWord(input)) callHelper("to-uint32");
                   rawValue(10, op.id);
                   imm(11, nativeStringDataOffset + index * 2);
                   emit({
