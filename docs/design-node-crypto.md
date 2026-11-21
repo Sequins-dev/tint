@@ -147,7 +147,7 @@ in PBKDF2 and provider failure in digest initialization.
   `randomBytes` against Node 26.13.1 with matched parameters and equivalent
   output. Warm each implementation, record system OpenSSL and Node's
   OpenSSL versions, rotate execution order in paired rounds under
-  `tint-timing.lock` and report per-case paired results. Use native cycles
+  `tools/gate/with-lock.sh both` and report per-case paired results. Use native cycles
   and wall time where available. Keep the PR in draft until Tint wins most
   cases and all required checks pass. The module's implementation remains
   typed and independent of the `perf/general-calls` stream.
@@ -158,6 +158,7 @@ in PBKDF2 and provider failure in digest initialization.
   [Typed hexadecimal conversion experiment](results/node-crypto-darwin-arm64-hex-v1.json) ·
   [Typed digest context experiment](results/node-crypto-darwin-arm64-contexts-v1.json) ·
   [Typed Buffer comparison](results/node-crypto-darwin-arm64-branded-shared-methods-v1.json) ·
+  [Typed byte lookup and Buffer length controls](results/node-crypto-darwin-arm64-typed-byte-hex-v1.md) ·
   [General method-call control](results/node-crypto-darwin-arm64-call-control-v1.md)
 
 ## PoC phases

@@ -1,6 +1,7 @@
 // Build outside the timing lock. `build public` resolves the public module.
 // `build branded` times the typed crypto code with its real Buffer adoption.
-// Run paired rounds under the timing and gate locks, in that order.
+// `build branded-slots` reads the same Buffer's length through typed storage.
+// Run paired rounds under tools/gate/with-lock.sh both.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
@@ -59,7 +60,10 @@ const cases = [
 
 const imports =
   'import { createHash, createHmac, randomBytes } from "node:crypto";';
-const branded = process.argv[2] === "build" && process.argv[3] === "branded";
+const typedLength =
+  process.argv[2] === "build" && process.argv[3] === "branded-slots";
+const branded =
+  typedLength || (process.argv[2] === "build" && process.argv[3] === "branded");
 const body = cases
   .map(({ name, setup, expression, iterations }) => {
     const randomBuffer = branded && name.startsWith("random-");
@@ -133,7 +137,11 @@ function randomBuffer(size:number):OrdinaryObject<ScriptPropertyKey,unknown> {
   return adoptNodeBuffer(core,randomBytes(size));
 }
 function bufferLength(buffer:OrdinaryObject<ScriptPropertyKey,unknown>):number {
-  const length=getProperty<ScriptPropertyKey,unknown>(buffer,"length",buffer,core.hooks);
+  const length=${
+    typedLength
+      ? "buffer.internalTypedArrayData?.length"
+      : 'getProperty<ScriptPropertyKey,unknown>(buffer,"length",buffer,core.hooks)'
+  };
   if(typeof length!=="number")throw "BUFFER_LENGTH";
   return length;
 }
@@ -148,7 +156,9 @@ function bufferLength(buffer:OrdinaryObject<ScriptPropertyKey,unknown>):number {
      ${bufferPrelude}
      export function run():number { ${branded ? "if(!isNodeBuffer(core,randomBuffer(0))) return 1;" : ""} ${body} return 42; }`,
     branded
-      ? "node-crypto-branded-microbench"
+      ? typedLength
+        ? "node-crypto-slot-branded-microbench"
+        : "node-crypto-branded-microbench"
       : publicDriver
         ? "node-crypto-public-microbench"
         : "node-crypto-microbench",

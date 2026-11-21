@@ -163,10 +163,12 @@ function hexDigit(value: number): number {
   return value < 10 ? value + 48 : value + 87;
 }
 
-function createHexPairs(): Uint16Array {
-  const pairs = new Uint16Array(256);
-  for (let byte = 0; byte < pairs.length; byte++)
-    pairs[byte] = hexDigit(byte >>> 4) | (hexDigit(byte & 15) << 8);
+function createHexPairs(): Uint8Array {
+  const pairs = new Uint8Array(512);
+  for (let byte = 0; byte < 256; byte++) {
+    pairs[byte * 2] = hexDigit(byte >>> 4);
+    pairs[byte * 2 + 1] = hexDigit(byte & 15);
+  }
   return pairs;
 }
 
@@ -178,36 +180,36 @@ function digestHex(bytes: Uint8Array, length: number): string {
   let text = "";
   let i = 0;
   for (; i + 8 <= length; i += 8) {
-    const a = hexPairs[bytes[i] ?? 0] ?? 0,
-      b = hexPairs[bytes[i + 1] ?? 0] ?? 0;
-    const c = hexPairs[bytes[i + 2] ?? 0] ?? 0,
-      d = hexPairs[bytes[i + 3] ?? 0] ?? 0;
-    const e = hexPairs[bytes[i + 4] ?? 0] ?? 0,
-      f = hexPairs[bytes[i + 5] ?? 0] ?? 0;
-    const g = hexPairs[bytes[i + 6] ?? 0] ?? 0,
-      h = hexPairs[bytes[i + 7] ?? 0] ?? 0;
+    const a = (bytes[i] ?? 0) * 2,
+      b = (bytes[i + 1] ?? 0) * 2;
+    const c = (bytes[i + 2] ?? 0) * 2,
+      d = (bytes[i + 3] ?? 0) * 2;
+    const e = (bytes[i + 4] ?? 0) * 2,
+      f = (bytes[i + 5] ?? 0) * 2;
+    const g = (bytes[i + 6] ?? 0) * 2,
+      h = (bytes[i + 7] ?? 0) * 2;
     text += String.fromCharCode(
-      a & 255,
-      a >>> 8,
-      b & 255,
-      b >>> 8,
-      c & 255,
-      c >>> 8,
-      d & 255,
-      d >>> 8,
-      e & 255,
-      e >>> 8,
-      f & 255,
-      f >>> 8,
-      g & 255,
-      g >>> 8,
-      h & 255,
-      h >>> 8,
+      hexPairs[a] ?? 0,
+      hexPairs[a + 1] ?? 0,
+      hexPairs[b] ?? 0,
+      hexPairs[b + 1] ?? 0,
+      hexPairs[c] ?? 0,
+      hexPairs[c + 1] ?? 0,
+      hexPairs[d] ?? 0,
+      hexPairs[d + 1] ?? 0,
+      hexPairs[e] ?? 0,
+      hexPairs[e + 1] ?? 0,
+      hexPairs[f] ?? 0,
+      hexPairs[f + 1] ?? 0,
+      hexPairs[g] ?? 0,
+      hexPairs[g + 1] ?? 0,
+      hexPairs[h] ?? 0,
+      hexPairs[h + 1] ?? 0,
     );
   }
   for (; i < length; i++) {
-    const pair = hexPairs[bytes[i] ?? 0] ?? 0;
-    text += String.fromCharCode(pair & 255, pair >>> 8);
+    const pair = (bytes[i] ?? 0) * 2;
+    text += String.fromCharCode(hexPairs[pair] ?? 0, hexPairs[pair + 1] ?? 0);
   }
   return text;
 }
