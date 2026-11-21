@@ -220,14 +220,10 @@ and the frozen input snapshot identical for the self-build comparison. Use absol
 source-directory paths as shown: debug information embeds those paths, so changing
 their spelling can change the binary even when source contents match.
 
-For performance measurements, capture the entire self-build. Start LLDB interactively
-and use `process launch --stop-at-entry -- ABSOLUTE_SOURCE ABSOLUTE_OUTPUT --debug-symbols`.
-Before continuing, attach `pprofessor attach --no-publish --output PROFILE CHILD_PID`
-in another terminal, then `continue` in LLDB. Leave capture running through child
-exit. This suppresses macOS crash-report windows while preserving a failure stop
-for inspection. Record profile duration separately from debugger pauses and
-symbolication. A failed child, truncated profile or missing output is not a successful
-build timing. See [benchmarking](benchmarking.md) for current measured results.
+For performance measurements, capture the complete self-build using the
+[verified-image profiling recipe](profiling.md#profiling-a-verified-compiler).
+Use the same debugger-symbol settings and snapshot for verification and
+capture. Record execution time separately from profile symbolication.
 
 ## Best measured verified self-build
 

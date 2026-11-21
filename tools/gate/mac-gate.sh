@@ -12,6 +12,7 @@ fi
 
 export TINT_GATE_EXCLUSIVE_LOCK="${TINT_GATE_EXCLUSIVE_LOCK:-$HOME/.t3/tint-gate.lock}"
 export TINT_GATE_MEMORY_DIRECTORY="${TINT_GATE_MEMORY_DIRECTORY:-$HOME/.t3/tint-gate-memory}"
+export TINT_GATE_NATIVE_CONCURRENCY="${TINT_GATE_NATIVE_CONCURRENCY:-3}"
 TINT_GATE_NATIVE_CONCURRENCY=$(node tools/check-test-files.ts native-concurrency)
 export TINT_GATE_NATIVE_CONCURRENCY
 printf "check-native-concurrency=%s\n" "$TINT_GATE_NATIVE_CONCURRENCY" | tee "$gate_output/check-native-concurrency.txt"

@@ -1449,7 +1449,7 @@ revisit when profiles show it.
 ## Measurements
 
 `tools/ffi-microbench.ts` (2026-11-17, Apple M-series, 18 cores, load average
-about 2–5, run under `lockf /Users/stephenbelanger/.t3/tint-timing.lock`,
+about 2–5, run under the [shared lock wrapper](validation-gate.md#timing-and-profiling-on-the-shared-mac),
 `TINT_GENERAL_FALLBACK=0`, Node 26.10 for `node:ffi`). Native loops time
 themselves with the monotonic clock over 10^8 calls (5×10^6 hash updates);
 images run under LLDB with entry and exit-status assertions.
