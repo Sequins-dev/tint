@@ -182,67 +182,116 @@ test(
 );
 
 test(
-  "the macOS gate uses active time and a separate admission wall deadline",
+  "the macOS gate enforces its active budget",
   { skip: process.platform !== "darwin" },
   () => {
     const directory = mkdtempSync(join(tmpdir(), "tint-gate-budget-"));
     try {
-      const tool = fileURLToPath(new URL("./gate/lock.ts", import.meta.url));
-      const run = () =>
-        spawnSync(
-          process.execPath,
-          [
-            tool,
-            "mac-budget",
-            "mac-gate",
-            "sh",
-            "-c",
-            "echo '2026-01-01T00:00:00Z start check-native resource=exclusive log=test'; exec sleep 30",
-          ],
-          {
-            encoding: "utf8",
-            env: {
-              ...process.env,
-              TINT_GATE_BUDGET: "1",
-              TINT_GATE_WALL_TIMEOUT: "2",
-              TINT_GATE_ADMISSION_DIRECTORY: directory,
-            },
-            timeout: 5000,
-          },
-        );
-      const active = run();
-      assert.equal(active.status, 124, active.stderr);
-      assert.match(active.stderr, /BUDGET.*active.*check-native/);
-      withGateLock([join(directory, "slot-1.lock")], "outer", undefined, () =>
-        withGateLock(
-          [join(directory, "slot-2.lock")],
-          "inner",
-          undefined,
-          () => {
-            const queued = run();
-            assert.equal(queued.status, 124, queued.stderr);
-            assert.match(queued.stderr, /BUDGET.*wall.*admission/);
-            assert.match(
-              queued.stdout,
-              /^gate-budget active-ms=0 queue-ms=\d+\n$/,
-            );
-          },
-        ),
-      );
-      const available = spawnSync(
+      const result = spawnSync(
         process.execPath,
-        [tool, "mac-budget", "mac-gate", "true"],
+        [
+          "tools/gate/lock.ts",
+          "mac-budget",
+          "mac-gate",
+          "sh",
+          "-c",
+          "echo '2026-01-01T00:00:00Z start sample resource=unlocked log=test'; exec sleep 30",
+        ],
         {
-          env: { ...process.env, TINT_GATE_ADMISSION_DIRECTORY: directory },
-          timeout: 5000,
+          encoding: "utf8",
+          env: {
+            ...process.env,
+            TINT_GATE_BUDGET: "1",
+            TINT_GATE_ADMISSION_DIRECTORY: directory,
+          },
+          timeout: 10_000,
         },
       );
-      assert.equal(available.status, 0);
+      assert.equal(result.status, 124, result.stderr);
+      assert.match(result.stderr, /BUDGET.*active.*sample/);
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }
   },
 );
+
+for (const resource of ["exclusive", "smoke"])
+  test(
+    `a macOS ${resource} step can queue past the former wall cap and pass`,
+    { skip: process.platform !== "darwin" },
+    () => {
+      const directory = mkdtempSync(join(tmpdir(), "tint-gate-queue-budget-"));
+      try {
+        const probe = join(directory, "probe.ts");
+        writeFileSync(
+          probe,
+          `import { gateLaunch } from ${JSON.stringify(new URL("./gate/lock.ts", import.meta.url).href)};
+        gateLaunch("nested", process.argv[2], []);`,
+        );
+        const payload = join(directory, "payload.ts");
+        writeFileSync(payload, 'console.log("null");');
+        const result = spawnSync(
+          "sh",
+          [
+            "-eu",
+            "-c",
+            `
+          /usr/bin/lockf -k "$TINT_GATE_EXCLUSIVE_LOCK" sh -c 'touch "$1"; sleep 3' holder "$1" &
+          holder=$!
+          until [ -e "$1" ]; do sleep 0.02; done
+          "$2" tools/gate/lock.ts mac-budget mac-gate sh -eu -c '
+            . tools/gate/common.sh
+            if [ "$1" = exclusive ]; then
+              gate_step_timeout=1 run_step queued exclusive true
+            else
+              run_step queued memory env TINT_GATE_LAUNCH_LOCK="$TINT_GATE_EXCLUSIVE_LOCK" TINT_GATE_STEP_TIMEOUT=1 node "$2" "$3"
+            fi
+          ' gate-step "$3" "$4" "$5"
+          wait "$holder"
+        `,
+            "test",
+            join(directory, "ready"),
+            process.execPath,
+            resource,
+            probe,
+            payload,
+          ],
+          {
+            encoding: "utf8",
+            env: {
+              ...process.env,
+              TINT_GATE_BUDGET: "2",
+              TINT_GATE_WALL_TIMEOUT: "1",
+              TINT_GATE_ADMISSION_DIRECTORY: directory,
+              TINT_GATE_MEMORY_DIRECTORY: join(directory, "memory"),
+              TINT_GATE_EXCLUSIVE_LOCK: join(directory, "launch.lock"),
+            },
+            timeout: 10_000,
+          },
+        );
+        const evidence = /^head=\S+ evidence=(.+)$/m.exec(result.stdout)?.[1];
+        try {
+          assert.ifError(result.error);
+          assert.equal(result.status, 0, result.stdout + result.stderr);
+          const step =
+            /gate-step step=queued active-ms=(\d+) queue-ms=(\d+)/.exec(
+              result.stdout,
+            );
+          assert.ok(step, result.stdout);
+          assert.ok(Number(step[1]) < 1000, result.stdout);
+          assert.ok(Number(step[2]) >= 2000, result.stdout);
+          assert.match(
+            result.stdout,
+            /gate-budget active-ms=\d+ queue-ms=[2-9]\d{3}/,
+          );
+        } finally {
+          if (evidence) rmSync(evidence, { recursive: true, force: true });
+        }
+      } finally {
+        rmSync(directory, { recursive: true, force: true });
+      }
+    },
+  );
 
 test("fixture preparation releases its memory slot before admission and records phases", async () => {
   if (process.platform !== "darwin") return;

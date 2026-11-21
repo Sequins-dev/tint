@@ -16,13 +16,14 @@ output. Run the gate on a fixed source tree.
 
 At most two full macOS gates are admitted at a time. Additional gates wait
 for an admission slot before building or running tests. The active budget
-is 3,600 seconds (`TINT_GATE_BUDGET`). It excludes admission, top-level
-memory and launch acquisition, and periods when every native test worker
-is queued. The independent wall deadline (`TINT_GATE_WALL_TIMEOUT`) defaults
-to the greater of 7,200 seconds and the active budget. Both limits exit 124,
-name the step, and record the deadline in `budget.tsv` when evidence exists.
-The final budget line reports active and queued milliseconds, including
-admission.
+is 3,600 seconds (`TINT_GATE_BUDGET`). It excludes admission, memory and
+launch acquisition, including Test262 smoke launches, and periods when
+every native test worker is queued. A gate can wait for a shared lock as
+long as needed. An active budget expiry exits 124, names the step, and
+records the deadline in `budget.tsv` when evidence exists.
+Each `gate-step` line reports active and queued milliseconds for that step.
+The final `gate-budget` line reports the totals, including time spent
+waiting for admission.
 
 The macOS gate runs ordinary builds and checks without locks. Its memory
 semaphore uses `TINT_GATE_MEMORY_SLOTS` slots (default three) shared across
@@ -62,7 +63,7 @@ Build, admission and execution continue to count against its deadline.
 DevTools sessions wait asynchronously for the launch lock. Their test
 deadlines start after admission in the gate.
 The batch logs active time and all-worker queue time (wall time), and the
-per-image journal logs individual lock waits. The separate wall deadline continues through those waits.
+per-image journal logs individual lock waits.
 Defaults are 1,800 seconds per bootstrap stage (`TINT_GATE_STAGE_TIMEOUT`),
 1,800 seconds for the native test batch (`TINT_GATE_NATIVE_TIMEOUT`), and
 600 seconds per Test262 admission or execution launch (`TINT_GATE_SMOKE_TIMEOUT`).
@@ -75,7 +76,7 @@ progress. It observes the identified inferior's accumulated CPU time, so a
 stopped or blocked inferior can time out even while its profiler is busy.
 If the inferior is still launching, it watches the debugger, then falls
 back to the command tree for jobs without a debugger. An idle stall exits
-125. An active or wall deadline exits 124. The watchdog snapshots process
+125. An active deadline exits 124. The watchdog snapshots process
 state and CPU time, attempts a bounded five-second `sample`, and kills the
 command tree, including the debugger and inferior. The gate records the
 step in `stalls.tsv`, `stall-<step>.txt`, and the final summary.

@@ -13,7 +13,6 @@ jobs:
   gate:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: ${{ matrix.timeout-minutes }}
     strategy:
       fail-fast: false
       matrix:
@@ -22,17 +21,14 @@ jobs:
             runner: macos-26
             arch: arm64
             gate: mac
-            timeout-minutes: 135
           - name: Linux x86-64
             runner: ubuntu-24.04
             arch: x64
             gate: linux
-            timeout-minutes: 110
           - name: Linux arm64
             runner: ubuntu-24.04-arm
             arch: arm64
             gate: linux
-            timeout-minutes: 110
 
     env:
       TEST262_SHA: 91c70759363c46557b694792bf34a2551a7af5ba

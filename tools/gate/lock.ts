@@ -8,6 +8,7 @@ import {
   mkdtempSync,
   mkdirSync,
   openSync,
+  rmSync,
   statSync,
   writeFileSync,
 } from "node:fs";
@@ -188,24 +189,32 @@ export function gateMemorySlots(env: NodeJS.ProcessEnv): string[] {
 
 export function gateLaunch<T>(label: string, tool: string, args: string[]): T {
   const script = fileURLToPath(new URL("./exclusive-step.sh", import.meta.url));
-  const result = spawnSync(
-    "sh",
-    [script, label, process.execPath, tool, ...args],
-    {
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        TINT_GATE_EXCLUSIVE_LOCK: process.env.TINT_GATE_LAUNCH_LOCK,
+  const ready = process.env.TINT_GATE_STEP_READY;
+  const queued = ready === undefined ? undefined : ready + ".queued";
+  if (queued) writeFileSync(queued, "");
+  try {
+    const result = spawnSync(
+      "sh",
+      [script, label, process.execPath, tool, ...args],
+      {
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          TINT_GATE_EXCLUSIVE_LOCK: process.env.TINT_GATE_LAUNCH_LOCK,
+          TINT_GATE_QUEUE_FILE: queued,
+        },
+        stdio: ["ignore", "pipe", "inherit"],
       },
-      stdio: ["ignore", "pipe", "inherit"],
-    },
-  );
-  if (result.error !== undefined) throw result.error;
-  if (result.status !== 0)
-    throw Error(
-      "Exclusive native launch failed: " + (result.signal ?? result.status),
     );
-  return JSON.parse(result.stdout) as T;
+    if (result.error !== undefined) throw result.error;
+    if (result.status !== 0)
+      throw Error(
+        "Exclusive native launch failed: " + (result.signal ?? result.status),
+      );
+    return JSON.parse(result.stdout) as T;
+  } finally {
+    if (queued) rmSync(queued, { force: true });
+  }
 }
 
 function runGateCommand(command: string, args: string[], fd?: number): number {
@@ -233,6 +242,8 @@ async function runTimed(
   process.env.TINT_GATE_STEP_TIMEOUT ??= "3600";
   try {
     markStepReady();
+    const queued = process.env.TINT_GATE_QUEUE_FILE;
+    if (queued) rmSync(queued, { force: true });
     return await runWithWatchdog(label, command, args, true);
   } finally {
     const timing = process.env.TINT_GATE_LOCK_TIMING;
@@ -263,16 +274,23 @@ function runMacGateBudget(command: string, args: string[]): Promise<number> {
   if (!Number.isInteger(budget) || budget < 1 || budget > 2_147_483)
     throw Error("Expected TINT_GATE_BUDGET (1–2147483 seconds)");
 
-  const wall = Number(
-    process.env.TINT_GATE_WALL_TIMEOUT ?? Math.max(7200, budget),
-  );
-  if (!Number.isInteger(wall) || wall < 1 || wall > 2_147_483)
-    throw Error("Expected TINT_GATE_WALL_TIMEOUT (1–2147483 seconds)");
-
   let step = "admission";
   let resource = "";
   let evidence: string | undefined;
   let batchWaiting: (() => boolean) | undefined;
+  let stepActive = 0;
+  let stepQueued = 0;
+  function reportStep() {
+    if (resource || step === "admission") {
+      const active = Math.round(stepActive);
+      const queued = Math.round(stepQueued);
+      console.log(
+        `gate-step step=${step} active-ms=${active} queue-ms=${queued}`,
+      );
+    }
+    stepActive = 0;
+    stepQueued = 0;
+  }
   function stopGate(pid: number) {
     let inferior: number | undefined;
     try {
@@ -282,14 +300,14 @@ function runMacGateBudget(command: string, args: string[]): Promise<number> {
       killGateProcess(pid, inferior);
     }
   }
-  function timeout(pid: number, kind: "active" | "wall", seconds: number) {
-    const message = `BUDGET kind=${kind} step=${step} timeout-seconds=${seconds}`;
+  function timeout(pid: number) {
+    const message = `BUDGET kind=active step=${step} timeout-seconds=${budget}`;
     console.error(message + (evidence ? " evidence=" + evidence : ""));
     try {
       if (evidence)
         appendFileSync(
           join(evidence, "budget.tsv"),
-          `${step}\t${seconds}\t${kind}\n`,
+          `${step}\t${budget}\tactive\n`,
         );
     } finally {
       stopGate(pid);
@@ -312,17 +330,19 @@ function runMacGateBudget(command: string, args: string[]): Promise<number> {
         return (
           evidence !== undefined &&
           /^(memory|memory-watchdog|exclusive)$/.test(resource) &&
-          !existsSync(join(evidence, "ready-" + step))
+          (!existsSync(join(evidence, "ready-" + step)) ||
+            existsSync(join(evidence, "ready-" + step + ".queued")))
         );
       },
+      onInterval: (elapsed, queued) => {
+        if (queued) stepQueued += elapsed;
+        else stepActive += elapsed;
+      },
       onClock: (active, queued) => {
+        reportStep();
         console.log(`gate-budget active-ms=${active} queue-ms=${queued}`);
       },
-      onTimeout: (pid) => timeout(pid, "active", budget),
-      wallLimit: {
-        seconds: wall,
-        onTimeout: (pid) => timeout(pid, "wall", wall),
-      },
+      onTimeout: timeout,
       onInterrupt: stopGate,
       onLine: (line) => {
         const gate = /^head=[a-f0-9]+ evidence=(.+)$/.exec(line);
@@ -330,15 +350,18 @@ function runMacGateBudget(command: string, args: string[]): Promise<number> {
           line,
         );
         if (gate) {
+          reportStep();
           evidence = gate[1]!;
           batchWaiting = nativeBatchWaiting(
             join(evidence, "native-images.jsonl"),
           );
           step = "setup";
         } else if (started) {
+          reportStep();
           step = started[1]!;
           resource = started[2]!;
         } else if (/^\S+ finish [a-zA-Z0-9_-]+ exit=/.test(line)) {
+          reportStep();
           step = "between-steps";
           resource = "";
         }

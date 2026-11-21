@@ -265,7 +265,7 @@ export async function runWithWatchdog(
 
 interface DeadlineHandlers {
   onTimeout: (pid: number) => void;
-  wallLimit?: { seconds: number; onTimeout: (pid: number) => void };
+  onInterval?: (elapsedMs: number, queued: boolean) => void;
   onClock?: (activeMs: number, waitingMs: number) => void;
   onInterrupt?: (pid: number) => void;
   onLine?: (line: string) => void;
@@ -283,7 +283,7 @@ export function runWithDeadline(
     onLine,
     waiting,
     idle,
-    wallLimit,
+    onInterval,
     onClock,
   }: DeadlineHandlers,
 ): Promise<number> {
@@ -293,7 +293,6 @@ export function runWithDeadline(
   });
   if (child.stdout && onLine) {
     child.stdout.pipe(process.stdout, { end: false });
-    createInterface({ input: child.stdout }).on("line", onLine);
   }
   return new Promise((resolve, reject) => {
     function stop(status: number, cleanup: (pid: number) => void) {
@@ -310,21 +309,30 @@ export function runWithDeadline(
     const interrupt = () => stop(130, onInterrupt!);
     const terminate = () => stop(143, onInterrupt!);
     const budgetMs = seconds * 1000;
-    const started = performance.now();
-    let tick = started;
+    let tick = performance.now();
     let activeMs = 0;
     let waitingMs = 0;
     let paused = waiting?.() ?? false;
     let finished = false;
     function account() {
       const now = performance.now();
-      if (paused) waitingMs += now - tick;
-      else activeMs += now - tick;
+      const elapsed = now - tick;
+      if (paused) waitingMs += elapsed;
+      else activeMs += elapsed;
+      onInterval?.(elapsed, paused);
       tick = now;
+    }
+    if (child.stdout && onLine) {
+      createInterface({ input: child.stdout }).on("line", (line) => {
+        if (finished) return;
+        account();
+        onLine(line);
+        paused = waiting?.() ?? false;
+      });
     }
     let nextIdleCheck = tick;
     const timer =
-      waiting || idle || wallLimit
+      waiting || idle
         ? setInterval(() => {
             account();
             try {
@@ -342,9 +350,7 @@ export function runWithDeadline(
               stop(1, killGateProcess);
               return;
             }
-            if (wallLimit && tick - started >= wallLimit.seconds * 1000)
-              stop(124, wallLimit.onTimeout);
-            else if (activeMs >= budgetMs) stop(124, onTimeout);
+            if (activeMs >= budgetMs) stop(124, onTimeout);
           }, 100)
         : setTimeout(() => stop(124, onTimeout), budgetMs);
     function clearDeadline() {
