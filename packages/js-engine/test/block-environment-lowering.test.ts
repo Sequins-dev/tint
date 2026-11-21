@@ -111,3 +111,52 @@ test("eliding empty block environments is unobservable", () => {
     assert.deepEqual(realm.printed, printed, source);
   }
 });
+
+test("a for-let loop without an escaping binding allocates only its initial environment", () => {
+  const base = environments("function count() {}");
+  assert.equal(
+    environments("function count() { for (let i = 0; i < 5; i++) print(i); }"),
+    base + 1,
+  );
+});
+
+test("for-let captures keep distinct initialization and iteration environments", () => {
+  const realm = createLoweredRealm();
+  const source = `
+    function run() {
+      let first, second, third;
+      for (let i = 0, initial = () => i; i < 2; i++) {
+        if (i === 0) {
+          first = initial;
+          second = () => i;
+          continue;
+        }
+        third = () => i;
+      }
+      print(String(first()));
+      print(String(second()));
+      print(String(third()));
+    }
+    run();
+  `;
+  assert.equal(realm.run(source), "none");
+  assert.deepEqual(realm.printed, ["0", "0", "1"]);
+});
+
+test("a direct eval closure keeps its own for-let iteration environment", () => {
+  const realm = createLoweredRealm();
+  const source = `
+    function run() {
+      let first, second;
+      for (let i = 0; i < 2; i++) {
+        if (i === 0) first = eval("() => i");
+        else second = eval("() => i");
+      }
+      print(String(first()));
+      print(String(second()));
+    }
+    run();
+  `;
+  assert.equal(realm.run(source), "none");
+  assert.deepEqual(realm.printed, ["0", "1"]);
+});

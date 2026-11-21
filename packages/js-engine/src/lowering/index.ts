@@ -400,6 +400,21 @@ function lowerScriptEntry(
   const bindingRecordContracts = new Map<number, TypeNode>();
   const recordTypes = new Map<string, TypeNode>();
   const boundBindings = bound.value.bindings;
+  const dynamicBindings =
+    directEvalOwners.length !== 0 || bound.value.containsWith;
+  // The binder does not mark captures of bindings outside functions. Keep
+  // copying those environments, and any environment observable by direct eval.
+  const copyLoopEnvironments = new Set<number>();
+  for (const binding of boundBindings) {
+    if (binding === undefined) throw "SCRIPT_BINDING_INVARIANT";
+    if (binding.kind !== "let") continue;
+    const bindingScope = bound.value.scopes[binding.scope];
+    if (
+      bindingScope?.kind === "for" &&
+      (binding.owner === undefined || binding.captured)
+    )
+      copyLoopEnvironments.add(bindingScope.node.start);
+  }
   if (checkContracts) {
     for (const declaration of sourceTypes?.statements ?? []) {
       if (declaration === undefined) throw "SOURCE_TYPE_DECLARATION_INVARIANT";
@@ -5664,7 +5679,10 @@ function lowerScriptEntry(
             true,
           );
           lexicalBindings([initializer], lexical);
-          if (initializer.mode === "let") {
+          if (
+            initializer.mode === "let" &&
+            (copyLoopEnvironments.has(node.start) || dynamicBindings)
+          ) {
             for (const binding of initializer.declarations) {
               if (binding === undefined) throw "SCRIPT_BINDING_INVARIANT";
               for (const identifier of bindingIdentifiers(binding)) {
