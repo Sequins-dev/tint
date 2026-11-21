@@ -2,6 +2,7 @@ import { sysVCallbackFrame } from "@tint/abi/c/sysv";
 import { nodeFfiScalarKind, type CCallLayout } from "@tint/abi/c";
 import {
   callObjectValueOrThrow,
+  typedRecordOf,
   viewObjectValue,
   type ProgramRealmCore,
 } from "@tint/js-runtime/objects";
@@ -12,7 +13,13 @@ import {
   createWeakSlot,
   weakSlotKey,
 } from "../intrinsics/weak.ts";
-import { readScalar, writeScalar } from "./ffi-memory.ts";
+import { viewUnaryNumberClosure } from "../intrinsics/value-views.ts";
+import {
+  readFfiNumberCell,
+  readScalar,
+  writeScalar,
+  writeTypedFfiResult,
+} from "./ffi-memory.ts";
 import {
   classifyScalarCall,
   ffiError,
@@ -32,6 +39,14 @@ interface CallbackArgument {
   readonly directlyReadable: boolean;
 }
 
+interface UnaryFfiCallback {
+  readonly target: (value: number) => number;
+  readonly argument: CallbackArgument;
+  readonly resultKind: number;
+  readonly resultOffset: number;
+  readonly signExtend: boolean;
+}
+
 interface CallbackWorkspace {
   readonly frame: Uint8Array;
   readonly cellBytes: Uint8Array;
@@ -48,6 +63,7 @@ export interface FfiCallback {
   readonly workspaces: CallbackWorkspace[];
   readonly weak: unknown;
   strong: unknown;
+  unary: UnaryFfiCallback | undefined;
   executing: number;
 }
 export interface FfiCallbacks {
@@ -76,6 +92,39 @@ export function createFfiCallbacks(
       frame: host.view(guard, stack + stackBytes),
       cellBytes: host.view(guard, Cell.size),
       scratch: new Uint8Array(Cell.size),
+    };
+  }
+
+  function unaryCallback(
+    signature: FfiSignature,
+    layout: CCallLayout,
+    parameters: readonly CallbackArgument[],
+    callback: unknown,
+  ): UnaryFfiCallback | undefined {
+    const argument = parameters[0];
+    const result = signature.result;
+    if (
+      parameters.length !== 1 ||
+      argument === undefined ||
+      !argument.directlyReadable ||
+      argument.kind === 6 ||
+      argument.kind === 7 ||
+      result === "void" ||
+      result === "i64" ||
+      result === "u64" ||
+      result === "pointer"
+    )
+      return undefined;
+    const object = viewObjectValue(callback, core.object);
+    if (object === undefined) return undefined;
+    const native = viewUnaryNumberClosure(typedRecordOf(object));
+    if (native === undefined) return undefined;
+    return {
+      target: native.target,
+      argument,
+      resultKind: nodeFfiScalarKind(result),
+      resultOffset: result === "f32" || result === "f64" ? floats : registers,
+      signExtend: layout.result.extend === "sign",
     };
   }
 
@@ -132,6 +181,7 @@ export function createFfiCallbacks(
       workspaces: [workspace],
       weak: createWeakSlot(callback, undefined, false),
       strong: callback,
+      unary: unaryCallback(signature, layout, parameters, callback),
       executing: 0,
     };
     entries.set(id, entry);
@@ -148,6 +198,7 @@ export function createFfiCallbacks(
     entries.delete(callback.id);
     clearWeakSlot(callback.weak);
     callback.strong = undefined;
+    callback.unary = undefined;
     host.release(callback.address);
   }
   function ref(callback: FfiCallback, enabled: boolean): void {
@@ -161,6 +212,14 @@ export function createFfiCallbacks(
         "Callback not found",
       );
     callback.strong = enabled ? value : undefined;
+    callback.unary = enabled
+      ? unaryCallback(
+          callback.signature,
+          callback.layout,
+          callback.parameters,
+          value,
+        )
+      : undefined;
   }
   function dispatch(id: number, address: number): number {
     const callback = entries.get(id);
@@ -190,6 +249,33 @@ export function createFfiCallbacks(
           raw[floats + byte] = 0;
         }
         return 0;
+      }
+      const native = callback.unary;
+      const agent = core.realm.agent;
+      if (native !== undefined && agent.activeContext?.realm === core.realm) {
+        retargetCallbackView(cellBytes, address + native.argument.offset);
+        const input = readFfiNumberCell(cell, native.argument.kind);
+        const previousDepth = agent.executionContextDepth;
+        let value: number;
+        agent.executionContextDepth = previousDepth + 1;
+        try {
+          value = native.target(input);
+        } catch (error) {
+          return host.abort("Callbacks cannot throw an exception");
+        } finally {
+          agent.executionContextDepth = previousDepth;
+        }
+        retargetCallbackView(cellBytes, address + native.resultOffset);
+        cell.u64 = 0;
+        try {
+          writeTypedFfiResult(core, cell, native.resultKind, value);
+        } catch (error) {
+          return host.abort(
+            "Callback returned invalid value for declared FFI type",
+          );
+        }
+        if (native.signExtend) cell.i64 = value;
+        return 1;
       }
       const args: unknown[] = [];
       for (const parameter of callback.parameters) {

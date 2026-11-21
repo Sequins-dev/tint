@@ -18,7 +18,7 @@ import type { SourceModule } from "@tint/typescript/modules/model";
 
 export const staticFfiModule = "packages/native-runtime/src/node/ffi-static.ts";
 const objectModule = "packages/js-runtime/src/objects/index.ts";
-const ffiMemoryModule = "packages/native-runtime/src/node/ffi-memory.ts";
+export const ffiMemoryModule = "packages/native-runtime/src/node/ffi-memory.ts";
 const nodeFfiModule = "packages/native-runtime/src/node/ffi.ts";
 
 export interface StaticFfiPlan {
@@ -171,6 +171,109 @@ export function staticFfiNumberEntry(index: number): string {
   return "callStaticFfiNumber" + String(index);
 }
 
+export function fixedFfiCallArities(
+  modules: readonly SourceModule[],
+): number[] {
+  const arities = new Set<number>();
+  for (const source of modules) {
+    if (source === undefined) throw "fixed FFI source invariant";
+    rewriteModule(source.module, {
+      expression: (mapped, original): Expression => {
+        if (
+          original.kind === "call" &&
+          !original.optional &&
+          original.arguments.length <= 256 &&
+          !original.arguments.some((argument) => argument?.kind === "spread")
+        )
+          arities.add(original.arguments.length);
+        return mapped;
+      },
+    });
+  }
+  const ordered: number[] = [];
+  for (let arity = 0; arity <= 256; arity++)
+    if (arities.has(arity)) ordered.push(arity);
+  return ordered;
+}
+
+export function fixedFfiCallEntry(arity: number): string {
+  return "tryFixedFfi" + String(arity);
+}
+
+export function mixedFfiCallEntry(arity: number): string {
+  return "tryMixedFfi" + String(arity);
+}
+
+function fixedFfiSource(
+  plans: readonly StaticFfiPlan[],
+  arity: number,
+  mixed: boolean,
+): string {
+  const parameters: string[] = ["callee:unknown"];
+  let numbers = "",
+    general = "";
+  for (let i = 0; i < arity; i++) {
+    parameters.push("p" + i + (mixed ? ":unknown" : ":number"));
+    numbers += "plan.writeNumber(frame," + i + ",p" + i + ");\n";
+    general += "plan.writeArgument(frame," + i + ",p" + i + ");\n";
+  }
+  let body =
+    "const plan=projectTypedFfiCall(callee);\n" +
+    "if(plan===undefined||plan.arity!==" +
+    arity +
+    ")return undefined;\n" +
+    "const mode=plan.mode();if(mode===0)return undefined;\n";
+  if (!mixed)
+    for (let i = 0; i < plans.length; i++) {
+      const plan = plans[i];
+      if (plan === undefined) throw "fixed FFI plan invariant";
+      if (
+        plan.signature.parameters.length !== arity ||
+        plan.signature.result.kind === "void" ||
+        !hasStaticFfiNumberEntry(plan)
+      )
+        continue;
+      const args = ["plan.address"];
+      for (let p = 0; p < arity; p++) {
+        const type = plan.signature.parameters[p];
+        if (type?.kind !== "scalar") throw "fixed FFI parameter invariant";
+        args.push(
+          "plan.checkNumber(" +
+            nodeFfiScalarKind(type.scalar) +
+            ",p" +
+            p +
+            "," +
+            p +
+            ")",
+        );
+      }
+      body +=
+        "if(mode===1&&plan.staticIndex===" +
+        i +
+        ")return " +
+        staticFfiNumberEntry(i) +
+        "(" +
+        args.join(",") +
+        ");\n";
+    }
+  const name = mixed ? mixedFfiCallEntry(arity) : fixedFfiCallEntry(arity);
+  return (
+    "export function " +
+    name +
+    "(" +
+    parameters.join(",") +
+    "):number|undefined{\n" +
+    body +
+    "const mayCallback=mode===2;const frame=plan.workspace(mayCallback);try{\n" +
+    (arity === 0
+      ? ""
+      : mixed
+        ? general
+        : "if(plan.numbersOnly){\n" + numbers + "}else{\n" + general + "}\n") +
+    "return plan.complete(frame,mayCallback);\n}finally{plan.release(frame);}}\n"
+  );
+}
+
 /** A trusted compiled wrapper unboxes and validates each argument before
  * calling a numeric C prototype at the binding's immutable symbol address. */
 function numericFfiSource(plan: StaticFfiPlan, index: number): string {
@@ -217,6 +320,7 @@ function numericFfiSource(plan: StaticFfiPlan, index: number): string {
 export function makeStaticFfiModule(
   plans: readonly StaticFfiPlan[],
   weakProcessing: boolean,
+  fixedArities: readonly number[] = [],
 ): SourceModule {
   let text =
     'import type { ProgramRealmCore } from "objects";\n' +
@@ -250,6 +354,14 @@ export function makeStaticFfiModule(
     lookup += 'if(key==="' + plan.key + '")return ' + String(index) + ";\n";
     dispatch +=
       "if(index===" + String(index) + ")return " + entry + "(frame);\n";
+  }
+  if (fixedArities.length !== 0) {
+    text = 'import { projectTypedFfiCall } from "memory";\n' + text;
+    for (const arity of fixedArities) {
+      if (arity === undefined) throw "fixed FFI arity invariant";
+      text += fixedFfiSource(plans, arity, false);
+      if (arity !== 0) text += fixedFfiSource(plans, arity, true);
+    }
   }
   const parsed = parseModule(
     createSourceTextView(

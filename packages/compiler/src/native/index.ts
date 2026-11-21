@@ -119,6 +119,10 @@ import {
 } from "../spill-files.ts";
 import type { FunctionStore } from "@tint/ir/storage";
 import {
+  ffiMemoryModule,
+  fixedFfiCallArities,
+  fixedFfiCallEntry,
+  mixedFfiCallEntry,
   recognizeStaticFfi,
   makeStaticFfiModule,
   staticFfiEntry,
@@ -264,6 +268,7 @@ export interface CompileRequest extends ModuleRequest {
   /** Executable hosts select whether the runtime processes weak slots. */
   readonly nodeFfiWeakProcessing?: boolean;
   readonly nodeFfiRealmModules?: ReadonlySet<string>;
+  readonly nodeFfiFixedArities?: readonly number[];
   /** Require the hosted context's optional linear-allocation state at byte 56. */
   readonly linearAllocation?: boolean;
   readonly generationalBarriers?: boolean;
@@ -744,8 +749,25 @@ function withStaticFfiRuntimes(
         );
   const weakProcessing = request.nodeFfiWeakProcessing !== false;
   const plans = weakProcessing ? recognizeStaticFfi(sources, signedChar) : [];
-  if (weakProcessing && plans.length === 0) return request;
-  const generated = makeStaticFfiModule(plans, weakProcessing);
+  const trusted = new Set(request.runtimes.map((runtime) => runtime?.module));
+  const application = generalApplicationModules(
+    request,
+    requestModules(
+      request,
+      edges === undefined
+        ? undefined
+        : sourceDependencyClosure([request.entry], (id) =>
+            trusted.has(id) ? undefined : edges(id),
+          ),
+    ),
+  );
+  const arities =
+    weakProcessing && application.ok
+      ? fixedFfiCallArities(application.value)
+      : [];
+  if (weakProcessing && plans.length === 0 && arities.length === 0)
+    return request;
+  const generated = makeStaticFfiModule(plans, weakProcessing, arities);
   function replace(modules: readonly SourceModule[]): SourceModule[] {
     return modules.map((source) =>
       source?.id === generated.id ? generated : source,
@@ -807,6 +829,7 @@ function withStaticFfiRuntimes(
     moduleLoader,
     runtimes,
     foreignMemoryBindings: bindings,
+    nodeFfiFixedArities: arities,
   };
 }
 
@@ -857,6 +880,24 @@ function withNodeRuntimes(
     }
   }
   if (!nodeFfi) return { ...request, runtimes, recordBindings };
+  const unaryView = "viewUnaryNumberClosure";
+  retain({
+    module: nativeValueViewsModule,
+    namespace: "native-value-views",
+    retainedExports: [unaryView],
+  });
+  if (
+    !recordBindings.some(
+      (binding) =>
+        binding?.module === nativeValueViewsModule &&
+        binding.name === unaryView,
+    )
+  )
+    recordBindings.push({
+      module: nativeValueViewsModule,
+      name: unaryView,
+      operation: "view",
+    });
   const finalizerView = "viewWeakRegistryOwner";
   if (!recordBindings.some((binding) => binding?.name === finalizerView)) {
     const values = "packages/js-runtime/src/objects/values.ts";
@@ -933,7 +974,20 @@ function withTypedNodeFfiRealm(request: CompileRequest): CompileRequest {
   const values = "packages/js-runtime/src/objects/values.ts";
   const objects = "packages/js-runtime/src/objects/index.ts";
   const views = ["viewObjectValue", "viewSymbolValue", "viewBigIntValue"];
+  const arities = request.nodeFfiFixedArities ?? [];
   const runtimes: RuntimeSource[] = request.runtimes.map((runtime) => {
+    if (runtime?.module === staticFfiModule && arities.length !== 0) {
+      const retained: string[] = runtime.retainedExports?.slice() ?? [];
+      for (const arity of arities) {
+        if (arity === undefined) throw "fixed FFI arity invariant";
+        retained.push(fixedFfiCallEntry(arity));
+        if (arity !== 0) retained.push(mixedFfiCallEntry(arity));
+      }
+      return {
+        ...runtime,
+        retainedExports: retained,
+      };
+    }
     if (runtime?.module !== values) return runtime;
     return {
       module: values,
@@ -954,6 +1008,19 @@ function withTypedNodeFfiRealm(request: CompileRequest): CompileRequest {
       retainedExports: views,
     });
   const recordBindings = request.recordBindings?.slice() ?? [];
+  if (arities.length !== 0) {
+    const witness = "viewTypedFfiCall";
+    runtimes.push({
+      module: ffiMemoryModule,
+      namespace: "node-ffi-memory",
+      retainedExports: [witness],
+    });
+    recordBindings.push({
+      module: ffiMemoryModule,
+      name: witness,
+      operation: "view",
+    });
+  }
   for (const name of views) {
     if (name === undefined) throw "node runtime view invariant";
     if (
@@ -2398,6 +2465,17 @@ function checkTypedProgram(
   const classifierHelper = helpers.get(
     "general-object-views:generalValueTypeof",
   );
+  const fixedFfiHelpers: string[] = [];
+  if (request.nodeFfiRealmModules !== undefined)
+    for (const arity of request.nodeFfiFixedArities ?? []) {
+      if (arity === undefined) throw "fixed FFI arity invariant";
+      const helper = helpers.get("node-ffi-static:" + fixedFfiCallEntry(arity));
+      if (helper !== undefined) fixedFfiHelpers.push(helper);
+      const mixedFfi = helpers.get(
+        "node-ffi-static:" + mixedFfiCallEntry(arity),
+      );
+      if (mixedFfi !== undefined) fixedFfiHelpers.push(mixedFfi);
+    }
   const retainClassifier =
     classifierHelper !== undefined &&
     (helpers.has("dynamic-object:projectUnaryNumber") ||
@@ -2506,7 +2584,11 @@ function checkTypedProgram(
     }
     const bound = bindModule(module, globals);
     if (!bound.ok) return { ok: false, error: bound.error.message };
-    if ((callsGeneral && callHelper !== undefined) || retainClassifier) {
+    if (
+      (callsGeneral && callHelper !== undefined) ||
+      retainClassifier ||
+      fixedFfiHelpers.length !== 0
+    ) {
       // Realm calls use specialized dependencies. Close the stateless
       // classifier and call entries after specialization.
       const functionNames = new Map<Span, string>();
@@ -2533,7 +2615,7 @@ function checkTypedProgram(
         names.add(target.name);
         if (known === undefined) dependencies.set(name, names);
       }
-      const pending: string[] = [];
+      const pending = fixedFfiHelpers.slice();
       if (callsGeneral && callHelper !== undefined) pending.push(callHelper);
       if (callsGeneral && constructHelper !== undefined)
         pending.push(constructHelper);
@@ -2942,6 +3024,20 @@ function lowerTypedProgram(
     "constructGeneralValue",
     "general-object-views",
   );
+  const fixedFfiCalls = new Map<number, number>();
+  const mixedFfiCalls = new Map<number, number>();
+  if (request.nodeFfiRealmModules !== undefined) {
+    for (const arity of request.nodeFfiFixedArities ?? []) {
+      if (arity === undefined) throw "fixed FFI arity invariant";
+      const entry = realmHelper(fixedFfiCallEntry(arity), "node-ffi-static");
+      if (entry !== undefined) fixedFfiCalls.set(arity, entry);
+      const mixedEntry = realmHelper(
+        mixedFfiCallEntry(arity),
+        "node-ffi-static",
+      );
+      if (mixedEntry !== undefined) mixedFfiCalls.set(arity, mixedEntry);
+    }
+  }
   const errorView = realmHelper("nativeErrorReceiver", "general-record-views");
   const errorOperation = realmHelper(
     "realmErrorOperation",
@@ -2983,6 +3079,8 @@ function lowerTypedProgram(
               applies: realmTypeofSourcePredicate(ranges, realmTypeofModules),
             },
       realmCall: callSource,
+      fixedFfiCalls: fixedFfiCalls.size === 0 ? undefined : fixedFfiCalls,
+      mixedFfiCalls: mixedFfiCalls.size === 0 ? undefined : mixedFfiCalls,
       realmConstruct: constructSource,
       realmErrors:
         realmTypeofModules === undefined ||

@@ -15,6 +15,7 @@ import {
   createCallableObject,
   createConstructorObject,
   createDataProperty,
+  createExoticObject,
   createObject,
   createRuntimeError,
   getObjectValuePropertyOrThrow,
@@ -89,23 +90,8 @@ import {
   type StaticFfiNumberCall,
 } from "./ffi-static.ts";
 
-interface ScalarWorkspace {
-  readonly frame: Uint8Array;
-  readonly cells: Uint8Array[];
-  readonly result: Uint8Array;
-  readonly loans: Uint8Array[];
-}
-
-interface ScalarParameter {
-  readonly kind: number;
-  readonly pointer: boolean;
-  readonly offset: number;
-  readonly register: boolean;
-  readonly signExtend: boolean;
-}
-
 interface ScalarCallPlan {
-  readonly parameters: ScalarParameter[];
+  readonly parameters: FfiScalarParameter[];
   readonly stackBytes: number;
   readonly resultOffset: number;
   readonly resultKind: number;
@@ -119,8 +105,8 @@ interface Binding {
   readonly staticCall: number;
   readonly staticNumberCall: StaticFfiNumberCall | undefined;
   readonly numericAddress: number;
-  leafWorkspace: ScalarWorkspace | undefined;
-  callbackWorkspace: ScalarWorkspace | undefined;
+  leafWorkspace: TypedFfiWorkspace | undefined;
+  callbackWorkspace: TypedFfiWorkspace | undefined;
   scalarDepth: number;
   wrapper: unknown;
 }
@@ -143,12 +129,18 @@ interface NodeFfi {
 }
 
 import {
+  checkedTypedFfiNumber,
+  readTypedFfiNumber,
   ffiSharedAddress,
   installFfiMemory,
   readScalar,
   stableFfiBacking,
   writeFfiBigInt,
   writeScalar,
+  writeTypedFfiNumber,
+  type FfiScalarParameter,
+  type TypedFfiCall,
+  type TypedFfiWorkspace,
 } from "./ffi-memory.ts";
 
 const maxPointer = 0xffffffffffffffffn;
@@ -283,7 +275,7 @@ function planScalarCall(
   signature: FfiSignature,
   layout: CCallLayout,
 ): ScalarCallPlan {
-  const parameters: ScalarParameter[] = [];
+  const parameters: FfiScalarParameter[] = [];
   for (let index = 0; index < signature.parameters.length; index++) {
     const type = signature.parameters[index],
       location = layout.arguments[index];
@@ -315,7 +307,7 @@ function scalarWorkspace(
   plan: ScalarCallPlan,
   address: SymbolAddress,
   stable: boolean,
-): ScalarWorkspace {
+): TypedFfiWorkspace {
   // Narrow Darwin stack operands can begin fewer than eight bytes from the
   // end. Padding allows an eight-byte cell view even for the final operand.
   const size = DynamicScalarFrame.size + plan.stackBytes + Cell.size - 1;
@@ -335,6 +327,84 @@ function scalarWorkspace(
   };
 }
 
+function acquireScalarWorkspace(
+  binding: Binding,
+  plan: ScalarCallPlan,
+  mayCallback: boolean,
+): TypedFfiWorkspace {
+  // Reentrant calls cannot overwrite an enclosing call's arguments or roots.
+  const reusable = binding.scalarDepth === 0;
+  let workspace = reusable
+    ? mayCallback
+      ? binding.callbackWorkspace
+      : binding.leafWorkspace
+    : undefined;
+  if (workspace === undefined) {
+    workspace = scalarWorkspace(plan, binding.address, mayCallback);
+    if (reusable) {
+      if (mayCallback) binding.callbackWorkspace = workspace;
+      else binding.leafWorkspace = workspace;
+    }
+  }
+  binding.scalarDepth++;
+  return workspace;
+}
+
+function releaseScalarWorkspace(
+  binding: Binding,
+  workspace: TypedFfiWorkspace,
+): void {
+  const loans = workspace.loans;
+  while (loans.length !== 0) loans.pop();
+  binding.scalarDepth--;
+}
+
+function writeScalarArgument(
+  core: ProgramRealmCore,
+  plan: ScalarCallPlan,
+  workspace: TypedFfiWorkspace,
+  index: number,
+  argument: unknown,
+): void {
+  const parameter = plan.parameters[index],
+    bytes = workspace.cells[index];
+  if (parameter === undefined || bytes === undefined)
+    throw "FFI_SCALAR_ARGUMENT_INVARIANT";
+  if (parameter.pointer) {
+    const loan = writePointerArgument(core, index, argument, bytes);
+    if (loan !== undefined) workspace.loans.push(loan);
+    return;
+  }
+  const cell = Cell.view(bytes);
+  // A narrow stack value can share its cell with a neighbouring operand.
+  if (parameter.register) cell.u64 = 0;
+  writeScalar(core, cell, parameter.kind, argument, index);
+  if (parameter.signExtend && typeof argument === "number") cell.i64 = argument;
+}
+
+function runScalarFrame(
+  core: ProgramRealmCore,
+  binding: Binding,
+  frame: Uint8Array,
+  dispatcher: CallbackDispatcher | undefined,
+): void {
+  const fixed = binding.staticCall;
+  const completed =
+    dispatcher !== undefined
+      ? callScalarForeignCallbacks(callbackState(), dispatcher, frame)
+      : fixed < 0
+        ? callScalarForeign(frame)
+        : staticFfiCall(fixed, frame);
+  if (!completed)
+    return ffiError(
+      core,
+      "range",
+      "ERR_FFI_CALL_FAILED",
+      "Insufficient native stack for FFI arguments",
+    );
+  if (dispatcher !== undefined) rethrowCallbackFailure();
+}
+
 function invokeScalar(
   core: ProgramRealmCore,
   binding: Binding,
@@ -342,71 +412,20 @@ function invokeScalar(
   args: readonly unknown[],
   dispatcher: CallbackDispatcher | undefined,
 ): unknown {
-  // The outer call owns its binding's workspace. Reentrant calls get private
-  // frames so they cannot overwrite saved arguments or borrowed byte roots.
-  const reusable = binding.scalarDepth === 0;
-  let workspace = reusable
-    ? dispatcher === undefined
-      ? binding.leafWorkspace
-      : binding.callbackWorkspace
-    : undefined;
-  if (workspace === undefined) {
-    workspace = scalarWorkspace(
-      plan,
-      binding.address,
-      dispatcher !== undefined,
-    );
-    if (reusable) {
-      if (dispatcher === undefined) binding.leafWorkspace = workspace;
-      else binding.callbackWorkspace = workspace;
-    }
-  }
-  const frame = workspace.frame;
-  const cells = workspace.cells;
-  const result = workspace.result;
-  const loans = workspace.loans;
-  binding.scalarDepth++;
+  const workspace = acquireScalarWorkspace(
+    binding,
+    plan,
+    dispatcher !== undefined,
+  );
   try {
-    for (let index = 0; index < plan.parameters.length; index++) {
-      const parameter = plan.parameters[index],
-        bytes = cells[index];
-      if (parameter === undefined || bytes === undefined)
-        throw "FFI_SCALAR_ARGUMENT_INVARIANT";
-      const argument = args[index];
-      if (parameter.pointer) {
-        const loan = writePointerArgument(core, index, argument, bytes);
-        if (loan !== undefined) loans.push(loan);
-        continue;
-      }
-      const cell = Cell.view(bytes);
-      // A narrow stack value shares the cell with neighbouring operands.
-      // Register cells own all eight bytes and may hold a prior result.
-      if (parameter.register) cell.u64 = 0;
-      writeScalar(core, cell, parameter.kind, argument, index);
-      if (parameter.signExtend && typeof argument === "number")
-        cell.i64 = argument;
-    }
-    const fixed = binding.staticCall;
-    const completed =
-      dispatcher !== undefined
-        ? callScalarForeignCallbacks(callbackState(), dispatcher, frame)
-        : fixed < 0
-          ? callScalarForeign(frame)
-          : staticFfiCall(fixed, frame);
-    if (!completed)
-      return ffiError(
-        core,
-        "range",
-        "ERR_FFI_CALL_FAILED",
-        "Insufficient native stack for FFI arguments",
-      );
-    if (dispatcher !== undefined) rethrowCallbackFailure();
+    for (let index = 0; index < plan.parameters.length; index++)
+      writeScalarArgument(core, plan, workspace, index, args[index]);
+    runScalarFrame(core, binding, workspace.frame, dispatcher);
     return plan.resultKind < 0
       ? undefined
-      : readScalar(Cell.view(result), plan.resultKind);
+      : readScalar(Cell.view(workspace.result), plan.resultKind);
   } finally {
-    while (loans.length !== 0) loans.pop();
-    binding.scalarDepth--;
+    releaseScalarWorkspace(binding, workspace);
   }
 }
 
@@ -642,42 +661,119 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     const slot = binding.wrapper;
     const existing = slot === undefined ? undefined : weakSlotKey(slot);
     if (existing !== undefined) return existing;
-    const call = createCallableObject<ScriptPropertyKey, unknown>(
-      realm.functionPrototype,
-      (_receiver, args): unknown => {
-        requireOpen(state);
-        // The wrapper retains its owner while the library caches the wrapper
-        // weakly. Validate this single identity without searching the realm.
-        if (weakSlotKey(state.identity) !== owner)
-          throw "FFI_WRAPPER_OWNER_INVARIANT";
-        const plan = binding.plan;
-        if (plan === undefined) return closed();
-        const parameters = binding.signature.parameters;
-        if (args.length !== parameters.length)
-          return ffiError(
-            core,
-            "type",
-            "ERR_INVALID_ARG_VALUE",
-            "Invalid argument count: expected " +
-              parameters.length +
-              ", got " +
-              args.length,
-          );
-        const mayCallback = callbacks.active() || hasRegisteredCallbacks();
-        const numberCall = binding.staticNumberCall;
-        if (!mayCallback && numberCall !== undefined)
-          return numberCall(core, binding.numericAddress, args);
-
-        return invokeScalar(
+    const invoke: ObjectCall<unknown> = (_receiver, args): unknown => {
+      requireOpen(state);
+      // The wrapper retains its owner while the library caches the wrapper
+      // weakly. Validate this single identity without searching the realm.
+      if (weakSlotKey(state.identity) !== owner)
+        throw "FFI_WRAPPER_OWNER_INVARIANT";
+      const plan = binding.plan;
+      if (plan === undefined) return closed();
+      const parameters = binding.signature.parameters;
+      if (args.length !== parameters.length)
+        return ffiError(
           core,
-          binding,
-          plan,
-          args,
-          mayCallback ? dispatcher : undefined,
+          "type",
+          "ERR_INVALID_ARG_VALUE",
+          "Invalid argument count: expected " +
+            parameters.length +
+            ", got " +
+            args.length,
         );
-      },
-      callContext,
-    );
+      const mayCallback = callbacks.active() || hasRegisteredCallbacks();
+      const numberCall = binding.staticNumberCall;
+      if (!mayCallback && numberCall !== undefined)
+        return numberCall(core, binding.numericAddress, args);
+
+      return invokeScalar(
+        core,
+        binding,
+        plan,
+        args,
+        mayCallback ? dispatcher : undefined,
+      );
+    };
+    const plan = binding.plan;
+    const typed: TypedFfiCall | undefined =
+      plan === undefined ||
+      plan.resultKind < 0 ||
+      plan.resultKind === 6 ||
+      plan.resultKind === 7
+        ? undefined
+        : {
+            arity: plan.parameters.length,
+            staticIndex:
+              binding.staticNumberCall === undefined ? -1 : binding.staticCall,
+            address: binding.numericAddress,
+            numbersOnly: !plan.parameters.some(
+              (parameter) =>
+                parameter.pointer ||
+                parameter.kind === 6 ||
+                parameter.kind === 7,
+            ),
+            mode: (): number => {
+              if (
+                state.handle === undefined ||
+                weakSlotKey(state.identity) !== owner ||
+                binding.scalarDepth !== 0
+              )
+                return 0;
+              return callbacks.active() || hasRegisteredCallbacks() ? 2 : 1;
+            },
+            workspace: (mayCallback): TypedFfiWorkspace =>
+              acquireScalarWorkspace(binding, plan, mayCallback),
+            checkNumber: (kind, input, index): number =>
+              checkedTypedFfiNumber(core, kind, input, index),
+            writeNumber: (workspace, index, input): void =>
+              writeTypedFfiNumber(
+                core,
+                plan.parameters,
+                workspace,
+                index,
+                input,
+              ),
+            writeArgument: (workspace, index, input): void =>
+              writeScalarArgument(core, plan, workspace, index, input),
+            complete: (workspace, mayCallback): number => {
+              if (!mayCallback)
+                runScalarFrame(core, binding, workspace.frame, undefined);
+              else {
+                const caller = agent.activeContext;
+                const depth = agent.executionContextDepth;
+                agent.activeContext =
+                  caller?.realm === realm
+                    ? caller
+                    : {
+                        realm,
+                        scriptOrModule: caller?.scriptOrModule,
+                      };
+                agent.executionContextDepth = depth + 1;
+                try {
+                  runScalarFrame(core, binding, workspace.frame, dispatcher);
+                } finally {
+                  agent.activeContext = caller;
+                  agent.executionContextDepth = depth;
+                }
+              }
+              return readTypedFfiNumber(workspace.result, plan.resultKind);
+            },
+            release: (workspace): void =>
+              releaseScalarWorkspace(binding, workspace),
+          };
+    const call =
+      typed === undefined
+        ? createCallableObject<ScriptPropertyKey, unknown>(
+            realm.functionPrototype,
+            invoke,
+            callContext,
+          )
+        : createExoticObject<ScriptPropertyKey, unknown>(
+            realm.functionPrototype,
+            { typedRecord: (): unknown => typed },
+            invoke,
+            undefined,
+            callContext,
+          );
     builtinFunctionMetadata(call, binding.name, 0, hooks);
     createDataProperty<ScriptPropertyKey, unknown>(
       call,

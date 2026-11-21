@@ -21,11 +21,12 @@ import {
 
 const sleep = new Int32Array(new SharedArrayBuffer(4));
 
-function tryAcquire(file: string): number | undefined {
+function tryAcquire(file: string, wait: boolean = false): number | undefined {
   const fd = openSync(file, "a");
   let acquired = false;
   try {
-    const result = spawnSync("/usr/bin/lockf", ["-k", "-s", "-t", "0", "3"], {
+    const args = wait ? ["-k", "-s", "3"] : ["-k", "-s", "-t", "0", "3"];
+    const result = spawnSync("/usr/bin/lockf", args, {
       stdio: ["ignore", "ignore", "inherit", fd],
     });
     if (result.error !== undefined) throw result.error;
@@ -42,6 +43,19 @@ function tryAcquire(file: string): number | undefined {
     return acquired ? fd : undefined;
   } finally {
     if (!acquired) closeSync(fd);
+  }
+}
+
+/** Join the kernel's wait queue when exactly one shared lock is required. */
+export function withQueuedGateLock<T>(file: string, run: () => T): T {
+  for (;;) {
+    const fd = tryAcquire(file, true);
+    if (fd === undefined) continue;
+    try {
+      return run();
+    } finally {
+      closeSync(fd);
+    }
   }
 }
 

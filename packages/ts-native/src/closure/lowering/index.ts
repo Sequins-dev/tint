@@ -178,6 +178,8 @@ interface NodeErrorTypes {
 export interface ModuleEntryOptions {
   readonly realmTypeof?: RealmTypeof | undefined;
   readonly realmCall?: number | undefined;
+  readonly fixedFfiCalls?: ReadonlyMap<number, number> | undefined;
+  readonly mixedFfiCalls?: ReadonlyMap<number, number> | undefined;
   readonly realmConstruct?: number | undefined;
   readonly realmErrors?: RealmErrorSources | undefined;
   readonly nodeErrorTypes?: NodeErrorTypes | undefined;
@@ -308,6 +310,8 @@ export function lowerModuleEntries(
     bigIntRepresentation: options?.bigIntRepresentation,
     realmTypeof: options?.realmTypeof,
     realmCall: options?.realmCall,
+    fixedFfiCalls: options?.fixedFfiCalls,
+    mixedFfiCalls: options?.mixedFfiCalls,
     realmConstruct: options?.realmConstruct,
     realmErrors: options?.realmErrors,
     nodeErrorTypes: options?.nodeErrorTypes,
@@ -344,6 +348,8 @@ function lowerEntries(
     bigIntRepresentation?: number | undefined;
     realmTypeof?: RealmTypeof | undefined;
     realmCall?: number | undefined;
+    fixedFfiCalls?: ReadonlyMap<number, number> | undefined;
+    mixedFfiCalls?: ReadonlyMap<number, number> | undefined;
     realmConstruct?: number | undefined;
     realmErrors?: RealmErrorSources | undefined;
     nodeErrorTypes?: NodeErrorTypes | undefined;
@@ -2059,6 +2065,7 @@ function lowerEntries(
         let realmInstanceOf: number | undefined;
         let arrayInstance: ExpressionInfo["arrayInstance"];
         let generalCall: ExpressionInfo["generalCall"];
+        let fixedFfiCall: number | undefined;
         if (viewUse !== undefined) {
           if (node.kind === "member") expr(node.object);
           else if (node.kind === "index") {
@@ -2810,6 +2817,39 @@ function lowerEntries(
                 generalCall = { target: realmCallTarget() };
                 expr(node.callee);
                 exprArguments(node.arguments);
+                const numeric = node.arguments.every(
+                  (argument) =>
+                    argument !== undefined &&
+                    expressions.get(argument)?.type === "number",
+                );
+                const source = (
+                  numeric
+                    ? recordTarget?.fixedFfiCalls
+                    : recordTarget?.mixedFfiCalls
+                )?.get(node.arguments.length);
+                if (
+                  source !== undefined &&
+                  recordTarget?.realmTypeof?.applies(node) === true &&
+                  node.arguments.every(
+                    (argument) =>
+                      argument !== undefined && argument.kind !== "spread",
+                  )
+                ) {
+                  const target = targetIds[source];
+                  const signature =
+                    target === undefined ? undefined : signatures[target];
+                  if (
+                    target === undefined ||
+                    signature?.returnType !== "optional-number" ||
+                    signature.parameters.length !== node.arguments.length + 1 ||
+                    signature.parameters[0] !== "general" ||
+                    signature.parameters
+                      .slice(1)
+                      .some((type) => type !== (numeric ? "number" : "general"))
+                  )
+                    fail("invalid fixed-arity Node FFI entry");
+                  fixedFfiCall = target;
+                }
                 break;
               }
               if (
@@ -3397,6 +3437,7 @@ function lowerEntries(
             bigIntType(checked, checkedType) !== undefined,
           realmTypeof,
           generalCall,
+          fixedFfiCall,
           bigIntRecord:
             (generalTypeof && realmTypeof === undefined) ||
             (dynamicIntrinsic === "flow-property-read" &&

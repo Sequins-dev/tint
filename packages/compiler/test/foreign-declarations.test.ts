@@ -29,7 +29,11 @@ import {
   foreignViewRegistry,
 } from "../src/native/foreign/index.ts";
 
-import { recognizeStaticFfi } from "../src/native/foreign/static-ffi.ts";
+import {
+  fixedFfiCallArities,
+  makeStaticFfiModule,
+  recognizeStaticFfi,
+} from "../src/native/foreign/static-ffi.ts";
 
 const root = new URL("../../native-runtime/src/c/", import.meta.url);
 const commonCrypto = readFileSync(new URL("commoncrypto.d.ts", root), "utf8");
@@ -1337,6 +1341,7 @@ open(null, {
   get lazy() { return { arguments: ["uint64"] }; },
   ["computed"]: { arguments: ["uint8"] },
 });
+
 ffi.dlopen(null, { no_args: {}, char: { return: "char" } });`,
     ),
   );
@@ -1367,4 +1372,31 @@ ffi.dlopen(null, { no_args: {}, char: { return: "char" } });`,
     callClass: "leaf",
     errno: "none",
   });
+});
+
+test("typed FFI calls enroll fixed arities without literal definitions", () => {
+  const parsed = parseModule(
+    createSourceTextView(`
+export function consume(fn: Function, args: number[]): number {
+  fn(...args);
+  fn?.(1);
+  fn();
+  return fn(1, 2) as number;
+}`),
+  );
+  assert.ok(parsed.ok);
+  const arities = fixedFfiCallArities([
+    { id: "consumer", module: parsed.value, dependencies: new Map() },
+  ]);
+  assert.deepEqual(arities, [0, 2]);
+  const generated = makeStaticFfiModule([], true, arities);
+  const entries = generated.module.statements.flatMap((statement) =>
+    statement?.kind === "function" && statement.name.startsWith("tryFixedFfi")
+      ? [[statement.name, statement.parameters.length]]
+      : [],
+  );
+  assert.deepEqual(entries, [
+    ["tryFixedFfi0", 1],
+    ["tryFixedFfi2", 3],
+  ]);
 });

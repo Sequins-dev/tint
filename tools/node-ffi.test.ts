@@ -103,6 +103,11 @@ const typedBridgeSource = `
 import ffi, { DynamicLibrary, dlopen } from "node:ffi";
 import { Buffer } from "node:buffer";
 
+function callNumber(target: unknown, argument: number): number {
+  if (typeof target !== "function") return -1;
+  return target(argument) as number;
+}
+
 export function run(): number {
   const program = new DynamicLibrary(null);
   try {
@@ -117,16 +122,31 @@ export function run(): number {
   const { lib: leaf, functions: numeric } = dlopen(null, {
     abs: { return: "int32", arguments: ["int32"] },
   });
+  const definition = { tolower: { return: "int32", arguments: ["int32"] } };
+  const runtime = dlopen(null, definition);
+  let evaluations = 0;
+  const invalid = (): number => { evaluations++; return 2147483648; };
   try {
     if (numeric.abs(-42) !== 42) return 7;
+    if (callNumber(numeric.abs, -41) !== 41) return 10;
+    if (callNumber(runtime.functions.tolower, 65) !== 97) return 11;
+    if (callNumber(numeric.abs, -40) !== 40) return 12;
     try {
-      numeric.abs(2147483648);
+      numeric.abs(invalid());
       return 8;
     } catch (error) {
-      if (!(error instanceof TypeError)) return 8;
+      if (!(error instanceof TypeError) || evaluations !== 1) return 8;
     }
   } finally {
+    runtime.lib.close();
     leaf.close();
+  }
+  try {
+    numeric.abs(invalid());
+    return 13;
+  } catch (error) {
+    if (evaluations !== 2) return 14;
+    if (!(error instanceof Error) || error instanceof TypeError) return 15;
   }
 
   const { lib, functions } = dlopen(null, {

@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { cpus, homedir, loadavg, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { withGateLock } from "./gate/lock.ts";
+import { withQueuedGateLock } from "./gate/lock.ts";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
 import {
@@ -531,7 +531,7 @@ function measure(
   }[] = [];
   const native: { round: number; workload: string; result: NativeResult }[] =
     [];
-  withGateLock([timingLock], "node-ffi-benchmark", undefined, () => {
+  withQueuedGateLock(timingLock, () => {
     for (let round = 0; round < rounds; round++) {
       const launches: ReturnType<typeof runWorkload>["telemetry"][] = [];
       for (const workload of roundOrder(workloads, round)) {

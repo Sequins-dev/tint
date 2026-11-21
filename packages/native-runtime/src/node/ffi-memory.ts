@@ -5,8 +5,10 @@ import {
   builtinFunction,
   createDataProperty,
   projectArrayBufferViewRange,
+  typedRecordOf,
   viewBigIntValue,
   viewObjectValue,
+  viewTypeofObject,
   type ObjectCall,
   type ProgramRealmCore,
   type ScriptPropertyKey,
@@ -54,6 +56,86 @@ const scalarMinimums: number[] = [-128, 0, -32768, 0, -2147483648, 0];
 const scalarMaximums: number[] = [
   127, 255, 32767, 65535, 2147483647, 4294967295,
 ];
+
+export interface FfiScalarParameter {
+  readonly kind: number;
+  readonly pointer: boolean;
+  readonly offset: number;
+  readonly register: boolean;
+  readonly signExtend: boolean;
+}
+
+export interface TypedFfiWorkspace {
+  readonly frame: Uint8Array;
+  readonly cells: readonly Uint8Array[];
+  readonly result: Uint8Array;
+  readonly loans: Uint8Array[];
+}
+
+/** A private reciprocal view of one validated bound function. JavaScript
+ * properties, bound functions, and proxies cannot supply this witness. */
+export interface TypedFfiCall {
+  readonly arity: number;
+  readonly staticIndex: number;
+  readonly address: number;
+  readonly mode: () => number;
+  readonly numbersOnly: boolean;
+  readonly workspace: (mayCallback: boolean) => TypedFfiWorkspace;
+  readonly checkNumber: (kind: number, input: number, index: number) => number;
+  readonly writeNumber: (
+    workspace: TypedFfiWorkspace,
+    index: number,
+    input: number,
+  ) => void;
+  readonly writeArgument: (
+    workspace: TypedFfiWorkspace,
+    index: number,
+    input: unknown,
+  ) => void;
+  readonly complete: (
+    workspace: TypedFfiWorkspace,
+    mayCallback: boolean,
+  ) => number;
+  readonly release: (workspace: TypedFfiWorkspace) => void;
+}
+
+export function viewTypedFfiCall(value: unknown): TypedFfiCall | undefined {
+  throw "UNBOUND_TYPED_FFI_VIEW";
+}
+
+export function projectTypedFfiCall(value: unknown): TypedFfiCall | undefined {
+  const callable = viewTypeofObject(value);
+  return callable === undefined
+    ? undefined
+    : viewTypedFfiCall(typedRecordOf(callable));
+}
+
+export function readTypedFfiNumber(bytes: Uint8Array, kind: number): number {
+  return readFfiNumberCell(Cell.view(bytes), kind);
+}
+
+export function readFfiNumberCell(cell: View<Cell>, kind: number): number {
+  switch (kind) {
+    case 0:
+      return cell.i8;
+    case 1:
+      return cell.u8;
+    case 2:
+      return cell.i16;
+    case 3:
+      return cell.u16;
+    case 4:
+      return cell.i32;
+    case 5:
+      return cell.u32;
+    case 8:
+      return cell.f32;
+    case 9:
+      return cell.f64;
+    default:
+      throw "TYPED_FFI_NUMBER_KIND_INVARIANT";
+  }
+}
 
 export function readScalar(cell: View<Cell>, kind: number): unknown {
   switch (kind) {
@@ -105,12 +187,22 @@ export function checkedFfiNumber(
   value: unknown,
   argumentIndex: number,
 ): number {
+  if (typeof value !== "number")
+    return invalidScalar(core, kind, argumentIndex);
+  return checkedTypedFfiNumber(core, kind, value, argumentIndex);
+}
+
+export function checkedTypedFfiNumber(
+  core: ProgramRealmCore,
+  kind: number,
+  value: number,
+  argumentIndex: number,
+): number {
   if (
-    typeof value !== "number" ||
-    (kind < 6 &&
-      (!Number.isInteger(value) ||
-        value < (scalarMinimums[kind] ?? 0) ||
-        value > (scalarMaximums[kind] ?? 0)))
+    kind < 6 &&
+    (!Number.isInteger(value) ||
+      value < (scalarMinimums[kind] ?? 0) ||
+      value > (scalarMaximums[kind] ?? 0))
   )
     return invalidScalar(core, kind, argumentIndex);
   return value;
@@ -165,7 +257,18 @@ export function writeScalar(
       return invalidScalar(core, kind, argumentIndex);
     return;
   }
-  const value = checkedFfiNumber(core, kind, input, argumentIndex);
+  writeFfiNumberCell(
+    cell,
+    kind,
+    checkedFfiNumber(core, kind, input, argumentIndex),
+  );
+}
+
+function writeFfiNumberCell(
+  cell: View<Cell>,
+  kind: number,
+  value: number,
+): void {
   switch (kind) {
     case 0:
       cell.i8 = value;
@@ -193,6 +296,35 @@ export function writeScalar(
       break;
     default:
       throw "FFI_MEMORY_KIND_INVARIANT";
+  }
+}
+
+export function writeTypedFfiResult(
+  core: ProgramRealmCore,
+  cell: View<Cell>,
+  kind: number,
+  input: number,
+): void {
+  writeFfiNumberCell(cell, kind, checkedTypedFfiNumber(core, kind, input, -1));
+}
+
+export function writeTypedFfiNumber(
+  core: ProgramRealmCore,
+  parameters: readonly FfiScalarParameter[],
+  workspace: TypedFfiWorkspace,
+  index: number,
+  input: number,
+): void {
+  const parameter = parameters[index],
+    bytes = workspace.cells[index];
+  if (parameter === undefined || bytes === undefined)
+    throw "TYPED_FFI_FRAME_LAYOUT_INVARIANT";
+  const cell = Cell.view(bytes);
+  const value = checkedTypedFfiNumber(core, parameter.kind, input, index);
+  if (parameter.signExtend) cell.i64 = value;
+  else {
+    if (parameter.register) cell.u64 = 0;
+    writeFfiNumberCell(cell, parameter.kind, value);
   }
 }
 
