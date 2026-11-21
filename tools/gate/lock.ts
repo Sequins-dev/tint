@@ -25,8 +25,8 @@ function tryAcquire(file: string, wait: boolean = false): number | undefined {
   const fd = openSync(file, "a");
   let acquired = false;
   try {
-    const args = wait ? ["-k", "-s", "3"] : ["-k", "-s", "-t", "0", "3"];
-    const result = spawnSync("/usr/bin/lockf", args, {
+    const timeout = wait ? [] : ["-t", "0"];
+    const result = spawnSync("/usr/bin/lockf", ["-k", "-s", ...timeout, "3"], {
       stdio: ["ignore", "ignore", "inherit", fd],
     });
     if (result.error !== undefined) throw result.error;
