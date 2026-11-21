@@ -5,7 +5,10 @@ import {
   createSourceExecutionContext,
   createFunctionRealmContext,
   enterSourceCall,
+  enterRegisterSourceCall,
   exitSourceCall,
+  enterExecutionName,
+  leaveExecutionName,
   visibleSourceCaller,
   activeSourceArguments,
 } from "./jobs.ts";
@@ -24,6 +27,8 @@ import {
   hasPrototype,
   type ObjectCall,
   type ObjectCallDispatch,
+  type ObjectRegisterCall,
+  type ObjectWideRegisterCall,
   type ObjectExecutionContext,
   type ObjectHooks,
   type OrdinaryObject,
@@ -247,6 +252,163 @@ export function createSourceFunction(
     false,
     callerPolicy,
   );
+}
+
+/** A source body that needs at most two fixed parameters and does not read
+ * its arguments binding. The general entry still supports apply, construct,
+ * extra arguments and callers with a different execution context. */
+export function createRegisterSourceFunction(
+  implementation: ObjectRegisterCall<unknown>,
+  constructible: boolean,
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+  name: string,
+  length: number,
+  home: OrdinaryObject<ScriptPropertyKey, unknown> | undefined,
+  callerPolicy: SourceCallerPolicy,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const agent = realm.agent;
+  const active = agent.activeContext;
+  const fn = createSourceFunction(
+    (receiver, args, callee, newTarget): unknown =>
+      implementation(
+        callee,
+        receiver,
+        newTarget,
+        args.length,
+        args[0],
+        args[1],
+      ),
+    constructible,
+    realm,
+    hooks,
+    name,
+    length,
+    home,
+    callerPolicy,
+  );
+  fn.internalRegisterCall = {
+    context: {
+      realm,
+      scriptOrModule: active === undefined ? undefined : active.scriptOrModule,
+    },
+    invokeWide: undefined,
+    invoke: (callee, receiver, newTarget, count, first, second): unknown => {
+      const trace = enterExecutionName(agent, name);
+      const depth = enterRegisterSourceCall(
+        agent,
+        callerPolicy === "opaque" ? undefined : callee,
+        callerPolicy === "legacy" ? count : -1,
+        first,
+        second,
+      );
+      try {
+        return implementation(
+          callee,
+          receiver,
+          newTarget,
+          count,
+          first,
+          second,
+        );
+      } finally {
+        exitSourceCall(agent, depth);
+        leaveExecutionName(agent, trace);
+      }
+    },
+  };
+  return fn;
+}
+
+/** A strict source body with up to six parameters and no arguments binding.
+ * The ordinary source entry handles exotic callers and spread. */
+export function createWideRegisterSourceFunction(
+  implementation: ObjectWideRegisterCall<unknown>,
+  constructible: boolean,
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+  name: string,
+  length: number,
+  home: OrdinaryObject<ScriptPropertyKey, unknown> | undefined,
+  callerPolicy: SourceCallerPolicy,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const agent = realm.agent;
+  const active = agent.activeContext;
+  const fn = createSourceFunction(
+    (receiver, args, callee, newTarget): unknown =>
+      implementation(
+        callee,
+        receiver,
+        newTarget,
+        args.length,
+        args[0],
+        args[1],
+        args[2],
+        args[3],
+        args[4],
+        args[5],
+      ),
+    constructible,
+    realm,
+    hooks,
+    name,
+    length,
+    home,
+    callerPolicy,
+  );
+  const invoke: ObjectWideRegisterCall<unknown> = (
+    callee,
+    receiver,
+    newTarget,
+    count,
+    first,
+    second,
+    third,
+    fourth,
+    fifth,
+    sixth,
+  ): unknown => {
+    const trace = enterExecutionName(agent, name);
+    const depth = enterSourceCall(agent, undefined);
+    try {
+      return implementation(
+        callee,
+        receiver,
+        newTarget,
+        count,
+        first,
+        second,
+        third,
+        fourth,
+        fifth,
+        sixth,
+      );
+    } finally {
+      exitSourceCall(agent, depth);
+      leaveExecutionName(agent, trace);
+    }
+  };
+  fn.internalRegisterCall = {
+    context: {
+      realm,
+      scriptOrModule: active === undefined ? undefined : active.scriptOrModule,
+    },
+    invoke: (callee, receiver, newTarget, count, first, second): unknown =>
+      invoke(
+        callee,
+        receiver,
+        newTarget,
+        count,
+        first,
+        second,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      ),
+    invokeWide: invoke,
+  };
+  return fn;
 }
 
 /** Use the ordinary function's identity, receiver and construct path. A

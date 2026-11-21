@@ -1,0 +1,113 @@
+{
+  "target": "darwin-aarch64",
+  "workload": "frozen workload-v7 compiler self-compile",
+  "sourceFiles": 760,
+  "sourceTreeSha256": "289ca5aa4b8a76e40a34434efc022d11d19289d9b0396d66e1bb0cceca058f1e",
+  "baseHead": "206530edd2dc8df8f79d070bbae2e110a467ddbf",
+  "baseImageSha256": "7c70ff64c844f2103f58b8501fcd6a576552aae66edd7683fbafb83e0ca0d5b8",
+  "candidateImageSha256": "4a01bc06f7d6e016dad30a6c8c7e417cd72f313650a0029fe7074fee1fea2491",
+  "branchImageSha256": "f7da0876753a42bcaa029059a7b60ea956343b6e7e1fb7295fbafba804232653",
+  "branchSourceHead": "19342f126fc2aa5be79a6a76ba477bb4d4e7668e",
+  "loadableSectionsSha256": {
+    "text": "bba7c0999174197a90559575f4f969973f825024df4fc3f82448ceabfec084fa",
+    "data": "b80682408d67cf9ac2e89519a0fa5d0e4b0d959c30131d634011ad8ddf19fbfa",
+    "unwindInfo": "a5b35ab97a3f9fc5e986c61f6084dde30a53af397836dd47aa0cf1061aebcc4a",
+    "ehFrame": "c822c35cf79ffac84bc468e0ddb4ff50a88543c2b2f895d835191136002ab1eb"
+  },
+  "protocol": "AB BA AB, shared timing and native launch locks, stopped at entry, exit 0 verified",
+  "wallInterval": "sources marker to stopped at libc exit",
+  "samplerSha256": "ae35b1823683f1722a515a339e8ed637647166c52038c5da1c8787acdca0a9b4",
+  "samplerWrapperSha256": "97a1816dd354dd2d7e697bff0a5c32fceb7e7acd6b43f353a5238a697b4d600b",
+  "rounds": [
+    {
+      "round": 1,
+      "order": [
+        "base",
+        "candidate"
+      ],
+      "base": {
+        "wallSeconds": 139.285135875,
+        "peakRssBytes": 2230403072,
+        "samples": 11212,
+        "outputSha256": "68c11052966f4a851b875c23b6a3413abc74262cec1460532dba09c624d17846",
+        "markersSha256": "e9b919ccdc137564f768214336e26d9eaec06d3a6363d55a4c789798060876bc",
+        "samplesSha256": "dfdf652af49beb91bd9e7836f53bfc54894bb86a6dec7bd012d064aaebdd7875"
+      },
+      "candidate": {
+        "wallSeconds": 111.803755916,
+        "peakRssBytes": 2230960128,
+        "samples": 9432,
+        "outputSha256": "68c11052966f4a851b875c23b6a3413abc74262cec1460532dba09c624d17846",
+        "markersSha256": "7a97ceedc8d7f0d9a2c89998cbaff72266434a6833a9cde305cfb1e9ff8c2712",
+        "samplesSha256": "9dae62ee591e2ebb914bf56daf87e5cc38cfd56ee64865bd7e849fe05d907b7f"
+      }
+    },
+    {
+      "round": 2,
+      "order": [
+        "candidate",
+        "base"
+      ],
+      "base": {
+        "wallSeconds": 125.157363667,
+        "peakRssBytes": 2230894592,
+        "samples": 10318,
+        "outputSha256": "68c11052966f4a851b875c23b6a3413abc74262cec1460532dba09c624d17846",
+        "markersSha256": "5a189ac9124cdd1b06b273dde81047f5b706c86ebcf5f7d7e0c39abceba15f62",
+        "samplesSha256": "57c0fbf5ac274c03f7768253e6a5ffa0ee7daf46db0ff030f6edffbeb6a81ec1"
+      },
+      "candidate": {
+        "wallSeconds": 107.4802335,
+        "peakRssBytes": 2230910976,
+        "samples": 9080,
+        "outputSha256": "68c11052966f4a851b875c23b6a3413abc74262cec1460532dba09c624d17846",
+        "markersSha256": "2bc3245fc5d14fb445eb89ef98fe1356f1049b455aeb1878be6c9c48f31d7725",
+        "samplesSha256": "dfe928bec88461872a7b6e33d517848bc094eaa3ed2ba3e270c7cf9d46e5cd1b"
+      }
+    },
+    {
+      "round": 3,
+      "order": [
+        "base",
+        "candidate"
+      ],
+      "base": {
+        "wallSeconds": 104.03022925,
+        "peakRssBytes": 2229731328,
+        "samples": 8107,
+        "outputSha256": "68c11052966f4a851b875c23b6a3413abc74262cec1460532dba09c624d17846",
+        "markersSha256": "5c4410c51dcf63182de2ac989db93dd09d68d9f53c2cccda20303ed37950ac79",
+        "samplesSha256": "34ce1f2c61071485f9ef50903b7bfc9c6739560c909f309a10b7091fa4b1c725"
+      },
+      "candidate": {
+        "wallSeconds": 104.686263875,
+        "peakRssBytes": 2229993472,
+        "samples": 7898,
+        "outputSha256": "68c11052966f4a851b875c23b6a3413abc74262cec1460532dba09c624d17846",
+        "markersSha256": "f99eda2b859843cc0f8b0d9bbae4d959f33704c6ba86b8c1aacd7c16a88949c4",
+        "samplesSha256": "13ce2521983f6d468c07ce2471205a6234a224e2401d2c6b851ecb8b7843bf43"
+      }
+    }
+  ],
+  "medians": {
+    "base": {
+      "wallSeconds": 125.157363667,
+      "peakRssBytes": 2230403072
+    },
+    "candidate": {
+      "wallSeconds": 107.4802335,
+      "peakRssBytes": 2230910976
+    }
+  },
+  "medianPairedDelta": {
+    "wallSeconds": -17.677130167,
+    "peakRssBytes": 262144
+  },
+  "loadableSectionsVerifiedFor": [
+    "origin/main matched image",
+    "scope-only image",
+    "measured final image",
+    "final source rebuild"
+  ],
+  "baselineAndCandidateLoadableSectionsByteIdentical": true
+}

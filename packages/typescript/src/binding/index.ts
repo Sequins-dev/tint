@@ -38,6 +38,7 @@ export interface Scope {
   readonly node: Span;
 }
 export interface Binding {
+  readonly capture?: "reference" | "value";
   readonly id: number;
   readonly name: string;
   readonly scope: number;
@@ -104,6 +105,8 @@ export interface BoundModule {
         readonly parameters: boolean;
       }[]
     | undefined;
+  /** Lexical scopes where direct eval or with can resolve names at runtime. */
+  readonly dynamicNameScopes?: readonly number[];
   readonly annexFunctionCopies?: readonly AnnexFunctionCopy[];
   /** Ordinary functions whose own arguments object can be observed: a syntactic
    * `arguments` reference or a direct eval, in the function itself or in a
@@ -255,6 +258,13 @@ function bindProgram(
   const directEvalOwners: { owner: Span | undefined; parameters: boolean }[] =
     [];
   const directEvalOwnerKeys = new Set<string>();
+  const dynamicNameScopes: number[] = [];
+  const dynamicScopesSeen = new Set<number>();
+  function recordDynamicScope(scope: number): void {
+    if (dynamicScopesSeen.has(scope)) return;
+    dynamicScopesSeen.add(scope);
+    dynamicNameScopes.push(scope);
+  }
   let containsWith = false;
   const argumentsOwnerIds = new Set<number>();
   const argumentsOwners: Span[] = [];
@@ -362,6 +372,7 @@ function bindProgram(
     name: string,
     kind: Binding["kind"],
     node: Span,
+    capture?: Binding["capture"],
   ): void {
     const previousId = s.names.get(name);
     if (previousId !== undefined) {
@@ -406,13 +417,14 @@ function bindProgram(
       }
       fail(node, "DUPLICATE_NAME", `duplicate value binding: ${name}`);
     }
-    s.names.set(name, registerBinding(s, name, kind, node));
+    s.names.set(name, registerBinding(s, name, kind, node, capture));
   }
   function registerBinding(
     s: ScopeState,
     name: string,
     kind: Binding["kind"],
     node: Span,
+    capture?: Binding["capture"],
   ): number {
     const id = bindings.length;
     bindings.push({
@@ -424,6 +436,7 @@ function bindProgram(
       mutable: kind !== "const" && kind !== "import",
       captured: false,
       node,
+      ...(capture === undefined ? {} : { capture }),
     });
     return id;
   }
@@ -438,7 +451,13 @@ function bindProgram(
           if (b === undefined) throw "declaration invariant";
           for (const identifier of bindingIdentifiers(b)) {
             if (identifier === undefined) throw "binding identifier invariant";
-            declare(s, identifier.name, node.mode, identifier);
+            declare(
+              s,
+              identifier.name,
+              node.mode,
+              identifier,
+              identifier.capture,
+            );
           }
         }
       else if (
@@ -589,10 +608,21 @@ function bindProgram(
       varInitializerTargets.push({ node, binding: caught });
   }
   function localBinding(name: string, s: ScopeState): number | undefined {
+    const implicitArguments = javascript && name === "arguments";
     let cursor: ScopeState | undefined = s;
     while (cursor !== undefined) {
       const id = cursor.names.get(name);
       if (id !== undefined) return id;
+      // The runtime creates each ordinary function's implicit arguments
+      // binding. Arrows can continue through their own frame to find it.
+      const owner = cursor.owner;
+      if (
+        implicitArguments &&
+        cursor.kind === "function" &&
+        owner !== undefined &&
+        functions[owner]?.receiver === owner
+      )
+        return undefined;
       cursor = cursor.parent === undefined ? undefined : scopes[cursor.parent];
     }
     return undefined;
@@ -1102,6 +1132,7 @@ function bindProgram(
             if (!javascript && localBinding("eval", s) === undefined)
               fail(node, "UNSUPPORTED", directEvalUnavailable);
             observeArguments(s);
+            recordDynamicScope(s.id);
             const parameters =
               s.owner !== undefined && parameterOwners.has(s.owner);
             const key =
@@ -1280,13 +1311,16 @@ function bindProgram(
         case "label":
           stmt(node.body, s);
           break;
-        case "with":
+        case "with": {
           if (!javascript)
             fail(node, "UNSUPPORTED", "with requires dynamic name resolution");
           containsWith = true;
           expr(node.object, s);
-          stmt(node.body, s);
+          const body = scope(s, "block", node, s.owner);
+          recordDynamicScope(body.id);
+          stmt(node.body, body);
           break;
+        }
         case "do-while":
         case "while":
           expr(node.test, s);
@@ -1488,6 +1522,7 @@ function bindProgram(
         externalPrivateNames.length === 0 ? undefined : externalPrivateNames,
       directEvalOwners:
         directEvalOwners.length === 0 ? undefined : directEvalOwners,
+      ...(dynamicNameScopes.length === 0 ? {} : { dynamicNameScopes }),
       argumentsOwners,
       containsWith,
       varInitializerTargets,

@@ -142,6 +142,29 @@ export function createScriptRuntimeRequest(
   const runtimeDependencies = scriptRuntimeDependencies.filter(
     ([specifier]) => dynamicImport || specifier !== "@tint/js-runtime/modules",
   );
+  const modules = workspaceModules(
+    runtimeDependencies.map((item) => item[1]),
+    snapshot,
+  );
+  // These entries exist only in captures with the positional call or property
+  // cache runtime. The normal linker still checks all required imports.
+  const missingFastPaths = new Set<string>();
+  if (snapshot !== undefined) {
+    const objects = capturedModuleExports(modules).get(
+      "packages/js-runtime/src/objects/index.ts",
+    );
+    for (const name of [
+      "createRegisterSourceFunction",
+      "callRegisterObjectValue",
+      "createWideRegisterSourceFunction",
+      "callWideRegisterObjectValue",
+      "createScriptPropertyCache",
+      "readCachedObjectValueProperty",
+      "writeCachedObjectValueProperty",
+    ]) {
+      if (!objects?.has(name)) missingFastPaths.add(name);
+    }
+  }
   const imports = scriptRuntimeImports(
       { start: 0, end: 0 },
       true,
@@ -161,14 +184,16 @@ export function createScriptRuntimeRequest(
       engineAborts,
       fusedResults,
       retainedFunctions,
-    ),
+    ).map((declaration) => ({
+      ...declaration,
+      bindings: declaration.bindings.filter(
+        (binding) => !missingFastPaths.has(binding.imported),
+      ),
+    })),
     root = "$surface-kinds";
   const linked = linkModules(
     [
-      ...workspaceModules(
-        runtimeDependencies.map((item) => item[1]),
-        snapshot,
-      ),
+      ...modules,
       {
         id: root,
         module: {
@@ -202,6 +227,7 @@ export function createScriptRuntimeRequest(
     fusedResults,
     retainedFunctions,
   )) {
+    if (missingFastPaths.has(item.name)) continue;
     const module = dependencies.get(item.specifier);
     assert.ok(module);
     const exported =

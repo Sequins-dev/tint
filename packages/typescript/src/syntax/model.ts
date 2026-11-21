@@ -283,6 +283,8 @@ export interface PropertySignature extends Span {
 }
 export interface Binding extends Span {
   readonly kind?: "binding";
+  /** Capture order established by the lowering that created this binding. */
+  readonly capture?: "reference" | "value";
   readonly name: string;
   readonly type: TypeNode | undefined;
   readonly initializer: Expression | undefined;

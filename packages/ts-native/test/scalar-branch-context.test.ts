@@ -47,3 +47,26 @@ test("a logical expression returned as a value retains its result storage", () =
   );
   assert.ok(fn.slots.filter((type) => type === "boolean").length > 6);
 });
+
+for (const [comparison, category] of [
+  ["value === null", "null"],
+  ["null !== value", "null"],
+  ['typeof value === "string"', "string"],
+  ['"number" !== typeof value', "number"],
+  ['typeof value === "boolean"', "boolean"],
+  ['typeof value === "undefined"', "undefined"],
+]) {
+  test("general comparison uses the tag directly: " + comparison, () => {
+    const fn = lower(
+      "function run(value: unknown): boolean {return " + comparison + ";}",
+    );
+    const operations = fn.blocks.flatMap((block) => block.instructions);
+    assert.equal(
+      operations.filter(
+        (operation) =>
+          operation.kind === "general-is" && operation.type === category,
+      ).length,
+      1,
+    );
+  });
+}

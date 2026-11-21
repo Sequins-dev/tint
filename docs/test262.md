@@ -292,7 +292,7 @@ current-toolchain pass rate:
 | `language/line-terminators`        |                               82/82 | [Report](results/test262-a1-phase1-language-line-terminators-heartbeat-v1.json)                |
 | `language/white-space`             |                             134/134 | [Report](results/test262-a1-phase1-language-white-space-heartbeat-v1.json)                     |
 | `language/statementList`           |                             160/160 | [Report](results/test262-a1-phase1-language-statementList-heartbeat-v1.json)                   |
-| `language/statements/for`          |                             758/758 | [Report](results/test262-a1-v16-language-statements-for-v1.json)                               |
+| `language/statements/for`          |                             758/758 | [Report](results/test262-general-integrated-for-v2.json)                                       |
 | `language/identifiers`             | 535/535; 535 measured; 0 unmeasured | [Disjoint native coverage](results/a1-identifiers-disjoint-coverage-remaining-small92-v1.json) |
 | `language/statements/function`     |                             783/783 | [Report](results/test262-a1-v16-language-statements-function-v1.json)                          |
 | `language/types`                   |                             211/211 | [Report](results/test262-a1-v17-language-types-v1.json)                                        |
@@ -301,9 +301,11 @@ current-toolchain pass rate:
 The inherited [integrated-main controls](results/language-main-controls-interruption-v3.json) stopped at the coordinator-directed case boundary after four passing class-realm cases; 81 controls remain unexecuted. These bespoke cases are separate from native conformance and do not gate the already-validated frozen host used for the queued language selections.
 
 The current direct-eval rerun passes [**336/336**](results/test262-language-direct-eval-current-v1.json).
-Proper tail calls remain a standard gap: the six `tail-call-optimization`
-variants in the complete [call report](results/test262-language-call-reference-core-v1.json)
-exhaust the native stack.
+The frozen general-call host passes **171/171** call-expression variants,
+including the six proper tail-call variants that exhausted the stack in the
+earlier report. The same host passes **90/90** `Function.prototype.call` variants.
+[Call expressions](results/test262-general-integrated-language-call-v2.json),
+[`Function.prototype.call`](results/test262-general-integrated-function-prototype-call-v2.json).
 
 ### Fully passing family reports
 

@@ -6546,6 +6546,52 @@ export function lowerFunction(
           return nullishValue(value(node.left), node.left, node, () =>
             value(node.right),
           );
+        if (node.operator === "===" || node.operator === "!==") {
+          const literal =
+            node.left.kind === "null" || node.left.kind === "string"
+              ? node.left
+              : node.right;
+          const compared = literal === node.left ? node.right : node.left;
+          let tested = compared;
+          let category:
+            "null" | "number" | "boolean" | "string" | "undefined" | undefined;
+          if (literal.kind === "null") category = "null";
+          else if (
+            literal.kind === "string" &&
+            compared.kind === "unary" &&
+            compared.operator === "typeof" &&
+            info(compared).realmTypeof === undefined
+          ) {
+            const name = literal.value;
+            if (
+              name === "number" ||
+              name === "boolean" ||
+              name === "string" ||
+              name === "undefined"
+            ) {
+              category = name;
+              tested = compared.operand;
+            }
+          }
+          if (category !== undefined && info(tested).type === "general") {
+            // The literal has no effects. Read the tag without materializing
+            // a null box or a typeof result string.
+            const operand = value(tested);
+            const id = nextValue++;
+            emit({
+              kind: "general-is",
+              id,
+              value: coerce(load(operand, tested), "general", tested),
+              type: category,
+              start: node.start,
+              end: node.end,
+            });
+            const equal = save(id, "boolean", node);
+            return node.operator === "==="
+              ? equal
+              : unarySlot("!", equal, "boolean", node);
+          }
+        }
         const left = value(node.left);
         if (node.operator === "&&" || node.operator === "||") {
           const result = temporary(scalarType(node));

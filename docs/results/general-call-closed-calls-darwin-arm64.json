@@ -1,0 +1,2318 @@
+{
+  "prepared": {
+    "head": "174988283d3aeb0eea04a7d5e522056e2b7b59d1",
+    "patchSha256": "52e87951dfcfe7e5e968011183ffdce0f456e6a02890cb9d0d438a1b3683713b",
+    "node": "/private/tmp/tint-node-v26.13.1.eiNCe7/node-v26.13.1-darwin-arm64/bin/node",
+    "nodeSha256": "266dec4dce3a6cdcf5cdc38722a00cf5ae6a12cc51068d2a227655bbb75751ec",
+    "script": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-general-call-bench-oe1NxF/benchmark.mjs",
+    "scriptSha256": "a399cebe7fee289f86ff232be6e6bc26dd2d05c94b3ad613d64fc2bba7287e68",
+    "native": {
+      "untyped": {
+        "target": "darwin-aarch64",
+        "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-untyped-cI4mz6/general-call-bench-untyped",
+        "imageSha256": "544fe5a1990e385baa1723ea6ad010ec764fa89912af468f7ae74e8a08e95f2b",
+        "buildManifest": {
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-untyped-cI4mz6/general-call-bench-untyped.manifest.json",
+          "sha256": "e41d70670e8aa29b653173610fd5b5c712bb2165a42c7c36d2f8197fd1a6159f"
+        }
+      },
+      "typed": {
+        "target": "darwin-aarch64",
+        "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-typed-teszO5/general-call-bench-typed",
+        "imageSha256": "247254d48165ba82726246b998d7d5f782887049e6f7733cfe0c7038099c7648",
+        "buildManifest": {
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-typed-teszO5/general-call-bench-typed.manifest.json",
+          "sha256": "4aacba94ed9651cd7a47bf2dadf986d61588b549dde87b7d6bd5c16cca0a66a7"
+        }
+      }
+    },
+    "checksums": {
+      "array": {
+        "sum": 450000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "closure": {
+        "sum": 1450000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "control": {
+        "sum": 4200000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "method": {
+        "sum": 1450000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "property": {
+        "sum": 750015,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "recursive": {
+        "sum": 55000,
+        "iterations": 2000,
+        "warm": 2000
+      },
+      "rest": {
+        "sum": 1650000,
+        "iterations": 100000,
+        "warm": 20000
+      },
+      "stringEquality": {
+        "sum": 50000,
+        "iterations": 100000,
+        "warm": 20000
+      }
+    }
+  },
+  "candidates": [
+    {
+      "head": "174988283d3aeb0eea04a7d5e522056e2b7b59d1",
+      "patchSha256": "7864b0f34a07a904617147baa137f826374ed91c0dcd207a77c62e6c26ede2d0",
+      "node": "/private/tmp/tint-node-v26.13.1.eiNCe7/node-v26.13.1-darwin-arm64/bin/node",
+      "nodeSha256": "266dec4dce3a6cdcf5cdc38722a00cf5ae6a12cc51068d2a227655bbb75751ec",
+      "script": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-general-call-bench-vecwr5/benchmark.mjs",
+      "scriptSha256": "a399cebe7fee289f86ff232be6e6bc26dd2d05c94b3ad613d64fc2bba7287e68",
+      "native": {
+        "untyped": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-untyped-hvaDdM/general-call-bench-untyped",
+          "imageSha256": "a0ca3d0f8d6bd94e2ff23d2bdca0955e94a1690646c627877fe348daac19cd81",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-untyped-hvaDdM/general-call-bench-untyped.manifest.json",
+            "sha256": "84130e61863f8aa691538c17eac5ea2b9effcd634e4183cad54328522c742624"
+          }
+        },
+        "typed": {
+          "target": "darwin-aarch64",
+          "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-typed-aL3Oo9/general-call-bench-typed",
+          "imageSha256": "247254d48165ba82726246b998d7d5f782887049e6f7733cfe0c7038099c7648",
+          "buildManifest": {
+            "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-typed-aL3Oo9/general-call-bench-typed.manifest.json",
+            "sha256": "2f70f2683ba75b85c168be4979fab2108940e1e33636e8ba49dc7398da46758e"
+          }
+        }
+      },
+      "checksums": {
+        "array": {
+          "sum": 450000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "closure": {
+          "sum": 1450000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "control": {
+          "sum": 4200000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "method": {
+          "sum": 1450000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "property": {
+          "sum": 750015,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "recursive": {
+          "sum": 55000,
+          "iterations": 2000,
+          "warm": 2000
+        },
+        "rest": {
+          "sum": 1650000,
+          "iterations": 100000,
+          "warm": 20000
+        },
+        "stringEquality": {
+          "sum": 50000,
+          "iterations": 100000,
+          "warm": 20000
+        }
+      }
+    }
+  ],
+  "cpu": "Apple M5 Max",
+  "rounds": 16,
+  "summary": {
+    "array": {
+      "node": {
+        "ns": {
+          "median": 18.222291469573975,
+          "q1": 5.136874318122864,
+          "q3": 40.244576930999756
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 206.7216694355011,
+          "q1": 181.07270777225494,
+          "q3": 234.39728915691376
+        },
+        "deltaFromNodeNs": {
+          "median": 179.10792112350464,
+          "q1": 168.56687366962433,
+          "q3": 219.8757255077362
+        }
+      },
+      "typed": {
+        "ns": {
+          "median": 3.308749198913574,
+          "q1": 3.0205178260803223,
+          "q3": 3.8199973106384277
+        },
+        "deltaFromNodeNs": {
+          "median": -15.202921628952026,
+          "q1": -33.2484370470047,
+          "q3": -1.6315656900405884
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 185.09312868118286,
+          "q1": 169.4397908449173,
+          "q3": 223.62260162830353
+        },
+        "deltaFromNodeNs": {
+          "median": 170.45979499816895,
+          "q1": 139.09177362918854,
+          "q3": 212.89854526519775
+        },
+        "deltaFromPreviousNs": {
+          "median": -6.392494440078735,
+          "q1": -49.028329849243164,
+          "q3": 19.957602620124817
+        }
+      }
+    },
+    "closure": {
+      "node": {
+        "ns": {
+          "median": 22.638955116271973,
+          "q1": 14.285102486610413,
+          "q3": 31.871564984321594
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 113.1516706943512,
+          "q1": 97.24155724048615,
+          "q3": 156.8790638446808
+        },
+        "deltaFromNodeNs": {
+          "median": 89.27124857902527,
+          "q1": 79.4138616323471,
+          "q3": 112.31448113918304
+        }
+      },
+      "typed": {
+        "ns": {
+          "median": 4.026041030883789,
+          "q1": 3.8509315252304077,
+          "q3": 4.877083897590637
+        },
+        "deltaFromNodeNs": {
+          "median": -18.574788570404053,
+          "q1": -25.810731053352356,
+          "q3": -9.79291319847107
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 101.89812421798706,
+          "q1": 94.0478104352951,
+          "q3": 117.17416822910309
+        },
+        "deltaFromNodeNs": {
+          "median": 81.76583051681519,
+          "q1": 68.26499700546265,
+          "q3": 102.24802196025848
+        },
+        "deltaFromPreviousNs": {
+          "median": -15.78145980834961,
+          "q1": -65.18354833126068,
+          "q3": 14.60573136806488
+        }
+      }
+    },
+    "control": {
+      "node": {
+        "ns": {
+          "median": 9.06312346458435,
+          "q1": 7.228125333786011,
+          "q3": 17.8269761800766
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 1.992499828338623,
+          "q1": 1.8942666053771973,
+          "q3": 2.2155219316482544
+        },
+        "deltaFromNodeNs": {
+          "median": -7.091670036315918,
+          "q1": -15.695306658744812,
+          "q3": -4.319683313369751
+        }
+      },
+      "typed": {
+        "ns": {
+          "median": 1.887500286102295,
+          "q1": 1.8865638971328735,
+          "q3": 1.978851556777954
+        },
+        "deltaFromNodeNs": {
+          "median": -7.176247835159302,
+          "q1": -15.933538675308228,
+          "q3": -5.269169211387634
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 1.9650006294250488,
+          "q1": 1.9083404541015625,
+          "q3": 2.5526028871536255
+        },
+        "deltaFromNodeNs": {
+          "median": -6.663118600845337,
+          "q1": -15.757085680961609,
+          "q3": -4.18822169303894
+        },
+        "deltaFromPreviousNs": {
+          "median": -0.03311514854431152,
+          "q1": -0.2139580249786377,
+          "q3": 0.5439621210098267
+        }
+      }
+    },
+    "method": {
+      "node": {
+        "ns": {
+          "median": 12.893955707550049,
+          "q1": 9.661146402359009,
+          "q3": 34.658440947532654
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 176.4927089214325,
+          "q1": 159.82729136943817,
+          "q3": 209.44490313529968
+        },
+        "deltaFromNodeNs": {
+          "median": 154.53187346458435,
+          "q1": 140.04677534103394,
+          "q3": 197.6566731929779
+        }
+      },
+      "typed": {
+        "ns": {
+          "median": 4.968956708908081,
+          "q1": 4.9573951959609985,
+          "q3": 5.0811415910720825
+        },
+        "deltaFromNodeNs": {
+          "median": -7.936664819717407,
+          "q1": -29.877296090126038,
+          "q3": -4.517286419868469
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 151.39291405677795,
+          "q1": 142.3492705821991,
+          "q3": 171.71812534332275
+        },
+        "deltaFromNodeNs": {
+          "median": 131.79749965667725,
+          "q1": 110.80811858177185,
+          "q3": 161.886984705925
+        },
+        "deltaFromPreviousNs": {
+          "median": -23.492090702056885,
+          "q1": -46.41791522502899,
+          "q3": -0.022085905075073242
+        }
+      }
+    },
+    "property": {
+      "node": {
+        "ns": {
+          "median": 4.8600006103515625,
+          "q1": 3.7237483263015747,
+          "q3": 16.114057302474976
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 74.47667002677917,
+          "q1": 69.14604067802429,
+          "q3": 91.35875225067139
+        },
+        "deltaFromNodeNs": {
+          "median": 65.89063048362732,
+          "q1": 64.92916941642761,
+          "q3": 81.49573087692261
+        }
+      },
+      "typed": {
+        "ns": {
+          "median": 1.8860435485839844,
+          "q1": 1.8854188919067383,
+          "q3": 1.9715672731399536
+        },
+        "deltaFromNodeNs": {
+          "median": -2.8268754482269287,
+          "q1": -14.228742718696594,
+          "q3": -1.8386465311050415
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 69.17396068572998,
+          "q1": 68.75624477863312,
+          "q3": 71.42843723297119
+        },
+        "deltaFromNodeNs": {
+          "median": 62.91541934013367,
+          "q1": 53.14645767211914,
+          "q3": 65.02021074295044
+        },
+        "deltaFromPreviousNs": {
+          "median": -8.452295064926147,
+          "q1": -22.08187758922577,
+          "q3": 0.11250436305999756
+        }
+      }
+    },
+    "recursive": {
+      "node": {
+        "ns": {
+          "median": 741.104245185852,
+          "q1": 636.900782585144,
+          "q3": 1776.3851583003998
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 8383.458495140076,
+          "q1": 7684.671700000763,
+          "q3": 9860.635370016098
+        },
+        "deltaFromNodeNs": {
+          "median": 7091.322839260101,
+          "q1": 6602.4689972400665,
+          "q3": 8678.983956575394
+        }
+      },
+      "typed": {
+        "ns": {
+          "median": 222.09370136260986,
+          "q1": 220.6040918827057,
+          "q3": 281.73455595970154
+        },
+        "deltaFromNodeNs": {
+          "median": -504.00054454803467,
+          "q1": -1560.0987076759338,
+          "q3": -374.27079677581787
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 224.81226921081543,
+          "q1": 223.66154193878174,
+          "q3": 246.5105652809143
+        },
+        "deltaFromNodeNs": {
+          "median": -468.03128719329834,
+          "q1": -826.6668617725372,
+          "q3": -378.0054450035095
+        },
+        "deltaFromPreviousNs": {
+          "median": -8133.677244186401,
+          "q1": -9639.18724656105,
+          "q3": -7451.916754245758
+        }
+      }
+    },
+    "rest": {
+      "node": {
+        "ns": {
+          "median": 36.89750552177429,
+          "q1": 29.851871132850647,
+          "q3": 64.91625487804413
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 2168.95583152771,
+          "q1": 1858.2691669464111,
+          "q3": 2669.672184586525
+        },
+        "deltaFromNodeNs": {
+          "median": 2075.024995803833,
+          "q1": 1821.1962467432022,
+          "q3": 2636.951563358307
+        }
+      },
+      "typed": {
+        "ns": {
+          "median": 40.87291479110718,
+          "q1": 39.99021232128143,
+          "q3": 42.692084312438965
+        },
+        "deltaFromNodeNs": {
+          "median": 4.13936972618103,
+          "q1": -22.17271387577057,
+          "q3": 10.981146693229675
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 2372.2997891902924,
+          "q1": 1838.4392702579498,
+          "q3": 2837.7852046489716
+        },
+        "deltaFromNodeNs": {
+          "median": 2333.6233282089233,
+          "q1": 1798.3381205797195,
+          "q3": 2785.863429903984
+        },
+        "deltaFromPreviousNs": {
+          "median": 20.683757066726685,
+          "q1": -239.87906336784363,
+          "q3": 539.6348869800568
+        }
+      }
+    },
+    "stringEquality": {
+      "node": {
+        "ns": {
+          "median": 13.693130016326904,
+          "q1": 4.099798202514648,
+          "q3": 20.6472909450531
+        },
+        "deltaFromNodeNs": {
+          "median": 0,
+          "q1": 0,
+          "q3": 0
+        }
+      },
+      "untyped": {
+        "ns": {
+          "median": 60.79187512397766,
+          "q1": 57.04583823680878,
+          "q3": 104.17125225067139
+        },
+        "deltaFromNodeNs": {
+          "median": 52.28958010673523,
+          "q1": 44.43125307559967,
+          "q3": 94.79427576065063
+        }
+      },
+      "typed": {
+        "ns": {
+          "median": 2.43666410446167,
+          "q1": 2.4252015352249146,
+          "q3": 2.726355791091919
+        },
+        "deltaFromNodeNs": {
+          "median": -7.050005197525024,
+          "q1": -15.969996452331543,
+          "q3": -1.2418758869171143
+        }
+      },
+      "candidate1Untyped": {
+        "ns": {
+          "median": 58.75208020210266,
+          "q1": 56.99583411216736,
+          "q3": 79.42270934581757
+        },
+        "deltaFromNodeNs": {
+          "median": 52.161874771118164,
+          "q1": 38.56302082538605,
+          "q3": 63.04093301296234
+        },
+        "deltaFromPreviousNs": {
+          "median": -1.0245800018310547,
+          "q1": -47.742919921875,
+          "q3": 3.207499384880066
+        }
+      }
+    }
+  },
+  "samples": [
+    {
+      "round": 0,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "array": 3.9891695976257324,
+        "closure": 8.35749864578247,
+        "control": 8.697497844696045,
+        "method": 9.4350004196167,
+        "property": 3.984999656677246,
+        "recursive": 907.2710275650024,
+        "rest": 25.469999313354492,
+        "stringEquality": 12.918338775634766
+      },
+      "exit": 0,
+      "loadBefore": [
+        36.55126953125,
+        34.4609375,
+        29.9130859375
+      ],
+      "loadAfter": [
+        36.55126953125,
+        34.4609375,
+        29.9130859375
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 0,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "array": 190.9720802307129,
+        "closure": 94.28625106811523,
+        "control": 9.464168548583984,
+        "method": 145.66375017166138,
+        "property": 69.15250062942505,
+        "recursive": 7742.33341217041,
+        "rest": 2812.549579143524,
+        "stringEquality": 57.19459056854248
+      },
+      "exit": 42,
+      "loadBefore": [
+        36.55126953125,
+        34.4609375,
+        29.9130859375
+      ],
+      "loadAfter": [
+        36.5869140625,
+        34.5029296875,
+        29.95458984375
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 0,
+      "engine": "typed",
+      "position": 2,
+      "values": {
+        "array": 3.2166600227355957,
+        "closure": 4.022080898284912,
+        "control": 1.8862509727478027,
+        "method": 5.81125020980835,
+        "property": 1.8854212760925293,
+        "recursive": 220.6249237060547,
+        "rest": 40.07833957672119,
+        "stringEquality": 91.87374830245972
+      },
+      "exit": 42,
+      "loadBefore": [
+        36.5869140625,
+        34.5029296875,
+        29.95458984375
+      ],
+      "loadAfter": [
+        43.38232421875,
+        36.03173828125,
+        30.55029296875
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 0,
+      "engine": "candidate1Untyped",
+      "position": 3,
+      "values": {
+        "array": 1297.5954103469849,
+        "closure": 195.48583984375,
+        "control": 2.032499313354492,
+        "method": 141.60457849502563,
+        "property": 68.77290964126587,
+        "recursive": 223.7083911895752,
+        "rest": 5625.772080421448,
+        "stringEquality": 413.41875076293945
+      },
+      "exit": 42,
+      "loadBefore": [
+        43.38232421875,
+        36.03173828125,
+        30.55029296875
+      ],
+      "loadAfter": [
+        48.20458984375,
+        37.3125,
+        31.06884765625
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 1,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "array": 240.86540937423706,
+        "closure": 410.9975004196167,
+        "control": 1.8916702270507812,
+        "method": 274.95832920074463,
+        "property": 69.12415981292725,
+        "recursive": 7677.250027656555,
+        "rest": 8550.014169216156,
+        "stringEquality": 50.84666967391968
+      },
+      "exit": 42,
+      "loadBefore": [
+        48.20458984375,
+        37.3125,
+        31.06884765625
+      ],
+      "loadAfter": [
+        55.96240234375,
+        39.31494140625,
+        31.85107421875
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 1,
+      "engine": "typed",
+      "position": 1,
+      "values": {
+        "array": 3.0208301544189453,
+        "closure": 3.8450002670288086,
+        "control": 1.8862509727478027,
+        "method": 5.042920112609863,
+        "property": 1.8862509727478027,
+        "recursive": 359.2710494995117,
+        "rest": 40.79999923706055,
+        "stringEquality": 6.566250324249268
+      },
+      "exit": 42,
+      "loadBefore": [
+        55.96240234375,
+        39.31494140625,
+        31.85107421875
+      ],
+      "loadAfter": [
+        56.04541015625,
+        39.6083984375,
+        31.998046875
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 1,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "array": 243.92292022705078,
+        "closure": 177.9966688156128,
+        "control": 1.7070817947387695,
+        "method": 138.900408744812,
+        "property": 71.38999938964844,
+        "recursive": 5096.708536148071,
+        "rest": 6197.021670341492,
+        "stringEquality": 57.0466685295105
+      },
+      "exit": 42,
+      "loadBefore": [
+        56.04541015625,
+        39.6083984375,
+        31.998046875
+      ],
+      "loadAfter": [
+        57.0244140625,
+        40.34814453125,
+        32.3486328125
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 1,
+      "engine": "node",
+      "position": 3,
+      "values": {
+        "array": 18.14000129699707,
+        "closure": 24.45166826248169,
+        "control": 30.424160957336426,
+        "method": 44.71708059310913,
+        "property": 23.958749771118164,
+        "recursive": 3795.0210571289062,
+        "rest": 137.5991702079773,
+        "stringEquality": 3.2033300399780273
+      },
+      "exit": 0,
+      "loadBefore": [
+        57.0244140625,
+        40.34814453125,
+        32.3486328125
+      ],
+      "loadAfter": [
+        57.0244140625,
+        40.34814453125,
+        32.3486328125
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 2,
+      "engine": "typed",
+      "position": 0,
+      "values": {
+        "array": 2.4170804023742676,
+        "closure": 4.273331165313721,
+        "control": 2.1833395957946777,
+        "method": 4.204587936401367,
+        "property": 2.181670665740967,
+        "recursive": 212.3544216156006,
+        "rest": 37.57542133331299,
+        "stringEquality": 2.6412510871887207
+      },
+      "exit": 42,
+      "loadBefore": [
+        57.0244140625,
+        40.34814453125,
+        32.3486328125
+      ],
+      "loadAfter": [
+        55.02001953125,
+        40.20947265625,
+        32.34619140625
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 2,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "array": 169.8895812034607,
+        "closure": 92.83499956130981,
+        "control": 1.9079208374023438,
+        "method": 141.1899995803833,
+        "property": 69.15125131607056,
+        "recursive": 223.8539457321167,
+        "rest": 2927.6083397865295,
+        "stringEquality": 56.84333086013794
+      },
+      "exit": 42,
+      "loadBefore": [
+        55.02001953125,
+        40.20947265625,
+        32.34619140625
+      ],
+      "loadAfter": [
+        54.37744140625,
+        40.32177734375,
+        32.431640625
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 2,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "array": 127.45333194732666,
+        "closure": 22.16583013534546,
+        "control": 8.569159507751465,
+        "method": 35.89375019073486,
+        "property": 3.654158115386963,
+        "recursive": 507.56239891052246,
+        "rest": 103.50708961486816,
+        "stringEquality": 24.399170875549316
+      },
+      "exit": 0,
+      "loadBefore": [
+        54.37744140625,
+        40.32177734375,
+        32.431640625
+      ],
+      "loadAfter": [
+        54.37744140625,
+        40.32177734375,
+        32.431640625
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 2,
+      "engine": "untyped",
+      "position": 3,
+      "values": {
+        "array": 179.5341682434082,
+        "closure": 125.12624979019165,
+        "control": 2.2037506103515625,
+        "method": 181.79332971572876,
+        "property": 199.42999839782715,
+        "recursive": 7633.603930473328,
+        "rest": 2203.7462520599365,
+        "stringEquality": 124.02999877929688
+      },
+      "exit": 42,
+      "loadBefore": [
+        54.37744140625,
+        40.32177734375,
+        32.431640625
+      ],
+      "loadAfter": [
+        53.54638671875,
+        40.3828125,
+        32.4990234375
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 3,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "array": 157.6912498474121,
+        "closure": 84.96667146682739,
+        "control": 1.7087507247924805,
+        "method": 212.43874788284302,
+        "property": 68.70625019073486,
+        "recursive": 206.9375514984131,
+        "rest": 2612.0958304405212,
+        "stringEquality": 57.15625047683716
+      },
+      "exit": 42,
+      "loadBefore": [
+        53.54638671875,
+        40.3828125,
+        32.4990234375
+      ],
+      "loadAfter": [
+        52.2578125,
+        40.53515625,
+        32.64501953125
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 3,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "array": 34.79417085647583,
+        "closure": 19.937920570373535,
+        "control": 7.408750057220459,
+        "method": 7.2733283042907715,
+        "property": 5.2312517166137695,
+        "recursive": 639.020562171936,
+        "rest": 29.371249675750732,
+        "stringEquality": 4.259579181671143
+      },
+      "exit": 0,
+      "loadBefore": [
+        52.2578125,
+        40.53515625,
+        32.64501953125
+      ],
+      "loadAfter": [
+        52.2578125,
+        40.53515625,
+        32.64501953125
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 3,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "array": 211.1720895767212,
+        "closure": 98.6333417892456,
+        "control": 1.8954181671142578,
+        "method": 142.16958045959473,
+        "property": 70.86834192276001,
+        "recursive": 20583.104014396667,
+        "rest": 2839.888331890106,
+        "stringEquality": 56.464998722076416
+      },
+      "exit": 42,
+      "loadBefore": [
+        52.2578125,
+        40.53515625,
+        32.64501953125
+      ],
+      "loadAfter": [
+        51.67626953125,
+        40.60888671875,
+        32.71728515625
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 3,
+      "engine": "typed",
+      "position": 3,
+      "values": {
+        "array": 4.507501125335693,
+        "closure": 9.359581470489502,
+        "control": 1.8845820426940918,
+        "method": 5.4633283615112305,
+        "property": 2.180001735687256,
+        "recursive": 224.49994087219238,
+        "rest": 40.49458026885986,
+        "stringEquality": 2.4245810508728027
+      },
+      "exit": 42,
+      "loadBefore": [
+        51.67626953125,
+        40.60888671875,
+        32.71728515625
+      ],
+      "loadAfter": [
+        50.5009765625,
+        40.548828125,
+        32.7421875
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 4,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "array": 41.32291078567505,
+        "closure": 15.670838356018066,
+        "control": 6.686251163482666,
+        "method": 16.654582023620605,
+        "property": 3.5445785522460938,
+        "recursive": 1429.2080402374268,
+        "rest": 40.84625005722046,
+        "stringEquality": 16.603329181671143
+      },
+      "exit": 0,
+      "loadBefore": [
+        50.5009765625,
+        40.548828125,
+        32.7421875
+      ],
+      "loadAfter": [
+        50.5009765625,
+        40.548828125,
+        32.7421875
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 4,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "array": 180.86708068847656,
+        "closure": 85.9091591835022,
+        "control": 2.2041702270507812,
+        "method": 164.0499997138977,
+        "property": 69.68874931335449,
+        "recursive": 7631.396055221558,
+        "rest": 2719.033751487732,
+        "stringEquality": 61.086249351501465
+      },
+      "exit": 42,
+      "loadBefore": [
+        50.5009765625,
+        40.548828125,
+        32.7421875
+      ],
+      "loadAfter": [
+        48.6103515625,
+        40.4658203125,
+        32.8037109375
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 4,
+      "engine": "typed",
+      "position": 2,
+      "values": {
+        "array": 3.0562496185302734,
+        "closure": 4.24875020980835,
+        "control": 2.1820783615112305,
+        "method": 4.557499885559082,
+        "property": 2.1804213523864746,
+        "recursive": 213.8749361038208,
+        "rest": 36.89084053039551,
+        "stringEquality": 2.1825003623962402
+      },
+      "exit": 42,
+      "loadBefore": [
+        48.6103515625,
+        40.4658203125,
+        32.8037109375
+      ],
+      "loadAfter": [
+        47.43994140625,
+        40.3583984375,
+        32.810546875
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 4,
+      "engine": "candidate1Untyped",
+      "position": 3,
+      "values": {
+        "array": 184.31957960128784,
+        "closure": 86.69874906539917,
+        "control": 3.559999465942383,
+        "method": 125.64458131790161,
+        "property": 60.66582918167114,
+        "recursive": 213.04142475128174,
+        "rest": 2406.7545795440674,
+        "stringEquality": 53.76166820526123
+      },
+      "exit": 42,
+      "loadBefore": [
+        47.43994140625,
+        40.3583984375,
+        32.810546875
+      ],
+      "loadAfter": [
+        46.123046875,
+        40.20263671875,
+        32.7998046875
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 5,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "array": 185.35083055496216,
+        "closure": 147.441668510437,
+        "control": 2.5316619873046875,
+        "method": 162.86624908447266,
+        "property": 69.12666082382202,
+        "recursive": 7566.562533378601,
+        "rest": 2484.219169616699,
+        "stringEquality": 56.51124954223633
+      },
+      "exit": 42,
+      "loadBefore": [
+        46.123046875,
+        40.20263671875,
+        32.7998046875
+      ],
+      "loadAfter": [
+        44.99169921875,
+        40.06640625,
+        32.794921875
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 5,
+      "engine": "typed",
+      "position": 1,
+      "values": {
+        "array": 3.4754204750061035,
+        "closure": 7.400000095367432,
+        "control": 1.9112491607666016,
+        "method": 4.972081184387207,
+        "property": 1.885838508605957,
+        "recursive": 306.37502670288086,
+        "rest": 40.976669788360596,
+        "stringEquality": 2.244999408721924
+      },
+      "exit": 42,
+      "loadBefore": [
+        44.99169921875,
+        40.06640625,
+        32.794921875
+      ],
+      "loadAfter": [
+        44.271484375,
+        39.99853515625,
+        32.8134765625
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 5,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "array": 177.37167119979858,
+        "closure": 90.7766604423523,
+        "control": 2.5520801544189453,
+        "method": 146.00666999816895,
+        "property": 69.1966700553894,
+        "recursive": 293.9584255218506,
+        "rest": 2678.183751106262,
+        "stringEquality": 57.11958885192871
+      },
+      "exit": 42,
+      "loadBefore": [
+        44.271484375,
+        39.99853515625,
+        32.8134765625
+      ],
+      "loadAfter": [
+        42.88818359375,
+        39.78271484375,
+        32.779296875
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 5,
+      "engine": "node",
+      "position": 3,
+      "values": {
+        "array": 3.6366677284240723,
+        "closure": 32.55000114440918,
+        "control": 19.161670207977295,
+        "method": 22.021660804748535,
+        "property": 6.840829849243164,
+        "recursive": 599.1874933242798,
+        "rest": 77.85500049591064,
+        "stringEquality": 28.839590549468994
+      },
+      "exit": 0,
+      "loadBefore": [
+        42.88818359375,
+        39.78271484375,
+        32.779296875
+      ],
+      "loadAfter": [
+        42.88818359375,
+        39.78271484375,
+        32.779296875
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 6,
+      "engine": "typed",
+      "position": 0,
+      "values": {
+        "array": 3.019580841064453,
+        "closure": 3.842918872833252,
+        "control": 2.1816587448120117,
+        "method": 4.189591407775879,
+        "property": 2.1816611289978027,
+        "recursive": 214.08355236053467,
+        "rest": 40.64833164215088,
+        "stringEquality": 5.97707986831665
+      },
+      "exit": 42,
+      "loadBefore": [
+        42.88818359375,
+        39.78271484375,
+        32.779296875
+      ],
+      "loadAfter": [
+        42.41650390625,
+        39.736328125,
+        32.8037109375
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 6,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "array": 167.8516697883606,
+        "closure": 94.45208072662354,
+        "control": 1.9095778465270996,
+        "method": 142.59750127792358,
+        "property": 63.27583074569702,
+        "recursive": 225.8545160293579,
+        "rest": 2807.844159603119,
+        "stringEquality": 58.69457960128784
+      },
+      "exit": 42,
+      "loadBefore": [
+        42.41650390625,
+        39.736328125,
+        32.8037109375
+      ],
+      "loadAfter": [
+        42.3837890625,
+        39.8115234375,
+        32.9111328125
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 6,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "array": 40.474581718444824,
+        "closure": 95.24999856948853,
+        "control": 40.016658306121826,
+        "method": 70.63125133514404,
+        "property": 3.4570789337158203,
+        "recursive": 3896.667003631592,
+        "rest": 34.726669788360596,
+        "stringEquality": 19.663331508636475
+      },
+      "exit": 0,
+      "loadBefore": [
+        42.3837890625,
+        39.8115234375,
+        32.9111328125
+      ],
+      "loadAfter": [
+        42.3837890625,
+        39.8115234375,
+        32.9111328125
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 6,
+      "engine": "untyped",
+      "position": 3,
+      "values": {
+        "array": 327.0841693878174,
+        "closure": 185.1912498474121,
+        "control": 2.215418815612793,
+        "method": 275.3966689109802,
+        "property": 80.85916996002197,
+        "recursive": 7713.687419891357,
+        "rest": 2268.4104204177856,
+        "stringEquality": 60.08915901184082
+      },
+      "exit": 42,
+      "loadBefore": [
+        42.3837890625,
+        39.8115234375,
+        32.9111328125
+      ],
+      "loadAfter": [
+        41.63232421875,
+        39.6982421875,
+        32.91162109375
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 7,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "array": 304.5916700363159,
+        "closure": 109.34416055679321,
+        "control": 1.9091606140136719,
+        "method": 219.23667192459106,
+        "property": 69.01916027069092,
+        "recursive": 214.04147148132324,
+        "rest": 1838.8420796394348,
+        "stringEquality": 59.41999912261963
+      },
+      "exit": 42,
+      "loadBefore": [
+        41.63232421875,
+        39.6982421875,
+        32.91162109375
+      ],
+      "loadAfter": [
+        42.46240234375,
+        39.90234375,
+        33.0234375
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 7,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "array": 40.167908668518066,
+        "closure": 14.082908630371094,
+        "control": 17.382078170776367,
+        "method": 13.057081699371338,
+        "property": 15.716660022735596,
+        "recursive": 678.1669855117798,
+        "rest": 37.261669635772705,
+        "stringEquality": 58.253750801086426
+      },
+      "exit": 0,
+      "loadBefore": [
+        42.46240234375,
+        39.90234375,
+        33.0234375
+      ],
+      "loadAfter": [
+        42.46240234375,
+        39.90234375,
+        33.0234375
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 7,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "array": 216.66958808898926,
+        "closure": 93.73625040054321,
+        "control": 1.9983386993408203,
+        "method": 150.71041822433472,
+        "property": 296.2970805168152,
+        "recursive": 10781.1039686203,
+        "rest": 1878.4899997711182,
+        "stringEquality": 60.07457971572876
+      },
+      "exit": 42,
+      "loadBefore": [
+        42.46240234375,
+        39.90234375,
+        33.0234375
+      ],
+      "loadAfter": [
+        42.24658203125,
+        39.95166015625,
+        33.12158203125
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 7,
+      "engine": "typed",
+      "position": 3,
+      "values": {
+        "array": 8.321659564971924,
+        "closure": 3.848748207092285,
+        "control": 1.887500286102295,
+        "method": 4.9574995040893555,
+        "property": 1.8854188919067383,
+        "recursive": 222.12493419647217,
+        "rest": 39.72583055496216,
+        "stringEquality": 2.425830364227295
+      },
+      "exit": 42,
+      "loadBefore": [
+        42.24658203125,
+        39.95166015625,
+        33.12158203125
+      ],
+      "loadAfter": [
+        41.185546875,
+        39.76953125,
+        33.09716796875
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 8,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "array": 9.963748455047607,
+        "closure": 23.112080097198486,
+        "control": 15.855000019073486,
+        "method": 8.251659870147705,
+        "property": 3.659999370574951,
+        "recursive": 773.6045122146606,
+        "rest": 48.61958980560303,
+        "stringEquality": 4.3695783615112305
+      },
+      "exit": 0,
+      "loadBefore": [
+        41.185546875,
+        39.76953125,
+        33.09716796875
+      ],
+      "loadAfter": [
+        41.185546875,
+        39.76953125,
+        33.09716796875
+      ],
+      "idlePercent": 1.9736842105263157
+    },
+    {
+      "round": 8,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "array": 228.88957977294922,
+        "closure": 110.68709135055542,
+        "control": 1.8933296203613281,
+        "method": 175.09416818618774,
+        "property": 89.93541955947876,
+        "recursive": 8640.166997909546,
+        "rest": 1764.4883394241333,
+        "stringEquality": 97.55167007446289
+      },
+      "exit": 42,
+      "loadBefore": [
+        41.185546875,
+        39.76953125,
+        33.09716796875
+      ],
+      "loadAfter": [
+        39.32421875,
+        39.4150390625,
+        33.048828125
+      ],
+      "idlePercent": 0.006005284650492433
+    },
+    {
+      "round": 8,
+      "engine": "typed",
+      "position": 2,
+      "values": {
+        "array": 3.225419521331787,
+        "closure": 3.855001926422119,
+        "control": 1.8879199028015137,
+        "method": 4.965832233428955,
+        "property": 1.8854093551635742,
+        "recursive": 221.64547443389893,
+        "rest": 45.50416946411133,
+        "stringEquality": 2.3120808601379395
+      },
+      "exit": 42,
+      "loadBefore": [
+        39.32421875,
+        39.4150390625,
+        33.048828125
+      ],
+      "loadAfter": [
+        38.7373046875,
+        39.29150390625,
+        33.04248046875
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 8,
+      "engine": "candidate1Untyped",
+      "position": 3,
+      "values": {
+        "array": 330.5216693878174,
+        "closure": 135.85041999816895,
+        "control": 19.691669940948486,
+        "method": 167.6437497138977,
+        "property": 68.521249294281,
+        "recursive": 276.04150772094727,
+        "rest": 1837.2308421134949,
+        "stringEquality": 56.28999948501587
+      },
+      "exit": 42,
+      "loadBefore": [
+        38.7373046875,
+        39.29150390625,
+        33.04248046875
+      ],
+      "loadAfter": [
+        36.716796875,
+        38.80615234375,
+        32.97705078125
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 9,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "array": 202.271249294281,
+        "closure": 103.43415975570679,
+        "control": 2.2158312797546387,
+        "method": 217.8908395767212,
+        "property": 68.81999969482422,
+        "recursive": 8754.354476928711,
+        "rest": 2134.1654109954834,
+        "stringEquality": 56.599581241607666
+      },
+      "exit": 42,
+      "loadBefore": [
+        36.716796875,
+        38.80615234375,
+        32.97705078125
+      ],
+      "loadAfter": [
+        37.41015625,
+        38.892578125,
+        33.076171875
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 9,
+      "engine": "typed",
+      "position": 1,
+      "values": {
+        "array": 6.5941691398620605,
+        "closure": 5.883328914642334,
+        "control": 1.887500286102295,
+        "method": 4.957082271575928,
+        "property": 1.8849992752075195,
+        "recursive": 221.89605236053467,
+        "rest": 39.25750017166138,
+        "stringEquality": 2.4791693687438965
+      },
+      "exit": 42,
+      "loadBefore": [
+        37.41015625,
+        38.892578125,
+        33.076171875
+      ],
+      "loadAfter": [
+        36.478515625,
+        38.6474609375,
+        33.05712890625
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 9,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "array": 216.85582876205444,
+        "closure": 101.35499954223633,
+        "control": 3.2791709899902344,
+        "method": 193.90415906906128,
+        "property": 72.0845890045166,
+        "recursive": 291.1040782928467,
+        "rest": 2928.3033299446106,
+        "stringEquality": 58.80958080291748
+      },
+      "exit": 42,
+      "loadBefore": [
+        36.478515625,
+        38.6474609375,
+        33.05712890625
+      ],
+      "loadAfter": [
+        35.48828125,
+        38.3623046875,
+        33.02099609375
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 9,
+      "engine": "node",
+      "position": 3,
+      "values": {
+        "array": 34.16750192642212,
+        "closure": 14.352500438690186,
+        "control": 5.728750228881836,
+        "method": 12.73082971572876,
+        "property": 3.744997978210449,
+        "recursive": 659.6250534057617,
+        "rest": 84.35458183288574,
+        "stringEquality": 4.2258405685424805
+      },
+      "exit": 0,
+      "loadBefore": [
+        35.48828125,
+        38.3623046875,
+        33.02099609375
+      ],
+      "loadAfter": [
+        35.48828125,
+        38.3623046875,
+        33.02099609375
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 10,
+      "engine": "typed",
+      "position": 0,
+      "values": {
+        "array": 2.402498722076416,
+        "closure": 6.13084077835083,
+        "control": 1.8866682052612305,
+        "method": 5.050828456878662,
+        "property": 1.8862485885620117,
+        "recursive": 222.06246852874756,
+        "rest": 43.10333967208862,
+        "stringEquality": 2.425827980041504
+      },
+      "exit": 42,
+      "loadBefore": [
+        35.48828125,
+        38.3623046875,
+        33.02099609375
+      ],
+      "loadAfter": [
+        35.26513671875,
+        38.21826171875,
+        33.03173828125
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 10,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "array": 162.9029107093811,
+        "closure": 95.49915790557861,
+        "control": 1.9099998474121094,
+        "method": 169.25750017166138,
+        "property": 72.9704213142395,
+        "recursive": 225.58307647705078,
+        "rest": 2014.1487503051758,
+        "stringEquality": 92.05125093460083
+      },
+      "exit": 42,
+      "loadBefore": [
+        35.26513671875,
+        38.21826171875,
+        33.03173828125
+      ],
+      "loadAfter": [
+        36.09814453125,
+        38.2939453125,
+        33.11865234375
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 10,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "array": 86.64790868759155,
+        "closure": 26.155412197113037,
+        "control": 6.290409564971924,
+        "method": 10.957498550415039,
+        "property": 5.336658954620361,
+        "recursive": 606.7500114440918,
+        "rest": 26.295411586761475,
+        "stringEquality": 3.5045790672302246
+      },
+      "exit": 0,
+      "loadBefore": [
+        36.09814453125,
+        38.2939453125,
+        33.11865234375
+      ],
+      "loadAfter": [
+        36.09814453125,
+        38.2939453125,
+        33.11865234375
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 10,
+      "engine": "untyped",
+      "position": 3,
+      "values": {
+        "array": 181.1412501335144,
+        "closure": 115.61625003814697,
+        "control": 2.457919120788574,
+        "method": 142.7679181098938,
+        "property": 70.6041693687439,
+        "recursive": 13017.812490463257,
+        "rest": 1602.4166703224182,
+        "stringEquality": 60.49750089645386
+      },
+      "exit": 42,
+      "loadBefore": [
+        36.09814453125,
+        38.2939453125,
+        33.11865234375
+      ],
+      "loadAfter": [
+        35.3134765625,
+        38.0537109375,
+        33.09326171875
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 11,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "array": 168.0904197692871,
+        "closure": 97.59291887283325,
+        "control": 2.3974990844726562,
+        "method": 142.7679204940796,
+        "property": 76.4187502861023,
+        "recursive": 232.81240463256836,
+        "rest": 1717.4266695976257,
+        "stringEquality": 56.12499952316284
+      },
+      "exit": 42,
+      "loadBefore": [
+        35.3134765625,
+        38.0537109375,
+        33.09326171875
+      ],
+      "loadAfter": [
+        36.0048828125,
+        38.10302734375,
+        33.16748046875
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 11,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "array": 4.175000190734863,
+        "closure": 52.98749923706055,
+        "control": 16.819591522216797,
+        "method": 11.342499256134033,
+        "property": 23.7404203414917,
+        "recursive": 929.6460151672363,
+        "rest": 26.69916868209839,
+        "stringEquality": 3.7216711044311523
+      },
+      "exit": 0,
+      "loadBefore": [
+        36.0048828125,
+        38.10302734375,
+        33.16748046875
+      ],
+      "loadAfter": [
+        36.0048828125,
+        38.10302734375,
+        33.16748046875
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 11,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "array": 172.896249294281,
+        "closure": 197.16125011444092,
+        "control": 1.892080307006836,
+        "method": 206.62959098815918,
+        "property": 114.19708967208862,
+        "recursive": 9133.978962898254,
+        "rest": 1748.801658153534,
+        "stringEquality": 85.87125062942505
+      },
+      "exit": 42,
+      "loadBefore": [
+        36.0048828125,
+        38.10302734375,
+        33.16748046875
+      ],
+      "loadAfter": [
+        35.283203125,
+        37.8837890625,
+        33.14697265625
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 11,
+      "engine": "typed",
+      "position": 3,
+      "values": {
+        "array": 3.590829372406006,
+        "closure": 4.030001163482666,
+        "control": 1.8866705894470215,
+        "method": 4.9574995040893555,
+        "property": 1.9020891189575195,
+        "recursive": 220.5415964126587,
+        "rest": 42.95207977294922,
+        "stringEquality": 2.4254202842712402
+      },
+      "exit": 42,
+      "loadBefore": [
+        35.283203125,
+        37.8837890625,
+        33.14697265625
+      ],
+      "loadAfter": [
+        35.3193359375,
+        37.8046875,
+        33.17431640625
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 12,
+      "engine": "node",
+      "position": 0,
+      "values": {
+        "array": 18.30458164215088,
+        "closure": 31.645419597625732,
+        "control": 31.427910327911377,
+        "method": 37.12249994277954,
+        "property": 31.137077808380127,
+        "recursive": 708.6039781570435,
+        "rest": 36.50667190551758,
+        "stringEquality": 14.467921257019043
+      },
+      "exit": 0,
+      "loadBefore": [
+        35.3193359375,
+        37.8046875,
+        33.17431640625
+      ],
+      "loadAfter": [
+        35.3193359375,
+        37.8046875,
+        33.17431640625
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 12,
+      "engine": "untyped",
+      "position": 1,
+      "values": {
+        "array": 241.97082996368408,
+        "closure": 93.90290975570679,
+        "control": 1.8924999237060547,
+        "method": 188.90374898910522,
+        "property": 95.62875032424927,
+        "recursive": 27774.24991130829,
+        "rest": 1797.60666847229,
+        "stringEquality": 62.347919940948486
+      },
+      "exit": 42,
+      "loadBefore": [
+        35.3193359375,
+        37.8046875,
+        33.17431640625
+      ],
+      "loadAfter": [
+        34.25439453125,
+        37.4970703125,
+        33.119140625
+      ],
+      "idlePercent": 0.005917509911829102
+    },
+    {
+      "round": 12,
+      "engine": "typed",
+      "position": 2,
+      "values": {
+        "array": 3.017909526824951,
+        "closure": 3.8524985313415527,
+        "control": 1.8866705894470215,
+        "method": 5.172080993652344,
+        "property": 1.885828971862793,
+        "recursive": 365.5834197998047,
+        "rest": 42.60541915893555,
+        "stringEquality": 2.425408363342285
+      },
+      "exit": 42,
+      "loadBefore": [
+        34.25439453125,
+        37.4970703125,
+        33.119140625
+      ],
+      "loadAfter": [
+        34.23388671875,
+        37.43896484375,
+        33.1240234375
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 12,
+      "engine": "candidate1Untyped",
+      "position": 3,
+      "values": {
+        "array": 185.48916816711426,
+        "closure": 108.17458152770996,
+        "control": 2.0200014114379883,
+        "method": 148.53665828704834,
+        "property": 71.54375076293945,
+        "recursive": 236.66691780090332,
+        "rest": 2337.8449988365173,
+        "stringEquality": 155.14292001724243
+      },
+      "exit": 42,
+      "loadBefore": [
+        34.23388671875,
+        37.43896484375,
+        33.1240234375
+      ],
+      "loadAfter": [
+        36.5869140625,
+        37.82275390625,
+        33.3095703125
+      ],
+      "idlePercent": 0.03215020576131687
+    },
+    {
+      "round": 13,
+      "engine": "untyped",
+      "position": 0,
+      "values": {
+        "array": 176.5149998664856,
+        "closure": 120.3374981880188,
+        "control": 1.8962502479553223,
+        "method": 177.89124965667725,
+        "property": 78.08499813079834,
+        "recursive": 7687.1455907821655,
+        "rest": 2653.2183289527893,
+        "stringEquality": 375.6483316421509
+      },
+      "exit": 42,
+      "loadBefore": [
+        36.5869140625,
+        37.82275390625,
+        33.3095703125
+      ],
+      "loadAfter": [
+        35.75927734375,
+        37.59912109375,
+        33.2822265625
+      ],
+      "idlePercent": 0.1199220506670664
+    },
+    {
+      "round": 13,
+      "engine": "typed",
+      "position": 1,
+      "values": {
+        "array": 3.3920788764953613,
+        "closure": 3.8516592979431152,
+        "control": 1.885831356048584,
+        "method": 4.965419769287109,
+        "property": 1.8854188919067383,
+        "recursive": 314.35394287109375,
+        "rest": 40.94583034515381,
+        "stringEquality": 2.447497844696045
+      },
+      "exit": 42,
+      "loadBefore": [
+        35.75927734375,
+        37.59912109375,
+        33.2822265625
+      ],
+      "loadAfter": [
+        35.2802734375,
+        37.431640625,
+        33.2724609375
+      ],
+      "idlePercent": 0.088171459576777
+    },
+    {
+      "round": 13,
+      "engine": "candidate1Untyped",
+      "position": 2,
+      "values": {
+        "array": 212.59167194366455,
+        "closure": 102.4412488937378,
+        "control": 1.9083404541015625,
+        "method": 154.8937487602234,
+        "property": 70.2033281326294,
+        "recursive": 224.04146194458008,
+        "rest": 2201.0633301734924,
+        "stringEquality": 91.4345908164978
+      },
+      "exit": 42,
+      "loadBefore": [
+        35.2802734375,
+        37.431640625,
+        33.2724609375
+      ],
+      "loadAfter": [
+        34.20849609375,
+        37.1357421875,
+        33.2158203125
+      ],
+      "idlePercent": 0.2807510089489384
+    },
+    {
+      "round": 13,
+      "engine": "node",
+      "position": 3,
+      "values": {
+        "array": 3.987917900085449,
+        "closure": 8.882079124450684,
+        "control": 8.545420169830322,
+        "method": 9.459590911865234,
+        "property": 3.822500705718994,
+        "recursive": 630.5414438247681,
+        "rest": 30.012078285217285,
+        "stringEquality": 3.0220794677734375
+      },
+      "exit": 0,
+      "loadBefore": [
+        34.20849609375,
+        37.1357421875,
+        33.2158203125
+      ],
+      "loadAfter": [
+        34.20849609375,
+        37.1357421875,
+        33.2158203125
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 14,
+      "engine": "typed",
+      "position": 0,
+      "values": {
+        "array": 11.520829200744629,
+        "closure": 3.844590187072754,
+        "control": 1.887500286102295,
+        "method": 4.973330497741699,
+        "property": 1.8862485885620117,
+        "recursive": 273.5210657119751,
+        "rest": 42.347919940948486,
+        "stringEquality": 2.4570798873901367
+      },
+      "exit": 42,
+      "loadBefore": [
+        34.20849609375,
+        37.1357421875,
+        33.2158203125
+      ],
+      "loadAfter": [
+        32.60302734375,
+        36.68798828125,
+        33.10205078125
+      ],
+      "idlePercent": 3.8059967874353027
+    },
+    {
+      "round": 14,
+      "engine": "candidate1Untyped",
+      "position": 1,
+      "values": {
+        "array": 184.69708919525146,
+        "closure": 110.9487509727478,
+        "control": 2.554171085357666,
+        "method": 154.24916982650757,
+        "property": 69.3370795249939,
+        "recursive": 223.52099418640137,
+        "rest": 1647.7195811271667,
+        "stringEquality": 66.15790843963623
+      },
+      "exit": 42,
+      "loadBefore": [
+        32.60302734375,
+        36.68798828125,
+        33.10205078125
+      ],
+      "loadAfter": [
+        31.32177734375,
+        36.28466796875,
+        33.00048828125
+      ],
+      "idlePercent": 0.218153486560187
+    },
+    {
+      "round": 14,
+      "engine": "node",
+      "position": 2,
+      "values": {
+        "array": 17.65124797821045,
+        "closure": 12.19750165939331,
+        "control": 9.428749084472656,
+        "method": 34.246671199798584,
+        "property": 4.4887495040893555,
+        "recursive": 3310.312509536743,
+        "rest": 36.53334140777588,
+        "stringEquality": 15.004169940948486
+      },
+      "exit": 0,
+      "loadBefore": [
+        31.32177734375,
+        36.28466796875,
+        33.00048828125
+      ],
+      "loadAfter": [
+        31.32177734375,
+        36.28466796875,
+        33.00048828125
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 14,
+      "engine": "untyped",
+      "position": 3,
+      "values": {
+        "array": 232.24124908447266,
+        "closure": 275.90959072113037,
+        "control": 1.8945789337158203,
+        "method": 359.1612482070923,
+        "property": 84.39125061035156,
+        "recursive": 8126.7499923706055,
+        "rest": 1923.8583302497864,
+        "stringEquality": 199.43167209625244
+      },
+      "exit": 42,
+      "loadBefore": [
+        31.32177734375,
+        36.28466796875,
+        33.00048828125
+      ],
+      "loadAfter": [
+        31.32177734375,
+        36.28466796875,
+        33.00048828125
+      ],
+      "idlePercent": 1.6764194211608414
+    },
+    {
+      "round": 15,
+      "engine": "candidate1Untyped",
+      "position": 0,
+      "values": {
+        "array": 192.36417055130005,
+        "closure": 183.85292053222656,
+        "control": 1.9083404541015625,
+        "method": 179.10000085830688,
+        "property": 69.09540891647339,
+        "recursive": 223.91700744628906,
+        "rest": 1819.9454092979431,
+        "stringEquality": 75.41874885559082
+      },
+      "exit": 42,
+      "loadBefore": [
+        31.32177734375,
+        36.28466796875,
+        33.00048828125
+      ],
+      "loadAfter": [
+        31.3583984375,
+        36.126953125,
+        32.982421875
+      ],
+      "idlePercent": 0.18980299757837554
+    },
+    {
+      "round": 15,
+      "engine": "node",
+      "position": 1,
+      "values": {
+        "array": 5.457499027252197,
+        "closure": 34.3370795249939,
+        "control": 5.519998073577881,
+        "method": 9.728331565856934,
+        "property": 17.306249141693115,
+        "recursive": 2817.916512489319,
+        "rest": 60.60333967208862,
+        "stringEquality": 23.59916925430298
+      },
+      "exit": 0,
+      "loadBefore": [
+        31.3583984375,
+        36.126953125,
+        32.982421875
+      ],
+      "loadAfter": [
+        31.3583984375,
+        36.126953125,
+        32.982421875
+      ],
+      "idlePercent": 0
+    },
+    {
+      "round": 15,
+      "engine": "untyped",
+      "position": 2,
+      "values": {
+        "array": 317.7633309364319,
+        "closure": 98.22665929794312,
+        "control": 1.9866609573364258,
+        "method": 167.01082944869995,
+        "property": 68.85541915893555,
+        "recursive": 9553.812503814697,
+        "rest": 1913.329999446869,
+        "stringEquality": 337.83124923706055
+      },
+      "exit": 42,
+      "loadBefore": [
+        31.3583984375,
+        36.126953125,
+        32.982421875
+      ],
+      "loadAfter": [
+        31.59765625,
+        36.02294921875,
+        32.982421875
+      ],
+      "idlePercent": 1.2090569355902396
+    },
+    {
+      "round": 15,
+      "engine": "typed",
+      "position": 3,
+      "values": {
+        "array": 3.539581298828125,
+        "closure": 4.541668891906738,
+        "control": 2.526249885559082,
+        "method": 5.20334005355835,
+        "property": 1.8850016593933105,
+        "recursive": 223.52099418640137,
+        "rest": 43.33249807357788,
+        "stringEquality": 2.9816699028015137
+      },
+      "exit": 42,
+      "loadBefore": [
+        31.59765625,
+        36.02294921875,
+        32.982421875
+      ],
+      "loadAfter": [
+        31.1845703125,
+        35.791015625,
+        32.935546875
+      ],
+      "idlePercent": 0.43397754889480383
+    }
+  ]
+}

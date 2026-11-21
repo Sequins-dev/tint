@@ -1,0 +1,90 @@
+{
+  "workload": "frozen workload-v7 compiler self-compile",
+  "target": "darwin-aarch64",
+  "baseHead": "206530edd2dc8df8f79d070bbae2e110a467ddbf",
+  "baseImageSha256": "7c70ff64c844f2103f58b8501fcd6a576552aae66edd7683fbafb83e0ca0d5b8",
+  "sourceFiles": 760,
+  "sourceTreeSha256": "289ca5aa4b8a76e40a34434efc022d11d19289d9b0396d66e1bb0cceca058f1e",
+  "protocol": "AB BA AB, shared timing and native launch locks, stopped at entry, exit 0 verified",
+  "wallInterval": "sources marker to stopped at libc exit",
+  "candidateBaseHead": "174988283d3aeb0eea04a7d5e522056e2b7b59d1",
+  "candidateImageSha256": "06c2e4f7d341bfb33e537cb2a8249d28fbbc723eb5ccd0225d6c9191fe678006",
+  "samplerSha256": "ae35b1823683f1722a515a339e8ed637647166c52038c5da1c8787acdca0a9b4",
+  "samplerWrapperSha256": "97a1816dd354dd2d7e697bff0a5c32fceb7e7acd6b43f353a5238a697b4d600b",
+  "rounds": [
+    {
+      "round": 1,
+      "order": ["base", "candidate"],
+      "base": {
+        "wallSeconds": 214.174737375,
+        "peakRssBytes": 2219393024,
+        "samples": 15060,
+        "outputSha256": "68c11052966f4a851b875c23b6a3413abc74262cec1460532dba09c624d17846",
+        "markersSha256": "7af6f8b1c442d9cdd5fbb5b7994fe2f391f73416c67720f3002d723036c2f575",
+        "samplesSha256": "876b6921ebcb094cf191ca16eaabca2e182dbc094afe25b961073505860a655c"
+      },
+      "candidate": {
+        "wallSeconds": 173.594737041,
+        "peakRssBytes": 2230403072,
+        "samples": 12544,
+        "outputSha256": "68c11052966f4a851b875c23b6a3413abc74262cec1460532dba09c624d17846",
+        "markersSha256": "317be86ce6a1798cd975f5f8cd469c0a461bf80adc6778c42c77121f53e8f3d2",
+        "samplesSha256": "2c2ce32c31883bec019df2deb5c519267dfd197b0210cfffd2b599950e17a9aa"
+      }
+    },
+    {
+      "round": 2,
+      "order": ["candidate", "base"],
+      "base": {
+        "wallSeconds": 261.6666605,
+        "peakRssBytes": 2230288384,
+        "samples": 18510,
+        "outputSha256": "68c11052966f4a851b875c23b6a3413abc74262cec1460532dba09c624d17846",
+        "markersSha256": "b2ca41dc4556eae7cdd6df56ede8634555db5f8460ee2fef7ce171feb09c7df1",
+        "samplesSha256": "7e005d2daffadeaa25b93b403c71ab5cd8cdaa302922a569e1ec4339393eeeb6"
+      },
+      "candidate": {
+        "wallSeconds": 138.402092333,
+        "peakRssBytes": 2230829056,
+        "samples": 10252,
+        "outputSha256": "68c11052966f4a851b875c23b6a3413abc74262cec1460532dba09c624d17846",
+        "markersSha256": "99c905d5268a7fd282370c86b32eb7b16557401790d203d49f95725ce7fd81ae",
+        "samplesSha256": "0fd582f8a07225c4b94e37012e7eca14b8f600f3159d9f89633221933fe5d182"
+      }
+    },
+    {
+      "round": 3,
+      "order": ["base", "candidate"],
+      "base": {
+        "wallSeconds": 156.74221925,
+        "peakRssBytes": 2229796864,
+        "samples": 11504,
+        "outputSha256": "68c11052966f4a851b875c23b6a3413abc74262cec1460532dba09c624d17846",
+        "markersSha256": "9728f3e505bc3fd5f2f7cc7c07dcbd473cd09c61e67583518e1fd09f50bd7122",
+        "samplesSha256": "3004b2bb03b2ad23ba7aa9a8b8643d339d9b39d294d6a456146b14652788c521"
+      },
+      "candidate": {
+        "wallSeconds": 148.767818375,
+        "peakRssBytes": 2230616064,
+        "samples": 11102,
+        "outputSha256": "68c11052966f4a851b875c23b6a3413abc74262cec1460532dba09c624d17846",
+        "markersSha256": "02fc726d4fe8fbe3e3d97cdf88fb2693aa74c329690001bb9f7676aa8d32ac7b",
+        "samplesSha256": "439ae67d06e9e0a53325ad66dcf181daef078c8e21fbd7ae0a9dfd5dba988072"
+      }
+    }
+  ],
+  "medians": {
+    "base": {
+      "wallSeconds": 214.174737375,
+      "peakRssBytes": 2229796864
+    },
+    "candidate": {
+      "wallSeconds": 148.767818375,
+      "peakRssBytes": 2230616064
+    }
+  },
+  "medianPairedDelta": {
+    "wallSeconds": -40.580000334000005,
+    "peakRssBytes": 819200
+  }
+}

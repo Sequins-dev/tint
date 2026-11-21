@@ -83,10 +83,12 @@ export interface OrdinaryObject<Key, Value> {
    * replaced. Only an in-place [[Value]] write to a writable data descriptor
    * leaves it unchanged, so a cached descriptor stays the live cell. */
   internalPropertyEpoch: number;
+  internalPropertyLayout: OrdinaryPropertyLayout<Value> | undefined;
   internalPropertyContract: PropertyWriteContract<Key, Value> | undefined;
   internalPrivateElements: PrivateElement<Value>[] | undefined;
   /** Internal [[Call]], never a named/inherited JavaScript property. */
   readonly internalCall: ObjectCall<Value> | undefined;
+  internalRegisterCall: ObjectRegisterEntry<Value> | undefined;
   /** Compiler/runtime-owned call steps. Each step owns and restores its context
    * before returning a transfer; JavaScript return values never select a step. */
   internalTailDispatch: ObjectTailDispatch<Key, Value> | undefined;
@@ -273,6 +275,45 @@ export type ObjectCall<Value> = (
   receiver: Value,
   arguments_: readonly Value[],
 ) => Value;
+export type ObjectRegisterCall<Value> = (
+  callee: Value,
+  receiver: Value,
+  newTarget: Value,
+  count: number,
+  first: Value,
+  second: Value,
+) => Value;
+export type ObjectWideRegisterCall<Value> = (
+  callee: Value,
+  receiver: Value,
+  newTarget: Value,
+  count: number,
+  first: Value,
+  second: Value,
+  third: Value,
+  fourth: Value,
+  fifth: Value,
+  sixth: Value,
+) => Value;
+export interface ObjectRegisterEntry<Value> {
+  readonly context: ScriptExecutionContext;
+  readonly invoke: ObjectRegisterCall<Value>;
+  readonly invokeWide: ObjectWideRegisterCall<Value> | undefined;
+}
+interface OrdinaryPropertyShape {
+  readonly keys: readonly string[];
+}
+interface OrdinaryPropertyLayout<Value> {
+  readonly shape: OrdinaryPropertyShape;
+  readonly cells: readonly Descriptor<Value>[];
+}
+export interface ScriptPropertyCache {
+  shapes: readonly OrdinaryPropertyShape[] | undefined;
+  offset: number;
+}
+export function createScriptPropertyCache(): ScriptPropertyCache {
+  return { shapes: undefined, offset: 0 };
+}
 export type ObjectCallDispatch<Key, Value> =
   | { readonly kind: "return"; readonly value: Value }
   | {
@@ -337,7 +378,7 @@ export function attachPropertyContract<Key, Value>(
   const elements = object.internalArrayElements;
   if (elements !== undefined) unpackArrayElements<Key, Value>(object, elements);
   object.internalPropertyContract = contract;
-  object.internalPropertyEpoch++;
+  invalidatePropertyLayout<Key, Value>(object);
 }
 export function createAliasedObject<Key, Value>(
   prototype: OrdinaryObject<Key, Value> | undefined,
@@ -433,8 +474,10 @@ function allocateObject<Key, Value>(
     internalImmutablePrototype: false,
     properties: new Map<Key, Descriptor<Value>>(),
     internalPropertyEpoch: 0,
+    internalPropertyLayout: undefined,
     internalPropertyContract: undefined,
     internalCall,
+    internalRegisterCall: undefined,
     internalTailDispatch: undefined,
     internalInitialName: undefined,
     internalSourceText: undefined,
@@ -616,7 +659,7 @@ export function ordinaryDefineOwnProperty<Key, Value>(
         current === undefined || (update.fields & valueField) !== 0,
       );
     object.properties.set(key, descriptor);
-    object.internalPropertyEpoch++;
+    invalidatePropertyLayout<Key, Value>(object);
     if (aliases !== undefined && alias !== undefined) {
       if (descriptor.accessor) aliases.delete(key);
       else {
@@ -639,7 +682,7 @@ function unpackArrayElements<Key, Value>(
       elements.keys.indexKey(index),
       arrayElementDescriptor<Key, Value>(elements, index),
     );
-  object.internalPropertyEpoch++;
+  invalidatePropertyLayout<Key, Value>(object);
   object.internalArrayElements = undefined;
 }
 /** Create or replace an own data property, without invoking setters. */
@@ -649,6 +692,29 @@ export function createDataProperty<Key, Value>(
   value: Value,
   hooks: ObjectHooks<Value>,
 ): boolean {
+  // A new property on an ordinary extensible object already has a complete,
+  // valid descriptor. Existing properties and exotic objects still use
+  // DefineOwnProperty for redefinitions, aliases and length constraints.
+  if (
+    object.internalMethods === undefined &&
+    object.internalArrayElements === undefined &&
+    object.internalDataAliases === undefined &&
+    object.internalPropertyContract === undefined &&
+    object.extensible &&
+    !object.properties.has(key)
+  ) {
+    object.properties.set(key, {
+      accessor: false,
+      value,
+      writable: true,
+      get: hooks.undefinedValue,
+      set: hooks.undefinedValue,
+      enumerable: true,
+      configurable: true,
+    });
+    invalidatePropertyLayout<Key, Value>(object);
+    return true;
+  }
   return (
     defineOwnProperty<Key, Value>(
       object,
@@ -722,7 +788,7 @@ export function ordinaryDeleteProperty<Key, Value>(
   const contract = object.internalPropertyContract;
   if (contract !== undefined && !contract.canDelete(key)) return false;
   object.properties.delete(key);
-  object.internalPropertyEpoch++;
+  invalidatePropertyLayout<Key, Value>(object);
   const aliases = object.internalDataAliases;
   if (aliases !== undefined) aliases.delete(key);
   return true;
@@ -763,6 +829,7 @@ export function setPrototype<Key, Value>(
     cursor = cursor.prototype;
   }
   object.prototype = prototype;
+  invalidatePropertyLayout<Key, Value>(object);
   return true;
 }
 /** Freeze only the prototype identity; own properties can remain extensible. */
@@ -844,6 +911,93 @@ export function writePropertyCell<Value>(
   value: Value,
 ): void {
   cell.value = value;
+}
+
+function invalidatePropertyLayout<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+): void {
+  object.internalPropertyEpoch++;
+  object.internalPropertyLayout = undefined;
+}
+
+/** The per-site cache owns only shapes and a slot number. The receiver and
+ * prototype objects own their descriptor lists, so the cache keeps no
+ * JavaScript object or symbol alive. */
+function propertyLayout<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  expected: OrdinaryPropertyShape | undefined,
+): OrdinaryPropertyLayout<Value> | undefined {
+  if (
+    object.internalMethods !== undefined ||
+    object.internalDataAliases !== undefined ||
+    object.internalPropertyContract !== undefined
+  )
+    return undefined;
+  const layout = object.internalPropertyLayout;
+  if (layout !== undefined) return layout;
+  const keys: string[] = [];
+  const cells: Descriptor<Value>[] = [];
+  let matches = expected !== undefined;
+  for (const [key, descriptor] of object.properties) {
+    if (typeof key !== "string") return undefined;
+    if (expected !== undefined && expected.keys[keys.length] !== key)
+      matches = false;
+    keys.push(key);
+    cells.push(descriptor);
+  }
+  const shape: OrdinaryPropertyShape =
+    matches && expected !== undefined && expected.keys.length === keys.length
+      ? expected
+      : { keys };
+  const installed: OrdinaryPropertyLayout<Value> = { shape, cells };
+  object.internalPropertyLayout = installed;
+  return installed;
+}
+
+export function lookupCachedScriptProperty<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  key: string,
+  cache: ScriptPropertyCache,
+  own: boolean,
+): Descriptor<Value> | undefined {
+  const expected = cache.shapes;
+  if (expected !== undefined && (!own || expected.length === 1)) {
+    let cursor: OrdinaryObject<Key, Value> | undefined = object;
+    for (
+      let depth = 0;
+      depth < expected.length && cursor !== undefined;
+      depth++
+    ) {
+      const layout = cursor.internalPropertyLayout;
+      if (layout === undefined || layout.shape !== expected[depth]) break;
+      if (depth + 1 === expected.length) {
+        const cell = layout.cells[cache.offset];
+        return cell === undefined || cell.accessor ? undefined : cell;
+      }
+      cursor = cursor.prototype;
+    }
+  }
+  const shapes: OrdinaryPropertyShape[] = [];
+  let cursor: OrdinaryObject<Key, Value> | undefined = object;
+  while (cursor !== undefined) {
+    const layout = propertyLayout<Key, Value>(
+      cursor,
+      expected?.[shapes.length],
+    );
+    if (layout === undefined) return undefined;
+    shapes.push(layout.shape);
+    const offset = layout.shape.keys.indexOf(key);
+    if (offset >= 0) {
+      const cell = layout.cells[offset];
+      if (cell === undefined || cell.accessor) return undefined;
+      cache.shapes = shapes;
+      cache.offset = offset;
+      return cell;
+    }
+    if (own) return undefined;
+    cursor = cursor.prototype;
+  }
+  return undefined;
 }
 /** True when no object on the prototype chain overrides an internal method,
  * so HasProperty and Get are unobservable lookups until a getter runs. */

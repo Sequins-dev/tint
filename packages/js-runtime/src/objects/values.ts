@@ -13,12 +13,18 @@ import {
   setProperty,
   deleteProperty,
   setPrototype,
+  lookupCachedScriptProperty,
+  type ScriptPropertyCache,
   type ObjectHooks,
   type OrdinaryObject,
 } from "./operations.ts";
 import { callObject } from "./call.ts";
 import { toObjectValue } from "./boxing.ts";
-import { createRuntimeError, type ErrorRealm } from "./errors.ts";
+import {
+  createRuntimeError,
+  throwIfRuntimeError,
+  type ErrorRealm,
+} from "./errors.ts";
 import {
   createPropertyEnumeration,
   type PropertyEnumeration,
@@ -210,6 +216,96 @@ export function callObjectValue(
   );
 }
 
+/** Positional call sites have evaluated every operand before dispatch. The
+ * generic path handles foreign realms, proxies, bound functions and hosts. */
+export function callRegisterObjectValue(
+  realm: ErrorRealm,
+  count: number,
+  value: unknown,
+  receiver: unknown,
+  first: unknown,
+  second: unknown,
+): unknown {
+  const object = viewObjectValue(value, realm.objectPrototype);
+  if (object === undefined) throw createRuntimeError(realm, "type");
+  const entry = object.internalRegisterCall;
+  const active = realm.agent.activeContext;
+  if (
+    entry !== undefined &&
+    active !== undefined &&
+    active.realm === entry.context.realm &&
+    active.scriptOrModule === entry.context.scriptOrModule
+  )
+    return entry.invoke(value, receiver, undefined, count, first, second);
+  const args: readonly unknown[] =
+    count === 0 ? [] : count === 1 ? [first] : [first, second];
+  const result = callObject<ScriptPropertyKey, unknown>(
+    object,
+    receiver,
+    args,
+    undefined,
+  );
+  if (result.error !== "none") throw createRuntimeError(realm, "type");
+  return result.value;
+}
+
+/** Same-Script calls to wide positional bodies keep all actual operands
+ * outside the managed heap. Other callees receive exactly the supplied list. */
+export function callWideRegisterObjectValue(
+  realm: ErrorRealm,
+  count: number,
+  value: unknown,
+  receiver: unknown,
+  first: unknown,
+  second: unknown,
+  third: unknown,
+  fourth: unknown,
+  fifth: unknown,
+  sixth: unknown,
+): unknown {
+  const object = viewObjectValue(value, realm.objectPrototype);
+  if (object === undefined) throw createRuntimeError(realm, "type");
+  const entry = object.internalRegisterCall;
+  const active = realm.agent.activeContext;
+  if (
+    entry !== undefined &&
+    active !== undefined &&
+    active.realm === entry.context.realm &&
+    active.scriptOrModule === entry.context.scriptOrModule
+  ) {
+    const invoke = entry.invokeWide;
+    if (invoke !== undefined)
+      return invoke(
+        value,
+        receiver,
+        undefined,
+        count,
+        first,
+        second,
+        third,
+        fourth,
+        fifth,
+        sixth,
+      );
+  }
+  const args: readonly unknown[] =
+    count === 3
+      ? [first, second, third]
+      : count === 4
+        ? [first, second, third, fourth]
+        : count === 5
+          ? [first, second, third, fourth, fifth]
+          : [first, second, third, fourth, fifth, sixth];
+  const result = callObject<ScriptPropertyKey, unknown>(
+    object,
+    receiver,
+    args,
+    undefined,
+  );
+  if (result.error !== "none") throw createRuntimeError(realm, "type");
+  return result.value;
+}
+
 /** Calls from typed source already carry a receiver and an evaluated list. */
 export function callGeneralValue(
   value: unknown,
@@ -313,6 +409,54 @@ export function readObjectValueProperty(
   if (base === null || base === undefined)
     throw createRuntimeError(realm, "type");
   return propertyValueOf(base, key, base, hooks, realm);
+}
+
+export function readCachedObjectValueProperty(
+  base: unknown,
+  key: string,
+  hooks: ObjectHooks<unknown>,
+  realm: ErrorRealm,
+  cache: ScriptPropertyCache,
+): unknown {
+  const object = viewObjectValue(base, realm.objectPrototype);
+  if (object !== undefined) {
+    const cell = lookupCachedScriptProperty<ScriptPropertyKey, unknown>(
+      object,
+      key,
+      cache,
+      false,
+    );
+    if (cell !== undefined) return cell.value;
+  }
+  return readObjectValueProperty(base, key, hooks, realm);
+}
+
+export function writeCachedObjectValueProperty(
+  base: unknown,
+  key: string,
+  value: unknown,
+  strict: boolean,
+  hooks: ObjectHooks<unknown>,
+  realm: ErrorRealm,
+  cache: ScriptPropertyCache,
+): void {
+  const object = viewObjectValue(base, realm.objectPrototype);
+  if (object !== undefined) {
+    const cell = lookupCachedScriptProperty<ScriptPropertyKey, unknown>(
+      object,
+      key,
+      cache,
+      true,
+    );
+    if (cell !== undefined && cell.writable) {
+      cell.value = value;
+      return;
+    }
+  }
+  throwIfRuntimeError(
+    realm,
+    setObjectValueProperty(base, key, value, strict, hooks, realm),
+  );
 }
 
 /** The realm prototype ToObject would give a String, Number or Boolean

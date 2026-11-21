@@ -11,6 +11,7 @@ import { viewObjectValue, propertyValueOf } from "./values.ts";
 import { typedArrayElementAt } from "./typed-array-data.ts";
 import { primitiveToString, primitiveToNumber } from "./operators.ts";
 import { viewBigIntValue, bigIntToString } from "./bigints.ts";
+import { arrayElementCount, readArrayElement } from "./array-elements.ts";
 
 /** Property references reject nullish bases before ToPropertyKey. */
 export function objectPropertyKey(
@@ -49,6 +50,16 @@ export function readObjectValuePropertyKey(
       object === undefined ? undefined : object.internalTypedArrayData;
     if (data !== undefined)
       return typedArrayElementAt(data, key === 0 ? 0 : key);
+    if (object !== undefined && key >= 0 && Math.floor(key) === key) {
+      const elements = object.internalArrayElements;
+      if (
+        elements !== undefined &&
+        object.internalMethods?.get === undefined &&
+        object.internalMethods?.getOwnProperty === undefined &&
+        key < arrayElementCount<ScriptPropertyKey, unknown>(elements)
+      )
+        return readArrayElement<ScriptPropertyKey, unknown>(elements, key);
+    }
     converted = String(key);
   } else {
     const symbol = viewSymbolValue(key);
