@@ -106,32 +106,33 @@ export function acquireGateLockSync(
 }
 
 async function acquireTimingAndLaunch(
-  timing: string,
   launch: string,
+  timing: string,
   label: string,
 ): Promise<() => void> {
   if (timing === launch)
     throw Error("Expected distinct timing and launch lock paths");
   for (;;) {
-    const first = probeGateLocks([timing], label, undefined);
-    if (first) {
-      let second: GateLock | undefined;
+    const launchLock = probeGateLocks([launch], label, undefined);
+    if (launchLock) {
+      let timingLock: GateLock | undefined;
       try {
-        second = probeGateLocks([launch], label, undefined);
-        const acquired = second;
+        timingLock = probeGateLocks([timing], label, undefined);
+        const acquired = timingLock;
         if (acquired)
           return () => {
             try {
               acquired.release();
             } finally {
-              first.release();
+              launchLock.release();
             }
           };
       } finally {
-        if (!second) first.release();
+        if (!timingLock) launchLock.release();
       }
     }
-    // A legacy caller may hold either lock. Do not park with one held.
+    // A legacy caller can hold timing while waiting for launch. Only probe
+    // timing, and release launch before retrying, so neither side deadlocks.
     await delay(250);
   }
 }
@@ -347,12 +348,18 @@ if (import.meta.main) {
     if (!file) throw Error("Expected TINT_GATE_HELD_LOCK");
     process.exitCode = await runTimed([file], label, command, args);
   } else if (resource === "timing-and-launch") {
-    const first = process.env.TINT_GATE_TIMING_LOCK;
-    const second = process.env.TINT_GATE_EXCLUSIVE_LOCK;
-    if (!first || !second) throw Error("Expected timing and launch lock paths");
-    const release = await acquireTimingAndLaunch(first, second, label);
+    const launch = process.env.TINT_GATE_EXCLUSIVE_LOCK;
+    const timingLock = process.env.TINT_GATE_TIMING_LOCK;
+    if (!launch || !timingLock)
+      throw Error("Expected timing and launch lock paths");
+    const release = await acquireTimingAndLaunch(launch, timingLock, label);
     try {
-      process.exitCode = await runTimed([first, second], label, command, args);
+      process.exitCode = await runTimed(
+        [launch, timingLock],
+        label,
+        command,
+        args,
+      );
     } finally {
       release();
     }

@@ -106,8 +106,8 @@ tools/gate/with-lock.sh both profile-stage \
 
 `launch` uses the native launch lock, `timing` uses the timing lock, and
 `both` runs only when it can acquire both. Single-lock calls join the blocking
-`lockf -k` queue. Dual-lock calls release the timing lock before retrying a busy
-launch lock, so a queued profile leaves timing available. The wrapper
+`lockf -k` queue. Dual-lock calls try launch first and release it immediately
+if timing is busy. A job queued for launch leaves timing available. The wrapper
 starts both deadlines after acquisition. Set `TINT_GATE_IDLE_TIMEOUT` for a
 workload that intentionally goes without CPU progress for longer than 120
 seconds. The hard holder deadline is `TINT_GATE_STEP_TIMEOUT` and defaults to

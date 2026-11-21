@@ -630,8 +630,13 @@ test(
           "-eu",
           "-c",
           `
-          /usr/bin/lockf -k "$TINT_GATE_EXCLUSIVE_LOCK" sh -c 'touch "$1"; sleep 3' holder "$1" &
+          release="$1.release"
+          /usr/bin/lockf -k "$TINT_GATE_EXCLUSIVE_LOCK" sh -c '
+            touch "$1"
+            until [ -f "$2" ]; do sleep 0.01; done
+          ' holder "$1" "$release" &
           holder=$!
+          trap 'touch "$release"; wait "$holder"' EXIT
           until [ -f "$1" ]; do sleep 0.01; done
           sh tools/gate/with-lock.sh both benchmark "$2" -e '
             const end = performance.now() + 2200;
@@ -641,7 +646,9 @@ test(
           waiter=$!
           sleep 1.5
           /usr/bin/lockf -k -t 0 "$TINT_GATE_TIMING_LOCK" true
+          touch "$release"
           wait "$holder"
+          trap - EXIT
           wait "$waiter"
         `,
           "queue",
