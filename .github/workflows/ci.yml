@@ -110,6 +110,7 @@ jobs:
           TINT_GATE_MEMORY_DIRECTORY: ${{ runner.temp }}/tint-gate/memory
           TINT_GATE_MEMORY_SLOTS: 1
           TINT_GATE_BUDGET: 7500
+          TINT_GATE_NATIVE_CONCURRENCY: 2
           TINT_GATE_NATIVE_TIMEOUT: 3600
           NODE_OPTIONS: --max-old-space-size=5120
         run: tools/gate/mac-gate.sh

@@ -2,15 +2,19 @@ import { spawnSync } from "node:child_process";
 import {
   appendFileSync,
   closeSync,
+  existsSync,
   fstatSync,
+  mkdtempSync,
   mkdirSync,
   openSync,
   statSync,
+  writeFileSync,
 } from "node:fs";
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import { nativeBatchWaiting } from "./native-batch-clock.ts";
 
 import {
   killGateProcess,
@@ -101,6 +105,37 @@ export function acquireGateLockSync(
   }
 }
 
+async function acquireTimingAndLaunch(
+  timing: string,
+  launch: string,
+  label: string,
+): Promise<() => void> {
+  if (timing === launch)
+    throw Error("Expected distinct timing and launch lock paths");
+  for (;;) {
+    const first = probeGateLocks([timing], label, undefined);
+    if (first) {
+      let second: GateLock | undefined;
+      try {
+        second = probeGateLocks([launch], label, undefined);
+        const acquired = second;
+        if (acquired)
+          return () => {
+            try {
+              acquired.release();
+            } finally {
+              first.release();
+            }
+          };
+      } finally {
+        if (!second) first.release();
+      }
+    }
+    // A legacy caller may hold either lock. Do not park with one held.
+    await delay(250);
+  }
+}
+
 export function withGateLock<T>(
   files: readonly string[],
   label: string,
@@ -158,13 +193,61 @@ function runGateCommand(command: string, args: string[], fd?: number): number {
   return result.status ?? 1;
 }
 
+async function runTimed(
+  files: string[],
+  label: string,
+  command: string,
+  args: string[],
+): Promise<number> {
+  const startedAt = Date.now();
+  const start = performance.now();
+  const evidence = process.env.TINT_GATE_EVIDENCE;
+  if (!evidence) {
+    process.env.TINT_GATE_EVIDENCE = mkdtempSync(join(tmpdir(), "tint-lock-"));
+  }
+  process.env.TINT_GATE_STEP_TIMEOUT ??= "3600";
+  try {
+    markStepReady();
+    return await runWithWatchdog(label, command, args, true);
+  } finally {
+    const timing = process.env.TINT_GATE_LOCK_TIMING;
+    if (timing)
+      appendFileSync(
+        timing,
+        files
+          .map((file) =>
+            [
+              label,
+              file,
+              startedAt,
+              Math.round(performance.now() - start),
+            ].join("\t"),
+          )
+          .join("\n") + "\n",
+      );
+  }
+}
+
+function markStepReady() {
+  const file = process.env.TINT_GATE_STEP_READY;
+  if (file) writeFileSync(file, "");
+}
+
 function runMacGateBudget(command: string, args: string[]): Promise<number> {
   const budget = Number(process.env.TINT_GATE_BUDGET ?? "3600");
   if (!Number.isInteger(budget) || budget < 1 || budget > 2_147_483)
     throw Error("Expected TINT_GATE_BUDGET (1–2147483 seconds)");
 
+  const wall = Number(
+    process.env.TINT_GATE_WALL_TIMEOUT ?? Math.max(7200, budget),
+  );
+  if (!Number.isInteger(wall) || wall < 1 || wall > 2_147_483)
+    throw Error("Expected TINT_GATE_WALL_TIMEOUT (1–2147483 seconds)");
+
   let step = "admission";
+  let resource = "";
   let evidence: string | undefined;
+  let batchWaiting: (() => boolean) | undefined;
   function stopGate(pid: number) {
     let inferior: number | undefined;
     try {
@@ -172,6 +255,19 @@ function runMacGateBudget(command: string, args: string[]): Promise<number> {
         inferior = stageInferior(join(evidence, step + ".pid"));
     } finally {
       killGateProcess(pid, inferior);
+    }
+  }
+  function timeout(pid: number, kind: "active" | "wall", seconds: number) {
+    const message = `BUDGET kind=${kind} step=${step} timeout-seconds=${seconds}`;
+    console.error(message + (evidence ? " evidence=" + evidence : ""));
+    try {
+      if (evidence)
+        appendFileSync(
+          join(evidence, "budget.tsv"),
+          `${step}\t${seconds}\t${kind}\n`,
+        );
+    } finally {
+      stopGate(pid);
     }
   }
   return runWithDeadline(
@@ -185,30 +281,41 @@ function runMacGateBudget(command: string, args: string[]): Promise<number> {
     ],
     budget,
     {
-      onTimeout: (pid) => {
-        const message = `BUDGET step=${step} timeout-seconds=${budget}`;
-        console.error(message + (evidence ? " evidence=" + evidence : ""));
-        try {
-          if (evidence)
-            appendFileSync(
-              join(evidence, "budget.tsv"),
-              `${step}\t${budget}\n`,
-            );
-        } finally {
-          stopGate(pid);
-        }
+      waiting: () => {
+        if (step === "admission") return true;
+        if (step === "check-native") return batchWaiting?.() ?? false;
+        return (
+          evidence !== undefined &&
+          /^(memory|memory-watchdog|exclusive)$/.test(resource) &&
+          !existsSync(join(evidence, "ready-" + step))
+        );
+      },
+      onClock: (active, queued) => {
+        console.log(`gate-budget active-ms=${active} queue-ms=${queued}`);
+      },
+      onTimeout: (pid) => timeout(pid, "active", budget),
+      wallLimit: {
+        seconds: wall,
+        onTimeout: (pid) => timeout(pid, "wall", wall),
       },
       onInterrupt: stopGate,
       onLine: (line) => {
         const gate = /^head=[a-f0-9]+ evidence=(.+)$/.exec(line);
-        const started = /^\S+ start ([a-zA-Z0-9_-]+) resource=/.exec(line);
+        const started = /^\S+ start ([a-zA-Z0-9_-]+) resource=([a-z-]+)/.exec(
+          line,
+        );
         if (gate) {
-          evidence = gate[1];
+          evidence = gate[1]!;
+          batchWaiting = nativeBatchWaiting(
+            join(evidence, "native-images.jsonl"),
+          );
           step = "setup";
         } else if (started) {
           step = started[1]!;
+          resource = started[2]!;
         } else if (/^\S+ finish [a-zA-Z0-9_-]+ exit=/.test(line)) {
           step = "between-steps";
+          resource = "";
         }
       },
     },
@@ -236,28 +343,28 @@ if (import.meta.main) {
   } else if (resource === "watchdog") {
     process.exitCode = await runWithWatchdog(label, command, args);
   } else if (resource === "timed") {
-    const startedAt = Date.now();
-    const start = performance.now();
+    const file = process.env.TINT_GATE_HELD_LOCK;
+    if (!file) throw Error("Expected TINT_GATE_HELD_LOCK");
+    process.exitCode = await runTimed([file], label, command, args);
+  } else if (resource === "timing-and-launch") {
+    const first = process.env.TINT_GATE_TIMING_LOCK;
+    const second = process.env.TINT_GATE_EXCLUSIVE_LOCK;
+    if (!first || !second) throw Error("Expected timing and launch lock paths");
+    const release = await acquireTimingAndLaunch(first, second, label);
     try {
-      process.exitCode = await runWithWatchdog(label, command, args);
+      process.exitCode = await runTimed([first, second], label, command, args);
     } finally {
-      if (timing)
-        appendFileSync(
-          timing,
-          [
-            label,
-            process.env.TINT_GATE_EXCLUSIVE_LOCK,
-            startedAt,
-            Math.round(performance.now() - start),
-          ].join("\t") + "\n",
-        );
+      release();
     }
   } else if (resource === "memory") {
     process.exitCode = withGateLock(
       gateMemorySlots(process.env),
       label,
       timing,
-      (fd) => runGateCommand(command, args, fd),
+      (fd) => {
+        markStepReady();
+        return runGateCommand(command, args, fd);
+      },
     );
   } else {
     throw Error("Unknown gate resource: " + resource);

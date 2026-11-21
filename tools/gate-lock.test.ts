@@ -41,7 +41,7 @@ test(
 
 test("all gate acquisitions keep their lock files", () => {
   const exclusive = readFileSync(
-    new URL("./gate/exclusive-step.sh", import.meta.url),
+    new URL("./gate/with-lock.sh", import.meta.url),
     "utf8",
   );
   const semaphore = readFileSync(
@@ -182,7 +182,7 @@ test(
 );
 
 test(
-  "the macOS gate budget includes admission wait and names the step that overruns",
+  "the macOS gate uses active time and a separate admission wall deadline",
   { skip: process.platform !== "darwin" },
   () => {
     const directory = mkdtempSync(join(tmpdir(), "tint-gate-budget-"));
@@ -204,6 +204,7 @@ test(
             env: {
               ...process.env,
               TINT_GATE_BUDGET: "1",
+              TINT_GATE_WALL_TIMEOUT: "2",
               TINT_GATE_ADMISSION_DIRECTORY: directory,
             },
             timeout: 5000,
@@ -211,7 +212,7 @@ test(
         );
       const active = run();
       assert.equal(active.status, 124, active.stderr);
-      assert.match(active.stderr, /BUDGET.*check-native/);
+      assert.match(active.stderr, /BUDGET.*active.*check-native/);
       withGateLock([join(directory, "slot-1.lock")], "outer", undefined, () =>
         withGateLock(
           [join(directory, "slot-2.lock")],
@@ -220,8 +221,11 @@ test(
           () => {
             const queued = run();
             assert.equal(queued.status, 124, queued.stderr);
-            assert.match(queued.stderr, /BUDGET.*admission/);
-            assert.equal(queued.stdout, "");
+            assert.match(queued.stderr, /BUDGET.*wall.*admission/);
+            assert.match(
+              queued.stdout,
+              /^gate-budget active-ms=0 queue-ms=\d+\n$/,
+            );
           },
         ),
       );
@@ -291,6 +295,7 @@ test("fixture preparation releases its memory slot before admission and records 
         .filter((row) => !row.phase.endsWith("-start"))
         .map((row) => row.phase),
       [
+        "memory-wait",
         "build",
         "lock-wait",
         "admission",
@@ -303,7 +308,7 @@ test("fixture preparation releases its memory slot before admission and records 
     );
     assert.ok(
       rows
-        .filter((row) => row.phase !== "build-start")
+        .filter((row) => row.path !== undefined)
         .every(
           (row) => row.path === image && row.bytes === 5 && row.elapsedMs >= 0,
         ),
@@ -513,3 +518,154 @@ test("a lock waiter does not pause the watchdog while another worker is active",
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test("memory-slot and launch wait together pause the native batch", () => {
+  const directory = mkdtempSync(join(tmpdir(), "tint-native-clock-"));
+  try {
+    const journal = join(directory, "native-images.jsonl");
+    const waiting = nativeBatchWaiting(journal);
+    const events = [
+      { phase: "worker-start", worker: 1 },
+      { phase: "worker-start", worker: 2 },
+      { phase: "lock-wait-start", worker: 1 },
+      { phase: "memory-wait-start", worker: 2 },
+    ];
+    const update = () =>
+      writeFileSync(
+        journal,
+        events.map((row) => JSON.stringify(row)).join("\n") + "\n",
+      );
+    update();
+    assert.equal(waiting(), true);
+    events.push({ phase: "memory-wait", worker: 2 });
+    update();
+    assert.equal(waiting(), false);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test(
+  "a stalled timing command kills its debugger and inferior and releases both locks",
+  {
+    skip: process.platform !== "darwin",
+  },
+  () => {
+    const directory = mkdtempSync(join(tmpdir(), "tint-timing-watchdog-"));
+    try {
+      const timing = join(directory, "timing.lock");
+      const launch = join(directory, "launch.lock");
+      const pids = join(directory, "pids");
+      const idle = spawnSync(
+        "sh",
+        [
+          fileURLToPath(new URL("./gate/with-lock.sh", import.meta.url)),
+          "both",
+          "profile",
+          process.execPath,
+          "--input-type=module",
+          "-e",
+          `
+        import { spawn } from "node:child_process";
+        import { writeFileSync } from "node:fs";
+        const inferior = spawn("/bin/sleep", ["30"], { detached: true, stdio: "ignore" });
+        process.kill(inferior.pid, "SIGSTOP");
+        writeFileSync(process.env.TINT_GATE_INFERIOR_PID_FILE, String(inferior.pid));
+        writeFileSync(process.argv[1], process.pid + " " + inferior.pid);
+      `,
+          pids,
+        ],
+        {
+          env: {
+            ...process.env,
+            TINT_GATE_EXCLUSIVE_LOCK: launch,
+            TINT_GATE_TIMING_LOCK: timing,
+            TINT_GATE_EVIDENCE: directory,
+            TINT_GATE_INFERIOR_PID_FILE: join(directory, "inferior.pid"),
+            TINT_GATE_STEP_TIMEOUT: "30",
+            TINT_GATE_IDLE_TIMEOUT: "1",
+          },
+          encoding: "utf8",
+          timeout: 20_000,
+        },
+      );
+      assert.ifError(idle.error);
+      assert.equal(idle.status, 125, idle.stderr);
+      const [debuggerPid, inferior] = readFileSync(pids, "utf8").split(" ");
+      const report = readFileSync(join(directory, "stall-profile.txt"), "utf8");
+      assert.match(
+        report,
+        new RegExp(`^ *${inferior} +${debuggerPid} +T`, "m"),
+      );
+      assert.match(report, /Analysis of sampling|sample failed/);
+      for (const pid of [debuggerPid!, inferior!]) {
+        const state = spawnSync("/bin/ps", ["-p", pid, "-o", "state="], {
+          encoding: "utf8",
+        }).stdout.trim();
+        assert.match(state, /^(?:Z.*)?$/, "still running: " + pid);
+      }
+      for (const lock of [timing, launch]) {
+        assert.equal(
+          spawnSync("/usr/bin/lockf", ["-ks", "-t", "0", lock, "true"]).status,
+          0,
+        );
+      }
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "a dual-lock waiter leaves timing available and its watchdog starts on acquisition",
+  { skip: process.platform !== "darwin" },
+  () => {
+    const directory = mkdtempSync(join(tmpdir(), "tint-dual-lock-"));
+    try {
+      const launch = join(directory, "launch.lock");
+      const timing = join(directory, "timing.lock");
+      const result = spawnSync(
+        "sh",
+        [
+          "-eu",
+          "-c",
+          `
+          /usr/bin/lockf -k "$TINT_GATE_EXCLUSIVE_LOCK" sh -c 'touch "$1"; sleep 3' holder "$1" &
+          holder=$!
+          until [ -f "$1" ]; do sleep 0.01; done
+          sh tools/gate/with-lock.sh both benchmark "$2" -e '
+            const end = performance.now() + 2200;
+            while (performance.now() < end) {}
+            console.log("measured");
+          ' &
+          waiter=$!
+          sleep 1.5
+          /usr/bin/lockf -k -t 0 "$TINT_GATE_TIMING_LOCK" true
+          wait "$holder"
+          wait "$waiter"
+        `,
+          "queue",
+          join(directory, "ready"),
+          process.execPath,
+        ],
+        {
+          env: {
+            ...process.env,
+            TINT_GATE_EXCLUSIVE_LOCK: launch,
+            TINT_GATE_TIMING_LOCK: timing,
+            TINT_GATE_EVIDENCE: directory,
+            TINT_GATE_IDLE_TIMEOUT: "1",
+            TINT_GATE_STEP_TIMEOUT: "10",
+          },
+          encoding: "utf8",
+          timeout: 15_000,
+        },
+      );
+      assert.ifError(result.error);
+      assert.equal(result.status, 0, result.stderr);
+      assert.match(result.stdout, /measured/);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  },
+);

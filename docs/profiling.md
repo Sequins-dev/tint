@@ -30,27 +30,47 @@ underlying capability to module callers. Symbols are optional and are emitted by
 Tint's own publisher, before UUID calculation and signing. No platform linker,
 external symbol file, or address-search instrumentation is required.
 
-For the first execution of a newly emitted compiler, launch it under LLDB so a
-compiler defect stops in the debugger instead of producing macOS crash dialogs:
+## Profiling a verified compiler
+
+Run a newly emitted image under LLDB first. Use absolute paths and distinct
+outputs for verification and profiling.
 
 ```sh
-lldb .tint-bootstrap/stage1-profile
-```
+image="$PWD/.tint-bootstrap/stage1-profile"
+source=/absolute/frozen-source
+verified="$PWD/.tint-bootstrap/verified-profile-stage"
+profiled="$PWD/.tint-bootstrap/profiled-stage"
 
-At the LLDB prompt, run
-`process launch --stop-at-entry -- <absolute-project-root> <absolute-output-path>`,
-then `continue` after the debugger reports the initial stop.
-Attach the local pprofessor to the PID shown by LLDB, for a bounded capture:
+tools/gate/with-lock.sh launch verify-profile-stage \
+  lldb --no-lldbinit --batch \
+  -o "settings set target.disable-aslr false" \
+  -o "process launch --stop-at-entry -- \"$source\" \"$verified\"" \
+  -o "script assert lldb.process.GetState() == lldb.eStateStopped" \
+  -o continue \
+  -o "script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 0" \
+  "$image"
+test -s "$verified"
 
-```sh
-pprofessor attach --no-publish --duration 10 --output checking.pb.gz <pid>
+tools/gate/with-lock.sh both profile-stage \
+  pprofessor run --no-publish --output checking.pb.gz -- "$image" "$source" "$profiled"
+test -s "$profiled"
+cmp "$verified" "$profiled"
 go tool pprof -top checking.pb.gz
-go tool pprof -list=scan checking.pb.gz
 ```
 
-The capture can also be opened in PProfessor.app. The validated local CLI supports
-these options. Attaching depends on the host's debugger permissions; no system
-crash-reporting configuration needs to change.
+Use pprofessor as the sole tracer on the profiling run. Attaching it to an
+LLDB inferior while resuming from entry races debugserver at dyld
+shared-library notifications. That race can leave the inferior stopped
+long after the profiler has written its profile. Keep the verified image,
+arguments, and source snapshot fixed between runs. Check the workload's
+completion evidence and resulting bytes because the profiler's own exit
+status can succeed after a failed child. For fixtures without an output
+file, have the workload emit an explicit completion marker after its last
+check.
+
+The capture can also be opened in PProfessor.app. See the
+[shared lock wrapper](validation-gate.md#timing-and-profiling-on-the-shared-mac)
+for idle limits and stall evidence.
 
 Function symbols identify the allocator, runtime, program, native helpers, and
 source module/function. Specialized instances keep distinct generated suffixes;

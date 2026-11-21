@@ -91,12 +91,10 @@ unique source snapshot and matching bootstrap binary for each candidate. Run one
 heavy workload at a time; do not run Node/native comparisons concurrently with
 profiling. Use the same debug settings and source inputs for the comparison.
 
-For failure diagnosis without macOS crash reports, launch the native compiler
-under LLDB stopped at process entry, attach pprofessor before resuming, and leave
-it attached through process exit. Record elapsed execution time separately from
-profile symbolication and debugger pauses. A profile captured across a stopped
-failure remains useful diagnostically, but its duration is not a successful build
-time. Do not truncate a long run and extrapolate from startup samples.
+Verify the native compiler under LLDB, then capture the whole self-build
+with pprofessor as the sole tracer using the
+[profiling recipe](profiling.md#profiling-a-verified-compiler). Record elapsed
+execution time separately from profile symbolication.
 
 Success requires all of: native exit status zero, the final output-written message,
 an output binary, and byte equality with the bootstrap binary. A successful profiler
