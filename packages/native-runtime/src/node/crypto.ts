@@ -1,6 +1,5 @@
 /** Node crypto over the system OpenSSL 3 default provider. */
 import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
-import { encodeHex } from "@tint/foundation/text/base-encoding";
 import {
   ERR_clear_error,
   EVP_MD_CTX_new,
@@ -90,6 +89,50 @@ function encodeUpdate(data: string, encoding: string | undefined): Uint8Array {
   return bufferBytes(data, name ?? "utf8");
 }
 
+function hexDigit(value: number): number {
+  return value < 10 ? value + 48 : value + 87;
+}
+
+/** A digest has at most 64 bytes. Emit several code units per string
+ * allocation, with at most eight concatenations before the short tail. */
+function digestHex(bytes: Uint8Array, length: number): string {
+  let text = "";
+  let i = 0;
+  for (; i + 8 <= length; i += 8) {
+    const a = bytes[i] ?? 0,
+      b = bytes[i + 1] ?? 0;
+    const c = bytes[i + 2] ?? 0,
+      d = bytes[i + 3] ?? 0;
+    const e = bytes[i + 4] ?? 0,
+      f = bytes[i + 5] ?? 0;
+    const g = bytes[i + 6] ?? 0,
+      h = bytes[i + 7] ?? 0;
+    text += String.fromCharCode(
+      hexDigit(a >>> 4),
+      hexDigit(a & 15),
+      hexDigit(b >>> 4),
+      hexDigit(b & 15),
+      hexDigit(c >>> 4),
+      hexDigit(c & 15),
+      hexDigit(d >>> 4),
+      hexDigit(d & 15),
+      hexDigit(e >>> 4),
+      hexDigit(e & 15),
+      hexDigit(f >>> 4),
+      hexDigit(f & 15),
+      hexDigit(g >>> 4),
+      hexDigit(g & 15),
+      hexDigit(h >>> 4),
+      hexDigit(h & 15),
+    );
+  }
+  for (; i < length; i++) {
+    const byte = bytes[i] ?? 0;
+    text += String.fromCharCode(hexDigit(byte >>> 4), hexDigit(byte & 15));
+  }
+  return text;
+}
+
 function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
   sweepDigests();
   const ffi = systemOpenSSL();
@@ -148,11 +191,7 @@ function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
     digest(encoding?: string): string | Uint8Array {
       if (!hmac) requireActive();
       const bytes = lifetime.address === 0 ? new Uint8Array(0) : finish();
-      if (encoding === "hex") {
-        const output = encodeHex(bytes, 0, bytes.length);
-        if (output === undefined) throw new Error("digest encoding invariant");
-        return output;
-      }
+      if (encoding === "hex") return digestHex(bytes, bytes.length);
       const name =
         encoding === undefined ? undefined : bufferEncoding(encoding);
       return name === undefined ? bytes : bufferText(bytes, name);
