@@ -18,13 +18,17 @@ The Object Test262 suite exhausted V8 old space at 2,848 MiB during retry
 helper specialization and reached emission at 2,880 MiB. The minimum cap
 for a complete build remains unknown. These are old-space limits for that
 suite.
-The current priority is the fastest native self-compile on a matched input.
-The memory target is a complete Object suite build within 2.8 GiB. Record
-RSS independently of the V8 old-space setting. Keep storage opt-in until
-admission estimates have been validated on both hosts.
+Prioritize native self-compile wall time. Use the current serial optimizer
+as the control for function-local optimizer and codegen workers. Retain a
+pool when rotated native comparisons show faster self-compiles and peak
+RSS stays close to the control. Record peak RSS on the self-
+compile and Object workloads for each change, independently of V8's
+old-space setting. The 2.8 GiB Object suite target belongs to follow-up
+memory work after this PR. Start storage policies as opt-in and validate
+admission estimates on both hosts before enabling them automatically.
 [Object suite cap trials](results/compiler-check-memory-instances-2026-11-20.md)
 
-After workers landed, the revised 821-file control spent 81.6 s in LICM,
+After the Worker API landed, the revised 821-file control spent 81.6 s in LICM,
 31.0 s in SSA constants and 84.9 s in codegen. The first LICM experiment
 reused one record-proof summary across the loops of an immutable round.
 Its first native comparison returned the same signed image 57.2 s sooner.
@@ -34,7 +38,7 @@ evaluate the pool against the improved kernel before integration.
 [Merged-main screen](results/parallel-bounded-compile-screening-v1.md) ·
 [Native profile and cap trials](results/parallel-bounded-compile-hot-passes-v1.md)
 
-## Implemented optimizer changes
+## Serial optimizer changes on main
 
 LICM computes the record proof summary on the first eligible loop in a round.
 All loops in that round read the same function version. A subsequent round
@@ -48,7 +52,9 @@ candidate reaches a fixed point on macOS arm64 and Linux arm64. Linux
 x86-64 passes the CI fixed-point gate. On the matched 821-file input, the
 combined compiler took 137.8 s and 91.5 s. The controls took 263.9 s and
 291.7 s. Median wall time fell 58.7% and median cycles fell 39.5%. All eight
-measured native builds produced the same signed image.
+measured native builds produced the same signed image. Both changes landed
+on main in PR #9.
+[Serial optimizer measurements](results/optimizer-serial-v1.md)
 
 With settled SSA joins skipped, the four-worker spill prototype saved
 1.21–1.26 s of pass wall time on Node and raised whole-process peak RSS
@@ -131,9 +137,9 @@ pass with 488,519,672 bytes of JS heap in use. The following bulk-list pass
 still entered a driver that decoded every function, even before checking
 for helper names. Subsequent prototypes removed that hydration and
 reached AArch64 emission with roughly 390 MB of JS heap in use. Both ran
-out of heap inside the emitter and exceeded the process RSS target. The
-full Object selection remains the acceptance workload for the opt-in
-whole-build budget.
+out of heap inside the emitter and exceeded the process RSS target. Use
+the complete Object selection to evaluate the follow-up whole-build budget
+and to track RSS when evaluating worker changes.
 [Streaming and fixed-point probes](results/parallel-bounded-compile-streaming-probes-v1.md) ·
 [Full timing rotation and further streaming probes](results/parallel-bounded-compile-rotation-v1.md) ·
 [Loop-cell promotion and the next hydration boundary](results/parallel-bounded-compile-streaming-cells-v1.md) ·
@@ -152,6 +158,26 @@ graph. The linked input is available for retry. Reducing this peak
 requires changes to the checker's data representation or lifetimes.
 [Typed streaming Object image comparison](results/parallel-bounded-compile-typed-object-image-v1.md)
 [Resident set at the instance check](results/parallel-bounded-compile-shared-preparation-v1.md#object-selections-collection-runtime-retry)
+
+Compact bitsets lowered the footprint of the largest register-home jobs.
+A two-worker native kernel replay reproduced both plans in 3.65 s,
+compared with 7.14 s inline. In the complete compile, the pool raised
+peak RSS by 13–20% and the paired wall times moved in opposite directions.
+Moving frame sharing onto the sidecar still added about 342 MiB of
+aggregate RSS. The in-process variant using the compiler's generational
+collector stopped at its managed-write check. These worker variants
+remain experimental.
+[Compact register-home workers](results/parallel-bounded-compile-compact-worker-v1.md) ·
+[Frame-plan worker rotation](results/parallel-bounded-compile-frame-plan-worker-v1.md) ·
+[Targeted liveness and worker collector](results/parallel-bounded-compile-ranked-register-homes-v1.md) ·
+[Native timing rotations](results/parallel-bounded-compile-native-late-rotation-v1.md)
+
+The array-access planner sent only proven instruction positions and
+integer-slot facts back from workers. The live compiler preserved the
+frozen image, with about 24 MiB more peak RSS. Both whole-build pairs
+took longer. The first selected function waited 2.37–2.94 s for its
+plan, motivating a later dispatch target.
+[Function-local array-access plans](results/parallel-bounded-compile-array-plan-workers-v1.md)
 
 Resolving local branches before leaving a function removed most
 deferred branch fixups. With repeated stack maps interned, an isolated
@@ -366,9 +392,15 @@ spilled bytes, disk peak, queue wait, active workers and cap-related failures.
 
 ## Sequence and estimates
 
-Engineering estimates assume one implementer familiar with Tint and exclude
-external dependency and gate queues. Each implementation step includes
-comparison to the frozen baseline and to its immediately preceding step.
+Evaluate workers first against the improved serial compiler. Use the
+post-optimizer profile to choose the first function-local pass or codegen
+kernel. A whole native build must show a repeatable wall-time gain with
+stable memory before the pool is retained. Continue the helper and storage
+work after this PR lands.
+
+The original estimates below assume one implementer familiar with Tint
+and exclude external dependency and gate queues. Compare each measured
+change to the frozen baseline and its immediate control.
 
 | Step | Scope and exit evidence                                                                                                                                                                                                                                                                                                                                                                             | Estimate  | PR #2 dependency                                                         |
 | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------ |
