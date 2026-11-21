@@ -371,7 +371,9 @@ test("Script surface instantiations match the real linked export namespaces and 
   // Ordinary-object property contracts add four list anchors for schemas,
   // rules, fields and union member IDs. The member IDs reuse the number-list
   // provider. The other three providers add eight operations each.
-  assert.equal(census.value.anchors.length, 122);
+  // Class method contracts add a parameter-mask anchor that reuses the
+  // number-list provider.
+  assert.equal(census.value.anchors.length, 123);
   assert.equal(census.value.collections.length, 55);
   assert.deepEqual(
     ["list", "set", "map"].map(

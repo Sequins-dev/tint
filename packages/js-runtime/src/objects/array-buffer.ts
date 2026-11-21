@@ -107,6 +107,7 @@ export function installArrayBufferIntrinsics(
         maximum,
         resizable,
         realm.bufferMaxBytes,
+        realm.bufferAllocator,
       );
       if (!storage.ok) return storageFailure(storage.error, realm);
       return wrap(storage.value, parent);

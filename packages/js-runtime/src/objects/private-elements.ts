@@ -26,6 +26,7 @@ export type PrivateElement<Value> =
       readonly name: PrivateName;
       readonly kind: "field";
       value: Value;
+      readonly acceptsValue?: ((value: Value) => boolean) | undefined;
     };
 
 export function createPrivateName(description: string): PrivateName {
@@ -76,9 +77,15 @@ export function addPrivateField<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   name: PrivateName,
   value: Value,
+  acceptsValue?: (value: Value) => boolean,
 ): "none" | "type" {
   if (!isExtensible<Key, Value>(object)) return "type";
-  return addPrivateElement<Key, Value>(object, { name, kind: "field", value });
+  return addPrivateElement<Key, Value>(object, {
+    name,
+    kind: "field",
+    value,
+    acceptsValue,
+  });
 }
 
 /** PrivateMethodOrAccessorAdd checks only duplicates; InitializeInstanceElements
@@ -139,6 +146,8 @@ export function setPrivateElement<Key, Value>(
       : findPrivateElement<Key, Value>(object, name);
   if (element === undefined || element.kind === "method") return "type";
   if (element.kind === "field") {
+    const accepts = element.acceptsValue;
+    if (accepts !== undefined && !accepts(value)) return "type";
     element.value = value;
     return "none";
   }

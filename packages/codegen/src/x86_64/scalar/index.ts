@@ -25,8 +25,13 @@ import {
   nativeStringLengthOffset,
   nativeCStackReserveBytes,
   nativeStackMapFooterMagic,
+  nativeStackMapRegistryOffset,
   nativeStackLimitOffset,
   nativeStackOverflowPayload,
+  nativeWorkerStopObserved,
+  nativeWorkerStopPayload,
+  nativeWorkerStopPointerOffset,
+  nativeWorkerStopRequested,
   type PosixHostFacts,
 } from "@tint/abi/host";
 import {
@@ -146,9 +151,10 @@ import {
   type NativeManagedPointerImport,
 } from "../../scalar/managed-abi.ts";
 import {
-  encodeWideStackMapTable,
+  planWideStackMapTable,
   rootHeadBinding,
   type SafepointEntry,
+  type WideStackMapPlan,
 } from "../../scalar/stack-maps.ts";
 import {
   frameStackMaps,
@@ -341,6 +347,7 @@ export function emitModule(
   far: boolean = false,
   managed?: X64ManagedOptions,
   jitDebug: boolean = false,
+  workerFunctions?: ReadonlySet<string>,
 ): X64Emission {
   const verified = verify(module);
   if (!verified.ok)
@@ -628,6 +635,10 @@ export function emitModule(
 
   function body(fn: FunctionIR): void {
     const fnLabel = functionLabel(fn.id);
+    const interruptible =
+      workerFunctions?.has(
+        fn.name.endsWith("$direct") ? fn.name.slice(0, -7) : fn.name,
+      ) === true;
     const fnEnd = fnLabel + ":end";
     const done = fnLabel + ":return";
     const slots: number[] = [];
@@ -775,9 +786,52 @@ export function emitModule(
       const handler = block.exception;
       if (handler === undefined) publish(thrown, from, 16);
       else {
+        if (interruptible) {
+          const ordinary =
+            fnLabel + ":ordinary-throw:" + String(instructionCount);
+          emit({ op: "cmp", dst: frame(from), src: imm(0) });
+          branch(emit, "ne", ordinary);
+          emit({
+            op: "cmp",
+            dst: frame(from + 8),
+            src: imm(nativeWorkerStopPayload),
+          });
+          branch(emit, "ne", ordinary);
+          publish(thrown, from, 16);
+          emit({ op: "label", name: ordinary });
+        }
         copyFrame(from, slot(handler.slot), 16);
         emit({ op: "jmp", target: label(blockLabel(fn.id, handler.target)) });
       }
+    }
+    function pollWorkerStop(): void {
+      if (!interruptible) return;
+      const resumed = fnLabel + ":worker-resumed:" + String(instructionCount);
+      emit({ op: "mov", dst: scratch, src: frame(savedContext) });
+      emit({
+        op: "mov",
+        dst: scratch,
+        src: mem(11, nativeStackMapRegistryOffset),
+      });
+      emit({
+        op: "mov",
+        dst: scratch,
+        src: mem(11, nativeWorkerStopPointerOffset),
+      });
+      emit({ op: "test", dst: scratch, src: scratch });
+      branch(emit, "e", resumed);
+      // Aligned loads and stores on x86 have acquire and release ordering.
+      emit({ op: "cmp", dst: mem(11, 0), src: imm(nativeWorkerStopRequested) });
+      branch(emit, "ne", resumed);
+      emit({ op: "mov", dst: mem(11, 0), src: imm(nativeWorkerStopObserved) });
+      emit({ op: "mov", dst: frame(callResult), src: imm(0) });
+      emit({
+        op: "mov",
+        dst: frame(callResult + 8),
+        src: imm(nativeWorkerStopPayload),
+      });
+      publish(thrown, callResult, 16);
+      emit({ op: "label", name: resumed });
     }
 
     const callSites: {
@@ -812,6 +866,7 @@ export function emitModule(
     function call(op: Instruction, block: Block, index: number): void {
       if (op.kind !== "call" && op.kind !== "call-indirect")
         throw "call invariant";
+      pollWorkerStop();
       const args = argumentsByFunction[op.target];
       const callee = module.functions[op.target];
       if (args === undefined || callee === undefined) throw "callee invariant";
@@ -886,6 +941,7 @@ export function emitModule(
             : label(functionLabel(op.target)),
       });
       safepoint(block, index);
+      pollWorkerStop();
       const received = fnLabel + ":call:" + String(instructionCount);
       emit({ op: "cmp", dst: eax, src: imm(normal) });
       emit({ op: "jcc", cc: "e", target: label(received) });
@@ -920,6 +976,7 @@ export function emitModule(
       block: Block,
       index: number,
     ): void {
+      if (operation === "executable-call-managed") pollWorkerStop();
       serializeCode(emit);
       exactInteger(emit, entry, r10, trapLabel);
       emit({ op: "test", dst: r10, src: r10 });
@@ -1001,6 +1058,7 @@ export function emitModule(
       site: string,
       denied: string,
     ): void {
+      pollWorkerStop();
       emit({ op: "mov", dst: rdx, src: frame(savedContext) });
       const fits = site + ":fits";
       if (!generational) {
@@ -1872,6 +1930,7 @@ export function emitModule(
         }
         case "host-call": {
           if (generational && op.operation === "collect-garbage") {
+            pollWorkerStop();
             const site = fnLabel + ":collect:" + String(instructionCount);
             emit({ op: "xor", dst: word(10), src: word(10) });
             callAllocator(block, index, site);
@@ -3618,7 +3677,7 @@ export function emitModule(
     const withPool = poolEnd > poolBase ? poolEnd : instructionBytes;
     const tableOffset = Math.ceil(withPool / 8) * 8;
     const stackMaps: X64Module["stackMaps"][number][] = [];
-    let words: number[] = [];
+    let stackMapPlan: WideStackMapPlan | undefined;
     if (host !== undefined) {
       const entries: SafepointEntry[] = [];
       for (const site of pendingMaps) {
@@ -3629,8 +3688,8 @@ export function emitModule(
           throw "x86-64 safepoint label invariant";
         entries.push({ offset, start, map: site.map });
       }
-      words = encodeWideStackMapTable(entries);
-      words.push(nativeStackMapFooterMagic, tableOffset);
+      pendingMaps.length = 0;
+      stackMapPlan = planWideStackMapTable(entries);
       const thunkStart = assembler.labels.get(callbackThunksLabel);
       stackMaps.push({
         codeOffset: 0,
@@ -3653,7 +3712,9 @@ export function emitModule(
         external.has(name) ||
         strings.has(name) ||
         descriptors.has(name),
-      words.length === 0 ? withPool : tableOffset + words.length * 8,
+      stackMapPlan === undefined
+        ? withPool
+        : tableOffset + (stackMapPlan.wordLength + 2) * 8,
     );
     const code = encoded.bytes;
     const functions: X64Function[] = [];
@@ -3692,21 +3753,26 @@ export function emitModule(
         ...(frame === undefined ? {} : { frame }),
       });
     }
-    for (let i = 0; i < words.length; i++) {
-      const value = words[i];
-      if (
-        value === undefined ||
-        !writeWord64(
-          code,
-          tableOffset + i * 8,
-          {
-            lo: value % 4294967296,
-            hi: Math.floor(value / 4294967296),
-          },
-          "little",
-        ).ok
-      )
-        throw "x86-64 stack map word invariant";
+    if (stackMapPlan !== undefined) {
+      let offset = tableOffset;
+      function writeMapWord(value: number): void {
+        if (
+          !writeWord64(
+            code,
+            offset,
+            {
+              lo: value % 4294967296,
+              hi: Math.floor(value / 4294967296),
+            },
+            "little",
+          ).ok
+        )
+          throw "x86-64 stack map word invariant";
+        offset += 8;
+      }
+      stackMapPlan.forEachWord(writeMapWord);
+      writeMapWord(nativeStackMapFooterMagic);
+      writeMapWord(tableOffset);
     }
     if (poolEnd > poolBase) {
       for (const [, item] of strings) {

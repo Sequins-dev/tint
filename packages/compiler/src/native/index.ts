@@ -34,6 +34,8 @@ import { materializeManagedRuntimeProviders } from "./managed-runtimes.ts";
 import {
   validRuntimeNamespace,
   dynamicObjectRuntimeSource,
+  nativeValueViewsModule,
+  nativeWeakModule,
   type RuntimeSource,
 } from "./runtime-contracts.ts";
 import {
@@ -114,12 +116,12 @@ import {
   type BuildStorage,
 } from "../spill-files.ts";
 import type { FunctionStore } from "@tint/ir/storage";
-import { nativeClosureCallMessage } from "@tint/ts-native/scalar";
 import { bindModule } from "@tint/typescript/binding";
 import {
   checkClosureModule,
   withRealmGlobals,
   type CheckedClosures,
+  type ClosureFallback,
 } from "@tint/typescript/checker";
 import {
   closeGeneralPartition,
@@ -136,10 +138,14 @@ import {
   prepareNativeGlobals,
   type NativeConstructor,
   type ModuleInstanceExport,
+  type ModuleInstanceFallback,
+  type LinkFallback,
   type LinkedExport,
   type SourceRange,
+  type SpecializationCapability,
 } from "@tint/ts-native/modules";
 import {
+  appendSourceModules,
   requestModules,
   type ModuleRequest,
   type SourcePosition,
@@ -230,6 +236,9 @@ export interface NativeServiceImport {
   readonly surface?: string;
 }
 export interface CompileRequest extends ModuleRequest {
+  readonly moduleConstructors?: readonly ModuleConstructorBinding[];
+  readonly workerEvaluation?: WorkerEvaluation;
+  readonly workerModules?: readonly string[] | undefined;
   readonly storage?: BuildStorage;
   readonly serviceImports?: readonly NativeServiceImport[];
   readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
@@ -303,6 +312,16 @@ export interface CompileRequest extends ModuleRequest {
    * specialization. */
   readonly requireTyped?: boolean;
 }
+export interface ModuleConstructorBinding {
+  readonly module: string;
+  readonly name: string;
+  readonly factory: string;
+}
+export interface WorkerEvaluation {
+  readonly entry: string;
+  readonly start: string;
+  readonly modules: readonly string[];
+}
 /** An optimization remark with its span resolved to an original source file
  * (UTF-16 offsets in that file; line and column when the module supplies
  * source positions, as for debug line tables). */
@@ -328,8 +347,11 @@ export interface ProgramOptimizationObserver {
 export interface GeneralProgramRequest {
   /** The application modules, as parsed (TypeScript syntax retained). */
   readonly modules: readonly SourceModule[];
-  /** Every module of the request, for resolving imports. */
+  /** Modules reachable from the application for resolving imports. With an
+   * owned-syntax request this may include all modules. */
   readonly available: readonly SourceModule[];
+  /** All original IDs when syntax was selectively replayed. */
+  readonly availableIds?: readonly string[];
   readonly entry: string;
   /** The entry export the generated host calls; it returns the exit status. */
   readonly start: string;
@@ -337,8 +359,35 @@ export interface GeneralProgramRequest {
    * entries: the host imports their exports and presents them to general
    * code as synthetic modules. */
   readonly boundaries: readonly TypedBoundaryModule[];
+  /** Configured guest entry modules when composing a checked worker program. */
+  readonly workerEntries?: readonly string[];
   /** Record types the boundaries use; they cross as JavaScript views. */
   readonly records?: readonly BoundaryRecord[];
+  /** Source capability that seeded this retry, where classified. */
+  readonly trigger?: FallbackTrigger;
+  /** The original graph passed the host checker before representation choice. */
+  readonly sourceValidated?: boolean;
+}
+export interface FallbackTrigger {
+  readonly phase: "link" | "check" | "specialize" | "runtime" | "lower";
+  readonly code: string;
+  readonly capability:
+    | ClosureFallback["capability"]
+    | LinkFallback["capability"]
+    | SpecializationCapability
+    | ModuleInstanceFallback["capability"]
+    | "native-callable-view";
+  readonly location: {
+    readonly module: string;
+    readonly start: number;
+    readonly end: number;
+  };
+  readonly owner: {
+    readonly kind: ClosureFallback["ownerKind"];
+    readonly module: string;
+    readonly start: number;
+    readonly end: number;
+  };
 }
 export type GeneralProgram =
   | {
@@ -346,8 +395,16 @@ export type GeneralProgram =
       readonly value: {
         /** Generated typed modules (lowered application and its host). */
         readonly modules: readonly SourceModule[];
+        /** Generated guest modules that may execute on a product worker. */
+        readonly workerModules?: readonly string[];
+        readonly moduleConstructors?: readonly ModuleConstructorBinding[];
+        readonly workerEvaluation?: WorkerEvaluation;
         /** The generated host module; it exports `start(): number`. */
         readonly entry: string;
+        /** A proved primitive entry uses the general value ABI without the program realm. */
+        readonly usesRealm?: boolean;
+        readonly functions?: readonly GeneralFallbackFunction[];
+        readonly classes?: readonly GeneralFallbackClass[];
         /** Record bindings of generated runtime modules (record view
          * slots), and those runtime modules. */
         readonly recordBindings?: readonly NativeRecordBinding[];
@@ -355,6 +412,20 @@ export type GeneralProgram =
       };
     }
   | { readonly ok: false; readonly error: string };
+export interface GeneralFallbackFunction extends Span {
+  readonly module: string;
+  readonly name: string;
+}
+export interface GeneralFallbackClass extends Span {
+  readonly module: string;
+  readonly name: string;
+}
+interface GeneralFallback {
+  readonly modules: readonly string[];
+  readonly reason: string;
+  readonly functions?: readonly GeneralFallbackFunction[];
+  readonly classes?: readonly GeneralFallbackClass[];
+}
 /** Lowers application modules to typed modules of runtime-helper calls that
  * implement JavaScript semantics, plus a typed host entry. Provided by the
  * JavaScript engine (it depends on this package). */
@@ -364,7 +435,21 @@ export interface GeneralLowering {
   /** Representation views and runtime exports the generated code needs. */
   readonly recordBindings: readonly NativeRecordBinding[];
   readonly runtimes: readonly RuntimeSource[];
+  /** Image-provided modules materialized by the generated host. */
+  readonly syntheticModules?: readonly string[];
+  /** Optional host oracle for the captured original source graph. The host
+   * supplies source goals, options and module resolution for this entry. */
+  readonly validateSource?: (entry: string) => readonly SourceDiagnostic[];
+  /** Compose a typed entry with host-managed guest modules before checking it. */
+  readonly prepareTypedWorkers?: (
+    request: GeneralProgramRequest,
+  ) => GeneralProgram;
   readonly lower: (request: GeneralProgramRequest) => GeneralProgram;
+}
+export interface SourceDiagnostic extends Span {
+  readonly code: string;
+  readonly message: string;
+  readonly module: string;
 }
 export interface SourceLineRange {
   readonly offset: number;
@@ -407,10 +492,7 @@ export interface CompiledProgram {
   readonly exports: readonly string[];
   /** Present when application modules were compiled with general semantics
    * because the typed pipeline rejected them (visible fallback). */
-  readonly general?: {
-    readonly modules: readonly string[];
-    readonly reason: string;
-  };
+  readonly general?: GeneralFallback;
 }
 export type Compilation =
   | { readonly ok: true; readonly value: CompiledProgram }
@@ -431,9 +513,12 @@ interface CompilationError {
   /** The module the failure is attributed to, when known. */
   readonly module?: string;
   readonly diagnostic?: string;
+  readonly sourceDiagnostics?: readonly SourceDiagnostic[];
+  readonly fallback?: FallbackTrigger;
   readonly preventsFallback?: boolean;
   readonly needsDynamicRealm?: boolean;
   readonly needsBindingRealm?: boolean;
+  readonly nativeProjections?: readonly string[];
 }
 /** A compiler-issued identity that foreign code binds by contract. */
 interface IdentityPlan {
@@ -462,6 +547,7 @@ interface ReferenceListPlan {
  * hosts keep a frame's dead locals alive until it returns). Later stages
  * replace `ir.module`, so only its current version stays reachable. */
 interface TypedProgram {
+  readonly workerFunctions?: ReadonlySet<string>;
   readonly ir: ModuleVersion;
   initializer: number;
   invocation: number;
@@ -518,6 +604,7 @@ interface LinkedTypedProgram {
   readonly application: Module;
   readonly exports: readonly LinkedExport[];
   readonly ranges: readonly SourceRange[];
+  readonly sourceNames: ReadonlyMap<string, string> | undefined;
   readonly helpers: Map<string, string>;
   readonly runtimeNamespacesByModule: Map<string, string>;
   readonly retainedRuntimeExports: readonly string[];
@@ -628,9 +715,11 @@ function compileTypedWithProgramRealm(
         };
   const initial = compileTypedProgram(without, realmTypeofModules);
   if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
+  const projections = initial.error.nativeProjections ?? [];
+  const callableViews = projections.includes("projectUnaryNumber");
   const runtime =
-    initial.error.needsBindingRealm === true
-      ? dynamicObjectRuntimeSource(true)
+    initial.error.needsBindingRealm === true || projections.length !== 0
+      ? dynamicObjectRuntimeSource(initial.error.needsBindingRealm, projections)
       : (explicit ?? dynamicObjectRuntimeSource());
   const module = runtime.module;
   const loader = request.moduleLoader;
@@ -663,13 +752,99 @@ function compileTypedWithProgramRealm(
   ];
   const runtimes = without.runtimes.slice();
   runtimes.push(runtime);
+  const weakBindings = (request.weakBindings ?? []).slice();
+  const bindings = (request.recordBindings ?? []).slice();
+  const retained = names.slice();
+  let realmModules = realmTypeofModules;
+  if (callableViews) {
+    names.push("viewTypeofObject");
+    retained.push("viewTypeofObject", "generalValueTypeof", "callGeneralValue");
+    if (realmModules === undefined) {
+      const dependencies = new Map<string, ReadonlyMap<string, string>>();
+      for (const source of expandedRequest.modules) {
+        if (source === undefined) throw "realm view source invariant";
+        dependencies.set(source.id, source.dependencies);
+      }
+      const resolve =
+        loader?.sourceDependencies ??
+        ((id: string): ReadonlyMap<string, string> | undefined =>
+          dependencies.get(id));
+      const application = new Set<string>();
+      for (const id of sourceDependencyClosure([request.entry], resolve))
+        if (id !== undefined) application.add(id);
+      const runtimeModules = sourceDependencyClosure(
+        runtimes.map((source) => source.module),
+        resolve,
+      );
+      for (const id of runtimeModules)
+        if (id !== undefined) application.delete(id);
+      realmModules = application;
+    }
+  }
+  if (projections.length !== 0) {
+    const witnesses: string[] = [];
+    if (callableViews) witnesses.push("viewUnaryNumberClosure");
+    if (projections.includes("projectNumberList"))
+      witnesses.push("viewNumberList");
+    const existing = runtimes.findIndex(
+      (source) => source?.module === nativeValueViewsModule,
+    );
+    if (existing < 0)
+      runtimes.push({
+        module: nativeValueViewsModule,
+        namespace: "native-value-views",
+        retainedExports: witnesses,
+      });
+    for (const name of witnesses) {
+      if (name === undefined) throw "native view witness invariant";
+      if (
+        !bindings.some(
+          (binding) =>
+            binding?.module === nativeValueViewsModule && binding.name === name,
+        )
+      )
+        bindings.push({
+          module: nativeValueViewsModule,
+          name,
+          operation: "view",
+        });
+    }
+    if (!runtimes.some((source) => source?.module === nativeWeakModule))
+      runtimes.push({
+        module: nativeWeakModule,
+        namespace: "native-view-weak",
+      });
+    const operations: readonly NativeWeakBinding[] = [
+      { module: nativeWeakModule, name: "createWeakSlot", operation: "new" },
+      { module: nativeWeakModule, name: "weakSlotKey", operation: "key" },
+      { module: nativeWeakModule, name: "weakSlotValue", operation: "value" },
+      {
+        module: nativeWeakModule,
+        name: "setWeakSlotValue",
+        operation: "set-value",
+      },
+      { module: nativeWeakModule, name: "clearWeakSlot", operation: "clear" },
+    ];
+    for (const operation of operations) {
+      if (operation === undefined) throw "native weak operation invariant";
+      if (
+        !weakBindings.some(
+          (binding) =>
+            binding?.module === operation.module &&
+            binding.name === operation.name,
+        )
+      )
+        weakBindings.push(operation);
+    }
+  }
   if (!runtimes.some((source) => source?.module === objects))
     runtimes.push({
       module: objects,
-      namespace: "dynamic-object-views",
-      retainedExports: names,
+      namespace: callableViews
+        ? "general-object-views"
+        : "dynamic-object-views",
+      retainedExports: retained,
     });
-  const bindings = (request.recordBindings ?? []).slice();
   for (const name of names) {
     if (name === undefined) throw "dynamic realm binding invariant";
     if (
@@ -680,13 +855,41 @@ function compileTypedWithProgramRealm(
       bindings.push({ module: objects, name, operation: "view" });
   }
   return compileTypedProgram(
-    { ...expandedRequest, runtimes, recordBindings: bindings },
-    realmTypeofModules,
+    { ...expandedRequest, runtimes, recordBindings: bindings, weakBindings },
+    realmModules,
   );
 }
 export function compileArm64Program(original: CompileRequest): Compilation {
+  const validateSource = original.generalLowering?.validateSource;
+  if (validateSource !== undefined && original.requireTyped !== true) {
+    const diagnostics = validateSource(original.entry);
+    const first = diagnostics[0];
+    if (first !== undefined)
+      return {
+        ok: false,
+        error: {
+          stage: "source",
+          diagnostic: first.code,
+          module: first.module,
+          message:
+            first.module +
+            ":" +
+            String(first.start) +
+            ":" +
+            String(first.end) +
+            ": " +
+            first.code +
+            ": " +
+            first.message,
+          sourceDiagnostics: diagnostics,
+        },
+      };
+  }
   const request = withForeignRuntimes(original);
-  const typed = compileTypedWithProgramRealm(request);
+  const typed = compileWithTypedWorkerEntry<CompiledProgram>(
+    request,
+    (source): Compilation => compileTypedWithProgramRealm(source),
+  );
   const lowering = request.generalLowering;
   if (
     typed.ok ||
@@ -694,25 +897,153 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     typed.error.preventsFallback === true
   )
     return typed;
-  if (request.requireTyped === true)
-    return failure(
-      typed.error.stage,
-      typed.error.message + " (typed compilation required)",
-      typed.error.module,
-    );
-  const reason = typed.error.stage + ": " + typed.error.message;
+  const general = compileGeneralProgram<CompiledProgram>(
+    request,
+    lowering,
+    typed.error,
+    (source, realmTypeofModules): Compilation =>
+      compileTypedWithProgramRealm(source, realmTypeofModules),
+  );
+  if (!general.ok) return general;
+  return {
+    ok: true,
+    value: { ...general.value, general: general.fallback },
+  };
+}
+
+/** A typed worker entry is checked directly. The host owns launching and
+ * evaluating guest modules, just as in an image whose entry uses JS semantics. */
+function compileWithTypedWorkerEntry<T>(
+  request: CompileRequest,
+  compile: (
+    request: CompileRequest,
+  ) => { readonly ok: true; readonly value: T } | CompilationFailure,
+): { readonly ok: true; readonly value: T } | CompilationFailure {
+  const lowering = request.generalLowering;
+  const prepare = lowering?.prepareTypedWorkers;
+  const guests = request.workerModules;
   const start = request.start;
-  if (start === undefined)
-    return failure(
-      typed.error.stage,
-      typed.error.message + " (general fallback requires a start export)",
-    );
+  if (
+    lowering === undefined ||
+    prepare === undefined ||
+    guests === undefined ||
+    start === undefined
+  )
+    return compile(request);
   const available = requestModules(request);
   const application = generalApplicationModules(request, available);
+  if (!application.ok) return stageFailure("worker-entry", application.error);
+  const prepared = prepare({
+    available,
+    modules: application.value,
+    entry: request.entry,
+    start,
+    boundaries: [],
+    workerEntries: guests,
+  });
+  if (!prepared.ok)
+    return request.requireTyped === true
+      ? stageFailure("worker-entry", prepared.error)
+      : compile(request);
+  const program = prepared.value;
+  const replaced = new Set(program.modules.map((source) => source.id));
+  const modules: SourceModule[] = [];
+  for (const source of available)
+    if (source !== undefined && !replaced.has(source.id)) modules.push(source);
+  for (const source of program.modules)
+    if (source !== undefined) modules.push(source);
+  const runtimes = request.runtimes.slice();
+  if (
+    program.workerEvaluation !== undefined &&
+    !runtimes.some((runtime) => runtime?.namespace === "dynamic-object")
+  )
+    runtimes.push(dynamicObjectRuntimeSource());
+  const recordBindings = (request.recordBindings ?? []).slice();
+  for (const runtime of [...lowering.runtimes, ...(program.runtimes ?? [])])
+    if (
+      runtime !== undefined &&
+      !runtimes.some((existing) => existing.module === runtime.module)
+    )
+      runtimes.push(runtime);
+  for (const binding of [
+    ...lowering.recordBindings,
+    ...(program.recordBindings ?? []),
+  ])
+    if (
+      binding !== undefined &&
+      !recordBindings.some(
+        (existing) =>
+          existing.module === binding.module && existing.name === binding.name,
+      )
+    )
+      recordBindings.push(binding);
+  const typed = compile({
+    ...request,
+    modules,
+    moduleLoader: undefined,
+    entry: program.entry,
+    workerModules: program.workerModules ?? guests,
+    ...(program.moduleConstructors === undefined
+      ? {}
+      : { moduleConstructors: program.moduleConstructors }),
+    ...(program.workerEvaluation === undefined
+      ? {}
+      : { workerEvaluation: program.workerEvaluation }),
+    recordBindings,
+    runtimes,
+  });
+  if (typed.ok || request.requireTyped === true) return typed;
+  return compile(request);
+}
+
+type GeneralCompilation<T> =
+  | {
+      readonly ok: true;
+      readonly value: T;
+      readonly fallback: GeneralFallback;
+    }
+  | CompilationFailure;
+
+function compileGeneralProgram<T>(
+  request: CompileRequest,
+  lowering: GeneralLowering,
+  typedError: CompilationError,
+  compile: (
+    request: CompileRequest,
+    realmTypeofModules: ReadonlySet<string> | undefined,
+  ) => { readonly ok: true; readonly value: T } | CompilationFailure,
+): GeneralCompilation<T> {
+  if (request.requireTyped === true)
+    return stageFailure(
+      typedError.stage,
+      typedError.message + " (typed compilation required)",
+      typedError.module,
+    );
+  const validateSource = lowering.validateSource;
+  if (validateSource !== undefined && typedError.fallback === undefined)
+    return { ok: false, error: typedError };
+  const reason = typedError.stage + ": " + typedError.message;
+  const start = request.start;
+  if (start === undefined)
+    return stageFailure(
+      typedError.stage,
+      typedError.message + " (general fallback requires a start export)",
+    );
+  const loader = request.moduleLoader;
+  const sourceDependencies = loader?.sourceDependencies;
+  const roots = [request.entry];
+  for (const id of request.workerModules ?? [])
+    if (id !== undefined) roots.push(id);
+  const replayIds =
+    sourceDependencies === undefined
+      ? undefined
+      : sourceDependencyClosure(roots, sourceDependencies);
+  const available = requestModules(request, replayIds);
+  const application = generalApplicationModules(request, available);
   if (!application.ok)
-    return failure(
-      typed.error.stage,
-      typed.error.message + " (general fallback: " + application.error + ")",
+    return stageFailure(
+      typedError.stage,
+      typedError.message + " (general fallback: " + application.error + ")",
     );
   // Module-granular partition: the module a typed failure is attributed to
   // becomes general, with its importers and any typed module whose used
@@ -721,8 +1052,19 @@ export function compileArm64Program(original: CompileRequest): Compilation {
   // application general.
   const seed = new Set<string>();
   const applicationIds = new Set<string>();
-  for (const module of application.value)
-    if (module !== undefined) applicationIds.add(module.id);
+  for (const module of application.value) {
+    if (module === undefined) continue;
+    applicationIds.add(module.id);
+    for (const [, dependency] of module.dependencies)
+      if (lowering.syntheticModules?.includes(dependency) === true)
+        seed.add(module.id);
+  }
+  const owner = typedError.fallback?.owner;
+  if (
+    validateSource !== undefined &&
+    (owner === undefined || !applicationIds.has(owner.module))
+  )
+    return { ok: false, error: typedError };
   // The general runtime's representation views and retained exports join
   // the request's, without duplicates.
   const recordBindings: NativeRecordBinding[] = [],
@@ -758,20 +1100,27 @@ export function compileArm64Program(original: CompileRequest): Compilation {
   const byId = new Map<string, SourceModule>();
   for (const module of available)
     if (module !== undefined) byId.set(module.id, module);
-  const pending = lowering.runtimeModules.slice();
-  for (let i = 0; i < pending.length; i++) {
-    const id = pending[i];
-    if (id === undefined || rawTypeofModules.has(id)) continue;
-    rawTypeofModules.add(id);
-    const module = byId.get(id);
-    if (module === undefined) continue;
-    for (const [, dependency] of module.dependencies) pending.push(dependency);
-  }
+  const rawIds = sourceDependencyClosure(
+    lowering.runtimeModules,
+    sourceDependencies ??
+      ((id: string): ReadonlyMap<string, string> | undefined =>
+        byId.get(id)?.dependencies),
+  );
+  for (const id of rawIds) if (id !== undefined) rawTypeofModules.add(id);
+  const availableIds =
+    sourceDependencies === undefined ? undefined : loader?.ids;
   const realmTypeofModules = new Set<string>();
-  for (const module of available)
-    if (module !== undefined && !rawTypeofModules.has(module.id))
-      realmTypeofModules.add(module.id);
-  let error = typed.error;
+  if (availableIds === undefined) {
+    for (const module of available)
+      if (module !== undefined && !rawTypeofModules.has(module.id))
+        realmTypeofModules.add(module.id);
+  } else {
+    for (const id of availableIds)
+      if (id !== undefined && !rawTypeofModules.has(id))
+        realmTypeofModules.add(id);
+  }
+  let error = typedError;
+  const checkedBoundaries = new Set<string>();
   for (let attempt = 0; attempt <= application.value.length; attempt++) {
     const culprit = error.module;
     if (
@@ -781,14 +1130,47 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     )
       for (const id of applicationIds) seed.add(id);
     else seed.add(culprit);
-    const partition = closeGeneralPartition(
+    let partition = closeGeneralPartition(
       application.value,
       seed,
       application.trusted,
       available,
     );
+    // The linker binds every declaration of an imported leaf. A structured
+    // implicit-arguments rejection in that leaf will survive partitioning, so
+    // close all such edges before replaying the full typed runtime graph.
+    if (replayIds !== undefined) {
+      for (;;) {
+        if (partition.blocked !== undefined) break;
+        let grew = false;
+        for (const boundary of partition.boundaries) {
+          if (boundary === undefined || checkedBoundaries.has(boundary.id))
+            continue;
+          checkedBoundaries.add(boundary.id);
+          if (!applicationIds.has(boundary.id)) continue;
+          const source = byId.get(boundary.id);
+          if (source === undefined || source.module.imports.length !== 0)
+            continue;
+          const bound = bindModule(source.module, typedGlobals);
+          if (
+            !bound.ok &&
+            bound.error.fallback?.capability === "arguments-object"
+          ) {
+            seed.add(boundary.id);
+            grew = true;
+          }
+        }
+        if (!grew) break;
+        partition = closeGeneralPartition(
+          application.value,
+          seed,
+          application.trusted,
+          available,
+        );
+      }
+    }
     if (partition.blocked !== undefined)
-      return failure(
+      return stageFailure(
         "general",
         "general code uses " +
           partition.blocked.exports +
@@ -803,58 +1185,110 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     const lowered = lowering.lower({
       modules: partition.general,
       available,
+      ...(availableIds === undefined ? {} : { availableIds }),
       entry: request.entry,
       start,
       boundaries: partition.boundaries,
+      sourceValidated: validateSource !== undefined,
+      ...(error.fallback === undefined ? {} : { trigger: error.fallback }),
       ...(partition.records === undefined
         ? {}
         : { records: partition.records }),
     });
     if (!lowered.ok)
-      return failure("general", lowered.error + " (typed: " + reason + ")");
+      return stageFailure(
+        "general",
+        lowered.error + " (typed: " + reason + ")",
+      );
+    const generated = lowered.value.modules;
     const modules: SourceModule[] = [];
-    for (const module of available)
-      if (module !== undefined) modules.push(module);
-    for (const module of lowered.value.modules)
-      if (module !== undefined) modules.push(module);
-    const programBindings = recordBindings.slice(),
-      programRuntimes = runtimes.slice();
+    const replay =
+      replayIds === undefined || loader === undefined
+        ? undefined
+        : appendSourceModules(loader, generated);
+    if (replay === undefined) {
+      for (const module of available)
+        if (module !== undefined) modules.push(module);
+      for (const module of generated)
+        if (module !== undefined) modules.push(module);
+    }
+    const usesRealm = lowered.value.usesRealm !== false;
+    const programBindings = usesRealm
+        ? recordBindings.slice()
+        : (request.recordBindings ?? []).slice(),
+      programRuntimes = usesRealm ? runtimes.slice() : request.runtimes.slice();
     for (const binding of lowered.value.recordBindings ?? [])
       if (binding !== undefined) programBindings.push(binding);
     for (const runtime of lowered.value.runtimes ?? [])
       if (runtime !== undefined) programRuntimes.push(runtime);
-    const compiled = compileTypedWithProgramRealm(
+    const compiled = compile(
       {
         ...request,
         recordBindings: programBindings,
         runtimes: programRuntimes,
         modules,
-        moduleLoader: undefined,
+        moduleLoader: replay,
         entry: lowered.value.entry,
         exports: [start],
+        workerModules: lowered.value.workerModules ?? request.workerModules,
       },
-      realmTypeofModules,
+      usesRealm ? realmTypeofModules : undefined,
     );
     const generalIds: string[] = [];
     for (const module of partition.general)
       if (module !== undefined) generalIds.push(module.id);
-    if (compiled.ok)
+    if (compiled.ok) {
+      const functions = lowered.value.functions;
+      const classes = lowered.value.classes;
+      const general: GeneralFallback = {
+        modules: generalIds,
+        reason,
+        ...(functions === undefined ? {} : { functions }),
+        ...(classes === undefined ? {} : { classes }),
+      };
       return {
         ok: true,
-        value: {
-          ...compiled.value,
-          general: { modules: generalIds, reason },
-        },
+        value: compiled.value,
+        fallback: general,
       };
+    }
     if (compiled.error.preventsFallback === true) return compiled;
+    if (validateSource !== undefined) {
+      const trigger = compiled.error.fallback;
+      if (
+        trigger === undefined ||
+        !applicationIds.has(trigger.owner.module) ||
+        seed.has(trigger.owner.module)
+      )
+        return compiled;
+    }
     if (seed.size === applicationIds.size)
-      return failure(
+      return stageFailure(
         "general " + compiled.error.stage,
         compiled.error.message + " (typed: " + reason + ")",
       );
     error = compiled.error;
   }
   throw "general partition did not converge";
+}
+
+function sourceDependencyClosure(
+  roots: readonly string[],
+  dependenciesOf: (id: string) => ReadonlyMap<string, string> | undefined,
+): readonly string[] {
+  const seen = new Set<string>(),
+    queue = roots.slice(),
+    order: string[] = [];
+  for (let index = 0; index < queue.length; index++) {
+    const id = queue[index];
+    if (id === undefined || seen.has(id)) continue;
+    seen.add(id);
+    order.push(id);
+    const dependencies = dependenciesOf(id);
+    if (dependencies === undefined) continue;
+    for (const [, dependency] of dependencies) queue.push(dependency);
+  }
+  return order;
 }
 /** The modules reachable from the entry that the general lowering may
  * replace, and the trusted runtime and host-bound modules they import. Trusted
@@ -894,11 +1328,15 @@ function generalApplicationModules(
     imported: SourceModule[] = [],
     seen = new Set<string>();
   const queue = [request.entry];
+  if (request.generalLowering?.syntheticModules !== undefined)
+    for (const id of request.workerModules ?? []) queue.push(id);
   for (let index = 0; index < queue.length; index++) {
     const id = queue[index];
     if (id === undefined) throw "general queue invariant";
     if (seen.has(id)) continue;
     seen.add(id);
+    if (request.generalLowering?.syntheticModules?.includes(id) === true)
+      continue;
     const module = byId.get(id);
     if (module === undefined)
       return { ok: false, error: "missing module " + id };
@@ -1044,6 +1482,16 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
     if (runtime.retainedExports !== undefined)
       rootExports.set(runtime.module, runtime.retainedExports.slice());
   }
+  for (const constructor of request.moduleConstructors ?? []) {
+    if (constructor === undefined) throw "module constructor invariant";
+    const requested = rootExports.get(constructor.module);
+    if (requested === undefined)
+      rootExports.set(constructor.module, [
+        constructor.name,
+        constructor.factory,
+      ]);
+    else requested.push(constructor.name, constructor.factory);
+  }
   // Managed surfaces select exports of their modules by name and publish
   // them; those modules stay entirely used.
   for (const surface of request.managedSurfaces ?? []) {
@@ -1089,7 +1537,11 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
     pruneUnusedModules(modules, entry, rootExports),
     entry,
     globals,
-    { evaluation: "instance", origins: false },
+    {
+      evaluation: "instance",
+      origins: false,
+      sourceNames: runtimeNamespacesByModule.has(nativeValueViewsModule),
+    },
   );
   // Managed-surface layouts link only the runtimes; the application's input
   // syntax is otherwise dead here and must not stay reachable through the
@@ -1102,8 +1554,49 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
           request.runtimes.map((runtime) => runtime.module),
         );
   modules.length = 0;
-  if (!linked.ok)
-    return stageFailure("link", linked.error.message, linked.error.module);
+  if (!linked.ok) {
+    const diagnostic = linked.error;
+    let fallback = diagnostic.fallback;
+    if (fallback === undefined) {
+      for (const id of request.generalLowering?.syntheticModules ?? []) {
+        if (id === undefined) throw "synthetic module invariant";
+        if (diagnostic.message === "unresolved module: " + id) {
+          fallback = {
+            capability: "module-evaluation",
+            owner: { start: diagnostic.start, end: diagnostic.end },
+            ownerKind: "module",
+          };
+          break;
+        }
+      }
+    }
+    if (fallback === undefined)
+      return stageFailure("link", diagnostic.message, diagnostic.module);
+    return {
+      ok: false,
+      error: {
+        stage: "link",
+        message: diagnostic.message,
+        module: diagnostic.module,
+        fallback: {
+          phase: "link",
+          code: diagnostic.code ?? "UNSUPPORTED",
+          capability: fallback.capability,
+          location: {
+            module: diagnostic.module,
+            start: diagnostic.start,
+            end: diagnostic.end,
+          },
+          owner: {
+            kind: fallback.ownerKind,
+            module: diagnostic.module,
+            start: fallback.owner.start,
+            end: fallback.owner.end,
+          },
+        },
+      },
+    };
+  }
   const retainedRuntimeExports: string[] = [];
   for (const runtime of request.runtimes) {
     if (runtime === undefined) throw "runtime source invariant";
@@ -1145,6 +1638,33 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
   }
   const consoleLog = helpers.get("native-console:consoleLog"),
     consoleError = helpers.get("native-console:consoleError");
+  const moduleConstructors: { name: string; factory: string }[] = [];
+  for (const binding of request.moduleConstructors ?? []) {
+    if (binding === undefined) throw "module constructor invariant";
+    const constructor = linked.value.exports.find(
+      (item) =>
+        item !== undefined &&
+        item.module === binding.module &&
+        item.namespace === "value" &&
+        item.name === binding.name,
+    );
+    const factory = linked.value.exports.find(
+      (item) =>
+        item !== undefined &&
+        item.module === binding.module &&
+        item.namespace === "value" &&
+        item.name === binding.factory,
+    );
+    if (constructor === undefined || factory === undefined)
+      return stageFailure(
+        "globals",
+        "missing module constructor or factory: " + binding.name,
+      );
+    moduleConstructors.push({
+      name: constructor.linkedName,
+      factory: factory.linkedName,
+    });
+  }
   const normalized = prepareNativeGlobals(
     linked.value.module,
     bound.value,
@@ -1152,10 +1672,26 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
     consoleLog === undefined || consoleError === undefined
       ? undefined
       : { log: consoleLog, error: consoleError },
+    moduleConstructors,
   );
   if (!normalized.ok) return stageFailure("globals", normalized.error);
+  const workerEvaluation = request.workerEvaluation;
+  const application =
+    workerEvaluation === undefined
+      ? normalized.value
+      : deferWorkerEvaluation(
+          normalized.value,
+          linked.value.exports,
+          linked.value.ranges,
+          workerEvaluation,
+        );
+  if (application === undefined)
+    return stageFailure(
+      "worker-entry",
+      "missing checked Worker entry function",
+    );
   const surfaces = prepareManagedSurfaceExports(
-    normalized.value,
+    application,
     linked.value,
     request.managedSurfaces ?? [],
     surfaceModules,
@@ -1172,6 +1708,7 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
       application: surfaces.value.module,
       exports: linked.value.exports,
       ranges: linked.value.ranges,
+      sourceNames: linked.value.sourceNames,
       helpers,
       runtimeNamespacesByModule,
       retainedRuntimeExports,
@@ -1180,18 +1717,113 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
     },
   };
 }
+
+/** Evaluate Worker-dependent root modules once their host has installed the
+ * isolate's Worker bindings. */
+function deferWorkerEvaluation(
+  module: Module,
+  exports: readonly LinkedExport[],
+  ranges: readonly SourceRange[],
+  evaluation: WorkerEvaluation,
+): Module | undefined {
+  const entry = exports.find(
+    (item) =>
+      item !== undefined &&
+      item.module === evaluation.entry &&
+      item.namespace === "value" &&
+      item.name === evaluation.start,
+  );
+  if (entry === undefined) return undefined;
+  const declarations: Statement[] = [];
+  const body: Statement[] = [];
+  let wrapper: Statement | undefined = undefined;
+  const deferred = new Set(evaluation.modules);
+  for (const statement of module.statements) {
+    if (statement === undefined) throw "worker evaluation statement invariant";
+    const origin = locateSourceRange(ranges, statement);
+    if (
+      origin === undefined ||
+      !deferred.has(origin.module) ||
+      statement.kind === "interface" ||
+      statement.kind === "type-alias"
+    ) {
+      declarations.push(statement);
+      continue;
+    }
+    body.push(statement);
+    if (statement.kind === "function" && statement.name === entry.linkedName)
+      wrapper = statement;
+  }
+  if (wrapper?.kind !== "function") return undefined;
+  const end = module.end;
+  body.push({
+    kind: "return",
+    expression: {
+      kind: "call",
+      callee: { kind: "identifier", name: entry.linkedName, start: end, end },
+      arguments: [],
+      start: end,
+      end,
+    },
+    start: end,
+    end,
+  });
+  const scopedBody: Statement = {
+    kind: "block",
+    statements: body,
+    start: module.start,
+    end,
+  };
+  declarations.push({
+    ...wrapper,
+    start: module.start,
+    end,
+    body: scopedBody,
+  });
+  return { ...module, statements: declarations };
+}
 /** Specializes the application; its binding dies with this frame. */
 function specializeApplication(
   application: Module,
   maxSpecializations: number,
+  ranges: readonly SourceRange[],
 ): { readonly ok: true; readonly value: Module } | CompilationFailure {
   const bound = bindModule(application, typedGlobals);
   if (!bound.ok) return stageFailure("bind", bound.error.message);
   const specialized = specializeModule(application, bound.value, {
     maxSpecializations,
   });
-  if (!specialized.ok)
-    return stageFailure("specialize", specialized.error.message);
+  if (!specialized.ok) {
+    const diagnostic = specialized.error;
+    const fallback = diagnostic.fallback;
+    const location = locateSourceRange(ranges, diagnostic);
+    const owner =
+      fallback === undefined
+        ? undefined
+        : locateSourceRange(ranges, fallback.owner);
+    if (fallback === undefined || location === undefined || owner === undefined)
+      return stageFailure("specialize", diagnostic.message, location?.module);
+    return {
+      ok: false,
+      error: {
+        stage: "specialize",
+        message: diagnostic.message,
+        module: owner.module,
+        fallback: {
+          phase: "specialize",
+          code: "UNSUPPORTED",
+          capability: fallback.capability,
+          location,
+          owner: {
+            kind: fallback.ownerKind,
+            module: owner.module,
+            start: owner.start,
+            end: owner.end,
+          },
+        },
+      },
+    };
+  }
   return { ok: true, value: specialized.value.module };
 }
 /** Checks the first specialization and prepares the source for instantiation.
@@ -1215,6 +1847,7 @@ function checkApplication(
   const specialized = specializeApplication(
     linkedProgram.application,
     request.maxSpecializations ?? 8192,
+    linkedProgram.ranges,
   );
   if (!specialized.ok) return { ok: false, error: specialized.error };
   const checked = checkClosureModule(specialized.value, {
@@ -1234,12 +1867,33 @@ function checkApplication(
           ":" +
           String(location.end) +
           ": ") + checked.error.message;
+    const fallback = checked.error.fallback;
+    const owner =
+      fallback === undefined
+        ? undefined
+        : locateSourceRange(linkedProgram.ranges, fallback.owner);
+    const trigger: FallbackTrigger | undefined =
+      fallback === undefined || location === undefined || owner === undefined
+        ? undefined
+        : {
+            phase: "check",
+            code: checked.error.code,
+            capability: fallback.capability,
+            location,
+            owner: {
+              kind: fallback.ownerKind,
+              module: owner.module,
+              start: owner.start,
+              end: owner.end,
+            },
+          };
     return {
       ok: false,
       error: {
         stage: "check",
         message,
         ...(location === undefined ? {} : { module: location.module }),
+        ...(trigger === undefined ? {} : { fallback: trigger }),
         ...(checked.error.preventsFallback === true
           ? { diagnostic: checked.error.code, preventsFallback: true }
           : {}),
@@ -1250,6 +1904,19 @@ function checkApplication(
     application = linkedProgram.application,
     hasDynamicRuntime = helpers.has("dynamic-object:create");
   const dynamic = usesDynamicObjectRuntime(checked.value, mixed);
+  const nativeProjections: string[] = [];
+  checked.value.nativeCallableViews?.forEach((_value, _site) => {
+    if (!nativeProjections.includes("projectUnaryNumber"))
+      nativeProjections.push("projectUnaryNumber");
+  });
+  checked.value.nativeListViews?.forEach((_value, _site) => {
+    if (!nativeProjections.includes("projectNumberList"))
+      nativeProjections.push("projectNumberList");
+  });
+  checked.value.nativeRecordViews?.forEach((_value, _site) => {
+    if (!nativeProjections.includes("projectNativeRecord"))
+      nativeProjections.push("projectNativeRecord");
+  });
   // Retained runtime functions can dispatch through attached error views
   // without capturing the program instance's realm closures.
   function canCaptureErrorRealm(site: Span): boolean {
@@ -1264,7 +1931,10 @@ function checkApplication(
     mixed || dynamic,
     canCaptureErrorRealm,
   );
-  if (!hasDynamicRuntime && (dynamic || realmInstanceof))
+  if (
+    !hasDynamicRuntime &&
+    (dynamic || realmInstanceof || nativeProjections.length !== 0)
+  )
     return {
       ok: false,
       error: {
@@ -1273,6 +1943,7 @@ function checkApplication(
           ? "UNSUPPORTED: instanceof requires the program realm runtime"
           : "UNSUPPORTED: dynamic-key objects require the program realm runtime",
         needsDynamicRealm: true,
+        ...(nativeProjections.length > 0 ? { nativeProjections } : {}),
         ...(checked.value.needsBindingRealm === true
           ? { needsBindingRealm: true }
           : {}),
@@ -1286,6 +1957,7 @@ function checkApplication(
         realmInstanceof,
         mixed,
         canCaptureErrorRealm,
+        linkedProgram.sourceNames,
       )
     : application;
   let callsGeneral = false;
@@ -1339,6 +2011,12 @@ function checkTypedProgram(
     retainedRuntimeModules = linkedProgram.retainedRuntimeModules,
     surfacePlans = linkedProgram.surfacePlans;
   const callHelper = helpers.get("general-object-views:callGeneralValue");
+  const classifierHelper = helpers.get(
+    "general-object-views:generalValueTypeof",
+  );
+  const retainClassifier =
+    classifierHelper !== undefined &&
+    helpers.has("dynamic-object:projectUnaryNumber");
   const checked = checkApplication(linkedProgram, request, callHelper, mixed);
   if (!checked.ok) return { ok: false, error: checked.error };
   const callsGeneral = checked.value.callsGeneral,
@@ -1348,6 +2026,7 @@ function checkTypedProgram(
   const start = request.start;
   let surfaceFunctions: readonly (readonly string[])[] = [];
   let surfaceRuntimes: readonly ManagedSurfaceRuntimeExports[] = [];
+  let instanceFallback: ModuleInstanceFallback | undefined;
   const transform: RuntimeModuleTransform = (inputModule, context) => {
     let generatedRetain: readonly string[] = [],
       generatedExclude: readonly string[] = [];
@@ -1440,9 +2119,9 @@ function checkTypedProgram(
     }
     const bound = bindModule(module, globals);
     if (!bound.ok) return { ok: false, error: bound.error.message };
-    if (callsGeneral && callHelper !== undefined) {
-      // The stateless call entry uses a specialized callObject dependency.
-      // Retain its concrete function dependencies after specialization.
+    if ((callsGeneral && callHelper !== undefined) || retainClassifier) {
+      // Realm calls use specialized dependencies. Close the stateless
+      // classifier and call entries after specialization.
       const functionNames = new Map<Span, string>();
       for (const statement of module.statements)
         if (statement?.kind === "function")
@@ -1467,9 +2146,11 @@ function checkTypedProgram(
         names.add(target.name);
         if (known === undefined) dependencies.set(name, names);
       }
-      const pending: string[] = [callHelper],
-        seen = new Set<string>();
-      seen.add(callHelper);
+      const pending: string[] = [];
+      if (callsGeneral && callHelper !== undefined) pending.push(callHelper);
+      if (retainClassifier && classifierHelper !== undefined)
+        pending.push(classifierHelper);
+      const seen = new Set(pending);
       for (let index = 0; index < pending.length; index++) {
         const root = pending[index];
         if (root === undefined) throw "realm call dependency invariant";
@@ -1490,7 +2171,10 @@ function checkTypedProgram(
       retained,
       invokeDirectly,
     );
-    if (!instance.ok) return instance;
+    if (!instance.ok) {
+      instanceFallback = instance.fallback;
+      return { ok: false, error: instance.error };
+    }
     initializerName = instance.value.initializer.name;
     if (invokeDirectly) {
       entryName = initializerName;
@@ -1525,7 +2209,47 @@ function checkTypedProgram(
     (request.managedSurfaces?.length ?? 0) === 0 &&
       (request.serviceImports?.length ?? 0) === 0,
   );
-  if (!prepared.ok) return stageFailure("runtime", prepared.error);
+  if (!prepared.ok) {
+    const diagnostic = prepared.diagnostic;
+    const site = instanceFallback?.location ?? diagnostic;
+    const fallback = instanceFallback ?? diagnostic?.fallback;
+    if (diagnostic !== undefined && diagnostic.preventsFallback === true)
+      return {
+        ok: false,
+        error: {
+          stage: "runtime",
+          message: prepared.error,
+          diagnostic: diagnostic.code,
+          preventsFallback: true,
+        },
+      };
+    if (site !== undefined && fallback !== undefined) {
+      const location = locateSourceRange(ranges, site);
+      const owner = locateSourceRange(ranges, fallback.owner);
+      if (location !== undefined && owner !== undefined)
+        return {
+          ok: false,
+          error: {
+            stage: "runtime",
+            message: prepared.error,
+            module: location.module,
+            fallback: {
+              phase: "runtime",
+              code: diagnostic?.code ?? "UNSUPPORTED",
+              capability: fallback.capability,
+              location,
+              owner: {
+                kind: fallback.ownerKind,
+                module: owner.module,
+                start: owner.start,
+                end: owner.end,
+              },
+            },
+          },
+        };
+    }
+    return stageFailure("runtime", prepared.error);
+  }
   return {
     ok: true,
     value: {
@@ -1898,7 +2622,48 @@ function lowerTypedProgram(
     },
   );
   if (!lowered.ok) {
-    const nativeClosure = lowered.error.startsWith(nativeClosureCallMessage);
+    const fallback = lowered.fallback;
+    if (fallback !== undefined) {
+      const location = locateSourceRange(ranges, fallback.location);
+      const owner = locateSourceRange(ranges, fallback.owner);
+      if (location !== undefined && owner !== undefined)
+        return {
+          ok: false,
+          error: {
+            stage: "lower",
+            message:
+              location.module +
+              ":" +
+              String(location.start) +
+              ":" +
+              String(location.end) +
+              ": " +
+              lowered.error,
+            module: location.module,
+            preventsFallback: true,
+            fallback: {
+              phase: "lower",
+              code: "UNSUPPORTED",
+              capability: fallback.capability,
+              location,
+              owner: {
+                kind: "function",
+                module: owner.module,
+                start: owner.start,
+                end: owner.end,
+              },
+            },
+          },
+        };
+      return {
+        ok: false,
+        error: {
+          stage: "lower",
+          message: lowered.error,
+          preventsFallback: true,
+        },
+      };
+    }
     let message = lowered.error,
       culprit: string | undefined;
     const marker = message.lastIndexOf("(source "),
@@ -1926,16 +2691,6 @@ function lowerTypedProgram(
             message;
       }
     }
-    if (nativeClosure)
-      return {
-        ok: false,
-        error: {
-          stage: "lower",
-          message,
-          preventsFallback: true,
-          ...(culprit === undefined ? {} : { module: culprit }),
-        },
-      };
     return stageFailure("lower", message, culprit);
   }
   const serviceImports: ManagedFunctionEntryBinding[] = [];
@@ -2298,6 +3053,28 @@ function lowerTypedProgram(
   if (!hosted.ok) return stageFailure("host", hosted.error);
   const weak = bindWeakOperations(hosted.value, weakBindings);
   if (!weak.ok) return stageFailure("weak", weak.error);
+  const workerModules = request.workerModules;
+  const workerFunctions =
+    workerModules === undefined ? undefined : new Set<string>();
+  if (workerModules !== undefined && workerFunctions !== undefined) {
+    for (const fn of nativeChecked.bindings.functions) {
+      if (fn === undefined) throw "worker function invariant";
+      const origin = locateSourceRange(ranges, fn.node);
+      if (origin === undefined || !workerModules.includes(origin.module))
+        continue;
+      const binding = nativeChecked.bindings.bindings.find(
+        (candidate) =>
+          candidate !== undefined &&
+          candidate.kind === "function" &&
+          candidate.node === fn.node,
+      );
+      workerFunctions.add(
+        binding === undefined ? "closure_" + fn.id : binding.name + "$" + fn.id,
+      );
+    }
+    if (workerFunctions.size === 0)
+      return stageFailure("worker", "worker modules have no managed functions");
+  }
   /** `module:sourceName` (closures: `module:closure@offset`) of each
    * generated function name, for debug symbols and diagnostics. */
   function functionSourceNames(): FunctionSourceNames {
@@ -2423,6 +3200,7 @@ function lowerTypedProgram(
       surfacePlans,
       surfaceRuntimes,
       sourceNames: describeSources ? functionSourceNames() : undefined,
+      ...(workerFunctions === undefined ? {} : { workerFunctions }),
       referenceLists,
     },
   };
@@ -2565,9 +3343,14 @@ export function compileX64HostedProgram(
     readonly generational?: boolean;
     readonly inlineAllocation?: boolean;
     readonly threaded?: boolean;
+    readonly nodeWorkerLibrary?: boolean;
     readonly signposts?: readonly X64SignpostSite[];
     readonly allocationProbes?: boolean;
     readonly report?: (stage: string) => void;
+    readonly onGeneralFallback?: (
+      modules: readonly string[],
+      reason: string,
+    ) => void;
   } = {},
 ):
   | CompilationFailure
@@ -2585,16 +3368,40 @@ export function compileX64HostedProgram(
   const selected =
     options.runtime === true ? request : selectX64ForeignRuntime(request);
   if (typeof selected === "string") return stageFailure("foreign", selected);
-  const lowered = lowerTypedProgram(
-    withForeignRuntimes({
-      ...request,
-      moduleLoader: selected.moduleLoader,
-      modules: selected.modules,
-      symbols: true,
-    }),
-    undefined,
-    options.runtime !== true && options.threaded !== true,
-  );
+  const source = withForeignRuntimes({
+    ...request,
+    moduleLoader: selected.moduleLoader,
+    modules: selected.modules,
+    symbols: true,
+  });
+  const invokeDirectly = options.runtime !== true && options.threaded !== true;
+  function lower(): TypedLowering {
+    const typed = compileWithTypedWorkerEntry<TypedProgram>(
+      source,
+      (prepared): TypedLowering =>
+        lowerTypedProgram(prepared, undefined, invokeDirectly),
+    );
+    const lowering = source.generalLowering;
+    if (
+      typed.ok ||
+      lowering === undefined ||
+      typed.error.preventsFallback === true
+    )
+      return typed;
+    const general = compileGeneralProgram<TypedProgram>(
+      source,
+      lowering,
+      typed.error,
+      (program, realmTypeofModules): TypedLowering =>
+        lowerTypedProgram(program, realmTypeofModules),
+    );
+    if (!general.ok) return general;
+    const report = options.onGeneralFallback;
+    if (report !== undefined)
+      report(general.fallback.modules, general.fallback.reason);
+    return { ok: true, value: general.value };
+  }
+  const lowered = lower();
   if (!lowered.ok) return lowered;
   const program = lowered.value;
   const lists = program.referenceLists;
@@ -2644,12 +3451,14 @@ export function compileX64HostedProgram(
     );
   if (
     options.threaded === true &&
-    (entry.parameters.length !== 1 ||
-      entry.slots[entry.parameters[0] ?? -1] !== "number")
+    (entry.parameters.length !== (options.nodeWorkerLibrary === true ? 2 : 1) ||
+      entry.parameters.some(
+        (slot) => slot === undefined || entry.slots[slot] !== "number",
+      ))
   )
     return stageFailure(
       "entry",
-      "linux-x86_64: a threaded entry must take one Number argument",
+      "linux-x86_64: threaded entry parameters must match the selected worker host",
     );
   const managed =
     program.serviceImports.length !== 0 || program.surfacePlans.length !== 0;
@@ -2676,6 +3485,7 @@ export function compileX64HostedProgram(
       closedRecords: !managed,
       closedCalls: !managed,
       devirtualizeClosures: true,
+      inlining: program.workerFunctions === undefined ? "small" : "none",
     });
   const invocation = program.invocation,
     optimized = program.ir.module;
@@ -2732,6 +3542,7 @@ export function compileX64HostedProgram(
         }
       : undefined,
     options.jitDebugInterface === true,
+    program.workerFunctions,
   );
   if (!emitted.ok) {
     const message = emitted.error.message;
@@ -3038,6 +3849,7 @@ function compileTypedProgram(
       devirtualizeClosures: request.closedProgram === true,
       closedRecords: closedWorld,
       closedCalls: closedWorld,
+      inlining: program.workerFunctions === undefined ? "small" : "none",
       ...(optimizationObserver === undefined
         ? {}
         : { observer: optimizationObserver }),
@@ -3098,6 +3910,7 @@ function compileTypedProgram(
     formHints: request.emissionFormHints,
     pageAlignedCode: request.pageAlignedCode ?? false,
     forceFarReach: request.forceFarReach === true ? true : undefined,
+    workerFunctions: program.workerFunctions,
   });
   const optimizedModule = program.ir.module;
   if (!native.ok) {

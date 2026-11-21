@@ -11,7 +11,10 @@ import {
   type DecodedSafepoint,
   type NativeModule,
 } from "../src/aarch64/scalar/index.ts";
-import { encodeStackMapTable } from "../src/scalar/stack-maps.ts";
+import {
+  encodeStackMapTable,
+  encodeWideStackMapTable,
+} from "../src/scalar/stack-maps.ts";
 import {
   nativeStackMapMagic,
   nativeStackMapCompactVersion,
@@ -393,6 +396,48 @@ function decodeTable(words: readonly number[], tableOffset = 0) {
     stackMaps: [{ codeOffset: 100, tableOffset }],
   });
 }
+
+test("wide tables intern numeric maps without serializing them as text", () => {
+  const first = [64, 2, 8, 16, 0, 0];
+  const equal = first.slice();
+  const different = [64, 2, 8, 24, 0, 0];
+  for (const map of [first, equal, different])
+    Object.defineProperty(map, "join", {
+      value: () => {
+        throw Error("stack maps need no textual key");
+      },
+    });
+  assert.deepEqual(
+    encodeWideStackMapTable([
+      { offset: 5, start: 0, map: first },
+      { offset: 13, start: 8, map: equal },
+      { offset: 19, start: 16, map: different },
+    ]),
+    [
+      nativeStackMapMagic,
+      nativeStackMapWideVersion,
+      3,
+      5,
+      9,
+      13,
+      9,
+      19,
+      15,
+      64,
+      2,
+      8,
+      16,
+      0,
+      0,
+      64,
+      2,
+      8,
+      24,
+      0,
+      0,
+    ],
+  );
+});
 
 test("compact tables group safepoints by function, keep exact maps and reject duplicates", () => {
   // Function at 0: frame 32, saves x22 at sp + 8, holds a reference in it.

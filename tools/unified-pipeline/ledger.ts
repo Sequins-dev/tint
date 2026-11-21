@@ -14,6 +14,13 @@ import { spawn } from "node:child_process";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { constructs } from "./corpus.ts";
+import type {
+  FallbackTrigger,
+  GeneralFallbackFunction,
+  GeneralFallbackClass,
+  SourceDiagnostic,
+} from "@tint/compiler/native";
+import type { SourceAdvisory } from "../source-validation.ts";
 
 type Form = "typed" | "untyped";
 interface Entry {
@@ -21,7 +28,7 @@ interface Entry {
   readonly form: Form;
   /** "general" when the build used the general fallback; "type-error" when
    * an ill-typed form was rejected at compile time as expected. */
-  readonly path: "typed" | "general" | "type-error" | "none";
+  readonly path: "typed" | "mixed" | "general" | "type-error" | "none";
   /** "missed-type-error": an ill-typed form compiled; "unsupported": the
    * construct needs compiler options Tint does not offer yet. */
   readonly outcome:
@@ -31,9 +38,19 @@ interface Entry {
     | "missed-type-error"
     | "unsupported";
   readonly generalModules?: readonly string[];
+  readonly fallbackFunctions?: readonly GeneralFallbackFunction[];
+  readonly fallbackClasses?: readonly GeneralFallbackClass[];
+  readonly fallbackTriggers?: readonly FallbackTrigger[];
+  readonly sourceDiagnostics?: readonly SourceDiagnostic[];
+  readonly sourceAdvisories?: readonly SourceAdvisory[];
   readonly reason?: string;
   readonly error?: string;
   readonly sourceSnapshot?: string;
+  readonly sourceReplay?: {
+    readonly loads: number;
+    readonly modules: number;
+    readonly utf16Units: number;
+  };
   readonly seconds: number;
 }
 interface Ledger {
@@ -104,11 +121,22 @@ function verify(construct: string, form: Form): Promise<Entry> {
           (line) => line.startsWith("/") && existsSync(line + ".manifest.json"),
         );
       let sourceSnapshot: string | undefined;
+      let sourceReplay: Entry["sourceReplay"];
+      let fallbackFunctions: Entry["fallbackFunctions"];
+      let fallbackClasses: Entry["fallbackClasses"];
       if (image !== undefined) {
         const manifest = JSON.parse(
           readFileSync(image + ".manifest.json", "utf8"),
-        ) as { sourceSnapshot: { sha256: string } };
+        ) as {
+          sourceSnapshot: { sha256: string };
+          sourceReplay?: Entry["sourceReplay"];
+          fallbackFunctions?: Entry["fallbackFunctions"];
+          fallbackClasses?: Entry["fallbackClasses"];
+        };
         sourceSnapshot = manifest.sourceSnapshot.sha256;
+        sourceReplay = manifest.sourceReplay;
+        fallbackFunctions = manifest.fallbackFunctions;
+        fallbackClasses = manifest.fallbackClasses;
         rmSync(dirname(image), { recursive: true, force: true });
       }
       // A build that fails before compiling (the hosted builder asserts its
@@ -116,16 +144,52 @@ function verify(construct: string, form: Form): Promise<Entry> {
       const assertion = /AssertionError \[ERR_ASSERTION\]: (\{.*\})\n/.exec(
         stderr,
       )?.[1];
-      const expectsTypeError =
-        form === "typed" &&
-        constructs.find((item) => item.name === construct)?.typedError === true;
+      const compilerError =
+        assertion?.startsWith('{"stage":') !== true
+          ? undefined
+          : (JSON.parse(assertion) as {
+              stage: string;
+              sourceDiagnostics?: readonly SourceDiagnostic[];
+              fallback?: FallbackTrigger;
+            });
+      const fallbackTriggers: FallbackTrigger[] = [];
+      const sourceDiagnostics: SourceDiagnostic[] = [];
+      const sourceAdvisories: SourceAdvisory[] = [];
+      for (const line of stderr.split("\n")) {
+        if (line.startsWith("SOURCE_DIAGNOSTIC "))
+          sourceDiagnostics.push(
+            JSON.parse(
+              line.slice("SOURCE_DIAGNOSTIC ".length),
+            ) as SourceDiagnostic,
+          );
+        if (line.startsWith("FALLBACK_TRIGGER "))
+          fallbackTriggers.push(
+            JSON.parse(
+              line.slice("FALLBACK_TRIGGER ".length),
+            ) as FallbackTrigger,
+          );
+        if (line.startsWith("SOURCE_ADVISORY "))
+          sourceAdvisories.push(
+            JSON.parse(line.slice("SOURCE_ADVISORY ".length)) as SourceAdvisory,
+          );
+      }
+      if (compilerError?.fallback !== undefined)
+        fallbackTriggers.push(compilerError.fallback);
+      const expectedTypeError =
+        form === "typed"
+          ? constructs.find((item) => item.name === construct)?.typedError
+          : undefined;
+      const sourceDiagnostic =
+        image === undefined && assertion !== undefined
+          ? (sourceDiagnostics[0]?.code ??
+            compilerError?.sourceDiagnostics?.[0]?.code)
+          : undefined;
       const rejected =
-        image === undefined &&
-        assertion !== undefined &&
-        assertion.includes('"stage":"check"');
+        expectedTypeError !== undefined &&
+        sourceDiagnostic === expectedTypeError;
       const outcome: Entry["outcome"] = stdout.includes("UNSUPPORTED_OPTION")
         ? "unsupported"
-        : expectsTypeError
+        : expectedTypeError !== undefined
           ? rejected
             ? "pass"
             : image === undefined
@@ -140,13 +204,16 @@ function verify(construct: string, form: Form): Promise<Entry> {
         construct,
         form,
         path:
-          expectsTypeError && rejected
+          sourceDiagnostic !== undefined
             ? "type-error"
             : image === undefined
               ? "none"
               : fallback === null
                 ? "typed"
-                : "general",
+                : fallbackFunctions === undefined &&
+                    fallbackClasses === undefined
+                  ? "general"
+                  : "mixed",
         outcome,
         ...(fallback === null
           ? assertion === undefined || image !== undefined
@@ -158,6 +225,12 @@ function verify(construct: string, form: Form): Promise<Entry> {
             }),
         ...(outcome === "pass" ? {} : { error: stderr.slice(-1200) }),
         ...(sourceSnapshot === undefined ? {} : { sourceSnapshot }),
+        ...(sourceReplay === undefined ? {} : { sourceReplay }),
+        ...(fallbackFunctions === undefined ? {} : { fallbackFunctions }),
+        ...(fallbackClasses === undefined ? {} : { fallbackClasses }),
+        ...(fallbackTriggers.length === 0 ? {} : { fallbackTriggers }),
+        ...(sourceAdvisories.length === 0 ? {} : { sourceAdvisories }),
+        ...(sourceDiagnostics.length === 0 ? {} : { sourceDiagnostics }),
         seconds,
       });
     });

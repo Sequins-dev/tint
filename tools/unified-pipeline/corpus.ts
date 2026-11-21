@@ -12,18 +12,27 @@
 // accepts any value. Type-erased execution (Node) ignores contracts, so the
 // constructs that pin a contract declare a different Node result.
 
+import { nativeCallablePropertySource } from "../slice2b-view-fixtures.ts";
+import {
+  nestedCaptureSource,
+  nestedContractSource,
+} from "../slice3-nested-fixture-source.ts";
+
 export interface Construct {
   readonly name: string;
   readonly typed: string;
   readonly untyped: string;
   /** Source modules the forms import as "./<file>". */
   readonly helpers?: Readonly<Record<string, string>>;
+  readonly helperImports?: Readonly<Record<string, readonly string[]>>;
+  /** Prelinked worker entry modules the program starts by filename. */
+  readonly workers?: readonly string[];
   /** Node's result where Tint's semantics intentionally differ from
    * type-erased execution (enforced annotations); otherwise 42. */
   readonly node?: { readonly typed?: number; readonly untyped?: number };
   /** The typed form is ill-typed under the program's compiler options and
    * must be rejected at compile time, exactly as tsc reports it. */
-  readonly typedError?: boolean;
+  readonly typedError?: string;
   /** Compiler options the forms assume (Tint's defaults follow the
    * workspace tsconfig, which sets noUncheckedIndexedAccess). */
   readonly options?: { readonly noUncheckedIndexedAccess?: boolean };
@@ -37,6 +46,49 @@ export function call(fn, value) { return fn(value); }
 };
 
 export const constructs: readonly Construct[] = [
+  {
+    name: "worker-construction",
+    workers: ["peer.ts"],
+    helpers: {
+      "peer.ts": `import { parentPort, workerData } from "node:worker_threads";
+const port = parentPort;
+if (port === null || typeof workerData !== "number") throw "invalid worker context";
+port.once("message", (value) => {
+  port.postMessage(workerData + value);
+  port.close();
+});`,
+    },
+    typed: `import { Worker } from "node:worker_threads";
+const worker: Worker = new Worker("./worker-construction/peer.ts", { workerData: 41 });
+export function run(): number {
+  if (worker.threadId <= 0) return 1;
+  let received: boolean = false;
+  worker.once("message", (value: unknown): void => {
+    if (value !== 42) throw "wrong worker response";
+    received = true;
+  });
+  worker.once("exit", (status: unknown): void => {
+    if (status !== 0 || !received || worker.threadId !== -1) throw "unexpected worker exit";
+  });
+  worker.postMessage(1);
+  return 42;
+}`,
+    untyped: `import { Worker } from "node:worker_threads";
+const worker = new Worker("./worker-construction/peer.ts", { workerData: 41 });
+export function run() {
+  if (worker.threadId <= 0) return 1;
+  let received = false;
+  worker.once("message", (value) => {
+    if (value !== 42) throw "wrong worker response";
+    received = true;
+  });
+  worker.once("exit", (status) => {
+    if (status !== 0 || !received || worker.threadId !== -1) throw "unexpected worker exit";
+  });
+  worker.postMessage(1);
+  return 42;
+}`,
+  },
   {
     name: "numeric-loop",
     typed: `export function run(): number {
@@ -225,6 +277,50 @@ export function run() {
 }`,
   },
   {
+    name: "native-callable-property-views",
+    typed: nativeCallablePropertySource,
+    untyped: `export function run() {
+  let total = 0;
+  const increment = (by) => { total += by; return total; };
+  const table = {};
+  table.first = increment;
+  table.second = increment;
+  const callable = table.first;
+  if (callable !== table.second || typeof callable !== "function") return 1;
+  if (callable(38) !== 38) return 2;
+  const arrays = { values: [2, 2] };
+  const values = arrays.values;
+  if (values === undefined) return 3;
+  const mapped = values.map(increment);
+  return mapped[0] === 40 && mapped[1] === 42 && total === 42 ? 42 : 4;
+}`,
+  },
+  {
+    name: "native-storage-keyed-views",
+    typed: `export function run(): number {
+  const list: number[] = [18];
+  const record: { delta: number; label: string } = { delta: 2, label: "live" };
+  const table: Record<string, unknown> = { list, record };
+  table.listAlias = list;
+  table.recordAlias = record;
+  list[0] = 20;
+  record.delta = 22;
+  return table.list === table.listAlias && table.record === table.recordAlias
+    ? (list[0] ?? 0) + record.delta : 1;
+}`,
+    untyped: `export function run() {
+  const list = [18];
+  const record = { delta: 2, label: "live" };
+  const table = { list, record };
+  table.listAlias = list;
+  table.recordAlias = record;
+  list[0] = 20;
+  record.delta = 22;
+  return table.list === table.listAlias && table.record === table.recordAlias
+    ? list[0] + record.delta : 1;
+}`,
+  },
+  {
     name: "dynamic-object-in-delete",
     typed: `export function run(): number {
   const object: Record<string, number> = { key: 1 };
@@ -353,7 +449,7 @@ export function run() {
 }
 class Square extends Shape {
   constructor(private side: number) { super("square"); }
-  area(): number { return this.side * this.side; }
+  override area(): number { return this.side * this.side; }
 }
 export function run(): number {
   const shape: Shape = new Square(3);
@@ -953,6 +1049,163 @@ export function run() {
 }`,
   },
   {
+    name: "arguments-function-fallback",
+    typed: `function kernel(): number { return 6 * 7; }
+function read(): number { return kernel() - arguments.length; }
+export function run(): number { return read(); }`,
+    untyped: `function kernel() { return 6 * 7; }
+function read() { return kernel() - arguments.length; }
+export function run() { return read(); }`,
+  },
+  {
+    name: "arguments-function-fallback-reentry",
+    typed: `function kernel(): number { return read() + 22; }
+function read(...values: number[]): number { return arguments.length === 0 ? 17 : kernel() + arguments.length; }
+export function run(): number { return read(1, 2, 3); }`,
+    untyped: `function kernel() { return read() + 22; }
+function read(...values) { return arguments.length === 0 ? 17 : kernel() + arguments.length; }
+export function run() { return read(1, 2, 3); }`,
+  },
+  {
+    name: "arguments-function-fallback-throw",
+    typed: `function kernel(): number { throw 7; }
+function read(): number { return kernel() + arguments.length; }
+export function run(): number { try { read(); return 1; } catch (error) { return error === 7 ? 42 : 2; } }`,
+    untyped: `function kernel() { throw 7; }
+function read() { return kernel() + arguments.length; }
+export function run() { try { read(); return 1; } catch (error) { return error === 7 ? 42 : 2; } }`,
+  },
+  {
+    name: "arguments-function-fallback-numeric",
+    typed: `function kernel(left: number, right: number): number { return left * 10 + right; }
+function read(value: number): number { return kernel(value, arguments.length) + 1; }
+export function run(): number { return read(4); }`,
+    untyped: `function kernel(left, right) { return left * 10 + right; }
+function read(value) { return kernel(value, arguments.length) + 1; }
+export function run() { return read(4); }`,
+  },
+  {
+    name: "function-fallback-primitive-contracts",
+    node: { typed: 1 },
+    typed: `let defaults = 0;
+let finalizers = 0;
+const marker = { value: 42 };
+function subject(this: { base: number }, value: number = ++defaults): number {
+  if (arguments.length > 1) throw marker;
+  if (value === -1) value = "bad" as unknown as number;
+  return this.base + value;
+}
+function invalid(): number {
+  try { return "bad" as unknown as number; }
+  finally { finalizers++; }
+}
+export function run(): number {
+  const receiver = { base: 40, subject };
+  if (receiver.subject() !== 41 || receiver.subject(undefined) !== 42 || defaults !== 2) return 2;
+  let rejected = 0;
+  try { receiver.subject("bad" as unknown as number); } catch (error) { if (error instanceof TypeError) rejected++; }
+  try { receiver.subject(-1); } catch (error) { if (error instanceof TypeError) rejected++; }
+  try { receiver.subject(...([1, 2] as unknown as [number])); } catch (error) { if (error === marker) rejected++; }
+  try { invalid(); } catch (error) { if (error instanceof TypeError && finalizers === 1) rejected++; }
+  return rejected === 4 ? 42 : 1;
+}`,
+    untyped: `let defaults = 0;
+let finalizers = 0;
+const marker = { value: 42 };
+function subject(value = ++defaults) {
+  if (arguments.length > 1) throw marker;
+  return this.base + value;
+}
+function invalid() { try { return "bad"; } finally { finalizers++; } }
+export function run() {
+  const receiver = { base: 40, subject };
+  if (receiver.subject() !== 41 || receiver.subject(undefined) !== 42 || defaults !== 2) return 2;
+  let throwsSame = false;
+  try { receiver.subject(1, 2); } catch (error) { throwsSame = error === marker; }
+  return throwsSame && receiver.subject("bad") === "40bad" && invalid() === "bad" && finalizers === 1 ? 42 : 1;
+}`,
+  },
+  {
+    name: "function-fallback-defaults-mixed",
+    typed: `function kernel(): number { return observe(2); }
+function observe(value: number = kernel() + 17): number {
+  const count = arguments.length;
+  if (count === 0) return value;
+  return value * 2 + count;
+}
+export function run(): number { return observe() + observe(undefined) - 25; }`,
+    untyped: `function kernel() { return observe(2); }
+function observe(value = kernel() + 17) {
+  const count = arguments.length;
+  if (count === 0) return value;
+  return value * 2 + count;
+}
+export function run() { return observe() + observe(undefined) - 25; }`,
+  },
+  {
+    name: "function-fallback-reexport-identity",
+    helperImports: { "reexport.ts": ["kernel.ts"] },
+    helpers: {
+      "kernel.ts": `function kernel(value: number): number { return value + 1; }
+export { kernel as first, kernel as second };`,
+      "reexport.ts": `export { second as third } from "./kernel.ts";`,
+    },
+    typed: `import { first, second } from "./kernel.ts";
+import { third } from "./reexport.ts";
+function size(): number { return arguments.length; }
+export function run(): number {
+  return first === second && first === third && size() === 0 ? third(41) : 1;
+}`,
+    untyped: `import { first, second } from "./kernel.ts";
+import { third } from "./reexport.ts";
+function size() { return arguments.length; }
+export function run() {
+  return first === second && first === third && size() === 0 ? third(41) : 1;
+}`,
+  },
+  {
+    name: "function-fallback-mixed-throw-object",
+    typed: `function exchange(value?: unknown): unknown {
+  if (arguments.length !== 0) throw value;
+  return { message: "same object" };
+}
+export function run(): number {
+  const marker = exchange();
+  try { exchange(marker); return 1; }
+  catch (caught) { return caught === marker ? 42 : 2; }
+}`,
+    untyped: `function exchange(value) {
+  if (arguments.length !== 0) throw value;
+  return { message: "same object" };
+}
+export function run() {
+  const marker = exchange();
+  try { exchange(marker); return 1; }
+  catch (caught) { return caught === marker ? 42 : 2; }
+}`,
+  },
+  {
+    name: "function-fallback-rest-spread",
+    typed: `function read(base: number, ...values: number[]): number {
+  let total = base + arguments.length;
+  for (const value of values) total += value;
+  return total;
+}
+export function run(): number {
+  const tail: number[] = [10, 11];
+  return read(1) === 2 ? read(18, ...tail) : 1;
+}`,
+    untyped: `function read(base, ...values) {
+  let total = base + arguments.length;
+  for (const value of values) total += value;
+  return total;
+}
+export function run() {
+  const tail = [10, 11];
+  return read(1) === 2 ? read(18, ...tail) : 1;
+}`,
+  },
+  {
     name: "tagged-templates",
     typed: `function tag(strings: TemplateStringsArray, ...values: number[]): string {
   return strings.raw.join("|") + values.join(",");
@@ -1152,6 +1405,41 @@ export function run() {
   // Enforced contracts: written annotations reject foreign writes with a
   // TypeError on every path and keep the previous value. The untyped forms
   // have no annotations, so the same writes succeed.
+  {
+    name: "nested-shared-captures",
+    typed: nestedCaptureSource,
+    untyped: `function activation(seed) {
+  let count = seed;
+  function bump(delta) { count += delta; return count; }
+  const alias = bump;
+  function general(delta) {
+    if (arguments.length !== 1 || bump !== alias) return -1;
+    count += 1;
+    return alias(delta);
+  }
+  return general;
+}
+export function run() {
+  const first = activation(1);
+  const second = activation(10);
+  if (first(1) !== 3 || second(1) !== 12) return 1;
+  return first(38) === 42 ? 42 : 2;
+}`,
+  },
+  {
+    name: "nested-capture-contract",
+    typed: nestedContractSource,
+    node: { typed: 3 },
+    untyped: `export function run() {
+  let count = 20;
+  function write(value) { count = value; }
+  function read() { return count; }
+  write("open");
+  if (read() !== "open") return 1;
+  write(42);
+  return read();
+}`,
+  },
   {
     name: "explicit-field-contract",
     helpers: untypedHelper,
@@ -1403,11 +1691,8 @@ export function run() {
 }`,
   },
   {
-    // With noUncheckedIndexedAccess (the workspace default) an element read
-    // has type number | undefined, so storing it into a number slot is a
-    // compile-time type error, as tsc reports it.
+    // The preceding write proves the constant indexed read.
     name: "typed-array-index",
-    typedError: true,
     typed: `export function run(): number {
   const bytes = new Uint8Array(2);
   bytes[1] = 42;
@@ -1421,6 +1706,36 @@ export function run() {
   const value = bytes[1];
   const missing = bytes[5];
   return value === 42 && missing === undefined ? 42 : 1;
+}`,
+  },
+  {
+    name: "typed-array-index-unproven",
+    typedError: "TS2322",
+    typed: `export function run(): number {
+  const bytes = new Uint8Array(2);
+  const value: number = bytes[5];
+  return value === undefined ? 42 : 1;
+}`,
+    untyped: `export function run() {
+  const bytes = new Uint8Array(2);
+  const value = bytes[5];
+  return value === undefined ? 42 : 1;
+}`,
+  },
+  {
+    name: "type-error-after-generator",
+    typedError: "TS2322",
+    typed: `function* count(): Generator<number, void, unknown> { yield 42; }
+export function run(): number {
+  const invalid: number = "wrong";
+  for (const value of count()) if (typeof invalid === "string") return value;
+  return 1;
+}`,
+    untyped: `function* count() { yield 42; }
+export function run() {
+  const invalid = "wrong";
+  for (const value of count()) if (typeof invalid === "string") return value;
+  return 1;
 }`,
   },
   {

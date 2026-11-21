@@ -1,3 +1,4 @@
+import { primitiveContractBit } from "@tint/foundation/values/primitive-contract";
 import { viewSymbolValue } from "./symbols.ts";
 import {
   viewBigIntValue,
@@ -22,6 +23,53 @@ import {
   createPropertyEnumeration,
   type PropertyEnumeration,
 } from "./enumeration.ts";
+
+export function checkPrimitiveContract(
+  realm: ErrorRealm,
+  value: unknown,
+  allowed: number,
+): unknown {
+  if (!acceptsPrimitiveContract(value, allowed))
+    throw createRuntimeError(realm, "type");
+  return value;
+}
+
+export function acceptsPrimitiveContract(
+  value: unknown,
+  allowed: number,
+): boolean {
+  let kind = value === null ? "null" : typeof value;
+  if (kind === "object") {
+    if (
+      (allowed & primitiveContractBit("bigint")) !== 0 &&
+      viewBigIntValue(value) !== undefined
+    )
+      kind = "bigint";
+    else if (
+      (allowed & primitiveContractBit("symbol")) !== 0 &&
+      viewSymbolValue(value) !== undefined
+    )
+      kind = "symbol";
+  }
+  return (allowed & primitiveContractBit(kind)) !== 0;
+}
+
+export function primitiveContractPredicate(
+  allowed: number,
+): ((value: unknown) => boolean) | undefined {
+  if (allowed === 0) return undefined;
+  return (value: unknown): boolean => acceptsPrimitiveContract(value, allowed);
+}
+
+export function checkPrimitiveRestArguments(
+  realm: ErrorRealm,
+  args: readonly unknown[],
+  offset: number,
+  allowed: number,
+): void {
+  for (let i = offset; i < args.length; i++)
+    checkPrimitiveContract(realm, args[i], allowed);
+}
 
 /** Literal prototype setters bypass named properties and ignore primitive values. */
 export function setObjectLiteralPrototype(

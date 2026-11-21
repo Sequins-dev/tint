@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./values/primitive-contract": {
+      "types": "./dist/values/primitive-contract.d.ts",
+      "import": "./dist/values/primitive-contract.js"
+    },
     "./binary/word64": {
       "types": "./dist/binary/word64.d.ts",
       "import": "./dist/binary/word64.js"

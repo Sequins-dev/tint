@@ -7,6 +7,7 @@ import {
   type Module,
 } from "@tint/typescript/syntax";
 import { lowerSourceTextModule } from "../src/lowering/index.ts";
+import { bindModule, directEvalUnavailable } from "@tint/typescript/binding";
 function lower(source: string): Module {
   const parsed = parseModule(createSourceTextView(source));
   assert.ok(parsed.ok);
@@ -79,4 +80,24 @@ test("module eval strings retain Script grammar rather than being parsed as modu
     "eval('import x from \"m\";');",
   ])
     lower(source);
+});
+
+test("the checked AOT composition diagnoses direct eval explicitly", () => {
+  const parsed = parseModule(
+    createSourceTextView(
+      'export function run(): number { return (eval)("42"); }',
+    ),
+  );
+  assert.ok(parsed.ok);
+  const typed = bindModule(parsed.value);
+  assert.equal(typed.ok, false);
+  if (!typed.ok) assert.equal(typed.error.message, directEvalUnavailable);
+  const lowered = lowerSourceTextModule(
+    parsed.value,
+    undefined,
+    undefined,
+    true,
+  );
+  assert.equal(lowered.ok, false);
+  if (!lowered.ok) assert.equal(lowered.error.message, directEvalUnavailable);
 });

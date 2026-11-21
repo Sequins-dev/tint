@@ -41,7 +41,9 @@ export interface ProgramRealmCore {
 let current: ProgramRealmCore | undefined = undefined;
 
 /** The shared realm identity. Embedders install globals on its object once. */
-export function programRealmCore(): ProgramRealmCore {
+export function programRealmCore(
+  canSuspend: boolean = false,
+): ProgramRealmCore {
   const existing = current;
   if (existing !== undefined) return existing;
   const prototype = createObject<ScriptPropertyKey, unknown>(undefined);
@@ -59,7 +61,7 @@ export function programRealmCore(): ProgramRealmCore {
     prototype,
     hooks,
     createSymbolRegistry(),
-    createScriptAgent(false),
+    createScriptAgent(canSuspend),
   );
   const initialized: ProgramRealmCore = {
     object,
@@ -98,6 +100,18 @@ export function installProgramTypedArrayIntrinsics(
   installProgramArrayBufferIntrinsics(core);
   installTypedArrayIntrinsics(core.object, core.realm, core.hooks, "little");
   core.typedArrayInstalled = true;
+}
+
+export function installProgramPromiseIntrinsics(core: ProgramRealmCore): void {
+  const { object, realm, hooks } = core;
+  if (realm.promiseConstructor === undefined)
+    installPromiseIntrinsics(
+      object,
+      realm,
+      hooks,
+      realm.promiseRejectionTracker,
+    );
+  core.installed.add("installPromiseIntrinsics");
 }
 
 /** Typed lookups and the generated host share installation state, including

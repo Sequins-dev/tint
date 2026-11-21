@@ -1,0 +1,128 @@
+{
+  "kind": "tint-unified-pipeline-ledger",
+  "version": 1,
+  "label": "slice3-source-validation-focused-v1",
+  "recorded": "2026-11-20T06:14:28.543Z",
+  "node": "v24.12.0",
+  "sourceSnapshot": "7e9faedb3645155b09f90b05d76e7a162ae7c0b9672eb6b87c2ce2311860e66e",
+  "summary": {
+    "typed": {
+      "general": 2,
+      "type-error": 2,
+      "typed": 1
+    },
+    "untyped": {
+      "general": 5
+    }
+  },
+  "entries": [
+    {
+      "construct": "open-callback-parameter",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:108:113: invalid binding operation",
+      "sourceSnapshot": "7e9faedb3645155b09f90b05d76e7a162ae7c0b9672eb6b87c2ce2311860e66e",
+      "seconds": 51.2
+    },
+    {
+      "construct": "open-callback-parameter",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:176: named functions require parameter and return annotations",
+      "sourceSnapshot": "7e9faedb3645155b09f90b05d76e7a162ae7c0b9672eb6b87c2ce2311860e66e",
+      "seconds": 51.2
+    },
+    {
+      "construct": "typed-array-index",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:92:116: invalid binding operation",
+      "sourceSnapshot": "7e9faedb3645155b09f90b05d76e7a162ae7c0b9672eb6b87c2ce2311860e66e",
+      "seconds": 46.3
+    },
+    {
+      "construct": "typed-array-index",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:188: named functions require parameter and return annotations",
+      "sourceSnapshot": "7e9faedb3645155b09f90b05d76e7a162ae7c0b9672eb6b87c2ce2311860e66e",
+      "seconds": 46.3
+    },
+    {
+      "construct": "typed-array-index-unproven",
+      "form": "typed",
+      "path": "type-error",
+      "outcome": "pass",
+      "reason": "{\"stage\":\"source\",\"message\":\"fixture:75:80: TS2322: Type 'number | undefined' is not assignable to type 'number'.\\n  Type 'undefined' is not assignable to type 'number'.\",\"module\":\"fixture\"}",
+      "seconds": 2.3
+    },
+    {
+      "construct": "typed-array-index-unproven",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:125: named functions require parameter and return annotations",
+      "sourceSnapshot": "7e9faedb3645155b09f90b05d76e7a162ae7c0b9672eb6b87c2ce2311860e66e",
+      "seconds": 46.2
+    },
+    {
+      "construct": "type-error-after-generator",
+      "form": "typed",
+      "path": "type-error",
+      "outcome": "pass",
+      "reason": "{\"stage\":\"source\",\"message\":\"fixture:106:113: TS2322: Type 'string' is not assignable to type 'number'.\",\"module\":\"fixture\"}",
+      "seconds": 2.4
+    },
+    {
+      "construct": "type-error-after-generator",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:31: generator suspension lowering is not implemented",
+      "sourceSnapshot": "7e9faedb3645155b09f90b05d76e7a162ae7c0b9672eb6b87c2ce2311860e66e",
+      "seconds": 46.1
+    },
+    {
+      "construct": "typed-array-index-checked",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "7e9faedb3645155b09f90b05d76e7a162ae7c0b9672eb6b87c2ce2311860e66e",
+      "seconds": 9
+    },
+    {
+      "construct": "typed-array-index-checked",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:193: named functions require parameter and return annotations",
+      "sourceSnapshot": "7e9faedb3645155b09f90b05d76e7a162ae7c0b9672eb6b87c2ce2311860e66e",
+      "seconds": 40.6
+    }
+  ]
+}

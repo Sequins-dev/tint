@@ -132,7 +132,16 @@ export type Result =
         readonly signatureTypes: Uint32Array | undefined;
       };
     }
-  | { readonly ok: false; readonly error: string };
+  | {
+      readonly ok: false;
+      readonly error: string;
+      readonly fallback?: LoweringFallback;
+    };
+export interface LoweringFallback {
+  readonly capability: "native-callable-view";
+  readonly location: IRSpan;
+  readonly owner: IRSpan;
+}
 /** A record extent rounded up to the managed allocation granule. */
 function alignAllocation(bytes: number): number {
   return (
@@ -357,6 +366,7 @@ function lowerEntries(
     functions: FunctionIR[] = [],
     seen = new Uint8Array(checked.bindings.functions.length);
   let error = "";
+  let fallback: LoweringFallback | undefined;
   function fail(message: string): never {
     error = message;
     throw abort;
@@ -1707,6 +1717,7 @@ function lowerEntries(
               checked.bindings.functions[fn.parent]?.scope !== layout.scope))
       )
         fail("entry must be a checked capturing function");
+      const sourceOwner = body.node;
       if (imported.has(sourceId) || addressStubs.has(sourceId)) {
         if (
           fn.parent !== undefined ||
@@ -1871,7 +1882,7 @@ function lowerEntries(
         );
       }
       const dynamicObjects: DynamicObjectRuntime | undefined =
-        dynamicAliases.size === 0
+        !dynamicAliases.has("create")
           ? undefined
           : {
               ...dynamicObjectRuntime((name) => {
@@ -2767,15 +2778,14 @@ function lowerEntries(
             case "call": {
               const intrinsic = checked.intrinsics.get(node);
               if (intrinsic === "general-call") {
-                if (knownNativeClosure(node.callee))
-                  fail(
-                    nativeClosureCallMessage +
-                      " (source " +
-                      node.start +
-                      ":" +
-                      node.end +
-                      ")",
-                  );
+                if (knownNativeClosure(node.callee)) {
+                  fallback = {
+                    capability: "native-callable-view",
+                    location: { start: node.start, end: node.end },
+                    owner: { start: sourceOwner.start, end: sourceOwner.end },
+                  };
+                  fail(nativeClosureCallMessage);
+                }
                 generalCall = { target: realmCallTarget() };
                 expr(node.callee);
                 exprArguments(node.arguments);
@@ -4372,7 +4382,9 @@ function lowerEntries(
   } catch (e) {
     if (e !== abort) throw e;
   }
-  return { ok: false, error };
+  return fallback === undefined
+    ? { ok: false, error }
+    : { ok: false, error, fallback };
 }
 // Spill original SSA values so guard-induced block splits cannot create cross-block uses.
 function cells(

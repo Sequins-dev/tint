@@ -484,3 +484,8 @@ export function bindingRest(
   copyObjectProperties(result, source, excluded, core.hooks, core.realm);
   return result;
 }
+export {
+  projectUnaryNumber,
+  projectNumberList,
+  projectNativeRecord,
+} from "../intrinsics/value-views.ts";

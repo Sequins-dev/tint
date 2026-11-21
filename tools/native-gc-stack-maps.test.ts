@@ -265,6 +265,68 @@ test("precise stack maps keep references across many collections", async () => {
       managedBytes: 4194304,
       allocationCapacity: 1048576,
       rootCapacity: 65536,
+      // The 300-deep walk needs more than the default 1 MiB stack on x86-64.
+      // Keep the heap small so the same workload still forces collections.
+      stackBytes: 2097152,
     },
+  );
+});
+
+test("wide stack maps stream into final storage on a bounded native heap", () => {
+  verifyHostedFixture(
+    `import { planWideStackMapTable, type SafepointEntry } from "stack-maps";
+export function run(): number {
+  const entries: SafepointEntry[] = [];
+  const count = 128;
+  const roots = 3072;
+  for (let i = 0; i < count; i++) {
+    const map: number[] = [roots * 16, roots];
+    for (let j = 0; j < roots; j++) map.push((j + i) * 8);
+    map.push(0);
+    map.push(0);
+    entries.push({ offset: i * 3, start: 0, map });
+  }
+  const table = planWideStackMapTable(entries);
+  const words = new Float64Array(table.wordLength);
+  let cursor = 0;
+  table.forEachWord((word: number): void => { words[cursor] = word; cursor++; });
+  return cursor === 3 + count * (roots + 6) &&
+    words[2] === count && words[4] === 3 + count * 2 &&
+    words[cursor - 3] === (roots + count - 2) * 8 ? 42 : 1;
+}`,
+    "wide-stack-map-stream",
+    [["stack-maps", "packages/codegen/src/scalar/stack-maps.ts"]],
+    [],
+    [],
+    [],
+    { managedBytes: 24 * 1024 * 1024, allocationCapacity: 1048576 },
+  );
+});
+
+test("x86-64 assembly releases local fixups before allocating the final image", () => {
+  verifyHostedFixture(
+    `import { createAssembler, type Instruction } from "x64-isa";
+export function run(): number {
+  const assembler = createAssembler();
+  const call: Instruction = { op: "call", target: { kind: "label", label: "end" } };
+  const count = 100000;
+  for (let i = 0; i < count; i++) assembler.instruction(call);
+  assembler.instruction({ op: "label", name: "end" });
+  const byteLength = 7 * 1024 * 1024;
+  const layout = assembler.finish(undefined, byteLength);
+  const last = (count - 1) * 5;
+  return layout.bytes.length === byteLength &&
+    layout.labels.get("end") === count * 5 &&
+    layout.bytes[0] === 232 && layout.bytes[1] === 27 &&
+    layout.bytes[2] === 161 && layout.bytes[3] === 7 &&
+    layout.bytes[last] === 232 && layout.bytes[last + 1] === 0 &&
+    layout.externalFixups.length === 0 ? 42 : 1;
+}`,
+    "x64-local-relocations-heap",
+    [["x64-isa", "packages/codegen/src/x86_64/isa.ts"]],
+    [],
+    [],
+    [],
+    { managedBytes: 24 * 1024 * 1024, allocationCapacity: 1048576 },
   );
 });

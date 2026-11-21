@@ -3,9 +3,15 @@ import assert from "node:assert/strict";
 import * as protocol from "../src/iterators/index.ts";
 import type { GeneratorResumeKind } from "../src/iterators/generator.ts";
 
-function harness(continuation: protocol.AsyncGeneratorContinuation<unknown>) {
+function harness(
+  continuation: protocol.AsyncGeneratorContinuation<unknown>,
+  contracts?: protocol.AsyncGeneratorContracts<unknown>,
+) {
   assert.equal(typeof protocol.createAsyncGeneratorRecord, "function");
-  const record = protocol.createAsyncGeneratorRecord<unknown>(continuation);
+  const record = protocol.createAsyncGeneratorRecord<unknown>(
+    continuation,
+    contracts,
+  );
   const jobs: (() => void)[] = [];
   const events: unknown[] = [];
   const hooks: protocol.AsyncGeneratorHooks<unknown> = {
@@ -87,6 +93,33 @@ test("await retains the active request and queued requests resume in order", () 
     { value: 21, done: false },
     { value: 42, done: true },
   ]);
+});
+
+test("async generator contracts check external resumptions and settled returns", () => {
+  let stage = 0;
+  const marker = new TypeError();
+  const h = harness(
+    (kind, value) => {
+      if (stage++ === 0) return { kind: "await", value: 11 };
+      if (stage === 2) {
+        assert.equal(kind, "next");
+        return { kind: "yield", value };
+      }
+      assert.equal(kind, "throw");
+      assert.equal(value, marker);
+      return { kind: "return", value: "wrong" };
+    },
+    {
+      acceptsNext: (value) => typeof value === "string",
+      acceptsReturn: (value) => typeof value === "number",
+      typeError: () => marker,
+    },
+  );
+  h.request("next", false);
+  h.request("next", false);
+  h.tick();
+  assert.deepEqual(h.events, [{ value: 11, done: false }, { error: marker }]);
+  assert.equal(h.record.state, "completed");
 });
 
 test("return before start awaits its input and blocks later requests without entering body", () => {

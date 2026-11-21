@@ -11,10 +11,13 @@ import {
   type Statement,
 } from "@tint/typescript/syntax";
 import { createKeyIndex } from "@tint/foundation/collections/key-index";
+import { nativeCallableProjectionAlias } from "@tint/typescript/checker";
 import type {
   CheckedClosures,
+  NativeRecordViewField,
   NativeTypedArray,
 } from "@tint/typescript/checker";
+import { projectRecordExpression } from "./record-view.ts";
 
 export interface DynamicObjectRuntime {
   readonly create: number;
@@ -453,11 +456,38 @@ export function insertDynamicObjectRuntime(
   realmInstanceof: boolean,
   speculativeFlow: boolean,
   canCaptureErrorRealm: (site: Span) => boolean,
+  sourceNames?: ReadonlyMap<string, string>,
 ): Module {
   const uses: Span[] = [];
   const patterns: Span[] = [];
   const compoundUses: Span[] = [],
     updates: Span[] = [];
+  const callableViews: Span[] = [];
+  const listViews: Span[] = [];
+  const recordViews: Span[] = [];
+  // These expressions were checked in the specialized copy. The rewrite
+  // consumes the linked source, before additional runtime specialization.
+  const callableSites = new Set<string>();
+  const listSites = new Set<string>();
+  const recordSites = new Map<string, readonly NativeRecordViewField[]>();
+  function sourceSite(node: Expression): string {
+    return node.kind + ":" + String(node.start) + ":" + String(node.end);
+  }
+  checked.nativeCallableViews?.forEach((_value, site) => {
+    callableViews.push(site);
+    callableSites.add(sourceSite(site));
+    uses.push(site);
+  });
+  checked.nativeListViews?.forEach((_value, site) => {
+    listViews.push(site);
+    listSites.add(sourceSite(site));
+    uses.push(site);
+  });
+  checked.nativeRecordViews?.forEach((fields, site) => {
+    recordViews.push(site);
+    recordSites.set(sourceSite(site), fields);
+    uses.push(site);
+  });
   checked.bindingRealm?.forEach((_value, site) => {
     patterns.push(site);
     uses.push(site);
@@ -546,7 +576,10 @@ export function insertDynamicObjectRuntime(
       const linked = helpers.get("dynamic-object:" + name);
       if (linked === undefined) throw "dynamic object helper invariant";
       declarations.push({
-        name: dynamicRuntimeAliasPrefix + name,
+        name:
+          name === "projectUnaryNumber"
+            ? nativeCallableProjectionAlias
+            : dynamicRuntimeAliasPrefix + name,
         type: undefined,
         initializer: {
           kind: "identifier",
@@ -581,6 +614,9 @@ export function insertDynamicObjectRuntime(
       alias("speculativeUnary");
     }
     if (contains(updates)) alias("update");
+    if (contains(callableViews)) alias("projectUnaryNumber");
+    if (contains(listViews)) alias("projectNumberList");
+    if (contains(recordViews)) alias("projectNativeRecord");
     if (realmInstanceof)
       for (const name of realmInstanceofHelpers) {
         if (name === undefined) throw "realm instanceof helper invariant";
@@ -662,6 +698,51 @@ export function insertDynamicObjectRuntime(
         ? { ...node, body: bodyWithRuntime(node.body, node.parameters) }
         : node,
     expression: (node, original) => {
+      const site =
+        callableSites.size + listSites.size + recordSites.size === 0
+          ? ""
+          : sourceSite(original);
+      const record = recordSites.get(site);
+      if (record !== undefined)
+        return projectRecordExpression(
+          node,
+          record,
+          dynamicRuntimeAliasPrefix + "projectNativeRecord",
+        );
+      const callable = callableSites.has(site);
+      if (callable || listSites.has(site)) {
+        const start = node.start,
+          end = node.end;
+        const helper = callable ? "projectUnaryNumber" : "projectNumberList";
+        const args: Expression[] = [node];
+        if (callable) {
+          let source = original;
+          while (source.kind === "group" || source.kind === "satisfies")
+            source = source.expression;
+          const name =
+            source.kind === "identifier"
+              ? (sourceNames?.get(source.name) ?? "")
+              : source.kind === "function-expression"
+                ? (source.name ?? "")
+                : "";
+          args.push({ kind: "string", value: name, start, end });
+        }
+        return {
+          kind: "call",
+          callee: {
+            kind: "identifier",
+            name: callable
+              ? nativeCallableProjectionAlias
+              : dynamicRuntimeAliasPrefix + helper,
+            start,
+            end,
+          },
+          arguments: args,
+          typeArguments: [],
+          start,
+          end,
+        };
+      }
       if (
         (node.kind !== "arrow" && node.kind !== "function-expression") ||
         !usesRuntime(original)
