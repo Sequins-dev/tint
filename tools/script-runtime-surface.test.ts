@@ -214,7 +214,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   }
   assert.deepEqual(
     { functions, types, genericFunctions, genericTypes },
-    { functions: 139, types: 26, genericFunctions: 33, genericTypes: 11 },
+    { functions: 145, types: 27, genericFunctions: 34, genericTypes: 12 },
   );
   const bound = bindModule(linked.value.module, globals);
   assert.ok(bound.ok, JSON.stringify(bound));
@@ -243,7 +243,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     typeExports,
   );
   assert.ok(selections.ok, JSON.stringify(selections));
-  assert.equal(selections.value.roots.length, 33);
+  assert.equal(selections.value.roots.length, 34);
   const specialized = specializeModule(normalized.value, rebound.value, {
     roots: selections.value.roots,
     maxSpecializations: 4096,
@@ -257,8 +257,8 @@ test("Script surface instantiations match the real linked export namespaces and 
     "$ScriptTable",
   );
   assert.ok(table.ok, JSON.stringify(table));
-  assert.equal(table.value.surface.entries.length, 139);
-  assert.equal(table.value.surface.types.length, 26);
+  assert.equal(table.value.surface.entries.length, 145);
+  assert.equal(table.value.surface.types.length, 27);
   const canonical = canonicalizeManagedSurfaceTypes(table.value.surface);
   assert.ok(canonical.ok, JSON.stringify(canonical));
   const registryEntries = scriptRuntimeSurface();
@@ -328,9 +328,9 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(twice.ok);
     assert.equal(twice.value.erased, 0);
   }
-  // AOT functions skip unobservable receiver conversion and empty environments
-  // (P stage 10); global identifier caches keep their surface applications.
-  assert.deepEqual(erased, [27, 32, 23]);
+  // Fixed binding slots and positional entries reduce generic applications.
+  // Global identifier caches keep their surface applications.
+  assert.deepEqual(erased, [18, 28, 18]);
 
   const wire = serializeManagedSurfaceTypes(canonical.value);
   assert.ok(wire.ok, JSON.stringify(wire));
@@ -373,21 +373,22 @@ test("Script surface instantiations match the real linked export namespaces and 
   // provider. The other three providers add eight operations each.
   // Class method contracts add a parameter-mask anchor that reuses the
   // number-list provider.
-  assert.equal(census.value.anchors.length, 123);
-  assert.equal(census.value.collections.length, 55);
+  // Property-cache guards add three anchors and two list providers.
+  assert.equal(census.value.anchors.length, 126);
+  assert.equal(census.value.collections.length, 57);
   assert.deepEqual(
     ["list", "set", "map"].map(
       (kind) =>
         census.value.collections.filter((row) => row.kind === kind).length,
     ),
-    [47, 2, 6],
+    [49, 2, 6],
   );
   assert.equal(
     census.value.collections.reduce(
       (sum, row) => sum + row.operations.length,
       0,
     ),
-    462,
+    478,
   );
 
   assert.ok(
@@ -416,7 +417,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   });
   assert.ok(facts.ok, JSON.stringify(facts));
   // Map buckets and object contract lists reuse existing physical signatures.
-  assert.equal(facts.value.runtimes.length, 57);
+  assert.equal(facts.value.runtimes.length, 59);
   assert.equal(
     new Set(
       facts.value.runtimes.flatMap((provider) =>
@@ -432,7 +433,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     (sum, row) => sum + row.operations.length,
     0,
   );
-  assert.equal(operationCount, 485);
+  assert.equal(operationCount, 501);
   assert.ok(
     facts.value.runtimes.every((row) =>
       row.operations.every((operation) => operation.returnType !== undefined),
@@ -615,9 +616,9 @@ test("Script surface instantiations match the real linked export namespaces and 
         collections.value,
       );
       if (!names.ok) return names;
-      // Each new object-contract provider has eight distinct targets.
+      // The cache list providers each contribute eight distinct targets.
       assert.equal(names.value.providers.length, facts.value.runtimes.length);
-      assert.equal(names.value.targets.length, 437);
+      assert.equal(names.value.targets.length, 453);
       const exported = prepareManagedRuntimeEntries(
         names.value,
         facts.value.runtimes,
@@ -625,7 +626,7 @@ test("Script surface instantiations match the real linked export namespaces and 
       );
       assert.ok(exported.ok, JSON.stringify(exported));
       assert.equal(exported.value.slots.length, operationCount);
-      assert.equal(exported.value.stubs.declarations.length, 480);
+      assert.equal(exported.value.stubs.declarations.length, 496);
       assert.equal(
         new Set(exported.value.slots.map((slot) => slot.entry)).size,
         names.value.targets.length,
@@ -682,13 +683,13 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(binding, name);
     assert.ok(importIds.includes(binding.id), name);
   }
-  assert.equal(finalValues.length, 139);
+  assert.equal(finalValues.length, 145);
   assert.equal(collectionOperations.length, census.value.anchors.length);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,
-    49,
+    51,
   );
-  assert.equal(new Set(collectionOperations.flat()).size, 414);
+  assert.equal(new Set(collectionOperations.flat()).size, 430);
   for (const name of new Set(collectionOperations.flat()))
     assert.ok(
       prepared.value.checked.module.statements.some(

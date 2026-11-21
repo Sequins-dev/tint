@@ -621,23 +621,31 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   const { capturedScriptDynamicImport, createScriptRuntimeRequest } =
     await import("./script-runtime-request.ts");
   const snapshot = workspaceSources();
+  const fastPaths = [
+    "createRegisterSourceFunction",
+    "callRegisterObjectValue",
+    "createScriptPropertyCache",
+    "readCachedObjectValueProperty",
+    "writeCachedObjectValueProperty",
+  ];
   const old = {
     ...snapshot,
-    inputs: snapshot.inputs.map((input) =>
-      input.id !== "packages/js-engine/src/lowering/index.ts"
-        ? input
-        : {
-            ...input,
-            bytes: new TextEncoder().encode(
-              new TextDecoder()
-                .decode(input.bytes)
-                .replace("  scriptRuntimeSupportsDynamicImport,\n", "")
-                .replace("  scriptRuntimeSupportsTemplateSites,\n", "")
-                .replace("  scriptRuntimeSupportsLiteralTables,\n", "")
-                .replace("  scriptRuntimeSupportsEngineAborts,\n", ""),
-            ),
-          },
-    ),
+    inputs: snapshot.inputs.map((input) => {
+      if (input.id === "packages/js-runtime/src/objects/index.ts") {
+        let source = new TextDecoder().decode(input.bytes);
+        for (const name of fastPaths)
+          source = source.replace(`  ${name},\n`, "");
+        return { ...input, bytes: new TextEncoder().encode(source) };
+      }
+      if (input.id !== "packages/js-engine/src/lowering/index.ts") return input;
+      const source = new TextDecoder()
+        .decode(input.bytes)
+        .replace("  scriptRuntimeSupportsDynamicImport,\n", "")
+        .replace("  scriptRuntimeSupportsTemplateSites,\n", "")
+        .replace("  scriptRuntimeSupportsLiteralTables,\n", "")
+        .replace("  scriptRuntimeSupportsEngineAborts,\n", "");
+      return { ...input, bytes: new TextEncoder().encode(source) };
+    }),
   };
   assert.equal(capturedScriptDynamicImport(snapshot), true);
   assert.equal(capturedScriptDynamicImport(old), false);
@@ -650,8 +658,15 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   const bind = { module: "fixture-host", name: "bindScript" };
   const previous = createScriptRuntimeRequest(bind, true, old),
     current = createScriptRuntimeRequest(bind, true, snapshot);
-  assert.equal(previous.values.length, 135);
-  assert.equal(current.values.length, 139);
+  assert.equal(previous.values.length, 136);
+  assert.equal(current.values.length, 145);
+  for (const name of fastPaths) {
+    assert.ok(!previous.values.some((value) => value.name === name), name);
+    assert.ok(
+      current.values.some((value) => value.name === name),
+      name,
+    );
+  }
   assert.ok(
     !previous.values.some((value) => value.name === "evaluateImportCall"),
   );
