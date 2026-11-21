@@ -120,6 +120,8 @@ function loadLibrary(path: string): OpenSSL {
     ]);
     for (const symbol of [
       "RAND_bytes_ex",
+      "EVP_get_digestbyname",
+      "EVP_md_null",
       "EVP_MD_CTX_new",
       "EVP_MD_CTX_free",
       "EVP_DigestInit_ex2",

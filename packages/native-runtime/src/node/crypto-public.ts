@@ -5,8 +5,10 @@ import {
   builtinFunction,
   builtinProperty,
   callObjectValue,
+  createArrayFromList,
   createCallableObject,
   createCodedRuntimeError,
+  createDataProperty,
   createObject,
   createPrivateName,
   createRuntimeError,
@@ -78,6 +80,50 @@ function invalid(
       received,
     "ERR_INVALID_ARG_TYPE",
   );
+}
+
+function unavailableDigest(
+  core: ProgramRealmCore,
+  operation: string,
+  message: string,
+): never {
+  const library = "digital envelope routines";
+  const error = createRuntimeError(core.realm, "error");
+  builtinProperty(error, "message", message, true, true, core.hooks);
+  if (operation === "createHash") {
+    const stack = createArrayFromList(
+      ["error:03000086:" + library + "::initialization error"],
+      0,
+      core.realm.arrayPrototype,
+      core.realm,
+      core.hooks,
+    );
+    createDataProperty<ScriptPropertyKey, unknown>(
+      error,
+      "opensslErrorStack",
+      stack,
+      core.hooks,
+    );
+  }
+  createDataProperty<ScriptPropertyKey, unknown>(
+    error,
+    "library",
+    library,
+    core.hooks,
+  );
+  createDataProperty<ScriptPropertyKey, unknown>(
+    error,
+    "reason",
+    "unsupported",
+    core.hooks,
+  );
+  createDataProperty<ScriptPropertyKey, unknown>(
+    error,
+    "code",
+    "ERR_OSSL_EVP_UNSUPPORTED",
+    core.hooks,
+  );
+  throw error;
 }
 
 function inputBytes(
@@ -497,15 +543,21 @@ export function createNodeCryptoModules(
             object,
             core.hooks,
           );
-          if (code === "ERR_CRYPTO_INVALID_DIGEST") {
+          if (
+            code === "ERR_CRYPTO_INVALID_DIGEST" ||
+            code === "ERR_OSSL_EVP_UNSUPPORTED"
+          ) {
             const message = getProperty<ScriptPropertyKey, unknown>(
               object,
               "message",
               object,
               core.hooks,
             );
-            if (typeof message === "string")
-              return fail(core, "type", message, code);
+            if (typeof message === "string") {
+              if (code === "ERR_CRYPTO_INVALID_DIGEST")
+                return fail(core, "type", message, code);
+              return unavailableDigest(core, name, message);
+            }
           }
         }
         throw adapted;

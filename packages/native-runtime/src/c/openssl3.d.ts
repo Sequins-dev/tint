@@ -2,6 +2,8 @@
 declare module "tint:c/openssl3" {
   import type { Address, Ptr, i32, u32, usize } from "tint:ffi";
   export function ERR_clear_error(): void;
+  export function EVP_get_digestbyname(name: Ptr<void>): Address<void>;
+  export function EVP_md_null(): Address<void>;
   export function EVP_MD_CTX_new(): Address<void>;
   export function EVP_MD_CTX_free(context: Address<void>): void;
   export function EVP_DigestInit_ex2(

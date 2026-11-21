@@ -2,6 +2,8 @@
 import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
 import {
   ERR_clear_error,
+  EVP_get_digestbyname,
+  EVP_md_null,
   EVP_MD_CTX_new,
   EVP_MD_CTX_free,
   EVP_DigestInit_ex2,
@@ -140,6 +142,14 @@ function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
   const cached = digests.get(name);
   const digest = cached ?? fetchDigest(ffi, name);
   if (digest === 0) {
+    // The name registry also recognizes algorithms unavailable in the
+    // default provider. Querying it does not initialize those algorithms.
+    const known = EVP_get_digestbyname(encodeUTF8(name + "\0"));
+    if (known !== 0 && known !== EVP_md_null())
+      throw codedError(
+        "error:0308010C:digital envelope routines::unsupported",
+        "ERR_OSSL_EVP_UNSUPPORTED",
+      );
     if (key !== undefined)
       throw codedError(
         "Invalid digest: " + algorithm,

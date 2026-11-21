@@ -143,6 +143,19 @@ export async function run() {
     if (!(error instanceof TypeError) || error.message !==
         "Cannot read properties of undefined (reading 'Symbol(kState)')") return 11;
   }
+  for (const hmac of [false, true]) {
+    try {
+      if (hmac) crypto.createHmac("md4", "key");
+      else crypto.createHash("md4");
+      return 12;
+    } catch (error) {
+      if (!(error instanceof Error) || error.code !== "ERR_OSSL_EVP_UNSUPPORTED" ||
+          error.message !== "error:0308010C:digital envelope routines::unsupported" ||
+          error.library !== "digital envelope routines" || error.reason !== "unsupported") return 13;
+      if (hmac ? error.opensslErrorStack !== undefined :
+          error.opensslErrorStack?.[0] !== "error:03000086:digital envelope routines::initialization error") return 14;
+    }
+  }
   for (const operation of [
     () => hash.copy(),
     () => hash.pipe({}),
