@@ -174,7 +174,7 @@ test("general arithmetic in a slot-backed loop emits a guarded numeric operation
       source,
       (node) => node.kind === "binary" && node.operator === "+",
     ),
-    1,
+    4,
   );
   assert.equal(runtimeCalls(source, "binaryObjectValueOperation"), 2);
 });
@@ -658,4 +658,66 @@ test("ordinary functions and arrows resolve the nearest arguments binding", () =
     "none",
   );
   assert.deepEqual(realm.printed, ["42", "7", "9"]);
+});
+
+test("general numeric updates and arithmetic emit native arithmetic", () => {
+  const source = "function calculate(x, y) { x++; return x * y; }";
+  for (const operator of ["+", "*"])
+    assert.ok(
+      countExpressions(
+        source,
+        (node) => node.kind === "binary" && node.operator === operator,
+      ) > 0,
+      operator,
+    );
+  assert.equal(runtimeCalls(source, "updateObjectValue"), 1);
+});
+
+test("general primitive operations preserve ordering and numeric boundaries", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+      let order = "";
+      const target = {
+        get value() { order += "g"; return { valueOf() { order += "v"; return 4; } }; },
+        set value(x) { order += "s" + x; },
+      };
+      const old = target.value++;
+      print(order + " " + old);
+      let zero = -0;
+      const before = zero++;
+      print(String(1 / before));
+      let big = 1n;
+      const was = big++;
+      print(String(was === 1n && big === 2n));
+      function calculate(a, b) { return (a * b) + (a << b); }
+      print(String(calculate(true, 2)));
+      function abrupt() {
+        let value = { valueOf() { throw 7; } };
+        try { value++; } catch (error) { return error; }
+      }
+      print(String(abrupt()));
+    `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["gvs5 4", "-Infinity", "true", "6", "7"]);
+});
+
+test("general truthiness and equality preserve primitive and slow cases", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+      function truth(value) { return value ? "T" : "F"; }
+      function equal(a, b) { return a === b; }
+      const values = [true, false, undefined, null, 0, -0, NaN, Infinity, "", "x", 0n, 1n, {}];
+      let output = "";
+      for (let i = 0; i < values.length; i++) output += truth(values[i]);
+      print(output);
+      const same = {};
+      print(String(equal(NaN, NaN) || equal(false, 0) || equal(undefined, null) ||
+        !equal(0, -0) || !equal(true, true) || !equal(same, same) || equal({}, {})));
+    `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["TFFFFFFTFTFTT", "false"]);
 });

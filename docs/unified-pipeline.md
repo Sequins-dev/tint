@@ -54,8 +54,9 @@ libraries and two object models**:
   category/payload encoding for `unknown` and heterogeneous unions.
 - General values are always the two-word encoding (`unknown`); objects are
   `js-runtime` ordinary/exotic objects (`ObjectValue` records with shapes,
-  descriptors and prototypes). Identifiers resolve by name through environment
-  records (`resolveBinding`/`getIdentifierValue`), not slots.
+  descriptors and prototypes). Resolved bindings use native frame or context
+  slots. Environment records handle lookups that depend on `with`, `eval` or
+  the global object.
 
 The two-word general encoding and strings are physically shared: `js-runtime`
 is itself typed TypeScript over `unknown` and `string`. Typed records, lists,

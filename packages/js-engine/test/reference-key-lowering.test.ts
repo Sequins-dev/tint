@@ -180,8 +180,8 @@ f().then(function () { order("key,get,set", "async"); print("async done"); });
 });
 
 test("only read-modify-write references store the converted key", () => {
-  // Counting assignments to generated temporaries isolates the stored key:
-  // plain reads, calls and simple writes keep their immutable key temporary.
+  // Count stores sourced from ToPropertyKey. Other generated assignments can
+  // store guarded arithmetic results in their own temporaries.
   function storedKeys(text: string): number {
     const bytes = new TextEncoder().encode(text);
     const source = createSourceText(bytes, bytes.length);
@@ -190,6 +190,22 @@ test("only read-modify-write references store the converted key", () => {
     assert.ok(parsed.ok);
     const lowered = lowerScript(parsed.value);
     assert.ok(lowered.ok);
+    const conversions = new Set<string>();
+    rewriteModule(lowered.value, {
+      statement: (node) => {
+        if (node.kind !== "variable") return node;
+        for (const declaration of node.declarations) {
+          const value = declaration?.initializer;
+          if (
+            value?.kind === "call" &&
+            value.callee.kind === "identifier" &&
+            value.callee.name === "objectPropertyKey"
+          )
+            conversions.add(declaration.name);
+        }
+        return node;
+      },
+    });
     let count = 0;
     rewriteModule(lowered.value, {
       expression: (node) => {
@@ -198,7 +214,9 @@ test("only read-modify-write references store the converted key", () => {
           node.target.kind === "identifier" &&
           node.target.name.startsWith("$value") &&
           node.value.kind === "member" &&
-          node.value.property === "value"
+          node.value.property === "value" &&
+          node.value.object.kind === "identifier" &&
+          conversions.has(node.value.object.name)
         )
           count++;
         return node;

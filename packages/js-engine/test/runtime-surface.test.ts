@@ -48,11 +48,11 @@ const corpus = [
   {
     source:
       "if(true)function globalFn(){}function outer(){if(true)function inner(){};{function local(){}}for(let i=0;i<2;i++){(()=>i)();}}",
-    sha256: "62a93e8e43375477e1cc5225a686811bd9a87a51a25a5acb40b92a97f1143aa3",
+    sha256: "c7f753906975d0cd6d69dbf5058cf1bb415cd013634b178a6dc58e97e401f175",
   },
   {
     source: "const pattern=/(?<name>x)/u;const number=1n;number+2n;",
-    sha256: "a51f10d0c29780cdc8251fd8a5060966adb32e5a2a3ed40f7fdabe33e5cda8b2",
+    sha256: "692455fcfae0c339ee17d12781ebd1e4c27b47e14aa6da4864bd8ee7ddabc942",
   },
 ];
 test("managed Script surface declares fixed instantiations and preserves lowered output", () => {

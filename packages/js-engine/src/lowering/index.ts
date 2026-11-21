@@ -2705,14 +2705,152 @@ function lowerScriptEntry(
       ">>>",
     ].includes(operator);
   }
+  function scalarBinary(
+    operator: string,
+    left: Expression,
+    right: Expression,
+    span: Span,
+  ): Expression {
+    return { ...at(span), kind: "binary", operator, left, right };
+  }
+  function scalarBranch(
+    test: Expression,
+    consequent: Expression,
+    alternate: Expression,
+    span: Span,
+  ): Expression {
+    return { ...at(span), kind: "conditional", test, consequent, alternate };
+  }
+  function categoryOperand(
+    value: Expression,
+    category: string,
+    span: Span,
+  ): Expression {
+    return scalarBinary(
+      "===",
+      { ...at(span), kind: "unary", operator: "typeof", operand: value },
+      text(category, span),
+      span,
+    );
+  }
   function numberOperand(value: Expression, span: Span): Expression {
-    return {
+    return categoryOperand(value, "number", span);
+  }
+  function scalarNumber(value: number, span: Span): Expression {
+    return { ...at(span), kind: "number", value, raw: "" + value };
+  }
+  function nullOperand(value: Expression, span: Span): Expression {
+    return scalarBinary("===", value, { ...at(span), kind: "null" }, span);
+  }
+  function undefinedOperand(value: Expression, span: Span): Expression {
+    return scalarBinary("===", value, id("undefined", span), span);
+  }
+  function immediateNumberOperand(value: Expression, span: Span): Expression {
+    return scalarBinary(
+      "||",
+      scalarBinary(
+        "||",
+        categoryOperand(value, "boolean", span),
+        nullOperand(value, span),
+        span,
+      ),
+      undefinedOperand(value, span),
+      span,
+    );
+  }
+  function primitiveNumberOperand(value: Expression, span: Span): Expression {
+    return scalarBinary(
+      "||",
+      numberOperand(value, span),
+      immediateNumberOperand(value, span),
+      span,
+    );
+  }
+  /** These primitive categories have no observable ToNumber effects. */
+  function primitiveNumber(value: Expression, span: Span): Expression {
+    const zero = scalarNumber(0, span);
+    return scalarBranch(
+      numberOperand(value, span),
+      value,
+      scalarBranch(
+        categoryOperand(value, "boolean", span),
+        scalarBranch(value, scalarNumber(1, span), zero, span),
+        scalarBranch(nullOperand(value, span), zero, id("NaN", span), span),
+        span,
+      ),
+      span,
+    );
+  }
+  function truthy(value: Expression, span: Span): Expression {
+    const fallback = objectRuntime("scriptBoolean", [value], span);
+    if (compactResults) return fallback;
+    const falsy: Expression = { ...at(span), kind: "boolean", value: false };
+    return scalarBranch(
+      categoryOperand(value, "boolean", span),
+      value,
+      scalarBranch(
+        numberOperand(value, span),
+        scalarBinary(
+          "&&",
+          scalarBinary("!==", value, scalarNumber(0, span), span),
+          scalarBinary("===", value, value, span),
+          span,
+        ),
+        scalarBranch(
+          scalarBinary(
+            "||",
+            nullOperand(value, span),
+            undefinedOperand(value, span),
+            span,
+          ),
+          falsy,
+          fallback,
+          span,
+        ),
+        span,
+      ),
+      span,
+    );
+  }
+  function strictEqual(
+    left: Expression,
+    right: Expression,
+    span: Span,
+  ): Expression {
+    const fallback = runtimeCall("scriptStrictEqual", [left, right], span);
+    if (compactResults) return fallback;
+    const different: Expression = {
       ...at(span),
-      kind: "binary",
-      operator: "===",
-      left: { ...at(span), kind: "unary", operator: "typeof", operand: value },
-      right: text("number", span),
+      kind: "boolean",
+      value: false,
     };
+    const matched = scalarBinary("===", left, right, span);
+    return scalarBranch(
+      numberOperand(left, span),
+      scalarBranch(numberOperand(right, span), matched, different, span),
+      scalarBranch(
+        categoryOperand(left, "boolean", span),
+        scalarBranch(
+          categoryOperand(right, "boolean", span),
+          matched,
+          different,
+          span,
+        ),
+        scalarBranch(
+          nullOperand(left, span),
+          nullOperand(right, span),
+          scalarBranch(
+            undefinedOperand(left, span),
+            undefinedOperand(right, span),
+            fallback,
+            span,
+          ),
+          span,
+        ),
+        span,
+      ),
+      span,
+    );
   }
   /** Operand evaluation precedes either branch. Only primitive number pairs
    * bypass ToPrimitive and overload dispatch. */
@@ -2723,21 +2861,77 @@ function lowerScriptEntry(
     span: Span,
   ): Expression {
     const args = [text(operator, span), left, right];
-    if (localSlots.size === 0 || (operator !== "+" && operator !== "<"))
+    if (compactResults || operator === "**")
       return checkedOperatorValue("binaryObjectValueOperation", args, span);
     const result = temporary(id("undefined", span), true, true);
+    function assigned(value: Expression): Statement {
+      return {
+        ...at(span),
+        kind: "expression",
+        expression: { ...at(span), kind: "assignment", target: result, value },
+      };
+    }
     const start = statements.length;
     const general = checkedOperatorValue(
       "binaryObjectValueOperation",
       args,
       span,
     );
-    expression({
+    statements.push(assigned(general));
+    const slow: BlockStatement = {
       ...at(span),
-      kind: "assignment",
-      target: result,
-      value: general,
+      kind: "block",
+      statements: statements.splice(start),
+    };
+    const primitive: Statement = {
+      ...at(span),
+      kind: "if",
+      test: scalarBinary(
+        "&&",
+        primitiveNumberOperand(left, span),
+        primitiveNumberOperand(right, span),
+        span,
+      ),
+      consequent: assigned(
+        scalarBinary(
+          operator,
+          primitiveNumber(left, span),
+          primitiveNumber(right, span),
+          span,
+        ),
+      ),
+      alternate: slow,
+    };
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test: scalarBinary(
+        "&&",
+        numberOperand(left, span),
+        numberOperand(right, span),
+        span,
+      ),
+      consequent: assigned(scalarBinary(operator, left, right, span)),
+      alternate: primitive,
     });
+    return result;
+  }
+  function unaryOperation(
+    operator: string,
+    operand: Expression,
+    span: Span,
+  ): Expression {
+    const args = [text(operator, span), operand];
+    if (compactResults)
+      return checkedOperatorValue("unaryObjectValueOperation", args, span);
+    const result = temporary(id("undefined", span), true, true);
+    const start = statements.length;
+    const fallback = checkedOperatorValue(
+      "unaryObjectValueOperation",
+      args,
+      span,
+    );
+    storeSlot(result, fallback, span);
     const alternate: BlockStatement = {
       ...at(span),
       kind: "block",
@@ -2745,49 +2939,118 @@ function lowerScriptEntry(
     };
     const numeric: Expression = {
       ...at(span),
-      kind: "binary",
+      kind: "unary",
       operator,
-      left,
-      right,
-    };
-    const store: Expression = {
-      ...at(span),
-      kind: "assignment",
-      target: result,
-      value: numeric,
+      operand: primitiveNumber(operand, span),
     };
     statements.push({
       ...at(span),
       kind: "if",
-      test: {
-        ...at(span),
-        kind: "binary",
-        operator: "&&",
-        left: numberOperand(left, span),
-        right: numberOperand(right, span),
-      },
+      test: primitiveNumberOperand(operand, span),
       consequent: {
         ...at(span),
-        kind: "block",
-        statements: [{ ...at(span), kind: "expression", expression: store }],
+        kind: "expression",
+        expression: {
+          ...at(span),
+          kind: "assignment",
+          target: result,
+          value: numeric,
+        },
       },
       alternate,
     });
     return result;
+  }
+  function updateAssignment(
+    target: AssignmentReference,
+    previous: Expression,
+    node: Expression & { readonly kind: "update" },
+  ): Expression {
+    function genericUpdate(): Expression {
+      const result = temporary(
+        runtimeCall(
+          "updateObjectValue",
+          [
+            text(node.operator, node),
+            previous,
+            member(id("$global"), "hooks", node),
+            id("$errors"),
+          ],
+          node,
+        ),
+      );
+      check(member(result, "error", node), node);
+      return result;
+    }
+    if (compactResults) {
+      const result = genericUpdate();
+      const assigned = temporary(member(result, "value", node), true);
+      writeAssignment(target, assigned);
+      return node.prefix ? assigned : member(result, "previous", node);
+    }
+    const assigned = temporary(id("undefined", node), true, true);
+    const old = node.prefix
+      ? undefined
+      : temporary(id("undefined", node), true, true);
+    const start = statements.length;
+    const generic = genericUpdate();
+    storeSlot(assigned, member(generic, "value", node), node);
+    if (old !== undefined)
+      storeSlot(old, member(generic, "previous", node), node);
+    const slow: BlockStatement = {
+      ...at(node),
+      kind: "block",
+      statements: statements.splice(start),
+    };
+    function updateNumber(numeric: Expression): BlockStatement {
+      const value = temporary(numeric, false, false, named("number"));
+      storeSlot(
+        assigned,
+        scalarBinary(
+          "+",
+          value,
+          scalarNumber(node.operator === "++" ? 1 : -1, node),
+          node,
+        ),
+        node,
+      );
+      if (old !== undefined) storeSlot(old, value, node);
+      return {
+        ...at(node),
+        kind: "block",
+        statements: statements.splice(start),
+      };
+    }
+    const numeric = updateNumber(previous);
+    const converted = updateNumber(primitiveNumber(previous, node));
+    statements.push({
+      ...at(node),
+      kind: "if",
+      test: numberOperand(previous, node),
+      consequent: numeric,
+      alternate: {
+        ...at(node),
+        kind: "if",
+        test: immediateNumberOperand(previous, node),
+        consequent: converted,
+        alternate: slow,
+      },
+    });
+    writeAssignment(target, assigned);
+    return old ?? assigned;
   }
   function logicalTest(
     operator: string,
     result: Expression,
     span: Span,
   ): Expression {
-    if (operator === "&&")
-      return objectRuntime("scriptBoolean", [result], span);
+    if (operator === "&&") return truthy(result, span);
     if (operator === "||")
       return {
         ...at(span),
         kind: "unary",
         operator: "!",
-        operand: objectRuntime("scriptBoolean", [result], span),
+        operand: truthy(result, span),
       };
     const isNull: Expression = {
       ...at(span),
@@ -5511,11 +5774,7 @@ function lowerScriptEntry(
         return invoke(callee, evaluated.receiver, node.arguments, node);
       }
       case "conditional": {
-        const test = objectRuntime(
-          "scriptBoolean",
-          [temporary(value(node.test), true)],
-          node,
-        );
+        const test = truthy(temporary(value(node.test), true), node);
         const result = temporary(id("undefined", node), true, true);
         const consequent = branchValue(result, node.consequent);
         const alternate = branchValue(result, node.alternate);
@@ -5554,22 +5813,14 @@ function lowerScriptEntry(
           node.operator === "~"
         ) {
           const operand = temporary(value(node.operand), true);
-          return checkedOperatorValue(
-            "unaryObjectValueOperation",
-            [text(node.operator, node), operand],
-            node,
-          );
+          return unaryOperation(node.operator, operand, node);
         }
         if (node.operator === "!")
           return {
             ...at(node),
             kind: "unary",
             operator: "!",
-            operand: objectRuntime(
-              "scriptBoolean",
-              [temporary(value(node.operand), true)],
-              node,
-            ),
+            operand: truthy(temporary(value(node.operand), true), node),
           };
         if (node.operator === "typeof") {
           let operand = node.operand;
@@ -5660,7 +5911,7 @@ function lowerScriptEntry(
         // JavaScript permits comparisons of statically disjoint categories.
         const left = temporary(value(node.left), true);
         const right = temporary(value(node.right), true);
-        const equal = runtimeCall("scriptStrictEqual", [left, right], node);
+        const equal = strictEqual(left, right, node);
         return node.operator === "==="
           ? equal
           : { ...at(node), kind: "unary", operator: "!", operand: equal };
@@ -5736,22 +5987,7 @@ function lowerScriptEntry(
       case "update": {
         const target = captureAssignment(node.target, true);
         const previous = temporary(readAssignment(target), true);
-        const result = temporary(
-          runtimeCall(
-            "updateObjectValue",
-            [
-              text(node.operator, node),
-              previous,
-              member(id("$global"), "hooks", node),
-              id("$errors"),
-            ],
-            node,
-          ),
-        );
-        check(member(result, "error", node), node);
-        const assigned = temporary(member(result, "value", node), true);
-        writeAssignment(target, assigned);
-        return node.prefix ? assigned : member(result, "previous", node);
+        return updateAssignment(target, previous, node);
       }
       case "await":
       case "yield": {
@@ -6188,7 +6424,7 @@ function lowerScriptEntry(
         ...at(test),
         kind: "unary",
         operator: "!",
-        operand: objectRuntime("scriptBoolean", [tested], test),
+        operand: truthy(tested, test),
       },
       consequent: { ...at(test), kind: "break" },
       alternate: undefined,
@@ -7447,11 +7683,7 @@ function lowerScriptEntry(
       return;
     }
     if (node.kind === "if") {
-      const test = objectRuntime(
-        "scriptBoolean",
-        [temporary(value(node.test), true)],
-        node,
-      );
+      const test = truthy(temporary(value(node.test), true), node);
       // IfStatement applies UpdateEmpty(undefined), so an empty selected arm
       // must not retain a preceding statement-list completion value.
       expression({
