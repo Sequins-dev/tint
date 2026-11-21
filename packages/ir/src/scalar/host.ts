@@ -116,7 +116,10 @@ export type HostOperation =
   /** One SHA-256 compression over (state, schedule, constants) Uint32Arrays,
    * exactly as foundation's compressSha256RoundsPortable: schedule words 16-63 are
    * written and the block is added into state. Short views trap. */
-  | "sha256-rounds";
+  | "sha256-rounds"
+  /** Encode the next bounded UTF-16 window into a Uint8Array. The packed
+   * read/written counts and bounds match foundation's encodeUTF8Window. */
+  | "utf8-window";
 /** Internal filesystem ABI: failures return -errno captured immediately. Paths
  * are NUL-terminated UTF-8 byte arrays; read/write cover the supplied view. */
 export function hostParameters(
@@ -172,6 +175,8 @@ export function hostParameters(
       return ["Uint32Array"];
     case "sha256-rounds":
       return ["Uint32Array", "Uint32Array", "Uint32Array"];
+    case "utf8-window":
+      return ["string", "Uint8Array", "number", "number"];
     case "allocation-state":
       return ["Uint32Array", "Uint32Array"];
     case "argument-length":

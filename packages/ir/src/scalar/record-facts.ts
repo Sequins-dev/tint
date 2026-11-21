@@ -16,6 +16,7 @@ function closedWorldHostOperation(operation: string): boolean {
     case "collect-garbage":
     case "cpu-pause":
     case "sha256-rounds":
+    case "utf8-window":
     case "monotonic-time":
     case "wall-clock-time":
     case "random-word":

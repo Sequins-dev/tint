@@ -149,6 +149,12 @@ export type Instruction =
       readonly vd: number;
       readonly vn: number;
     }
+  | {
+      readonly op: "umaxv-8h" | "xtn-8b";
+      readonly vd: number;
+      readonly vn: number;
+    }
+  | { readonly op: "umov-h0"; readonly rd: DataRegister; readonly vn: number }
   | { readonly op: "fcmp"; readonly rn: number; readonly rm: number }
   | { readonly op: "fmov-d-x"; readonly rd: number; readonly rn: DataRegister }
   /** SXTW Xd, Wn (SBFM Xd, Xn, #0, #31): sign-extend the low 32 bits. */
@@ -635,6 +641,19 @@ export function encode(instruction: Instruction): EncodingResult<number> {
           ? 0x4ea01c00 + i.vn * 65536 + i.vn * 32 + i.vd
           : 0x5e282800 + i.vn * 32 + i.vd,
       );
+    }
+    case "umaxv-8h":
+    case "xtn-8b": {
+      if (!integer(i.vd, 0, 31) || !integer(i.vn, 0, 31))
+        return fail("INVALID_REGISTER");
+      return word(
+        (i.op === "umaxv-8h" ? 0x6e70a800 : 0x0e212800) + i.vn * 32 + i.vd,
+      );
+    }
+    case "umov-h0": {
+      const rd = register(i.rd, "zr");
+      if (rd < 0 || !integer(i.vn, 0, 31)) return fail("INVALID_REGISTER");
+      return word(0x0e023c00 + i.vn * 32 + rd);
     }
     case "fadd":
     case "fsub":

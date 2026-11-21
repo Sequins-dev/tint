@@ -7,6 +7,9 @@ import { encode, type Instruction } from "../src/aarch64/isa.ts";
 const cases: readonly [Instruction, number][] = [
   [{ op: "ldr-q", qt: 4, rn: 13, offset: 48 }, 0x3dc00da4],
   [{ op: "str-q", qt: 5, rn: 13, offset: 80 }, 0x3d8015a5],
+  [{ op: "umaxv-8h", vd: 1, vn: 0 }, 0x6e70a801],
+  [{ op: "umov-h0", rd: 7, vn: 1 }, 0x0e023c27],
+  [{ op: "xtn-8b", vd: 0, vn: 0 }, 0x0e212800],
   [{ op: "add-4s", vd: 3, vn: 3, vm: 6 }, 0x4ea68463],
   [{ op: "mov-16b", vd: 2, vn: 0 }, 0x4ea01c02],
   [{ op: "sha256h", vd: 0, vn: 1, vm: 3 }, 0x5e034020],

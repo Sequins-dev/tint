@@ -150,6 +150,13 @@ type Encodable =
       readonly dst: Xmm;
       readonly src: XmmRm<128>;
     }
+  | {
+      readonly op: "movdqu" | "pcmpeqw" | "packuswb";
+      readonly dst: Xmm;
+      readonly src: XmmRm<128>;
+    }
+  | { readonly op: "psrlw"; readonly dst: Xmm; readonly count: number }
+  | { readonly op: "pmovmskb"; readonly dst: Gpr<32>; readonly src: Xmm }
   | { readonly op: "cvtss2sd"; readonly dst: Xmm; readonly src: XmmRm<32> }
   | {
       readonly op: "cvtsi2sd";
@@ -364,6 +371,10 @@ function describeInstruction(insn: Encodable): string {
     case "movzx":
     case "movsx":
     case "movsd":
+    case "movdqu":
+    case "pcmpeqw":
+    case "packuswb":
+    case "pmovmskb":
     case "addsd":
     case "subsd":
     case "mulsd":
@@ -386,6 +397,8 @@ function describeInstruction(insn: Encodable): string {
       return (
         opcode + describeOperand(insn.dst) + ", " + describeOperand(insn.src)
       );
+    case "psrlw":
+      return opcode + describeOperand(insn.dst) + ", " + String(insn.count);
     default:
       return insn.op;
   }
@@ -1156,6 +1169,26 @@ function emit(out: Encoding, insn: Encodable): void {
     case "cvtsd2ss":
       sseSource(insn.src, 64);
       return modRm(out, 0xf2, false, 0x0f5a, insn.dst, insn.src);
+    case "movdqu":
+    case "pcmpeqw":
+    case "packuswb":
+      sseSource(insn.src, 128);
+      return modRm(
+        out,
+        insn.op === "movdqu" ? 0xf3 : 0x66,
+        false,
+        insn.op === "movdqu" ? 0x0f6f : insn.op === "pcmpeqw" ? 0x0f75 : 0x0f67,
+        insn.dst,
+        insn.src,
+      );
+    case "psrlw":
+      if (!fits(insn.count, 0, 255)) return invalid("invalid psrlw count");
+      modRm(out, 0x66, false, 0x0f71, 2, insn.dst);
+      append(out.bytes, insn.count);
+      return;
+    case "pmovmskb":
+      requireWidth(insn.dst.width, 32);
+      return modRm(out, 0x66, false, 0x0fd7, insn.dst, insn.src);
     case "cvtss2sd":
       sseSource(insn.src, 32);
       return modRm(out, 0xf3, false, 0x0f5a, insn.dst, insn.src);

@@ -191,6 +191,7 @@ export function projectBuildRequest(
   // Additional host services follow the supplied facade, including frozen source
   // graphs. Mandatory compiler I/O bindings remain unconditional and fail closed.
   const sourceRequest: ModuleRequest = { modules, moduleLoader };
+  const textEncoding = "packages/foundation/src/text/text-encoding/index.ts";
   // Hand-tuned intrinsics and build facts replace portable bodies where the
   // source defines the bound function (frozen snapshots may predate it;
   // their single compressSha256Rounds assumed the SHA-256 instructions).
@@ -210,6 +211,11 @@ export function projectBuildRequest(
       name: "sha256InstructionsAvailable",
       operation: "cpu-sha256",
     },
+    {
+      module: textEncoding,
+      name: "encodeUTF8Window",
+      operation: "utf8-window",
+    },
     { module: process, name: "targetOperatingSystem", operation: "target-os" },
     {
       module: process,
@@ -221,6 +227,7 @@ export function projectBuildRequest(
     fs,
     process,
     "packages/foundation/src/binary/sha256-rounds.ts",
+    textEncoding,
   ]);
   for (const intrinsic of intrinsics) {
     if (intrinsic === undefined) throw "intrinsic binding invariant";

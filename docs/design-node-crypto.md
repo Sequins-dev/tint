@@ -94,9 +94,12 @@ result brands and input encodings.
 Hash and HMAC pass existing byte windows straight to OpenSSL. Tint stores
 native strings as UTF-16. For UTF-8 updates, the shared encoder writes into a
 4 KiB isolate-local scratch window in one pass. OpenSSL consumes each window
-synchronously. The encoder resumes between Unicode scalars and replaces
-unpaired surrogates. Buffer and TextEncoder use the same encoder for their
-owned byte results.
+synchronously before the next window is encoded. The native encoder checks
+eight UTF-16 code units at a time with NEON on arm64 and SSE2 on x86-64,
+narrowing ASCII blocks directly into the destination. It transcodes Unicode
+scalars, replaces unpaired surrogates with U+FFFD, and resumes block copies
+when it reaches another ASCII run. Buffer and TextEncoder use the same
+encoder for their owned byte results.
 
 For PBKDF2, validate digest, iterations, length, callback and input types
 on the isolate. Snapshot password and salt into job-owned native storage.

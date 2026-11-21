@@ -32,29 +32,31 @@ export interface EncodeResult {
   readonly written: number;
 }
 
-function copyAsciiPrefix(value: string, destination: Uint8Array): number {
-  const capacity = destination.length;
-  for (let index = 0; index < value.length; index++) {
-    if (index >= capacity) return index;
-    const byte = value.charCodeAt(index) & 0xffff;
-    if (byte >= 0x80) return index;
-    destination[index] = byte;
-  }
-  return value.length;
-}
+export const utf8WindowBytes = 4096;
+export const utf8WindowCountBits = 13;
 
-/** Start at a UTF-16 offset within the input. Counts are relative to that
- * offset. A scalar that does not fit is left for the next call. */
-export function encodeUTF8Into(
+/** Portable implementation of the native utf8-window operation. Each window
+ * writes at most 4 KiB. The packed result contains two exact integer counts. */
+export function encodeUTF8Window(
   value: string,
   destination: Uint8Array,
-  start: number = 0,
-): EncodeResult {
+  start: number,
+  offset: number,
+): number {
   const end = value.length;
-  const capacity = destination.length;
-  let written = start === 0 ? copyAsciiPrefix(value, destination) : 0;
-  let read = start + written;
-  for (; read < end && written < capacity; read++) {
+  if (
+    !Number.isInteger(start) ||
+    start < 0 ||
+    start >= end ||
+    !Number.isInteger(offset) ||
+    offset < 0 ||
+    offset >= destination.length
+  )
+    return 0;
+  const limit = Math.min(destination.length, offset + utf8WindowBytes);
+  let read = start;
+  let written = offset;
+  for (; read < end && written < limit; read++) {
     const first = value.charCodeAt(read >>> 0) & 0xffff;
     if (first < 0x80) {
       destination[written] = first;
@@ -63,7 +65,7 @@ export function encodeUTF8Into(
     }
     const point = scalarAt(value, read, first);
     const bytes = width(point);
-    if (bytes > capacity - written) break;
+    if (bytes > limit - written) break;
     if (bytes === 2) {
       destination[written] = 0xc0 | (point >>> 6);
       destination[written + 1] = 0x80 | (point & 63);
@@ -79,6 +81,27 @@ export function encodeUTF8Into(
     }
     if (point > 0xffff) read++;
     written += bytes;
+  }
+  return ((read - start) << utf8WindowCountBits) | (written - offset);
+}
+
+/** Start at a UTF-16 offset within the input. Counts are relative to that
+ * offset. A scalar that does not fit is left for the next call. */
+export function encodeUTF8Into(
+  value: string,
+  destination: Uint8Array,
+  start: number = 0,
+): EncodeResult {
+  const windowCountMask = (1 << utf8WindowCountBits) - 1;
+  let read = start;
+  let written = 0;
+  while (read < value.length && written < destination.length) {
+    const finalWindow = destination.length - written <= utf8WindowBytes;
+    const result = encodeUTF8Window(value, destination, read, written);
+    if (result === 0) break;
+    read += result >>> utf8WindowCountBits;
+    written += result & windowCountMask;
+    if (finalWindow) break;
   }
   return { read: read - start, written };
 }

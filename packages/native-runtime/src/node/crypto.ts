@@ -2,6 +2,7 @@
 import {
   encodeUTF8,
   encodeUTF8Into,
+  utf8WindowBytes,
 } from "@tint/foundation/text/text-encoding";
 import {
   ERR_clear_error,
@@ -60,7 +61,7 @@ let recentAlgorithm: string | undefined = undefined;
 let recentDigest = 0;
 const encodedDigest = new Uint8Array(64);
 const finalizedSize = new Uint8Array(4);
-const updateScratch = new Uint8Array(4096);
+const updateScratch = new Uint8Array(utf8WindowBytes);
 let spareHash = 0;
 let spareHashDigest = 0;
 let spareHmac = 0;

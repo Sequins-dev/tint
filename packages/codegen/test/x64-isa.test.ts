@@ -27,6 +27,21 @@ test("the assembler reserves the final image tail without changing byte labels",
   assert.equal(hex(laidOut.bytes), "90" + "00".repeat(15));
 });
 
+test("SSE2 ASCII validation and narrowing match LLVM MC encodings", () => {
+  const sequence: Instruction[] = [
+    { op: "movdqu", dst: xmm(0), src: mem(128, 6) },
+    { op: "movdqu", dst: xmm(1), src: xmm(0) },
+    { op: "psrlw", dst: xmm(1), count: 7 },
+    { op: "pcmpeqw", dst: xmm(1), src: xmm(2) },
+    { op: "pmovmskb", dst: reg(32, 0), src: xmm(1) },
+    { op: "packuswb", dst: xmm(0), src: xmm(0) },
+  ];
+  assert.equal(
+    hex(encode(sequence)),
+    "f30f6f06f30f6fc8660f71d107660f75ca660fd7c1660f67c0",
+  );
+});
+
 test("streamed rel32 fields patch across byte chunks", () => {
   const assembler = createAssembler();
   for (let index = 0; index < 65534; index++)

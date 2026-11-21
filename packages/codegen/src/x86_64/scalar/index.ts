@@ -131,6 +131,7 @@ import {
   sysVStagingBytes,
 } from "./foreign.ts";
 import { branch, emitHostCall, exactInteger } from "./host.ts";
+import { emitUtf8WindowX64 } from "./utf8.ts";
 import {
   beginTransition,
   endTransition,
@@ -1960,6 +1961,17 @@ export function emitModule(
             return frame(home(arg));
           }
           const operation = op.operation;
+          if (operation === "utf8-window" && host !== undefined) {
+            if (id === undefined) throw "UTF-8 window result invariant";
+            emitUtf8WindowX64(
+              emit,
+              fnLabel + ":utf8-window:" + String(id) + ":",
+              argument,
+            );
+            numberBits();
+            define(id, "number");
+            return;
+          }
           if (operation === "stack-overflow-is" && host !== undefined) {
             const input = args[0];
             if (id === undefined || input === undefined)

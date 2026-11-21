@@ -131,6 +131,7 @@ import {
 import { emitCellAccess, type CellAccess } from "../cell.ts";
 import { numericHelper, type NumericHelper } from "./numeric.ts";
 import { stringHelper, type StringHelper } from "./strings.ts";
+import { utf8WindowAArch64 } from "./utf8.ts";
 import { arrayInitializer } from "./arrays.ts";
 import {
   sharedMemoryPrimitive,
@@ -11343,6 +11344,20 @@ function emitModuleForms(
                 const resultId = op.id;
                 if (resultId === undefined)
                   throw "verified host result invariant";
+                if (operation === "utf8-window") {
+                  rawValue(2, argument(0));
+                  rawValue(3, argument(1));
+                  floatLoad(0, argument(2));
+                  floatLoad(1, argument(3));
+                  for (const instruction of utf8WindowAArch64()) {
+                    if (instruction === undefined)
+                      throw "UTF-8 instruction invariant";
+                    emit(instruction);
+                  }
+                  stackWords.clear();
+                  floatStore(0, resultId);
+                  break;
+                }
                 if (operation === "word-park" || operation === "word-wake") {
                   const parking = host().parking;
                   if (parking === undefined)
