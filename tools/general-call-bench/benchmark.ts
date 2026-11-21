@@ -10,9 +10,9 @@ import { verifyHostedFixture } from "../hosted-fixture.ts";
 import { nativeFixtureTarget } from "../native-host-target.ts";
 import { nativeArtifact } from "../native-target-runner.ts";
 import * as kernels from "./kernels.ts";
+import * as generality from "./generality.ts";
 
 const clock = "packages/native-runtime/src/intrinsics/clock.ts";
-type Kernel = keyof typeof kernels;
 type Artifact = ReturnType<typeof nativeArtifact>;
 interface Prepared {
   head: string;
@@ -23,6 +23,12 @@ interface Prepared {
   scriptSha256: string;
   native: Record<string, Artifact>;
   checksums: Record<string, { sum: number; iterations: number; warm: number }>;
+  nativeLaunch?: { args: string[]; exit: number };
+  octane?: {
+    revision: string;
+    upstream: string;
+    hashes: Record<string, string>;
+  };
 }
 
 function execute(command: string, args: string[]): string {
@@ -47,15 +53,31 @@ function writeReport(path: string, report: unknown): void {
   writeFileSync(path, JSON.stringify(report, null, 2) + "\n", { flag: "wx" });
 }
 
+function preparationIdentity(node: string, script: string) {
+  return {
+    head: execute("git", ["rev-parse", "HEAD"]).trim(),
+    patchSha256: hash(
+      execute("git", ["diff", "--binary", "HEAD", "--", "packages"]),
+    ),
+    node,
+    nodeSha256: fileHash(node),
+    script,
+    scriptSha256: fileHash(script),
+  };
+}
+
 function prepare(
   node: string,
   selected: string | undefined,
   scale: number,
+  suite: "kernels" | "generality",
 ): Prepared {
   node = resolve(node);
   assert.equal(execute(node, ["--version"]).trim(), "v26.13.1");
   assert.ok(Number.isSafeInteger(scale) && scale > 0);
-  const names = (Object.keys(kernels) as Kernel[]).filter(
+  const operations: Record<string, (iterations: number) => number> =
+    suite === "kernels" ? kernels : generality;
+  const names = Object.keys(operations).filter(
     (name) => selected === undefined || selected === name,
   );
   assert.ok(names.length > 0, "unknown benchmark case");
@@ -63,10 +85,11 @@ function prepare(
   const cases = names.map((name) => {
     const iterations = (name === "recursive" ? 2_000 : 100_000) * scale;
     const warm = name === "recursive" ? 2_000 : 20_000;
-    const sum = kernels[name](iterations);
+    const operation = operations[name]!;
+    const sum = operation(iterations);
     checksums[name] = { sum, iterations, warm };
     return `{
-      if (${name}(${warm}) !== ${kernels[name](warm)}) return 1;
+      if (${name}(${warm}) !== ${operation(warm)}) return 1;
       const started = now();
       const sum = ${name}(${iterations});
       const elapsed = now() - started;
@@ -74,7 +97,10 @@ function prepare(
       console.log("TINT_GENERAL_BENCH ${name} " + elapsed + " " + sum);
     }`;
   });
-  const source = readFileSync(new URL("./kernels.ts", import.meta.url), "utf8");
+  const source = readFileSync(
+    new URL("./" + suite + ".ts", import.meta.url),
+    "utf8",
+  );
   const workload = `${source}
 export function run(): number {
   ${cases.join("\n")}
@@ -132,15 +158,11 @@ export function run(): number {
     return nativeArtifact(target, path, path + ".manifest.json");
   }
   return {
-    head: execute("git", ["rev-parse", "HEAD"]).trim(),
-    patchSha256: hash(
-      execute("git", ["diff", "--binary", "HEAD", "--", "packages"]),
-    ),
-    node,
-    nodeSha256: fileHash(node),
-    script,
-    scriptSha256: fileHash(script),
-    native: { untyped: build(false), typed: build(true) },
+    ...preparationIdentity(node, script),
+    native: {
+      untyped: build(false),
+      ...(suite === "kernels" ? { typed: build(true) } : {}),
+    },
     checksums,
   };
 }
@@ -165,8 +187,11 @@ function cpuTimes() {
   return { idle, total };
 }
 
-function runNative(artifact: Artifact): string {
-  const output = execute("lldb", [
+function runNative(
+  artifact: Artifact,
+  launch = { args: [] as string[], exit: 42 },
+): string {
+  const args = [
     "--no-lldbinit",
     "--batch",
     "-o",
@@ -178,12 +203,46 @@ function runNative(artifact: Artifact): string {
     "-o",
     "continue",
     "-o",
-    'script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42; print("TINT_BENCH_EXIT_42")',
+    "script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == " +
+      launch.exit +
+      '; print("TINT_BENCH_VERIFIED")',
     "--",
     artifact.path,
-  ]);
-  assert.match(output, /^TINT_BENCH_EXIT_42$/m);
+    ...launch.args,
+  ];
+  const lock = process.env.TINT_GATE_LAUNCH_LOCK;
+  const output =
+    lock === undefined
+      ? execute("lldb", args)
+      : execute("/usr/bin/lockf", ["-k", lock, "lldb", ...args]);
+  assert.match(output, /^TINT_BENCH_VERIFIED$/m);
   return output;
+}
+
+function readSamples(output: string, checksums: Prepared["checksums"]) {
+  const values: Record<string, number> = {};
+  for (const match of output.matchAll(
+    /^TINT_GENERAL_BENCH (\w+) ([0-9.eE+-]+) (\d+)\r?$/gm,
+  )) {
+    const name = match[1]!;
+    const expected = checksums[name];
+    const elapsed = Number(match[2]);
+    assert.ok(
+      expected &&
+        Number(match[3]) === expected.sum &&
+        Number.isFinite(elapsed) &&
+        elapsed > 0,
+      "invalid benchmark result: " + match[0],
+    );
+    assert.equal(values[name], undefined, "duplicate benchmark sample");
+    values[name] = (elapsed * 1e6) / expected.iterations;
+  }
+  assert.deepEqual(
+    Object.keys(values).sort(),
+    Object.keys(checksums).sort(),
+    output,
+  );
+  return values;
 }
 
 function measure(
@@ -196,19 +255,21 @@ function measure(
   assert.equal(fileHash(prepared.script), prepared.scriptSha256);
   const artifacts: Record<string, Artifact> = { ...prepared.native };
   const previousUntyped = new Map<string, string>();
-  const typedHashes = new Set([prepared.native.typed!.imageSha256]);
+  const typedHashes = new Set([prepared.native.typed?.imageSha256]);
   for (const [index, candidate] of candidates.entries()) {
     assert.deepEqual(candidate.checksums, prepared.checksums);
     assert.equal(candidate.scriptSha256, prepared.scriptSha256);
     assert.equal(candidate.nodeSha256, prepared.nodeSha256);
+    assert.deepEqual(candidate.nativeLaunch, prepared.nativeLaunch);
     const name = "candidate" + String(index + 1);
     artifacts[name + "Untyped"] = candidate.native.untyped!;
     previousUntyped.set(
       name + "Untyped",
       index === 0 ? "untyped" : "candidate" + String(index) + "Untyped",
     );
-    const typed = candidate.native.typed!;
-    if (!typedHashes.has(typed.imageSha256)) {
+    const typed = candidate.native.typed;
+    assert.equal(typed === undefined, prepared.native.typed === undefined);
+    if (typed !== undefined && !typedHashes.has(typed.imageSha256)) {
       artifacts[name + "Typed"] = typed;
       typedHashes.add(typed.imageSha256);
     }
@@ -244,35 +305,16 @@ function measure(
       const output =
         artifact === undefined
           ? execute(prepared.node, [prepared.script])
-          : runNative(artifact);
+          : runNative(artifact, prepared.nativeLaunch);
       const after = cpuTimes();
       const total = after.total - before.total;
-      const values: Record<string, number> = {};
-      for (const match of output.matchAll(
-        /^TINT_GENERAL_BENCH (\w+) ([0-9.eE+-]+) (\d+)\r?$/gm,
-      )) {
-        const name = match[1]!;
-        const expected = prepared.checksums[name];
-        const elapsed = Number(match[2]);
-        assert.ok(
-          expected &&
-            Number(match[3]) === expected.sum &&
-            Number.isFinite(elapsed) &&
-            elapsed > 0,
-        );
-        assert.equal(values[name], undefined, "duplicate benchmark sample");
-        values[name] = (elapsed * 1e6) / expected.iterations;
-      }
-      assert.deepEqual(
-        Object.keys(values).sort(),
-        Object.keys(prepared.checksums).sort(),
-      );
+      const values = readSamples(output, prepared.checksums);
       samples.push({
         round,
         engine,
         position,
         values,
-        exit: artifact === undefined ? 0 : 42,
+        exit: artifact === undefined ? 0 : (prepared.nativeLaunch?.exit ?? 42),
         loadBefore,
         loadAfter: loadavg(),
         idlePercent:
@@ -332,8 +374,42 @@ function readPrepared(path: string): Prepared {
 }
 
 const [mode, input, output, extra, ...additional] = process.argv.slice(2);
-if (mode === "prepare" && input && output) {
-  writeReport(output, prepare(input, extra, Number(additional[0] ?? 1)));
+if ((mode === "prepare" || mode === "prepare-generality") && input && output) {
+  writeReport(
+    output,
+    prepare(
+      input,
+      extra,
+      Number(additional[0] ?? 1),
+      mode === "prepare" ? "kernels" : "generality",
+    ),
+  );
+} else if (mode === "fetch-octane" && input) {
+  const { fetchOctane } = await import("./octane.ts");
+  fetchOctane(input);
+} else if (mode === "prepare-octane" && input && output && extra) {
+  const { prepareOctane } = await import("./octane.ts");
+  const node = resolve(input);
+  assert.equal(execute(node, ["--version"]).trim(), "v26.13.1");
+  const prepared = prepareOctane(extra, additional[0], node);
+  writeReport(output, {
+    ...prepared,
+    ...preparationIdentity(node, prepared.script),
+  });
+} else if (mode === "smoke" && input) {
+  const prepared = readPrepared(input);
+  console.log(
+    "Node",
+    readSamples(execute(prepared.node, [prepared.script]), prepared.checksums),
+  );
+  for (const [name, artifact] of Object.entries(prepared.native))
+    console.log(
+      name,
+      readSamples(
+        runNative(artifact, prepared.nativeLaunch),
+        prepared.checksums,
+      ),
+    );
 } else if (mode === "measure" && input && output) {
   assert.equal(process.platform, "darwin", "expected Darwin timing host");
   // The lock wrapper enters this process only after owning the shared lock.
@@ -346,5 +422,9 @@ if (mode === "prepare" && input && output) {
 } else {
   throw Error(`Usage:
   node tools/general-call-bench/benchmark.ts prepare NODE26 PREPARED.json [CASE] [SCALE]
+  node tools/general-call-bench/benchmark.ts prepare-generality NODE26 PREPARED.json [CASE] [SCALE]
+  node tools/general-call-bench/benchmark.ts fetch-octane DIRECTORY
+  node tools/general-call-bench/benchmark.ts prepare-octane NODE26 PREPARED.json DIRECTORY [CASE]
+  node tools/general-call-bench/benchmark.ts smoke PREPARED.json
   /usr/bin/lockf -k ${join(homedir(), ".t3", "tint-timing.lock")} node tools/general-call-bench/benchmark.ts measure PREPARED.json REPORT.json [ROUNDS] [CANDIDATE.json ...]`);
 }

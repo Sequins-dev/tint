@@ -1,11 +1,38 @@
 import assert from "node:assert/strict";
 import { stripTypeScriptTypes } from "node:module";
 import { test } from "node:test";
+import * as generality from "./general-call-bench/generality.ts";
 import {
   generalCallLoopSource,
   generalSlotCollectionSource,
   typedCallLoopSource,
 } from "./general-call-loop-fixture-source.ts";
+
+test("untyped generality kernels produce the expected observations", () => {
+  const expected = {
+    receivers2: 80,
+    receivers4: 96,
+    receivers8: 128,
+    arguments3: 120,
+    arguments4: 184,
+    arguments5: 264,
+    arguments6: 360,
+    objectRoundTrip: 88,
+    allocateObjects: 264,
+    mutableCapture: 55,
+    concatenateStrings: 88,
+    buildString: 25,
+    catchInLoop: 61,
+    objectArray: 288,
+    mixedCall: 46,
+  };
+  assert.deepEqual(
+    Object.fromEntries(
+      Object.entries(generality).map(([name, kernel]) => [name, kernel(16)]),
+    ),
+    expected,
+  );
+});
 
 for (const [mode, source] of [
   ["general", generalCallLoopSource],
