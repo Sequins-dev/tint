@@ -301,9 +301,11 @@ current-toolchain pass rate:
 The inherited [integrated-main controls](results/language-main-controls-interruption-v3.json) stopped at the coordinator-directed case boundary after four passing class-realm cases; 81 controls remain unexecuted. These bespoke cases are separate from native conformance and do not gate the already-validated frozen host used for the queued language selections.
 
 The current direct-eval rerun passes [**336/336**](results/test262-language-direct-eval-current-v1.json).
-Proper tail calls remain a standard gap: the six `tail-call-optimization`
-variants in the complete [call report](results/test262-language-call-reference-core-v1.json)
-exhaust the native stack.
+The frozen general-call host passes **171/171** call-expression variants,
+including the six proper tail-call variants that exhausted the stack in the
+earlier report. The same host passes **90/90** `Function.prototype.call` variants.
+[Call expressions](results/test262-general-integrated-language-call-v2.json),
+[`Function.prototype.call`](results/test262-general-integrated-function-prototype-call-v2.json).
 
 ### Fully passing family reports
 
