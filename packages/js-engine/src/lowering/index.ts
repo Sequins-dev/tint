@@ -1754,11 +1754,10 @@ function lowerScriptEntry(
     while (node.kind === "group") node = node.expression;
     if (node.kind !== "arrow" && node.kind !== "function-expression")
       return undefined;
-    const typeParameters = node.typeParameters;
     if (
       node.async ||
       node.returnType !== undefined ||
-      (typeParameters !== undefined && typeParameters.length !== 0) ||
+      typeParameterCount(node.typeParameters) !== 0 ||
       (node.kind === "function-expression" &&
         (node.generator ||
           node.receiver !== undefined ||
@@ -1891,12 +1890,11 @@ function lowerScriptEntry(
       }
       const method = property.value;
       if (method.kind !== "function-expression") return undefined;
-      const typeParameters = method.typeParameters;
       if (
         method.generator ||
         method.async ||
         method.returnType !== undefined ||
-        (typeParameters !== undefined && typeParameters.length !== 0)
+        typeParameterCount(method.typeParameters) !== 0
       )
         return undefined;
       const bindings = new Map<string, NumericBinding>();
@@ -2232,12 +2230,11 @@ function lowerScriptEntry(
     owner: BlockStatement,
   ): Statement | undefined {
     if (node.kind !== "function") return undefined;
-    const typeParameters = node.typeParameters;
     if (
       node.generator ||
       node.async ||
       node.returnType !== undefined ||
-      (typeParameters !== undefined && typeParameters.length !== 0) ||
+      typeParameterCount(node.typeParameters) !== 0 ||
       node.name === "arguments" ||
       outer.has(node.name)
     )
