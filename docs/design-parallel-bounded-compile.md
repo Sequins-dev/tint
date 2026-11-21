@@ -66,6 +66,14 @@ at 53.1% of reported pass time. A second profile attributed 103.73 of
 next worker integration target.
 [Native SSA worker screen and self-compile profile](results/parallel-bounded-compile-native-worker-screen-v1.md)
 
+The end-to-end SSA sidecar screen took 308.106 s with two workers versus
+302.077 s serial. Packing, handoff and merge exceeded the entire 11.986 s
+serial pass. The final image differed even though all decoded SSA bodies
+matched the serial reference, so the experiment was discarded. The macOS
+profile also put AArch64 emission first, at 53.6% of reported pass time.
+[End-to-end SSA sidecar](results/parallel-bounded-compile-ssa-sidecar-v1.md) ·
+[Native macOS profile](results/parallel-bounded-compile-packed-delta-v1.md#native-self-compile-profile-on-macos)
+
 In a separate Object compilation pair with a 4,096 MiB V8 old-space setting,
 the optimizer candidate built the same signed image in 524.22 s versus
 899.40 s. Its observed peak RSS was 5,195.6 MiB versus 4,760.7 MiB.
@@ -86,7 +94,8 @@ whole-build budget.
 [Streaming and fixed-point probes](results/parallel-bounded-compile-streaming-probes-v1.md) ·
 [Full timing rotation and further streaming probes](results/parallel-bounded-compile-rotation-v1.md) ·
 [Loop-cell promotion and the next hydration boundary](results/parallel-bounded-compile-streaming-cells-v1.md) ·
-[Packed Object emission](results/parallel-bounded-compile-object-emission-v1.md)
+[Packed Object emission](results/parallel-bounded-compile-object-emission-v1.md) ·
+[Object compilation with staged IR changes](results/parallel-bounded-compile-packed-delta-v1.md)
 
 ## Work and dependencies
 
