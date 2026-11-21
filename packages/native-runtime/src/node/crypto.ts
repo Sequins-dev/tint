@@ -23,6 +23,8 @@ import {
   digestName,
   disposeAddress,
   fetchDigest,
+  findDigestAlias,
+  registeredDigestName,
   systemOpenSSL,
 } from "./openssl.ts";
 import { codedError, codedRangeError } from "./errors.ts";
@@ -39,14 +41,15 @@ interface DigestLifetime {
   address: number;
   readonly hmac: boolean;
   readonly digest: number;
-  readonly owner: unknown;
+  owner: unknown;
 }
 
 let lifetimes: DigestLifetime[] = [];
 let sweepAt = 256;
 let digests = new Map<string, number>();
+let fetchedDigests: number[] = [];
 let recentAlgorithm: string | undefined = undefined;
-let recentDigest: number | undefined = undefined;
+let recentDigest = 0;
 const encodedDigest = new Uint8Array(64);
 const finalizedSize = new Uint8Array(4);
 let spareHash = 0;
@@ -104,13 +107,14 @@ export function closeDigestContexts(): void {
   spareHashDigest = 0;
   spareHmac = 0;
   recentAlgorithm = undefined;
-  recentDigest = undefined;
-  if (digests.size !== 0) {
+  recentDigest = 0;
+  if (fetchedDigests.length !== 0) {
     const ffi = systemOpenSSL();
-    for (const [_name, digest] of digests) {
+    for (const digest of fetchedDigests) {
       if (digest === undefined) throw "digest cache invariant";
       disposeAddress(ffi.digestFree, digest);
     }
+    fetchedDigests = [];
     digests = new Map<string, number>();
   }
 }
@@ -174,9 +178,123 @@ function createHexPairs(): Uint8Array {
 
 const hexPairs = createHexPairs();
 
+function createPackedHexPairs(): Uint16Array {
+  const pairs = new Uint16Array(256);
+  for (let byte = 0; byte < 256; byte++) {
+    pairs[byte] = hexDigit(byte >>> 4) | (hexDigit(byte & 15) << 8);
+  }
+  return pairs;
+}
+
+const packedHexPairs = createPackedHexPairs();
+
+/** Fixed arity lets the typed fromCharCode operation write one final string. */
+function digestHex64(bytes: Uint8Array): string {
+  const pair0 = packedHexPairs[bytes[0] ?? 0] ?? 0;
+  const pair1 = packedHexPairs[bytes[1] ?? 0] ?? 0;
+  const pair2 = packedHexPairs[bytes[2] ?? 0] ?? 0;
+  const pair3 = packedHexPairs[bytes[3] ?? 0] ?? 0;
+  const pair4 = packedHexPairs[bytes[4] ?? 0] ?? 0;
+  const pair5 = packedHexPairs[bytes[5] ?? 0] ?? 0;
+  const pair6 = packedHexPairs[bytes[6] ?? 0] ?? 0;
+  const pair7 = packedHexPairs[bytes[7] ?? 0] ?? 0;
+  const pair8 = packedHexPairs[bytes[8] ?? 0] ?? 0;
+  const pair9 = packedHexPairs[bytes[9] ?? 0] ?? 0;
+  const pair10 = packedHexPairs[bytes[10] ?? 0] ?? 0;
+  const pair11 = packedHexPairs[bytes[11] ?? 0] ?? 0;
+  const pair12 = packedHexPairs[bytes[12] ?? 0] ?? 0;
+  const pair13 = packedHexPairs[bytes[13] ?? 0] ?? 0;
+  const pair14 = packedHexPairs[bytes[14] ?? 0] ?? 0;
+  const pair15 = packedHexPairs[bytes[15] ?? 0] ?? 0;
+  const pair16 = packedHexPairs[bytes[16] ?? 0] ?? 0;
+  const pair17 = packedHexPairs[bytes[17] ?? 0] ?? 0;
+  const pair18 = packedHexPairs[bytes[18] ?? 0] ?? 0;
+  const pair19 = packedHexPairs[bytes[19] ?? 0] ?? 0;
+  const pair20 = packedHexPairs[bytes[20] ?? 0] ?? 0;
+  const pair21 = packedHexPairs[bytes[21] ?? 0] ?? 0;
+  const pair22 = packedHexPairs[bytes[22] ?? 0] ?? 0;
+  const pair23 = packedHexPairs[bytes[23] ?? 0] ?? 0;
+  const pair24 = packedHexPairs[bytes[24] ?? 0] ?? 0;
+  const pair25 = packedHexPairs[bytes[25] ?? 0] ?? 0;
+  const pair26 = packedHexPairs[bytes[26] ?? 0] ?? 0;
+  const pair27 = packedHexPairs[bytes[27] ?? 0] ?? 0;
+  const pair28 = packedHexPairs[bytes[28] ?? 0] ?? 0;
+  const pair29 = packedHexPairs[bytes[29] ?? 0] ?? 0;
+  const pair30 = packedHexPairs[bytes[30] ?? 0] ?? 0;
+  const pair31 = packedHexPairs[bytes[31] ?? 0] ?? 0;
+  const pair32 = packedHexPairs[bytes[32] ?? 0] ?? 0;
+  const pair33 = packedHexPairs[bytes[33] ?? 0] ?? 0;
+  const pair34 = packedHexPairs[bytes[34] ?? 0] ?? 0;
+  const pair35 = packedHexPairs[bytes[35] ?? 0] ?? 0;
+  const pair36 = packedHexPairs[bytes[36] ?? 0] ?? 0;
+  const pair37 = packedHexPairs[bytes[37] ?? 0] ?? 0;
+  const pair38 = packedHexPairs[bytes[38] ?? 0] ?? 0;
+  const pair39 = packedHexPairs[bytes[39] ?? 0] ?? 0;
+  const pair40 = packedHexPairs[bytes[40] ?? 0] ?? 0;
+  const pair41 = packedHexPairs[bytes[41] ?? 0] ?? 0;
+  const pair42 = packedHexPairs[bytes[42] ?? 0] ?? 0;
+  const pair43 = packedHexPairs[bytes[43] ?? 0] ?? 0;
+  const pair44 = packedHexPairs[bytes[44] ?? 0] ?? 0;
+  const pair45 = packedHexPairs[bytes[45] ?? 0] ?? 0;
+  const pair46 = packedHexPairs[bytes[46] ?? 0] ?? 0;
+  const pair47 = packedHexPairs[bytes[47] ?? 0] ?? 0;
+  const pair48 = packedHexPairs[bytes[48] ?? 0] ?? 0;
+  const pair49 = packedHexPairs[bytes[49] ?? 0] ?? 0;
+  const pair50 = packedHexPairs[bytes[50] ?? 0] ?? 0;
+  const pair51 = packedHexPairs[bytes[51] ?? 0] ?? 0;
+  const pair52 = packedHexPairs[bytes[52] ?? 0] ?? 0;
+  const pair53 = packedHexPairs[bytes[53] ?? 0] ?? 0;
+  const pair54 = packedHexPairs[bytes[54] ?? 0] ?? 0;
+  const pair55 = packedHexPairs[bytes[55] ?? 0] ?? 0;
+  const pair56 = packedHexPairs[bytes[56] ?? 0] ?? 0;
+  const pair57 = packedHexPairs[bytes[57] ?? 0] ?? 0;
+  const pair58 = packedHexPairs[bytes[58] ?? 0] ?? 0;
+  const pair59 = packedHexPairs[bytes[59] ?? 0] ?? 0;
+  const pair60 = packedHexPairs[bytes[60] ?? 0] ?? 0;
+  const pair61 = packedHexPairs[bytes[61] ?? 0] ?? 0;
+  const pair62 = packedHexPairs[bytes[62] ?? 0] ?? 0;
+  const pair63 = packedHexPairs[bytes[63] ?? 0] ?? 0;
+  // prettier-ignore
+  return String.fromCharCode(
+    pair0 & 255, pair0 >>> 8, pair1 & 255, pair1 >>> 8,
+    pair2 & 255, pair2 >>> 8, pair3 & 255, pair3 >>> 8,
+    pair4 & 255, pair4 >>> 8, pair5 & 255, pair5 >>> 8,
+    pair6 & 255, pair6 >>> 8, pair7 & 255, pair7 >>> 8,
+    pair8 & 255, pair8 >>> 8, pair9 & 255, pair9 >>> 8,
+    pair10 & 255, pair10 >>> 8, pair11 & 255, pair11 >>> 8,
+    pair12 & 255, pair12 >>> 8, pair13 & 255, pair13 >>> 8,
+    pair14 & 255, pair14 >>> 8, pair15 & 255, pair15 >>> 8,
+    pair16 & 255, pair16 >>> 8, pair17 & 255, pair17 >>> 8,
+    pair18 & 255, pair18 >>> 8, pair19 & 255, pair19 >>> 8,
+    pair20 & 255, pair20 >>> 8, pair21 & 255, pair21 >>> 8,
+    pair22 & 255, pair22 >>> 8, pair23 & 255, pair23 >>> 8,
+    pair24 & 255, pair24 >>> 8, pair25 & 255, pair25 >>> 8,
+    pair26 & 255, pair26 >>> 8, pair27 & 255, pair27 >>> 8,
+    pair28 & 255, pair28 >>> 8, pair29 & 255, pair29 >>> 8,
+    pair30 & 255, pair30 >>> 8, pair31 & 255, pair31 >>> 8,
+    pair32 & 255, pair32 >>> 8, pair33 & 255, pair33 >>> 8,
+    pair34 & 255, pair34 >>> 8, pair35 & 255, pair35 >>> 8,
+    pair36 & 255, pair36 >>> 8, pair37 & 255, pair37 >>> 8,
+    pair38 & 255, pair38 >>> 8, pair39 & 255, pair39 >>> 8,
+    pair40 & 255, pair40 >>> 8, pair41 & 255, pair41 >>> 8,
+    pair42 & 255, pair42 >>> 8, pair43 & 255, pair43 >>> 8,
+    pair44 & 255, pair44 >>> 8, pair45 & 255, pair45 >>> 8,
+    pair46 & 255, pair46 >>> 8, pair47 & 255, pair47 >>> 8,
+    pair48 & 255, pair48 >>> 8, pair49 & 255, pair49 >>> 8,
+    pair50 & 255, pair50 >>> 8, pair51 & 255, pair51 >>> 8,
+    pair52 & 255, pair52 >>> 8, pair53 & 255, pair53 >>> 8,
+    pair54 & 255, pair54 >>> 8, pair55 & 255, pair55 >>> 8,
+    pair56 & 255, pair56 >>> 8, pair57 & 255, pair57 >>> 8,
+    pair58 & 255, pair58 >>> 8, pair59 & 255, pair59 >>> 8,
+    pair60 & 255, pair60 >>> 8, pair61 & 255, pair61 >>> 8,
+    pair62 & 255, pair62 >>> 8, pair63 & 255, pair63 >>> 8,
+  );
+}
+
 /** A digest has at most 64 bytes. Emit several code units per string
  * allocation, with at most eight concatenations before the short tail. */
 function digestHex(bytes: Uint8Array, length: number): string {
+  if (length === 64) return digestHex64(bytes);
   let text = "";
   let i = 0;
   for (; i + 8 <= length; i += 8) {
@@ -236,48 +354,81 @@ function finishDigest(lifetime: DigestLifetime, bytes: Uint8Array): number {
   }
 }
 
-function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
-  sweepDigests();
+export function asciiLower(name: string): string {
+  let lower = "";
+  for (let index = 0; index < name.length; index++) {
+    const code = name.charCodeAt(index);
+    lower += String.fromCharCode(code >= 65 && code <= 90 ? code + 32 : code);
+  }
+  return lower;
+}
+
+function resolveDigest(algorithm: string, hmac: boolean): number {
+  if (algorithm === recentAlgorithm) return recentDigest;
+  let digest = digests.get(algorithm);
+  if (digest === undefined) {
+    const name = asciiLower(digestName(algorithm));
+    digest = digests.get(name);
+    if (digest === undefined) {
+      digest = loadDigest(algorithm, name, hmac);
+      digests.set(name, digest);
+    }
+  }
+  recentAlgorithm = algorithm;
+  recentDigest = digest;
+  return digest;
+}
+
+function loadDigest(algorithm: string, name: string, hmac: boolean): number {
   const ffi = systemOpenSSL();
-  const recent = algorithm === recentAlgorithm;
-  const name = recent ? algorithm : digestName(algorithm);
-  const cached = recent ? recentDigest : digests.get(name);
-  const digest = cached ?? fetchDigest(ffi, name);
+  const nameBytes = encodeUTF8(name + "\0");
+  const alias = findDigestAlias(ffi, fetchedDigests, nameBytes);
+  if (alias !== 0) return alias;
+
+  // The registry resolves historical aliases such as RSA-SHA512.
+  // Resolve implementations only in the default provider.
+  const known = EVP_get_digestbyname(nameBytes);
+  const registered = known !== 0 && known !== EVP_md_null();
+  const canonical = registered
+    ? (registeredDigestName(ffi, known) ?? name)
+    : name;
+  if (canonical !== name) {
+    const match = findDigestAlias(
+      ffi,
+      fetchedDigests,
+      encodeUTF8(canonical + "\0"),
+    );
+    if (match !== 0) return match;
+  }
+  const digest = fetchDigest(ffi, canonical);
   if (digest === 0) {
-    // The name registry also recognizes algorithms unavailable in the
-    // default provider. Querying it does not initialize those algorithms.
-    const known = EVP_get_digestbyname(encodeUTF8(name + "\0"));
-    if (known !== 0 && known !== EVP_md_null())
+    if (registered)
       throw codedError(
         "error:0308010C:digital envelope routines::unsupported",
         "ERR_OSSL_EVP_UNSUPPORTED",
       );
-    if (key !== undefined)
+    if (hmac)
       throw codedError(
         "Invalid digest: " + algorithm,
         "ERR_CRYPTO_INVALID_DIGEST",
       );
     throw new Error("Digest method not supported");
   }
-  if (
-    cached === undefined &&
-    (EVP_MD_get_flags(digest) & EVP_MD_FLAG_XOF) !== 0
-  ) {
+  if ((EVP_MD_get_flags(digest) & EVP_MD_FLAG_XOF) !== 0) {
     disposeAddress(ffi.digestFree, digest);
     throw codedError(
       "node:crypto XOF hashing is outside Tint's crypto proof of concept",
       "ERR_CRYPTO_UNSUPPORTED_OPERATION",
     );
   }
-  const cacheNew = cached === undefined && digests.size < 64;
-  if (cacheNew) digests.set(name, digest);
-  const releaseDigest = cached === undefined && !cacheNew;
-  if (!recent && !releaseDigest && name === algorithm) {
-    recentAlgorithm = algorithm;
-    recentDigest = digest;
-  }
+  fetchedDigests.push(digest);
+  return digest;
+}
 
+function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
+  sweepDigests();
   const hmac = key !== undefined;
+  const digest = resolveDigest(algorithm, hmac);
   let context = 0;
   try {
     const ready = !hmac && spareHash !== 0 && spareHashDigest === digest;
@@ -300,10 +451,14 @@ function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
   } catch (error) {
     if (context !== 0) disposeContext(context, hmac);
     throw error;
-  } finally {
-    if (releaseDigest) disposeAddress(ffi.digestFree, digest);
   }
 
+  const lifetime: DigestLifetime = {
+    address: context,
+    hmac,
+    digest,
+    owner: undefined,
+  };
   const hash: Hash = {
     update(data: string | Uint8Array, encoding?: string): Hash {
       const address = activeContext(lifetime);
@@ -333,13 +488,13 @@ function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
       return name === undefined ? output : bufferText(output, name);
     },
   };
-  const lifetime: DigestLifetime = {
-    address: context,
-    hmac,
-    digest,
-    owner: createWeakSlot(hash, undefined, false),
-  };
-  lifetimes.push(lifetime);
+  lifetime.owner = createWeakSlot(hash, undefined, false);
+  // Replace a finished tail entry instead of growing the tracking vector.
+  const last = lifetimes.length - 1;
+  const previous = last < 0 ? undefined : lifetimes[last];
+  if (previous !== undefined && previous.address === 0)
+    lifetimes[last] = lifetime;
+  else lifetimes.push(lifetime);
   return hash;
 }
 

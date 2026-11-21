@@ -98,6 +98,8 @@ export interface OpenSSL {
   readonly libraryContext: number;
   readonly digestFetch: ForeignFunction;
   readonly digestFree: ForeignFunction;
+  readonly digestIsA: ForeignFunction;
+  readonly digestName: ForeignFunction;
   readonly clearErrors: ForeignFunction;
   readonly pbkdf2: ForeignFunction;
   readonly setThreadContext: ForeignFunction;
@@ -147,6 +149,8 @@ function loadLibrary(path: string): OpenSSL {
         pointer,
       ]),
       digestFree: bind(library, "EVP_MD_free", voidType, [pointer]),
+      digestIsA: bind(library, "EVP_MD_is_a", integer, [pointer, pointer]),
+      digestName: bind(library, "EVP_MD_get0_name", pointer, [pointer]),
       clearErrors: bind(library, "ERR_clear_error", voidType, []),
       pbkdf2: bind(library, "PKCS5_PBKDF2_HMAC", integer, [
         pointer,
@@ -248,6 +252,40 @@ export function fetchDigest(ffi: OpenSSL, algorithm: string): number {
   setNumber(ffi.digestFetch, 2, 0);
   if (digest === 0) invoke(ffi.clearErrors);
   return digest;
+}
+
+export function findDigestAlias(
+  ffi: OpenSSL,
+  digests: readonly number[],
+  name: Uint8Array,
+): number {
+  if (digests.length === 0) return 0;
+  let match = 0;
+  setBytes(ffi.digestIsA, 1, name);
+  try {
+    for (const digest of digests) {
+      if (digest === undefined) throw "digest cache invariant";
+      setNumber(ffi.digestIsA, 0, digest);
+      invoke(ffi.digestIsA);
+      if (resultNumber(ffi.digestIsA) === 1) {
+        match = digest;
+        break;
+      }
+    }
+  } finally {
+    setNumber(ffi.digestIsA, 1, 0);
+  }
+  return match;
+}
+
+export function registeredDigestName(
+  ffi: OpenSSL,
+  digest: number,
+): string | undefined {
+  setNumber(ffi.digestName, 0, digest);
+  invoke(ffi.digestName);
+  const address = resultNumber(ffi.digestName);
+  return address === 0 ? undefined : cStringAt(address);
 }
 
 /** Node's OpenSSL bindings pass digest names as C strings. */

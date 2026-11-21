@@ -31,6 +31,7 @@ import {
   createHmac as nativeHmac,
   randomBytes as nativeRandomBytes,
   pbkdf2 as nativePbkdf2,
+  asciiLower,
   type Hash,
 } from "./crypto.ts";
 export { closeDigestContexts } from "./crypto.ts";
@@ -329,15 +330,6 @@ function digestPrototype(core: ProgramRealmCore, hmac: boolean): RealmObject {
   if (!hmac) unsupportedProperty(core, prototype, "copy", "Hash.copy");
   core.realm.prototypes.set(brand, prototype);
   return prototype;
-}
-
-function asciiLower(text: string): string {
-  let result = "";
-  for (let i = 0; i < text.length; i++) {
-    const code = text.charCodeAt(i);
-    result += String.fromCharCode(code >= 65 && code <= 90 ? code + 32 : code);
-  }
-  return result;
 }
 
 function unsupported(core: ProgramRealmCore, operation: string): never {
