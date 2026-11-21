@@ -221,7 +221,10 @@ export function run() {
       return 47;
 
     let keyOrder = "";
-    const indexed = {"0": 1, "-0": 2, "-1": 3, "01": 4};
+    const indexed = {
+      "0": 1, "-0": 2, "-1": 3, "01": 4,
+      "4294967296": 5, "-9007199254740991": 6
+    };
     const indexedPrototype = Object.create(null);
     Object.defineProperty(indexedPrototype, "0", {
       get() { return this === indexed ? 11 : -1; },
@@ -230,7 +233,9 @@ export function run() {
     Object.setPrototypeOf(indexed, indexedPrototype);
     function writeIndex(object, key, value) { object[key] = value; }
     if (readIndex(indexed, -0) !== 1 || readIndex(indexed, -1) !== 3 ||
-        readIndex(indexed, "-0") !== 2 || readIndex(indexed, 1) !== undefined)
+        readIndex(indexed, "-0") !== 2 || readIndex(indexed, 1) !== undefined ||
+        readIndex(indexed, 4294967296) !== 5 ||
+        readIndex(indexed, -9007199254740991) !== 6)
       return 48;
     writeIndex(indexed, 0, 10);
     if (readIndex(indexed, 0) !== 10) return 49;

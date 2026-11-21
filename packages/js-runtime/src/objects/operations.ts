@@ -87,7 +87,7 @@ export interface OrdinaryObject<Key, Value> {
   internalPropertyEpoch: number;
   internalPropertyLayout: OrdinaryPropertyLayout<Value> | undefined;
   /** Lazy numeric-key view of own descriptor storage. Null is an empty view. */
-  internalIndexedProperties: Map<number, Descriptor<Value>> | null | undefined;
+  internalIndexedProperties: IndexedPropertyLayout<Value> | null | undefined;
   internalPropertyContract: PropertyWriteContract<Key, Value> | undefined;
   internalPrivateElements: PrivateElement<Value>[] | undefined;
   /** Internal [[Call]], never a named/inherited JavaScript property. */
@@ -319,7 +319,12 @@ interface OrdinaryPropertyLayout<Value> {
   readonly shape: OrdinaryPropertyShape;
   readonly cells: readonly Descriptor<Value>[];
 }
+interface IndexedPropertyLayout<Value> {
+  readonly keys: Float64Array;
+  readonly cells: readonly Descriptor<Value>[];
+}
 interface ScriptPropertyCacheEntry {
+  name: string;
   receiver: OrdinaryPropertyShape | undefined;
   holder: OrdinaryPropertyShape | undefined;
   offset: number;
@@ -332,7 +337,7 @@ export interface ScriptPropertyCache {
   megamorphic: boolean;
 }
 function propertyCacheEntry(): ScriptPropertyCacheEntry {
-  return { receiver: undefined, holder: undefined, offset: 0 };
+  return { name: "", receiver: undefined, holder: undefined, offset: 0 };
 }
 export function createScriptPropertyCache(
   name: string = "",
@@ -351,17 +356,12 @@ export function createScriptPropertyCache(
     megamorphic: false,
   };
 }
-interface ScriptPropertyStubEntry {
-  name: string;
-  readonly property: ScriptPropertyCacheEntry;
-}
 export interface ScriptPropertyStubCache {
-  readonly buckets: readonly ScriptPropertyStubEntry[];
+  readonly buckets: readonly ScriptPropertyCacheEntry[];
 }
 export function createScriptPropertyStubCache(): ScriptPropertyStubCache {
-  const buckets: ScriptPropertyStubEntry[] = [];
-  for (let i = 0; i < 256; i++)
-    buckets.push({ name: "", property: propertyCacheEntry() });
+  const buckets: ScriptPropertyCacheEntry[] = [];
+  for (let i = 0; i < 256; i++) buckets.push(propertyCacheEntry());
   return { buckets };
 }
 export type ObjectCallDispatch<Key, Value> =
@@ -972,16 +972,17 @@ function invalidatePropertyLayout<Key, Value>(
   object.internalIndexedProperties = undefined;
 }
 
-/** Look up an integer already in Number representation. Callers handle
- * packed elements, aliasing and exotic dispatch before consulting the map. */
-export function indexedPropertyCell<Key, Value>(
+function indexedPropertyBucket(index: number, mask: number): number {
+  const folded = index ^ Math.floor(index / 4294967296);
+  const mixed = Math.imul(folded ^ (folded >>> 16), 0x85ebca6b);
+  return (mixed ^ (mixed >>> 13)) & mask;
+}
+
+function buildIndexedPropertyLayout<Key, Value>(
   object: OrdinaryObject<Key, Value>,
-  index: number,
-): Descriptor<Value> | undefined {
-  const cached = object.internalIndexedProperties;
-  if (cached === null) return undefined;
-  if (cached !== undefined) return cached.get(index);
-  let cells: Map<number, Descriptor<Value>> | undefined = undefined;
+): IndexedPropertyLayout<Value> | null {
+  let keys: number[] | undefined = undefined;
+  let cells: Descriptor<Value>[] | undefined = undefined;
   for (const [key, descriptor] of object.properties) {
     if (typeof key !== "string") continue;
     const numeric = canonicalNumericIndex(key);
@@ -991,13 +992,60 @@ export function indexedPropertyCell<Key, Value>(
       (numeric === 0 && 1 / numeric < 0)
     )
       continue;
-    const table: Map<number, Descriptor<Value>> = cells ??
-    new Map<number, Descriptor<Value>>();
-    table.set(numeric, descriptor);
-    cells = table;
+    const indexedKeys: number[] = keys ?? [];
+    const indexedCells: Descriptor<Value>[] = cells ?? [];
+    indexedKeys.push(numeric);
+    indexedCells.push(descriptor);
+    keys = indexedKeys;
+    cells = indexedCells;
   }
-  object.internalIndexedProperties = cells ?? null;
-  return cells?.get(index);
+  const indexedKeys = keys,
+    indexedCells = cells;
+  if (indexedKeys === undefined || indexedCells === undefined) return null;
+  const count = indexedKeys.length;
+  let capacity = 4;
+  while (capacity < count * 2) capacity *= 2;
+  const table = new Float64Array(capacity);
+  const descriptors: Descriptor<Value>[] = [];
+  table.fill(NaN);
+  // The view is rebuilt on shape changes. Half occupancy leaves an empty
+  // bucket for every failed lookup, with no tombstones.
+  const mask = capacity - 1;
+  for (let index = 0; index < count; index++) {
+    const key = indexedKeys[index],
+      descriptor = indexedCells[index];
+    if (key === undefined || descriptor === undefined)
+      throw "INDEXED_PROPERTY_CELL_INVARIANT";
+    let position = indexedPropertyBucket(key, mask);
+    while (!Number.isNaN(table[position])) position = (position + 1) & mask;
+    table[position] = key;
+    descriptors[position] = descriptor;
+  }
+  return { keys: table, cells: descriptors };
+}
+
+/** Look up an integer already in Number representation. The numeric view
+ * and the named layout share the original descriptor cells. */
+export function indexedPropertyCell<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  index: number,
+): Descriptor<Value> | undefined {
+  let layout = object.internalIndexedProperties;
+  if (layout === undefined) {
+    layout = buildIndexedPropertyLayout<Key, Value>(object);
+    object.internalIndexedProperties = layout;
+  }
+  if (layout === undefined || layout === null) return undefined;
+  const keys = layout.keys,
+    cells = layout.cells;
+  const mask = keys.length - 1;
+  let position = indexedPropertyBucket(index, mask);
+  for (;;) {
+    const key = keys[position];
+    if (key === undefined || key !== key) return undefined;
+    if (key === index) return cells[position];
+    position = (position + 1) & mask;
+  }
 }
 
 /** The per-site cache owns only shapes and a slot number. The receiver and
@@ -1089,7 +1137,7 @@ export function lookupCachedScriptProperty<Key, Value>(
     const cell = cachedScriptPropertyCell<Key, Value>(
       object,
       layout,
-      stub.property,
+      stub,
       own,
     );
     if (cell !== undefined) return cell;
@@ -1111,7 +1159,7 @@ export function lookupCachedScriptProperty<Key, Value>(
   if (entry === undefined) {
     cache.megamorphic = true;
     stub.name = key;
-    entry = stub.property;
+    entry = stub;
   } else cache.used++;
   entry.receiver = layout.shape;
   entry.holder = holder === layout ? undefined : holder.shape;
