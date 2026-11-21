@@ -487,6 +487,8 @@ export function run(): number {
     if ((call(pointer, -41) as number) !== -42) return 2;
     lib.refCallback(pointer);
     if ((call(pointer, -41) as number) !== fn(-41)) return 3;
+    try { call(pointer, 2147483648) as number; return 4; }
+    catch (error) { if (!(error instanceof TypeError)) return 5; }
     return 42;
   } finally {
     lib.unregisterCallback(pointer);

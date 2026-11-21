@@ -346,9 +346,11 @@ function fixedFfiSource(
       "if(mode===1&&pointerLeaf!==undefined)return pointerLeaf(p0);\n";
   if (mixed && arity === 2) {
     direct = true;
+    // On a numeric guard miss the general entry validates the pointer first.
     body +=
       "const callback=plan.pointerI32Callback;" +
-      "if(mode===2&&callback!==undefined&&typeof p1==='number'&&(p1|0)===p1){" +
+      "if(mode===2&&callback!==undefined){" +
+      "if(typeof p1!=='number'||(p1|0)!==p1)return undefined;" +
       "const result=callback(p0,p1);if(result!==undefined)return result;}\n";
   }
   const name = mixed ? mixedFfiCallEntry(arity) : fixedFfiCallEntry(arity);
