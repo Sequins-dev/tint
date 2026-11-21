@@ -94,6 +94,13 @@ median wall time. Its live compiler integration produced the same ELF
 but spent 65.83 s more end to end, so that sidecar stays experimental.
 [Native register-home workers and self-compile integration](results/parallel-bounded-compile-native-register-homes-v1.md)
 
+Preparing the module's emission facts once made the AArch64 fragment
+replay faster at two and six workers. Ordered placement assigned
+dispatch IDs and selected branch forms without a serial seed. At six
+workers the Node replay took 51.23 s versus 101.47 s serial and
+raised process peak RSS to 9,449,680 KiB. This is a stage replay.
+[Shared AArch64 preparation](results/parallel-bounded-compile-shared-preparation-v1.md)
+
 In a separate Object compilation pair with a 4,096 MiB V8 old-space setting,
 the optimizer candidate built the same signed image in 524.22 s versus
 899.40 s. Its observed peak RSS was 5,195.6 MiB versus 4,760.7 MiB.
@@ -122,7 +129,13 @@ The typed streaming prototype completed the whole Object image at a
 4,096 MiB old-space setting, byte-identical to the earlier control.
 Its peak RSS was 4,798,824,448 bytes. Lower heap settings failed in
 collection-runtime preparation before packed lowering could help.
+At the whole-program instance check, RSS was 4,043,046,912 bytes and
+JavaScript heap in use was 2,996,480,488 bytes. The check validates
+helper demands on the instantiated syntax and its binding and type
+graph. The linked input is available for retry. Reducing this peak
+requires changes to the checker's data representation or lifetimes.
 [Typed streaming Object image comparison](results/parallel-bounded-compile-typed-object-image-v1.md)
+[Resident set at the instance check](results/parallel-bounded-compile-shared-preparation-v1.md#object-selections-collection-runtime-retry)
 
 ## Work and dependencies
 
