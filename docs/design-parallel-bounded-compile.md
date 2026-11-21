@@ -56,6 +56,16 @@ by 1.20–1.36 GiB. Structured clone took longer than the improved serial
 kernel in both orders. The branch uses the serial kernels for the whole
 compiler. The worker entry probe exercised typed SSA in a native isolate.
 
+A follow-up Linux arm64 screen ran the same settled-SSA kernel over the
+frozen compiler's full pass input. Two workers reduced median pass wall
+time from 25.20 s to 13.01 s, and six to 7.69 s. All result batches matched
+across worker counts. Peak RSS was about 1.02 GiB with two workers and
+2.97 GiB with six. The new self-compile profile put native code emission
+at 53.1% of reported pass time. A second profile attributed 103.73 of
+120.16 emitter seconds to the function emission loop. That loop is the
+next worker integration target.
+[Native SSA worker screen and self-compile profile](results/parallel-bounded-compile-native-worker-screen-v1.md)
+
 In a separate Object compilation pair with a 4,096 MiB V8 old-space setting,
 the optimizer candidate built the same signed image in 524.22 s versus
 899.40 s. Its observed peak RSS was 5,195.6 MiB versus 4,760.7 MiB.
@@ -63,12 +73,20 @@ Packing function bodies during lowering removed the full decoded IR from
 that frame. The optimizer still exhausted memory after those bodies were
 rehydrated. Moving the first reachability scan onto stored bodies deferred
 the same pressure to the retained result. Keeping the first optimizer
-generations packed reduced live heap before module-wide work. The remaining
-whole-module passes still needed decoded IR, and the lowest peak RSS in
-the final Object trials was 3,364.8 MiB. The full selection remains the
-acceptance workload for the opt-in whole-build budget.
+generations packed reduced live heap before module-wide work. A subsequent
+prototype completed loop-cell promotion by collecting call and cell-layout
+summaries, then decoding and rewriting each body in order. It finished the
+pass with 488,519,672 bytes of JS heap in use. The following bulk-list pass
+still entered a driver that decoded every function, even before checking
+for helper names. Subsequent prototypes removed that hydration and
+reached AArch64 emission with roughly 390 MB of JS heap in use. Both ran
+out of heap inside the emitter and exceeded the process RSS target. The
+full Object selection remains the acceptance workload for the opt-in
+whole-build budget.
 [Streaming and fixed-point probes](results/parallel-bounded-compile-streaming-probes-v1.md) ·
-[Full timing rotation and further streaming probes](results/parallel-bounded-compile-rotation-v1.md)
+[Full timing rotation and further streaming probes](results/parallel-bounded-compile-rotation-v1.md) ·
+[Loop-cell promotion and the next hydration boundary](results/parallel-bounded-compile-streaming-cells-v1.md) ·
+[Packed Object emission](results/parallel-bounded-compile-object-emission-v1.md)
 
 ## Work and dependencies
 
