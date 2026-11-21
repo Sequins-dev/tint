@@ -42,6 +42,7 @@ import {
   type OrdinaryObject,
   type ObjectHooks,
   type ObjectExecutionContext,
+  type ObjectInternalMethods,
 } from "./operations.ts";
 import { viewObjectValue, viewTypeofObject } from "./values.ts";
 import { instanceOfValue } from "./functions.ts";
@@ -168,6 +169,12 @@ export interface ErrorRealm {
     string,
     OrdinaryObject<ScriptPropertyKey, unknown>
   >;
+  typedArrayIntegerIndexed:
+    | {
+        readonly hooks: ObjectHooks<unknown>;
+        readonly methods: ObjectInternalMethods<ScriptPropertyKey, unknown>;
+      }
+    | undefined;
   readonly dataViewPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly arrayBufferPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly sharedArrayBufferPrototype: OrdinaryObject<
@@ -586,6 +593,7 @@ export function createErrorRealm(
       string,
       OrdinaryObject<ScriptPropertyKey, unknown>
     >(),
+    typedArrayIntegerIndexed: undefined,
     dataViewPrototype: createObject<ScriptPropertyKey, unknown>(
       objectPrototype,
     ),
