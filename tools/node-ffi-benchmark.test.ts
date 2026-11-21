@@ -4,7 +4,7 @@ import {
   benchmarkBody,
   caseTiming,
   cpuIdlePercent,
-  pairedOverheadChange,
+  pairedCaseComparison,
   roundOrder,
 } from "./node-ffi-benchmark.ts";
 
@@ -49,12 +49,24 @@ test("overhead subtracts the control from the same round", () => {
   });
 });
 
-test("candidate comparisons pair overheads in the same round", () => {
-  assert.deepEqual(pairedOverheadChange([10, 50, 40], [40, 50, 100]), {
-    median: -30,
-    q1: -45,
-    q3: -15,
+test("parity requires both paired total time and paired overhead", () => {
+  const candidate = [
+    { call: 17, control: 10, overhead: 7 },
+    { call: 12, control: 10, overhead: 2 },
+    { call: 11, control: 8, overhead: 3 },
+  ];
+  const reference = [
+    { call: 14, control: 2, overhead: 12 },
+    { call: 10, control: 2, overhead: 8 },
+    { call: 12, control: 3, overhead: 9 },
+  ];
+  assert.deepEqual(pairedCaseComparison(candidate, reference), {
+    overheadNs: { median: -6, q1: -6, q3: -5.5 },
+    callNs: { median: 2, q1: 0.5, q3: 2.5 },
+    parity: false,
   });
+  assert.equal(pairedCaseComparison(reference, candidate).parity, false);
+  assert.equal(pairedCaseComparison(reference, reference).parity, true);
 });
 
 test("each workload occupies each launch position in a rotation", () => {

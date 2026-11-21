@@ -188,20 +188,29 @@ export function caseTiming(
   };
 }
 
-export function pairedOverheadChange(
-  candidate: readonly number[],
-  reference: readonly number[],
+export function pairedCaseComparison(
+  candidate: Readonly<ReturnType<typeof casePairs>>,
+  reference: Readonly<ReturnType<typeof casePairs>>,
 ) {
   if (candidate.length !== reference.length)
     throw Error("unmatched benchmark rounds");
-  return distribution(
-    candidate.map((value, round) => {
-      const before = reference[round];
-      if (before === undefined)
-        throw Error("missing reference for round " + round);
-      return value - before;
-    }),
-  );
+  function change(metric: "call" | "overhead") {
+    return distribution(
+      candidate.map((value, round) => {
+        const before = reference[round];
+        if (before === undefined)
+          throw Error("missing reference for round " + round);
+        return value[metric] - before[metric];
+      }),
+    );
+  }
+  const overheadNs = change("overhead"),
+    callNs = change("call");
+  return {
+    overheadNs,
+    callNs,
+    parity: overheadNs.median <= 0 && callNs.median <= 0,
+  };
 }
 
 export function roundOrder<T>(workloads: readonly T[], round: number): T[] {
@@ -557,30 +566,30 @@ function measure(
         ),
       ]),
     );
-    const overhead = (workload: string) =>
-      casePairs(
-        results.get(workload) ?? [],
-        name,
-        prepared.iterations,
-        rounds,
-      ).map((pair) => pair.overhead);
-    const node = overhead("node");
+    const pairs = (workload: string) =>
+      casePairs(results.get(workload) ?? [], name, prepared.iterations, rounds);
+    const node = pairs("node");
     const comparisons = Object.fromEntries(
       workloads.flatMap(({ name: workload, engine }) => {
         if (engine === undefined) return [];
-        const paired = overhead(workload);
+        const paired = pairs(workload);
+        const versusNode = pairedCaseComparison(paired, node);
+        const versusBaseline =
+          workload === engine
+            ? undefined
+            : pairedCaseComparison(paired, pairs(engine));
         return [
           [
             workload,
             {
-              versusNodeNs: pairedOverheadChange(paired, node),
-              ...(workload === engine
+              versusNodeNs: versusNode.overheadNs,
+              totalVersusNodeNs: versusNode.callNs,
+              parity: versusNode.parity,
+              ...(versusBaseline === undefined
                 ? {}
                 : {
-                    versusBaselineNs: pairedOverheadChange(
-                      paired,
-                      overhead(engine),
-                    ),
+                    versusBaselineNs: versusBaseline.overheadNs,
+                    totalVersusBaselineNs: versusBaseline.callNs,
                   }),
             },
           ],
@@ -588,8 +597,8 @@ function measure(
       }),
     );
     const typedParity =
-      (comparisons.tintTypedLiteral?.versusNodeNs.median ?? Infinity) <= 0 &&
-      (comparisons.tintTypedRuntime?.versusNodeNs.median ?? Infinity) <= 0;
+      comparisons.tintTypedLiteral?.parity === true &&
+      comparisons.tintTypedRuntime?.parity === true;
     return { case: name, timing, comparisons, typedParity };
   });
   writeReport(file, {
