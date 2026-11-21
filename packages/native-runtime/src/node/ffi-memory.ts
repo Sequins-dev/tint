@@ -83,38 +83,27 @@ export function readScalar(cell: View<Cell>, kind: number): unknown {
   }
 }
 
-export function writeScalar(
+function invalidScalar(
   core: ProgramRealmCore,
-  cell: View<Cell>,
   kind: number,
-  value: unknown,
-  argumentIndex: number = -1,
-): void {
+  argumentIndex: number,
+): never {
   const subject = argumentIndex < 0 ? "Value" : "Argument " + argumentIndex;
   const label = scalarLabels[kind] ?? "a number";
-  if (kind === 6 || kind === 7) {
-    const bits =
-      typeof value === "bigint"
-        ? value
-        : typeof value === "number" && Number.isSafeInteger(value)
-          ? BigInt(value)
-          : undefined;
-    const signed = kind === 6;
-    if (
-      bits === undefined ||
-      bits < (signed ? -0x8000000000000000n : 0n) ||
-      bits > (signed ? 0x7fffffffffffffffn : maxPointer)
-    )
-      return ffiError(
-        core,
-        "type",
-        "ERR_INVALID_ARG_VALUE",
-        subject + " must be " + label,
-      );
-    cell.halves.low = Number(bits & 0xffffffffn);
-    cell.halves.high = Number((bits >> 32n) & 0xffffffffn);
-    return;
-  }
+  return ffiError(
+    core,
+    "type",
+    "ERR_INVALID_ARG_VALUE",
+    subject + " must be " + label,
+  );
+}
+
+export function checkedFfiNumber(
+  core: ProgramRealmCore,
+  kind: number,
+  value: unknown,
+  argumentIndex: number,
+): number {
   if (
     typeof value !== "number" ||
     (kind < 6 &&
@@ -122,12 +111,36 @@ export function writeScalar(
         value < (scalarMinimums[kind] ?? 0) ||
         value > (scalarMaximums[kind] ?? 0)))
   )
-    return ffiError(
-      core,
-      "type",
-      "ERR_INVALID_ARG_VALUE",
-      subject + " must be " + label,
-    );
+    return invalidScalar(core, kind, argumentIndex);
+  return value;
+}
+
+export function writeScalar(
+  core: ProgramRealmCore,
+  cell: View<Cell>,
+  kind: number,
+  input: unknown,
+  argumentIndex: number = -1,
+): void {
+  if (kind === 6 || kind === 7) {
+    const bits =
+      typeof input === "bigint"
+        ? input
+        : typeof input === "number" && Number.isSafeInteger(input)
+          ? BigInt(input)
+          : undefined;
+    const signed = kind === 6;
+    if (
+      bits === undefined ||
+      bits < (signed ? -0x8000000000000000n : 0n) ||
+      bits > (signed ? 0x7fffffffffffffffn : maxPointer)
+    )
+      return invalidScalar(core, kind, argumentIndex);
+    cell.halves.low = Number(bits & 0xffffffffn);
+    cell.halves.high = Number((bits >> 32n) & 0xffffffffn);
+    return;
+  }
+  const value = checkedFfiNumber(core, kind, input, argumentIndex);
   switch (kind) {
     case 0:
       cell.i8 = value;

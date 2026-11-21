@@ -2,14 +2,19 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { cpus, tmpdir } from "node:os";
+import { cpus, loadavg, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { withGateLock } from "./gate/lock.ts";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
-import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
+import {
+  nativeArtifact,
+  runNativeBatch,
+  type NativeResult,
+} from "./native-target-runner.ts";
 
 const [nodePath, reportPath, iterationText] = process.argv.slice(2);
-const iterations = Number(iterationText ?? "20000");
+const iterations = Number(iterationText ?? "100000");
 if (
   nodePath === undefined ||
   reportPath === undefined ||
@@ -109,8 +114,8 @@ const scalarCases = arities
 const setupScalars = arities
   .map((arity) => "const f" + arity + " = functions.bench_" + arity + ";")
   .join("\n");
-const samples = 5,
-  warm = Math.min(1000, iterations);
+const rounds = 9,
+  warm = Math.min(20000, iterations);
 
 function body(literal: boolean): string {
   const open =
@@ -128,14 +133,12 @@ export function run() {
     let sum = 0;
     for (let i = 0; i < ${warm}; i++) sum += operation();
     if (sum !== ${warm} * expected) throw Error(name + " warmup checksum " + sum);
-    for (let sample = 0; sample < ${samples}; sample++) {
-      sum = 0;
-      const start = now();
-      for (let i = 0; i < ${iterations}; i++) sum += operation();
-      const elapsed = now() - start;
-      if (sum !== ${iterations} * expected) throw Error(name + " checksum " + sum);
-      console.log("TINT_FFI_BENCH " + name + " " + sample + " " + elapsed + " " + sum);
-    }
+    sum = 0;
+    const start = now();
+    for (let i = 0; i < ${iterations}; i++) sum += operation();
+    const elapsed = now() - start;
+    if (sum !== ${iterations} * expected) throw Error(name + " checksum " + sum);
+    console.log("TINT_FFI_BENCH " + name + " " + elapsed + " " + sum);
   }
   try {
     ${scalarCases}
@@ -197,10 +200,6 @@ ${body(literal)}`,
   );
   return nativeArtifact(target, image, image + ".manifest.json");
 });
-const native = runNativeBatch(
-  artifacts.map((artifact) => ({ artifact, timeoutMs: 120000 })),
-);
-const reference = execute(node, [benchmark]);
 const hashes = (path: string): string =>
   createHash("sha256").update(readFileSync(path)).digest("hex");
 
@@ -210,36 +209,103 @@ type Measurement = {
   milliseconds: number;
   checksum: number;
 };
-function parse(output: string): Measurement[] {
+function parse(output: string, round: number): Measurement[] {
   const values: Measurement[] = [];
   for (const match of output.matchAll(
-    /^TINT_FFI_BENCH ([\w-]+) (\d+) ([0-9.eE+-]+) (\d+)$/gm,
+    /^TINT_FFI_BENCH ([\w-]+) ([0-9.eE+-]+) (\d+)$/gm,
   )) {
     const name = match[1];
     if (name === undefined) throw Error("benchmark record is missing its name");
     values.push({
       case: name,
-      round: Number(match[2]),
-      milliseconds: Number(match[3]),
-      checksum: Number(match[4]),
+      round,
+      milliseconds: Number(match[2]),
+      checksum: Number(match[3]),
     });
   }
   if (
-    values.length !== (arities.length + 2) * samples ||
+    values.length !== arities.length + 2 ||
+    new Set(values.map((value) => value.case)).size !== values.length ||
     values.some((entry) => !(entry.milliseconds > 0))
   )
     throw Error("incomplete benchmark output");
   return values;
 }
-const results = [reference, ...native.map((entry) => entry.stdout)].map(
-  (output) => {
-    try {
-      return { samples: parse(output) };
-    } catch (error) {
-      return { error: String(error), output };
+const engines = ["node", "tintLiteral", "tintRuntime"] as const;
+type Engine = (typeof engines)[number];
+const results = { node: [], tintLiteral: [], tintRuntime: [] } as Record<
+  Engine,
+  Measurement[]
+>;
+const observations: { round: number; engine: Engine; started: string }[] = [];
+const native: {
+  round: number;
+  engine: Engine;
+  result: NativeResult | undefined;
+}[] = [];
+const failures: string[] = [];
+const timingLock = process.env.TINT_FFI_BENCH_TIMING_LOCK;
+let loadBefore: number[] = [],
+  loadAfter: number[] = [];
+function measure(): void {
+  loadBefore = loadavg();
+  for (let round = 0; round < rounds; round++) {
+    // Rotate which engine samples first so no engine consistently benefits
+    // from the machine state left behind by the preceding run.
+    const order = [...engines.slice(round % 3), ...engines.slice(0, round % 3)];
+    for (const engine of order) {
+      observations.push({ round, engine, started: new Date().toISOString() });
+      try {
+        let output: string;
+        if (engine === "node") output = execute(node, [benchmark]);
+        else {
+          const artifact = artifacts[engine === "tintLiteral" ? 0 : 1];
+          if (artifact === undefined)
+            throw Error("missing native benchmark image: " + engine);
+          const [result] = runNativeBatch([{ artifact, timeoutMs: 120000 }]);
+          native.push({ round, engine, result });
+          if (result?.kind !== "exited" || result.status !== 42)
+            throw Error("native benchmark did not exit 42: " + result?.kind);
+          output = result.stdout;
+        }
+        results[engine].push(...parse(output, round));
+      } catch (error) {
+        failures.push(engine + " round " + round + ": " + String(error));
+      }
     }
-  },
-);
+  }
+  loadAfter = loadavg();
+}
+if (timingLock === undefined) measure();
+else withGateLock([timingLock], "node-ffi-benchmark", undefined, measure);
+function median(engine: Engine, name: string): number | undefined {
+  const times = results[engine]
+    .filter((sample) => sample.case === name)
+    .map((sample) => (sample.milliseconds * 1e6) / iterations)
+    .sort((left, right) => left - right);
+  return times.length === rounds ? times[Math.floor(rounds / 2)] : undefined;
+}
+const medians = [
+  ...arities.map((arity) => "arity-" + arity),
+  "buffer",
+  "callback",
+].map((name) => {
+  const node = median("node", name),
+    tintLiteral = median("tintLiteral", name),
+    tintRuntime = median("tintRuntime", name);
+  return {
+    case: name,
+    node,
+    tintLiteral,
+    tintRuntime,
+    parity:
+      node !== undefined &&
+      tintLiteral !== undefined &&
+      tintRuntime !== undefined &&
+      tintLiteral <= node &&
+      tintRuntime <= node,
+  };
+});
 writeFileSync(
   resolve(reportPath),
   JSON.stringify(
@@ -247,27 +313,30 @@ writeFileSync(
       head: execute("git", ["rev-parse", "HEAD"]),
       iterations,
       warm,
-      rounds: samples,
+      rounds,
       target,
       cpu: cpus()[0]?.model,
       node: "26.13.1",
       nodeSha256: hashes(node),
       dsoSha256: hashes(dso),
       sourceSha256: hashes(benchmark),
+      timingLock,
+      loadBefore,
+      loadAfter,
+      observations,
       native,
-      results: {
-        node: results[0],
-        tintLiteral: results[1],
-        tintRuntime: results[2],
-      },
+      failures,
+      results,
+      medians,
     },
     null,
     2,
   ) + "\n",
   { flag: "wx" },
 );
-if (
-  native.some((entry) => entry.kind !== "exited" || entry.status !== 42) ||
-  results.some((result) => result.error !== undefined)
+if (failures.length !== 0) process.exitCode = 1;
+else if (
+  process.env.TINT_FFI_BENCH_REQUIRE_PARITY === "1" &&
+  medians.some((sample) => !sample.parity)
 )
-  process.exitCode = 1;
+  process.exitCode = 2;

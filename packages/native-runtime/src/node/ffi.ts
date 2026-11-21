@@ -40,22 +40,13 @@ import {
   callScalarForeignCallbacks,
   closeLibrary,
   findSymbolWords,
-  foreignFunction,
   hasRegisteredCallbacks,
-  invoke,
   openLibrary,
   openProgram,
   releaseCallbackStub,
   rethrowCallbackFailure,
-  resultHigh,
-  resultLow,
-  resultNumber,
-  setBytes,
-  setNumber,
-  setWords,
   stableAddressWords,
   type CallbackDispatcher,
-  type ForeignFunction,
   type LibraryHandle,
   type SymbolAddress,
 } from "tint:ffi/unsafe";
@@ -76,7 +67,6 @@ import {
   scalarKind,
   type FfiObject,
   type FfiSignature,
-  type FfiType,
 } from "./ffi-signature.ts";
 
 import { createFfiCallbacks, type FfiCallback } from "./ffi-callbacks.ts";
@@ -89,17 +79,32 @@ import {
 
 interface ScalarWorkspace {
   readonly frame: Uint8Array;
-  readonly scratch: Uint8Array;
+  readonly cells: Uint8Array[];
+  readonly result: Uint8Array;
   readonly loans: Uint8Array[];
+}
+
+interface ScalarParameter {
+  readonly kind: number;
+  readonly pointer: boolean;
+  readonly offset: number;
+  readonly register: boolean;
+  readonly signExtend: boolean;
+}
+
+interface ScalarCallPlan {
+  readonly parameters: ScalarParameter[];
+  readonly stackBytes: number;
+  readonly resultOffset: number;
+  readonly resultKind: number;
 }
 
 interface Binding {
   readonly name: string;
   readonly signature: FfiSignature;
   readonly address: SymbolAddress;
-  readonly frame: ForeignFunction | undefined;
+  readonly plan: ScalarCallPlan | undefined;
   readonly staticCall: number;
-  wideLayout: CCallLayout | undefined;
   leafWorkspace: ScalarWorkspace | undefined;
   callbackWorkspace: ScalarWorkspace | undefined;
   scalarDepth: number;
@@ -133,21 +138,11 @@ import {
 
 const wordMask = 0xffffffffn;
 const maxPointer = 0xffffffffffffffffn;
-const minSigned = -0x8000000000000000n;
 const maxSigned = 0x7fffffffffffffffn;
 
 function word(low: number, high: number): bigint {
   return (BigInt(high) << 32n) | BigInt(low);
 }
-function setWord(frame: ForeignFunction, index: number, bits: bigint): void {
-  setWords(
-    frame,
-    index,
-    Number(bits & wordMask),
-    Number((bits >> 32n) & wordMask),
-  );
-}
-
 function invalidArgument(
   core: ProgramRealmCore,
   index: number,
@@ -243,92 +238,69 @@ function pointerArgument(
   );
 }
 
-function numberType(type: FfiType): string {
-  switch (type) {
-    case "i8":
-      return "an int8";
-    case "u8":
-      return "a uint8";
-    case "i16":
-      return "an int16";
-    case "u16":
-      return "a uint16";
-    case "i32":
-      return "an int32";
-    case "u32":
-      return "a uint32";
-    case "f32":
-      return "a float";
-    case "f64":
-      return "a double";
-    default:
-      throw "FFI_NUMBER_TYPE_INVARIANT";
+function planScalarCall(
+  signature: FfiSignature,
+  layout: CCallLayout,
+): ScalarCallPlan {
+  const parameters: ScalarParameter[] = [];
+  for (let index = 0; index < signature.parameters.length; index++) {
+    const type = signature.parameters[index],
+      location = layout.arguments[index];
+    if (type === undefined || location === undefined)
+      throw "FFI_SCALAR_ARGUMENT_INVARIANT";
+    const register = location.stackOffset < 0;
+    parameters.push({
+      kind: scalarKind(type),
+      pointer: type === "pointer",
+      offset: register
+        ? location.gp >= 0
+          ? location.gp * 8
+          : 64 + location.fp * 8
+        : DynamicScalarFrame.size + location.stackOffset,
+      register,
+      signExtend: register && location.extend === "sign",
+    });
   }
+  const result = signature.result;
+  return {
+    parameters,
+    stackBytes: layout.stackBytes,
+    resultOffset: result === "f32" || result === "f64" ? 64 : 0,
+    resultKind: result === "void" ? -1 : scalarKind(result),
+  };
 }
 
-function marshal(
-  core: ProgramRealmCore,
-  frame: ForeignFunction,
-  index: number,
-  type: FfiType,
-  argument: unknown,
-): void {
-  if (type === "pointer") {
-    const pointer = pointerArgument(core, index, argument, false);
-    const bytes = pointer.bytes;
-    if (bytes === undefined) setWords(frame, index, pointer.low, pointer.high);
-    else setBytes(frame, index, bytes);
-    return;
-  }
-  if (type === "i64" || type === "u64") {
-    const signed = type === "i64";
-    const bits =
-      typeof argument === "bigint"
-        ? argument
-        : typeof argument === "number" && Number.isSafeInteger(argument)
-          ? BigInt(argument)
-          : undefined;
-    if (
-      bits === undefined ||
-      bits < (signed ? minSigned : 0n) ||
-      bits > (signed ? maxSigned : maxPointer)
-    )
-      return invalidArgument(
-        core,
-        index,
-        signed ? "must be an int64" : "must be a uint64",
-      );
-    setWord(frame, index, bits);
-    return;
-  }
-  const label = numberType(type);
-  if (typeof argument !== "number")
-    return invalidArgument(core, index, "must be " + label);
-  try {
-    setNumber(frame, index, argument);
-  } catch (error) {
-    if (!(error instanceof TypeError)) throw error;
-    return invalidArgument(core, index, "must be " + label);
-  }
-}
-
-function unmarshal(frame: ForeignFunction, type: FfiType): unknown {
-  if (type === "void") return undefined;
-  if (type === "u64" || type === "i64" || type === "pointer") {
-    const bits = word(resultLow(frame), resultHigh(frame));
-    return type === "i64" && bits > maxSigned ? bits - (1n << 64n) : bits;
-  }
-  return resultNumber(frame);
+function scalarWorkspace(
+  plan: ScalarCallPlan,
+  address: SymbolAddress,
+  stable: boolean,
+): ScalarWorkspace {
+  // Narrow Darwin stack operands can begin fewer than eight bytes from the
+  // end. Padding allows an eight-byte cell view even for the final operand.
+  const size = DynamicScalarFrame.size + plan.stackBytes + Cell.size - 1;
+  const frame = stable ? external(size) : new Uint8Array(size);
+  const view = DynamicScalarFrame.view(frame);
+  view.target.low = address.low;
+  view.target.high = address.high;
+  view.stackBytes = plan.stackBytes;
+  const args: Uint8Array[] = [];
+  for (const parameter of plan.parameters)
+    args.push(frame.subarray(parameter.offset, parameter.offset + Cell.size));
+  return {
+    frame,
+    cells: args,
+    result: frame.subarray(plan.resultOffset, plan.resultOffset + Cell.size),
+    loans: [],
+  };
 }
 
 function invokeScalar(
   core: ProgramRealmCore,
   binding: Binding,
-  layout: CCallLayout,
+  plan: ScalarCallPlan,
   args: readonly unknown[],
   dispatcher: CallbackDispatcher | undefined,
 ): unknown {
-  const header = DynamicScalarFrame.size;
   // The outer call owns its binding's workspace. Reentrant calls get private
   // frames so they cannot overwrite saved arguments or borrowed byte roots.
   const reusable = binding.scalarDepth === 0;
@@ -338,37 +310,30 @@ function invokeScalar(
       : binding.callbackWorkspace
     : undefined;
   if (workspace === undefined) {
-    workspace = {
-      frame:
-        dispatcher === undefined
-          ? new Uint8Array(header + layout.stackBytes)
-          : external(header + layout.stackBytes),
-      scratch: new Uint8Array(Cell.size),
-      loans: [],
-    };
+    workspace = scalarWorkspace(
+      plan,
+      binding.address,
+      dispatcher !== undefined,
+    );
     if (reusable) {
       if (dispatcher === undefined) binding.leafWorkspace = workspace;
       else binding.callbackWorkspace = workspace;
     }
   }
   const frame = workspace.frame;
+  const cells = workspace.cells;
+  const result = workspace.result;
   const loans = workspace.loans;
-  const bytes = workspace.scratch;
-  const view = DynamicScalarFrame.view(frame);
-  view.target.low = binding.address.low;
-  view.target.high = binding.address.high;
-  view.stackBytes = layout.stackBytes;
-  const cell = Cell.view(bytes);
-  const types = binding.signature.parameters;
   binding.scalarDepth++;
   try {
-    for (let index = 0; index < types.length; index++) {
-      const type = types[index],
-        location = layout.arguments[index];
-      if (type === undefined || location === undefined)
+    for (let index = 0; index < plan.parameters.length; index++) {
+      const parameter = plan.parameters[index],
+        bytes = cells[index];
+      if (parameter === undefined || bytes === undefined)
         throw "FFI_SCALAR_ARGUMENT_INVARIANT";
+      const cell = Cell.view(bytes);
       let argument = args[index];
-      if (type === "pointer") {
+      if (parameter.pointer) {
         const pointer = pointerArgument(core, index, argument, true);
         const loan = pointer.bytes;
         if (loan === undefined) argument = word(pointer.low, pointer.high);
@@ -377,21 +342,12 @@ function invokeScalar(
           argument = stableAddressWords(loan);
         }
       }
-      cell.u64 = 0;
-      writeScalar(core, cell, scalarKind(type), argument, index);
-      const stackOffset = location.stackOffset;
-      let offset: number, width: number;
-      if (stackOffset >= 0) {
-        offset = header + stackOffset;
-        width = location.size;
-      } else {
-        offset = location.gp >= 0 ? location.gp * 8 : 64 + location.fp * 8;
-        width = 8;
-        if (location.extend === "sign" && typeof argument === "number")
-          cell.i64 = argument;
-      }
-      for (let byte = 0; byte < width; byte++)
-        frame[offset + byte] = bytes[byte] ?? 0;
+      // A narrow stack value shares the cell with neighbouring operands.
+      // Register cells own all eight bytes and may hold a prior result.
+      if (parameter.register) cell.u64 = 0;
+      writeScalar(core, cell, parameter.kind, argument, index);
+      if (parameter.signExtend && typeof argument === "number")
+        cell.i64 = argument;
     }
     const fixed = binding.staticCall;
     const completed =
@@ -408,14 +364,10 @@ function invokeScalar(
         "Insufficient native stack for FFI arguments",
       );
     if (dispatcher !== undefined) rethrowCallbackFailure();
-    const result = binding.signature.result;
-    if (result === "void") return undefined;
-    const offset = result === "f32" || result === "f64" ? 64 : 0;
-    for (let byte = 0; byte < Cell.size; byte++)
-      bytes[byte] = frame[offset + byte] ?? 0;
-    return readScalar(cell, scalarKind(result));
+    return plan.resultKind < 0
+      ? undefined
+      : readScalar(Cell.view(result), plan.resultKind);
   } finally {
-    // C holds only raw words. Keep the true storage roots live across the loan.
     while (loans.length !== 0) loans.pop();
     binding.scalarDepth--;
   }
@@ -603,31 +555,19 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       return existing;
     }
     const address = resolve(state, name);
-    const numeric = address.high * 4294967296 + address.low;
-    let pointers = 0;
-    for (const type of signature.parameters) if (type === "pointer") pointers++;
-    // Keep the existing scalar leaf trampoline for signatures it can carry.
     const staticCall = staticFfiIndex(
       nodeFfiSignatureKey(signature.result, signature.parameters),
     );
-    const wide =
-      staticCall >= 0 ||
-      signature.parameters.length > 64 ||
-      pointers > 8 ||
-      (address.high >= 2097152 && !Number.isSafeInteger(numeric));
-    const frame =
-      numeric === 0 || wide
+    const plan =
+      address.low === 0 && address.high === 0
         ? undefined
-        : foreignFunction(numeric, signature.abi);
-    const wideLayout =
-      numeric === 0 || !wide ? undefined : classifyScalarCall(core, signature);
+        : planScalarCall(signature, classifyScalarCall(core, signature));
     return {
       name,
       signature,
       address,
-      frame,
       staticCall,
-      wideLayout,
+      plan,
       leafWorkspace: undefined,
       callbackWorkspace: undefined,
       scalarDepth: 0,
@@ -652,9 +592,8 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
         // weakly. Validate this single identity without searching the realm.
         if (weakSlotKey(state.identity) !== owner)
           throw "FFI_WRAPPER_OWNER_INVARIANT";
-        const frame = binding.frame;
-        let wideLayout = binding.wideLayout;
-        if (frame === undefined && wideLayout === undefined) return closed();
+        const plan = binding.plan;
+        if (plan === undefined) return closed();
         const parameters = binding.signature.parameters;
         if (args.length !== parameters.length)
           return ffiError(
@@ -667,31 +606,13 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
               args.length,
           );
         const mayCallback = callbacks.active() || hasRegisteredCallbacks();
-        if (mayCallback && wideLayout === undefined) {
-          wideLayout = classifyScalarCall(core, binding.signature);
-          binding.wideLayout = wideLayout;
-        }
-        if ((mayCallback || frame === undefined) && wideLayout !== undefined)
-          return invokeScalar(
-            core,
-            binding,
-            wideLayout,
-            args,
-            mayCallback ? dispatcher : undefined,
-          );
-        if (frame === undefined) throw "FFI_SCALAR_BINDING_INVARIANT";
-        try {
-          for (let index = 0; index < parameters.length; index++) {
-            const type = parameters[index];
-            if (type === undefined) throw "FFI_PARAMETER_INVARIANT";
-            marshal(core, frame, index, type, args[index]);
-          }
-          invoke(frame);
-          return unmarshal(frame, binding.signature.result);
-        } finally {
-          for (let index = 0; index < parameters.length; index++)
-            if (parameters[index] === "pointer") setWords(frame, index, 0, 0);
-        }
+        return invokeScalar(
+          core,
+          binding,
+          plan,
+          args,
+          mayCallback ? dispatcher : undefined,
+        );
       },
       hooks,
     );
