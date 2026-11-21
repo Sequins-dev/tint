@@ -1,6 +1,7 @@
 import {
   canonicalNodeFfiType,
   nodeFfiCType,
+  nodeFfiScalarKind,
   nodeFfiSignatureKey,
   type CSignature,
   type CType,
@@ -18,7 +19,6 @@ import type { SourceModule } from "@tint/typescript/modules/model";
 export const staticFfiModule = "packages/native-runtime/src/node/ffi-static.ts";
 const objectModule = "packages/js-runtime/src/objects/index.ts";
 const ffiMemoryModule = "packages/native-runtime/src/node/ffi-memory.ts";
-const ffiSignatureModule = "packages/native-runtime/src/node/ffi-signature.ts";
 const nodeFfiModule = "packages/native-runtime/src/node/ffi.ts";
 
 export interface StaticFfiPlan {
@@ -186,9 +186,9 @@ function numericFfiSource(plan: StaticFfiPlan, index: number): string {
     if (type?.kind !== "scalar") throw "static numeric FFI parameter invariant";
     parameters.push("p" + parameter + ":number");
     args.push(
-      'checkedFfiNumber(core,scalarKind("' +
-        type.scalar +
-        '"),args[' +
+      "checkedFfiNumber(core," +
+        nodeFfiScalarKind(type.scalar) +
+        ",args[" +
         parameter +
         "]," +
         parameter +
@@ -221,7 +221,6 @@ export function makeStaticFfiModule(
   let text =
     'import type { ProgramRealmCore } from "objects";\n' +
     'import { checkedFfiNumber } from "memory";\n' +
-    'import { scalarKind } from "signature";\n' +
     "export type StaticFfiNumberCall=(core:ProgramRealmCore,target:number,args:readonly unknown[])=>unknown;\n" +
     "export function ffiWeakProcessing():boolean { return " +
     String(weakProcessing) +
@@ -267,7 +266,6 @@ export function makeStaticFfiModule(
   const dependencies = new Map<string, string>();
   dependencies.set("objects", objectModule);
   dependencies.set("memory", ffiMemoryModule);
-  dependencies.set("signature", ffiSignatureModule);
   return {
     id: staticFfiModule,
     module: parsed.value,

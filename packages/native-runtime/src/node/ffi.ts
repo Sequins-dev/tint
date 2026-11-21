@@ -1,4 +1,8 @@
-import { nodeFfiSignatureKey, type CCallLayout } from "@tint/abi/c";
+import {
+  nodeFfiScalarKind,
+  nodeFfiSignatureKey,
+  type CCallLayout,
+} from "@tint/abi/c";
 import type { ByteStorage } from "@tint/js-runtime/bytes";
 import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
 import {
@@ -8,6 +12,7 @@ import {
   builtinProperty,
   callObjectValueOrThrow,
   constructObjectValueOrThrow,
+  createCallableObject,
   createConstructorObject,
   createDataProperty,
   createObject,
@@ -20,12 +25,15 @@ import {
   ownKeys,
   programRealmCore,
   projectArrayBufferViewRange,
+  runScriptContext,
   scriptPropertyKeyOrder,
   setIntegrityLevel,
   viewObjectValue,
   wellKnownSymbol,
   type ObjectCall,
+  type ObjectExecutionContext,
   type ProgramRealmCore,
+  type ScriptExecutionContext,
   type ScriptPropertyKey,
   type WeakStorageService,
 } from "@tint/js-runtime/objects";
@@ -67,7 +75,6 @@ import {
   ffiString,
   parseFfiSignature,
   sameFfiSignature,
-  scalarKind,
   type FfiObject,
   type FfiSignature,
 } from "./ffi-signature.ts";
@@ -193,23 +200,6 @@ function writePointerArgument(
     cell.u64 = 0;
     return undefined;
   }
-  if (typeof argument === "bigint") {
-    if (!writeFfiBigInt(cell, argument, false))
-      return invalidArgument(
-        core,
-        index,
-        "must be a non-negative pointer bigint",
-      );
-    return undefined;
-  }
-  if (typeof argument === "string") {
-    ffiString(core, argument, "Argument " + index);
-    const encoded = encodeUTF8(argument);
-    const terminated = external(encoded.length + 1);
-    terminated.set(encoded);
-    byteAddressInto(terminated, destination);
-    return terminated;
-  }
   const object = viewObjectValue(argument, core.object);
   if (object !== undefined) {
     const array = object.internalTypedArrayData;
@@ -265,6 +255,23 @@ function writePointerArgument(
       return lendPointer(core, storage, bytes, 0, destination);
     }
   }
+  if (typeof argument === "bigint") {
+    if (!writeFfiBigInt(cell, argument, false))
+      return invalidArgument(
+        core,
+        index,
+        "must be a non-negative pointer bigint",
+      );
+    return undefined;
+  }
+  if (typeof argument === "string") {
+    ffiString(core, argument, "Argument " + index);
+    const encoded = encodeUTF8(argument);
+    const terminated = external(encoded.length + 1);
+    terminated.set(encoded);
+    byteAddressInto(terminated, destination);
+    return terminated;
+  }
   return invalidArgument(
     core,
     index,
@@ -284,7 +291,7 @@ function planScalarCall(
       throw "FFI_SCALAR_ARGUMENT_INVARIANT";
     const register = location.stackOffset < 0;
     parameters.push({
-      kind: scalarKind(type),
+      kind: nodeFfiScalarKind(type),
       pointer: type === "pointer",
       offset: register
         ? location.gp >= 0
@@ -300,7 +307,7 @@ function planScalarCall(
     parameters,
     stackBytes: layout.stackBytes,
     resultOffset: result === "f32" || result === "f64" ? 64 : 0,
-    resultKind: result === "void" ? -1 : scalarKind(result),
+    resultKind: result === "void" ? -1 : nodeFfiScalarKind(result),
   };
 }
 
@@ -470,6 +477,22 @@ function nodeFfiTypeTable(core: ProgramRealmCore): FfiObject {
 function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
   const realm = core.realm,
     hooks = core.hooks;
+  const agent = realm.agent;
+  const nativeCaller: ScriptExecutionContext = {
+    realm,
+    scriptOrModule: undefined,
+  };
+  // Bound calls use the existing active Script/module when it belongs to this
+  // realm. Typed callers with no active Script/module use one shared context.
+  const callContext: ObjectExecutionContext<unknown> = {
+    getRealm: () => realm,
+    run: (action): unknown => {
+      const active = agent.activeContext ?? nativeCaller;
+      return active.realm === realm
+        ? runScriptContext<unknown>(agent, active, action)
+        : realm.executionContext.run(action);
+    },
+  };
   const states: DynamicLibraryState[] = [];
   let serial = 0;
   const prototype = createObject<ScriptPropertyKey, unknown>(
@@ -619,10 +642,8 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     const slot = binding.wrapper;
     const existing = slot === undefined ? undefined : weakSlotKey(slot);
     if (existing !== undefined) return existing;
-    const call = builtinFunction(
+    const call = createCallableObject<ScriptPropertyKey, unknown>(
       realm.functionPrototype,
-      binding.name,
-      0,
       (_receiver, args): unknown => {
         requireOpen(state);
         // The wrapper retains its owner while the library caches the wrapper
@@ -655,8 +676,9 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
           mayCallback ? dispatcher : undefined,
         );
       },
-      hooks,
+      callContext,
     );
+    builtinFunctionMetadata(call, binding.name, 0, hooks);
     createDataProperty<ScriptPropertyKey, unknown>(
       call,
       "pointer",

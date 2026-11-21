@@ -45,6 +45,7 @@ export {
   nodeFfiDefinition,
   canonicalNodeFfiType,
   nodeFfiCType,
+  nodeFfiScalarKind,
   nodeFfiSignatureKey,
   type NodeFfiType,
   cLibraryDescriptor,

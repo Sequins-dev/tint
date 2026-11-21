@@ -126,6 +126,35 @@ export function canonicalNodeFfiType(
       return undefined;
   }
 }
+/** The scalar memory codec also handles the native-endian register image. */
+export function nodeFfiScalarKind(type: NodeFfiType): number {
+  switch (type) {
+    case "i8":
+      return 0;
+    case "u8":
+      return 1;
+    case "i16":
+      return 2;
+    case "u16":
+      return 3;
+    case "i32":
+      return 4;
+    case "u32":
+      return 5;
+    case "i64":
+      return 6;
+    case "pointer":
+    case "u64":
+      return 7;
+    case "f32":
+      return 8;
+    case "f64":
+      return 9;
+    default:
+      throw "FFI_SCALAR_KIND_INVARIANT";
+  }
+}
+
 export function nodeFfiCType(type: NodeFfiType): CType {
   if (type === "void") return { kind: "void" };
   if (type === "pointer") return { kind: "pointer", pointee: { kind: "void" } };

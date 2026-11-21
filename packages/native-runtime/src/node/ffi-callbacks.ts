@@ -1,5 +1,5 @@
 import { sysVCallbackFrame } from "@tint/abi/c/sysv";
-import type { CCallLayout } from "@tint/abi/c";
+import { nodeFfiScalarKind, type CCallLayout } from "@tint/abi/c";
 import {
   callObjectValueOrThrow,
   viewObjectValue,
@@ -16,7 +16,6 @@ import { readScalar, writeScalar } from "./ffi-memory.ts";
 import {
   classifyScalarCall,
   ffiError,
-  scalarKind,
   type FfiSignature,
 } from "./ffi-signature.ts";
 
@@ -95,7 +94,7 @@ export function createFfiCallbacks(
       if (parameter === undefined || location === undefined)
         throw "FFI_CALLBACK_LAYOUT_INVARIANT";
       parameters.push({
-        kind: scalarKind(parameter),
+        kind: nodeFfiScalarKind(parameter),
         offset:
           location.stackOffset >= 0
             ? stack + location.stackOffset
@@ -221,7 +220,7 @@ export function createFfiCallbacks(
         );
       cell.u64 = 0;
       try {
-        writeScalar(core, cell, scalarKind(result), value);
+        writeScalar(core, cell, nodeFfiScalarKind(result), value);
       } catch (error) {
         return host.abort(
           "Callback returned invalid value for declared FFI type",
