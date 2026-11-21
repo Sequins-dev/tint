@@ -49,13 +49,14 @@ test("managed Script assembly emits every import against the real AOT-selected f
     if (text === samples[0]) {
       // f never reads its receiver: AOT output skips sloppyCallReceiver.
       // The positional entry also imports the fixed-arity function descriptor.
+      // Primitive tag tests avoid the boxed-null and typeof helper imports.
       assert.deepEqual(prepared.value.counts, {
         signatures: 20,
         memberOnly: 3,
-        records: 21,
-        functions: 12,
+        records: 20,
+        functions: 7,
       });
-      assert.equal(prepared.value.native.managedImports.length, 54);
+      assert.equal(prepared.value.native.managedImports.length, 48);
     }
     if (text === samples[2]) {
       // Distinct runtime functions with one signature type share a directory
