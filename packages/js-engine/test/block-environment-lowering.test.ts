@@ -1,11 +1,18 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createSourceTextView } from "@tint/source/text";
-import { parseScript, rewriteModule } from "@tint/typescript/syntax";
+import {
+  parseScript,
+  rewriteModule,
+  type Expression,
+} from "@tint/typescript/syntax";
 import { lowerScript } from "../src/lowering/index.ts";
 import { createLoweredRealm } from "./lowered-node-host.ts";
 
-function environments(text: string): number {
+function countExpressions(
+  text: string,
+  accept: (expression: Expression) => boolean,
+): number {
   const parsed = parseScript(createSourceTextView(text));
   assert.ok(parsed.ok);
   const lowered = lowerScript(parsed.value, text);
@@ -13,16 +20,25 @@ function environments(text: string): number {
   let count = 0;
   rewriteModule(lowered.value, {
     expression: (mapped) => {
-      if (
-        mapped.kind === "call" &&
-        mapped.callee.kind === "identifier" &&
-        mapped.callee.name === "createDeclarativeEnvironment"
-      )
-        count++;
+      if (accept(mapped)) count++;
       return mapped;
     },
   });
   return count;
+}
+
+function runtimeCalls(text: string, name: string): number {
+  return countExpressions(
+    text,
+    (node) =>
+      node.kind === "call" &&
+      node.callee.kind === "identifier" &&
+      node.callee.name === name,
+  );
+}
+
+function environments(text: string): number {
+  return runtimeCalls(text, "createDeclarativeEnvironment");
 }
 
 test("blocks without lexically scoped declarations create no environment", () => {
@@ -118,6 +134,32 @@ test("a for-let loop without an escaping binding allocates only its initial envi
     environments("function count() { for (let i = 0; i < 5; i++) print(i); }"),
     base + 1,
   );
+});
+
+test("an initialized for-let counter uses a native slot for reads and writes", () => {
+  const source = "function count() { for (let i = 0; i < 5; i++) i; }";
+  assert.equal(runtimeCalls(source, "getIdentifierValue"), 0);
+  assert.equal(runtimeCalls(source, "putBindingReference"), 0);
+});
+
+test("initialized uncaptured body locals use native slots", () => {
+  const source =
+    "function sum() { const step = 1; let total = 0; total += step; return total; }";
+  assert.equal(runtimeCalls(source, "getIdentifierValue"), 0);
+  assert.equal(runtimeCalls(source, "putBindingReference"), 0);
+});
+
+test("general arithmetic in a slot-backed loop emits a guarded numeric operation", () => {
+  const source =
+    "function sum(x) { let total = 0; for (let i = 0; i < 5; i++) total += x; return total; }";
+  assert.equal(
+    countExpressions(
+      source,
+      (node) => node.kind === "binary" && node.operator === "+",
+    ),
+    1,
+  );
+  assert.equal(runtimeCalls(source, "binaryObjectValueOperation"), 2);
 });
 
 test("for-let captures keep distinct initialization and iteration environments", () => {

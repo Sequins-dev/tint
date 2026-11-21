@@ -8,7 +8,7 @@ import { join, resolve } from "node:path";
 import { stripTypeScriptTypes } from "node:module";
 import { verifyHostedFixture } from "../hosted-fixture.ts";
 import { nativeFixtureTarget } from "../native-host-target.ts";
-import { nativeArtifact, runNativeBatch } from "../native-target-runner.ts";
+import { nativeArtifact } from "../native-target-runner.ts";
 import * as kernels from "./kernels.ts";
 
 const clock = "packages/native-runtime/src/intrinsics/clock.ts";
@@ -93,7 +93,7 @@ export function run(): number {
   );
   const target = nativeFixtureTarget().name;
   process.env.TZ = "UTC";
-  process.env.TINT_BUILD_ONLY = "defer-admission";
+  process.env.TINT_BUILD_ONLY = "1";
   delete process.env.TINT_GENERAL_FALLBACK;
   function build(typed: boolean): Artifact {
     let fellBack = false;
@@ -166,29 +166,57 @@ function cpuTimes() {
   return { idle, total };
 }
 
+function runNative(artifact: Artifact): string {
+  const output = execute("lldb", [
+    "--no-lldbinit",
+    "--batch",
+    "-o",
+    "settings set target.disable-aslr false",
+    "-o",
+    "process launch --stop-at-entry",
+    "-o",
+    "script assert lldb.process.GetState() == lldb.eStateStopped",
+    "-o",
+    "continue",
+    "-o",
+    'script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42; print("TINT_BENCH_EXIT_42")',
+    "--",
+    artifact.path,
+  ]);
+  assert.match(output, /^TINT_BENCH_EXIT_42$/m);
+  return output;
+}
+
 function measure(
   prepared: Prepared,
   path: string,
   rounds: number,
-  candidate?: Prepared,
+  candidates: Prepared[],
 ) {
   assert.equal(fileHash(prepared.node), prepared.nodeSha256);
   assert.equal(fileHash(prepared.script), prepared.scriptSha256);
-  if (candidate !== undefined) {
+  const artifacts: Record<string, Artifact> = { ...prepared.native };
+  const previousUntyped = new Map<string, string>();
+  const typedHashes = new Set([prepared.native.typed!.imageSha256]);
+  for (const [index, candidate] of candidates.entries()) {
     assert.deepEqual(candidate.checksums, prepared.checksums);
     assert.equal(candidate.scriptSha256, prepared.scriptSha256);
     assert.equal(candidate.nodeSha256, prepared.nodeSha256);
+    const name = "candidate" + String(index + 1);
+    artifacts[name + "Untyped"] = candidate.native.untyped!;
+    previousUntyped.set(
+      name + "Untyped",
+      index === 0 ? "untyped" : "candidate" + String(index) + "Untyped",
+    );
+    const typed = candidate.native.typed!;
+    if (!typedHashes.has(typed.imageSha256)) {
+      artifacts[name + "Typed"] = typed;
+      typedHashes.add(typed.imageSha256);
+    }
   }
-  const artifacts: Record<string, Artifact> = {
-    ...prepared.native,
-    ...(candidate === undefined
-      ? {}
-      : {
-          candidateUntyped: candidate.native.untyped!,
-          candidateTyped: candidate.native.typed!,
-        }),
-  };
-  for (const artifact of Object.values(artifacts)) {
+  for (const artifact of [prepared, ...candidates].flatMap((build) =>
+    Object.values(build.native),
+  )) {
     assert.equal(fileHash(artifact.path), artifact.imageSha256);
     const manifest = artifact.buildManifest;
     assert.ok(manifest);
@@ -214,17 +242,10 @@ function measure(
       const artifact = artifacts[engine];
       const before = cpuTimes();
       const loadBefore = loadavg();
-      const native =
-        artifact === undefined
-          ? undefined
-          : runNativeBatch([{ artifact, timeoutMs: 120_000 }])[0];
-      if (artifact !== undefined)
-        assert.ok(
-          native?.kind === "exited" && native.status === 42,
-          JSON.stringify(native),
-        );
       const output =
-        native?.stdout ?? execute(prepared.node, [prepared.script]);
+        artifact === undefined
+          ? execute(prepared.node, [prepared.script])
+          : runNative(artifact);
       const after = cpuTimes();
       const total = after.total - before.total;
       const values: Record<string, number> = {};
@@ -252,7 +273,7 @@ function measure(
         engine,
         position,
         values,
-        exit: native?.kind === "exited" ? native.status : 0,
+        exit: artifact === undefined ? 0 : 42,
         loadBefore,
         loadAfter: loadavg(),
         idlePercent:
@@ -264,12 +285,13 @@ function measure(
   const summary = Object.fromEntries(
     Object.keys(prepared.checksums).map((name) => {
       const node = samples.filter((row) => row.engine === "node");
-      const changes = samples.filter((row) => row.engine === "untyped");
       return [
         name,
         Object.fromEntries(
           engines.map((engine) => {
             const rows = samples.filter((row) => row.engine === engine);
+            const previous = previousUntyped.get(engine);
+            const before = samples.filter((row) => row.engine === previous);
             return [
               engine,
               {
@@ -279,12 +301,12 @@ function measure(
                     (row, i) => row.values[name]! - node[i]!.values[name]!,
                   ),
                 ),
-                ...(engine === "candidateUntyped"
+                ...(previous !== undefined
                   ? {
-                      deltaFromBaseNs: distribution(
+                      deltaFromPreviousNs: distribution(
                         rows.map(
                           (row, i) =>
-                            row.values[name]! - changes[i]!.values[name]!,
+                            row.values[name]! - before[i]!.values[name]!,
                         ),
                       ),
                     }
@@ -298,7 +320,7 @@ function measure(
   );
   writeReport(path, {
     prepared,
-    candidate,
+    candidates,
     cpu: cpus()[0]?.model,
     rounds,
     summary,
@@ -310,9 +332,9 @@ function readPrepared(path: string): Prepared {
   return JSON.parse(readFileSync(path, "utf8")) as Prepared;
 }
 
-const [mode, input, output, extra, additional] = process.argv.slice(2);
+const [mode, input, output, extra, ...additional] = process.argv.slice(2);
 if (mode === "prepare" && input && output) {
-  writeReport(output, prepare(input, extra, Number(additional ?? 1)));
+  writeReport(output, prepare(input, extra, Number(additional[0] ?? 1)));
 } else if (mode === "measure" && input && output) {
   assert.equal(process.platform, "darwin", "expected Darwin timing host");
   // The lock wrapper enters this process only after owning the shared lock.
@@ -320,10 +342,10 @@ if (mode === "prepare" && input && output) {
     readPrepared(input),
     output,
     Number(extra ?? 15),
-    additional === undefined ? undefined : readPrepared(additional),
+    additional.map(readPrepared),
   );
 } else {
   throw Error(`Usage:
   node tools/general-call-bench/benchmark.ts prepare NODE26 PREPARED.json [CASE] [SCALE]
-  /usr/bin/lockf -k ${join(homedir(), ".t3", "tint-timing.lock")} node tools/general-call-bench/benchmark.ts measure PREPARED.json REPORT.json [ROUNDS] [CANDIDATE.json]`);
+  /usr/bin/lockf -k ${join(homedir(), ".t3", "tint-timing.lock")} node tools/general-call-bench/benchmark.ts measure PREPARED.json REPORT.json [ROUNDS] [CANDIDATE.json ...]`);
 }

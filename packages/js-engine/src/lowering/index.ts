@@ -228,6 +228,7 @@ interface PrivateMethodDefinition extends Span {
 
 interface AssignmentReference extends Span {
   readonly invalid?: boolean;
+  readonly local?: boolean;
   readonly base: Expression;
   readonly property: Expression | undefined;
   /** Read-modify-write references keep a computed key in a mutable temporary.
@@ -405,16 +406,36 @@ function lowerScriptEntry(
   // The binder does not mark captures of bindings outside functions. Keep
   // copying those environments, and any environment observable by direct eval.
   const copyLoopEnvironments = new Set<number>();
+  const localBindingDeclarations = new Map<number, number>();
   for (const binding of boundBindings) {
     if (binding === undefined) throw "SCRIPT_BINDING_INVARIANT";
-    if (binding.kind !== "let") continue;
+    if (binding.kind !== "let" && binding.kind !== "const") continue;
     const bindingScope = bound.value.scopes[binding.scope];
-    if (
-      bindingScope?.kind === "for" &&
-      (binding.owner === undefined || binding.captured)
+    if (binding.owner === undefined || binding.captured) {
+      if (binding.kind === "let" && bindingScope?.kind === "for")
+        copyLoopEnvironments.add(bindingScope.node.start);
+    } else if (
+      !dynamicBindings &&
+      (bindingScope?.kind === "for" ||
+        bindingScope?.kind === "function" ||
+        bindingScope?.kind === "function-body")
     )
-      copyLoopEnvironments.add(bindingScope.node.start);
+      localBindingDeclarations.set(binding.node.start, binding.id);
   }
+  const localBindingReferences = new Map<number, number>();
+  if (localBindingDeclarations.size !== 0)
+    for (const reference of bound.value.references) {
+      if (reference === undefined) throw "SCRIPT_REFERENCE_INVARIANT";
+      const binding = reference.binding;
+      if (binding === undefined) continue;
+      const target = boundBindings[binding];
+      if (
+        target !== undefined &&
+        localBindingDeclarations.get(target.node.start) === binding
+      )
+        localBindingReferences.set(reference.node.start, binding);
+    }
+  const localSlots = new Map<number, Expression>();
   if (checkContracts) {
     for (const declaration of sourceTypes?.statements ?? []) {
       if (declaration === undefined) throw "SOURCE_TYPE_DECLARATION_INVARIANT";
@@ -1029,6 +1050,8 @@ function lowerScriptEntry(
     span: Span,
     forTypeof: boolean = false,
   ): Expression {
+    const local = localSlot(span);
+    if (local !== undefined) return temporary({ ...local, ...at(span) }, true);
     return temporary(
       call(
         "getIdentifierValue",
@@ -1045,6 +1068,64 @@ function lowerScriptEntry(
         span,
       ),
     );
+  }
+  function localSlot(
+    span: Span,
+    forWrite: boolean = false,
+  ): Expression | undefined {
+    const binding = localBindingReferences.get(span.start);
+    if (
+      binding === undefined ||
+      (forWrite && boundBindings[binding]?.kind !== "let")
+    )
+      return undefined;
+    return localSlots.get(binding);
+  }
+  /** The original scope handles TDZ and declaration initialization. Only
+   * initialized bindings invisible to closures and dynamic lookup get slots. */
+  function localizeInitialized(node: Statement, initialized: number[]): void {
+    if (
+      dynamicBindings ||
+      node.kind !== "variable" ||
+      node.mode === "var" ||
+      node.disposal !== undefined
+    )
+      return;
+    for (const declaration of node.declarations) {
+      if (declaration === undefined) throw "SCRIPT_BINDING_INVARIANT";
+      if (
+        declaration.kind === "object-binding" ||
+        declaration.kind === "array-binding" ||
+        bindingContracts.has(declaration.start) ||
+        bindingRecordContracts.has(declaration.start)
+      )
+        continue;
+      const binding = localBindingDeclarations.get(declaration.start);
+      if (binding === undefined) continue;
+      const initial = temporary(
+        call(
+          "getBindingValue",
+          [lexical, text(declaration.name, declaration)],
+          declaration,
+        ),
+      );
+      check(member(initial, "error", declaration), declaration);
+      localSlots.set(
+        binding,
+        temporary(
+          member(initial, "value", declaration),
+          true,
+          node.mode === "let",
+        ),
+      );
+      initialized.push(binding);
+    }
+  }
+  function releaseLocalSlots(initialized: readonly number[]): void {
+    for (const binding of initialized) {
+      if (binding === undefined) throw "SCRIPT_BINDING_INVARIANT";
+      localSlots.delete(binding);
+    }
   }
   /** ToPropertyKey of a constant string key is the key itself, and its only
    * other effect, RequireObjectCoercible(base), is repeated by the adjacent
@@ -1108,12 +1189,16 @@ function lowerScriptEntry(
     readModifyWrite: boolean = false,
   ): AssignmentReference {
     while (target.kind === "group") target = target.expression;
-    if (target.kind === "identifier")
+    if (target.kind === "identifier") {
+      const local = localSlot(target, true);
+      if (local !== undefined)
+        return { ...at(target), base: local, property: undefined, local: true };
       return {
         ...at(target),
         base: reference(target.name, target),
         property: undefined,
       };
+    }
     if (target.kind === "member" || target.kind === "index") {
       if (target.optional)
         fail(target, "Script optional property assignment is not implemented");
@@ -1204,6 +1289,7 @@ function lowerScriptEntry(
   }
   function readAssignment(target: AssignmentReference): Expression {
     if (target.invalid) return id("undefined");
+    if (target.local) return { ...target.base, ...at(target) };
     const property = target.property;
     const superReceiver = target.superReceiver;
     const privateKey = target.privateName;
@@ -1265,6 +1351,15 @@ function lowerScriptEntry(
     assigned: Expression,
   ): void {
     if (target.invalid) return;
+    if (target.local) {
+      expression({
+        ...at(target),
+        kind: "assignment",
+        target: target.base,
+        value: assigned,
+      });
+      return;
+    }
     const property = target.property;
     const superReceiver = target.superReceiver;
     const privateKey = target.privateName;
@@ -1775,6 +1870,76 @@ function lowerScriptEntry(
       ">>",
       ">>>",
     ].includes(operator);
+  }
+  function numberOperand(value: Expression, span: Span): Expression {
+    return {
+      ...at(span),
+      kind: "binary",
+      operator: "===",
+      left: { ...at(span), kind: "unary", operator: "typeof", operand: value },
+      right: text("number", span),
+    };
+  }
+  /** Operand evaluation precedes either branch. Only primitive number pairs
+   * bypass ToPrimitive and overload dispatch. */
+  function binaryOperation(
+    operator: string,
+    left: Expression,
+    right: Expression,
+    span: Span,
+  ): Expression {
+    const args = [text(operator, span), left, right];
+    if (localSlots.size === 0 || (operator !== "+" && operator !== "<"))
+      return checkedOperatorValue("binaryObjectValueOperation", args, span);
+    const result = temporary(id("undefined", span), true, true);
+    const start = statements.length;
+    const general = checkedOperatorValue(
+      "binaryObjectValueOperation",
+      args,
+      span,
+    );
+    expression({
+      ...at(span),
+      kind: "assignment",
+      target: result,
+      value: general,
+    });
+    const alternate: BlockStatement = {
+      ...at(span),
+      kind: "block",
+      statements: statements.splice(start),
+    };
+    const numeric: Expression = {
+      ...at(span),
+      kind: "binary",
+      operator,
+      left,
+      right,
+    };
+    const store: Expression = {
+      ...at(span),
+      kind: "assignment",
+      target: result,
+      value: numeric,
+    };
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test: {
+        ...at(span),
+        kind: "binary",
+        operator: "&&",
+        left: numberOperand(left, span),
+        right: numberOperand(right, span),
+      },
+      consequent: {
+        ...at(span),
+        kind: "block",
+        statements: [{ ...at(span), kind: "expression", expression: store }],
+      },
+      alternate,
+    });
+    return result;
   }
   function logicalTest(
     operator: string,
@@ -2628,10 +2793,13 @@ function lowerScriptEntry(
       }
       executionStart = statements.length;
       const resources = beginResources(bodyStatements, body);
+      const initializedSlots: number[] = [];
       for (const child of bodyStatements) {
         if (child === undefined) throw "SCRIPT_STATEMENT_INVARIANT";
         statement(child);
+        if (!raw && !suspending) localizeInitialized(child, initializedSlots);
       }
+      releaseLocalSlots(initializedSlots);
       statements.push({
         ...at(body),
         kind: "return",
@@ -4422,11 +4590,7 @@ function lowerScriptEntry(
         ) {
           const left = temporary(value(node.left), true);
           const right = temporary(value(node.right), true);
-          return checkedOperatorValue(
-            "binaryObjectValueOperation",
-            [text(node.operator, node), left, right],
-            node,
-          );
+          return binaryOperation(node.operator, left, right, node);
         }
         if (node.operator !== "===" && node.operator !== "!==")
           return fail(
@@ -4504,11 +4668,7 @@ function lowerScriptEntry(
         }
         const right = temporary(value(node.value), true);
         const assigned = temporary(
-          checkedOperatorValue(
-            "binaryObjectValueOperation",
-            [text(operator, node), previous, right],
-            node,
-          ),
+          binaryOperation(operator, previous, right, node),
           true,
         );
         writeAssignment(target, assigned);
@@ -5665,6 +5825,7 @@ function lowerScriptEntry(
         outerLexical = lexical;
       const initializer = node.kind === "for" ? node.initializer : undefined;
       const iterationNames: string[] = [];
+      const initializedSlots: number[] = [];
       let resources: ScriptResourceScope | undefined;
       if (initializer !== undefined) {
         if (initializer.kind === "variable" && initializer.mode !== "var") {
@@ -5694,6 +5855,8 @@ function lowerScriptEntry(
         }
         resources = beginResources([initializer], node);
         statement(initializer);
+        if (iterationNames.length === 0)
+          localizeInitialized(initializer, initializedSlots);
       }
       resetCompletion(node);
       const first = temporary(
@@ -5793,6 +5956,7 @@ function lowerScriptEntry(
         ),
       );
       finishResources(resources, node);
+      releaseLocalSlots(initializedSlots);
       scope = outerScope;
       lexical = outerLexical;
       return;

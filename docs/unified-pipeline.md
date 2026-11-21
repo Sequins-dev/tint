@@ -461,6 +461,28 @@ covers 74 constructs. Both new typed forms stay typed, both untyped forms
 pass, and all 144 forms shared with the C2 and B3 baseline retain their paths
 and outcomes.
 
+### Local slots in general lowering
+
+Classic `for (let …)` loops inside functions reuse the initial declarative
+environment when the binder accounts for every reference and no closure,
+direct eval, or `with` can observe a distinct iteration binding. Capturing
+loops keep the creation order of their initialization and iteration scopes.
+
+After normal declaration initialization, uncaptured simple bindings in
+eligible loop heads and function bodies can use native slots that hold
+general values. Initialization still checks the temporal dead zone and
+evaluates initializers in source order. Writes to mutable slots accept the
+full JavaScript value domain. Constant writes and declarations with checked
+contracts use their existing binding operations.
+
+When a local slot is active, general `+` and `<` can test both evaluated
+operands for the number category. The numeric branch uses the shared native
+scalar operations. Other operand pairs enter the general arithmetic helper
+with the original values in evaluation order.
+
+The [paired candidate results](results/general-call-benchmark-darwin-arm64-206530edd-candidates.md)
+record the contribution of each lowering change.
+
 ### Live native views (slice 2b)
 
 An erased dynamic-key property can hold a canonical realm view of an existing
