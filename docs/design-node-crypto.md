@@ -64,6 +64,12 @@ follow the system package. [OpenSSL provider documentation](https://docs.openssl
 
 ## Execution and errors
 
+The Node host registers `node:crypto` and `node:buffer` in the realm's
+module loader. Static imports, runtime imports and CommonJS `require`
+share the same crypto exports and Buffer constructor. The host uses the
+existing 16 MiB Node isolate stack budget. The x86-64 realm initializer
+exceeds the compact 1 MiB stack used by small typed fixtures.
+
 Synchronous calls borrow byte windows during direct leaf FFI calls on the
 isolate's thread. Give OpenSSL contexts explicit lifetime ownership,
 including normal completion, failure and abandoned state. Any address
@@ -115,6 +121,8 @@ in PBKDF2 and provider failure in digest initialization.
   `node tools/node-crypto-conformance.ts <node-source> <node-oracle>`
   and the native extraction with
   `node tools/node-crypto-native-conformance.ts <node-source> <report-path>`.
+  Build the workspace first. For macOS native runs, point
+  `TINT_GATE_EXCLUSIVE_LOCK` to the shared `~/.t3/tint-gate.lock`.
 - Exercise the real built-in import with typed and untyped native fixtures.
   Cover digest and HMAC vectors, output and error behavior, GC across
   updates, missing/incompatible library selection and callback ordering.
@@ -132,3 +140,17 @@ in PBKDF2 and provider failure in digest initialization.
   and wall time where available. Keep the PR in draft until Tint wins most
   cases and all required checks pass. The module's implementation remains
   typed and independent of the `perf/general-calls` stream.
+  [Profile captures](results/node-crypto-darwin-arm64-profiles-v1.md) ·
+  [Public API baseline](results/node-crypto-darwin-arm64-public-v1.json) ·
+  [Typed hexadecimal conversion experiment](results/node-crypto-darwin-arm64-hex-v1.json)
+
+## PoC phases
+
+1. Validate system-library discovery and typed leaf calls with native hashes,
+   HMAC and random bytes.
+2. Connect callback PBKDF2 to the blocking pool and verify callback ordering
+   and the ownership of inputs and results.
+3. Register the built-in in the Node host, adopt results as realm Buffers and
+   run the exact upstream extraction on Node and all three Tint targets.
+4. Profile the native cases, measure the public calls and typed controls,
+   and apply the performance and validation gates above.
