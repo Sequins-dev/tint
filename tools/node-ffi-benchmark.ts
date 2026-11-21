@@ -266,7 +266,7 @@ interface PreparedBenchmark {
   readonly sourceSha256: string;
   readonly dso: string;
   readonly dsoSha256: string;
-  readonly target: string;
+  readonly target: NativeArtifact["target"];
   readonly iterations: number;
   readonly warm: number;
   readonly artifacts: Readonly<Partial<Record<TintEngine, NativeArtifact>>>;
@@ -402,7 +402,7 @@ ${benchmarkBody(dso, literal, typed, iterations, warm)}`,
     sourcePatchSha256: createHash("sha256")
       .update(execute("git", ["diff", "--binary", "HEAD", "--", "packages"]))
       .digest("hex"),
-    label,
+    ...(label === undefined ? {} : { label }),
     artifacts: Object.fromEntries(
       engines.map((engine) => [engine, build(engine)]),
     ),
