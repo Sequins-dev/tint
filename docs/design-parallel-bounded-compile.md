@@ -103,6 +103,13 @@ profile found 87.5% of the measured kernel time in 234 of the 5,910 requests.
 That identifies a smaller candidate set for worker admission.
 [Native register-home rotation](results/parallel-bounded-compile-register-home-lifetimes-v1.md)
 
+Publishing finished batches while the compiler prepared later ones cut
+wall time in both orders on the Linux VM. CPU and emission time moved
+in opposite directions across the pairs. Both six-worker runs exceeded
+7 GiB peak RSS. The same-process launcher with eager worker startup
+timed out before it published a batch. These remain prototypes.
+[Overlapping native register-home batches](results/parallel-bounded-compile-register-home-overlap-v1.md)
+
 Preparing the module's emission facts once made the AArch64 fragment
 replay faster at two and six workers. Ordered placement assigned
 dispatch IDs and selected branch forms without a serial seed. At six
@@ -145,6 +152,13 @@ graph. The linked input is available for retry. Reducing this peak
 requires changes to the checker's data representation or lifetimes.
 [Typed streaming Object image comparison](results/parallel-bounded-compile-typed-object-image-v1.md)
 [Resident set at the instance check](results/parallel-bounded-compile-shared-preparation-v1.md#object-selections-collection-runtime-retry)
+
+Resolving local branches before leaving a function removed most
+deferred branch fixups. With repeated stack maps interned, an isolated
+replay of all 29,636 Object function records emitted the same machine
+code at 2.68 GiB peak RSS. The full pipeline still reaches the earlier
+whole-program instance check.
+[Object emission with function-local fixups](results/parallel-bounded-compile-object-local-fixups-v1.md)
 
 ## Work and dependencies
 
