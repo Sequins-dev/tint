@@ -6,14 +6,36 @@ export const nativeContextBytes = nativeHostedContextByteLength;
 export const nativeAllocationStateOffset = 56;
 export const nativeExternalMemoryOffset = 64;
 export interface ParameterLocation {
-  readonly kind: "float" | "integer" | "stack";
+  readonly kind: "float" | "integer" | "stack" | "pair" | "script-list";
   readonly index: number;
 }
 export interface SignatureLayout {
   readonly parameters: readonly ParameterLocation[];
   readonly stackBytes: number;
 }
+// x0/x1 retain the context and closure environment. x2 carries either
+// (argc * 2 + 1) or an aligned reference to an existing argument list.
+// x3 carries the completion area. x4–x9 hold callee, receiver and new.target.
+// x16/x17 are available for entry dispatch and x18 is reserved on Darwin.
+export const scriptFirstActualRegister = 10;
+export const scriptActualRegisterPairs = 3;
+export function scriptArgumentLayout(count: number): {
+  readonly registerArguments: number;
+  readonly stackBytes: number;
+} {
+  const registerArguments = Math.min(count, scriptActualRegisterPairs);
+  return { registerArguments, stackBytes: 16 * (count - registerArguments) };
+}
 export function signatureLayout(fn: FunctionIR): SignatureLayout {
+  if (fn.scriptEntry === true)
+    return {
+      parameters: fn.parameters.map((_, index): ParameterLocation =>
+        index === 3
+          ? { kind: "script-list", index: 2 }
+          : { kind: "pair", index: 4 + index * 2 },
+      ),
+      stackBytes: 0,
+    };
   const parameters: ParameterLocation[] = [];
   let numbers = 0,
     booleans = 0,

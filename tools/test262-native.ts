@@ -304,14 +304,17 @@ const sourceRecipes = new WeakMap<
   NativeModuleRecipe["load"]
 >();
 
-function loweredScriptRecipe(source: string): NativeModuleRecipe["load"] {
+function loweredScriptRecipe(
+  source: string,
+  nativeScriptCalls: boolean,
+): NativeModuleRecipe["load"] {
   return () => {
     const bytes = new TextEncoder().encode(source);
     const decoded = createSourceText(bytes, bytes.length);
     if (!decoded.ok) throw Error("native Script source failed");
     const parsed = parseScript(decoded.value);
     if (!parsed.ok) throw Error(JSON.stringify(parsed.error));
-    const lowered = lowerScript(parsed.value, source);
+    const lowered = lowerScript(parsed.value, source, { nativeScriptCalls });
     if (!lowered.ok) throw Error(JSON.stringify(lowered.error));
     return lowered.value;
   };
@@ -392,6 +395,8 @@ function prepareNativeScriptInputs(
     outcome: { kind: "unsupported" as const, reason },
   });
   const modules: SourceModule[] = [];
+  const nativeScriptCalls =
+    process.env.TINT_EXPERIMENTAL_NATIVE_SCRIPT_CALLS === "1";
   for (const [index, input] of inputs.entries()) {
     const bytes = new TextEncoder().encode(input.source);
     const source = createSourceText(bytes, bytes.length);
@@ -401,7 +406,9 @@ function prepareNativeScriptInputs(
     // A partial grammar's rejection is not sufficient evidence of a spec early error.
     if (!parsed.ok)
       return unsupported(input.filename + ": " + JSON.stringify(parsed.error));
-    const lowered = lowerScript(parsed.value, input.source);
+    const lowered = lowerScript(parsed.value, input.source, {
+      nativeScriptCalls,
+    });
     if (!lowered.ok)
       return unsupported(input.filename + ": " + JSON.stringify(lowered.error));
     const dynamicImport = lowered.value.imports.some(
@@ -415,7 +422,10 @@ function prepareNativeScriptInputs(
       return unsupported(
         input.filename + ": Script dynamic import requires HOST-ESM M3b",
       );
-    sourceRecipes.set(lowered.value, loweredScriptRecipe(input.source));
+    sourceRecipes.set(
+      lowered.value,
+      loweredScriptRecipe(input.source, nativeScriptCalls),
+    );
     modules.push({
       id: "test262-script-" + index,
       module: lowered.value,

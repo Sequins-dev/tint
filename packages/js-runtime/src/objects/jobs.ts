@@ -12,7 +12,11 @@ import {
   type JobQueue,
 } from "../jobs/index.ts";
 import { rejectEngineAbort, type ErrorRealm } from "./errors.ts";
-import type { ObjectExecutionContext } from "./operations.ts";
+import {
+  createScriptPropertyStubCache,
+  type ObjectExecutionContext,
+  type ScriptPropertyStubCache,
+} from "./operations.ts";
 
 /** Host identity for one successfully parsed Script, independent of compiled
  * code identity. Eval and dynamic functions inherit the active record. */
@@ -70,6 +74,7 @@ export interface ScriptAgent {
   readonly pendingAtomicWaits: PendingAtomicWait[];
   /** Immutable host policy for this agent; other realms share the same agent. */
   readonly canSuspend: boolean;
+  readonly propertyStubCache: ScriptPropertyStubCache;
   /** Stable target flags shared by every realm using this agent. */
   atomicsCapabilities: AtomicCapabilities | undefined;
   weakStorage: WeakStorageService | undefined;
@@ -110,9 +115,18 @@ export interface SourceCallFrame {
   argumentCount: number;
   firstArgument: unknown;
   secondArgument: unknown;
+  argumentRegisters: number;
+  argumentStack: number;
+  argumentReader: SourceArgumentReader | undefined;
   readonly previous: SourceCallFrame | undefined;
   next: SourceCallFrame | undefined;
 }
+export type SourceArgumentReader = (
+  index: number,
+  count: number,
+  registers: number,
+  stack: number,
+) => unknown;
 /** Reusable execution-context trace-name frame, chained like SourceCallFrame. */
 export interface ExecutionNameFrame {
   name: string | undefined;
@@ -128,6 +142,9 @@ function sourceCallFrame(
     argumentCount: -1,
     firstArgument: undefined,
     secondArgument: undefined,
+    argumentRegisters: 0,
+    argumentStack: 0,
+    argumentReader: undefined,
     previous,
     next: undefined,
   };
@@ -143,6 +160,7 @@ export function createScriptAgent(canSuspend: boolean = false): ScriptAgent {
   return {
     pendingAtomicWaits: [],
     canSuspend,
+    propertyStubCache: createScriptPropertyStubCache(),
     atomicsCapabilities: undefined,
     weakStorage: undefined,
     stackGuard: undefined,
@@ -201,6 +219,24 @@ export function enterRegisterSourceCall(
   }
   return depth;
 }
+/** The addresses are valid only while this compiled source frame is active.
+ * Its maps keep the values at both addresses current across collections. */
+export function enterNativeSourceCall(
+  agent: ScriptAgent,
+  callee: unknown,
+  count: number,
+  registers: number,
+  stack: number,
+  reader: SourceArgumentReader,
+): number {
+  const depth = enterSourceCall(agent, callee);
+  const frame = agent.sourceCallTop;
+  frame.argumentCount = count;
+  frame.argumentRegisters = registers;
+  frame.argumentStack = stack;
+  frame.argumentReader = reader;
+  return depth;
+}
 export function exitSourceCall(agent: ScriptAgent, depth: number): void {
   // Clearing keeps returned callees collectable once their invocation ends.
   while (agent.sourceCallDepth > depth) {
@@ -213,6 +249,9 @@ export function exitSourceCall(agent: ScriptAgent, depth: number): void {
       frame.argumentCount = -1;
       frame.firstArgument = undefined;
       frame.secondArgument = undefined;
+      frame.argumentRegisters = 0;
+      frame.argumentStack = 0;
+      frame.argumentReader = undefined;
     }
     agent.sourceCallTop = previous;
     agent.sourceCallDepth = agent.sourceCallDepth - 1;
@@ -246,6 +285,16 @@ export function activeSourceArguments(
     if (previous === undefined) return undefined;
     if (frame.callee === callee) {
       if (frame.argumentCount < 0) return frame.legacyArguments;
+      const reader = frame.argumentReader;
+      if (reader !== undefined) {
+        const actuals: unknown[] = [];
+        const count = frame.argumentCount;
+        for (let index = 0; index < count; index++)
+          actuals.push(
+            reader(index, count, frame.argumentRegisters, frame.argumentStack),
+          );
+        return actuals;
+      }
       if (frame.argumentCount === 0) return [];
       if (frame.argumentCount === 1) return [frame.firstArgument];
       return [frame.firstArgument, frame.secondArgument];

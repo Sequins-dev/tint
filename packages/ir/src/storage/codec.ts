@@ -423,15 +423,38 @@ export function encodeInstruction(
         op,
         bit(receiver !== undefined, 2) +
           bit(id !== undefined, 4) +
-          bit(op.discardResult === true, 8),
+          bit(op.discardResult === true, 8) +
+          bit(op.scriptArguments !== undefined, 16),
       );
       if (receiver !== undefined) writeSigned(writer, receiver);
       if (id !== undefined) writeSigned(writer, id);
       writeSigned(writer, op.target);
       writeSigned(writer, op.callee);
       writeList(writer, op.arguments);
+      if (op.scriptArguments !== undefined)
+        writeList(writer, op.scriptArguments);
       return true;
     }
+    case "script-argument": {
+      const frame = op.frame;
+      writePrefix(writer, 82, op, bit(frame !== undefined, 2));
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.index);
+      if (frame !== undefined) {
+        writeSigned(writer, frame.count);
+        writeSigned(writer, frame.registers);
+        writeSigned(writer, frame.stack);
+      }
+      return true;
+    }
+    case "script-argument-count":
+      writePrefix(writer, 83, op, 0);
+      writeSigned(writer, op.id);
+      return true;
+    case "script-argument-area":
+      writePrefix(writer, 84, op, bit(op.area === "stack", 2));
+      writeSigned(writer, op.id);
+      return true;
     case "closure-environment":
       writePrefix(writer, 21, op, 0);
       writeSigned(writer, op.id);
@@ -929,6 +952,7 @@ export function decodeInstruction(
         target,
         callee,
         arguments: args,
+        ...(flagged(flags, 16) ? { scriptArguments: readList(reader) } : {}),
         ...span,
       };
     }
@@ -1247,6 +1271,31 @@ export function decodeInstruction(
       if (operator === undefined) throw "packed IR operator";
       return { kind: "binary", id, operator, left, right, ...span };
     }
+    case 82:
+      return {
+        kind: "script-argument",
+        id: readSigned(reader),
+        index: readSigned(reader),
+        ...(flagged(flags, 2)
+          ? {
+              frame: {
+                count: readSigned(reader),
+                registers: readSigned(reader),
+                stack: readSigned(reader),
+              },
+            }
+          : {}),
+        ...span,
+      };
+    case 83:
+      return { kind: "script-argument-count", id: readSigned(reader), ...span };
+    case 84:
+      return {
+        kind: "script-argument-area",
+        id: readSigned(reader),
+        area: flagged(flags, 2) ? "stack" : "registers",
+        ...span,
+      };
     case 81: {
       const id = readSigned(reader),
         value = readSigned(reader);
@@ -1621,7 +1670,8 @@ const importFlag = 1,
   closureFlag = 8,
   environmentFlag = 16,
   integerSlotsFlag = 32,
-  debugFlag = 64;
+  debugFlag = 64,
+  scriptEntryFlag = 128;
 /** Appends one function record to `writer`. */
 export function encodeFunction(
   writer: ByteWriter,
@@ -1643,7 +1693,8 @@ export function encodeFunction(
       bit(closure !== undefined, closureFlag) +
       bit(environment !== undefined, environmentFlag) +
       bit(integerSlots !== undefined, integerSlotsFlag) +
-      bit(debug !== undefined, debugFlag),
+      bit(debug !== undefined, debugFlag) +
+      bit(fn.scriptEntry === true, scriptEntryFlag),
   );
   writeSigned(writer, fn.id);
   writeString(writer, fn.name);
@@ -1715,6 +1766,7 @@ export function decodeFunction(
     blocks,
   };
   if (flagged(flags, importFlag)) fn = { ...fn, import: true };
+  if (flagged(flags, scriptEntryFlag)) fn = { ...fn, scriptEntry: true };
   if (receiverSlot !== undefined) fn = { ...fn, receiverSlot };
   if (closureEnvironment !== undefined) fn = { ...fn, closureEnvironment };
   if (environment !== undefined) fn = { ...fn, environment };

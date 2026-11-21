@@ -562,6 +562,28 @@ export function verify(
           fail("GRAPH", "invalid parameter slot");
         params[p] = 1;
       }
+      if (
+        f.scriptEntry === true &&
+        (f.import === true ||
+          f.exported ||
+          f.receiverSlot !== undefined ||
+          f.parameters.length !== 4 ||
+          f.slots[f.parameters[0] ?? -1] !== "general" ||
+          f.slots[f.parameters[1] ?? -1] !== "general" ||
+          f.slots[f.parameters[2] ?? -1] !== "general" ||
+          f.slots[f.parameters[3] ?? -1] !== "optional-reference" ||
+          f.returnType !== "general")
+      )
+        fail(
+          "TYPE",
+          "invalid JavaScript entry header " +
+            f.name +
+            " " +
+            f.parameters.map((slot) => f.slots[slot]).join(",") +
+            " -> " +
+            f.returnType +
+            (f.exported ? " (exported)" : ""),
+        );
       let previousInteger = -1;
       for (const slot of f.integerSlots ?? []) {
         if (
@@ -1366,6 +1388,23 @@ export function verify(
               const target = module.functions[op.target];
               if (!natural(op.target) || target === undefined)
                 fail("GRAPH", "unknown callee");
+              const scriptArguments =
+                op.kind === "call-indirect" ? op.scriptArguments : undefined;
+              if (
+                (target.scriptEntry === true) !==
+                (scriptArguments !== undefined)
+              )
+                fail("TYPE", "JavaScript entry requires a JavaScript call");
+              if (scriptArguments !== undefined && op.receiver !== undefined)
+                fail(
+                  "TYPE",
+                  "JavaScript calls take the receiver in the header",
+                );
+              for (const argument of scriptArguments ?? []) {
+                if (argument === undefined)
+                  fail("TYPE", "missing actual argument");
+                equal(use(argument), "general");
+              }
               if (
                 target.import === true &&
                 op.kind === "call" &&
@@ -1442,6 +1481,25 @@ export function verify(
                   fail("TYPE", "value call requires a result");
                 define(resultId, returnType);
               }
+              break;
+            }
+            case "script-argument-count":
+            case "script-argument-area":
+              if (f.scriptEntry !== true)
+                fail("TYPE", "argument storage requires a JavaScript entry");
+              define(op.id, "number");
+              break;
+            case "script-argument": {
+              const frame = op.frame;
+              if (frame === undefined && f.scriptEntry !== true)
+                fail("TYPE", "actual arguments require a JavaScript entry");
+              if (frame !== undefined) {
+                equal(use(frame.count), "number");
+                equal(use(frame.registers), "number");
+                equal(use(frame.stack), "number");
+              }
+              equal(use(op.index), "number");
+              define(op.id, "general");
               break;
             }
           }

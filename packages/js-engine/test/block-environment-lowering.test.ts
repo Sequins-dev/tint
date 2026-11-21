@@ -785,6 +785,37 @@ test("constant-name reads and writes get their own property cache", () => {
   assert.equal(runtimeCalls(source, "writeCachedObjectValueProperty"), 1);
 });
 
+test("an inline property store checks the shape after evaluating its RHS", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+      const receiver = { field: 0 };
+      let changes = "";
+      function store(value) { receiver.field = value(); }
+      function plain() { return 1; }
+      store(plain);
+      store(plain);
+      store(function replace() {
+        Object.defineProperty(receiver, "field", {
+          configurable: true,
+          set(value) { changes += value; }
+        });
+        return 42;
+      });
+      print(changes);
+      print(String(receiver.field));
+    `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["42", "undefined"]);
+});
+
+test("computed writes use the indexed path after evaluating the value", () => {
+  const source = "function store(o, key, value) { o[key] = value(); }";
+  assert.equal(runtimeCalls(source, "writeObjectValuePropertyKey"), 1);
+  assert.equal(runtimeCalls(source, "objectPropertyKey"), 0);
+});
+
 test("fixed-arity calls construct one argument list after evaluating operands", () => {
   const count = countExpressions(
     "unknownTarget(first(), 2, 3, 4, 5, 6, last());",

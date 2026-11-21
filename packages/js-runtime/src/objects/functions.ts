@@ -26,6 +26,7 @@ import {
   getProperty,
   hasPrototype,
   type ObjectCall,
+  type ObjectScriptCall,
   type ObjectCallDispatch,
   type ObjectRegisterCall,
   type ObjectWideRegisterCall,
@@ -252,6 +253,57 @@ export function createSourceFunction(
     false,
     callerPolicy,
   );
+}
+
+export function createNativeSourceFunction(
+  implementation: SourceFunctionCall,
+  scriptInvoke: ObjectScriptCall<unknown>,
+  constructible: boolean,
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+  name: string,
+  length: number,
+  home: OrdinaryObject<ScriptPropertyKey, unknown> | undefined,
+  callerPolicy: SourceCallerPolicy,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  const fn = sourceFunction(
+    implementation,
+    constructible,
+    realm,
+    hooks,
+    name,
+    length,
+    home,
+    false,
+    callerPolicy,
+  );
+  const active = realm.agent.activeContext;
+  fn.internalRegisterCall = {
+    context: { realm, scriptOrModule: active?.scriptOrModule },
+    invoke: undefined,
+    invokeWide: undefined,
+    scriptInvoke,
+  };
+  return fn;
+}
+
+/** Only generated native entry bodies use these two lowering intrinsics. */
+export function sourceArgumentCount(): number {
+  throw "SOURCE_ARGUMENT_INTRINSIC";
+}
+export function sourceArgument(_index: number): unknown {
+  throw "SOURCE_ARGUMENT_INTRINSIC";
+}
+export function sourceArgumentArea(): number {
+  throw "SOURCE_ARGUMENT_INTRINSIC";
+}
+export function sourceArgumentFromFrame(
+  _index: number,
+  _count: number,
+  _registers: number,
+  _stack: number,
+): unknown {
+  throw "SOURCE_ARGUMENT_INTRINSIC";
 }
 
 /** A source body that needs at most two fixed parameters and does not read

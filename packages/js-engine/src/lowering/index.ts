@@ -79,6 +79,7 @@ export type ScriptLoweringResult =
  * getIdentifierValue) with unchanged semantics; AOT output keeps inline checks. */
 export interface ScriptLoweringOptions {
   readonly runtimeCompiled?: boolean;
+  readonly nativeScriptCalls?: boolean;
 }
 /** Immutable numeric imports proved by the hosted function planner. */
 export interface NumericCallSite extends Span {
@@ -418,6 +419,11 @@ export function lowerScript(
     0,
     undefined,
     options.runtimeCompiled === true,
+    undefined,
+    false,
+    false,
+    undefined,
+    options.nativeScriptCalls === true,
   );
 }
 /** Lower source-module bodies through the shared execution lowering. */
@@ -428,6 +434,7 @@ export function lowerSourceTextModule(
   checkContracts: boolean = false,
   checkMethodCalls: boolean = false,
   sourceTypes?: Module,
+  nativeScriptCalls: boolean = false,
 ): ScriptLoweringResult {
   return lowerScriptEntry(
     module,
@@ -440,6 +447,7 @@ export function lowerSourceTextModule(
     checkContracts,
     checkMethodCalls,
     sourceTypes,
+    nativeScriptCalls,
   );
 }
 /** Indirect eval uses fresh lexical storage and eval declaration admission. */
@@ -497,6 +505,7 @@ function lowerScriptEntry(
   checkContracts: boolean = false,
   checkMethodCalls: boolean = false,
   sourceTypes?: Module,
+  nativeScriptCalls: boolean = false,
 ): ScriptLoweringResult {
   const bound =
     entryKind === "module"
@@ -872,10 +881,10 @@ function lowerScriptEntry(
     appendStatements(tables, slotTable("$pc", propertyCacheInitializers));
     return tables;
   }
-  function propertyCache(span: Span): Expression {
+  function propertyCache(name: string, span: Span): Expression {
     const index = propertyCacheInitializers.length;
     propertyCacheInitializers.push(
-      runtimeCall("createScriptPropertyCache", [], generated),
+      runtimeCall("createScriptPropertyCache", [text(name)], generated),
     );
     return slotField("$pc", index, span);
   }
@@ -1032,6 +1041,8 @@ function lowerScriptEntry(
   let usesTailCalls = false;
   let usesRegisterCalls = false;
   let usesWideRegisterCalls = false;
+  let usesNativeScriptCalls = false;
+  let usesIndexedWrites = false;
   let usesPrimitiveContracts = false;
   let suspensionInput: string | undefined =
     entryKind === "module" ? "$moduleInput" : undefined;
@@ -1130,6 +1141,13 @@ function lowerScriptEntry(
     span: Span = generated,
   ): Expression {
     return { ...at(span), kind: "member", object, property };
+  }
+  function optionalMember(
+    object: Expression,
+    property: string,
+    span: Span,
+  ): Expression {
+    return { ...at(span), kind: "member", object, property, optional: true };
   }
   function call(
     name: string,
@@ -2743,19 +2761,165 @@ function lowerScriptEntry(
     const key = convertedKey(base, property, span);
     return readProperty(base, key, span);
   }
+  function inlineCachedPropertyCell(
+    base: Expression,
+    cache: Expression,
+    own: boolean,
+    span: Span,
+  ): Expression {
+    const without = id("undefined", span);
+    const object = temporary(
+      runtimeCall(
+        "viewObjectValue",
+        [base, member(id("$errors"), "objectPrototype", span)],
+        span,
+      ),
+    );
+    const first = temporary(member(cache, "first", span));
+    const layout = temporary(
+      optionalMember(object, "internalPropertyLayout", span),
+    );
+    const holder = own ? layout : temporary(layout, false, true);
+    if (!own) {
+      const expected = temporary(member(first, "holder", span));
+      const start = statements.length;
+      const prototype = temporary(optionalMember(object, "prototype", span));
+      const inherited = temporary(
+        optionalMember(prototype, "internalPropertyLayout", span),
+      );
+      const matches: Expression = {
+        ...at(span),
+        kind: "binary",
+        operator: "&&",
+        left: {
+          ...at(span),
+          kind: "binary",
+          operator: "!==",
+          left: inherited,
+          right: without,
+        },
+        right: {
+          ...at(span),
+          kind: "binary",
+          operator: "===",
+          left: member(inherited, "shape", span),
+          right: expected,
+        },
+      };
+      expression({
+        ...at(span),
+        kind: "assignment",
+        target: holder,
+        value: scalarBranch(matches, inherited, without, span),
+      });
+      const consequent: BlockStatement = {
+        ...at(span),
+        kind: "block",
+        statements: statements.splice(start),
+      };
+      statements.push({
+        ...at(span),
+        kind: "if",
+        test: {
+          ...at(span),
+          kind: "binary",
+          operator: "!==",
+          left: expected,
+          right: without,
+        },
+        consequent,
+        alternate: undefined,
+      });
+    }
+    const matchingShape: Expression = {
+      ...at(span),
+      kind: "binary",
+      operator: "&&",
+      left: {
+        ...at(span),
+        kind: "binary",
+        operator: "!==",
+        left: layout,
+        right: without,
+      },
+      right: {
+        ...at(span),
+        kind: "binary",
+        operator: "===",
+        left: member(layout, "shape", span),
+        right: member(first, "receiver", span),
+      },
+    };
+    const present: Expression = own
+      ? matchingShape
+      : {
+          ...at(span),
+          kind: "binary",
+          operator: "&&",
+          left: matchingShape,
+          right: {
+            ...at(span),
+            kind: "binary",
+            operator: "!==",
+            left: holder,
+            right: without,
+          },
+        };
+    return temporary(
+      scalarBranch(
+        present,
+        {
+          ...at(span),
+          kind: "index",
+          object: member(holder, "cells", span),
+          index: member(first, "offset", span),
+        },
+        without,
+        span,
+      ),
+    );
+  }
+  function dataCacheHit(cell: Expression, span: Span): Expression {
+    return {
+      ...at(span),
+      kind: "binary",
+      operator: "&&",
+      left: {
+        ...at(span),
+        kind: "binary",
+        operator: "!==",
+        left: cell,
+        right: id("undefined", span),
+      },
+      right: {
+        ...at(span),
+        kind: "unary",
+        operator: "!",
+        operand: member(cell, "accessor", span),
+      },
+    };
+  }
   function readProperty(
     base: Expression,
     key: Expression,
     span: Span,
   ): Expression {
     const cached = key.kind === "string" && !compactResults;
+    const object =
+      cached && key.kind === "string" && key.value !== "length"
+        ? temporary(base, true)
+        : base;
     const args = [
-      base,
+      object,
       key,
       member(id("$global"), "hooks", span),
       id("$errors"),
     ];
-    if (cached) args.push(propertyCache(span));
+    const cache =
+      cached && key.kind === "string"
+        ? propertyCache(key.value, span)
+        : undefined;
+    if (cache !== undefined) args.push(cache);
     const read = runtimeCall(
       cached ? "readCachedObjectValueProperty" : "readObjectValueProperty",
       args,
@@ -2771,7 +2935,75 @@ function lowerScriptEntry(
         ),
         true,
       );
-    return temporary(read, true);
+    if (cache === undefined) return temporary(read, true);
+    const cell = inlineCachedPropertyCell(object, cache, false, span);
+    return temporary(
+      scalarBranch(
+        dataCacheHit(cell, span),
+        member(cell, "value", span),
+        read,
+        span,
+      ),
+      true,
+    );
+  }
+  function readComputedProperty(
+    base: Expression,
+    key: Expression,
+    span: Span,
+  ): Expression {
+    const slow = runtimeCall(
+      "readObjectValuePropertyKey",
+      [base, key, member(id("$global"), "hooks", span), id("$errors")],
+      span,
+    );
+    if (compactResults) return temporary(slow, true);
+    const zero = scalarNumber(0, span);
+    const index = temporary(
+      scalarBranch(
+        numberOperand(key, span),
+        scalarBinary(">>>", key, zero, span),
+        scalarNumber(-1, span),
+        span,
+      ),
+    );
+    const object = temporary(
+      scalarBranch(
+        scalarBinary(
+          "&&",
+          scalarBinary(">=", index, zero, span),
+          scalarBinary("===", key, index, span),
+          span,
+        ),
+        runtimeCall(
+          "viewObjectValue",
+          [base, member(id("$errors"), "objectPrototype", span)],
+          span,
+        ),
+        id("undefined", span),
+        span,
+      ),
+    );
+    const elements = temporary(
+      optionalMember(object, "internalArrayElements", span),
+    );
+    // Only the standard Array exotic owns packed elements. The length check
+    // excludes holes so the ordinary path can still observe inherited accessors.
+    const packed = (list: Expression, fallback: Expression): Expression =>
+      scalarBranch(
+        scalarBinary(
+          "&&",
+          scalarBinary("!==", list, id("undefined", span), span),
+          scalarBinary("<", index, member(list, "length", span), span),
+          span,
+        ),
+        { ...at(span), kind: "index", object: list, index },
+        fallback,
+        span,
+      );
+    const numbers = temporary(optionalMember(elements, "numbers", span));
+    const values = temporary(optionalMember(elements, "values", span));
+    return temporary(packed(numbers, packed(values, slow)), true);
   }
   function typedList(elementType: string, span: Span): Expression {
     return temporary(
@@ -2954,19 +3186,7 @@ function lowerScriptEntry(
       property.kind !== "string" &&
       target.retainedKey !== true
     )
-      return temporary(
-        runtimeCall(
-          "readObjectValuePropertyKey",
-          [
-            target.base,
-            property,
-            member(id("$global"), "hooks", target),
-            id("$errors"),
-          ],
-          target,
-        ),
-        true,
-      );
+      return readComputedProperty(target.base, property, target);
     const key = referenceKey(target, property, target, true);
     if (superReceiver === undefined)
       return readProperty(target.base, key, target);
@@ -3045,6 +3265,29 @@ function lowerScriptEntry(
       write(target.base, assigned, target);
       return;
     }
+    if (
+      superReceiver === undefined &&
+      property.kind !== "string" &&
+      target.retainedKey !== true &&
+      !compactResults
+    ) {
+      usesIndexedWrites = true;
+      expression(
+        runtimeCall(
+          "writeObjectValuePropertyKey",
+          [
+            target.base,
+            property,
+            assigned,
+            { ...at(target), kind: "boolean", value: strict },
+            member(id("$global"), "hooks", target),
+            id("$errors"),
+          ],
+          target,
+        ),
+      );
+      return;
+    }
     const key = referenceKey(target, property, target, false);
     const args: Expression[] = [target.base, key, assigned];
     if (superReceiver !== undefined) args.push(superReceiver);
@@ -3058,8 +3301,42 @@ function lowerScriptEntry(
       key.kind === "string" &&
       !compactResults
     ) {
-      args.push(propertyCache(target));
-      expression(runtimeCall("writeCachedObjectValueProperty", args, target));
+      const cache = propertyCache(key.value, target);
+      const value = temporary(assigned, true);
+      args[2] = value;
+      args.push(cache);
+      const cell = inlineCachedPropertyCell(target.base, cache, true, target);
+      const fast: Expression = {
+        ...at(target),
+        kind: "binary",
+        operator: "&&",
+        left: dataCacheHit(cell, target),
+        right: member(cell, "writable", target),
+      };
+      statements.push({
+        ...at(target),
+        kind: "if",
+        test: fast,
+        consequent: {
+          ...at(target),
+          kind: "expression",
+          expression: {
+            ...at(target),
+            kind: "assignment",
+            target: member(cell, "value", target),
+            value,
+          },
+        },
+        alternate: {
+          ...at(target),
+          kind: "expression",
+          expression: runtimeCall(
+            "writeCachedObjectValueProperty",
+            args,
+            target,
+          ),
+        },
+      });
       return;
     }
     checkedRuntimeCompletion(
@@ -3282,6 +3559,142 @@ function lowerScriptEntry(
     args: readonly Expression[],
     span: Span,
   ): Expression {
+    if (
+      nativeScriptCalls &&
+      !compactResults &&
+      !isTailCall(span) &&
+      !args.some((argument) => argument?.kind === "spread")
+    ) {
+      usesNativeScriptCalls = true;
+      const target = temporary(callee, true);
+      const thisValue = temporary(receiver, true);
+      const actuals = args.map((argument) => {
+        if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+        return temporary(value(argument), true);
+      });
+      const errors = id("$errors", span);
+      const object = temporary(
+        runtimeCall(
+          "viewObjectValue",
+          [target, member(errors, "objectPrototype", span)],
+          span,
+        ),
+      );
+      const slot = temporary({
+        ...at(span),
+        kind: "member",
+        object,
+        property: "internalRegisterCall",
+        optional: true,
+      });
+      const entry = temporary({
+        ...at(span),
+        kind: "member",
+        object: slot,
+        property: "scriptInvoke",
+        optional: true,
+      });
+      const active = temporary(
+        member(member(errors, "agent", span), "activeContext", span),
+      );
+      const context = member(slot, "context", span);
+      let accepts: Expression = {
+        ...at(span),
+        kind: "binary",
+        operator: "!==",
+        left: entry,
+        right: id("undefined", span),
+      };
+      for (const left of [slot, active]) {
+        if (left === undefined) throw "SCRIPT_NATIVE_GUARD_INVARIANT";
+        accepts = {
+          ...at(span),
+          kind: "binary",
+          operator: "&&",
+          left: accepts,
+          right: {
+            ...at(span),
+            kind: "binary",
+            operator: "!==",
+            left,
+            right: id("undefined", span),
+          },
+        };
+      }
+      for (const property of ["realm", "scriptOrModule"]) {
+        if (property === undefined) throw "SCRIPT_CONTEXT_FIELD_INVARIANT";
+        const test: Expression = {
+          ...at(span),
+          kind: "binary",
+          operator: "===",
+          left: member(active, property, span),
+          right: member(context, property, span),
+        };
+        accepts = {
+          ...at(span),
+          kind: "binary",
+          operator: "&&",
+          left: accepts,
+          right: test,
+        };
+      }
+      const result = temporary(id("undefined", span), true, true);
+      const start = statements.length;
+      const slow = invokeList(
+        target,
+        thisValue,
+        {
+          ...at(span),
+          kind: "array",
+          elements: actuals,
+        },
+        span,
+      );
+      expression({
+        ...at(span),
+        kind: "assignment",
+        target: result,
+        value: slow,
+      });
+      const alternate: BlockStatement = {
+        ...at(span),
+        kind: "block",
+        statements: statements.splice(start),
+      };
+      const operands: Expression[] = [
+        target,
+        thisValue,
+        id("undefined", span),
+        id("undefined", span),
+      ];
+      for (const actual of actuals) {
+        if (actual === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+        operands.push(actual);
+      }
+      statements.push({
+        ...at(span),
+        kind: "if",
+        test: accepts,
+        consequent: {
+          ...at(span),
+          kind: "expression",
+          expression: {
+            ...at(span),
+            kind: "assignment",
+            target: result,
+            value: {
+              ...at(span),
+              kind: "call",
+              scriptCall: true,
+              callee: entry,
+              arguments: operands,
+            },
+          },
+        },
+        alternate,
+      });
+      return result;
+    }
     if (
       !compactResults &&
       !isTailCall(span) &&
@@ -4296,8 +4709,54 @@ function lowerScriptEntry(
     const numericImplementation =
       numericBody === undefined ? undefined : temporary(numericBody);
     const hasArguments = !arrow && observesArguments(span);
+    const hasRest = parameters.some((parameter) => parameter?.rest);
+    const nativeEntry =
+      nativeScriptCalls &&
+      !compactResults &&
+      !raw &&
+      !derived &&
+      !suspending &&
+      !options.packed &&
+      !tailEnabled &&
+      resultContract === 0;
+    const legacyNativeEntry = nativeEntry && !codeStrict && !arrow && !method;
+    const materializesArguments = nativeEntry && (hasArguments || hasRest);
+    const nativeName = nativeEntry
+      ? temporary(
+          runtimeCall(
+            "propertyFunctionName",
+            [functionName ?? text("", span)],
+            span,
+          ),
+        )
+      : undefined;
+    let nativeArgumentReader: Expression | undefined;
+    if (legacyNativeEntry) {
+      const readerParameters: Parameter[] = [];
+      const readerArguments: Expression[] = [];
+      for (const name of ["$index", "$count", "$registers", "$overflow"]) {
+        if (name === undefined) throw "SCRIPT_ARGUMENT_READER_INVARIANT";
+        readerParameters.push({ ...at(span), name, type: named("number") });
+        readerArguments.push(id(name, span));
+      }
+      nativeArgumentReader = temporary({
+        ...at(span),
+        kind: "arrow",
+        parameters: readerParameters,
+        returnType: named("unknown"),
+        body: {
+          ...at(span),
+          kind: "call",
+          scriptArgument: "load-frame",
+          callee: id("sourceArgumentFromFrame", span),
+          arguments: readerArguments,
+        },
+      });
+    }
+    if (nativeEntry) usesNativeScriptCalls = true;
     const wideRegister = codeStrict && parameters.length > 2;
     const register =
+      !nativeEntry &&
       !compactResults &&
       !raw &&
       !suspending &&
@@ -4307,7 +4766,7 @@ function lowerScriptEntry(
       resultContract === 0 &&
       numericImplementation === undefined &&
       parameters.length <= (wideRegister ? 6 : 2) &&
-      !parameters.some((parameter) => parameter?.rest);
+      !hasRest;
     const registerCount = register ? "$count" + serial++ : "",
       registerFirst = register ? "$first" + serial++ : "",
       registerSecond = register ? "$second" + serial++ : "";
@@ -4361,18 +4820,149 @@ function lowerScriptEntry(
     const receiverName = "$receiver" + serial++,
       argsName = "$args" + serial++,
       calleeName = "$callee" + serial++,
-      newTargetName = "$newTarget" + serial++;
+      newTargetName = "$newTarget" + serial++,
+      incomingArguments = materializesArguments
+        ? "$incoming" + serial++
+        : argsName;
+    const list: TypeNode = {
+      ...at(span),
+      kind: "array",
+      readonly: true,
+      element: named("unknown"),
+    };
+    function hasList(): Expression {
+      return {
+        ...at(span),
+        kind: "binary",
+        operator: "!==",
+        left: id(incomingArguments, span),
+        right: id("undefined", span),
+      };
+    }
+    function nativeArgument(index: Expression, site: Span): Expression {
+      return {
+        ...at(site),
+        kind: "call",
+        scriptArgument: "index",
+        callee: id("sourceArgument", site),
+        arguments: [index],
+      };
+    }
+    function nativeArgumentCount(site: Span): Expression {
+      return {
+        ...at(site),
+        kind: "call",
+        scriptArgument: "count",
+        callee: id("sourceArgumentCount", site),
+        arguments: [],
+      };
+    }
+    function argumentAt(index: Expression, site: Span): Expression {
+      const fromList: Expression = {
+        ...at(site),
+        kind: "index",
+        object: id(argsName, site),
+        index,
+      };
+      return nativeEntry && !materializesArguments
+        ? {
+            ...at(site),
+            kind: "conditional",
+            test: hasList(),
+            consequent: fromList,
+            alternate: nativeArgument(index, site),
+          }
+        : fromList;
+    }
+    if (materializesArguments) {
+      statements.push({
+        ...at(span),
+        kind: "variable",
+        mode: "let",
+        exported: false,
+        declarations: [
+          { ...at(span), name: argsName, type: list, initializer: undefined },
+        ],
+      });
+      const begin = statements.length;
+      const actual = temporary(
+        { ...at(span), kind: "array", elements: [] },
+        false,
+        false,
+        { ...at(span), kind: "array", element: named("unknown") },
+      );
+      const count = temporary(nativeArgumentCount(span));
+      const index = temporary(scalarNumber(0, span), false, true);
+      const loopStart = statements.length;
+      expression({
+        ...at(span),
+        kind: "call",
+        callee: member(actual, "push", span),
+        arguments: [nativeArgument(index, span)],
+      });
+      expression({
+        ...at(span),
+        kind: "assignment",
+        target: index,
+        value: {
+          ...at(span),
+          kind: "binary",
+          operator: "+",
+          left: index,
+          right: scalarNumber(1, span),
+        },
+      });
+      const collectActuals: BlockStatement = {
+        ...at(span),
+        kind: "block",
+        statements: statements.splice(loopStart),
+      };
+      statements.push({
+        ...at(span),
+        kind: "while",
+        test: {
+          ...at(span),
+          kind: "binary",
+          operator: "<",
+          left: index,
+          right: count,
+        },
+        body: collectActuals,
+      });
+      expression({
+        ...at(span),
+        kind: "assignment",
+        target: id(argsName, span),
+        value: actual,
+      });
+      const collect: BlockStatement = {
+        ...at(span),
+        kind: "block",
+        statements: statements.splice(begin),
+      };
+      statements.push({
+        ...at(span),
+        kind: "if",
+        test: hasList(),
+        consequent: {
+          ...at(span),
+          kind: "expression",
+          expression: {
+            ...at(span),
+            kind: "assignment",
+            target: id(argsName, span),
+            value: id(incomingArguments, span),
+          },
+        },
+        alternate: collect,
+      });
+    }
     if (numericImplementation !== undefined) {
       const operands: Expression[] = [];
       let guard: Expression | undefined;
       for (let i = 0; i < parameters.length; i++) {
         const argument = temporary(
-          {
-            ...at(span),
-            kind: "index",
-            object: id(argsName, span),
-            index: { ...at(span), kind: "number", value: i, raw: "" + i },
-          },
+          argumentAt(scalarNumber(i, span), span),
           true,
         );
         operands.push(argument);
@@ -4814,12 +5404,7 @@ function lowerScriptEntry(
               ],
               parameter,
             )
-          : {
-              ...at(parameter),
-              kind: "index",
-              object: id(argsName, parameter),
-              index: offset,
-            };
+          : argumentAt(offset, parameter);
       const binding = directSimpleParameters
         ? localBindingDeclarations.get(parameter.start)
         : undefined;
@@ -5357,6 +5942,160 @@ function lowerScriptEntry(
             : "visible",
       span,
     );
+    if (nativeEntry) {
+      if (nativeName === undefined) throw "SCRIPT_NATIVE_NAME_INVARIANT";
+      const optionalList: TypeNode = {
+        ...at(span),
+        kind: "union",
+        members: [list, named("undefined")],
+      };
+      const args = [calleeName, receiverName, newTargetName, incomingArguments];
+      const begin = statements.length;
+      const agent = member(id("$errors"), "agent", span);
+      const trace = temporary({
+        ...at(span),
+        kind: "conditional",
+        test: hasList(),
+        consequent: id("undefined", span),
+        alternate: runtimeCall("enterExecutionName", [agent, nativeName], span),
+      });
+      const depth = temporary({
+        ...at(span),
+        kind: "conditional",
+        test: hasList(),
+        consequent: scalarNumber(-1, span),
+        alternate:
+          nativeArgumentReader === undefined
+            ? runtimeCall(
+                "enterSourceCall",
+                [agent, id(codeStrict ? "undefined" : calleeName, span)],
+                span,
+              )
+            : runtimeCall(
+                "enterNativeSourceCall",
+                [
+                  agent,
+                  id(calleeName, span),
+                  nativeArgumentCount(span),
+                  {
+                    ...at(span),
+                    kind: "call",
+                    scriptArgument: "registers",
+                    callee: id("sourceArgumentArea", span),
+                    arguments: [],
+                  },
+                  {
+                    ...at(span),
+                    kind: "call",
+                    scriptArgument: "stack",
+                    callee: id("sourceArgumentArea", span),
+                    arguments: [],
+                  },
+                  nativeArgumentReader,
+                ],
+                span,
+              ),
+      });
+      const cleanup = statements.length;
+      expression(runtimeCall("exitSourceCall", [agent, depth], span));
+      expression(runtimeCall("leaveExecutionName", [agent, trace], span));
+      const cleanupBody = statements.splice(cleanup);
+      statements.push({
+        ...at(span),
+        kind: "try",
+        body: callbackBody,
+        handler: undefined,
+        finalizer: {
+          ...at(span),
+          kind: "block",
+          statements: [
+            {
+              ...at(span),
+              kind: "if",
+              test: {
+                ...at(span),
+                kind: "binary",
+                operator: "!==",
+                left: trace,
+                right: id("undefined", span),
+              },
+              consequent: {
+                ...at(span),
+                kind: "block",
+                statements: cleanupBody,
+              },
+              alternate: undefined,
+            },
+          ],
+        },
+      });
+      const nativeParameters: Parameter[] = [];
+      const bridgeParameters: Parameter[] = [];
+      const bridgeArguments: Expression[] = [];
+      for (const name of args) {
+        if (name === undefined) throw "SCRIPT_NATIVE_HEADER_INVARIANT";
+        nativeParameters.push({
+          ...at(span),
+          name,
+          type: name === incomingArguments ? optionalList : named("unknown"),
+        });
+      }
+      for (const name of [receiverName, argsName, calleeName, newTargetName]) {
+        if (name === undefined) throw "SCRIPT_NATIVE_BRIDGE_INVARIANT";
+        bridgeParameters.push({
+          ...at(span),
+          name,
+          type: name === argsName ? list : named("unknown"),
+        });
+      }
+      for (const name of [calleeName, receiverName, newTargetName, argsName]) {
+        if (name === undefined) throw "SCRIPT_NATIVE_BRIDGE_INVARIANT";
+        bridgeArguments.push(id(name, span));
+      }
+      const nativeBody = temporary({
+        ...at(span),
+        kind: "arrow",
+        scriptEntry: true,
+        parameters: nativeParameters,
+        returnType: named("unknown"),
+        body: {
+          ...at(span),
+          kind: "block",
+          statements: statements.splice(begin),
+        },
+      });
+      const bridge: Expression = {
+        ...at(span),
+        kind: "arrow",
+        parameters: bridgeParameters,
+        returnType: named("unknown"),
+        body: {
+          ...at(span),
+          kind: "call",
+          scriptCall: true,
+          callee: nativeBody,
+          arguments: bridgeArguments,
+        },
+      };
+      return retainSource(
+        runtimeCall(
+          "createNativeSourceFunction",
+          [
+            bridge,
+            nativeBody,
+            constructible,
+            id("$errors"),
+            member(id("$global"), "hooks", span),
+            nativeName,
+            scalarNumber(length, span),
+            homeObject ?? id("undefined"),
+            callerPolicy,
+          ],
+          span,
+        ),
+        retainedSpan,
+      );
+    }
     // One call names, creates and retains the source of each function.
     if (
       compactResults &&
@@ -9294,6 +10033,8 @@ function lowerScriptEntry(
     usesRegisterCalls,
     propertyCacheInitializers.length !== 0,
     usesWideRegisterCalls,
+    usesNativeScriptCalls,
+    usesIndexedWrites,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,

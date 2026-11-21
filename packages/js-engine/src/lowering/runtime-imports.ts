@@ -77,6 +77,8 @@ export function scriptRuntimeImports(
   usesRegisterCalls: boolean = false,
   usesPropertyCaches: boolean = false,
   usesWideRegisterCalls: boolean = false,
+  usesNativeScriptCalls: boolean = false,
+  usesIndexedWrites: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -167,6 +169,20 @@ export function scriptRuntimeImports(
         "updateObjectValue",
         "unaryObjectValueOperation",
         "createSourceFunction",
+        ...(usesNativeScriptCalls
+          ? [
+              "createNativeSourceFunction",
+              "sourceArgumentCount",
+              "sourceArgument",
+              "sourceArgumentArea",
+              "sourceArgumentFromFrame",
+              "enterNativeSourceCall",
+              "enterSourceCall",
+              "exitSourceCall",
+              "enterExecutionName",
+              "leaveExecutionName",
+            ]
+          : []),
         ...(usesRegisterCalls || declarations === "all"
           ? ["createRegisterSourceFunction"]
           : []),
@@ -262,6 +278,7 @@ export function scriptRuntimeImports(
             ]
           : []),
         "readObjectValuePropertyKey",
+        ...(usesIndexedWrites ? ["writeObjectValuePropertyKey"] : []),
         "getObjectValuePropertyWithReceiver",
         "setObjectValueProperty",
         "setObjectValuePropertyWithReceiver",

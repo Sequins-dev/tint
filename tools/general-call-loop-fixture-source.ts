@@ -190,6 +190,73 @@ export function run() {
     const joined = join("a", "🦉");
     if (joined.length !== 3 || joined !== "a🦉") return 40;
     if (join(2, 3) !== 5 || join({valueOf() {return "a";}}, true) !== "atrue") return 41;
+
+    function capture(a = 0, ...rest) {
+      if (a === sentinel) throw sentinel;
+      if (this !== wide || new.target !== undefined) return -1;
+      return a + arguments.length + (rest[5] || 0);
+    }
+    wide.capture = capture;
+    if (wide.capture() !== 0 || wide.capture(1, 2, 3, 4, 5, 6, 7) !== 15)
+      return 43;
+    let traps = 0;
+    wide.capture = new Proxy(capture, {apply(target, receiver, values) {
+      traps++;
+      if (values.length !== 8) return -1;
+      return Reflect.apply(target, receiver, values);
+    }});
+    if (wide.capture(...[1, 2, 3, 4, 5, 6, 7, 8]) !== 16 || traps !== 1)
+      return 44;
+    try {
+      wide.capture(sentinel, 2, 3, 4, 5, 6, 7, 8);
+      return 45;
+    } catch (error) {
+      if (error !== sentinel || traps !== 2) return 46;
+    }
+    function last(a, b, c, d, e, f, g, h) { return this === wide ? h : g; }
+    wide.last = last;
+    if (wide.last(1, 2, 3, 4, 5, 6, 7) !== undefined ||
+        wide.last(1, 2, 3, 4, 5, 6, 7, sentinel, "ignored") !== sentinel ||
+        last(1, 2, 3, 4, 5, 6, sentinel) !== sentinel)
+      return 47;
+
+    let keyOrder = "";
+    const indexed = {"0": 1, "-0": 2, "-1": 3, "01": 4};
+    const indexedPrototype = Object.create(null);
+    Object.defineProperty(indexedPrototype, "0", {
+      get() { return this === indexed ? 11 : -1; },
+      set(value) { keyOrder += "setter" + value; },
+    });
+    Object.setPrototypeOf(indexed, indexedPrototype);
+    function writeIndex(object, key, value) { object[key] = value; }
+    if (readIndex(indexed, -0) !== 1 || readIndex(indexed, -1) !== 3 ||
+        readIndex(indexed, "-0") !== 2 || readIndex(indexed, 1) !== undefined)
+      return 48;
+    writeIndex(indexed, 0, 10);
+    if (readIndex(indexed, 0) !== 10) return 49;
+    delete indexed[0];
+    if (readIndex(indexed, 0) !== 11) return 50;
+    writeIndex(indexed, -0, 12);
+    const computed = {toString() { keyOrder += "key"; return "0"; }};
+    try { null[computed] = (keyOrder += "rhs", 13); return 51; }
+    catch (error) { if (!(error instanceof TypeError)) return 52; }
+    indexed[computed] = (keyOrder += "rhs", 14);
+    if (keyOrder !== "setter12rhsrhskeysetter14") return 53;
+
+    const bytes = new ArrayBuffer(8, {maxByteLength: 16});
+    const view = new Uint8Array(bytes, 2, 4);
+    writeIndex(view, -0, 42);
+    if (readIndex(view, 0) !== 42 || readIndex(view, -1) !== undefined) return 54;
+    bytes.resize(4);
+    if (readIndex(view, 0) !== undefined) return 55;
+    bytes.resize(8);
+    if (readIndex(view, 0) !== 42 || readIndex(view, 3) !== 0) return 56;
+
+    const sparse = [];
+    writeIndex(sparse, 8, 42);
+    if (readIndex(sparse, 8) !== 42) return 57;
+    sparse.length = 0;
+    if (readIndex(sparse, 8) !== undefined) return 58;
   }
   return 42;
 }

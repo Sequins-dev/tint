@@ -229,14 +229,16 @@ export function callRegisterObjectValue(
   const object = viewObjectValue(value, realm.objectPrototype);
   if (object === undefined) throw createRuntimeError(realm, "type");
   const entry = object.internalRegisterCall;
+  const invoke = entry?.invoke;
   const active = realm.agent.activeContext;
   if (
     entry !== undefined &&
+    invoke !== undefined &&
     active !== undefined &&
     active.realm === entry.context.realm &&
     active.scriptOrModule === entry.context.scriptOrModule
   )
-    return entry.invoke(value, receiver, undefined, count, first, second);
+    return invoke(value, receiver, undefined, count, first, second);
   const args: readonly unknown[] =
     count === 0 ? [] : count === 1 ? [first] : [first, second];
   const result = callObject<ScriptPropertyKey, unknown>(
@@ -425,6 +427,7 @@ export function readCachedObjectValueProperty(
       key,
       cache,
       false,
+      realm.agent.propertyStubCache,
     );
     if (cell !== undefined) return cell.value;
   }
@@ -447,6 +450,7 @@ export function writeCachedObjectValueProperty(
       key,
       cache,
       true,
+      realm.agent.propertyStubCache,
     );
     if (cell !== undefined && cell.writable) {
       cell.value = value;

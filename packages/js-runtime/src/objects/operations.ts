@@ -1,4 +1,6 @@
 import type { WeakData } from "./weak-storage.ts";
+import { hashString } from "@tint/foundation/collections/key-index";
+import { canonicalNumericIndex } from "./integer-index.ts";
 import type { ShadowRealmHost } from "./shadow-realm.ts";
 import type { SegmenterState } from "./segmenter-state.ts";
 import type { RelativeTimeFormatter } from "./relative-time.ts";
@@ -84,6 +86,8 @@ export interface OrdinaryObject<Key, Value> {
    * leaves it unchanged, so a cached descriptor stays the live cell. */
   internalPropertyEpoch: number;
   internalPropertyLayout: OrdinaryPropertyLayout<Value> | undefined;
+  /** Lazy numeric-key view of own descriptor storage. Null is an empty view. */
+  internalIndexedProperties: Map<number, Descriptor<Value>> | null | undefined;
   internalPropertyContract: PropertyWriteContract<Key, Value> | undefined;
   internalPrivateElements: PrivateElement<Value>[] | undefined;
   /** Internal [[Call]], never a named/inherited JavaScript property. */
@@ -275,6 +279,12 @@ export type ObjectCall<Value> = (
   receiver: Value,
   arguments_: readonly Value[],
 ) => Value;
+export type ObjectScriptCall<Value> = (
+  callee: Value,
+  receiver: Value,
+  newTarget: Value,
+  arguments_: readonly Value[] | undefined,
+) => Value;
 export type ObjectRegisterCall<Value> = (
   callee: Value,
   receiver: Value,
@@ -297,22 +307,62 @@ export type ObjectWideRegisterCall<Value> = (
 ) => Value;
 export interface ObjectRegisterEntry<Value> {
   readonly context: ScriptExecutionContext;
-  readonly invoke: ObjectRegisterCall<Value>;
+  readonly invoke: ObjectRegisterCall<Value> | undefined;
   readonly invokeWide: ObjectWideRegisterCall<Value> | undefined;
+  readonly scriptInvoke?: ObjectScriptCall<Value>;
 }
 interface OrdinaryPropertyShape {
   readonly keys: readonly string[];
+  readonly hash: number;
 }
 interface OrdinaryPropertyLayout<Value> {
   readonly shape: OrdinaryPropertyShape;
   readonly cells: readonly Descriptor<Value>[];
 }
-export interface ScriptPropertyCache {
-  shapes: readonly OrdinaryPropertyShape[] | undefined;
+interface ScriptPropertyCacheEntry {
+  receiver: OrdinaryPropertyShape | undefined;
+  holder: OrdinaryPropertyShape | undefined;
   offset: number;
 }
-export function createScriptPropertyCache(): ScriptPropertyCache {
-  return { shapes: undefined, offset: 0 };
+export interface ScriptPropertyCache {
+  readonly first: ScriptPropertyCacheEntry;
+  readonly entries: readonly ScriptPropertyCacheEntry[];
+  readonly nameHash: number;
+  used: number;
+  megamorphic: boolean;
+}
+function propertyCacheEntry(): ScriptPropertyCacheEntry {
+  return { receiver: undefined, holder: undefined, offset: 0 };
+}
+export function createScriptPropertyCache(
+  name: string = "",
+): ScriptPropertyCache {
+  const first = propertyCacheEntry();
+  return {
+    first,
+    entries: [
+      first,
+      propertyCacheEntry(),
+      propertyCacheEntry(),
+      propertyCacheEntry(),
+    ],
+    nameHash: hashString(name),
+    used: 0,
+    megamorphic: false,
+  };
+}
+interface ScriptPropertyStubEntry {
+  name: string;
+  readonly property: ScriptPropertyCacheEntry;
+}
+export interface ScriptPropertyStubCache {
+  readonly buckets: readonly ScriptPropertyStubEntry[];
+}
+export function createScriptPropertyStubCache(): ScriptPropertyStubCache {
+  const buckets: ScriptPropertyStubEntry[] = [];
+  for (let i = 0; i < 256; i++)
+    buckets.push({ name: "", property: propertyCacheEntry() });
+  return { buckets };
 }
 export type ObjectCallDispatch<Key, Value> =
   | { readonly kind: "return"; readonly value: Value }
@@ -475,6 +525,7 @@ function allocateObject<Key, Value>(
     properties: new Map<Key, Descriptor<Value>>(),
     internalPropertyEpoch: 0,
     internalPropertyLayout: undefined,
+    internalIndexedProperties: undefined,
     internalPropertyContract: undefined,
     internalCall,
     internalRegisterCall: undefined,
@@ -918,6 +969,35 @@ function invalidatePropertyLayout<Key, Value>(
 ): void {
   object.internalPropertyEpoch++;
   object.internalPropertyLayout = undefined;
+  object.internalIndexedProperties = undefined;
+}
+
+/** Look up an integer already in Number representation. Callers handle
+ * packed elements, aliasing and exotic dispatch before consulting the map. */
+export function indexedPropertyCell<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  index: number,
+): Descriptor<Value> | undefined {
+  const cached = object.internalIndexedProperties;
+  if (cached === null) return undefined;
+  if (cached !== undefined) return cached.get(index);
+  let cells: Map<number, Descriptor<Value>> | undefined = undefined;
+  for (const [key, descriptor] of object.properties) {
+    if (typeof key !== "string") continue;
+    const numeric = canonicalNumericIndex(key);
+    if (
+      numeric === undefined ||
+      !Number.isSafeInteger(numeric) ||
+      (numeric === 0 && 1 / numeric < 0)
+    )
+      continue;
+    const table: Map<number, Descriptor<Value>> = cells ??
+    new Map<number, Descriptor<Value>>();
+    table.set(numeric, descriptor);
+    cells = table;
+  }
+  object.internalIndexedProperties = cells ?? null;
+  return cells?.get(index);
 }
 
 /** The per-site cache owns only shapes and a slot number. The receiver and
@@ -948,10 +1028,38 @@ function propertyLayout<Key, Value>(
   const shape: OrdinaryPropertyShape =
     matches && expected !== undefined && expected.keys.length === keys.length
       ? expected
-      : { keys };
+      : { keys, hash: propertyShapeHash(keys) };
   const installed: OrdinaryPropertyLayout<Value> = { shape, cells };
   object.internalPropertyLayout = installed;
   return installed;
+}
+
+function propertyShapeHash(keys: readonly string[]): number {
+  let hash = 2166136261;
+  for (const key of keys) {
+    if (key === undefined) throw "PROPERTY_SHAPE_KEY_INVARIANT";
+    hash = Math.imul(hash ^ hashString(key), 16777619) >>> 0;
+  }
+  return hash;
+}
+
+function cachedScriptPropertyCell<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  layout: OrdinaryPropertyLayout<Value>,
+  entry: ScriptPropertyCacheEntry,
+  own: boolean,
+): Descriptor<Value> | undefined {
+  if (entry.receiver !== layout.shape) return undefined;
+  let holder = layout;
+  if (entry.holder !== undefined) {
+    if (own) return undefined;
+    const inherited = object.prototype?.internalPropertyLayout;
+    if (inherited === undefined || inherited.shape !== entry.holder)
+      return undefined;
+    holder = inherited;
+  }
+  const cell = holder.cells[entry.offset];
+  return cell === undefined || cell.accessor ? undefined : cell;
 }
 
 export function lookupCachedScriptProperty<Key, Value>(
@@ -959,45 +1067,56 @@ export function lookupCachedScriptProperty<Key, Value>(
   key: string,
   cache: ScriptPropertyCache,
   own: boolean,
+  global: ScriptPropertyStubCache,
 ): Descriptor<Value> | undefined {
-  const expected = cache.shapes;
-  if (expected !== undefined && (!own || expected.length === 1)) {
-    let cursor: OrdinaryObject<Key, Value> | undefined = object;
-    for (
-      let depth = 0;
-      depth < expected.length && cursor !== undefined;
-      depth++
-    ) {
-      const layout = cursor.internalPropertyLayout;
-      if (layout === undefined || layout.shape !== expected[depth]) break;
-      if (depth + 1 === expected.length) {
-        const cell = layout.cells[cache.offset];
-        return cell === undefined || cell.accessor ? undefined : cell;
-      }
-      cursor = cursor.prototype;
-    }
-  }
-  const shapes: OrdinaryPropertyShape[] = [];
-  let cursor: OrdinaryObject<Key, Value> | undefined = object;
-  while (cursor !== undefined) {
-    const layout = propertyLayout<Key, Value>(
-      cursor,
-      expected?.[shapes.length],
+  const layout = propertyLayout<Key, Value>(object, cache.first.receiver);
+  if (layout === undefined) return undefined;
+  for (let index = 0; index < cache.used; index++) {
+    const entry = cache.entries[index];
+    if (entry === undefined) throw "PROPERTY_CACHE_ENTRY_INVARIANT";
+    const cell = cachedScriptPropertyCell<Key, Value>(
+      object,
+      layout,
+      entry,
+      own,
     );
-    if (layout === undefined) return undefined;
-    shapes.push(layout.shape);
-    const offset = layout.shape.keys.indexOf(key);
-    if (offset >= 0) {
-      const cell = layout.cells[offset];
-      if (cell === undefined || cell.accessor) return undefined;
-      cache.shapes = shapes;
-      cache.offset = offset;
-      return cell;
-    }
-    if (own) return undefined;
-    cursor = cursor.prototype;
+    if (cell !== undefined) return cell;
   }
-  return undefined;
+  const index = ((layout.shape.hash ^ cache.nameHash) >>> 0) & 255;
+  const stub = global.buckets[index];
+  if (stub === undefined) throw "PROPERTY_STUB_ENTRY_INVARIANT";
+  if (cache.megamorphic && stub.name === key) {
+    const cell = cachedScriptPropertyCell<Key, Value>(
+      object,
+      layout,
+      stub.property,
+      own,
+    );
+    if (cell !== undefined) return cell;
+  }
+  let holder = layout;
+  let offset = layout.shape.keys.indexOf(key);
+  if (offset < 0) {
+    const prototype = object.prototype;
+    if (own || prototype === undefined) return undefined;
+    const inherited = propertyLayout<Key, Value>(prototype, cache.first.holder);
+    if (inherited === undefined) return undefined;
+    holder = inherited;
+    offset = inherited.shape.keys.indexOf(key);
+  }
+  if (offset < 0) return undefined;
+  const cell = holder.cells[offset];
+  if (cell === undefined || cell.accessor) return undefined;
+  let entry = cache.entries[cache.used];
+  if (entry === undefined) {
+    cache.megamorphic = true;
+    stub.name = key;
+    entry = stub.property;
+  } else cache.used++;
+  entry.receiver = layout.shape;
+  entry.holder = holder === layout ? undefined : holder.shape;
+  entry.offset = offset;
+  return cell;
 }
 /** True when no object on the prototype chain overrides an internal method,
  * so HasProperty and Get are unobservable lookups until a getter runs. */

@@ -564,6 +564,11 @@ function lowerEntries(
     }
     const direct = directFunctions(checked),
       targetIds: (number | undefined)[] = [];
+    for (let binding = 0; binding < direct.length; binding++) {
+      const fn = direct[binding];
+      if (fn !== undefined && bodyByFunction[fn]?.scriptEntry === true)
+        direct[binding] = undefined;
+    }
     for (let index = 0; index < entries.length; index++) {
       const id = entries[index];
       if (id === undefined) fail("entry function invariant");
@@ -629,11 +634,17 @@ function lowerEntries(
       return result + "(" + parameters.join(",") + ")";
     }
     const signatureIds = new Map<string, number>();
+    const scriptSignatures = new Set<number>();
     for (let index = 0; index < signatures.length; index++) {
       const signature = signatures[index];
       if (signature === undefined || imported.has(entries[index] ?? -1))
         continue;
-      const key = signatureKey(signature.parameters, signature.returnType);
+      const scriptEntry =
+        bodyByFunction[entries[index] ?? -1]?.scriptEntry === true;
+      if (scriptEntry) scriptSignatures.add(index);
+      const key =
+        (scriptEntry ? "javascript:" : "") +
+        signatureKey(signature.parameters, signature.returnType);
       if (!signatureIds.has(key)) signatureIds.set(key, index);
     }
     const semanticWitnesses =
@@ -646,8 +657,9 @@ function lowerEntries(
       parameters: readonly ScalarType[],
       result: FunctionSignature["returnType"],
       type: number | undefined,
+      scriptEntry?: true,
     ): number {
-      if (semanticWitnesses !== undefined) {
+      if (semanticWitnesses !== undefined && scriptEntry !== true) {
         if (
           type === undefined ||
           !Number.isInteger(type) ||
@@ -663,11 +675,14 @@ function lowerEntries(
         semanticWitnesses[type] = id + 1;
         return id;
       }
-      const key = signatureKey(parameters, result),
+      const key =
+          (scriptEntry === true ? "javascript:" : "") +
+          signatureKey(parameters, result),
         found = signatureIds.get(key);
       if (found !== undefined) return found;
       const id = signatures.length;
       signatures.push({ parameters, returnType: result });
+      if (scriptEntry === true) scriptSignatures.add(id);
       signatureIds.set(key, id);
       return id;
     }
@@ -2785,6 +2800,10 @@ function lowerEntries(
               break;
             }
             case "call": {
+              if (node.scriptArgument !== undefined) {
+                exprArguments(node.arguments);
+                break;
+              }
               const intrinsic = checked.intrinsics.get(node);
               if (intrinsic === "general-call") {
                 if (knownNativeClosure(node.callee)) {
@@ -3221,7 +3240,10 @@ function lowerEntries(
                 const binding = referenceBindings.get(target);
                 const source =
                   binding === undefined ? undefined : direct[binding];
-                callee = source === undefined ? undefined : targetIds[source];
+                callee =
+                  source === undefined || node.scriptCall === true
+                    ? undefined
+                    : targetIds[source];
                 if (callee === undefined) {
                   const id =
                     (chain !== undefined || node.optional
@@ -3237,7 +3259,12 @@ function lowerEntries(
                     checked.types[signature.result]?.kind === "never"
                       ? "void"
                       : scalar(signature.result);
-                  callee = callbackSignature(parameters, result, id);
+                  callee = callbackSignature(
+                    parameters,
+                    result,
+                    id,
+                    node.scriptCall,
+                  );
                   indirect = true;
                   expr(node.callee);
                 } else {
@@ -4041,7 +4068,10 @@ function lowerEntries(
       recordContracts?.clearFunctionOperations();
       // Debug builds name the slots holding this function's own parameters
       // and locals. Captured and environment-owned bindings live in cells.
-      let original = lowered;
+      let original: FunctionIR =
+        body.scriptEntry === true
+          ? { ...lowered, exported: false, scriptEntry: true }
+          : lowered;
       if (recordTarget?.debug === true) {
         const variables: SourceVariable[] = [],
           slots: SlotBinding[] = [];
@@ -4070,7 +4100,7 @@ function lowerEntries(
           });
         }
         original = {
-          ...lowered,
+          ...original,
           debug: { variables, slots, values: [], inlineSites: [] },
         };
       }
@@ -4102,6 +4132,7 @@ function lowerEntries(
         id,
         name: "$callback$" + String(id),
         exported: false,
+        scriptEntry: scriptSignatures.has(id) ? true : undefined,
         parameters: signature.parameters.map((_, index) => index),
         slots: signature.parameters,
         returnType: signature.returnType,
