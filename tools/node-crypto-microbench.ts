@@ -1,5 +1,6 @@
-// Build outside the timing lock. Run paired, rotated rounds with:
-//   /usr/bin/lockf -k ~/.t3/tint-timing.lock node tools/node-crypto-microbench.ts run <image>
+// Build outside the timing lock. `build public` resolves the public module.
+// `build branded` times the typed crypto code with its real Buffer adoption.
+// Run paired rounds under the timing and gate locks, in that order.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
@@ -58,24 +59,32 @@ const cases = [
 
 const imports =
   'import { createHash, createHmac, randomBytes } from "node:crypto";';
+const branded = process.argv[2] === "build" && process.argv[3] === "branded";
 const body = cases
-  .map(
-    ({ name, setup, expression, iterations }) => `{
+  .map(({ name, setup, expression, iterations }) => {
+    const randomBuffer = branded && name.startsWith("random-");
+    const call = randomBuffer
+      ? expression.replace("randomBytes", "randomBuffer")
+      : expression;
+    const length = randomBuffer
+      ? "bufferLength(result)"
+      : 'typeof result==="string"?result.length:result.length';
+    return `{
   ${setup}
   let checksum=0;
   for(let i=0;i<${Math.max(64, Math.floor(iterations / 4))};i++){
-    const result=${expression};
-    checksum+=typeof result==="string"?result.length:result.length;
+    const result=${call};
+    checksum+=${length};
   }
   const start=monotonicMilliseconds();
   for(let i=0;i<${iterations};i++){
-    const result=${expression};
-    checksum+=typeof result==="string"?result.length:result.length;
+    const result=${call};
+    checksum+=${length};
   }
   const elapsed=monotonicMilliseconds()-start;
   console.log("TINT_CRYPTO_BENCH ${name} "+String(elapsed*1000000/${iterations})+" "+String(checksum));
-}`,
-  )
+}`;
+  })
   .join("\n");
 
 function command(file: string, args: readonly string[], exit = 0): string {
@@ -110,15 +119,48 @@ if (process.argv[2] === "build") {
       "node:crypto",
       "packages/native-runtime/src/node/crypto.ts",
     ]);
+  if (branded)
+    dependencies.push(
+      ["node-buffer", "packages/native-runtime/src/node/buffer.ts"],
+      ["objects", "packages/js-runtime/src/objects/index.ts"],
+    );
+  const bufferPrelude = branded
+    ? `
+import { adoptNodeBuffer, isNodeBuffer } from "node-buffer";
+import { programRealmCore, getProperty, type ScriptPropertyKey, type OrdinaryObject, type ProgramRealmCore } from "objects";
+const core:ProgramRealmCore=programRealmCore();
+function randomBuffer(size:number):OrdinaryObject<ScriptPropertyKey,unknown> {
+  return adoptNodeBuffer(core,randomBytes(size));
+}
+function bufferLength(buffer:OrdinaryObject<ScriptPropertyKey,unknown>):number {
+  const length=getProperty<ScriptPropertyKey,unknown>(buffer,"length",buffer,core.hooks);
+  if(typeof length!=="number")throw "BUFFER_LENGTH";
+  return length;
+}
+`
+    : "";
+  const objects = "packages/js-runtime/src/objects/index.ts";
+  const views = ["viewObjectValue", "viewSymbolValue", "viewBigIntValue"];
   process.env.TINT_BUILD_ONLY = "1";
   if (!publicDriver) process.env.TINT_GENERAL_FALLBACK = "0";
   verifyHostedFixture(
     `${imports}\nimport {monotonicMilliseconds} from "clock";
-     export function run():number { ${body} return 42; }`,
-    publicDriver ? "node-crypto-public-microbench" : "node-crypto-microbench",
+     ${bufferPrelude}
+     export function run():number { ${branded ? "if(!isNodeBuffer(core,randomBuffer(0))) return 1;" : ""} ${body} return 42; }`,
+    branded
+      ? "node-crypto-branded-microbench"
+      : publicDriver
+        ? "node-crypto-public-microbench"
+        : "node-crypto-microbench",
     dependencies,
     [],
-    [],
+    branded
+      ? views.map((name) => ({
+          module: objects,
+          name,
+          operation: "view" as const,
+        }))
+      : [],
     publicDriver
       ? []
       : [
@@ -127,6 +169,15 @@ if (process.argv[2] === "build") {
             namespace: "crypto-bench-clock",
             retainedExports: ["monotonicMilliseconds"],
           },
+          ...(branded
+            ? [
+                {
+                  module: objects,
+                  namespace: "crypto-bench-objects",
+                  retainedExports: views,
+                },
+              ]
+            : []),
         ],
     {
       ...(publicDriver
@@ -161,6 +212,8 @@ if (process.argv[2] === "build") {
         "--batch",
         "-o",
         "settings set target.disable-aslr false",
+        "-o",
+        "settings set target.process.stop-on-sharedlibrary-events false",
         "-o",
         "process launch --stop-at-entry",
         "-o",

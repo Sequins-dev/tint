@@ -71,8 +71,12 @@ existing 16 MiB Node isolate stack budget. The x86-64 realm initializer
 exceeds the compact 1 MiB stack used by small typed fixtures.
 
 Synchronous calls borrow byte windows during direct leaf FFI calls on the
-isolate's thread. Give OpenSSL contexts explicit lifetime ownership,
-including normal completion, failure and abandoned state. Any address
+isolate's thread. Cache fetched digests and retain one reset context each
+for hash and HMAC operations in the isolate. On recycle, reset the context
+and clear HMAC key state. Release active and spare contexts with the cached
+digest references at isolate exit. Encoded hexadecimal digests borrow
+scratch storage within one synchronous operation. Buffer results own
+their bytes. Any address
 held after a leaf returns must refer to stable owned storage. Validate
 actual byte offsets and lengths, including subviews, and preserve Node's
 result brands and input encodings.
@@ -141,8 +145,11 @@ in PBKDF2 and provider failure in digest initialization.
   cases and all required checks pass. The module's implementation remains
   typed and independent of the `perf/general-calls` stream.
   [Profile captures](results/node-crypto-darwin-arm64-profiles-v1.md) ·
+  [Public profile](results/node-crypto-darwin-arm64-public-profile-v1.md) ·
   [Public API baseline](results/node-crypto-darwin-arm64-public-v1.json) ·
-  [Typed hexadecimal conversion experiment](results/node-crypto-darwin-arm64-hex-v1.json)
+  [Typed hexadecimal conversion experiment](results/node-crypto-darwin-arm64-hex-v1.json) ·
+  [Typed digest context experiment](results/node-crypto-darwin-arm64-contexts-v1.json) ·
+  [General method-call control](results/node-crypto-darwin-arm64-call-control-v1.md)
 
 ## PoC phases
 
