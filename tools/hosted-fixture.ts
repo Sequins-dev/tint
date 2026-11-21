@@ -388,6 +388,16 @@ function buildHostedFixture(
     ...dependencyIds,
     ...(sysvDynamic ? [foreignRuntimeModules.sysv] : []),
   ];
+  // A typed built-in can reach unsafe FFI transitively. The fixture's
+  // explicitly imported roots alone do not expose that dependency.
+  if (
+    fixtureTarget.arch === "x86_64" &&
+    !sysvDynamic &&
+    workspaceModuleLoader(roots, foreign.snapshot).ids.includes(
+      foreignRuntimeModules.unsafe,
+    )
+  )
+    roots.push(foreignRuntimeModules.sysv);
   const replay = { loads: 0, modules: 0, utf16Units: 0 };
   const moduleLoader =
     replaySources === undefined

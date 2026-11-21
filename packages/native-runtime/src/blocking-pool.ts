@@ -31,6 +31,9 @@ export interface NativeBlockingPool {
   receive(): NativeBlockingResult | undefined;
   /** The owner has collected all work. Only idle helper threads are joined. */
   close(): void;
+  /** Stop accepting work, skip queued requests and join running helpers.
+   * The owner can release abandoned payloads once this returns. */
+  abort(): void;
 }
 
 interface PoolState {
@@ -199,6 +202,12 @@ export function createNativeBlockingPool(
       state = undefined;
       if (pool !== undefined) stop(pool);
     },
+    abort: (): void => {
+      const pool = state;
+      closed = true;
+      state = undefined;
+      if (pool !== undefined) stop(pool);
+    },
   };
 }
 
@@ -229,6 +238,7 @@ export function runNativeBlockingHelper(
     if (!requests.ok || !replies.ok) throw "BLOCKING_POOL_ATTACH";
     for (;;) {
       const generation = readNumber(host, record, GENERATION, scratch);
+      if (readNumber(host, record, CLOSED, scratch) !== 0) return 0;
       const request = requests.value.receive();
       if (request === undefined) {
         if (readNumber(host, record, CLOSED, scratch) !== 0) return 0;

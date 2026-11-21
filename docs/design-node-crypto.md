@@ -33,10 +33,14 @@ AOT and live code call through Tint's existing C ABI. Tint still produces
 its own images without a C compiler or platform linker.
 
 1. On macOS arm64, an absolute path supplied via `TINT_OPENSSL_LIBRARY`
-   takes precedence. Require an OpenSSL 3 versioned library filename,
+   takes precedence. To use the exact prefix reported by Homebrew, set
+   `TINT_OPENSSL_LIBRARY="$(brew --prefix openssl@3)/lib/libcrypto.3.dylib"`.
+   Require an OpenSSL 3 versioned library filename,
    `libcrypto.3.dylib`, and reject Apple's system library paths. The
    override is authoritative, so an invalid override produces an error.
-2. Without an override, try
+2. Without an override, try the formula under a custom
+   `HOMEBREW_PREFIX` from `brew shellenv`
+   (`$HOMEBREW_PREFIX/opt/openssl@3/lib/libcrypto.3.dylib`), then
    `/opt/homebrew/opt/openssl@3/lib/libcrypto.3.dylib`, then
    `/usr/local/opt/openssl@3/lib/libcrypto.3.dylib`. Use absolute
    paths. Never probe Apple's unversioned `/usr/lib/libcrypto.dylib`.
@@ -91,11 +95,14 @@ in PBKDF2 and provider failure in digest initialization.
 
 - Pin the Node source to `v26.13.1`
   (`e9c277643b0249c50f6e6de5413be8a88ea11b6a`). Its full
-  `test/parallel/test-crypto-*` population is 166 files. Record a manifest
-  of the relevant unmodified upstream files for the PoC and publish its
-  exact denominator, selection rules and results on each target. Report
-  tests that mix supported and unsupported behavior, and retain selected
-  failures, skips and harness gaps in the denominator.
+  `test/parallel/test-crypto-*` population is 166 files. The PoC selection
+  is four direct API suites under `test/parallel/`:
+  `test-crypto-hash.js`, `test-crypto-hmac.js`,
+  `test-crypto-pbkdf2.js`, and `test-crypto-random.js`. Each exercises
+  a public entry point in the PoC. Each also mixes scoped behavior with
+  other calls, such as stream methods, KeyObjects, sync PBKDF2, or other
+  random APIs. Run the original files and report out-of-scope calls,
+  failures, skips and harness gaps in the denominator of four per target.
 - Exercise the real built-in import with typed and untyped native fixtures.
   Cover digest and HMAC vectors, output and error behavior, GC across
   updates, missing/incompatible library selection and callback ordering.

@@ -64,6 +64,14 @@ jobs:
           sudo apt-get install -y lldb
           lldb --version
 
+      - name: Ensure macOS OpenSSL 3 is installed
+        if: matrix.gate == 'mac'
+        run: |
+          if ! brew list --versions openssl@3; then
+            brew install openssl@3
+          fi
+          test -f "$(brew --prefix openssl@3)/lib/libcrypto.3.dylib"
+
       - name: Prepare macOS SDK and debugger
         if: matrix.gate == 'mac'
         run: |
