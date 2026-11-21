@@ -253,10 +253,12 @@ test("runtime-compiled functions skip only unobservable receiver and environment
   assert.equal(uses("param", "sloppyCallReceiverOrThrow"), false);
   for (const name of ["self", "arrow", "sup", "evals"])
     assert.equal(uses(name, "sloppyCallReceiverOrThrow"), true, name);
-  // Environments only where something is bound in them.
+  // Direct eval and arguments need named cells.
   assert.equal(uses("plain", "createDeclarativeEnvironment"), false);
   assert.equal(uses("self", "createDeclarativeEnvironment"), false);
-  for (const name of ["evals", "param", "local", "args"])
+  for (const name of ["param", "local"])
+    assert.equal(uses(name, "createDeclarativeEnvironment"), false, name);
+  for (const name of ["evals", "args"])
     assert.equal(uses(name, "createDeclarativeEnvironment"), true, name);
 });
 

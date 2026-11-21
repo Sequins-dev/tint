@@ -50,6 +50,7 @@ import {
   type Expression,
   type Span,
   type TypeNode,
+  type PropertySignature,
   type ClassDefinition,
   type ClassElement,
 } from "@tint/typescript/syntax";
@@ -284,6 +285,7 @@ interface PrivateMethodDefinition extends Span {
 interface AssignmentReference extends Span {
   readonly invalid?: boolean;
   readonly local?: boolean;
+  readonly fixedBinding?: number;
   readonly base: Expression;
   readonly property: Expression | undefined;
   /** Read-modify-write references keep a computed key in a mutable temporary.
@@ -456,29 +458,128 @@ function lowerScriptEntry(
   const bindingRecordContracts = new Map<number, TypeNode>();
   const recordTypes = new Map<string, TypeNode>();
   const boundBindings = bound.value.bindings;
-  const dynamicBindings =
-    directEvalOwners.length !== 0 || bound.value.containsWith;
-  // The binder does not mark captures of bindings outside functions. Keep
-  // copying those environments, and any environment observable by direct eval.
+  const containsWith = bound.value.containsWith;
+  const dynamicBindings = directEvalOwners.length !== 0 || containsWith;
+  // A closure created by eval can outlive each visible activation, even in
+  // strict mode. A with lookup can fall through to every enclosing scope.
+  // Retain their named cells and let unrelated scopes use native slots.
+  const namedScopes = new Set<number>();
+  for (const site of bound.value.dynamicNameScopes ?? []) {
+    let scope: number | undefined = site;
+    while (scope !== undefined && !namedScopes.has(scope)) {
+      namedScopes.add(scope);
+      scope = bound.value.scopes[scope]?.parent;
+    }
+  }
+  // The binder's capture flag excludes Script scopes. Compare owners for
+  // those references as well so a Script's loop can elide unobservable cells.
+  const capturedBindings = new Set<number>();
+  for (const reference of bound.value.references) {
+    if (reference === undefined) throw "SCRIPT_REFERENCE_INVARIANT";
+    const index = reference.binding;
+    if (index === undefined) continue;
+    const binding = boundBindings[index];
+    if (
+      binding !== undefined &&
+      (binding.captured ||
+        binding.owner !== bound.value.scopes[reference.scope]?.owner)
+    )
+      capturedBindings.add(index);
+  }
   const copyLoopEnvironments = new Set<number>();
   const localBindingDeclarations = new Map<number, number>();
+  const variableDeclarationBindings = new Map<number, number>();
+  const functionVariables = new Map<number, number[]>();
+  const selfBindings = new Map<Span, number>();
+  const blockFunctions = new Map<Span, number>();
   for (const binding of boundBindings) {
     if (binding === undefined) throw "SCRIPT_BINDING_INVARIANT";
-    if (binding.kind !== "let" && binding.kind !== "const") continue;
+    const slotEligible = !namedScopes.has(binding.scope);
+    if (
+      slotEligible &&
+      (binding.kind === "parameter" || binding.kind === "catch")
+    ) {
+      localBindingDeclarations.set(binding.node.start, binding.id);
+      continue;
+    }
     const bindingScope = bound.value.scopes[binding.scope];
-    if (binding.owner === undefined || binding.captured) {
-      if (binding.kind === "let" && bindingScope?.kind === "for")
-        copyLoopEnvironments.add(bindingScope.node.start);
-    } else if (
-      !dynamicBindings &&
+    if (
+      slotEligible &&
+      binding.kind === "const" &&
+      bindingScope?.kind === "block" &&
+      bindingScope.node === binding.node
+    ) {
+      selfBindings.set(binding.node, binding.id);
+      continue;
+    }
+    if (
+      slotEligible &&
+      binding.kind === "function" &&
+      bindingScope?.kind === "block"
+    ) {
+      blockFunctions.set(binding.node, binding.id);
+      continue;
+    }
+    if (
+      slotEligible &&
+      (binding.kind === "var" || binding.kind === "function") &&
+      (bindingScope?.kind === "function" ||
+        bindingScope?.kind === "function-body") &&
+      binding.name !== "arguments"
+    ) {
+      const owner = binding.owner;
+      const fn = owner === undefined ? undefined : bound.value.functions[owner];
+      if (fn === undefined) throw "SCRIPT_VARIABLE_OWNER_INVARIANT";
+      localBindingDeclarations.set(binding.node.start, binding.id);
+      variableDeclarationBindings.set(binding.node.start, binding.id);
+      let variables = functionVariables.get(fn.node.end);
+      if (variables === undefined) {
+        variables = [];
+        functionVariables.set(fn.node.end, variables);
+      }
+      variables.push(binding.id);
+      continue;
+    }
+    if (binding.kind !== "let" && binding.kind !== "const") continue;
+    if (
+      binding.kind === "let" &&
+      bindingScope?.kind === "for" &&
+      (capturedBindings.has(binding.id) || namedScopes.has(binding.scope))
+    )
+      copyLoopEnvironments.add(bindingScope.node.start);
+    if (
+      slotEligible &&
       (bindingScope?.kind === "for" ||
         bindingScope?.kind === "function" ||
-        bindingScope?.kind === "function-body")
+        bindingScope?.kind === "function-body" ||
+        bindingScope?.kind === "block")
     )
       localBindingDeclarations.set(binding.node.start, binding.id);
   }
+  for (const alias of bound.value.aliases ?? []) {
+    if (alias === undefined) throw "SCRIPT_BINDING_ALIAS_INVARIANT";
+    const binding = boundBindings[alias.binding];
+    if (
+      binding !== undefined &&
+      variableDeclarationBindings.get(binding.node.start) === binding.id
+    )
+      variableDeclarationBindings.set(alias.node.start, binding.id);
+  }
+  for (const target of bound.value.varInitializerTargets ?? []) {
+    if (target === undefined) throw "SCRIPT_BINDING_ALIAS_INVARIANT";
+    variableDeclarationBindings.set(target.node.start, target.binding);
+  }
   const localBindingReferences = new Map<number, number>();
-  if (localBindingDeclarations.size !== 0)
+  const writtenSlots = new Set<number>();
+  for (const target of bound.value.varInitializerTargets ?? []) {
+    if (target === undefined) throw "SCRIPT_BINDING_ALIAS_INVARIANT";
+    writtenSlots.add(target.binding);
+  }
+  if (
+    localBindingDeclarations.size !== 0 ||
+    selfBindings.size !== 0 ||
+    blockFunctions.size !== 0
+  )
     for (const reference of bound.value.references) {
       if (reference === undefined) throw "SCRIPT_REFERENCE_INVARIANT";
       const binding = reference.binding;
@@ -486,11 +587,46 @@ function lowerScriptEntry(
       const target = boundBindings[binding];
       if (
         target !== undefined &&
-        localBindingDeclarations.get(target.node.start) === binding
-      )
+        (localBindingDeclarations.get(target.node.start) === binding ||
+          selfBindings.get(target.node) === binding ||
+          blockFunctions.get(target.node) === binding)
+      ) {
         localBindingReferences.set(reference.node.start, binding);
+        if (reference.access !== "read") writtenSlots.add(binding);
+      }
+    }
+  const fixedCellIndices = new Map<number, number>();
+  const fixedCellReferences = new Map<number, number>();
+  const fixedCellNames: string[] = [];
+  const staticScriptLexicals =
+    (entryKind === "script" || entryKind === "indirect-eval") &&
+    !dynamicBindings;
+  if (entryKind === "module" || staticScriptLexicals)
+    for (const reference of bound.value.references) {
+      if (reference === undefined) throw "SCRIPT_REFERENCE_INVARIANT";
+      const binding = reference.binding;
+      if (binding === undefined) continue;
+      const target = boundBindings[binding];
+      if (target === undefined) continue;
+      const kind = bound.value.scopes[target.scope]?.kind;
+      if (
+        kind !== "module" &&
+        !(
+          kind === "script" &&
+          (target.kind === "let" || target.kind === "const")
+        )
+      )
+        continue;
+      fixedCellReferences.set(reference.node.start, binding);
+      if (!fixedCellIndices.has(binding)) {
+        fixedCellIndices.set(binding, fixedCellNames.length);
+        fixedCellNames.push(target.name);
+      }
     }
   const localSlots = new Map<number, Expression>();
+  const frameLexicals = new Set<number>();
+  const sloppySelfBindings = new Set<number>();
+  const slotInitialization = new Map<number, Expression>();
   const numericLeaves = new Map<number, NumericLeaf>();
   if (checkContracts) {
     for (const declaration of sourceTypes?.statements ?? []) {
@@ -559,72 +695,112 @@ function lowerScriptEntry(
     }
   }
   const argumentsOwners = bound.value.argumentsOwners;
-  /** Identifier sites that can reach the global record: names the binder
-   * left unresolved and Script-level var/function bindings, which live on the
-   * global object. Keyed by span; each receives one GlobalIdentifierCache
-   * allocated in the entry prologue. Module code keeps uncached lookups. */
+  // Global references use a per-site cache. Closures share the table, which
+  // keeps their capture layouts independent of the number of identifier sites.
   const globalIdentifierSites = new Set<string>();
-  if (entryKind !== "module")
-    for (const reference of bound.value.references) {
-      if (reference === undefined) throw "GLOBAL_REFERENCE_INVARIANT";
-      // Only sites in the entry's own top-level code: the caches are entry
-      // locals, and nested functions would capture one per site, growing
-      // their closure records past the layout limit in large Scripts.
-      const site = bound.value.scopes[reference.scope];
-      if (site === undefined || site.owner !== undefined) continue;
-      const index = reference.binding;
-      let reaches = index === undefined;
-      if (index !== undefined) {
-        const binding = bound.value.bindings[index];
-        const owner =
-          binding === undefined ? undefined : bound.value.scopes[binding.scope];
-        reaches =
-          binding !== undefined &&
-          owner !== undefined &&
-          owner.kind === "script" &&
-          (binding.kind === "var" || binding.kind === "function");
+  for (const reference of bound.value.references) {
+    if (reference === undefined) throw "GLOBAL_REFERENCE_INVARIANT";
+    const node = reference.node;
+    // The binder tracks implicit arguments separately from named declarations.
+    if (node.kind === "identifier" && node.name === "arguments") continue;
+    const binding =
+      reference.binding === undefined
+        ? undefined
+        : boundBindings[reference.binding];
+    const reachesGlobal =
+      binding === undefined ||
+      (bound.value.scopes[binding.scope]?.kind === "script" &&
+        (binding.kind === "var" || binding.kind === "function"));
+    if (reachesGlobal)
+      globalIdentifierSites.add(
+        String(reference.node.start) + ":" + String(reference.node.end),
+      );
+  }
+  const globalIdentifierCaches = new Map<string, number>();
+  const globalCacheInitializers: Expression[] = [];
+  // Fixed record fields work in AOT and managed entries. Each closure
+  // captures the groups it uses, and one large host harness cannot exceed a
+  // native record's field limit.
+  const slotGroupWidth = 24;
+  function slotGroupName(prefix: string, index: number): string {
+    return prefix + Math.floor(index / slotGroupWidth);
+  }
+  function slotFieldName(index: number): string {
+    return "cell" + (index % slotGroupWidth);
+  }
+  function slotField(prefix: string, index: number, span: Span): Expression {
+    return member(
+      id(slotGroupName(prefix, index), span),
+      slotFieldName(index),
+      span,
+    );
+  }
+  function slotTable(
+    prefix: string,
+    values: readonly Expression[],
+    type: TypeNode | undefined = undefined,
+  ): Statement[] {
+    const result: Statement[] = [];
+    for (let start = 0; start < values.length; start += slotGroupWidth) {
+      const entries = values.slice(start, start + slotGroupWidth);
+      const names = entries.map((_entry, i) => slotFieldName(i));
+      let layout: TypeNode | undefined = undefined;
+      if (type !== undefined) {
+        const fieldType: TypeNode = type;
+        const properties: PropertySignature[] = [];
+        for (const name of names) {
+          if (name === undefined) throw "SCRIPT_SLOT_FIELD_INVARIANT";
+          properties.push({
+            ...generated,
+            name,
+            readonly: false,
+            type: fieldType,
+          });
+        }
+        layout = { ...generated, kind: "object", properties };
       }
-      if (reaches)
-        globalIdentifierSites.add(
-          String(reference.node.start) + ":" + String(reference.node.end),
-        );
+      result.push({
+        ...generated,
+        kind: "variable",
+        mode: "const",
+        exported: false,
+        declarations: [
+          {
+            ...generated,
+            name: slotGroupName(prefix, start),
+            type: layout,
+            initializer: object(names, entries, generated),
+          },
+        ],
+      });
     }
-  const globalIdentifierCaches = new Map<string, string>();
-  const globalCacheDeclarations: Statement[] = [];
-  /** Identifier helper arguments followed by the site's cache, if any; an
-   * uncached site omits the defaulted argument. */
+    return result;
+  }
+  function globalCacheDeclarations(): Statement[] {
+    return slotTable("$gc", globalCacheInitializers);
+  }
   function withGlobalIdentifierCache(
     args: readonly Expression[],
     span: Span,
   ): readonly Expression[] {
-    const cache = globalIdentifierCache(span);
-    if (cache === undefined) return args;
-    const extended = args.slice();
-    extended.push(cache);
-    return extended;
-  }
-  function globalIdentifierCache(span: Span): Expression | undefined {
     const key = String(span.start) + ":" + String(span.end);
-    if (!globalIdentifierSites.has(key)) return undefined;
-    const existing = globalIdentifierCaches.get(key);
-    if (existing !== undefined) return id(existing, span);
-    const name = "$gc" + String(globalCacheDeclarations.length);
-    globalIdentifierCaches.set(key, name);
-    globalCacheDeclarations.push({
-      ...generated,
-      kind: "variable",
-      mode: "const",
-      exported: false,
-      declarations: [
-        {
-          ...generated,
-          name,
-          type: undefined,
-          initializer: call("createGlobalIdentifierCache", [], generated),
-        },
-      ],
-    });
-    return id(name, span);
+    if (!globalIdentifierSites.has(key)) return args;
+    let index = globalIdentifierCaches.get(key);
+    if (index === undefined) {
+      index = globalCacheInitializers.length;
+      globalIdentifierCaches.set(key, index);
+      globalCacheInitializers.push(
+        call("createGlobalIdentifierCache", [], generated),
+      );
+    }
+    const extended = args.slice();
+    if (
+      (entryKind === "script" || entryKind === "indirect-eval") &&
+      !dynamicBindings
+    )
+      extended[0] = id("$scope");
+    extended.push(slotField("$gc", index, span));
+    return extended;
   }
   /** Direct eval code may run inside a caller's `with` body. Elsewhere, an
    * identifier callee without any `with` in its unit has an undefined this. */
@@ -676,6 +852,15 @@ function lowerScriptEntry(
     moduleFunctions: Expression[] = [],
     moduleFunctionNames: string[] = [];
   const statements: Statement[] = [];
+  function appendStatements(
+    target: Statement[],
+    additions: readonly Statement[],
+  ): void {
+    for (const statement of additions) {
+      if (statement === undefined) throw "SCRIPT_STATEMENT_INVARIANT";
+      target.push(statement);
+    }
+  }
   const generated: Span = { start: script.start, end: script.start };
   let serial = 0;
   // Names of const temporaries, and those declared `unknown` (general).
@@ -919,6 +1104,7 @@ function lowerScriptEntry(
     general: boolean = false,
     mutable: boolean = false,
     annotation: TypeNode | undefined = undefined,
+    capture: "reference" | "value" | undefined = undefined,
   ): Expression {
     if (compactResults && !mutable && annotation === undefined) {
       // Runtime-compiled entries never name a scalar literal or a copy of an
@@ -953,6 +1139,7 @@ function lowerScriptEntry(
           name,
           type: general ? named("unknown") : annotation,
           initializer: value,
+          ...(capture === undefined ? {} : { capture }),
         },
       ],
     });
@@ -1067,19 +1254,31 @@ function lowerScriptEntry(
     );
   }
   function write(target: Expression, value: Expression, span: Span): void {
-    const declaration = bindingWrites.get(span.start) ?? span.start;
-    const mask = bindingContracts.get(declaration);
-    const shape = bindingRecordContracts.get(declaration);
-    if (mask !== undefined || shape !== undefined) {
+    if (hasBindingContract(span)) {
       const assigned = temporary(value, true);
       // PutValue checks the binding's initialization after evaluating the RHS.
       expression(read(target, span));
-      value =
-        mask === undefined
-          ? (recordContract(assigned, shape, span) ?? assigned)
-          : checkedContract(assigned, mask, span);
+      value = bindingWriteValue(assigned, span);
     }
     checkedRuntimeCompletion("putBindingReference", [target, value], span);
+  }
+  function hasBindingContract(span: Span): boolean {
+    const declaration = bindingWrites.get(span.start) ?? span.start;
+    return (
+      bindingContracts.has(declaration) ||
+      bindingRecordContracts.has(declaration)
+    );
+  }
+  function bindingWriteValue(assigned: Expression, span: Span): Expression {
+    const declaration = bindingWrites.get(span.start) ?? span.start;
+    const mask = bindingContracts.get(declaration);
+    return mask === undefined
+      ? (recordContract(
+          assigned,
+          bindingRecordContracts.get(declaration),
+          span,
+        ) ?? assigned)
+      : checkedContract(assigned, mask, span);
   }
   function read(
     target: Expression,
@@ -1107,7 +1306,16 @@ function lowerScriptEntry(
     forTypeof: boolean = false,
   ): Expression {
     const local = localSlot(span);
-    if (local !== undefined) return temporary({ ...local, ...at(span) }, true);
+    if (local !== undefined) {
+      checkSlotInitialized(span);
+      return temporary({ ...local, ...at(span) }, true);
+    }
+    const fixedBinding = fixedCellReferences.get(span.start);
+    if (fixedBinding !== undefined) {
+      const cell = fixedCell(fixedBinding, span);
+      checkBindingInitialized(member(cell, "initialized", span), span);
+      return temporary(member(cell, "value", span), true);
+    }
     return temporary(
       call(
         "getIdentifierValue",
@@ -1130,18 +1338,239 @@ function lowerScriptEntry(
     forWrite: boolean = false,
   ): Expression | undefined {
     const binding = localBindingReferences.get(span.start);
+    const kind =
+      binding === undefined ? undefined : boundBindings[binding]?.kind;
     if (
       binding === undefined ||
-      (forWrite && boundBindings[binding]?.kind !== "let")
+      (forWrite &&
+        kind !== "let" &&
+        kind !== "parameter" &&
+        kind !== "var" &&
+        kind !== "function" &&
+        !frameLexicals.has(binding))
     )
       return undefined;
     return localSlots.get(binding);
   }
+  function checkSlotInitialized(span: Span): void {
+    const binding = localBindingReferences.get(span.start);
+    if (binding === undefined) return;
+    const initialized = slotInitialization.get(binding);
+    if (initialized === undefined) return;
+    checkBindingInitialized(initialized, span);
+  }
+  function fixedCellTable(): Statement[] {
+    const type: TypeNode = {
+      ...generated,
+      kind: "union",
+      members: [
+        {
+          ...generated,
+          kind: "named",
+          name: "Binding",
+          arguments: instantiation("Binding"),
+        },
+        named("undefined"),
+      ],
+    };
+    return slotTable(
+      "$fixedCells",
+      fixedCellNames.map(() => id("undefined")),
+      type,
+    );
+  }
+  // Copy cell identities after declaration instantiation, including aliases
+  // established by module linking. The values and TDZ remain live.
+  function loadFixedCells(environment: Expression): Statement[] {
+    const initializeCells: Statement[] = [];
+    for (let index = 0; index < fixedCellNames.length; index++) {
+      const name = fixedCellNames[index];
+      if (name === undefined) throw "FIXED_BINDING_CELL_INVARIANT";
+      const variable = "$cell" + serial++;
+      const cell = id(variable);
+      initializeCells.push({
+        ...generated,
+        kind: "variable",
+        mode: "const",
+        exported: false,
+        declarations: [
+          {
+            ...generated,
+            name: variable,
+            type: undefined,
+            initializer: call(
+              "findBinding",
+              [environment, text(name)],
+              generated,
+            ),
+          },
+        ],
+      });
+      initializeCells.push(requireFixedCell(cell, generated));
+      initializeCells.push({
+        ...generated,
+        kind: "expression",
+        expression: {
+          ...generated,
+          kind: "assignment",
+          target: slotField("$fixedCells", index, generated),
+          value: cell,
+        },
+      });
+    }
+    return initializeCells;
+  }
+  function fixedCell(binding: number, span: Span): Expression {
+    const index = fixedCellIndices.get(binding);
+    if (index === undefined) throw "FIXED_BINDING_CELL_INVARIANT";
+    const cell = temporary(slotField("$fixedCells", index, span));
+    statements.push(requireFixedCell(cell, span));
+    return cell;
+  }
+  function requireFixedCell(cell: Expression, span: Span): Statement {
+    return {
+      ...at(span),
+      kind: "if",
+      test: {
+        ...at(span),
+        kind: "binary",
+        operator: "===",
+        left: cell,
+        right: id("undefined", span),
+      },
+      consequent: {
+        ...at(span),
+        kind: "throw",
+        expression: text("FIXED_BINDING_CELL_INVARIANT", span),
+      },
+      alternate: undefined,
+    };
+  }
+  function checkBindingInitialized(initialized: Expression, span: Span): void {
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test: { ...at(span), kind: "unary", operator: "!", operand: initialized },
+      consequent: {
+        ...at(span),
+        kind: "throw",
+        expression: call(
+          "createRuntimeError",
+          [id("$errors"), text("reference", span)],
+          span,
+        ),
+      },
+      alternate: undefined,
+    });
+  }
+  function storeSlot(target: Expression, value: Expression, span: Span): void {
+    expression({ ...at(span), kind: "assignment", target, value });
+  }
+  function reserveLexicalSlots(children: readonly Statement[]): number[] {
+    const lexicalSlots: number[] = [];
+    for (const child of children) {
+      if (child === undefined) throw "SCRIPT_STATEMENT_INVARIANT";
+      const fn = statementFunctionDeclaration(child);
+      const blockBinding =
+        fn === undefined ? undefined : blockFunctions.get(fn);
+      if (blockBinding !== undefined) {
+        lexicalSlots.push(blockBinding);
+        reserveLexicalSlot(blockBinding, child, false);
+        continue;
+      }
+      if (child.kind === "class") {
+        const binding = localBindingDeclarations.get(child.start);
+        if (binding !== undefined) {
+          lexicalSlots.push(binding);
+          reserveLexicalSlot(binding, child, true);
+        }
+        continue;
+      }
+      if (
+        child.kind !== "variable" ||
+        child.mode === "var" ||
+        child.disposal !== undefined
+      )
+        continue;
+      for (const declaration of child.declarations) {
+        if (declaration === undefined) throw "SCRIPT_DECLARATION_INVARIANT";
+        reservePatternSlots(declaration, lexicalSlots);
+      }
+    }
+    return lexicalSlots;
+  }
+  function reservePatternSlots(
+    declaration: VariableBinding,
+    slots: number[],
+  ): void {
+    if (declaration.type !== undefined) return;
+    for (const identifier of bindingIdentifiers(declaration)) {
+      if (identifier === undefined) throw "SCRIPT_BINDING_INVARIANT";
+      if (hasBindingContract(identifier)) continue;
+      const binding = localBindingDeclarations.get(identifier.start);
+      if (binding === undefined) continue;
+      slots.push(binding);
+      reserveLexicalSlot(binding, identifier, true);
+    }
+  }
+  function reserveLexicalSlot(
+    binding: number,
+    span: Span,
+    hasTDZ: boolean,
+  ): Expression {
+    const slot = temporary(id("undefined", span), true, true);
+    frameLexicals.add(binding);
+    localSlots.set(binding, slot);
+    if (hasTDZ)
+      slotInitialization.set(
+        binding,
+        temporary(
+          { ...at(span), kind: "boolean", value: false },
+          false,
+          true,
+          undefined,
+          "reference",
+        ),
+      );
+    return slot;
+  }
+  function frameLexicalBinding(span: Span): number | undefined {
+    const binding = localBindingDeclarations.get(span.start);
+    return binding !== undefined && frameLexicals.has(binding)
+      ? binding
+      : undefined;
+  }
+  function initializeLexicalSlot(value: Expression, span: Span): boolean {
+    const binding = frameLexicalBinding(span);
+    if (binding === undefined) return false;
+    initializeKnownLexical(binding, value, span);
+    return true;
+  }
+  function initializeKnownLexical(
+    binding: number,
+    value: Expression,
+    span: Span,
+  ): void {
+    const target = localSlots.get(binding);
+    if (target === undefined) throw "SCRIPT_LEXICAL_SLOT_INVARIANT";
+    const initialized = slotInitialization.get(binding);
+    storeSlot(target, value, span);
+    if (initialized !== undefined)
+      storeSlot(
+        initialized,
+        { ...at(span), kind: "boolean", value: true },
+        span,
+      );
+  }
   /** The original scope handles TDZ and declaration initialization. Only
    * initialized bindings invisible to closures and dynamic lookup get slots. */
   function localizeInitialized(node: Statement, initialized: number[]): void {
+    if (node.kind === "class") {
+      const binding = frameLexicalBinding(node);
+      if (binding !== undefined) finalizeLexicalSlot(binding);
+      return;
+    }
     if (
-      dynamicBindings ||
       node.kind !== "variable" ||
       node.mode === "var" ||
       node.disposal !== undefined
@@ -1151,26 +1580,36 @@ function lowerScriptEntry(
       if (declaration === undefined) throw "SCRIPT_BINDING_INVARIANT";
       if (
         declaration.kind === "object-binding" ||
-        declaration.kind === "array-binding" ||
-        bindingContracts.has(declaration.start) ||
-        bindingRecordContracts.has(declaration.start)
-      )
+        declaration.kind === "array-binding"
+      ) {
+        for (const identifier of bindingIdentifiers(declaration)) {
+          if (identifier === undefined) throw "SCRIPT_BINDING_INVARIANT";
+          const binding = frameLexicalBinding(identifier);
+          if (binding !== undefined) finalizeLexicalSlot(binding);
+        }
         continue;
+      }
+      if (hasBindingContract(declaration)) continue;
       const binding = localBindingDeclarations.get(declaration.start);
       if (binding === undefined) continue;
-      const initial = temporary(
-        call(
-          "getBindingValue",
-          [lexical, text(declaration.name, declaration)],
-          declaration,
-        ),
-      );
-      check(member(initial, "error", declaration), declaration);
-      const slot = temporary(
-        member(initial, "value", declaration),
-        true,
-        node.mode === "let",
-      );
+      const frameSlot = localSlots.get(binding);
+      let slot: Expression;
+      if (frameSlot === undefined) {
+        const initial = temporary(
+          call(
+            "getBindingValue",
+            [lexical, text(declaration.name, declaration)],
+            declaration,
+          ),
+        );
+        check(member(initial, "error", declaration), declaration);
+        slot = temporary(
+          member(initial, "value", declaration),
+          true,
+          node.mode === "let",
+        );
+        initialized.push(binding);
+      } else slot = finalizeLexicalSlot(binding);
       localSlots.set(binding, slot);
       const implementation = numericLeaf(declaration.initializer);
       if (implementation !== undefined) {
@@ -1182,13 +1621,26 @@ function lowerScriptEntry(
           mutable,
         });
       }
-      initialized.push(binding);
     }
+  }
+  function finalizeLexicalSlot(binding: number): Expression {
+    const current = localSlots.get(binding);
+    if (current === undefined) throw "SCRIPT_LEXICAL_SLOT_INVARIANT";
+    // Earlier closures retain their checked cell. Later closures can copy
+    // an initialized value when no source write can change it.
+    const finalized = writtenSlots.has(binding)
+      ? current
+      : temporary(current, true, false, undefined, "value");
+    localSlots.set(binding, finalized);
+    slotInitialization.delete(binding);
+    return finalized;
   }
   function releaseLocalSlots(initialized: readonly number[]): void {
     for (const binding of initialized) {
       if (binding === undefined) throw "SCRIPT_BINDING_INVARIANT";
       localSlots.delete(binding);
+      frameLexicals.delete(binding);
+      slotInitialization.delete(binding);
       numericLeaves.delete(binding);
     }
   }
@@ -1450,6 +1902,14 @@ function lowerScriptEntry(
       const local = localSlot(target, true);
       if (local !== undefined)
         return { ...at(target), base: local, property: undefined, local: true };
+      const fixedBinding = fixedCellReferences.get(target.start);
+      if (fixedBinding !== undefined)
+        return {
+          ...at(target),
+          base: fixedCell(fixedBinding, target),
+          property: undefined,
+          fixedBinding,
+        };
       return {
         ...at(target),
         base: reference(target.name, target),
@@ -1495,6 +1955,16 @@ function lowerScriptEntry(
       };
     }
     return fail(target, "Script assignment target is not implemented");
+  }
+  function declareVariableTarget(
+    name: string,
+    span: Span,
+  ): AssignmentReference {
+    const binding = variableDeclarationBindings.get(span.start);
+    const local = binding === undefined ? undefined : localSlots.get(binding);
+    return local === undefined
+      ? { ...at(span), base: reference(name, span), property: undefined }
+      : { ...at(span), base: local, property: undefined, local: true };
   }
   function propertyReference(
     base: Expression,
@@ -1546,7 +2016,17 @@ function lowerScriptEntry(
   }
   function readAssignment(target: AssignmentReference): Expression {
     if (target.invalid) return id("undefined");
-    if (target.local) return { ...target.base, ...at(target) };
+    if (target.local) {
+      checkSlotInitialized(target);
+      return { ...target.base, ...at(target) };
+    }
+    if (target.fixedBinding !== undefined) {
+      checkBindingInitialized(
+        member(target.base, "initialized", target),
+        target,
+      );
+      return temporary(member(target.base, "value", target), true);
+    }
     const property = target.property;
     const superReceiver = target.superReceiver;
     const privateKey = target.privateName;
@@ -1609,12 +2089,35 @@ function lowerScriptEntry(
   ): void {
     if (target.invalid) return;
     if (target.local) {
-      expression({
-        ...at(target),
-        kind: "assignment",
-        target: target.base,
-        value: assigned,
-      });
+      const value = temporary(assigned, true);
+      checkSlotInitialized(target);
+      const binding = localBindingReferences.get(target.start);
+      if (binding !== undefined && boundBindings[binding]?.kind === "const") {
+        if (strict || !sloppySelfBindings.has(binding))
+          check(text("type", target), target);
+      } else storeSlot(target.base, bindingWriteValue(value, target), target);
+      return;
+    }
+    const fixedBinding = target.fixedBinding;
+    if (fixedBinding !== undefined) {
+      const value = temporary(assigned, true);
+      const binding = boundBindings[fixedBinding];
+      if (binding === undefined) throw "FIXED_BINDING_CELL_INVARIANT";
+      if (binding.kind === "import") {
+        check(text("type", target), target);
+        return;
+      }
+      checkBindingInitialized(
+        member(target.base, "initialized", target),
+        target,
+      );
+      if (!binding.mutable) check(text("type", target), target);
+      else
+        storeSlot(
+          member(target.base, "value", target),
+          bindingWriteValue(value, target),
+          target,
+        );
       return;
     }
     const property = target.property;
@@ -1707,7 +2210,7 @@ function lowerScriptEntry(
     if (node.kind === "identifier") {
       // Declarative, module and global records have no base object; reading
       // the callee before its arguments preserves evaluation order.
-      if (identifierCalleesUnbased)
+      if (identifierCalleesUnbased || localSlot(node) !== undefined)
         return {
           value: identifierValue(node.name, node),
           receiver: id("undefined", node),
@@ -2763,6 +3266,69 @@ function lowerScriptEntry(
       imports: [],
       statements: body.kind === "block" ? body.statements : [],
     });
+    const lexicalSlots =
+      !raw && body.kind === "block" ? reserveLexicalSlots(body.statements) : [];
+    const retainedLexicals =
+      lexicalSlots.length === 0
+        ? functionDeclarations.lexical
+        : functionDeclarations.lexical.filter(
+            (declaration) =>
+              declaration !== undefined &&
+              frameLexicalBinding(declaration) === undefined,
+          );
+    const hasArguments = !arrow && observesArguments(span);
+    const hoistedSlots: number[] = [];
+    const hoistedNames = new Set<string>();
+    if (
+      !raw &&
+      !options.packed &&
+      !hasArguments &&
+      !parameters.some(
+        (parameter) =>
+          parameter !== undefined && parameterHasExpressions(parameter),
+      )
+    )
+      for (const binding of functionVariables.get(span.end) ?? []) {
+        if (binding === undefined) throw "SCRIPT_VARIABLE_SLOT_INVARIANT";
+        const variable = boundBindings[binding];
+        if (variable === undefined) throw "SCRIPT_VARIABLE_SLOT_INVARIANT";
+        hoistedSlots.push(binding);
+        hoistedNames.add(variable.name);
+        localSlots.set(
+          binding,
+          temporary(id("undefined", variable.node), true, true),
+        );
+      }
+    // Mapped arguments, dynamic lookup and var aliases need the shared
+    // parameter record. Other formals have slots, including the bindings
+    // observed by defaults that run before the parameter list finishes.
+    const directParameters =
+      !raw &&
+      !options.packed &&
+      !hasArguments &&
+      parameters.every(
+        (parameter) =>
+          parameter !== undefined &&
+          parameter.type === undefined &&
+          parameterIdentifiers(parameter).every(
+            (identifier) =>
+              identifier !== undefined &&
+              localBindingDeclarations.has(identifier.start) &&
+              !functionDeclarations.variables.includes(identifier.name) &&
+              !annexCopies.some(
+                (copy) =>
+                  copy !== undefined &&
+                  copy.owner?.start === span.start &&
+                  copy.owner?.end === span.end &&
+                  copy.name === identifier.name,
+              ),
+          ),
+      );
+    const directSimpleParameters =
+      directParameters &&
+      parameters.every(
+        (parameter) => parameter !== undefined && isSimpleParameter(parameter),
+      );
     // Sloppy functions that never read their receiver skip
     // OrdinaryCallBindThis's conversion: wrapping a primitive receiver has no
     // other effect, and only `this`, `super` or a direct eval could see it.
@@ -2818,20 +3384,23 @@ function lowerScriptEntry(
       !derived &&
       !options.classFieldInitializer &&
       !options.baseConstructor &&
-      body.kind === "block" &&
-      parameters.length === 0 &&
+      (parameters.length === 0 || directParameters) &&
       !evalBody &&
       !evalParameters &&
-      (arrow || !observesArguments(span)) &&
-      functionDeclarations.variables.length === 0 &&
-      functionDeclarations.functions.length === 0 &&
-      functionDeclarations.lexical.length === 0 &&
+      !hasArguments &&
+      functionDeclarations.variables.every((name) => hoistedNames.has(name)) &&
+      functionDeclarations.functions.every(
+        (declaration) =>
+          declaration !== undefined && hoistedNames.has(declaration.name),
+      ) &&
+      retainedLexicals.length === 0 &&
       !annexCopies.some((copy) => {
         const owner = copy.owner;
         return (
           owner !== undefined &&
           owner.start === span.start &&
-          owner.end === span.end
+          owner.end === span.end &&
+          !hoistedNames.has(copy.name)
         );
       });
     const parameterRecord = bindsNothing
@@ -2855,8 +3424,22 @@ function lowerScriptEntry(
     const created = new Set<string>(),
       initializedParameters = new Set<string>();
     const parameterNames: Expression[] = [];
+    const parameterSlots: number[] = [];
     for (const parameter of parameters) {
       if (parameter === undefined) throw "SCRIPT_PARAMETER_INVARIANT";
+      if (directParameters) {
+        if (!directSimpleParameters)
+          for (const identifier of parameterIdentifiers(parameter)) {
+            if (identifier === undefined)
+              throw "SCRIPT_PARAMETER_SLOT_INVARIANT";
+            const binding = localBindingDeclarations.get(identifier.start);
+            if (binding === undefined) throw "SCRIPT_PARAMETER_SLOT_INVARIANT";
+            reserveLexicalSlot(binding, identifier, true);
+            parameterSlots.push(binding);
+          }
+        if (parameterHasExpressions(parameter)) separate = true;
+        continue;
+      }
       if (parameter.kind !== "pattern-parameter" && !parameter.rest) {
         const mask = contract(parameter.type);
         if (mask !== 0)
@@ -2889,7 +3472,7 @@ function lowerScriptEntry(
       if (!isSimpleParameter(parameter)) simple = false;
       if (parameterHasExpressions(parameter)) separate = true;
     }
-    if (!arrow && observesArguments(span)) {
+    if (hasArguments) {
       const argumentPlan = object(
         [
           "arrow",
@@ -2984,7 +3567,29 @@ function lowerScriptEntry(
             object: id(argsName, parameter),
             index: offset,
           };
-      const argument = temporary(argumentValue, true);
+      const binding = directSimpleParameters
+        ? localBindingDeclarations.get(parameter.start)
+        : undefined;
+      const argument = temporary(
+        argumentValue,
+        true,
+        false,
+        undefined,
+        binding !== undefined && !writtenSlots.has(binding)
+          ? "value"
+          : undefined,
+      );
+      if (directSimpleParameters) {
+        if (binding === undefined) throw "SCRIPT_PARAMETER_SLOT_INVARIANT";
+        localSlots.set(
+          binding,
+          writtenSlots.has(binding)
+            ? temporary(argument, true, true)
+            : argument,
+        );
+        parameterSlots.push(binding);
+        continue;
+      }
       const initializer = parameter.initializer;
       let initialized = argument;
       if (initializer !== undefined) {
@@ -3009,6 +3614,19 @@ function lowerScriptEntry(
           consequent,
           alternate: undefined,
         });
+      }
+      if (directParameters) {
+        if (parameter.kind === "pattern-parameter")
+          initializePattern(parameter.pattern, initialized, "let", false);
+        else if (!initializeLexicalSlot(initialized, parameter))
+          throw "SCRIPT_PARAMETER_SLOT_INVARIANT";
+        for (const identifier of parameterIdentifiers(parameter)) {
+          if (identifier === undefined) throw "SCRIPT_PARAMETER_SLOT_INVARIANT";
+          const cell = frameLexicalBinding(identifier);
+          if (cell === undefined) throw "SCRIPT_PARAMETER_SLOT_INVARIANT";
+          finalizeLexicalSlot(cell);
+        }
+        continue;
       }
       if (parameter.kind === "pattern-parameter") {
         initializePattern(parameter.pattern, initialized, "let", false);
@@ -3049,9 +3667,9 @@ function lowerScriptEntry(
     if (body.kind === "block") {
       const bodyStatements = body.statements;
       const plan = functionDeclarations;
-      const variables: Expression[] = plan.variables.map((name) =>
-        text(name, body),
-      );
+      const variables: Expression[] = plan.variables
+        .filter((name) => !hoistedNames.has(name))
+        .map((name) => text(name, body));
       for (const copy of annexCopies) {
         if (copy === undefined) throw "SCRIPT_ANNEX_COPY_INVARIANT";
         const owner = copy.owner;
@@ -3059,19 +3677,23 @@ function lowerScriptEntry(
           owner !== undefined &&
           owner.start === span.start &&
           owner.end === span.end &&
-          copy.name !== "arguments"
+          copy.name !== "arguments" &&
+          !hoistedNames.has(copy.name)
         )
           variables.push(text(copy.name, copy.node));
       }
       for (const declaration of plan.functions) {
         if (declaration === undefined) throw "SCRIPT_FUNCTION_INVARIANT";
-        variables.push(text(declaration.name, declaration));
+        if (!hoistedNames.has(declaration.name))
+          variables.push(text(declaration.name, declaration));
       }
-      const lexicalDeclarations = !strict && evalBody ? [] : plan.lexical;
+      const lexicalDeclarations = !strict && evalBody ? [] : retainedLexicals;
       // Without declarations or a separate var environment, the body shares
       // the parameter scope; skip allocating a plan on every invocation.
       const declares =
-        separate || variables.length > 0 || lexicalDeclarations.length > 0;
+        (separate && !bindsNothing) ||
+        variables.length > 0 ||
+        lexicalDeclarations.length > 0;
       const bodyPlan = (): Expression =>
         object(
           ["separate", "variables", "functions", "lexical"],
@@ -3177,7 +3799,10 @@ function lowerScriptEntry(
             functionName: text(declaration.name, declaration),
           },
         );
-        write(reference(declaration.name, declaration), fn, declaration);
+        writeAssignment(
+          declareVariableTarget(declaration.name, declaration),
+          fn,
+        );
       }
       executionStart = statements.length;
       const resources = beginResources(bodyStatements, body);
@@ -3188,6 +3813,7 @@ function lowerScriptEntry(
         if (!raw && !suspending) localizeInitialized(child, initializedSlots);
       }
       releaseLocalSlots(initializedSlots);
+      releaseLocalSlots(lexicalSlots);
       statements.push({
         ...at(body),
         kind: "return",
@@ -3198,6 +3824,8 @@ function lowerScriptEntry(
       const result = value(body, inferredName);
       statements.push({ ...at(body), kind: "return", expression: result });
     }
+    releaseLocalSlots(parameterSlots);
+    releaseLocalSlots(hoistedSlots);
     if (suspending) {
       const executionBody: BlockStatement = {
         ...at(body),
@@ -3560,26 +4188,48 @@ function lowerScriptEntry(
       outerLexical = lexical,
       outerStrict = strict;
     strict = true;
-    const record = temporary(
-      call("createDeclarativeEnvironment", [id("undefined")], node),
-    );
-    scope = temporary(
-      call("createDeclarativeScope", [outerScope, record], node),
-    );
-    lexical = record;
     const className = node.name;
-    if (className !== undefined)
-      expression(
-        call(
-          "createImmutableBinding",
-          [
-            record,
-            text(className, node),
-            { ...at(node), kind: "boolean", value: true },
-          ],
-          node,
-        ),
+    const classBinding = selfBindings.get(node);
+    let record: Expression | undefined;
+    if (classBinding !== undefined)
+      reserveLexicalSlot(classBinding, node, true);
+    else if (dynamicBindings || className !== undefined) {
+      const classRecord = temporary(
+        call("createDeclarativeEnvironment", [id("undefined")], node),
       );
+      record = classRecord;
+      scope = temporary(
+        call("createDeclarativeScope", [outerScope, classRecord], node),
+      );
+      lexical = classRecord;
+      if (className !== undefined)
+        expression(
+          call(
+            "createImmutableBinding",
+            [
+              classRecord,
+              text(className, node),
+              { ...at(node), kind: "boolean", value: true },
+            ],
+            node,
+          ),
+        );
+    }
+    function initializeClassName(value: Expression): void {
+      if (classBinding !== undefined)
+        initializeKnownLexical(classBinding, value, node);
+      else if (className !== undefined) {
+        const classRecord = record;
+        if (classRecord === undefined) throw "SCRIPT_CLASS_BINDING_INVARIANT";
+        expression(
+          call(
+            "initializeBinding",
+            [classRecord, text(className, node), value],
+            node,
+          ),
+        );
+      }
+    }
     const heritage =
       node.heritage === undefined
         ? undefined
@@ -4302,14 +4952,7 @@ function lowerScriptEntry(
         typeArguments: [],
       });
     }
-    if (!decorated && className !== undefined)
-      expression(
-        call(
-          "initializeBinding",
-          [record, text(className, node), result],
-          node,
-        ),
-      );
+    if (!decorated) initializeClassName(result);
     expression(
       runtimeCall(
         "initializeClassPrivateMethods",
@@ -4337,14 +4980,7 @@ function lowerScriptEntry(
         value: replacement,
       });
     }
-    if (decorated && className !== undefined)
-      expression(
-        call(
-          "initializeBinding",
-          [record, text(className, node), staticReceiver],
-          node,
-        ),
-      );
+    if (decorated) initializeClassName(staticReceiver);
     if (decorated)
       expression(
         runtimeCall(
@@ -4374,6 +5010,7 @@ function lowerScriptEntry(
         ),
       );
     privateScopes.pop();
+    if (classBinding !== undefined) releaseLocalSlots([classBinding]);
     scope = outerScope;
     lexical = outerLexical;
     strict = outerStrict;
@@ -4727,23 +5364,31 @@ function lowerScriptEntry(
             functionName: inferredName,
           });
         const outerScope = scope;
-        const record = temporary(
-          call("createDeclarativeEnvironment", [id("undefined")], node),
-        );
-        expression(
-          call(
-            "createImmutableBinding",
-            [
-              record,
-              text(selfName, node),
-              { ...at(node), kind: "boolean", value: false },
-            ],
-            node,
-          ),
-        );
-        scope = temporary(
-          call("createDeclarativeScope", [outerScope, record], node),
-        );
+        const selfBinding = selfBindings.get(node);
+        let record: Expression | undefined;
+        if (selfBinding !== undefined) {
+          reserveLexicalSlot(selfBinding, node, false);
+          sloppySelfBindings.add(selfBinding);
+        } else {
+          const selfRecord = temporary(
+            call("createDeclarativeEnvironment", [id("undefined")], node),
+          );
+          record = selfRecord;
+          expression(
+            call(
+              "createImmutableBinding",
+              [
+                selfRecord,
+                text(selfName, node),
+                { ...at(node), kind: "boolean", value: false },
+              ],
+              node,
+            ),
+          );
+          scope = temporary(
+            call("createDeclarativeScope", [outerScope, selfRecord], node),
+          );
+        }
         const fn = temporary(
           callable(node.parameters, node.body, false, node, {
             generator: node.generator,
@@ -4754,9 +5399,16 @@ function lowerScriptEntry(
           }),
           true,
         );
-        expression(
-          call("initializeBinding", [record, text(selfName, node), fn], node),
-        );
+        if (selfBinding !== undefined) {
+          initializeKnownLexical(selfBinding, fn, node);
+          releaseLocalSlots([selfBinding]);
+          sloppySelfBindings.delete(selfBinding);
+        } else {
+          if (record === undefined) throw "SCRIPT_FUNCTION_SELF_INVARIANT";
+          expression(
+            call("initializeBinding", [record, text(selfName, node), fn], node),
+          );
+        }
         scope = outerScope;
         return fn;
       }
@@ -4880,12 +5532,15 @@ function lowerScriptEntry(
         if (node.operator === "delete") {
           let operand = node.operand;
           while (operand.kind === "group") operand = operand.expression;
-          if (operand.kind === "identifier")
+          if (operand.kind === "identifier") {
+            if (localSlot(operand) !== undefined)
+              return { ...at(node), kind: "boolean", value: false };
             return call(
               "deleteBindingReference",
               [reference(operand.name, operand)],
               node,
             );
+          }
           if (isOptionalChain(operand))
             return optionalChainValue(operand, true).value;
           if (operand.kind === "member" || operand.kind === "index")
@@ -5369,14 +6024,31 @@ function lowerScriptEntry(
   }
   /** Whether a statement list has LexicallyScopedDeclarations (let, const,
    * using, class or block-level function declarations). */
+  function blockFunctionSlot(declaration: Span): number | undefined {
+    const binding = blockFunctions.get(declaration);
+    return binding === undefined || !frameLexicals.has(binding)
+      ? undefined
+      : binding;
+  }
   function declaresLexically(children: readonly Statement[]): boolean {
     for (const child of children) {
       if (child === undefined) throw "SCRIPT_STATEMENT_INVARIANT";
       const declaration = statementFunctionDeclaration(child) ?? child;
-      if (declaration.kind === "class" || declaration.kind === "function")
+      if (
+        (declaration.kind === "class" &&
+          frameLexicalBinding(declaration) === undefined) ||
+        (declaration.kind === "function" &&
+          blockFunctionSlot(declaration) === undefined)
+      )
         return true;
       if (declaration.kind === "variable" && declaration.mode !== "var")
-        return true;
+        for (const binding of declaration.declarations) {
+          if (binding === undefined) throw "SCRIPT_DECLARATION_INVARIANT";
+          for (const identifier of bindingIdentifiers(binding)) {
+            if (identifier === undefined) throw "SCRIPT_BINDING_INVARIANT";
+            if (frameLexicalBinding(identifier) === undefined) return true;
+          }
+        }
     }
     return false;
   }
@@ -5401,8 +6073,12 @@ function lowerScriptEntry(
     for (const child of declarations) {
       if (child === undefined) throw "SCRIPT_STATEMENT_INVARIANT";
       if (child.kind === "class" || child.kind === "function") {
+        if (child.kind === "class" && frameLexicalBinding(child) !== undefined)
+          continue;
         if (created.has(child.name)) continue;
         created.add(child.name);
+        const fn = functions.get(child.name);
+        if (fn !== undefined && blockFunctionSlot(fn) !== undefined) continue;
         expression(
           call(
             "createMutableBinding",
@@ -5421,6 +6097,7 @@ function lowerScriptEntry(
         if (binding === undefined) throw "SCRIPT_DECLARATION_INVARIANT";
         for (const declaration of bindingIdentifiers(binding)) {
           if (declaration === undefined) throw "SCRIPT_BINDING_INVARIANT";
+          if (frameLexicalBinding(declaration) !== undefined) continue;
           expression(
             call(
               child.mode === "const"
@@ -5445,15 +6122,62 @@ function lowerScriptEntry(
     // exist before any function is initialized, including later lexical bindings.
     for (const child of declarations) {
       if (child === undefined) throw "SCRIPT_STATEMENT_INVARIANT";
-      if (child.kind === "function" && functions.get(child.name) === child)
-        expression(
-          call(
-            "initializeBinding",
-            [record, text(child.name, child), declaredFunction(child)],
-            child,
-          ),
-        );
+      if (child.kind === "function" && functions.get(child.name) === child) {
+        const binding = blockFunctionSlot(child);
+        const fn = declaredFunction(child);
+        if (binding === undefined)
+          expression(
+            call(
+              "initializeBinding",
+              [record, text(child.name, child), fn],
+              child,
+            ),
+          );
+        else initializeKnownLexical(binding, fn, child);
+      }
     }
+  }
+  function iterationContext(
+    slots: readonly number[],
+    span: Span,
+  ):
+    | {
+        readonly record: Expression;
+        readonly type: TypeNode;
+        readonly bindings: readonly number[];
+        readonly fields: readonly string[];
+      }
+    | undefined {
+    const bindings: number[] = [],
+      fields: string[] = [],
+      values: Expression[] = [];
+    for (const binding of slots) {
+      if (binding === undefined) throw "SCRIPT_LOOP_BINDING_INVARIANT";
+      if (!capturedBindings.has(binding) || !writtenSlots.has(binding))
+        continue;
+      const value = localSlots.get(binding);
+      if (value === undefined) throw "SCRIPT_LOOP_BINDING_INVARIANT";
+      fields.push("value" + bindings.length);
+      bindings.push(binding);
+      values.push(value);
+    }
+    if (bindings.length === 0) return undefined;
+    const type: TypeNode = {
+      ...at(span),
+      kind: "object",
+      properties: fields.map((name) => ({
+        ...at(span),
+        name,
+        readonly: false,
+        type: named("unknown"),
+      })),
+    };
+    return {
+      record: temporary(object(fields, values, span), false, true, type),
+      type,
+      bindings,
+      fields,
+    };
   }
   function loopTest(test: Expression): void {
     const tested = temporary(value(test), true);
@@ -5650,7 +6374,7 @@ function lowerScriptEntry(
     incoming: Expression,
     mode: "let" | "const" | "var",
     useDefault: boolean,
-    capturedReference: Expression | undefined = undefined,
+    capturedReference: AssignmentReference | undefined = undefined,
   ): void {
     if (binding.kind === "array-binding") {
       const initialized = patternDefault(
@@ -5706,7 +6430,7 @@ function lowerScriptEntry(
     }
     const target =
       binding.kind !== "object-binding" && mode === "var"
-        ? (capturedReference ?? reference(binding.name, binding))
+        ? (capturedReference ?? declareVariableTarget(binding.name, binding))
         : undefined;
     const initialized = patternDefault(
       incoming,
@@ -5719,8 +6443,8 @@ function lowerScriptEntry(
     if (binding.kind !== "object-binding") {
       if (mode === "var") {
         if (target === undefined) throw "SCRIPT_PATTERN_REFERENCE_INVARIANT";
-        write(target, initialized, binding);
-      } else
+        writeAssignment(target, initialized);
+      } else if (!initializeLexicalSlot(initialized, binding))
         expression(
           call(
             "initializeBinding",
@@ -5767,11 +6491,11 @@ function lowerScriptEntry(
   function patternReference(
     binding: VariableBinding,
     mode: "let" | "const" | "var",
-  ): Expression | undefined {
+  ): AssignmentReference | undefined {
     return mode === "var" &&
       binding.kind !== "object-binding" &&
       binding.kind !== "array-binding"
-      ? reference(binding.name, binding)
+      ? declareVariableTarget(binding.name, binding)
       : undefined;
   }
 
@@ -6049,19 +6773,25 @@ function lowerScriptEntry(
               : [binding],
           exported: false,
         };
-      if (
+      function iterationLexical(declaration: Statement): number[] {
+        const slots = reserveLexicalSlots([declaration]);
+        if (declaresLexically([declaration])) {
+          lexical = temporary(
+            call("createDeclarativeEnvironment", [id("undefined")], node),
+          );
+          scope = temporary(
+            call("createDeclarativeScope", [outerScope, lexical], node),
+          );
+          lexicalBindings([declaration], lexical);
+        }
+        return slots;
+      }
+      const tdzSlots =
         (node.kind === "for-in" || node.kind === "for-of") &&
         node.mode !== "var" &&
         declaration !== undefined
-      ) {
-        lexical = temporary(
-          call("createDeclarativeEnvironment", [id("undefined")], node),
-        );
-        scope = temporary(
-          call("createDeclarativeScope", [outerScope, lexical], node),
-        );
-        lexicalBindings([declaration], lexical);
-      }
+          ? iterationLexical(declaration)
+          : [];
       // Annex B var initializers execute once, before evaluating the RHS,
       // including when enumeration produces no keys.
       if (
@@ -6072,6 +6802,7 @@ function lowerScriptEntry(
       )
         statement(declaration);
       const source = temporary(value(node.iterable), true);
+      releaseLocalSlots(tdzSlots);
       scope = outerScope;
       lexical = outerLexical;
       let iterator: Expression;
@@ -6156,6 +6887,7 @@ function lowerScriptEntry(
           true,
         );
       }
+      let iterationSlots: number[] = [];
       if (
         node.kind === "for-in-assignment" ||
         node.kind === "for-of-assignment"
@@ -6172,17 +6904,16 @@ function lowerScriptEntry(
         binding !== undefined &&
         declaration !== undefined
       ) {
-        lexical = temporary(
-          call("createDeclarativeEnvironment", [id("undefined")], node),
-        );
-        scope = temporary(
-          call("createDeclarativeScope", [outerScope, lexical], node),
-        );
-        lexicalBindings([declaration], lexical);
+        iterationSlots = iterationLexical(declaration);
         initializePattern(binding, key, node.mode, false);
+        for (const slot of iterationSlots) {
+          if (slot === undefined) throw "SCRIPT_ITERATION_BINDING_INVARIANT";
+          finalizeLexicalSlot(slot);
+        }
       } else throw "SCRIPT_ITERATION_BINDING_INVARIANT";
       statement(node.body);
       finishResources(resources, node);
+      releaseLocalSlots(iterationSlots);
       const body: BlockStatement = {
         ...at(node),
         kind: "block",
@@ -6211,13 +6942,14 @@ function lowerScriptEntry(
     if (node.kind === "class") {
       const record = lexical;
       const constructed = classValue(node.definition, text(node.name, node));
-      expression(
-        call(
-          "initializeBinding",
-          [record, text(node.name, node), constructed],
-          node,
-        ),
-      );
+      if (!initializeLexicalSlot(constructed, node))
+        expression(
+          call(
+            "initializeBinding",
+            [record, text(node.name, node), constructed],
+            node,
+          ),
+        );
       return;
     }
     if (
@@ -6233,21 +6965,39 @@ function lowerScriptEntry(
       let resources: ScriptResourceScope | undefined;
       if (initializer !== undefined) {
         if (initializer.kind === "variable" && initializer.mode !== "var") {
-          lexical = temporary(
-            call("createDeclarativeEnvironment", [id("undefined")], node),
-            false,
-            true,
-          );
-          scope = temporary(
-            call("createDeclarativeScope", [outerScope, lexical], node),
-            false,
-            true,
-          );
-          lexicalBindings([initializer], lexical);
-          if (
+          const copy =
             initializer.mode === "let" &&
-            (copyLoopEnvironments.has(node.start) || dynamicBindings)
-          ) {
+            copyLoopEnvironments.has(node.start) &&
+            (initializer.disposal !== undefined ||
+              initializer.declarations.some(
+                (declaration) =>
+                  declaration === undefined ||
+                  declaration.kind === "object-binding" ||
+                  declaration.kind === "array-binding" ||
+                  declaration.type !== undefined ||
+                  !localBindingDeclarations.has(declaration.start) ||
+                  bindingContracts.has(declaration.start) ||
+                  bindingRecordContracts.has(declaration.start),
+              ));
+          if (!copy)
+            for (const binding of reserveLexicalSlots([initializer])) {
+              if (binding === undefined) throw "SCRIPT_BINDING_INVARIANT";
+              initializedSlots.push(binding);
+            }
+          if (declaresLexically([initializer])) {
+            lexical = temporary(
+              call("createDeclarativeEnvironment", [id("undefined")], node),
+              false,
+              true,
+            );
+            scope = temporary(
+              call("createDeclarativeScope", [outerScope, lexical], node),
+              false,
+              true,
+            );
+            lexicalBindings([initializer], lexical);
+          }
+          if (copy) {
             for (const binding of initializer.declarations) {
               if (binding === undefined) throw "SCRIPT_BINDING_INVARIANT";
               for (const identifier of bindingIdentifiers(binding)) {
@@ -6262,6 +7012,10 @@ function lowerScriptEntry(
         if (iterationNames.length === 0)
           localizeInitialized(initializer, initializedSlots);
       }
+      // The initializer's cells remain distinct from the first body turn.
+      // Each iteration captures its own fixed record, while the carried
+      // pointer is updated before the increment, including after continue.
+      const fixed = iterationContext(initializedSlots, node);
       resetCompletion(node);
       const first = temporary(
         { ...at(node), kind: "boolean", value: true },
@@ -6269,6 +7023,27 @@ function lowerScriptEntry(
         true,
       );
       const start = statements.length;
+      if (fixed !== undefined) {
+        const record = fixed.record;
+        const next = temporary(
+          object(
+            fixed.fields,
+            fixed.fields.map((field) => member(record, field, node)),
+            node,
+          ),
+          false,
+          false,
+          fixed.type,
+        );
+        storeSlot(record, next, node);
+        for (let i = 0; i < fixed.bindings.length; i++) {
+          const binding = fixed.bindings[i],
+            field = fixed.fields[i];
+          if (binding === undefined || field === undefined)
+            throw "SCRIPT_LOOP_BINDING_INVARIANT";
+          localSlots.set(binding, member(next, field, node));
+        }
+      }
       if (iterationNames.length !== 0) {
         const next = temporary(
           call("createDeclarativeEnvironment", [id("undefined")], node),
@@ -6369,11 +7144,13 @@ function lowerScriptEntry(
       const start = statements.length;
       const outerScope = scope,
         outerLexical = lexical;
+      const blockSlots = reserveLexicalSlots(node.statements);
       // Without lexically scoped declarations, BlockDeclarationInstantiation
       // binds nothing, so the block environment is unobservable: resolution
       // and a direct eval's own environment chain past an empty one
       // identically. Skip it (2^21 empty blocks are ~1 KB of code each).
-      if (declaresLexically(node.statements)) {
+      const recordNeeded = declaresLexically(node.statements);
+      if (recordNeeded) {
         const record = temporary(
           call("createDeclarativeEnvironment", [id("undefined")], node),
         );
@@ -6381,14 +7158,17 @@ function lowerScriptEntry(
           call("createDeclarativeScope", [outerScope, record], node),
         );
         lexical = record;
-        lexicalBindings(node.statements, record);
       }
+      if (recordNeeded || blockSlots.length !== 0)
+        lexicalBindings(node.statements, lexical);
       const resources = beginResources(node.statements, node);
       for (const child of node.statements) {
         if (child === undefined) throw "SCRIPT_STATEMENT_INVARIANT";
         statement(child);
+        localizeInitialized(child, blockSlots);
       }
       finishResources(resources, node);
+      releaseLocalSlots(blockSlots);
       scope = outerScope;
       lexical = outerLexical;
       const body = statements.splice(start);
@@ -6404,13 +7184,6 @@ function lowerScriptEntry(
       const discriminant = temporary(value(node.expression), true);
       const outerScope = scope,
         outerLexical = lexical;
-      const record = temporary(
-        call("createDeclarativeEnvironment", [id("undefined")], node),
-      );
-      scope = temporary(
-        call("createDeclarativeScope", [outerScope, record], node),
-      );
-      lexical = record;
       const children: Statement[] = [];
       for (const clause of node.clauses) {
         if (clause === undefined) throw "SCRIPT_CLAUSE_INVARIANT";
@@ -6424,7 +7197,16 @@ function lowerScriptEntry(
         if (child.kind === "variable" && child.disposal !== undefined)
           fail(child, "resource disposal in switch clauses is not implemented");
       }
-      lexicalBindings(children, record);
+      const slots = reserveLexicalSlots(children);
+      if (declaresLexically(children)) {
+        lexical = temporary(
+          call("createDeclarativeEnvironment", [id("undefined")], node),
+        );
+        scope = temporary(
+          call("createDeclarativeScope", [outerScope, lexical], node),
+        );
+      }
+      lexicalBindings(children, lexical);
       resetCompletion(node);
       const noMatch: Expression = {
         ...at(node),
@@ -6544,6 +7326,7 @@ function lowerScriptEntry(
         expression: selected,
         clauses,
       });
+      releaseLocalSlots(slots);
       scope = outerScope;
       lexical = outerLexical;
       return;
@@ -6582,34 +7365,48 @@ function lowerScriptEntry(
           true,
         );
         resetCompletion(clause);
+        const catchSlots: number[] = [];
         if (clause.binding !== undefined) {
           const binding = clause.binding;
-          const record = temporary(
-            call("createDeclarativeEnvironment", [id("undefined")], clause),
+          reservePatternSlots(binding, catchSlots);
+          const names = bindingIdentifiers(binding).filter(
+            (identifier) =>
+              identifier !== undefined &&
+              frameLexicalBinding(identifier) === undefined,
           );
-          scope = temporary(
-            call("createDeclarativeScope", [outerScope, record], clause),
-          );
-          lexical = record;
-          catchRecords.push(record);
-          for (const identifier of bindingIdentifiers(binding)) {
-            if (identifier === undefined)
-              throw "SCRIPT_CATCH_BINDING_INVARIANT";
-            expression(
-              call(
-                "createMutableBinding",
-                [
-                  record,
-                  text(identifier.name, identifier),
-                  { ...at(identifier), kind: "boolean", value: false },
-                ],
-                identifier,
-              ),
+          if (names.length !== 0) {
+            const record = temporary(
+              call("createDeclarativeEnvironment", [id("undefined")], clause),
             );
+            scope = temporary(
+              call("createDeclarativeScope", [outerScope, record], clause),
+            );
+            lexical = record;
+            catchRecords.push(record);
+            for (const identifier of names) {
+              if (identifier === undefined)
+                throw "SCRIPT_CATCH_BINDING_INVARIANT";
+              expression(
+                call(
+                  "createMutableBinding",
+                  [
+                    record,
+                    text(identifier.name, identifier),
+                    { ...at(identifier), kind: "boolean", value: false },
+                  ],
+                  identifier,
+                ),
+              );
+            }
           }
           initializePattern(binding, converted, "let", false);
+          for (const slot of catchSlots) {
+            if (slot === undefined) throw "SCRIPT_CATCH_BINDING_INVARIANT";
+            finalizeLexicalSlot(slot);
+          }
         }
         statement(clause.body);
+        releaseLocalSlots(catchSlots);
         scope = outerScope;
         lexical = outerLexical;
         catchRecords = outerCatchRecords;
@@ -6671,12 +7468,35 @@ function lowerScriptEntry(
       return;
     }
     if (node.kind === "function") {
-      if (annexCopies.some((copy) => copy.node === node)) {
+      const annexCopy = annexCopies.find(
+        (copy) => copy !== undefined && copy.node === node,
+      );
+      if (annexCopy !== undefined) {
         const start = statements.length;
-        const result = temporary(
-          call("getBindingValue", [lexical, text(node.name, node)], node),
-        );
-        check(member(result, "error", node), node);
+        const blockBinding = blockFunctionSlot(node);
+        let initialized =
+          blockBinding === undefined ? undefined : localSlots.get(blockBinding);
+        if (initialized === undefined) {
+          const result = temporary(
+            call("getBindingValue", [lexical, text(node.name, node)], node),
+          );
+          check(member(result, "error", node), node);
+          initialized = member(result, "value", node);
+        }
+        const functionValue = initialized;
+        const owner = annexCopy.owner;
+        if (owner !== undefined)
+          for (const binding of functionVariables.get(owner.end) ?? []) {
+            if (binding === undefined) throw "SCRIPT_VARIABLE_SLOT_INVARIANT";
+            const slot = localSlots.get(binding);
+            if (
+              boundBindings[binding]?.name !== node.name ||
+              slot === undefined
+            )
+              continue;
+            storeSlot(slot, functionValue, node);
+            return;
+          }
         const record = annexVariableRecord;
         const copy = (target: Expression | undefined): Expression =>
           target === undefined
@@ -6685,7 +7505,7 @@ function lowerScriptEntry(
                 [
                   id("$global"),
                   text(node.name, node),
-                  member(result, "value", node),
+                  functionValue,
                   { ...at(node), kind: "boolean", value: false },
                 ],
                 node,
@@ -6695,7 +7515,7 @@ function lowerScriptEntry(
                 [
                   target,
                   text(node.name, node),
-                  member(result, "value", node),
+                  functionValue,
                   { ...at(node), kind: "boolean", value: false },
                 ],
                 node,
@@ -6801,11 +7621,10 @@ function lowerScriptEntry(
         }
         if (node.mode === "var") {
           if (initializer !== undefined) {
-            const target = reference(declaration.name, declaration);
-            write(
+            const target = declareVariableTarget(declaration.name, declaration);
+            writeAssignment(
               target,
               value(initializer, text(declaration.name, declaration)),
-              declaration,
             );
           }
         } else {
@@ -6840,13 +7659,14 @@ function lowerScriptEntry(
               declaration,
             );
           }
-          expression(
-            call(
-              "initializeBinding",
-              [lexical, text(declaration.name, declaration), initialized],
-              declaration,
-            ),
-          );
+          if (!initializeLexicalSlot(initialized, declaration))
+            expression(
+              call(
+                "initializeBinding",
+                [lexical, text(declaration.name, declaration), initialized],
+                declaration,
+              ),
+            );
         }
       }
     } else
@@ -6982,6 +7802,10 @@ function lowerScriptEntry(
           moduleInstantiation.push(initialized);
         }
       } else {
+        for (const group of fixedCellTable()) {
+          if (group === undefined) throw "FIXED_BINDING_CELL_INVARIANT";
+          statements.push(group);
+        }
         const annexDeclarations: Expression[] = [];
         for (const copy of annexCopies) {
           if (copy === undefined) throw "SCRIPT_ANNEX_COPY_INVARIANT";
@@ -7085,6 +7909,10 @@ function lowerScriptEntry(
           ),
           generated,
         );
+        for (const slot of loadFixedCells(lexical)) {
+          if (slot === undefined) throw "FIXED_BINDING_CELL_INVARIANT";
+          statements.push(slot);
+        }
       }
       statements.push({
         ...generated,
@@ -7222,6 +8050,7 @@ function lowerScriptEntry(
     compactResults,
     compactResults,
     usesPrimitiveContracts,
+    fixedCellNames.length !== 0,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,
@@ -7417,6 +8246,8 @@ function lowerScriptEntry(
       kind: "return",
       expression: array(moduleFunctions),
     });
+    const initializeStatements = loadFixedCells(id("$environment"));
+    appendStatements(initializeStatements, moduleInstantiation);
     const initialize: Expression = {
       ...generated,
       kind: "arrow",
@@ -7430,7 +8261,7 @@ function lowerScriptEntry(
       body: {
         ...generated,
         kind: "block",
-        statements: moduleInstantiation,
+        statements: initializeStatements,
       },
     };
     const execute: Expression = {
@@ -7442,7 +8273,8 @@ function lowerScriptEntry(
       ),
       body: moduleContinuation ?? body,
     };
-    const factoryStatements: Statement[] = [];
+    const factoryStatements = globalCacheDeclarations();
+    appendStatements(factoryStatements, fixedCellTable());
     // Each Module Record owns its parsed template sites even when the host
     // reuses a compiled factory for equal source text at different specifiers.
     for (const site of templateSites)
@@ -7617,21 +8449,12 @@ function lowerScriptEntry(
       });
     }
   }
-  // AOT entries run the body in the context arrow: declare the caches there,
-  // where the arrow reads them, rather than as captured execute locals.
-  const arrowStatements: Statement[] = [];
-  for (const cache of globalCacheDeclarations) {
-    if (cache === undefined) throw "GLOBAL_CACHE_PROLOGUE_INVARIANT";
-    arrowStatements.push(cache);
+  const caches = globalCacheDeclarations();
+  let contextArrowBody = body;
+  if (!compactResults && caches.length !== 0) {
+    appendStatements(caches, body.statements);
+    contextArrowBody = { ...body, statements: caches };
   }
-  for (const statement of body.statements) {
-    if (statement === undefined) throw "SCRIPT_STATEMENT_INVARIANT";
-    arrowStatements.push(statement);
-  }
-  const contextArrowBody: BlockStatement =
-    globalCacheDeclarations.length === 0
-      ? body
-      : { ...body, statements: arrowStatements };
   const contextualStatements: Statement[] = [];
   contextualStatements.push({
     ...generated,
@@ -7651,12 +8474,9 @@ function lowerScriptEntry(
     if (site === undefined) throw "SCRIPT_SITE_PROLOGUE_INVARIANT";
     contextualStatements.push(site);
   }
-  // Caches live in the function that uses them: inline entries run their
-  // body here, while the context arrow would otherwise capture one closure
-  // field per cache and outgrow the record layout limit in large Scripts.
   if (compactResults)
-    for (const cache of globalCacheDeclarations) {
-      if (cache === undefined) throw "GLOBAL_CACHE_PROLOGUE_INVARIANT";
+    for (const cache of caches) {
+      if (cache === undefined) throw "GLOBAL_CACHE_DECLARATION_INVARIANT";
       contextualStatements.push(cache);
     }
   const scriptContext = object(

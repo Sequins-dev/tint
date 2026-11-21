@@ -481,27 +481,44 @@ covers 74 constructs. Both new typed forms stay typed, both untyped forms
 pass, and all 144 forms shared with the C2 and B3 baseline retain their paths
 and outcomes.
 
-### Local slots in general lowering
+### Binding slots in general lowering
 
-Classic `for (let …)` loops inside functions reuse the initial declarative
-environment when the binder accounts for every reference and no closure,
-direct eval, or `with` can observe a distinct iteration binding. Capturing
-loops keep the creation order of their initialization and iteration scopes.
+The binder identifies references to parameters, locals, class names and
+module bindings before code generation. General lowering gives uncaptured
+locals native slots and uses the shared closure compiler for retained
+values. A lexical declaration starts with an uninitialized flag until its
+initializer finishes. Slot reads and writes enforce the temporal dead zone
+until initialization dominates the reference.
 
-After normal declaration initialization, uncaptured simple bindings in
-eligible loop heads and function bodies can use native slots that hold
-general values. Initialization still checks the temporal dead zone and
-evaluates initializers in source order. Writes to mutable slots accept the
-full JavaScript value domain. Constant writes and declarations with checked
-contracts use their existing binding operations.
+Direct eval and with preserve the named heap cells visible from their
+evaluation scopes. Mapped arguments continue to share cells with aliased
+parameters. Closures and suspension steps retain their live bindings.
+A closure can copy a general value after initialization when later source
+writes cannot change it. Earlier closures retain the shared cell and
+initialization flag. The native record layout traces both forms.
 
-When a local slot is active, general `+` and `<` can test both evaluated
-operands for the number category. The numeric branch uses the shared native
-scalar operations. Other operand pairs enter the general arithmetic helper
-with the original values in evaluation order.
+Classic loop headers carry fixed iteration fields when a closure can
+observe a distinct mutable binding. An initializer closure retains the
+pre-iteration binding. Each iteration creates its own retained fields
+before the update, including after a continue that runs a finally block.
+For-in and for-of retain the iterable's TDZ and initialize fresh slots for
+the body. Annex B block functions update the variable binding when the block
+declaration is evaluated.
+
+Module and Script lexical references use the cells established by
+declaration instantiation. Linked import aliases keep the exporting cell,
+so updates and temporal dead zones remain visible through the alias.
+Global object names use per-site caches when resolution reaches the
+global record. Property changes and global lexical declarations
+invalidate the cached property cell.
+
+General addition and less-than can test both evaluated operands for the
+number category. The numeric branch uses the shared native scalar
+operations. Other operand pairs enter the general arithmetic helper with
+the original values in evaluation order.
 
 The [paired candidate results](results/general-call-benchmark-darwin-arm64-206530edd-candidates.md)
-record the contribution of each lowering change.
+record the earlier slot and arithmetic experiments.
 
 ### Live native views (slice 2b)
 
@@ -851,7 +868,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | `toLowerCase` and other unlisted String methods; `Math.pow`/`log2`/`fround`; `JSON`                                                                                                                                                                                                                                                                    | `string-methods`, `math`, `json`                                                                        | 4                                        |
 | (Removed by 2b: checked downcasts) `x as Uint8Array` from a general value                                                                                                                                                                                                                                                                              | `general-value-casts`                                                                                   | 2 (projection), 4                        |
 | Typed-array views over another buffer                                                                                                                                                                                                                                                                                                                  | `typed-array-buffer-views`                                                                              | 4                                        |
-| Forward references to unannotated module constants can use hosted fallback with the original diagnostic location. Native specialization requires module binding inference. | `forward-inferred-const` | Open module binding inference |
+| Forward references to unannotated module constants can use hosted fallback with the original diagnostic location. Native specialization requires module binding inference.                                                                                                                                                                             | `forward-inferred-const`                                                                                | Open module binding inference            |
 | (Removed by 4a) Typed rest parameters and spreads in the rest position                                                                                                                                                                                                                                                                                 | `rest-default-parameters`, `rest-spread`                                                                | 4a                                       |
 | (Removed by 4a) Value-returning functions rejected in void callback slots                                                                                                                                                                                                                                                                              | `void-callbacks`                                                                                        | 4a                                       |
 | (Removed by 4a C3) Consuming the value returned through a void-typed callback                                                                                                                                                                                                                                                                          | `void-callback-result`                                                                                  | 4a C3                                    |

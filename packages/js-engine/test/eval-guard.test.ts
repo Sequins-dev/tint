@@ -85,13 +85,13 @@ test("eval guard receives the evaluated argument list, witness and running realm
   assert.equal(args[4].kind, "identifier");
   assert.equal(args[4].name, "$errors");
 });
-test("indirect-only lowering remains byte-identical", () => {
+test("indirect-only lowering keeps its caller-policy output contract", () => {
   const module = lower(
     "(0,eval)(1);eval?.(1);(eval)?.(1);this.eval(1);var e=eval;e(1);eval`x`;new eval(1);",
   );
   assert.equal(
     createHash("sha256").update(syntaxShapeJSON(module)).digest("hex"),
-    "879f121ae54c62e1bb5e8d845e40496b2592e44d6d387e0feb317d9a44278409",
+    "9de56e9fef18a5d9516affa153e7481b27cd8335b5171cb792e2e0d5a1e3799a",
   );
   // No indirect form may reach the direct-eval guard.
   assert.doesNotMatch(JSON.stringify(module), /"name":"callEvalCandidate"/);

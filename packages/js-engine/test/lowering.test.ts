@@ -11,6 +11,7 @@ import {
   type Expression,
 } from "@tint/typescript/syntax";
 import * as lowering from "../src/lowering/index.ts";
+import { createLoweredRealm } from "./lowered-node-host.ts";
 test("generated Script references keep linking work linear when source spans repeat", () => {
   const result = lower(
     "class Example{" +
@@ -1077,16 +1078,12 @@ test("resource scopes lower loop headers and suspended cleanup", () => {
 });
 
 test("labelled sloppy block functions are instantiated before block statements", () => {
-  const bytes = new TextEncoder().encode(
-    "{ f(); label: function f(){return 42;} }",
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run("{ print(String(f())); label: function f(){return 42;} }"),
+    "none",
   );
-  const source = createSourceText(bytes, bytes.length);
-  assert.ok(source.ok);
-  const parsed = parseScript(source.value);
-  assert.ok(parsed.ok);
-  const result = lowering.lowerScript(parsed.value);
-  assert.ok(result.ok, JSON.stringify(result));
-  assert.match(JSON.stringify(result.value), /"name":"initializeBinding"/);
+  assert.deepEqual(realm.printed, ["42"]);
 });
 
 test("suspending callbacks enter their driver through a transfer record", () => {

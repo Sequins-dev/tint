@@ -44,19 +44,15 @@ function environments(text: string): number {
 test("blocks without lexically scoped declarations create no environment", () => {
   const base = environments("0;");
   assert.equal(environments("{}{}{ {f();} }"), base);
-  // Each declaring block adds exactly its own environment.
-  for (const declaration of [
-    "let a=1;",
-    "const b=1;",
-    "class C{}",
-    "function g(){}",
-  ])
-    assert.equal(
-      environments("{" + declaration + "}{}"),
-      environments(declaration) + 1,
-      declaration,
-    );
+  for (const declaration of ["let a=1;", "const b=1;"])
+    assert.equal(environments("{" + declaration + "}{}"), base, declaration);
+  assert.equal(environments("{class C{}}"), environments("class C{}"));
+  assert.equal(environments("{let a=1;eval('a');}"), base + 1);
   assert.equal(environments("{var v=1;}"), environments("var v=1;"));
+  assert.equal(
+    environments("{function g(){}}"),
+    environments("function g(){}"),
+  );
 });
 
 function loweredStatements(text: string): number {
@@ -128,12 +124,33 @@ test("eliding empty block environments is unobservable", () => {
   }
 });
 
-test("a for-let loop without an escaping binding allocates only its initial environment", () => {
+test("a for-let loop without an escaping binding needs no lexical record", () => {
   const base = environments("function count() {}");
   assert.equal(
     environments("function count() { for (let i = 0; i < 5; i++) print(i); }"),
-    base + 1,
+    base,
   );
+});
+
+test("nested block bindings use the same captured slots after the block exits", () => {
+  const source = `
+    function outer(value) {
+      let read;
+      { let captured = value; read = () => ++captured; }
+      return read;
+    }
+  `;
+  assert.equal(runtimeCalls(source, "getIdentifierValue"), 0);
+  assert.equal(runtimeCalls(source, "resolveBinding"), 0);
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(
+      source +
+        "const next = outer(40); print(String(next())); print(String(next()));",
+    ),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["41", "42"]);
 });
 
 test("an initialized for-let counter uses a native slot for reads and writes", () => {
@@ -183,6 +200,7 @@ test("for-let captures keep distinct initialization and iteration environments",
   `;
   assert.equal(realm.run(source), "none");
   assert.deepEqual(realm.printed, ["0", "0", "1"]);
+  assert.equal(runtimeCalls(source, "getBindingValue"), 0);
 });
 
 test("a direct eval closure keeps its own for-let iteration environment", () => {
@@ -286,4 +304,338 @@ test("numeric loops specialize whole functions behind an argument guard", () => 
     "none",
   );
   assert.deepEqual(realm.printed, ["6", "6", "0", "3", "3"]);
+});
+
+test("simple parameter reads and writes use their bound slots", () => {
+  const source = "function update(value) { value = 'js'; return value; }";
+  assert.equal(runtimeCalls(source, "getIdentifierValue"), 0);
+  assert.equal(runtimeCalls(source, "putBindingReference"), 0);
+  assert.equal(runtimeCalls(source, "createMutableBinding"), 0);
+});
+
+test("known captures read the parameter slot and share subsequent writes", () => {
+  const source = "function outer(value) { return () => ++value; }";
+  assert.equal(runtimeCalls(source, "resolveBinding"), 0);
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(
+      source +
+        "const next = outer(40); print(String(next())); print(String(next()));",
+    ),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["41", "42"]);
+});
+
+test("strict direct eval can capture enclosing parameters after return", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+      function outer(value) {
+        "use strict";
+        function inner() {
+          const step = 1;
+          return eval("() => value += step");
+        }
+        return inner();
+      }
+      const next = outer(40);
+      print(String(next()));
+      print(String(next()));
+    `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["41", "42"]);
+});
+
+test("escaped sloppy arguments and closures alias the same parameter", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+      let escaped, read;
+      function remember(value) {
+        escaped = arguments;
+        read = () => value;
+      }
+      remember(1);
+      escaped[0] = 42;
+      print(String(read()));
+    `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["42"]);
+});
+
+test("parameter aliases and deletion retain Script binding semantics", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+      function duplicate(value, value) { return value; }
+      function redeclared(value) { var value = 42; return value; }
+      function removable(value) { return delete value; }
+      print(String(duplicate(0, 42)));
+      print(String(redeclared(0)));
+      print(String(removable(0)));
+    `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["42", "42", "false"]);
+});
+
+test("locals and parameters carry mutations across await in a loop", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+      async function sum(step) {
+        let total = 0;
+        for (let i = 0; i < 3; i++) {
+          step += i;
+          await step;
+          total += ++step;
+        }
+        print(String(total));
+      }
+      sum(1);
+    `),
+    "none",
+  );
+  realm.drain();
+  assert.deepEqual(realm.printed, ["13"]);
+});
+
+test("Annex B updates the outer var at block evaluation", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+      function run(take) {
+        print(typeof inner);
+        if (take) {
+          print(String(inner()));
+          function inner() { return 42; }
+        }
+        print(typeof inner);
+      }
+      run(false);
+      run(true);
+    `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "undefined",
+    "undefined",
+    "undefined",
+    "42",
+    "function",
+  ]);
+});
+
+test("function-body lexical references resolve to initialized or TDZ slots", () => {
+  const source = `
+    function outer() {
+      const early = () => later;
+      let caught = false;
+      try { early(); } catch (error) { caught = error instanceof ReferenceError; }
+      let later = 40;
+      const late = () => ++later;
+      return caught && early() === 40 && late() === 41 && early() === 41;
+    }
+  `;
+  assert.equal(runtimeCalls(source, "getBindingValue"), 0);
+  const realm = createLoweredRealm();
+  assert.equal(realm.run(source + "print(String(outer()));"), "none");
+  assert.deepEqual(realm.printed, ["true"]);
+});
+
+test("function vars and hoisted functions use slots shared with closures", () => {
+  const source = `function f(n) {
+    var sum;
+    if (sum !== undefined) return 1;
+    sum = 0;
+    for (var i = 0; i < n; i++) add(i);
+    return () => sum;
+    function add(x) { sum += x; }
+  }`;
+  assert.equal(runtimeCalls(source, "instantiateFunctionBody"), 0);
+  assert.equal(runtimeCalls(source, "getIdentifierValue"), 1);
+  const realm = createLoweredRealm();
+  assert.equal(realm.run(source + "print(String(f(4)()));"), "none");
+  assert.deepEqual(realm.printed, ["6"]);
+});
+
+test("class and named-function self references use lexical slots", () => {
+  const source = `
+    const fn = function self() { self = 1; return self; };
+    class C { static read() { return C; } }
+    const classRead = C.read;
+  `;
+  // The synthetic constructor retains its environment.
+  assert.equal(environments(source), 1);
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(source + "print(String(fn() === fn && classRead() === C))"),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["true"]);
+});
+
+test("class name slots preserve the heritage TDZ and lexical arrow receivers", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+      try { const Invalid = class Inner extends Inner {}; }
+      catch (error) { print(error.name); }
+      class Base { value() { return 40; } }
+      class Derived extends Base {
+        #extra = 2;
+        value() { return (() => super.value() + this.#extra)(); }
+      }
+      function Constructor() { this.target = () => new.target; }
+      print(String(new Derived().value()));
+      print(String(new Constructor().target() === Constructor));
+    `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["ReferenceError", "42", "true"]);
+});
+
+test("Annex B copies the initialized block slot into the function var slot", () => {
+  const source = `function f() {
+    const before = typeof inner;
+    if (true) { function inner() { return 42; } }
+    return before + " " + inner();
+  }`;
+  assert.equal(runtimeCalls(source, "getBindingValue"), 0);
+  assert.equal(environments(source), 0);
+  const realm = createLoweredRealm();
+  assert.equal(realm.run(source + " print(f());"), "none");
+  assert.deepEqual(realm.printed, ["undefined 42"]);
+});
+
+test("direct eval in a sibling function leaves unrelated locals in slots", () => {
+  const source = `
+    function read(value) { const local = value; return local; }
+    function dynamic() { const text = "ignored"; return eval("text"); }
+  `;
+  assert.equal(runtimeCalls(source, "getIdentifierValue"), 1);
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(source + "print(String(read(42)));print(dynamic());"),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["42", "ignored"]);
+});
+
+test("with lookup preserves the receiver and unrelated functions keep slots", () => {
+  const source = `
+    function safe(input) { const step = () => input + 1; return step(); }
+    function dynamic(target) { with (target) { return step(); } }
+  `;
+  assert.equal(runtimeCalls(source, "getIdentifierValue"), 1);
+  assert.equal(runtimeCalls(source, "getBindingThisValue"), 1);
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(
+      source +
+        "print(String(safe(41)));print(String(dynamic({value: 42, step() { return this.value; }})));",
+    ),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["42", "42"]);
+});
+
+test("destructured lexicals use fixed slots and retain TDZ in defaults", () => {
+  const source = `
+    function read() {
+      let {a, b = a} = {a: 42};
+      return () => b;
+    }
+  `;
+  assert.equal(runtimeCalls(source, "getIdentifierValue"), 0);
+  assert.equal(environments(source), 0);
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(
+      source +
+        "print(String(read()())); try { let [x = y, y] = []; } catch (error) { print(error.name); }",
+    ),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["42", "ReferenceError"]);
+});
+
+test("a Script-level for let counter with no capture stays in a slot", () => {
+  const source = "for (let i = 0; i < 2; i++) { i; }";
+  assert.equal(environments(source), 0);
+  assert.equal(runtimeCalls(source, "getIdentifierValue"), 0);
+});
+
+test("for-of bindings use fresh slots after evaluating the iterable", () => {
+  const source = `
+    function read() {
+      const readers = [];
+      for (let value of [40, 42]) readers.push(() => value);
+      return readers;
+    }
+  `;
+  assert.equal(runtimeCalls(source, "getIdentifierValue"), 0);
+  assert.equal(environments(source), 0);
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(
+      source +
+        "let [first, second] = read(); print(String(first())); print(String(second())); try { for (let value of value) {} } catch (error) { print(error.name); }",
+    ),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["40", "42", "ReferenceError"]);
+});
+
+test("catch slots preserve Annex B's redirected var initializer", () => {
+  const source = `
+    function read() {
+      let closure;
+      try { throw 40; }
+      catch (value) {
+        var value = 42;
+        closure = () => value;
+      }
+      return typeof value + " " + closure();
+    }
+  `;
+  assert.equal(runtimeCalls(source, "getIdentifierValue"), 0);
+  assert.equal(environments(source), 0);
+  const realm = createLoweredRealm();
+  assert.equal(realm.run(source + "print(read());"), "none");
+  assert.deepEqual(realm.printed, ["undefined 42"]);
+});
+
+test("Script lexical cells are located once for all resolved references", () => {
+  const source =
+    "let total = 40; function next() { total += 2; return total; }";
+  assert.equal(runtimeCalls(source, "getIdentifierValue"), 0);
+  assert.equal(runtimeCalls(source, "resolveBinding"), 0);
+  assert.equal(runtimeCalls(source, "findBinding"), 1);
+  const realm = createLoweredRealm();
+  assert.equal(realm.run(source + "print(String(next()));"), "none");
+  assert.equal(realm.run("print(String(next()));"), "none");
+  assert.deepEqual(realm.printed, ["42", "44"]);
+});
+
+test("defaults, destructuring and rest share initialized parameter slots", () => {
+  const source = `
+    function read(make = () => later, {value: later} = {value: 41}, ...rest) {
+      return make() + rest[0];
+    }
+  `;
+  assert.equal(runtimeCalls(source, "getIdentifierValue"), 0);
+  assert.equal(environments(source), 0);
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(
+      source +
+        "print(String(read(undefined, undefined, 1))); function early(a = b, b = 0) {} try { early(); } catch (error) { print(error.name); }",
+    ),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["42", "ReferenceError"]);
 });

@@ -614,10 +614,14 @@ test("entries differing only in binding names and function source text share one
   const first = results[0],
     third = results[2];
   assert.ok(first?.ok && third?.ok);
-  for (const value of ["f1", "a", "c", "function f1([a=func(), ...c]) {}"])
+  for (const value of ["f1", "function f1([a=func(), ...c]) {}"])
     assert.ok(first.literals?.includes(value), value);
-  for (const value of ["g7", "b", "d", "function g7([b=func(), ...d]) {}"])
+  for (const local of ["a", "c"])
+    assert.equal(first.literals?.includes(local), false);
+  for (const value of ["g7", "function g7([b=func(), ...d]) {}"])
     assert.ok(third.literals?.includes(value), value);
+  for (const local of ["b", "d"])
+    assert.equal(third.literals?.includes(local), false);
   assert.equal(first.literals?.includes("g7"), false);
   // Identifier reads, writes and declarations share across names too.
   const reads = ["a;", "b;"].map((text) =>

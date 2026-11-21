@@ -112,6 +112,7 @@ import {
   type Instruction,
   type Terminator,
   type ScalarType,
+  type RecordField,
   type Environment,
   type Span as IRSpan,
   type SourceVariable,
@@ -1642,9 +1643,13 @@ function lowerEntries(
         )
           fail("unsupported owned capture scope");
         const type = bindingScalar(binding.id);
-        // Environment fields below occupy one word. Keep wider carriers in
-        // cells; traced pointers retain their ordinary descriptor field type.
-        if (valueCaptures[binding.id] === 1 && scalarByteLength(type) !== 8)
+        // Preserve the existing capture layout of ordinary typed sources.
+        // General lowering explicitly marks initialized value snapshots.
+        if (
+          valueCaptures[binding.id] === 1 &&
+          binding.capture !== "value" &&
+          scalarByteLength(type) !== 8
+        )
           valueCaptures[binding.id] = 0;
         ownedCells[binding.id] = recordContracts.append({
           byteLength: alignAllocation(
@@ -1669,24 +1674,23 @@ function lowerEntries(
           .map((c) => c.binding)
           .filter((id) => direct[id] === undefined && !constants.has(id));
         if (bindings.length === 0) continue;
+        let offset: number = recordHeaderBytes;
+        const fields: RecordField[] = [];
         for (const binding of bindings) {
           if (binding === undefined || ownedCells[binding] === undefined)
             fail("owned capture requires an included lexical owner");
+          const type: ScalarType =
+            valueCaptures[binding] === 1
+              ? scalar(checked.bindingTypes[binding])
+              : "reference";
+          fields.push({ offset, type, mutable: false });
+          offset += scalarByteLength(type);
         }
         ownedFunctions.set(sourceId, {
           bindings,
           record: recordContracts.append({
-            byteLength: alignAllocation(
-              recordHeaderBytes + bindings.length * 8,
-            ),
-            fields: bindings.map((binding, i) => ({
-              offset: recordHeaderBytes + i * 8,
-              type:
-                valueCaptures[binding] === 1
-                  ? scalar(checked.bindingTypes[binding])
-                  : "reference",
-              mutable: false,
-            })),
+            byteLength: alignAllocation(offset),
+            fields,
           }),
         });
       }

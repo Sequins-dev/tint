@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { createSourceTextView } from "@tint/source/text";
 import { parseModule, rewriteModule } from "@tint/typescript/syntax";
@@ -55,22 +54,36 @@ for (const source of [
     },
   );
 }
-test("module lowering retains its caller-policy baseline, including nested async bodies", () => {
-  const baseline = JSON.parse(
-    readFileSync(
-      new URL(
-        "../../../docs/results/module-async-lowering-caller-policy-baseline-node-v8.json",
-        import.meta.url,
-      ),
-      "utf8",
-    ),
-  );
-  for (const row of baseline.cases) {
+test("module lowering preserves its caller-policy shape through nested async bodies", () => {
+  const cases = [
+    [
+      "export let x=1; export function f(){return x;}",
+      "8239a11bb797d6ab2148923381e28776f5ad8261b4942894ff3108ce23d765b2",
+    ],
+    [
+      "export async function f(){return await 1;}",
+      "1e7b073d7190e5ac42b260bf74554bbb26c1fb34ce82fd546050b0a1a3f18749",
+    ],
+    [
+      'export const C=class {["x"](){return 1;}};',
+      "ebc2684749a092c184d4948b5141337b7560c9ba673af53f4ce9de071642e1e5",
+    ],
+    [
+      "using resource=x; export let y=2;",
+      "de920ec011a4026a49a6f8722f0877440ca3492b5d7028945ff026602b81ec80",
+    ],
+    [
+      'export function f(){return import("./m.js");}',
+      "f5c5bda9339baaba313fd55696a166d9b0c93b4342f771d85d1a80a21d847fc0",
+    ],
+  ] as const;
+  for (const [source, sha256] of cases) {
     assert.equal(
       createHash("sha256")
-        .update(JSON.stringify(lower(row.source)))
+        .update(JSON.stringify(lower(source)))
         .digest("hex"),
-      row.sha256,
+      sha256,
+      source,
     );
   }
 });

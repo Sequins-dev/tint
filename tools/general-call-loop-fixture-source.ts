@@ -112,3 +112,30 @@ export function run(): number {
   return sum === 18 ? 42 : 1;
 }
 `;
+
+// The incoming argument is a primitive. The object assigned to the parameter
+// has no Script-visible root except the parameter's native slot.
+export const generalSlotCollectionSource = `
+function retain(value) {
+  value = { answer: 42 };
+  for (let index = 0; index < 5; index++) {
+    const garbage = { answer: index };
+    collectGarbage();
+    if (garbage.answer !== index) return 1;
+  }
+  return value.answer;
+}
+
+function capture() {
+  const value = { answer: 42 };
+  return () => value.answer;
+}
+
+export function run() {
+  if (typeof Reflect !== "object") return 2;
+  const read = capture();
+  collectGarbage();
+  if (read() !== 42) return 3;
+  return retain(0);
+}
+`;

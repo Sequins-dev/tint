@@ -3,12 +3,17 @@ import { stripTypeScriptTypes } from "node:module";
 import { test } from "node:test";
 import {
   generalCallLoopSource,
+  generalSlotCollectionSource,
   typedCallLoopSource,
 } from "./general-call-loop-fixture-source.ts";
 
 for (const [mode, source] of [
   ["general", generalCallLoopSource],
   ["typed", typedCallLoopSource],
+  [
+    "general promoted slot",
+    "const collectGarbage = () => {};\n" + generalSlotCollectionSource,
+  ],
 ]) {
   test(mode + " call and loop fixture holds under Node", async () => {
     assert.ok(source);
