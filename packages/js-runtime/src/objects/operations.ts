@@ -320,15 +320,30 @@ export interface ObjectRegisterEntry<Value> {
 interface OrdinaryPropertyShape {
   readonly keys: readonly string[];
   readonly hash: number;
-  /** Shared successors by appended key; undefined for an unshared shape
-   * (null prototype, too many keys or too many successors). */
-  readonly transitions: Map<string, OrdinaryPropertyShape> | undefined;
+  /** Whether successors are shared (false for a null prototype's shapes
+   * and past the key and successor limits). Shared successors form a list
+   * (firstSuccessor, nextSibling) keyed by their last key; records instead
+   * of a map keep the runtime's collection instantiations unchanged. */
+  readonly shared: boolean;
+  firstSuccessor: OrdinaryPropertyShape | undefined;
+  readonly nextSibling: OrdinaryPropertyShape | undefined;
+  successors: number;
 }
 /** Kept current as properties are added or redefined; rebuilt from the
  * prototype's root after deletions and prototype changes. */
-interface OrdinaryPropertyLayout<Value> {
+export interface OrdinaryPropertyLayout<Value> {
   shape: OrdinaryPropertyShape;
   readonly cells: Descriptor<Value>[];
+  /** The first propertyLayoutSlots cells again, in place: generated caches
+   * read them at a computed offset (readPropertyLayoutSlot). */
+  slot0: Descriptor<Value> | undefined;
+  slot1: Descriptor<Value> | undefined;
+  slot2: Descriptor<Value> | undefined;
+  slot3: Descriptor<Value> | undefined;
+  slot4: Descriptor<Value> | undefined;
+  slot5: Descriptor<Value> | undefined;
+  slot6: Descriptor<Value> | undefined;
+  slot7: Descriptor<Value> | undefined;
 }
 interface IndexedPropertyLayout<Value> {
   readonly keys: Float64Array;
@@ -452,7 +467,7 @@ export function attachPropertyContract<Key, Value>(
   const elements = object.internalArrayElements;
   if (elements !== undefined) unpackArrayElements<Key, Value>(object, elements);
   object.internalPropertyContract = contract;
-  invalidatePropertyLayout<Key, Value>(object);
+  updatePropertyLayout<Key, Value>(object, undefined, undefined, false);
 }
 export function createAliasedObject<Key, Value>(
   prototype: OrdinaryObject<Key, Value> | undefined,
@@ -736,7 +751,7 @@ export function ordinaryDefineOwnProperty<Key, Value>(
       );
     const added = !object.properties.has(key);
     object.properties.set(key, descriptor);
-    recordPropertyDefinition<Key, Value>(object, key, descriptor, added);
+    updatePropertyLayout<Key, Value>(object, key, descriptor, added);
     if (aliases !== undefined && alias !== undefined) {
       if (descriptor.accessor) aliases.delete(key);
       else {
@@ -759,7 +774,7 @@ function unpackArrayElements<Key, Value>(
       elements.keys.indexKey(index),
       arrayElementDescriptor<Key, Value>(elements, index),
     );
-  invalidatePropertyLayout<Key, Value>(object);
+  updatePropertyLayout<Key, Value>(object, undefined, undefined, false);
   object.internalArrayElements = undefined;
 }
 /** Create or replace an own data property, without invoking setters. */
@@ -790,7 +805,7 @@ export function createDataProperty<Key, Value>(
       configurable: true,
     };
     object.properties.set(key, descriptor);
-    recordPropertyDefinition<Key, Value>(object, key, descriptor, true);
+    updatePropertyLayout<Key, Value>(object, key, descriptor, true);
     return true;
   }
   return (
@@ -866,7 +881,7 @@ export function ordinaryDeleteProperty<Key, Value>(
   const contract = object.internalPropertyContract;
   if (contract !== undefined && !contract.canDelete(key)) return false;
   object.properties.delete(key);
-  invalidatePropertyLayout<Key, Value>(object);
+  updatePropertyLayout<Key, Value>(object, undefined, undefined, false);
   const aliases = object.internalDataAliases;
   if (aliases !== undefined) aliases.delete(key);
   return true;
@@ -907,7 +922,7 @@ export function setPrototype<Key, Value>(
     cursor = cursor.prototype;
   }
   object.prototype = prototype;
-  invalidatePropertyLayout<Key, Value>(object);
+  updatePropertyLayout<Key, Value>(object, undefined, undefined, false);
   return true;
 }
 /** Freeze only the prototype identity; own properties can remain extensible. */
@@ -991,36 +1006,71 @@ export function writePropertyCell<Value>(
   cell.value = value;
 }
 
-function invalidatePropertyLayout<Key, Value>(
+/** Records a change of the object's own descriptors. A new key or a
+ * replaced descriptor keeps an installed layout current (string keys);
+ * any other change (key undefined) discards it for a rebuild. */
+function updatePropertyLayout<Key, Value>(
   object: OrdinaryObject<Key, Value>,
-): void {
-  object.internalPropertyEpoch++;
-  object.internalPropertyLayout = undefined;
-  object.internalIndexedProperties = undefined;
-}
-/** A stored descriptor was added (appended to the map) or replaced. */
-function recordPropertyDefinition<Key, Value>(
-  object: OrdinaryObject<Key, Value>,
-  key: Key,
-  descriptor: Descriptor<Value>,
+  key: Key | undefined,
+  descriptor: Descriptor<Value> | undefined,
   added: boolean,
 ): void {
   object.internalPropertyEpoch++;
   object.internalIndexedProperties = undefined;
   const layout = object.internalPropertyLayout;
   if (layout === undefined) return;
-  if (typeof key !== "string") {
+  if (
+    key === undefined ||
+    descriptor === undefined ||
+    typeof key !== "string"
+  ) {
     object.internalPropertyLayout = undefined;
     return;
   }
   if (added) {
     layout.shape = transitionPropertyShape(layout.shape, key);
     layout.cells.push(descriptor);
+    writePropertyLayoutSlot<Value>(layout, layout.cells.length - 1, descriptor);
     return;
   }
   const index = layout.shape.keys.indexOf(key);
   if (index < 0) throw "PROPERTY_LAYOUT_KEY_INVARIANT";
   layout.cells[index] = descriptor;
+  writePropertyLayoutSlot<Value>(layout, index, descriptor);
+}
+/** In-place cell slots per layout (slot0..7). */
+export const propertyLayoutSlots = 8;
+function writePropertyLayoutSlot<Value>(
+  layout: OrdinaryPropertyLayout<Value>,
+  index: number,
+  cell: Descriptor<Value>,
+): void {
+  switch (index) {
+    case 0:
+      layout.slot0 = cell;
+      return;
+    case 1:
+      layout.slot1 = cell;
+      return;
+    case 2:
+      layout.slot2 = cell;
+      return;
+    case 3:
+      layout.slot3 = cell;
+      return;
+    case 4:
+      layout.slot4 = cell;
+      return;
+    case 5:
+      layout.slot5 = cell;
+      return;
+    case 6:
+      layout.slot6 = cell;
+      return;
+    case 7:
+      layout.slot7 = cell;
+      return;
+  }
 }
 
 const emptyPropertyShapeHash = 2166136261;
@@ -1029,42 +1079,31 @@ const emptyPropertyShapeHash = 2166136261;
  * shared trees without bound. */
 const maxSharedPropertyKeys = 64,
   maxPropertyTransitions = 32;
-function rootPropertyShape<Key, Value>(
-  prototype: OrdinaryObject<Key, Value> | undefined,
-): OrdinaryPropertyShape {
-  if (prototype === undefined)
-    return { keys: [], hash: emptyPropertyShapeHash, transitions: undefined };
-  const existing = prototype.internalChildShape;
-  if (existing !== undefined) return existing;
-  const root: OrdinaryPropertyShape = {
-    keys: [],
-    hash: emptyPropertyShapeHash,
-    transitions: new Map<string, OrdinaryPropertyShape>(),
-  };
-  prototype.internalChildShape = root;
-  return root;
-}
 function transitionPropertyShape(
   shape: OrdinaryPropertyShape,
   key: string,
 ): OrdinaryPropertyShape {
-  const transitions = shape.transitions;
-  if (transitions !== undefined) {
-    const existing = transitions.get(key);
-    if (existing !== undefined) return existing;
+  let successor = shape.firstSuccessor;
+  while (successor !== undefined) {
+    const keys = successor.keys;
+    if (keys[keys.length - 1] === key) return successor;
+    successor = successor.nextSibling;
   }
   const keys = shape.keys.slice();
   keys.push(key);
-  const shared =
-    transitions !== undefined &&
-    keys.length < maxSharedPropertyKeys &&
-    transitions.size < maxPropertyTransitions;
+  const linked = shape.shared && shape.successors < maxPropertyTransitions;
   const next: OrdinaryPropertyShape = {
     keys,
     hash: Math.imul(shape.hash ^ hashString(key), 16777619) >>> 0,
-    transitions: shared ? new Map<string, OrdinaryPropertyShape>() : undefined,
+    shared: linked && keys.length < maxSharedPropertyKeys,
+    firstSuccessor: undefined,
+    nextSibling: linked ? shape.firstSuccessor : undefined,
+    successors: 0,
   };
-  if (shared && transitions !== undefined) transitions.set(key, next);
+  if (linked) {
+    shape.firstSuccessor = next;
+    shape.successors++;
+  }
   return next;
 }
 
@@ -1158,14 +1197,45 @@ function propertyLayout<Key, Value>(
     return undefined;
   const layout = object.internalPropertyLayout;
   if (layout !== undefined) return layout;
-  let shape = rootPropertyShape<Key, Value>(object.prototype);
-  const cells: Descriptor<Value>[] = [];
+  // Shared shapes start at the prototype's root; a null prototype's stay
+  // private to the object.
+  const prototype = object.prototype;
+  let shape: OrdinaryPropertyShape | undefined =
+    prototype === undefined ? undefined : prototype.internalChildShape;
+  if (shape === undefined) {
+    const root: OrdinaryPropertyShape = {
+      keys: [],
+      hash: emptyPropertyShapeHash,
+      shared: prototype !== undefined,
+      firstSuccessor: undefined,
+      nextSibling: undefined,
+      successors: 0,
+    };
+    if (prototype !== undefined) prototype.internalChildShape = root;
+    shape = root;
+  }
+  const installed: OrdinaryPropertyLayout<Value> = {
+    shape,
+    cells: [],
+    slot0: undefined,
+    slot1: undefined,
+    slot2: undefined,
+    slot3: undefined,
+    slot4: undefined,
+    slot5: undefined,
+    slot6: undefined,
+    slot7: undefined,
+  };
   for (const [key, descriptor] of object.properties) {
     if (typeof key !== "string") return undefined;
-    shape = transitionPropertyShape(shape, key);
-    cells.push(descriptor);
+    installed.shape = transitionPropertyShape(installed.shape, key);
+    writePropertyLayoutSlot<Value>(
+      installed,
+      installed.cells.length,
+      descriptor,
+    );
+    installed.cells.push(descriptor);
   }
-  const installed: OrdinaryPropertyLayout<Value> = { shape, cells };
   object.internalPropertyLayout = installed;
   return installed;
 }

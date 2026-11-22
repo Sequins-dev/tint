@@ -8,6 +8,7 @@ import {
 import { sameValue } from "./operators.ts";
 import { scriptPropertyKeyOrder } from "./symbols.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
+import type { Descriptor } from "../descriptors/index.ts";
 import {
   getProperty,
   setProperty,
@@ -17,6 +18,7 @@ import {
   type ScriptPropertyCache,
   type ObjectHooks,
   type OrdinaryObject,
+  type OrdinaryPropertyLayout,
 } from "./operations.ts";
 import { callObject } from "./call.ts";
 import { toObjectValue } from "./boxing.ts";
@@ -125,6 +127,33 @@ export function viewObjectValue(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
   throw "UNBOUND_OBJECT_VIEW";
+}
+
+/** Cell `index` of a Script object's installed layout, read in place;
+ * native code binds this to one checked load. */
+export function readPropertyLayoutSlot(
+  layout: OrdinaryPropertyLayout<unknown>,
+  index: number,
+): Descriptor<unknown> | undefined {
+  switch (index) {
+    case 0:
+      return layout.slot0;
+    case 1:
+      return layout.slot1;
+    case 2:
+      return layout.slot2;
+    case 3:
+      return layout.slot3;
+    case 4:
+      return layout.slot4;
+    case 5:
+      return layout.slot5;
+    case 6:
+      return layout.slot6;
+    case 7:
+      return layout.slot7;
+  }
+  throw "PROPERTY_LAYOUT_SLOT_INVARIANT";
 }
 
 /** Concrete host-authorized object view for weak-directory lookup. Unlike the

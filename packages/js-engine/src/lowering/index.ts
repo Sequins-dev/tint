@@ -86,6 +86,10 @@ export interface ScriptLoweringOptions {
    * fails). Defaults to true. */
   readonly htmlDDAObjects?: boolean;
 }
+/** In-place cell slots of a property layout (js-runtime
+ * propertyLayoutSlots): cached cells below this offset are read with
+ * readPropertyLayoutSlot. */
+export const propertyLayoutSlots = 8;
 /** Immutable numeric imports proved by the hosted function planner. */
 export interface NumericCallSite extends Span {
   readonly target: string;
@@ -2878,19 +2882,21 @@ function lowerScriptEntry(
             right: without,
           },
         };
-    return temporary(
-      scalarBranch(
-        present,
-        {
-          ...at(span),
-          kind: "index",
-          object: member(holder, "cells", span),
-          index: member(first, "offset", span),
-        },
-        without,
-        span,
-      ),
+    // The holder's first cells are in place: one checked load.
+    const offset = temporary(member(first, "offset", span));
+    // `present` (below) has narrowed the holder.
+    const cell = scalarBranch(
+      scalarBinary("<", offset, scalarNumber(propertyLayoutSlots, span), span),
+      runtimeCall("readPropertyLayoutSlot", [holder, offset], span),
+      {
+        ...at(span),
+        kind: "index",
+        object: member(holder, "cells", span),
+        index: offset,
+      },
+      span,
     );
+    return temporary(scalarBranch(present, cell, without, span));
   }
   function dataCacheHit(cell: Expression, span: Span): Expression {
     return {

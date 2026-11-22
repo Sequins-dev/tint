@@ -636,6 +636,7 @@ test("historical captures keep their managed vocabulary and adapter", async () =
     "scriptIsHTMLDDA",
     "looselyEqualOrThrow",
     "excludeHTMLDDAObjects",
+    "readPropertyLayoutSlot",
   ];
   const old = {
     ...snapshot,
@@ -670,7 +671,7 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   const previous = createScriptRuntimeRequest(bind, true, old),
     current = createScriptRuntimeRequest(bind, true, snapshot);
   assert.equal(previous.values.length, 136);
-  assert.equal(current.values.length, 150);
+  assert.equal(current.values.length, 151);
   for (const name of fastPaths) {
     assert.ok(!previous.values.some((value) => value.name === name), name);
     assert.ok(

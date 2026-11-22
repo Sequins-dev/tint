@@ -19,7 +19,10 @@ import {
   typeOnlyDeclarations,
 } from "@tint/typescript/syntax";
 import type { SourceModule } from "@tint/typescript/modules/model";
-import { lowerSourceTextModule } from "../lowering/index.ts";
+import {
+  lowerSourceTextModule,
+  propertyLayoutSlots,
+} from "../lowering/index.ts";
 import { createGeneralIntrinsicPlan } from "./intrinsics.ts";
 import {
   planFunctionFallback,
@@ -121,6 +124,14 @@ export function createGeneralLowering(
   const recordBindings: NativeRecordBinding[] = [];
   for (const name of objectViews)
     recordBindings.push({ module: runtime.objects, name, operation: "view" });
+  // Generated property caches read the first cells in place.
+  recordBindings.push({
+    module: runtime.objects,
+    name: "readPropertyLayoutSlot",
+    operation: "slot-read",
+    field: "slot0",
+    count: propertyLayoutSlots,
+  });
   for (const name of referrerViews)
     recordBindings.push({ module: runtime.modules, name, operation: "view" });
   return {
@@ -147,6 +158,7 @@ export function createGeneralLowering(
         namespace: "general-object-views",
         retainedExports: [
           ...objectViews,
+          "readPropertyLayoutSlot",
           "objectTypeof",
           "generalValueTypeof",
           "callGeneralValue",

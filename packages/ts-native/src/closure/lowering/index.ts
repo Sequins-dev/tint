@@ -209,6 +209,9 @@ export interface ModuleEntryOptions {
 export interface RecordBinding {
   readonly function: number;
   readonly operation: RecordOperation;
+  /** slot-read: the first slot field's name and the slot count. */
+  readonly field?: string;
+  readonly count?: number;
 }
 export function lowerModuleEntries(
   checked: CheckedClosures,
@@ -4169,6 +4172,48 @@ function lowerEntries(
         fail("record binding requires a module function");
       const first = fn.parameters[0],
         second = fn.parameters[1];
+      if (binding.operation === "slot-read") {
+        const witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
+        const record =
+          witnessType === undefined
+            ? undefined
+            : recordContracts.forType(witnessType);
+        const name = binding.field,
+          count = binding.count;
+        const field =
+          record === undefined || name === undefined
+            ? undefined
+            : recordContracts.fieldIndex(record, name);
+        if (
+          first === undefined ||
+          second === undefined ||
+          fn.parameters.length !== 2 ||
+          fn.slots[first] !== "reference" ||
+          fn.slots[second] !== "number" ||
+          record === undefined ||
+          field === undefined ||
+          count === undefined ||
+          !Number.isSafeInteger(count) ||
+          count < 1 ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "slot read bindings take a record with named consecutive slot fields and a number index",
+          );
+        functions[fn.id] = bindRecordOperation(
+          fn,
+          first,
+          record,
+          "slot-read",
+          { start: body.node.start, end: body.node.end },
+          field,
+          count,
+          second,
+        );
+        continue;
+      }
       if (
         binding.operation === "view-slot" ||
         binding.operation === "set-view-slot"

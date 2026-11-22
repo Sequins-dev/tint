@@ -15,6 +15,9 @@ export type RecordOperation =
    * hidden slot (undefined before the first crossing, or for a record of
    * another layout). */
   | "view-slot"
+  /** `(record: T, index: number): F`: field `field + index` of the record's
+   * `count` consecutive fields of type F (index checked). */
+  | "slot-read"
   /** `(record: T, view: unknown): void`: store the view (ignored for a
    * record of another layout). */
   | "set-view-slot";
@@ -26,9 +29,41 @@ export function bindRecordOperation(
   record: number,
   operation: RecordOperation,
   span: Span,
-  /** The view slot's field index (view-slot and set-view-slot). */
+  /** The view slot's field index (view-slot and set-view-slot), or the
+   * first slot field (slot-read). */
   field: number = -1,
+  /** slot-read: the number of consecutive slot fields and the index
+   * parameter's slot. */
+  count: number = 0,
+  index: number = -1,
 ): FunctionIR {
+  if (operation === "slot-read") {
+    if (field < 0 || count < 1 || index < 0) throw "record slot invariant";
+    return {
+      ...fn,
+      entry: 0,
+      blocks: [
+        {
+          id: 0,
+          instructions: [
+            { ...span, kind: "load", id: 0, slot: input },
+            { ...span, kind: "load", id: 1, slot: index },
+            {
+              ...span,
+              kind: "record-slot-read",
+              id: 2,
+              object: 0,
+              record,
+              field,
+              count,
+              index: 1,
+            },
+          ],
+          terminator: { ...span, kind: "return", value: 2 },
+        },
+      ],
+    };
+  }
   if (operation === "view-slot" || operation === "set-view-slot") {
     if (field < 0) throw "record view slot invariant";
     const read = operation === "view-slot";

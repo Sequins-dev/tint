@@ -23,7 +23,7 @@ const corpus = [
   {
     source:
       "class A{#p=1;static m(){return 1}get g(){return this.#p}}class B extends A{constructor(){super();this.q=super.g}}",
-    sha256: "6365b869c72053fdb91c608cb47ff0ddc4eeff97c66c02721285b97f67f590fa",
+    sha256: "56e806869be53c1f38861743bae59886e62c7b6d06689365b65bd1ca723632b1",
   },
   {
     source:
@@ -38,7 +38,7 @@ const corpus = [
   {
     source:
       "function p(a,b=1,...c){return arguments.length}(()=>this)();new p();`a${1}`;tag`x`;",
-    sha256: "4cb579493069c0aab4912f1089b73e467d4c1d9c30c9c562db5dbb0f7e082d17",
+    sha256: "3abab4bd2ca38326f63a03f049f2dfef779f909ee08e40311e76da362a7c0ba7",
   },
   {
     source:
@@ -57,9 +57,9 @@ const corpus = [
 ];
 test("managed Script surface declares fixed instantiations and preserves lowered output", () => {
   const surface = lowering.scriptRuntimeSurface();
-  assert.equal(surface.length, 177);
+  assert.equal(surface.length, 178);
   const names = new Map(surface.map((entry) => [entry.name, entry]));
-  assert.equal(names.size, 177);
+  assert.equal(names.size, 178);
   assert.equal(
     surface.filter((entry) => entry.typeArguments.length > 0).length,
     46,

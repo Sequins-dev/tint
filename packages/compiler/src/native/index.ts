@@ -217,6 +217,9 @@ export interface NativeRecordBinding {
   readonly module: string;
   readonly name: string;
   readonly operation: RecordOperation;
+  /** slot-read: the first slot field's name and the slot count. */
+  readonly field?: string;
+  readonly count?: number;
 }
 /** Opaque managed weak storage is available only to declared runtime exports. */
 export interface NativeWeakBinding {
@@ -2448,6 +2451,8 @@ function lowerTypedProgram(
   const recordBindings: {
     function: number;
     operation: RecordOperation;
+    field?: string;
+    count?: number;
   }[] = [];
   for (const plan of surfacePlans) {
     if (plan === undefined) throw "surface plan invariant";
@@ -2505,7 +2510,13 @@ function lowerTypedProgram(
         "record-binding",
         "record binding requires a module function: " + name,
       );
-    recordBindings.push({ function: fn.id, operation: binding.operation });
+    const field = binding.field,
+      count = binding.count;
+    recordBindings.push(
+      field === undefined || count === undefined
+        ? { function: fn.id, operation: binding.operation }
+        : { function: fn.id, operation: binding.operation, field, count },
+    );
   }
   const serviceSources: {
     readonly function: number;

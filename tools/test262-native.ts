@@ -25,7 +25,11 @@ import {
 } from "./captured-module-exports.ts";
 import { createSourceText } from "@tint/source/text";
 import { parseModule, parseScript } from "@tint/typescript/syntax";
-import { lowerScript, lowerSourceTextModule } from "@tint/js-engine/lowering";
+import {
+  lowerScript,
+  lowerSourceTextModule,
+  propertyLayoutSlots,
+} from "@tint/js-engine/lowering";
 import { createSourceTextView } from "@tint/source/text";
 import {
   discoverModuleGraph,
@@ -3463,6 +3467,7 @@ function createNativeImageRequest(
             "viewObjectValue",
             "viewSymbolValue",
             "viewBigIntValue",
+            "readPropertyLayoutSlot",
             ...intlFormatViewNames,
             ...(finalizationRegistry ? ["viewWeakRegistryOwner"] : []),
           ],
@@ -3516,6 +3521,14 @@ function createNativeImageRequest(
         { module: objectModule, name: "viewObjectValue", operation: "view" },
         { module: objectModule, name: "viewSymbolValue", operation: "view" },
         { module: objectModule, name: "viewBigIntValue", operation: "view" },
+        // Generated property caches read the first cells in place.
+        {
+          module: objectModule,
+          name: "readPropertyLayoutSlot",
+          operation: "slot-read",
+          field: "slot0",
+          count: propertyLayoutSlots,
+        },
         ...intlFormatRecordBindings(objectModule),
         ...(finalizationRegistry
           ? [
