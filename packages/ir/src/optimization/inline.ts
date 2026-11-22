@@ -6,6 +6,7 @@ import {
   substituteTerminatorValues,
   instructionEffects,
   effectAllocate,
+  naturalLoops,
   type ModuleIR,
   type FunctionIR,
   type Instruction,
@@ -228,9 +229,11 @@ function inlineRefusal(
  * IR and never mutated. Incremental mode keeps only completed nonallocating
  * callers, caps each expansion and retains original callees after exhaustion.
  * Remarks describe only decisions of callers whose result is kept.
- * `interruptible` marks the functions that poll for Worker stop requests at
- * their safepoints; a call is inlined only when caller and callee agree, so
- * neither class gains or loses polls. */
+ * `interruptible` marks the functions that poll for Worker stop requests (at
+ * loop headers, and on entry when they call). Worker code never inlines into
+ * runtime code, which would lose its polls, and runtime code inlines into
+ * Worker code only when it has no loop: an inlined leaf brings no call and no
+ * loop header, so it gains no poll either. */
 export function inlineSmallFunctions(
   module: ModuleIR,
   budget: number,
@@ -263,9 +266,21 @@ export function inlineSmallFunctions(
       if (fn === undefined) throw "inline function invariant";
       classes[id] = classify(fn) ? 1 : 0;
     }
+  // Loop-free runtime callees, computed on first use: 1 free, 2 loops.
+  const loopFree = new Uint8Array(classes.length);
   /** Whether the callee must stay a call because the classes differ. */
   function separated(caller: FunctionIR, callee: number): boolean {
-    return classes.length !== 0 && classes[caller.id] !== classes[callee];
+    if (classes.length === 0 || classes[caller.id] === classes[callee])
+      return false;
+    if (classes[caller.id] !== 1) return true;
+    if (loopFree[callee] === 0) {
+      const target = module.functions[callee];
+      if (target === undefined) throw "inline callee invariant";
+      const loops = naturalLoops(target, 100000);
+      loopFree[callee] =
+        loops !== undefined && loops.loops.length === 0 ? 1 : 2;
+    }
+    return loopFree[callee] !== 1;
   }
   const eligible = new Uint8Array(module.functions.length),
     // Callees that call or allocate (kept out of shape-recognized helpers).
