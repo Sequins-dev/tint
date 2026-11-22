@@ -1,0 +1,1625 @@
+{
+  "description": "Main-thread pprofessor samples (999 Hz, --main-thread) of per-kernel profiling images (TINT_DEBUG_SYMBOLS=1 TINT_OPERATION_RANGES=1 TINT_CODE_SIZE=1, --steady 40), aggregated by function (inlined frames keep their source function) and by IR operation signature (tools/op-cost/analyze.ts).",
+  "kernels": {
+    "allocation": {
+      "imageSha256": "71ea5a3b41fc08541c7f3c3bac002fd1896da4a46ab83644d4d3dc565d2d778c",
+      "sampledMs": 417,
+      "opCostCoverage": "7914 operation ranges, 27004 instructions; 417 samples, 69.3% inside program operations",
+      "functions": [
+        {
+          "percent": 30.7,
+          "function": "fixture:allocation"
+        },
+        {
+          "percent": 25.4,
+          "function": "packages/foundation/src/collections/number-list.ts:pushNumberList"
+        },
+        {
+          "percent": 10.8,
+          "function": "packages/foundation/src/collections/number-list.ts:createNumberList"
+        },
+        {
+          "percent": 8.4,
+          "function": "helper:array-initialize"
+        },
+        {
+          "percent": 4.3,
+          "function": "packages/foundation/src/collections/number-list.ts:readNumberList"
+        },
+        {
+          "percent": 3.8,
+          "function": "packages/foundation/src/collections/sparse-list.ts:pushList"
+        },
+        {
+          "percent": 2.6,
+          "function": "packages/native-runtime/src/generational.ts:collect"
+        },
+        {
+          "percent": 2.2,
+          "function": "helper:to-uint32"
+        }
+      ],
+      "signatures": [
+        {
+          "reduciblePercent": 4.1,
+          "weightPercent": 4.56,
+          "sites": 11,
+          "instructionsPerSite": 39.8,
+          "boundPerSite": 4.0,
+          "signature": "call reference@r f64@r optional-reference@r"
+        },
+        {
+          "reduciblePercent": 3.48,
+          "weightPercent": 6.95,
+          "sites": 1,
+          "instructionsPerSite": 2.0,
+          "boundPerSite": 1.0,
+          "signature": "record-read reference@m ->optional-reference@r"
+        },
+        {
+          "reduciblePercent": 3.3,
+          "weightPercent": 3.6,
+          "sites": 5,
+          "instructionsPerSite": 12.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:| f64@r int@r ->i32@r"
+        },
+        {
+          "reduciblePercent": 3.12,
+          "weightPercent": 3.12,
+          "sites": 285,
+          "instructionsPerSite": 1.0,
+          "boundPerSite": 0.0,
+          "signature": "store slot:optional-reference@r optional-reference@r"
+        },
+        {
+          "reduciblePercent": 2.4,
+          "weightPercent": 2.64,
+          "sites": 9,
+          "instructionsPerSite": 11.1,
+          "boundPerSite": 1.0,
+          "signature": "binary:& f64@r int@r ->int@r"
+        },
+        {
+          "reduciblePercent": 2.4,
+          "weightPercent": 2.4,
+          "sites": 9,
+          "instructionsPerSite": 3.0,
+          "boundPerSite": 0.0,
+          "signature": "reference-value optional-reference@r ->Float64Array@r"
+        },
+        {
+          "reduciblePercent": 2.16,
+          "weightPercent": 2.16,
+          "sites": 103,
+          "instructionsPerSite": 3.0,
+          "boundPerSite": 0.0,
+          "signature": "reference-value optional-reference@r ->reference@r"
+        },
+        {
+          "reduciblePercent": 1.53,
+          "weightPercent": 1.92,
+          "sites": 3,
+          "instructionsPerSite": 15.0,
+          "boundPerSite": 3.0,
+          "signature": "array-write Float64Array@r f64@r f64@r"
+        },
+        {
+          "reduciblePercent": 1.53,
+          "weightPercent": 1.68,
+          "sites": 1,
+          "instructionsPerSite": 11.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:>>> f64@r const@r ->i32@m"
+        },
+        {
+          "reduciblePercent": 1.31,
+          "weightPercent": 1.68,
+          "sites": 1,
+          "instructionsPerSite": 18.0,
+          "boundPerSite": 4.0,
+          "signature": "call optional-reference@r reference@r int@r ->optional-reference@r"
+        },
+        {
+          "reduciblePercent": 0.97,
+          "weightPercent": 1.68,
+          "sites": 52,
+          "instructionsPerSite": 2.4,
+          "boundPerSite": 1.0,
+          "signature": "binary:< f64@r int@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 0.88,
+          "weightPercent": 2.16,
+          "sites": 819,
+          "instructionsPerSite": 1.7,
+          "boundPerSite": 1.0,
+          "signature": "branch boolean@r"
+        }
+      ]
+    },
+    "numeric": {
+      "imageSha256": "fcaa6c36f57d90ec798d75211fd153945586cfc7b6d3c42fd8994de067952002",
+      "sampledMs": 1344,
+      "opCostCoverage": "6421 operation ranges, 22589 instructions; 1343 samples, 99.9% inside program operations",
+      "functions": [
+        {
+          "percent": 99.8,
+          "function": "fixture:numeric"
+        },
+        {
+          "percent": 0.1,
+          "function": "0x0000000102ea65d8"
+        },
+        {
+          "percent": 0.1,
+          "function": "packages/foundation/src/numeric/number-text/index.ts:compare"
+        },
+        {
+          "percent": 0.1,
+          "function": "packages/foundation/src/numeric/number-text/index.ts:subtract"
+        }
+      ],
+      "signatures": [
+        {
+          "reduciblePercent": 24.83,
+          "weightPercent": 39.02,
+          "sites": 3,
+          "instructionsPerSite": 11.0,
+          "boundPerSite": 4.0,
+          "signature": "array-read Float64Array@r int@r ->optional-number@r"
+        },
+        {
+          "reduciblePercent": 24.81,
+          "weightPercent": 31.42,
+          "sites": 8,
+          "instructionsPerSite": 4.8,
+          "boundPerSite": 1.0,
+          "signature": "optional-value-or optional-number@r const@r ->f64@r"
+        },
+        {
+          "reduciblePercent": 8.86,
+          "weightPercent": 12.66,
+          "sites": 1,
+          "instructionsPerSite": 10.0,
+          "boundPerSite": 3.0,
+          "signature": "array-write Float64Array@r int@r f64@r"
+        },
+        {
+          "reduciblePercent": 3.86,
+          "weightPercent": 8.56,
+          "sites": 599,
+          "instructionsPerSite": 1.8,
+          "boundPerSite": 1.0,
+          "signature": "constant ->int@r"
+        },
+        {
+          "reduciblePercent": 0.57,
+          "weightPercent": 5.81,
+          "sites": 73,
+          "instructionsPerSite": 1.1,
+          "boundPerSite": 1.0,
+          "signature": "binary:< int@r int@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 0.41,
+          "weightPercent": 1.04,
+          "sites": 633,
+          "instructionsPerSite": 1.7,
+          "boundPerSite": 1.0,
+          "signature": "branch boolean@r"
+        },
+        {
+          "reduciblePercent": 0.22,
+          "weightPercent": 0.22,
+          "sites": 6,
+          "instructionsPerSite": 2.0,
+          "boundPerSite": 0.0,
+          "signature": "optional-value optional-number@r ->f64@m"
+        },
+        {
+          "reduciblePercent": 0.05,
+          "weightPercent": 0.07,
+          "sites": 23,
+          "instructionsPerSite": 14.4,
+          "boundPerSite": 4.0,
+          "signature": "array-read Uint32Array@r f64@r ->optional-number@r"
+        },
+        {
+          "reduciblePercent": 0.04,
+          "weightPercent": 0.07,
+          "sites": 1,
+          "instructionsPerSite": 2.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:| word@r int@r ->int@r"
+        },
+        {
+          "reduciblePercent": 0.03,
+          "weightPercent": 0.15,
+          "sites": 336,
+          "instructionsPerSite": 1.3,
+          "boundPerSite": 1.0,
+          "signature": "constant ->const@r"
+        },
+        {
+          "reduciblePercent": 0.01,
+          "weightPercent": 0.22,
+          "sites": 54,
+          "instructionsPerSite": 1.1,
+          "boundPerSite": 1.0,
+          "signature": "binary:+ int@r int@r ->int@r"
+        },
+        {
+          "reduciblePercent": 0.0,
+          "weightPercent": 0.0,
+          "sites": 1,
+          "instructionsPerSite": 13.0,
+          "boundPerSite": null,
+          "signature": "host-call:monotonic-time ->f64@m"
+        }
+      ]
+    },
+    "calls": {
+      "imageSha256": "a398aeca74b0caec9811db8b796fc64681f375e0c993ad3b19ee98bb9ef46e81",
+      "sampledMs": 1386,
+      "opCostCoverage": "6431 operation ranges, 22778 instructions; 1385 samples, 99.9% inside program operations",
+      "functions": [
+        {
+          "percent": 42.9,
+          "function": "fixture:calls"
+        },
+        {
+          "percent": 25.8,
+          "function": "fixture:dot"
+        },
+        {
+          "percent": 20.7,
+          "function": "fixture:clamp"
+        },
+        {
+          "percent": 10.2,
+          "function": "fixture:scaled"
+        },
+        {
+          "percent": 0.1,
+          "function": "packages/foundation/src/collections/sparse-list.ts:lengthList"
+        },
+        {
+          "percent": 0.1,
+          "function": "0x00000001027725d8"
+        },
+        {
+          "percent": 0.1,
+          "function": "packages/foundation/src/numeric/number-text/index.ts:compare"
+        },
+        {
+          "percent": 0.1,
+          "function": "packages/foundation/src/numeric/number-text/index.ts:natural"
+        }
+      ],
+      "signatures": [
+        {
+          "reduciblePercent": 10.33,
+          "weightPercent": 18.99,
+          "sites": 139,
+          "instructionsPerSite": 4.1,
+          "boundPerSite": 1.9,
+          "signature": "record:read reference@r"
+        },
+        {
+          "reduciblePercent": 10.31,
+          "weightPercent": 11.34,
+          "sites": 3,
+          "instructionsPerSite": 11.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:| f64@r int@r ->int@r"
+        },
+        {
+          "reduciblePercent": 8.16,
+          "weightPercent": 8.16,
+          "sites": 18,
+          "instructionsPerSite": 3.0,
+          "boundPerSite": 0.0,
+          "signature": "load slot:int@r ->i32@r"
+        },
+        {
+          "reduciblePercent": 7.44,
+          "weightPercent": 7.44,
+          "sites": 112,
+          "instructionsPerSite": 1.0,
+          "boundPerSite": 0.0,
+          "signature": "store slot:reference@r reference@r"
+        },
+        {
+          "reduciblePercent": 6.35,
+          "weightPercent": 6.35,
+          "sites": 173,
+          "instructionsPerSite": 1.0,
+          "boundPerSite": 0.0,
+          "signature": "store slot:optional-reference@r optional-reference@r"
+        },
+        {
+          "reduciblePercent": 4.66,
+          "weightPercent": 5.99,
+          "sites": 2,
+          "instructionsPerSite": 18.0,
+          "boundPerSite": 4.0,
+          "signature": "call optional-reference@r reference@m int@r ->optional-reference@r"
+        },
+        {
+          "reduciblePercent": 4.45,
+          "weightPercent": 11.26,
+          "sites": 639,
+          "instructionsPerSite": 1.7,
+          "boundPerSite": 1.0,
+          "signature": "branch boolean@r"
+        },
+        {
+          "reduciblePercent": 1.27,
+          "weightPercent": 2.17,
+          "sites": 26,
+          "instructionsPerSite": 2.4,
+          "boundPerSite": 1.0,
+          "signature": "binary:> f64@r int@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 1.23,
+          "weightPercent": 1.23,
+          "sites": 78,
+          "instructionsPerSite": 3.0,
+          "boundPerSite": 0.0,
+          "signature": "reference-value optional-reference@r ->reference@r"
+        },
+        {
+          "reduciblePercent": 0.36,
+          "weightPercent": 0.36,
+          "sites": 284,
+          "instructionsPerSite": 1.0,
+          "boundPerSite": 0.0,
+          "signature": "store slot:number@r f64@r"
+        },
+        {
+          "reduciblePercent": 0.36,
+          "weightPercent": 0.72,
+          "sites": 3,
+          "instructionsPerSite": 2.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:+ int@r f64@r ->f64@r"
+        },
+        {
+          "reduciblePercent": 0.29,
+          "weightPercent": 4.12,
+          "sites": 27,
+          "instructionsPerSite": 2.1,
+          "boundPerSite": 1.9,
+          "signature": "binary:=== optional-reference@r optional-reference@r ->boolean@r"
+        }
+      ]
+    },
+    "strings": {
+      "imageSha256": "f74cd6e4da1508217a40cf5cc3670362d5e03a12f9243516566b612030fd0552",
+      "sampledMs": 758,
+      "opCostCoverage": "6493 operation ranges, 23146 instructions; 757 samples, 47.4% inside program operations",
+      "functions": [
+        {
+          "percent": 22.1,
+          "function": "packages/foundation/src/numeric/number-text/index.ts:decimalInteger"
+        },
+        {
+          "percent": 21.3,
+          "function": "helper:string-concat-copy"
+        },
+        {
+          "percent": 16.6,
+          "function": "fixture:strings"
+        },
+        {
+          "percent": 11.1,
+          "function": "helper:string-starts-with"
+        },
+        {
+          "percent": 7.4,
+          "function": "packages/foundation/src/numeric/number-text/index.ts:numberToString"
+        },
+        {
+          "percent": 6.1,
+          "function": "helper:to-uint32"
+        },
+        {
+          "percent": 2.9,
+          "function": "helper:string-write-copy"
+        },
+        {
+          "percent": 2.8,
+          "function": "packages/native-runtime/src/generational.ts:collect"
+        }
+      ],
+      "signatures": [
+        {
+          "reduciblePercent": 5.77,
+          "weightPercent": 6.74,
+          "sites": 18,
+          "instructionsPerSite": 21.0,
+          "boundPerSite": 3.0,
+          "signature": "binary:% f64@r const@r ->f64@r"
+        },
+        {
+          "reduciblePercent": 2.22,
+          "weightPercent": 2.51,
+          "sites": 4,
+          "instructionsPerSite": 34.3,
+          "boundPerSite": 4.0,
+          "signature": "call reference@r f64@r optional-string@r"
+        },
+        {
+          "reduciblePercent": 1.47,
+          "weightPercent": 1.72,
+          "sites": 1,
+          "instructionsPerSite": 21.0,
+          "boundPerSite": 3.0,
+          "signature": "binary:% safe@r const@r ->f64@m"
+        },
+        {
+          "reduciblePercent": 1.45,
+          "weightPercent": 1.45,
+          "sites": 210,
+          "instructionsPerSite": 1.0,
+          "boundPerSite": 0.0,
+          "signature": "store slot:int@r int@r"
+        },
+        {
+          "reduciblePercent": 1.19,
+          "weightPercent": 2.38,
+          "sites": 2,
+          "instructionsPerSite": 2.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:+ const@r f64@r ->f64@m"
+        },
+        {
+          "reduciblePercent": 0.45,
+          "weightPercent": 0.53,
+          "sites": 11,
+          "instructionsPerSite": 21.0,
+          "boundPerSite": 3.0,
+          "signature": "call reference@r int@r ->optional-string@r"
+        },
+        {
+          "reduciblePercent": 0.31,
+          "weightPercent": 3.3,
+          "sites": 76,
+          "instructionsPerSite": 1.1,
+          "boundPerSite": 1.0,
+          "signature": "binary:< int@r int@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 0.3,
+          "weightPercent": 0.66,
+          "sites": 609,
+          "instructionsPerSite": 1.8,
+          "boundPerSite": 1.0,
+          "signature": "constant ->int@r"
+        },
+        {
+          "reduciblePercent": 0.29,
+          "weightPercent": 0.53,
+          "sites": 11,
+          "instructionsPerSite": 2.2,
+          "boundPerSite": 1.0,
+          "signature": "binary:!== f64@r int@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 0.24,
+          "weightPercent": 0.26,
+          "sites": 6,
+          "instructionsPerSite": 10.0,
+          "boundPerSite": 1.0,
+          "signature": "unary:is-integer f64@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 0.21,
+          "weightPercent": 0.4,
+          "sites": 33,
+          "instructionsPerSite": 2.1,
+          "boundPerSite": 1.0,
+          "signature": "binary:<= f64@r int@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 0.19,
+          "weightPercent": 0.26,
+          "sites": 4,
+          "instructionsPerSite": 7.0,
+          "boundPerSite": 2.0,
+          "signature": "call f64@m ->string@m"
+        }
+      ]
+    },
+    "compiler": {
+      "imageSha256": "c9d030231d427ba526116ef8c9b3d7cc08d087194385d02bc491024869bf8032",
+      "sampledMs": 1018,
+      "opCostCoverage": "6482 operation ranges, 23491 instructions; 1017 samples, 77.3% inside program operations",
+      "functions": [
+        {
+          "percent": 31.9,
+          "function": "packages/foundation/src/numeric/number-text/index.ts:shift"
+        },
+        {
+          "percent": 11.8,
+          "function": "packages/foundation/src/numeric/number-text/index.ts:natural"
+        },
+        {
+          "percent": 11.0,
+          "function": "helper:array-initialize"
+        },
+        {
+          "percent": 6.7,
+          "function": "fixture:parse"
+        },
+        {
+          "percent": 6.3,
+          "function": "packages/foundation/src/numeric/number-text/index.ts:roundedRatio"
+        },
+        {
+          "percent": 3.6,
+          "function": "fixture:bind"
+        },
+        {
+          "percent": 3.2,
+          "function": "fixture:tokenize"
+        },
+        {
+          "percent": 3.1,
+          "function": "packages/foundation/src/collections/linked-map.ts:findMap [__tint_specialized_129$344]"
+        }
+      ],
+      "signatures": [
+        {
+          "reduciblePercent": 3.7,
+          "weightPercent": 5.11,
+          "sites": 23,
+          "instructionsPerSite": 14.4,
+          "boundPerSite": 4.0,
+          "signature": "array-read Uint32Array@r f64@r ->optional-number@r"
+        },
+        {
+          "reduciblePercent": 3.29,
+          "weightPercent": 3.83,
+          "sites": 18,
+          "instructionsPerSite": 21.0,
+          "boundPerSite": 3.0,
+          "signature": "binary:% f64@r const@r ->f64@r"
+        },
+        {
+          "reduciblePercent": 2.26,
+          "weightPercent": 2.26,
+          "sites": 77,
+          "instructionsPerSite": 3.0,
+          "boundPerSite": 0.0,
+          "signature": "reference-value optional-reference@r ->reference@r"
+        },
+        {
+          "reduciblePercent": 2.12,
+          "weightPercent": 2.46,
+          "sites": 17,
+          "instructionsPerSite": 22.0,
+          "boundPerSite": 3.0,
+          "signature": "array-write Uint32Array@r f64@r f64@r"
+        },
+        {
+          "reduciblePercent": 1.94,
+          "weightPercent": 2.26,
+          "sites": 1,
+          "instructionsPerSite": 21.0,
+          "boundPerSite": 3.0,
+          "signature": "binary:% f64@m const@r ->f64@r"
+        },
+        {
+          "reduciblePercent": 1.72,
+          "weightPercent": 3.83,
+          "sites": 586,
+          "instructionsPerSite": 1.8,
+          "boundPerSite": 1.0,
+          "signature": "constant ->int@r"
+        },
+        {
+          "reduciblePercent": 1.5,
+          "weightPercent": 1.67,
+          "sites": 9,
+          "instructionsPerSite": 39.1,
+          "boundPerSite": 4.0,
+          "signature": "call reference@r f64@r optional-reference@r"
+        },
+        {
+          "reduciblePercent": 1.08,
+          "weightPercent": 1.08,
+          "sites": 301,
+          "instructionsPerSite": 1.0,
+          "boundPerSite": 0.0,
+          "signature": "store slot:number@r f64@r"
+        },
+        {
+          "reduciblePercent": 0.86,
+          "weightPercent": 2.16,
+          "sites": 633,
+          "instructionsPerSite": 1.7,
+          "boundPerSite": 1.0,
+          "signature": "branch boolean@r"
+        },
+        {
+          "reduciblePercent": 0.79,
+          "weightPercent": 1.57,
+          "sites": 2,
+          "instructionsPerSite": 2.0,
+          "boundPerSite": 1.0,
+          "signature": "unary:trunc f64@m ->f64@r"
+        },
+        {
+          "reduciblePercent": 0.68,
+          "weightPercent": 12.49,
+          "sites": 35,
+          "instructionsPerSite": 1.1,
+          "boundPerSite": 1.0,
+          "signature": "binary:< f64@r f64@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 0.64,
+          "weightPercent": 0.79,
+          "sites": 1,
+          "instructionsPerSite": 22.0,
+          "boundPerSite": 4.0,
+          "signature": "call optional-reference@r reference@r f64@r ->optional-reference@r"
+        }
+      ]
+    },
+    "typedArrays": {
+      "imageSha256": "582a0d15d8c9087abcb95f023810dc8e76c23dfdca7f078f73ff5b940e4b2b20",
+      "sampledMs": 1393,
+      "opCostCoverage": "6391 operation ranges, 22579 instructions; 1392 samples, 99.5% inside program operations",
+      "functions": [
+        {
+          "percent": 99.4,
+          "function": "fixture:typedArrays"
+        },
+        {
+          "percent": 0.3,
+          "function": "helper:array-initialize"
+        },
+        {
+          "percent": 0.1,
+          "function": "0x0000000104cd1ee4"
+        },
+        {
+          "percent": 0.1,
+          "function": "__kernelrpc_mach_port_request_notification"
+        },
+        {
+          "percent": 0.1,
+          "function": "_flock"
+        },
+        {
+          "percent": 0.1,
+          "function": "packages/foundation/src/numeric/number-text/index.ts:shift"
+        }
+      ],
+      "signatures": [
+        {
+          "reduciblePercent": 21.26,
+          "weightPercent": 47.2,
+          "sites": 604,
+          "instructionsPerSite": 1.8,
+          "boundPerSite": 1.0,
+          "signature": "constant ->int@r"
+        },
+        {
+          "reduciblePercent": 5.62,
+          "weightPercent": 6.18,
+          "sites": 4,
+          "instructionsPerSite": 11.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:| f64@r int@r ->int@r"
+        },
+        {
+          "reduciblePercent": 5.06,
+          "weightPercent": 10.13,
+          "sites": 2,
+          "instructionsPerSite": 2.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:& int@r int@r ->int@r"
+        },
+        {
+          "reduciblePercent": 0.46,
+          "weightPercent": 0.57,
+          "sites": 1,
+          "instructionsPerSite": 5.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:& i32@r int@r ->i32@r"
+        },
+        {
+          "reduciblePercent": 0.29,
+          "weightPercent": 0.43,
+          "sites": 1,
+          "instructionsPerSite": 3.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:+ i32@r i32@r ->int@r"
+        },
+        {
+          "reduciblePercent": 0.06,
+          "weightPercent": 0.07,
+          "sites": 1,
+          "instructionsPerSite": 21.0,
+          "boundPerSite": 3.0,
+          "signature": "binary:% f64@m const@r ->f64@r"
+        },
+        {
+          "reduciblePercent": 0.06,
+          "weightPercent": 0.14,
+          "sites": 632,
+          "instructionsPerSite": 1.7,
+          "boundPerSite": 1.0,
+          "signature": "branch boolean@r"
+        },
+        {
+          "reduciblePercent": 0.02,
+          "weightPercent": 0.36,
+          "sites": 56,
+          "instructionsPerSite": 1.1,
+          "boundPerSite": 1.0,
+          "signature": "binary:+ int@r int@r ->int@r"
+        },
+        {
+          "reduciblePercent": 0.01,
+          "weightPercent": 0.14,
+          "sites": 74,
+          "instructionsPerSite": 1.1,
+          "boundPerSite": 1.0,
+          "signature": "binary:< int@r int@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 0.0,
+          "weightPercent": 0.0,
+          "sites": 1,
+          "instructionsPerSite": 13.0,
+          "boundPerSite": null,
+          "signature": "host-call:monotonic-time ->f64@m"
+        },
+        {
+          "reduciblePercent": 0.0,
+          "weightPercent": 0.0,
+          "sites": 4,
+          "instructionsPerSite": 8.0,
+          "boundPerSite": null,
+          "signature": "return f64@m"
+        },
+        {
+          "reduciblePercent": 0.0,
+          "weightPercent": 0.0,
+          "sites": 199,
+          "instructionsPerSite": 1.0,
+          "boundPerSite": 0.0,
+          "signature": "store slot:int@r int@r"
+        }
+      ]
+    },
+    "stringEquality": {
+      "imageSha256": "d4d9be89eb9e29ee15317a77e7b9cf51132c7a9a30ff503729f10ca287de8609",
+      "sampledMs": 375,
+      "opCostCoverage": "6895 operation ranges, 25986 instructions; 375 samples, 92.0% inside program operations",
+      "functions": [
+        {
+          "percent": 90.9,
+          "function": "@1:value:18$365$direct"
+        },
+        {
+          "percent": 6.7,
+          "function": "helper:string-equal"
+        },
+        {
+          "percent": 0.5,
+          "function": "packages/foundation/src/numeric/number-text/index.ts:shift"
+        },
+        {
+          "percent": 0.5,
+          "function": "helper:array-initialize"
+        },
+        {
+          "percent": 0.3,
+          "function": "0x00000001046071fc"
+        },
+        {
+          "percent": 0.3,
+          "function": "__kernelrpc_mach_port_request_notification"
+        },
+        {
+          "percent": 0.3,
+          "function": "packages/foundation/src/numeric/number-text/index.ts:bits"
+        },
+        {
+          "percent": 0.3,
+          "function": "packages/foundation/src/numeric/number-text/index.ts:subtract"
+        }
+      ],
+      "signatures": [
+        {
+          "reduciblePercent": 11.55,
+          "weightPercent": 15.2,
+          "sites": 6,
+          "instructionsPerSite": 8.3,
+          "boundPerSite": 2.0,
+          "signature": "binary:=== optional-string@r optional-string@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 10.91,
+          "weightPercent": 11.73,
+          "sites": 23,
+          "instructionsPerSite": 14.3,
+          "boundPerSite": 1.0,
+          "signature": "binary:=== string@r string@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 10.81,
+          "weightPercent": 12.8,
+          "sites": 3,
+          "instructionsPerSite": 19.3,
+          "boundPerSite": 3.0,
+          "signature": "call reference@r f64@r ->optional-string@r"
+        },
+        {
+          "reduciblePercent": 10.11,
+          "weightPercent": 17.33,
+          "sites": 40,
+          "instructionsPerSite": 2.4,
+          "boundPerSite": 1.0,
+          "signature": "binary:< f64@r int@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 2.97,
+          "weightPercent": 3.47,
+          "sites": 19,
+          "instructionsPerSite": 21.0,
+          "boundPerSite": 3.0,
+          "signature": "binary:% f64@r const@r ->f64@r"
+        },
+        {
+          "reduciblePercent": 1.16,
+          "weightPercent": 2.93,
+          "sites": 658,
+          "instructionsPerSite": 1.7,
+          "boundPerSite": 1.0,
+          "signature": "branch boolean@r"
+        },
+        {
+          "reduciblePercent": 0.91,
+          "weightPercent": 1.07,
+          "sites": 12,
+          "instructionsPerSite": 21.0,
+          "boundPerSite": 3.0,
+          "signature": "call reference@r int@r ->optional-string@r"
+        },
+        {
+          "reduciblePercent": 0.8,
+          "weightPercent": 0.8,
+          "sites": 66,
+          "instructionsPerSite": 1.0,
+          "boundPerSite": 0.0,
+          "signature": "store slot:string@r string@r"
+        },
+        {
+          "reduciblePercent": 0.53,
+          "weightPercent": 1.07,
+          "sites": 138,
+          "instructionsPerSite": 3.7,
+          "boundPerSite": 1.9,
+          "signature": "record:read reference@r"
+        },
+        {
+          "reduciblePercent": 0.39,
+          "weightPercent": 1.87,
+          "sites": 333,
+          "instructionsPerSite": 1.3,
+          "boundPerSite": 1.0,
+          "signature": "constant ->const@r"
+        },
+        {
+          "reduciblePercent": 0.36,
+          "weightPercent": 0.8,
+          "sites": 602,
+          "instructionsPerSite": 1.8,
+          "boundPerSite": 1.0,
+          "signature": "constant ->int@r"
+        },
+        {
+          "reduciblePercent": 0.27,
+          "weightPercent": 0.27,
+          "sites": 351,
+          "instructionsPerSite": 1.0,
+          "boundPerSite": 0.0,
+          "signature": "store slot:number@r f64@r"
+        }
+      ]
+    },
+    "stringBuild": {
+      "imageSha256": "342a4de8b3f6d3ab76b4fccc739f42df0cf9e27490b7cc3ab62cd03a1c93f736",
+      "sampledMs": 1528,
+      "opCostCoverage": "6477 operation ranges, 23765 instructions; 1527 samples, 38.8% inside program operations",
+      "functions": [
+        {
+          "percent": 46.7,
+          "function": "helper:string-concat-copy"
+        },
+        {
+          "percent": 18.3,
+          "function": "packages/foundation/src/numeric/number-text/index.ts:decimalInteger"
+        },
+        {
+          "percent": 15.3,
+          "function": "fixture:stringBuild"
+        },
+        {
+          "percent": 7.2,
+          "function": "packages/foundation/src/numeric/number-text/index.ts:numberToString"
+        },
+        {
+          "percent": 5.9,
+          "function": "helper:to-uint32"
+        },
+        {
+          "percent": 4.8,
+          "function": "packages/native-runtime/src/generational.ts:collect"
+        },
+        {
+          "percent": 0.8,
+          "function": "_shmget"
+        },
+        {
+          "percent": 0.2,
+          "function": "__kernelrpc_mach_port_request_notification"
+        }
+      ],
+      "signatures": [
+        {
+          "reduciblePercent": 3.54,
+          "weightPercent": 4.13,
+          "sites": 19,
+          "instructionsPerSite": 21.0,
+          "boundPerSite": 3.0,
+          "signature": "binary:% f64@r const@r ->f64@r"
+        },
+        {
+          "reduciblePercent": 1.05,
+          "weightPercent": 2.1,
+          "sites": 4,
+          "instructionsPerSite": 2.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:+ const@r f64@r ->f64@m"
+        },
+        {
+          "reduciblePercent": 0.9,
+          "weightPercent": 1.05,
+          "sites": 1,
+          "instructionsPerSite": 21.0,
+          "boundPerSite": 3.0,
+          "signature": "binary:% safe@r const@r ->f64@r"
+        },
+        {
+          "reduciblePercent": 0.38,
+          "weightPercent": 0.85,
+          "sites": 606,
+          "instructionsPerSite": 1.8,
+          "boundPerSite": 1.0,
+          "signature": "constant ->int@r"
+        },
+        {
+          "reduciblePercent": 0.36,
+          "weightPercent": 0.72,
+          "sites": 1,
+          "instructionsPerSite": 2.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:=== f64@r const@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 0.31,
+          "weightPercent": 0.59,
+          "sites": 33,
+          "instructionsPerSite": 2.1,
+          "boundPerSite": 1.0,
+          "signature": "binary:<= f64@r int@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 0.3,
+          "weightPercent": 3.14,
+          "sites": 76,
+          "instructionsPerSite": 1.1,
+          "boundPerSite": 1.0,
+          "signature": "binary:< int@r int@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 0.27,
+          "weightPercent": 0.46,
+          "sites": 39,
+          "instructionsPerSite": 2.4,
+          "boundPerSite": 1.0,
+          "signature": "binary:< f64@r int@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 0.23,
+          "weightPercent": 0.33,
+          "sites": 4,
+          "instructionsPerSite": 7.0,
+          "boundPerSite": 2.0,
+          "signature": "call i32@m ->string@m"
+        },
+        {
+          "reduciblePercent": 0.14,
+          "weightPercent": 0.2,
+          "sites": 1,
+          "instructionsPerSite": 7.0,
+          "boundPerSite": 2.0,
+          "signature": "call f64@r ->string@r"
+        },
+        {
+          "reduciblePercent": 0.14,
+          "weightPercent": 0.26,
+          "sites": 35,
+          "instructionsPerSite": 2.1,
+          "boundPerSite": 1.0,
+          "signature": "binary:=== f64@r int@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 0.11,
+          "weightPercent": 0.2,
+          "sites": 11,
+          "instructionsPerSite": 2.2,
+          "boundPerSite": 1.0,
+          "signature": "binary:!== f64@r int@r ->boolean@r"
+        }
+      ]
+    },
+    "mapSet": {
+      "imageSha256": "cbe7dfb1a8cb346ff177908441407528174e36354d691f4caca203f673a9cbf0",
+      "sampledMs": 1649,
+      "opCostCoverage": "8111 operation ranges, 28537 instructions; 1698 samples, 90.5% inside program operations",
+      "functions": [
+        {
+          "percent": 19.4,
+          "function": "packages/foundation/src/collections/linked-map.ts:findMap [__tint_specialized_123$338]"
+        },
+        {
+          "percent": 15.7,
+          "function": "packages/foundation/src/collections/linked-set.ts:findSet"
+        },
+        {
+          "percent": 9.8,
+          "function": "packages/foundation/src/collections/linked-map.ts:findMap [__tint_specialized_126$341]"
+        },
+        {
+          "percent": 7.7,
+          "function": "packages/foundation/src/collections/sparse-list.ts:pushList"
+        },
+        {
+          "percent": 7.0,
+          "function": "packages/foundation/src/collections/key-index.ts:hashString"
+        },
+        {
+          "percent": 6.2,
+          "function": "packages/foundation/src/collections/linked-set.ts:appendSet [__tint_specialized_79$294]"
+        },
+        {
+          "percent": 5.6,
+          "function": "packages/foundation/src/collections/linked-set.ts:valueHash"
+        },
+        {
+          "percent": 3.9,
+          "function": "packages/foundation/src/collections/linked-map.ts:setMapHashed [__tint_specialized_83$298]"
+        }
+      ],
+      "signatures": [
+        {
+          "reduciblePercent": 16.14,
+          "weightPercent": 16.14,
+          "sites": 168,
+          "instructionsPerSite": 3.0,
+          "boundPerSite": 0.0,
+          "signature": "reference-value optional-reference@r ->reference@r"
+        },
+        {
+          "reduciblePercent": 13.07,
+          "weightPercent": 13.07,
+          "sites": 39,
+          "instructionsPerSite": 2.0,
+          "boundPerSite": 0.0,
+          "signature": "reference-none ->optional-reference@r"
+        },
+        {
+          "reduciblePercent": 6.74,
+          "weightPercent": 7.48,
+          "sites": 15,
+          "instructionsPerSite": 40.7,
+          "boundPerSite": 4.0,
+          "signature": "call reference@r f64@r optional-reference@r"
+        },
+        {
+          "reduciblePercent": 3.84,
+          "weightPercent": 4.48,
+          "sites": 20,
+          "instructionsPerSite": 21.0,
+          "boundPerSite": 3.0,
+          "signature": "call reference@r int@r ->optional-reference@r"
+        },
+        {
+          "reduciblePercent": 2.36,
+          "weightPercent": 2.36,
+          "sites": 283,
+          "instructionsPerSite": 1.0,
+          "boundPerSite": 0.0,
+          "signature": "store slot:optional-reference@r optional-reference@r"
+        },
+        {
+          "reduciblePercent": 2.28,
+          "weightPercent": 2.53,
+          "sites": 12,
+          "instructionsPerSite": 40.0,
+          "boundPerSite": 4.0,
+          "signature": "call reference@r int@r optional-reference@r"
+        },
+        {
+          "reduciblePercent": 1.75,
+          "weightPercent": 1.88,
+          "sites": 20,
+          "instructionsPerSite": 14.3,
+          "boundPerSite": 1.0,
+          "signature": "binary:=== string@r string@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 1.52,
+          "weightPercent": 3.89,
+          "sites": 768,
+          "instructionsPerSite": 1.6,
+          "boundPerSite": 1.0,
+          "signature": "branch boolean@r"
+        },
+        {
+          "reduciblePercent": 1.43,
+          "weightPercent": 1.71,
+          "sites": 18,
+          "instructionsPerSite": 12.4,
+          "boundPerSite": 2.0,
+          "signature": "record:write reference@m"
+        },
+        {
+          "reduciblePercent": 1.22,
+          "weightPercent": 1.35,
+          "sites": 8,
+          "instructionsPerSite": 10.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:& word@r f64@r ->int@r"
+        },
+        {
+          "reduciblePercent": 1.19,
+          "weightPercent": 1.47,
+          "sites": 90,
+          "instructionsPerSite": 9.4,
+          "boundPerSite": 1.8,
+          "signature": "record:write reference@r"
+        },
+        {
+          "reduciblePercent": 0.54,
+          "weightPercent": 0.59,
+          "sites": 1,
+          "instructionsPerSite": 12.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:>>> f64@r const@r ->i32@r"
+        }
+      ]
+    },
+    "closures": {
+      "imageSha256": "29a89d184df369a9b50dacad3f0ebc4b658dcf0521b07a1767108e62e8a5a2bc",
+      "sampledMs": 345,
+      "opCostCoverage": "7065 operation ranges, 25307 instructions; 345 samples, 84.9% inside program operations",
+      "functions": [
+        {
+          "percent": 33.1,
+          "function": "fixture:closures"
+        },
+        {
+          "percent": 17.1,
+          "function": "packages/foundation/src/collections/number-list.ts:pushNumberList"
+        },
+        {
+          "percent": 14.2,
+          "function": "fixture:closure@13096 [closure_369]"
+        },
+        {
+          "percent": 10.1,
+          "function": "packages/foundation/src/collections/number-list.ts:readNumberList"
+        },
+        {
+          "percent": 4.6,
+          "function": "helper:array-initialize"
+        },
+        {
+          "percent": 4.1,
+          "function": "packages/foundation/src/collections/number-list.ts:reserve"
+        },
+        {
+          "percent": 2.9,
+          "function": "fixture:closure@14103"
+        },
+        {
+          "percent": 2.9,
+          "function": "fixture:applyAll"
+        }
+      ],
+      "signatures": [
+        {
+          "reduciblePercent": 5.8,
+          "weightPercent": 5.8,
+          "sites": 15,
+          "instructionsPerSite": 1.0,
+          "boundPerSite": 0.0,
+          "signature": "store slot:optional-reference@m optional-reference@r"
+        },
+        {
+          "reduciblePercent": 3.92,
+          "weightPercent": 9.86,
+          "sites": 711,
+          "instructionsPerSite": 1.7,
+          "boundPerSite": 1.0,
+          "signature": "branch boolean@r"
+        },
+        {
+          "reduciblePercent": 2.64,
+          "weightPercent": 2.9,
+          "sites": 6,
+          "instructionsPerSite": 11.3,
+          "boundPerSite": 1.0,
+          "signature": "binary:& f64@r int@r ->int@r"
+        },
+        {
+          "reduciblePercent": 2.32,
+          "weightPercent": 2.32,
+          "sites": 11,
+          "instructionsPerSite": 2.0,
+          "boundPerSite": 0.0,
+          "signature": "store slot:optional-reference@m optional-reference@m"
+        },
+        {
+          "reduciblePercent": 2.13,
+          "weightPercent": 2.32,
+          "sites": 6,
+          "instructionsPerSite": 12.2,
+          "boundPerSite": 1.0,
+          "signature": "binary:| f64@r int@r ->i32@r"
+        },
+        {
+          "reduciblePercent": 1.74,
+          "weightPercent": 1.74,
+          "sites": 2,
+          "instructionsPerSite": 1.0,
+          "boundPerSite": 0.0,
+          "signature": "load slot:number@r ->f64@r"
+        },
+        {
+          "reduciblePercent": 1.66,
+          "weightPercent": 3.48,
+          "sites": 153,
+          "instructionsPerSite": 3.5,
+          "boundPerSite": 1.8,
+          "signature": "record:read reference@r"
+        },
+        {
+          "reduciblePercent": 1.48,
+          "weightPercent": 2.32,
+          "sites": 2,
+          "instructionsPerSite": 11.0,
+          "boundPerSite": 4.0,
+          "signature": "array-read Float64Array@r int@r ->optional-number@r"
+        },
+        {
+          "reduciblePercent": 1.17,
+          "weightPercent": 2.61,
+          "sites": 633,
+          "instructionsPerSite": 1.8,
+          "boundPerSite": 1.0,
+          "signature": "constant ->int@r"
+        },
+        {
+          "reduciblePercent": 1.16,
+          "weightPercent": 1.16,
+          "sites": 9,
+          "instructionsPerSite": 3.0,
+          "boundPerSite": 0.0,
+          "signature": "reference-value optional-reference@r ->Float64Array@r"
+        },
+        {
+          "reduciblePercent": 1.01,
+          "weightPercent": 2.03,
+          "sites": 3,
+          "instructionsPerSite": 2.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:< int@r f64@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 0.93,
+          "weightPercent": 1.16,
+          "sites": 4,
+          "instructionsPerSite": 15.0,
+          "boundPerSite": 3.0,
+          "signature": "array-write Float64Array@r f64@r f64@r"
+        }
+      ]
+    },
+    "arrays": {
+      "imageSha256": "357776c185952da23e84a2bc4b0dd4e69ef0a2adc4620f4b137ced323af51834",
+      "sampledMs": 2189,
+      "opCostCoverage": "7041 operation ranges, 24743 instructions; 2187 samples, 88.3% inside program operations",
+      "functions": [
+        {
+          "percent": 40.9,
+          "function": "fixture:arrays"
+        },
+        {
+          "percent": 21.2,
+          "function": "packages/foundation/src/collections/number-list.ts:readNumberList"
+        },
+        {
+          "percent": 17.4,
+          "function": "packages/foundation/src/collections/number-list.ts:resizeNumberList"
+        },
+        {
+          "percent": 11.6,
+          "function": "packages/foundation/src/collections/number-list.ts:pushNumberList"
+        },
+        {
+          "percent": 2.6,
+          "function": "helper:array-initialize"
+        },
+        {
+          "percent": 1.6,
+          "function": "__tint_reference_list_write$410"
+        },
+        {
+          "percent": 1.3,
+          "function": "helper:array-copy"
+        },
+        {
+          "percent": 1.0,
+          "function": "packages/foundation/src/collections/sparse-list.ts:pushList"
+        }
+      ],
+      "signatures": [
+        {
+          "reduciblePercent": 6.13,
+          "weightPercent": 6.13,
+          "sites": 202,
+          "instructionsPerSite": 1.0,
+          "boundPerSite": 0.0,
+          "signature": "store slot:int@r int@r"
+        },
+        {
+          "reduciblePercent": 4.35,
+          "weightPercent": 4.57,
+          "sites": 1,
+          "instructionsPerSite": 21.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:^ f64@r f64@r ->i32@r"
+        },
+        {
+          "reduciblePercent": 2.88,
+          "weightPercent": 3.2,
+          "sites": 8,
+          "instructionsPerSite": 10.0,
+          "boundPerSite": 1.0,
+          "signature": "unary:is-integer f64@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 2.37,
+          "weightPercent": 2.61,
+          "sites": 5,
+          "instructionsPerSite": 11.2,
+          "boundPerSite": 1.0,
+          "signature": "binary:& f64@r int@r ->int@r"
+        },
+        {
+          "reduciblePercent": 2.29,
+          "weightPercent": 5.12,
+          "sites": 633,
+          "instructionsPerSite": 1.8,
+          "boundPerSite": 1.0,
+          "signature": "constant ->int@r"
+        },
+        {
+          "reduciblePercent": 2.18,
+          "weightPercent": 5.53,
+          "sites": 718,
+          "instructionsPerSite": 1.7,
+          "boundPerSite": 1.0,
+          "signature": "branch boolean@r"
+        },
+        {
+          "reduciblePercent": 2.12,
+          "weightPercent": 3.34,
+          "sites": 2,
+          "instructionsPerSite": 11.0,
+          "boundPerSite": 4.0,
+          "signature": "array-read Float64Array@r int@r ->optional-number@r"
+        },
+        {
+          "reduciblePercent": 1.76,
+          "weightPercent": 2.19,
+          "sites": 2,
+          "instructionsPerSite": 15.0,
+          "boundPerSite": 3.0,
+          "signature": "array-write Float64Array@r f64@r f64@r"
+        },
+        {
+          "reduciblePercent": 1.6,
+          "weightPercent": 2.56,
+          "sites": 1,
+          "instructionsPerSite": 8.0,
+          "boundPerSite": 3.0,
+          "signature": "call reference@r safe@m ->optional-number@m"
+        },
+        {
+          "reduciblePercent": 1.3,
+          "weightPercent": 2.61,
+          "sites": 1,
+          "instructionsPerSite": 2.0,
+          "boundPerSite": 1.0,
+          "signature": "record-read reference@m ->optional-reference@r"
+        },
+        {
+          "reduciblePercent": 1.28,
+          "weightPercent": 1.92,
+          "sites": 1,
+          "instructionsPerSite": 3.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:> i32@m int@r ->boolean@r"
+        },
+        {
+          "reduciblePercent": 1.21,
+          "weightPercent": 2.42,
+          "sites": 2,
+          "instructionsPerSite": 2.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:< int@r f64@r ->boolean@r"
+        }
+      ]
+    },
+    "escape": {
+      "imageSha256": "61a2e63999fbc1caa6549a1a5b5c5ffdf951639a69f7dc6f2e1123d1c7bc4231",
+      "sampledMs": 811,
+      "opCostCoverage": "7386 operation ranges, 25241 instructions; 810 samples, 95.3% inside program operations",
+      "functions": [
+        {
+          "percent": 71.6,
+          "function": "fixture:addPoints"
+        },
+        {
+          "percent": 23.5,
+          "function": "fixture:escape"
+        },
+        {
+          "percent": 2.7,
+          "function": "packages/native-runtime/src/generational.ts:collect"
+        },
+        {
+          "percent": 0.6,
+          "function": "helper:remember-object"
+        },
+        {
+          "percent": 0.2,
+          "function": "__kernelrpc_mach_port_request_notification"
+        },
+        {
+          "percent": 0.2,
+          "function": "_shmget"
+        },
+        {
+          "percent": 0.1,
+          "function": "0x0000000102c1f100"
+        },
+        {
+          "percent": 0.1,
+          "function": "_flock"
+        }
+      ],
+      "signatures": [
+        {
+          "reduciblePercent": 8.96,
+          "weightPercent": 20.0,
+          "sites": 693,
+          "instructionsPerSite": 1.8,
+          "boundPerSite": 1.0,
+          "signature": "constant ->int@r"
+        },
+        {
+          "reduciblePercent": 2.22,
+          "weightPercent": 4.44,
+          "sites": 1,
+          "instructionsPerSite": 2.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:+ f64@r i32@r ->f64@m"
+        },
+        {
+          "reduciblePercent": 0.66,
+          "weightPercent": 0.74,
+          "sites": 1,
+          "instructionsPerSite": 26.0,
+          "boundPerSite": 3.0,
+          "signature": "call reference@r i32@m ->boolean@r"
+        },
+        {
+          "reduciblePercent": 0.56,
+          "weightPercent": 0.62,
+          "sites": 11,
+          "instructionsPerSite": 39.8,
+          "boundPerSite": 4.0,
+          "signature": "call reference@r f64@r optional-reference@r"
+        },
+        {
+          "reduciblePercent": 0.42,
+          "weightPercent": 0.49,
+          "sites": 6,
+          "instructionsPerSite": 21.0,
+          "boundPerSite": 3.0,
+          "signature": "call reference@r int@r ->optional-reference@r"
+        },
+        {
+          "reduciblePercent": 0.39,
+          "weightPercent": 0.74,
+          "sites": 179,
+          "instructionsPerSite": 4.0,
+          "boundPerSite": 1.9,
+          "signature": "record:read reference@r"
+        },
+        {
+          "reduciblePercent": 0.37,
+          "weightPercent": 0.37,
+          "sites": 121,
+          "instructionsPerSite": 1.0,
+          "boundPerSite": 0.0,
+          "signature": "store slot:reference@r reference@r"
+        },
+        {
+          "reduciblePercent": 0.33,
+          "weightPercent": 0.49,
+          "sites": 1,
+          "instructionsPerSite": 3.0,
+          "boundPerSite": 1.0,
+          "signature": "binary:& word@r int@r ->i32@r"
+        },
+        {
+          "reduciblePercent": 0.12,
+          "weightPercent": 0.12,
+          "sites": 19,
+          "instructionsPerSite": 3.0,
+          "boundPerSite": 0.0,
+          "signature": "load slot:int@r ->i32@r"
+        },
+        {
+          "reduciblePercent": 0.12,
+          "weightPercent": 0.12,
+          "sites": 16,
+          "instructionsPerSite": 1.0,
+          "boundPerSite": 0.0,
+          "signature": "store slot:number@r i32@r"
+        },
+        {
+          "reduciblePercent": 0.12,
+          "weightPercent": 0.12,
+          "sites": 43,
+          "instructionsPerSite": 3.0,
+          "boundPerSite": 0.0,
+          "signature": "reference-wrap reference@r ->optional-reference@r"
+        },
+        {
+          "reduciblePercent": 0.11,
+          "weightPercent": 0.12,
+          "sites": 5,
+          "instructionsPerSite": 28.0,
+          "boundPerSite": 3.0,
+          "signature": "reference-vector-write reference@r f64@r optional-reference@r"
+        }
+      ]
+    }
+  }
+}

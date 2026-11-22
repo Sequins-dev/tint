@@ -6,6 +6,7 @@
 //     node tools/typed-bench/bench.ts smoke PREPARED.json
 //   tools/gate/with-lock.sh both typed-bench \
 //     node tools/typed-bench/bench.ts measure PREPARED.json REPORT.json [ROUNDS] [CANDIDATE.json ...]
+//   node tools/typed-bench/bench.ts v8-script KERNEL SCRIPT.mjs
 // Every run executes each kernel once cold and then `steady` times warm; a
 // run's steady value is the median of its warm iterations. Each round runs
 // every engine once; round r starts at engine r mod n and odd rounds run in
@@ -499,6 +500,21 @@ if (mode === "prepare" && rest.length >= 2) {
       Number(valueOf("--steady") ?? 5),
     ),
   );
+} else if (mode === "v8-script" && rest.length === 2) {
+  // One kernel, stripped and run six times at its scale, for V8 code
+  // inspection: node --print-opt-code --code-comments SCRIPT.mjs
+  const [name, output] = rest;
+  const suite = Object.values(suites).find(
+    (candidate) => candidate.scales[name!] !== undefined,
+  );
+  assert.ok(suite !== undefined, "unknown kernel " + name);
+  const source = readFileSync(new URL("./" + suite.file, import.meta.url));
+  writeFileSync(
+    output!,
+    stripTypeScriptTypes(source.toString()) +
+      `\nfor (let i = 0; i < 6; i++) ${name}(${suite.scales[name!]});\n`,
+    { flag: "wx" },
+  );
 } else if (mode === "smoke" && rest.length === 1) {
   const prepared = readPrepared(rest[0]!);
   checkPrepared(prepared);
@@ -527,5 +543,6 @@ if (mode === "prepare" && rest.length >= 2) {
   throw Error(`Usage:
   node tools/typed-bench/bench.ts prepare NODE26 PREPARED.json [--suite typed|classes] [--steady N] [KERNEL ...]
   tools/gate/with-lock.sh launch typed-bench-smoke node tools/typed-bench/bench.ts smoke PREPARED.json
-  tools/gate/with-lock.sh both typed-bench node tools/typed-bench/bench.ts measure PREPARED.json REPORT.json [ROUNDS] [CANDIDATE.json ...]`);
+  tools/gate/with-lock.sh both typed-bench node tools/typed-bench/bench.ts measure PREPARED.json REPORT.json [ROUNDS] [CANDIDATE.json ...]
+  node tools/typed-bench/bench.ts v8-script KERNEL SCRIPT.mjs`);
 }
