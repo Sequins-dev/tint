@@ -44,6 +44,26 @@ function value<T>(result: SharedResult<T>): T {
   assert.ok(result.ok, JSON.stringify(result));
   return result.value;
 }
+test("notify examines occupied waiter rows even when the registry is large", async () => {
+  const f = await fixture(65536);
+  const read = f.host.readSharedWord64.bind(f.host);
+  let reads = 0;
+  f.host.readSharedWord64 = (...args): number => {
+    reads++;
+    return read(...args);
+  };
+  const live = value(f.registry.register(f.location, 7, 0, false));
+  const tail = value(f.registry.register(f.location, 7, 0, false));
+  assert.equal(value(f.registry.expire(tail.ticket)), true);
+  assert.equal(value(f.registry.take(tail.ticket)), "timed-out");
+  reads = 0;
+  assert.equal(value(f.registry.notify(1, 0, 4, 1)), 1);
+  assert.ok(
+    reads < 32,
+    "notify used " + reads + " registry reads for one waiter",
+  );
+  assert.equal(value(f.registry.take(live.ticket)), "notified");
+});
 test("native waiter registration compares under its lock and immediate results consume no slots", async () => {
   const f = await fixture(2),
     r = f.registry;
