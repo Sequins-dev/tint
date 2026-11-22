@@ -633,6 +633,8 @@ test("historical captures keep their managed vocabulary and adapter", async () =
     "createScriptPropertyCache",
     "readCachedObjectValueProperty",
     "writeCachedObjectValueProperty",
+    "scriptIsHTMLDDA",
+    "looselyEqualOrThrow",
   ];
   const old = {
     ...snapshot,
@@ -640,7 +642,9 @@ test("historical captures keep their managed vocabulary and adapter", async () =
       if (input.id === "packages/js-runtime/src/objects/index.ts") {
         let source = new TextDecoder().decode(input.bytes);
         for (const name of fastPaths)
-          source = source.replace(`  ${name},\n`, "");
+          source = source
+            .replace(`  ${name},\n`, "")
+            .replace(`, ${name} }`, " }");
         return { ...input, bytes: new TextEncoder().encode(source) };
       }
       if (input.id !== "packages/js-engine/src/lowering/index.ts") return input;
@@ -665,7 +669,7 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   const previous = createScriptRuntimeRequest(bind, true, old),
     current = createScriptRuntimeRequest(bind, true, snapshot);
   assert.equal(previous.values.length, 136);
-  assert.equal(current.values.length, 147);
+  assert.equal(current.values.length, 149);
   for (const name of fastPaths) {
     assert.ok(!previous.values.some((value) => value.name === name), name);
     assert.ok(
