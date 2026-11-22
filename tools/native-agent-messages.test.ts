@@ -89,6 +89,12 @@ test("recycling mailboxes reuse single-quantum payloads up to a bound", async ()
   for (let i = 0; i < burst; i++) queue.send("b" + i);
   for (let i = 0; i < burst; i++) assert.equal(queue.receive(), "b" + i);
   assert.equal(host.kernel.mappings.size, 1 + api.recycledMessageBlocks);
+  // Reused blocks carry stale free-stack links; a queue of several of them
+  // must still end at its last message.
+  for (let i = 0; i < 5; i++) queue.send("r" + i);
+  for (let i = 0; i < 5; i++) assert.equal(queue.receive(), "r" + i);
+  assert.equal(queue.receive(), undefined);
+  assert.equal(host.kernel.mappings.size, 1 + api.recycledMessageBlocks);
   // Multi-quantum payloads are never recycled.
   const large = "x".repeat(20000);
   queue.send(large);

@@ -206,6 +206,9 @@ export function prepareNativeAgentMessage(
   // Payload preparation and every managed allocation precede publication.
   let prepared = false;
   try {
+    // A recycled block still holds its free-stack link where the queue keeps
+    // its next pointer; a fresh mapping is zero-filled.
+    if (recycled !== 0) writeNumber(host, payload, 0, 0);
     writeNumber(host, payload, 8, message.length);
     for (let i = 0; i < message.length; i++)
       if (
