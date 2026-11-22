@@ -124,6 +124,11 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "array-length":
     case "array-write":
     case "array-store":
+    // Tag tests and payload views of general values are pure inline
+    // sequences (a mismatched checked view traps).
+    case "general-is":
+    case "general-record-is":
+    case "general-value":
       return true;
     case "reference-none":
     case "reference-wrap":
@@ -892,6 +897,9 @@ export function inlineSmallFunctions(
               case "reference-value":
               case "string-reference":
               case "reference-string":
+              case "general-is":
+              case "general-record-is":
+              case "general-value":
                 cloned.push({
                   ...instruction,
                   id: value(instruction.id),
