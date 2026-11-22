@@ -39,6 +39,10 @@ export interface EventLoop {
   setInterval(callback: Callback, delay?: number): EventLoopHandle;
   clearInterval(handle: EventLoopHandle | undefined): void;
   checkpoint(entry: Entry): void;
+  /** From inside a running callback: the checkpoint its return would run.
+   * A callback that delivers several events runs it between them, as
+   * Node's per-callback scope does. */
+  checkpointWithin(): void;
   run(entry: Entry): void;
 }
 
@@ -344,6 +348,10 @@ export function createEventLoop(host: EventLoopHost): EventLoop {
       } finally {
         running = false;
       }
+    },
+    checkpointWithin: (): void => {
+      if (!running) throw "EVENT_LOOP_NOT_RUNNING";
+      checkpoint("callback");
     },
     run,
   };

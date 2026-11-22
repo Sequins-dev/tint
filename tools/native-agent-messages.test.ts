@@ -109,3 +109,51 @@ test("recycling mailboxes reuse single-quantum payloads up to a bound", async ()
   assert.equal(plain.value.receive(), "once");
   assert.equal(host.kernel.mappings.size, 2);
 });
+
+test("small packets share a segment until every packet and the producer let go", async () => {
+  const api = await import("../packages/native-runtime/src/agent-messages.ts");
+  const host = new NodeSharedMemoryHost();
+  const parking = {
+    park: (_address: number, _expected: number, _timeout: number) => 0,
+    wake: (_address: number) => 0,
+  };
+  const created = api.createNativeAgentMailbox(host, parking, 75, true);
+  assert.ok(created.ok);
+  const registry = created.value.registry;
+  const producer = api.createNativeAgentPacketProducer(host, parking, registry);
+  const sent: number[] = [];
+  for (let i = 0; i < 3; i++) {
+    const packet = producer.allocate(0);
+    assert.ok(packet !== undefined && packet.segment !== 0);
+    producer.commit(packet, 40 + i);
+    api.publishNativeAgentPacket(host, parking, registry, packet, 40 + i);
+    sent.push(packet.base);
+  }
+  // One segment mapping holds all three; a nested allocation while a
+  // packet is open gets a mapping of its own.
+  assert.equal(host.kernel.mappings.size, 2);
+  const open = producer.allocate(0);
+  assert.ok(open !== undefined);
+  const nested = producer.allocate(100);
+  assert.ok(nested !== undefined && nested.segment === 0);
+  producer.release(nested);
+  producer.release(open);
+  const entries = api.drainNativeAgentPackets(host, parking, registry);
+  assert.deepEqual(
+    entries.map((entry) => [entry.packet.base, entry.used]),
+    sent.map((base, i) => [base, 40 + i]),
+  );
+  // The segment outlives its drained packets while the producer holds it.
+  for (const entry of entries)
+    api.releaseNativeAgentPacket(host, parking, registry, entry.packet);
+  assert.equal(api.drainNativeAgentPackets(host, parking, registry).length, 0);
+  producer.close();
+  // Closing returns it to the free stack, where the next segment comes from.
+  const again = producer.allocate(0);
+  assert.ok(again !== undefined);
+  assert.equal(again.segment, entries[0]!.packet.segment);
+  producer.release(again);
+  producer.close();
+  api.releaseNativeAgentMailboxBlocks(host, registry);
+  assert.equal(host.kernel.mappings.size, 1);
+});

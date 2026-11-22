@@ -1,6 +1,7 @@
 import type { SharedResult } from "@tint/js-runtime/bytes/shared";
 import type { NativeWaiterParkingHost } from "./shared-waiters.ts";
 import {
+  compareNumber,
   integer,
   readNumber,
   writeNumber,
@@ -40,7 +41,7 @@ const MAPPING_QUANTUM = 16384,
   MESSAGE_HEADER = 16,
   MAX_UNITS = 8 * 1024 * 1024;
 /** Most payload blocks one recycling mailbox keeps for reuse. */
-export const recycledMessageBlocks = 32;
+export const recycledMessageBlocks = 128;
 
 /** With `recycle`, consumed single-quantum payloads return to the mailbox
  * for the next send; the mailbox's final owner must then call
@@ -140,24 +141,33 @@ function returnBlock(
     unlock(host, parking, registry, scratch);
   }
 }
-/** A binary message packet: one whole mapping of `byteLength` bytes, owned
- * by its sender until published and by its receiver once taken. Bytes
- * [0, nativeAgentPacketHeader) hold the queue link, the payload length and
- * the mapping length; the payload follows, eight-byte aligned. Packet
- * mailboxes carry only packets. */
+/** A binary message packet: `byteLength` bytes at `base`, owned by its
+ * sender until published and by its receiver once taken. Bytes
+ * [0, nativeAgentPacketHeader) hold the queue link, the payload length, the
+ * packet's size and its segment; the payload follows, eight-byte aligned.
+ * A small packet lives in a shared segment (a recycled block whose first
+ * word counts the packets in it, plus one for its producer); a large one
+ * is a whole mapping of its own (`segment` 0). Packet mailboxes carry only
+ * packets. */
 export interface NativeAgentPacket {
   readonly base: number;
   readonly byteLength: number;
+  readonly segment: number;
 }
-const PACKET_HEADER = 24;
+const PACKET_HEADER = 32;
 export const nativeAgentPacketHeader = PACKET_HEADER;
+// Packets start after the segment's reference count, at a cache line.
+const SEGMENT_HEADER = 64;
+// A packet starts in a segment only with at least this much payload room.
+const SEGMENT_MINIMUM = 4096;
 function packetBytes(payload: number): number {
   return (
     Math.ceil((PACKET_HEADER + payload) / MAPPING_QUANTUM) * MAPPING_QUANTUM
   );
 }
-/** A packet with room for `payload` bytes: a recycled block when one quantum
- * suffices, else a fresh zero-filled mapping; undefined when none is mapped. */
+/** A packet with room for `payload` bytes in a mapping of its own: a recycled
+ * block when one quantum suffices, else a fresh zero-filled mapping;
+ * undefined when none is mapped. */
 export function allocateNativeAgentPacket(
   host: NativeSharedMemoryHost,
   parking: NativeWaiterParkingHost,
@@ -173,10 +183,42 @@ export function allocateNativeAgentPacket(
       : 0;
   const base = recycled !== 0 ? recycled : host.mapMemory(byteLength);
   if (!integer(base) || base <= 0 || base % 8 !== 0) return undefined;
-  return { base, byteLength };
+  return { base, byteLength, segment: 0 };
 }
-/** Return an unpublished or consumed packet: single-quantum packets go back
- * to a recycling mailbox, others are unmapped. */
+/** Adds `delta` to a segment's reference count and returns the new count. */
+function adjustSegment(
+  host: NativeSharedMemoryHost,
+  segment: number,
+  delta: number,
+  scratch: Uint32Array,
+): number {
+  const window = { base: segment, byteLength: SEGMENT_HEADER, engineId: 1 };
+  let count = readNumber(host, window, 0, scratch);
+  for (;;) {
+    const next = count + delta;
+    if (next < 0) throw "NATIVE_AGENT_SEGMENT_COUNT";
+    const observed = compareNumber(host, window, 0, count, next, scratch);
+    if (observed === count) return next;
+    count = observed;
+  }
+}
+/** Recycle a block nobody references any more, or unmap it. */
+function retireBlock(
+  host: NativeSharedMemoryHost,
+  parking: NativeWaiterParkingHost,
+  registry: NativeSharedBlockRegistry,
+  block: number,
+  scratch: Uint32Array,
+): void {
+  if (
+    !returnBlock(host, parking, registry, block, scratch) &&
+    host.unmapMemory(block, MAPPING_QUANTUM) !== 0
+  )
+    throw "NATIVE_AGENT_MESSAGE_RELEASE";
+}
+/** Return an unpublished or consumed packet: a segment packet drops its
+ * segment reference; a single-quantum mapping goes back to a recycling
+ * mailbox; others are unmapped. */
 export function releaseNativeAgentPacket(
   host: NativeSharedMemoryHost,
   parking: NativeWaiterParkingHost,
@@ -184,25 +226,101 @@ export function releaseNativeAgentPacket(
   packet: NativeAgentPacket,
 ): void {
   const scratch = new Uint32Array(2);
-  if (
-    !(
-      packet.byteLength === MAPPING_QUANTUM &&
-      returnBlock(host, parking, registry, packet.base, scratch)
-    ) &&
-    host.unmapMemory(packet.base, packet.byteLength) !== 0
-  )
+  if (packet.segment !== 0) {
+    if (adjustSegment(host, packet.segment, -1, scratch) === 0)
+      retireBlock(host, parking, registry, packet.segment, scratch);
+    return;
+  }
+  if (packet.byteLength === MAPPING_QUANTUM)
+    retireBlock(host, parking, registry, packet.base, scratch);
+  else if (host.unmapMemory(packet.base, packet.byteLength) !== 0)
     throw "NATIVE_AGENT_MESSAGE_RELEASE";
 }
+/** One sender's packet allocator for one mailbox. Small packets are carved
+ * from the sender's current segment, one open packet at a time; a nested or
+ * growing allocation while one is open, or a large one, gets a mapping of
+ * its own. */
+export interface NativeAgentPacketProducer {
+  allocate(payload: number): NativeAgentPacket | undefined;
+  /** Close the open packet at `used` payload bytes before publishing it. */
+  commit(packet: NativeAgentPacket, used: number): void;
+  release(packet: NativeAgentPacket): void;
+  /** Drop the producer's segment reference; the producer stays usable. */
+  close(): void;
+}
+export function createNativeAgentPacketProducer(
+  host: NativeSharedMemoryHost,
+  parking: NativeWaiterParkingHost,
+  registry: NativeSharedBlockRegistry,
+): NativeAgentPacketProducer {
+  const scratch = new Uint32Array(2);
+  let segment = 0,
+    offset = 0,
+    open = 0;
+  function close(): void {
+    if (segment === 0) return;
+    const retired = segment;
+    segment = 0;
+    if (adjustSegment(host, retired, -1, scratch) === 0)
+      retireBlock(host, parking, registry, retired, scratch);
+  }
+  return {
+    allocate: (payload: number): NativeAgentPacket | undefined => {
+      if (
+        open !== 0 ||
+        !integer(payload) ||
+        payload > MAPPING_QUANTUM - SEGMENT_HEADER - PACKET_HEADER
+      )
+        return allocateNativeAgentPacket(host, parking, registry, payload);
+      const room = Math.max(payload, SEGMENT_MINIMUM) + PACKET_HEADER;
+      if (segment === 0 || MAPPING_QUANTUM - offset < room) {
+        close();
+        const block = takeBlock(host, parking, registry, scratch);
+        const fresh = block !== 0 ? block : host.mapMemory(MAPPING_QUANTUM);
+        if (!integer(fresh) || fresh <= 0 || fresh % 8 !== 0) return undefined;
+        // The producer's own reference keeps a drained segment alive.
+        writeNumber(
+          host,
+          { base: fresh, byteLength: SEGMENT_HEADER, engineId: 1 },
+          0,
+          1,
+        );
+        segment = fresh;
+        offset = SEGMENT_HEADER;
+      }
+      adjustSegment(host, segment, 1, scratch);
+      const packet = {
+        base: segment + offset,
+        byteLength: MAPPING_QUANTUM - offset,
+        segment,
+      };
+      open = packet.base;
+      return packet;
+    },
+    commit: (packet: NativeAgentPacket, used: number): void => {
+      if (packet.base !== open) return;
+      open = 0;
+      offset += Math.ceil((PACKET_HEADER + used) / 8) * 8;
+    },
+    release: (packet: NativeAgentPacket): void => {
+      if (packet.base === open) open = 0;
+      releaseNativeAgentPacket(host, parking, registry, packet);
+    },
+    close,
+  };
+}
 /** Link `packet`, whose payload is `used` bytes, at the tail of the queue.
- * `notify` runs inside the queue lock so a reader cannot miss the packet. */
+ * `signal` runs inside the queue lock, where a reader that drains the queue
+ * dry decides to sleep, so the two cannot miss each other; its result is
+ * returned so the caller can wake the reader after the lock is released. */
 export function publishNativeAgentPacket(
   host: NativeSharedMemoryHost,
   parking: NativeWaiterParkingHost,
   registry: NativeSharedBlockRegistry,
   packet: NativeAgentPacket,
   used: number,
-  notify?: () => void,
-): void {
+  signal?: () => boolean,
+): boolean {
   if (!integer(used) || used > packet.byteLength - PACKET_HEADER)
     throw "NATIVE_AGENT_PACKET_LENGTH";
   const scratch = new Uint32Array(2);
@@ -216,9 +334,11 @@ export function publishNativeAgentPacket(
   writeNumber(host, header, 0, 0);
   writeNumber(host, header, 8, used);
   writeNumber(host, header, 16, packet.byteLength);
+  writeNumber(host, header, 24, packet.segment);
+  let wake = false;
   lock(host, parking, registry, scratch);
   try {
-    if (notify !== undefined) notify();
+    if (signal !== undefined) wake = signal();
     const tail = readNumber(host, registry, TAIL, scratch);
     if (tail === 0) writeNumber(host, registry, HEAD, packet.base);
     else {
@@ -229,6 +349,7 @@ export function publishNativeAgentPacket(
   } finally {
     unlock(host, parking, registry, scratch);
   }
+  return wake;
 }
 /** A packet taken from the queue and the length of its payload. */
 export interface NativeAgentPacketEntry {
@@ -236,11 +357,13 @@ export interface NativeAgentPacketEntry {
   readonly used: number;
 }
 /** Detach every queued packet under one lock, in order. The receiver owns
- * each and releases it with releaseNativeAgentPacket. */
+ * each and releases it with releaseNativeAgentPacket. `empty` runs inside
+ * the lock when there is none (see publishNativeAgentPacket). */
 export function drainNativeAgentPackets(
   host: NativeSharedMemoryHost,
   parking: NativeWaiterParkingHost,
   registry: NativeSharedBlockRegistry,
+  empty?: () => void,
 ): NativeAgentPacketEntry[] {
   const scratch = new Uint32Array(2);
   let head = 0;
@@ -250,7 +373,7 @@ export function drainNativeAgentPackets(
     if (head !== 0) {
       writeNumber(host, registry, HEAD, 0);
       writeNumber(host, registry, TAIL, 0);
-    }
+    } else if (empty !== undefined) empty();
   } finally {
     unlock(host, parking, registry, scratch);
   }
@@ -265,9 +388,15 @@ export function drainNativeAgentPackets(
     const next = readNumber(host, header, 0, scratch);
     const used = readNumber(host, header, 8, scratch);
     const byteLength = readNumber(host, header, 16, scratch);
-    if (byteLength % MAPPING_QUANTUM !== 0 || used > byteLength - PACKET_HEADER)
+    const segment = readNumber(host, header, 24, scratch);
+    if (
+      (segment === 0
+        ? byteLength % MAPPING_QUANTUM !== 0
+        : head < segment || head + byteLength !== segment + MAPPING_QUANTUM) ||
+      used > byteLength - PACKET_HEADER
+    )
       throw "NATIVE_AGENT_PACKET_LENGTH";
-    entries.push({ packet: { base: head, byteLength }, used });
+    entries.push({ packet: { base: head, byteLength, segment }, used });
     head = next;
   }
   return entries;

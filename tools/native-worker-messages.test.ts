@@ -123,11 +123,11 @@ function fixture() {
     },
   };
   function allocatePacket(payload: number): NativeAgentPacket {
-    const byteLength = Math.ceil((24 + payload) / 16384) * 16384;
+    const byteLength = Math.ceil((32 + payload) / 16384) * 16384;
     const base = nextPacket;
     nextPacket += byteLength;
     packets.set(base, new Uint8Array(byteLength));
-    return { base, byteLength };
+    return { base, byteLength, segment: 0 };
   }
   function releasePacket(value: NativeAgentPacket): void {
     assert.ok(packets.delete(value.base), "packet released once");

@@ -1,6 +1,6 @@
 import {
-  allocateNativeAgentPacket,
   attachNativeAgentMailbox,
+  createNativeAgentPacketProducer,
   createNativeAgentMailbox,
   drainNativeAgentPackets,
   publishNativeAgentPacket,
@@ -77,8 +77,11 @@ const INPUT = 16;
 const OUTPUT = 24;
 const MAILBOX = 32;
 // Set by a sender that wrote the receiver's signal byte and cleared by the
-// receiver before it drains, so a burst of sends writes the pipe once.
+// receiver once a drain finds its queue empty, so sends to a receiver that
+// is still delivering write no pipe.
 const SIGNALED = 40;
+// Packets one I/O task delivers before yielding to the rest of the loop.
+const deliveriesPerTask = 1000;
 const OWNED = 1;
 const IN_FLIGHT = 2;
 const CLOSED = 3;
@@ -180,8 +183,6 @@ export function createNativeMessagePorts(
     }
 
     try {
-      threads.close(read(pair, local + INPUT));
-      threads.close(read(pair, local + OUTPUT));
       const undelivered = pending.slice();
       for (const entry of drainNativeAgentPackets(
         memory,
@@ -218,6 +219,12 @@ export function createNativeMessagePorts(
         remaining = observed;
       }
       if (remaining === 1) {
+        // Signal pipes close with the pair, so a sender can write its
+        // peer's pipe after releasing the pair lock.
+        for (const side of [local, peer]) {
+          threads.close(read(pair, side + INPUT));
+          threads.close(read(pair, side + OUTPUT));
+        }
         releaseMailbox(read(pair, local + MAILBOX));
         releaseMailbox(read(pair, peer + MAILBOX));
         releaseMemory(pair.base);
@@ -232,34 +239,74 @@ export function createNativeMessagePorts(
     const incoming = mailbox(pair, local);
     const outgoing = mailbox(pair, peer);
     // Runs under the pair lock: signal only a receiver not already signaled.
-    function notifyPeer(): void {
-      if (read(pair, peer + SIGNALED) !== 0) return;
+    /** Under the peer's queue lock: whether this send must wake it. */
+    function signalPeer(): boolean {
+      if (read(pair, peer + SIGNALED) !== 0) return false;
       write(pair, peer + SIGNALED, 1);
-      notify(read(pair, peer + OUTPUT));
+      return true;
+    }
+    function clearSignal(): void {
+      write(pair, local + SIGNALED, 0);
     }
     let owned = true;
     let watch: EventLoopHandle | undefined;
-    // Packets drained from the incoming queue and not yet delivered.
-    let pending: NativeAgentPacketEntry[] = [];
+    // Small packets for the peer share segments of the peer's mailbox.
+    const producer = createNativeAgentPacketProducer(
+      memory,
+      parking,
+      outgoing.registry,
+    );
+    // Packets drained from the incoming queue; those from `cursor` on are
+    // not yet delivered.
+    let pending: NativeAgentPacketEntry[] = [],
+      cursor = 0;
+    function shift(): NativeAgentPacketEntry | undefined {
+      const entry = pending[cursor];
+      if (entry !== undefined) cursor++;
+      return entry;
+    }
+    /** The undelivered packets, which leave this port's hands. */
+    function undelivered(): NativeAgentPacketEntry[] {
+      const entries = pending.slice(cursor);
+      pending = [];
+      cursor = 0;
+      return entries;
+    }
     function next(): NativeAgentPacketEntry | undefined {
-      if (pending.length === 0)
+      if (cursor === pending.length) {
         pending = drainNativeAgentPackets(memory, parking, incoming.registry);
-      return pending.shift();
+        cursor = 0;
+      }
+      return shift();
+    }
+    /** The next packet for a watcher. A drain that finds the queue empty
+     * clears the signal flag in the queue-lock hold in which senders decide
+     * to signal, so senders skip the wake while the watcher still has work
+     * and the first send after it runs dry wakes it again. */
+    function nextWatched(): NativeAgentPacketEntry | undefined {
+      if (cursor === pending.length) {
+        pending = drainNativeAgentPackets(
+          memory,
+          parking,
+          incoming.registry,
+          clearSignal,
+        );
+        cursor = 0;
+      }
+      return shift();
     }
     /** Undelivered packets go back ahead of the queue for the next owner. */
     function requeue(): void {
-      const entries = pending;
-      pending = [];
-      restoreNativeAgentPackets(memory, parking, incoming.registry, entries);
+      restoreNativeAgentPackets(
+        memory,
+        parking,
+        incoming.registry,
+        undelivered(),
+      );
     }
     return {
       allocate: (payload): NativeAgentPacket => {
-        const packet = allocateNativeAgentPacket(
-          memory,
-          parking,
-          outgoing.registry,
-          payload,
-        );
+        const packet = producer.allocate(payload);
         if (packet === undefined)
           throw new Error("message port packet allocation failed");
         return packet;
@@ -268,27 +315,36 @@ export function createNativeMessagePorts(
         // Every block, sent or received, joins the free stack of the mailbox
         // this side sends into, where a reply finds it. The pair's final
         // owner frees both stacks.
-        releaseNativeAgentPacket(memory, parking, outgoing.registry, packet);
+        producer.release(packet);
       },
       send: (packet, used, commit): boolean => {
         if (!owned) return false;
+        producer.commit(packet, used);
         if (commit !== undefined) commit();
         if (!owned) return false;
+        let wake = -1;
         lock(pair);
         try {
           if (read(pair, peer + STATE) === CLOSED) return false;
-          publishNativeAgentPacket(
-            memory,
-            parking,
-            outgoing.registry,
-            packet,
-            used,
-            notifyPeer,
-          );
-          return true;
+          if (
+            publishNativeAgentPacket(
+              memory,
+              parking,
+              outgoing.registry,
+              packet,
+              used,
+              signalPeer,
+            )
+          )
+            wake = read(pair, peer + OUTPUT);
         } finally {
           unlock(pair);
         }
+        // The pipe write follows both unlocks, so the woken peer finds
+        // neither lock held. The pipe lives as long as the pair, which this
+        // sender's endpoint keeps alive.
+        if (wake >= 0) notify(wake);
+        return true;
       },
       take: (): NativeAgentPacketEntry | undefined => {
         if (!owned) return undefined;
@@ -302,21 +358,41 @@ export function createNativeMessagePorts(
           throw new Error("message port is already watched");
         let scheduled = false;
         let active = true;
-        // One I/O task per message, as Node delivers them; each drain of
-        // the shared queue takes every packet queued so far.
+        // Like Node's MessagePort, one I/O task delivers the queued packets,
+        // with a microtask checkpoint after each (the loop runs the last),
+        // draining again until the queue runs dry or a bounded count is
+        // delivered. A packet stays pending through each checkpoint, so a
+        // close or transfer it runs still hands it on; if a listener
+        // throws, the next task is queued before the error leaves.
         function schedule(): void {
           if (!active || scheduled) return;
           scheduled = true;
           reactor.loop.enqueueIO((): void => {
             scheduled = false;
             if (!active) return;
-            const entry = next();
-            if (entry !== undefined) {
+            let delivered = 0;
+            try {
+              for (;;) {
+                const entry = nextWatched();
+                if (entry === undefined) {
+                  if (read(pair, peer + STATE) === CLOSED) {
+                    handle.close();
+                    peerClose();
+                  }
+                  return;
+                }
+                message(entry);
+                if (!active) return;
+                if (++delivered === deliveriesPerTask) {
+                  schedule();
+                  return;
+                }
+                reactor.loop.checkpointWithin();
+                if (!active) return;
+              }
+            } catch (error) {
               schedule();
-              message(entry);
-            } else if (read(pair, peer + STATE) === CLOSED) {
-              handle.close();
-              peerClose();
+              throw error;
             }
           });
         }
@@ -326,14 +402,6 @@ export function createNativeMessagePorts(
             status = threads.read(input, notifications);
           if (status <= 0 && status !== threads.wouldBlock)
             throw new Error("message port read failed: " + String(status));
-          // Clear before draining: a later send signals again, and every
-          // earlier one is already queued for this drain.
-          lock(pair);
-          try {
-            write(pair, local + SIGNALED, 0);
-          } finally {
-            unlock(pair);
-          }
           schedule();
         });
         const handle: EventLoopHandle = {
@@ -369,6 +437,7 @@ export function createNativeMessagePorts(
         };
         watch?.close();
         requeue();
+        producer.close();
         lock(pair);
         try {
           ensureLease(pair, local, grant.generation, OWNED);
@@ -384,9 +453,8 @@ export function createNativeMessagePorts(
         if (!owned) return;
         watch?.close();
         owned = false;
-        const undelivered = pending;
-        pending = [];
-        releaseEndpoint(grant, OWNED, incoming, undelivered);
+        producer.close();
+        releaseEndpoint(grant, OWNED, incoming, undelivered());
       },
     };
   }
