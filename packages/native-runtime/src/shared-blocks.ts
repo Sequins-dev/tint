@@ -8,7 +8,9 @@ import type {
   SharedResult,
   SharedStatus,
   SharedUnsignedWidth,
+  SharedUpdate,
 } from "@tint/js-runtime/bytes/shared";
+import { sharedUpdateValue } from "@tint/js-runtime/bytes/shared";
 import {
   sharedRegistryMagic,
   sharedRegistryHeaderBytes,
@@ -224,11 +226,29 @@ function sharedFacade(
   clock: (() => number) | undefined,
   wrapWaiting?: (waiting: SharedBlockWaiting) => SharedBlockWaiting,
 ): NativeSharedBlockService {
+  // A published descriptor never changes and its mapping lives as long as
+  // the engine, so each isolate resolves a handle's location once.
+  const locations: (BlockLocation | undefined)[] = [];
   function location(
     handle: number,
     scratch: Uint32Array,
   ): BlockLocation | undefined {
     if (!integer(handle) || handle === 0) return undefined;
+    if (handle < locations.length) {
+      const known = locations[handle];
+      if (known !== undefined) return known;
+    }
+    const block = publishedLocation(handle, scratch);
+    if (block !== undefined) {
+      while (locations.length <= handle) locations.push(undefined);
+      locations[handle] = block;
+    }
+    return block;
+  }
+  function publishedLocation(
+    handle: number,
+    scratch: Uint32Array,
+  ): BlockLocation | undefined {
     const count = readNumber(
       host,
       registry,
@@ -592,6 +612,52 @@ function sharedFacade(
       ? { ok: false, error: "invalid-range" }
       : { ok: true, value };
   }
+  /** The compare-exchange loop of one read-modify-write, under a single
+   * block lookup and length read. */
+  function updateUnsigned(
+    handle: number,
+    offset: number,
+    width: SharedUnsignedWidth,
+    operation: SharedUpdate,
+    operand: number,
+  ): SharedResult<number> {
+    const scratch = new Uint32Array(2),
+      block = location(handle, scratch);
+    if (block === undefined) return { ok: false, error: "invalid-handle" };
+    const status = access(offset, width, "seq-cst", false);
+    if (status !== "none") return { ok: false, error: status };
+    const maximum = width === 1 ? 255 : width === 2 ? 65535 : 4294967295;
+    if (!integer(operand) || operand > maximum)
+      return { ok: false, error: "invalid-value" };
+    const length = readNumber(
+      host,
+      registry,
+      block.offset + sharedBlockLengthOffset,
+      scratch,
+    );
+    const atomic = atomicHost;
+    if (atomic === undefined) throw "NATIVE_SHARED_ATOMIC_AUTHORITY";
+    let previous = host.readSharedUnsigned(
+      block.base,
+      length,
+      offset,
+      width,
+      1,
+    );
+    for (;;) {
+      if (previous < 0) return { ok: false, error: "invalid-range" };
+      const observed = atomic.compareExchangeSharedUnsigned(
+        block.base,
+        length,
+        offset,
+        width,
+        previous,
+        sharedUpdateValue(operation, previous, operand, width),
+      );
+      if (observed === previous) return { ok: true, value: previous };
+      previous = observed;
+    }
+  }
   function compareExchangeWord64(
     handle: number,
     offset: number,
@@ -673,6 +739,14 @@ function sharedFacade(
               replacementHi,
               output,
             ),
+          updateUnsigned: (
+            handle,
+            offset,
+            width,
+            operation,
+            operand,
+          ): SharedResult<number> =>
+            updateUnsigned(handle, offset, width, operation, operand),
         };
   function waiterLocation(
     handle: number,
