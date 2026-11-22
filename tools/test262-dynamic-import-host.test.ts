@@ -649,6 +649,12 @@ test("historical captures keep their managed vocabulary and adapter", async () =
             .replace(`, ${name} }`, " }");
         return { ...input, bytes: new TextEncoder().encode(source) };
       }
+      if (input.id === "packages/js-runtime/src/environments/global/index.ts") {
+        const source = new TextDecoder()
+          .decode(input.bytes)
+          .replace("  cachedGlobalIdentifierCell,\n", "");
+        return { ...input, bytes: new TextEncoder().encode(source) };
+      }
       if (input.id !== "packages/js-engine/src/lowering/index.ts") return input;
       const source = new TextDecoder()
         .decode(input.bytes)
@@ -671,7 +677,7 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   const previous = createScriptRuntimeRequest(bind, true, old),
     current = createScriptRuntimeRequest(bind, true, snapshot);
   assert.equal(previous.values.length, 136);
-  assert.equal(current.values.length, 151);
+  assert.equal(current.values.length, 152);
   for (const name of fastPaths) {
     assert.ok(!previous.values.some((value) => value.name === name), name);
     assert.ok(

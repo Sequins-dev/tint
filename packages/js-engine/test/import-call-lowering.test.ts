@@ -68,24 +68,24 @@ test("proposal import phases lower through Script, module, eval and Function ent
 });
 test("import-free lowering retains the caller-policy output contract", () => {
   const cases: [string, boolean, string][] = [
-    ["42;", false, "afe92abe8eb5b2c3"],
-    ["function f(){ return a?.b(c); }", false, "4dcbea24223c96d6"],
+    ["42;", false, "ba2869c9ab7c9b13"],
+    ["function f(){ return a?.b(c); }", false, "8e07d10dd4191054"],
     [
       "async function g(){ await x; } function* k(){ yield 1; }",
       false,
-      "d406fdf54f7b31db",
+      "e7a5ea1f1cbf38aa",
     ],
-    ["new (f())(1); x = y ?? z;", false, "75c90537f442ea70"],
-    ['eval("1");', false, "b9f7100a25337608"],
-    ["{ using r = null; }", false, "b20a1da4238fdf5c"],
+    ["new (f())(1); x = y ?? z;", false, "f93f7d704c6509cc"],
+    ['eval("1");', false, "36790681582352cb"],
+    ["{ using r = null; }", false, "7ff4b4b7b1609bd9"],
     [
       "export let a = 1; export function f(){ return a; }",
       true,
-      "ab30b84ed114ede4",
+      "a15f99f3d9a8fb7e",
     ],
-    ['import {x} from "./x"; export default x;', true, "251d189aa85b5a54"],
-    ["export async function g(){ await 1; }", true, "651068e61a5a2f4b"],
-    ["export const o = {a(){ return this?.b; }};", true, "f2bbf978dcf1a287"],
+    ['import {x} from "./x"; export default x;', true, "68b4f2c7850603bb"],
+    ["export async function g(){ await 1; }", true, "fb9de45147375151"],
+    ["export const o = {a(){ return this?.b; }};", true, "5d2036b83b90f3e7"],
   ];
   for (const [source, module, hash] of cases) {
     const result = module
@@ -178,9 +178,9 @@ test("runtime vocabulary flags add only requested helpers and preserve the manag
     imports.flatMap((i) => i.bindings).length;
   const script = lowering.scriptRuntimeImports(span),
     module = lowering.scriptRuntimeImports(span, false, false, false, "module");
-  assert.equal(count(script), 118);
-  assert.equal(count(module), 122);
-  assert.equal(lowering.scriptRuntimeSurface().length, 178);
+  assert.equal(count(script), 119);
+  assert.equal(count(module), 123);
+  assert.equal(lowering.scriptRuntimeSurface().length, 179);
   assert.ok(
     lowering
       .scriptRuntimeSurface()
@@ -198,7 +198,7 @@ test("runtime vocabulary flags add only requested helpers and preserve the manag
         true,
       ),
     ),
-    119,
+    120,
   );
   assert.equal(
     count(
@@ -213,7 +213,7 @@ test("runtime vocabulary flags add only requested helpers and preserve the manag
         true,
       ),
     ),
-    124,
+    125,
   );
   for (const mode of [
     "indirect-eval",

@@ -1453,21 +1453,34 @@ function lowerScriptEntry(
       checkBindingInitialized(member(cell, "initialized", span), span);
       return temporary(member(cell, "value", span), true);
     }
+    const args = withGlobalIdentifierCache(
+      [
+        scope,
+        text(name, span),
+        { ...at(span), kind: "boolean", value: strict },
+        id("$errors"),
+        { ...at(span), kind: "boolean", value: forTypeof },
+      ],
+      span,
+    );
+    const lookup = call("getIdentifierValue", args, span);
+    const start = args[0],
+      cache = args[5];
+    // Runtime-compiled entries keep one fused lookup per site.
+    if (start === undefined || cache === undefined || compactResults)
+      return temporary(lookup);
+    // A warm cached global binding reads its cell inline.
+    const cell = temporary(
+      call("cachedGlobalIdentifierCell", [start, cache], span),
+    );
     return temporary(
-      call(
-        "getIdentifierValue",
-        withGlobalIdentifierCache(
-          [
-            scope,
-            text(name, span),
-            { ...at(span), kind: "boolean", value: strict },
-            id("$errors"),
-            { ...at(span), kind: "boolean", value: forTypeof },
-          ],
-          span,
-        ),
+      scalarBranch(
+        scalarBinary("!==", cell, id("undefined", span), span),
+        member(cell, "value", span),
+        lookup,
         span,
       ),
+      true,
     );
   }
   function localSlot(

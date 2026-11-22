@@ -168,6 +168,11 @@ export function createScriptRuntimeRequest(
     ]) {
       if (!objects?.has(name)) missingFastPaths.add(name);
     }
+    const global = capturedModuleExports(modules).get(
+      "packages/js-runtime/src/environments/global/index.ts",
+    );
+    if (!global?.has("cachedGlobalIdentifierCell"))
+      missingFastPaths.add("cachedGlobalIdentifierCell");
   }
   const imports = scriptRuntimeImports(
       { start: 0, end: 0 },

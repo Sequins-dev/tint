@@ -301,6 +301,18 @@ export function getBindingReferenceForTypeof<Key, Value>(
 /** GetValue(ResolveBinding(name)) for an identifier read, in one runtime call.
  * Resolution and the read are adjacent, so no user code can run between them;
  * abrupt results complete exactly as lowered result checks do. */
+/** The cached global data cell of a site whose scope is the global record
+ * itself, as getIdentifierValue checks first; undefined when the cache is
+ * cold or stale, and the caller then calls getIdentifierValue. Small enough
+ * to inline into generated code. */
+export function cachedGlobalIdentifierCell<Key, Value>(
+  start: EnvironmentScope<Key, Value>,
+  cache: GlobalIdentifierCache<Key, Value>,
+): Descriptor<Value> | undefined {
+  if (start.declarative !== undefined || start.object !== undefined)
+    return undefined;
+  return cachedGlobalCell<Key, Value>(start.global, cache);
+}
 export function getIdentifierValue<Key, Value>(
   start: EnvironmentScope<Key, Value>,
   name: string,
