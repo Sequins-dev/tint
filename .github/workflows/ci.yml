@@ -1,12 +1,18 @@
 name: CI
 
-on: [push, pull_request]
+# Gate each commit once: pushes to main, plus every pull request (its head
+# commit is gated by the pull_request event, not a duplicate push run).
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
