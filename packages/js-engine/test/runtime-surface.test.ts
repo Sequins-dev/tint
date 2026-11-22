@@ -23,7 +23,7 @@ const corpus = [
   {
     source:
       "class A{#p=1;static m(){return 1}get g(){return this.#p}}class B extends A{constructor(){super();this.q=super.g}}",
-    sha256: "13a2536179b8c36feabd2c5f44995573ef3b60e33fa7e62cab98f12018092531",
+    sha256: "6365b869c72053fdb91c608cb47ff0ddc4eeff97c66c02721285b97f67f590fa",
   },
   {
     source:

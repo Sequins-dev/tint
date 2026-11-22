@@ -262,6 +262,22 @@ export function run() {
     if (readIndex(sparse, 8) !== 42) return 57;
     sparse.length = 0;
     if (readIndex(sparse, 8) !== undefined) return 58;
+
+    const holder = {read() { return this === receiver ? 42 : 0; }};
+    const ancestor = Object.create(holder);
+    const parent = Object.create(ancestor);
+    const receiver = Object.create(parent);
+    function inherited(object) { return object.read(); }
+    if (inherited(receiver) !== 42 || inherited(receiver) !== 42) return 59;
+    parent.read = function() { return 3; };
+    if (inherited(receiver) !== 3) return 60;
+    delete parent.read;
+    Object.setPrototypeOf(ancestor, {read() { return 4; }});
+    if (inherited(receiver) !== 4) return 61;
+    Object.defineProperty(ancestor, "read", {get() { throw sentinel; }});
+    try { inherited(receiver); return 62; }
+    catch (error) { if (error !== sentinel) return 63; }
+
   }
   return 42;
 }

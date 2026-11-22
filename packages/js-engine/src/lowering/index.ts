@@ -2847,7 +2847,7 @@ function lowerScriptEntry(
         kind: "binary",
         operator: "===",
         left: member(layout, "shape", span),
-        right: member(first, "receiver", span),
+        right: member(cache, "inlineReceiver", span),
       },
     };
     const present: Expression = own

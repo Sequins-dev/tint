@@ -326,18 +326,30 @@ interface IndexedPropertyLayout<Value> {
 interface ScriptPropertyCacheEntry {
   name: string;
   receiver: OrdinaryPropertyShape | undefined;
+  parent: OrdinaryPropertyShape | undefined;
+  ancestor: OrdinaryPropertyShape | undefined;
   holder: OrdinaryPropertyShape | undefined;
   offset: number;
 }
 export interface ScriptPropertyCache {
   readonly first: ScriptPropertyCacheEntry;
+  /** The first entry is exposed to generated code only for an own or
+   * immediate-prototype property. Deeper guards run in the miss stub. */
+  inlineReceiver: OrdinaryPropertyShape | undefined;
   readonly entries: readonly ScriptPropertyCacheEntry[];
   readonly nameHash: number;
   used: number;
   megamorphic: boolean;
 }
 function propertyCacheEntry(): ScriptPropertyCacheEntry {
-  return { name: "", receiver: undefined, holder: undefined, offset: 0 };
+  return {
+    name: "",
+    receiver: undefined,
+    parent: undefined,
+    ancestor: undefined,
+    holder: undefined,
+    offset: 0,
+  };
 }
 export function createScriptPropertyCache(
   name: string = "",
@@ -345,6 +357,7 @@ export function createScriptPropertyCache(
   const first = propertyCacheEntry();
   return {
     first,
+    inlineReceiver: undefined,
     entries: [
       first,
       propertyCacheEntry(),
@@ -1101,7 +1114,28 @@ function cachedScriptPropertyCell<Key, Value>(
   let holder = layout;
   if (entry.holder !== undefined) {
     if (own) return undefined;
-    const inherited = object.prototype?.internalPropertyLayout;
+    let prototype = object.prototype;
+    const parent = entry.parent,
+      ancestor = entry.ancestor;
+    if (parent !== undefined) {
+      const checked = prototype;
+      if (
+        checked === undefined ||
+        checked.internalPropertyLayout?.shape !== parent
+      )
+        return undefined;
+      prototype = checked.prototype;
+    }
+    if (ancestor !== undefined) {
+      const checked = prototype;
+      if (
+        checked === undefined ||
+        checked.internalPropertyLayout?.shape !== ancestor
+      )
+        return undefined;
+      prototype = checked.prototype;
+    }
+    const inherited = prototype?.internalPropertyLayout;
     if (inherited === undefined || inherited.shape !== entry.holder)
       return undefined;
     holder = inherited;
@@ -1144,13 +1178,31 @@ export function lookupCachedScriptProperty<Key, Value>(
   }
   let holder = layout;
   let offset = layout.shape.keys.indexOf(key);
-  if (offset < 0) {
-    const prototype = object.prototype;
-    if (own || prototype === undefined) return undefined;
-    const inherited = propertyLayout<Key, Value>(prototype, cache.first.holder);
-    if (inherited === undefined) return undefined;
-    holder = inherited;
-    offset = inherited.shape.keys.indexOf(key);
+  let parent: OrdinaryPropertyShape | undefined = undefined;
+  let ancestor: OrdinaryPropertyShape | undefined = undefined;
+  if (offset < 0 && !own) {
+    let prototype = object.prototype;
+    const first = cache.first;
+    // Keep the intermediate guards in the cache entry itself. Longer
+    // prototype chains retain the ordinary lookup.
+    for (let depth = 0; depth < 3 && offset < 0; depth++) {
+      const current = prototype;
+      if (current === undefined) return undefined;
+      const expected =
+        depth === 0
+          ? (first.parent ?? first.holder)
+          : depth === 1
+            ? (first.ancestor ?? first.holder)
+            : first.holder;
+      const inherited = propertyLayout<Key, Value>(current, expected);
+      if (inherited === undefined) return undefined;
+      holder = inherited;
+      offset = inherited.shape.keys.indexOf(key);
+      if (offset >= 0) break;
+      if (depth === 0) parent = inherited.shape;
+      else if (depth === 1) ancestor = inherited.shape;
+      prototype = current.prototype;
+    }
   }
   if (offset < 0) return undefined;
   const cell = holder.cells[offset];
@@ -1162,8 +1214,12 @@ export function lookupCachedScriptProperty<Key, Value>(
     entry = stub;
   } else cache.used++;
   entry.receiver = layout.shape;
+  entry.parent = parent;
+  entry.ancestor = ancestor;
   entry.holder = holder === layout ? undefined : holder.shape;
   entry.offset = offset;
+  if (entry === cache.first && parent === undefined)
+    cache.inlineReceiver = layout.shape;
   return cell;
 }
 /** True when no object on the prototype chain overrides an internal method,

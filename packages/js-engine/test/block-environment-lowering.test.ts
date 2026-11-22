@@ -1088,6 +1088,42 @@ test("polymorphic sites keep receivers and follow a replaced prototype", () => {
   ]);
 });
 
+test("a named load uses the one-link primary cache shape", () => {
+  const source = "function read(object) { return object.value; }";
+  assert.equal(
+    countExpressions(
+      source,
+      (node) => node.kind === "member" && node.property === "inlineReceiver",
+    ),
+    1,
+  );
+});
+
+test("multi-level cached prototype reads follow intermediate changes", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+    const holder = {value: 1};
+    const ancestor = Object.create(holder);
+    const parent = Object.create(ancestor);
+    const receiver = Object.create(parent);
+    function read() { return receiver.value; }
+    print(String(read()));
+    print(String(read()));
+    ancestor.value = 2;
+    print(String(read()));
+    delete ancestor.value;
+    print(String(read()));
+    Object.defineProperty(parent, "value", { get() { throw 3; } });
+    try { read(); } catch (value) { print(String(value)); }
+    Object.setPrototypeOf(receiver, {value: 4});
+    print(String(read()));
+  `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["1", "1", "2", "1", "3", "4"]);
+});
+
 test("closed numeric loops lower nested recursive functions to direct entries", () => {
   const source = `
     function sum(n) {
