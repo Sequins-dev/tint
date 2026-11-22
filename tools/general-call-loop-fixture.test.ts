@@ -25,6 +25,9 @@ test("untyped generality kernels produce the expected observations", () => {
     catchInLoop: 61,
     objectArray: 288,
     mixedCall: 46,
+    numberCall: 56,
+    mathMax: 68,
+    builtinMethod: 48,
   };
   assert.deepEqual(
     Object.fromEntries(
