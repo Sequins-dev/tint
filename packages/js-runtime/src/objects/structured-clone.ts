@@ -4,6 +4,7 @@ import {
   finishString,
 } from "@tint/foundation/text/string-builder";
 import { setMap } from "@tint/foundation/collections/linked-map";
+import { decodeFloat64, encodeFloat64 } from "@tint/foundation/binary/bytes";
 import { createByteStorage, byteStorageData } from "../bytes/index.ts";
 import { createArrayObject } from "./arrays.ts";
 import {
@@ -144,7 +145,10 @@ function errorKind(name: string): string {
 
 /** Snapshot a graph into a UTF-16 sequence, preserving lone surrogates and
  * references to every first-seen object. Only enumerable own string keys
- * participate in ordinary object and array cloning. */
+ * participate in ordinary object and array cloning. Lengths, counts and
+ * numbers are fixed-width code units, never decimal text: a count is four
+ * units (a safe integer's high and low words), an int32 number two units and
+ * any other number its four binary64 units. */
 export function serializeWorkerValue(
   value: unknown,
   realm: ErrorRealm,
@@ -156,20 +160,36 @@ export function serializeWorkerValue(
   function tag(value: string): void {
     appendString(packet, value);
   }
-  function field(value: string): void {
-    tag(String(value.length) + ":");
-    tag(value);
+  function word(value: number): void {
+    tag(String.fromCharCode(Math.floor(value / 65536), value % 65536));
   }
-  function number(value: number): void {
-    field(value === 0 && 1 / value === -Infinity ? "-0" : String(value));
+  function count(value: number): void {
+    if (!Number.isSafeInteger(value) || value < 0)
+      throw "WORKER_CLONE_COUNT_INVARIANT";
+    word(Math.floor(value / 4294967296));
+    word(value % 4294967296);
+  }
+  function float(value: number): void {
+    const bits = encodeFloat64(value);
+    word(bits.hi);
+    word(bits.lo);
+  }
+  function field(value: string): void {
+    count(value.length);
+    tag(value);
   }
   function encode(value: unknown): void {
     if (value === undefined) return tag("u");
     if (value === null) return tag("n");
     if (typeof value === "boolean") return tag(value ? "t" : "f");
     if (typeof value === "number") {
+      // int32 values other than -0 take two units; the rest binary64.
+      if ((value | 0) === value && (value !== 0 || 1 / value > 0)) {
+        tag("j");
+        return word(value >>> 0);
+      }
       tag("d");
-      return number(value);
+      return float(value);
     }
     if (typeof value === "string") {
       tag("s");
@@ -190,13 +210,13 @@ export function serializeWorkerValue(
     const seen = objects.get(object.internalIdentity);
     if (seen !== undefined) {
       tag("r");
-      return number(seen);
+      return count(seen);
     }
     objects.set(object.internalIdentity, objects.size);
     const grant = attachments?.encode?.(object);
     if (grant !== undefined) {
       tag("x");
-      return number(grant);
+      return count(grant);
     }
     if (unsupportedObject(object))
       return throwWorkerCloneError(realm, "The object could not be cloned");
@@ -217,8 +237,9 @@ export function serializeWorkerValue(
       tag("T");
       field(typed.kind);
       tag(typed.endian === "little" ? "l" : "b");
-      number(typed.byteOffset);
-      number(typed.length ?? -1);
+      count(typed.byteOffset);
+      // Zero marks a length-tracking view; others store length + 1.
+      count(typed.length === undefined ? 0 : typed.length + 1);
       return encode(typed.buffer);
     }
     const view = object.internalDataViewData;
@@ -233,8 +254,8 @@ export function serializeWorkerValue(
       )
         return throwWorkerCloneError(realm, "The DataView is out of bounds");
       tag("V");
-      number(view.byteOffset);
-      number(view.byteLength ?? -1);
+      count(view.byteOffset);
+      count(view.byteLength === undefined ? 0 : view.byteLength + 1);
       return encode(view.buffer);
     }
     if (object.internalErrorData) {
@@ -278,7 +299,7 @@ export function serializeWorkerValue(
         head = head.next;
       }
       tag(map === undefined ? "q" : "m");
-      number(keys.length);
+      count(keys.length);
       for (let index = 0; index < keys.length; index++) {
         encode(keys[index]);
         if (map !== undefined) encode(values[index]);
@@ -288,7 +309,7 @@ export function serializeWorkerValue(
     const date = object.internalDateValue;
     if (date !== undefined) {
       tag("D");
-      return number(date);
+      return float(date);
     }
     const expression = object.internalRegExpData;
     if (expression !== undefined) {
@@ -302,8 +323,8 @@ export function serializeWorkerValue(
       if (bytes === undefined)
         return throwWorkerCloneError(realm, "The ArrayBuffer is detached");
       tag(storage.resizable ? "A" : "B");
-      number(storage.maxByteLength);
-      number(bytes.length);
+      count(storage.maxByteLength);
+      count(bytes.length);
       for (let index = 0; index < bytes.length; index++)
         tag(String.fromCharCode(bytes[index] ?? 0));
       return;
@@ -315,7 +336,7 @@ export function serializeWorkerValue(
         "length",
       )?.value;
       if (typeof length !== "number") throw "WORKER_CLONE_ARRAY_LENGTH";
-      number(length);
+      count(length);
     } else tag("o");
     const keys = ownKeys<ScriptPropertyKey, unknown>(
       object,
@@ -352,26 +373,27 @@ export function deserializeWorkerValue(
     if (next >= packet.length) return invalid();
     return packet.charAt(next++);
   }
-  function field(): string {
-    const boundary = packet.indexOf(":", next);
-    if (boundary < next) return invalid();
-    const lengthText = packet.slice(next, boundary);
-    const length = Number(lengthText);
-    next = boundary + 1;
-    if (
-      length < 0 ||
-      !Number.isSafeInteger(length) ||
-      String(length) !== lengthText ||
-      length > packet.length - next
-    )
-      return invalid();
-    const value = packet.slice(next, next + length);
-    next += length;
+  function word(): number {
+    if (next + 2 > packet.length) return invalid();
+    const value = packet.charCodeAt(next) * 65536 + packet.charCodeAt(next + 1);
+    next += 2;
     return value;
   }
   function count(): number {
-    const value = Number(field());
-    if (!Number.isSafeInteger(value) || value < 0) return invalid();
+    const high = word();
+    if (high > 2097151) return invalid();
+    return high * 4294967296 + word();
+  }
+  function float(): number {
+    const hi = word();
+    const value = decodeFloat64({ hi, lo: word() });
+    return value.ok ? value.value : invalid();
+  }
+  function field(): string {
+    const length = count();
+    if (length > packet.length - next) return invalid();
+    const value = packet.slice(next, next + length);
+    next += length;
     return value;
   }
   function present(): boolean {
@@ -388,7 +410,8 @@ export function deserializeWorkerValue(
     if (kind === "u") return undefined;
     if (kind === "n") return null;
     if (kind === "t" || kind === "f") return kind === "t";
-    if (kind === "d") return Number(field());
+    if (kind === "j") return word() | 0;
+    if (kind === "d") return float();
     if (kind === "s") return field();
     if (kind === "i") {
       const value = bigIntFromString(field());
@@ -408,7 +431,7 @@ export function deserializeWorkerValue(
       const date = createObject<ScriptPropertyKey, unknown>(
         realm.datePrototype,
       );
-      date.internalDateValue = Number(field());
+      date.internalDateValue = float();
       return remember(date);
     }
     if (kind === "w") {
@@ -444,9 +467,8 @@ export function deserializeWorkerValue(
       )
         return invalid();
       const byteOffset = count();
-      const size = Number(field());
-      if (!Number.isSafeInteger(size) || size < -1) return invalid();
-      const length = size === -1 ? undefined : size;
+      const size = count();
+      const length = size === 0 ? undefined : size - 1;
       const buffer = viewObjectValue(decode(), realm.objectPrototype);
       if (buffer === undefined) return invalid();
       const storage =

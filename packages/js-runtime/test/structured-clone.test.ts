@@ -99,3 +99,111 @@ test("worker clone preserves Error causes and shared backing among copied views"
   assert.equal(o.getOwnProperty(cloneError, "message")!.value, "failure");
   assert.equal(o.getOwnProperty(cloneError, "cause")!.value, copy);
 });
+
+test("worker clone encodes numbers and counts as fixed-width units", () => {
+  const source = isolate();
+  const target = isolate();
+  const values = [
+    0,
+    -0,
+    1,
+    -1,
+    2147483647,
+    -2147483648,
+    2147483648,
+    -2147483649,
+    4294967296,
+    Number.MAX_SAFE_INTEGER,
+    -Number.MAX_SAFE_INTEGER,
+    0.1,
+    -2.5,
+    1e300,
+    -1e-300,
+    5e-324,
+    Number.MAX_VALUE,
+    Infinity,
+    -Infinity,
+    NaN,
+  ];
+  const array = o.createArrayObject<objects.ScriptPropertyKey, unknown>(
+    values.length,
+    source.realm.arrayPrototype,
+    source.realm.arrayHooks,
+    source.hooks,
+  );
+  values.forEach((value, index) =>
+    o.createDataProperty(array, String(index), value, source.hooks),
+  );
+  // A key longer than one 16-bit unit of length, and a date.
+  const key = "k".repeat(70000);
+  const holder = o.createObject(source.root);
+  o.createDataProperty(holder, key, array, source.hooks);
+  const date = o.createObject(source.realm.datePrototype);
+  date.internalDateValue = -8.64e15;
+  o.createDataProperty(holder, "date", date, source.hooks);
+  const invalid = o.createObject(source.realm.datePrototype);
+  invalid.internalDateValue = NaN;
+  o.createDataProperty(holder, "invalid", invalid, source.hooks);
+  const packet = codec.serializeWorkerValue(holder, source.realm);
+  // No count or number is decimal text any more.
+  assert.equal(packet.includes("70000:"), false);
+  const copy = codec.deserializeWorkerValue(
+    packet,
+    target.realm,
+  ) as ObjectValue;
+  const cloned = o.getOwnProperty(copy, key)!.value as ObjectValue;
+  assert.equal(o.getOwnProperty(cloned, "length")!.value, values.length);
+  values.forEach((value, index) =>
+    assert.ok(
+      Object.is(o.getOwnProperty(cloned, String(index))!.value, value),
+      String(index),
+    ),
+  );
+  const copiedDate = o.getOwnProperty(copy, "date")!.value as ObjectValue;
+  assert.equal(copiedDate.internalDateValue, -8.64e15);
+  const copiedInvalid = o.getOwnProperty(copy, "invalid")!.value as ObjectValue;
+  assert.ok(Number.isNaN(copiedInvalid.internalDateValue));
+});
+
+test("worker clone keeps length-tracking views and rejects truncated packets", () => {
+  const source = isolate();
+  const target = isolate();
+  const buffer = o.createObject(source.realm.arrayBufferPrototype);
+  const bytes = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
+  const storage = {
+    kind: "ordinary" as const,
+    data: bytes,
+    immutable: false,
+    maxByteLength: 16,
+    resizable: true,
+    allocationLimit: 16,
+  };
+  buffer.internalArrayBufferData = storage;
+  const tracking = o.createTypedArrayView(
+    source.realm.typedArrayPrototypes.get("Uint16"),
+    {
+      buffer,
+      storage,
+      byteOffset: 2,
+      length: undefined,
+      kind: "Uint16",
+      endian: "little",
+    },
+    source.realm,
+    source.hooks,
+  );
+  const packet = codec.serializeWorkerValue(tracking, source.realm);
+  const copy = codec.deserializeWorkerValue(
+    packet,
+    target.realm,
+  ) as ObjectValue;
+  assert.equal(copy.internalTypedArrayData?.length, undefined);
+  assert.equal(copy.internalTypedArrayData?.byteOffset, 2);
+  const backing = copy.internalTypedArrayData?.buffer as ObjectValue;
+  assert.equal(backing.internalArrayBufferData?.maxByteLength, 16);
+  assert.equal(backing.internalArrayBufferData?.resizable, true);
+  for (let cut = 0; cut < packet.length; cut++)
+    assert.throws(() =>
+      codec.deserializeWorkerValue(packet.slice(0, cut), target.realm),
+    );
+});
