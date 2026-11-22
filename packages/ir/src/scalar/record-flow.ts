@@ -282,6 +282,10 @@ export function provenRecordFacts(
               // A proven read observes the field like a checked read terminator.
               edge(field(op.record, op.field), result);
               break;
+            case "record-slot-read":
+              for (let slot = 0; slot < op.count; slot++)
+                edge(field(op.record, op.field + slot), result);
+              break;
             case "store":
               edge(value(fn.id, op.value), slot(fn.id, op.slot));
               break;

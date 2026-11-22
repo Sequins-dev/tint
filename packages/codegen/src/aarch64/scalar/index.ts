@@ -4579,6 +4579,13 @@ function emitModuleForms(
                 type = field.type;
                 break;
               }
+              case "record-slot-read": {
+                const field = module.records?.[op.record]?.fields[op.field];
+                if (field === undefined) throw "record slot layout invariant";
+                id = op.id;
+                type = field.type;
+                break;
+              }
               case "error-is":
               case "general-equal":
               case "record-has":
@@ -10350,6 +10357,73 @@ function emitModuleForms(
                       width: 64,
                       rt: 10,
                       rn: object,
+                      offset: offset + word,
+                    });
+                    rawStore(10, value(op.id).offset + word);
+                  }
+                break;
+              }
+              case "record-slot-read": {
+                const field = module.records?.[op.record]?.fields[op.field];
+                if (field === undefined) throw "record slot field invariant";
+                const bytes = scalarByteLength(field.type);
+                // The index must be an integer in [0, count).
+                if (storedAsInteger(op.index)) rawValue(10, op.index);
+                else {
+                  const index = floatOperand(op.index, 0);
+                  emit({ op: "fcvtzs-x-d", rd: 10, rn: index });
+                  emit({ op: "scvtf-d-x", rd: 1, rn: 10 });
+                  emit({ op: "fcmp", rn: index, rm: 1 });
+                  trapIf({ op: "b.cond", condition: "ne" });
+                }
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 10,
+                  immediate: op.count,
+                  shift: 0,
+                  setFlags: true,
+                });
+                trapIf({ op: "b.cond", condition: "cs" });
+                rawValue(9, op.object);
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 9,
+                  rn: 9,
+                  rm: 10,
+                  shift: "lsl",
+                  amount: bytes === 16 ? 4 : 3,
+                  setFlags: false,
+                });
+                let offset = field.offset;
+                if (offset > 32768 - bytes) {
+                  imm(12, offset);
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 9,
+                    rn: 9,
+                    rm: 12,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  offset = 0;
+                }
+                const home = homeOf(op.id);
+                if (bytes === 8 && home >= 32)
+                  emit({ op: "ldr", width: 64, rt: home - 32, rn: 9, offset });
+                else if (bytes === 8 && home !== 0)
+                  emit({ op: "ldr-d", rt: home, rn: 9, offset });
+                else
+                  for (let word = 0; word < bytes; word += 8) {
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 10,
+                      rn: 9,
                       offset: offset + word,
                     });
                     rawStore(10, value(op.id).offset + word);

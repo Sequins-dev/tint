@@ -129,6 +129,7 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "general-is":
     case "general-record-is":
     case "general-value":
+    case "record-slot-read":
       return true;
     case "reference-none":
     case "reference-wrap":
@@ -926,6 +927,17 @@ export function inlineSmallFunctions(
                   ...instruction,
                   id: value(instruction.id),
                   array: value(instruction.array),
+                  index: value(instruction.index),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "record-slot-read":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  object: value(instruction.object),
                   index: value(instruction.index),
                   start: at.start,
                   end: at.end,

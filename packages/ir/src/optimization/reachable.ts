@@ -120,7 +120,8 @@ function pruneTracedModule(
           op.kind === "general-record-descriptor" ||
           op.kind === "record-descriptor-address" ||
           op.kind === "record-has" ||
-          op.kind === "record-read"
+          op.kind === "record-read" ||
+          op.kind === "record-slot-read"
         ) {
           const record = recordId(op.record);
           if (record !== op.record) rewritten = { ...op, record };

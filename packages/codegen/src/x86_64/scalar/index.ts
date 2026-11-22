@@ -2515,6 +2515,22 @@ export function emitModule(
           types.set(op.id, field.type);
           return;
         }
+        case "record-slot-read": {
+          const field = recordField(op.record, op.field);
+          // The index must be an integer in [0, count).
+          exactInteger(emit, frame(home(op.index)), r9, trapLabel);
+          emit({ op: "cmp", dst: r9, src: imm(op.count) });
+          branch(emit, "ae", trapLabel);
+          emit({
+            op: "shl",
+            dst: r9,
+            count: scalarByteLength(field.type) === 16 ? 4 : 3,
+          });
+          emit({ op: "add", dst: r9, src: frame(home(op.object)) });
+          transferField(field, home(op.id), true);
+          types.set(op.id, field.type);
+          return;
+        }
         case "record-has": {
           const field = recordField(op.record, op.field);
           const site = fnLabel + ":record-has:" + String(op.id);

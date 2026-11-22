@@ -721,6 +721,41 @@ export function verify(
               define(op.id, field.type);
               break;
             }
+            case "record-slot-read": {
+              hasRecordReads = true;
+              const type = use(op.object);
+              if (type !== "reference" && type !== "optional-reference")
+                fail("TYPE", "record slot read requires a reference");
+              equal(use(op.index), "number");
+              const fields = module.records?.[op.record]?.fields;
+              const first = fields?.[op.field];
+              if (
+                !natural(op.record) ||
+                !natural(op.field) ||
+                !natural(op.count) ||
+                op.count < 1 ||
+                fields === undefined ||
+                first === undefined
+              )
+                fail("TYPE", "record slot read requires valid fields");
+              const stride = scalarByteLength(first.type);
+              for (let slot = 0; slot < op.count; slot++) {
+                const field = fields[op.field + slot];
+                if (
+                  field === undefined ||
+                  field.type !== first.type ||
+                  field.stateOffset !== undefined ||
+                  field.presenceOffset !== undefined ||
+                  field.offset !== first.offset + slot * stride
+                )
+                  fail(
+                    "TYPE",
+                    "record slot read requires consecutive fields of one type",
+                  );
+              }
+              define(op.id, first.type);
+              break;
+            }
             case "record-has": {
               const type = use(op.object);
               if (type !== "reference" && type !== "optional-reference")

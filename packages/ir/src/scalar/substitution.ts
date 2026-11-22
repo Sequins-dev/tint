@@ -110,6 +110,13 @@ export function substituteInstructionValues(
       const object = substitutedValue(values, op.object);
       return object === op.object ? op : { ...op, object };
     }
+    case "record-slot-read": {
+      const object = substitutedValue(values, op.object),
+        index = substitutedValue(values, op.index);
+      return object === op.object && index === op.index
+        ? op
+        : { ...op, object, index };
+    }
     case "error-new": {
       const message = substitutedValue(values, op.message);
       return message === op.message ? op : { ...op, message };

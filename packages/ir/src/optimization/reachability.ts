@@ -87,7 +87,8 @@ export function traceModuleReferences(
           op.kind === "general-record-descriptor" ||
           op.kind === "record-descriptor-address" ||
           op.kind === "record-has" ||
-          op.kind === "record-read"
+          op.kind === "record-read" ||
+          op.kind === "record-slot-read"
         )
           includeRecord(op.record);
       }

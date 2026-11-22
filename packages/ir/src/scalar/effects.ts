@@ -37,6 +37,7 @@ export function instructionEffects(op: Instruction): number {
     case "array-valid":
     case "closure-environment":
     case "record-read":
+    case "record-slot-read":
     case "array-read":
     case "array-element":
     case "weak-slot-key":

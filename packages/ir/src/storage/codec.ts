@@ -456,6 +456,15 @@ export function encodeInstruction(
       writePrefix(writer, 84, op, bit(op.area === "stack", 2));
       writeSigned(writer, op.id);
       return true;
+    case "record-slot-read":
+      writePrefix(writer, 85, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.object);
+      writeSigned(writer, op.record);
+      writeSigned(writer, op.field);
+      writeSigned(writer, op.count);
+      writeSigned(writer, op.index);
+      return true;
     case "closure-environment":
       writePrefix(writer, 21, op, 0);
       writeSigned(writer, op.id);
@@ -1292,6 +1301,24 @@ export function decodeInstruction(
       };
     case 83:
       return { kind: "script-argument-count", id: readSigned(reader), ...span };
+    case 85: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        count = readSigned(reader),
+        index = readSigned(reader);
+      return {
+        kind: "record-slot-read",
+        id,
+        object,
+        record,
+        field,
+        count,
+        index,
+        ...span,
+      };
+    }
     case 84:
       return {
         kind: "script-argument-area",

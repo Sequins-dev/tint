@@ -66,6 +66,10 @@ export function visitInstructionOperands(
     case "record-has":
       visit(op.object);
       return;
+    case "record-slot-read":
+      visit(op.object);
+      visit(op.index);
+      return;
     case "function-new":
       if (op.environment !== undefined) visit(op.environment);
       return;

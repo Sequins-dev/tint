@@ -113,6 +113,19 @@ export type Instruction = Span &
         readonly record: number;
         readonly field: number;
       }
+    | {
+        /** Field `field + index` of a non-null record whose fields
+         * field..field+count-1 share one type (consecutive payload words):
+         * one load at a computed offset. Traps unless `index` is an integer
+         * in [0, count). */
+        readonly kind: "record-slot-read";
+        readonly id: number;
+        readonly object: number;
+        readonly record: number;
+        readonly field: number;
+        readonly count: number;
+        readonly index: number;
+      }
     | { readonly kind: "boolean-none"; readonly id: number }
     | {
         readonly kind: "boolean-wrap" | "boolean-value" | "boolean-present";
