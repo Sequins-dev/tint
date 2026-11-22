@@ -51,10 +51,38 @@ const scalarLabels: string[] = [
   "a double",
 ];
 const scalarWidths: number[] = [1, 1, 2, 2, 4, 4, 8, 8, 4, 8];
-const scalarMinimums: number[] = [-128, 0, -32768, 0, -2147483648, 0];
-const scalarMaximums: number[] = [
-  127, 255, 32767, 65535, 2147483647, 4294967295,
-];
+/** Integer kinds 0-5 are i8, u8, i16, u16, i32 and u32. Call sites pass a
+ * constant kind, so these bounds fold instead of reading a table. */
+function scalarMinimum(kind: number): number {
+  switch (kind) {
+    case 0:
+      return -128;
+    case 2:
+      return -32768;
+    case 4:
+      return -2147483648;
+    default:
+      return 0;
+  }
+}
+function scalarMaximum(kind: number): number {
+  switch (kind) {
+    case 0:
+      return 127;
+    case 1:
+      return 255;
+    case 2:
+      return 32767;
+    case 3:
+      return 65535;
+    case 4:
+      return 2147483647;
+    case 5:
+      return 4294967295;
+    default:
+      return 0;
+  }
+}
 
 export interface FfiScalarParameter {
   readonly kind: number;
@@ -205,8 +233,8 @@ export function checkedFfiNumber(
     typeof value !== "number" ||
     (kind < 6 &&
       (!Number.isInteger(value) ||
-        value < (scalarMinimums[kind] ?? 0) ||
-        value > (scalarMaximums[kind] ?? 0)))
+        value < scalarMinimum(kind) ||
+        value > scalarMaximum(kind)))
   )
     return invalidScalar(core, kind, argumentIndex);
   return value;
@@ -221,8 +249,8 @@ export function checkedTypedFfiNumber(
   if (
     kind < 6 &&
     (!Number.isInteger(value) ||
-      value < (scalarMinimums[kind] ?? 0) ||
-      value > (scalarMaximums[kind] ?? 0))
+      value < scalarMinimum(kind) ||
+      value > scalarMaximum(kind))
   )
     return invalidScalar(core, kind, argumentIndex);
   return value;

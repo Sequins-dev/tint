@@ -25,6 +25,7 @@ export {
   type ScriptRecord,
   clearKeptObjects,
   runScriptContext,
+  runRealmBoundCall,
   enterScriptContext,
   leaveScriptContext,
   type ScriptContextFrame,

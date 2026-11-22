@@ -26,9 +26,10 @@ import {
   ownKeys,
   programRealmCore,
   projectArrayBufferViewRange,
-  runScriptContext,
+  runRealmBoundCall,
   scriptPropertyKeyOrder,
   setIntegrityLevel,
+  viewBigIntValue,
   viewObjectValue,
   wellKnownSymbol,
   type ObjectCall,
@@ -256,7 +257,8 @@ function writePointerArgument(
       return lendPointer(core, storage, bytes, 0, destination);
     }
   }
-  if (typeof argument === "bigint") {
+  // A BigInt view avoids the realm typeof classifier on every pointer call.
+  if (viewBigIntValue(argument) !== undefined) {
     if (!writeFfiBigInt(cell, argument, false))
       return invalidArgument(
         core,
@@ -569,12 +571,8 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
   // realm. Typed callers with no active Script/module use one shared context.
   const callContext: ObjectExecutionContext<unknown> = {
     getRealm: () => realm,
-    run: (action): unknown => {
-      const active = agent.activeContext ?? nativeCaller;
-      return active.realm === realm
-        ? runScriptContext<unknown>(agent, active, action)
-        : realm.executionContext.run(action);
-    },
+    run: (action): unknown =>
+      runRealmBoundCall(agent, realm, nativeCaller, action),
   };
   const states: DynamicLibraryState[] = [];
   let serial = 0;
@@ -768,6 +766,116 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       wrapper: undefined,
     };
   }
+  /** The identity slot is created for the library object and is cleared only
+   * after that object is collected. Every wrapper entry captures the object,
+   * so while one runs a live slot names its owner. Testing presence avoids an
+   * object identity comparison, which realm error views make costly, on
+   * every call. */
+  function ownerLive(state: DynamicLibraryState): boolean {
+    return weakSlotKey(state.identity) !== undefined;
+  }
+  /** `retained` is the library object each entry captures, so a wrapper keeps
+   * its library reachable while the library caches the wrapper weakly. */
+  function callBinding(
+    retained: FfiObject,
+    state: DynamicLibraryState,
+    binding: Binding,
+    args: readonly unknown[],
+  ): unknown {
+    requireOpen(state);
+    if (!ownerLive(state)) throw "FFI_WRAPPER_OWNER_INVARIANT";
+    const plan = binding.plan;
+    if (plan === undefined) return closed();
+    const parameters = binding.signature.parameters;
+    if (args.length !== parameters.length)
+      return ffiError(
+        core,
+        "type",
+        "ERR_INVALID_ARG_VALUE",
+        "Invalid argument count: expected " +
+          parameters.length +
+          ", got " +
+          args.length,
+      );
+    const mayCallback = callbacks.active() || hasRegisteredCallbacks();
+    const numberCall = binding.staticNumberCall;
+    if (!mayCallback && numberCall !== undefined)
+      return numberCall(core, binding.numericAddress, args);
+
+    return invokeScalar(
+      core,
+      binding,
+      plan,
+      args,
+      mayCallback ? dispatcher : undefined,
+    );
+  }
+  /** Positional calls from the creating Script or module enter the binding
+   * directly. The ordinary entry runs in the caller's own context, which the
+   * register guard has already matched, so only the argument list, the realm
+   * thunk and the call result record are skipped. One argument list per
+   * wrapper is reused outside reentrant calls and cleared after each call. */
+  function installRegisterCall(
+    call: FfiObject,
+    owner: FfiObject,
+    state: DynamicLibraryState,
+    binding: Binding,
+  ): void {
+    const active = agent.activeContext;
+    const arity = binding.signature.parameters.length;
+    if (active === undefined || active.realm !== realm || arity > 6) return;
+    const reusable: unknown[] = [];
+    for (let index = 0; index < arity; index++) reusable.push(undefined);
+    let reusing = false;
+    const enter = (
+      count: number,
+      first: unknown,
+      second: unknown,
+      third: unknown,
+      fourth: unknown,
+      fifth: unknown,
+      sixth: unknown,
+    ): unknown => {
+      const reuse = count === arity && !reusing;
+      const args: unknown[] = reuse ? reusable : [];
+      if (reuse) reusing = true;
+      if (count > 0) args[0] = first;
+      if (count > 1) args[1] = second;
+      if (count > 2) args[2] = third;
+      if (count > 3) args[3] = fourth;
+      if (count > 4) args[4] = fifth;
+      if (count > 5) args[5] = sixth;
+      const depth = agent.executionContextDepth;
+      agent.executionContextDepth = depth + 1;
+      try {
+        return callBinding(owner, state, binding, args);
+      } finally {
+        agent.executionContextDepth = depth;
+        if (reuse) {
+          for (let index = 0; index < arity; index++)
+            reusable[index] = undefined;
+          reusing = false;
+        }
+      }
+    };
+    call.internalRegisterCall = {
+      context: { realm, scriptOrModule: active.scriptOrModule },
+      invoke: (_callee, _receiver, _newTarget, count, first, second): unknown =>
+        enter(count, first, second, undefined, undefined, undefined, undefined),
+      invokeWide: (
+        _callee,
+        _receiver,
+        _newTarget,
+        count,
+        first,
+        second,
+        third,
+        fourth,
+        fifth,
+        sixth,
+      ): unknown => enter(count, first, second, third, fourth, fifth, sixth),
+    };
+  }
   function wrapper(
     owner: FfiObject,
     state: DynamicLibraryState,
@@ -776,38 +884,8 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     const slot = binding.wrapper;
     const existing = slot === undefined ? undefined : weakSlotKey(slot);
     if (existing !== undefined) return existing;
-    const invoke: ObjectCall<unknown> = (_receiver, args): unknown => {
-      requireOpen(state);
-      // The wrapper retains its owner while the library caches the wrapper
-      // weakly. Validate this single identity without searching the realm.
-      if (weakSlotKey(state.identity) !== owner)
-        throw "FFI_WRAPPER_OWNER_INVARIANT";
-      const plan = binding.plan;
-      if (plan === undefined) return closed();
-      const parameters = binding.signature.parameters;
-      if (args.length !== parameters.length)
-        return ffiError(
-          core,
-          "type",
-          "ERR_INVALID_ARG_VALUE",
-          "Invalid argument count: expected " +
-            parameters.length +
-            ", got " +
-            args.length,
-        );
-      const mayCallback = callbacks.active() || hasRegisteredCallbacks();
-      const numberCall = binding.staticNumberCall;
-      if (!mayCallback && numberCall !== undefined)
-        return numberCall(core, binding.numericAddress, args);
-
-      return invokeScalar(
-        core,
-        binding,
-        plan,
-        args,
-        mayCallback ? dispatcher : undefined,
-      );
-    };
+    const invoke: ObjectCall<unknown> = (_receiver, args): unknown =>
+      callBinding(owner, state, binding, args);
     const plan = binding.plan;
     const typed: TypedFfiCall | undefined =
       plan === undefined ||
@@ -844,7 +922,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
             mode: (): number => {
               if (
                 state.handle === undefined ||
-                weakSlotKey(state.identity) !== owner ||
+                !ownerLive(state) ||
                 binding.scalarDepth !== 0
               )
                 return 0;
@@ -894,6 +972,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       word(binding.address.low, binding.address.high),
       hooks,
     );
+    installRegisterCall(call, owner, state, binding);
     binding.wrapper = createWeakSlot(call, undefined, false);
     return call;
   }
