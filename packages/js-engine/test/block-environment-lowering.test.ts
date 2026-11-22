@@ -1285,6 +1285,43 @@ test("cached stores add properties through transitions and respect prototype cha
   ]);
 });
 
+test("cached reads of primitive receivers follow their prototypes", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+    function at(s) { return s.charAt(1); }
+    function len(s) { return s.length; }
+    function fixed(n) { return n.toFixed(1); }
+    function flag(b) { return b.toString(); }
+    print(at("abc")); print(at("xyz")); print(String(len("abcd")));
+    print(fixed(2.5)); print(flag(true));
+    const original = String.prototype.charAt;
+    String.prototype.charAt = function () { return "patched " + this; };
+    print(at("abc"));
+    Object.defineProperty(String.prototype, "charAt", { get() { return () => "getter"; }, configurable: true });
+    print(at("abc"));
+    Object.defineProperty(String.prototype, "charAt", { value: original, writable: true, configurable: true });
+    print(at("qrs"));
+    Number.prototype.toFixed = function () { return "nf " + typeof this; };
+    print(fixed(3));
+    print(String(len("")));
+  `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "b",
+    "y",
+    "4",
+    "2.5",
+    "true",
+    "patched abc",
+    "getter",
+    "r",
+    "nf object",
+    "0",
+  ]);
+});
+
 test("multi-level cached prototype reads follow intermediate changes", () => {
   const realm = createLoweredRealm();
   assert.equal(

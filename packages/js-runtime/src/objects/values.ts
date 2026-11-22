@@ -599,9 +599,19 @@ export function readCachedObjectValueProperty(
   cache: ScriptPropertyCache,
 ): unknown {
   const object = viewObjectValue(base, realm.objectPrototype);
-  if (object !== undefined) {
+  // A String's own properties are its length and indices, and Number and
+  // Boolean wrappers have none, so other keys of those primitives are the
+  // keys of their prototype, which the site caches like a receiver's own.
+  const receiver =
+    object !== undefined
+      ? object
+      : typeof base === "string" &&
+          (key === "length" || scriptPropertyKeyOrder(key) >= 0)
+        ? undefined
+        : primitivePrototype(base, realm);
+  if (receiver !== undefined) {
     const holder = lookupCachedScriptProperty(
-      object,
+      receiver,
       key,
       cache,
       false,

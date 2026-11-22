@@ -368,6 +368,11 @@ export interface OrdinaryPropertyShape<Key, Value> {
   successors: number;
   /** The realm's undefined: a value slot holding no value reads as it. */
   readonly undefinedValue: Value;
+  /** String key positions, built on first lookup for shapes past
+   * indexedShapeKeys keys (shapes never change their keys). A map with
+   * string keys reuses the runtime's existing collection instantiation;
+   * symbol keys are scanned. */
+  index: Map<string, number> | undefined;
 }
 type ScriptObject = OrdinaryObject<ScriptPropertyKey, unknown>;
 type ScriptShape = OrdinaryPropertyShape<ScriptPropertyKey, unknown>;
@@ -744,7 +749,8 @@ export function ordinaryGetOwnProperty<Key, Value>(
   }
   if (!object.internalDictionary) {
     const shape = object.internalShape;
-    const index = shape === undefined ? -1 : shape.keys.indexOf(key);
+    const index =
+      shape === undefined ? -1 : shapeKeyIndex<Key, Value>(shape, key);
     return shape === undefined || index < 0
       ? undefined
       : fastDescriptor<Key, Value>(object, shape, index);
@@ -812,7 +818,8 @@ export function ordinaryDefineOwnProperty<Key, Value>(
   }
   if (!object.internalDictionary) {
     const shape = object.internalShape;
-    const index = shape === undefined ? -1 : shape.keys.indexOf(key);
+    const index =
+      shape === undefined ? -1 : shapeKeyIndex<Key, Value>(shape, key);
     const current =
       shape === undefined || index < 0
         ? undefined
@@ -931,7 +938,7 @@ export function createDataProperty<Key, Value>(
     if (
       object.extensible &&
       fastKey<Key>(key) &&
-      (shape === undefined || shape.keys.indexOf(key) < 0)
+      (shape === undefined || shapeKeyIndex<Key, Value>(shape, key) < 0)
     ) {
       const base =
         shape === undefined
@@ -1038,7 +1045,8 @@ export function ordinaryDeleteProperty<Key, Value>(
   }
   if (!object.internalDictionary) {
     const shape = object.internalShape;
-    const index = shape === undefined ? -1 : shape.keys.indexOf(key);
+    const index =
+      shape === undefined ? -1 : shapeKeyIndex<Key, Value>(shape, key);
     if (shape === undefined || index < 0) return true;
     if (((shape.kinds[index] ?? 0) & propertyConfigurable) === 0) return false;
     useDictionaryProperties<Key, Value>(object);
@@ -1139,7 +1147,8 @@ export function hasProperty<Key, Value>(
     if (method !== undefined) return method(cursor, key);
     if (!cursor.internalDictionary) {
       const shape = cursor.internalShape;
-      if (shape !== undefined && shape.keys.indexOf(key) >= 0) return true;
+      if (shape !== undefined && shapeKeyIndex<Key, Value>(shape, key) >= 0)
+        return true;
       cursor = cursor.prototype;
       continue;
     }
@@ -1226,6 +1235,34 @@ function descriptorKind<Value>(descriptor: Descriptor<Value>): number {
     (descriptor.enumerable ? propertyEnumerable : 0) |
     (descriptor.configurable ? propertyConfigurable : 0)
   );
+}
+/** Shapes past this many keys find a key through a hashed index; smaller
+ * ones scan their keys. */
+const indexedShapeKeys = 8;
+/** The position of `key` in the shape, or -1. */
+function shapeKeyIndex<Key, Value>(
+  shape: OrdinaryPropertyShape<Key, Value>,
+  key: Key,
+): number {
+  const keys = shape.keys;
+  if (keys.length <= indexedShapeKeys || typeof key !== "string")
+    return keys.indexOf(key);
+  const existing = shape.index;
+  const index =
+    existing === undefined ? indexShapeKeys<Key, Value>(shape) : existing;
+  const position = index.get(key);
+  return position === undefined ? -1 : position;
+}
+function indexShapeKeys<Key, Value>(
+  shape: OrdinaryPropertyShape<Key, Value>,
+): Map<string, number> {
+  const index = new Map<string, number>();
+  for (let position = 0; position < shape.keys.length; position++) {
+    const key = shape.keys[position];
+    if (typeof key === "string") index.set(key, position);
+  }
+  shape.index = index;
+  return index;
 }
 /** Records a structural change of the object's own properties. */
 function noteStructureChange<Key, Value>(
@@ -1443,7 +1480,7 @@ export function ordinaryHasOwnProperty<Key, Value>(
 ): boolean {
   if (!object.internalDictionary) {
     const shape = object.internalShape;
-    return shape !== undefined && shape.keys.indexOf(key) >= 0;
+    return shape !== undefined && shapeKeyIndex<Key, Value>(shape, key) >= 0;
   }
   return ordinaryGetOwnProperty<Key, Value>(object, key) !== undefined;
 }
@@ -1470,6 +1507,7 @@ function rootPropertyShape<Key, Value>(
     nextSibling: undefined,
     successors: 0,
     undefinedValue,
+    index: undefined,
   };
   if (prototype !== undefined) prototype.internalChildShape = root;
   return root;
@@ -1485,6 +1523,7 @@ export const unusedPropertyShape: ScriptShape = {
   nextSibling: undefined,
   successors: 0,
   undefinedValue: undefined,
+  index: undefined,
 };
 /** Shapes past this many keys, or past this many successors of one shape,
  * stay private to their object so dictionary-like use cannot grow the
@@ -1518,6 +1557,7 @@ function transitionPropertyShape<Key, Value>(
     nextSibling: linked ? shape.firstSuccessor : undefined,
     successors: 0,
     undefinedValue: shape.undefinedValue,
+    index: undefined,
   };
   if (linked) {
     shape.firstSuccessor = next;
@@ -1684,7 +1724,7 @@ export function lookupCachedScriptProperty(
   }
   let holder = object,
     holderShape = shape;
-  let offset = shape.keys.indexOf(key);
+  let offset = shapeKeyIndex<ScriptPropertyKey, unknown>(shape, key);
   let parent: ScriptShape | undefined = undefined;
   let ancestor: ScriptShape | undefined = undefined;
   if (offset < 0 && !own) {
@@ -1699,7 +1739,7 @@ export function lookupCachedScriptProperty(
       if (inherited === undefined) return undefined;
       holder = current;
       holderShape = inherited;
-      offset = inherited.keys.indexOf(key);
+      offset = shapeKeyIndex<ScriptPropertyKey, unknown>(inherited, key);
       if (offset >= 0) break;
       if (depth === 0) parent = inherited;
       else if (depth === 1) ancestor = inherited;
@@ -1769,7 +1809,10 @@ export function storeCachedScriptProperty(
 ): boolean {
   if (object.internalDictionary) return false;
   const shape = object.internalShape;
-  const index = shape === undefined ? -1 : shape.keys.indexOf(key);
+  const index =
+    shape === undefined
+      ? -1
+      : shapeKeyIndex<ScriptPropertyKey, unknown>(shape, key);
   if (shape !== undefined && index >= 0) {
     if (((shape.kinds[index] ?? 0) & propertyWritable) === 0) return false;
     setFastValue<ScriptPropertyKey, unknown>(object, index, value);
@@ -1830,7 +1873,8 @@ export function findOrdinaryProperty<Key, Value>(
   while (cursor !== undefined) {
     if (!cursor.internalDictionary) {
       const shape = cursor.internalShape;
-      const index = shape === undefined ? -1 : shape.keys.indexOf(key);
+      const index =
+        shape === undefined ? -1 : shapeKeyIndex<Key, Value>(shape, key);
       if (shape !== undefined && index >= 0)
         return fastDescriptor<Key, Value>(cursor, shape, index);
       cursor = cursor.prototype;
@@ -1854,7 +1898,8 @@ export function getProperty<Key, Value>(
     if (method !== undefined) return method(cursor, key, receiver, hooks);
     if (!cursor.internalDictionary) {
       const shape = cursor.internalShape;
-      const index = shape === undefined ? -1 : shape.keys.indexOf(key);
+      const index =
+        shape === undefined ? -1 : shapeKeyIndex<Key, Value>(shape, key);
       if (shape !== undefined && index >= 0) {
         if (((shape.kinds[index] ?? 0) & propertyAccessor) === 0)
           return fastValue<Key, Value>(cursor, shape, index);
@@ -1904,7 +1949,8 @@ export function setProperty<Key, Value>(
       return method(cursor, key, value, receiver, hooks);
     if (!cursor.internalDictionary) {
       const shape = cursor.internalShape;
-      const index = shape === undefined ? -1 : shape.keys.indexOf(key);
+      const index =
+        shape === undefined ? -1 : shapeKeyIndex<Key, Value>(shape, key);
       if (shape === undefined || index < 0) {
         cursor = cursor.prototype;
         continue;
