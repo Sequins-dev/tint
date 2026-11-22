@@ -163,6 +163,14 @@ const maxPointer = 0xffffffffffffffffn;
 function word(low: number, high: number): bigint {
   return (BigInt(high) << 32n) | BigInt(low);
 }
+/** The identity slot is created for the library object and is cleared only
+ * after that object is collected. Every wrapper entry captures the object,
+ * so while one runs a live slot names its owner. Testing presence avoids an
+ * object identity comparison, which realm error views make costly, on every
+ * call. */
+function ownerLive(state: DynamicLibraryState): boolean {
+  return weakSlotKey(state.identity) !== undefined;
+}
 function invalidArgument(
   core: ProgramRealmCore,
   index: number,
@@ -797,14 +805,6 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       wrapper: undefined,
     };
   }
-  /** The identity slot is created for the library object and is cleared only
-   * after that object is collected. Every wrapper entry captures the object,
-   * so while one runs a live slot names its owner. Testing presence avoids an
-   * object identity comparison, which realm error views make costly, on
-   * every call. */
-  function ownerLive(state: DynamicLibraryState): boolean {
-    return weakSlotKey(state.identity) !== undefined;
-  }
   /** `retained` is the library object each entry captures, so a wrapper keeps
    * its library reachable while the library caches the wrapper weakly. */
   function callBinding(
@@ -813,7 +813,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     binding: Binding,
     args: readonly unknown[],
   ): unknown {
-    requireOpen(state);
+    if (state.handle === undefined) return closed();
     if (!ownerLive(state)) throw "FFI_WRAPPER_OWNER_INVARIANT";
     const plan = binding.plan;
     if (plan === undefined) return closed();
