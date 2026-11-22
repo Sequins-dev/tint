@@ -117,6 +117,13 @@ export function substituteInstructionValues(
         ? op
         : { ...op, object, index };
     }
+    case "property-cell": {
+      const object = substitutedValue(values, op.object),
+        site = substitutedValue(values, op.site);
+      return object === op.object && site === op.site
+        ? op
+        : { ...op, object, site };
+    }
     case "error-new": {
       const message = substitutedValue(values, op.message);
       return message === op.message ? op : { ...op, message };

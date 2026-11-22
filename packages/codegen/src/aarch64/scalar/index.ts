@@ -4586,6 +4586,10 @@ function emitModuleForms(
                 type = field.type;
                 break;
               }
+              case "property-cell":
+                id = op.id;
+                type = "optional-reference";
+                break;
               case "error-is":
               case "general-equal":
               case "record-has":
@@ -10428,6 +10432,155 @@ function emitModuleForms(
                     });
                     rawStore(10, value(op.id).offset + word);
                   }
+                break;
+              }
+              case "property-cell": {
+                const fields = module.records?.[op.record]?.fields,
+                  siteFields = module.records?.[op.siteRecord]?.fields;
+                const shapeField = fields?.[0],
+                  prototypeField = fields?.[op.prototypeField],
+                  siteShape = siteFields?.[op.siteField],
+                  siteHolder = siteFields?.[op.siteField + 2];
+                if (
+                  shapeField === undefined ||
+                  prototypeField === undefined ||
+                  siteShape === undefined ||
+                  (op.inherited && siteHolder === undefined) ||
+                  siteShape.offset > 504
+                )
+                  throw "property cell layout invariant";
+                // The receiver's first word against the site's shape, then the
+                // cell at the site's raw word index (verified field layout).
+                // An own cell uses x9..x12 only; the site is dead after the
+                // pair load, so x10 takes the receiver's shape.
+                rawValue(9, op.object);
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  immediate: 5,
+                  shift: 0,
+                  setFlags: true,
+                });
+                const tagMiss = instructions.length;
+                emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                const object = 9;
+                rawLoad(object, value(op.object).offset + 8);
+                const site = rawRegister(op.site, 10);
+                emit({
+                  op: "ldp",
+                  width: 64,
+                  rt: 11,
+                  rt2: 12,
+                  rn: site,
+                  offset: siteShape.offset,
+                  mode: "offset",
+                });
+                const receiverShape = op.inherited ? 13 : 10;
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: receiverShape,
+                  rn: object,
+                  offset: shapeField.offset,
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: receiverShape,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                const receiverMiss = instructions.length;
+                emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                let holder = object,
+                  holderMiss = -1;
+                if (op.inherited) {
+                  if (siteHolder === undefined)
+                    throw "property cell layout invariant";
+                  // A matching receiver shape names its prototype (shapes
+                  // grow from the prototype's root), which holds the
+                  // property when its first word is the site's holder shape.
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 14,
+                    rn: object,
+                    offset: prototypeField.offset,
+                  });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 11,
+                    rn: site,
+                    offset: siteHolder.offset,
+                  });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 13,
+                    rn: 14,
+                    offset: shapeField.offset,
+                  });
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 13,
+                    rm: 11,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  holderMiss = instructions.length;
+                  emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                  holder = 14;
+                }
+                const target = rawTarget(op.id, 11);
+                emit({
+                  op: "ldr-indexed",
+                  size: 3,
+                  fp: false,
+                  rt: target,
+                  rn: holder,
+                  rm: 12,
+                  scaled: true,
+                });
+                const hit = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                const none = instructions.length;
+                patchInstruction(tagMiss, {
+                  op: "b.cond",
+                  condition: "ne",
+                  displacement: (none - tagMiss) * 4,
+                });
+                patchInstruction(receiverMiss, {
+                  op: "b.cond",
+                  condition: "ne",
+                  displacement: (none - receiverMiss) * 4,
+                });
+                if (holderMiss >= 0)
+                  patchInstruction(holderMiss, {
+                    op: "b.cond",
+                    condition: "ne",
+                    displacement: (none - holderMiss) * 4,
+                  });
+                emit({
+                  op: "orr-reg",
+                  width: 64,
+                  rd: target,
+                  rn: "zr",
+                  rm: "zr",
+                });
+                patchInstruction(hit, {
+                  op: "b",
+                  displacement: (instructions.length - hit) * 4,
+                });
+                saveRaw(target, op.id);
                 break;
               }
               case "record-has": {

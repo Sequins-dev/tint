@@ -291,7 +291,8 @@ export function scriptRuntimeImports(
               "createScriptPropertyCache",
               "readCachedObjectValueProperty",
               "writeCachedObjectValueProperty",
-              "readPropertySlot",
+              "cachedOwnPropertyCell",
+              "cachedInheritedPropertyCell",
             ]
           : []),
         "readObjectValuePropertyKey",

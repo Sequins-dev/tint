@@ -125,6 +125,16 @@ function pruneTracedModule(
         ) {
           const record = recordId(op.record);
           if (record !== op.record) rewritten = { ...op, record };
+        } else if (op.kind === "property-cell") {
+          const record = recordId(op.record),
+            cellRecord = recordId(op.cellRecord),
+            siteRecord = recordId(op.siteRecord);
+          if (
+            record !== op.record ||
+            cellRecord !== op.cellRecord ||
+            siteRecord !== op.siteRecord
+          )
+            rewritten = { ...op, record, cellRecord, siteRecord };
         }
         if (rewritten !== op && instructions === undefined)
           instructions = block.instructions.slice(0, i);

@@ -164,7 +164,9 @@ export function createScriptRuntimeRequest(
       "scriptIsHTMLDDA",
       "looselyEqualOrThrow",
       "excludeHTMLDDAObjects",
-      "readPropertySlot",
+      "cachedOwnPropertyCell",
+      "cachedInheritedPropertyCell",
+      "propertySlotWord",
     ]) {
       if (!objects?.has(name)) missingFastPaths.add(name);
     }

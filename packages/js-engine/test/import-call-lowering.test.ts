@@ -69,7 +69,7 @@ test("proposal import phases lower through Script, module, eval and Function ent
 test("import-free lowering retains the caller-policy output contract", () => {
   const cases: [string, boolean, string][] = [
     ["42;", false, "ba2869c9ab7c9b13"],
-    ["function f(){ return a?.b(c); }", false, "2ccfada17498b242"],
+    ["function f(){ return a?.b(c); }", false, "038e8772d8f9419c"],
     [
       "async function g(){ await x; } function* k(){ yield 1; }",
       false,
@@ -85,7 +85,7 @@ test("import-free lowering retains the caller-policy output contract", () => {
     ],
     ['import {x} from "./x"; export default x;', true, "68b4f2c7850603bb"],
     ["export async function g(){ await 1; }", true, "fb9de45147375151"],
-    ["export const o = {a(){ return this?.b; }};", true, "ec3b41decbae2f22"],
+    ["export const o = {a(){ return this?.b; }};", true, "7cbdcd58050d9ac8"],
   ];
   for (const [source, module, hash] of cases) {
     const result = module
@@ -180,7 +180,7 @@ test("runtime vocabulary flags add only requested helpers and preserve the manag
     module = lowering.scriptRuntimeImports(span, false, false, false, "module");
   assert.equal(count(script), 119);
   assert.equal(count(module), 123);
-  assert.equal(lowering.scriptRuntimeSurface().length, 179);
+  assert.equal(lowering.scriptRuntimeSurface().length, 180);
   assert.ok(
     lowering
       .scriptRuntimeSurface()

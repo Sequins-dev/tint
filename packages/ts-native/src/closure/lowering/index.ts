@@ -35,7 +35,11 @@ import {
   type DynamicObjectRuntime,
 } from "./dynamic-objects.ts";
 import type { RecordOperation } from "./record-bindings.ts";
-import { bindRecordOperation } from "./record-bindings.ts";
+import {
+  bindFieldWord,
+  bindPropertyCell,
+  bindRecordOperation,
+} from "./record-bindings.ts";
 import { incompatibleRepresentationView } from "./representation-views.ts";
 import {
   checkedPropertyName,
@@ -209,9 +213,14 @@ export interface ModuleEntryOptions {
 export interface RecordBinding {
   readonly function: number;
   readonly operation: RecordOperation;
-  /** slot-read: the first slot field's name and the slot count. */
-  readonly field?: string;
-  readonly count?: number;
+  /** slot-read and property-cell: the first slot field's name and the slot
+   * count; field-word: the field's name. */
+  readonly field?: string | undefined;
+  readonly count?: number | undefined;
+  /** property-cell: the witness record's prototype field and the site
+   * record's first cache field (shape, then slot, then holder shape). */
+  readonly prototypeField?: string | undefined;
+  readonly siteField?: string | undefined;
 }
 export function lowerModuleEntries(
   checked: CheckedClosures,
@@ -4172,6 +4181,120 @@ function lowerEntries(
         fail("record binding requires a module function");
       const first = fn.parameters[0],
         second = fn.parameters[1];
+      const span = { start: body.node.start, end: body.node.end };
+      if (binding.operation === "field-word") {
+        const witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
+        const record =
+          witnessType === undefined
+            ? undefined
+            : recordContracts.forType(witnessType);
+        const name = binding.field;
+        const field =
+          record === undefined || name === undefined
+            ? undefined
+            : recordContracts.fieldIndex(record, name);
+        const placed =
+          record === undefined || field === undefined
+            ? undefined
+            : recordContracts.records[record]?.fields[field];
+        if (
+          first === undefined ||
+          fn.parameters.length !== 1 ||
+          fn.slots[first] !== "reference" ||
+          fn.returnType !== "number" ||
+          placed === undefined ||
+          placed.offset % 8 !== 0 ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail("field word bindings take a record witness with a named field");
+        functions[fn.id] = bindFieldWord(fn, placed.offset / 8, span);
+        continue;
+      }
+      if (
+        binding.operation === "property-cell" ||
+        binding.operation === "inherited-property-cell"
+      ) {
+        const witnessType = checked.bindingTypes[bindingId(body.parameters[0])],
+          siteType = checked.bindingTypes[bindingId(body.parameters[2])];
+        const record =
+            witnessType === undefined
+              ? undefined
+              : recordContracts.forType(witnessType),
+          siteRecord =
+            siteType === undefined
+              ? undefined
+              : recordContracts.forType(siteType);
+        const cellName = binding.field,
+          prototypeName = binding.prototypeField,
+          siteName = binding.siteField,
+          count = binding.count;
+        const field =
+            record === undefined || cellName === undefined
+              ? undefined
+              : recordContracts.fieldIndex(record, cellName),
+          prototypeField =
+            record === undefined || prototypeName === undefined
+              ? undefined
+              : recordContracts.fieldIndex(record, prototypeName),
+          siteField =
+            siteRecord === undefined || siteName === undefined
+              ? undefined
+              : recordContracts.fieldIndex(siteRecord, siteName);
+        // The present result's record: the cells' layout.
+        let cellRecord: number | undefined = undefined;
+        const result = checked.types[body.result];
+        if (result?.kind === "union")
+          for (const member of result.members) {
+            if (member === undefined) throw "property cell type invariant";
+            if (checked.types[member]?.kind === "object")
+              cellRecord = recordContracts.forType(member);
+          }
+        const third = fn.parameters[2];
+        if (
+          first === undefined ||
+          second === undefined ||
+          third === undefined ||
+          fn.parameters.length !== 3 ||
+          fn.slots[first] !== "reference" ||
+          fn.slots[second] !== "general" ||
+          fn.slots[third] !== "reference" ||
+          fn.returnType !== "optional-reference" ||
+          record === undefined ||
+          siteRecord === undefined ||
+          field === undefined ||
+          prototypeField === undefined ||
+          siteField === undefined ||
+          cellRecord === undefined ||
+          count === undefined ||
+          !Number.isSafeInteger(count) ||
+          count < 1 ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "property cell bindings take a record witness, an unknown value and a cache site with named fields",
+          );
+        functions[fn.id] = bindPropertyCell(
+          fn,
+          second,
+          third,
+          {
+            record,
+            field,
+            count,
+            cellRecord,
+            prototypeField,
+            siteRecord,
+            siteField,
+          },
+          binding.operation === "inherited-property-cell",
+          span,
+        );
+        continue;
+      }
       if (binding.operation === "slot-read") {
         const witnessType = checked.bindingTypes[bindingId(body.parameters[0])];
         const record =

@@ -1,5 +1,7 @@
 import type {
+  FunctionDebug,
   FunctionIR,
+  SlotBinding,
   Block,
   ScalarType,
   Span,
@@ -20,7 +22,118 @@ export type RecordOperation =
   | "slot-read"
   /** `(record: T, view: unknown): void`: store the view (ignored for a
    * record of another layout). */
-  | "set-view-slot";
+  | "set-view-slot"
+  /** `(witness: T, value: unknown, site: S): C | undefined`: the cached own
+   * (or inherited) property cell of an object value (IR property-cell). */
+  | "property-cell"
+  | "inherited-property-cell"
+  /** `(witness: T): number`: the word index of a named field of T. */
+  | "field-word";
+
+/** The record fields a property-cell binding reads (see the IR
+ * instruction). */
+export interface PropertyCellLayout {
+  readonly record: number;
+  readonly field: number;
+  readonly count: number;
+  readonly cellRecord: number;
+  readonly prototypeField: number;
+  readonly siteRecord: number;
+  readonly siteField: number;
+}
+/** A bound body's slots: its parameters only, so the replaced source
+ * body's locals cannot keep it from inlining. */
+function parameterSlots(fn: FunctionIR): ScalarType[] {
+  const slots: ScalarType[] = [];
+  for (let index = 0; index < fn.parameters.length; index++) {
+    const type = fn.slots[index];
+    if (fn.parameters[index] !== index || type === undefined)
+      throw "record binding parameter invariant";
+    slots.push(type);
+  }
+  return slots;
+}
+/** Debug metadata of a bound body: source variables and parameter slots
+ * remain; bindings of the replaced body's values and locals do not. */
+function parameterDebug(
+  debug: FunctionDebug,
+  parameters: number,
+): FunctionDebug {
+  const slots: SlotBinding[] = [];
+  for (const binding of debug.slots)
+    if (binding.slot < parameters) slots.push(binding);
+  return {
+    variables: debug.variables,
+    slots,
+    values: [],
+    inlineSites: debug.inlineSites,
+  };
+}
+/** The body of a property-cell binding: its value and site parameters. */
+export function bindPropertyCell(
+  fn: FunctionIR,
+  value: number,
+  site: number,
+  layout: PropertyCellLayout,
+  inherited: boolean,
+  span: Span,
+): FunctionIR {
+  return {
+    ...fn,
+    slots: parameterSlots(fn),
+    ...(fn.debug === undefined
+      ? {}
+      : { debug: parameterDebug(fn.debug, fn.parameters.length) }),
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { ...span, kind: "load", id: 0, slot: value },
+          { ...span, kind: "load", id: 1, slot: site },
+          {
+            ...span,
+            kind: "property-cell",
+            id: 2,
+            object: 0,
+            site: 1,
+            record: layout.record,
+            field: layout.field,
+            count: layout.count,
+            cellRecord: layout.cellRecord,
+            prototypeField: layout.prototypeField,
+            siteRecord: layout.siteRecord,
+            siteField: layout.siteField,
+            inherited,
+          },
+        ],
+        terminator: { ...span, kind: "return", value: 2 },
+      },
+    ],
+  };
+}
+/** The body of a field-word binding: one constant. */
+export function bindFieldWord(
+  fn: FunctionIR,
+  word: number,
+  span: Span,
+): FunctionIR {
+  return {
+    ...fn,
+    slots: parameterSlots(fn),
+    ...(fn.debug === undefined
+      ? {}
+      : { debug: parameterDebug(fn.debug, fn.parameters.length) }),
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [{ ...span, kind: "constant", id: 0, value: word }],
+        terminator: { ...span, kind: "return", value: 0 },
+      },
+    ],
+  };
+}
 
 /** Signature and semantic result types are validated by the source adapter. */
 export function bindRecordOperation(

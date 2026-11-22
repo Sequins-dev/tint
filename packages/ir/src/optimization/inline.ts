@@ -130,6 +130,7 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "general-record-is":
     case "general-value":
     case "record-slot-read":
+    case "property-cell":
       return true;
     case "reference-none":
     case "reference-wrap":
@@ -939,6 +940,17 @@ export function inlineSmallFunctions(
                   id: value(instruction.id),
                   object: value(instruction.object),
                   index: value(instruction.index),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "property-cell":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  object: value(instruction.object),
+                  site: value(instruction.site),
                   start: at.start,
                   end: at.end,
                   inline: at.inline,

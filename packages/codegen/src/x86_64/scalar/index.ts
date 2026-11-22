@@ -2531,6 +2531,55 @@ export function emitModule(
           types.set(op.id, field.type);
           return;
         }
+        case "property-cell": {
+          // See the AArch64 emission: the receiver's first word against the
+          // site's shape, then the cell at the site's raw word index.
+          const shape = recordField(op.record, 0),
+            prototype = recordField(op.record, op.prototypeField),
+            siteShape = recordField(op.siteRecord, op.siteField),
+            siteSlot = recordField(op.siteRecord, op.siteField + 1);
+          const site = fnLabel + ":property-cell:" + String(op.id);
+          const none = site + ":none",
+            done = site + ":done";
+          emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
+          branch(emit, "ne", none);
+          emit({ op: "mov", dst: r9, src: frame(home(op.object) + 8) });
+          emit({ op: "mov", dst: gpr(10), src: frame(home(op.site)) });
+          emit({ op: "mov", dst: rax, src: mem(9, shape.offset) });
+          emit({ op: "cmp", dst: rax, src: mem(10, siteShape.offset) });
+          branch(emit, "ne", none);
+          let holder = 9;
+          if (op.inherited) {
+            const siteHolder = recordField(op.siteRecord, op.siteField + 2);
+            emit({ op: "mov", dst: scratch, src: mem(9, prototype.offset) });
+            emit({ op: "mov", dst: rax, src: mem(11, shape.offset) });
+            emit({ op: "cmp", dst: rax, src: mem(10, siteHolder.offset) });
+            branch(emit, "ne", none);
+            holder = 11;
+          }
+          emit({ op: "mov", dst: rax, src: mem(10, siteSlot.offset) });
+          emit({
+            op: "mov",
+            dst: rax,
+            src: {
+              kind: "mem",
+              width: 64,
+              address: {
+                kind: "base",
+                base: holder,
+                index: 0,
+                scale: 8,
+                disp: 0,
+              },
+            },
+          });
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: none });
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "label", name: done });
+          define(op.id, "optional-reference");
+          return;
+        }
         case "record-has": {
           const field = recordField(op.record, op.field);
           const site = fnLabel + ":record-has:" + String(op.id);

@@ -465,6 +465,19 @@ export function encodeInstruction(
       writeSigned(writer, op.count);
       writeSigned(writer, op.index);
       return true;
+    case "property-cell":
+      writePrefix(writer, 86, op, bit(op.inherited, 2));
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.object);
+      writeSigned(writer, op.site);
+      writeSigned(writer, op.record);
+      writeSigned(writer, op.field);
+      writeSigned(writer, op.count);
+      writeSigned(writer, op.cellRecord);
+      writeSigned(writer, op.prototypeField);
+      writeSigned(writer, op.siteRecord);
+      writeSigned(writer, op.siteField);
+      return true;
     case "closure-environment":
       writePrefix(writer, 21, op, 0);
       writeSigned(writer, op.id);
@@ -1316,6 +1329,33 @@ export function decodeInstruction(
         field,
         count,
         index,
+        ...span,
+      };
+    }
+    case 86: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        site = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        count = readSigned(reader),
+        cellRecord = readSigned(reader),
+        prototypeField = readSigned(reader),
+        siteRecord = readSigned(reader),
+        siteField = readSigned(reader);
+      return {
+        kind: "property-cell",
+        id,
+        object,
+        site,
+        record,
+        field,
+        count,
+        cellRecord,
+        prototypeField,
+        siteRecord,
+        siteField,
+        inherited: flagged(flags, 2),
         ...span,
       };
     }

@@ -38,6 +38,7 @@ export function instructionEffects(op: Instruction): number {
     case "closure-environment":
     case "record-read":
     case "record-slot-read":
+    case "property-cell":
     case "array-read":
     case "array-element":
     case "weak-slot-key":

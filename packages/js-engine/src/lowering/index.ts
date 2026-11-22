@@ -87,9 +87,62 @@ export interface ScriptLoweringOptions {
    * marks one (markHTMLDDAObject) fails loudly instead of changing `==`. */
   readonly htmlDDAObjects?: boolean;
 }
-/** In-place cell slots of an ordinary object (js-runtime propertySlots):
- * cached cells below this offset are read with readPropertySlot. */
+/** In-place cell slots of an ordinary object (js-runtime propertySlots). */
 export const propertySlots = 8;
+/** The runtime functions generated property caches read cells with, and
+ * the slot reader their portable bodies share. */
+export const propertyCellNames: readonly string[] = [
+  "cachedOwnPropertyCell",
+  "cachedInheritedPropertyCell",
+  "propertySlotWord",
+  "readPropertySlot",
+  "propertyCellLayout",
+];
+export interface PropertyCellBinding {
+  readonly module: string;
+  readonly name: string;
+  readonly operation:
+    "test" | "field-word" | "property-cell" | "inherited-property-cell";
+  readonly field?: string;
+  readonly count?: number;
+  readonly prototypeField?: string;
+  readonly siteField?: string;
+}
+/** Native record bindings of the property cache functions in the runtime's
+ * objects module: inline shape compares and cell loads (IR property-cell)
+ * and the constant word index of the first in-place cell. */
+export function propertyCellBindings(
+  module: string,
+): readonly PropertyCellBinding[] {
+  return [
+    // The layout test that keeps other cells out of the in-place slots.
+    { module, name: "propertyCellLayout", operation: "test" },
+    {
+      module,
+      name: "propertySlotWord",
+      operation: "field-word",
+      field: "internalSlot0",
+    },
+    {
+      module,
+      name: "cachedOwnPropertyCell",
+      operation: "property-cell",
+      field: "internalSlot0",
+      count: propertySlots,
+      prototypeField: "prototype",
+      siteField: "inlineShape",
+    },
+    {
+      module,
+      name: "cachedInheritedPropertyCell",
+      operation: "inherited-property-cell",
+      field: "internalSlot0",
+      count: propertySlots,
+      prototypeField: "prototype",
+      siteField: "inlineShape",
+    },
+  ];
+}
 /** Immutable numeric imports proved by the hosted function planner. */
 export interface NumericCallSite extends Span {
   readonly target: string;
@@ -894,10 +947,22 @@ function lowerScriptEntry(
     appendStatements(tables, slotTable("$pc", propertyCacheInitializers));
     return tables;
   }
-  function propertyCache(name: string, span: Span): Expression {
+  /** A property cache site; an inherited site serves method calls from the
+   * receiver's immediate prototype. */
+  function propertyCache(
+    name: string,
+    span: Span,
+    inherited: boolean,
+  ): Expression {
     const index = propertyCacheInitializers.length;
     propertyCacheInitializers.push(
-      runtimeCall("createScriptPropertyCache", [text(name)], generated),
+      runtimeCall(
+        "createScriptPropertyCache",
+        inherited
+          ? [text(name), { ...at(generated), kind: "boolean", value: true }]
+          : [text(name)],
+        generated,
+      ),
     );
     return slotField("$pc", index, span);
   }
@@ -2791,151 +2856,37 @@ function lowerScriptEntry(
     const key = convertedKey(base, property, span);
     return readProperty(base, key, span);
   }
+  /** The site's inline data cell of `base` (IR property-cell natively), or
+   * undefined: a receiver shape match proves the cell's kind. */
   function inlineCachedPropertyCell(
     base: Expression,
     cache: Expression,
-    own: boolean,
+    inherited: boolean,
     span: Span,
   ): Expression {
-    const without = id("undefined", span);
-    const object = temporary(
-      runtimeCall(
-        "viewObjectValue",
-        [base, member(id("$errors"), "objectPrototype", span)],
-        span,
-      ),
-    );
-    const first = temporary(member(cache, "first", span));
-    const holder = own ? object : temporary(object, false, true);
-    if (!own) {
-      // An inherited entry names the immediate prototype's shape; an own
-      // entry (holder undefined) reads the receiver itself.
-      const expected = temporary(member(first, "holder", span));
-      const start = statements.length;
-      const prototype = temporary(optionalMember(object, "prototype", span));
-      const matches: Expression = {
-        ...at(span),
-        kind: "binary",
-        operator: "&&",
-        left: {
-          ...at(span),
-          kind: "binary",
-          operator: "!==",
-          left: prototype,
-          right: without,
-        },
-        right: {
-          ...at(span),
-          kind: "binary",
-          operator: "===",
-          left: member(prototype, "internalShape", span),
-          right: expected,
-        },
-      };
-      expression({
-        ...at(span),
-        kind: "assignment",
-        target: holder,
-        value: scalarBranch(matches, prototype, without, span),
-      });
-      const consequent: BlockStatement = {
-        ...at(span),
-        kind: "block",
-        statements: statements.splice(start),
-      };
-      statements.push({
-        ...at(span),
-        kind: "if",
-        test: {
-          ...at(span),
-          kind: "binary",
-          operator: "!==",
-          left: expected,
-          right: without,
-        },
-        consequent,
-        alternate: undefined,
-      });
-    }
-    // An empty cache holds a shape no object has, so a receiver without a
-    // shape cannot match.
-    const matchingShape: Expression = {
-      ...at(span),
-      kind: "binary",
-      operator: "&&",
-      left: {
-        ...at(span),
-        kind: "binary",
-        operator: "!==",
-        left: object,
-        right: without,
-      },
-      right: {
-        ...at(span),
-        kind: "binary",
-        operator: "===",
-        left: member(object, "internalShape", span),
-        right: member(cache, "inlineReceiver", span),
-      },
-    };
-    // Cells past the in-place slots take the miss path.
-    const offset = temporary(member(first, "offset", span));
-    const inPlace: Expression = {
-      ...at(span),
-      kind: "binary",
-      operator: "&&",
-      left: matchingShape,
-      right: scalarBinary("<", offset, scalarNumber(propertySlots, span), span),
-    };
-    const present: Expression = own
-      ? inPlace
-      : {
-          ...at(span),
-          kind: "binary",
-          operator: "&&",
-          left: inPlace,
-          right: {
-            ...at(span),
-            kind: "binary",
-            operator: "!==",
-            left: holder,
-            right: without,
-          },
-        };
-    // `present` has narrowed the holder.
     return temporary(
-      scalarBranch(
-        present,
-        runtimeCall("readPropertySlot", [holder, offset], span),
-        without,
+      runtimeCall(
+        inherited ? "cachedInheritedPropertyCell" : "cachedOwnPropertyCell",
+        [member(id("$errors"), "objectPrototype", span), base, cache],
         span,
       ),
     );
   }
-  function dataCacheHit(cell: Expression, span: Span): Expression {
+  function presentCell(cell: Expression, span: Span): Expression {
     return {
       ...at(span),
       kind: "binary",
-      operator: "&&",
-      left: {
-        ...at(span),
-        kind: "binary",
-        operator: "!==",
-        left: cell,
-        right: id("undefined", span),
-      },
-      right: {
-        ...at(span),
-        kind: "unary",
-        operator: "!",
-        operand: member(cell, "accessor", span),
-      },
+      operator: "!==",
+      left: cell,
+      right: id("undefined", span),
     };
   }
+  /** `method` reads a callee (`o.m()`), served from the prototype. */
   function readProperty(
     base: Expression,
     key: Expression,
     span: Span,
+    method: boolean = false,
   ): Expression {
     const cached = key.kind === "string" && !compactResults;
     const object =
@@ -2950,7 +2901,7 @@ function lowerScriptEntry(
     ];
     const cache =
       cached && key.kind === "string"
-        ? propertyCache(key.value, span)
+        ? propertyCache(key.value, span, method)
         : undefined;
     if (cache !== undefined) args.push(cache);
     const read = runtimeCall(
@@ -2969,10 +2920,10 @@ function lowerScriptEntry(
         true,
       );
     if (cache === undefined) return temporary(read, true);
-    const cell = inlineCachedPropertyCell(object, cache, false, span);
+    const cell = inlineCachedPropertyCell(object, cache, method, span);
     return temporary(
       scalarBranch(
-        dataCacheHit(cell, span),
+        presentCell(cell, span),
         member(cell, "value", span),
         read,
         span,
@@ -3190,7 +3141,11 @@ function lowerScriptEntry(
       });
     return key;
   }
-  function readAssignment(target: AssignmentReference): Expression {
+  /** `method` reads a callee (`o.m()`), see readProperty. */
+  function readAssignment(
+    target: AssignmentReference,
+    method: boolean = false,
+  ): Expression {
     if (target.invalid) return id("undefined");
     if (target.local) {
       checkSlotInitialized(target);
@@ -3222,7 +3177,7 @@ function lowerScriptEntry(
       return readComputedProperty(target.base, property, target);
     const key = referenceKey(target, property, target, true);
     if (superReceiver === undefined)
-      return readProperty(target.base, key, target);
+      return readProperty(target.base, key, target, method);
     return checkedRuntimeValue(
       "getObjectValuePropertyWithReceiver",
       [
@@ -3334,16 +3289,16 @@ function lowerScriptEntry(
       key.kind === "string" &&
       !compactResults
     ) {
-      const cache = propertyCache(key.value, target);
+      const cache = propertyCache(key.value, target, false);
       const value = temporary(assigned, true);
       args[2] = value;
       args.push(cache);
-      const cell = inlineCachedPropertyCell(target.base, cache, true, target);
+      const cell = inlineCachedPropertyCell(target.base, cache, false, target);
       const fast: Expression = {
         ...at(target),
         kind: "binary",
         operator: "&&",
-        left: dataCacheHit(cell, target),
+        left: presentCell(cell, target),
         right: member(cell, "writable", target),
       };
       statements.push({
@@ -3475,7 +3430,7 @@ function lowerScriptEntry(
         };
       }
       return {
-        value: readAssignment(reference),
+        value: readAssignment(reference, true),
         receiver: reference.superReceiver ?? reference.base,
         contract: undefined,
       };
@@ -3959,7 +3914,7 @@ function lowerScriptEntry(
       const step = steps[i];
       if (step === undefined) throw "CHAIN_STEP_INVARIANT";
       if (reference !== undefined) {
-        current = readAssignment(reference);
+        current = readAssignment(reference, step.kind === "call");
         receiver = reference.superReceiver ?? reference.base;
       }
       const previous = temporary(current, true);

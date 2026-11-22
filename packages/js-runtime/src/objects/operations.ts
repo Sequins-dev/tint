@@ -362,10 +362,18 @@ interface ScriptPropertyCacheEntry {
   offset: number;
 }
 export interface ScriptPropertyCache {
+  /** The first entry as generated code reads it (IR property-cell): the
+   * receiver shape, the raw-bit word index of the cell (inlineSlotBits) and,
+   * at an inherited site, the immediate prototype's shape. The fields are
+   * first and consecutive, and an empty site holds unusedPropertyShape. */
+  inlineShape: OrdinaryPropertyShape;
+  inlineSlot: number;
+  inlineHolder: OrdinaryPropertyShape;
+  /** Whether generated code reads the first entry from the receiver's
+   * immediate prototype (method calls) rather than the receiver. Deeper
+   * entries and other holders take the miss path. */
+  readonly inherited: boolean;
   readonly first: ScriptPropertyCacheEntry;
-  /** The first entry is exposed to generated code only for an own or
-   * immediate-prototype property. Deeper guards run in the miss stub. */
-  inlineReceiver: OrdinaryPropertyShape;
   readonly entries: readonly ScriptPropertyCacheEntry[];
   readonly nameHash: number;
   used: number;
@@ -383,11 +391,15 @@ function propertyCacheEntry(): ScriptPropertyCacheEntry {
 }
 export function createScriptPropertyCache(
   name: string = "",
+  inherited: boolean = false,
 ): ScriptPropertyCache {
   const first = propertyCacheEntry();
   return {
+    inlineShape: unusedPropertyShape,
+    inlineSlot: 0,
+    inlineHolder: unusedPropertyShape,
+    inherited,
     first,
-    inlineReceiver: unusedPropertyShape,
     entries: [
       first,
       propertyCacheEntry(),
@@ -1046,17 +1058,18 @@ function updatePropertyShape<Key, Value>(
   const kind = descriptor.accessor ? 2 : descriptor.writable ? 1 : 0;
   if (added) {
     const index = shape.keys.length;
-    object.internalShape = transitionPropertyShape(shape, key, kind);
-    setPropertyCell<Key, Value>(object, index, descriptor);
+    if (setPropertyCell<Key, Value>(object, index, descriptor))
+      object.internalShape = transitionPropertyShape(shape, key, kind);
+    else discardPropertyShape<Key, Value>(object);
     return;
   }
   const index = shape.keys.indexOf(key);
   if (index < 0) throw "PROPERTY_SHAPE_KEY_INVARIANT";
-  if (shape.kinds[index] !== kind) {
+  if (
+    shape.kinds[index] !== kind ||
+    !setPropertyCell<Key, Value>(object, index, descriptor)
+  )
     discardPropertyShape<Key, Value>(object);
-    return;
-  }
-  setPropertyCell<Key, Value>(object, index, descriptor);
 }
 function discardPropertyShape<Key, Value>(
   object: OrdinaryObject<Key, Value>,
@@ -1074,38 +1087,50 @@ function discardPropertyShape<Key, Value>(
 }
 /** In-place cell slots per object (internalSlot0..7). */
 export const propertySlots = 8;
+/** Whether `value` has the descriptor record layout generated caches read
+ * from in-place slots without a check (IR property-cell). Native code binds
+ * this to a header comparison; structurally typed descriptors of another
+ * layout stay out of the slots. */
+export function propertyCellLayout(
+  value: unknown,
+  witness: Descriptor<unknown>,
+): boolean {
+  return true;
+}
 /** Store the descriptor of the shape's key at index. Indices past the
- * in-place slots extend internalCells in order. */
+ * in-place slots extend internalCells in order. False, storing nothing, for
+ * an in-place cell of another layout (see propertyCellLayout). */
 function setPropertyCell<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   index: number,
   cell: Descriptor<Value>,
-): void {
+): boolean {
+  if (index < propertySlots && !propertyCellLayout(cell, cell)) return false;
   switch (index) {
     case 0:
       object.internalSlot0 = cell;
-      return;
+      return true;
     case 1:
       object.internalSlot1 = cell;
-      return;
+      return true;
     case 2:
       object.internalSlot2 = cell;
-      return;
+      return true;
     case 3:
       object.internalSlot3 = cell;
-      return;
+      return true;
     case 4:
       object.internalSlot4 = cell;
-      return;
+      return true;
     case 5:
       object.internalSlot5 = cell;
-      return;
+      return true;
     case 6:
       object.internalSlot6 = cell;
-      return;
+      return true;
     case 7:
       object.internalSlot7 = cell;
-      return;
+      return true;
   }
   const spill = index - propertySlots;
   const cells = object.internalCells;
@@ -1115,6 +1140,7 @@ function setPropertyCell<Key, Value>(
   } else if (spill === cells.length) cells.push(cell);
   else if (spill < cells.length) cells[spill] = cell;
   else throw "PROPERTY_CELL_INDEX_INVARIANT";
+  return true;
 }
 /** The descriptor of the shape's key at index. */
 export function propertyCell<Key, Value>(
@@ -1296,8 +1322,11 @@ function ownPropertyShape<Key, Value>(
       return undefined;
     }
     const kind = descriptor.accessor ? 2 : descriptor.writable ? 1 : 0;
+    if (!setPropertyCell<Key, Value>(object, index++, descriptor)) {
+      discardPropertyShape<Key, Value>(object);
+      return undefined;
+    }
     shape = transitionPropertyShape(shape, key, kind);
-    setPropertyCell<Key, Value>(object, index++, descriptor);
   }
   object.internalShape = shape;
   return shape;
@@ -1347,12 +1376,20 @@ function cachedScriptPropertyCell<Key, Value>(
   return cell === undefined || cell.accessor ? undefined : cell;
 }
 
+/** A cell's word index as generated code reads it: the binary64 whose bits
+ * are the integer (exact as a subnormal multiple of the least positive
+ * value, with flush-to-zero off as native code runs). */
+export function inlineSlotBits(word: number): number {
+  return word * Number.MIN_VALUE;
+}
+/** `slotWord` is the word index of internalSlot0 in the object record. */
 export function lookupCachedScriptProperty<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   key: string,
   cache: ScriptPropertyCache,
   own: boolean,
   global: ScriptPropertyStubCache,
+  slotWord: number,
 ): Descriptor<Value> | undefined {
   const shape = ownPropertyShape<Key, Value>(object);
   if (shape === undefined) return undefined;
@@ -1406,8 +1443,17 @@ export function lookupCachedScriptProperty<Key, Value>(
   entry.ancestor = ancestor;
   entry.holder = holder === object ? undefined : holderShape;
   entry.offset = offset;
-  if (entry === cache.first && parent === undefined)
-    cache.inlineReceiver = shape;
+  if (
+    entry === cache.first &&
+    offset < propertySlots &&
+    (cache.inherited
+      ? holder !== object && parent === undefined
+      : holder === object)
+  ) {
+    cache.inlineShape = shape;
+    cache.inlineSlot = inlineSlotBits(slotWord + offset);
+    cache.inlineHolder = cache.inherited ? holderShape : unusedPropertyShape;
+  }
   return cell;
 }
 /** True when no object on the prototype chain overrides an internal method,

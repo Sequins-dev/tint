@@ -214,7 +214,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   }
   assert.deepEqual(
     { functions, types, genericFunctions, genericTypes },
-    { functions: 152, types: 27, genericFunctions: 35, genericTypes: 12 },
+    { functions: 153, types: 27, genericFunctions: 35, genericTypes: 12 },
   );
   const bound = bindModule(linked.value.module, globals);
   assert.ok(bound.ok, JSON.stringify(bound));
@@ -257,7 +257,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     "$ScriptTable",
   );
   assert.ok(table.ok, JSON.stringify(table));
-  assert.equal(table.value.surface.entries.length, 152);
+  assert.equal(table.value.surface.entries.length, 153);
   assert.equal(table.value.surface.types.length, 27);
   const canonical = canonicalizeManagedSurfaceTypes(table.value.surface);
   assert.ok(canonical.ok, JSON.stringify(canonical));
@@ -686,7 +686,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(binding, name);
     assert.ok(importIds.includes(binding.id), name);
   }
-  assert.equal(finalValues.length, 152);
+  assert.equal(finalValues.length, 153);
   assert.equal(collectionOperations.length, census.value.anchors.length);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,

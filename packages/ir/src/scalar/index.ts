@@ -294,6 +294,18 @@ function scalar(value: string): boolean {
     value === "optional-number"
   );
 }
+/** A field read as a plain word: of `type`, with no presence or cell state. */
+function plainRecordField(
+  field: RecordField | undefined,
+  type: ScalarType,
+): boolean {
+  return (
+    field !== undefined &&
+    field.type === type &&
+    field.stateOffset === undefined &&
+    field.presenceOffset === undefined
+  );
+}
 function successors(block: Block): readonly number[] {
   const t = block.terminator;
   const normal: readonly number[] =
@@ -754,6 +766,55 @@ export function verify(
                   );
               }
               define(op.id, first.type);
+              break;
+            }
+            case "property-cell": {
+              hasRecordReads = true;
+              equal(use(op.object), "general");
+              equal(use(op.site), "reference");
+              const fields = module.records?.[op.record]?.fields,
+                siteFields = module.records?.[op.siteRecord]?.fields;
+              const first = fields?.[op.field],
+                shape = fields?.[0],
+                prototype = fields?.[op.prototypeField],
+                siteShape = siteFields?.[op.siteField],
+                siteSlot = siteFields?.[op.siteField + 1],
+                siteHolder = siteFields?.[op.siteField + 2];
+              if (
+                !natural(op.record) ||
+                !natural(op.field) ||
+                !natural(op.count) ||
+                op.count < 1 ||
+                !natural(op.prototypeField) ||
+                !natural(op.cellRecord) ||
+                module.records?.[op.cellRecord] === undefined ||
+                !natural(op.siteRecord) ||
+                !natural(op.siteField) ||
+                fields === undefined ||
+                first === undefined ||
+                !plainRecordField(shape, "optional-reference") ||
+                !plainRecordField(prototype, "optional-reference") ||
+                !plainRecordField(siteShape, "reference") ||
+                !plainRecordField(siteSlot, "number") ||
+                (op.inherited && !plainRecordField(siteHolder, "reference")) ||
+                siteSlot === undefined ||
+                siteShape === undefined ||
+                siteSlot.offset !== siteShape.offset + 8
+              )
+                fail("TYPE", "property cell requires shape and cell fields");
+              for (let slot = 0; slot < op.count; slot++) {
+                const field = fields[op.field + slot];
+                if (
+                  !plainRecordField(field, "optional-reference") ||
+                  field === undefined ||
+                  field.offset !== first.offset + slot * 8
+                )
+                  fail(
+                    "TYPE",
+                    "property cell requires consecutive optional-reference cells",
+                  );
+              }
+              define(op.id, "optional-reference");
               break;
             }
             case "record-has": {

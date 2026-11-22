@@ -1,6 +1,7 @@
-// Generated property caches compare shared shapes (per-prototype transition
-// trees) and read the holder's first cells in place (readPropertySlot,
-// one checked load natively). These sections drive one read site through
+// Generated property caches compare the receiver's shared shape (per-
+// prototype transition trees), and for method calls the prototype's, with
+// the site's inline entry and load the cached cell in place (IR
+// property-cell natively). These sections drive one read site through
 // shared and diverging shapes, offsets past the in-place slots, inherited
 // methods, redefinitions, deletions, prototype changes and accessors, so a
 // stale shape, slot or cell changes an observation. Node computes the

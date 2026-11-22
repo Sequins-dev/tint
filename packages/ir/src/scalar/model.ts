@@ -126,6 +126,35 @@ export type Instruction = Span &
         readonly count: number;
         readonly index: number;
       }
+    | {
+        /** The cached own (or, for `inherited`, prototype) property cell of
+         * a JavaScript object (js-runtime property caches), or none unless
+         * the general value `object` is object-tagged. Its payload is any
+         * record such a value can hold; its first word is compared with the
+         * shape in field
+         * `siteField` of the `siteRecord` record `site`; no record but a
+         * `record` object has a shape in that word. On a match the holder is
+         * the object, or for `inherited` its `prototypeField` when that
+         * prototype's first word is the shape in site field `siteField + 2`,
+         * and the result is the holder's cell field whose word index is the
+         * raw binary64 bits of site field `siteField + 1`. The runtime writes
+         * only indices of fields `field..field+count-1` (consecutive
+         * optional references) with a shape it read those cells under, and
+         * stores only cells of record `cellRecord` in them, so a present
+         * result has that layout. Otherwise the result is none. */
+        readonly kind: "property-cell";
+        readonly id: number;
+        readonly object: number;
+        readonly site: number;
+        readonly record: number;
+        readonly field: number;
+        readonly count: number;
+        readonly cellRecord: number;
+        readonly prototypeField: number;
+        readonly siteRecord: number;
+        readonly siteField: number;
+        readonly inherited: boolean;
+      }
     | { readonly kind: "boolean-none"; readonly id: number }
     | {
         readonly kind: "boolean-wrap" | "boolean-value" | "boolean-present";

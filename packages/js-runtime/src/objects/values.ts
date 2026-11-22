@@ -128,8 +128,7 @@ export function viewObjectValue(
   throw "UNBOUND_OBJECT_VIEW";
 }
 
-/** In-place cell `index` of a Script object's shape (internalSlot0..7);
- * native code binds this to one checked load. */
+/** In-place cell `index` of a Script object's shape (internalSlot0..7). */
 export function readPropertySlot(
   object: OrdinaryObject<ScriptPropertyKey, unknown>,
   index: number,
@@ -153,6 +152,51 @@ export function readPropertySlot(
       return object.internalSlot7;
   }
   throw "PROPERTY_SLOT_INVARIANT";
+}
+
+/** The word index of internalSlot0 in an ordinary object record. Native
+ * code binds this to the layout's constant (field-word); unbound, cells are
+ * numbered from zero, consistently for the functions below. */
+export function propertySlotWord(
+  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
+): number {
+  return 0;
+}
+
+/** The cached own data cell of `value` at `site`: its shape is the site's
+ * inline shape, which proves the cell's kind. Undefined otherwise. Native
+ * code binds this to the IR property-cell instruction. */
+export function cachedOwnPropertyCell(
+  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
+  value: unknown,
+  site: ScriptPropertyCache,
+): Descriptor<unknown> | undefined {
+  const object = viewObjectValue(value, witness);
+  if (object === undefined || object.internalShape !== site.inlineShape)
+    return undefined;
+  return readPropertySlot(
+    object,
+    site.inlineSlot / Number.MIN_VALUE - propertySlotWord(witness),
+  );
+}
+
+/** As cachedOwnPropertyCell, for a data cell of the receiver's immediate
+ * prototype whose shape is the site's inline holder. */
+export function cachedInheritedPropertyCell(
+  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
+  value: unknown,
+  site: ScriptPropertyCache,
+): Descriptor<unknown> | undefined {
+  const object = viewObjectValue(value, witness);
+  if (object === undefined || object.internalShape !== site.inlineShape)
+    return undefined;
+  const holder = object.prototype;
+  if (holder === undefined || holder.internalShape !== site.inlineHolder)
+    return undefined;
+  return readPropertySlot(
+    holder,
+    site.inlineSlot / Number.MIN_VALUE - propertySlotWord(witness),
+  );
 }
 
 /** Concrete host-authorized object view for weak-directory lookup. Unlike the
@@ -486,6 +530,7 @@ export function readCachedObjectValueProperty(
       cache,
       false,
       realm.agent.propertyStubCache,
+      propertySlotWord(realm.objectPrototype),
     );
     if (cell !== undefined) return cell.value;
   }
@@ -509,6 +554,7 @@ export function writeCachedObjectValueProperty(
       cache,
       true,
       realm.agent.propertyStubCache,
+      propertySlotWord(realm.objectPrototype),
     );
     if (cell !== undefined && cell.writable) {
       cell.value = value;

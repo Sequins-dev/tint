@@ -1220,12 +1220,18 @@ test("polymorphic sites keep receivers and follow a replaced prototype", () => {
   ]);
 });
 
-test("a named load uses the one-link primary cache shape", () => {
-  const source = "function read(object) { return object.value; }";
+test("a named load reads the receiver's cell and a method call the prototype's", () => {
+  const read = "function read(object) { return object.value; }",
+    call = "function call(object) { return object.method(1); }";
+  assert.equal(runtimeCalls(read, "cachedOwnPropertyCell"), 1);
+  assert.equal(runtimeCalls(read, "cachedInheritedPropertyCell"), 0);
+  assert.equal(runtimeCalls(call, "cachedInheritedPropertyCell"), 1);
+  assert.equal(runtimeCalls(call, "cachedOwnPropertyCell"), 0);
+  // Optional chains read callees as methods too.
   assert.equal(
-    countExpressions(
-      source,
-      (node) => node.kind === "member" && node.property === "inlineReceiver",
+    runtimeCalls(
+      "function call(object) { return object?.a.method(); }",
+      "cachedInheritedPropertyCell",
     ),
     1,
   );

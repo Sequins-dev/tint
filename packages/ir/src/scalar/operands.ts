@@ -70,6 +70,10 @@ export function visitInstructionOperands(
       visit(op.object);
       visit(op.index);
       return;
+    case "property-cell":
+      visit(op.object);
+      visit(op.site);
+      return;
     case "function-new":
       if (op.environment !== undefined) visit(op.environment);
       return;

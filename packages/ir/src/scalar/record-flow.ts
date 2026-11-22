@@ -283,6 +283,7 @@ export function provenRecordFacts(
               edge(field(op.record, op.field), result);
               break;
             case "record-slot-read":
+            case "property-cell":
               for (let slot = 0; slot < op.count; slot++)
                 edge(field(op.record, op.field + slot), result);
               break;
