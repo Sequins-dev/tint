@@ -6,6 +6,7 @@
 //   raw        kernels plus a node:zlib kernel (C calls, external storage)
 //   main       kernels on the main thread of a program that starts a Worker
 //   worker     kernels inside a Worker of that program
+//   typed-transport  typed round trips, batches, strings and wakes
 //   transport  message passing, shared memory and startup workloads
 //              (an optional second argument selects one operation prefix)
 // Prints the image path (from the hosted fixture builder). Run images under
@@ -26,10 +27,18 @@ if (process.env.TINT_BUILD_ONLY !== "1")
   throw Error("Worker benchmarks are measured outside the builder");
 const variant = process.argv[2] ?? "";
 if (
-  !["plain", "copying", "raw", "main", "worker", "transport"].includes(variant)
+  ![
+    "plain",
+    "copying",
+    "raw",
+    "main",
+    "worker",
+    "transport",
+    "typed-transport",
+  ].includes(variant)
 )
   throw Error("unknown Worker benchmark variant " + variant);
-// Measurements of the main thread must be of typed code.
+// Measurements of typed variants must be of typed code.
 if (variant !== "transport") process.env.TINT_GENERAL_FALLBACK = "0";
 
 const clock = "packages/native-runtime/src/intrinsics/clock.ts";
@@ -168,6 +177,38 @@ export function run(): number {
       ...workerFixtureOptions([peer.id]),
       ...sizes,
       requireTyped: true,
+    },
+  );
+} else if (variant === "typed-transport") {
+  const peer = local("typed-transport-peer.ts", [[threads, threads]]);
+  const typed = local("typed-transport.ts", [[threads, threads]]);
+  verifyHostedFixture(
+    `import { monotonicMilliseconds } from "clock";
+import { runTypedTransport } from "./typed-transport.ts";
+export function run(): number {
+  runTypedTransport("${peer.id}", (): number => monotonicMilliseconds(), (status: number): void => {
+    if (status !== 42) throw "typed transport failed with " + String(status);
+  });
+  return 42;
+}`,
+    "worker-bench-typed-transport",
+    [
+      ["clock", clock],
+      ["./typed-transport.ts", typed.id],
+    ],
+    [typed, peer],
+    [],
+    workerFixtureRuntimes,
+    {
+      ...workerFixtureOptions([peer.id]),
+      ...sizes,
+      requireTyped: true,
+      // The Worker entry must be typed too.
+      onGeneralFallback: (modules: readonly string[], reason: string): void => {
+        throw Error(
+          "general fallback for " + modules.join(", ") + ": " + reason,
+        );
+      },
     },
   );
 } else {

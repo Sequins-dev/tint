@@ -10,6 +10,8 @@
 //   placements tint-plain tint-main tint-worker
 //              node-plain node-main node-worker
 //   transport  tint-transport node-transport
+//   transport-steps tint-transport-a tint-transport-b tint-transport-c
+//              node-transport
 // Each round runs every member once; round r starts at member r mod n and
 // odd rounds run in reverse. Native images run under LLDB, which must report
 // the stop at entry and exit status 42; Node must exit 42. Every observation,
@@ -44,6 +46,13 @@ const sets: Record<string, readonly string[]> = {
     "node-worker",
   ],
   transport: ["tint-transport", "node-transport"],
+  // Successive transport images (--image transport-a=… -b=… -c=…).
+  "transport-steps": [
+    "tint-transport-a",
+    "tint-transport-b",
+    "tint-transport-c",
+    "node-transport",
+  ],
 };
 const argv = process.argv.slice(2);
 const set = argv[0] ?? "";

@@ -101,10 +101,9 @@ for (const file of process.argv.slice(2)) {
     for (const observation of round.observations) {
       if (!observation.passed)
         failures.push(`${file} round ${index + 1} ${observation.member}`);
-      const values =
-        result.set === "transport"
-          ? transportValues(observation)
-          : kernelValues(observation);
+      const values = result.set.startsWith("transport")
+        ? transportValues(observation)
+        : kernelValues(observation);
       const metrics = table.get(observation.member) ?? new Map();
       table.set(observation.member, metrics);
       for (const [metric, value] of values) {
@@ -261,6 +260,31 @@ if (transport !== undefined) {
   for (const operation of operations)
     console.log(
       `| ${operation} | ${cell(finite(transport.get("tint-transport")?.get(operation)))} | ${cell(finite(transport.get("node-transport")?.get(operation)))} | ${ratio(paired(transport, "tint-transport", "node-transport", operation))} |`,
+    );
+}
+const steps = tables.get("transport-steps");
+if (steps !== undefined) {
+  const operations = [...(steps.get("node-transport")?.keys() ?? [])];
+  const columns = [
+    "tint-transport-a",
+    "tint-transport-b",
+    "tint-transport-c",
+    "node-transport",
+  ];
+  console.log("\n### Transport steps (µs per operation)\n");
+  console.log(
+    "| Operation | " + columns.join(" | ") + " | b / a | c / b | c / Node |",
+  );
+  console.log(
+    "| --- |" + columns.map(() => " ---: |").join("") + " ---: | ---: | ---: |",
+  );
+  for (const operation of operations)
+    console.log(
+      `| ${operation} | ` +
+        columns
+          .map((column) => cell(finite(steps.get(column)?.get(operation))))
+          .join(" | ") +
+        ` | ${ratio(paired(steps, "tint-transport-b", "tint-transport-a", operation))} | ${ratio(paired(steps, "tint-transport-c", "tint-transport-b", operation))} | ${ratio(paired(steps, "tint-transport-c", "node-transport", operation))} |`,
     );
 }
 const [loadMedian, loadLow, loadHigh] = stats(finite(loads));
