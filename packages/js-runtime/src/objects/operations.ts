@@ -86,6 +86,9 @@ export interface OrdinaryObject<Key, Value> {
    * leaves it unchanged, so a cached descriptor stays the live cell. */
   internalPropertyEpoch: number;
   internalPropertyLayout: OrdinaryPropertyLayout<Value> | undefined;
+  /** Root of the shared shapes of objects whose [[Prototype]] is this
+   * object, so equal shapes also imply the same prototype. */
+  internalChildShape: OrdinaryPropertyShape | undefined;
   /** Lazy numeric-key view of own descriptor storage. Null is an empty view. */
   internalIndexedProperties: IndexedPropertyLayout<Value> | null | undefined;
   internalPropertyContract: PropertyWriteContract<Key, Value> | undefined;
@@ -311,13 +314,21 @@ export interface ObjectRegisterEntry<Value> {
   readonly invokeWide: ObjectWideRegisterCall<Value> | undefined;
   readonly scriptInvoke?: ObjectScriptCall<Value>;
 }
+/** The ordered string keys of an object's own properties. Shapes reached by
+ * the same keys from the same prototype's root are one shared object, so
+ * caches compare identities. */
 interface OrdinaryPropertyShape {
   readonly keys: readonly string[];
   readonly hash: number;
+  /** Shared successors by appended key; undefined for an unshared shape
+   * (null prototype, too many keys or too many successors). */
+  readonly transitions: Map<string, OrdinaryPropertyShape> | undefined;
 }
+/** Kept current as properties are added or redefined; rebuilt from the
+ * prototype's root after deletions and prototype changes. */
 interface OrdinaryPropertyLayout<Value> {
-  readonly shape: OrdinaryPropertyShape;
-  readonly cells: readonly Descriptor<Value>[];
+  shape: OrdinaryPropertyShape;
+  readonly cells: Descriptor<Value>[];
 }
 interface IndexedPropertyLayout<Value> {
   readonly keys: Float64Array;
@@ -538,6 +549,7 @@ function allocateObject<Key, Value>(
     properties: new Map<Key, Descriptor<Value>>(),
     internalPropertyEpoch: 0,
     internalPropertyLayout: undefined,
+    internalChildShape: undefined,
     internalIndexedProperties: undefined,
     internalPropertyContract: undefined,
     internalCall,
@@ -722,8 +734,9 @@ export function ordinaryDefineOwnProperty<Key, Value>(
         descriptor,
         current === undefined || (update.fields & valueField) !== 0,
       );
+    const added = !object.properties.has(key);
     object.properties.set(key, descriptor);
-    invalidatePropertyLayout<Key, Value>(object);
+    recordPropertyDefinition<Key, Value>(object, key, descriptor, added);
     if (aliases !== undefined && alias !== undefined) {
       if (descriptor.accessor) aliases.delete(key);
       else {
@@ -767,7 +780,7 @@ export function createDataProperty<Key, Value>(
     object.extensible &&
     !object.properties.has(key)
   ) {
-    object.properties.set(key, {
+    const descriptor: Descriptor<Value> = {
       accessor: false,
       value,
       writable: true,
@@ -775,8 +788,9 @@ export function createDataProperty<Key, Value>(
       set: hooks.undefinedValue,
       enumerable: true,
       configurable: true,
-    });
-    invalidatePropertyLayout<Key, Value>(object);
+    };
+    object.properties.set(key, descriptor);
+    recordPropertyDefinition<Key, Value>(object, key, descriptor, true);
     return true;
   }
   return (
@@ -984,6 +998,75 @@ function invalidatePropertyLayout<Key, Value>(
   object.internalPropertyLayout = undefined;
   object.internalIndexedProperties = undefined;
 }
+/** A stored descriptor was added (appended to the map) or replaced. */
+function recordPropertyDefinition<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  key: Key,
+  descriptor: Descriptor<Value>,
+  added: boolean,
+): void {
+  object.internalPropertyEpoch++;
+  object.internalIndexedProperties = undefined;
+  const layout = object.internalPropertyLayout;
+  if (layout === undefined) return;
+  if (typeof key !== "string") {
+    object.internalPropertyLayout = undefined;
+    return;
+  }
+  if (added) {
+    layout.shape = transitionPropertyShape(layout.shape, key);
+    layout.cells.push(descriptor);
+    return;
+  }
+  const index = layout.shape.keys.indexOf(key);
+  if (index < 0) throw "PROPERTY_LAYOUT_KEY_INVARIANT";
+  layout.cells[index] = descriptor;
+}
+
+const emptyPropertyShapeHash = 2166136261;
+/** Shapes past this many keys, or past this many successors of one shape,
+ * stay private to their object so dictionary-like use cannot grow the
+ * shared trees without bound. */
+const maxSharedPropertyKeys = 64,
+  maxPropertyTransitions = 32;
+function rootPropertyShape<Key, Value>(
+  prototype: OrdinaryObject<Key, Value> | undefined,
+): OrdinaryPropertyShape {
+  if (prototype === undefined)
+    return { keys: [], hash: emptyPropertyShapeHash, transitions: undefined };
+  const existing = prototype.internalChildShape;
+  if (existing !== undefined) return existing;
+  const root: OrdinaryPropertyShape = {
+    keys: [],
+    hash: emptyPropertyShapeHash,
+    transitions: new Map<string, OrdinaryPropertyShape>(),
+  };
+  prototype.internalChildShape = root;
+  return root;
+}
+function transitionPropertyShape(
+  shape: OrdinaryPropertyShape,
+  key: string,
+): OrdinaryPropertyShape {
+  const transitions = shape.transitions;
+  if (transitions !== undefined) {
+    const existing = transitions.get(key);
+    if (existing !== undefined) return existing;
+  }
+  const keys = shape.keys.slice();
+  keys.push(key);
+  const shared =
+    transitions !== undefined &&
+    keys.length < maxSharedPropertyKeys &&
+    transitions.size < maxPropertyTransitions;
+  const next: OrdinaryPropertyShape = {
+    keys,
+    hash: Math.imul(shape.hash ^ hashString(key), 16777619) >>> 0,
+    transitions: shared ? new Map<string, OrdinaryPropertyShape>() : undefined,
+  };
+  if (shared && transitions !== undefined) transitions.set(key, next);
+  return next;
+}
 
 function indexedPropertyBucket(index: number, mask: number): number {
   const folded = index ^ Math.floor(index / 4294967296);
@@ -1066,7 +1149,6 @@ export function indexedPropertyCell<Key, Value>(
  * JavaScript object or symbol alive. */
 function propertyLayout<Key, Value>(
   object: OrdinaryObject<Key, Value>,
-  expected: OrdinaryPropertyShape | undefined,
 ): OrdinaryPropertyLayout<Value> | undefined {
   if (
     object.internalMethods !== undefined ||
@@ -1076,32 +1158,16 @@ function propertyLayout<Key, Value>(
     return undefined;
   const layout = object.internalPropertyLayout;
   if (layout !== undefined) return layout;
-  const keys: string[] = [];
+  let shape = rootPropertyShape<Key, Value>(object.prototype);
   const cells: Descriptor<Value>[] = [];
-  let matches = expected !== undefined;
   for (const [key, descriptor] of object.properties) {
     if (typeof key !== "string") return undefined;
-    if (expected !== undefined && expected.keys[keys.length] !== key)
-      matches = false;
-    keys.push(key);
+    shape = transitionPropertyShape(shape, key);
     cells.push(descriptor);
   }
-  const shape: OrdinaryPropertyShape =
-    matches && expected !== undefined && expected.keys.length === keys.length
-      ? expected
-      : { keys, hash: propertyShapeHash(keys) };
   const installed: OrdinaryPropertyLayout<Value> = { shape, cells };
   object.internalPropertyLayout = installed;
   return installed;
-}
-
-function propertyShapeHash(keys: readonly string[]): number {
-  let hash = 2166136261;
-  for (const key of keys) {
-    if (key === undefined) throw "PROPERTY_SHAPE_KEY_INVARIANT";
-    hash = Math.imul(hash ^ hashString(key), 16777619) >>> 0;
-  }
-  return hash;
 }
 
 function cachedScriptPropertyCell<Key, Value>(
@@ -1151,7 +1217,7 @@ export function lookupCachedScriptProperty<Key, Value>(
   own: boolean,
   global: ScriptPropertyStubCache,
 ): Descriptor<Value> | undefined {
-  const layout = propertyLayout<Key, Value>(object, cache.first.receiver);
+  const layout = propertyLayout<Key, Value>(object);
   if (layout === undefined) return undefined;
   for (let index = 0; index < cache.used; index++) {
     const entry = cache.entries[index];
@@ -1182,19 +1248,12 @@ export function lookupCachedScriptProperty<Key, Value>(
   let ancestor: OrdinaryPropertyShape | undefined = undefined;
   if (offset < 0 && !own) {
     let prototype = object.prototype;
-    const first = cache.first;
     // Keep the intermediate guards in the cache entry itself. Longer
     // prototype chains retain the ordinary lookup.
     for (let depth = 0; depth < 3 && offset < 0; depth++) {
       const current = prototype;
       if (current === undefined) return undefined;
-      const expected =
-        depth === 0
-          ? (first.parent ?? first.holder)
-          : depth === 1
-            ? (first.ancestor ?? first.holder)
-            : first.holder;
-      const inherited = propertyLayout<Key, Value>(current, expected);
+      const inherited = propertyLayout<Key, Value>(current);
       if (inherited === undefined) return undefined;
       holder = inherited;
       offset = inherited.shape.keys.indexOf(key);
