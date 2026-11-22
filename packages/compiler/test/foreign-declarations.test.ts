@@ -1464,8 +1464,10 @@ test("runtime i32 definitions get direct typed entries without replacing the gen
       guards.has("nodeCallbacks") &&
       guards.has("nativeCallbacks") &&
       guards.has("pointerI32Callback") &&
-      guards.has("typedRecord"),
+      guards.has("typedView"),
   );
+  // Entries read the stable view; they never call `typedRecord`.
+  assert.ok(!guards.has("typedRecord"));
 });
 
 test("Node FFI binds a precompiled runtime-registered i32 callback prototype", () => {
