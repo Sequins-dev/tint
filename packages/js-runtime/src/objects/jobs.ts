@@ -367,6 +367,11 @@ export function runScriptContext<Value>(
     agent.activeContext = previous;
   }
 }
+/** Whether a built-in bound to `realm` runs in the active context as is. */
+export function activeInRealm(agent: ScriptAgent, realm: ErrorRealm): boolean {
+  const active = agent.activeContext;
+  return active !== undefined && active.realm === realm;
+}
 /** A built-in bound to `realm` runs in the active context when that context
  * belongs to the realm. Callers without an active context enter `fallback`,
  * and callers from another realm enter the realm's own context. */

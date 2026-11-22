@@ -26,6 +26,7 @@ import {
   ownKeys,
   programRealmCore,
   projectArrayBufferViewRange,
+  activeInRealm,
   runRealmBoundCall,
   scriptPropertyKeyOrder,
   setIntegrityLevel,
@@ -33,6 +34,7 @@ import {
   viewObjectValue,
   wellKnownSymbol,
   type ObjectCall,
+  type ObjectCallDispatch,
   type ObjectExecutionContext,
   type ProgramRealmCore,
   type ScriptExecutionContext,
@@ -53,7 +55,6 @@ import {
   callScalarForeignCallbacks,
   closeLibrary,
   findSymbolWords,
-  hasRegisteredCallbacks,
   openLibrary,
   openProgram,
   registeredCallbackActivity,
@@ -763,10 +764,10 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
         ? staticCall
         : typedFfiIndex(key)
       : -1;
+    // The common prototypes compiled for the program's call arities serve
+    // any binding whose runtime signature has the same key.
     const staticNumberCall =
-      staticCall >= 0 && addressFits
-        ? staticFfiNumberCall(staticCall)
-        : undefined;
+      typedIndex >= 0 ? staticFfiNumberCall(typedIndex) : undefined;
     const parameters = signature.parameters;
     return {
       name,
@@ -827,7 +828,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
           ", got " +
           args.length,
       );
-    const mayCallback = callbacks.active() || hasRegisteredCallbacks();
+    const mayCallback = callbacks.activity.active || nativeCallbacks.active;
     // General callers share the typed callers' entries for these shapes.
     if (!mayCallback) {
       const numberCall = binding.staticNumberCall;
@@ -928,6 +929,30 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
     if (existing !== undefined) return existing;
     const invoke: ObjectCall<unknown> = (_receiver, args): unknown =>
       callBinding(owner, state, binding, args);
+    // The call step runs in the context `callContext.run` would select,
+    // without the thunk and context frame of the ordinary entry.
+    const dispatch = (
+      _receiver: unknown,
+      args: readonly unknown[],
+    ): ObjectCallDispatch<ScriptPropertyKey, unknown> => {
+      if (!activeInRealm(agent, realm))
+        return {
+          kind: "return",
+          value: runRealmBoundCall(agent, realm, nativeCaller, (): unknown =>
+            callBinding(owner, state, binding, args),
+          ),
+        };
+      const depth = agent.executionContextDepth;
+      agent.executionContextDepth = depth + 1;
+      try {
+        return {
+          kind: "return",
+          value: callBinding(owner, state, binding, args),
+        };
+      } finally {
+        agent.executionContextDepth = depth;
+      }
+    };
     const plan = binding.plan;
     const typed: TypedFfiCall | undefined =
       plan === undefined ||
@@ -968,7 +993,9 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
                 binding.scalarDepth !== 0
               )
                 return 0;
-              return callbacks.active() || hasRegisteredCallbacks() ? 2 : 1;
+              return callbacks.activity.active || nativeCallbacks.active
+                ? 2
+                : 1;
             },
             workspace: (mayCallback): TypedFfiWorkspace =>
               acquireScalarWorkspace(binding, plan, mayCallback),
@@ -1014,6 +1041,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       word(binding.address.low, binding.address.high),
       hooks,
     );
+    call.internalTailDispatch = dispatch;
     installRegisterCall(call, owner, state, binding);
     binding.wrapper = createWeakSlot(call, undefined, false);
     return call;

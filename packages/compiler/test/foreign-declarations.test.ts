@@ -1428,8 +1428,30 @@ test("runtime i32 definitions get direct typed entries without replacing the gen
   assert.ok(emitted.includes("invokeTryFixedFfi0Frame"));
   assert.ok(emitted.includes("invokeTryFixedFfi2Frame"));
   assert.ok(emitted.includes("invokeTryMixedFfi2Frame"));
-  assert.ok(!emitted.includes("invokeCallStaticFfiNumber0"));
+  // General callers whose runtime signature matches reach the same entries.
+  assert.ok(emitted.includes("invokecallStaticFfiNumber0"));
+  assert.ok(emitted.includes("invokecallStaticFfiNumber1"));
   assert.ok(!emitted.includes("callStaticFfi0"));
+  const numbers = generated.module.statements.find(
+    (statement) =>
+      statement?.kind === "function" &&
+      statement.name === "staticFfiNumberCall",
+  );
+  const returned = new Set<string>();
+  if (numbers !== undefined)
+    rewriteModule(
+      { ...generated.module, statements: [numbers] },
+      {
+        expression: (expression) => {
+          if (expression.kind === "identifier") returned.add(expression.name);
+          return expression;
+        },
+      },
+    );
+  assert.ok(
+    returned.has("invokecallStaticFfiNumber0") &&
+      returned.has("invokecallStaticFfiNumber1"),
+  );
   const guards = new Set<string>();
   rewriteModule(generated.module, {
     expression: (expression) => {

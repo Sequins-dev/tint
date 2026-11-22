@@ -437,7 +437,8 @@ function numericFfiSource(plan: StaticFfiPlan, index: number): string {
     "):" +
     returns +
     " { throw 'UNBOUND_STATIC_FFI'; }\n";
-  if (plan.typedOnly) return declaration;
+  // Typed-only plans also get the general wrapper: a binding whose runtime
+  // signature has the same key calls the same entry.
   return (
     declaration +
     "function invoke" +
@@ -490,7 +491,16 @@ export function makeStaticFfiModule(
       bytes += "if(index===" + index + ")return invoke" + name + ";\n";
     }
     if (plan.typedOnly) {
-      if (!byteEntry) text += numericFfiSource(plan, index);
+      if (!byteEntry) {
+        text += numericFfiSource(plan, index);
+        if (hasStaticFfiNumberEntry(plan))
+          numbers +=
+            "if(index===" +
+            index +
+            ")return invoke" +
+            staticFfiNumberEntry(index) +
+            ";\n";
+      }
       typed += 'if(key==="' + plan.key + '")return ' + String(index) + ";\n";
       continue;
     }
