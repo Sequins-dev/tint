@@ -49,6 +49,7 @@ import {
 import type { Word64 } from "@tint/foundation/binary/word64";
 import {
   instructionResult,
+  naturalLoops,
   optionalNumberAbsentHigh,
   optionalNumberAbsentLow,
   scalarByteLength,
@@ -651,6 +652,28 @@ export function emitModule(
       workerFunctions?.has(
         fn.name.endsWith("$direct") ? fn.name.slice(0, -7) : fn.name,
       ) === true;
+    // Worker functions poll for stop requests at loop headers and, when they
+    // call, on entry (as on AArch64); a function whose loops exceed the
+    // analysis budget keeps the per-call and per-allocation polls.
+    const stopLoops = interruptible ? naturalLoops(fn, 1000000) : undefined;
+    const callSitePolls = interruptible && stopLoops === undefined;
+    const pollHeaders = new Set<number>();
+    let pollEntry = false;
+    if (stopLoops !== undefined) {
+      for (const loop of stopLoops.loops) {
+        if (loop === undefined) throw "stop poll loop invariant";
+        pollHeaders.add(loop.header);
+      }
+      for (const block of fn.blocks) {
+        if (block === undefined) throw "stop poll block invariant";
+        for (const op of block.instructions)
+          if (
+            op !== undefined &&
+            (op.kind === "call" || op.kind === "call-indirect")
+          )
+            pollEntry = true;
+      }
+    }
     const fnEnd = fnLabel + ":end";
     const done = fnLabel + ":return";
     const slots: number[] = [];
@@ -817,7 +840,9 @@ export function emitModule(
       }
     }
     function pollWorkerStop(): void {
-      if (!interruptible) return;
+      if (callSitePolls) workerStopPoll();
+    }
+    function workerStopPoll(): void {
       const resumed = fnLabel + ":worker-resumed:" + String(instructionCount);
       emit({ op: "mov", dst: scratch, src: frame(savedContext) });
       emit({
@@ -3357,6 +3382,8 @@ export function emitModule(
       if (block === undefined) throw "block invariant";
       blockId = block.id;
       emit({ op: "label", name: blockLabel(fn.id, block.id) });
+      if (pollHeaders.has(block.id) || (pollEntry && block.id === fn.entry))
+        workerStopPoll();
       for (let index = 0; index < block.instructions.length; index++) {
         const op = block.instructions[index];
         if (op === undefined) throw "instruction invariant";

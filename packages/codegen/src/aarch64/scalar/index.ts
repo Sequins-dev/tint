@@ -5141,10 +5141,39 @@ function emitModuleForms(
           options.workerFunctions?.has(
             fn.name.endsWith("$direct") ? fn.name.slice(0, -7) : fn.name,
           ) === true;
-        // Use IP registers before allocating or setting up a managed call.
-        // The exceptional edge publishes the usual two-word thrown value.
+        // Worker functions poll for stop requests at loop headers and, when
+        // they call, on entry: unbounded execution passes one of them (a
+        // cycle or a recursion), and straight-line code needs no poll. This
+        // also stops allocation-free loops. A function whose loops exceed the
+        // analysis budget keeps the per-call and per-allocation polls.
+        const stopLoops = interruptible
+          ? naturalLoops(fn, work(1000000))
+          : undefined;
+        const callSitePolls = interruptible && stopLoops === undefined;
+        const pollHeaders = new Set<number>();
+        let pollEntry = false;
+        if (stopLoops !== undefined) {
+          for (const loop of stopLoops.loops) {
+            if (loop === undefined) throw "stop poll loop invariant";
+            pollHeaders.add(loop.header);
+          }
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "stop poll block invariant";
+            for (const op of block.instructions)
+              if (
+                op !== undefined &&
+                (op.kind === "call" || op.kind === "call-indirect")
+              )
+                pollEntry = true;
+          }
+        }
         function pollWorkerStop(): void {
-          if (!interruptible) return;
+          if (callSitePolls) workerStopPoll();
+        }
+        // Uses the IP registers, so it runs at a block start or before
+        // allocating or setting up a managed call. The exceptional edge
+        // publishes the usual two-word thrown value.
+        function workerStopPoll(): void {
           rawLoad(17, contextOffset);
           emit({
             op: "ldr",
@@ -5165,7 +5194,9 @@ function emitModuleForms(
           emit({ op: "ldr", width: 64, rt: 17, rn: 17, offset: 0 });
           const noWorker = instructions.length;
           emit({ op: "cbz", width: 64, rt: 17, displacement: 0 });
-          emit({ op: "ldar", width: 64, rt: 16, rn: 17 });
+          // A stop request is a monotonic signal: a plain load observes it
+          // soon enough, and the observation below is a release store.
+          emit({ op: "ldr", width: 64, rt: 16, rn: 17, offset: 0 });
           emit({
             op: "sub-imm",
             width: 64,
@@ -8243,6 +8274,8 @@ function emitModuleForms(
             for (let index = 0; index < viewSlots.size; index++)
               viewSlotTokens.push(-1);
           }
+          if (pollHeaders.has(b.id) || (pollEntry && b.id === fn.entry))
+            workerStopPoll();
           // SSA values are block-local. A final comparison used by the branch
           // has no other consumer, so its flags can replace a boolean carrier.
           const finalInstruction = b.instructions[b.instructions.length - 1];
