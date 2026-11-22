@@ -395,8 +395,8 @@ test("fixture preparation releases its memory slot before admission and records 
         ),
     );
     assert.deepEqual(
-      rows.slice(0, 2).map((row) => row.phase),
-      ["memory-wait-start", "build-start"],
+      rows.slice(0, 3).map((row) => row.phase),
+      ["memory-wait-start", "memory-wait", "build-start"],
     );
     const result = spawnSync(
       process.execPath,

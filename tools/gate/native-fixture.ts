@@ -61,7 +61,6 @@ export function buildNativeFixture(
 ): string {
   const output = env.TINT_GATE_NATIVE_IMAGES;
   if (!output) return build();
-  record(output, "memory-wait-start", performance.now(), { fixture });
   return withNativeFixtureMemory((memoryWaitMs) => {
     const started = performance.now();
     record(output, "build-start", started, { fixture, memoryWaitMs });
