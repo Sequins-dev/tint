@@ -80,10 +80,11 @@ export type ScriptLoweringResult =
 export interface ScriptLoweringOptions {
   readonly runtimeCompiled?: boolean;
   readonly nativeScriptCalls?: boolean;
-  /** False when the host creates no Annex B [[IsHTMLDDA]] objects: inline
-   * loose equality with null omits their check, and the lowered module
-   * excludes such objects when it initializes (markHTMLDDAObject then
-   * fails). Defaults to true. */
+  /** The Annex B [[IsHTMLDDA]] host capability (B.3.6). Defaults to true,
+   * which is correct for every host. False declares that the host creates no
+   * such objects: inline loose equality with null omits their brand check,
+   * and the lowered code excludes them when it initializes, so a host that
+   * marks one (markHTMLDDAObject) fails loudly instead of changing `==`. */
   readonly htmlDDAObjects?: boolean;
 }
 /** In-place cell slots of a property layout (js-runtime

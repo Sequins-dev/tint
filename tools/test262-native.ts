@@ -374,13 +374,26 @@ export function deferNativeCase(
   };
 }
 
-/** Benchmark hosts create no [[IsHTMLDDA]] object, so their Scripts lower
- * with `htmlDDAObjects` false; Test262 hosts keep it. */
+/** The capabilities a native Script host declares to the Script lowering.
+ * `htmlDDAObjects` is the Annex B [[IsHTMLDDA]] capability
+ * (ScriptLoweringOptions.htmlDDAObjects): Scripts lowered without it skip the
+ * brand check in `== null` and refuse, at evaluation, to run beside a host
+ * that marked such an object. */
+export interface NativeScriptHost {
+  readonly htmlDDAObjects: boolean;
+}
+/** The Test262 host creates `$262.IsHTMLDDA`. */
+export const test262ScriptHost: NativeScriptHost = { htmlDDAObjects: true };
+/** The benchmark host (`benchmarkHost`) creates no [[IsHTMLDDA]] object. */
+export const benchmarkScriptHost: NativeScriptHost = { htmlDDAObjects: false };
+
+/** Lower a plan's harness and test Scripts for a host with `host`'s
+ * capabilities. */
 export function prepareNativeScripts(
   plan: ExecutionPlan,
   variant: SyntaxVariant,
   harness: readonly { readonly filename: string; readonly source: string }[],
-  htmlDDAObjects: boolean = true,
+  host: NativeScriptHost = test262ScriptHost,
 ):
   | { readonly ok: true; readonly modules: readonly SourceModule[] }
   | { readonly ok: false; readonly outcome: ExecutionOutcome } {
@@ -395,7 +408,7 @@ export function prepareNativeScripts(
   return prepareNativeScriptInputs(
     [...harness, { filename: "test", source: plan.source }],
     undefined,
-    htmlDDAObjects,
+    host.htmlDDAObjects,
   );
 }
 
@@ -1368,7 +1381,8 @@ function installRealmHost(host:RealmHost,realms:ErrorRealm[]):OrdinaryObject<Scr
      : ""
  }
  const api=createObject<ScriptPropertyKey,unknown>(realm.objectPrototype);${
-   // Benchmark Scripts are lowered without [[IsHTMLDDA]] checks.
+   // Only the Test262 host declares the [[IsHTMLDDA]] capability
+   // (test262ScriptHost); benchmark Scripts lower without it.
    benchmarkHost
      ? ""
      : `

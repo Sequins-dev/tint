@@ -41,6 +41,13 @@ export interface GeneralRuntimeModules {
 export interface GeneralLoweringOptions {
   readonly runtime: GeneralRuntimeModules;
   readonly nativeScriptCalls?: boolean;
+  /** The Annex B [[IsHTMLDDA]] host capability (B.3.6): true when the host
+   * creates such objects, as Test262's `$262.IsHTMLDDA` does. General
+   * program hosts create none, so by default their modules lower `x == null`
+   * as a tag test without the brand check and exclude such objects when
+   * they initialize: a host that marks one beside them (markHTMLDDAObject)
+   * fails instead of changing loose equality. */
+  readonly htmlDDAObjects?: boolean;
   /** Enables the limited function fallback route for validated fixtures. */
   readonly functionFallback?: boolean;
   /** A host function `(fd: number, bytes: Uint8Array) => number`, exposed to
@@ -381,8 +388,7 @@ function lowerGeneralProgram(
       checkMethodCalls,
       source.module,
       options.nativeScriptCalls === true,
-      // General program hosts create no [[IsHTMLDDA]] objects.
-      false,
+      options.htmlDDAObjects === true,
     );
     if (!lowered.ok)
       return {
