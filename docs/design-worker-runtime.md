@@ -1,6 +1,8 @@
 # Worker runtime: per-isolate fast heaps and per-entry analyses
 
-22 November 2026 · status: **in progress** (stream `perf/worker-runtime`, PR #15)
+22 November 2026 · status: **in progress** (stream `perf/worker-runtime`, PR #15).
+Sections 1–4 are implemented; section 5 is partly done.
+[Phase 2 results](results/worker-runtime-phase2-v1.md)
 
 ## Goal
 
@@ -110,7 +112,7 @@ facts. If measurement shows that the union loses precision for a hot shared
 function, the next step is to specialize per entry: clone such functions per
 root set and analyze each clone with its own entry's facts.
 
-## 3. Inlining in Worker images
+## 3. Inlining and stop polls in Worker images
 
 Commit 402d2750a added stop polls to Worker application functions at managed
 allocation and call safepoints. To keep runtime helpers free of those polls, it
@@ -118,13 +120,25 @@ set `inlining: "none"` for the whole image. As a result, typed code on the main
 thread of a Worker program ran without inlining.
 
 The `calls` kernel measured 13.5× the plain program. Restoring the closed-world
-facts (section 2) recovers most of that; missing inlining accounts for the
-remaining factor of about 1.8.
+facts (section 2) recovers most of that.
 
-**Rule.** An inlining candidate must be in the same interruptibility class as
-its caller. Application code can then inline application code, and runtime code
-can inline runtime code. A helper is never inlined into an interruptible
-function, and the reverse never happens either.
+**Polls.** Worker functions now poll at each natural loop header and, when
+they make calls, on entry. Unbounded execution has to pass one of those points
+(a cycle or a recursion), so straight-line code needs none. Polling at loop
+headers also stops allocation-free loops, which the event loop design had
+listed as a gap. A function whose loops exceed the analysis budget keeps the
+per-call polls.
+
+**Inlining.**
+
+- A runtime helper never inlines Worker code; that code would lose its polls.
+- Worker code inlines a runtime helper only when the helper has no loop. The
+  inliner only takes leaf callees, so a loop-free helper brings no poll site.
+- Worker code inlines Worker code freely.
+
+With both rules, every kernel measured 0.98–1.04× the plain program on the
+main thread and inside a Worker
+([Phase 2 results](results/worker-runtime-phase2-v1.md)).
 
 ## 4. Typed code inside Workers
 
@@ -158,8 +172,48 @@ one-pipeline rule: a typed module behaves as untyped code when a Worker runs it.
 
 ## 5. Message path
 
-The baseline ranks the transport costs. The profiles in the report attribute
-them, and fixes follow in that order.
+The baseline profiles attribute the transport costs. The fixes, in order:
+
+1. **Fixed-width clone counts and numbers.** The packet wrote every length,
+   count and number as decimal text and parsed it back exactly. Counts now
+   take four UTF-16 units, int32 numbers two, and every other number its
+   binary64 words. Done.
+2. **Linear packet assembly.** The serializer and the receiving mailbox built
+   packets through a binary-counter string builder; the mailbox appended one
+   single-character string per code unit. Both now collect parts and join
+   once, and typed `join` sizes the result in one pass. Done.
+3. **Fewer system calls per message.** Done:
+   - The registry locks wake only when contended.
+   - Port mailboxes recycle up to 32 consumed 16 KiB packet blocks.
+   - A sender writes the receiver's signal pipe only when the receiver is not
+     already signaled.
+4. **Stop polls.** Done. Worker functions poll at natural loop headers, and on
+   entry when they call, with a plain load. Polls used to sit before every
+   call and allocation. This also stops allocation-free loops, the gap that
+   the event loop design listed.
+5. **Packed small packets.** Every tiny packet still takes its own 16 KiB block,
+   and a burst longer than the recycle bound falls back to one mapping per
+   message. The plan is to append small packets to shared mailbox pages and
+   recycle a page once it drains.
+6. **Typed-native ports.** A typed program's messages still pass through the
+   Script realm: the facade calls the realm's `postMessage`, structured clone
+   builds realm values, and delivery dispatches realm listeners. That layering
+   is most of the remaining per-message user time. Typed ports would serialize
+   from typed values and call typed listeners directly.
+7. **Bulk packet copies.** A packet still crosses one code unit per host call.
+   The plan is to copy through `tint:c/memory` (`memcpy`) or a wider
+   shared-memory operation.
+8. **Untyped await overhead.** This belongs to the untyped runtime stream. The
+   typed transport variant measures the runtime's messaging cost without it.
+
+**Typed SharedArrayBuffer.** Typed code cannot create a `SharedArrayBuffer`
+yet: the program realm does not install the global. Until it does, typed
+shared memory and typed `Atomics` stay unmeasured.
+
+**Later: one collector helper pool per process.** Each generational isolate
+starts its own pool of parallel-collector helpers, which multiplies threads
+when a program runs many Workers. A single process-wide pool could serve
+whichever isolate collects.
 
 ## Validation
 
