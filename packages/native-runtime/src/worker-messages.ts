@@ -1,4 +1,8 @@
-import { type ByteStorage } from "@tint/js-runtime/bytes";
+import {
+  byteStorageData,
+  createByteStorage,
+  type ByteStorage,
+} from "@tint/js-runtime/bytes";
 import {
   attachSharedStorage,
   type SharedBlockService,
@@ -159,6 +163,25 @@ export function createNativeWorkerMessages(
   function error(message: string): never {
     return throwWorkerCloneError(realm, message);
   }
+  function cloneBuffer(storage: ByteStorage): NativeWorkerBackingGrant {
+    const source = byteStorageData(storage);
+    if (source === undefined) return error("The ArrayBuffer is detached");
+    const copy = createByteStorage(
+      source.length,
+      storage.maxByteLength,
+      storage.resizable,
+      realm.bufferMaxBytes,
+      backing.allocate,
+    );
+    if (!copy.ok) return error("The ArrayBuffer could not be cloned");
+    const bytes = byteStorageData(copy.value, "write");
+    const grant = backing.inspect(copy.value);
+    if (bytes === undefined || grant === undefined)
+      throw "NATIVE_WORKER_CLONE_BACKING";
+    bytes.set(source);
+    backing.move(copy.value, grant);
+    return grant;
+  }
   function send(
     target: NativeMessagePort,
     value: unknown,
@@ -166,6 +189,7 @@ export function createNativeWorkerMessages(
   ): void {
     const moves: Move[] = [];
     const grants: Grant[] = [];
+    const copies: NativeWorkerBackingGrant[] = [];
     const indices = new Map<number, number>();
     const destination = target.inspect();
     for (const entry of transfer) {
@@ -197,46 +221,6 @@ export function createNativeWorkerMessages(
         grants.push({ kind: "p", port: next });
       }
     }
-    const payload = serializeWorkerValue(value, realm, {
-      encode: (object): number | undefined => {
-        const known = indices.get(identity(object));
-        if (known !== undefined) return known;
-        if (options.portForObject(object) !== undefined)
-          return error("A MessagePort must be listed in the transfer list");
-        const storage = object.internalSharedArrayBufferData;
-        if (storage === undefined) return undefined;
-        if (shared === undefined || storage.engineId !== shared.engineId)
-          return error("The SharedArrayBuffer belongs to another engine");
-        const index = grants.length;
-        grants.push({
-          kind: "s",
-          engineId: storage.engineId,
-          handle: storage.handle,
-        });
-        return index;
-      },
-    });
-    // Getters in the cloned graph can close ports or detach, grow, and
-    // re-transfer buffers. Revalidate every move before mutating any source.
-    for (const move of moves) {
-      if (move.kind === "a") {
-        const current = backing.inspect(move.own);
-        if (
-          current === undefined ||
-          current.address !== move.backing.address ||
-          current.length !== move.backing.length
-        )
-          return error("ArrayBuffer changed during message serialization");
-      } else {
-        const current = move.own.inspect();
-        if (
-          current === undefined ||
-          current.generation + 1 !== move.port.generation
-        )
-          return error("MessagePort changed during message serialization");
-      }
-    }
-    const packet = encodeEnvelope(payload, grants);
     let moved = 0;
     function commit(): void {
       for (const move of moves) {
@@ -247,10 +231,61 @@ export function createNativeWorkerMessages(
     }
     let published = false;
     try {
+      const payload = serializeWorkerValue(value, realm, {
+        encode: (object): number | undefined => {
+          const known = indices.get(identity(object));
+          if (known !== undefined) return known;
+          if (options.portForObject(object) !== undefined)
+            return error("A MessagePort must be listed in the transfer list");
+          const index = grants.length;
+          const buffer = object.internalArrayBufferData;
+          if (buffer !== undefined) {
+            const copy = cloneBuffer(buffer);
+            copies.push(copy);
+            grants.push({ kind: "a", backing: copy });
+            return index;
+          }
+          const storage = object.internalSharedArrayBufferData;
+          if (storage === undefined) return undefined;
+          if (shared === undefined || storage.engineId !== shared.engineId)
+            return error("The SharedArrayBuffer belongs to another engine");
+          grants.push({
+            kind: "s",
+            engineId: storage.engineId,
+            handle: storage.handle,
+          });
+          return index;
+        },
+      });
+      // Getters can close ports or detach, grow and re-transfer buffers.
+      // Revalidate every move before mutating any source.
+      for (const move of moves) {
+        if (move.kind === "a") {
+          const current = backing.inspect(move.own);
+          if (
+            current === undefined ||
+            current.address !== move.backing.address ||
+            current.length !== move.backing.length
+          )
+            return error("ArrayBuffer changed during message serialization");
+        } else {
+          const current = move.own.inspect();
+          if (
+            current === undefined ||
+            current.generation + 1 !== move.port.generation
+          )
+            return error("MessagePort changed during message serialization");
+        }
+      }
+      const packet = encodeEnvelope(payload, grants);
       if (target.inspect() === undefined) commit();
       else published = target.send(packet, commit);
     } finally {
       if (!published) {
+        for (const copy of copies) {
+          if (copy === undefined) throw "NATIVE_WORKER_CLONE_INDEX";
+          backing.discard(copy);
+        }
         for (let index = 0; index < moved; index++) {
           const grant = grants[index];
           if (grant === undefined) throw "NATIVE_WORKER_TRANSFER_INDEX";
