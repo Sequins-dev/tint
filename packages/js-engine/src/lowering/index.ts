@@ -87,59 +87,70 @@ export interface ScriptLoweringOptions {
    * marks one (markHTMLDDAObject) fails loudly instead of changing `==`. */
   readonly htmlDDAObjects?: boolean;
 }
-/** In-place cell slots of an ordinary object (js-runtime propertySlots). */
+/** In-place value slots of an ordinary object (js-runtime propertySlots). */
 export const propertySlots = 8;
-/** The runtime functions generated property caches read cells with, and
- * the slot reader their portable bodies share. */
-export const propertyCellNames: readonly string[] = [
-  "cachedOwnPropertyCell",
-  "cachedInheritedPropertyCell",
+/** The runtime functions generated property caches read and store values
+ * with, and the slot accessors their portable bodies share. */
+export const propertyCacheNames: readonly string[] = [
+  "cachedOwnPropertyValue",
+  "cachedInheritedPropertyValue",
+  "absentPropertyValue",
+  "cachedPropertyStore",
   "propertySlotWord",
-  "readPropertySlot",
-  "propertyCellLayout",
+  "readPropertyValueSlot",
+  "writePropertyValueSlot",
 ];
-export interface PropertyCellBinding {
+export interface PropertyCacheBinding {
   readonly module: string;
   readonly name: string;
   readonly operation:
-    "test" | "field-word" | "property-cell" | "inherited-property-cell";
+    | "field-word"
+    | "property-load"
+    | "inherited-property-load"
+    | "absent-test"
+    | "property-store";
   readonly field?: string;
   readonly count?: number;
-  readonly prototypeField?: string;
   readonly siteField?: string;
 }
 /** Native record bindings of the property cache functions in the runtime's
- * objects module: inline shape compares and cell loads (IR property-cell)
- * and the constant word index of the first in-place cell. */
-export function propertyCellBindings(
+ * objects module: inline shape compares with value loads (IR property-load)
+ * and stores (IR property-store), the miss test, and the constant word
+ * index of the first in-place value. */
+export function propertyCacheBindings(
   module: string,
-): readonly PropertyCellBinding[] {
+): readonly PropertyCacheBinding[] {
   return [
-    // The layout test that keeps other cells out of the in-place slots.
-    { module, name: "propertyCellLayout", operation: "test" },
     {
       module,
       name: "propertySlotWord",
       operation: "field-word",
-      field: "internalSlot0",
+      field: "internalValue0",
     },
     {
       module,
-      name: "cachedOwnPropertyCell",
-      operation: "property-cell",
-      field: "internalSlot0",
+      name: "cachedOwnPropertyValue",
+      operation: "property-load",
+      field: "internalValue0",
       count: propertySlots,
-      prototypeField: "prototype",
       siteField: "ownShape",
     },
     {
       module,
-      name: "cachedInheritedPropertyCell",
-      operation: "inherited-property-cell",
-      field: "internalSlot0",
+      name: "cachedInheritedPropertyValue",
+      operation: "inherited-property-load",
+      field: "internalValue0",
       count: propertySlots,
-      prototypeField: "prototype",
       siteField: "inheritedShape",
+    },
+    { module, name: "absentPropertyValue", operation: "absent-test" },
+    {
+      module,
+      name: "cachedPropertyStore",
+      operation: "property-store",
+      field: "internalValue0",
+      count: propertySlots,
+      siteField: "storeShape",
     },
   ];
 }
@@ -2844,40 +2855,31 @@ function lowerScriptEntry(
     const key = convertedKey(base, property, span);
     return readProperty(base, key, span);
   }
-  /** The site's inline data cell of `base` (IR property-cell natively), or
-   * undefined: a receiver shape match proves the cell's kind. A method read
-   * tries the prototype's cell first, then the receiver's. */
-  function inlineCachedPropertyCell(
-    base: Expression,
+  /** `if (absentPropertyValue(value, cache)) fallback` */
+  function ifAbsent(
+    value: string,
     cache: Expression,
-    method: boolean,
+    fallback: Statement,
     span: Span,
-  ): Expression {
-    const witness = member(id("$errors"), "objectPrototype", span);
-    const own = runtimeCall(
-      "cachedOwnPropertyCell",
-      [witness, base, cache],
-      span,
-    );
-    if (!method) return temporary(own);
-    const inherited = temporary(
-      runtimeCall(
-        "cachedInheritedPropertyCell",
-        [{ ...witness }, base, cache],
-        span,
-      ),
-    );
-    return temporary(
-      scalarBranch(presentCell(inherited, span), inherited, own, span),
-    );
-  }
-  function presentCell(cell: Expression, span: Span): Expression {
+  ): Statement {
     return {
       ...at(span),
-      kind: "binary",
-      operator: "!==",
-      left: cell,
-      right: id("undefined", span),
+      kind: "if",
+      test: runtimeCall("absentPropertyValue", [id(value, span), cache], span),
+      consequent: fallback,
+      alternate: undefined,
+    };
+  }
+  function assignTo(name: string, value: Expression, span: Span): Statement {
+    return {
+      ...at(span),
+      kind: "expression",
+      expression: {
+        ...at(span),
+        kind: "assignment",
+        target: id(name, span),
+        value,
+      },
     };
   }
   /** `method` reads a callee (`o.m()`), served from the prototype. */
@@ -2919,16 +2921,42 @@ function lowerScriptEntry(
         true,
       );
     if (cache === undefined) return temporary(read, true);
-    const cell = inlineCachedPropertyCell(object, cache, method, span);
-    return temporary(
-      scalarBranch(
-        presentCell(cell, span),
-        member(cell, "value", span),
-        read,
+    // The site's inline value (IR property-load natively); a miss takes the
+    // runtime read, which refills the site. A method call (`o.m()`) tries
+    // the prototype's value, then the receiver's.
+    const witness = member(id("$errors"), "objectPrototype", span);
+    const result = temporary(
+      runtimeCall(
+        method ? "cachedInheritedPropertyValue" : "cachedOwnPropertyValue",
+        [witness, object, cache],
         span,
       ),
       true,
+      true,
     );
+    if (result.kind !== "identifier")
+      throw "property cache temporary invariant";
+    const name = result.name;
+    let fallback: Statement = assignTo(name, read, span);
+    if (method)
+      fallback = {
+        ...at(span),
+        kind: "block",
+        statements: [
+          assignTo(
+            name,
+            runtimeCall(
+              "cachedOwnPropertyValue",
+              [{ ...witness }, object, cache],
+              span,
+            ),
+            span,
+          ),
+          ifAbsent(name, cache, fallback, span),
+        ],
+      };
+    statements.push(ifAbsent(name, cache, fallback, span));
+    return id(name, span);
   }
   function readComputedProperty(
     base: Expression,
@@ -3292,28 +3320,23 @@ function lowerScriptEntry(
       const value = temporary(assigned, true);
       args[2] = value;
       args.push(cache);
-      const cell = inlineCachedPropertyCell(target.base, cache, false, target);
-      const fast: Expression = {
-        ...at(target),
-        kind: "binary",
-        operator: "&&",
-        left: presentCell(cell, target),
-        right: member(cell, "writable", target),
-      };
+      // The site's store cache (IR property-store natively): a cached
+      // writable property or transition; otherwise the runtime write,
+      // which refills the site.
       statements.push({
         ...at(target),
         kind: "if",
-        test: fast,
-        consequent: {
-          ...at(target),
-          kind: "expression",
-          expression: {
-            ...at(target),
-            kind: "assignment",
-            target: member(cell, "value", target),
+        test: runtimeCall(
+          "cachedPropertyStore",
+          [
+            member(id("$errors"), "objectPrototype", target),
+            target.base,
             value,
-          },
-        },
+            cache,
+          ],
+          target,
+        ),
+        consequent: { ...at(target), kind: "block", statements: [] },
         alternate: {
           ...at(target),
           kind: "expression",

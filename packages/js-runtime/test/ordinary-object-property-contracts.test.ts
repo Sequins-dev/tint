@@ -24,6 +24,9 @@ const hooks: operations.ObjectHooks<unknown> = {
 test("storage contract guards direct sets, effective descriptors and deletions", () => {
   const object = operations.createObject<string, unknown>(undefined);
   operations.createDataProperty(object, "required", 1, hooks);
+  // Cell caches hold descriptors of dictionary-mode objects (the global
+  // object's).
+  operations.useDictionaryProperties(object);
   const cache = operations.createPropertyCellCache<string, unknown>();
   assert.ok(operations.refreshPropertyCell(object, "required", cache));
   const receiver = { object, value: object };

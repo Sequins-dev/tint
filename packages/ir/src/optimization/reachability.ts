@@ -91,10 +91,13 @@ export function traceModuleReferences(
           op.kind === "record-slot-read"
         )
           includeRecord(op.record);
-        else if (op.kind === "property-cell") {
+        else if (op.kind === "property-load") {
           includeRecord(op.record);
-          includeRecord(op.cellRecord);
           includeRecord(op.siteRecord);
+        } else if (op.kind === "property-store") {
+          includeRecord(op.record);
+          includeRecord(op.siteRecord);
+          includeRecord(op.epochRecord);
         }
       }
       const t = block.terminator;

@@ -768,53 +768,82 @@ export function verify(
               define(op.id, first.type);
               break;
             }
-            case "property-cell": {
+            case "property-load":
+            case "property-store": {
               hasRecordReads = true;
               equal(use(op.object), "general");
               equal(use(op.site), "reference");
+              if (op.kind === "property-store") equal(use(op.value), "general");
               const fields = module.records?.[op.record]?.fields,
                 siteFields = module.records?.[op.siteRecord]?.fields;
               const first = fields?.[op.field],
                 shape = fields?.[0],
-                prototype = fields?.[op.prototypeField],
                 siteShape = siteFields?.[op.siteField],
-                siteSlot = siteFields?.[op.siteField + 1],
-                siteHolder = siteFields?.[op.siteField + 2];
+                siteSlot = siteFields?.[op.siteField + 1];
               if (
                 !natural(op.record) ||
                 !natural(op.field) ||
                 !natural(op.count) ||
                 op.count < 1 ||
-                !natural(op.prototypeField) ||
-                !natural(op.cellRecord) ||
-                module.records?.[op.cellRecord] === undefined ||
                 !natural(op.siteRecord) ||
                 !natural(op.siteField) ||
                 fields === undefined ||
                 first === undefined ||
                 !plainRecordField(shape, "optional-reference") ||
-                !plainRecordField(prototype, "optional-reference") ||
+                shape === undefined ||
+                shape.offset !== 8 ||
                 !plainRecordField(siteShape, "reference") ||
                 !plainRecordField(siteSlot, "number") ||
-                (op.inherited && !plainRecordField(siteHolder, "reference")) ||
                 siteSlot === undefined ||
                 siteShape === undefined ||
                 siteSlot.offset !== siteShape.offset + 8
               )
-                fail("TYPE", "property cell requires shape and cell fields");
+                fail("TYPE", "property cache requires shape and value fields");
+              // Site fields read in pairs after the shape and word index.
+              const pair = (index: number, type: ScalarType): boolean => {
+                const field = siteFields?.[op.siteField + index];
+                return (
+                  plainRecordField(field, type) &&
+                  field !== undefined &&
+                  siteShape !== undefined &&
+                  field.offset === siteShape.offset + 8 * index
+                );
+              };
+              if (
+                op.kind === "property-load" &&
+                op.inherited &&
+                (!pair(2, "optional-reference") || !pair(3, "reference"))
+              )
+                fail("TYPE", "inherited property load requires a holder entry");
+              if (op.kind === "property-store") {
+                const epoch =
+                  module.records?.[op.epochRecord]?.fields[op.epochField];
+                if (
+                  !natural(op.epochRecord) ||
+                  !natural(op.epochField) ||
+                  !pair(2, "optional-reference") ||
+                  !pair(3, "number") ||
+                  !pair(4, "reference") ||
+                  !plainRecordField(epoch, "number")
+                )
+                  fail("TYPE", "property store requires a transition entry");
+              }
               for (let slot = 0; slot < op.count; slot++) {
                 const field = fields[op.field + slot];
                 if (
-                  !plainRecordField(field, "optional-reference") ||
+                  !plainRecordField(field, "general") ||
                   field === undefined ||
-                  field.offset !== first.offset + slot * 8
+                  field.offset !== first.offset + slot * 16
                 )
                   fail(
                     "TYPE",
-                    "property cell requires consecutive optional-reference cells",
+                    "property cache requires consecutive general values",
                   );
               }
-              define(op.id, "optional-reference");
+              define(
+                op.id,
+                op.kind === "property-load" ? "general" : "boolean",
+              );
               break;
             }
             case "record-has": {
@@ -899,7 +928,8 @@ export function verify(
                 op.type !== "Uint16Array" &&
                 op.type !== "Uint32Array" &&
                 op.type !== "Float64Array" &&
-                op.type !== "object"
+                op.type !== "object" &&
+                op.type !== "absent"
               )
                 fail("TYPE", "general test requires a known category");
               define(op.id, "boolean");

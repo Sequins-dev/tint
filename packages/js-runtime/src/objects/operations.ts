@@ -28,6 +28,7 @@ import type { DataViewData } from "./data-view.ts";
 import type { ByteStorage } from "../bytes/index.ts";
 import type { SharedBlockStorage } from "../bytes/shared.ts";
 import type { ErrorRealm } from "./errors.ts";
+import type { ScriptPropertyKey } from "./symbols.ts";
 import type { ObjectShapeContract } from "./property-contracts.ts";
 import type { RegExpData } from "./regexp-data.ts";
 import type { PromiseRecord } from "../promises/index.ts";
@@ -77,35 +78,37 @@ export interface PropertyWriteContract<Key, Value> {
 /** Internal object state with optional runtime capabilities. Keys must be canonical;
  * values and callable handles belong to the embedding runtime. Mutate through this module. */
 export interface OrdinaryObject<Key, Value> {
-  /** The shared shape of the own properties while every own key is a string
-   * (undefined until first needed, and for objects with internal methods,
-   * aliases or contracts). It is the first field, so a generated cache
-   * compares the first word of any object record: no other record a
-   * JavaScript value can hold has a shape in that word. */
-  internalShape: OrdinaryPropertyShape | undefined;
+  /** Fast mode (internalDictionary false): the shared shape of the own
+   * properties, whose values are internalValue0..7 and internalValues in
+   * key order; undefined while the object has none and its prototype has no
+   * root shape yet. Dictionary mode: undefined. It is the first field, so a
+   * generated cache compares the first word of any object record: no other
+   * record a JavaScript value can hold has a shape in that word. */
+  internalShape: OrdinaryPropertyShape<Key, Value> | undefined;
   prototype: OrdinaryObject<Key, Value> | undefined;
   extensible: boolean;
   internalImmutablePrototype: boolean;
+  /** Dictionary-mode own properties. In fast mode, only the descriptors of
+   * accessor keys (their values live in the shape's slots otherwise). */
   readonly properties: Map<Key, Descriptor<Value>>;
   /** Bumped whenever a key is added or deleted or a stored descriptor is
    * replaced. Only an in-place [[Value]] write to a writable data descriptor
    * leaves it unchanged, so a cached descriptor stays the live cell. */
   internalPropertyEpoch: number;
-  /** The descriptors of the shape's keys from propertySlots on, in shape
-   * order; the first propertySlots are internalSlot0..7. */
-  internalCells: Descriptor<Value>[] | undefined;
-  /** In place, so generated caches load a cell at a computed offset. */
-  internalSlot0: Descriptor<Value> | undefined;
-  internalSlot1: Descriptor<Value> | undefined;
-  internalSlot2: Descriptor<Value> | undefined;
-  internalSlot3: Descriptor<Value> | undefined;
-  internalSlot4: Descriptor<Value> | undefined;
-  internalSlot5: Descriptor<Value> | undefined;
-  internalSlot6: Descriptor<Value> | undefined;
-  internalSlot7: Descriptor<Value> | undefined;
   /** Root of the shared shapes of objects whose [[Prototype]] is this
    * object, so equal shapes also imply the same prototype. */
-  internalChildShape: OrdinaryPropertyShape | undefined;
+  internalChildShape: OrdinaryPropertyShape<Key, Value> | undefined;
+  /** Own properties live in `properties` with full descriptors: exotic,
+   * aliased and contracted objects, the global object, and objects that
+   * deleted a property, defined an accessor, a symbol or numeric key, more
+   * than maxFastKeys keys, or prevented extensions. Permanent. */
+  internalDictionary: boolean;
+  /** Set once the object is some object's [[Prototype]]: its structural
+   * changes then invalidate cached transitions (propertyEpoch), and its
+   * shapes are private, so no cached transition starts at one. */
+  internalUsedAsPrototype: boolean;
+  /** Fast-mode values of the shape's keys from propertySlots on. */
+  internalValues: Value[] | undefined;
   /** Lazy numeric-key view of own descriptor storage. Null is an empty view. */
   internalIndexedProperties: IndexedPropertyLayout<Value> | null | undefined;
   internalPropertyContract: PropertyWriteContract<Key, Value> | undefined;
@@ -222,6 +225,18 @@ export interface OrdinaryObject<Key, Value> {
   internalHomeObject: OrdinaryObject<Key, Value> | undefined;
   readonly internalMethods: ObjectInternalMethods<Key, Value> | undefined;
   readonly internalDataAliases: Map<Key, DataAlias<Value>> | undefined;
+  /** Fast-mode values of the shape's first propertySlots keys, in place so
+   * generated caches load and store them at a computed offset. Undefined
+   * (no value) past the shape's keys; a present JavaScript undefined is
+   * the shape's undefinedValue. */
+  internalValue0: Value | undefined;
+  internalValue1: Value | undefined;
+  internalValue2: Value | undefined;
+  internalValue3: Value | undefined;
+  internalValue4: Value | undefined;
+  internalValue5: Value | undefined;
+  internalValue6: Value | undefined;
+  internalValue7: Value | undefined;
 }
 export interface ProxyState<Key, Value> {
   target: OrdinaryObject<Key, Value> | undefined;
@@ -331,12 +346,13 @@ export interface ObjectRegisterEntry<Value> {
   readonly invokeWide: ObjectWideRegisterCall<Value> | undefined;
   readonly scriptInvoke?: ObjectScriptCall<Value>;
 }
-/** The ordered string keys of an object's own properties and the kind of
- * each (2 accessor, 1 writable data, 0 read-only data). Shapes reached by the same keys and kinds from the
- * same prototype's root are one shared object, so caches compare
- * identities, and a matching shape proves a cached slot's kind. */
-export interface OrdinaryPropertyShape {
-  readonly keys: readonly string[];
+/** The ordered keys of a fast-mode object's own data properties and the
+ * attributes of each (propertyWritable | propertyEnumerable |
+ * propertyConfigurable). Shapes reached by the same keys and attributes from
+ * the same prototype's root are one shared object, so caches compare
+ * identities, and a matching shape proves a cached slot's attributes. */
+export interface OrdinaryPropertyShape<Key, Value> {
+  readonly keys: readonly Key[];
   readonly kinds: readonly number[];
   readonly hash: number;
   /** Whether successors are shared (false for a null prototype's shapes
@@ -345,34 +361,59 @@ export interface OrdinaryPropertyShape {
    * instead of a map keep the runtime's collection instantiations
    * unchanged. */
   readonly shared: boolean;
-  firstSuccessor: OrdinaryPropertyShape | undefined;
-  readonly nextSibling: OrdinaryPropertyShape | undefined;
+  firstSuccessor: OrdinaryPropertyShape<Key, Value> | undefined;
+  readonly nextSibling: OrdinaryPropertyShape<Key, Value> | undefined;
   successors: number;
+  /** The realm's undefined: a value slot holding no value reads as it. */
+  readonly undefinedValue: Value;
 }
+type ScriptObject = OrdinaryObject<ScriptPropertyKey, unknown>;
+type ScriptShape = OrdinaryPropertyShape<ScriptPropertyKey, unknown>;
 interface IndexedPropertyLayout<Value> {
   readonly keys: Float64Array;
   readonly cells: readonly Descriptor<Value>[];
 }
 interface ScriptPropertyCacheEntry {
   name: string;
-  receiver: OrdinaryPropertyShape | undefined;
-  parent: OrdinaryPropertyShape | undefined;
-  ancestor: OrdinaryPropertyShape | undefined;
-  holder: OrdinaryPropertyShape | undefined;
+  receiver: ScriptShape | undefined;
+  parent: ScriptShape | undefined;
+  ancestor: ScriptShape | undefined;
+  holder: ScriptShape | undefined;
   offset: number;
 }
+/** Bumped by every structural change of an object used as a prototype
+ * outside generated caches, so cached transitions (which add writable data
+ * properties only) know no setter or read-only property appeared on a
+ * receiver's chain. */
+export interface PropertyEpoch {
+  value: number;
+}
+export const propertyEpoch: PropertyEpoch = { value: 0 };
 export interface ScriptPropertyCache {
-  /** The newest own entry as generated code reads it (IR property-cell):
-   * the receiver shape and the cell's raw-bit word index (inlineSlotBits).
+  /** The newest own entry as generated code reads it (IR property-load):
+   * the receiver shape and the value's raw-bit word index (inlineSlotBits).
    * The newest entry held by the receiver's immediate prototype follows:
-   * the receiver shape, the word index and the prototype's shape. The
-   * fields are first and consecutive; an empty one holds unusedPropertyShape.
-   * Deeper entries and cells past the in-place slots take the miss path. */
-  ownShape: OrdinaryPropertyShape;
+   * the receiver shape, the word index, the prototype and its shape (a
+   * receiver shape implies its prototype: prototypes have private shapes,
+   * and changing an object's prototype reshapes it). Then the
+   * newest store: the receiver shape, the value's word index, the shape a
+   * transition reaches (undefined for a store to an existing property) and
+   * the propertyEpoch value the transition was found under. The fields are
+   * first and consecutive; an empty shape is unusedPropertyShape. Deeper
+   * entries and values past the in-place slots take the miss path. */
+  ownShape: ScriptShape;
   ownSlot: number;
-  inheritedShape: OrdinaryPropertyShape;
+  inheritedShape: ScriptShape;
   inheritedSlot: number;
-  inheritedHolder: OrdinaryPropertyShape;
+  inheritedObject: ScriptObject | undefined;
+  inheritedHolder: ScriptShape;
+  storeShape: ScriptShape;
+  storeSlot: number;
+  storeTransition: ScriptShape | undefined;
+  storeEpoch: number;
+  readonly epoch: PropertyEpoch;
+  /** The shape index of the property the last lookup found. */
+  foundIndex: number;
   readonly first: ScriptPropertyCacheEntry;
   readonly entries: readonly ScriptPropertyCacheEntry[];
   readonly nameHash: number;
@@ -398,7 +439,14 @@ export function createScriptPropertyCache(
     ownSlot: 0,
     inheritedShape: unusedPropertyShape,
     inheritedSlot: 0,
+    inheritedObject: undefined,
     inheritedHolder: unusedPropertyShape,
+    storeShape: unusedPropertyShape,
+    storeSlot: 0,
+    storeTransition: undefined,
+    storeEpoch: 0,
+    epoch: propertyEpoch,
+    foundIndex: -1,
     first,
     entries: [
       first,
@@ -478,12 +526,14 @@ export function attachPropertyContract<Key, Value>(
 ): void {
   if (!acceptsPropertyContract<Key, Value>(object, allowCallable))
     throw "PROPERTY_CONTRACT_OBJECT_INVARIANT";
+  // Contract checks run on descriptor storage.
+  useDictionaryProperties<Key, Value>(object);
   // Contracted array writes use the existing descriptor guard. Transfer the
   // packed elements without invoking any user code or changing their keys.
   const elements = object.internalArrayElements;
   if (elements !== undefined) unpackArrayElements<Key, Value>(object, elements);
   object.internalPropertyContract = contract;
-  updatePropertyShape<Key, Value>(object, undefined, undefined, false);
+  noteStructureChange<Key, Value>(object);
 }
 export function createAliasedObject<Key, Value>(
   prototype: OrdinaryObject<Key, Value> | undefined,
@@ -573,23 +623,24 @@ function allocateObject<Key, Value>(
   internalMethods: ObjectInternalMethods<Key, Value> | undefined,
   internalExecutionContext?: ObjectExecutionContext<Value>,
 ): OrdinaryObject<Key, Value> {
+  const dictionary =
+    internalMethods !== undefined || internalDataAliases !== undefined;
+  if (prototype !== undefined) markPrototype<Key, Value>(prototype);
   return {
-    internalShape: undefined,
+    // A fast object starts at its prototype's root shape once one exists.
+    internalShape:
+      dictionary || prototype === undefined
+        ? undefined
+        : prototype.internalChildShape,
     prototype,
     extensible: true,
     internalImmutablePrototype: false,
     properties: new Map<Key, Descriptor<Value>>(),
     internalPropertyEpoch: 0,
-    internalCells: undefined,
-    internalSlot0: undefined,
-    internalSlot1: undefined,
-    internalSlot2: undefined,
-    internalSlot3: undefined,
-    internalSlot4: undefined,
-    internalSlot5: undefined,
-    internalSlot6: undefined,
-    internalSlot7: undefined,
     internalChildShape: undefined,
+    internalDictionary: dictionary,
+    internalUsedAsPrototype: false,
+    internalValues: undefined,
     internalIndexedProperties: undefined,
     internalPropertyContract: undefined,
     internalCall,
@@ -658,6 +709,14 @@ function allocateObject<Key, Value>(
     internalPrivateElements: undefined,
     internalMethods,
     internalDataAliases,
+    internalValue0: undefined,
+    internalValue1: undefined,
+    internalValue2: undefined,
+    internalValue3: undefined,
+    internalValue4: undefined,
+    internalValue5: undefined,
+    internalValue6: undefined,
+    internalValue7: undefined,
   };
 }
 export function getOwnProperty<Key, Value>(
@@ -680,6 +739,13 @@ export function ordinaryGetOwnProperty<Key, Value>(
       return index < arrayElementCount<Key, Value>(elements)
         ? arrayElementDescriptor<Key, Value>(elements, index)
         : undefined;
+  }
+  if (!object.internalDictionary) {
+    const shape = object.internalShape;
+    const index = shape === undefined ? -1 : shape.keys.indexOf(key);
+    return shape === undefined || index < 0
+      ? undefined
+      : fastDescriptor<Key, Value>(object, shape, index);
   }
   const descriptor = object.properties.get(key);
   if (descriptor === undefined) return undefined;
@@ -742,6 +808,53 @@ export function ordinaryDefineOwnProperty<Key, Value>(
       unpackArrayElements<Key, Value>(object, elements);
     }
   }
+  if (!object.internalDictionary) {
+    const shape = object.internalShape;
+    const index = shape === undefined ? -1 : shape.keys.indexOf(key);
+    const current =
+      shape === undefined || index < 0
+        ? undefined
+        : fastDescriptor<Key, Value>(object, shape, index);
+    const result = applyDescriptor<Value>(
+      current,
+      object.extensible,
+      update,
+      hooks.undefinedValue,
+      hooks.sameValue,
+    );
+    const descriptor = result.descriptor;
+    if (result.status !== "accepted") return result.status;
+    if (descriptor === undefined) throw "ACCEPTED_DESCRIPTOR_INVARIANT";
+    if (fastKey<Key>(key)) {
+      const kind = descriptorKind<Value>(descriptor);
+      const value = descriptor.accessor
+        ? hooks.undefinedValue
+        : descriptor.value;
+      if (shape !== undefined && index >= 0) {
+        const previous = shape.kinds[index] ?? 0;
+        if (descriptor.accessor) object.properties.set(key, descriptor);
+        else if ((previous & propertyAccessor) !== 0)
+          object.properties.delete(key);
+        if (previous !== kind)
+          reshapeFastProperty<Key, Value>(object, shape, index, kind);
+        setFastValue<Key, Value>(object, index, value);
+        return "accepted";
+      }
+      const base =
+        shape === undefined
+          ? rootPropertyShape<Key, Value>(object, hooks.undefinedValue)
+          : shape;
+      if (base.keys.length < maxFastKeys) {
+        if (descriptor.accessor) object.properties.set(key, descriptor);
+        addFastProperty<Key, Value>(object, base, key, kind, value);
+        return "accepted";
+      }
+    }
+    useDictionaryProperties<Key, Value>(object);
+    object.properties.set(key, descriptor);
+    noteStructureChange<Key, Value>(object);
+    return "accepted";
+  }
   const aliases = object.internalDataAliases;
   const alias = aliases === undefined ? undefined : aliases.get(key);
   let applied = update;
@@ -774,9 +887,8 @@ export function ordinaryDefineOwnProperty<Key, Value>(
         descriptor,
         current === undefined || (update.fields & valueField) !== 0,
       );
-    const added = !object.properties.has(key);
     object.properties.set(key, descriptor);
-    updatePropertyShape<Key, Value>(object, key, descriptor, added);
+    noteStructureChange<Key, Value>(object);
     if (aliases !== undefined && alias !== undefined) {
       if (descriptor.accessor) aliases.delete(key);
       else {
@@ -799,7 +911,7 @@ function unpackArrayElements<Key, Value>(
       elements.keys.indexKey(index),
       arrayElementDescriptor<Key, Value>(elements, index),
     );
-  updatePropertyShape<Key, Value>(object, undefined, undefined, false);
+  noteStructureChange<Key, Value>(object);
   object.internalArrayElements = undefined;
 }
 /** Create or replace an own data property, without invoking setters. */
@@ -812,7 +924,29 @@ export function createDataProperty<Key, Value>(
   // A new property on an ordinary extensible object already has a complete,
   // valid descriptor. Existing properties and exotic objects still use
   // DefineOwnProperty for redefinitions, aliases and length constraints.
-  if (
+  if (!object.internalDictionary) {
+    const shape = object.internalShape;
+    if (
+      object.extensible &&
+      fastKey<Key>(key) &&
+      (shape === undefined || shape.keys.indexOf(key) < 0)
+    ) {
+      const base =
+        shape === undefined
+          ? rootPropertyShape<Key, Value>(object, hooks.undefinedValue)
+          : shape;
+      if (base.keys.length < maxFastKeys) {
+        addFastProperty<Key, Value>(
+          object,
+          base,
+          key,
+          propertyWritable | propertyEnumerable | propertyConfigurable,
+          value,
+        );
+        return true;
+      }
+    }
+  } else if (
     object.internalMethods === undefined &&
     object.internalArrayElements === undefined &&
     object.internalDataAliases === undefined &&
@@ -830,7 +964,7 @@ export function createDataProperty<Key, Value>(
       configurable: true,
     };
     object.properties.set(key, descriptor);
-    updatePropertyShape<Key, Value>(object, key, descriptor, true);
+    noteStructureChange<Key, Value>(object);
     return true;
   }
   return (
@@ -900,13 +1034,20 @@ export function ordinaryDeleteProperty<Key, Value>(
       unpackArrayElements<Key, Value>(object, elements);
     }
   }
+  if (!object.internalDictionary) {
+    const shape = object.internalShape;
+    const index = shape === undefined ? -1 : shape.keys.indexOf(key);
+    if (shape === undefined || index < 0) return true;
+    if (((shape.kinds[index] ?? 0) & propertyConfigurable) === 0) return false;
+    useDictionaryProperties<Key, Value>(object);
+  }
   const descriptor = object.properties.get(key);
   if (descriptor === undefined) return true;
   if (!descriptor.configurable) return false;
   const contract = object.internalPropertyContract;
   if (contract !== undefined && !contract.canDelete(key)) return false;
   object.properties.delete(key);
-  updatePropertyShape<Key, Value>(object, undefined, undefined, false);
+  noteStructureChange<Key, Value>(object);
   const aliases = object.internalDataAliases;
   if (aliases !== undefined) aliases.delete(key);
   return true;
@@ -916,6 +1057,8 @@ export function preventExtensions<Key, Value>(
 ): boolean {
   const method = object.internalMethods?.preventExtensions;
   if (method !== undefined) return method(object);
+  // Cached transitions rely on fast-mode objects being extensible.
+  useDictionaryProperties<Key, Value>(object);
   object.extensible = false;
   return true;
 }
@@ -947,7 +1090,20 @@ export function setPrototype<Key, Value>(
     cursor = cursor.prototype;
   }
   object.prototype = prototype;
-  updatePropertyShape<Key, Value>(object, undefined, undefined, false);
+  if (prototype !== undefined) markPrototype<Key, Value>(prototype);
+  // Shapes grow from the prototype's root: replay the keys from the new one.
+  const shape = object.internalShape;
+  if (!object.internalDictionary && shape !== undefined)
+    object.internalShape = replayPropertyShape<Key, Value>(
+      object,
+      shape,
+      -1,
+      0,
+    );
+  else if (!object.internalDictionary)
+    object.internalShape =
+      prototype === undefined ? undefined : prototype.internalChildShape;
+  noteStructureChange<Key, Value>(object);
   return true;
 }
 /** Freeze only the prototype identity; own properties can remain extensible. */
@@ -976,6 +1132,12 @@ export function hasProperty<Key, Value>(
   while (cursor !== undefined) {
     const method = cursor.internalMethods?.hasProperty;
     if (method !== undefined) return method(cursor, key);
+    if (!cursor.internalDictionary) {
+      const shape = cursor.internalShape;
+      if (shape !== undefined && shape.keys.indexOf(key) >= 0) return true;
+      cursor = cursor.prototype;
+      continue;
+    }
     if (getOwnProperty<Key, Value>(cursor, key) !== undefined) return true;
     cursor = getPrototype<Key, Value>(cursor);
   }
@@ -1003,14 +1165,16 @@ export function cachedPropertyCell<Key, Value>(
     ? cache.cell
     : undefined;
 }
-/** Look up and cache an own data property of an entirely ordinary object
- * without arguments aliases; undefined (and nothing cached) otherwise. */
+/** Look up and cache an own data property of an entirely ordinary
+ * dictionary-mode object without arguments aliases; undefined (and nothing
+ * cached) otherwise. */
 export function refreshPropertyCell<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   key: Key,
   cache: PropertyCellCache<Key, Value>,
 ): Descriptor<Value> | undefined {
   if (
+    !object.internalDictionary ||
     object.internalMethods !== undefined ||
     object.internalDataAliases !== undefined ||
     object.internalPropertyContract !== undefined
@@ -1031,159 +1195,302 @@ export function writePropertyCell<Value>(
   cell.value = value;
 }
 
-/** Records a change of the object's own descriptors. A new string key, or a
- * replaced descriptor of the same kind, keeps an installed shape current;
- * any other change (key undefined, a symbol key or a changed kind)
- * discards it for a rebuild. */
-function updatePropertyShape<Key, Value>(
+/** Attributes a shape records for a fast-mode key. */
+export const propertyWritable = 1,
+  propertyEnumerable = 2,
+  propertyConfigurable = 4,
+  /** An accessor: its descriptor stays in `properties` and its value slot
+   * holds no value. */
+  propertyAccessor = 8;
+/** Fast-mode objects past this many keys move to dictionary mode, so a key
+ * lookup stays a bounded scan of the shape. */
+const maxFastKeys = 128;
+/** Keys fast mode holds: symbols and strings other than canonical numeric
+ * strings (numeric keys use the dictionary's indexed view). */
+function fastKey<Key>(key: Key): boolean {
+  return typeof key !== "string" || canonicalNumericIndex(key) === undefined;
+}
+/** The shape kind of a complete descriptor. */
+function descriptorKind<Value>(descriptor: Descriptor<Value>): number {
+  return (
+    (descriptor.accessor
+      ? propertyAccessor
+      : descriptor.writable
+        ? propertyWritable
+        : 0) |
+    (descriptor.enumerable ? propertyEnumerable : 0) |
+    (descriptor.configurable ? propertyConfigurable : 0)
+  );
+}
+/** Records a structural change of the object's own properties. */
+function noteStructureChange<Key, Value>(
   object: OrdinaryObject<Key, Value>,
-  key: Key | undefined,
-  descriptor: Descriptor<Value> | undefined,
-  added: boolean,
 ): void {
   object.internalPropertyEpoch++;
   object.internalIndexedProperties = undefined;
-  const shape = object.internalShape;
-  if (shape === undefined) return;
-  if (
-    key === undefined ||
-    descriptor === undefined ||
-    typeof key !== "string"
-  ) {
-    discardPropertyShape<Key, Value>(object);
-    return;
-  }
-  // The facts a cached hit relies on without reading the descriptor: data
-  // or accessor, and writability.
-  const kind = descriptor.accessor ? 2 : descriptor.writable ? 1 : 0;
-  if (added) {
-    const index = shape.keys.length;
-    if (setPropertyCell<Key, Value>(object, index, descriptor))
-      object.internalShape = transitionPropertyShape(shape, key, kind);
-    else discardPropertyShape<Key, Value>(object);
-    return;
-  }
-  const index = shape.keys.indexOf(key);
-  if (index < 0) throw "PROPERTY_SHAPE_KEY_INVARIANT";
-  if (
-    shape.kinds[index] !== kind ||
-    !setPropertyCell<Key, Value>(object, index, descriptor)
-  )
-    discardPropertyShape<Key, Value>(object);
+  if (object.internalUsedAsPrototype) propertyEpoch.value++;
 }
-function discardPropertyShape<Key, Value>(
-  object: OrdinaryObject<Key, Value>,
-): void {
-  object.internalShape = undefined;
-  object.internalCells = undefined;
-  object.internalSlot0 = undefined;
-  object.internalSlot1 = undefined;
-  object.internalSlot2 = undefined;
-  object.internalSlot3 = undefined;
-  object.internalSlot4 = undefined;
-  object.internalSlot5 = undefined;
-  object.internalSlot6 = undefined;
-  object.internalSlot7 = undefined;
-}
-/** In-place cell slots per object (internalSlot0..7). */
+/** In-place value slots per object (internalValue0..7). */
 export const propertySlots = 8;
-/** Whether `value` has the descriptor record layout generated caches read
- * from in-place slots without a check (IR property-cell). Native code binds
- * this to a header comparison; structurally typed descriptors of another
- * layout stay out of the slots. */
-export function propertyCellLayout(
-  value: unknown,
-  witness: Descriptor<unknown>,
-): boolean {
-  return true;
-}
-/** Store the descriptor of the shape's key at index. Indices past the
- * in-place slots extend internalCells in order. False, storing nothing, for
- * an in-place cell of another layout (see propertyCellLayout). */
-function setPropertyCell<Key, Value>(
+function storedValue<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   index: number,
-  cell: Descriptor<Value>,
-): boolean {
-  if (index < propertySlots && !propertyCellLayout(cell, cell)) return false;
+): Value | undefined {
   switch (index) {
     case 0:
-      object.internalSlot0 = cell;
-      return true;
+      return object.internalValue0;
     case 1:
-      object.internalSlot1 = cell;
-      return true;
+      return object.internalValue1;
     case 2:
-      object.internalSlot2 = cell;
-      return true;
+      return object.internalValue2;
     case 3:
-      object.internalSlot3 = cell;
-      return true;
+      return object.internalValue3;
     case 4:
-      object.internalSlot4 = cell;
-      return true;
+      return object.internalValue4;
     case 5:
-      object.internalSlot5 = cell;
-      return true;
+      return object.internalValue5;
     case 6:
-      object.internalSlot6 = cell;
-      return true;
+      return object.internalValue6;
     case 7:
-      object.internalSlot7 = cell;
-      return true;
+      return object.internalValue7;
+  }
+  const values = object.internalValues;
+  return values === undefined ? undefined : values[index - propertySlots];
+}
+/** The value of the shape's key at index of a fast-mode object. */
+function fastValue<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  shape: OrdinaryPropertyShape<Key, Value>,
+  index: number,
+): Value {
+  const value = storedValue<Key, Value>(object, index);
+  return value === undefined ? shape.undefinedValue : value;
+}
+/** Store the value of the shape's key at index. Indices past the in-place
+ * slots extend internalValues in order. */
+function setFastValue<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  index: number,
+  value: Value,
+): void {
+  switch (index) {
+    case 0:
+      object.internalValue0 = value;
+      return;
+    case 1:
+      object.internalValue1 = value;
+      return;
+    case 2:
+      object.internalValue2 = value;
+      return;
+    case 3:
+      object.internalValue3 = value;
+      return;
+    case 4:
+      object.internalValue4 = value;
+      return;
+    case 5:
+      object.internalValue5 = value;
+      return;
+    case 6:
+      object.internalValue6 = value;
+      return;
+    case 7:
+      object.internalValue7 = value;
+      return;
   }
   const spill = index - propertySlots;
-  const cells = object.internalCells;
-  if (cells === undefined) {
-    if (spill !== 0) throw "PROPERTY_CELL_INDEX_INVARIANT";
-    object.internalCells = [cell];
-  } else if (spill === cells.length) cells.push(cell);
-  else if (spill < cells.length) cells[spill] = cell;
-  else throw "PROPERTY_CELL_INDEX_INVARIANT";
-  return true;
+  const values = object.internalValues;
+  if (values === undefined) {
+    if (spill !== 0) throw "PROPERTY_VALUE_INDEX_INVARIANT";
+    object.internalValues = [value];
+  } else if (spill === values.length) values.push(value);
+  else if (spill < values.length) values[spill] = value;
+  else throw "PROPERTY_VALUE_INDEX_INVARIANT";
 }
-/** The descriptor of the shape's key at index. */
-export function propertyCell<Key, Value>(
+/** A fast-mode property as a (fresh) data descriptor. */
+function fastDescriptor<Key, Value>(
   object: OrdinaryObject<Key, Value>,
+  shape: OrdinaryPropertyShape<Key, Value>,
   index: number,
-): Descriptor<Value> | undefined {
-  switch (index) {
-    case 0:
-      return object.internalSlot0;
-    case 1:
-      return object.internalSlot1;
-    case 2:
-      return object.internalSlot2;
-    case 3:
-      return object.internalSlot3;
-    case 4:
-      return object.internalSlot4;
-    case 5:
-      return object.internalSlot5;
-    case 6:
-      return object.internalSlot6;
-    case 7:
-      return object.internalSlot7;
+): Descriptor<Value> {
+  const kind = shape.kinds[index] ?? 0;
+  if ((kind & propertyAccessor) !== 0)
+    return fastAccessor<Key, Value>(object, shape, index);
+  return {
+    accessor: false,
+    value: fastValue<Key, Value>(object, shape, index),
+    writable: (kind & propertyWritable) !== 0,
+    get: shape.undefinedValue,
+    set: shape.undefinedValue,
+    enumerable: (kind & propertyEnumerable) !== 0,
+    configurable: (kind & propertyConfigurable) !== 0,
+  };
+}
+/** The stored descriptor of a fast-mode accessor. */
+function fastAccessor<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  shape: OrdinaryPropertyShape<Key, Value>,
+  index: number,
+): Descriptor<Value> {
+  const key = shape.keys[index];
+  const descriptor = key === undefined ? undefined : object.properties.get(key);
+  if (descriptor === undefined || !descriptor.accessor)
+    throw "FAST_ACCESSOR_INVARIANT";
+  return descriptor;
+}
+function addFastProperty<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  shape: OrdinaryPropertyShape<Key, Value>,
+  key: Key,
+  kind: number,
+  value: Value,
+): void {
+  setFastValue<Key, Value>(object, shape.keys.length, value);
+  object.internalShape = transitionPropertyShape<Key, Value>(shape, key, kind);
+  noteStructureChange<Key, Value>(object);
+}
+/** The object's keys grown again from its prototype's root, with key
+ * `index` given `kind` (index -1 keeps every kind). Values keep their
+ * slots. */
+function replayPropertyShape<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  shape: OrdinaryPropertyShape<Key, Value>,
+  index: number,
+  kind: number,
+): OrdinaryPropertyShape<Key, Value> {
+  let next = rootPropertyShape<Key, Value>(object, shape.undefinedValue);
+  for (let position = 0; position < shape.keys.length; position++) {
+    const key = shape.keys[position];
+    if (key === undefined) throw "PROPERTY_KEY_INVARIANT";
+    const keyKind = position === index ? kind : (shape.kinds[position] ?? 0);
+    next = transitionPropertyShape<Key, Value>(next, key, keyKind);
   }
-  const cells = object.internalCells;
-  return cells === undefined ? undefined : cells[index - propertySlots];
+  return next;
+}
+function reshapeFastProperty<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  shape: OrdinaryPropertyShape<Key, Value>,
+  index: number,
+  kind: number,
+): void {
+  object.internalShape = replayPropertyShape<Key, Value>(
+    object,
+    shape,
+    index,
+    kind,
+  );
+  noteStructureChange<Key, Value>(object);
+}
+/** Note that object is a [[Prototype]]: from now on it grows private shapes,
+ * which cached transitions never start at, and its structural changes bump
+ * propertyEpoch. */
+function markPrototype<Key, Value>(object: OrdinaryObject<Key, Value>): void {
+  if (object.internalUsedAsPrototype) return;
+  object.internalUsedAsPrototype = true;
+  const shape = object.internalShape;
+  if (!object.internalDictionary && shape !== undefined)
+    object.internalShape = replayPropertyShape<Key, Value>(
+      object,
+      shape,
+      -1,
+      0,
+    );
+}
+/** Move the object's own properties to descriptor storage, permanently. */
+export function useDictionaryProperties<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+): void {
+  if (object.internalDictionary) return;
+  const shape = object.internalShape;
+  if (shape !== undefined) {
+    // Accessors are already stored; insert every key in shape order.
+    const descriptors: Descriptor<Value>[] = [];
+    for (let index = 0; index < shape.keys.length; index++)
+      descriptors.push(fastDescriptor<Key, Value>(object, shape, index));
+    object.properties.clear();
+    for (let index = 0; index < shape.keys.length; index++) {
+      const key = shape.keys[index],
+        descriptor = descriptors[index];
+      if (key === undefined || descriptor === undefined)
+        throw "PROPERTY_KEY_INVARIANT";
+      object.properties.set(key, descriptor);
+    }
+  }
+  object.internalDictionary = true;
+  object.internalShape = undefined;
+  object.internalValues = undefined;
+  object.internalValue0 = undefined;
+  object.internalValue1 = undefined;
+  object.internalValue2 = undefined;
+  object.internalValue3 = undefined;
+  object.internalValue4 = undefined;
+  object.internalValue5 = undefined;
+  object.internalValue6 = undefined;
+  object.internalValue7 = undefined;
+  noteStructureChange<Key, Value>(object);
+}
+/** Whether an ordinary object has an own property `key`, without exotic
+ * dispatch and without building a descriptor. */
+export function ordinaryHasOwnProperty<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  key: Key,
+): boolean {
+  if (!object.internalDictionary) {
+    const shape = object.internalShape;
+    return shape !== undefined && shape.keys.indexOf(key) >= 0;
+  }
+  return ordinaryGetOwnProperty<Key, Value>(object, key) !== undefined;
 }
 
 const emptyPropertyShapeHash = 2166136261;
+/** Shared shapes start at the prototype's root. Shapes of objects with a
+ * null prototype, and of prototypes, stay private to the object. */
+function rootPropertyShape<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  undefinedValue: Value,
+): OrdinaryPropertyShape<Key, Value> {
+  const prototype = object.internalUsedAsPrototype
+    ? undefined
+    : object.prototype;
+  const shared =
+    prototype === undefined ? undefined : prototype.internalChildShape;
+  if (shared !== undefined) return shared;
+  const root: OrdinaryPropertyShape<Key, Value> = {
+    keys: [],
+    kinds: [],
+    hash: emptyPropertyShapeHash,
+    shared: prototype !== undefined,
+    firstSuccessor: undefined,
+    nextSibling: undefined,
+    successors: 0,
+    undefinedValue,
+  };
+  if (prototype !== undefined) prototype.internalChildShape = root;
+  return root;
+}
 /** Never the shape of an object: an empty cache entry holds it, so an object
  * without a shape cannot match one. */
-export const unusedPropertyShape: OrdinaryPropertyShape =
-  rootPropertyShape(false);
+export const unusedPropertyShape: ScriptShape = {
+  keys: [],
+  kinds: [],
+  hash: emptyPropertyShapeHash,
+  shared: false,
+  firstSuccessor: undefined,
+  nextSibling: undefined,
+  successors: 0,
+  undefinedValue: undefined,
+};
 /** Shapes past this many keys, or past this many successors of one shape,
  * stay private to their object so dictionary-like use cannot grow the
  * shared trees without bound. */
 const maxSharedPropertyKeys = 64,
   maxPropertyTransitions = 32;
-function transitionPropertyShape(
-  shape: OrdinaryPropertyShape,
-  key: string,
+function transitionPropertyShape<Key, Value>(
+  shape: OrdinaryPropertyShape<Key, Value>,
+  key: Key,
   kind: number,
-): OrdinaryPropertyShape {
+): OrdinaryPropertyShape<Key, Value> {
   let successor = shape.firstSuccessor;
   while (successor !== undefined) {
     const last = successor.keys.length - 1;
@@ -1196,14 +1503,16 @@ function transitionPropertyShape(
   const kinds = shape.kinds.slice();
   kinds.push(kind);
   const linked = shape.shared && shape.successors < maxPropertyTransitions;
-  const next: OrdinaryPropertyShape = {
+  const keyHash = typeof key === "string" ? hashString(key) : 0;
+  const next: OrdinaryPropertyShape<Key, Value> = {
     keys,
     kinds,
-    hash: Math.imul(shape.hash ^ hashString(key) ^ kind, 16777619) >>> 0,
+    hash: Math.imul(shape.hash ^ keyHash ^ kind, 16777619) >>> 0,
     shared: linked && keys.length < maxSharedPropertyKeys,
     firstSuccessor: undefined,
     nextSibling: linked ? shape.firstSuccessor : undefined,
     successors: 0,
+    undefinedValue: shape.undefinedValue,
   };
   if (linked) {
     shape.firstSuccessor = next;
@@ -1288,137 +1597,100 @@ export function indexedPropertyCell<Key, Value>(
   }
 }
 
-/** The object's shape, built from the prototype's root on first use. The
- * per-site cache owns only shapes and a slot number; the receiver and
- * prototype objects own their descriptors, so the cache keeps no JavaScript
- * object or symbol alive. */
-function ownPropertyShape<Key, Value>(
-  object: OrdinaryObject<Key, Value>,
-): OrdinaryPropertyShape | undefined {
-  if (
-    object.internalMethods !== undefined ||
-    object.internalDataAliases !== undefined ||
-    object.internalPropertyContract !== undefined
-  )
-    return undefined;
-  const current = object.internalShape;
-  if (current !== undefined) return current;
-  // Shared shapes start at the prototype's root; a null prototype's stay
-  // private to the object.
-  const prototype = object.prototype;
-  const inherited =
-    prototype === undefined ? undefined : prototype.internalChildShape;
-  let shape =
-    inherited === undefined
-      ? rootPropertyShape(prototype !== undefined)
-      : inherited;
-  if (inherited === undefined && prototype !== undefined)
-    prototype.internalChildShape = shape;
-  object.internalCells = undefined;
-  let index = 0;
-  for (const [key, descriptor] of object.properties) {
-    if (typeof key !== "string") {
-      discardPropertyShape<Key, Value>(object);
-      return undefined;
-    }
-    const kind = descriptor.accessor ? 2 : descriptor.writable ? 1 : 0;
-    if (!setPropertyCell<Key, Value>(object, index++, descriptor)) {
-      discardPropertyShape<Key, Value>(object);
-      return undefined;
-    }
-    shape = transitionPropertyShape(shape, key, kind);
-  }
-  object.internalShape = shape;
-  return shape;
+/** A fast-mode object's shape, which the per-site caches key on. The cache
+ * owns only shapes and slot numbers; the receiver and prototype objects own
+ * their values, so the cache keeps no JavaScript object or symbol alive. */
+function cacheableShape(object: ScriptObject): ScriptShape | undefined {
+  if (object.internalDictionary) return undefined;
+  const shape = object.internalShape;
+  if (shape !== undefined) return shape;
+  // An object without own properties takes its (empty) root shape so its
+  // inherited properties cache too.
+  const root = rootPropertyShape<ScriptPropertyKey, unknown>(object, undefined);
+  object.internalShape = root;
+  return root;
 }
-
-function rootPropertyShape(shared: boolean): OrdinaryPropertyShape {
-  return {
-    keys: [],
-    kinds: [],
-    hash: emptyPropertyShapeHash,
-    shared,
-    firstSuccessor: undefined,
-    nextSibling: undefined,
-    successors: 0,
-  };
-}
-
-function cachedScriptPropertyCell<Key, Value>(
-  object: OrdinaryObject<Key, Value>,
+/** The holder an entry names for an object of the entry's receiver shape. */
+function cachedScriptPropertyHolder(
+  object: ScriptObject,
   entry: ScriptPropertyCacheEntry,
   own: boolean,
-): Descriptor<Value> | undefined {
+): ScriptObject | undefined {
   if (entry.receiver !== object.internalShape) return undefined;
-  let holder = object;
-  if (entry.holder !== undefined) {
-    if (own) return undefined;
-    let prototype = object.prototype;
-    const parent = entry.parent,
-      ancestor = entry.ancestor;
-    if (parent !== undefined) {
-      const checked = prototype;
-      if (checked === undefined || checked.internalShape !== parent)
-        return undefined;
-      prototype = checked.prototype;
-    }
-    if (ancestor !== undefined) {
-      const checked = prototype;
-      if (checked === undefined || checked.internalShape !== ancestor)
-        return undefined;
-      prototype = checked.prototype;
-    }
-    if (prototype === undefined || prototype.internalShape !== entry.holder)
+  if (entry.holder === undefined) return object;
+  if (own) return undefined;
+  let prototype = object.prototype;
+  const parent = entry.parent,
+    ancestor = entry.ancestor;
+  if (parent !== undefined) {
+    const checked = prototype;
+    if (checked === undefined || checked.internalShape !== parent)
       return undefined;
-    holder = prototype;
+    prototype = checked.prototype;
   }
-  const cell = propertyCell<Key, Value>(holder, entry.offset);
-  return cell === undefined || cell.accessor ? undefined : cell;
+  if (ancestor !== undefined) {
+    const checked = prototype;
+    if (checked === undefined || checked.internalShape !== ancestor)
+      return undefined;
+    prototype = checked.prototype;
+  }
+  if (prototype === undefined || prototype.internalShape !== entry.holder)
+    return undefined;
+  return prototype;
 }
-
-/** A cell's word index as generated code reads it: the binary64 whose bits
- * are the integer (exact as a subnormal multiple of the least positive
- * value, with flush-to-zero off as native code runs). */
+/** A cached value's word index as generated code reads it: the binary64
+ * whose bits are the integer (exact as a subnormal multiple of the least
+ * positive value, with flush-to-zero off as native code runs). */
 export function inlineSlotBits(word: number): number {
   return word * Number.MIN_VALUE;
 }
-/** `slotWord` is the word index of internalSlot0 in the object record. */
-export function lookupCachedScriptProperty<Key, Value>(
-  object: OrdinaryObject<Key, Value>,
+/** Find `key` on a fast-mode object or its first prototypes and cache where
+ * it was found. Returns the holder of the data property, with its shape
+ * index in cache.foundIndex, or undefined to take the ordinary lookup.
+ * `slotWord` is the word index of internalValue0 in the object record. */
+export function lookupCachedScriptProperty(
+  object: ScriptObject,
   key: string,
   cache: ScriptPropertyCache,
   own: boolean,
   global: ScriptPropertyStubCache,
   slotWord: number,
-): Descriptor<Value> | undefined {
-  const shape = ownPropertyShape<Key, Value>(object);
+): ScriptObject | undefined {
+  const shape = cacheableShape(object);
   if (shape === undefined) return undefined;
   for (let index = 0; index < cache.used; index++) {
     const entry = cache.entries[index];
     if (entry === undefined) throw "PROPERTY_CACHE_ENTRY_INVARIANT";
-    const cell = cachedScriptPropertyCell<Key, Value>(object, entry, own);
-    if (cell !== undefined) return cell;
+    const holder = cachedScriptPropertyHolder(object, entry, own);
+    if (holder !== undefined) {
+      cache.foundIndex = entry.offset;
+      return holder;
+    }
   }
   const index = ((shape.hash ^ cache.nameHash) >>> 0) & 255;
   const stub = global.buckets[index];
   if (stub === undefined) throw "PROPERTY_STUB_ENTRY_INVARIANT";
   if (cache.megamorphic && stub.name === key) {
-    const cell = cachedScriptPropertyCell<Key, Value>(object, stub, own);
-    if (cell !== undefined) return cell;
+    const holder = cachedScriptPropertyHolder(object, stub, own);
+    if (holder !== undefined) {
+      cache.foundIndex = stub.offset;
+      return holder;
+    }
   }
   let holder = object,
     holderShape = shape;
   let offset = shape.keys.indexOf(key);
-  let parent: OrdinaryPropertyShape | undefined = undefined;
-  let ancestor: OrdinaryPropertyShape | undefined = undefined;
+  let parent: ScriptShape | undefined = undefined;
+  let ancestor: ScriptShape | undefined = undefined;
   if (offset < 0 && !own) {
     let prototype = object.prototype;
     // Keep the intermediate guards in the cache entry itself. Longer
     // prototype chains retain the ordinary lookup.
     for (let depth = 0; depth < 3 && offset < 0; depth++) {
       const current = prototype;
-      if (current === undefined) return undefined;
-      const inherited = ownPropertyShape<Key, Value>(current);
+      if (current === undefined || current.internalMethods !== undefined)
+        return undefined;
+      const inherited = cacheableShape(current);
       if (inherited === undefined) return undefined;
       holder = current;
       holderShape = inherited;
@@ -1429,9 +1701,9 @@ export function lookupCachedScriptProperty<Key, Value>(
       prototype = current.prototype;
     }
   }
-  if (offset < 0) return undefined;
-  const cell = propertyCell<Key, Value>(holder, offset);
-  if (cell === undefined || cell.accessor) return undefined;
+  // Accessors keep the ordinary lookup, which calls them.
+  if (offset < 0 || ((holderShape.kinds[offset] ?? 0) & propertyAccessor) !== 0)
+    return undefined;
   let entry = cache.entries[cache.used];
   if (entry === undefined) {
     cache.megamorphic = true;
@@ -1443,17 +1715,107 @@ export function lookupCachedScriptProperty<Key, Value>(
   entry.ancestor = ancestor;
   entry.holder = holder === object ? undefined : holderShape;
   entry.offset = offset;
+  // Each value is a two-word general slot.
   if (offset < propertySlots) {
     if (holder === object) {
       cache.ownShape = shape;
-      cache.ownSlot = inlineSlotBits(slotWord + offset);
+      cache.ownSlot = inlineSlotBits(slotWord + offset * 2);
     } else if (parent === undefined) {
       cache.inheritedShape = shape;
-      cache.inheritedSlot = inlineSlotBits(slotWord + offset);
+      cache.inheritedSlot = inlineSlotBits(slotWord + offset * 2);
+      cache.inheritedObject = holder;
       cache.inheritedHolder = holderShape;
     }
   }
-  return cell;
+  cache.foundIndex = offset;
+  return holder;
+}
+/** The value of the property a cached lookup found on holder. */
+export function cachedScriptPropertyValue(
+  holder: ScriptObject,
+  cache: ScriptPropertyCache,
+): unknown {
+  return storedValue<ScriptPropertyKey, unknown>(holder, cache.foundIndex);
+}
+/** Whether every object on the prototype chain is ordinary and lacks
+ * `key`, so storing it adds a writable data property to the receiver. */
+function chainLacksProperty(object: ScriptObject, key: string): boolean {
+  let cursor = object.prototype;
+  while (cursor !== undefined) {
+    if (
+      cursor.internalMethods !== undefined ||
+      ordinaryHasOwnProperty<ScriptPropertyKey, unknown>(cursor, key)
+    )
+      return false;
+    cursor = cursor.prototype;
+  }
+  return true;
+}
+/** Store a property of a fast-mode object the way generated code repeats
+ * it: to an existing writable own data property, or by adding a writable
+ * data property when no prototype has `key`. Caches the store at the site
+ * and returns true; false leaves the store to the ordinary path. */
+export function storeCachedScriptProperty(
+  object: ScriptObject,
+  key: string,
+  value: unknown,
+  cache: ScriptPropertyCache,
+  slotWord: number,
+): boolean {
+  if (object.internalDictionary) return false;
+  const shape = object.internalShape;
+  const index = shape === undefined ? -1 : shape.keys.indexOf(key);
+  if (shape !== undefined && index >= 0) {
+    if (((shape.kinds[index] ?? 0) & propertyWritable) === 0) return false;
+    setFastValue<ScriptPropertyKey, unknown>(object, index, value);
+    if (index < propertySlots) {
+      cache.storeShape = shape;
+      cache.storeSlot = inlineSlotBits(slotWord + index * 2);
+      cache.storeTransition = undefined;
+    }
+    return true;
+  }
+  if (!object.extensible || !fastKey<string>(key)) return false;
+  const epoch = propertyEpoch.value;
+  if (!chainLacksProperty(object, key)) return false;
+  const base =
+    shape === undefined
+      ? rootPropertyShape<ScriptPropertyKey, unknown>(object, undefined)
+      : shape;
+  const added = base.keys.length;
+  if (added >= maxFastKeys) return false;
+  addFastProperty<ScriptPropertyKey, unknown>(
+    object,
+    base,
+    key,
+    propertyWritable | propertyEnumerable | propertyConfigurable,
+    value,
+  );
+  const next = object.internalShape;
+  if (
+    added < propertySlots &&
+    next !== undefined &&
+    !object.internalUsedAsPrototype
+  ) {
+    cache.storeShape = base;
+    cache.storeSlot = inlineSlotBits(slotWord + added * 2);
+    cache.storeTransition = next;
+    cache.storeEpoch = epoch;
+  }
+  return true;
+}
+/** Value slot `index` of a fast-mode Script object, as cached code reads it
+ * (no value is undefined). */
+export function readPropertySlot(object: ScriptObject, index: number): unknown {
+  return storedValue<ScriptPropertyKey, unknown>(object, index);
+}
+/** Store value slot `index` of a fast-mode Script object. */
+export function writePropertySlot(
+  object: ScriptObject,
+  index: number,
+  value: unknown,
+): void {
+  setFastValue<ScriptPropertyKey, unknown>(object, index, value);
 }
 /** True when no object on the prototype chain overrides an internal method,
  * so HasProperty and Get are unobservable lookups until a getter runs. */
@@ -1474,6 +1836,14 @@ export function findOrdinaryProperty<Key, Value>(
 ): Descriptor<Value> | undefined {
   let cursor: OrdinaryObject<Key, Value> | undefined = object;
   while (cursor !== undefined) {
+    if (!cursor.internalDictionary) {
+      const shape = cursor.internalShape;
+      const index = shape === undefined ? -1 : shape.keys.indexOf(key);
+      if (shape !== undefined && index >= 0)
+        return fastDescriptor<Key, Value>(cursor, shape, index);
+      cursor = cursor.prototype;
+      continue;
+    }
     const descriptor = ordinaryGetOwnProperty<Key, Value>(cursor, key);
     if (descriptor !== undefined) return descriptor;
     cursor = cursor.prototype;
@@ -1490,6 +1860,20 @@ export function getProperty<Key, Value>(
   while (cursor !== undefined) {
     const method = cursor.internalMethods?.get;
     if (method !== undefined) return method(cursor, key, receiver, hooks);
+    if (!cursor.internalDictionary) {
+      const shape = cursor.internalShape;
+      const index = shape === undefined ? -1 : shape.keys.indexOf(key);
+      if (shape !== undefined && index >= 0) {
+        if (((shape.kinds[index] ?? 0) & propertyAccessor) === 0)
+          return fastValue<Key, Value>(cursor, shape, index);
+        const getter = fastAccessor<Key, Value>(cursor, shape, index).get;
+        return hooks.sameValue(getter, hooks.undefinedValue)
+          ? hooks.undefinedValue
+          : hooks.call(getter, receiver, []);
+      }
+      cursor = cursor.prototype;
+      continue;
+    }
     const elements = cursor.internalArrayElements;
     if (
       elements !== undefined &&
@@ -1526,6 +1910,26 @@ export function setProperty<Key, Value>(
     const method = cursor.internalMethods?.set;
     if (method !== undefined)
       return method(cursor, key, value, receiver, hooks);
+    if (!cursor.internalDictionary) {
+      const shape = cursor.internalShape;
+      const index = shape === undefined ? -1 : shape.keys.indexOf(key);
+      if (shape === undefined || index < 0) {
+        cursor = cursor.prototype;
+        continue;
+      }
+      const kind = shape.kinds[index] ?? 0;
+      if ((kind & propertyAccessor) !== 0) {
+        const setter = fastAccessor<Key, Value>(cursor, shape, index).set;
+        if (hooks.sameValue(setter, hooks.undefinedValue)) return false;
+        hooks.call(setter, receiver.value, [value]);
+        return true;
+      }
+      if ((kind & propertyWritable) === 0) return false;
+      // OrdinarySetWithOwnDescriptor on the receiver redefines only [[Value]].
+      if (cursor !== object || receiver.object !== object) break;
+      setFastValue<Key, Value>(object, index, value);
+      return true;
+    }
     const elements = cursor.internalArrayElements;
     if (
       elements !== undefined &&
@@ -1613,7 +2017,15 @@ export function ordinaryOwnKeys<Key, Value>(
   keyOrder: (key: Key) => number,
 ): Key[] {
   const keys: Key[] = [];
-  for (const [key, descriptor] of object.properties) keys.push(key);
+  const shape = object.internalShape;
+  if (!object.internalDictionary) {
+    // Fast mode: `properties` holds only the accessors' descriptors.
+    if (shape !== undefined)
+      for (const key of shape.keys) {
+        if (key === undefined) throw "PROPERTY_KEY_INVARIANT";
+        keys.push(key);
+      }
+  } else for (const [key, descriptor] of object.properties) keys.push(key);
   const elements = object.internalArrayElements;
   if (elements !== undefined) {
     // Packed indices precede every map key, which holds no array index.

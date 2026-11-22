@@ -623,9 +623,6 @@ export function dataflowRecordGuards(
           set(index, layoutOf(op.value));
         }
       } else if (op.kind === "record-new") define(op.id, op.record + 1, 0, 0);
-      // A present cached property cell has the layout the runtime stores.
-      else if (op.kind === "property-cell")
-        define(op.id, op.cellRecord + 1, 0, 0);
       else if (op.kind === "reference-value" || op.kind === "reference-wrap") {
         if (stamps[op.value] === generation)
           define(

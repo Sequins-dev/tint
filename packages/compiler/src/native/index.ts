@@ -217,12 +217,11 @@ export interface NativeRecordBinding {
   readonly module: string;
   readonly name: string;
   readonly operation: RecordOperation;
-  /** slot-read and property-cell: the first slot field's name and the slot
-   * count; field-word: the field's name. */
+  /** slot-read and the property cache operations: the first slot field's
+   * name and the slot count; field-word: the field's name. */
   readonly field?: string;
   readonly count?: number;
-  /** property-cell: the prototype field and the site's first cache field. */
-  readonly prototypeField?: string;
+  /** Property cache operations: the site's first cache field. */
   readonly siteField?: string;
 }
 /** Opaque managed weak storage is available only to declared runtime exports. */
@@ -2457,7 +2456,6 @@ function lowerTypedProgram(
     operation: RecordOperation;
     field?: string | undefined;
     count?: number | undefined;
-    prototypeField?: string | undefined;
     siteField?: string | undefined;
   }[] = [];
   for (const plan of surfacePlans) {
@@ -2521,7 +2519,6 @@ function lowerTypedProgram(
       operation: binding.operation,
       field: binding.field,
       count: binding.count,
-      prototypeField: binding.prototypeField,
       siteField: binding.siteField,
     });
   }

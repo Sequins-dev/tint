@@ -81,15 +81,12 @@ test("DurationFormat metadata, defaults and property order", () => {
     "microseconds",
     "nanoseconds",
   ];
-  assert.deepEqual(
-    [...resolved.properties.keys()],
-    [
-      "locale",
-      "numberingSystem",
-      "style",
-      ...names.flatMap((name) => [name, name + "Display"]),
-    ],
-  );
+  assert.deepEqual(o.ownKeys(resolved, o.scriptPropertyKeyOrder), [
+    "locale",
+    "numberingSystem",
+    "style",
+    ...names.flatMap((name) => [name, name + "Display"]),
+  ]);
   assert.equal(r.get(resolved, "style"), "short");
   for (const name of names) {
     assert.equal(r.get(resolved, name), "short");

@@ -15,6 +15,8 @@ import {
   deleteProperty,
   setPrototype,
   lookupCachedScriptProperty,
+  cachedScriptPropertyValue,
+  storeCachedScriptProperty,
   type ScriptPropertyCache,
   type ObjectHooks,
   type OrdinaryObject,
@@ -128,75 +130,149 @@ export function viewObjectValue(
   throw "UNBOUND_OBJECT_VIEW";
 }
 
-/** In-place cell `index` of a Script object's shape (internalSlot0..7). */
-export function readPropertySlot(
+/** In-place value `index` of a fast-mode Script object (internalValue0..7),
+ * as the portable bodies of the generated caches' functions read it. */
+export function readPropertyValueSlot(
   object: OrdinaryObject<ScriptPropertyKey, unknown>,
   index: number,
-): Descriptor<unknown> | undefined {
+): unknown {
   switch (index) {
     case 0:
-      return object.internalSlot0;
+      return object.internalValue0;
     case 1:
-      return object.internalSlot1;
+      return object.internalValue1;
     case 2:
-      return object.internalSlot2;
+      return object.internalValue2;
     case 3:
-      return object.internalSlot3;
+      return object.internalValue3;
     case 4:
-      return object.internalSlot4;
+      return object.internalValue4;
     case 5:
-      return object.internalSlot5;
+      return object.internalValue5;
     case 6:
-      return object.internalSlot6;
+      return object.internalValue6;
     case 7:
-      return object.internalSlot7;
+      return object.internalValue7;
+  }
+  throw "PROPERTY_SLOT_INVARIANT";
+}
+/** Store in-place value `index` of a fast-mode Script object. */
+export function writePropertyValueSlot(
+  object: OrdinaryObject<ScriptPropertyKey, unknown>,
+  index: number,
+  value: unknown,
+): void {
+  switch (index) {
+    case 0:
+      object.internalValue0 = value;
+      return;
+    case 1:
+      object.internalValue1 = value;
+      return;
+    case 2:
+      object.internalValue2 = value;
+      return;
+    case 3:
+      object.internalValue3 = value;
+      return;
+    case 4:
+      object.internalValue4 = value;
+      return;
+    case 5:
+      object.internalValue5 = value;
+      return;
+    case 6:
+      object.internalValue6 = value;
+      return;
+    case 7:
+      object.internalValue7 = value;
+      return;
   }
   throw "PROPERTY_SLOT_INVARIANT";
 }
 
-/** The word index of internalSlot0 in an ordinary object record. Native
- * code binds this to the layout's constant (field-word); unbound, cells are
- * numbered from zero, consistently for the functions below. */
+/** The word index of internalValue0 in an ordinary object record. Native
+ * code binds this to the layout's constant (field-word); unbound, value
+ * words are numbered from zero, consistently for the functions below. */
 export function propertySlotWord(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): number {
   return 0;
 }
 
-/** The cached own data cell of `value` at `site`: its shape is the site's
- * own shape, which proves the cell's kind. Undefined otherwise. Native code
- * binds this to the IR property-cell instruction. */
-export function cachedOwnPropertyCell(
+/** The value of `value`'s own data property cached at `site`: its shape is
+ * the site's own shape, which proves the property and its slot. Otherwise
+ * the site itself, which absentPropertyValue recognizes and no property
+ * holds. Native code binds this to IR property-load, whose miss is a
+ * dedicated non-value. */
+export function cachedOwnPropertyValue(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
   value: unknown,
   site: ScriptPropertyCache,
-): Descriptor<unknown> | undefined {
+): unknown {
   const object = viewObjectValue(value, witness);
   if (object === undefined || object.internalShape !== site.ownShape)
-    return undefined;
-  return readPropertySlot(
+    return site;
+  // The site's raw-bit word index, two words per value.
+  return readPropertyValueSlot(
     object,
-    site.ownSlot / Number.MIN_VALUE - propertySlotWord(witness),
+    (site.ownSlot / Number.MIN_VALUE - propertySlotWord(witness)) / 2,
   );
 }
 
-/** As cachedOwnPropertyCell, for a data cell of the receiver's immediate
- * prototype whose shape is the site's inherited holder. */
-export function cachedInheritedPropertyCell(
+/** As cachedOwnPropertyValue, for a data property of the receiver's
+ * immediate prototype: the receiver's shape implies that prototype, the
+ * site's inherited object, whose shape must be the site's holder shape. */
+export function cachedInheritedPropertyValue(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
   value: unknown,
   site: ScriptPropertyCache,
-): Descriptor<unknown> | undefined {
+): unknown {
   const object = viewObjectValue(value, witness);
   if (object === undefined || object.internalShape !== site.inheritedShape)
-    return undefined;
-  const holder = object.prototype;
+    return site;
+  const holder = site.inheritedObject;
   if (holder === undefined || holder.internalShape !== site.inheritedHolder)
-    return undefined;
-  return readPropertySlot(
+    return site;
+  return readPropertyValueSlot(
     holder,
-    site.inheritedSlot / Number.MIN_VALUE - propertySlotWord(witness),
+    (site.inheritedSlot / Number.MIN_VALUE - propertySlotWord(witness)) / 2,
   );
+}
+
+/** Whether a cached read missed. Native code binds it to the miss test of
+ * IR property-load. */
+export function absentPropertyValue(
+  value: unknown,
+  site: ScriptPropertyCache,
+): boolean {
+  return value === site;
+}
+
+/** Store `value` through the site's store cache: to the cached writable own
+ * data property, or by the cached transition that adds one (valid while no
+ * prototype changed shape since: see propertyEpoch). False when the cache
+ * does not apply. Native code binds this to IR property-store. */
+export function cachedPropertyStore(
+  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
+  target: unknown,
+  value: unknown,
+  site: ScriptPropertyCache,
+): boolean {
+  const object = viewObjectValue(target, witness);
+  if (object === undefined || object.internalShape !== site.storeShape)
+    return false;
+  const transition = site.storeTransition;
+  if (transition !== undefined) {
+    if (site.epoch.value !== site.storeEpoch) return false;
+    object.internalShape = transition;
+  }
+  writePropertyValueSlot(
+    object,
+    (site.storeSlot / Number.MIN_VALUE - propertySlotWord(witness)) / 2,
+    value,
+  );
+  return true;
 }
 
 /** Concrete host-authorized object view for weak-directory lookup. Unlike the
@@ -524,7 +600,7 @@ export function readCachedObjectValueProperty(
 ): unknown {
   const object = viewObjectValue(base, realm.objectPrototype);
   if (object !== undefined) {
-    const cell = lookupCachedScriptProperty<ScriptPropertyKey, unknown>(
+    const holder = lookupCachedScriptProperty(
       object,
       key,
       cache,
@@ -532,7 +608,7 @@ export function readCachedObjectValueProperty(
       realm.agent.propertyStubCache,
       propertySlotWord(realm.objectPrototype),
     );
-    if (cell !== undefined) return cell.value;
+    if (holder !== undefined) return cachedScriptPropertyValue(holder, cache);
   }
   return readObjectValueProperty(base, key, hooks, realm);
 }
@@ -547,20 +623,17 @@ export function writeCachedObjectValueProperty(
   cache: ScriptPropertyCache,
 ): void {
   const object = viewObjectValue(base, realm.objectPrototype);
-  if (object !== undefined) {
-    const cell = lookupCachedScriptProperty<ScriptPropertyKey, unknown>(
+  if (
+    object !== undefined &&
+    storeCachedScriptProperty(
       object,
       key,
+      value,
       cache,
-      true,
-      realm.agent.propertyStubCache,
       propertySlotWord(realm.objectPrototype),
-    );
-    if (cell !== undefined && cell.writable) {
-      cell.value = value;
-      return;
-    }
-  }
+    )
+  )
+    return;
   throwIfRuntimeError(
     realm,
     setObjectValueProperty(base, key, value, strict, hooks, realm),

@@ -130,7 +130,10 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "general-record-is":
     case "general-value":
     case "record-slot-read":
-    case "property-cell":
+    case "property-load":
+    // A cached property store is a nonallocating, nonthrowing inline
+    // sequence; its write keeps heap effects (see instructionEffects).
+    case "property-store":
       return true;
     case "reference-none":
     case "reference-wrap":
@@ -288,7 +291,10 @@ export function inlineSmallFunctions(
         (fn.returnType === "void" ||
           scalar(fn.returnType) ||
           fn.returnType === "reference" ||
-          fn.returnType === "optional-reference"),
+          fn.returnType === "optional-reference" ||
+          // A straight-line general result (such as a bound property
+          // cache read) needs only the caller's general result slot.
+          (fn.returnType === "general" && fn.blocks.length === 1)),
       // Charge actual expansion work: instructions, terminators, parameter
       // copies and the result slot. Empty jump/trap blocks do not need a
       // separate size heuristic that excludes otherwise small helpers.
@@ -945,11 +951,23 @@ export function inlineSmallFunctions(
                   inline: at.inline,
                 });
                 break;
-              case "property-cell":
+              case "property-load":
                 cloned.push({
                   ...instruction,
                   id: value(instruction.id),
                   object: value(instruction.object),
+                  site: value(instruction.site),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "property-store":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  object: value(instruction.object),
+                  value: value(instruction.value),
                   site: value(instruction.site),
                   start: at.start,
                   end: at.end,

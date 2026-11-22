@@ -18,8 +18,9 @@ function transparent(op: Instruction): boolean {
     op.kind === "record-read" ||
     // A slot read uses x9, x10, x12 and d0/d1 only.
     op.kind === "record-slot-read" ||
-    // An own property cell uses x9..x12 only (an inherited one x13, x14).
-    (op.kind === "property-cell" && !op.inherited) ||
+    // An own cached property load uses x9..x13 only (an inherited one
+    // also x14), none of them a temporary home.
+    (op.kind === "property-load" && !op.inherited) ||
     op.kind === "record-has" ||
     op.kind === "reference-vector-is" ||
     op.kind === "reference-vector-length" ||

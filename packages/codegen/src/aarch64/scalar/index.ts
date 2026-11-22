@@ -94,6 +94,7 @@ export type {
 } from "./debug-variables.ts";
 import { forwardRegisterRoundTrips } from "./register-moves.ts";
 import { fallsThrough, forwardableEntries } from "./block-entries.ts";
+import { fusedPropertyAccesses } from "../../scalar/property-fusion.ts";
 import {
   createWordBuffer,
   appendWord,
@@ -2620,6 +2621,26 @@ function emitModuleForms(
   /** Copy storage bits without crossing register banks. This is a bitwise move,
    * including references, signed zero and NaN payloads; register eligibility and
    * GC visibility remain entirely the existing allocation planner's decision. */
+  /** Copy a two-word value: one LDP/STP pair when all four words are frame
+   * memory, else word by word. */
+  function copyGeneralPair(source: number, target: number): void {
+    if (source === target) return;
+    const homes = scalarRegisters;
+    if (
+      source <= 504 &&
+      target <= 504 &&
+      (homes?.[source / 8] ?? 0) === 0 &&
+      (homes?.[source / 8 + 1] ?? 0) === 0 &&
+      (homes?.[target / 8] ?? 0) === 0 &&
+      (homes?.[target / 8 + 1] ?? 0) === 0
+    ) {
+      generalPair(9, source, true);
+      generalPair(9, target, false);
+      return;
+    }
+    copyRawWord(source, target);
+    copyRawWord(source + 8, target + 8);
+  }
   function copyRawWord(source: number, target: number): void {
     if (source === target) return;
     const registers = scalarRegisters,
@@ -4586,9 +4607,13 @@ function emitModuleForms(
                 type = field.type;
                 break;
               }
-              case "property-cell":
+              case "property-load":
                 id = op.id;
-                type = "optional-reference";
+                type = "general";
+                break;
+              case "property-store":
+                id = op.id;
+                type = "boolean";
                 break;
               case "error-is":
               case "general-equal":
@@ -8296,6 +8321,11 @@ function emitModuleForms(
           const exception = block.exception;
           if (exception !== undefined) viewEntries.set(exception.target, -1);
         }
+        // Cached property misses branch to their block's slow successor
+        // directly (not with C view tokens, which follow block ends).
+        const fusedAccesses = viewAccesses
+          ? undefined
+          : fusedPropertyAccesses(fn);
         /** The token of Uint8Array value `id` (fresh when unknown). */
         function viewValueToken(id: number): number {
           const known = viewValueTokens.get(id);
@@ -8478,6 +8508,7 @@ function emitModuleForms(
               comparisonValue = finalInstruction.id;
           }
           let comparisonBranch: Condition | undefined = undefined;
+          const fusion = fusedAccesses?.get(b.id);
           for (
             let operationIndex = 0;
             operationIndex < b.instructions.length;
@@ -8791,6 +8822,37 @@ function emitModuleForms(
                 break;
               }
               case "general-is": {
+                if (op.type === "absent") {
+                  // property-load's miss: undefined's tag with payload 1. A
+                  // fused test is the load's own miss branches.
+                  if (fusion !== undefined && fusion.test === op.id) break;
+                  rawValue(9, op.value);
+                  rawLoad(10, value(op.value).offset + 8);
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  emit({
+                    op: "ccmp-imm",
+                    width: 64,
+                    rn: 10,
+                    immediate: 1,
+                    nzcv: 0,
+                    condition: "eq",
+                  });
+                  if (op.id === comparisonValue) comparisonBranch = "eq";
+                  else {
+                    const target = rawTarget(op.id, 12);
+                    emit({ op: "cset", rd: target, condition: "eq" });
+                    saveRaw(target, op.id);
+                  }
+                  break;
+                }
                 const tag =
                   op.type === "undefined"
                     ? 0
@@ -10434,26 +10496,50 @@ function emitModuleForms(
                   }
                 break;
               }
-              case "property-cell": {
+              case "property-load":
+              case "property-store": {
                 const fields = module.records?.[op.record]?.fields,
                   siteFields = module.records?.[op.siteRecord]?.fields;
                 const shapeField = fields?.[0],
-                  prototypeField = fields?.[op.prototypeField],
-                  siteShape = siteFields?.[op.siteField],
-                  siteHolder = siteFields?.[op.siteField + 2];
+                  siteShape = siteFields?.[op.siteField];
                 if (
                   shapeField === undefined ||
-                  prototypeField === undefined ||
                   siteShape === undefined ||
-                  (op.inherited && siteHolder === undefined) ||
-                  siteShape.offset > 504
+                  siteShape.offset > 472
                 )
-                  throw "property cell layout invariant";
-                // The receiver's first word against the site's shape, then the
-                // cell at the site's raw word index (verified field layout).
-                // An own cell uses x9..x12 only; the site is dead after the
-                // pair load, so x10 takes the receiver's shape.
-                rawValue(9, op.object);
+                  throw "property cache layout invariant";
+                // A fused miss leaves for the block's slow successor; an
+                // unfused one produces the absent value (loads) or false.
+                const fusedMiss =
+                  fusion !== undefined && fusion.access === op.id
+                    ? fusion.miss
+                    : undefined;
+                const misses: number[] = [];
+                function miss(): void {
+                  if (fusedMiss !== undefined)
+                    branch({ op: "b.cond", condition: "ne" }, fn.id, fusedMiss);
+                  else {
+                    misses.push(instructions.length);
+                    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                  }
+                }
+                function compare(left: number, right: number): void {
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: left,
+                    rm: right,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  miss();
+                }
+                // The receiver's tag (x9) and payload (x10), then its first
+                // word against the site's shape (x12; the verified site layout
+                // pairs it with the word index, x13).
+                generalPair(9, value(op.object).offset, true);
                 emit({
                   op: "sub-imm",
                   width: 64,
@@ -10463,122 +10549,189 @@ function emitModuleForms(
                   shift: 0,
                   setFlags: true,
                 });
-                const tagMiss = instructions.length;
-                emit({ op: "b.cond", condition: "ne", displacement: 0 });
-                const object: number = 9;
-                rawLoad(object, value(op.object).offset + 8);
-                const site = rawRegister(op.site, 10);
+                miss();
+                const site = rawRegister(op.site, 11);
                 emit({
                   op: "ldp",
                   width: 64,
-                  rt: 11,
-                  rt2: 12,
+                  rt: 12,
+                  rt2: 13,
                   rn: site,
                   offset: siteShape.offset,
                   mode: "offset",
                 });
-                const receiverShape = op.inherited ? 13 : 10;
                 emit({
                   op: "ldr",
                   width: 64,
-                  rt: receiverShape,
-                  rn: object,
+                  rt: 9,
+                  rn: 10,
                   offset: shapeField.offset,
                 });
-                emit({
-                  op: "sub-reg",
-                  width: 64,
-                  rd: "zr",
-                  rn: receiverShape,
-                  rm: 11,
-                  shift: "lsl",
-                  amount: 0,
-                  setFlags: true,
-                });
-                const receiverMiss = instructions.length;
-                emit({ op: "b.cond", condition: "ne", displacement: 0 });
-                let holder: number = object,
-                  holderMiss: number = -1;
-                if (op.inherited) {
-                  if (siteHolder === undefined)
-                    throw "property cell layout invariant";
-                  // A matching receiver shape names its prototype (shapes
-                  // grow from the prototype's root), which holds the
-                  // property when its first word is the site's holder shape.
+                compare(9, 12);
+                if (op.kind === "property-load") {
+                  let holder = 10;
+                  if (op.inherited) {
+                    // The receiver's shape implies its prototype, the site's
+                    // holder, when the holder still has the site's shape.
+                    emit({
+                      op: "ldp",
+                      width: 64,
+                      rt: 14,
+                      rt2: 12,
+                      rn: site,
+                      offset: siteShape.offset + 16,
+                      mode: "offset",
+                    });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 9,
+                      rn: 14,
+                      offset: shapeField.offset,
+                    });
+                    compare(9, 12);
+                    holder = 14;
+                  }
                   emit({
-                    op: "ldr",
+                    op: "add-reg",
                     width: 64,
-                    rt: 14,
-                    rn: object,
-                    offset: prototypeField.offset,
-                  });
-                  emit({
-                    op: "ldr",
-                    width: 64,
-                    rt: 11,
-                    rn: site,
-                    offset: siteHolder.offset,
-                  });
-                  emit({
-                    op: "ldr",
-                    width: 64,
-                    rt: 13,
-                    rn: 14,
-                    offset: shapeField.offset,
-                  });
-                  emit({
-                    op: "sub-reg",
-                    width: 64,
-                    rd: "zr",
-                    rn: 13,
-                    rm: 11,
+                    rd: 9,
+                    rn: holder,
+                    rm: 13,
                     shift: "lsl",
-                    amount: 0,
-                    setFlags: true,
+                    amount: 3,
+                    setFlags: false,
                   });
-                  holderMiss = instructions.length;
-                  emit({ op: "b.cond", condition: "ne", displacement: 0 });
-                  holder = 14;
+                  const offset = value(op.id).offset,
+                    tagHome = scalarRegisters?.[offset / 8] ?? 0,
+                    payloadHome = scalarRegisters?.[offset / 8 + 1] ?? 0;
+                  if (tagHome >= 32 && payloadHome >= 32)
+                    emit({
+                      op: "ldp",
+                      width: 64,
+                      rt: tagHome - 32,
+                      rt2: payloadHome - 32,
+                      rn: 9,
+                      offset: 0,
+                      mode: "offset",
+                    });
+                  else {
+                    emit({
+                      op: "ldp",
+                      width: 64,
+                      rt: 9,
+                      rt2: 10,
+                      rn: 9,
+                      offset: 0,
+                      mode: "offset",
+                    });
+                    generalPair(9, offset, false);
+                  }
+                  if (fusedMiss !== undefined) break;
+                  const hit = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  for (const site of misses)
+                    patchInstruction(site, {
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  // The absent value: undefined's tag with payload 1.
+                  emit({ op: "orr-reg", width: 64, rd: 9, rn: "zr", rm: "zr" });
+                  imm(10, 1);
+                  generalPair(9, offset, false);
+                  patchInstruction(hit, {
+                    op: "b",
+                    displacement: (instructions.length - hit) * 4,
+                  });
+                  break;
                 }
-                const target = rawTarget(op.id, 11);
+                const epochField =
+                  module.records?.[op.epochRecord]?.fields[op.epochField];
+                if (epochField === undefined)
+                  throw "property cache layout invariant";
+                // A transition (x14) also needs the epoch it was found under
+                // (x9) to be current.
                 emit({
-                  op: "ldr-indexed",
-                  size: 3,
-                  fp: false,
-                  rt: target,
-                  rn: holder,
-                  rm: 12,
-                  scaled: true,
+                  op: "ldp",
+                  width: 64,
+                  rt: 14,
+                  rt2: 9,
+                  rn: site,
+                  offset: siteShape.offset + 16,
+                  mode: "offset",
                 });
-                const hit = instructions.length;
+                const existing = instructions.length;
+                emit({ op: "cbz", width: 64, rt: 14, displacement: 0 });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 15,
+                  rn: site,
+                  offset: siteShape.offset + 32,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 15,
+                  rn: 15,
+                  offset: epochField.offset,
+                });
+                compare(15, 9);
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: 14,
+                  rn: 10,
+                  offset: shapeField.offset,
+                });
+                patchInstruction(existing, {
+                  op: "cbz",
+                  width: 64,
+                  rt: 14,
+                  displacement: (instructions.length - existing) * 4,
+                });
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 13,
+                  rn: 10,
+                  rm: 13,
+                  shift: "lsl",
+                  amount: 3,
+                  setFlags: false,
+                });
+                generalPair(14, value(op.value).offset, true);
+                emit({
+                  op: "stp",
+                  width: 64,
+                  rt: 14,
+                  rt2: 15,
+                  rn: 13,
+                  offset: 0,
+                  mode: "offset",
+                });
+                if (generationalBarriers) {
+                  // An old object may now refer to a young value or shape.
+                  emit({ op: "orr-reg", width: 64, rd: 9, rn: "zr", rm: 10 });
+                  rawLoad(10, contextOffset);
+                  rememberObject();
+                }
+                if (fusedMiss !== undefined) break;
+                const target = rawTarget(op.id, 12);
+                imm(target, 1);
+                const stored = instructions.length;
                 emit({ op: "b", displacement: 0 });
-                const none = instructions.length;
-                patchInstruction(tagMiss, {
-                  op: "b.cond",
-                  condition: "ne",
-                  displacement: (none - tagMiss) * 4,
-                });
-                patchInstruction(receiverMiss, {
-                  op: "b.cond",
-                  condition: "ne",
-                  displacement: (none - receiverMiss) * 4,
-                });
-                if (holderMiss >= 0)
-                  patchInstruction(holderMiss, {
+                for (const site of misses)
+                  patchInstruction(site, {
                     op: "b.cond",
                     condition: "ne",
-                    displacement: (none - holderMiss) * 4,
+                    displacement: (instructions.length - site) * 4,
                   });
-                emit({
-                  op: "orr-reg",
-                  width: 64,
-                  rd: target,
-                  rn: "zr",
-                  rm: "zr",
-                });
-                patchInstruction(hit, {
+                imm(target, 0);
+                patchInstruction(stored, {
                   op: "b",
-                  displacement: (instructions.length - hit) * 4,
+                  displacement: (instructions.length - stored) * 4,
                 });
                 saveRaw(target, op.id);
                 break;
@@ -14628,6 +14781,12 @@ function emitModuleForms(
                   tracker.saved(op.id, instructions.length * 4);
                 break;
               case "store":
+                // A copy only a fused miss test would read.
+                if (
+                  fusion !== undefined &&
+                  fusion.skipped.indexOf(operationIndex) >= 0
+                )
+                  break;
                 if (integerSlots[op.slot] === 1) {
                   const constant = deferredIntegers.get(op.value);
                   if (constant !== undefined)
@@ -14640,16 +14799,14 @@ function emitModuleForms(
                   }
                   break;
                 }
-                copyRawWord(value(op.value).offset, slotOffset(op.slot));
                 if (
                   value(op.value).type === "general" ||
                   value(op.value).type === "optional-boolean"
                 ) {
-                  copyRawWord(
-                    value(op.value).offset + 8,
-                    slotOffset(op.slot) + 8,
-                  );
+                  copyGeneralPair(value(op.value).offset, slotOffset(op.slot));
+                  break;
                 }
+                copyRawWord(value(op.value).offset, slotOffset(op.slot));
                 break;
               case "unary": {
                 if (
@@ -16499,6 +16656,14 @@ function emitModuleForms(
             exceptionalBranch({ op: "b" });
           } else if (t.kind === "jump") {
             if (t.target !== nextBlock) branch({ op: "b" }, fn.id, t.target);
+          } else if (
+            t.kind === "branch" &&
+            fusion !== undefined &&
+            fusion.test !== undefined
+          ) {
+            // The access branched to its miss successor already.
+            if (fusion.hit !== nextBlock)
+              branch({ op: "b" }, fn.id, fusion.hit);
           } else if (t.kind === "branch") {
             if (comparisonBranch !== undefined) {
               if (t.consequent === nextBlock)

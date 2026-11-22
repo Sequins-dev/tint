@@ -207,6 +207,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/scalar/property-fusion.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/scalar/signature.ts",
       packageId: "codegen",
     },

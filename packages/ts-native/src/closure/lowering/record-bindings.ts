@@ -1,6 +1,7 @@
 import type {
   FunctionDebug,
   FunctionIR,
+  Instruction,
   SlotBinding,
   Block,
   ScalarType,
@@ -23,21 +24,26 @@ export type RecordOperation =
   /** `(record: T, view: unknown): void`: store the view (ignored for a
    * record of another layout). */
   | "set-view-slot"
-  /** `(witness: T, value: unknown, site: S): C | undefined`: the cached own
-   * (or inherited) property cell of an object value (IR property-cell). */
-  | "property-cell"
-  | "inherited-property-cell"
+  /** `(witness: T, value: unknown, site: S): unknown`: the cached own (or
+   * inherited) property value of an object value, or a miss (IR
+   * property-load). */
+  | "property-load"
+  | "inherited-property-load"
+  /** `(value: unknown, site: S): boolean`: whether a property-load missed
+   * (IR general-is "absent"). */
+  | "absent-test"
+  /** `(witness: T, target: unknown, value: unknown, site: S): boolean`: a
+   * cached property store (IR property-store). */
+  | "property-store"
   /** `(witness: T): number`: the word index of a named field of T. */
   | "field-word";
 
-/** The record fields a property-cell binding reads (see the IR
- * instruction). */
-export interface PropertyCellLayout {
+/** The record fields a property cache binding reads (see the IR
+ * instructions property-load and property-store). */
+export interface PropertyCacheLayout {
   readonly record: number;
   readonly field: number;
   readonly count: number;
-  readonly cellRecord: number;
-  readonly prototypeField: number;
   readonly siteRecord: number;
   readonly siteField: number;
 }
@@ -71,15 +77,27 @@ function parameterDebug(
     inlineSites: debug.inlineSites,
   };
 }
-/** The body of a property-cell binding: its value and site parameters. */
-export function bindPropertyCell(
+/** A bound body of one instruction over its parameters. */
+function boundBody(
   fn: FunctionIR,
-  value: number,
-  site: number,
-  layout: PropertyCellLayout,
-  inherited: boolean,
+  parameters: readonly number[],
+  instruction: (loaded: readonly number[]) => Instruction,
   span: Span,
 ): FunctionIR {
+  const instructions: Instruction[] = [];
+  const loaded: number[] = [];
+  for (const slot of parameters) {
+    loaded.push(instructions.length);
+    instructions.push({
+      start: span.start,
+      end: span.end,
+      kind: "load",
+      id: instructions.length,
+      slot,
+    });
+  }
+  const result = instruction(loaded);
+  instructions.push(result);
   return {
     ...fn,
     slots: parameterSlots(fn),
@@ -90,29 +108,94 @@ export function bindPropertyCell(
     blocks: [
       {
         id: 0,
-        instructions: [
-          { ...span, kind: "load", id: 0, slot: value },
-          { ...span, kind: "load", id: 1, slot: site },
-          {
-            ...span,
-            kind: "property-cell",
-            id: 2,
-            object: 0,
-            site: 1,
-            record: layout.record,
-            field: layout.field,
-            count: layout.count,
-            cellRecord: layout.cellRecord,
-            prototypeField: layout.prototypeField,
-            siteRecord: layout.siteRecord,
-            siteField: layout.siteField,
-            inherited,
-          },
-        ],
-        terminator: { ...span, kind: "return", value: 2 },
+        instructions,
+        terminator: { ...span, kind: "return", value: loaded.length },
       },
     ],
   };
+}
+/** The body of a property-load binding: its value and site parameters. */
+export function bindPropertyLoad(
+  fn: FunctionIR,
+  value: number,
+  site: number,
+  layout: PropertyCacheLayout,
+  inherited: boolean,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [value, site],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "property-load",
+      id: loaded.length,
+      object: loaded[0] ?? -1,
+      site: loaded[1] ?? -1,
+      record: layout.record,
+      field: layout.field,
+      count: layout.count,
+      siteRecord: layout.siteRecord,
+      siteField: layout.siteField,
+      inherited,
+    }),
+    span,
+  );
+}
+/** The body of an absent-test binding: its value parameter's miss test. */
+export function bindAbsentTest(
+  fn: FunctionIR,
+  value: number,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [value],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "general-is",
+      id: loaded.length,
+      value: loaded[0] ?? -1,
+      type: "absent",
+    }),
+    span,
+  );
+}
+/** The body of a property-store binding: its target, value and site
+ * parameters, and the epoch record the site's transition entry names. */
+export function bindPropertyStore(
+  fn: FunctionIR,
+  target: number,
+  value: number,
+  site: number,
+  layout: PropertyCacheLayout,
+  epochRecord: number,
+  epochField: number,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [target, value, site],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "property-store",
+      id: loaded.length,
+      object: loaded[0] ?? -1,
+      value: loaded[1] ?? -1,
+      site: loaded[2] ?? -1,
+      record: layout.record,
+      field: layout.field,
+      count: layout.count,
+      siteRecord: layout.siteRecord,
+      siteField: layout.siteField,
+      epochRecord,
+      epochField,
+    }),
+    span,
+  );
 }
 /** The body of a field-word binding: one constant. */
 export function bindFieldWord(

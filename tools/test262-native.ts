@@ -28,8 +28,8 @@ import { parseModule, parseScript } from "@tint/typescript/syntax";
 import {
   lowerScript,
   lowerSourceTextModule,
-  propertyCellBindings,
-  propertyCellNames,
+  propertyCacheBindings,
+  propertyCacheNames,
 } from "@tint/js-engine/lowering";
 import { createSourceTextView } from "@tint/source/text";
 import {
@@ -3482,7 +3482,7 @@ function createNativeImageRequest(
             "viewObjectValue",
             "viewSymbolValue",
             "viewBigIntValue",
-            ...propertyCellNames,
+            ...propertyCacheNames,
             ...intlFormatViewNames,
             ...(finalizationRegistry ? ["viewWeakRegistryOwner"] : []),
           ],
@@ -3536,8 +3536,9 @@ function createNativeImageRequest(
         { module: objectModule, name: "viewObjectValue", operation: "view" },
         { module: objectModule, name: "viewSymbolValue", operation: "view" },
         { module: objectModule, name: "viewBigIntValue", operation: "view" },
-        // Generated property caches compare shapes and load cells inline.
-        ...propertyCellBindings(objectModule),
+        // Generated property caches compare shapes and load and store
+        // values inline.
+        ...propertyCacheBindings(objectModule),
         ...intlFormatRecordBindings(objectModule),
         ...(finalizationRegistry
           ? [

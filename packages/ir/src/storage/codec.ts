@@ -311,6 +311,7 @@ const generalTests: readonly GeneralTest[] = [
   "Float64Array",
   "object",
   "nullish",
+  "absent",
 ];
 export function encodeInstruction(
   writer: ByteWriter,
@@ -465,7 +466,7 @@ export function encodeInstruction(
       writeSigned(writer, op.count);
       writeSigned(writer, op.index);
       return true;
-    case "property-cell":
+    case "property-load":
       writePrefix(writer, 86, op, bit(op.inherited, 2));
       writeSigned(writer, op.id);
       writeSigned(writer, op.object);
@@ -473,10 +474,22 @@ export function encodeInstruction(
       writeSigned(writer, op.record);
       writeSigned(writer, op.field);
       writeSigned(writer, op.count);
-      writeSigned(writer, op.cellRecord);
-      writeSigned(writer, op.prototypeField);
       writeSigned(writer, op.siteRecord);
       writeSigned(writer, op.siteField);
+      return true;
+    case "property-store":
+      writePrefix(writer, 87, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.object);
+      writeSigned(writer, op.value);
+      writeSigned(writer, op.site);
+      writeSigned(writer, op.record);
+      writeSigned(writer, op.field);
+      writeSigned(writer, op.count);
+      writeSigned(writer, op.siteRecord);
+      writeSigned(writer, op.siteField);
+      writeSigned(writer, op.epochRecord);
+      writeSigned(writer, op.epochField);
       return true;
     case "closure-environment":
       writePrefix(writer, 21, op, 0);
@@ -1339,23 +1352,47 @@ export function decodeInstruction(
         record = readSigned(reader),
         field = readSigned(reader),
         count = readSigned(reader),
-        cellRecord = readSigned(reader),
-        prototypeField = readSigned(reader),
         siteRecord = readSigned(reader),
         siteField = readSigned(reader);
       return {
-        kind: "property-cell",
+        kind: "property-load",
         id,
         object,
         site,
         record,
         field,
         count,
-        cellRecord,
-        prototypeField,
         siteRecord,
         siteField,
         inherited: flagged(flags, 2),
+        ...span,
+      };
+    }
+    case 87: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        value = readSigned(reader),
+        site = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        count = readSigned(reader),
+        siteRecord = readSigned(reader),
+        siteField = readSigned(reader),
+        epochRecord = readSigned(reader),
+        epochField = readSigned(reader);
+      return {
+        kind: "property-store",
+        id,
+        object,
+        value,
+        site,
+        record,
+        field,
+        count,
+        siteRecord,
+        siteField,
+        epochRecord,
+        epochField,
         ...span,
       };
     }

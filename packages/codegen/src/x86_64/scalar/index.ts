@@ -2531,53 +2531,80 @@ export function emitModule(
           types.set(op.id, field.type);
           return;
         }
-        case "property-cell": {
+        case "property-load":
+        case "property-store": {
           // See the AArch64 emission: the receiver's first word against the
-          // site's shape, then the cell at the site's raw word index.
+          // site's shape, then the value at the site's raw word index.
           const shape = recordField(op.record, 0),
-            prototype = recordField(op.record, op.prototypeField),
             siteShape = recordField(op.siteRecord, op.siteField),
             siteSlot = recordField(op.siteRecord, op.siteField + 1);
-          const site = fnLabel + ":property-cell:" + String(op.id);
-          const none = site + ":none",
+          const site = fnLabel + ":" + op.kind + ":" + String(op.id);
+          const missed = site + ":miss",
             done = site + ":done";
           emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
-          branch(emit, "ne", none);
+          branch(emit, "ne", missed);
           emit({ op: "mov", dst: r9, src: frame(home(op.object) + 8) });
           emit({ op: "mov", dst: gpr(10), src: frame(home(op.site)) });
           emit({ op: "mov", dst: rax, src: mem(9, shape.offset) });
           emit({ op: "cmp", dst: rax, src: mem(10, siteShape.offset) });
-          branch(emit, "ne", none);
+          branch(emit, "ne", missed);
           let holder: number = 9;
-          if (op.inherited) {
-            const siteHolder = recordField(op.siteRecord, op.siteField + 2);
-            emit({ op: "mov", dst: scratch, src: mem(9, prototype.offset) });
-            emit({ op: "mov", dst: rax, src: mem(11, shape.offset) });
-            emit({ op: "cmp", dst: rax, src: mem(10, siteHolder.offset) });
-            branch(emit, "ne", none);
+          if (op.kind === "property-load" && op.inherited) {
+            const siteObject = recordField(op.siteRecord, op.siteField + 2),
+              siteHolder = recordField(op.siteRecord, op.siteField + 3);
+            emit({ op: "mov", dst: scratch, src: mem(10, siteObject.offset) });
+            emit({ op: "mov", dst: r9, src: mem(11, shape.offset) });
+            emit({ op: "cmp", dst: r9, src: mem(10, siteHolder.offset) });
+            branch(emit, "ne", missed);
             holder = 11;
           }
+          if (op.kind === "property-store") {
+            const transition = recordField(op.siteRecord, op.siteField + 2),
+              epoch = recordField(op.siteRecord, op.siteField + 3),
+              epochRecord = recordField(op.siteRecord, op.siteField + 4),
+              current = recordField(op.epochRecord, op.epochField);
+            const existing = site + ":existing";
+            emit({ op: "mov", dst: scratch, src: mem(10, transition.offset) });
+            emit({ op: "test", dst: scratch, src: scratch });
+            branch(emit, "e", existing);
+            emit({ op: "mov", dst: rax, src: mem(10, epochRecord.offset) });
+            emit({ op: "mov", dst: rax, src: mem(0, current.offset) });
+            emit({ op: "cmp", dst: rax, src: mem(10, epoch.offset) });
+            branch(emit, "ne", missed);
+            emit({ op: "mov", dst: mem(9, shape.offset), src: scratch });
+            emit({ op: "label", name: existing });
+          }
           emit({ op: "mov", dst: rax, src: mem(10, siteSlot.offset) });
-          emit({
-            op: "mov",
-            dst: rax,
-            src: {
-              kind: "mem",
-              width: 64,
-              address: {
-                kind: "base",
-                base: holder,
-                index: 0,
-                scale: 8,
-                disp: 0,
-              },
-            },
+          const word = (disp: number): Memory<64> => ({
+            kind: "mem",
+            width: 64,
+            address: { kind: "base", base: holder, index: 0, scale: 8, disp },
           });
+          if (op.kind === "property-load") {
+            emit({ op: "mov", dst: gpr(10), src: word(8) });
+            emit({ op: "mov", dst: frame(home(op.id) + 8), src: gpr(10) });
+            emit({ op: "mov", dst: rax, src: word(0) });
+            emit({ op: "jmp", target: label(done) });
+            emit({ op: "label", name: missed });
+            // The absent value: undefined's tag with payload 1.
+            emit({ op: "mov", dst: frame(home(op.id) + 8), src: imm(1) });
+            emit({ op: "xor", dst: eax, src: eax });
+            emit({ op: "label", name: done });
+            define(op.id, "general");
+            return;
+          }
+          emit({ op: "mov", dst: scratch, src: frame(home(op.value)) });
+          emit({ op: "mov", dst: word(0), src: scratch });
+          emit({ op: "mov", dst: scratch, src: frame(home(op.value) + 8) });
+          emit({ op: "mov", dst: word(8), src: scratch });
+          // An old object may now refer to a young value or shape.
+          remember();
+          emit({ op: "mov", dst: eax, src: imm(1) });
           emit({ op: "jmp", target: label(done) });
-          emit({ op: "label", name: none });
+          emit({ op: "label", name: missed });
           emit({ op: "xor", dst: eax, src: eax });
           emit({ op: "label", name: done });
-          define(op.id, "optional-reference");
+          define(op.id, "boolean");
           return;
         }
         case "record-has": {
@@ -2889,6 +2916,18 @@ export function emitModule(
           return;
         case "general-is": {
           const type = op.type;
+          if (type === "absent") {
+            // property-load's miss: undefined's tag with payload 1.
+            const done = fnLabel + ":absent:" + String(op.id);
+            emit({ op: "xor", dst: eax, src: eax });
+            emit({ op: "cmp", dst: frame(home(op.value)), src: imm(0) });
+            branch(emit, "ne", done);
+            emit({ op: "cmp", dst: frame(home(op.value) + 8), src: imm(1) });
+            setBoolean(emit, "e", 0);
+            emit({ op: "label", name: done });
+            define(op.id, "boolean");
+            return;
+          }
           if (type === "nullish") {
             // Clear the only bit that differs between the two nullish tags.
             emit({ op: "mov", dst: r9, src: frame(home(op.value)) });

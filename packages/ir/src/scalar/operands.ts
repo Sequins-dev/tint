@@ -70,8 +70,13 @@ export function visitInstructionOperands(
       visit(op.object);
       visit(op.index);
       return;
-    case "property-cell":
+    case "property-load":
       visit(op.object);
+      visit(op.site);
+      return;
+    case "property-store":
+      visit(op.object);
+      visit(op.value);
       visit(op.site);
       return;
     case "function-new":

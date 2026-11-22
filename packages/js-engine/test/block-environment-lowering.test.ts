@@ -1220,21 +1220,69 @@ test("polymorphic sites keep receivers and follow a replaced prototype", () => {
   ]);
 });
 
-test("a named load reads the receiver's cell and a method call the prototype's, then the receiver's", () => {
+test("a named load reads the receiver's value, a method call the prototype's, then the receiver's, and a named store uses the store cache", () => {
   const read = "function read(object) { return object.value; }",
-    call = "function call(object) { return object.method(1); }";
-  assert.equal(runtimeCalls(read, "cachedOwnPropertyCell"), 1);
-  assert.equal(runtimeCalls(read, "cachedInheritedPropertyCell"), 0);
-  assert.equal(runtimeCalls(call, "cachedInheritedPropertyCell"), 1);
-  assert.equal(runtimeCalls(call, "cachedOwnPropertyCell"), 1);
+    call = "function call(object) { return object.method(1); }",
+    write = "function write(object) { object.value = 1; }";
+  assert.equal(runtimeCalls(read, "cachedOwnPropertyValue"), 1);
+  assert.equal(runtimeCalls(read, "cachedInheritedPropertyValue"), 0);
+  assert.equal(runtimeCalls(read, "absentPropertyValue"), 1);
+  assert.equal(runtimeCalls(call, "cachedInheritedPropertyValue"), 1);
+  assert.equal(runtimeCalls(call, "cachedOwnPropertyValue"), 1);
+  assert.equal(runtimeCalls(call, "absentPropertyValue"), 2);
+  assert.equal(runtimeCalls(write, "cachedPropertyStore"), 1);
+  assert.equal(runtimeCalls(write, "writeCachedObjectValueProperty"), 1);
   // Optional chains read callees as methods too.
   assert.equal(
     runtimeCalls(
       "function call(object) { return object?.a.method(); }",
-      "cachedInheritedPropertyCell",
+      "cachedInheritedPropertyValue",
     ),
     1,
   );
+});
+
+test("cached stores add properties through transitions and respect prototype changes", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+    function Point(x, y) { this.x = x; this.y = y; }
+    function make(i) { return new Point(i, i + 1); }
+    const points = [];
+    for (let i = 0; i < 4; i++) points.push(make(i));
+    print(String(points[3].x + points[3].y));
+    print(Object.keys(points[2]).join());
+    // A setter on the prototype chain takes the ordinary path.
+    let seen = 0;
+    Object.defineProperty(Point.prototype, "y", { set(v) { seen = v; }, configurable: true });
+    const p = make(10);
+    print(String(p.y) + " " + String(seen) + " " + String(Object.keys(p).join()));
+    // A read-only inherited property rejects the store.
+    delete Point.prototype.y;
+    Object.defineProperty(Point.prototype, "x", { value: 0, writable: false, configurable: true });
+    const q = make(20);
+    print(String(q.x) + " " + Object.keys(q).join());
+    // Frozen objects reject writes; non-extensible ones reject additions.
+    delete Point.prototype.x;
+    const r = make(30);
+    Object.freeze(r);
+    function set(o) { o.x = 99; o.z = 1; }
+    set(r);
+    print(String(r.x) + " " + String(r.z));
+    const s = make(40);
+    set(s); set(s);
+    print(String(s.x) + " " + String(s.z) + " " + Object.keys(s).join());
+  `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "7",
+    "x,y",
+    "undefined 11 x",
+    "0 y",
+    "30 undefined",
+    "99 1 x,y,z",
+  ]);
 });
 
 test("multi-level cached prototype reads follow intermediate changes", () => {

@@ -1,12 +1,15 @@
 // Generated property caches compare the receiver's shared shape (per-
 // prototype transition trees), and for method calls the prototype's, with
-// the site's inline entry and load the cached cell in place (IR
-// property-cell natively). These sections drive one read site through
-// shared and diverging shapes, offsets past the in-place slots, inherited
-// methods, redefinitions, deletions, prototype changes and accessors, so a
-// stale shape, slot or cell changes an observation. Node computes the
-// expected observations from the same source; the native image runs under
-// LLDB through the general path.
+// the site's inline entry and load the cached value in place (IR
+// property-load natively); named stores go through the site's store cache
+// (IR property-store), which also adds properties by cached transitions.
+// These sections drive read and write sites through shared and diverging
+// shapes, offsets past the in-place slots, inherited methods,
+// redefinitions, deletions, prototype changes, accessors, symbols,
+// non-extensible receivers and builtin objects, so a stale shape, slot or
+// transition changes an observation. Node computes the expected
+// observations from the same source; the native image runs under LLDB
+// through the general path.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -137,6 +140,86 @@ function megamorphic() {
   for (const o of objects) out.push(String(readV(o)), callM(o));
   return out.join(",");
 }
+function stores() {
+  const out = [];
+  function P(a, b) { this.a = a; this.b = b; }
+  const ps = [];
+  for (let i = 0; i < 6; i++) ps.push(new P(i, i * 2));
+  out.push(ps.map((p) => p.a + p.b).join(" "));
+  out.push(Object.keys(ps[5]).join());
+  // A setter appears on the prototype after the transition was cached.
+  let seen = "none";
+  Object.defineProperty(P.prototype, "b", {
+    set(v) { seen = "set " + v; },
+    get() { return "g"; },
+    configurable: true,
+  });
+  const q = new P(1, 2);
+  out.push(seen, q.b, Object.keys(q).join());
+  delete P.prototype.b;
+  // Module code is strict: rejected stores throw.
+  const attempt = (f) => {
+    try {
+      return String(f());
+    } catch (e) {
+      return e instanceof TypeError ? "TypeError" : "other";
+    }
+  };
+  // A read-only inherited property rejects the add.
+  Object.defineProperty(P.prototype, "a", { value: "ro", writable: false, configurable: true });
+  out.push(attempt(() => new P(3, 4).a));
+  delete P.prototype.a;
+  out.push(Object.keys(new P(3, 4)).join());
+  // Existing writable stores, frozen and non-extensible receivers.
+  const write = (o, v) => { o.a = v; o.c = v; };
+  const s = new P(5, 6);
+  write(s, 7);
+  write(s, 8);
+  const f = Object.freeze(new P(9, 10));
+  out.push(attempt(() => write(f, 11)));
+  const n = Object.preventExtensions(new P(12, 13));
+  out.push(attempt(() => write(n, 14)));
+  out.push(s.a, s.c, f.a, String(f.c), n.a, String(n.c));
+  // Many keys spill past the in-place values, then use descriptors.
+  const big = {};
+  for (let i = 0; i < 140; i++) big["k" + i] = i;
+  out.push(Object.keys(big).length, big.k3, big.k139, Object.keys(big)[100]);
+  // Prototype objects keep accepting stores.
+  const proto = {};
+  const child = Object.create(proto);
+  const put = (o, v) => { o.shared = v; };
+  put(proto, "p1");
+  put(child, "c1");
+  put(proto, "p2");
+  out.push(proto.shared, child.shared);
+  // Symbols and accessors stay ordinary properties.
+  const sym = Symbol("s");
+  const acc = { a: 1, get b() { return this.a + 1; }, [sym]: "sym", c: 3 };
+  out.push(acc.b, acc[sym], Object.keys(acc).join(), Object.getOwnPropertySymbols(acc).length);
+  acc.a = 10;
+  out.push(acc.b);
+  return out.join(",");
+}
+function builtins() {
+  const out = [];
+  const max = (a, b) => Math.max(a, b);
+  for (let i = 0; i < 3; i++) out.push(max(i, 1));
+  const num = (x) => Number(x);
+  out.push(num("12"), num(true));
+  const m = new Map();
+  const put = (k, v) => m.set(k, v);
+  for (let i = 0; i < 3; i++) put("k" + i, i);
+  out.push(m.size, m.get("k2"));
+  const d = new Date(0);
+  const year = (x) => x.getUTCFullYear();
+  out.push(year(d), year(d));
+  const arr = [];
+  const push = (a, v) => a.push(v);
+  push(arr, 1);
+  push(arr, 2);
+  out.push(arr.length);
+  return out.join(",");
+}
 export function sections() {
   return [
     String(sharedShapes()),
@@ -146,6 +229,8 @@ export function sections() {
     redefinitions(),
     prototypes(),
     megamorphic(),
+    stores(),
+    builtins(),
   ];
 }
 `;
@@ -163,7 +248,7 @@ test("property caches keep JavaScript lookups across shapes and redefinitions", 
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-  assert.equal(expected.length, 7);
+  assert.equal(expected.length, 9);
   // Exit status 42 when every section matches, else 10 + the first
   // mismatching section's index.
   let general = false;

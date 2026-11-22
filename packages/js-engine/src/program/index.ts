@@ -21,8 +21,8 @@ import {
 import type { SourceModule } from "@tint/typescript/modules/model";
 import {
   lowerSourceTextModule,
-  propertyCellBindings,
-  propertyCellNames,
+  propertyCacheBindings,
+  propertyCacheNames,
 } from "../lowering/index.ts";
 import { createGeneralIntrinsicPlan } from "./intrinsics.ts";
 import {
@@ -132,8 +132,9 @@ export function createGeneralLowering(
   const recordBindings: NativeRecordBinding[] = [];
   for (const name of objectViews)
     recordBindings.push({ module: runtime.objects, name, operation: "view" });
-  // Generated property caches compare shapes and load cells inline.
-  for (const binding of propertyCellBindings(runtime.objects))
+  // Generated property caches compare shapes and load and store values
+  // inline.
+  for (const binding of propertyCacheBindings(runtime.objects))
     recordBindings.push(binding);
   for (const name of referrerViews)
     recordBindings.push({ module: runtime.modules, name, operation: "view" });
@@ -161,7 +162,7 @@ export function createGeneralLowering(
         namespace: "general-object-views",
         retainedExports: [
           ...objectViews,
-          ...propertyCellNames,
+          ...propertyCacheNames,
           "objectTypeof",
           "generalValueTypeof",
           "callGeneralValue",

@@ -636,8 +636,10 @@ test("historical captures keep their managed vocabulary and adapter", async () =
     "scriptIsHTMLDDA",
     "looselyEqualOrThrow",
     "excludeHTMLDDAObjects",
-    "cachedOwnPropertyCell",
-    "cachedInheritedPropertyCell",
+    "cachedOwnPropertyValue",
+    "cachedInheritedPropertyValue",
+    "absentPropertyValue",
+    "cachedPropertyStore",
   ];
   const old = {
     ...snapshot,
@@ -678,9 +680,10 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   const previous = createScriptRuntimeRequest(bind, true, old),
     current = createScriptRuntimeRequest(bind, true, snapshot);
   assert.equal(previous.values.length, 136);
-  // The inline property caches import two cell readers (own and inherited)
-  // where they imported one slot reader.
-  assert.equal(current.values.length, 153);
+  // The inline property caches import two value readers (own and
+  // inherited), their miss test and the cached store where they imported
+  // one slot reader.
+  assert.equal(current.values.length, 155);
   for (const name of fastPaths) {
     assert.ok(!previous.values.some((value) => value.name === name), name);
     assert.ok(

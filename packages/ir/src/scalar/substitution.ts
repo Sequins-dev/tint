@@ -117,12 +117,20 @@ export function substituteInstructionValues(
         ? op
         : { ...op, object, index };
     }
-    case "property-cell": {
+    case "property-load": {
       const object = substitutedValue(values, op.object),
         site = substitutedValue(values, op.site);
       return object === op.object && site === op.site
         ? op
         : { ...op, object, site };
+    }
+    case "property-store": {
+      const object = substitutedValue(values, op.object),
+        value = substitutedValue(values, op.value),
+        site = substitutedValue(values, op.site);
+      return object === op.object && value === op.value && site === op.site
+        ? op
+        : { ...op, object, value, site };
     }
     case "error-new": {
       const message = substitutedValue(values, op.message);

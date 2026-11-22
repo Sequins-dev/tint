@@ -283,9 +283,15 @@ export function provenRecordFacts(
               edge(field(op.record, op.field), result);
               break;
             case "record-slot-read":
-            case "property-cell":
+            case "property-load":
               for (let slot = 0; slot < op.count; slot++)
                 edge(field(op.record, op.field + slot), result);
+              break;
+            case "property-store":
+              for (let slot = 0; slot < op.count; slot++)
+                edge(value(fn.id, op.value), field(op.record, op.field + slot));
+              // A transition stores the site's shape in the object's first field.
+              edge(field(op.siteRecord, op.siteField + 2), field(op.record, 0));
               break;
             case "store":
               edge(value(fn.id, op.value), slot(fn.id, op.slot));

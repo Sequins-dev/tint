@@ -37,7 +37,9 @@ import {
 import type { RecordOperation } from "./record-bindings.ts";
 import {
   bindFieldWord,
-  bindPropertyCell,
+  bindPropertyLoad,
+  bindPropertyStore,
+  bindAbsentTest,
   bindRecordOperation,
 } from "./record-bindings.ts";
 import { incompatibleRepresentationView } from "./representation-views.ts";
@@ -213,13 +215,12 @@ export interface ModuleEntryOptions {
 export interface RecordBinding {
   readonly function: number;
   readonly operation: RecordOperation;
-  /** slot-read and property-cell: the first slot field's name and the slot
-   * count; field-word: the field's name. */
+  /** slot-read and the property cache operations: the first slot field's
+   * name and the slot count; field-word: the field's name. */
   readonly field?: string | undefined;
   readonly count?: number | undefined;
-  /** property-cell: the witness record's prototype field and the site
-   * record's first cache field (shape, then slot, then holder shape). */
-  readonly prototypeField?: string | undefined;
+  /** Property cache operations: the site record's first cache field (see
+   * the IR property-load and property-store). */
   readonly siteField?: string | undefined;
 }
 export function lowerModuleEntries(
@@ -4212,12 +4213,30 @@ function lowerEntries(
         functions[fn.id] = bindFieldWord(fn, placed.offset / 8, span);
         continue;
       }
+      if (binding.operation === "absent-test") {
+        if (
+          first === undefined ||
+          fn.parameters.length !== 2 ||
+          fn.slots[first] !== "general" ||
+          fn.returnType !== "boolean" ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail("absent test bindings take an unknown value and a cache site");
+        functions[fn.id] = bindAbsentTest(fn, first, span);
+        continue;
+      }
       if (
-        binding.operation === "property-cell" ||
-        binding.operation === "inherited-property-cell"
+        binding.operation === "property-load" ||
+        binding.operation === "inherited-property-load" ||
+        binding.operation === "property-store"
       ) {
+        const store = binding.operation === "property-store";
+        const siteParameter = store ? 3 : 2;
         const witnessType = checked.bindingTypes[bindingId(body.parameters[0])],
-          siteType = checked.bindingTypes[bindingId(body.parameters[2])];
+          siteType =
+            checked.bindingTypes[bindingId(body.parameters[siteParameter])];
         const record =
             witnessType === undefined
               ? undefined
@@ -4226,74 +4245,86 @@ function lowerEntries(
             siteType === undefined
               ? undefined
               : recordContracts.forType(siteType);
-        const cellName = binding.field,
-          prototypeName = binding.prototypeField,
+        const valueName = binding.field,
           siteName = binding.siteField,
           count = binding.count;
         const field =
-            record === undefined || cellName === undefined
+            record === undefined || valueName === undefined
               ? undefined
-              : recordContracts.fieldIndex(record, cellName),
-          prototypeField =
-            record === undefined || prototypeName === undefined
-              ? undefined
-              : recordContracts.fieldIndex(record, prototypeName),
+              : recordContracts.fieldIndex(record, valueName),
           siteField =
             siteRecord === undefined || siteName === undefined
               ? undefined
               : recordContracts.fieldIndex(siteRecord, siteName);
-        // The present result's record: the cells' layout.
-        let cellType = -1;
-        const result = checked.types[body.result];
-        if (result !== undefined && result.kind === "union")
-          for (const member of result.members) {
-            if (member === undefined) throw "property cell type invariant";
-            if (checked.types[member]?.kind === "object") cellType = member;
-          }
-        const cellRecord =
-          cellType < 0 ? undefined : recordContracts.forType(cellType);
+        // A store's transition entry ends with the epoch record whose
+        // `value` the site's epoch must equal.
+        let epochRecord: number | undefined = undefined,
+          epochField: number | undefined = undefined;
+        const site =
+          siteType === undefined ? undefined : checked.types[siteType];
+        if (store && site?.kind === "object") {
+          const epoch = site.properties.find(
+            (property) => property !== undefined && property.name === "epoch",
+          );
+          epochRecord =
+            epoch === undefined
+              ? undefined
+              : recordContracts.forType(epoch.type);
+          epochField =
+            epochRecord === undefined
+              ? undefined
+              : recordContracts.fieldIndex(epochRecord, "value");
+        }
+        const parameters = store ? 4 : 3;
+        const target = fn.parameters[siteParameter];
         const third = fn.parameters[2];
         if (
           first === undefined ||
           second === undefined ||
           third === undefined ||
-          fn.parameters.length !== 3 ||
+          target === undefined ||
+          fn.parameters.length !== parameters ||
           fn.slots[first] !== "reference" ||
           fn.slots[second] !== "general" ||
-          fn.slots[third] !== "reference" ||
-          fn.returnType !== "optional-reference" ||
+          (store && fn.slots[third] !== "general") ||
+          fn.slots[target] !== "reference" ||
+          fn.returnType !== (store ? "boolean" : "general") ||
           record === undefined ||
           siteRecord === undefined ||
           field === undefined ||
-          prototypeField === undefined ||
           siteField === undefined ||
-          cellRecord === undefined ||
           count === undefined ||
           !Number.isSafeInteger(count) ||
           count < 1 ||
+          (store && (epochRecord === undefined || epochField === undefined)) ||
           fn.closureEnvironment !== undefined ||
           fn.environment !== undefined ||
           fn.receiverSlot !== undefined
         )
           fail(
-            "property cell bindings take a record witness, an unknown value and a cache site with named fields",
+            "property cache bindings take a record witness, unknown values and a cache site with named fields",
           );
-        functions[fn.id] = bindPropertyCell(
-          fn,
-          second,
-          third,
-          {
-            record,
-            field,
-            count,
-            cellRecord,
-            prototypeField,
-            siteRecord,
-            siteField,
-          },
-          binding.operation === "inherited-property-cell",
-          span,
-        );
+        const layout = { record, field, count, siteRecord, siteField };
+        functions[fn.id] =
+          store && epochRecord !== undefined && epochField !== undefined
+            ? bindPropertyStore(
+                fn,
+                second,
+                third,
+                target,
+                layout,
+                epochRecord,
+                epochField,
+                span,
+              )
+            : bindPropertyLoad(
+                fn,
+                second,
+                target,
+                layout,
+                binding.operation === "inherited-property-load",
+                span,
+              );
         continue;
       }
       if (binding.operation === "slot-read") {

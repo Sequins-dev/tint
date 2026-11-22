@@ -125,16 +125,21 @@ function pruneTracedModule(
         ) {
           const record = recordId(op.record);
           if (record !== op.record) rewritten = { ...op, record };
-        } else if (op.kind === "property-cell") {
+        } else if (op.kind === "property-load") {
           const record = recordId(op.record),
-            cellRecord = recordId(op.cellRecord),
             siteRecord = recordId(op.siteRecord);
+          if (record !== op.record || siteRecord !== op.siteRecord)
+            rewritten = { ...op, record, siteRecord };
+        } else if (op.kind === "property-store") {
+          const record = recordId(op.record),
+            siteRecord = recordId(op.siteRecord),
+            epochRecord = recordId(op.epochRecord);
           if (
             record !== op.record ||
-            cellRecord !== op.cellRecord ||
-            siteRecord !== op.siteRecord
+            siteRecord !== op.siteRecord ||
+            epochRecord !== op.epochRecord
           )
-            rewritten = { ...op, record, cellRecord, siteRecord };
+            rewritten = { ...op, record, siteRecord, epochRecord };
         }
         if (rewritten !== op && instructions === undefined)
           instructions = block.instructions.slice(0, i);

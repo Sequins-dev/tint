@@ -9,6 +9,7 @@ import {
   type BindingResult,
 } from "../records/index.ts";
 import {
+  useDictionaryProperties,
   isExtensible,
   getOwnProperty,
   hasProperty,
@@ -48,6 +49,8 @@ export function createGlobalEnvironment<Key, Value>(
   keyForName: (name: string) => Key,
   hooks: ObjectHooks<Value>,
 ): GlobalEnvironment<Key, Value> {
+  // Global property caches hold the object's descriptors (see scope.ts).
+  useDictionaryProperties<Key, Value>(object);
   return {
     lexical: createDeclarativeEnvironment<Value>(hooks.undefinedValue),
     object,

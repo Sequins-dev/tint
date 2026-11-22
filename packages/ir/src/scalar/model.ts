@@ -38,7 +38,9 @@ export type GeneralTest =
   | "null"
   | "nullish"
   | NativeTypedArray
-  | "object";
+  | "object"
+  /** The miss result of property-load: no JavaScript value. */
+  | "absent";
 export type Instruction = Span &
   DebugOrigin &
   (
@@ -127,33 +129,55 @@ export type Instruction = Span &
         readonly index: number;
       }
     | {
-        /** The cached own (or, for `inherited`, prototype) property cell of
-         * a JavaScript object (js-runtime property caches), or none unless
-         * the general value `object` is object-tagged. Its payload is any
-         * record such a value can hold; its first word is compared with the
-         * shape in field
-         * `siteField` of the `siteRecord` record `site`; no record but a
-         * `record` object has a shape in that word. On a match the holder is
-         * the object, or for `inherited` its `prototypeField` when that
-         * prototype's first word is the shape in site field `siteField + 2`,
-         * and the result is the holder's cell field whose word index is the
-         * raw binary64 bits of site field `siteField + 1`. The runtime writes
-         * only indices of fields `field..field+count-1` (consecutive
-         * optional references) with a shape it read those cells under, and
-         * stores only cells of record `cellRecord` in them, so a present
-         * result has that layout. Otherwise the result is none. */
-        readonly kind: "property-cell";
+        /** A cached property value of a JavaScript object (js-runtime
+         * property caches), or the absent value (which general-is "absent"
+         * recognizes and no property holds) unless the general value
+         * `object` is object-tagged and the cache applies. Its payload is
+         * any record such a value can hold; its first word is compared with
+         * the shape in field `siteField` of the `siteRecord` record `site`;
+         * no record but a `record` object has a shape in that word. On a
+         * match the holder is the object, or for `inherited` the object in
+         * site field `siteField + 2` when its first word is the shape in
+         * site field `siteField + 3` (a receiver shape implies its
+         * prototype, which the runtime stores there). The result is the
+         * holder's general field whose word index is the raw binary64 bits
+         * of site field `siteField + 1`. The runtime writes only indices of
+         * fields `field..field+count-1` (consecutive general fields) with a
+         * shape under which they hold the property's value. */
+        readonly kind: "property-load";
         readonly id: number;
         readonly object: number;
         readonly site: number;
         readonly record: number;
         readonly field: number;
         readonly count: number;
-        readonly cellRecord: number;
-        readonly prototypeField: number;
         readonly siteRecord: number;
         readonly siteField: number;
         readonly inherited: boolean;
+      }
+    | {
+        /** Store general `value` through a cached property store (js-runtime
+         * property caches); the boolean result is false, with nothing
+         * written, unless `object` is object-tagged with the shape in site
+         * field `siteField`. The value then goes to the general field whose
+         * word index is the raw bits of site field `siteField + 1` (one of
+         * `field..field+count-1` of a `record` object). When site field
+         * `siteField + 2` holds a transition shape, the store also requires
+         * site field `siteField + 3` to equal field `epochField` of the
+         * `epochRecord` object in site field `siteField + 4`, and sets the
+         * object's first word (its shape) to the transition. */
+        readonly kind: "property-store";
+        readonly id: number;
+        readonly object: number;
+        readonly value: number;
+        readonly site: number;
+        readonly record: number;
+        readonly field: number;
+        readonly count: number;
+        readonly siteRecord: number;
+        readonly siteField: number;
+        readonly epochRecord: number;
+        readonly epochField: number;
       }
     | { readonly kind: "boolean-none"; readonly id: number }
     | {
