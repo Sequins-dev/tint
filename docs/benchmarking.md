@@ -85,7 +85,10 @@ startup and worker records, stack-map formats, weak slots, shared blocks and C
 descriptors. Those `@tint/abi` sources therefore come from the tree too. The set
 is derived from imports (`tools/frozen-runtime-tree.ts`): every `@tint/abi`
 module the substituted runtime files import, through package exports, plus
-those modules' relative imports. The runtime's other dependencies
+those modules' relative imports. Imports are not followed from a tree file that
+imports, directly or transitively, a file the snapshot lacks. The frozen
+program cannot load such a file, so its contract imports would only change the
+frozen compiler's own copy of those modules. The runtime's other dependencies
 (`@tint/foundation`, `@tint/js-runtime`) are libraries the frozen compiler also
 uses, so they stay frozen; name them with `--tree <path>` when a measurement
 needs them.

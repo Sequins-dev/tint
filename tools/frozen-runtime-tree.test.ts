@@ -38,14 +38,22 @@ const shared = {
     'import { shutdown } from "@tint/abi/host";',
     'import { weak } from "@tint/abi/weak-slot";',
     'import { list } from "@tint/foundation/collections/number-list";',
-    'import { helper } from "../helper.ts";',
+    'import { cycle } from "../cycle.ts";',
     'export { other } from "tint:ffi";',
+  ].join("\n"),
+  "packages/native-runtime/src/cycle.ts":
+    'import "./tracing/scan.ts";\nexport const cycle = 1;',
+  // Its tree version imports a file the snapshot lacks, so the frozen
+  // program cannot load it: copied, but its contract imports not followed.
+  "packages/native-runtime/src/ffi/dynamic.ts": [
+    'import type { CTarget } from "@tint/abi/c";',
+    'import { helper } from "../helper.ts";',
   ].join("\n"),
   "packages/native-runtime/src/helper.ts":
     'import { fresh } from "./fresh.ts";\nexport const helper = fresh;',
 };
 
-test("--runtime-tree copies the runtime and the host-ABI files it imports", () => {
+test("--runtime-tree copies the runtime and the host-ABI files its buildable modules import", () => {
   const tree = workspace({
     ...shared,
     "packages/abi/package.json": abiManifest,
@@ -64,6 +72,8 @@ test("--runtime-tree copies the runtime and the host-ABI files it imports", () =
         "packages/abi/src/c/types.ts",
         "packages/abi/src/host.ts",
         "packages/abi/src/weak-slot.ts",
+        "packages/native-runtime/src/cycle.ts",
+        "packages/native-runtime/src/ffi/dynamic.ts",
         "packages/native-runtime/src/helper.ts",
         "packages/native-runtime/src/tracing/scan.ts",
       ],

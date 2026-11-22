@@ -38,7 +38,10 @@ export interface RuntimeTreeFiles {
 }
 
 /** The snapshot's runtime files plus the `@tint/abi` sources they import,
- * transitively through relative and contract-package imports. */
+ * transitively through relative and contract-package imports. A file that
+ * (transitively) imports a file the snapshot lacks cannot be part of a
+ * successful frozen build, so its contract imports are not followed: they
+ * would only change the frozen compiler's own copy of those modules. */
 export function runtimeTreeFiles(
   tree: string,
   snapshot: string,
@@ -66,27 +69,56 @@ export function runtimeTreeFiles(
       throw Error(`--runtime-tree: ${file} imports unknown ${specifier}`);
     return source;
   }
-  const reached = new Set<string>(),
+  // Followed imports of every reached file the snapshot also has.
+  const imports = new Map<string, string[]>(),
     missing = new Set<string>(),
-    pending: { file: string; from?: string }[] = [];
-  for (const file of sources(snapshot, runtimeDirectory))
-    if (existsSync(join(tree, file))) pending.push({ file });
+    runtime = sources(snapshot, runtimeDirectory).filter((file) =>
+      existsSync(join(tree, file)),
+    ),
+    pending = runtime.map((file) => ({ file, from: "" }));
   for (let item = pending.pop(); item !== undefined; item = pending.pop()) {
     const { file, from } = item;
-    if (reached.has(file)) continue;
+    if (imports.has(file)) continue;
     if (!existsSync(join(tree, file)))
       throw Error(`--runtime-tree: ${from} imports missing ${file}`);
     if (!existsSync(join(snapshot, file))) {
       missing.add(from + " -> " + file);
       continue;
     }
-    reached.add(file);
+    const targets: string[] = [];
+    imports.set(file, targets);
     const text = readFileSync(join(tree, file), "utf8");
     for (const { fileName } of ts.preProcessFile(text, true, true)
       .importedFiles) {
       const target = resolveImport(file, fileName);
-      if (target !== undefined) pending.push({ file: target, from: file });
+      if (target === undefined) continue;
+      targets.push(target);
+      pending.push({ file: target, from: file });
     }
   }
-  return { files: [...reached].sort(), missing: [...missing].sort() };
+  // Files that cannot build against the snapshot: missing ones and, to a
+  // fixpoint (import cycles), every file importing one of them.
+  const broken = new Set<string>();
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const [file, targets] of imports)
+      if (
+        !broken.has(file) &&
+        targets.some((target) => broken.has(target) || !imports.has(target))
+      ) {
+        broken.add(file);
+        changed = true;
+      }
+  }
+  // All runtime files are copied, as before; contract files only when a
+  // buildable runtime file reaches them through buildable files.
+  const files = new Set(runtime),
+    contract = runtime.filter((file) => !broken.has(file));
+  for (let file = contract.pop(); file !== undefined; file = contract.pop())
+    for (const target of imports.get(file) ?? [])
+      if (!files.has(target) && !broken.has(target)) {
+        files.add(target);
+        contract.push(target);
+      }
+  return { files: [...files].sort(), missing: [...missing].sort() };
 }
