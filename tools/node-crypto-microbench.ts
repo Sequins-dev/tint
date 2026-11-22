@@ -32,23 +32,25 @@ function stringCase(size: number, ascii: boolean): BenchCase {
     name: `sha512-string-${ascii ? "ascii" : "unicode"}-${size}`,
     setup: `const input = ${JSON.stringify(input)};`,
     expression: 'createHash("sha512").update(input).digest("hex")',
-    iterations: size === 64 ? 20000 : 4000,
+    iterations: size === 64 ? 100000 : 20000,
     expected: referenceHash("sha512").update(input).digest("hex"),
   };
 }
 
+// Each short case spans several copying collections in the public image,
+// so a whole collection pause does not land in whichever case triggers it.
 const cases: readonly BenchCase[] = [
   {
     name: "sha256-64",
     setup: "const bytes = new Uint8Array(64);",
     expression: 'createHash("sha256").update(bytes).digest("hex")',
-    iterations: 20000,
+    iterations: 100000,
   },
   {
     name: "sha512-64",
     setup: "const bytes = new Uint8Array(64);",
     expression: 'createHash("sha512").update(bytes).digest("hex")',
-    iterations: 20000,
+    iterations: 100000,
   },
   stringCase(64, true),
   stringCase(64, false),
@@ -58,13 +60,13 @@ const cases: readonly BenchCase[] = [
     name: "hmac-sha256-64",
     setup: "const bytes = new Uint8Array(64); const key = new Uint8Array(32);",
     expression: 'createHmac("sha256", key).update(bytes).digest("hex")',
-    iterations: 20000,
+    iterations: 100000,
   },
   {
     name: "hmac-sha512-64",
     setup: "const bytes = new Uint8Array(64); const key = new Uint8Array(32);",
     expression: 'createHmac("sha512", key).update(bytes).digest("hex")',
-    iterations: 20000,
+    iterations: 100000,
   },
   {
     name: "sha256-1MiB",
@@ -82,13 +84,13 @@ const cases: readonly BenchCase[] = [
     name: "random-32",
     setup: "",
     expression: "randomBytes(32)",
-    iterations: 50000,
+    iterations: 250000,
   },
   {
     name: "random-4096",
     setup: "",
     expression: "randomBytes(4096)",
-    iterations: 10000,
+    iterations: 50000,
   },
 ];
 
