@@ -169,7 +169,7 @@ test("calls inline only within one interruptibility class", () => {
               ? {
                   ...block,
                   terminator: {
-                    kind: "branch",
+                    kind: "branch" as const,
                     condition: 5,
                     consequent: 0,
                     alternate: 3,
