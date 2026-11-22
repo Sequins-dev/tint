@@ -7,6 +7,8 @@
 //   kernels    tint-plain tint-copying tint-raw tint-main
 //              node-plain node-raw node-main node-worker
 //   worker     tint-worker node-worker
+//   placements tint-plain tint-main tint-worker
+//              node-plain node-main node-worker
 //   transport  tint-transport node-transport
 // Each round runs every member once; round r starts at member r mod n and
 // odd rounds run in reverse. Native images run under LLDB, which must report
@@ -32,6 +34,15 @@ const sets: Record<string, readonly string[]> = {
     "node-worker",
   ],
   worker: ["tint-worker", "node-worker"],
+  // Once Workers no longer tax their code, every placement fits one set.
+  placements: [
+    "tint-plain",
+    "tint-main",
+    "tint-worker",
+    "node-plain",
+    "node-main",
+    "node-worker",
+  ],
   transport: ["tint-transport", "node-transport"],
 };
 const argv = process.argv.slice(2);

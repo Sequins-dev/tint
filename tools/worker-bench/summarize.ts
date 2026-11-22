@@ -189,6 +189,51 @@ if (kernels !== undefined) {
         " |",
     );
 }
+const placements = tables.get("placements");
+if (placements !== undefined) {
+  const names = [...(placements.get("tint-plain")?.keys() ?? [])].filter(
+    (metric) => !metric.endsWith(":cold"),
+  );
+  const columns = [
+    "tint-plain",
+    "tint-main",
+    "tint-worker",
+    "node-plain",
+    "node-main",
+    "node-worker",
+  ];
+  console.log("### Placements, steady state (ms per iteration)\n");
+  console.log("| Kernel | " + columns.join(" | ") + " |");
+  console.log("| --- |" + columns.map(() => " ---: |").join(""));
+  for (const name of names)
+    console.log(
+      `| ${name} | ` +
+        columns
+          .map((column) => cell(finite(placements.get(column)?.get(name))))
+          .join(" | ") +
+        " |",
+    );
+  const pairs: [string, string][] = [
+    ["tint-main", "tint-plain"],
+    ["tint-worker", "tint-plain"],
+    ["tint-plain", "node-plain"],
+    ["tint-main", "node-main"],
+    ["tint-worker", "node-worker"],
+  ];
+  console.log("\n### Placements, paired ratios\n");
+  console.log(
+    "| Kernel | " + pairs.map(([a, b]) => `${a} / ${b}`).join(" | ") + " |",
+  );
+  console.log("| --- |" + pairs.map(() => " ---: |").join(""));
+  for (const name of names)
+    console.log(
+      `| ${name} | ` +
+        pairs
+          .map(([a, b]) => ratio(paired(placements, a, b, name)))
+          .join(" | ") +
+        " |",
+    );
+}
 const worker = tables.get("worker");
 if (worker !== undefined) {
   const names = [...(worker.get("tint-worker")?.keys() ?? [])].filter(

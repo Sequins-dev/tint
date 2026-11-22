@@ -7,6 +7,7 @@
 //   main       kernels on the main thread of a program that starts a Worker
 //   worker     kernels inside a Worker of that program
 //   transport  message passing, shared memory and startup workloads
+//              (an optional second argument selects one operation prefix)
 // Prints the image path (from the hosted fixture builder). Run images under
 // LLDB through tools/worker-bench/measure.ts.
 import { readFileSync } from "node:fs";
@@ -170,11 +171,13 @@ export function run(): number {
     },
   );
 } else {
+  // An optional operation prefix restricts the workload (for profiles).
+  const only = process.argv[3];
   const transport = local("transport.mjs", [[threads, threads]]);
   verifyHostedFixture(
     `import { run as benchmark } from "./transport.mjs";
 import { monotonicMilliseconds } from "clock";
-export function run(): unknown { return benchmark("${transport.id}", monotonicMilliseconds); }`,
+export function run(): unknown { return benchmark("${transport.id}", monotonicMilliseconds${only === undefined ? "" : ", " + JSON.stringify(only)}); }`,
     "worker-bench-transport",
     [
       ["./transport.mjs", transport.id],

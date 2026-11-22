@@ -18,6 +18,12 @@ function check(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+// Profiles select one operation by prefix (build-native.ts transport <prefix>).
+let only;
+function selected(operation) {
+  return only === undefined || operation.startsWith(only);
+}
+
 function measure(operation, count, elapsed) {
   console.log("WORKER_BENCH " + JSON.stringify({ operation, count, elapsed }));
 }
@@ -35,9 +41,9 @@ function numbers(count) {
   return list;
 }
 function text(length) {
-  let value = "";
-  while (value.length < length) value += "worker-message-";
-  return value.slice(0, length);
+  // repeat() avoids quadratic setup outside the timers.
+  const unit = "worker-message-";
+  return unit.repeat(Math.ceil(length / unit.length)).slice(0, length);
 }
 function tree(depth) {
   if (depth === 0) return { leaf: true, label: "leaf" };
@@ -188,7 +194,7 @@ function elapsed(now, start) {
 }
 
 async function lifecycle(filename, now) {
-  for (let sample = -1; sample < samples; sample++) {
+  for (let sample = -1; sample < samples && selected("startup"); sample++) {
     const start = now();
     const child = launch(filename, { mode: "messages" });
     check((await child.receive()) === "ready", "expected ready");
@@ -202,7 +208,7 @@ async function lifecycle(filename, now) {
       measure("terminate", 1, stopped);
     }
   }
-  for (let sample = -1; sample < samples; sample++) {
+  for (let sample = -1; sample < samples && selected("startup-8"); sample++) {
     const start = now();
     const children = [];
     for (let i = 0; i < 8; i++)
@@ -219,7 +225,7 @@ async function messages(filename, now) {
   const child = launch(filename, { mode: "messages" });
   check((await child.receive()) === "ready", "expected ready");
   // Small round trips.
-  for (let sample = -1; sample < samples; sample++) {
+  for (let sample = -1; sample < samples && selected("round-trip"); sample++) {
     const count = sample < 0 ? 100 : 1000;
     const start = now();
     for (let i = 0; i < count; i++) {
@@ -230,6 +236,7 @@ async function messages(filename, now) {
   }
   // Structured clone round trips (both directions clone the payload).
   for (const [name, build, count] of clonePayloads) {
+    if (!selected("clone-" + name)) continue;
     const payload = build();
     const expected = fingerprint(payload);
     for (let sample = -1; sample < samples; sample++) {
@@ -250,6 +257,7 @@ async function messages(filename, now) {
   }
   // Transferred buffers: the time should not depend on the size.
   for (const size of transferSizes) {
+    if (!selected("transfer-" + size)) continue;
     let buffer = new ArrayBuffer(size);
     new Uint8Array(buffer)[size - 1] = 7;
     for (let sample = -1; sample < samples; sample++) {
@@ -268,7 +276,7 @@ async function messages(filename, now) {
     }
   }
   // Many small messages without waiting, then one reply.
-  for (let sample = -1; sample < samples; sample++) {
+  for (let sample = -1; sample < samples && selected("batch"); sample++) {
     const count = sample < 0 ? 1000 : 10000;
     const start = now();
     child.worker.postMessage(["batch", count]);
@@ -290,7 +298,11 @@ async function messages(filename, now) {
     deliver = undefined;
     resolve(value);
   });
-  for (let sample = -1; sample < samples; sample++) {
+  for (
+    let sample = -1;
+    sample < samples && selected("port-round-trip");
+    sample++
+  ) {
     const count = sample < 0 ? 100 : 1000;
     const start = now();
     for (let i = 0; i < count; i++) {
@@ -310,7 +322,7 @@ async function messages(filename, now) {
 async function shared(filename, now) {
   const wakes = 1000;
   // Atomics.wait/notify ping-pong (both threads block).
-  for (let sample = -1; sample < samples; sample++) {
+  for (let sample = -1; sample < samples && selected("wait-notify"); sample++) {
     const count = sample < 0 ? 100 : wakes;
     const buffer = new SharedArrayBuffer(8);
     const words = new Int32Array(buffer);
@@ -330,7 +342,7 @@ async function shared(filename, now) {
     await child.finish(false);
   }
   // Atomics.waitAsync on the main thread against a blocking Worker.
-  for (let sample = -1; sample < samples; sample++) {
+  for (let sample = -1; sample < samples && selected("wait-async"); sample++) {
     const count = sample < 0 ? 100 : wakes;
     const buffer = new SharedArrayBuffer(8);
     const words = new Int32Array(buffer);
@@ -351,7 +363,11 @@ async function shared(filename, now) {
   }
   // Contended counters: 1 and 4 Workers each add 100,000 times.
   for (const workers of [1, 4]) {
-    for (let sample = -1; sample < samples; sample++) {
+    for (
+      let sample = -1;
+      sample < samples && selected("counter-" + workers);
+      sample++
+    ) {
       const count = 100000;
       const buffer = new SharedArrayBuffer(8);
       const words = new Int32Array(buffer);
@@ -375,7 +391,8 @@ async function shared(filename, now) {
   }
 }
 
-export async function run(filename, now) {
+export async function run(filename, now, operation) {
+  only = operation;
   try {
     await lifecycle(filename, now);
     await messages(filename, now);
