@@ -1220,13 +1220,13 @@ test("polymorphic sites keep receivers and follow a replaced prototype", () => {
   ]);
 });
 
-test("a named load reads the receiver's cell and a method call the prototype's", () => {
+test("a named load reads the receiver's cell and a method call the prototype's, then the receiver's", () => {
   const read = "function read(object) { return object.value; }",
     call = "function call(object) { return object.method(1); }";
   assert.equal(runtimeCalls(read, "cachedOwnPropertyCell"), 1);
   assert.equal(runtimeCalls(read, "cachedInheritedPropertyCell"), 0);
   assert.equal(runtimeCalls(call, "cachedInheritedPropertyCell"), 1);
-  assert.equal(runtimeCalls(call, "cachedOwnPropertyCell"), 0);
+  assert.equal(runtimeCalls(call, "cachedOwnPropertyCell"), 1);
   // Optional chains read callees as methods too.
   assert.equal(
     runtimeCalls(

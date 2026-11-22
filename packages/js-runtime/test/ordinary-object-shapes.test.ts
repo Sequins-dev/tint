@@ -178,63 +178,59 @@ test("null-prototype and dictionary-like objects keep private shapes", () => {
   assert.equal(shape(point(prototype, ["f0"])), fanned[0]);
 });
 
-test("a site exposes its first own or inherited entry inline", () => {
+test("a site exposes its newest own and inherited entries inline", () => {
   const prototype = createObject<string, unknown>(undefined);
   createDataProperty<string, unknown>(prototype, "method", "m", hooks);
   const object = point(prototype, ["x", "y"]);
+  const site = createScriptPropertyCache("y");
+  assert.equal(site.ownShape, unusedPropertyShape);
+  assert.equal(site.inheritedShape, unusedPropertyShape);
   // Generated code reads the cell's word index as raw bits: slotWord + index.
-  const own = createScriptPropertyCache("y");
-  assert.equal(own.inlineShape, unusedPropertyShape);
-  const cell = lookupCachedScriptProperty<string, unknown>(
-    object,
-    "y",
-    own,
-    false,
-    stubs,
-    10,
+  assert.equal(
+    lookupCachedScriptProperty<string, unknown>(
+      object,
+      "y",
+      site,
+      false,
+      stubs,
+      10,
+    )?.value,
+    1,
   );
-  assert.equal(cell?.value, 1);
-  assert.equal(own.inlineShape, shape(object));
-  assert.equal(own.inlineHolder, unusedPropertyShape);
-  assert.equal(own.inlineSlot, inlineSlotBits(11));
+  assert.equal(site.ownShape, shape(object));
+  assert.equal(site.ownSlot, inlineSlotBits(11));
+  assert.equal(site.inheritedShape, unusedPropertyShape);
   const bits = new DataView(new ArrayBuffer(8));
-  bits.setFloat64(0, own.inlineSlot, true);
+  bits.setFloat64(0, site.ownSlot, true);
   assert.equal(bits.getBigUint64(0, true), 11n);
-  // An own site leaves an inherited entry to the miss path, and an
-  // inherited site the reverse.
-  const ownMiss = createScriptPropertyCache("method");
-  lookupCachedScriptProperty<string, unknown>(
-    object,
-    "method",
-    ownMiss,
-    false,
-    stubs,
-    10,
-  );
-  assert.equal(ownMiss.inlineShape, unusedPropertyShape);
-  const inherited = createScriptPropertyCache("method", true);
+  // A prototype's property fills the inherited entry and keeps the own one.
+  const method = createScriptPropertyCache("method");
   assert.equal(
     lookupCachedScriptProperty<string, unknown>(
       object,
       "method",
-      inherited,
+      method,
       false,
       stubs,
       10,
     )?.value,
     "m",
   );
-  assert.equal(inherited.inlineShape, shape(object));
-  assert.equal(inherited.inlineHolder, shape(prototype));
-  assert.equal(inherited.inlineSlot, inlineSlotBits(10));
-  const inheritedMiss = createScriptPropertyCache("x", true);
+  assert.equal(method.inheritedShape, shape(object));
+  assert.equal(method.inheritedHolder, shape(prototype));
+  assert.equal(method.inheritedSlot, inlineSlotBits(10));
+  assert.equal(method.ownShape, unusedPropertyShape);
+  // A newer own entry replaces the own one only.
+  const own = point(prototype, ["method"]);
   lookupCachedScriptProperty<string, unknown>(
-    object,
-    "x",
-    inheritedMiss,
+    own,
+    "method",
+    method,
     false,
     stubs,
     10,
   );
-  assert.equal(inheritedMiss.inlineShape, unusedPropertyShape);
+  assert.equal(method.ownShape, shape(own));
+  assert.equal(method.ownSlot, inlineSlotBits(10));
+  assert.equal(method.inheritedHolder, shape(prototype));
 });

@@ -362,17 +362,17 @@ interface ScriptPropertyCacheEntry {
   offset: number;
 }
 export interface ScriptPropertyCache {
-  /** The first entry as generated code reads it (IR property-cell): the
-   * receiver shape, the raw-bit word index of the cell (inlineSlotBits) and,
-   * at an inherited site, the immediate prototype's shape. The fields are
-   * first and consecutive, and an empty site holds unusedPropertyShape. */
-  inlineShape: OrdinaryPropertyShape;
-  inlineSlot: number;
-  inlineHolder: OrdinaryPropertyShape;
-  /** Whether generated code reads the first entry from the receiver's
-   * immediate prototype (method calls) rather than the receiver. Deeper
-   * entries and other holders take the miss path. */
-  readonly inherited: boolean;
+  /** The newest own entry as generated code reads it (IR property-cell):
+   * the receiver shape and the cell's raw-bit word index (inlineSlotBits).
+   * The newest entry held by the receiver's immediate prototype follows:
+   * the receiver shape, the word index and the prototype's shape. The
+   * fields are first and consecutive; an empty one holds unusedPropertyShape.
+   * Deeper entries and cells past the in-place slots take the miss path. */
+  ownShape: OrdinaryPropertyShape;
+  ownSlot: number;
+  inheritedShape: OrdinaryPropertyShape;
+  inheritedSlot: number;
+  inheritedHolder: OrdinaryPropertyShape;
   readonly first: ScriptPropertyCacheEntry;
   readonly entries: readonly ScriptPropertyCacheEntry[];
   readonly nameHash: number;
@@ -391,14 +391,14 @@ function propertyCacheEntry(): ScriptPropertyCacheEntry {
 }
 export function createScriptPropertyCache(
   name: string = "",
-  inherited: boolean = false,
 ): ScriptPropertyCache {
   const first = propertyCacheEntry();
   return {
-    inlineShape: unusedPropertyShape,
-    inlineSlot: 0,
-    inlineHolder: unusedPropertyShape,
-    inherited,
+    ownShape: unusedPropertyShape,
+    ownSlot: 0,
+    inheritedShape: unusedPropertyShape,
+    inheritedSlot: 0,
+    inheritedHolder: unusedPropertyShape,
     first,
     entries: [
       first,
@@ -1443,16 +1443,15 @@ export function lookupCachedScriptProperty<Key, Value>(
   entry.ancestor = ancestor;
   entry.holder = holder === object ? undefined : holderShape;
   entry.offset = offset;
-  if (
-    entry === cache.first &&
-    offset < propertySlots &&
-    (cache.inherited
-      ? holder !== object && parent === undefined
-      : holder === object)
-  ) {
-    cache.inlineShape = shape;
-    cache.inlineSlot = inlineSlotBits(slotWord + offset);
-    cache.inlineHolder = cache.inherited ? holderShape : unusedPropertyShape;
+  if (offset < propertySlots) {
+    if (holder === object) {
+      cache.ownShape = shape;
+      cache.ownSlot = inlineSlotBits(slotWord + offset);
+    } else if (parent === undefined) {
+      cache.inheritedShape = shape;
+      cache.inheritedSlot = inlineSlotBits(slotWord + offset);
+      cache.inheritedHolder = holderShape;
+    }
   }
   return cell;
 }

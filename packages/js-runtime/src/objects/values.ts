@@ -164,38 +164,38 @@ export function propertySlotWord(
 }
 
 /** The cached own data cell of `value` at `site`: its shape is the site's
- * inline shape, which proves the cell's kind. Undefined otherwise. Native
- * code binds this to the IR property-cell instruction. */
+ * own shape, which proves the cell's kind. Undefined otherwise. Native code
+ * binds this to the IR property-cell instruction. */
 export function cachedOwnPropertyCell(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
   value: unknown,
   site: ScriptPropertyCache,
 ): Descriptor<unknown> | undefined {
   const object = viewObjectValue(value, witness);
-  if (object === undefined || object.internalShape !== site.inlineShape)
+  if (object === undefined || object.internalShape !== site.ownShape)
     return undefined;
   return readPropertySlot(
     object,
-    site.inlineSlot / Number.MIN_VALUE - propertySlotWord(witness),
+    site.ownSlot / Number.MIN_VALUE - propertySlotWord(witness),
   );
 }
 
 /** As cachedOwnPropertyCell, for a data cell of the receiver's immediate
- * prototype whose shape is the site's inline holder. */
+ * prototype whose shape is the site's inherited holder. */
 export function cachedInheritedPropertyCell(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
   value: unknown,
   site: ScriptPropertyCache,
 ): Descriptor<unknown> | undefined {
   const object = viewObjectValue(value, witness);
-  if (object === undefined || object.internalShape !== site.inlineShape)
+  if (object === undefined || object.internalShape !== site.inheritedShape)
     return undefined;
   const holder = object.prototype;
-  if (holder === undefined || holder.internalShape !== site.inlineHolder)
+  if (holder === undefined || holder.internalShape !== site.inheritedHolder)
     return undefined;
   return readPropertySlot(
     holder,
-    site.inlineSlot / Number.MIN_VALUE - propertySlotWord(witness),
+    site.inheritedSlot / Number.MIN_VALUE - propertySlotWord(witness),
   );
 }
 

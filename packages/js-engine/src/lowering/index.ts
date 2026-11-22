@@ -130,7 +130,7 @@ export function propertyCellBindings(
       field: "internalSlot0",
       count: propertySlots,
       prototypeField: "prototype",
-      siteField: "inlineShape",
+      siteField: "ownShape",
     },
     {
       module,
@@ -139,7 +139,7 @@ export function propertyCellBindings(
       field: "internalSlot0",
       count: propertySlots,
       prototypeField: "prototype",
-      siteField: "inlineShape",
+      siteField: "inheritedShape",
     },
   ];
 }
@@ -947,22 +947,10 @@ function lowerScriptEntry(
     appendStatements(tables, slotTable("$pc", propertyCacheInitializers));
     return tables;
   }
-  /** A property cache site; an inherited site serves method calls from the
-   * receiver's immediate prototype. */
-  function propertyCache(
-    name: string,
-    span: Span,
-    inherited: boolean,
-  ): Expression {
+  function propertyCache(name: string, span: Span): Expression {
     const index = propertyCacheInitializers.length;
     propertyCacheInitializers.push(
-      runtimeCall(
-        "createScriptPropertyCache",
-        inherited
-          ? [text(name), { ...at(generated), kind: "boolean", value: true }]
-          : [text(name)],
-        generated,
-      ),
+      runtimeCall("createScriptPropertyCache", [text(name)], generated),
     );
     return slotField("$pc", index, span);
   }
@@ -2857,19 +2845,30 @@ function lowerScriptEntry(
     return readProperty(base, key, span);
   }
   /** The site's inline data cell of `base` (IR property-cell natively), or
-   * undefined: a receiver shape match proves the cell's kind. */
+   * undefined: a receiver shape match proves the cell's kind. A method read
+   * tries the prototype's cell first, then the receiver's. */
   function inlineCachedPropertyCell(
     base: Expression,
     cache: Expression,
-    inherited: boolean,
+    method: boolean,
     span: Span,
   ): Expression {
-    return temporary(
+    const witness = member(id("$errors"), "objectPrototype", span);
+    const own = runtimeCall(
+      "cachedOwnPropertyCell",
+      [witness, base, cache],
+      span,
+    );
+    if (!method) return temporary(own);
+    const inherited = temporary(
       runtimeCall(
-        inherited ? "cachedInheritedPropertyCell" : "cachedOwnPropertyCell",
-        [member(id("$errors"), "objectPrototype", span), base, cache],
+        "cachedInheritedPropertyCell",
+        [{ ...witness }, base, cache],
         span,
       ),
+    );
+    return temporary(
+      scalarBranch(presentCell(inherited, span), inherited, own, span),
     );
   }
   function presentCell(cell: Expression, span: Span): Expression {
@@ -2901,7 +2900,7 @@ function lowerScriptEntry(
     ];
     const cache =
       cached && key.kind === "string"
-        ? propertyCache(key.value, span, method)
+        ? propertyCache(key.value, span)
         : undefined;
     if (cache !== undefined) args.push(cache);
     const read = runtimeCall(
@@ -3289,7 +3288,7 @@ function lowerScriptEntry(
       key.kind === "string" &&
       !compactResults
     ) {
-      const cache = propertyCache(key.value, target, false);
+      const cache = propertyCache(key.value, target);
       const value = temporary(assigned, true);
       args[2] = value;
       args.push(cache);
