@@ -88,6 +88,14 @@ function roundedRatio(numerator: Natural, denominator: Natural): number {
   else for (let i = 0; i < scale; i++) quotient *= 2;
   return quotient;
 }
+/** 10^exponent, exact for 0 <= exponent <= 22 (5^22 < 2^53). */
+function exactPowerOfTen(exponent: number): number {
+  let power = 1;
+  for (let i = 0; i < exponent; i++) power *= 10;
+  return power;
+}
+// Integers accumulated in binary64 are exact while they stay below 2^53.
+const exactIntegerLimit = 9007199254740992;
 function digit(code: number): number {
   if (code >= 48 && code <= 57) return code - 48;
   if (code >= 65 && code <= 90) return code - 55;
@@ -121,12 +129,17 @@ export function stringToNumber(text: string): number {
   if (radix !== 10) {
     start += 2;
     if (start === end) return NaN;
-    const integer = natural(Math.ceil(((end - start) * 4) / 16) + 1, 0);
+    let exact = 0;
     for (let i = start; i < end; i++) {
       const value = digit(text.charCodeAt(i));
       if (value < 0 || value >= radix) return NaN;
-      multiplyAdd(integer, radix, value);
+      exact = exact * radix + value;
     }
+    // Every prefix is smaller, so a sum below 2^53 was accumulated exactly.
+    if (exact < exactIntegerLimit) return exact;
+    const integer = natural(Math.ceil(((end - start) * 4) / 16) + 1, 0);
+    for (let i = start; i < end; i++)
+      multiplyAdd(integer, radix, digit(text.charCodeAt(i)));
     return roundedRatio(integer, natural(1, 1));
   }
   let index = start,
@@ -188,6 +201,21 @@ export function stringToNumber(text: string): number {
   const magnitude = significant + exponent - 1;
   if (magnitude > 309) return negative ? -Infinity : Infinity;
   if (magnitude < -325) return negative ? -0 : 0;
+  // Clinger's fast path: at most 15 significant digits form an integer below
+  // 2^53 and 10^k is exact for k <= 22, so one correctly rounded multiply or
+  // divide is the correctly rounded value of the decimal.
+  if (significant <= 15 && exponent >= -22 && exponent <= 22) {
+    let mantissa = 0;
+    for (let i = start; i < mantissaEnd; i++) {
+      const code = text.charCodeAt(i);
+      if (code !== 46) mantissa = mantissa * 10 + (code - 48);
+    }
+    const result =
+      exponent < 0
+        ? mantissa / exactPowerOfTen(-exponent)
+        : mantissa * exactPowerOfTen(exponent);
+    return negative ? -result : result;
+  }
   const capacity = Math.ceil(((digits + Math.abs(exponent)) * 4) / 16) + 150;
   const numerator = natural(capacity, 0),
     denominator = natural(capacity, 1);
@@ -228,6 +256,11 @@ export function parseIntegerText(text: string, radix: number): number {
     end++;
   }
   if (end === start) return NaN;
+  let exact = 0;
+  for (let index = start; index < end; index++)
+    exact = exact * radix + digit(text.charCodeAt(index));
+  // Every prefix is smaller, so a sum below 2^53 was accumulated exactly.
+  if (exact < exactIntegerLimit) return negative ? -exact : exact;
   const integer = natural(Math.ceil(((end - start) * 6) / 16) + 1, 0);
   for (let index = start; index < end; index++)
     multiplyAdd(integer, radix, digit(text.charCodeAt(index)));

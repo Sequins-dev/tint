@@ -924,6 +924,7 @@ the ledger corpus reproduce the ones expressible in a single application.
 | Typed classes beyond hosted fallback: with `TINT_GENERAL_FALLBACK=0` any module-instance class fails (`module instance classes require scoped contract and construction lowering`); `extends` (`class inheritance contracts require heritage checking`), class instances assigned to a structural interface (`value does not match its declared type`) and method calls on a class union, even after `instanceof` or discriminant narrowing (`invalid method call`), fail at check time. Class-heavy typed code runs on the general path ([typed codegen baseline](results/typed-codegen-baseline-v1.md): 98× Node) | `class-basic`, `tools/typed-bench/classes.ts` | Native class ABI |
 | Typed arrays other than `Uint8Array`, `Uint16Array`, `Uint32Array` and `Float64Array` (`Realm constructor Int32Array requires library overload lowering`) | `tools/typed-bench` (`Uint32Array` in place of `Int32Array`) | not yet scheduled |
 | `Array.prototype.reduce` on typed lists (`invalid method call`; `map`, `filter`, `forEach`, `some`, `every` and `find` lower) | `tools/typed-bench` (`for…of` sum in place of `reduce`) | not yet scheduled |
+| `parseInt` and `parseFloat` in typed code (`unknown value name: parseFloat` at link time; `Number(text)` lowers) | `tools/native-number-text.test.ts` | not yet scheduled |
 
 Indexed reads follow TypeScript under the program's compiler options
 (coordinator decision, 2026-11-17). With `noUncheckedIndexedAccess`, which
