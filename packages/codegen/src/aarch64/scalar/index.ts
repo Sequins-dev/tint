@@ -14400,9 +14400,18 @@ function emitModuleForms(
                           ? 3
                           : 2;
                 // Word elements convert first (possibly through a helper,
-                // which clobbers scratch registers) and are staged; doubles
-                // are stored from their register after the address.
-                if (op.kind === "array-store" && type !== "Float64Array") {
+                // which clobbers scratch registers) and are staged; int64
+                // values store their low bits (ToUint8/16/32 of an exact
+                // integer) straight from a register, as doubles do.
+                const directWord =
+                  op.kind === "array-store" &&
+                  type !== "Float64Array" &&
+                  storedAsInteger(op.value);
+                if (
+                  op.kind === "array-store" &&
+                  type !== "Float64Array" &&
+                  !directWord
+                ) {
                   wordValue(op.value);
                   rawStore(9, resultOffset + 24);
                 }
@@ -14440,12 +14449,14 @@ function emitModuleForms(
                   break;
                 }
                 if (op.kind === "array-store") {
-                  rawLoad(11, resultOffset + 24);
+                  let element = 11;
+                  if (directWord) element = intRegister(op.value, 11);
+                  else rawLoad(11, resultOffset + 24);
                   emit({
                     op: "str-indexed",
                     size: scale,
                     fp: false,
-                    rt: 11,
+                    rt: element,
                     rn: 10,
                     rm: index,
                     scaled: scale !== 0,
@@ -14465,6 +14476,22 @@ function emitModuleForms(
                     scaled: true,
                   });
                   floatStore(target, op.id);
+                  break;
+                }
+                if (wantsInteger(op.id)) {
+                  // Unsigned element loads zero-extend: an exact int64.
+                  const target = intTarget(op.id, 11);
+                  emit({
+                    op: "ldr-indexed",
+                    size: scale,
+                    fp: false,
+                    rt: target,
+                    rn: 10,
+                    rm: index,
+                    scaled: scale !== 0,
+                  });
+                  saveRaw(target, op.id);
+                  markInteger(op.id);
                   break;
                 }
                 emit({

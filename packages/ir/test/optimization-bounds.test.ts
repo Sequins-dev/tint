@@ -684,3 +684,266 @@ test("code units stay checked without the length relation", () => {
     false,
   );
 });
+
+/** `stencil(a)` over a parameter array of unknown length: for (i = start;
+ * i + indexDelta OP a.length - lengthOffset; i++) total += a[i + d] ?? 0
+ * for each read delta d, then a[i + write] = total. With `hoisted`, the bound
+ * a.length - lengthOffset is computed once into slot 2 before the loop.
+ * Slots: 0 a, 1 i, 2 bound, 3 total. */
+function stencil(options: {
+  readonly start: number;
+  readonly operator: "<" | "<=" | ">" | ">=";
+  readonly lengthOffset: number;
+  readonly indexDelta?: number;
+  readonly reads: readonly number[];
+  readonly write?: number;
+  readonly hoisted?: boolean;
+  readonly reassign?: boolean;
+}): FunctionIR {
+  let next = 100;
+  const id = (): number => next++;
+  function lengthMinus(into: Instruction[]): number {
+    const array = id(),
+      length = id(),
+      offset = id(),
+      bound = id();
+    into.push(
+      { kind: "load", id: array, slot: 0, ...span },
+      { kind: "array-length", id: length, array, ...span },
+      { kind: "constant", id: offset, value: options.lengthOffset, ...span },
+      {
+        kind: "binary",
+        id: bound,
+        operator: "-",
+        left: length,
+        right: offset,
+        ...span,
+      },
+    );
+    return bound;
+  }
+  function indexPlus(into: Instruction[], delta: number): number {
+    const index = id(),
+      amount = id(),
+      sum = id();
+    into.push(
+      { kind: "load", id: index, slot: 1, ...span },
+      { kind: "constant", id: amount, value: Math.abs(delta), ...span },
+      {
+        kind: "binary",
+        id: sum,
+        operator: delta < 0 ? "-" : "+",
+        left: index,
+        right: amount,
+        ...span,
+      },
+    );
+    return sum;
+  }
+  const entry: Instruction[] = [
+    { kind: "constant", id: 0, value: options.start, ...span },
+    { kind: "store", slot: 1, value: 0, ...span },
+    { kind: "constant", id: 1, value: 0, ...span },
+    { kind: "store", slot: 3, value: 1, ...span },
+  ];
+  if (options.hoisted === true)
+    entry.push({ kind: "store", slot: 2, value: lengthMinus(entry), ...span });
+  const header: Instruction[] = [];
+  const index = indexPlus(header, options.indexDelta ?? 0);
+  let bound: number;
+  if (options.hoisted === true) {
+    bound = id();
+    header.push({ kind: "load", id: bound, slot: 2, ...span });
+  } else bound = lengthMinus(header);
+  const condition = id();
+  // `>`/`>=` compare with the bound on the left: `bound > index`.
+  const boundLeft = options.operator === ">" || options.operator === ">=";
+  header.push({
+    kind: "binary",
+    id: condition,
+    operator: options.operator,
+    left: boundLeft ? bound : index,
+    right: boundLeft ? index : bound,
+    ...span,
+  });
+  const body: Instruction[] = [];
+  for (const delta of options.reads) {
+    const array = id(),
+      read = id(),
+      fallback = id(),
+      value = id(),
+      total = id(),
+      sum = id();
+    body.push({ kind: "load", id: array, slot: 0, ...span });
+    const at = indexPlus(body, delta);
+    body.push(
+      { kind: "array-read", id: read, array, index: at, ...span },
+      { kind: "constant", id: fallback, value: 0, ...span },
+      { kind: "optional-value-or", id: value, value: read, fallback, ...span },
+      { kind: "load", id: total, slot: 3, ...span },
+      {
+        kind: "binary",
+        id: sum,
+        operator: "+",
+        left: total,
+        right: value,
+        ...span,
+      },
+      { kind: "store", slot: 3, value: sum, ...span },
+    );
+  }
+  if (options.reassign === true) {
+    const length = id(),
+      fresh = id();
+    body.push(
+      { kind: "constant", id: length, value: 2, ...span },
+      { kind: "array-new", id: fresh, type: "Float64Array", length, ...span },
+      { kind: "store", slot: 0, value: fresh, ...span },
+    );
+  }
+  if (options.write !== undefined) {
+    const array = id(),
+      total = id();
+    body.push({ kind: "load", id: array, slot: 0, ...span });
+    const at = indexPlus(body, options.write);
+    body.push(
+      { kind: "load", id: total, slot: 3, ...span },
+      { kind: "array-write", array, index: at, value: total, ...span },
+    );
+  }
+  const step = indexPlus(body, 1);
+  body.push({ kind: "store", slot: 1, value: step, ...span });
+  const result = id();
+  return {
+    id: 0,
+    name: "stencil",
+    exported: true,
+    parameters: [0],
+    slots: ["Float64Array", "number", "number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: entry,
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+      {
+        id: 1,
+        instructions: header,
+        terminator: {
+          kind: "branch",
+          condition,
+          consequent: 2,
+          alternate: 3,
+          ...span,
+        },
+      },
+      {
+        id: 2,
+        instructions: body,
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+      {
+        id: 3,
+        instructions: [{ kind: "load", id: result, slot: 3, ...span }],
+        terminator: { kind: "return", value: result, ...span },
+      },
+    ],
+  };
+}
+function checked(fn: FunctionIR): number {
+  return kinds(select(fn)).filter(
+    (kind) => kind === "array-read" || kind === "array-write",
+  ).length;
+}
+
+test("an index below an array's length minus c proves offsets up to c", () => {
+  for (const hoisted of [false, true]) {
+    const fn = select(
+      stencil({
+        start: 1,
+        operator: "<",
+        lengthOffset: 1,
+        reads: [-1, 0, 1],
+        write: 0,
+        hoisted,
+      }),
+    );
+    assert.equal(
+      kinds(fn).filter((kind) => kind === "array-element").length,
+      3,
+    );
+    assert.equal(kinds(fn).filter((kind) => kind === "array-store").length, 1);
+    assert.ok(!kinds(fn).includes("array-read"));
+    assert.ok(!kinds(fn).includes("array-write"));
+  }
+  // `i + 1 < a.length` and `a.length - 1 > i` prove the same.
+  assert.equal(
+    checked(
+      stencil({
+        start: 0,
+        operator: "<",
+        lengthOffset: 0,
+        indexDelta: 1,
+        reads: [0, 1],
+      }),
+    ),
+    0,
+  );
+  assert.equal(
+    checked(
+      stencil({ start: 0, operator: ">", lengthOffset: 1, reads: [0, 1] }),
+    ),
+    0,
+  );
+  // `i <= a.length - 2` is `i < a.length - 1`.
+  assert.equal(
+    checked(stencil({ start: 0, operator: "<=", lengthOffset: 2, reads: [1] })),
+    0,
+  );
+});
+
+test("offsets beyond the proven margin, negative indexes and reassignment stay checked", () => {
+  // a[i + 2] may be a[a.length] when i < a.length - 1.
+  assert.equal(
+    checked(stencil({ start: 1, operator: "<", lengthOffset: 1, reads: [2] })),
+    1,
+  );
+  // `i <= a.length - 1` admits i = a.length - 1, so a[i + 1] may be past
+  // the end; `i <= a.length` proves nothing.
+  assert.equal(
+    checked(
+      stencil({ start: 0, operator: "<=", lengthOffset: 1, reads: [0, 1] }),
+    ),
+    1,
+  );
+  assert.equal(
+    checked(stencil({ start: 0, operator: "<=", lengthOffset: 0, reads: [0] })),
+    1,
+  );
+  // From i = 0, a[i - 1] reads index -1.
+  assert.equal(
+    checked(stencil({ start: 0, operator: "<", lengthOffset: 1, reads: [-1] })),
+    1,
+  );
+  // A new array in the slot ends the relation for later accesses.
+  assert.equal(
+    checked(
+      stencil({
+        start: 0,
+        operator: "<",
+        lengthOffset: 0,
+        reads: [0],
+        write: 0,
+        reassign: true,
+      }),
+    ),
+    1,
+  );
+  // `>=` with the bound on the left is `i <= a.length - c`.
+  assert.equal(
+    checked(stencil({ start: 0, operator: ">=", lengthOffset: 1, reads: [1] })),
+    1,
+  );
+});
