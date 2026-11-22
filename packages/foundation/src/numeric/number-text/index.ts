@@ -313,13 +313,100 @@ export function parseFloatText(text: string): number {
 }
 
 // Nonnegative safe integers, without recursive formatting or rounded candidates.
+/** Decimal digits of a nonnegative safe integer, built as one string. */
 function decimalInteger(value: number): string {
-  let text = "";
-  do {
-    text = String.fromCharCode(48 + (value % 10)) + text;
-    value = Math.floor(value / 10);
-  } while (value !== 0);
-  return text;
+  if (value < 100000000) return shortDecimal(value);
+  // value / 10^8 is rounded, so its floor can be one too large or small; the
+  // remainder is exact (both products stay below 2^53) and corrects it.
+  let high = Math.floor(value / 100000000),
+    low = value - high * 100000000;
+  if (low < 0) {
+    high--;
+    low += 100000000;
+  } else if (low >= 100000000) {
+    high++;
+    low -= 100000000;
+  }
+  return shortDecimal(high) + eightDigits(low);
+}
+/** Decimal digits of an integer in [0, 10^8), without leading zeros. */
+function shortDecimal(value: number): string {
+  const d0 = value % 10;
+  value = (value - d0) / 10;
+  if (value === 0) return String.fromCharCode(48 + d0);
+  const d1 = value % 10;
+  value = (value - d1) / 10;
+  if (value === 0) return String.fromCharCode(48 + d1, 48 + d0);
+  const d2 = value % 10;
+  value = (value - d2) / 10;
+  if (value === 0) return String.fromCharCode(48 + d2, 48 + d1, 48 + d0);
+  const d3 = value % 10;
+  value = (value - d3) / 10;
+  if (value === 0)
+    return String.fromCharCode(48 + d3, 48 + d2, 48 + d1, 48 + d0);
+  const d4 = value % 10;
+  value = (value - d4) / 10;
+  if (value === 0)
+    return String.fromCharCode(48 + d4, 48 + d3, 48 + d2, 48 + d1, 48 + d0);
+  const d5 = value % 10;
+  value = (value - d5) / 10;
+  if (value === 0)
+    return String.fromCharCode(
+      48 + d5,
+      48 + d4,
+      48 + d3,
+      48 + d2,
+      48 + d1,
+      48 + d0,
+    );
+  const d6 = value % 10;
+  value = (value - d6) / 10;
+  if (value === 0)
+    return String.fromCharCode(
+      48 + d6,
+      48 + d5,
+      48 + d4,
+      48 + d3,
+      48 + d2,
+      48 + d1,
+      48 + d0,
+    );
+  return String.fromCharCode(
+    48 + value,
+    48 + d6,
+    48 + d5,
+    48 + d4,
+    48 + d3,
+    48 + d2,
+    48 + d1,
+    48 + d0,
+  );
+}
+/** Exactly eight decimal digits of an integer in [0, 10^8). */
+function eightDigits(value: number): string {
+  const d0 = value % 10;
+  value = (value - d0) / 10;
+  const d1 = value % 10;
+  value = (value - d1) / 10;
+  const d2 = value % 10;
+  value = (value - d2) / 10;
+  const d3 = value % 10;
+  value = (value - d3) / 10;
+  const d4 = value % 10;
+  value = (value - d4) / 10;
+  const d5 = value % 10;
+  value = (value - d5) / 10;
+  const d6 = value % 10;
+  return String.fromCharCode(
+    48 + (value - d6) / 10,
+    48 + d6,
+    48 + d5,
+    48 + d4,
+    48 + d3,
+    48 + d2,
+    48 + d1,
+    48 + d0,
+  );
 }
 function decimalLayout(digits: string, point: number): string {
   while (digits.length > 1 && digits.charCodeAt(digits.length - 1) === 48)
