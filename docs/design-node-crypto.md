@@ -92,10 +92,12 @@ actual byte offsets and lengths, including subviews, and preserve Node's
 result brands and input encodings.
 
 Each public Hash or Hmac is one ordinary realm object on a prototype the
-isolate caches. A private field holds the typed digest lifetime itself.
-The shared methods recover it through a compiler-bound record view, walking
-the receiver's prototype chain so borrowed methods keep working, and the
-lifetime's weak owner is the realm object. Ordinary, fixed-length,
+isolate caches. A private field holds the typed digest lifetime itself. The shared methods recover it
+through a compiler-bound record view, walking the receiver's prototype
+chain so borrowed methods keep working. The isolate holds the newest
+digest's owner until the next digest opens. Only a digest still open then
+gets a weak owner slot, so its context is freed if the owner is collected
+first. Ordinary, fixed-length,
 in-bounds typed arrays lend their bytes without a range projection; other
 views take the general projection. Algorithm-name checks compare ASCII
 case-insensitively without lowercase copies, and SHA-256-sized digests use
@@ -148,7 +150,8 @@ in PBKDF2 and provider failure in digest initialization.
   Out-of-scope cases earn no passes. The original whole-file attempts
   remain historical evidence.
   [Extraction manifest](../tools/node-crypto-cases.json) ·
-  [Whole-file attempt](results/node-crypto-v26.13.1-poc-v1.md)
+  [Whole-file attempt](results/node-crypto-v26.13.1-poc-v1.md) ·
+  [Current three-target run](results/node-crypto-v26.13.1-extracted-v2.md)
   The manifest currently selects 41 case groups and lists 39 exclusion
   ranges. A case group can contain a loop over several upstream inputs.
   Run the Node reference extraction with
@@ -185,7 +188,8 @@ in PBKDF2 and provider failure in digest initialization.
   [General method-call control](results/node-crypto-darwin-arm64-call-control-v1.md) ·
   [Short SHA-512 call and allocation breakdown](results/node-crypto-darwin-arm64-sha512-breakdown.md) ·
   [Scalar UTF-8 comparison](results/node-crypto-darwin-arm64-utf8.md) ·
-  [Word-at-a-time UTF-8 comparison](results/node-crypto-darwin-arm64-utf8-simd.md)
+  [Word-at-a-time UTF-8 comparison](results/node-crypto-darwin-arm64-utf8-simd.md) ·
+  [Public path after PRs #9–#11](results/node-crypto-darwin-arm64-public-v4.md)
 
 ## PoC phases
 
