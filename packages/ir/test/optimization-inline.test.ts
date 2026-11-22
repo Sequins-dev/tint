@@ -130,6 +130,34 @@ test("CFG inlining remaps repeated calls, branches, parameters and return values
     );
   assert.deepEqual(input, snapshot);
 });
+test("calls inline only within one interruptibility class", () => {
+  const input = fixture();
+  // A Worker application caller keeps its call to a runtime helper, and a
+  // runtime caller keeps its call to an application function.
+  for (const interruptible of ["caller", "absolute"]) {
+    const separated = inlineSmallFunctions(
+      input,
+      10000,
+      false,
+      false,
+      undefined,
+      (fn) => fn.name === interruptible,
+    );
+    assert.ok(separated);
+    assert.equal(separated.inlined, 0);
+    assert.deepEqual(separated.module, input);
+  }
+  // Two application functions inline as they would without Workers.
+  const same = inlineSmallFunctions(
+    input,
+    10000,
+    false,
+    false,
+    undefined,
+    () => true,
+  );
+  assert.equal(same?.inlined, 2);
+});
 test("budget exhaustion rolls back and allocating, recursive or environment-bearing callees are retained", () => {
   const input = fixture();
   assert.equal(inlineSmallFunctions(input, 1), undefined);

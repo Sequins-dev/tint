@@ -326,7 +326,11 @@ function foldedTextScalar(
 export interface OptimizationOptions {
   /** Experimental wider candidates (two rounds). Full self-build profiling
    * currently favors the smaller default candidates (up to three rounds). */
-  readonly inlining?: "small" | "guarded" | "none";
+  readonly inlining?: "small" | "guarded";
+  /** Functions that poll for Worker stop requests at their safepoints. Calls
+   * inline only within one class, so runtime helpers never gain polls and
+   * Worker application code never loses them. */
+  readonly interruptible?: (fn: FunctionIR) => boolean;
   /** Rewrite indirect calls of closures known within their function into
    * direct calls (closed programs: no managed callback contracts observe
    * the call shapes or the function table). */
@@ -1116,9 +1120,7 @@ export function optimizeModuleVersion(
   const guardedInlining = options.inlining === "guarded";
   // Inlining considers leaf callees only, so a wrapper becomes eligible once
   // its own callees were inlined: repeat while rounds make progress.
-  const inlineRounds =
-    options.inlining === "none" ? 0 : guardedInlining ? 2 : 3;
-  for (let round = 0; round < inlineRounds; round++) {
+  for (let round = 0; round < (guardedInlining ? 2 : 3); round++) {
     const remaining =
       maxInstructions -
       visited -
@@ -1136,6 +1138,7 @@ export function optimizeModuleVersion(
           guardedInlining,
           false,
           remarks,
+          options.interruptible,
         );
         return result === undefined
           ? undefined

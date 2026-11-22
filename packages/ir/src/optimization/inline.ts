@@ -178,10 +178,12 @@ function inlineRefusal(
   referenceAllowance: number,
   effectful: boolean,
   nonallocatingCaller: boolean,
+  separated: boolean,
 ): string {
   if (callee === undefined) return "unknown callee";
   if (callee.id === caller.id) return "recursive call";
   if (environment) return "call passes a closure environment";
+  if (separated) return "caller and callee differ in interruptibility";
   if (eligibility === 0) {
     if (callee.import === true) return "callee is an import";
     if (
@@ -225,13 +227,17 @@ function inlineRefusal(
  * handlers are excluded. Caller exception edges survive cloning. Input is verified
  * IR and never mutated. Incremental mode keeps only completed nonallocating
  * callers, caps each expansion and retains original callees after exhaustion.
- * Remarks describe only decisions of callers whose result is kept. */
+ * Remarks describe only decisions of callers whose result is kept.
+ * `interruptible` marks the functions that poll for Worker stop requests at
+ * their safepoints; a call is inlined only when caller and callee agree, so
+ * neither class gains or loses polls. */
 export function inlineSmallFunctions(
   module: ModuleIR,
   budget: number,
   guarded: boolean = false,
   incremental: boolean = false,
   remarks?: RemarkSink,
+  interruptible?: (fn: FunctionIR) => boolean,
 ): Inlining | undefined {
   if (!Number.isSafeInteger(budget) || budget < 0)
     throw "INVALID_OPTIMIZATION_BUDGET";
@@ -245,6 +251,21 @@ export function inlineSmallFunctions(
       sink(remark);
     }
     pendingRemarks = [];
+  }
+  // Interruptibility class by function ID (empty when every function shares one).
+  const classify = interruptible;
+  const classes = new Uint8Array(
+    classify === undefined ? 0 : module.functions.length,
+  );
+  if (classify !== undefined)
+    for (let id = 0; id < module.functions.length; id++) {
+      const fn = module.functions[id];
+      if (fn === undefined) throw "inline function invariant";
+      classes[id] = classify(fn) ? 1 : 0;
+    }
+  /** Whether the callee must stay a call because the classes differ. */
+  function separated(caller: FunctionIR, callee: number): boolean {
+    return classes.length !== 0 && classes[caller.id] !== classes[callee];
   }
   const eligible = new Uint8Array(module.functions.length),
     // Callees that call or allocate (kept out of shape-recognized helpers).
@@ -402,7 +423,9 @@ export function inlineSmallFunctions(
         originalCount++;
         if (
           op.kind === "call"
-            ? !eligible[op.target] || op.environment !== undefined
+            ? !eligible[op.target] ||
+              op.environment !== undefined ||
+              separated(fn, op.target)
             : incremental
               ? (instructionEffects(op) & effectAllocate) !== 0
               : !supported(op)
@@ -416,7 +439,8 @@ export function inlineSmallFunctions(
           op.kind === "call" &&
           eligible[op.target] &&
           op.target !== fn.id &&
-          op.environment === undefined
+          op.environment === undefined &&
+          !separated(fn, op.target)
         )
           hasCandidate = true;
       }
@@ -466,6 +490,7 @@ export function inlineSmallFunctions(
           !eligible[callee.id] ||
           callee.id === fn.id ||
           op.environment !== undefined ||
+          separated(fn, callee.id) ||
           cost > allowance ||
           (shapeRecognized(fn) && effectful[callee.id] === 1) ||
           (eligible[callee.id] === 2 &&
@@ -493,6 +518,7 @@ export function inlineSmallFunctions(
                   referenceAllowance,
                   effectful[op.target] === 1,
                   nonallocatingCaller,
+                  separated(fn, op.target),
                 ),
             });
           instructions.push(op);

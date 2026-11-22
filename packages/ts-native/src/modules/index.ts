@@ -138,6 +138,10 @@ export interface LinkOptions {
   readonly origins?: boolean;
   /** Preserve source spellings when callable views expose Function#name. */
   readonly sourceNames?: boolean;
+  /** Instance-mode modules whose top-level statements the compiler moves into
+   * a deferred evaluation function (the main and Worker entries' scopes,
+   * docs/design-worker-runtime.md), where any statement is valid. */
+  readonly deferred?: readonly string[];
 }
 /** Most modules one link accepts. */
 export const maxLinkedModules = 1048576;
@@ -338,7 +342,8 @@ export function linkModules(
         } else if (
           !(
             options?.evaluation === "instance" &&
-            statement.kind === "expression"
+            (statement.kind === "expression" ||
+              options.deferred?.includes(source.id) === true)
           ) &&
           statement.kind !== "interface" &&
           statement.kind !== "type-alias" &&
