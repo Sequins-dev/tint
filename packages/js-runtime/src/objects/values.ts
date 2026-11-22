@@ -180,6 +180,14 @@ export function generalValueTypeof(value: unknown): string {
   return objectTypeof(value, viewTypeofObject(value));
 }
 
+export function scriptIsHTMLDDA(
+  value: unknown,
+  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
+): boolean {
+  const object = viewObjectValue(value, witness);
+  return object !== undefined && object.internalIsHTMLDDA;
+}
+
 export function scriptBoolean(
   value: unknown,
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,

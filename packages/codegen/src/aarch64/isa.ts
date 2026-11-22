@@ -52,6 +52,14 @@ export type Instruction =
     }
   | { readonly op: "brk"; readonly immediate: number }
   | {
+      readonly op: "ccmp-imm";
+      readonly width: RegisterWidth;
+      readonly rn: DataRegister;
+      readonly immediate: number;
+      readonly condition: Condition;
+      readonly nzcv: number;
+    }
+  | {
       readonly op: "ldrb" | "strb" | "ldrh" | "strh";
       readonly rt: DataRegister;
       readonly rn: BaseRegister;
@@ -468,6 +476,20 @@ export function encode(instruction: Instruction): EncodingResult<number> {
               ? 0x089ffc00
               : 0x085ffc00;
       return word(base + size * 0x40000000 + rn * 32 + rt);
+    }
+    case "ccmp-imm": {
+      const rn = register(i.rn, "zr");
+      if (rn < 0) return fail("INVALID_REGISTER");
+      if (i.width !== 32 && i.width !== 64) return fail("INVALID_WIDTH");
+      if (!integer(i.immediate, 0, 31) || !integer(i.nzcv, 0, 15))
+        return fail("INVALID_IMMEDIATE");
+      return word(
+        (i.width === 64 ? 0xfa400800 : 0x7a400800) +
+          i.immediate * 65536 +
+          condition(i.condition) * 4096 +
+          rn * 32 +
+          i.nzcv,
+      );
     }
     case "and-reg":
     case "orr-reg":

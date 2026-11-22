@@ -1781,6 +1781,11 @@ export function lowerFunction(
       end: node.end,
     });
   }
+  function builtinUndefined(node: Expression): boolean {
+    if (node.kind !== "identifier" || node.name !== "undefined") return false;
+    const checked = info(node);
+    return checked.local === undefined && checked.realmGlobal === undefined;
+  }
   function chooseExpression(test: Expression, yes: Builder, no: Builder): void {
     // A condition needs only truthiness, not the selected operand value. Keep
     // short-circuit evaluation in the CFG without a result slot and merge.
@@ -1792,10 +1797,55 @@ export function lowerFunction(
       chooseExpression(test.operand, no, yes);
       return;
     }
+    if (generalObjectViews && test.kind === "conditional") {
+      const consequent = block(),
+        alternate = block();
+      chooseExpression(test.test, consequent, alternate);
+      current = consequent;
+      chooseExpression(test.consequent, yes, no);
+      current = alternate;
+      chooseExpression(test.alternate, yes, no);
+      return;
+    }
     if (
       test.kind === "binary" &&
       (test.operator === "&&" || test.operator === "||")
     ) {
+      const first = test.left,
+        second = test.right;
+      if (
+        generalObjectViews &&
+        test.operator === "||" &&
+        first.kind === "binary" &&
+        first.operator === "===" &&
+        second.kind === "binary" &&
+        second.operator === "===" &&
+        first.left.kind === "identifier" &&
+        second.left.kind === "identifier" &&
+        first.right.kind === "null" &&
+        builtinUndefined(second.right) &&
+        info(first.left).type === "general" &&
+        info(second.left).type === "general"
+      ) {
+        // The checked local read has no effects, so both comparisons can
+        // share a single load and observe only the general carrier tag.
+        const local = info(first.left).local;
+        if (local !== undefined && local === info(second.left).local) {
+          const operand = value(first.left);
+          const match = nextValue++;
+          emit({
+            kind: "general-is",
+            id: match,
+            value: load(operand, first.left),
+            type: "nullish",
+            branch: true,
+            start: test.start,
+            end: test.end,
+          });
+          choose(match, yes, no, test);
+          return;
+        }
+      }
       const right = block();
       if (test.operator === "&&") chooseExpression(test.left, right, no);
       else chooseExpression(test.left, yes, right);
@@ -6100,7 +6150,8 @@ export function lowerFunction(
             type = info(node.operand).type;
           if (type === "general") {
             if (operand === undefined) throw "general typeof operand invariant";
-            const classifier = info(node).realmTypeof;
+            const classifier =
+              node.generalTag === true ? undefined : info(node).realmTypeof;
             if (classifier !== undefined)
               return save(
                 primitiveCall(classifier, [load(operand, node)], node),
@@ -6563,26 +6614,37 @@ export function lowerFunction(
           (node.operator === "===" || node.operator === "!==")
         ) {
           const literal =
-            node.left.kind === "null" || node.left.kind === "string"
+            node.left.kind === "null" ||
+            node.left.kind === "string" ||
+            builtinUndefined(node.left)
               ? node.left
               : node.right;
           const compared = literal === node.left ? node.right : node.left;
           let tested = compared;
           let category:
-            "null" | "number" | "boolean" | "string" | "undefined" | undefined;
+            | "null"
+            | "number"
+            | "boolean"
+            | "string"
+            | "undefined"
+            | "object"
+            | undefined;
           if (literal.kind === "null") category = "null";
+          else if (builtinUndefined(literal)) category = "undefined";
           else if (
             literal.kind === "string" &&
             compared.kind === "unary" &&
             compared.operator === "typeof" &&
-            info(compared).realmTypeof === undefined
+            (compared.generalTag === true ||
+              info(compared).realmTypeof === undefined)
           ) {
             const name = literal.value;
             if (
               name === "number" ||
               name === "boolean" ||
               name === "string" ||
-              name === "undefined"
+              name === "undefined" ||
+              (name === "object" && compared.generalTag === true)
             ) {
               category = name;
               tested = compared.operand;
@@ -6598,6 +6660,7 @@ export function lowerFunction(
               id,
               value: coerce(load(operand, tested), "general", tested),
               type: category,
+              branch: true,
               start: node.start,
               end: node.end,
             });

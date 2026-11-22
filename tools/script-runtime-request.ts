@@ -161,6 +161,8 @@ export function createScriptRuntimeRequest(
       "createScriptPropertyCache",
       "readCachedObjectValueProperty",
       "writeCachedObjectValueProperty",
+      "scriptIsHTMLDDA",
+      "looselyEqualOrThrow",
     ]) {
       if (!objects?.has(name)) missingFastPaths.add(name);
     }

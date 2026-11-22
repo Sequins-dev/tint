@@ -188,6 +188,8 @@ export type Expression = Span &
       }
     | {
         readonly kind: "unary";
+        /** Compiler-generated typeof guard on the raw general carrier. */
+        readonly generalTag?: true | undefined;
         readonly operator: string;
         readonly operand: Expression;
       }

@@ -1043,6 +1043,9 @@ function lowerScriptEntry(
   let usesWideRegisterCalls = false;
   let usesNativeScriptCalls = false;
   let usesIndexedWrites = false;
+  let usesNullishEquality = false;
+  let usesRelationalFallback = false;
+  let usesLooseEqualityFallback = false;
   let usesPrimitiveContracts = false;
   let suspensionInput: string | undefined =
     entryKind === "module" ? "$moduleInput" : undefined;
@@ -4085,12 +4088,14 @@ function lowerScriptEntry(
     category: string,
     span: Span,
   ): Expression {
-    return scalarBinary(
-      "===",
-      { ...at(span), kind: "unary", operator: "typeof", operand: value },
-      text(category, span),
-      span,
-    );
+    const tested: Expression = {
+      ...at(span),
+      kind: "unary",
+      operator: "typeof",
+      operand: value,
+      generalTag: category === "object" ? true : undefined,
+    };
+    return scalarBinary("===", tested, text(category, span), span);
   }
   function numberOperand(value: Expression, span: Span): Expression {
     return categoryOperand(value, "number", span);
@@ -4103,6 +4108,123 @@ function lowerScriptEntry(
   }
   function undefinedOperand(value: Expression, span: Span): Expression {
     return scalarBinary("===", value, id("undefined", span), span);
+  }
+  function ungroup(node: Expression): Expression {
+    let inner = node;
+    while (inner.kind === "group") inner = inner.expression;
+    return inner;
+  }
+  function isNullishLiteral(expression: Expression): boolean {
+    const node = ungroup(expression);
+    return (
+      node.kind === "null" ||
+      (node.kind === "unary" && node.operator === "void")
+    );
+  }
+  function nullishEquality(subject: Expression, span: Span): Expression {
+    usesNullishEquality = true;
+    return scalarBranch(
+      scalarBinary(
+        "||",
+        nullOperand(subject, span),
+        undefinedOperand(subject, span),
+        span,
+      ),
+      { ...at(span), kind: "boolean", value: true },
+      scalarBinary(
+        "&&",
+        categoryOperand(subject, "object", span),
+        objectRuntime("scriptIsHTMLDDA", [subject], span),
+        span,
+      ),
+      span,
+    );
+  }
+  function negate(value: Expression, span: Span): Expression {
+    return { ...at(span), kind: "unary", operator: "!", operand: value };
+  }
+  function looseEquality(
+    left: Expression,
+    right: Expression,
+    span: Span,
+  ): Expression {
+    usesLooseEqualityFallback = true;
+    return runtimeCall(
+      "looselyEqualOrThrow",
+      [left, right, member(id("$global"), "hooks", span), id("$errors")],
+      span,
+    );
+  }
+  function literalComparison(
+    node: Expression & { readonly kind: "binary" },
+  ): Expression | undefined {
+    const equal = node.operator === "===" || node.operator === "==";
+    const strict = node.operator === "===" || node.operator === "!==";
+    const left = ungroup(node.left),
+      right = ungroup(node.right);
+    if (strict) {
+      const literal = left.kind === "string" ? left : right;
+      const tested = literal === left ? right : left;
+      if (
+        literal.kind === "string" &&
+        tested.kind === "unary" &&
+        tested.operator === "typeof" &&
+        (literal.value === "number" ||
+          literal.value === "boolean" ||
+          literal.value === "string")
+      ) {
+        const operand = ungroup(tested.operand);
+        const subject =
+          operand.kind === "identifier"
+            ? identifierValue(operand.name, operand, true)
+            : value(operand);
+        const matches = categoryOperand(subject, literal.value, node);
+        return equal ? matches : negate(matches, node);
+      }
+    }
+    const leftLiteral = isNullishLiteral(left);
+    const rightLiteral = isNullishLiteral(right);
+    if (leftLiteral || rightLiteral) {
+      // Evaluating void still evaluates its operand in source order.
+      const first = left.kind === "null" ? left : temporary(value(left), true);
+      const second =
+        right.kind === "null" ? right : temporary(value(right), true);
+      const subject = leftLiteral ? second : first;
+      const literal = leftLiteral ? left : right;
+      const matches = strict
+        ? literal.kind === "null"
+          ? nullOperand(subject, node)
+          : undefinedOperand(subject, node)
+        : nullishEquality(subject, node);
+      return equal ? matches : negate(matches, node);
+    }
+    if (strict) return undefined;
+    const leftUndefined =
+      left.kind === "identifier" && left.name === "undefined";
+    const rightUndefined =
+      right.kind === "identifier" && right.name === "undefined";
+    if (!leftUndefined && !rightUndefined) return undefined;
+    const first = temporary(value(left), true);
+    const second = temporary(value(right), true);
+    const matches = scalarBranch(
+      undefinedOperand(leftUndefined ? first : second, node),
+      nullishEquality(leftUndefined ? second : first, node),
+      looseEquality(first, second, node),
+      node,
+    );
+    return equal ? matches : negate(matches, node);
+  }
+  function bothNumbers(
+    left: Expression,
+    right: Expression,
+    span: Span,
+  ): Expression {
+    return scalarBinary(
+      "&&",
+      numberOperand(left, span),
+      numberOperand(right, span),
+      span,
+    );
   }
   function immediateNumberOperand(value: Expression, span: Span): Expression {
     return scalarBinary(
@@ -4171,6 +4293,29 @@ function lowerScriptEntry(
       span,
     );
   }
+  function conditionValue(input: Expression, span: Span): Expression {
+    const node = ungroup(input);
+    if (
+      !compactResults &&
+      (node.kind === "boolean" ||
+        (node.kind === "unary" && node.operator === "!") ||
+        (node.kind === "binary" &&
+          [
+            "==",
+            "!=",
+            "===",
+            "!==",
+            "<",
+            "<=",
+            ">",
+            ">=",
+            "in",
+            "instanceof",
+          ].includes(node.operator)))
+    )
+      return value(node);
+    return truthy(temporary(value(input), true), span);
+  }
   function strictEqual(
     left: Expression,
     right: Expression,
@@ -4222,6 +4367,52 @@ function lowerScriptEntry(
     const args = [text(operator, span), left, right];
     if (compactResults || operator === "**")
       return checkedOperatorValue("binaryObjectValueOperation", args, span);
+    if (
+      operator === "<" ||
+      operator === "<=" ||
+      operator === ">" ||
+      operator === ">="
+    ) {
+      usesRelationalFallback = true;
+      const immediatePair = scalarBinary(
+        "&&",
+        primitiveNumberOperand(left, span),
+        primitiveNumberOperand(right, span),
+        span,
+      );
+      const fallback = scalarBinary(
+        "===",
+        runtimeCall(
+          "binaryObjectValueOperationOrThrow",
+          [
+            text(operator, span),
+            left,
+            right,
+            member(id("$global"), "hooks", span),
+            id("$errors"),
+          ],
+          span,
+        ),
+        { ...at(span), kind: "boolean", value: true },
+        span,
+      );
+      return scalarBranch(
+        bothNumbers(left, right, span),
+        scalarBinary(operator, left, right, span),
+        scalarBranch(
+          immediatePair,
+          scalarBinary(
+            operator,
+            primitiveNumber(left, span),
+            primitiveNumber(right, span),
+            span,
+          ),
+          fallback,
+          span,
+        ),
+        span,
+      );
+    }
     const result = temporary(id("undefined", span), true, true);
     function assigned(value: Expression): Statement {
       return {
@@ -7521,7 +7712,7 @@ function lowerScriptEntry(
         return invoke(callee, evaluated.receiver, node.arguments, node);
       }
       case "conditional": {
-        const test = truthy(temporary(value(node.test), true), node);
+        const test = conditionValue(node.test, node);
         const result = temporary(id("undefined", node), true, true);
         const consequent = branchValue(result, node.consequent);
         const alternate = branchValue(result, node.alternate);
@@ -7567,7 +7758,7 @@ function lowerScriptEntry(
             ...at(node),
             kind: "unary",
             operator: "!",
-            operand: truthy(temporary(value(node.operand), true), node),
+            operand: conditionValue(node.operand, node),
           };
         if (node.operator === "typeof") {
           let operand = node.operand;
@@ -7591,6 +7782,16 @@ function lowerScriptEntry(
         return id("undefined", node);
       }
       case "binary": {
+        if (
+          !compactResults &&
+          (node.operator === "==" ||
+            node.operator === "!=" ||
+            node.operator === "===" ||
+            node.operator === "!==")
+        ) {
+          const comparison = literalComparison(node);
+          if (comparison !== undefined) return comparison;
+        }
         if (
           node.operator === "&&" ||
           node.operator === "||" ||
@@ -7620,6 +7821,18 @@ function lowerScriptEntry(
         ) {
           const left = temporary(value(node.left), true);
           const right = temporary(value(node.right), true);
+          if (
+            !compactResults &&
+            (node.operator === "==" || node.operator === "!=")
+          ) {
+            const matches = scalarBranch(
+              bothNumbers(left, right, node),
+              scalarBinary("===", left, right, node),
+              looseEquality(left, right, node),
+              node,
+            );
+            return node.operator === "==" ? matches : negate(matches, node);
+          }
           const result = temporary(
             objectRuntime(
               node.operator === "==" || node.operator === "!="
@@ -8163,7 +8376,7 @@ function lowerScriptEntry(
     };
   }
   function loopTest(test: Expression): void {
-    const tested = temporary(value(test), true);
+    const tested = conditionValue(test, test);
     statements.push({
       ...at(test),
       kind: "if",
@@ -8171,7 +8384,7 @@ function lowerScriptEntry(
         ...at(test),
         kind: "unary",
         operator: "!",
-        operand: truthy(tested, test),
+        operand: tested,
       },
       consequent: { ...at(test), kind: "break" },
       alternate: undefined,
@@ -9430,7 +9643,7 @@ function lowerScriptEntry(
       return;
     }
     if (node.kind === "if") {
-      const test = truthy(temporary(value(node.test), true), node);
+      const test = conditionValue(node.test, node);
       // IfStatement applies UpdateEmpty(undefined), so an empty selected arm
       // must not retain a preceding statement-list completion value.
       expression({
@@ -10035,6 +10248,9 @@ function lowerScriptEntry(
     usesWideRegisterCalls,
     usesNativeScriptCalls,
     usesIndexedWrites,
+    usesNullishEquality,
+    usesRelationalFallback,
+    usesLooseEqualityFallback,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,

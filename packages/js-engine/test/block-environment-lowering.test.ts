@@ -41,6 +41,76 @@ function environments(text: string): number {
   return runtimeCalls(text, "createDeclarativeEnvironment");
 }
 
+test("literal nullish equality bypasses general equality completions", () => {
+  const source =
+    "function f(x) { return x == null || null != x || x == void 0; }";
+  assert.equal(runtimeCalls(source, "looselyEqual"), 0);
+  assert.equal(
+    countExpressions(
+      source,
+      (node) => node.kind === "unary" && node.generalTag === true,
+    ),
+    3,
+  );
+});
+
+test("numeric loose equality guards a scalar comparison", () => {
+  const source = "function f(x, y) { if (x == y) return 1; return 0; }";
+  assert.equal(runtimeCalls(source, "looselyEqual"), 0);
+  assert.equal(runtimeCalls(source, "looselyEqualOrThrow"), 1);
+});
+
+test("primitive typeof predicates bypass the object classifier", () => {
+  for (const category of ["number", "boolean", "string"])
+    assert.equal(
+      runtimeCalls(
+        'function f(x) { return typeof x === "' + category + '"; }',
+        "objectValueTypeof",
+      ),
+      0,
+    );
+});
+
+test("nullish comparisons and typeof predicates preserve evaluation boundaries", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+      let reads = 0;
+      let x = {
+        get value() { reads++; return undefined; },
+        valueOf() { throw "nullish equality must not coerce"; }
+      };
+      print(String(x.value == null) + " " + String(null == x) + " " + String(reads));
+      print(String(false != null) + " " + String(0 == void 0) + " " + String(null == void 0));
+      print(String(1n == null) + " " + String(Symbol() != null));
+      print(String(typeof missing === "number"));
+      print(String(typeof -0 === "number") + " " + String("number" !== typeof NaN));
+      try { typeof notInitialized === "boolean"; } catch (error) { print(error.name); }
+      let notInitialized = true;
+      with ({undefined: 3}) print(String(3 == undefined));
+      print(String(NaN == NaN) + " " + String(-0 == 0));
+      print(String(5 == { valueOf() { print("coerce"); return "5"; } }));
+      try {
+        null == { get bad() { throw "getter"; } }.bad;
+      } catch (error) { print(error); }
+    `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "true false 1",
+    "true false true",
+    "false true",
+    "false",
+    "true false",
+    "ReferenceError",
+    "true",
+    "false true",
+    "coerce",
+    "true",
+    "getter",
+  ]);
+});
+
 test("blocks without lexically scoped declarations create no environment", () => {
   const base = environments("0;");
   assert.equal(environments("{}{}{ {f();} }"), base);
@@ -175,7 +245,8 @@ test("general arithmetic in a slot-backed loop emits a guarded numeric operation
       (node) => node.kind === "binary" && node.operator === "+",
     ) > 0,
   );
-  assert.equal(runtimeCalls(source, "binaryObjectValueOperation"), 2);
+  assert.equal(runtimeCalls(source, "binaryObjectValueOperation"), 1);
+  assert.equal(runtimeCalls(source, "binaryObjectValueOperationOrThrow"), 1);
 });
 
 test("for-let captures keep distinct initialization and iteration environments", () => {

@@ -172,7 +172,7 @@ export {
   type NativeViewCache,
 } from "./native-views.ts";
 export { objectValueHasProperty } from "./membership.ts";
-export { looselyEqual } from "./equality.ts";
+export { looselyEqual, looselyEqualOrThrow } from "./equality.ts";
 export { installPrimitiveIntrinsics } from "./primitive-intrinsics.ts";
 export { installMathIntrinsics } from "./math-intrinsics.ts";
 export { toObjectValue, requireObjectCoercible } from "./boxing.ts";
@@ -205,6 +205,7 @@ export {
   checkPrimitiveRestArguments,
   viewTypeofObject,
   scriptBoolean,
+  scriptIsHTMLDDA,
   scriptStrictEqual,
   scriptSameValue,
   callObjectValue,

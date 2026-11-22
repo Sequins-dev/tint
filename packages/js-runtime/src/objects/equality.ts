@@ -1,6 +1,6 @@
 import { viewSymbolValue } from "./symbols.ts";
 import { viewObjectValue } from "./values.ts";
-import type { ErrorRealm } from "./errors.ts";
+import { throwIfRuntimeError, type ErrorRealm } from "./errors.ts";
 import type { ObjectHooks } from "./operations.ts";
 import { primitiveValue } from "./coercion.ts";
 import {
@@ -13,6 +13,17 @@ import {
 interface EqualityResult {
   readonly error: "none" | "type" | "unsupported";
   readonly value: boolean;
+}
+
+export function looselyEqualOrThrow(
+  left: unknown,
+  right: unknown,
+  hooks: ObjectHooks<unknown>,
+  realm: ErrorRealm,
+): boolean {
+  const result = looselyEqual(left, right, hooks, realm);
+  throwIfRuntimeError(realm, result.error);
+  return result.value;
 }
 
 /** IsLooselyEqual including Script primitives and observable object conversion. */

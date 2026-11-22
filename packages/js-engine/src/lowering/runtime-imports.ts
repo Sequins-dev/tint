@@ -79,6 +79,9 @@ export function scriptRuntimeImports(
   usesWideRegisterCalls: boolean = false,
   usesNativeScriptCalls: boolean = false,
   usesIndexedWrites: boolean = false,
+  usesNullishEquality: boolean = false,
+  usesRelationalFallback: boolean = false,
+  usesLooseEqualityFallback: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -163,6 +166,15 @@ export function scriptRuntimeImports(
         "createBigIntLiteral",
         "createRegExpLiteral",
         "scriptBoolean",
+        ...(usesNullishEquality || declarations === "all"
+          ? ["scriptIsHTMLDDA"]
+          : []),
+        ...(usesLooseEqualityFallback || declarations === "all"
+          ? ["looselyEqualOrThrow"]
+          : []),
+        ...(usesRelationalFallback && !usesFusedResults
+          ? ["binaryObjectValueOperationOrThrow"]
+          : []),
         "scriptStrictEqual",
         "binaryObjectValueOperation",
         "objectPropertyKey",

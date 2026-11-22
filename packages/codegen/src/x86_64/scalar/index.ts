@@ -2824,6 +2824,14 @@ export function emitModule(
           return;
         case "general-is": {
           const type = op.type;
+          if (type === "nullish") {
+            // Clear the only bit that differs between the two nullish tags.
+            emit({ op: "mov", dst: r9, src: frame(home(op.value)) });
+            emit({ op: "test", dst: r9, src: imm(-5) });
+            setBoolean(emit, "e", 0);
+            define(op.id, "boolean");
+            return;
+          }
           const targetTag =
             type === "undefined" ? 0 : type === "null" ? 4 : generalTag(type);
           const array = typedArrayMarker(type);

@@ -798,6 +798,7 @@ export function verify(
                 op.type !== "boolean" &&
                 op.type !== "string" &&
                 op.type !== "null" &&
+                op.type !== "nullish" &&
                 op.type !== "Uint8Array" &&
                 op.type !== "Uint16Array" &&
                 op.type !== "Uint32Array" &&

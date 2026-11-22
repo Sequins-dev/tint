@@ -36,6 +36,7 @@ export type GeneralTest =
   | "boolean"
   | "string"
   | "null"
+  | "nullish"
   | NativeTypedArray
   | "object";
 export type Instruction = Span &
@@ -76,6 +77,8 @@ export type Instruction = Span &
         readonly id: number;
         readonly value: number;
         readonly type: GeneralTest;
+        /** Prefer a direct flags branch for a branch-only Script tag guard. */
+        readonly branch?: true;
       }
     | {
         readonly kind: "general-equal";

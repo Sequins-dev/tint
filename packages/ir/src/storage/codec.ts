@@ -310,6 +310,7 @@ const generalTests: readonly GeneralTest[] = [
   "Uint32Array",
   "Float64Array",
   "object",
+  "nullish",
 ];
 export function encodeInstruction(
   writer: ByteWriter,
@@ -341,7 +342,7 @@ export function encodeInstruction(
       writeSigned(writer, op.value);
       return true;
     case "general-is":
-      writePrefix(writer, 80, op, 0);
+      writePrefix(writer, 80, op, op.branch === true ? 2 : 0);
       writeSigned(writer, op.id);
       writeSigned(writer, op.value);
       writeByte(writer, generalTests.indexOf(op.type));
@@ -1306,7 +1307,9 @@ export function decodeInstruction(
         value = readSigned(reader),
         type = generalTests[readByte(reader)];
       if (type === undefined) throw "packed general test invariant";
-      return { kind: "general-is", id, value, type, ...span };
+      return flagged(flags, 2)
+        ? { kind: "general-is", id, value, type, branch: true, ...span }
+        : { kind: "general-is", id, value, type, ...span };
     }
     case 79: {
       const receiver = flagged(flags, 2) ? readSigned(reader) : undefined,

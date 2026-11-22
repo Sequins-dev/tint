@@ -8450,6 +8450,7 @@ function emitModuleForms(
           if (
             finalInstruction !== undefined &&
             (finalInstruction.kind === "binary" ||
+              finalInstruction.kind === "general-is" ||
               finalInstruction.kind === "optional-present")
           ) {
             const terminator = b.terminator;
@@ -8782,11 +8783,11 @@ function emitModuleForms(
                         ? 2
                         : op.type === "string"
                           ? 3
-                          : op.type === "null"
+                          : op.type === "null" || op.type === "nullish"
                             ? 4
                             : 5;
                 rawValue(9, op.value);
-                imm(12, 0);
+                if (op.branch !== true) imm(12, 0);
                 emit({
                   op: "sub-imm",
                   width: 64,
@@ -8796,6 +8797,18 @@ function emitModuleForms(
                   shift: 0,
                   setFlags: true,
                 });
+                // Undefined and null are tags 0 and 4. If the null
+                // comparison already matched, preserve Z instead of
+                // comparing the tag with undefined.
+                if (op.type === "nullish")
+                  emit({
+                    op: "ccmp-imm",
+                    width: 64,
+                    rn: 9,
+                    immediate: 0,
+                    nzcv: 4,
+                    condition: "ne",
+                  });
                 const marker =
                   op.type === "Uint8Array"
                     ? 2
@@ -8807,10 +8820,15 @@ function emitModuleForms(
                           ? 5
                           : 0;
                 if (marker === 0) {
-                  emit({ op: "cset", rd: 12, condition: "eq" });
-                  saveRaw(12, op.id);
+                  if (op.branch === true && op.id === comparisonValue)
+                    comparisonBranch = "eq";
+                  else {
+                    emit({ op: "cset", rd: 12, condition: "eq" });
+                    saveRaw(12, op.id);
+                  }
                   break;
                 }
+                if (op.branch === true) imm(12, 0);
                 // An object whose header marker (bits 0-47) is 2: a typed
                 // array of 1-byte elements, as general-value checks.
                 const nonObject = instructions.length;
