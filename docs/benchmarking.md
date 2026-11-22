@@ -73,7 +73,8 @@ copying a workload elsewhere.
 
 `v7` (frozen at `7e83194c1`) is the supported workload. Build it with
 `--runtime-tree` on both sides of an A/B: its own collector rejects the
-stack-map tables current code generation emits. `v1`–`v6` are retired. `v1`–`v5`
+stack-map tables current code generation emits
+([evidence](results/frozen-runtime-tree-v7-v1.md)). `v1`–`v6` are retired. `v1`–`v5`
 cannot take `--runtime-tree` because the current collector imports runtime
 modules those snapshots lack.
 
