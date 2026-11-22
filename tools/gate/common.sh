@@ -15,7 +15,7 @@ gate_status() {
     sum=$(awk -F '\t' -v lock="${TINT_GATE_EXCLUSIVE_LOCK:-}" '$2 == lock { sum += $4 } END { print sum + 0 }' "$TINT_GATE_LOCK_TIMING")
   fi
   if [ -s "$gate_output/stalls.tsv" ]; then
-    awk -F '\t' '{ printf "STALL step=%s timeout-seconds=%s pid=%s report=%s\n", $1, $2, $3, $4 }' "$gate_output/stalls.tsv"
+    awk -F '\t' '{ printf "STALL step=%s timeout-seconds=%s pid=%s report=%s status=%s\n", $1, $2, $3, $4, $5 }' "$gate_output/stalls.tsv"
   fi
   printf 'gate-exit=%s wall-seconds=%s exclusive-lock-ms=%s evidence=%s\n' \
     "$gate_exit" "$(( $(date +%s) - gate_started ))" "$sum" "$gate_output"
@@ -38,15 +38,20 @@ run_step_logged() {
   printf '%s start %s resource=%s log=%s\n' "$(date -u +%FT%TZ)" "$step_name" "$step_resource" "$step_log"
   case "$step_resource" in
     unlocked) ;;
-    memory) set -- node tools/gate/lock.ts memory "$step_name" "$@" ;;
+    memory)
+      set -- env TINT_GATE_STEP_READY="$gate_output/ready-$step_name" \
+        node tools/gate/lock.ts memory "$step_name" "$@"
+      ;;
     exclusive)
-      set -- env TINT_GATE_STEP_TIMEOUT="${gate_step_timeout:?}" \
+      set -- env TINT_GATE_STEP_READY="$gate_output/ready-$step_name" \
+        TINT_GATE_STEP_TIMEOUT="${gate_step_timeout:?}" \
         sh tools/gate/exclusive-step.sh "$step_name" "$@"
       ;;
     watchdog|memory-watchdog)
       set -- node tools/gate/lock.ts watchdog "$step_name" "$@"
       if [ "$step_resource" = memory-watchdog ]; then
-        set -- node tools/gate/lock.ts memory "$step_name" "$@"
+        set -- env TINT_GATE_STEP_READY="$gate_output/ready-$step_name" \
+          node tools/gate/lock.ts memory "$step_name" "$@"
       fi
       set -- env TINT_GATE_STEP_TIMEOUT="${gate_step_timeout:?}" "$@"
       ;;
@@ -59,7 +64,9 @@ run_step_logged() {
   else
     "$@" >"$step_log" 2>"$step_stderr" || step_exit=$?
   fi
-  if [ -s "$gate_output/stalls.tsv" ]; then step_exit=124; fi
+  if [ -s "$gate_output/stalls.tsv" ]; then
+    step_exit=$(awk -F '\t' 'NR == 1 {print $5 ? $5 : 124}' "$gate_output/stalls.tsv")
+  fi
   printf '%s finish %s exit=%s wall-seconds=%s\n' \
     "$(date -u +%FT%TZ)" "$step_name" "$step_exit" "$(( $(date +%s) - step_started ))"
   if [ "$step_exit" -ne 0 ]; then

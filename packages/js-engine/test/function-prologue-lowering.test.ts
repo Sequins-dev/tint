@@ -101,20 +101,22 @@ function bodyInstantiations(source: string): number {
   return count;
 }
 
-/** A body with no var, function or lexical declarations and no separate
- * parameter environment shares the parameter scope; no plan is allocated. */
+/** Slot-backed declarations bypass the named body environment. */
 for (const [source, expected] of [
   ["function f(a){return a+1}", 0],
-  ["function f(a=1){return a}", 1],
-  ["function f(){var x=1;return x}", 1],
-  ["function f(){let x=1;return x}", 1],
-  ["function f(){function g(){}return g}", 1],
+  ["function f(a=1){return a}", 0],
+  ["function f(){var x=1;return x}", 0],
+  ["function f(){let x=1;return x}", 0],
+  ["function f(){function g(){}return g}", 0],
   ["function f(){eval('var x=1');return x}", 0],
   ["function f(){return function(){return 1}}", 0],
 ] as const)
-  test("body instantiation only for declaring bodies: " + source, () => {
-    assert.equal(bodyInstantiations(source), expected);
-  });
+  test(
+    "slot-backed function bodies skip named instantiation: " + source,
+    () => {
+      assert.equal(bodyInstantiations(source), expected);
+    },
+  );
 
 /** Count OrdinaryCallBindThis conversions (sloppyCallReceiver) in AOT Script
  * output. A sloppy function needs one only when its receiver can be read:
@@ -199,23 +201,22 @@ for (const [source, expected] of [
   ["var o={get v(){return this.x}};", 0],
   ["var g=()=>{return 1};", 0],
   ["var o={m(){return 1}};", 0],
-  ["function f(a){return a}", 1],
-  ["function f(){var v=1;return v}", 1],
+  ["function f(a){return a}", 0],
+  ["function f(){var v=1;return v}", 0],
   ["function f(){return arguments}", 1],
-  ["function f(){let x=1;return x}", 1],
-  ["function f(){function g(){}return g}", 1],
-  ["var f=function n(){return n};", 1],
-  // Expression-bodied arrows and class methods keep their environments.
-  ["var g=()=>1;", 1],
-  ["function f(){return ()=>1}", 1],
-  ["class C{m(){return 1}}", 2],
-  ["function f(){{let y=1;}return 2}", 1],
+  ["function f(){let x=1;return x}", 0],
+  ["function f(){function g(){}return g}", 0],
+  ["var f=function n(){return n};", 0],
+  ["var g=()=>1;", 0],
+  ["function f(){return ()=>1}", 0],
+  ["class C{m(){return 1}}", 1],
+  ["function f(){{let y=1;}return 2}", 0],
   ["function* g(){yield 1}", 1],
-  ["function f(){if(true)function h(){}}", 2],
+  ["function f(){if(true)function h(){}}", 0],
   ['function f(){eval("")}', 2],
 ] as const)
   test(
-    "AOT function environments only where something is bound: " + source,
+    "AOT function environments are allocated for observable records: " + source,
     () => {
       assert.equal(environmentCreations(source), expected);
     },

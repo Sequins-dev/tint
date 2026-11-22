@@ -432,3 +432,83 @@ test("a union dispatch's later layout checks stay behind the earlier check", () 
     "record",
   );
 });
+
+test("scans the function-wide record proof inputs once for multiple loops", () => {
+  function proofReads(includeSecondLoop: boolean): number {
+    const original = loop([]).functions[0]!;
+    let reads = 0;
+    const entry = original.blocks[0]!;
+    const sentinel: Instruction = {
+      ...span,
+      get kind() {
+        reads++;
+        return "constant" as const;
+      },
+      id: 100,
+      value: 1,
+    };
+    const blocks = original.blocks.slice();
+    blocks[0] = { ...entry, instructions: [...entry.instructions, sentinel] };
+    if (includeSecondLoop) {
+      blocks[3] = {
+        ...blocks[3]!,
+        terminator: { kind: "jump", target: 4, ...span },
+      };
+      blocks.push(
+        {
+          id: 4,
+          instructions: [
+            { kind: "load", id: 101, slot: 2, ...span },
+            { kind: "load", id: 102, slot: 0, ...span },
+            {
+              kind: "binary",
+              id: 103,
+              operator: "<",
+              left: 101,
+              right: 102,
+              ...span,
+            },
+          ],
+          terminator: {
+            kind: "branch",
+            condition: 103,
+            consequent: 5,
+            alternate: 6,
+            ...span,
+          },
+        },
+        {
+          id: 5,
+          instructions: [
+            { kind: "load", id: 104, slot: 2, ...span },
+            { kind: "constant", id: 105, value: 1, ...span },
+            {
+              kind: "binary",
+              id: 106,
+              operator: "+",
+              left: 104,
+              right: 105,
+              ...span,
+            },
+            { kind: "store", slot: 2, value: 106, ...span },
+          ],
+          terminator: { kind: "jump", target: 4, ...span },
+        },
+        {
+          id: 6,
+          instructions: [{ kind: "load", id: 107, slot: 3, ...span }],
+          terminator: { kind: "return", value: 107, ...span },
+        },
+      );
+    }
+    const fn = { ...original, blocks };
+    const module = { functions: [fn] };
+    assert.deepEqual(verify(module), { ok: true });
+    reads = 0;
+    const result = hoistLoopInvariants(fn, module, 100000);
+    assert.equal(result?.fn, fn);
+    return reads;
+  }
+
+  assert.equal(proofReads(true), proofReads(false));
+});

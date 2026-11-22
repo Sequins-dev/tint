@@ -158,15 +158,12 @@ test("eval entries retain direct-eval guards and early-error rejection", () => {
 function environments(source: string) {
   return calls(lower(source, false), "createDeclarativeEnvironment").length;
 }
-test("only sloppy direct-eval owners separate their body lexicals from vars", () => {
+test("direct eval retains heap bindings and only sloppy eval splits lexical and variable records", () => {
   assert.equal(
     environments("function f(){let x;eval(7)}"),
-    environments("function f(){let x;void 7}") + 1,
+    environments('function f(){"use strict";let x;eval(7)}') + 1,
   );
-  assert.equal(
-    environments('function f(){"use strict";let x;eval(7)}'),
-    environments('function f(){"use strict";let x;void 7}'),
-  );
+  assert.equal(environments("function f(){let x;void 7}"), 0);
   // With nothing else to declare, the body reuses the parameter scope.
   assert.equal(
     calls(
@@ -189,19 +186,17 @@ test("only sloppy direct-eval owners separate their body lexicals from vars", ()
   );
 });
 test("sloppy parameter eval gets a variable record outside parameter bindings", () => {
-  assert.equal(
-    environments("function f(a=eval(7)){}"),
-    environments("function f(a=7){}") + 1,
-  );
-  assert.equal(
-    environments('"use strict";function f(a=eval(7)){}'),
-    environments('"use strict";function f(a=7){}'),
-  );
+  const strict = environments('"use strict";function f(a=eval(7)){}');
+  assert.equal(strict, 1);
+  assert.equal(environments("function f(a=eval(7)){}"), strict + 1);
+  assert.equal(environments("function f(a=7){}"), 0);
 });
-test("nested eval candidates split their own block-bodied arrow only", () => {
+test("nested direct eval preserves both its own and enclosing lexical records", () => {
+  const strict = 'function f(){"use strict";let x;return ()=>{let y;eval(7)}}';
+  assert.equal(environments(strict), 2);
   assert.equal(
     environments("function f(){let x;return ()=>{let y;eval(7)}}"),
-    environments("function f(){let x;return ()=>{let y;void 7}}") + 1,
+    environments(strict) + 1,
   );
   for (const expression of ["eval?.(7)", "(0,eval)(7)"])
     assert.equal(

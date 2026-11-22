@@ -112,7 +112,11 @@ export {
 } from "./derived-construction.ts";
 export { makeMethod, getSuperBase } from "./methods.ts";
 export { copyObjectProperties } from "./spread.ts";
-export { objectPropertyKey, readObjectValuePropertyKey } from "./coercion.ts";
+export {
+  objectPropertyKey,
+  readObjectValuePropertyKey,
+  writeObjectValuePropertyKey,
+} from "./coercion.ts";
 export {
   createObject,
   createExoticObject,
@@ -144,6 +148,7 @@ export {
   isOrdinaryPrototypeChain,
   findOrdinaryProperty,
   createPropertyCellCache,
+  createScriptPropertyCache,
   cachedPropertyCell,
   refreshPropertyCell,
   writePropertyCell,
@@ -206,9 +211,13 @@ export {
   scriptStrictEqual,
   scriptSameValue,
   callObjectValue,
+  callRegisterObjectValue,
+  callWideRegisterObjectValue,
   callGeneralValue,
   getObjectValueProperty,
   readObjectValueProperty,
+  readCachedObjectValueProperty,
+  writeCachedObjectValueProperty,
   getObjectValuePropertyWithReceiver,
   setObjectValueProperty,
   setObjectValuePropertyWithReceiver,
@@ -263,6 +272,13 @@ export {
 } from "./errors.ts";
 export {
   createSourceFunction,
+  createNativeSourceFunction,
+  sourceArgumentCount,
+  sourceArgument,
+  sourceArgumentArea,
+  sourceArgumentFromFrame,
+  createRegisterSourceFunction,
+  createWideRegisterSourceFunction,
   createTailSourceFunction,
   createCheckedSourceFunction,
   requestSourceTailCall,
@@ -274,6 +290,13 @@ export {
   ordinaryHasInstance,
   instanceOfValue,
 } from "./functions.ts";
+export {
+  enterSourceCall,
+  enterNativeSourceCall,
+  exitSourceCall,
+  enterExecutionName,
+  leaveExecutionName,
+} from "./jobs.ts";
 export {
   primitiveToNumber,
   primitiveToString,

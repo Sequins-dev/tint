@@ -50,6 +50,8 @@ export function substituteInstructionValues(
     case "undefined":
     case "general-null":
     case "general-none":
+    case "script-argument-count":
+    case "script-argument-area":
     case "boolean-none":
     case "string-none":
     case "reference-none":
@@ -266,12 +268,17 @@ export function substituteInstructionValues(
     }
     case "call-indirect": {
       const args = list(op.arguments, values),
+        actuals =
+          op.scriptArguments === undefined
+            ? undefined
+            : list(op.scriptArguments, values),
         callee = substitutedValue(values, op.callee),
         receiver =
           op.receiver === undefined
             ? undefined
             : substitutedValue(values, op.receiver);
       return args === op.arguments &&
+        actuals === op.scriptArguments &&
         callee === op.callee &&
         receiver === op.receiver
         ? op
@@ -280,7 +287,23 @@ export function substituteInstructionValues(
             arguments: args,
             callee,
             ...(receiver === undefined ? {} : { receiver }),
+            ...(actuals === undefined ? {} : { scriptArguments: actuals }),
           };
+    }
+    case "script-argument": {
+      const index = substitutedValue(values, op.index);
+      const frame = op.frame;
+      if (frame === undefined)
+        return index === op.index ? op : { ...op, index };
+      const count = substitutedValue(values, frame.count),
+        registers = substitutedValue(values, frame.registers),
+        stack = substitutedValue(values, frame.stack);
+      return index === op.index &&
+        count === frame.count &&
+        registers === frame.registers &&
+        stack === frame.stack
+        ? op
+        : { ...op, index, frame: { count, registers, stack } };
     }
     case "record-new": {
       const args = optionalList(op.arguments, values),

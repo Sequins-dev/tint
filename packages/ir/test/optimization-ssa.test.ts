@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { foldSSAConstants } from "../src/optimization/ssa.ts";
+import { unboundedWork } from "../src/optimization/budget.ts";
 import { verify, type FunctionIR } from "@tint/ir/scalar";
 const s = { start: 0, end: 0 };
 function diamond(left: number, right: number): FunctionIR {
@@ -71,6 +72,37 @@ test("joins preserve differing values and signed zero", () => {
 });
 test("incomplete analysis does not publish transient constants", () => {
   assert.equal(foldSSAConstants(diamond(4, 4), 1), undefined);
+});
+test("unbounded SSA skips settled joins on a later predecessor visit", () => {
+  const source = diamond(4, 5);
+  const fn: FunctionIR = {
+    ...source,
+    slots: ["boolean", "number", "number"],
+    parameters: [0, 2],
+    blocks: [
+      source.blocks[0]!,
+      {
+        ...source.blocks[1]!,
+        instructions: [
+          { kind: "load", id: 1, slot: 2, ...s },
+          { kind: "store", slot: 1, value: 1, ...s },
+        ],
+      },
+      {
+        id: 2,
+        instructions: [],
+        terminator: { kind: "jump", target: 4, ...s },
+      },
+      source.blocks[3]!,
+      { ...source.blocks[2]!, id: 4 },
+    ],
+  };
+  assert.deepEqual(verify({ functions: [fn] }), { ok: true });
+  const bounded = foldSSAConstants(fn, 10000)!;
+  const unbounded = foldSSAConstants(fn, unboundedWork)!;
+  assert.equal(unbounded.fn, bounded.fn);
+  assert.equal(unbounded.rewritten, bounded.rewritten);
+  assert.equal(bounded.visited - unbounded.visited, 2);
 });
 test("conditional reachability excludes an untaken incoming value", () => {
   const fn = diamond(4, 5);

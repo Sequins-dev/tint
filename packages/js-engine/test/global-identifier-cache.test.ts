@@ -21,7 +21,12 @@ function lowered(source: string): { caches: number; cachedSites: number } {
         if (name === "createGlobalIdentifierCache") caches++;
         if (name === "getIdentifierValue" || name === "resolveBinding") {
           const last = node.arguments[node.arguments.length - 1];
-          if (last?.kind === "identifier" && last.name.startsWith("$gc"))
+          if (
+            (last?.kind === "identifier" && last.name.startsWith("$gc")) ||
+            (last?.kind === "member" &&
+              last.object.kind === "identifier" &&
+              last.object.name.startsWith("$gc"))
+          )
             cachedSites++;
         }
       }
@@ -48,25 +53,20 @@ test("declarative and Script lexical sites get no global cache", () => {
   });
 });
 
-test("only top-level sites get caches; nested functions read uncached", () => {
-  // v+v inside g stays uncached (a cache there would be captured); the
-  // top-level callee g is a Script function on the global object.
+test("nested functions cache each statically global site", () => {
   assert.deepEqual(lowered("var v=1;function g(){return v+v}g();"), {
-    caches: 1,
-    cachedSites: 1,
+    caches: 3,
+    cachedSites: 3,
   });
 });
 
-test("many functions reading globals capture no caches", () => {
-  // Each nested site used to get an entry-local cache that every function
-  // captured, growing closure records past the layout limit in large Scripts
-  // (64-variant Test262 batches with harness files).
+test("many functions reading globals index the shared cache table", () => {
   const functions: string[] = [];
   for (let i = 0; i < 400; i++)
     functions.push(`function f${i}(){return g${i}+h${i}+k${i};}`);
   assert.deepEqual(lowered(functions.join("") + "f0();"), {
-    caches: 1,
-    cachedSites: 1,
+    caches: 1201,
+    cachedSites: 1201,
   });
 });
 
@@ -79,9 +79,9 @@ for (const [name, scripts, printed] of [
   [
     "a deleted global is unresolvable at a warm site",
     [
-      "x=1;function r(){return x}print(r());delete globalThis.x;print(typeof x);try{r()}catch(e){print(e.name)}",
+      "x=1;function r(){return x}print(r());print(r());delete globalThis.x;print(typeof x);try{r()}catch(e){print(e.name)}",
     ],
-    ["1", "undefined", "ReferenceError"],
+    ["1", "1", "undefined", "ReferenceError"],
   ],
   [
     "a global redefined as an accessor runs its getter",

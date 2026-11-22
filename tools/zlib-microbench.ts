@@ -4,7 +4,7 @@
 // bundles Chromium's zlib, a different implementation). Each loop times
 // itself with the monotonic clock; the Tint image runs under LLDB (stopped
 // at entry, exit status 42 asserted). Run under
-//   lockf /Users/stephenbelanger/.t3/tint-timing.lock node tools/zlib-microbench.ts
+//   tools/gate/with-lock.sh both zlib-microbench node tools/zlib-microbench.ts
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";

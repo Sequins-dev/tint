@@ -1,9 +1,8 @@
 #!/bin/sh
 set -eu
-: "${TINT_GATE_STEP_TIMEOUT:?}" "${TINT_GATE_EVIDENCE:?}"
+: "${TINT_GATE_STEP_TIMEOUT:?}" "${TINT_GATE_EVIDENCE:?}" "${TINT_GATE_EXCLUSIVE_LOCK:?}"
 if [ -s "$TINT_GATE_EVIDENCE/stalls.tsv" ]; then
   echo "An earlier gate step stalled. See $TINT_GATE_EVIDENCE/stalls.tsv." >&2
-  exit 124
+  exit "$(awk -F '\t' 'NR == 1 {print $5 ? $5 : 124}' "$TINT_GATE_EVIDENCE/stalls.tsv")"
 fi
-gate_timing_tool=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)/lock.ts
-exec /usr/bin/lockf -k "${TINT_GATE_EXCLUSIVE_LOCK:?}" node "$gate_timing_tool" timed "$@"
+exec sh "$(dirname -- "$0")/with-lock.sh" launch "$@"

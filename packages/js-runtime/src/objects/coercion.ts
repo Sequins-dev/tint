@@ -1,16 +1,34 @@
 import {
   createRuntimeError,
   rejectUnsupportedExecution,
+  throwIfRuntimeError,
   type ErrorRealm,
 } from "./errors.ts";
 import { viewSymbolValue, wellKnownSymbol } from "./symbols.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
-import { getProperty, type ObjectHooks } from "./operations.ts";
+import {
+  getProperty,
+  indexedPropertyCell,
+  type ObjectHooks,
+} from "./operations.ts";
 import { isCallableObject, callObject } from "./call.ts";
-import { viewObjectValue, propertyValueOf } from "./values.ts";
-import { typedArrayElementAt } from "./typed-array-data.ts";
+import {
+  viewObjectValue,
+  propertyValueOf,
+  setObjectValueProperty,
+} from "./values.ts";
+import {
+  setTypedArrayElement,
+  typedArrayElementAt,
+} from "./typed-array-data.ts";
+import { bufferStorageImmutable } from "./buffer-storage.ts";
 import { primitiveToString, primitiveToNumber } from "./operators.ts";
 import { viewBigIntValue, bigIntToString } from "./bigints.ts";
+import {
+  arrayElementCount,
+  readArrayElement,
+  writeArrayElement,
+} from "./array-elements.ts";
 
 /** Property references reject nullish bases before ToPropertyKey. */
 export function objectPropertyKey(
@@ -44,11 +62,49 @@ export function readObjectValuePropertyKey(
     // A TypedArray's [[Get]] of a canonical numeric key never consults the
     // prototype chain; ToString of a Number is canonical, naming the Number
     // itself (-0 names "0"). Read the element without the string round trip.
-    const object = viewObjectValue(base, realm.objectPrototype);
-    const data =
-      object === undefined ? undefined : object.internalTypedArrayData;
+    let object = viewObjectValue(base, realm.objectPrototype);
+    const data = object?.internalTypedArrayData;
     if (data !== undefined)
       return typedArrayElementAt(data, key === 0 ? 0 : key);
+    if (Number.isSafeInteger(key) && object !== undefined) {
+      while (object !== undefined) {
+        const typed = object.internalTypedArrayData;
+        if (typed !== undefined)
+          return typedArrayElementAt(typed, key === 0 ? 0 : key);
+        const methods = object.internalMethods;
+        if (
+          methods?.get !== undefined ||
+          methods?.getOwnProperty !== undefined ||
+          methods?.getPrototype !== undefined ||
+          object.internalDataAliases !== undefined
+        )
+          return getProperty<ScriptPropertyKey, unknown>(
+            object,
+            String(key),
+            base,
+            hooks,
+          );
+        const elements = object.internalArrayElements;
+        if (
+          elements !== undefined &&
+          key >= 0 &&
+          key < arrayElementCount<ScriptPropertyKey, unknown>(elements)
+        )
+          return readArrayElement<ScriptPropertyKey, unknown>(elements, key);
+        const cell = indexedPropertyCell<ScriptPropertyKey, unknown>(
+          object,
+          key,
+        );
+        if (cell !== undefined) {
+          if (!cell.accessor) return cell.value;
+          return hooks.sameValue(cell.get, hooks.undefinedValue)
+            ? hooks.undefinedValue
+            : hooks.call(cell.get, base, []);
+        }
+        object = object.prototype;
+      }
+      return hooks.undefinedValue;
+    }
     converted = String(key);
   } else {
     const symbol = viewSymbolValue(key);
@@ -62,6 +118,68 @@ export function readObjectValuePropertyKey(
     }
   }
   return propertyValueOf(base, converted, base, hooks, realm);
+}
+
+/** PutValue of an already evaluated computed reference. An integer
+ * overwrite of existing ordinary storage needs no property-name string. */
+export function writeObjectValuePropertyKey(
+  base: unknown,
+  key: unknown,
+  value: unknown,
+  strict: boolean,
+  hooks: ObjectHooks<unknown>,
+  realm: ErrorRealm,
+): void {
+  if (base === null || base === undefined)
+    throw createRuntimeError(realm, "type");
+  if (typeof key === "number") {
+    const object = viewObjectValue(base, realm.objectPrototype);
+    if (object !== undefined) {
+      const data = object.internalTypedArrayData;
+      if (data !== undefined) {
+        if (!bufferStorageImmutable(data.storage))
+          setTypedArrayElement(data, key === 0 ? 0 : key, value, realm, hooks);
+        else if (strict) throw createRuntimeError(realm, "type");
+        return;
+      }
+      if (
+        Number.isSafeInteger(key) &&
+        object.internalPropertyContract === undefined
+      ) {
+        const elements = object.internalArrayElements;
+        if (
+          elements !== undefined &&
+          key >= 0 &&
+          key < arrayElementCount<ScriptPropertyKey, unknown>(elements)
+        ) {
+          writeArrayElement<ScriptPropertyKey, unknown>(elements, key, value);
+          return;
+        }
+        if (
+          object.internalMethods === undefined &&
+          object.internalDataAliases === undefined
+        ) {
+          const cell = indexedPropertyCell<ScriptPropertyKey, unknown>(
+            object,
+            key,
+          );
+          if (cell !== undefined && !cell.accessor) {
+            if (cell.writable) cell.value = value;
+            else if (strict) throw createRuntimeError(realm, "type");
+            return;
+          }
+        }
+      }
+    }
+  }
+  const converted = propertyKeyValue(key, hooks, realm);
+  if (converted.error === "unsupported") rejectUnsupportedExecution(realm);
+  if (converted.error !== "none")
+    throw createRuntimeError(realm, converted.error);
+  throwIfRuntimeError(
+    realm,
+    setObjectValueProperty(base, converted.value, value, strict, hooks, realm),
+  );
 }
 
 export function propertyKeyValue(

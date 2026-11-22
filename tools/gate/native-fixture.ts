@@ -39,13 +39,18 @@ export function withNativeFixtureMemory<T>(
   run: (waitMs: number) => T,
   env = process.env,
 ): T {
-  if (!env.TINT_GATE_NATIVE_IMAGES) return run(0);
+  const output = env.TINT_GATE_NATIVE_IMAGES;
+  if (!output) return run(0);
   const queued = performance.now();
+  record(output, "memory-wait-start", queued, {});
   return withGateLock(
     gateMemorySlots(env),
     "fixture-build",
     env.TINT_GATE_LOCK_TIMING,
-    () => run(performance.now() - queued),
+    () => {
+      record(output, "memory-wait", queued, {});
+      return run(performance.now() - queued);
+    },
   );
 }
 

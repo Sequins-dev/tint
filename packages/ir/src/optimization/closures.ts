@@ -318,7 +318,12 @@ export function devirtualizeClosureCalls(
             known[op.id] = slotKnown;
         }
         if (instructions !== undefined) instructions.push(op);
-        if (op.kind !== "call-indirect" || op.receiver !== undefined) continue;
+        if (
+          op.kind !== "call-indirect" ||
+          op.receiver !== undefined ||
+          op.scriptArguments !== undefined
+        )
+          continue;
         const closure = known[op.callee];
         if (closure === undefined) {
           if (remarks !== undefined)

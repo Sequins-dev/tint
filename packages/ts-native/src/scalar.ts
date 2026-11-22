@@ -401,6 +401,7 @@ export function lowerFunction(
   dynamicSignatures: readonly number[] = [],
   realmErrorBindings?: RealmErrorRuntime,
   nodeErrors?: NodeErrorRecords,
+  generalObjectViews: boolean = false,
 ): FunctionIR {
   const primitives = primitiveBindings,
     bigints = bigIntBindings,
@@ -448,6 +449,7 @@ export function lowerFunction(
       case "general-null":
       case "general-none":
       case "general-wrap":
+      case "script-argument":
         type = "general";
         break;
       case "general-value":
@@ -477,6 +479,8 @@ export function lowerFunction(
         break;
       case "string-length":
       case "string-code-unit":
+      case "script-argument-count":
+      case "script-argument-area":
         type = "number";
         break;
       case "array-subarray":
@@ -3706,6 +3710,7 @@ export function lowerFunction(
     calleeSlot: number | undefined,
     receiver: number | undefined,
     node: Expression,
+    scriptArguments?: readonly number[],
   ): number | undefined {
     const signature = signatures[target];
     if (signature === undefined) throw "call signature invariant";
@@ -3831,6 +3836,13 @@ export function lowerFunction(
           : {}),
         callee: operation.callee,
         arguments: operation.arguments,
+        ...(scriptArguments === undefined
+          ? {}
+          : {
+              scriptArguments: scriptArguments.map((slot) =>
+                coerce(load(slot, node), "general", node),
+              ),
+            }),
       });
     }
     if (type === "void") return undefined;
@@ -6677,6 +6689,55 @@ export function lowerFunction(
           return nullishValue(value(node.left), node.left, node, () =>
             value(node.right),
           );
+        if (
+          generalObjectViews &&
+          (node.operator === "===" || node.operator === "!==")
+        ) {
+          const literal =
+            node.left.kind === "null" || node.left.kind === "string"
+              ? node.left
+              : node.right;
+          const compared = literal === node.left ? node.right : node.left;
+          let tested = compared;
+          let category:
+            "null" | "number" | "boolean" | "string" | "undefined" | undefined;
+          if (literal.kind === "null") category = "null";
+          else if (
+            literal.kind === "string" &&
+            compared.kind === "unary" &&
+            compared.operator === "typeof" &&
+            info(compared).realmTypeof === undefined
+          ) {
+            const name = literal.value;
+            if (
+              name === "number" ||
+              name === "boolean" ||
+              name === "string" ||
+              name === "undefined"
+            ) {
+              category = name;
+              tested = compared.operand;
+            }
+          }
+          if (category !== undefined && info(tested).type === "general") {
+            // The literal has no effects. Read the tag without materializing
+            // a null box or a typeof result string.
+            const operand = value(tested);
+            const id = nextValue++;
+            emit({
+              kind: "general-is",
+              id,
+              value: coerce(load(operand, tested), "general", tested),
+              type: category,
+              start: node.start,
+              end: node.end,
+            });
+            const equal = save(id, "boolean", node);
+            return node.operator === "==="
+              ? equal
+              : unarySlot("!", equal, "boolean", node);
+          }
+        }
         const left = value(node.left);
         if (node.operator === "&&" || node.operator === "||") {
           const result = temporary(scalarType(node));
@@ -7201,6 +7262,70 @@ export function lowerFunction(
         return result;
       }
       case "call": {
+        if (node.scriptArgument === "count") {
+          const id = nextValue++;
+          emit({
+            kind: "script-argument-count",
+            id,
+            start: node.start,
+            end: node.end,
+          });
+          return save(id, "number", node);
+        }
+        if (
+          node.scriptArgument === "registers" ||
+          node.scriptArgument === "stack"
+        ) {
+          const id = nextValue++;
+          emit({
+            kind: "script-argument-area",
+            id,
+            area: node.scriptArgument,
+            start: node.start,
+            end: node.end,
+          });
+          return save(id, "number", node);
+        }
+        if (
+          node.scriptArgument === "index" ||
+          node.scriptArgument === "load-frame"
+        ) {
+          const argument = node.arguments[0];
+          if (argument === undefined) throw "script argument index invariant";
+          const indexSlot = value(argument);
+          let frame:
+            { count: number; registers: number; stack: number } | undefined;
+          if (node.scriptArgument === "load-frame") {
+            const count = node.arguments[1],
+              registers = node.arguments[2],
+              stack = node.arguments[3];
+            if (
+              count === undefined ||
+              registers === undefined ||
+              stack === undefined
+            )
+              throw "script argument frame invariant";
+            const size = value(count),
+              reg = value(registers),
+              overflow = value(stack);
+            frame = {
+              count: load(size, node),
+              registers: load(reg, node),
+              stack: load(overflow, node),
+            };
+          }
+          const index = load(indexSlot, node),
+            id = nextValue++;
+          emit({
+            kind: "script-argument",
+            id,
+            index,
+            ...(frame === undefined ? {} : { frame }),
+            start: node.start,
+            end: node.end,
+          });
+          return save(id, "general", node);
+        }
         if (metadata.fixedFfiCall !== undefined)
           return fixedFfiCall(node, metadata.fixedFfiCall);
         const general = metadata.generalCall;
@@ -9852,6 +9977,18 @@ export function lowerFunction(
           : node.arguments;
         const target = info(node).callee;
         if (target === undefined) throw "call invariant";
+        if (node.scriptCall === true) {
+          if (calleeSlot === undefined) throw "script call entry invariant";
+          const header = callArguments(args.slice(0, 4), target, node);
+          return invoke(
+            target,
+            header,
+            calleeSlot,
+            undefined,
+            node,
+            args.slice(4).map(value),
+          );
+        }
         return invoke(
           target,
           callArguments(args, target, node),

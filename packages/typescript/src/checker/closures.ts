@@ -241,6 +241,7 @@ export type ClosureIntrinsic =
   | "string-code-unit";
 export interface ClosureBody {
   readonly node: Span;
+  readonly scriptEntry: true | undefined;
   readonly parameters: readonly Parameter[];
   readonly body: Expression | BlockStatement;
   readonly result: number;
@@ -3667,6 +3668,7 @@ function checkClosureModuleLayout(
     signature: number,
     inferResult: boolean = false,
     inheritStableFacts: boolean = false,
+    scriptEntry: true | undefined = undefined,
   ): number {
     const savedFacts = present,
       savedCallSafeFacts = callSafeFacts;
@@ -3768,6 +3770,7 @@ function checkClosureModuleLayout(
       if (type.result !== voidType) requireType(result, type.result, node);
       bodies.set(owner, {
         node,
+        scriptEntry,
         parameters: params,
         body,
         result,
@@ -3792,7 +3795,13 @@ function checkClosureModuleLayout(
               body,
             );
           }
-          bodies.set(owner, { node, parameters: params, body, result });
+          bodies.set(owner, {
+            node,
+            scriptEntry,
+            parameters: params,
+            body,
+            result,
+          });
         } else if ((completed & 1) !== 0 && result !== voidType) {
           requireType(undefinedType, result, body);
         }
@@ -3804,7 +3813,13 @@ function checkClosureModuleLayout(
         );
         if (inferResult) {
           result = actual;
-          bodies.set(owner, { node, parameters: params, body, result });
+          bodies.set(owner, {
+            node,
+            scriptEntry,
+            parameters: params,
+            body,
+            result,
+          });
         }
         if (result === voidType && types[actual]?.kind === "void-value")
           recordVoidReturn(owner, body);
@@ -4052,6 +4067,10 @@ function checkClosureModuleLayout(
       const argument = node.arguments[i];
       if (argument === undefined) throw "call argument invariant";
       const position = i - offset;
+      if (node.kind === "call" && node.scriptCall === true && position >= 4) {
+        expression(argument, owner);
+        continue;
+      }
       const trailing = element !== undefined && position >= start;
       if (argument.kind !== "spread") {
         args.push(
@@ -5425,6 +5444,7 @@ function checkClosureModuleLayout(
             result,
             infer,
             true,
+            node.kind === "arrow" ? node.scriptEntry : undefined,
           );
           if (signature.result === voidType && returned !== voidType)
             result = appendType(

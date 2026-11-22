@@ -252,6 +252,9 @@ import {
 } from "../isa.ts";
 import {
   signatureLayout,
+  scriptArgumentLayout,
+  scriptFirstActualRegister,
+  scriptActualRegisterPairs,
   nativeAllocationStateOffset,
   type SignatureLayout,
 } from "./abi.ts";
@@ -2592,6 +2595,30 @@ function emitModuleForms(
     } else if (register !== 0) emit({ op: "fmov-d-x", rd: register, rn: rt });
     else emit({ op: "str", width: 64, rt, rn: "sp", offset });
   }
+  function generalPair(register: number, offset: number, load: boolean): void {
+    const homes = scalarRegisters;
+    if (
+      offset <= 504 &&
+      (homes?.[offset / 8] ?? 0) === 0 &&
+      (homes?.[offset / 8 + 1] ?? 0) === 0
+    ) {
+      emit({
+        op: load ? "ldp" : "stp",
+        width: 64,
+        rt: register,
+        rt2: register + 1,
+        rn: "sp",
+        offset,
+        mode: "offset",
+      });
+    } else if (load) {
+      rawLoad(register, offset);
+      rawLoad(register + 1, offset + 8);
+    } else {
+      rawStore(register, offset);
+      rawStore(register + 1, offset + 8);
+    }
+  }
   /** Zero stack words whose order is unobservable (no label or safepoint
    * between them). These are frame words the collector may scan (roots,
    * temporary pools, result buffers): they are written in memory even when
@@ -3228,7 +3255,7 @@ function emitModuleForms(
     const seenDiscardSignatures = new Set<number>();
     for (const f of module.functions) {
       if (f === undefined) throw "function invariant";
-      let parameters = ":";
+      let parameters = f.scriptEntry === true ? ":javascript:" : ":";
       for (const slot of f.parameters) {
         if (slot === undefined) throw "parameter invariant";
         const type = f.slots[slot];
@@ -4071,6 +4098,7 @@ function emitModuleForms(
         // Frame words outside slots and temporaries that a safepoint's map
         // must list (a may-callback call's callback function values).
         const siteReferences = new Map<number, readonly number[]>();
+        const siteGeneralArguments = new Map<number, number>();
         let siteIndex = 0;
         function safepoint(at: number = instructions.length): void {
           const block = blockId;
@@ -4139,6 +4167,14 @@ function emitModuleForms(
               const s = signatures[op.target];
               if (s === undefined) throw "callee signature invariant";
               outgoingBytes = Math.max(outgoingBytes, s.stackBytes);
+              if (
+                op.kind === "call-indirect" &&
+                op.scriptArguments !== undefined
+              )
+                outgoingBytes = Math.max(
+                  outgoingBytes,
+                  scriptArgumentLayout(op.scriptArguments.length).stackBytes,
+                );
             }
             if (op.kind === "c-call")
               outgoingBytes = Math.max(
@@ -4176,8 +4212,13 @@ function emitModuleForms(
             fn.closureEnvironment === undefined
               ? borrowedEnvironmentOffset
               : localsBase,
+          scriptCountOffset =
+            localsBase + (fn.closureEnvironment === undefined ? 0 : 8),
+          scriptArgumentsOffset = scriptCountOffset + 8,
           localsOffset =
-            localsBase + (fn.closureEnvironment === undefined ? 0 : 8);
+            fn.scriptEntry === true
+              ? scriptArgumentsOffset + scriptActualRegisterPairs * 16
+              : scriptCountOffset;
         let cursor = localsOffset;
         const slotOffsets: number[] = [];
         // Frames share offsets between same-typed slots whose live ranges
@@ -4441,11 +4482,17 @@ function emitModuleForms(
               case "general-null":
               case "general-none":
               case "general-wrap":
+              case "script-argument":
               case "weak-slot-new":
               case "weak-slot-key":
               case "weak-slot-value":
                 id = op.id;
                 type = "general";
+                break;
+              case "script-argument-count":
+              case "script-argument-area":
+                id = op.id;
+                type = "number";
                 break;
               case "general-value":
                 id = op.id;
@@ -5570,7 +5617,8 @@ function emitModuleForms(
           );
           const result = earlyExit.value;
           const direct =
-              directReturns !== undefined && directReturns[fn.id] === 1,
+              fn.scriptEntry === true ||
+              (directReturns !== undefined && directReturns[fn.id] === 1),
             target = direct ? 1 : 9;
           if (result.kind === "bits") imm64(target, result.lo, result.hi);
           else if (result.kind === "integer")
@@ -5720,6 +5768,44 @@ function emitModuleForms(
         }
         rawStore(0, contextOffset);
         rawStore(3, resultPointerOffset);
+        if (fn.scriptEntry === true) {
+          const listSlot = fn.parameters[3];
+          if (listSlot === undefined) throw "script entry header invariant";
+          emit({ op: "ubfm", width: 64, rd: 16, rn: 2, immr: 0, imms: 0 });
+          emit({
+            op: "sub-imm",
+            width: 64,
+            rd: "zr",
+            rn: 16,
+            immediate: 0,
+            shift: 0,
+            setFlags: true,
+          });
+          emit({
+            op: "csel",
+            width: 64,
+            rd: 16,
+            rn: 2,
+            rm: "zr",
+            condition: "eq",
+          });
+          rawStore(16, slotOffset(listSlot));
+          emit({ op: "ubfm", width: 64, rd: 17, rn: 2, immr: 1, imms: 63 });
+          emit({
+            op: "csel",
+            width: 64,
+            rd: 17,
+            rn: "zr",
+            rm: 17,
+            condition: "eq",
+          });
+          rawStore(17, scriptCountOffset);
+          for (let i = 0; i < scriptActualRegisterPairs; i++) {
+            const offset = scriptArgumentsOffset + i * 16;
+            const register = scriptFirstActualRegister + i * 2;
+            generalPair(register, offset, false);
+          }
+        }
         frameStart = instructions.length * 4;
         // Words the prologue stores below before publishing the frame record
         // (environment, receiver, parameters) need no zeroing first.
@@ -5936,11 +6022,16 @@ function emitModuleForms(
             location = signature.parameters[i];
           if (slot === undefined || location === undefined)
             throw "parameter layout invariant";
+          if (location.kind === "script-list") continue;
           const offset = slotOffset(slot);
           if (
             fn.slots[slot] === "general" ||
             fn.slots[slot] === "optional-boolean"
           ) {
+            if (location.kind === "pair") {
+              generalPair(location.index, offset, false);
+              continue;
+            }
             if (location.kind === "integer")
               emit({
                 op: "orr-reg",
@@ -9228,6 +9319,205 @@ function emitModuleForms(
                 saveRaw(9, op.id);
                 rawStore("zr", value(op.id).offset + 8);
                 break;
+              case "script-argument-count":
+                rawLoad(9, scriptCountOffset);
+                emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                floatStore(0, op.id);
+                break;
+              case "script-argument-area":
+                if (op.area === "registers") address(9, scriptArgumentsOffset);
+                else
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 9,
+                    rn: 29,
+                    immediate: 16,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                floatStore(0, op.id);
+                break;
+              case "script-argument": {
+                const frame = op.frame;
+                const fact = valueIds.intern(op.index);
+                const position =
+                  wordKinds[fact] === 3 ? wordConstants[fact] : undefined;
+                if (
+                  frame === undefined &&
+                  position !== undefined &&
+                  position < scriptActualRegisterPairs
+                ) {
+                  const offset = scriptArgumentsOffset + position * 16;
+                  generalPair(9, offset, true);
+                  saveRaw(9, op.id);
+                  rawStore(10, value(op.id).offset + 8);
+                  break;
+                }
+                if (
+                  frame === undefined &&
+                  position !== undefined &&
+                  position < 2048
+                ) {
+                  const offset =
+                    16 + (position - scriptActualRegisterPairs) * 16;
+                  rawLoad(9, scriptCountOffset);
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    immediate: position,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  const outOfBounds = instructions.length;
+                  emit({ op: "b.cond", condition: "ls", displacement: 0 });
+                  emit({ op: "ldr", width: 64, rt: 9, rn: 29, offset });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 10,
+                    rn: 29,
+                    offset: offset + 8,
+                  });
+                  const loaded = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  patchInstruction(outOfBounds, {
+                    op: "b.cond",
+                    condition: "ls",
+                    displacement: (instructions.length - outOfBounds) * 4,
+                  });
+                  imm(9, 0);
+                  imm(10, 0);
+                  patchInstruction(loaded, {
+                    op: "b",
+                    displacement: (instructions.length - loaded) * 4,
+                  });
+                  saveRaw(9, op.id);
+                  rawStore(10, value(op.id).offset + 8);
+                  break;
+                }
+                if (frame !== undefined) {
+                  emit({
+                    op: "fcvtzs-x-d",
+                    rd: 12,
+                    rn: floatOperand(frame.count, 0),
+                  });
+                  emit({
+                    op: "fcvtzs-x-d",
+                    rd: 13,
+                    rn: floatOperand(frame.registers, 0),
+                  });
+                  emit({
+                    op: "fcvtzs-x-d",
+                    rd: 14,
+                    rn: floatOperand(frame.stack, 0),
+                  });
+                }
+                const input = floatOperand(op.index, 0);
+                const exact = input === 1 ? 0 : 1;
+                emit({ op: "fcvtzs-x-d", rd: 9, rn: input });
+                emit({ op: "scvtf-d-x", rd: exact, rn: 9 });
+                emit({ op: "fcmp", rn: input, rm: exact });
+                const nonInteger = instructions.length;
+                emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                if (frame === undefined) rawLoad(10, scriptCountOffset);
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  rm: frame === undefined ? 10 : 12,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                const absent = instructions.length;
+                emit({ op: "b.cond", condition: "cs", displacement: 0 });
+                if (frame === undefined) address(11, scriptArgumentsOffset);
+                else
+                  emit({ op: "orr-reg", width: 64, rd: 11, rn: "zr", rm: 13 });
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  immediate: scriptActualRegisterPairs,
+                  shift: 0,
+                  setFlags: true,
+                });
+                const inRegister = instructions.length;
+                emit({ op: "b.cond", condition: "cc", displacement: 0 });
+                if (frame === undefined)
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 11,
+                    rn: 29,
+                    immediate: 16,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                else
+                  emit({ op: "orr-reg", width: 64, rd: 11, rn: "zr", rm: 14 });
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: 9,
+                  rn: 9,
+                  immediate: scriptActualRegisterPairs,
+                  shift: 0,
+                  setFlags: false,
+                });
+                patchInstruction(inRegister, {
+                  op: "b.cond",
+                  condition: "cc",
+                  displacement: (instructions.length - inRegister) * 4,
+                });
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 11,
+                  rn: 11,
+                  rm: 9,
+                  shift: "lsl",
+                  amount: 4,
+                  setFlags: false,
+                });
+                emit({
+                  op: "ldp",
+                  width: 64,
+                  rt: 9,
+                  rt2: 10,
+                  rn: 11,
+                  offset: 0,
+                  mode: "offset",
+                });
+                const loaded = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                const missing = instructions.length;
+                patchInstruction(nonInteger, {
+                  op: "b.cond",
+                  condition: "ne",
+                  displacement: (missing - nonInteger) * 4,
+                });
+                patchInstruction(absent, {
+                  op: "b.cond",
+                  condition: "cs",
+                  displacement: (missing - absent) * 4,
+                });
+                imm(9, 0);
+                imm(10, 0);
+                patchInstruction(loaded, {
+                  op: "b",
+                  displacement: (instructions.length - loaded) * 4,
+                });
+                saveRaw(9, op.id);
+                rawStore(10, value(op.id).offset + 8);
+                break;
+              }
               case "general-wrap": {
                 const t = value(op.value).type;
                 const tag =
@@ -9787,7 +10077,7 @@ function emitModuleForms(
                   if (input === undefined) throw "string code unit invariant";
                   rawValue(9, input);
                   // ToUint16 is ToUint32 modulo 65536; strh stores those low bits.
-                  callHelper("to-uint32");
+                  if (!storedAsWord(input)) callHelper("to-uint32");
                   rawValue(10, op.id);
                   imm(11, nativeStringDataOffset + index * 2);
                   emit({
@@ -15162,6 +15452,8 @@ function emitModuleForms(
                 pollWorkerStop();
                 const target = signatures[op.target];
                 if (target === undefined) throw "call signature invariant";
+                const actuals =
+                  op.kind === "call-indirect" ? op.scriptArguments : undefined;
                 // Dense list reads: the vector fast path inline, the
                 // accessor call only for sparse roots, holes past the
                 // length, non-index numbers and guard failures.
@@ -15710,7 +16002,11 @@ function emitModuleForms(
                   }
                 }
                 const importedEntry = entryImports.get(op.target);
-                for (let i = 0; i < op.arguments.length; i++) {
+                for (
+                  let i = 0;
+                  actuals === undefined && i < op.arguments.length;
+                  i++
+                ) {
                   const arg = op.arguments[i],
                     location = target.parameters[i];
                   if (arg === undefined || location === undefined)
@@ -15737,7 +16033,10 @@ function emitModuleForms(
                 // Verified direct callees overwrite every consumed completion field.
                 // The result buffer is not a GC root; no safepoint separates return
                 // from payload consumption. Opaque calls retain initialization.
-                if (op.kind === "call-indirect" || importedEntry !== undefined)
+                if (
+                  (op.kind === "call-indirect" && actuals === undefined) ||
+                  importedEntry !== undefined
+                )
                   zeroWords([
                     resultOffset,
                     resultOffset + 8,
@@ -15846,12 +16145,68 @@ function emitModuleForms(
                     rn: 12,
                     offset: nativeFunctionEntryOffset,
                   });
+                  if (actuals !== undefined) {
+                    const layout = scriptArgumentLayout(actuals.length);
+                    // Overflow words stay in the caller frame. The stack map
+                    // roots them in place until the callee has returned.
+                    for (
+                      let i = layout.registerArguments;
+                      i < actuals.length;
+                      i++
+                    ) {
+                      const argument = actuals[i];
+                      if (argument === undefined)
+                        throw "script operand invariant";
+                      const source = value(argument).offset;
+                      const target = (i - layout.registerArguments) * 16;
+                      generalPair(9, source, true);
+                      generalPair(9, target, false);
+                    }
+                    for (let i = 0; i < op.arguments.length; i++) {
+                      const argument = op.arguments[i],
+                        location = target.parameters[i];
+                      if (argument === undefined || location === undefined)
+                        throw "script call header invariant";
+                      const offset = value(argument).offset;
+                      if (location.kind === "pair")
+                        generalPair(location.index, offset, true);
+                      else rawLoad(location.index, offset);
+                    }
+                    for (let i = 0; i < scriptActualRegisterPairs; i++) {
+                      const register = scriptFirstActualRegister + i * 2;
+                      const argument = actuals[i];
+                      if (argument === undefined) {
+                        imm(register, 0);
+                        imm(register + 1, 0);
+                      } else {
+                        const offset = value(argument).offset;
+                        generalPair(register, offset, true);
+                      }
+                    }
+                    const list = instructions.length;
+                    emit({ op: "cbnz", width: 64, rt: 2, displacement: 0 });
+                    imm(2, actuals.length * 2 + 1);
+                    patchInstruction(list, {
+                      op: "cbnz",
+                      width: 64,
+                      rt: 2,
+                      displacement: (instructions.length - list) * 4,
+                    });
+                  }
                   emit({ op: "blr", rn: 16 });
                 } else if (importedEntry !== undefined) {
                   managedPointer(16, importedEntry);
                   emit({ op: "blr", rn: 16 });
                 } else branch({ op: "bl" }, op.target, undefined);
                 safepoint();
+                if (
+                  actuals !== undefined &&
+                  actuals.length > scriptActualRegisterPairs
+                )
+                  siteGeneralArguments.set(
+                    callSites.length - 1,
+                    actuals.length - scriptActualRegisterPairs,
+                  );
                 pollWorkerStop();
                 emit({
                   op: "sub-imm",
@@ -15867,10 +16222,11 @@ function emitModuleForms(
                 const resultId = op.id;
                 if (resultId !== undefined) {
                   const registerResult =
-                    op.kind === "call" &&
-                    importedEntry === undefined &&
-                    directReturns !== undefined &&
-                    directReturns[op.target] === 1;
+                    actuals !== undefined ||
+                    (op.kind === "call" &&
+                      importedEntry === undefined &&
+                      directReturns !== undefined &&
+                      directReturns[op.target] === 1);
                   if (registerResult) saveRaw(1, resultId);
                   else {
                     rawLoad(9, resultOffset + 16);
@@ -16303,7 +16659,10 @@ function emitModuleForms(
               branch({ op: "b" }, fn.id, t.alternate);
             }
           } else {
-            if (directReturns !== undefined && directReturns[fn.id] === 1) {
+            if (
+              fn.scriptEntry === true ||
+              (directReturns !== undefined && directReturns[fn.id] === 1)
+            ) {
               const returned = t.value;
               if (returned !== undefined) {
                 rawValue(1, returned);
@@ -16710,6 +17069,11 @@ function emitModuleForms(
               if (offset === undefined) throw "site reference invariant";
               references.push(offset);
             }
+            if (fn.scriptEntry === true)
+              for (let i = 0; i < scriptActualRegisterPairs; i++)
+                generals.push(scriptArgumentsOffset + i * 16);
+            const scriptOverflow = siteGeneralArguments.get(index) ?? 0;
+            for (let i = 0; i < scriptOverflow; i++) generals.push(i * 16);
             const map: number[] = [frameBytes];
             for (const list of [references, generals]) {
               if (list === undefined) throw "safepoint map invariant";

@@ -131,3 +131,69 @@ test("string code units read like ECMAScript charCodeAt", async () => {
     },
   );
 });
+
+const fromCharCodeSource = String.raw`
+function unit(value: number): string {
+  return String.fromCharCode(value);
+}
+function wordUnits(value: number): string {
+  return String.fromCharCode((value & 15) | 48, value | 0, value >>> 0);
+}
+function wideUnit(value: number): string {
+  return String.fromCharCode((value >>> 0) + 65536);
+}
+function ordered(value: number, trace: Uint8Array): number {
+  trace[0] = ((trace[0] ?? 0) * 10) + value;
+  return value;
+}
+function reject(trace: Uint8Array): number {
+  trace[0] = 7;
+  throw new RangeError("stop");
+}
+export function run(): number {
+  const bytes = new Uint8Array(1);
+  bytes[0] = 222;
+  if (String.fromCharCode(((bytes[0] ?? 0) & 15) | 48) !== ">") return 1;
+  if (wordUnits(-1) !== "?\uffff\uffff") return 2;
+  if (wordUnits(2147483648) !== "0\u0000\u0000") return 3;
+  if (wideUnit(-1) !== "\uffff") return 4;
+  if (unit(9007199254740991) !== "\uffff") return 5;
+  if (unit(-9007199254740991) !== "\u0001") return 6;
+  if (unit(9007199254740992) !== "\u0000") return 7;
+  if (unit(-1.9) !== "\uffff") return 8;
+  if (unit(65537.75) !== "\u0001") return 9;
+  if (unit(-0) !== "\u0000") return 10;
+  if (unit(0 / 0) !== "\u0000") return 11;
+  if (unit(1 / 0) !== "\u0000") return 12;
+  if (unit(-1 / 0) !== "\u0000") return 13;
+  const trace = new Uint8Array(1);
+  if (String.fromCharCode(ordered(1, trace), ordered(2, trace)) !== "\u0001\u0002") return 14;
+  if (trace[0] !== 12) return 15;
+  let caught = false;
+  try {
+    String.fromCharCode(reject(trace), ordered(2, trace));
+  } catch (error) {
+    caught = error instanceof RangeError;
+  }
+  if (!caught || trace[0] !== 7) return 16;
+  return 42;
+}
+`;
+
+test("code-unit conversions agree with Node at integer and double boundaries", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "tint-string-code-units-"));
+  try {
+    const file = join(directory, "fixture.ts");
+    writeFileSync(file, fromCharCodeSource);
+    const loaded = (await import(pathToFileURL(file).href)) as {
+      run(): number;
+    };
+    assert.equal(loaded.run(), 42);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("typed native code units preserve conversions and evaluation order", () => {
+  verifyHostedFixture(fromCharCodeSource, "string-code-unit-integer");
+});

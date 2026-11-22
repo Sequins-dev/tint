@@ -1619,6 +1619,8 @@ function removable(op: Instruction): boolean {
     case "constant":
     case "string-literal":
     case "general-none":
+    case "script-argument-count":
+    case "script-argument-area":
     case "general-null":
     case "general-wrap":
     case "load":
