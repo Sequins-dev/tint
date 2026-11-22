@@ -131,3 +131,69 @@ test("idle percentages use deltas rather than cumulative idle", () => {
     null,
   );
 });
+
+test("general engines also measure built-in twins of each call shape", () => {
+  const untyped = benchmarkBody("/fixture.dylib", false, false, 10, 2);
+  assert.match(untyped, /measure\("builtin-arity-0", \(\) => num\(\), 0\)/);
+  assert.match(untyped, /measure\("builtin-arity-2", \(\) => max\(1,1\), 1\)/);
+  assert.match(
+    untyped,
+    /measure\("builtin-buffer", \(\) => isView\(bytes\), 1\)/,
+  );
+  assert.match(
+    untyped,
+    /measure\("builtin-callback", \(\) => apply\(increment, undefined, applied\), 42\)/,
+  );
+  assert.doesNotMatch(
+    benchmarkBody("/fixture.dylib", true, true, 10, 2),
+    /builtin-/,
+  );
+  const candidate = [
+    {
+      call: 9,
+      control: 1,
+      overhead: 8,
+      shape: 2,
+      own: 7,
+      builtin: 6,
+      overBuiltin: 3,
+    },
+    {
+      call: 8,
+      control: 1,
+      overhead: 7,
+      shape: 2,
+      own: 6,
+      builtin: 6,
+      overBuiltin: 2,
+    },
+  ];
+  const reference = [
+    {
+      call: 5,
+      control: 1,
+      overhead: 4,
+      shape: 1,
+      own: 4,
+      builtin: 1,
+      overBuiltin: 4,
+    },
+    {
+      call: 5,
+      control: 1,
+      overhead: 4,
+      shape: 1,
+      own: 4,
+      builtin: 1,
+      overBuiltin: 4,
+    },
+  ];
+  const comparison = pairedCaseComparison(candidate, reference);
+  assert.deepEqual(comparison.overBuiltinNs, {
+    median: -1.5,
+    q1: -1.75,
+    q3: -1.25,
+  });
+  assert.equal(comparison.builtinParity, true);
+  assert.equal(comparison.ownParity, false);
+});

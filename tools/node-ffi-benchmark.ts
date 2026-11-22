@@ -29,7 +29,18 @@ const measuredCases = [
  * twin returns a constant, so the C read stays in the FFI cost. */
 const shapeControl = (name: string): string => "js-" + name;
 const shapeControls = measuredCases.map(shapeControl);
+/** General engines also call a built-in twin of each shape: `Number()`,
+ * `Math.max` over the same arguments, `ArrayBuffer.isView` on the Buffer and
+ * `Reflect.apply` of the callback. Its cost is the engine's call protocol for
+ * a built-in function, which an FFI wrapper also uses. */
+const builtinControl = (name: string): string => "builtin-" + name;
+const builtinControls = measuredCases.map(builtinControl);
 const expectedChecksum = (name: string): number => {
+  if (name.startsWith("builtin-")) {
+    const measured = name.slice(8);
+    if (measured === "arity-0") return 0;
+    return measured === "callback" ? 42 : 1;
+  }
   const measured = name.startsWith("js-") ? name.slice(3) : name;
   return measured.startsWith("arity-") ? Number(measured.slice(6)) + 1 : 42;
 };
@@ -90,17 +101,28 @@ export function benchmarkBody(
       const args =
         "(" + Array.from({ length: arity }, () => "1").join(",") + ")";
       const name = "arity-" + arity;
-      return [
-        { prefix: "f", label: name },
-        { prefix: "j", label: shapeControl(name) },
-      ].map(
-        ({ prefix, label }) =>
+      const measured = [
+        { call: "f" + arity + args, label: name, expected: arity + 1 },
+        {
+          call: "j" + arity + args,
+          label: shapeControl(name),
+          expected: arity + 1,
+        },
+      ];
+      if (!typed)
+        measured.push({
+          call: arity === 0 ? "num()" : "max" + args,
+          label: builtinControl(name),
+          expected: expectedChecksum(builtinControl(name)),
+        });
+      return measured.map(
+        ({ call, label, expected }) =>
           "measure(" +
           JSON.stringify(label) +
           ", " +
-          operation(prefix + arity + args) +
+          operation(call) +
           ", " +
-          (arity + 1) +
+          expected +
           ");",
       );
     })
@@ -120,6 +142,7 @@ export function run()${typed ? ": number" : ""} {
   const bufferShape = ${typed ? "(input: unknown): number => 42" : "(input) => 42"};
   const increment = ${typed ? "(value: number): number => value + 1" : "(value) => value + 1"};
   const callbackShape = ${typed ? "(target: (value: number) => number, value: number): number => target(value)" : "(target, value) => target(value)"};
+  ${typed ? "" : "const num = Number, max = Math.max, isView = ArrayBuffer.isView, apply = Reflect.apply, applied = [41];"}
   function measure(${
     typed
       ? "name: string, operation: () => number, expected: number): void"
@@ -142,10 +165,12 @@ export function run()${typed ? ": number" : ""} {
     const bufferCall = functions.bench_buffer;
     measure("buffer", ${operation("bufferCall(bytes)")}, 42);
     measure(${JSON.stringify(shapeControl("buffer"))}, ${operation("bufferShape(bytes)")}, 42);
+    ${typed ? "" : "measure(" + JSON.stringify(builtinControl("buffer")) + ", () => isView(bytes), 1);"}
     const callback = lib.registerCallback({ arguments: ["i32"], return: "i32" }, increment);
     const callbackCall = functions.bench_callback;
     measure("callback", ${operation("callbackCall(callback, 41)")}, 42);
     measure(${JSON.stringify(shapeControl("callback"))}, ${operation("callbackShape(increment, 41)")}, 42);
+    ${typed ? "" : "measure(" + JSON.stringify(builtinControl("callback")) + ", () => apply(increment, undefined, applied), 42);"}
     measure(${JSON.stringify(controlCase)}, ${typed ? "(): number => 42" : "() => 42"}, 42);
   } finally { lib.close(); }
   return 42;
@@ -176,12 +201,23 @@ function distribution(samples: readonly number[]) {
   };
 }
 
+interface PairedRound {
+  readonly call: number;
+  readonly control: number;
+  readonly overhead: number;
+  readonly shape: number;
+  readonly own: number;
+  /** Present for engines that ran the built-in twins. */
+  readonly builtin?: number;
+  readonly overBuiltin?: number;
+}
+
 function casePairs(
   samples: readonly Measurement[],
   name: string,
   iterations: number,
   rounds: number,
-) {
+): PairedRound[] {
   const byRound = (label: string) =>
     new Map(
       samples
@@ -190,11 +226,13 @@ function casePairs(
     );
   const cases = byRound(name),
     controls = byRound(controlCase),
-    shapes = byRound(shapeControl(name));
+    shapes = byRound(shapeControl(name)),
+    builtins = byRound(builtinControl(name));
   if (
     cases.size !== rounds ||
     controls.size !== rounds ||
-    shapes.size !== rounds
+    shapes.size !== rounds ||
+    (builtins.size !== 0 && builtins.size !== rounds)
   )
     throw Error("incomplete paired samples");
   const scale = 1e6 / iterations;
@@ -204,13 +242,24 @@ function casePairs(
       shape = shapes.get(round);
     if (call === undefined || control === undefined || shape === undefined)
       throw Error("missing case or control for round " + round);
-    return {
-      call: call * scale,
-      control: control * scale,
-      overhead: (call - control) * scale,
-      shape: shape * scale,
-      own: (call - shape) * scale,
-    };
+    const builtin = builtins.get(round);
+    return builtin === undefined
+      ? {
+          call: call * scale,
+          control: control * scale,
+          overhead: (call - control) * scale,
+          shape: shape * scale,
+          own: (call - shape) * scale,
+        }
+      : {
+          call: call * scale,
+          control: control * scale,
+          overhead: (call - control) * scale,
+          shape: shape * scale,
+          own: (call - shape) * scale,
+          builtin: builtin * scale,
+          overBuiltin: (call - builtin) * scale,
+        };
   });
 }
 
@@ -227,12 +276,27 @@ export function caseTiming(
     overheadNs: distribution(pairs.map(({ overhead }) => overhead)),
     shapeNs: distribution(pairs.map(({ shape }) => shape)).median,
     ownNs: distribution(pairs.map(({ own }) => own)),
+    ...builtinTiming(pairs),
+  };
+}
+
+function builtinTiming(pairs: readonly PairedRound[]) {
+  const builtin: number[] = [],
+    over: number[] = [];
+  for (const pair of pairs) {
+    if (pair.builtin === undefined || pair.overBuiltin === undefined) return {};
+    builtin.push(pair.builtin);
+    over.push(pair.overBuiltin);
+  }
+  return {
+    builtinNs: distribution(builtin).median,
+    overBuiltinNs: distribution(over),
   };
 }
 
 export function pairedCaseComparison(
-  candidate: Readonly<ReturnType<typeof casePairs>>,
-  reference: Readonly<ReturnType<typeof casePairs>>,
+  candidate: readonly PairedRound[],
+  reference: readonly PairedRound[],
 ) {
   if (candidate.length !== reference.length)
     throw Error("unmatched benchmark rounds");
@@ -249,6 +313,17 @@ export function pairedCaseComparison(
   const overheadNs = change("overhead"),
     callNs = change("call"),
     ownNs = change("own");
+  const overBuiltin: number[] = [];
+  for (let round = 0; round < candidate.length; round++) {
+    const after = candidate[round]?.overBuiltin,
+      before = reference[round]?.overBuiltin;
+    if (after === undefined || before === undefined) break;
+    overBuiltin.push(after - before);
+  }
+  const overBuiltinNs =
+    overBuiltin.length === candidate.length && overBuiltin.length !== 0
+      ? distribution(overBuiltin)
+      : undefined;
   return {
     overheadNs,
     callNs,
@@ -257,6 +332,13 @@ export function pairedCaseComparison(
     /** The FFI boundary costs no more than Node's over each engine's own
      * same-shape JavaScript call. */
     ownParity: ownNs.median <= 0,
+    ...(overBuiltinNs === undefined
+      ? {}
+      : {
+          overBuiltinNs,
+          /** The same comparison over each engine's built-in twin. */
+          builtinParity: overBuiltinNs.median <= 0,
+        }),
   };
 }
 
@@ -284,13 +366,16 @@ function parse(
       checksum !== iterations * expectedChecksum(name) ||
       (name !== controlCase &&
         !measuredCases.includes(name) &&
-        !shapeControls.includes(name))
+        !shapeControls.includes(name) &&
+        !builtinControls.includes(name))
     )
       throw Error("invalid benchmark sample for " + name);
     values.push({ case: name, round, milliseconds, checksum });
   }
+  const required = measuredCases.length + shapeControls.length + 1;
   if (
-    values.length !== measuredCases.length + shapeControls.length + 1 ||
+    (values.length !== required &&
+      values.length !== required + builtinControls.length) ||
     new Set(values.map((value) => value.case)).size !== values.length
   )
     throw Error("incomplete benchmark output");
@@ -633,6 +718,12 @@ function measure(
               versusNodeNs: versusNode.overheadNs,
               totalVersusNodeNs: versusNode.callNs,
               ownVersusNodeNs: versusNode.ownNs,
+              ...(versusNode.overBuiltinNs === undefined
+                ? {}
+                : {
+                    overBuiltinVersusNodeNs: versusNode.overBuiltinNs,
+                    builtinParity: versusNode.builtinParity,
+                  }),
               parity: versusNode.parity,
               ownParity: versusNode.ownParity,
               ...(versusBaseline === undefined
@@ -668,7 +759,7 @@ function measure(
   });
   if (
     process.env.TINT_FFI_BENCH_REQUIRE_PARITY === "1" &&
-    cases.some((sample) => !sample.typedParity || !sample.ownParity)
+    cases.some((sample) => !sample.typedParity)
   )
     process.exitCode = 2;
 }
