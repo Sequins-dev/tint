@@ -163,6 +163,11 @@ function supported(op: Instruction, references: boolean = true): boolean {
 /** Largest inlined expansion (instructions, terminators, parameter copies
  * and result slot). */
 const maxExpansion = 128;
+/** Total cost of CFG callees with traced reference slots (eligibility 2)
+ * that one caller absorbs. Collection accessors (a number list's read,
+ * push and resize cost 35-58 each) are this kind, so a loop over several
+ * lists needs room for a handful of them. */
+const callerReferenceAllowance = 384;
 /** Most non-trap blocks of an inlined scalar or void callee. */
 function maxCalleeBlocks(guarded: boolean): number {
   return guarded ? 32 : 24;
@@ -426,7 +431,7 @@ export function inlineSmallFunctions(
       continue;
     }
     let allowance = incremental ? 128 : originalCount + 128,
-      referenceAllowance = 128,
+      referenceAllowance = callerReferenceAllowance,
       changed = false;
     const slots: ScalarType[] = fn.slots.slice(),
       blocks: Block[] = [],

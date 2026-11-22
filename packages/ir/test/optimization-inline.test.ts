@@ -1034,7 +1034,7 @@ test("new reference expansion has a fixed per-caller budget", () => {
             id: 0,
             instructions: [
               { kind: "load", id: 0, slot: 0, ...span },
-              ...Array.from({ length: 40 }, (_, i) => ({
+              ...Array.from({ length: 300 }, (_, i) => ({
                 kind: "call" as const,
                 id: i + 1,
                 target: 1,
@@ -1042,7 +1042,7 @@ test("new reference expansion has a fixed per-caller budget", () => {
                 ...span,
               })),
             ],
-            terminator: { kind: "return", value: 40, ...span },
+            terminator: { kind: "return", value: 300, ...span },
           },
         ],
       },
@@ -1066,13 +1066,15 @@ test("new reference expansion has a fixed per-caller budget", () => {
   };
   assert.deepEqual(verify(module), { ok: true });
   const result = inlineSmallFunctions(module, 10000)!;
-  assert.equal(result.inlined, 32);
+  // Each identity expansion costs 4 of the caller's 384 (its growth
+  // allowance, 301 + 128, is larger).
+  assert.equal(result.inlined, 96);
   assert.deepEqual(verify(result.module), { ok: true });
   assert.equal(
     result.module.functions[0]!.blocks[0]!.instructions.filter(
       (op) => op.kind === "call",
     ).length,
-    8,
+    204,
   );
 });
 
