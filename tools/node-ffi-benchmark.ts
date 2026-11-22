@@ -23,6 +23,16 @@ const measuredCases = [
   "buffer",
   "callback",
 ];
+/** Each measured case has a JavaScript twin with the same call shape: the
+ * same arity and arguments, the same Buffer argument, or the same callback
+ * invocation. Subtracting it leaves the FFI boundary's own cost. The Buffer
+ * twin returns a constant, so the C read stays in the FFI cost. */
+const shapeControl = (name: string): string => "js-" + name;
+const shapeControls = measuredCases.map(shapeControl);
+const expectedChecksum = (name: string): number => {
+  const measured = name.startsWith("js-") ? name.slice(3) : name;
+  return measured.startsWith("arity-") ? Number(measured.slice(6)) + 1 : 42;
+};
 const tintEngines = [
   "tintUntypedLiteral",
   "tintUntypedRuntime",
@@ -58,24 +68,43 @@ export function benchmarkBody(
 ): string {
   const operation = (call: string) =>
     typed ? "(): number => " + call + " as number" : "() => " + call;
+  const number = typed ? ": number" : "";
+  const shapeFunctions = arities
+    .map((arity) => {
+      const parameters = Array.from({ length: arity }, (_, i) => "a" + i);
+      return (
+        "const j" +
+        arity +
+        " = (" +
+        parameters.map((name) => name + number).join(", ") +
+        ")" +
+        number +
+        " => 1" +
+        parameters.map((name) => " + " + name).join("") +
+        ";"
+      );
+    })
+    .join("\n  ");
   const scalarCases = arities
-    .map(
-      (arity) =>
-        "measure(" +
-        JSON.stringify("arity-" + arity) +
-        ", " +
-        operation(
-          "f" +
-            arity +
-            "(" +
-            Array.from({ length: arity }, () => "1").join(",") +
-            ")",
-        ) +
-        ", " +
-        (arity + 1) +
-        ");",
-    )
-    .join("\n");
+    .flatMap((arity) => {
+      const args =
+        "(" + Array.from({ length: arity }, () => "1").join(",") + ")";
+      const name = "arity-" + arity;
+      return [
+        { prefix: "f", label: name },
+        { prefix: "j", label: shapeControl(name) },
+      ].map(
+        ({ prefix, label }) =>
+          "measure(" +
+          JSON.stringify(label) +
+          ", " +
+          operation(prefix + arity + args) +
+          ", " +
+          (arity + 1) +
+          ");",
+      );
+    })
+    .join("\n    ");
   const open =
     "dlopen(" +
     JSON.stringify(dso) +
@@ -87,6 +116,10 @@ export function run()${typed ? ": number" : ""} {
   ${literal ? "" : "const definitions = " + JSON.stringify(definitions) + ";"}
   const { lib, functions } = ${open};
   ${setupScalars}
+  ${shapeFunctions}
+  const bufferShape = ${typed ? "(input: unknown): number => 42" : "(input) => 42"};
+  const increment = ${typed ? "(value: number): number => value + 1" : "(value) => value + 1"};
+  const callbackShape = ${typed ? "(target: (value: number) => number, value: number): number => target(value)" : "(target, value) => target(value)"};
   function measure(${
     typed
       ? "name: string, operation: () => number, expected: number): void"
@@ -108,10 +141,11 @@ export function run()${typed ? ": number" : ""} {
     const bytes = Buffer.from([42]);
     const bufferCall = functions.bench_buffer;
     measure("buffer", ${operation("bufferCall(bytes)")}, 42);
-    const callback = lib.registerCallback({ arguments: ["i32"], return: "i32" },
-      ${typed ? "(value: number): number => value + 1" : "(value) => value + 1"});
+    measure(${JSON.stringify(shapeControl("buffer"))}, ${operation("bufferShape(bytes)")}, 42);
+    const callback = lib.registerCallback({ arguments: ["i32"], return: "i32" }, increment);
     const callbackCall = functions.bench_callback;
     measure("callback", ${operation("callbackCall(callback, 41)")}, 42);
+    measure(${JSON.stringify(shapeControl("callback"))}, ${operation("callbackShape(increment, 41)")}, 42);
     measure(${JSON.stringify(controlCase)}, ${typed ? "(): number => 42" : "() => 42"}, 42);
   } finally { lib.close(); }
   return 42;
@@ -148,28 +182,34 @@ function casePairs(
   iterations: number,
   rounds: number,
 ) {
-  const cases = new Map(
-    samples
-      .filter((sample) => sample.case === name)
-      .map((sample) => [sample.round, sample.milliseconds]),
-  );
-  const controls = new Map(
-    samples
-      .filter((sample) => sample.case === controlCase)
-      .map((sample) => [sample.round, sample.milliseconds]),
-  );
-  if (cases.size !== rounds || controls.size !== rounds)
+  const byRound = (label: string) =>
+    new Map(
+      samples
+        .filter((sample) => sample.case === label)
+        .map((sample) => [sample.round, sample.milliseconds]),
+    );
+  const cases = byRound(name),
+    controls = byRound(controlCase),
+    shapes = byRound(shapeControl(name));
+  if (
+    cases.size !== rounds ||
+    controls.size !== rounds ||
+    shapes.size !== rounds
+  )
     throw Error("incomplete paired samples");
   const scale = 1e6 / iterations;
   return Array.from({ length: rounds }, (_, round) => {
     const call = cases.get(round),
-      control = controls.get(round);
-    if (call === undefined || control === undefined)
+      control = controls.get(round),
+      shape = shapes.get(round);
+    if (call === undefined || control === undefined || shape === undefined)
       throw Error("missing case or control for round " + round);
     return {
       call: call * scale,
       control: control * scale,
       overhead: (call - control) * scale,
+      shape: shape * scale,
+      own: (call - shape) * scale,
     };
   });
 }
@@ -185,6 +225,8 @@ export function caseTiming(
     callNs: distribution(pairs.map(({ call }) => call)).median,
     controlNs: distribution(pairs.map(({ control }) => control)).median,
     overheadNs: distribution(pairs.map(({ overhead }) => overhead)),
+    shapeNs: distribution(pairs.map(({ shape }) => shape)).median,
+    ownNs: distribution(pairs.map(({ own }) => own)),
   };
 }
 
@@ -194,7 +236,7 @@ export function pairedCaseComparison(
 ) {
   if (candidate.length !== reference.length)
     throw Error("unmatched benchmark rounds");
-  function change(metric: "call" | "overhead") {
+  function change(metric: "call" | "overhead" | "own") {
     return distribution(
       candidate.map((value, round) => {
         const before = reference[round];
@@ -205,11 +247,16 @@ export function pairedCaseComparison(
     );
   }
   const overheadNs = change("overhead"),
-    callNs = change("call");
+    callNs = change("call"),
+    ownNs = change("own");
   return {
     overheadNs,
     callNs,
+    ownNs,
     parity: overheadNs.median <= 0 && callNs.median <= 0,
+    /** The FFI boundary costs no more than Node's over each engine's own
+     * same-shape JavaScript call. */
+    ownParity: ownNs.median <= 0,
   };
 }
 
@@ -229,20 +276,21 @@ function parse(
   )) {
     const name = match[1];
     if (name === undefined) throw Error("benchmark record is missing its name");
-    const expected = name.startsWith("arity-") ? Number(name.slice(6)) + 1 : 42;
     const milliseconds = Number(match[2]),
       checksum = Number(match[3]);
     if (
       !Number.isFinite(milliseconds) ||
       milliseconds <= 0 ||
-      checksum !== iterations * expected ||
-      (name !== controlCase && !measuredCases.includes(name))
+      checksum !== iterations * expectedChecksum(name) ||
+      (name !== controlCase &&
+        !measuredCases.includes(name) &&
+        !shapeControls.includes(name))
     )
       throw Error("invalid benchmark sample for " + name);
     values.push({ case: name, round, milliseconds, checksum });
   }
   if (
-    values.length !== measuredCases.length + 1 ||
+    values.length !== measuredCases.length + shapeControls.length + 1 ||
     new Set(values.map((value) => value.case)).size !== values.length
   )
     throw Error("incomplete benchmark output");
@@ -584,12 +632,15 @@ function measure(
             {
               versusNodeNs: versusNode.overheadNs,
               totalVersusNodeNs: versusNode.callNs,
+              ownVersusNodeNs: versusNode.ownNs,
               parity: versusNode.parity,
+              ownParity: versusNode.ownParity,
               ...(versusBaseline === undefined
                 ? {}
                 : {
                     versusBaselineNs: versusBaseline.overheadNs,
                     totalVersusBaselineNs: versusBaseline.callNs,
+                    ownVersusBaselineNs: versusBaseline.ownNs,
                   }),
             },
           ],
@@ -599,7 +650,10 @@ function measure(
     const typedParity =
       comparisons.tintTypedLiteral?.parity === true &&
       comparisons.tintTypedRuntime?.parity === true;
-    return { case: name, timing, comparisons, typedParity };
+    const ownParity = tintEngines.every(
+      (engine) => comparisons[engine]?.ownParity === true,
+    );
+    return { case: name, timing, comparisons, typedParity, ownParity };
   });
   writeReport(file, {
     ...prepared,
@@ -614,7 +668,7 @@ function measure(
   });
   if (
     process.env.TINT_FFI_BENCH_REQUIRE_PARITY === "1" &&
-    cases.some((sample) => !sample.typedParity)
+    cases.some((sample) => !sample.typedParity || !sample.ownParity)
   )
     process.exitCode = 2;
 }
