@@ -59,6 +59,50 @@ subsystem measurements.
 
 Reference API: https://github.com/nodejs/node/blob/main/doc/api/bench.md.
 
+## Frozen workloads
+
+`tools/frozen-workload.ts` measures generated code on a fixed workload: the
+compiler source frozen at one commit, compiled by the current toolchain,
+compiling that same frozen source. `freeze <name>` writes
+`.tint-bootstrap/workload-<name>`, `build <name> <label>` builds
+`native-<label>`, and `run <name> <label>... --rounds N` and `node <name>` time
+interleaved runs. Each run's output must match the Node reference `out-node`
+byte for byte; compare SHA-256s before reading the timings. The output depends
+on the workload's absolute path, so rerun `node <name>` for a reference after
+copying a workload elsewhere.
+
+`v7` (frozen at `7e83194c1`) is the supported workload. Build it with
+`--runtime-tree` on both sides of an A/B: its own collector rejects the
+stack-map tables current code generation emits
+([evidence](results/frozen-runtime-tree-v7-v1.md)). `v1`–`v6` are retired. `v1`–`v5`
+cannot take `--runtime-tree` because the current collector imports runtime
+modules those snapshots lack.
+
+`--runtime-tree` links the tree's native runtime
+(`packages/native-runtime/src`) into the frozen program instead of the
+snapshot's, so runtime and collector changes are measured. The runtime shares
+the host-ABI contract with the code generator that compiles it: object headers,
+startup and worker records, stack-map formats, weak slots, shared blocks and C
+descriptors. Those `@tint/abi` sources therefore come from the tree too. The set
+is derived from imports (`tools/frozen-runtime-tree.ts`): every `@tint/abi`
+module the substituted runtime files import, through package exports, plus
+those modules' relative imports. Imports are not followed from a tree file that
+imports, directly or transitively, a file the snapshot lacks. The frozen
+program cannot load such a file, so its contract imports would only change the
+frozen compiler's own copy of those modules. The runtime's other dependencies
+(`@tint/foundation`, `@tint/js-runtime`) are libraries the frozen compiler also
+uses, so they stay frozen; name them with `--tree <path>` when a measurement
+needs them.
+
+Only files the snapshot already has are replaced. The snapshot's catalog is
+compiled into the program and selects its input files, so it must not change.
+The build prints the contract files it substitutes and every imported tree file
+the snapshot lacks. A runtime module the frozen program never loads may list
+some; a build that fails to resolve one needs a fresh freeze. The program's
+input stays the frozen snapshot. Contract files are also part of the frozen
+compiler, however, so check its output against `out-node` before comparing
+timings.
+
 ## Initial comparative measurements
 
 The repeat run in `.tint-bench/runs/2026-10-29T17-38-05.153Z/results.json`
