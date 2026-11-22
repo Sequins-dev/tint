@@ -91,7 +91,9 @@ const LOCK = 0,
   NEXT = 24,
   ENGINE = 32,
   NEXT_COMPLETION = 40,
-  EVENT_VERSION = 48;
+  EVENT_VERSION = 48,
+  // One past the last occupied row, maintained under the registry lock.
+  USED_ROWS = 56;
 const STATE = 0,
   TICKET = 8,
   BLOCK = 16,
@@ -168,7 +170,8 @@ function facade(
     parking.wake(registry.base + LOCK);
   }
   function find(ticket: number, scratch: Uint32Array): number {
-    for (let i = 0; i < capacity; i++) {
+    const used = readNumber(host, registry, USED_ROWS, scratch);
+    for (let i = 0; i < used; i++) {
       const row = HEADER + i * ROW;
       if (
         readNumber(host, registry, row + TICKET, scratch) === ticket &&
@@ -246,16 +249,16 @@ function facade(
     if (!fault && matches) {
       result = "timed-out";
       if (!zeroTimeout) {
-        let free = -1;
-        for (let i = 0; i < capacity; i++)
-          if (
-            readNumber(host, registry, HEADER + i * ROW + STATE, scratch) === 0
-          ) {
-            free = HEADER + i * ROW;
+        const used = readNumber(host, registry, USED_ROWS, scratch);
+        const end = HEADER + used * ROW;
+        let free = end;
+        for (let at: number = HEADER; at < end; at += ROW)
+          if (readNumber(host, registry, at + STATE, scratch) === 0) {
+            free = at;
             break;
           }
         const next = readNumber(host, registry, NEXT, scratch) + 1;
-        full = free < 0 || !integer(next);
+        full = free >= HEADER + capacity * ROW || !integer(next);
         if (!full) {
           ticket = next;
           result = "waiting";
@@ -266,6 +269,7 @@ function facade(
           writeNumber(host, registry, free + COMPLETION, 0);
           writeNumber(host, registry, free + WAKE_TARGET, 0);
           writeNumber(host, registry, free + STATE, 1);
+          if (free === end) writeNumber(host, registry, USED_ROWS, used + 1);
         }
       }
     }
@@ -291,13 +295,14 @@ function facade(
     const scratch = new Uint32Array(2);
     lock(scratch);
     try {
+      const used = readNumber(host, registry, USED_ROWS, scratch);
       const firstCompletion =
         readNumber(host, registry, NEXT_COMPLETION, scratch) + 1;
       let notified = 0;
       while (notified < count) {
         let row = -1,
           first = Infinity;
-        for (let i = 0; i < capacity; i++) {
+        for (let i = 0; i < used; i++) {
           const at = HEADER + i * ROW;
           if (
             readNumber(host, registry, at + STATE, scratch) === 1 &&
@@ -358,6 +363,21 @@ function facade(
     if (consume && row >= 0 && code !== 1) {
       writeNumber(host, registry, row + TICKET, 0);
       writeNumber(host, registry, row + STATE, 0);
+      const used = readNumber(host, registry, USED_ROWS, scratch);
+      let end = used;
+      if (row === HEADER + (used - 1) * ROW) {
+        do end--;
+        while (
+          end > 0 &&
+          readNumber(
+            host,
+            registry,
+            HEADER + (end - 1) * ROW + STATE,
+            scratch,
+          ) === 0
+        );
+        writeNumber(host, registry, USED_ROWS, end);
+      }
     }
     unlock();
     if (row < 0) return { ok: false, error: "invalid-handle" };

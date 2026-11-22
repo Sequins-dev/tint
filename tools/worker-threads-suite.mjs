@@ -171,6 +171,36 @@ async function verifyWorker(filename) {
   }
 }
 
+async function verifyLargeBufferClone() {
+  const { port1, port2 } = new MessageChannel();
+  try {
+    const length = 8 * 1024 * 1024;
+    const buffer = new ArrayBuffer(length, { maxByteLength: length + 8 });
+    const view = new Uint8Array(buffer);
+    view[0] = 11;
+    view[length - 1] = 42;
+    const message = once(port2, "message");
+    port1.postMessage({ buffer, view });
+    view[0] = 99;
+    const copy = await message;
+    if (
+      !copy.buffer.resizable ||
+      copy.buffer.maxByteLength !== length + 8 ||
+      copy.view.buffer !== copy.buffer ||
+      copy.view.byteLength !== length ||
+      copy.view[0] !== 11 ||
+      copy.view[length - 1] !== 42 ||
+      buffer.byteLength !== length ||
+      view[0] !== 99
+    )
+      return 19;
+    return 42;
+  } finally {
+    port1.close();
+    port2.close();
+  }
+}
+
 async function verifyLifecycle(filename) {
   const worker = new Worker(filename, { workerData: { mode: "error" } });
   const order = [];
@@ -235,6 +265,8 @@ export async function run(filename) {
     return 1;
   const local = await verifyLocalClone();
   if (local !== 42) return local;
+  const large = await verifyLargeBufferClone();
+  if (large !== 42) return large;
   const worker = await verifyWorker(filename);
   if (worker !== 42) return worker;
   const lifecycle = await verifyLifecycle(filename);
