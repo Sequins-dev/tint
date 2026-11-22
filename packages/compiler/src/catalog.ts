@@ -2867,6 +2867,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/packet-memory.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/processors.ts",
       packageId: "native-runtime",
     },

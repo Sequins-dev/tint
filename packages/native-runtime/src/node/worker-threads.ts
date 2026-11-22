@@ -41,6 +41,7 @@ import type {
 } from "../worker-lifecycle.ts";
 import type { NativeSharedMemoryHost } from "../shared-memory-host.ts";
 import type { NativeWaiterParkingHost } from "../shared-waiters.ts";
+import type { NativePacketMemory } from "../packet-memory.ts";
 
 type ScriptObject = OrdinaryObject<ScriptPropertyKey, unknown>;
 
@@ -73,6 +74,7 @@ export interface NodeWorkerThreadsOptions {
   readonly threads: NativeWorkerThreadHost;
   readonly reactor: ReactorEventLoop;
   readonly shared: SharedBlockService | undefined;
+  readonly packets: NativePacketMemory;
   prepare(
     filename: string,
     resourceLimits: WorkerResourceLimits,
@@ -313,10 +315,10 @@ export function createNodeWorkerThreads(
       endpoint.port.inspect() === undefined
     )
       return;
-    endpoint.watch = endpoint.port.watch((packet: string): void => {
+    endpoint.watch = endpoint.port.watch((entry): void => {
       let value: unknown;
       try {
-        value = messages.receive(packet);
+        value = messages.receive(endpoint.port, entry);
       } catch (error) {
         emit(endpoint, "messageerror", [error]);
         return;
@@ -361,13 +363,14 @@ export function createNodeWorkerThreads(
     options.parking,
     options.threads,
     reactor,
-    (packet: string): void => messages.discard(packet),
+    (entry): void => messages.discard(entry),
   );
   const messages: NativeWorkerMessages = createNativeWorkerMessages({
     realm,
     shared: options.shared,
     backing,
     ports,
+    packets: options.packets,
     portForObject: (object): NativeMessagePort | undefined =>
       portObjects.get(object.internalIdentity)?.port,
     objectForPort: makePort,
@@ -656,9 +659,9 @@ export function createNodeWorkerThreads(
   let data: unknown = null;
   let resources = limitsObject(undefined);
   if (parent !== undefined) {
-    const packet = parent.take();
-    if (packet === undefined) throw "NODE_WORKER_DATA_PACKET";
-    const envelope = ensureObject(messages.receive(packet));
+    const entry = parent.take();
+    if (entry === undefined) throw "NODE_WORKER_DATA_PACKET";
+    const envelope = ensureObject(messages.receive(parent, entry));
     data = read(envelope, "data");
     resources = ensureObject(read(envelope, "limits"));
   }

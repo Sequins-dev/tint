@@ -212,13 +212,16 @@ export function run(): number {
     },
   );
 } else {
-  // An optional operation prefix restricts the workload (for profiles).
+  // An optional operation prefix restricts the workload and an optional
+  // sample count lengthens it (for profiles).
   const only = process.argv[3];
+  const count =
+    process.argv[4] === undefined ? "" : ", " + Number(process.argv[4]);
   const transport = local("transport.mjs", [[threads, threads]]);
   verifyHostedFixture(
     `import { run as benchmark } from "./transport.mjs";
 import { monotonicMilliseconds } from "clock";
-export function run(): unknown { return benchmark("${transport.id}", monotonicMilliseconds${only === undefined ? "" : ", " + JSON.stringify(only)}); }`,
+export function run(): unknown { return benchmark("${transport.id}", monotonicMilliseconds${only === undefined ? "" : ", " + JSON.stringify(only) + count}); }`,
     "worker-bench-transport",
     [
       ["./transport.mjs", transport.id],

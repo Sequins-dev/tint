@@ -1997,6 +1997,50 @@ export function emitModule(
             return frame(home(arg));
           }
           const operation = op.operation;
+          if (operation === "memory-read-string" && host !== undefined) {
+            // Check the window, allocate the string, then copy its units
+            // out of the caller-owned raw memory. Invalid input traps.
+            if (id === undefined) throw "string read result invariant";
+            const limit = scratch,
+              address = gpr(8),
+              length = gpr(1);
+            emit({ op: "mov", dst: limit, src: bits(0, 0x10000) });
+            for (const [index, target] of [
+              [0, address],
+              [1, length],
+              [2, receiver],
+              [3, r9],
+            ] as const) {
+              exactInteger(emit, argument(index), target, trapLabel);
+              emit({ op: "cmp", dst: target, src: limit });
+              branch(emit, "ae", trapLabel);
+            }
+            emit({ op: "test", dst: address, src: address });
+            branch(emit, "e", trapLabel);
+            emit({ op: "sub", dst: limit, src: address });
+            emit({ op: "cmp", dst: length, src: limit });
+            branch(emit, "a", trapLabel);
+            emit({ op: "sub", dst: length, src: receiver });
+            branch(emit, "b", trapLabel);
+            emit({ op: "mov", dst: rax, src: r9 });
+            emit({ op: "shl", dst: rax, count: 1 });
+            emit({ op: "cmp", dst: rax, src: length });
+            branch(emit, "a", trapLabel);
+            allocateString(id, block, index);
+            define(id, "string");
+            emit({
+              op: "lea",
+              dst: context,
+              src: mem(0, nativeStringDataOffset),
+            });
+            exactInteger(emit, argument(0), environment, trapLabel);
+            exactInteger(emit, argument(2), r10, trapLabel);
+            emit({ op: "add", dst: environment, src: r10 });
+            exactInteger(emit, argument(3), receiver, trapLabel);
+            emit({ op: "shl", dst: receiver, count: 1 });
+            bytesOperation(host.symbolPrefix + "memmove");
+            return;
+          }
           if (operation === "stack-overflow-is" && host !== undefined) {
             const input = args[0];
             if (id === undefined || input === undefined)

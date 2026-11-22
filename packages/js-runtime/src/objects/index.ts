@@ -549,6 +549,8 @@ export {
   serializeWorkerValue,
   throwWorkerCloneError,
   type WorkerCloneAttachments,
+  type WorkerCloneSink,
+  type WorkerCloneSource,
 } from "./structured-clone.ts";
 export {
   builtinAccessor,

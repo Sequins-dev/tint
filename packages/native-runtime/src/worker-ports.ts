@@ -1,9 +1,15 @@
 import {
+  allocateNativeAgentPacket,
   attachNativeAgentMailbox,
   createNativeAgentMailbox,
-  prepareNativeAgentMessage,
+  drainNativeAgentPackets,
+  publishNativeAgentPacket,
   releaseNativeAgentMailboxBlocks,
+  releaseNativeAgentPacket,
+  restoreNativeAgentPackets,
   type NativeAgentMailbox,
+  type NativeAgentPacket,
+  type NativeAgentPacketEntry,
 } from "./agent-messages.ts";
 import type { ReactorEventLoop } from "./event-loop-reactor.ts";
 import type { EventLoopHandle } from "./event-loop.ts";
@@ -29,13 +35,22 @@ export interface NativeMessagePortGrant {
   readonly side: number;
   readonly generation: number;
 }
+/** Binary packets cross a port by pointer (docs/design-worker-runtime.md).
+ * A sender allocates a packet from the peer's mailbox, fills its payload and
+ * sends it; a receiver takes or is handed each packet and releases it once
+ * decoded, before running script. */
 export interface NativeMessagePort {
-  /** The trusted commit runs after packet allocation, before publication.
-   * False means the packet and its grants still belong to the caller. */
-  send(packet: string, commit?: () => void): boolean;
-  take(): string | undefined;
+  /** A packet with room for `payload` bytes, owned by the caller until sent
+   * or released. */
+  allocate(payload: number): NativeAgentPacket;
+  /** Return a packet that was allocated or received and is no longer used. */
+  release(packet: NativeAgentPacket): void;
+  /** The trusted commit runs before publication. False means the packet and
+   * its grants still belong to the caller. */
+  send(packet: NativeAgentPacket, used: number, commit?: () => void): boolean;
+  take(): NativeAgentPacketEntry | undefined;
   watch(
-    message: (packet: string) => void,
+    message: (entry: NativeAgentPacketEntry) => void,
     peerClose: () => void,
   ): EventLoopHandle;
   inspect(): NativeMessagePortGrant | undefined;
@@ -76,7 +91,9 @@ export function createNativeMessagePorts(
   parking: NativeWaiterParkingHost,
   threads: NativeWorkerThreadHost,
   reactor: ReactorEventLoop,
-  disposePacket: (packet: string) => void,
+  /** Discards the grants of a packet that will never be delivered; the
+   * ports release the packet itself. */
+  disposePacket: (entry: NativeAgentPacketEntry) => void,
 ): NativeMessagePorts {
   const scratch = new Uint32Array(2);
   const signal = new Uint8Array(1);
@@ -147,6 +164,7 @@ export function createNativeMessagePorts(
     grant: NativeMessagePortGrant,
     state: number,
     queue: NativeAgentMailbox,
+    pending: readonly NativeAgentPacketEntry[],
   ): void {
     const pair = registry(grant.base);
     const local = endpoint(grant.side);
@@ -164,10 +182,24 @@ export function createNativeMessagePorts(
     try {
       threads.close(read(pair, local + INPUT));
       threads.close(read(pair, local + OUTPUT));
-      for (;;) {
-        const packet = queue.receive();
-        if (packet === undefined) break;
-        disposePacket(packet);
+      const undelivered = pending.slice();
+      for (const entry of drainNativeAgentPackets(
+        memory,
+        parking,
+        queue.registry,
+      ))
+        undelivered.push(entry);
+      for (const entry of undelivered) {
+        try {
+          disposePacket(entry);
+        } finally {
+          releaseNativeAgentPacket(
+            memory,
+            parking,
+            queue.registry,
+            entry.packet,
+          );
+        }
       }
     } finally {
       // Once this decrement succeeds the other closer may unmap the pair.
@@ -207,37 +239,62 @@ export function createNativeMessagePorts(
     }
     let owned = true;
     let watch: EventLoopHandle | undefined;
+    // Packets drained from the incoming queue and not yet delivered.
+    let pending: NativeAgentPacketEntry[] = [];
+    function next(): NativeAgentPacketEntry | undefined {
+      if (pending.length === 0)
+        pending = drainNativeAgentPackets(memory, parking, incoming.registry);
+      return pending.shift();
+    }
+    /** Undelivered packets go back ahead of the queue for the next owner. */
+    function requeue(): void {
+      const entries = pending;
+      pending = [];
+      restoreNativeAgentPackets(memory, parking, incoming.registry, entries);
+    }
     return {
-      send: (packet, commit): boolean => {
-        if (!owned) return false;
-        const prepared = prepareNativeAgentMessage(
+      allocate: (payload): NativeAgentPacket => {
+        const packet = allocateNativeAgentPacket(
           memory,
           parking,
           outgoing.registry,
-          packet,
+          payload,
         );
-        if (!prepared.ok)
+        if (packet === undefined)
           throw new Error("message port packet allocation failed");
+        return packet;
+      },
+      release: (packet): void => {
+        // Every block, sent or received, joins the free stack of the mailbox
+        // this side sends into, where a reply finds it. The pair's final
+        // owner frees both stacks.
+        releaseNativeAgentPacket(memory, parking, outgoing.registry, packet);
+      },
+      send: (packet, used, commit): boolean => {
+        if (!owned) return false;
+        if (commit !== undefined) commit();
+        if (!owned) return false;
+        lock(pair);
         try {
-          if (commit !== undefined) commit();
-          if (!owned) return false;
-          lock(pair);
-          try {
-            if (read(pair, peer + STATE) === CLOSED) return false;
-            prepared.value.publish(notifyPeer);
-            return true;
-          } finally {
-            unlock(pair);
-          }
+          if (read(pair, peer + STATE) === CLOSED) return false;
+          publishNativeAgentPacket(
+            memory,
+            parking,
+            outgoing.registry,
+            packet,
+            used,
+            notifyPeer,
+          );
+          return true;
         } finally {
-          prepared.value.discard();
+          unlock(pair);
         }
       },
-      take: (): string | undefined => {
+      take: (): NativeAgentPacketEntry | undefined => {
         if (!owned) return undefined;
         if (watch !== undefined)
           throw new Error("message port is already watched");
-        return incoming.receive();
+        return next();
       },
       watch: (message, peerClose): EventLoopHandle => {
         if (!owned) throw new Error("message port is closed");
@@ -245,16 +302,18 @@ export function createNativeMessagePorts(
           throw new Error("message port is already watched");
         let scheduled = false;
         let active = true;
+        // One I/O task per message, as Node delivers them; each drain of
+        // the shared queue takes every packet queued so far.
         function schedule(): void {
           if (!active || scheduled) return;
           scheduled = true;
           reactor.loop.enqueueIO((): void => {
             scheduled = false;
             if (!active) return;
-            const packet = incoming.receive();
-            if (packet !== undefined) {
+            const entry = next();
+            if (entry !== undefined) {
               schedule();
-              message(packet);
+              message(entry);
             } else if (read(pair, peer + STATE) === CLOSED) {
               handle.close();
               peerClose();
@@ -309,6 +368,7 @@ export function createNativeMessagePorts(
           generation: grant.generation + 1,
         };
         watch?.close();
+        requeue();
         lock(pair);
         try {
           ensureLease(pair, local, grant.generation, OWNED);
@@ -324,7 +384,9 @@ export function createNativeMessagePorts(
         if (!owned) return;
         watch?.close();
         owned = false;
-        releaseEndpoint(grant, OWNED, incoming);
+        const undelivered = pending;
+        pending = [];
+        releaseEndpoint(grant, OWNED, incoming, undelivered);
       },
     };
   }
@@ -396,7 +458,12 @@ export function createNativeMessagePorts(
     },
     discard: (grant): void => {
       const pair = registry(grant.base);
-      releaseEndpoint(grant, IN_FLIGHT, mailbox(pair, endpoint(grant.side)));
+      releaseEndpoint(
+        grant,
+        IN_FLIGHT,
+        mailbox(pair, endpoint(grant.side)),
+        [],
+      );
     },
   };
 }

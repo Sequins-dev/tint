@@ -69,6 +69,20 @@ export type HostOperation =
   /** Bounded copy of a Uint8Array into a caller-owned raw writable window:
    * (address, byteLength, offset, bytes) -> 0, or -1 for invalid input. */
   | "memory-write-bytes"
+  /** A binary64 at an eight-byte-aligned offset of a caller-owned raw window,
+   * with the memory-read-word bounds contract: (address, byteLength, offset)
+   * reads it (NaN for invalid input); (address, byteLength, offset, value)
+   * writes it and returns 0, or -1 for invalid input. */
+  | "memory-read-float64"
+  | "memory-write-float64"
+  /** Bulk UTF-16 copies between strings and a caller-owned raw window.
+   * memory-write-string copies every code unit of a string (two bytes each,
+   * native byte order) to (address, byteLength, offset) and returns 0, or -1
+   * when the units do not fit or an input is invalid. memory-read-string
+   * returns a fresh string of `units` code units copied from the window;
+   * invalid input traps. */
+  | "memory-write-string"
+  | "memory-read-string"
   /** GDB/LLDB JIT interface of a jitDebugInterface image: the address of
    * __jit_debug_descriptor, and a call of __jit_debug_register_code. */
   | "jit-debug-descriptor"
@@ -209,6 +223,13 @@ export function hostParameters(
     case "executable-write":
     case "memory-write-bytes":
       return ["number", "number", "number", "Uint8Array"];
+    case "memory-read-float64":
+      return ["number", "number", "number"];
+    case "memory-write-float64":
+    case "memory-read-string":
+      return ["number", "number", "number", "number"];
+    case "memory-write-string":
+      return ["number", "number", "number", "string"];
     case "executable-unmap":
     case "memory-unmap":
     case "memory-release":
@@ -245,7 +266,7 @@ export function hostParameters(
 /** The result encoding is part of the capability's checked ABI. */
 export function hostReturnType(
   operation: HostOperation,
-): "number" | "general" | "void" | undefined {
+): "number" | "string" | "general" | "void" | undefined {
   if (hostParameters(operation) === undefined) return undefined;
   if (
     operation === "cpu-pause" ||
@@ -254,6 +275,7 @@ export function hostReturnType(
     operation === "jit-debug-register"
   )
     return "void";
+  if (operation === "memory-read-string") return "string";
   return operation === "executable-call-value" ||
     operation === "executable-call-managed" ||
     operation === "engine-range-error"

@@ -18,6 +18,26 @@ const bindings: readonly NativeHostBinding[] = [
   { module: memory, name: "startNativeThread", operation: "thread-start" },
   {
     module: memory,
+    name: "readMemoryString",
+    operation: "memory-read-string",
+  },
+  {
+    module: memory,
+    name: "writeMemoryString",
+    operation: "memory-write-string",
+  },
+  {
+    module: memory,
+    name: "readMemoryFloat64",
+    operation: "memory-read-float64",
+  },
+  {
+    module: memory,
+    name: "writeMemoryFloat64",
+    operation: "memory-write-float64",
+  },
+  {
+    module: memory,
     name: "hostedThreadEntry",
     operation: "hosted-thread-entry",
   },
@@ -52,6 +72,27 @@ import {nativeSharedMemoryHost,nativeWaiterParkingHost} from 'blocks';
 import {createNativeWorkerThreadHost} from 'thread';
 import {createNativeMessagePorts,type NativeMessagePort,type NativeMessagePortGrant} from 'ports';
 import {startNativeWorker,runNativeWorker,type NativeWorkerTurnControl} from 'workers';
+import {nativeAgentPacketHeader,type NativeAgentPacketEntry} from 'mailbox';
+import {nativePacketMemory} from 'packets';
+
+// Text packets: the payload is the message's UTF-16 units.
+const packets=nativePacketMemory();
+function send(port:NativeMessagePort,text:string):boolean{
+  const packet=port.allocate(text.length*2);
+  if(packets.writeString(packet.base,packet.byteLength,nativeAgentPacketHeader,text)!==0)throw "text packet write";
+  const sent=port.send(packet,text.length*2);
+  if(!sent)port.release(packet);
+  return sent;
+}
+function text(entry:NativeAgentPacketEntry):string{
+  return packets.readString(entry.packet.base,entry.packet.byteLength,nativeAgentPacketHeader,entry.used/2);
+}
+/** The text of a delivered packet, which returns to its port. */
+function receive(port:NativeMessagePort,entry:NativeAgentPacketEntry):string{
+  const message=text(entry);
+  port.release(entry.packet);
+  return message;
+}
 
 export function run(argument:number):number {
   const loop=createReactorEventLoop({
@@ -64,7 +105,7 @@ export function run(argument:number):number {
   let discarded="";
   const ports=createNativeMessagePorts(
     memory,parking,threads,loop,
-    (packet:string):void=>{discarded+=packet;},
+    (entry:NativeAgentPacketEntry):void=>{discarded+=text(entry);},
   );
   if(argument!==0)return runNativeWorker(memory,parking,argument,
     (moduleId:number,id:number,control:NativeWorkerTurnControl):number=>{
@@ -72,8 +113,8 @@ export function run(argument:number):number {
       const port=control.claimParentPort(ports);
       if(port===undefined)return 11;
       const endpoint:NativeMessagePort=port;
-      endpoint.watch((message:string):void=>{
-        endpoint.send(message+"!");
+      endpoint.watch((entry:NativeAgentPacketEntry):void=>{
+        send(endpoint,receive(endpoint,entry)+"!");
         endpoint.close();
       },():void=>{endpoint.close();});
       try{loop.loop.run("callback");}finally{endpoint.close();loop.close();}
@@ -82,31 +123,31 @@ export function run(argument:number):number {
   );
   const pair=ports.create();
   let sequence="";
-  if(!pair.first.send("before"))return 1;
+  if(!send(pair.first,"before"))return 1;
   const grant=pair.second.transfer();
-  if(!pair.first.send("during"))return 2;
+  if(!send(pair.first,"during"))return 2;
   const receiver=ports.adopt(grant);
-  if(pair.second.send("bad"))return 3;
-  receiver.watch((message:string):void=>{
-    sequence+=message+";";
+  if(send(pair.second,"bad"))return 3;
+  receiver.watch((entry:NativeAgentPacketEntry):void=>{
+    sequence+=receive(receiver,entry)+";";
     loop.loop.nextTick(():void=>{sequence+="tick;";});
   },():void=>{sequence+="closed";receiver.close();});
-  if(!pair.first.send("after"))return 4;
+  if(!send(pair.first,"after"))return 4;
   pair.first.close();
   loop.loop.run("callback");
   if(sequence!=="before;tick;during;tick;after;tick;closed")return 5;
   const abandoned=ports.create();
   const inFlight=abandoned.second.transfer();
-  if(!abandoned.first.send("discarded"))return 6;
+  if(!send(abandoned.first,"discarded"))return 6;
   ports.discard(inFlight);
-  if(discarded!=="discarded"||abandoned.first.send("lost"))return 7;
+  if(discarded!=="discarded"||send(abandoned.first,"lost"))return 7;
   abandoned.first.close();
   const background=ports.create();
   const workerGrant=background.second.transfer();
-  if(!background.first.send("hello"))return 8;
+  if(!send(background.first,"hello"))return 8;
   let reply="",exit=-1;
   let peerClosed=false;
-  background.first.watch((message:string):void=>{reply=message;},
+  background.first.watch((entry:NativeAgentPacketEntry):void=>{reply=receive(background.first,entry);},
     ():void=>{peerClosed=true;background.first.close();});
   startNativeWorker(memory,parking,threads,loop,{
     threadId:1,moduleId:17,parentPort:workerGrant,
@@ -129,6 +170,8 @@ export function run(argument:number):number {
     ["blocks", "packages/native-runtime/src/shared-blocks.ts"],
     ["thread", "packages/platform/src/workers.ts"],
     ["ports", "packages/native-runtime/src/worker-ports.ts"],
+    ["mailbox", "packages/native-runtime/src/agent-messages.ts"],
+    ["packets", "packages/native-runtime/src/packet-memory.ts"],
     ["workers", "packages/native-runtime/src/worker-lifecycle.ts"],
   ],
   [],
@@ -139,13 +182,8 @@ export function run(argument:number):number {
       namespace: "native-clock",
       retainedExports: ["monotonicMilliseconds"],
     },
-    {
-      module: memory,
-      namespace: "native-memory",
-      retainedExports: bindings
-        .filter((binding) => binding.module === memory)
-        .map((binding) => binding.name),
-    },
+    // Packet views bring tint:ffi, whose runtimes include the memory
+    // intrinsics.
     {
       module: shared,
       namespace: "worker-port-shared-memory",

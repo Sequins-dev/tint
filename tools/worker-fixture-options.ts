@@ -8,6 +8,27 @@ const bindings: readonly NativeHostBinding[] = [
   { module: memory, name: "parkNativeWord", operation: "word-park" },
   { module: memory, name: "wakeNativeWord", operation: "word-wake" },
   { module: memory, name: "startNativeThread", operation: "thread-start" },
+  // Message packets (packet-memory.ts).
+  {
+    module: memory,
+    name: "readMemoryFloat64",
+    operation: "memory-read-float64",
+  },
+  {
+    module: memory,
+    name: "writeMemoryFloat64",
+    operation: "memory-write-float64",
+  },
+  {
+    module: memory,
+    name: "readMemoryString",
+    operation: "memory-read-string",
+  },
+  {
+    module: memory,
+    name: "writeMemoryString",
+    operation: "memory-write-string",
+  },
   {
     module: memory,
     name: "hostedThreadEntry",

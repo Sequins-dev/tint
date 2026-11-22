@@ -858,6 +858,8 @@ function rawWordOperation(operation: string): boolean {
   return (
     operation === "memory-read-word" ||
     operation === "memory-write-word" ||
+    operation === "memory-read-float64" ||
+    operation === "memory-write-float64" ||
     operation === "memory-move" ||
     operation === "memory-compare-exchange-word" ||
     operation === "memory-fetch-add-word" ||
@@ -3838,11 +3840,20 @@ function emitModuleForms(
                 }
               }
               if (op.kind === "host-call" && rawWordOperation(op.operation))
-                for (const argument of op.arguments)
+                for (
+                  let position = 0;
+                  position < op.arguments.length;
+                  position++
+                ) {
+                  const argument = op.arguments[position];
+                  // A stored binary64 travels in a float register.
+                  if (op.operation === "memory-write-float64" && position === 3)
+                    continue;
                   if (argument !== undefined && wordImmediates.has(argument)) {
                     const index = valueIds.intern(argument);
                     folded[index] = (folded[index] ?? 0) + 1;
                   }
+                }
               if (op.kind === "undefined")
                 undefinedValues[valueIds.intern(op.id)] = 1;
               if (op.kind === "reference-none" || op.kind === "string-none")
@@ -4134,7 +4145,9 @@ function emitModuleForms(
                   op.kind === "array-new" ||
                   op.kind === "weak-slot-new" ||
                   op.kind === "reference-vector-new" ||
-                  op.kind === "array-subarray",
+                  op.kind === "array-subarray" ||
+                  (op.kind === "host-call" &&
+                    op.operation === "memory-read-string"),
               ),
             )
               ? 24
@@ -12010,6 +12023,253 @@ function emitModuleForms(
                   floatStore(0, resultId);
                   break;
                 }
+                if (
+                  operation === "memory-write-string" ||
+                  operation === "memory-read-string"
+                ) {
+                  // Bulk UTF-16 copies through the C library's memmove. Both
+                  // first check every window input: exact integers within
+                  // MAX_SAFE_INTEGER, a nonzero address, and `units` code
+                  // units (two bytes each) inside the window at `offset`.
+                  // The string's data address stays valid across the copy:
+                  // nothing between the load and memmove can allocate.
+                  const read = operation === "memory-read-string";
+                  const failures: {
+                    index: number;
+                    condition: "hi" | "eq" | "ne";
+                  }[] = [];
+                  function reject(condition: "hi" | "eq" | "ne"): void {
+                    if (read) trapIf({ op: "b.cond", condition });
+                    else {
+                      failures.push({ index: instructions.length, condition });
+                      emit({ op: "b.cond", condition, displacement: 0 });
+                    }
+                  }
+                  function compare(left: number, right: number): void {
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: left,
+                      rm: right,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                  }
+                  function window(): void {
+                    // x0 address, x1 byteLength, x2 offset, x10 byte count.
+                    for (let index = 0; index < 3; index++) {
+                      floatLoad(0, argument(index));
+                      emit({ op: "fcvtzs-x-d", rd: index, rn: 0 });
+                      emit({ op: "scvtf-d-x", rd: 1, rn: index });
+                      emit({ op: "fcmp", rn: 0, rm: 1 });
+                      reject("ne");
+                    }
+                    if (read) {
+                      floatLoad(0, argument(3));
+                      emit({ op: "fcvtzs-x-d", rd: 10, rn: 0 });
+                      emit({ op: "scvtf-d-x", rd: 1, rn: 10 });
+                      emit({ op: "fcmp", rn: 0, rm: 1 });
+                      reject("ne");
+                      imm(9, maximumStringLength);
+                      compare(10, 9);
+                      reject("hi");
+                    } else {
+                      rawValue(9, argument(3));
+                      emit({
+                        op: "ldr",
+                        width: 32,
+                        rt: 10,
+                        rn: 9,
+                        offset: nativeStringLengthOffset,
+                      });
+                    }
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 10,
+                      rn: "zr",
+                      rm: 10,
+                      shift: "lsl",
+                      amount: 1,
+                      setFlags: false,
+                    });
+                    imm(9, 0x1fffffffffffff);
+                    for (const register of [0, 1, 2]) {
+                      compare(register, 9);
+                      reject("hi");
+                    }
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 0,
+                      immediate: 0,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    reject("eq");
+                    compare(2, 1);
+                    reject("hi");
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: 11,
+                      rn: 1,
+                      rm: 2,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
+                    compare(10, 11);
+                    reject("hi");
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 11,
+                      rn: 0,
+                      rm: 1,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
+                    imm(9, 0x1fffffffffffff);
+                    compare(11, 9);
+                    reject("hi");
+                  }
+                  /** memmove(x0, x1, x10) unless x10 is zero. */
+                  function copy(): void {
+                    const empty = instructions.length;
+                    emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 2,
+                      rn: "zr",
+                      rm: 10,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
+                    foreign(host().symbolPrefix + "memmove");
+                    patchInstruction(empty, {
+                      op: "cbz",
+                      width: 64,
+                      rt: 10,
+                      displacement: (instructions.length - empty) * 4,
+                    });
+                  }
+                  if (read) {
+                    // Check the window, then allocate the string and copy
+                    // into it. The allocator may call out, so the source
+                    // address and byte count wait in the frame words that
+                    // string builders keep across allocation: the window is
+                    // caller-owned raw memory, which no collection moves.
+                    window();
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 1,
+                      rn: 0,
+                      rm: 2,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
+                    rawStore(1, allocationOffset + 8);
+                    rawStore(10, allocationOffset + 16);
+                    allocate(
+                      () => {
+                        rawLoad(11, allocationOffset + 16);
+                        emit({
+                          op: "ubfm",
+                          width: 64,
+                          rd: 11,
+                          rn: 11,
+                          immr: 1,
+                          imms: 63,
+                        });
+                        prepareStringSize();
+                      },
+                      (rd) => rawLoad(rd, allocationOffset),
+                    );
+                    saveRaw(9, resultId);
+                    imm(10, 1);
+                    emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 0 });
+                    rawLoad(10, allocationOffset + 16);
+                    emit({
+                      op: "ubfm",
+                      width: 64,
+                      rd: 11,
+                      rn: 10,
+                      immr: 1,
+                      imms: 63,
+                    });
+                    emit({
+                      op: "str",
+                      width: 64,
+                      rt: 11,
+                      rn: 9,
+                      offset: nativeStringLengthOffset,
+                    });
+                    rawLoad(1, allocationOffset + 8);
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: 0,
+                      rn: 9,
+                      immediate: nativeStringDataOffset,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    copy();
+                    break;
+                  }
+                  window();
+                  // Destination x0 + x2, source the string's units.
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 0,
+                    rn: 0,
+                    rm: 2,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  rawValue(9, argument(3));
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 1,
+                    rn: 9,
+                    immediate: nativeStringDataOffset,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  copy();
+                  emit({ op: "fmov-d-x", rd: 0, rn: "zr" });
+                  const skip = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  const invalid = instructions.length;
+                  imm(9, 1);
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                  emit({ op: "fneg", rd: 0, rn: 0 });
+                  const done = instructions.length;
+                  for (const failure of failures)
+                    patchInstruction(failure.index, {
+                      op: "b.cond",
+                      condition: failure.condition,
+                      displacement: (invalid - failure.index) * 4,
+                    });
+                  patchInstruction(skip, {
+                    op: "b",
+                    displacement: (done - skip) * 4,
+                  });
+                  floatStore(0, resultId);
+                  break;
+                }
                 if (operation === "jit-debug-descriptor") {
                   // The hosted routine returns the descriptor's address in x0.
                   startupCall("jit-descriptor");
@@ -13205,10 +13465,16 @@ function emitModuleForms(
                     operation === "memory-compare-exchange-word"
                       ? 5
                       : operation === "memory-write-word" ||
+                          operation === "memory-write-float64" ||
                           operation === "memory-fetch-add-word" ||
                           operation === "memory-store-release-word"
                         ? 4
                         : 3;
+                  // A binary64 operand or result is any number: it bypasses
+                  // the integer checks and travels in a float register.
+                  const float =
+                    operation === "memory-read-float64" ||
+                    operation === "memory-write-float64";
                   // A fetch-add delta may be negative: it needs only an
                   // exact integer, not the unsigned address-domain check.
                   const signedArgument =
@@ -13230,6 +13496,7 @@ function emitModuleForms(
                     effective = directAddress ? 0 : 10;
                   for (let index = 0; index < arity; index++) {
                     if (fixedBounds && (index === 1 || index === 2)) continue;
+                    if (float && index === 3) continue;
                     const fact = valueIds.intern(argument(index));
                     if (wordKinds[fact] === 3) {
                       imm(index, wordConstants[fact] ?? 0);
@@ -13331,6 +13598,17 @@ function emitModuleForms(
                         offset: 0,
                       });
                       rejectUnsafe(0);
+                    } else if (operation === "memory-read-float64") {
+                      emit({ op: "ldr-d", rt: 0, rn: effective, offset: 0 });
+                    } else if (operation === "memory-write-float64") {
+                      const operand = floatOperand(argument(3), 1);
+                      emit({
+                        op: "str-d",
+                        rt: operand,
+                        rn: effective,
+                        offset: 0,
+                      });
+                      imm(0, 0);
                     } else if (operation === "memory-load-acquire-word") {
                       emit({ op: "ldar", width: 64, rt: 0, rn: effective });
                       rejectUnsafe(0);
@@ -13418,8 +13696,11 @@ function emitModuleForms(
                   }
                   // Integer consumers take the exact word (or -1) as int64.
                   const integral =
-                    operation !== "memory-move" && wantsInteger(resultId);
-                  if (!integral) emit({ op: "scvtf-d-x", rd: 0, rn: 0 });
+                    operation !== "memory-move" &&
+                    operation !== "memory-read-float64" &&
+                    wantsInteger(resultId);
+                  if (!integral && operation !== "memory-read-float64")
+                    emit({ op: "scvtf-d-x", rd: 0, rn: 0 });
                   const skip = instructions.length;
                   emit({ op: "b", displacement: 0 });
                   const invalid = instructions.length;
@@ -13431,7 +13712,17 @@ function emitModuleForms(
                       rn: "zr",
                       rm: "zr",
                     });
-                  else {
+                  else if (operation === "memory-read-float64") {
+                    // An invalid window reads as NaN.
+                    emit({
+                      op: "movz",
+                      width: 64,
+                      rd: 9,
+                      immediate: 0x7ff8,
+                      shift: 48,
+                    });
+                    emit({ op: "fmov-d-x", rd: 0, rn: 9 });
+                  } else {
                     imm(9, 1);
                     emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
                     emit({ op: "fneg", rd: 0, rn: 0 });

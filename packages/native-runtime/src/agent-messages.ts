@@ -140,6 +140,177 @@ function returnBlock(
     unlock(host, parking, registry, scratch);
   }
 }
+/** A binary message packet: one whole mapping of `byteLength` bytes, owned
+ * by its sender until published and by its receiver once taken. Bytes
+ * [0, nativeAgentPacketHeader) hold the queue link, the payload length and
+ * the mapping length; the payload follows, eight-byte aligned. Packet
+ * mailboxes carry only packets. */
+export interface NativeAgentPacket {
+  readonly base: number;
+  readonly byteLength: number;
+}
+const PACKET_HEADER = 24;
+export const nativeAgentPacketHeader = PACKET_HEADER;
+function packetBytes(payload: number): number {
+  return (
+    Math.ceil((PACKET_HEADER + payload) / MAPPING_QUANTUM) * MAPPING_QUANTUM
+  );
+}
+/** A packet with room for `payload` bytes: a recycled block when one quantum
+ * suffices, else a fresh zero-filled mapping; undefined when none is mapped. */
+export function allocateNativeAgentPacket(
+  host: NativeSharedMemoryHost,
+  parking: NativeWaiterParkingHost,
+  registry: NativeSharedBlockRegistry,
+  payload: number,
+): NativeAgentPacket | undefined {
+  if (!integer(payload) || payload > MAX_UNITS * 4) return undefined;
+  const byteLength = packetBytes(payload);
+  const scratch = new Uint32Array(2);
+  const recycled =
+    byteLength === MAPPING_QUANTUM
+      ? takeBlock(host, parking, registry, scratch)
+      : 0;
+  const base = recycled !== 0 ? recycled : host.mapMemory(byteLength);
+  if (!integer(base) || base <= 0 || base % 8 !== 0) return undefined;
+  return { base, byteLength };
+}
+/** Return an unpublished or consumed packet: single-quantum packets go back
+ * to a recycling mailbox, others are unmapped. */
+export function releaseNativeAgentPacket(
+  host: NativeSharedMemoryHost,
+  parking: NativeWaiterParkingHost,
+  registry: NativeSharedBlockRegistry,
+  packet: NativeAgentPacket,
+): void {
+  const scratch = new Uint32Array(2);
+  if (
+    !(
+      packet.byteLength === MAPPING_QUANTUM &&
+      returnBlock(host, parking, registry, packet.base, scratch)
+    ) &&
+    host.unmapMemory(packet.base, packet.byteLength) !== 0
+  )
+    throw "NATIVE_AGENT_MESSAGE_RELEASE";
+}
+/** Link `packet`, whose payload is `used` bytes, at the tail of the queue.
+ * `notify` runs inside the queue lock so a reader cannot miss the packet. */
+export function publishNativeAgentPacket(
+  host: NativeSharedMemoryHost,
+  parking: NativeWaiterParkingHost,
+  registry: NativeSharedBlockRegistry,
+  packet: NativeAgentPacket,
+  used: number,
+  notify?: () => void,
+): void {
+  if (!integer(used) || used > packet.byteLength - PACKET_HEADER)
+    throw "NATIVE_AGENT_PACKET_LENGTH";
+  const scratch = new Uint32Array(2);
+  const header = {
+    base: packet.base,
+    byteLength: PACKET_HEADER,
+    engineId: registry.engineId,
+  };
+  // A recycled block still holds its free-stack link where the queue keeps
+  // its next pointer.
+  writeNumber(host, header, 0, 0);
+  writeNumber(host, header, 8, used);
+  writeNumber(host, header, 16, packet.byteLength);
+  lock(host, parking, registry, scratch);
+  try {
+    if (notify !== undefined) notify();
+    const tail = readNumber(host, registry, TAIL, scratch);
+    if (tail === 0) writeNumber(host, registry, HEAD, packet.base);
+    else {
+      header.base = tail;
+      writeNumber(host, header, 0, packet.base);
+    }
+    writeNumber(host, registry, TAIL, packet.base);
+  } finally {
+    unlock(host, parking, registry, scratch);
+  }
+}
+/** A packet taken from the queue and the length of its payload. */
+export interface NativeAgentPacketEntry {
+  readonly packet: NativeAgentPacket;
+  readonly used: number;
+}
+/** Detach every queued packet under one lock, in order. The receiver owns
+ * each and releases it with releaseNativeAgentPacket. */
+export function drainNativeAgentPackets(
+  host: NativeSharedMemoryHost,
+  parking: NativeWaiterParkingHost,
+  registry: NativeSharedBlockRegistry,
+): NativeAgentPacketEntry[] {
+  const scratch = new Uint32Array(2);
+  let head = 0;
+  lock(host, parking, registry, scratch);
+  try {
+    head = readNumber(host, registry, HEAD, scratch);
+    if (head !== 0) {
+      writeNumber(host, registry, HEAD, 0);
+      writeNumber(host, registry, TAIL, 0);
+    }
+  } finally {
+    unlock(host, parking, registry, scratch);
+  }
+  const entries: NativeAgentPacketEntry[] = [];
+  const header = {
+    base: 0,
+    byteLength: PACKET_HEADER,
+    engineId: registry.engineId,
+  };
+  while (head !== 0) {
+    header.base = head;
+    const next = readNumber(host, header, 0, scratch);
+    const used = readNumber(host, header, 8, scratch);
+    const byteLength = readNumber(host, header, 16, scratch);
+    if (byteLength % MAPPING_QUANTUM !== 0 || used > byteLength - PACKET_HEADER)
+      throw "NATIVE_AGENT_PACKET_LENGTH";
+    entries.push({ packet: { base: head, byteLength }, used });
+    head = next;
+  }
+  return entries;
+}
+/** Relink packets detached by drainNativeAgentPackets, in order, ahead of
+ * every packet queued since: a transferred or closed watcher leaves its
+ * undelivered packets for the next owner. */
+export function restoreNativeAgentPackets(
+  host: NativeSharedMemoryHost,
+  parking: NativeWaiterParkingHost,
+  registry: NativeSharedBlockRegistry,
+  entries: readonly NativeAgentPacketEntry[],
+): void {
+  if (entries.length === 0) return;
+  const scratch = new Uint32Array(2);
+  const header = {
+    base: 0,
+    byteLength: PACKET_HEADER,
+    engineId: registry.engineId,
+  };
+  for (let index = 0; index + 1 < entries.length; index++) {
+    const entry = entries[index],
+      next = entries[index + 1];
+    if (entry === undefined || next === undefined)
+      throw "NATIVE_AGENT_PACKET_INVARIANT";
+    header.base = entry.packet.base;
+    writeNumber(host, header, 0, next.packet.base);
+  }
+  const first = entries[0],
+    last = entries[entries.length - 1];
+  if (first === undefined || last === undefined)
+    throw "NATIVE_AGENT_PACKET_INVARIANT";
+  lock(host, parking, registry, scratch);
+  try {
+    const head = readNumber(host, registry, HEAD, scratch);
+    header.base = last.packet.base;
+    writeNumber(host, header, 0, head);
+    if (head === 0) writeNumber(host, registry, TAIL, last.packet.base);
+    writeNumber(host, registry, HEAD, first.packet.base);
+  } finally {
+    unlock(host, parking, registry, scratch);
+  }
+}
 export function attachNativeAgentMailbox(
   host: NativeSharedMemoryHost,
   parking: NativeWaiterParkingHost,

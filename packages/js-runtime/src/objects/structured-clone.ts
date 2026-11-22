@@ -1,6 +1,10 @@
 import { setMap } from "@tint/foundation/collections/linked-map";
-import { decodeFloat64, encodeFloat64 } from "@tint/foundation/binary/bytes";
 import { createByteStorage, byteStorageData } from "../bytes/index.ts";
+import {
+  arrayElementCount,
+  readArrayElement,
+  writeArrayElement,
+} from "./array-elements.ts";
 import { createArrayObject } from "./arrays.ts";
 import {
   bigIntFromString,
@@ -18,6 +22,7 @@ import {
   getOwnProperty,
   getProperty,
   ownKeys,
+  propertyMapKeys,
   type OrdinaryObject,
 } from "./operations.ts";
 import { createRegExpLiteral } from "./regexp-runtime.ts";
@@ -99,26 +104,6 @@ function unsupportedObject(object: ScriptObject): boolean {
   );
 }
 
-function arrayKind(name: string): TypedArrayElementKind | undefined {
-  switch (name) {
-    case "Int8":
-    case "Uint8":
-    case "Uint8Clamped":
-    case "Int16":
-    case "Uint16":
-    case "Int32":
-    case "Uint32":
-    case "Float16":
-    case "Float32":
-    case "Float64":
-    case "BigInt64":
-    case "BigUint64":
-      return name;
-    default:
-      return undefined;
-  }
-}
-
 function errorKind(name: string): string {
   switch (name) {
     case "TypeError":
@@ -138,65 +123,184 @@ function errorKind(name: string): string {
   }
 }
 
-/** Snapshot a graph into a UTF-16 sequence, preserving lone surrogates and
- * references to every first-seen object. Only enumerable own string keys
- * participate in ordinary object and array cloning. Lengths, counts and
- * numbers are fixed-width code units, never decimal text: a count is four
- * units (a safe integer's high and low words), an int32 number two units and
- * any other number its four binary64 units. */
+/** A growable output window for the binary clone codec. Offsets are relative
+ * to `bytes`; native hosts back it with an external view of a message packet,
+ * whose start is eight-byte aligned. */
+export interface WorkerCloneSink {
+  bytes: Uint8Array;
+  /** Replace `bytes` with a window of at least `used + needed` bytes whose
+   * first `used` bytes are unchanged. */
+  grow(used: number, needed: number): void;
+  /** A binary64 at an eight-byte-aligned offset within `bytes`. */
+  writeFloat64(offset: number, value: number): void;
+  /** Every UTF-16 code unit of `value`, two bytes each, at `offset`. */
+  writeString(offset: number, value: string): void;
+}
+/** The input window of a received packet; offsets are relative to `bytes`. */
+export interface WorkerCloneSource {
+  readonly bytes: Uint8Array;
+  readFloat64(offset: number): number;
+  readString(offset: number, units: number): string;
+}
+
+// One-byte tags, after V8's ValueSerializer where one corresponds.
+const tagUndefined = 95; // _
+const tagNull = 48; // 0
+const tagTrue = 84; // T
+const tagFalse = 70; // F
+const tagInt32 = 73; // I: zigzag varint
+const tagDouble = 78; // N: padding to eight bytes, then binary64
+const tagString = 99; // c: varint units, then UTF-16 units
+const tagBigInt = 90; // Z: decimal digits as a string payload
+const tagReference = 94; // ^: varint object index
+const tagAttachment = 120; // x: varint grant index
+const tagBoxed = 119; // w: the boxed primitive value
+const tagDate = 68; // D: a double payload
+const tagRegExp = 82; // R: source and flags string payloads
+const tagError = 69; // E
+const tagTypedArray = 86; // V
+const tagDataView = 87; // W
+const tagArrayBuffer = 66; // B
+const tagResizableArrayBuffer = 126; // ~
+const tagMap = 59; // ;
+const tagSet = 39; // '
+const tagDenseArray = 65; // A: elements by position, then properties, $
+const tagNumberArray = 80; // P: packed binary64 elements, then properties, $
+const tagSparseArray = 97; // a: properties, then @
+const tagObject = 111; // o: properties, then {
+const tagHole = 45; // -
+const tagNewKey = 107; // k: a property key's string payload
+const tagKeyReference = 75; // K: varint index of an earlier key
+const endObject = 123; // {
+const endDenseArray = 36; // $
+const endSparseArray = 64; // @
+
+const elementKinds: readonly TypedArrayElementKind[] = [
+  "Int8",
+  "Uint8",
+  "Uint8Clamped",
+  "Int16",
+  "Uint16",
+  "Int32",
+  "Uint32",
+  "Float16",
+  "Float32",
+  "Float64",
+  "BigInt64",
+  "BigUint64",
+];
+// Short strings copy inline; longer ones in one bulk copy.
+const inlineStringUnits = 16;
+
+/** Serialize `value` into `sink` from offset `start` and return the end
+ * offset. The traversal, its property order and every getter call match the
+ * HTML structured serialization algorithm. Only enumerable own string keys
+ * participate in ordinary object and array cloning. */
 export function serializeWorkerValue(
   value: unknown,
   realm: ErrorRealm,
+  sink: WorkerCloneSink,
+  start: number,
   attachments?: WorkerCloneAttachments,
-): string {
-  // Parts join once: typed join sizes and writes the result in one pass.
-  const packet: string[] = [];
+): number {
   const objects = new Map<number, number>();
+  const keyIndices = new Map<string, number>();
   const hooks = realm.objectHooks;
-  function tag(value: string): void {
-    packet.push(value);
+  let bytes = sink.bytes,
+    position = start;
+  function reserve(count: number): void {
+    if (position + count <= bytes.length) return;
+    sink.grow(position, count);
+    bytes = sink.bytes;
   }
-  function word(value: number): void {
-    tag(String.fromCharCode(Math.floor(value / 65536), value % 65536));
+  function tag(value: number): void {
+    reserve(1);
+    bytes[position++] = value;
   }
-  function count(value: number): void {
+  function varint(value: number): void {
     if (!Number.isSafeInteger(value) || value < 0)
       throw "WORKER_CLONE_COUNT_INVARIANT";
-    word(Math.floor(value / 4294967296));
-    word(value % 4294967296);
+    reserve(8);
+    while (value >= 128) {
+      bytes[position++] = (value % 128) + 128;
+      value = Math.floor(value / 128);
+    }
+    bytes[position++] = value;
+  }
+  function align(width: number): void {
+    reserve(width);
+    while (position % width !== 0) bytes[position++] = 0;
   }
   function float(value: number): void {
-    const bits = encodeFloat64(value);
-    word(bits.hi);
-    word(bits.lo);
+    align(8);
+    reserve(8);
+    sink.writeFloat64(position, value);
+    position += 8;
   }
-  function field(value: string): void {
-    count(value.length);
-    tag(value);
+  function string(value: string): void {
+    const units = value.length;
+    varint(units);
+    reserve(units * 2);
+    if (units <= inlineStringUnits)
+      for (let index = 0; index < units; index++) {
+        const unit = value.charCodeAt(index);
+        bytes[position++] = unit % 256;
+        bytes[position++] = Math.floor(unit / 256);
+      }
+    else {
+      sink.writeString(position, value);
+      position += units * 2;
+    }
+  }
+  function key(value: string): void {
+    const known = keyIndices.get(value);
+    if (known !== undefined) {
+      tag(tagKeyReference);
+      return varint(known);
+    }
+    keyIndices.set(value, keyIndices.size);
+    tag(tagNewKey);
+    string(value);
+  }
+  /** Enumerable own string properties from `keys`, re-checked as each is
+   * visited because a getter may delete a later one. */
+  function properties(
+    object: ScriptObject,
+    keys: readonly ScriptPropertyKey[],
+  ): void {
+    for (const name of keys) {
+      if (typeof name !== "string") continue;
+      const property = getOwnProperty<ScriptPropertyKey, unknown>(object, name);
+      if (property === undefined || !property.enumerable) continue;
+      key(name);
+      encode(
+        getProperty<ScriptPropertyKey, unknown>(object, name, object, hooks),
+      );
+    }
   }
   function encode(value: unknown): void {
-    if (value === undefined) return tag("u");
-    if (value === null) return tag("n");
-    if (typeof value === "boolean") return tag(value ? "t" : "f");
+    if (value === undefined) return tag(tagUndefined);
+    if (value === null) return tag(tagNull);
+    if (typeof value === "boolean") return tag(value ? tagTrue : tagFalse);
     if (typeof value === "number") {
-      // int32 values other than -0 take two units; the rest binary64.
+      // int32 values other than -0 take a zigzag varint; the rest binary64.
       if ((value | 0) === value && (value !== 0 || 1 / value > 0)) {
-        tag("j");
-        return word(value >>> 0);
+        tag(tagInt32);
+        return varint(value >= 0 ? value * 2 : -value * 2 - 1);
       }
-      tag("d");
+      tag(tagDouble);
       return float(value);
     }
     if (typeof value === "string") {
-      tag("s");
-      return field(value);
+      tag(tagString);
+      return string(value);
     }
     const big = viewBigIntValue(value);
     if (big !== undefined) {
       const digits = bigIntToString(big, 10);
       if (digits === undefined) throw "WORKER_CLONE_BIGINT_RADIX";
-      tag("i");
-      return field(digits);
+      tag(tagBigInt);
+      return string(digits);
     }
     const object = viewObjectValue(value, realm.objectPrototype);
     if (object === undefined)
@@ -205,14 +309,14 @@ export function serializeWorkerValue(
       object.internalIdentity = realm.agent.nextObjectIdentity++;
     const seen = objects.get(object.internalIdentity);
     if (seen !== undefined) {
-      tag("r");
-      return count(seen);
+      tag(tagReference);
+      return varint(seen);
     }
     objects.set(object.internalIdentity, objects.size);
     const grant = attachments?.encode?.(object);
     if (grant !== undefined) {
-      tag("x");
-      return count(grant);
+      tag(tagAttachment);
+      return varint(grant);
     }
     if (unsupportedObject(object))
       return throwWorkerCloneError(realm, "The object could not be cloned");
@@ -223,19 +327,21 @@ export function serializeWorkerValue(
           realm,
           "A boxed Symbol could not be cloned",
         );
-      tag("w");
+      tag(tagBoxed);
       return encode(primitive.value);
     }
     const typed = object.internalTypedArrayData;
     if (typed !== undefined) {
       if (typedArrayWindow(typed) === undefined)
         return throwWorkerCloneError(realm, "The typed array is out of bounds");
-      tag("T");
-      field(typed.kind);
-      tag(typed.endian === "little" ? "l" : "b");
-      count(typed.byteOffset);
+      const kind = elementKinds.indexOf(typed.kind);
+      if (kind < 0) throw "WORKER_CLONE_ELEMENT_KIND";
+      tag(tagTypedArray);
+      tag(kind);
+      tag(typed.endian === "little" ? 0 : 1);
+      varint(typed.byteOffset);
       // Zero marks a length-tracking view; others store length + 1.
-      count(typed.length === undefined ? 0 : typed.length + 1);
+      varint(typed.length === undefined ? 0 : typed.length + 1);
       return encode(typed.buffer);
     }
     const view = object.internalDataViewData;
@@ -249,37 +355,40 @@ export function serializeWorkerValue(
         ) === undefined
       )
         return throwWorkerCloneError(realm, "The DataView is out of bounds");
-      tag("V");
-      count(view.byteOffset);
-      count(view.byteLength === undefined ? 0 : view.byteLength + 1);
+      tag(tagDataView);
+      varint(view.byteOffset);
+      varint(view.byteLength === undefined ? 0 : view.byteLength + 1);
       return encode(view.buffer);
     }
     if (object.internalErrorData) {
-      tag("E");
+      tag(tagError);
       const name = getProperty<ScriptPropertyKey, unknown>(
         object,
         "name",
         object,
         hooks,
       );
-      field(typeof name === "string" ? name : "Error");
+      string(typeof name === "string" ? name : "Error");
       const message = getOwnProperty<ScriptPropertyKey, unknown>(
         object,
         "message",
       );
-      const hasMessage = message !== undefined && !message.accessor;
-      tag(hasMessage ? "1" : "0");
+      let text: string | undefined = undefined;
       if (message !== undefined && !message.accessor) {
-        const value = stringValue(message.value, hooks, realm);
-        if (value.error !== "none") throw createRuntimeError(realm, "type");
-        field(value.value);
+        const coerced = stringValue(message.value, hooks, realm);
+        if (coerced.error !== "none") throw createRuntimeError(realm, "type");
+        text = coerced.value;
       }
       const stack = object.internalErrorStack;
-      tag(stack === undefined ? "0" : "1");
-      if (stack !== undefined) field(stack);
       const cause = getOwnProperty<ScriptPropertyKey, unknown>(object, "cause");
       const hasCause = cause !== undefined && !cause.accessor;
-      tag(hasCause ? "1" : "0");
+      tag(
+        (text === undefined ? 0 : 1) +
+          (stack === undefined ? 0 : 2) +
+          (hasCause ? 4 : 0),
+      );
+      if (text !== undefined) string(text);
+      if (stack !== undefined) string(stack);
       if (cause !== undefined && !cause.accessor) encode(cause.value);
       return;
     }
@@ -294,8 +403,8 @@ export function serializeWorkerValue(
         if (map !== undefined) values.push(head.value);
         head = head.next;
       }
-      tag(map === undefined ? "q" : "m");
-      count(keys.length);
+      tag(map === undefined ? tagSet : tagMap);
+      varint(keys.length);
       for (let index = 0; index < keys.length; index++) {
         encode(keys[index]);
         if (map !== undefined) encode(values[index]);
@@ -304,133 +413,236 @@ export function serializeWorkerValue(
     }
     const date = object.internalDateValue;
     if (date !== undefined) {
-      tag("D");
+      tag(tagDate);
       return float(date);
     }
     const expression = object.internalRegExpData;
     if (expression !== undefined) {
-      tag("R");
-      field(expression.originalSource);
-      return field(expression.originalFlags);
+      tag(tagRegExp);
+      string(expression.originalSource);
+      return string(expression.originalFlags);
     }
     const storage = object.internalArrayBufferData;
     if (storage !== undefined) {
-      const bytes = byteStorageData(storage);
-      if (bytes === undefined)
+      const data = byteStorageData(storage);
+      if (data === undefined)
         return throwWorkerCloneError(realm, "The ArrayBuffer is detached");
-      tag(storage.resizable ? "A" : "B");
-      count(storage.maxByteLength);
-      count(bytes.length);
-      for (let index = 0; index < bytes.length; index++)
-        tag(String.fromCharCode(bytes[index] ?? 0));
+      tag(storage.resizable ? tagResizableArrayBuffer : tagArrayBuffer);
+      varint(storage.maxByteLength);
+      varint(data.length);
+      reserve(data.length);
+      bytes.set(data, position);
+      position += data.length;
       return;
     }
     if (object.internalArrayData) {
-      tag("a");
       const length = getOwnProperty<ScriptPropertyKey, unknown>(
         object,
         "length",
       )?.value;
       if (typeof length !== "number") throw "WORKER_CLONE_ARRAY_LENGTH";
-      count(length);
-    } else tag("o");
-    const keys = ownKeys<ScriptPropertyKey, unknown>(
-      object,
-      scriptPropertyKeyOrder,
-    );
-    for (const key of keys) {
-      if (typeof key !== "string") continue;
-      const property = getOwnProperty<ScriptPropertyKey, unknown>(object, key);
-      if (property === undefined || !property.enumerable) continue;
-      tag("k");
-      field(key);
-      encode(
-        getProperty<ScriptPropertyKey, unknown>(object, key, object, hooks),
+      const elements = object.internalArrayElements;
+      if (elements === undefined) {
+        tag(tagSparseArray);
+        varint(length);
+        properties(
+          object,
+          ownKeys<ScriptPropertyKey, unknown>(object, scriptPropertyKeyOrder),
+        );
+        return tag(endSparseArray);
+      }
+      // Packed: indices 0..count-1 precede every map key, as in
+      // [[OwnPropertyKeys]], and none of them is created on the way.
+      const count = arrayElementCount<ScriptPropertyKey, unknown>(elements);
+      const rest = propertyMapKeys<ScriptPropertyKey, unknown>(
+        object,
+        scriptPropertyKeyOrder,
       );
+      const numbers = elements.numbers;
+      if (numbers !== undefined) {
+        // Encoding numbers runs no script, so the run is one snapshot.
+        tag(tagNumberArray);
+        varint(length);
+        varint(count);
+        align(8);
+        reserve(count * 8);
+        for (let index = 0; index < count; index++) {
+          sink.writeFloat64(position, numbers[index] ?? 0);
+          position += 8;
+        }
+      } else {
+        tag(tagDenseArray);
+        varint(length);
+        varint(count);
+        for (let index = 0; index < count; index++) {
+          // A getter met earlier may have removed or redefined this index.
+          const current = object.internalArrayElements;
+          if (
+            current !== undefined &&
+            index < arrayElementCount<ScriptPropertyKey, unknown>(current)
+          ) {
+            encode(
+              readArrayElement<ScriptPropertyKey, unknown>(current, index),
+            );
+            continue;
+          }
+          const name = realm.arrayHooks.indexKey(index);
+          const property = getOwnProperty<ScriptPropertyKey, unknown>(
+            object,
+            name,
+          );
+          if (property === undefined || !property.enumerable) {
+            tag(tagHole);
+            continue;
+          }
+          encode(
+            getProperty<ScriptPropertyKey, unknown>(
+              object,
+              name,
+              object,
+              hooks,
+            ),
+          );
+        }
+      }
+      properties(object, rest);
+      return tag(endDenseArray);
     }
-    tag(".");
+    tag(tagObject);
+    properties(
+      object,
+      ownKeys<ScriptPropertyKey, unknown>(object, scriptPropertyKeyOrder),
+    );
+    tag(endObject);
   }
   encode(value);
-  return packet.join("");
+  return position;
 }
 
 export function deserializeWorkerValue(
-  packet: string,
+  source: WorkerCloneSource,
+  start: number,
+  end: number,
   realm: ErrorRealm,
   attachments?: WorkerCloneAttachments,
 ): unknown {
   const objects: (ScriptObject | undefined)[] = [];
+  const keys: string[] = [];
   const hooks = realm.objectHooks;
-  let next = 0;
+  const bytes = source.bytes;
+  if (start < 0 || end > bytes.length || start > end)
+    throw "WORKER_CLONE_WINDOW_INVARIANT";
+  let position = start;
   function invalid(): never {
     return throwWorkerCloneError(realm, "Invalid worker clone payload");
   }
-  function tag(): string {
-    if (next >= packet.length) return invalid();
-    return packet.charAt(next++);
+  function next(): number {
+    if (position >= end) return invalid();
+    return bytes[position++] ?? 0;
   }
-  function word(): number {
-    if (next + 2 > packet.length) return invalid();
-    const value = packet.charCodeAt(next) * 65536 + packet.charCodeAt(next + 1);
-    next += 2;
-    return value;
+  function varint(): number {
+    let value = 0,
+      scale = 1;
+    for (;;) {
+      const byte = next();
+      value += (byte % 128) * scale;
+      if (byte < 128) break;
+      scale *= 128;
+      if (scale > 9007199254740992) return invalid();
+    }
+    return Number.isSafeInteger(value) ? value : invalid();
   }
-  function count(): number {
-    const high = word();
-    if (high > 2097151) return invalid();
-    return high * 4294967296 + word();
+  function align(width: number): void {
+    while (position % width !== 0) if (next() !== 0) invalid();
   }
   function float(): number {
-    const hi = word();
-    const value = decodeFloat64({ hi, lo: word() });
-    return value.ok ? value.value : invalid();
-  }
-  function field(): string {
-    const length = count();
-    if (length > packet.length - next) return invalid();
-    const value = packet.slice(next, next + length);
-    next += length;
+    align(8);
+    if (end - position < 8) return invalid();
+    const value = source.readFloat64(position);
+    position += 8;
     return value;
   }
-  function present(): boolean {
-    const flag = tag();
-    if (flag !== "0" && flag !== "1") return invalid();
-    return flag === "1";
+  function string(): string {
+    const units = varint();
+    if (units > (end - position) / 2) return invalid();
+    const value = source.readString(position, units);
+    position += units * 2;
+    return value;
+  }
+  function key(): string {
+    const kind = next();
+    if (kind === tagNewKey) {
+      const value = string();
+      keys.push(value);
+      return value;
+    }
+    if (kind !== tagKeyReference) return invalid();
+    const value = keys[varint()];
+    return value === undefined ? invalid() : value;
   }
   function remember(object: ScriptObject): ScriptObject {
     objects.push(object);
     return object;
   }
+  function define(
+    object: ScriptObject,
+    name: ScriptPropertyKey,
+    value: unknown,
+  ): void {
+    if (
+      !createDataProperty<ScriptPropertyKey, unknown>(
+        object,
+        name,
+        value,
+        hooks,
+      )
+    )
+      invalid();
+  }
+  /** Properties up to `terminator`. */
+  function properties(object: ScriptObject, terminator: number): ScriptObject {
+    for (;;) {
+      if (position < end && bytes[position] === terminator) {
+        position++;
+        return object;
+      }
+      const name = key();
+      define(object, name, decode());
+    }
+  }
   function decode(): unknown {
-    const kind = tag();
-    if (kind === "u") return undefined;
-    if (kind === "n") return null;
-    if (kind === "t" || kind === "f") return kind === "t";
-    if (kind === "j") return word() | 0;
-    if (kind === "d") return float();
-    if (kind === "s") return field();
-    if (kind === "i") {
-      const value = bigIntFromString(field());
+    const kind = next();
+    if (kind === tagUndefined) return undefined;
+    if (kind === tagNull) return null;
+    if (kind === tagTrue) return true;
+    if (kind === tagFalse) return false;
+    if (kind === tagInt32) {
+      const zigzag = varint();
+      if (zigzag > 4294967295) return invalid();
+      return zigzag % 2 === 0 ? zigzag / 2 : -(zigzag + 1) / 2;
+    }
+    if (kind === tagDouble) return float();
+    if (kind === tagString) return string();
+    if (kind === tagBigInt) {
+      const value = bigIntFromString(string());
       return value === undefined ? invalid() : value;
     }
-    if (kind === "r" || kind === "x") {
-      const index = count();
-      const value =
-        kind === "x" ? attachments?.decode?.(index) : objects[index];
-      return value === undefined
-        ? invalid()
-        : kind === "x"
-          ? remember(value)
-          : value;
+    if (kind === tagReference) {
+      const value = objects[varint()];
+      return value === undefined ? invalid() : value;
     }
-    if (kind === "D") {
+    if (kind === tagAttachment) {
+      const value = attachments?.decode?.(varint());
+      return value === undefined ? invalid() : remember(value);
+    }
+    if (kind === tagDate) {
       const date = createObject<ScriptPropertyKey, unknown>(
         realm.datePrototype,
       );
       date.internalDateValue = float();
       return remember(date);
     }
-    if (kind === "w") {
+    if (kind === tagBoxed) {
       const value = decode();
       if (
         typeof value !== "number" &&
@@ -441,29 +653,28 @@ export function deserializeWorkerValue(
         return invalid();
       return remember(toObjectValue(value, realm, hooks));
     }
-    if (kind === "R")
-      return remember(createRegExpLiteral(field(), field(), realm, hooks));
-    if (kind === "E") {
-      const error = remember(createRuntimeError(realm, errorKind(field())));
-      if (present())
-        builtinProperty(error, "message", field(), true, false, hooks);
-      error.internalErrorStack = present() ? field() : undefined;
-      if (present())
+    if (kind === tagRegExp)
+      return remember(createRegExpLiteral(string(), string(), realm, hooks));
+    if (kind === tagError) {
+      const error = remember(createRuntimeError(realm, errorKind(string())));
+      const flags = next();
+      if (flags > 7) return invalid();
+      if ((flags & 1) !== 0)
+        builtinProperty(error, "message", string(), true, false, hooks);
+      error.internalErrorStack = (flags & 2) !== 0 ? string() : undefined;
+      if ((flags & 4) !== 0)
         builtinProperty(error, "cause", decode(), true, false, hooks);
       return error;
     }
-    if (kind === "T" || kind === "V") {
+    if (kind === tagTypedArray || kind === tagDataView) {
       const index = objects.length;
       objects.push(undefined);
-      const element = kind === "T" ? arrayKind(field()) : undefined;
-      const order = kind === "T" ? tag() : "l";
-      if (
-        (kind === "T" && element === undefined) ||
-        (order !== "l" && order !== "b")
-      )
+      const element = kind === tagTypedArray ? elementKinds[next()] : undefined;
+      const order = kind === tagTypedArray ? next() : 0;
+      if ((kind === tagTypedArray && element === undefined) || order > 1)
         return invalid();
-      const byteOffset = count();
-      const size = count();
+      const byteOffset = varint();
+      const size = varint();
       const length = size === 0 ? undefined : size - 1;
       const buffer = viewObjectValue(decode(), realm.objectPrototype);
       if (buffer === undefined) return invalid();
@@ -491,7 +702,7 @@ export function deserializeWorkerValue(
           byteOffset,
           length,
           kind: element,
-          endian: order === "l" ? "little" : "big",
+          endian: order === 0 ? "little" : "big",
         };
         if (typedArrayWindow(data) === undefined) return invalid();
         object = createTypedArrayView(
@@ -504,33 +715,30 @@ export function deserializeWorkerValue(
       objects[index] = object;
       return object;
     }
-    if (kind === "A" || kind === "B") {
-      const maximum = count(),
-        length = count();
-      if (length > packet.length - next) return invalid();
+    if (kind === tagArrayBuffer || kind === tagResizableArrayBuffer) {
+      const maximum = varint(),
+        length = varint();
+      if (length > end - position) return invalid();
       const storage = createByteStorage(
         length,
         maximum,
-        kind === "A",
+        kind === tagResizableArrayBuffer,
         realm.bufferMaxBytes,
         realm.bufferAllocator,
       );
       if (!storage.ok) return invalid();
-      const bytes = byteStorageData(storage.value);
-      if (bytes === undefined) return invalid();
-      for (let index = 0; index < length; index++) {
-        const byte = packet.charCodeAt(next++);
-        if (byte > 255) return invalid();
-        bytes[index] = byte;
-      }
+      const data = byteStorageData(storage.value);
+      if (data === undefined) return invalid();
+      data.set(bytes.subarray(position, position + length));
+      position += length;
       const buffer = createObject<ScriptPropertyKey, unknown>(
         realm.arrayBufferPrototype,
       );
       buffer.internalArrayBufferData = storage.value;
       return remember(buffer);
     }
-    if (kind === "q" || kind === "m") {
-      const isMap = kind === "m";
+    if (kind === tagSet || kind === tagMap) {
+      const isMap = kind === tagMap;
       const object = remember(
         createObject<ScriptPropertyKey, unknown>(
           isMap ? realm.mapPrototype : realm.setPrototype,
@@ -539,41 +747,84 @@ export function deserializeWorkerValue(
       const data = createSetData();
       if (isMap) object.internalMapData = data;
       else object.internalSetData = data;
-      const length = count();
+      const length = varint();
       for (let index = 0; index < length; index++) {
         const key = decode();
         setMap<unknown, unknown>(data, key, isMap ? decode() : key);
       }
       return object;
     }
-    if (kind !== "a" && kind !== "o") return invalid();
-    const object = remember(
-      kind === "a"
-        ? createArrayObject<ScriptPropertyKey, unknown>(
-            count(),
+    if (kind === tagDenseArray || kind === tagNumberArray) {
+      const length = varint(),
+        count = varint();
+      if (count > length) return invalid();
+      const object = remember(
+        createArrayObject<ScriptPropertyKey, unknown>(
+          length,
+          realm.arrayPrototype,
+          realm.arrayHooks,
+          hooks,
+        ),
+      );
+      const elements = object.internalArrayElements;
+      if (elements === undefined) throw "WORKER_CLONE_ARRAY_INVARIANT";
+      if (kind === tagNumberArray) {
+        align(8);
+        if (count > (end - position) / 8) return invalid();
+        const numbers = elements.numbers;
+        if (numbers === undefined) throw "WORKER_CLONE_ARRAY_INVARIANT";
+        for (let index = 0; index < count; index++) {
+          numbers.push(source.readFloat64(position));
+          position += 8;
+        }
+      } else {
+        // Elements append to packed storage until the first hole; later
+        // ones are ordinary index properties.
+        let packed = true;
+        for (let index = 0; index < count; index++) {
+          if (position < end && bytes[position] === tagHole) {
+            position++;
+            packed = false;
+            continue;
+          }
+          const value = decode();
+          const current = object.internalArrayElements;
+          if (
+            packed &&
+            current !== undefined &&
+            arrayElementCount<ScriptPropertyKey, unknown>(current) === index
+          )
+            writeArrayElement<ScriptPropertyKey, unknown>(
+              current,
+              index,
+              value,
+            );
+          else define(object, realm.arrayHooks.indexKey(index), value);
+        }
+      }
+      return properties(object, endDenseArray);
+    }
+    if (kind === tagSparseArray)
+      return properties(
+        remember(
+          createArrayObject<ScriptPropertyKey, unknown>(
+            varint(),
             realm.arrayPrototype,
             realm.arrayHooks,
             hooks,
-          )
-        : createObject<ScriptPropertyKey, unknown>(realm.objectPrototype),
-    );
-    for (;;) {
-      const property = tag();
-      if (property === ".") return object;
-      if (property !== "k") return invalid();
-      const key = field();
-      const value = decode();
-      if (
-        !createDataProperty<ScriptPropertyKey, unknown>(
-          object,
-          key,
-          value,
-          hooks,
-        )
-      )
-        return invalid();
-    }
+          ),
+        ),
+        endSparseArray,
+      );
+    if (kind === tagObject)
+      return properties(
+        remember(
+          createObject<ScriptPropertyKey, unknown>(realm.objectPrototype),
+        ),
+        endObject,
+      );
+    return invalid();
   }
   const result = decode();
-  return next === packet.length ? result : invalid();
+  return position === end ? result : invalid();
 }

@@ -21,6 +21,26 @@ const bindings: readonly NativeHostBinding[] = [
   { module: memory, name: "startNativeThread", operation: "thread-start" },
   {
     module: memory,
+    name: "readMemoryString",
+    operation: "memory-read-string",
+  },
+  {
+    module: memory,
+    name: "writeMemoryString",
+    operation: "memory-write-string",
+  },
+  {
+    module: memory,
+    name: "readMemoryFloat64",
+    operation: "memory-read-float64",
+  },
+  {
+    module: memory,
+    name: "writeMemoryFloat64",
+    operation: "memory-write-float64",
+  },
+  {
+    module: memory,
     name: "hostedThreadEntry",
     operation: "hosted-thread-entry",
   },
@@ -60,6 +80,8 @@ import {createNativeWorkerThreadHost} from 'thread';
 import {createNativeMessagePorts,type NativeMessagePort,type NativeMessagePorts} from 'ports';
 import {createNativeWorkerBacking,type NativeWorkerBacking} from 'backing';
 import {createNativeWorkerMessages,type NativeWorkerMessages} from 'messages';
+import {nativePacketMemory} from 'packets';
+import type {NativeAgentPacketEntry} from 'mailbox';
 
 type Value=OrdinaryObject<ScriptPropertyKey,unknown>;
 interface TestEndpoint{
@@ -89,7 +111,7 @@ export function run(argument:number):number {
     const realm=createErrorRealm(global,hooks);
     const backing=createNativeWorkerBacking(memory);
     const local=new Map<number,NativeMessagePort>();
-    const ports=createNativeMessagePorts(memory,parking,threads,loop,(packet:string):void=>messages.discard(packet));
+    const ports=createNativeMessagePorts(memory,parking,threads,loop,(entry:NativeAgentPacketEntry):void=>messages.discard(entry));
     function wrap(port:NativeMessagePort):Value {
       const object=createObject<ScriptPropertyKey,unknown>(realm.objectPrototype);
       object.internalIdentity=realm.agent.nextObjectIdentity++;
@@ -97,7 +119,7 @@ export function run(argument:number):number {
       return object;
     }
     const messages:NativeWorkerMessages=createNativeWorkerMessages({
-      realm,shared,backing,ports,portForObject:(object:Value):NativeMessagePort|undefined=>local.get(object.internalIdentity),
+      realm,shared,backing,ports,packets:nativePacketMemory(),portForObject:(object:Value):NativeMessagePort|undefined=>local.get(object.internalIdentity),
       objectForPort:wrap,
     });
     return {global,hooks,realm,backing,ports,messages,wrap,local};
@@ -133,7 +155,7 @@ export function run(argument:number):number {
   if(byteStorageData(made.value)!==undefined||second.second.inspect()!==undefined)return 6;
   const packet=peer.take();
   if(packet===undefined)return 7;
-  const cloned=viewObjectValue(to.messages.receive(packet),to.global);
+  const cloned=viewObjectValue(to.messages.receive(peer,packet),to.global);
   if(cloned===undefined)return 8;
   const result:Value=cloned;
   function get(name:string):Value|undefined {
@@ -151,7 +173,7 @@ export function run(argument:number):number {
   const empty:unknown[]=[];
   to.messages.send(adopted,"hello",empty);
   const reply=second.first.take();
-  if(reply===undefined||from.messages.receive(reply)!=="hello")return 13;
+  if(reply===undefined||from.messages.receive(second.first,reply)!=="hello")return 13;
   adopted.close();second.first.close();peer.close();pair.first.close();
   from.backing.close();to.backing.close();loop.close();
   return 42;
@@ -170,6 +192,8 @@ export function run(argument:number):number {
     ["ports", "packages/native-runtime/src/worker-ports.ts"],
     ["backing", "packages/native-runtime/src/worker-backing.ts"],
     ["messages", "packages/native-runtime/src/worker-messages.ts"],
+    ["packets", "packages/native-runtime/src/packet-memory.ts"],
+    ["mailbox", "packages/native-runtime/src/agent-messages.ts"],
   ],
   [],
   views.map((name) => ({ module: object, name, operation: "view" })),

@@ -16,7 +16,15 @@ import {
   type ErrorRealm,
   type OrdinaryObject,
   type ScriptPropertyKey,
+  type WorkerCloneSink,
+  type WorkerCloneSource,
 } from "@tint/js-runtime/objects";
+import {
+  nativeAgentPacketHeader,
+  type NativeAgentPacket,
+  type NativeAgentPacketEntry,
+} from "./agent-messages.ts";
+import type { NativePacketMemory } from "./packet-memory.ts";
 import type {
   NativeWorkerBacking,
   NativeWorkerBackingGrant,
@@ -53,15 +61,13 @@ interface PortMove {
   readonly port: NativeMessagePortGrant;
 }
 type Move = BufferMove | PortMove;
-interface Envelope {
-  readonly payload: string;
-  readonly grants: readonly Grant[];
-}
+
 export interface NativeWorkerMessageOptions {
   readonly realm: ErrorRealm;
   readonly shared: SharedBlockService | undefined;
   readonly backing: NativeWorkerBacking;
   readonly ports: NativeMessagePorts;
+  readonly packets: NativePacketMemory;
   portForObject(object: ObjectValue): NativeMessagePort | undefined;
   objectForPort(port: NativeMessagePort): ObjectValue;
 }
@@ -71,81 +77,100 @@ export interface NativeWorkerMessages {
     value: unknown,
     transfer: readonly unknown[],
   ): void;
-  receive(packet: string): unknown;
-  discard(packet: string): void;
+  /** Decodes a received packet into this realm and releases the packet to
+   * `port` before returning. */
+  receive(port: NativeMessagePort, entry: NativeAgentPacketEntry): unknown;
+  /** Discards the grants of a packet that will never be delivered. */
+  discard(entry: NativeAgentPacketEntry): void;
 }
 
-function encodeEnvelope(payload: string, grants: readonly Grant[]): string {
-  const result: string[] = [];
-  function number(value: number): void {
-    result.push(String(value) + ":");
+// Payload layout after the packet header: the grant table's offset (four
+// bytes, then padding to eight), the serialized value, then the grant table:
+// a varint count and, per grant, a kind byte and varint fields.
+const payloadStart = nativeAgentPacketHeader + 8;
+const grantBuffer = 97; // a
+const grantPort = 112; // p
+const grantShared = 115; // s
+// Cloned ArrayBuffers up to this size travel inside the packet; larger ones
+// are copied once into a mapping the receiver adopts.
+const inlineBufferBytes = 1048576;
+
+function writeVarint(bytes: Uint8Array, at: number, value: number): number {
+  if (!Number.isSafeInteger(value) || value < 0)
+    throw "NATIVE_WORKER_PACKET_FIELD";
+  let position = at;
+  while (value >= 128) {
+    bytes[position++] = (value % 128) + 128;
+    value = Math.floor(value / 128);
   }
-  number(grants.length);
-  for (const grant of grants) {
-    result.push(grant.kind);
-    if (grant.kind === "a") {
-      number(grant.backing.address);
-      number(grant.backing.length);
-      number(grant.backing.maximum);
-      number(grant.backing.resizable ? 1 : 0);
-    } else if (grant.kind === "p") {
-      number(grant.port.base);
-      number(grant.port.side);
-      number(grant.port.generation);
-    } else {
-      number(grant.engineId);
-      number(grant.handle);
+  bytes[position++] = value;
+  return position;
+}
+function decodeGrants(bytes: Uint8Array, at: number, end: number): Grant[] {
+  let position = at;
+  function next(): number {
+    if (position >= end) throw "NATIVE_WORKER_PACKET_LENGTH";
+    return bytes[position++] ?? 0;
+  }
+  function varint(): number {
+    let value = 0,
+      scale = 1;
+    for (;;) {
+      const byte = next();
+      value += (byte % 128) * scale;
+      if (byte < 128) break;
+      scale *= 128;
+      if (scale > 9007199254740992) throw "NATIVE_WORKER_PACKET_FIELD";
     }
-  }
-  result.push(payload);
-  return result.join("");
-}
-
-function decodeEnvelope(packet: string): Envelope {
-  let next = 0;
-  function count(): number {
-    const separator = packet.indexOf(":", next);
-    if (separator < 0) throw "NATIVE_WORKER_PACKET_FIELD";
-    const field = packet.slice(next, separator);
-    const value = Number(field);
-    if (!Number.isSafeInteger(value) || value < 0 || String(value) !== field)
-      throw "NATIVE_WORKER_PACKET_FIELD";
-    next = separator + 1;
+    if (!Number.isSafeInteger(value)) throw "NATIVE_WORKER_PACKET_FIELD";
     return value;
   }
   const grants: Grant[] = [];
-  const length = count();
-  if (length > packet.length - next) throw "NATIVE_WORKER_PACKET_LENGTH";
-  for (let index = 0; index < length; index++) {
-    const kind = packet.charAt(next++);
-    if (kind === "a") {
-      const address = count(),
-        length = count(),
-        maximum = count(),
-        flag = count();
+  const count = varint();
+  if (count > end - position) throw "NATIVE_WORKER_PACKET_LENGTH";
+  for (let index = 0; index < count; index++) {
+    const kind = next();
+    if (kind === grantBuffer) {
+      const address = varint(),
+        length = varint(),
+        maximum = varint(),
+        flag = varint();
       if (flag > 1) throw "NATIVE_WORKER_PACKET_FIELD";
       grants.push({
         kind: "a",
         backing: { address, length, maximum, resizable: flag === 1 },
       });
-    } else if (kind === "p") {
-      const base = count(),
-        side = count(),
-        generation = count();
+    } else if (kind === grantPort) {
+      const base = varint(),
+        side = varint(),
+        generation = varint();
       grants.push({ kind: "p", port: { base, side, generation } });
-    } else if (kind === "s") {
-      const engineId = count(),
-        handle = count();
+    } else if (kind === grantShared) {
+      const engineId = varint(),
+        handle = varint();
       grants.push({ kind: "s", engineId, handle });
     } else throw "NATIVE_WORKER_PACKET_KIND";
   }
-  return { payload: packet.slice(next), grants };
+  if (position !== end) throw "NATIVE_WORKER_PACKET_LENGTH";
+  return grants;
+}
+/** The grant table offset recorded at the payload's start. */
+function grantTable(bytes: Uint8Array, end: number): number {
+  const at = nativeAgentPacketHeader;
+  const offset =
+    (bytes[at] ?? 0) +
+    (bytes[at + 1] ?? 0) * 256 +
+    (bytes[at + 2] ?? 0) * 65536 +
+    (bytes[at + 3] ?? 0) * 16777216;
+  if (offset < payloadStart || offset > end)
+    throw "NATIVE_WORKER_PACKET_LENGTH";
+  return offset;
 }
 
 export function createNativeWorkerMessages(
   options: NativeWorkerMessageOptions,
 ): NativeWorkerMessages {
-  const { realm, shared, backing, ports } = options;
+  const { realm, shared, backing, ports, packets } = options;
   function identity(object: ObjectValue): number {
     if (object.internalIdentity === 0)
       object.internalIdentity = realm.agent.nextObjectIdentity++;
@@ -225,8 +250,33 @@ export function createNativeWorkerMessages(
       }
     }
     let published = false;
+    let packet: NativeAgentPacket = target.allocate(0);
+    let packetBytes = packet.byteLength;
+    const sink: WorkerCloneSink = {
+      bytes: packets.view(packet.base, packetBytes),
+      grow: (used, needed): void => {
+        const larger = target.allocate(
+          Math.max(used + needed, packetBytes * 2) - nativeAgentPacketHeader,
+        );
+        const bytes = packets.view(larger.base, larger.byteLength);
+        bytes.set(sink.bytes.subarray(0, used));
+        const previous = packet;
+        packet = larger;
+        packetBytes = larger.byteLength;
+        sink.bytes = bytes;
+        target.release(previous);
+      },
+      writeFloat64: (offset, value): void => {
+        if (packets.writeFloat64(packet.base, packetBytes, offset, value) !== 0)
+          throw "NATIVE_WORKER_PACKET_WRITE";
+      },
+      writeString: (offset, value): void => {
+        if (packets.writeString(packet.base, packetBytes, offset, value) !== 0)
+          throw "NATIVE_WORKER_PACKET_WRITE";
+      },
+    };
     try {
-      const payload = serializeWorkerValue(value, realm, {
+      const table = serializeWorkerValue(value, realm, sink, payloadStart, {
         encode: (object): number | undefined => {
           const known = indices.get(identity(object));
           if (known !== undefined) return known;
@@ -235,6 +285,9 @@ export function createNativeWorkerMessages(
           const index = grants.length;
           const buffer = object.internalArrayBufferData;
           if (buffer !== undefined) {
+            const bytes = byteStorageData(buffer);
+            if (bytes !== undefined && bytes.length <= inlineBufferBytes)
+              return undefined;
             const copy = cloneBuffer(buffer);
             copies.push(copy);
             grants.push({ kind: "a", backing: copy });
@@ -272,11 +325,45 @@ export function createNativeWorkerMessages(
             return error("MessagePort changed during message serialization");
         }
       }
-      const packet = encodeEnvelope(payload, grants);
+      // The grant table: at most 1 + 41 bytes per grant.
+      if (table + 10 + grants.length * 41 > sink.bytes.length)
+        sink.grow(table, 10 + grants.length * 41);
+      const bytes = sink.bytes;
+      let position = writeVarint(bytes, table, grants.length);
+      for (const grant of grants) {
+        if (grant.kind === "a") {
+          bytes[position++] = grantBuffer;
+          position = writeVarint(bytes, position, grant.backing.address);
+          position = writeVarint(bytes, position, grant.backing.length);
+          position = writeVarint(bytes, position, grant.backing.maximum);
+          position = writeVarint(
+            bytes,
+            position,
+            grant.backing.resizable ? 1 : 0,
+          );
+        } else if (grant.kind === "p") {
+          bytes[position++] = grantPort;
+          position = writeVarint(bytes, position, grant.port.base);
+          position = writeVarint(bytes, position, grant.port.side);
+          position = writeVarint(bytes, position, grant.port.generation);
+        } else {
+          bytes[position++] = grantShared;
+          position = writeVarint(bytes, position, grant.engineId);
+          position = writeVarint(bytes, position, grant.handle);
+        }
+      }
+      if (table > 4294967295) throw "NATIVE_WORKER_PACKET_LENGTH";
+      const at = nativeAgentPacketHeader;
+      bytes[at] = table % 256;
+      bytes[at + 1] = Math.floor(table / 256) % 256;
+      bytes[at + 2] = Math.floor(table / 65536) % 256;
+      bytes[at + 3] = Math.floor(table / 16777216);
+      const used = position - nativeAgentPacketHeader;
       if (target.inspect() === undefined) commit();
-      else published = target.send(packet, commit);
+      else published = target.send(packet, used, commit);
     } finally {
       if (!published) {
+        target.release(packet);
         for (const copy of copies) {
           if (copy === undefined) throw "NATIVE_WORKER_CLONE_INDEX";
           backing.discard(copy);
@@ -289,11 +376,26 @@ export function createNativeWorkerMessages(
       }
     }
   }
-  function receive(packet: string): unknown {
-    const { payload, grants } = decodeEnvelope(packet);
+  function receive(
+    port: NativeMessagePort,
+    entry: NativeAgentPacketEntry,
+  ): unknown {
+    const packet = entry.packet;
+    let grants: Grant[] = [];
     const used = new Set<number>();
     try {
-      return deserializeWorkerValue(payload, realm, {
+      const bytes = packets.view(packet.base, packet.byteLength);
+      const end = nativeAgentPacketHeader + entry.used;
+      const table = grantTable(bytes, end);
+      grants = decodeGrants(bytes, table, end);
+      const source: WorkerCloneSource = {
+        bytes,
+        readFloat64: (offset): number =>
+          packets.readFloat64(packet.base, packet.byteLength, offset),
+        readString: (offset, units): string =>
+          packets.readString(packet.base, packet.byteLength, offset, units),
+      };
+      return deserializeWorkerValue(source, payloadStart, table, realm, {
         decode: (index): ObjectValue | undefined => {
           const grant = grants[index];
           if (grant === undefined || used.has(index)) return undefined;
@@ -309,12 +411,12 @@ export function createNativeWorkerMessages(
             return object;
           }
           if (grant.kind === "p") {
-            const port = ports.adopt(grant.port);
+            const adopted = ports.adopt(grant.port);
             used.add(index);
             try {
-              return options.objectForPort(port);
+              return options.objectForPort(adopted);
             } catch (reason) {
-              port.close();
+              adopted.close();
               throw reason;
             }
           }
@@ -331,18 +433,24 @@ export function createNativeWorkerMessages(
         },
       });
     } finally {
-      for (let index = 0; index < grants.length; index++) {
-        const grant = grants[index];
-        if (grant !== undefined && !used.has(index)) discardGrant(grant);
+      try {
+        for (let index = 0; index < grants.length; index++) {
+          const grant = grants[index];
+          if (grant !== undefined && !used.has(index)) discardGrant(grant);
+        }
+      } finally {
+        port.release(packet);
       }
     }
   }
   return {
     send,
     receive,
-    discard: (packet): void => {
-      const envelope = decodeEnvelope(packet);
-      for (const grant of envelope.grants) discardGrant(grant);
+    discard: (entry): void => {
+      const bytes = packets.view(entry.packet.base, entry.packet.byteLength);
+      const end = nativeAgentPacketHeader + entry.used;
+      for (const grant of decodeGrants(bytes, grantTable(bytes, end), end))
+        discardGrant(grant);
     },
   };
 }

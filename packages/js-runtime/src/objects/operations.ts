@@ -1379,23 +1379,29 @@ export function ordinaryOwnKeys<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   keyOrder: (key: Key) => number,
 ): Key[] {
+  const sorted = propertyMapKeys<Key, Value>(object, keyOrder);
+  const elements = object.internalArrayElements;
+  if (elements === undefined) return sorted;
+  // Packed indices precede every map key, which holds no array index.
+  const ordered: Key[] = [];
+  const count = arrayElementCount<Key, Value>(elements);
+  for (let index = 0; index < count; index++)
+    ordered.push(elements.keys.indexKey(index));
+  for (let position = 0; position < sorted.length; position++) {
+    const key = sorted[position];
+    if (key === undefined) throw "PROPERTY_KEY_INVARIANT";
+    ordered.push(key);
+  }
+  return ordered;
+}
+/** The keys of `object`'s property map in [[OwnPropertyKeys]] order: every
+ * own key except packed array indices, which precede them. */
+export function propertyMapKeys<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  keyOrder: (key: Key) => number,
+): Key[] {
   const keys: Key[] = [];
   for (const [key, descriptor] of object.properties) keys.push(key);
-  const elements = object.internalArrayElements;
-  if (elements !== undefined) {
-    // Packed indices precede every map key, which holds no array index.
-    const ordered: Key[] = [];
-    const count = arrayElementCount<Key, Value>(elements);
-    for (let index = 0; index < count; index++)
-      ordered.push(elements.keys.indexKey(index));
-    const sorted = sortPropertyKeys<Key>(keys, keyOrder);
-    for (let position = 0; position < sorted.length; position++) {
-      const key = sorted[position];
-      if (key === undefined) throw "PROPERTY_KEY_INVARIANT";
-      ordered.push(key);
-    }
-    return ordered;
-  }
   return sortPropertyKeys<Key>(keys, keyOrder);
 }
 function sortPropertyKeys<Key>(

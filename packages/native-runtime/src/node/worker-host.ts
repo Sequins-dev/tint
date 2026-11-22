@@ -29,6 +29,7 @@ import {
   type NativeSharedBlockRegistry,
 } from "../shared-memory-host.ts";
 import type { NativeWaiterParkingHost } from "../shared-waiters.ts";
+import { nativePacketMemory } from "../packet-memory.ts";
 import {
   startNativeWorker,
   type NativeWorkerEngineGrant,
@@ -167,6 +168,7 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
     parking,
     threads: host.threads,
     shared: service,
+    packets: nativePacketMemory(),
     threadId: host.threadId,
     prepare: (filename, requested): NodeWorkerPlan => {
       const moduleId = host.lookup(filename);

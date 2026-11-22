@@ -12,7 +12,8 @@ import {
   workerData,
 } from "node:worker_threads";
 
-const samples = 3;
+// Profiles may raise the sample count (build-native.ts transport <prefix> <n>).
+let samples = 3;
 
 function check(condition, message) {
   if (!condition) throw new Error(message);
@@ -391,8 +392,9 @@ async function shared(filename, now) {
   }
 }
 
-export async function run(filename, now, operation) {
+export async function run(filename, now, operation, sampleCount) {
   only = operation;
+  if (sampleCount !== undefined) samples = sampleCount;
   try {
     await lifecycle(filename, now);
     await messages(filename, now);

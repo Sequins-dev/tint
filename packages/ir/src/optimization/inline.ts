@@ -149,7 +149,9 @@ function supported(op: Instruction, references: boolean = true): boolean {
         op.operation === "memory-compare-exchange-word" ||
         op.operation === "memory-fetch-add-word" ||
         op.operation === "memory-load-acquire-word" ||
-        op.operation === "memory-store-release-word"
+        op.operation === "memory-store-release-word" ||
+        op.operation === "memory-read-float64" ||
+        op.operation === "memory-write-float64"
       );
     // A leaf C call never allocates, throws or re-enters managed code, so
     // its single-instruction bindings inline into callers: the call site

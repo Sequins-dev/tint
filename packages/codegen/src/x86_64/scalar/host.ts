@@ -6,6 +6,8 @@ import {
   nativeStackMapSaveBlockOffset,
   nativeStackMapRegistryHeaderBytes,
   nativeStackMapRegistryEntryBytes,
+  nativeStringDataOffset,
+  nativeStringLengthOffset,
   nativeTargetOSLinux,
   nativeTargetArchX86_64,
   type PosixHostFacts,
@@ -670,6 +672,70 @@ export function emitHostCall(request: HostCall): boolean {
       emit({ op: "xor", dst: eax, src: eax });
       emit({ op: "jmp", target: label(done) });
       emit({ op: "label", name: bad });
+      emit({ op: "mov", dst: rax, src: imm(-1) });
+      emit({ op: "label", name: done });
+      numberResult(rax);
+      return true;
+    }
+    case "memory-read-float64":
+    case "memory-write-float64": {
+      // The memory-read-word window contract for one aligned binary64; a
+      // read of an invalid window yields NaN.
+      wordWindow(8, false);
+      if (operation === "memory-read-float64") {
+        emit({ op: "movsd", dst: x0, src: mem(10, 0) });
+        floatBits(emit, rax, x0);
+        emit({ op: "jmp", target: label(wordDone) });
+        emit({ op: "label", name: invalidWord });
+        emit({ op: "mov", dst: rax, src: bits(0, 0x7ff80000) });
+        emit({ op: "label", name: wordDone });
+        return true;
+      }
+      emit({ op: "movsd", dst: x0, src: argument(3) });
+      emit({ op: "movsd", dst: mem(10, 0), src: x0 });
+      emit({ op: "xor", dst: eax, src: eax });
+      return finishWord();
+    }
+    case "memory-write-string": {
+      // Every code unit of the string, two bytes each, into the window.
+      const failed = site + ":string-invalid",
+        done = site + ":string-done";
+      const limit = r11;
+      emit({ op: "mov", dst: limit, src: bits(0, 0x10000) });
+      const args = [rdi, rsi, rdx];
+      for (let index = 0; index < args.length; index++) {
+        const target = args[index];
+        if (target === undefined) throw "write-string argument invariant";
+        exactInteger(emit, argument(index), target, failed);
+        emit({ op: "cmp", dst: target, src: limit });
+        branch(emit, "ae", failed);
+      }
+      emit({ op: "test", dst: rdi, src: rdi });
+      branch(emit, "e", failed);
+      emit({ op: "sub", dst: limit, src: rdi });
+      emit({ op: "cmp", dst: rsi, src: limit });
+      branch(emit, "a", failed);
+      emit({ op: "sub", dst: rsi, src: rdx });
+      branch(emit, "b", failed);
+      emit({ op: "add", dst: rdi, src: rdx });
+      emit({ op: "mov", dst: r10, src: argument(3) });
+      emit({
+        op: "mov",
+        dst: edx,
+        src: { ...mem(10, nativeStringLengthOffset), width: 32 },
+      });
+      emit({ op: "shl", dst: rdx, count: 1 });
+      emit({ op: "cmp", dst: rdx, src: rsi });
+      branch(emit, "a", failed);
+      emit({
+        op: "lea",
+        dst: rsi,
+        src: mem(10, nativeStringDataOffset),
+      });
+      libc("memmove");
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: failed });
       emit({ op: "mov", dst: rax, src: imm(-1) });
       emit({ op: "label", name: done });
       numberResult(rax);

@@ -23,6 +23,49 @@ function isolate() {
   return { root, hooks, realm: o.createErrorRealm(root, hooks) };
 }
 
+/** An in-memory packet: native hosts back the same interfaces with raw
+ * mappings. */
+function serialize(value: unknown, realm: objects.ErrorRealm): Uint8Array {
+  const sink: objects.WorkerCloneSink = {
+    bytes: new Uint8Array(8),
+    grow(used, needed) {
+      const bytes = new Uint8Array(
+        Math.max(sink.bytes.length * 2, used + needed),
+      );
+      bytes.set(sink.bytes.subarray(0, used));
+      sink.bytes = bytes;
+    },
+    writeFloat64(offset, value) {
+      assert.equal(offset % 8, 0, "aligned binary64");
+      new DataView(sink.bytes.buffer).setFloat64(offset, value, true);
+    },
+    writeString(offset, value) {
+      for (let index = 0; index < value.length; index++) {
+        sink.bytes[offset + index * 2] = value.charCodeAt(index) & 255;
+        sink.bytes[offset + index * 2 + 1] = value.charCodeAt(index) >> 8;
+      }
+    },
+  };
+  const end = codec.serializeWorkerValue(value, realm, sink, 0);
+  return sink.bytes.slice(0, end);
+}
+function deserialize(bytes: Uint8Array, realm: objects.ErrorRealm): unknown {
+  const source: objects.WorkerCloneSource = {
+    bytes,
+    readFloat64: (offset) =>
+      new DataView(bytes.buffer).getFloat64(offset, true),
+    readString: (offset, units) => {
+      let text = "";
+      for (let index = 0; index < units; index++)
+        text += String.fromCharCode(
+          bytes[offset + index * 2]! + bytes[offset + index * 2 + 1]! * 256,
+        );
+      return text;
+    },
+  };
+  return codec.deserializeWorkerValue(source, 0, bytes.length, realm);
+}
+
 test("worker clone carries cyclic aliases across realm boundaries", () => {
   const source = isolate();
   const target = isolate();
@@ -34,9 +77,8 @@ test("worker clone carries cyclic aliases across realm boundaries", () => {
   o.createDataProperty(inner, "zero", -0, source.hooks);
   o.createDataProperty(inner, "nan", NaN, source.hooks);
   o.createDataProperty(inner, "units", "\ud800\u0000", source.hooks);
-  const packet = codec.serializeWorkerValue(outer, source.realm);
-  const copy = codec.deserializeWorkerValue(
-    packet,
+  const copy = deserialize(
+    serialize(outer, source.realm),
     target.realm,
   ) as ObjectValue;
   const child = o.getOwnProperty(copy, "left")!.value as ObjectValue;
@@ -83,8 +125,8 @@ test("worker clone preserves Error causes and shared backing among copied views"
   o.createDataProperty(object, "first", view, source.hooks);
   o.createDataProperty(object, "backing", buffer, source.hooks);
   o.createDataProperty(object, "error", error, source.hooks);
-  const copy = codec.deserializeWorkerValue(
-    codec.serializeWorkerValue(object, source.realm),
+  const copy = deserialize(
+    serialize(object, source.realm),
     target.realm,
   ) as ObjectValue;
   const clonedView = o.getOwnProperty(copy, "first")!.value as ObjectValue;
@@ -100,7 +142,7 @@ test("worker clone preserves Error causes and shared backing among copied views"
   assert.equal(o.getOwnProperty(cloneError, "cause")!.value, copy);
 });
 
-test("worker clone encodes numbers and counts as fixed-width units", () => {
+test("worker clone carries every number, long keys and dates", () => {
   const source = isolate();
   const target = isolate();
   const values = [
@@ -144,11 +186,8 @@ test("worker clone encodes numbers and counts as fixed-width units", () => {
   const invalid = o.createObject(source.realm.datePrototype);
   invalid.internalDateValue = NaN;
   o.createDataProperty(holder, "invalid", invalid, source.hooks);
-  const packet = codec.serializeWorkerValue(holder, source.realm);
-  // No count or number is decimal text any more.
-  assert.equal(packet.includes("70000:"), false);
-  const copy = codec.deserializeWorkerValue(
-    packet,
+  const copy = deserialize(
+    serialize(holder, source.realm),
     target.realm,
   ) as ObjectValue;
   const cloned = o.getOwnProperty(copy, key)!.value as ObjectValue;
@@ -192,18 +231,123 @@ test("worker clone keeps length-tracking views and rejects truncated packets", (
     source.realm,
     source.hooks,
   );
-  const packet = codec.serializeWorkerValue(tracking, source.realm);
-  const copy = codec.deserializeWorkerValue(
-    packet,
-    target.realm,
-  ) as ObjectValue;
+  const packet = serialize(tracking, source.realm);
+  const copy = deserialize(packet, target.realm) as ObjectValue;
   assert.equal(copy.internalTypedArrayData?.length, undefined);
   assert.equal(copy.internalTypedArrayData?.byteOffset, 2);
   const backing = copy.internalTypedArrayData?.buffer as ObjectValue;
   assert.equal(backing.internalArrayBufferData?.maxByteLength, 16);
   assert.equal(backing.internalArrayBufferData?.resizable, true);
   for (let cut = 0; cut < packet.length; cut++)
-    assert.throws(() =>
-      codec.deserializeWorkerValue(packet.slice(0, cut), target.realm),
-    );
+    assert.throws(() => deserialize(packet.slice(0, cut), target.realm));
+});
+
+function arrayOf(
+  realm: objects.ErrorRealm,
+  hooks: objects.ObjectHooks<unknown>,
+  values: readonly unknown[],
+): ObjectValue {
+  const array = o.createArrayObject<objects.ScriptPropertyKey, unknown>(
+    0,
+    realm.arrayPrototype,
+    realm.arrayHooks,
+    hooks,
+  );
+  values.forEach((value, index) =>
+    o.createDataProperty(array, String(index), value, hooks),
+  );
+  return array;
+}
+
+test("packed number arrays travel as one binary64 run with their properties", () => {
+  const source = isolate();
+  const target = isolate();
+  const numbers = [0, -0, 1.5, NaN, -Infinity, 2 ** 53, 7];
+  const array = arrayOf(source.realm, source.hooks, numbers);
+  assert.ok(array.internalArrayElements?.numbers !== undefined);
+  o.createDataProperty(array, "label", "tail", source.hooks);
+  const packet = serialize(array, source.realm);
+  // The tag, varint length and count, padding, then the run.
+  assert.equal(packet[0], "P".charCodeAt(0));
+  const copy = deserialize(packet, target.realm) as ObjectValue;
+  assert.ok(copy.internalArrayElements?.numbers !== undefined);
+  assert.equal(o.getOwnProperty(copy, "length")!.value, numbers.length);
+  numbers.forEach((value, index) =>
+    assert.ok(Object.is(o.getOwnProperty(copy, String(index))!.value, value)),
+  );
+  assert.equal(o.getOwnProperty(copy, "label")!.value, "tail");
+  const empty = deserialize(
+    serialize(arrayOf(source.realm, source.hooks, []), source.realm),
+    target.realm,
+  ) as ObjectValue;
+  assert.equal(o.getOwnProperty(empty, "length")!.value, 0);
+});
+
+test("dense arrays skip elements a getter removes, like EnumerableOwnProperties", () => {
+  const source = isolate();
+  const target = isolate();
+  const array = arrayOf(source.realm, source.hooks, ["a", "b", "c", "d"]);
+  const trap = o.createObject(source.root);
+  // Visiting element 1's object deletes index 3 and redefines index 2.
+  const getter = o.builtinFunction(
+    source.root,
+    "get",
+    0,
+    () => {
+      assert.ok(o.deleteProperty(array, "3"));
+      o.createDataProperty(array, "2", "C", source.hooks);
+      return 1;
+    },
+    source.hooks,
+  );
+  assert.equal(
+    o.defineOwnProperty(
+      trap,
+      "x",
+      {
+        fields: 60,
+        value: undefined,
+        writable: false,
+        get: getter,
+        set: undefined,
+        enumerable: true,
+        configurable: true,
+      },
+      source.hooks,
+    ),
+    "accepted",
+  );
+  o.createDataProperty(array, "1", trap, source.hooks);
+  const copy = deserialize(
+    serialize(array, source.realm),
+    target.realm,
+  ) as ObjectValue;
+  assert.equal(o.getOwnProperty(copy, "length")!.value, 4);
+  assert.equal(o.getOwnProperty(copy, "0")!.value, "a");
+  assert.equal(o.getOwnProperty(copy, "2")!.value, "C");
+  assert.equal(o.getOwnProperty(copy, "3"), undefined);
+});
+
+test("repeated property keys are written once and shared by the copies", () => {
+  const source = isolate();
+  const target = isolate();
+  const records: unknown[] = [];
+  for (let index = 0; index < 3; index++) {
+    const record = o.createObject(source.root);
+    o.createDataProperty(record, "identifier", index, source.hooks);
+    o.createDataProperty(record, "description", "r" + index, source.hooks);
+    records.push(record);
+  }
+  const packet = serialize(
+    arrayOf(source.realm, source.hooks, records),
+    source.realm,
+  );
+  const text = String.fromCharCode(...packet);
+  assert.equal(text.split("i\0d\0e\0n\0").length - 1, 1, "one key copy");
+  const copy = deserialize(packet, target.realm) as ObjectValue;
+  for (let index = 0; index < 3; index++) {
+    const record = o.getOwnProperty(copy, String(index))!.value as ObjectValue;
+    assert.equal(o.getOwnProperty(record, "identifier")!.value, index);
+    assert.equal(o.getOwnProperty(record, "description")!.value, "r" + index);
+  }
 });
