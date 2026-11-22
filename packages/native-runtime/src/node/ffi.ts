@@ -1020,6 +1020,9 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
             release: (workspace): void =>
               releaseScalarWorkspace(binding, workspace),
           };
+    // The typed record's general view never changes. Typed call entries
+    // read it from `typedView` without calling `typedRecord`.
+    const readTyped = (): unknown => typed;
     const call =
       typed === undefined
         ? createCallableObject<ScriptPropertyKey, unknown>(
@@ -1029,7 +1032,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
           )
         : createExoticObject<ScriptPropertyKey, unknown>(
             realm.functionPrototype,
-            { typedRecord: (): unknown => typed },
+            { typedRecord: readTyped, typedView: { value: readTyped() } },
             invoke,
             undefined,
             callContext,

@@ -283,9 +283,9 @@ function fixedFfiSource(
     general += "plan.writeArgument(frame," + i + ",p" + i + ");\n";
   }
   let body =
-    "const readRecord=viewTypeofObject(callee)?.internalMethods?.typedRecord;\n" +
-    "if(readRecord===undefined)return undefined;\n" +
-    "const plan=viewTypedFfiCall(readRecord());\n" +
+    "const typedView=viewTypeofObject(callee)?.internalMethods?.typedView;\n" +
+    "if(typedView===undefined)return undefined;\n" +
+    "const plan=viewTypedFfiCall(typedView.value);\n" +
     "if(plan===undefined||plan.arity!==" +
     arity +
     ")return undefined;\n";
