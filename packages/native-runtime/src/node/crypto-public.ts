@@ -1,5 +1,6 @@
 import { byteStorageData } from "@tint/js-runtime/bytes";
 import {
+  addPrivateField,
   builtinAccessor,
   builtinFunction,
   builtinProperty,
@@ -8,7 +9,6 @@ import {
   createCodedRuntimeError,
   createDataProperty,
   createObject,
-  createObjectWithPrivateField,
   createPrivateName,
   createRuntimeError,
   findPrivateElement,
@@ -258,11 +258,17 @@ function digestView(
   core: ProgramRealmCore,
   lifetime: DigestLifetime,
 ): RealmObject {
-  const object = createObjectWithPrivateField<ScriptPropertyKey, unknown>(
+  const object = createObject<ScriptPropertyKey, unknown>(
     digestPrototype(core, lifetime.hmac),
-    digestState,
-    lifetime,
   );
+  if (
+    addPrivateField<ScriptPropertyKey, unknown>(
+      object,
+      digestState,
+      lifetime,
+    ) !== "none"
+  )
+    throw "CRYPTO_DIGEST_STATE_INVARIANT";
   trackDigest(lifetime, object);
   return object;
 }
