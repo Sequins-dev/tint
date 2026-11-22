@@ -3,10 +3,12 @@ import {
   createNativeAgentPacketProducer,
   createNativeAgentMailbox,
   drainNativeAgentPackets,
+  nativeAgentPacketsQueued,
   publishNativeAgentPacket,
   releaseNativeAgentMailboxBlocks,
   releaseNativeAgentPacket,
   restoreNativeAgentPackets,
+  settleNativeAgentPackets,
   type NativeAgentMailbox,
   type NativeAgentPacket,
   type NativeAgentPacketEntry,
@@ -358,6 +360,8 @@ export function createNativeMessagePorts(
           throw new Error("message port is already watched");
         let scheduled = false;
         let active = true;
+        // Whether this port delivered since the loop last went idle.
+        let recent = false;
         // Like Node's MessagePort, one I/O task delivers the queued packets,
         // with a microtask checkpoint after each (the loop runs the last),
         // draining again until the queue runs dry or a bounded count is
@@ -382,6 +386,7 @@ export function createNativeMessagePorts(
                   return;
                 }
                 message(entry);
+                recent = true;
                 if (!active) return;
                 if (++delivered === deliveriesPerTask) {
                   schedule();
@@ -396,6 +401,32 @@ export function createNativeMessagePorts(
             }
           });
         }
+        // Before the loop blocks, a port that just delivered tells senders
+        // it is awake (so they skip the pipe write) and polls its queue; it
+        // settles under the queue lock, so a send after that wakes it.
+        const stopPolling = reactor.pollWhileIdle({
+          arm: (): boolean => {
+            if (!active || !recent) return false;
+            recent = false;
+            write(pair, local + SIGNALED, 1);
+            return true;
+          },
+          ready: (): boolean =>
+            nativeAgentPacketsQueued(memory, incoming.registry, scratch),
+          settle: (): boolean => {
+            if (
+              !settleNativeAgentPackets(
+                memory,
+                parking,
+                incoming.registry,
+                clearSignal,
+              )
+            )
+              return false;
+            schedule();
+            return true;
+          },
+        });
         const source = reactor.watchReadable(input, (): void => {
           let status = threads.read(input, notifications);
           while (status === INTERRUPTED)
@@ -419,6 +450,7 @@ export function createNativeMessagePorts(
             if (!active) return;
             active = false;
             watch = undefined;
+            stopPolling();
             source.close();
           },
         };

@@ -191,19 +191,39 @@ The baseline profiles attribute the transport costs. The fixes, in order:
    entry when they call, with a plain load. Polls used to sit before every
    call and allocation. This also stops allocation-free loops, the gap that
    the event loop design listed.
-5. **Packed small packets.** Every tiny packet still takes its own 16 KiB block,
-   and a burst longer than the recycle bound falls back to one mapping per
-   message. The plan is to append small packets to shared mailbox pages and
-   recycle a page once it drains.
-6. **Typed-native ports.** A typed program's messages still pass through the
+5. **Binary packets.** Done. A message is one native packet: a
+   ValueSerializer-style encoding with one-byte tags, varints, bulk binary64
+   and UTF-16 copies and back-references, decoded straight into the
+   receiver's heap. Small packets share 16 KiB segments with a reference
+   count; a large one takes a mapping of its own, and a mailbox keeps one
+   warm large mapping for reuse.
+6. **Batched delivery.** Done. One I/O task drains the whole queue and
+   delivers up to 1,000 packets, with a microtask checkpoint after each.
+7. **Wakeups.** Done:
+   - On macOS, a zero-timeout `kevent64` is not a poll: a zero timespec
+     takes the timed-wait path and reschedules the thread, about 11 µs per
+     call. The loop makes that call on every turn that has work queued, so
+     each message hop paid it. Zero-timeout polls now pass
+     `KEVENT_FLAG_IMMEDIATE` (0.15 µs). Linux's `epoll_wait` with a zero
+     timeout is already a true poll.
+   - Before a loop blocks, a port that delivered in that turn polls its
+     queue for up to 50 µs (bounded by the next timer). While it polls, its
+     signal flag tells senders it is awake, so they skip the pipe write. It
+     then settles under the queue lock: it schedules queued packets, or
+     clears the flag so the next send wakes it. A reply to a message the
+     loop just handled usually arrives within the window, so a round trip
+     makes no system call. A loop that keeps finding work this way checks
+     its descriptors at most once per millisecond.
+   - The kernel wake itself is not the cost. Two native threads ping-pong in
+     5.8 µs per round trip through a pipe watched by `kevent`, 3.9 µs through
+     an `EVFILT_USER` trigger (libuv 1.52's `uv_async_send` on macOS) and
+     4.6 µs through word park and wake. Ports keep the pipe; with idle
+     polling, a steady exchange makes no wake at all.
+8. **Typed-native ports.** A typed program's messages still pass through the
    Script realm: the facade calls the realm's `postMessage`, structured clone
-   builds realm values, and delivery dispatches realm listeners. That layering
-   is most of the remaining per-message user time. Typed ports would serialize
-   from typed values and call typed listeners directly.
-7. **Bulk packet copies.** A packet still crosses one code unit per host call.
-   The plan is to copy through `tint:c/memory` (`memcpy`) or a wider
-   shared-memory operation.
-8. **Untyped await overhead.** This belongs to the untyped runtime stream. The
+   builds realm values, and delivery dispatches realm listeners. Typed ports
+   would serialize from typed values and call typed listeners directly.
+9. **Untyped await overhead.** This belongs to the untyped runtime stream. The
    typed transport variant measures the runtime's messaging cost without it.
 
 **Typed SharedArrayBuffer.** Typed code cannot create a `SharedArrayBuffer`
@@ -215,6 +235,47 @@ starts its own pool of parallel-collector helpers, which multiplies threads
 when a program runs many Workers. A single process-wide pool could serve
 whichever isolate collects.
 
+## 6. Shared memory and isolate boundaries
+
+With the analyses and inlining back on, the optimizer sees code that touches
+memory another thread mutates. Three invariants keep that sound; the
+[soundness report](results/worker-runtime-soundness-v1.md) has the fixtures
+and their results.
+
+**No shared access is cached, moved or removed.**
+
+- Every `SharedArrayBuffer` access, plain or `Atomics`, reaches a `shared-*`
+  host operation through `SharedBlockService`. Shared storage never exposes a
+  byte array, so no path loads it inline.
+- `instructionEffects` gives every host call unknown effects. GVN, LICM,
+  store forwarding and dead-code elimination therefore treat each access as
+  reading and writing all memory, and no other memory operation moves across
+  it. The inliner does not inline a callee that contains one.
+- Neither backend schedules instructions. On arm64 each access is a call to an
+  out-of-line leaf; on x86-64 it is an inline sequence.
+- Typed code cannot create a `SharedArrayBuffer` yet, so typed
+  specializations never see shared memory.
+
+**Atomics are barriers.** A seq-cst access compiles to
+`dmb ish; ldar|stlr; dmb ish` on arm64, and compare-exchange is a fenced
+`ldaxr`/`stlxr` loop. On x86-64 a seq-cst store is `xchg`, compare-exchange is
+`lock cmpxchg`, and loads are `mov`: the standard TSO mapping. Unordered
+accesses are plain loads and stores on both.
+
+**No heap pointer crosses an isolate.**
+
+- In a Worker program, the realm's buffer allocator maps every `ArrayBuffer`
+  backing outside the managed heap and tracks it with a weak slot. Transfer
+  moves the mapping's address to the receiver, which adopts it in a fresh
+  object. A clone copies the bytes into a new mapping.
+- Structured clone rebuilds every other value from packet bytes in the
+  receiving heap.
+- `node:zlib` runs synchronously in the calling isolate. Blocking-pool helpers
+  are separate hosted isolates that exchange strings through mapped mailboxes.
+  PR #6's `node:crypto` jobs pass the helper only the address of a `tint:ffi`
+  allocation. The submitting isolate owns that allocation until the reply
+  and copies the result into its own heap.
+
 ## Validation
 
 Every change must keep:
@@ -223,7 +284,8 @@ Every change must keep:
   isolate operation;
 - self-build stage 2 = stage 3;
 - the native Worker fixtures (suite, messages, ports, clone, backing, exit,
-  safepoints, compiler) at exit 42 under LLDB;
+  safepoints, compiler, memory model, ordering litmus, transfer and zlib
+  stress) at exit 42 under LLDB;
 - Test262's agent and Atomics selections without regressions;
 - green CI on all three targets.
 

@@ -471,6 +471,34 @@ export function drainNativeAgentPackets(
   }
   return entries;
 }
+/** Whether a packet is queued: one unlocked read, for a receiver that polls
+ * before it parks. A packet published concurrently may be missed; only
+ * settleNativeAgentPackets decides under the lock. */
+export function nativeAgentPacketsQueued(
+  host: NativeSharedMemoryHost,
+  registry: NativeSharedBlockRegistry,
+  scratch: Uint32Array,
+): boolean {
+  return readNumber(host, registry, HEAD, scratch, 0) !== 0;
+}
+/** Under the queue lock, whether a packet is queued; when none is, `empty`
+ * runs inside the lock, as in drainNativeAgentPackets. */
+export function settleNativeAgentPackets(
+  host: NativeSharedMemoryHost,
+  parking: NativeWaiterParkingHost,
+  registry: NativeSharedBlockRegistry,
+  empty: () => void,
+): boolean {
+  const scratch = new Uint32Array(2);
+  lock(host, parking, registry, scratch);
+  try {
+    if (readNumber(host, registry, HEAD, scratch) !== 0) return true;
+    empty();
+    return false;
+  } finally {
+    unlock(host, parking, registry, scratch);
+  }
+}
 /** Relink packets detached by drainNativeAgentPackets, in order, ahead of
  * every packet queued since: a transferred or closed watcher leaves its
  * undelivered packets for the next owner. */

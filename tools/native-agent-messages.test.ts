@@ -184,3 +184,65 @@ test("a recycling mailbox reuses one released large packet mapping", async () =>
   api.releaseNativeAgentMailboxBlocks(host, registry);
   assert.equal(host.kernel.mappings.size, 1);
 });
+
+test("a polling receiver settles under the queue lock before it parks", async () => {
+  const api = await import("../packages/native-runtime/src/agent-messages.ts");
+  const host = new NodeSharedMemoryHost();
+  const parking = {
+    park: (_address: number, _expected: number, _timeout: number) => 0,
+    wake: (_address: number) => 0,
+  };
+  const created = api.createNativeAgentMailbox(host, parking, 77, true);
+  assert.ok(created.ok);
+  const registry = created.value.registry;
+  const scratch = new Uint32Array(2);
+  // The receiver advertises that it is awake, so a sender asks for no wake.
+  let awake = true;
+  const signal = (): boolean => {
+    if (awake) return false;
+    awake = true;
+    return true;
+  };
+  const idle: string[] = [];
+  const park = (): void => {
+    idle.push("park");
+    awake = false;
+  };
+  assert.equal(api.nativeAgentPacketsQueued(host, registry, scratch), false);
+  const producer = api.createNativeAgentPacketProducer(host, parking, registry);
+  const first = producer.allocate(0)!;
+  producer.commit(first, 8);
+  assert.equal(
+    api.publishNativeAgentPacket(host, parking, registry, first, 8, signal),
+    false,
+  );
+  assert.equal(api.nativeAgentPacketsQueued(host, registry, scratch), true);
+  // Queued work keeps the receiver awake; it does not park.
+  assert.equal(
+    api.settleNativeAgentPackets(host, parking, registry, park),
+    true,
+  );
+  assert.deepEqual(idle, []);
+  const entries = api.drainNativeAgentPackets(host, parking, registry);
+  assert.equal(entries.length, 1);
+  // With the queue empty it parks inside the lock, and the next send wakes it.
+  assert.equal(
+    api.settleNativeAgentPackets(host, parking, registry, park),
+    false,
+  );
+  assert.deepEqual(idle, ["park"]);
+  const second = producer.allocate(0)!;
+  producer.commit(second, 8);
+  assert.equal(
+    api.publishNativeAgentPacket(host, parking, registry, second, 8, signal),
+    true,
+  );
+  for (const entry of [
+    ...entries,
+    ...api.drainNativeAgentPackets(host, parking, registry),
+  ])
+    api.releaseNativeAgentPacket(host, parking, registry, entry.packet);
+  producer.close();
+  api.releaseNativeAgentMailboxBlocks(host, registry);
+  assert.equal(host.kernel.mappings.size, 1);
+});
