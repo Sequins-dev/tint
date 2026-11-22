@@ -2,13 +2,16 @@ import {
   attachNativeAgentMailbox,
   createNativeAgentMailbox,
   prepareNativeAgentMessage,
+  releaseNativeAgentMailboxBlocks,
   type NativeAgentMailbox,
 } from "./agent-messages.ts";
 import type { ReactorEventLoop } from "./event-loop-reactor.ts";
 import type { EventLoopHandle } from "./event-loop.ts";
 import {
   compareNumber,
+  lockRegistryWord,
   readNumber,
+  unlockRegistryWord,
   writeNumber,
   type NativeSharedMemoryHost,
   type NativeSharedBlockRegistry,
@@ -51,13 +54,16 @@ export interface NativeMessagePorts {
 
 const PAGE = 16384;
 const ENDPOINTS = 16;
-const ENDPOINT_BYTES = 40;
+const ENDPOINT_BYTES = 48;
 const REMAINING = 8;
 const STATE = 0;
 const GENERATION = 8;
 const INPUT = 16;
 const OUTPUT = 24;
 const MAILBOX = 32;
+// Set by a sender that wrote the receiver's signal byte and cleared by the
+// receiver before it drains, so a burst of sends writes the pipe once.
+const SIGNALED = 40;
 const OWNED = 1;
 const IN_FLIGHT = 2;
 const CLOSED = 3;
@@ -79,12 +85,10 @@ export function createNativeMessagePorts(
     return { base, byteLength: PAGE, engineId: base };
   }
   function lock(pair: NativeSharedBlockRegistry): void {
-    while (compareNumber(memory, pair, 0, 0, 1, scratch) !== 0)
-      parking.park(pair.base, 1, 1000000);
+    lockRegistryWord(memory, parking, pair, 0, scratch);
   }
   function unlock(pair: NativeSharedBlockRegistry): void {
-    writeNumber(memory, pair, 0, 0);
-    parking.wake(pair.base);
+    unlockRegistryWord(memory, parking, pair, 0, scratch);
   }
   function read(pair: NativeSharedBlockRegistry, offset: number): number {
     return readNumber(memory, pair, offset, scratch);
@@ -134,6 +138,11 @@ export function createNativeMessagePorts(
     if (memory.unmapMemory(base, PAGE) !== 0)
       throw "NATIVE_MESSAGE_PORT_RELEASE";
   }
+  /** The final owner frees a mailbox's recycled payloads, then its page. */
+  function releaseMailbox(base: number): void {
+    releaseNativeAgentMailboxBlocks(memory, registry(base));
+    releaseMemory(base);
+  }
   function releaseEndpoint(
     grant: NativeMessagePortGrant,
     state: number,
@@ -177,8 +186,8 @@ export function createNativeMessagePorts(
         remaining = observed;
       }
       if (remaining === 1) {
-        releaseMemory(read(pair, local + MAILBOX));
-        releaseMemory(read(pair, peer + MAILBOX));
+        releaseMailbox(read(pair, local + MAILBOX));
+        releaseMailbox(read(pair, peer + MAILBOX));
         releaseMemory(pair.base);
       }
     }
@@ -190,7 +199,10 @@ export function createNativeMessagePorts(
     const input = read(pair, local + INPUT);
     const incoming = mailbox(pair, local);
     const outgoing = mailbox(pair, peer);
+    // Runs under the pair lock: signal only a receiver not already signaled.
     function notifyPeer(): void {
+      if (read(pair, peer + SIGNALED) !== 0) return;
+      write(pair, peer + SIGNALED, 1);
       notify(read(pair, peer + OUTPUT));
     }
     let owned = true;
@@ -255,6 +267,14 @@ export function createNativeMessagePorts(
             status = threads.read(input, notifications);
           if (status <= 0 && status !== threads.wouldBlock)
             throw new Error("message port read failed: " + String(status));
+          // Clear before draining: a later send signals again, and every
+          // earlier one is already queued for this drain.
+          lock(pair);
+          try {
+            write(pair, local + SIGNALED, 0);
+          } finally {
+            unlock(pair);
+          }
           schedule();
         });
         const handle: EventLoopHandle = {
@@ -322,7 +342,7 @@ export function createNativeMessagePorts(
     write(pair, local + OUTPUT, signals.output);
   }
   function allocateMailbox(base: number): NativeAgentMailbox {
-    const created = createNativeAgentMailbox(memory, parking, base);
+    const created = createNativeAgentMailbox(memory, parking, base, true);
     if (!created.ok) throw new Error("message port mailbox allocation failed");
     return created.value;
   }

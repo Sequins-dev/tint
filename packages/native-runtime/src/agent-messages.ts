@@ -32,13 +32,24 @@ const MAPPING_QUANTUM = 16384,
   ENGINE = 16,
   HEAD = 24,
   TAIL = 32,
+  // Recycling mailboxes keep released single-quantum payloads on a free
+  // stack instead of unmapping them (docs/design-worker-runtime.md).
+  FREE = 40,
+  FREE_COUNT = 48,
+  RECYCLE = 56,
   MESSAGE_HEADER = 16,
   MAX_UNITS = 8 * 1024 * 1024;
+/** Most payload blocks one recycling mailbox keeps for reuse. */
+export const recycledMessageBlocks = 32;
 
+/** With `recycle`, consumed single-quantum payloads return to the mailbox
+ * for the next send; the mailbox's final owner must then call
+ * releaseNativeAgentMailboxBlocks before unmapping the registry. */
 export function createNativeAgentMailbox(
   host: NativeSharedMemoryHost,
   parking: NativeWaiterParkingHost,
   engineId: number,
+  recycle: boolean = false,
 ): SharedResult<NativeAgentMailbox> {
   if (!integer(engineId) || engineId === 0)
     return { ok: false, error: "invalid-handle" };
@@ -48,7 +59,86 @@ export function createNativeAgentMailbox(
   const registry = { base, byteLength: MAPPING_QUANTUM, engineId };
   writeNumber(host, registry, ENGINE, engineId);
   writeNumber(host, registry, MAGIC_AT, MAGIC);
+  if (recycle) writeNumber(host, registry, RECYCLE, 1);
   return { ok: true, value: mailbox(host, parking, registry) };
+}
+/** Unmaps a recycling mailbox's free payload blocks. Only the mailbox's final
+ * owner calls this, after every producer and consumer has stopped. */
+export function releaseNativeAgentMailboxBlocks(
+  host: NativeSharedMemoryHost,
+  registry: NativeSharedBlockRegistry,
+): void {
+  const scratch = new Uint32Array(2);
+  const header = {
+    base: 0,
+    byteLength: MESSAGE_HEADER,
+    engineId: registry.engineId,
+  };
+  let block = readNumber(host, registry, FREE, scratch);
+  while (block !== 0) {
+    header.base = block;
+    const next = readNumber(host, header, 0, scratch);
+    if (host.unmapMemory(block, MAPPING_QUANTUM) !== 0)
+      throw "NATIVE_AGENT_MESSAGE_RELEASE";
+    block = next;
+  }
+  writeNumber(host, registry, FREE, 0);
+  writeNumber(host, registry, FREE_COUNT, 0);
+}
+/** Pops a free payload block, or returns 0. */
+function takeBlock(
+  host: NativeSharedMemoryHost,
+  parking: NativeWaiterParkingHost,
+  registry: NativeSharedBlockRegistry,
+  scratch: Uint32Array,
+): number {
+  if (readNumber(host, registry, RECYCLE, scratch) === 0) return 0;
+  lock(host, parking, registry, scratch);
+  try {
+    const block = readNumber(host, registry, FREE, scratch);
+    if (block === 0) return 0;
+    const header = {
+      base: block,
+      byteLength: MESSAGE_HEADER,
+      engineId: registry.engineId,
+    };
+    writeNumber(host, registry, FREE, readNumber(host, header, 0, scratch));
+    writeNumber(
+      host,
+      registry,
+      FREE_COUNT,
+      readNumber(host, registry, FREE_COUNT, scratch) - 1,
+    );
+    return block;
+  } finally {
+    unlock(host, parking, registry, scratch);
+  }
+}
+/** Pushes a consumed payload block for reuse; false when it must be unmapped. */
+function returnBlock(
+  host: NativeSharedMemoryHost,
+  parking: NativeWaiterParkingHost,
+  registry: NativeSharedBlockRegistry,
+  block: number,
+  scratch: Uint32Array,
+): boolean {
+  if (readNumber(host, registry, RECYCLE, scratch) === 0) return false;
+  lock(host, parking, registry, scratch);
+  try {
+    const count = readNumber(host, registry, FREE_COUNT, scratch);
+    if (count >= recycledMessageBlocks) return false;
+    const header = {
+      base: block,
+      byteLength: MESSAGE_HEADER,
+      engineId: registry.engineId,
+    };
+    writeNumber(host, header, 0, readNumber(host, registry, FREE, scratch));
+    writeNumber(host, registry, FREE, block);
+    writeNumber(host, registry, FREE_COUNT, count + 1);
+    return true;
+  } finally {
+    unlock(host, parking, registry, scratch);
+  }
 }
 export function attachNativeAgentMailbox(
   host: NativeSharedMemoryHost,
@@ -103,8 +193,13 @@ export function prepareNativeAgentMessage(
 ): SharedResult<NativeAgentMessage> {
   if (message.length > MAX_UNITS)
     return { ok: false, error: "allocation-limit" };
+  const scratch = new Uint32Array(2);
   const length = messageBytes(message.length),
-    base = host.mapMemory(length);
+    recycled =
+      length === MAPPING_QUANTUM
+        ? takeBlock(host, parking, registry, scratch)
+        : 0,
+    base = recycled !== 0 ? recycled : host.mapMemory(length);
   if (!integer(base) || base <= 0 || base % 8 !== 0)
     return { ok: false, error: "allocation-limit" };
   const payload = { base, byteLength: length, engineId: registry.engineId };
@@ -124,7 +219,6 @@ export function prepareNativeAgentMessage(
         ) !== 0
       )
         throw "NATIVE_AGENT_MESSAGE_WRITE";
-    const scratch = new Uint32Array(2);
     const previous = {
       base: 0,
       byteLength: MESSAGE_HEADER,
@@ -245,7 +339,13 @@ function mailbox(
       for (; i < units; i++) parts.push(String.fromCharCode(unit(i)));
       return parts.join("");
     } finally {
-      if (host.unmapMemory(base, length) !== 0)
+      if (
+        !(
+          length === MAPPING_QUANTUM &&
+          returnBlock(host, parking, registry, payload, scratch)
+        ) &&
+        host.unmapMemory(payload, length) !== 0
+      )
         throw "NATIVE_AGENT_MESSAGE_RELEASE";
     }
   }

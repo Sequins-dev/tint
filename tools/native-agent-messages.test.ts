@@ -67,3 +67,39 @@ test("agent mailbox attachment rejects another engine and malformed descriptors"
       { ok: false, error: "invalid-handle" },
     );
 });
+
+test("recycling mailboxes reuse single-quantum payloads up to a bound", async () => {
+  const api = await import("../packages/native-runtime/src/agent-messages.ts");
+  const host = new NodeSharedMemoryHost();
+  const parking = {
+    park: (_address: number, _expected: number, _timeout: number) => 0,
+    wake: (_address: number) => 0,
+  };
+  const created = api.createNativeAgentMailbox(host, parking, 73, true);
+  assert.ok(created.ok);
+  const queue = created.value;
+  // Steady one-at-a-time traffic maps one payload block and reuses it.
+  for (let i = 0; i < 100; i++) {
+    assert.deepEqual(queue.send("m" + i), { ok: true, value: undefined });
+    assert.equal(queue.receive(), "m" + i);
+  }
+  assert.equal(host.kernel.mappings.size, 2);
+  // A burst keeps at most recycledMessageBlocks blocks once drained.
+  const burst = api.recycledMessageBlocks + 8;
+  for (let i = 0; i < burst; i++) queue.send("b" + i);
+  for (let i = 0; i < burst; i++) assert.equal(queue.receive(), "b" + i);
+  assert.equal(host.kernel.mappings.size, 1 + api.recycledMessageBlocks);
+  // Multi-quantum payloads are never recycled.
+  const large = "x".repeat(20000);
+  queue.send(large);
+  assert.equal(queue.receive(), large);
+  assert.equal(host.kernel.mappings.size, 1 + api.recycledMessageBlocks);
+  api.releaseNativeAgentMailboxBlocks(host, queue.registry);
+  assert.equal(host.kernel.mappings.size, 1);
+  // A plain mailbox still unmaps every consumed payload.
+  const plain = api.createNativeAgentMailbox(host, parking, 74);
+  assert.ok(plain.ok);
+  plain.value.send("once");
+  assert.equal(plain.value.receive(), "once");
+  assert.equal(host.kernel.mappings.size, 2);
+});
