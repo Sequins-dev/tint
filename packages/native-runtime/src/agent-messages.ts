@@ -4,7 +4,8 @@ import {
   integer,
   readNumber,
   writeNumber,
-  compareNumber,
+  lockRegistryWord,
+  unlockRegistryWord,
   type NativeSharedMemoryHost,
   type NativeSharedBlockRegistry,
 } from "./shared-memory-host.ts";
@@ -82,16 +83,15 @@ function lock(
   registry: NativeSharedBlockRegistry,
   scratch: Uint32Array,
 ): void {
-  while (compareNumber(host, registry, 0, 0, 1, scratch) !== 0)
-    parking.park(registry.base, 1, 1000000);
+  lockRegistryWord(host, parking, registry, 0, scratch);
 }
 function unlock(
   host: NativeSharedMemoryHost,
   parking: NativeWaiterParkingHost,
   registry: NativeSharedBlockRegistry,
+  scratch: Uint32Array,
 ): void {
-  writeNumber(host, registry, 0, 0);
-  parking.wake(registry.base);
+  unlockRegistryWord(host, parking, registry, 0, scratch);
 }
 /** Allocate and copy before entering the caller's publication lock. The
  * registry must belong to a mailbox already attached to this context. */
@@ -147,7 +147,7 @@ export function prepareNativeAgentMessage(
           writeNumber(host, registry, TAIL, base);
           open = false;
         } finally {
-          unlock(host, parking, registry);
+          unlock(host, parking, registry, scratch);
         }
       },
       discard: (): void => {
@@ -208,7 +208,7 @@ function mailbox(
         if (next === 0) writeNumber(host, registry, TAIL, 0);
       }
     } finally {
-      unlock(host, parking, registry);
+      unlock(host, parking, registry, scratch);
     }
     if (base === 0) return undefined;
     const length = messageBytes(units);

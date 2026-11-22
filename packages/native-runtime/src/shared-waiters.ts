@@ -7,7 +7,8 @@ import {
   integer,
   readNumber,
   writeNumber,
-  compareNumber,
+  lockRegistryWord,
+  unlockRegistryWord,
   type NativeSharedMemoryHost,
   type NativeSharedBlockRegistry,
 } from "./shared-memory-host.ts";
@@ -162,12 +163,11 @@ function facade(
   capacity: number,
 ): NativeWaitRegistry {
   function lock(scratch: Uint32Array): void {
-    while (compareNumber(host, registry, LOCK, 0, 1, scratch) !== 0)
-      parking.park(registry.base + LOCK, 1, 1000000);
+    lockRegistryWord(host, parking, registry, LOCK, scratch);
   }
+  const unlockScratch = new Uint32Array(2);
   function unlock(): void {
-    writeNumber(host, registry, LOCK, 0);
-    parking.wake(registry.base + LOCK);
+    unlockRegistryWord(host, parking, registry, LOCK, unlockScratch);
   }
   function find(ticket: number, scratch: Uint32Array): number {
     const used = readNumber(host, registry, USED_ROWS, scratch);
