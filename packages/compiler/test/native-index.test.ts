@@ -429,6 +429,7 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "compact-slots",
       "cache-list-vectors",
       "bound-counted-loops",
+      "layout-blocks",
     ],
   );
   assert.ok(

@@ -61,6 +61,7 @@ import { devirtualizeClosureCalls } from "./closures.ts";
 import { selectArrayAccesses } from "./bounds.ts";
 import { hoistLoopInvariants } from "./licm.ts";
 import { boundCountedLoops } from "./counted-loops.ts";
+import { layoutBlocks } from "./block-layout.ts";
 export { hoistLoopInvariants } from "./licm.ts";
 export { selectArrayAccesses } from "./bounds.ts";
 export { devirtualizeClosureCalls } from "./closures.ts";
@@ -1636,6 +1637,28 @@ export function optimizeModuleVersion(
   if (bounded.exhausted)
     return exhausted("bound-counted-loops", bounded.visited);
   if (completed("bound-counted-loops", bounded, false)) return stop();
+  // Layout only: each block is followed by its preferred successor, so the
+  // emitter elides that edge's branch (block-layout.ts).
+  const layoutBudget = vectorBudget - vectors.visited - bounded.visited;
+  const laid = rewriteFunctions(
+    version,
+    layoutBudget,
+    undefined,
+    undefined,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = layoutBlocks(fn, budget);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.moved,
+            refused: false,
+          };
+    },
+  );
+  if (laid.exhausted) return exhausted("layout-blocks", layoutBudget);
+  if (completed("layout-blocks", laid, false)) return stop();
   return { passes, budgetExhausted: false };
 }
 
