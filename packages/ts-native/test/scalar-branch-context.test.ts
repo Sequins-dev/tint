@@ -99,3 +99,42 @@ for (const [comparison, operand] of [
     },
   );
 }
+
+test("realm typeof comparisons test primitive tags without the classifier", () => {
+  const fn = lower(
+    `interface Witness { marker: number }
+     function run(value: unknown): number {
+       let count = 0;
+       if (typeof value === "number") count++;
+       if ("boolean" !== typeof value) count++;
+       if (typeof value === "string") count++;
+       if (typeof value === "undefined") count++;
+       if (typeof value === "function") count++;
+       return count;
+     }
+     function classify(value: unknown): string {
+       throw "unbound classifier";
+     }
+     function view(value: unknown, witness: Witness): Witness | undefined {
+       throw "unbound view";
+     }`,
+    [0, 1, 2],
+    {
+      recordBindings: [{ function: 2, operation: "view" }],
+      realmTypeof: { function: 1, applies: () => true },
+    },
+  );
+  const operations = fn.blocks.flatMap((block) => block.instructions);
+  assert.deepEqual(
+    operations.flatMap((operation) =>
+      operation.kind === "general-is" ? [operation.type] : [],
+    ),
+    ["number", "boolean", "string"],
+  );
+  // [[IsHTMLDDA]] objects report "undefined", and only the classifier
+  // distinguishes callable objects.
+  assert.equal(
+    operations.filter((operation) => operation.kind === "call").length,
+    2,
+  );
+});

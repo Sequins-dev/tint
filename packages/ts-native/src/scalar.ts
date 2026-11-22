@@ -6705,15 +6705,18 @@ export function lowerFunction(
           else if (
             literal.kind === "string" &&
             compared.kind === "unary" &&
-            compared.operator === "typeof" &&
-            info(compared).realmTypeof === undefined
+            compared.operator === "typeof"
           ) {
             const name = literal.value;
+            // The realm classifier differs from the value tag only for
+            // values with the object tag: callable and [[IsHTMLDDA]] objects,
+            // symbols and BigInts. Number, boolean and string results are
+            // the tag itself; "undefined" also covers [[IsHTMLDDA]].
             if (
               name === "number" ||
               name === "boolean" ||
               name === "string" ||
-              name === "undefined"
+              (name === "undefined" && info(compared).realmTypeof === undefined)
             ) {
               category = name;
               tested = compared.operand;
