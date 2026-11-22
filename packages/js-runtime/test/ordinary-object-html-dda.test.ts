@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import type { ScriptPropertyKey } from "../src/objects/symbols.ts";
 import {
   createObject,
   createCallableObject,
@@ -8,11 +9,14 @@ import {
 } from "../src/objects/index.ts";
 
 test("IsHTMLDDA is a host-only internal slot, not inherited state", () => {
-  const host = createCallableObject<string, unknown>(undefined, () => null);
+  const host = createCallableObject<ScriptPropertyKey, unknown>(
+    undefined,
+    () => null,
+  );
   assert.equal(host.internalIsHTMLDDA, false);
   markHTMLDDAObject(host);
   assert.equal(host.internalIsHTMLDDA, true);
-  const child = createObject<string, unknown>(host);
+  const child = createObject<ScriptPropertyKey, unknown>(host);
   assert.equal(child.internalIsHTMLDDA, false);
   assert.equal(child.properties.has("internalIsHTMLDDA"), false);
 });
@@ -24,5 +28,5 @@ test("code lowered without IsHTMLDDA objects cannot run beside a marked one", ()
     (error) =>
       error === "code lowered without IsHTMLDDA objects runs beside one",
   );
-  markHTMLDDAObject(createObject<string, unknown>(undefined));
+  markHTMLDDAObject(createObject<ScriptPropertyKey, unknown>(undefined));
 });

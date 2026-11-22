@@ -195,7 +195,9 @@ export function scriptIsHTMLDDA(
  * error, never a silent change of `==` semantics. */
 let htmlDDAObjects: "unknown" | "present" | "excluded" = "unknown";
 
-export function markHTMLDDAObject<K, V>(object: OrdinaryObject<K, V>): void {
+export function markHTMLDDAObject(
+  object: OrdinaryObject<ScriptPropertyKey, unknown>,
+): void {
   if (htmlDDAObjects === "excluded")
     throw "IsHTMLDDA objects were excluded by code lowered without them";
   htmlDDAObjects = "present";
