@@ -5399,15 +5399,37 @@ function lowerScriptEntry(
       receiver =
         strict || unobservedReceiver
           ? id(receiverName, span)
-          : checkedRuntimeValue(
-              "sloppyCallReceiver",
-              [
+          : // An ordinary object receiver is its own ToObject; only nullish
+            // and primitive receivers need the sloppy conversion.
+            temporary(
+              scalarBranch(
+                scalarBinary(
+                  "!==",
+                  runtimeCall(
+                    "viewObjectValue",
+                    [
+                      id(receiverName, span),
+                      member(id("$errors"), "objectPrototype", span),
+                    ],
+                    span,
+                  ),
+                  id("undefined", span),
+                  span,
+                ),
                 id(receiverName, span),
-                member(id("$global"), "thisValue", span),
-                member(id("$global"), "hooks", span),
-                id("$errors"),
-              ],
-              span,
+                checkedRuntimeValue(
+                  "sloppyCallReceiver",
+                  [
+                    id(receiverName, span),
+                    member(id("$global"), "thisValue", span),
+                    member(id("$global"), "hooks", span),
+                    id("$errors"),
+                  ],
+                  span,
+                ),
+                span,
+              ),
+              true,
             );
 
     const parameterEval =

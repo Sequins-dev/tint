@@ -1564,3 +1564,23 @@ test("integer reductions guard the accumulator's range and retain exact doubles 
     "-Infinity",
   ]);
 });
+
+test("sloppy receivers keep objects and convert nullish and primitive values", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+      function who() { return this; }
+      function kind() { return typeof this; }
+      const o = { who };
+      print(String(o.who() === o) + " " + String(who.call(null) === globalThis) + " " + String(who.call(undefined) === globalThis));
+      print(kind.call(1) + " " + kind.call("s") + " " + kind.call(true) + " " + kind.call(Symbol()) + " " + kind.call(1n) + " " + kind.call(o));
+      print(String(who.call(5) instanceof Number) + " " + String(who.call(5) !== who.call(5)));
+    `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "true true true",
+    "object object object object object object",
+    "true true",
+  ]);
+});
