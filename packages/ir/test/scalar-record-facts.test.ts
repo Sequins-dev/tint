@@ -796,6 +796,12 @@ test("join-crossing descriptor facts need the check on every incoming path", () 
   ]);
   checked(constructed);
   assert.equal(dataflowRecordGuards(constructed)?.[5], 1);
+  // The sparse live lists of tables above the dense limit prove the same.
+  for (const fn of [plain, copied, reassigned, constructed])
+    assert.deepEqual(
+      dataflowRecordGuards(fn, 2000000, false, 0),
+      dataflowRecordGuards(fn),
+    );
 });
 test("join-crossing facts respect opaque calls, exception entries and budgets", () => {
   const called = diamond([
@@ -807,6 +813,7 @@ test("join-crossing facts respect opaque calls, exception entries and budgets", 
   checked(called);
   assert.equal(dataflowRecordGuards(called)?.[5], 0);
   assert.equal(dataflowRecordGuards(called, 100000, true)?.[5], 1);
+  assert.equal(dataflowRecordGuards(called, 100000, true, 0)?.[5], 1);
   const base = diamond([]);
   const exceptional: FunctionIR = {
     ...base,
