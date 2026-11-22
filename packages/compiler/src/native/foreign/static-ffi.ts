@@ -174,11 +174,12 @@ export function staticFfiNumberEntry(index: number): string {
 
 export function hasStaticFfiBytesEntry(plan: StaticFfiPlan): boolean {
   const signature = plan.signature;
+  const result = signature.result;
   return (
     signature.parameters.length === 1 &&
     signature.parameters[0]?.kind === "pointer" &&
-    signature.result.kind === "scalar" &&
-    signature.result.scalar === "i32"
+    result.kind === "scalar" &&
+    result.scalar === "i32"
   );
 }
 

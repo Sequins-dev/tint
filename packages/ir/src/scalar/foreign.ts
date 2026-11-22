@@ -569,6 +569,7 @@ export function foreignMemoryTypes(
     const prototype = access.callback;
     if (prototype !== undefined) {
       const parameter = prototype.parameters[0];
+      const result = prototype.result;
       if (
         prototype.parameters.length !== 1 ||
         prototype.fixedParameters !== 1 ||
@@ -576,8 +577,8 @@ export function foreignMemoryTypes(
         prototype.errno !== "none" ||
         parameter?.kind !== "scalar" ||
         parameter.scalar !== "i32" ||
-        prototype.result.kind !== "scalar" ||
-        prototype.result.scalar !== "i32"
+        result.kind !== "scalar" ||
+        result.scalar !== "i32"
       )
         return { ok: false, error: "malformed runtime callback prototype" };
     }
