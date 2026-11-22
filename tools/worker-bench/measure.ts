@@ -10,6 +10,7 @@
 //   placements tint-plain tint-main tint-worker
 //              node-plain node-main node-worker
 //   transport  tint-transport node-transport
+//   typed-transport tint-typed-transport node-typed-transport
 //   transport-steps tint-transport-a tint-transport-b tint-transport-c
 //              node-transport
 //   transport-pair tint-transport-a tint-transport-b node-transport
@@ -49,6 +50,7 @@ const sets: Record<string, readonly string[]> = {
     "node-worker",
   ],
   transport: ["tint-transport", "node-transport"],
+  "typed-transport": ["tint-typed-transport", "node-typed-transport"],
   // Two transport images (--image transport-a=… --image transport-b=…).
   "transport-pair": ["tint-transport-a", "tint-transport-b", "node-transport"],
   "typed-transport-pair": [

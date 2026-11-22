@@ -251,15 +251,18 @@ if (worker !== undefined) {
     );
   }
 }
-const transport = tables.get("transport");
-if (transport !== undefined) {
-  const operations = [...(transport.get("node-transport")?.keys() ?? [])];
-  console.log("\n### Transport (µs per operation)\n");
+for (const name of ["transport", "typed-transport"]) {
+  const transport = tables.get(name);
+  if (transport === undefined) continue;
+  const tint = "tint-" + name,
+    node = "node-" + name;
+  const operations = [...(transport.get(node)?.keys() ?? [])];
+  console.log(`\n### ${name} (µs per operation)\n`);
   console.log("| Operation | Tint | Node | Tint / Node |");
   console.log("| --- | ---: | ---: | ---: |");
   for (const operation of operations)
     console.log(
-      `| ${operation} | ${cell(finite(transport.get("tint-transport")?.get(operation)))} | ${cell(finite(transport.get("node-transport")?.get(operation)))} | ${ratio(paired(transport, "tint-transport", "node-transport", operation))} |`,
+      `| ${operation} | ${cell(finite(transport.get(tint)?.get(operation)))} | ${cell(finite(transport.get(node)?.get(operation)))} | ${ratio(paired(transport, tint, node, operation))} |`,
     );
 }
 const steps = tables.get("transport-steps");
