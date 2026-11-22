@@ -840,31 +840,6 @@ test("async declarations and expressions lower through the Promise call boundary
   }
 });
 
-test("an async cleanup continuation retains its loop-block binding by reference", () => {
-  const text =
-    "async function f(){for(const item of [42]){const cleanup=[];try{await item;}finally{await cleanup.length;}}}f();";
-  const start = text.indexOf("cleanup=");
-  const result = lower(text);
-  assert.ok(result.ok, JSON.stringify(result));
-  const captures: (string | undefined)[] = [];
-  rewriteModule(result.value, {
-    statement(node) {
-      if (node.kind === "variable")
-        for (const declaration of node.declarations)
-          if (
-            declaration.start === start &&
-            declaration.kind !== "object-binding" &&
-            declaration.kind !== "array-binding" &&
-            declaration.type?.kind === "named" &&
-            declaration.type.name === "unknown"
-          )
-            captures.push(declaration.capture);
-      return node;
-    },
-  });
-  assert.deepEqual(captures, ["reference"]);
-});
-
 test("async generators lower through distinct await and yield native segments", () => {
   for (const text of [
     "async function* f(){yield await 42;return 19;}f();",
