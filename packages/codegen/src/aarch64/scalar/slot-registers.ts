@@ -1,7 +1,12 @@
 import {
+  analyzeLiveSlotRows,
+  analyzeLiveSlotRowsPrecisely,
   analyzeLiveSlots,
   analyzeLiveSlotsPrecisely,
+  fitsLiveRows,
   naturalLoops,
+  type SlotLiveRows,
+  type SlotLiveness,
   visitInstructionOperands,
   visitTerminatorOperands,
   type FunctionIR,
@@ -26,6 +31,10 @@ export interface SlotHomes {
   /** False when the interference analysis exceeded its budget, so each
    * group took a register of its own (pass statistics report this). */
   readonly shared: boolean;
+  /** 1 for each slot the interference liveness tracked that is live into
+   * the entry block; undefined unless that liveness covered every homed
+   * slot. Homes need zeroing only where it is 1. */
+  readonly entryLive: Uint8Array | undefined;
 }
 /** Groups per register class whose interference is tracked; lower-ranked
  * groups keep their frame words. Bounds the interference matrices. */
@@ -38,6 +47,67 @@ export interface ReferenceHomes {
   readonly collects: (op: Instruction) => boolean;
 }
 
+/** Live-in sets of one analysis: dense rows, or sparse lists when the rows
+ * would exceed the dense table limit. */
+interface LiveIn {
+  readonly rows: SlotLiveRows | undefined;
+  readonly lists: SlotLiveness | undefined;
+  readonly work: number;
+}
+function liveIn(
+  rows: SlotLiveRows | undefined,
+  lists: SlotLiveness | undefined,
+): LiveIn | undefined {
+  if (rows !== undefined) return { rows, lists: undefined, work: rows.work };
+  if (lists !== undefined) return { rows: undefined, lists, work: lists.work };
+  return undefined;
+}
+/** Conservative (or `precise`) live-in sets of `tracked`, as rows when the
+ * function's table fits. Both forms hold the same sets and charge the same
+ * work. */
+function analyzeLiveIn(
+  fn: FunctionIR,
+  maxWork: number,
+  tracked: readonly number[],
+  precise: boolean,
+): LiveIn | undefined {
+  if (fitsLiveRows(fn, tracked.length))
+    return liveIn(
+      precise
+        ? analyzeLiveSlotRowsPrecisely(fn, maxWork, tracked)
+        : analyzeLiveSlotRows(fn, maxWork, tracked),
+      undefined,
+    );
+  return liveIn(
+    undefined,
+    precise
+      ? analyzeLiveSlotsPrecisely(fn, maxWork, tracked)
+      : analyzeLiveSlots(fn, maxWork, tracked),
+  );
+}
+/** Appends the slots live into `block` to `out`, in tracked order. */
+function appendLiveIn(live: LiveIn, block: number, out: number[]): void {
+  const dense = live.rows;
+  if (dense === undefined) {
+    for (const slot of live.lists?.slots[block] ?? [])
+      if (slot !== undefined) out.push(slot);
+    return;
+  }
+  const rows = dense.rows,
+    tracked = dense.tracked,
+    base = block * dense.rowWords,
+    end = dense.ends[block] ?? 0;
+  for (let word = dense.starts[block] ?? 0; word < end; word++) {
+    let bits = rows[base + word] ?? 0;
+    while (bits !== 0) {
+      const low = (bits & -bits) >>> 0;
+      bits = (bits ^ low) >>> 0;
+      const slot = tracked[word * 32 + 31 - Math.clz32(low)];
+      if (slot === undefined) throw "slot home live row invariant";
+      out.push(slot);
+    }
+  }
+}
 /** Slot types homed in d8..d15: numbers and NaN-boxed optional numbers. Every
  * such slot must also join the interference liveness, or a group sharing
  * its register would overwrite it while it is live. */
@@ -148,14 +218,14 @@ export function slotHomes(
   const allLive =
     homeable.length === 0
       ? undefined
-      : analyzeLiveSlots(fn, Math.max(1, maxWork - work), homeable);
-  const liveIn =
+      : analyzeLiveIn(fn, Math.max(1, maxWork - work), homeable, false);
+  const conservative =
     allLive !== undefined
       ? allLive
       : candidates.length === 0
         ? undefined
-        : analyzeLiveSlots(fn, Math.max(1, maxWork - work), candidates);
-  if (liveIn !== undefined) work += liveIn.work;
+        : analyzeLiveIn(fn, Math.max(1, maxWork - work), candidates, false);
+  if (conservative !== undefined) work += conservative.work;
   let shared = homeable.length === 0 || allLive !== undefined;
   // Live candidates as a sparse set (members plus positions), so resetting
   // per block and listing the live set at each safepoint cost only the live
@@ -166,6 +236,47 @@ export function slotHomes(
     // Per block, per collecting instruction: candidates live after it.
     afterSets: (number[] | undefined)[][] = [];
   for (const slot of candidates) if (slot !== undefined) candidate[slot] = 1;
+  /** Enters the slots of `tracked` live into `block` (all but `skipped`);
+   * with `protectedIn`, stamps every live slot there. Returns the number of
+   * live slots, `skipped` included (the list form's length). */
+  function enterLiveIn(
+    live: LiveIn,
+    block: number,
+    skipped: number,
+    tracked: Uint8Array,
+    protectedIn: Uint32Array | undefined,
+    stamp: number,
+  ): number {
+    const dense = live.rows;
+    if (dense === undefined) {
+      const slots = live.lists?.slots[block] ?? [];
+      for (const slot of slots)
+        if (slot !== undefined && slot !== skipped) {
+          enter(slot, tracked);
+          if (protectedIn !== undefined) protectedIn[slot] = stamp;
+        }
+      return slots.length;
+    }
+    const rows = dense.rows,
+      liveSlots = dense.tracked,
+      base = block * dense.rowWords,
+      end = dense.ends[block] ?? 0;
+    let total = 0;
+    for (let word = dense.starts[block] ?? 0; word < end; word++) {
+      let bits = rows[base + word] ?? 0;
+      while (bits !== 0) {
+        const low = (bits & -bits) >>> 0;
+        bits = (bits ^ low) >>> 0;
+        const slot = liveSlots[word * 32 + 31 - Math.clz32(low)];
+        if (slot === undefined) throw "slot home live row invariant";
+        total++;
+        if (slot === skipped) continue;
+        enter(slot, tracked);
+        if (protectedIn !== undefined) protectedIn[slot] = stamp;
+      }
+    }
+    return total;
+  }
   function enter(slot: number, tracked: Uint8Array): void {
     if (tracked[slot] !== 1) return;
     const at = position[slot] ?? 0;
@@ -188,24 +299,27 @@ export function slotHomes(
     }
     position[slot] = 0;
   }
-  if (liveIn !== undefined && candidates.length > 0) {
+  if (conservative !== undefined && candidates.length > 0) {
     for (const block of fn.blocks) {
       if (block === undefined) throw "slot home block invariant";
       const handler = block.exception;
-      if (handler !== undefined)
-        for (const slot of liveIn.slots[handler.target] ?? [])
-          if (slot !== undefined) handlerSlot[slot] = 1;
+      if (handler !== undefined) {
+        const live: number[] = [];
+        appendLiveIn(conservative, handler.target, live);
+        for (const slot of live) if (slot !== undefined) handlerSlot[slot] = 1;
+      }
     }
     // Register roots follow precise liveness: a guarded read writes its slot
     // only on the consequent edge, so a dead reference whose register a
     // later read overwrites is not reported (and kept alive) until then.
     // Interference keeps the conservative liveIn above.
-    const precise = analyzeLiveSlotsPrecisely(
+    const precise = analyzeLiveIn(
         fn,
         Math.max(1, maxWork - work),
         candidates,
+        true,
       ),
-      rootLive = precise ?? liveIn;
+      rootLive = precise ?? conservative;
     if (precise !== undefined) work += precise.work;
     for (const block of fn.blocks) {
       if (block === undefined) throw "slot home block invariant";
@@ -238,11 +352,14 @@ export function slotHomes(
       for (let edge = 0; edge < 2; edge++) {
         const successor = edge === 0 ? first : second;
         if (successor < 0) continue;
-        const slots = rootLive.slots[successor] ?? [];
-        work += slots.length;
-        for (const slot of slots)
-          if (slot !== undefined && !(edge === 0 && slot === written))
-            enter(slot, candidate);
+        work += enterLiveIn(
+          rootLive,
+          successor,
+          edge === 0 ? written : -1,
+          candidate,
+          undefined,
+          0,
+        );
       }
       if (++work > maxWork) return undefined;
       const sets: (number[] | undefined)[] = [];
@@ -272,7 +389,7 @@ export function slotHomes(
     totals = new Map<number, number>();
   const referenceCandidate = new Uint8Array(count),
     slotKinds = new Uint8Array(count);
-  if (liveIn !== undefined)
+  if (conservative !== undefined)
     for (const slot of candidates)
       if (slot !== undefined && handlerSlot[slot] !== 1)
         referenceCandidate[slot] = 1;
@@ -320,7 +437,7 @@ export function slotHomes(
   /** Fills the interference matrices of the ranked groups (rank + 1 per
    * group key in `rankOf`); false when the work budget runs out. */
   function buildInterference(
-    live: readonly (readonly number[])[],
+    live: LiveIn,
     floatBits: Uint32Array,
     floatWords: number,
     gpBits: Uint32Array,
@@ -376,8 +493,7 @@ export function slotHomes(
     // Entry: parameters are written by the prologue and every other slot
     // live into the entry block starts as zero there, all at once.
     clearMembers();
-    for (const slot of live[fn.entry] ?? [])
-      if (slot !== undefined) enter(slot, tracked);
+    enterLiveIn(live, fn.entry, -1, tracked, undefined, 0);
     for (const slot of fn.parameters)
       if (slot !== undefined) enter(slot, tracked);
     const entrySet = members.slice();
@@ -389,8 +505,7 @@ export function slotHomes(
       const handler = block.exception;
       if (handler === undefined || tracked[handler.slot] !== 1) continue;
       clearMembers();
-      for (const slot of live[handler.target] ?? [])
-        if (slot !== undefined) enter(slot, tracked);
+      enterLiveIn(live, handler.target, -1, tracked, undefined, 0);
       if (!written(handler.slot)) return false;
     }
     // Slots a value loaded from them is still to be used, by value id.
@@ -413,29 +528,22 @@ export function slotHomes(
       }
       clearMembers();
       const t = block.terminator;
-      if (t.kind === "jump") {
-        for (const slot of live[t.target] ?? [])
-          if (slot !== undefined) enter(slot, tracked);
-      } else if (
+      if (t.kind === "jump")
+        enterLiveIn(live, t.target, -1, tracked, undefined, 0);
+      else if (
         t.kind === "branch" ||
         t.kind === "record" ||
         t.kind === "record-cell" ||
         t.kind === "cell"
       ) {
-        for (const slot of live[t.consequent] ?? [])
-          if (slot !== undefined) enter(slot, tracked);
-        for (const slot of live[t.alternate] ?? [])
-          if (slot !== undefined) enter(slot, tracked);
+        enterLiveIn(live, t.consequent, -1, tracked, undefined, 0);
+        enterLiveIn(live, t.alternate, -1, tracked, undefined, 0);
       }
       // A slot live into the handler is live throughout this block: a throw
       // may leave it before any store here.
       const handler = block.exception;
       if (handler !== undefined)
-        for (const slot of live[handler.target] ?? [])
-          if (slot !== undefined) {
-            enter(slot, tracked);
-            protectedIn[slot] = stamp;
-          }
+        enterLiveIn(live, handler.target, -1, tracked, protectedIn, stamp);
       // Cell and record terminators may write their slot after reading it.
       if (
         t.kind === "record" ||
@@ -468,7 +576,7 @@ export function slotHomes(
     if (
       work <= maxWork &&
       buildInterference(
-        allLive.slots,
+        allLive,
         floatInterference,
         floatRow,
         gpInterference,
@@ -537,7 +645,24 @@ export function slotHomes(
     }
     if (any) registerRoots[block] = lists;
   }
-  return { registers, floatCount, saved, registerRoots, shared };
+  // Entry liveness of the homes, from the interference liveness when it
+  // tracked every homed slot.
+  let entryLive: Uint8Array | undefined;
+  if (allLive !== undefined) {
+    const covered = new Uint8Array(count);
+    for (const slot of homeable) if (slot !== undefined) covered[slot] = 1;
+    let complete = true;
+    for (let slot = 0; slot < count; slot++)
+      if (registers[slot] !== 0 && covered[slot] !== 1) complete = false;
+    if (complete) {
+      const live: number[] = [];
+      appendLiveIn(allLive, fn.entry, live);
+      const entry = new Uint8Array(count);
+      for (const slot of live) if (slot !== undefined) entry[slot] = 1;
+      entryLive = entry;
+    }
+  }
+  return { registers, floatCount, saved, registerRoots, shared, entryLive };
 }
 /** Registers for groups in rank order: per rank, a register index plus one,
  * or 0. Without an interference matrix (row words per rank), each group
