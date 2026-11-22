@@ -636,7 +636,7 @@ test("historical captures keep their managed vocabulary and adapter", async () =
     "scriptIsHTMLDDA",
     "looselyEqualOrThrow",
     "excludeHTMLDDAObjects",
-    "readPropertyLayoutSlot",
+    "readPropertySlot",
   ];
   const old = {
     ...snapshot,

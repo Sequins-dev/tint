@@ -26,7 +26,7 @@ const hooks: ObjectHooks<unknown> = {
 };
 const stubs = createScriptPropertyStubCache();
 
-/** Looks up `key` through a fresh site cache, which installs the layout. */
+/** Looks up `key` through a fresh site cache, which installs the shape. */
 function read(object: OrdinaryObject<string, unknown>, key: string): unknown {
   const cell = lookupCachedScriptProperty<string, unknown>(
     object,
@@ -38,16 +38,16 @@ function read(object: OrdinaryObject<string, unknown>, key: string): unknown {
   return cell?.value;
 }
 function shape(object: OrdinaryObject<string, unknown>): unknown {
-  const layout = object.internalPropertyLayout;
-  assert.ok(layout !== undefined);
-  return layout.shape;
+  const installed = object.internalShape;
+  assert.ok(installed !== undefined);
+  return installed;
 }
 function point(
   prototype: OrdinaryObject<string, unknown> | undefined,
   keys: readonly string[],
 ): OrdinaryObject<string, unknown> {
   const object = createObject<string, unknown>(prototype);
-  // Install the layout first so later additions extend it incrementally.
+  // Install the shape first so later additions extend it incrementally.
   read(object, "missing");
   for (const [index, key] of keys.entries())
     createDataProperty<string, unknown>(object, key, index, hooks);
@@ -67,39 +67,73 @@ test("objects with one prototype and key order share one shape", () => {
     shape(point(createObject<string, unknown>(undefined), ["x", "y", "z"])),
     shape(a),
   );
-  // A layout built from scratch reaches the same shape.
+  // A shape built from scratch is the same shape.
   const late = createObject<string, unknown>(prototype);
   for (const key of ["x", "y", "z"])
     createDataProperty<string, unknown>(late, key, 0, hooks);
-  assert.equal(late.internalPropertyLayout, undefined);
+  assert.equal(late.internalShape, undefined);
   read(late, "x");
   assert.equal(shape(late), shape(a));
 });
 
-test("redefinition keeps the shape and replaces the live cell", () => {
-  const prototype = createObject<string, unknown>(undefined);
-  const object = point(prototype, ["x", "y"]);
-  const before = shape(object),
-    epoch = object.internalPropertyEpoch;
+function redefine(
+  object: OrdinaryObject<string, unknown>,
+  key: string,
+  fields: number,
+  writable: boolean,
+): void {
   assert.equal(
     defineOwnProperty<string, unknown>(
       object,
-      "x",
+      key,
       {
         ...emptyUpdate<unknown>(undefined),
-        fields: valueField | writableField | enumerableField,
+        fields: valueField | enumerableField | fields,
         value: 7,
-        writable: false,
+        writable,
         enumerable: false,
       },
       hooks,
     ),
     "accepted",
   );
+}
+
+test("a redefinition of the same kind keeps the shape and replaces the live cell", () => {
+  const prototype = createObject<string, unknown>(undefined);
+  const object = point(prototype, ["x", "y"]);
+  const before = shape(object),
+    cell = object.internalSlot0,
+    epoch = object.internalPropertyEpoch;
+  redefine(object, "x", 0, true);
   assert.equal(shape(object), before);
   assert.ok(object.internalPropertyEpoch > epoch);
+  assert.notEqual(object.internalSlot0, cell);
+  assert.equal(object.internalSlot0?.enumerable, false);
   assert.equal(read(object, "x"), 7);
-  assert.equal(object.internalPropertyLayout?.cells[0]?.writable, false);
+});
+
+test("a change of kind moves the object to the shape that records it", () => {
+  const prototype = createObject<string, unknown>(undefined);
+  const object = point(prototype, ["x", "y"]);
+  const writable = shape(object);
+  redefine(object, "x", writableField, false);
+  assert.equal(object.internalShape, undefined);
+  assert.equal(read(object, "x"), 7);
+  assert.notEqual(shape(object), writable);
+  assert.equal(object.internalSlot0?.writable, false);
+  // The same keys and kinds from the same root are one shape again.
+  const other = point(prototype, ["x", "y"]);
+  redefine(other, "x", writableField, false);
+  read(other, "y");
+  assert.equal(shape(other), shape(object));
+  // Past the in-place slots, cells extend internalCells in shape order.
+  const keys: string[] = [];
+  for (let index = 0; index < 10; index++) keys.push("k" + String(index));
+  const wide = point(prototype, keys);
+  assert.equal(wide.internalSlot7?.value, 7);
+  assert.equal(wide.internalCells?.length, 2);
+  assert.equal(read(wide, "k9"), 9);
 });
 
 test("deletion and prototype changes rebuild a canonical shape", () => {
@@ -107,11 +141,12 @@ test("deletion and prototype changes rebuild a canonical shape", () => {
     other = createObject<string, unknown>(undefined);
   const object = point(prototype, ["x", "y", "z"]);
   assert.ok(deleteProperty<string, unknown>(object, "y"));
-  assert.equal(object.internalPropertyLayout, undefined);
+  assert.equal(object.internalShape, undefined);
+  assert.equal(object.internalSlot1, undefined);
   assert.equal(read(object, "z"), 2);
   assert.equal(shape(object), shape(point(prototype, ["x", "z"])));
   assert.ok(setPrototype<string, unknown>(object, other));
-  assert.equal(object.internalPropertyLayout, undefined);
+  assert.equal(object.internalShape, undefined);
   assert.equal(read(object, "x"), 0);
   assert.equal(shape(object), shape(point(other, ["x", "z"])));
 });

@@ -291,7 +291,7 @@ export function scriptRuntimeImports(
               "createScriptPropertyCache",
               "readCachedObjectValueProperty",
               "writeCachedObjectValueProperty",
-              "readPropertyLayoutSlot",
+              "readPropertySlot",
             ]
           : []),
         "readObjectValuePropertyKey",

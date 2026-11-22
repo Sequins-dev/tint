@@ -206,7 +206,7 @@ export {
   viewTypeofObject,
   scriptBoolean,
   scriptIsHTMLDDA,
-  readPropertyLayoutSlot,
+  readPropertySlot,
   markHTMLDDAObject,
   excludeHTMLDDAObjects,
   scriptStrictEqual,

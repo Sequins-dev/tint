@@ -1,5 +1,5 @@
 // Generated property caches compare shared shapes (per-prototype transition
-// trees) and read the holder's first cells in place (readPropertyLayoutSlot,
+// trees) and read the holder's first cells in place (readPropertySlot,
 // one checked load natively). These sections drive one read site through
 // shared and diverging shapes, offsets past the in-place slots, inherited
 // methods, redefinitions, deletions, prototype changes and accessors, so a

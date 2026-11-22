@@ -376,7 +376,8 @@ test("Script surface instantiations match the real linked export namespaces and 
   // number-list provider.
   // Property-cache guards add three anchors and two list providers.
   // Numeric property layouts and global stub buckets reuse existing providers.
-  assert.equal(census.value.anchors.length, 129);
+  // Shapes record each key's kind in one more number-list anchor.
+  assert.equal(census.value.anchors.length, 130);
   assert.equal(census.value.collections.length, 57);
   assert.deepEqual(
     ["list", "set", "map"].map(

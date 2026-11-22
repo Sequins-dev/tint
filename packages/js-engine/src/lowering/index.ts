@@ -87,10 +87,9 @@ export interface ScriptLoweringOptions {
    * marks one (markHTMLDDAObject) fails loudly instead of changing `==`. */
   readonly htmlDDAObjects?: boolean;
 }
-/** In-place cell slots of a property layout (js-runtime
- * propertyLayoutSlots): cached cells below this offset are read with
- * readPropertyLayoutSlot. */
-export const propertyLayoutSlots = 8;
+/** In-place cell slots of an ordinary object (js-runtime propertySlots):
+ * cached cells below this offset are read with readPropertySlot. */
+export const propertySlots = 8;
 /** Immutable numeric imports proved by the hosted function planner. */
 export interface NumericCallSite extends Span {
   readonly target: string;
@@ -2807,17 +2806,13 @@ function lowerScriptEntry(
       ),
     );
     const first = temporary(member(cache, "first", span));
-    const layout = temporary(
-      optionalMember(object, "internalPropertyLayout", span),
-    );
-    const holder = own ? layout : temporary(layout, false, true);
+    const holder = own ? object : temporary(object, false, true);
     if (!own) {
+      // An inherited entry names the immediate prototype's shape; an own
+      // entry (holder undefined) reads the receiver itself.
       const expected = temporary(member(first, "holder", span));
       const start = statements.length;
       const prototype = temporary(optionalMember(object, "prototype", span));
-      const inherited = temporary(
-        optionalMember(prototype, "internalPropertyLayout", span),
-      );
       const matches: Expression = {
         ...at(span),
         kind: "binary",
@@ -2826,14 +2821,14 @@ function lowerScriptEntry(
           ...at(span),
           kind: "binary",
           operator: "!==",
-          left: inherited,
+          left: prototype,
           right: without,
         },
         right: {
           ...at(span),
           kind: "binary",
           operator: "===",
-          left: member(inherited, "shape", span),
+          left: member(prototype, "internalShape", span),
           right: expected,
         },
       };
@@ -2841,7 +2836,7 @@ function lowerScriptEntry(
         ...at(span),
         kind: "assignment",
         target: holder,
-        value: scalarBranch(matches, inherited, without, span),
+        value: scalarBranch(matches, prototype, without, span),
       });
       const consequent: BlockStatement = {
         ...at(span),
@@ -2862,6 +2857,8 @@ function lowerScriptEntry(
         alternate: undefined,
       });
     }
+    // An empty cache holds a shape no object has, so a receiver without a
+    // shape cannot match.
     const matchingShape: Expression = {
       ...at(span),
       kind: "binary",
@@ -2870,24 +2867,33 @@ function lowerScriptEntry(
         ...at(span),
         kind: "binary",
         operator: "!==",
-        left: layout,
+        left: object,
         right: without,
       },
       right: {
         ...at(span),
         kind: "binary",
         operator: "===",
-        left: member(layout, "shape", span),
+        left: member(object, "internalShape", span),
         right: member(cache, "inlineReceiver", span),
       },
     };
+    // Cells past the in-place slots take the miss path.
+    const offset = temporary(member(first, "offset", span));
+    const inPlace: Expression = {
+      ...at(span),
+      kind: "binary",
+      operator: "&&",
+      left: matchingShape,
+      right: scalarBinary("<", offset, scalarNumber(propertySlots, span), span),
+    };
     const present: Expression = own
-      ? matchingShape
+      ? inPlace
       : {
           ...at(span),
           kind: "binary",
           operator: "&&",
-          left: matchingShape,
+          left: inPlace,
           right: {
             ...at(span),
             kind: "binary",
@@ -2896,21 +2902,15 @@ function lowerScriptEntry(
             right: without,
           },
         };
-    // The holder's first cells are in place: one checked load.
-    const offset = temporary(member(first, "offset", span));
-    // `present` (below) has narrowed the holder.
-    const cell = scalarBranch(
-      scalarBinary("<", offset, scalarNumber(propertyLayoutSlots, span), span),
-      runtimeCall("readPropertyLayoutSlot", [holder, offset], span),
-      {
-        ...at(span),
-        kind: "index",
-        object: member(holder, "cells", span),
-        index: offset,
-      },
-      span,
+    // `present` has narrowed the holder.
+    return temporary(
+      scalarBranch(
+        present,
+        runtimeCall("readPropertySlot", [holder, offset], span),
+        without,
+        span,
+      ),
     );
-    return temporary(scalarBranch(present, cell, without, span));
   }
   function dataCacheHit(cell: Expression, span: Span): Expression {
     return {

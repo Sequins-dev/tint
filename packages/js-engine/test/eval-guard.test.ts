@@ -91,7 +91,7 @@ test("indirect-only lowering keeps its caller-policy output contract", () => {
   );
   assert.equal(
     createHash("sha256").update(syntaxShapeJSON(module)).digest("hex"),
-    "cbe8652a8bec31bacdb1317d3e66f1929fff2cfd398e7d458bf34d315caef20d",
+    "3a3bb9c48254e469bdeb49fa772f0a5a604421d041d95e71a6cdabeeac0baea5",
   );
   // No indirect form may reach the direct-eval guard.
   assert.doesNotMatch(JSON.stringify(module), /"name":"callEvalCandidate"/);
