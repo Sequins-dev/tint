@@ -96,7 +96,7 @@ test("generated module loaders widen only with explicit dynamic import capabilit
     createHash("sha256")
       .update(old.replaceAll('architecture:"x86_64",\n ', ""))
       .digest("hex"),
-    "39e9305032a00956f823e618a6b3791aa4cffa7cd741a1f8f06d4d397d9fba65",
+    "22ba2e059730df928ec54ff8b46c3752c4709360eb4fb93a958317887e0c6e1e",
   );
   assert.match(
     old,
@@ -301,7 +301,7 @@ test("Script-root runtime text is enabled only for batches that need it", () => 
     createHash("sha256")
       .update(moduleOnly.replaceAll('architecture:"x86_64",\n ', ""))
       .digest("hex"),
-    "5663ed9ce3c02cba87154af78ed5f36846aa517fa4862cac956a0ac44dbf56e7",
+    "40e90aad28574574cadd20268f65de6bf44fcefb1173b34e502de2439adbc08f",
   );
   const roots = native.nativeTestRuntimeSource(
     evaluation,

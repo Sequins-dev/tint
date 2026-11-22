@@ -1363,16 +1363,15 @@ function installRealmHost(host:RealmHost,realms:ErrorRealm[]):OrdinaryObject<Scr
  createDataProperty<ScriptPropertyKey,unknown>(host.object,"tintBenchmarkReport",report,hooks);`
      : ""
  }
- const api=createObject<ScriptPropertyKey,unknown>(realm.objectPrototype);
-${
-  // Benchmark Scripts are lowered without [[IsHTMLDDA]] checks.
-  benchmarkHost
-    ? ""
-    : `
+ const api=createObject<ScriptPropertyKey,unknown>(realm.objectPrototype);${
+   // Benchmark Scripts are lowered without [[IsHTMLDDA]] checks.
+   benchmarkHost
+     ? ""
+     : `
  const htmlDDA=createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver,args):unknown=>null);
  markHTMLDDAObject(htmlDDA);
  createDataProperty<ScriptPropertyKey,unknown>(api,"IsHTMLDDA",htmlDDA,hooks);`
-}
+ }
  const create=createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver,args):unknown=>{
    const child=createRealmHost(realm,realms);
    ${shadowRealm ? "const initializeModuleHost=host.moduleHost;if(initializeModuleHost!==undefined)initializeModuleHost(child);\n   " : ""}return installRealmHost(child,realms);
