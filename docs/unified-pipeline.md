@@ -575,14 +575,23 @@ runtime-classified call plan. Libraries with registered callbacks enter through
 the rooted native transition. Callback registration classifies the declared
 signature and allocates an executable entry with the same library lifetime.
 
-General code calls a wrapper through the engine's call protocol. A wrapper
-created in a Script or module also carries a positional register entry for
-calls from that context with up to six arguments. It skips the argument
-list, realm thunk and result record of the ordinary entry, which would run
-in the same caller context. Per-call checks avoid object identity
-comparisons, because realm error views expose both operands of each one,
-and integer argument checks use primitive tag tests rather than the realm
-typeof classifier.
+General code calls a wrapper through the engine's call protocol. The
+wrapper's call step runs the binding in the context the ordinary entry
+would select, without its context thunk. A wrapper created in a Script or
+module also carries a positional register entry for calls from that
+context with up to six arguments, which skips the argument list as well.
+
+A binding uses a compiled number entry when one exists for its runtime
+signature key. These come from literal definitions and from the `i32`
+prototypes compiled for the program's call arities, so runtime
+definitions use them too. Per-call checks avoid object identity
+comparisons, because realm error views expose both operands of each one.
+Integer argument checks use primitive tag tests rather than the realm
+typeof classifier. Exact int32 values take a fast check.
+
+Typed fixed-arity entries read the wrapper's plan from its stable
+`typedView` field. The IR inliner inlines bound record views, so a
+direct typed call makes no calls before the C function.
 
 Typed programs call the same public realm functions, constructors and
 property operations as general code. The compiler links the realm helpers
