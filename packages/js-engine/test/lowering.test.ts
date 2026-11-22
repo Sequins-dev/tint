@@ -853,6 +853,8 @@ test("an async cleanup continuation retains its loop-block binding by reference"
         for (const declaration of node.declarations)
           if (
             declaration.start === start &&
+            declaration.kind !== "object-binding" &&
+            declaration.kind !== "array-binding" &&
             declaration.type?.kind === "named" &&
             declaration.type.name === "unknown"
           )
