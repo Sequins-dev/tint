@@ -5663,23 +5663,31 @@ function emitModuleForms(
           const homed: number[] = [];
           for (let slot = 0; slot < fn.slots.length; slot++)
             if (slotRegister(slot) !== 0) homed.push(slot);
-          const entryLive = new Uint8Array(fn.slots.length);
-          if (!entryLivenessKnown) {
-            cachedEntryLiveness =
-              homed.length === 0
-                ? undefined
-                : limited<SlotLiveness>(
-                    "entry-live-homes",
-                    fn,
-                    liveSlotsIntoEntry(fn, work(2000000), homed),
-                  );
-            entryLivenessKnown = true;
+          // Ahead of time the homes' own complete liveness covers every homed
+          // slot; bounded analyses keep the separate entry query and budget.
+          const homeEntry =
+            options.unboundedAnalysis === true && homes !== undefined
+              ? homes.entryLive
+              : undefined;
+          const entryLive = homeEntry ?? new Uint8Array(fn.slots.length);
+          if (homeEntry === undefined) {
+            if (!entryLivenessKnown) {
+              cachedEntryLiveness =
+                homed.length === 0
+                  ? undefined
+                  : limited<SlotLiveness>(
+                      "entry-live-homes",
+                      fn,
+                      liveSlotsIntoEntry(fn, work(2000000), homed),
+                    );
+              entryLivenessKnown = true;
+            }
+            const liveness = cachedEntryLiveness;
+            if (liveness === undefined) entryLive.fill(1);
+            else
+              for (const slot of liveness.slots[0] ?? [])
+                if (slot !== undefined) entryLive[slot] = 1;
           }
-          const liveness = cachedEntryLiveness;
-          if (liveness === undefined) entryLive.fill(1);
-          else
-            for (const slot of liveness.slots[0] ?? [])
-              if (slot !== undefined) entryLive[slot] = 1;
           const zeroed = new Set<number>();
           for (let slot = 0; slot < fn.slots.length; slot++) {
             const home = slotRegister(slot);

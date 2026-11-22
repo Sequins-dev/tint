@@ -100,9 +100,14 @@ export {
 export {
   deadSlotsAtEntry,
   analyzeLiveSlots,
+  analyzeLiveSlotRows,
+  analyzeLiveSlotRowsPrecisely,
   analyzeLiveSlotsPrecisely,
+  fitsLiveRows,
+  liveRowWords,
   liveSlotsIntoEntry,
   type SlotLiveness,
+  type SlotLiveRows,
 } from "./liveness.ts";
 export {
   slotVariables,

@@ -1,5 +1,9 @@
 import { instructionResult } from "./operands.ts";
-import { analyzeLiveSlots } from "./liveness.ts";
+import {
+  analyzeLiveSlotRows,
+  analyzeLiveSlots,
+  fitsLiveRows,
+} from "./liveness.ts";
 import type {
   FunctionBodySource,
   FunctionIR,
@@ -396,6 +400,8 @@ export function dataflowRecordGuards(
   fn: FunctionIR,
   maxWork: number = 2000000,
   stableLayouts: boolean = false,
+  /** Dense live-in table limit in words (tests force the list form). */
+  denseRowWords?: number,
 ): Uint8Array | undefined {
   if (!Number.isSafeInteger(maxWork) || maxWork < 0) return undefined;
   const blockCount = fn.blocks.length,
@@ -423,10 +429,17 @@ export function dataflowRecordGuards(
     }
   }
   if (work > maxWork) return undefined;
-  const liveness = analyzeLiveSlots(fn, maxWork - work, trackedSlots);
-  if (liveness === undefined) return undefined;
-  work += liveness.work;
-  const liveSlots = liveness.slots;
+  // Live-in sets as dense rows when they fit (same sets and work).
+  const dense = fitsLiveRows(fn, trackedSlots.length, denseRowWords),
+    rowLiveness = dense
+      ? analyzeLiveSlotRows(fn, maxWork - work, trackedSlots)
+      : undefined,
+    listLiveness = dense
+      ? undefined
+      : analyzeLiveSlots(fn, maxWork - work, trackedSlots);
+  if (rowLiveness === undefined && listLiveness === undefined) return undefined;
+  work += rowLiveness?.work ?? listLiveness?.work ?? 0;
+  const liveSlots = listLiveness?.slots;
   // Value facts are block-local; a generation stamp discards stale entries.
   const layouts = new Uint32Array(maximum),
     sources = new Uint32Array(maximum),
@@ -497,11 +510,27 @@ export function dataflowRecordGuards(
       let kept = 0;
       if (!empty) {
         liveGeneration++;
-        const live = liveSlots[target] ?? [];
-        for (const slot of live)
-          if (slot !== undefined)
-            liveStamps[slotIndex[slot] ?? 0] = liveGeneration;
-        work += live.length;
+        if (rowLiveness !== undefined) {
+          // Row bit `index` is tracked slot `index`, stamped as index + 1.
+          const rows = rowLiveness.rows,
+            base = target * rowLiveness.rowWords,
+            end = rowLiveness.ends[target] ?? 0;
+          for (let word = rowLiveness.starts[target] ?? 0; word < end; word++) {
+            let bits = rows[base + word] ?? 0;
+            while (bits !== 0) {
+              const low = (bits & -bits) >>> 0;
+              bits = (bits ^ low) >>> 0;
+              liveStamps[word * 32 + 32 - Math.clz32(low)] = liveGeneration;
+              work++;
+            }
+          }
+        } else {
+          const live = liveSlots?.[target] ?? [];
+          for (const slot of live)
+            if (slot !== undefined)
+              liveStamps[slotIndex[slot] ?? 0] = liveGeneration;
+          work += live.length;
+        }
         for (let position = 0; position < factCount; position += 2) {
           const index = facts[position] ?? 0;
           if (liveStamps[index] !== liveGeneration) continue;

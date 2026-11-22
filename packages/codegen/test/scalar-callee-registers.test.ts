@@ -466,3 +466,106 @@ test("slots live into a handler interfere throughout the protected block", () =>
   assert.notEqual(plan.registers[1], 0);
   assert.notEqual(plan.registers[0], plan.registers[1]);
 });
+test("register homes plan the same from dense live rows and live lists", () => {
+  let seed = 29;
+  const random = (limit: number): number => {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed % limit;
+  };
+  const types = ["number", "reference", "boolean", "string"] as const;
+  for (let round = 0; round < 300; round++) {
+    const blockCount = 1 + random(10),
+      slotCount = 1 + random(48);
+    const slots = Array.from({ length: slotCount }, () => types[random(4)]!);
+    let value = 0;
+    const blocks = Array.from({ length: blockCount }, (_, id) => {
+      const instructions: FunctionIR["blocks"][number]["instructions"][number][] =
+        [];
+      for (let count = random(8); count > 0; count--) {
+        const shape = random(4);
+        if (shape === 0)
+          instructions.push({
+            kind: "call",
+            id: undefined,
+            target: 1,
+            arguments: [],
+            ...s,
+          });
+        else if (shape === 1 && value > 0)
+          instructions.push({
+            kind: "store",
+            slot: random(slotCount),
+            value: random(value),
+            ...s,
+          });
+        else
+          instructions.push({
+            kind: "load",
+            id: value++,
+            slot: random(slotCount),
+            ...s,
+          });
+      }
+      const target = (): number => random(blockCount),
+        shape = random(4);
+      const terminator =
+        shape === 0 || value === 0
+          ? { kind: "return" as const, ...s }
+          : shape === 1
+            ? { kind: "jump" as const, target: target(), ...s }
+            : {
+                kind: "branch" as const,
+                condition: random(value),
+                consequent: target(),
+                alternate: target(),
+                ...s,
+              };
+      return {
+        id,
+        instructions,
+        terminator,
+        ...(random(5) === 0
+          ? { exception: { target: target(), slot: random(slotCount) } }
+          : {}),
+      };
+    });
+    const randomFunction = {
+      id: 0,
+      name: "random",
+      exported: true,
+      parameters: random(2) === 0 ? [] : [random(slotCount)],
+      slots,
+      returnType: "void",
+      entry: 0,
+      blocks,
+    } as unknown as FunctionIR;
+    const integers = new Uint8Array(slotCount);
+    for (let slot = 0; slot < slotCount; slot++)
+      if (slots[slot] === "number" && random(2) === 0) integers[slot] = 1;
+    const homes = {
+      eligible: (slot: number): boolean => slots[slot] === "reference",
+      collects: (op: { readonly kind: string }): boolean => op.kind === "call",
+    };
+    const words = [28, 27];
+    for (const budget of [Number.MAX_SAFE_INTEGER, 2000000, 40]) {
+      const rows = slotHomes(
+          randomFunction,
+          integers,
+          undefined,
+          words,
+          homes,
+          budget,
+        ),
+        lists = slotHomes(
+          randomFunction,
+          integers,
+          undefined,
+          words,
+          homes,
+          budget,
+          0,
+        );
+      assert.deepEqual(rows, lists);
+    }
+  }
+});
