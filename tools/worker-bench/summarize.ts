@@ -101,7 +101,7 @@ for (const file of process.argv.slice(2)) {
     for (const observation of round.observations) {
       if (!observation.passed)
         failures.push(`${file} round ${index + 1} ${observation.member}`);
-      const values = result.set.startsWith("transport")
+      const values = result.set.includes("transport")
         ? transportValues(observation)
         : kernelValues(observation);
       const metrics = table.get(observation.member) ?? new Map();
@@ -285,6 +285,23 @@ if (steps !== undefined) {
           .map((column) => cell(finite(steps.get(column)?.get(operation))))
           .join(" | ") +
         ` | ${ratio(paired(steps, "tint-transport-b", "tint-transport-a", operation))} | ${ratio(paired(steps, "tint-transport-c", "tint-transport-b", operation))} | ${ratio(paired(steps, "tint-transport-c", "node-transport", operation))} |`,
+    );
+}
+for (const [name, node] of [
+  ["transport-pair", "node-transport"],
+  ["typed-transport-pair", "node-typed-transport"],
+]) {
+  const pair = name === undefined ? undefined : tables.get(name);
+  if (pair === undefined || node === undefined) continue;
+  const prefix = node.replace("node-", "tint-");
+  const a = prefix + "-a",
+    b = prefix + "-b";
+  console.log(`\n### ${name} (µs per operation)\n`);
+  console.log(`| Operation | ${a} | ${b} | ${node} | b / a | b / Node |`);
+  console.log("| --- | ---: | ---: | ---: | ---: | ---: |");
+  for (const operation of pair.get(node)?.keys() ?? [])
+    console.log(
+      `| ${operation} | ${cell(finite(pair.get(a)?.get(operation)))} | ${cell(finite(pair.get(b)?.get(operation)))} | ${cell(finite(pair.get(node)?.get(operation)))} | ${ratio(paired(pair, b, a, operation))} | ${ratio(paired(pair, b, node, operation))} |`,
     );
 }
 const [loadMedian, loadLow, loadHigh] = stats(finite(loads));

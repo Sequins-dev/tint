@@ -12,6 +12,9 @@
 //   transport  tint-transport node-transport
 //   transport-steps tint-transport-a tint-transport-b tint-transport-c
 //              node-transport
+//   transport-pair tint-transport-a tint-transport-b node-transport
+//   typed-transport-pair tint-typed-transport-a tint-typed-transport-b
+//              node-typed-transport
 // Each round runs every member once; round r starts at member r mod n and
 // odd rounds run in reverse. Native images run under LLDB, which must report
 // the stop at entry and exit status 42; Node must exit 42. Every observation,
@@ -46,6 +49,13 @@ const sets: Record<string, readonly string[]> = {
     "node-worker",
   ],
   transport: ["tint-transport", "node-transport"],
+  // Two transport images (--image transport-a=… --image transport-b=…).
+  "transport-pair": ["tint-transport-a", "tint-transport-b", "node-transport"],
+  "typed-transport-pair": [
+    "tint-typed-transport-a",
+    "tint-typed-transport-b",
+    "node-typed-transport",
+  ],
   // Successive transport images (--image transport-a=… -b=… -c=…).
   "transport-steps": [
     "tint-transport-a",
@@ -110,7 +120,7 @@ function launch(member: string): Observation {
     const list = variant === "raw" ? expected.raw : expected.base;
     const result = spawnSync(
       node,
-      variant === "transport"
+      variant === "transport" || variant === "typed-transport"
         ? [runner, variant]
         : [runner, variant, JSON.stringify(list)],
       { encoding: "utf8", env: environment, timeout: 1800000 },
