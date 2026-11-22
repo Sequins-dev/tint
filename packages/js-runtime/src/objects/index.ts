@@ -89,6 +89,7 @@ export {
   addPrivateField,
   addPrivateMethod,
   addPrivateAccessor,
+  createObjectWithPrivateField,
   findPrivateElement,
   getPrivateElement,
   setPrivateElement,

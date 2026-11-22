@@ -1,4 +1,5 @@
 import {
+  createObject,
   isExtensible,
   type OrdinaryObject,
   type ObjectHooks,
@@ -86,6 +87,20 @@ export function addPrivateField<Key, Value>(
     value,
     acceptsValue,
   });
+}
+
+/** createObject followed by PrivateFieldAdd, which cannot fail on a fresh
+ * extensible object: host constructors brand instances in one step. */
+export function createObjectWithPrivateField<Key, Value>(
+  prototype: OrdinaryObject<Key, Value> | undefined,
+  name: PrivateName,
+  value: Value,
+): OrdinaryObject<Key, Value> {
+  const object = createObject<Key, Value>(prototype);
+  object.internalPrivateElements = [
+    { name, kind: "field", value, acceptsValue: undefined },
+  ];
+  return object;
 }
 
 /** PrivateMethodOrAccessorAdd checks only duplicates; InitializeInstanceElements
