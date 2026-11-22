@@ -1,3 +1,4 @@
+import { createHash as referenceHash, createHmac } from "node:crypto";
 import { nativeFixtureTarget } from "./native-host-target.ts";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 
@@ -112,6 +113,13 @@ export function run(argument:number):number {
 }
 
 export function verifyCryptoPublicFixture(): string {
+  const sha256 = (bytes: Uint8Array): string =>
+    referenceHash("sha256").update(bytes).digest("hex");
+  // Node reference digests for the byte-window and name checks below.
+  const abc = sha256(Buffer.from("abc"));
+  const wide = sha256(new Uint8Array(new Uint16Array([0x6261, 0x63]).buffer));
+  const window = sha256(Buffer.from("bcd"));
+  const dss1 = createHmac("sha1", "key").update("abc").digest("hex");
   return verifyHostedFixture(
     `
 import { createHash, pbkdf2 } from "node:crypto";
@@ -173,6 +181,29 @@ export async function run() {
           !error.message.includes("outside")) return 5;
     }
   }
+  // Typed-array windows: offset subviews, wider elements and DataView.
+  const backing = new Uint8Array([0, 97, 98, 99, 100, 0]);
+  if (createHash("sha256").update(backing.subarray(1, 4)).digest("hex") !==
+      "${abc}") return 15;
+  if (createHash("SHA256").update(new Uint16Array([0x6261, 0x63])).digest("hex") !==
+      "${wide}") return 16;
+  if (createHash("sha256").update(new DataView(backing.buffer, 2, 3)).digest("hex") !==
+      "${window}") return 17;
+  // Finished hashes reject both operations; HMAC digests stay empty.
+  const finished = createHash("sha256");
+  finished.digest();
+  for (const operation of [() => finished.update("x"), () => finished.digest()]) {
+    try { operation(); return 18; }
+    catch (error) {
+      if (error.code !== "ERR_CRYPTO_HASH_FINALIZED" ||
+          error.message !== "Digest already called") return 19;
+    }
+  }
+  if (crypto.createHmac("DSS1", "key").update("abc").digest("hex") !== "${dss1}")
+    return 20;
+  // Abandoned contexts are reclaimed with their objects across collections.
+  for (let i = 0; i < 20000; i++) createHash(i % 2 === 0 ? "sha256" : "sha512").update("x");
+  if (createHash("sha256").update("abc").digest("hex") !== "${abc}") return 21;
   let returned = false;
   const completed = new Promise((resolve) => {
     pbkdf2("password", "salt", 2, 20, "sha1", (error, key) => {

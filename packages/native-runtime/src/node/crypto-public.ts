@@ -6,19 +6,19 @@ import {
   builtinProperty,
   callObjectValue,
   createArrayFromList,
-  createCallableObject,
   createCodedRuntimeError,
   createDataProperty,
   createObject,
   createPrivateName,
   createRuntimeError,
-  getPrivateElement,
+  findPrivateElement,
   getProperty,
   isArrayValue,
   isCallableObject,
   programRealmCore,
-  projectArrayBufferView,
+  projectArrayBufferViewRange,
   stringValueOrThrow,
+  typedArrayElementWidth,
   viewObjectValue,
   type ObjectCall,
   type OrdinaryObject,
@@ -27,13 +27,16 @@ import {
 } from "@tint/js-runtime/objects";
 import { adoptNodeBuffer, installNodeBuffer } from "./buffer.ts";
 import {
-  createHash as nativeHash,
-  createHmac as nativeHmac,
+  digestFinished,
+  finishDigestAs,
+  openDigest,
+  trackDigest,
+  updateDigest,
   randomBytes as nativeRandomBytes,
   pbkdf2 as nativePbkdf2,
-  asciiLower,
-  type Hash,
+  type DigestLifetime,
 } from "./crypto.ts";
+import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
 export { closeDigestContexts } from "./crypto.ts";
 
 type RealmObject = OrdinaryObject<ScriptPropertyKey, unknown>;
@@ -128,6 +131,25 @@ function unavailableDigest(
   throw error;
 }
 
+/** Borrow an ordinary, fixed-length, in-bounds typed array's bytes for one
+ * synchronous step without projecting a range record. Other views (DataView,
+ * shared, length-tracking, detached or out of bounds) return undefined. */
+function typedArrayBytes(object: RealmObject): Uint8Array | undefined {
+  const data = object.internalTypedArrayData;
+  if (data === undefined) return undefined;
+  const storage = data.storage;
+  const length = data.length;
+  if (storage.kind !== "ordinary" || length === undefined) return undefined;
+  const bytes = storage.data;
+  if (bytes === undefined) return undefined;
+  const start = data.byteOffset;
+  const end = start + length * typedArrayElementWidth(data.kind);
+  if (end > bytes.length) return undefined;
+  return start === 0 && end === bytes.length
+    ? bytes
+    : bytes.subarray(start, end);
+}
+
 function inputBytes(
   core: ProgramRealmCore,
   input: unknown,
@@ -135,7 +157,11 @@ function inputBytes(
   allowArrayBuffer: boolean,
 ): string | Uint8Array {
   if (typeof input === "string") return input;
-  const range = projectArrayBufferView(input, core.object);
+  const view = viewObjectValue(input, core.object);
+  const direct = view === undefined ? undefined : typedArrayBytes(view);
+  if (direct !== undefined) return direct;
+  const range =
+    view === undefined ? undefined : projectArrayBufferViewRange(view);
   if (range !== undefined) {
     const bytes = range.bytes;
     if (bytes !== undefined) {
@@ -148,8 +174,7 @@ function inputBytes(
     }
   }
   if (allowArrayBuffer) {
-    const object = viewObjectValue(input, core.object);
-    const storage = object?.internalArrayBufferData;
+    const storage = view?.internalArrayBufferData;
     if (storage !== undefined) {
       const bytes = byteStorageData(storage);
       if (bytes !== undefined) return bytes;
@@ -193,25 +218,28 @@ function unsupportedProperty(
 
 const digestState = createPrivateName("node:crypto digest");
 
+/** Bound by the image compiler to an exact DigestLifetime record check. */
+export function viewDigestLifetime(value: unknown): DigestLifetime | undefined {
+  throw "UNBOUND_DIGEST_LIFETIME_VIEW";
+}
+
 function viewDigestState(
   core: ProgramRealmCore,
   receiver: unknown,
-): ObjectCall<unknown> {
+): DigestLifetime {
   let object = viewObjectValue(receiver, core.object);
   // Shared methods can be borrowed, including by an object with a digest
   // instance on its prototype chain.
   while (object !== undefined) {
-    const field = getPrivateElement<ScriptPropertyKey, unknown>(
-      { object, value: receiver },
+    const element = findPrivateElement<ScriptPropertyKey, unknown>(
+      object,
       digestState,
-      core.hooks,
     );
-    if (field.error === "none") {
-      const handle = viewObjectValue(field.value, core.object);
-      if (handle === undefined) throw "CRYPTO_DIGEST_STATE_INVARIANT";
-      const call = handle.internalCall;
-      if (call === undefined) throw "CRYPTO_DIGEST_STATE_INVARIANT";
-      return call;
+    if (element !== undefined) {
+      if (element.kind !== "field") throw "CRYPTO_DIGEST_STATE_INVARIANT";
+      const lifetime = viewDigestLifetime(element.value);
+      if (lifetime === undefined) throw "CRYPTO_DIGEST_STATE_INVARIANT";
+      return lifetime;
     }
     object = object.prototype;
   }
@@ -228,53 +256,65 @@ function viewDigestState(
 
 function digestView(
   core: ProgramRealmCore,
-  hash: Hash,
-  hmac: boolean,
+  lifetime: DigestLifetime,
 ): RealmObject {
   const object = createObject<ScriptPropertyKey, unknown>(
-    digestPrototype(core, hmac),
-  );
-  let finalized = false;
-  const state = createCallableObject<ScriptPropertyKey, unknown>(
-    undefined,
-    (operation, args): unknown => {
-      if (finalized) {
-        if (operation === "hmac") {
-          const encoding = args[0];
-          return encoding && encoding !== "buffer"
-            ? ""
-            : adoptNodeBuffer(core, new Uint8Array(0));
-        }
-        return fail(
-          core,
-          "error",
-          "Digest already called",
-          "ERR_CRYPTO_HASH_FINALIZED",
-        );
-      }
-      if (operation === "update") {
-        const data = inputBytes(core, args[0], "data", false);
-        const encoding = args[1];
-        hash.update(data, typeof encoding === "string" ? encoding : undefined);
-        return undefined;
-      }
-      const encoding = args[0];
-      const text = encoding
-        ? stringValueOrThrow(encoding, core.hooks, core.realm)
-        : undefined;
-      const result = hash.digest(text);
-      finalized = true;
-      return typeof result === "string"
-        ? result
-        : adoptNodeBuffer(core, result);
-    },
+    digestPrototype(core, lifetime.hmac),
   );
   if (
-    addPrivateField<ScriptPropertyKey, unknown>(object, digestState, state) !==
-    "none"
+    addPrivateField<ScriptPropertyKey, unknown>(
+      object,
+      digestState,
+      lifetime,
+    ) !== "none"
   )
     throw "CRYPTO_DIGEST_STATE_INVARIANT";
+  trackDigest(lifetime, object);
   return object;
+}
+
+function finalizedError(core: ProgramRealmCore): never {
+  return fail(
+    core,
+    "error",
+    "Digest already called",
+    "ERR_CRYPTO_HASH_FINALIZED",
+  );
+}
+
+function updateView(
+  core: ProgramRealmCore,
+  lifetime: DigestLifetime,
+  data: unknown,
+  encoding: unknown,
+): void {
+  if (digestFinished(lifetime)) finalizedError(core);
+  updateDigest(
+    lifetime,
+    inputBytes(core, data, "data", false),
+    typeof encoding === "string" ? encoding : undefined,
+  );
+}
+
+/** As in Node, the method decides finished-digest behavior: Hmac's digest
+ * returns an empty result even for a borrowed Hash receiver. */
+function digestOfView(
+  core: ProgramRealmCore,
+  lifetime: DigestLifetime,
+  encoding: unknown,
+  hmacMethod: boolean,
+): unknown {
+  if (digestFinished(lifetime)) {
+    if (!hmacMethod) return finalizedError(core);
+    return encoding && encoding !== "buffer"
+      ? ""
+      : adoptNodeBuffer(core, new Uint8Array(0));
+  }
+  const text = encoding
+    ? stringValueOrThrow(encoding, core.hooks, core.realm)
+    : undefined;
+  const result = finishDigestAs(lifetime, text);
+  return typeof result === "string" ? result : adoptNodeBuffer(core, result);
 }
 
 const streamProperties: readonly string[] = [
@@ -299,11 +339,36 @@ const streamProperties: readonly string[] = [
   "uncork",
 ];
 
+// The isolate has one program realm. Cache its digest prototypes so each
+// createHash allocates only the Hash object.
+let prototypeCore: ProgramRealmCore | undefined = undefined;
+let hashPrototype: RealmObject | undefined = undefined;
+let hmacPrototype: RealmObject | undefined = undefined;
+
 function digestPrototype(core: ProgramRealmCore, hmac: boolean): RealmObject {
+  if (prototypeCore !== core) {
+    hashPrototype = undefined;
+    hmacPrototype = undefined;
+    prototypeCore = core;
+  }
+  const cached = hmac ? hmacPrototype : hashPrototype;
+  if (cached !== undefined) return cached;
   const kind = hmac ? "Hmac" : "Hash";
   const brand = "node:crypto." + kind;
-  const existing = core.realm.prototypes.get(brand);
-  if (existing !== undefined) return existing;
+  const prototype =
+    core.realm.prototypes.get(brand) ??
+    createDigestPrototype(core, hmac, kind, brand);
+  if (hmac) hmacPrototype = prototype;
+  else hashPrototype = prototype;
+  return prototype;
+}
+
+function createDigestPrototype(
+  core: ProgramRealmCore,
+  hmac: boolean,
+  kind: string,
+  brand: string,
+): RealmObject {
   const prototype = createObject<ScriptPropertyKey, unknown>(
     core.realm.objectPrototype,
   );
@@ -318,12 +383,12 @@ function digestPrototype(core: ProgramRealmCore, hmac: boolean): RealmObject {
     builtinProperty(prototype, "update", update, true, true, core.hooks);
   } else {
     method(core, prototype, "update", 2, (receiver, args): unknown => {
-      viewDigestState(core, receiver)("update", args);
+      updateView(core, viewDigestState(core, receiver), args[0], args[1]);
       return receiver;
     });
   }
   method(core, prototype, "digest", 1, (receiver, args): unknown =>
-    viewDigestState(core, receiver)(hmac ? "hmac" : "hash", args),
+    digestOfView(core, viewDigestState(core, receiver), args[0], hmac),
   );
   for (const stream of streamProperties)
     unsupportedProperty(core, prototype, stream, kind + "." + stream);
@@ -347,10 +412,29 @@ export function createHash(algorithm: unknown, options: unknown): unknown {
     return invalid(core, "algorithm", "string", algorithm);
   if (options !== undefined && options !== null)
     return unsupported(core, "createHash options");
-  const lower = asciiLower(algorithm);
-  if (lower.startsWith("shake") || lower.startsWith("cshake"))
-    return unsupported(core, "XOF hashing");
-  return digestView(core, nativeHash(algorithm), false);
+  if (xofName(algorithm)) return unsupported(core, "XOF hashing");
+  return digestView(core, openDigest(algorithm, undefined));
+}
+
+/** ASCII case-insensitive prefix test against a lowercase `prefix`, without
+ * allocating a lowercase copy of `name`. */
+function asciiPrefix(name: string, prefix: string): boolean {
+  if (name.length < prefix.length) return false;
+  for (let index = 0; index < prefix.length; index++) {
+    const code = name.charCodeAt(index);
+    const lower = code >= 65 && code <= 90 ? code + 32 : code;
+    if (lower !== prefix.charCodeAt(index)) return false;
+  }
+  return true;
+}
+
+/** Node maps the historical DSS1 name to SHA-1 for HMAC. */
+function isDss1(algorithm: string): boolean {
+  return algorithm.length === 4 && asciiPrefix(algorithm, "dss1");
+}
+
+function xofName(algorithm: string): boolean {
+  return asciiPrefix(algorithm, "shake") || asciiPrefix(algorithm, "cshake");
 }
 
 export function createHmac(
@@ -364,8 +448,11 @@ export function createHmac(
   if (options !== undefined && options !== null)
     return unsupported(core, "createHmac options");
   const bytes = inputBytes(core, key, "key", true);
-  const name = asciiLower(algorithm) === "dss1" ? "sha1" : algorithm;
-  return digestView(core, nativeHmac(name, bytes), true);
+  const name = isDss1(algorithm) ? "sha1" : algorithm;
+  return digestView(
+    core,
+    openDigest(name, typeof bytes === "string" ? encodeUTF8(bytes) : bytes),
+  );
 }
 
 export function randomBytes(size: unknown, callback: unknown): unknown {

@@ -143,6 +143,11 @@ export function createGeneralLowering(
     recordBindings.push({ module: runtime.objects, name, operation: "view" });
   for (const name of referrerViews)
     recordBindings.push({ module: runtime.modules, name, operation: "view" });
+  // node:crypto objects hold their OpenSSL state as a checked record view.
+  const cryptoViews = ["viewDigestLifetime"];
+  if (crypto !== undefined)
+    for (const name of cryptoViews)
+      recordBindings.push({ module: crypto.module, name, operation: "view" });
   return {
     runtimeModules,
     recordBindings,
@@ -171,6 +176,15 @@ export function createGeneralLowering(
           "realmErrorOperation",
         ],
       },
+      ...(crypto === undefined
+        ? []
+        : [
+            {
+              module: crypto.module,
+              namespace: "general-node-crypto-views",
+              retainedExports: cryptoViews,
+            },
+          ]),
     ],
     lower: (request: GeneralProgramRequest): GeneralProgram =>
       lowerGeneralProgram(request, options),

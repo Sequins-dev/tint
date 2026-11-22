@@ -46,7 +46,10 @@ export interface Hash {
   digest(encoding?: string): string | Uint8Array;
 }
 
-interface DigestLifetime {
+/** One OpenSSL digest or HMAC context. Typed Hash objects and node:crypto
+ * views both own one; the context returns to the spare slot when the digest
+ * finishes, or is freed after its owner is collected. */
+export interface DigestLifetime {
   address: number;
   readonly hmac: boolean;
   readonly digest: number;
@@ -144,14 +147,27 @@ function sweepDigests(): void {
 }
 
 export function createHash(algorithm: string): Hash {
-  return beginDigest(algorithm, undefined);
+  return digestObject(openDigest(algorithm, undefined));
 }
 
 export function createHmac(algorithm: string, key: string | Uint8Array): Hash {
-  return beginDigest(
-    algorithm,
-    typeof key === "string" ? encodeUTF8(key) : key,
+  return digestObject(
+    openDigest(algorithm, typeof key === "string" ? encodeUTF8(key) : key),
   );
+}
+
+function digestObject(lifetime: DigestLifetime): Hash {
+  const hash: Hash = {
+    update(data: string | Uint8Array, encoding?: string): Hash {
+      updateDigest(lifetime, data, encoding);
+      return hash;
+    },
+    digest(encoding?: string): string | Uint8Array {
+      return finishDigestAs(lifetime, encoding);
+    },
+  };
+  trackDigest(lifetime, hash);
+  return hash;
 }
 
 function failure(message: string): Error {
@@ -208,17 +224,6 @@ function updateString(
 function hexDigit(value: number): number {
   return value < 10 ? value + 48 : value + 87;
 }
-
-function createHexPairs(): Uint8Array {
-  const pairs = new Uint8Array(512);
-  for (let byte = 0; byte < 256; byte++) {
-    pairs[byte * 2] = hexDigit(byte >>> 4);
-    pairs[byte * 2 + 1] = hexDigit(byte & 15);
-  }
-  return pairs;
-}
-
-const hexPairs = createHexPairs();
 
 function createPackedHexPairs(): Uint16Array {
   const pairs = new Uint16Array(256);
@@ -333,43 +338,86 @@ function digestHex64(bytes: Uint8Array): string {
   );
 }
 
-/** A digest has at most 64 bytes. Emit several code units per string
- * allocation, with at most eight concatenations before the short tail. */
+/** Fixed arity writes SHA-256 and SHA3-256 output as one final string. */
+function digestHex32(bytes: Uint8Array): string {
+  const pair0 = packedHexPairs[bytes[0] ?? 0] ?? 0;
+  const pair1 = packedHexPairs[bytes[1] ?? 0] ?? 0;
+  const pair2 = packedHexPairs[bytes[2] ?? 0] ?? 0;
+  const pair3 = packedHexPairs[bytes[3] ?? 0] ?? 0;
+  const pair4 = packedHexPairs[bytes[4] ?? 0] ?? 0;
+  const pair5 = packedHexPairs[bytes[5] ?? 0] ?? 0;
+  const pair6 = packedHexPairs[bytes[6] ?? 0] ?? 0;
+  const pair7 = packedHexPairs[bytes[7] ?? 0] ?? 0;
+  const pair8 = packedHexPairs[bytes[8] ?? 0] ?? 0;
+  const pair9 = packedHexPairs[bytes[9] ?? 0] ?? 0;
+  const pair10 = packedHexPairs[bytes[10] ?? 0] ?? 0;
+  const pair11 = packedHexPairs[bytes[11] ?? 0] ?? 0;
+  const pair12 = packedHexPairs[bytes[12] ?? 0] ?? 0;
+  const pair13 = packedHexPairs[bytes[13] ?? 0] ?? 0;
+  const pair14 = packedHexPairs[bytes[14] ?? 0] ?? 0;
+  const pair15 = packedHexPairs[bytes[15] ?? 0] ?? 0;
+  const pair16 = packedHexPairs[bytes[16] ?? 0] ?? 0;
+  const pair17 = packedHexPairs[bytes[17] ?? 0] ?? 0;
+  const pair18 = packedHexPairs[bytes[18] ?? 0] ?? 0;
+  const pair19 = packedHexPairs[bytes[19] ?? 0] ?? 0;
+  const pair20 = packedHexPairs[bytes[20] ?? 0] ?? 0;
+  const pair21 = packedHexPairs[bytes[21] ?? 0] ?? 0;
+  const pair22 = packedHexPairs[bytes[22] ?? 0] ?? 0;
+  const pair23 = packedHexPairs[bytes[23] ?? 0] ?? 0;
+  const pair24 = packedHexPairs[bytes[24] ?? 0] ?? 0;
+  const pair25 = packedHexPairs[bytes[25] ?? 0] ?? 0;
+  const pair26 = packedHexPairs[bytes[26] ?? 0] ?? 0;
+  const pair27 = packedHexPairs[bytes[27] ?? 0] ?? 0;
+  const pair28 = packedHexPairs[bytes[28] ?? 0] ?? 0;
+  const pair29 = packedHexPairs[bytes[29] ?? 0] ?? 0;
+  const pair30 = packedHexPairs[bytes[30] ?? 0] ?? 0;
+  const pair31 = packedHexPairs[bytes[31] ?? 0] ?? 0;
+  // prettier-ignore
+  return String.fromCharCode(
+    pair0 & 255, pair0 >>> 8, pair1 & 255, pair1 >>> 8,
+    pair2 & 255, pair2 >>> 8, pair3 & 255, pair3 >>> 8,
+    pair4 & 255, pair4 >>> 8, pair5 & 255, pair5 >>> 8,
+    pair6 & 255, pair6 >>> 8, pair7 & 255, pair7 >>> 8,
+    pair8 & 255, pair8 >>> 8, pair9 & 255, pair9 >>> 8,
+    pair10 & 255, pair10 >>> 8, pair11 & 255, pair11 >>> 8,
+    pair12 & 255, pair12 >>> 8, pair13 & 255, pair13 >>> 8,
+    pair14 & 255, pair14 >>> 8, pair15 & 255, pair15 >>> 8,
+    pair16 & 255, pair16 >>> 8, pair17 & 255, pair17 >>> 8,
+    pair18 & 255, pair18 >>> 8, pair19 & 255, pair19 >>> 8,
+    pair20 & 255, pair20 >>> 8, pair21 & 255, pair21 >>> 8,
+    pair22 & 255, pair22 >>> 8, pair23 & 255, pair23 >>> 8,
+    pair24 & 255, pair24 >>> 8, pair25 & 255, pair25 >>> 8,
+    pair26 & 255, pair26 >>> 8, pair27 & 255, pair27 >>> 8,
+    pair28 & 255, pair28 >>> 8, pair29 & 255, pair29 >>> 8,
+    pair30 & 255, pair30 >>> 8, pair31 & 255, pair31 >>> 8,
+  );
+}
+
+/** Other digest lengths (at most 64 bytes) append eight bytes per string
+ * allocation, then the short tail. Packed pairs keep code units integral. */
 function digestHex(bytes: Uint8Array, length: number): string {
   if (length === 64) return digestHex64(bytes);
+  if (length === 32) return digestHex32(bytes);
   let text = "";
   let i = 0;
   for (; i + 8 <= length; i += 8) {
-    const a = (bytes[i] ?? 0) * 2,
-      b = (bytes[i + 1] ?? 0) * 2;
-    const c = (bytes[i + 2] ?? 0) * 2,
-      d = (bytes[i + 3] ?? 0) * 2;
-    const e = (bytes[i + 4] ?? 0) * 2,
-      f = (bytes[i + 5] ?? 0) * 2;
-    const g = (bytes[i + 6] ?? 0) * 2,
-      h = (bytes[i + 7] ?? 0) * 2;
+    const a = packedHexPairs[bytes[i] ?? 0] ?? 0,
+      b = packedHexPairs[bytes[i + 1] ?? 0] ?? 0;
+    const c = packedHexPairs[bytes[i + 2] ?? 0] ?? 0,
+      d = packedHexPairs[bytes[i + 3] ?? 0] ?? 0;
+    const e = packedHexPairs[bytes[i + 4] ?? 0] ?? 0,
+      f = packedHexPairs[bytes[i + 5] ?? 0] ?? 0;
+    const g = packedHexPairs[bytes[i + 6] ?? 0] ?? 0,
+      h = packedHexPairs[bytes[i + 7] ?? 0] ?? 0;
+    // prettier-ignore
     text += String.fromCharCode(
-      hexPairs[a] ?? 0,
-      hexPairs[a + 1] ?? 0,
-      hexPairs[b] ?? 0,
-      hexPairs[b + 1] ?? 0,
-      hexPairs[c] ?? 0,
-      hexPairs[c + 1] ?? 0,
-      hexPairs[d] ?? 0,
-      hexPairs[d + 1] ?? 0,
-      hexPairs[e] ?? 0,
-      hexPairs[e + 1] ?? 0,
-      hexPairs[f] ?? 0,
-      hexPairs[f + 1] ?? 0,
-      hexPairs[g] ?? 0,
-      hexPairs[g + 1] ?? 0,
-      hexPairs[h] ?? 0,
-      hexPairs[h + 1] ?? 0,
+      a & 255, a >>> 8, b & 255, b >>> 8, c & 255, c >>> 8, d & 255, d >>> 8,
+      e & 255, e >>> 8, f & 255, f >>> 8, g & 255, g >>> 8, h & 255, h >>> 8,
     );
   }
   for (; i < length; i++) {
-    const pair = (bytes[i] ?? 0) * 2;
-    text += String.fromCharCode(hexPairs[pair] ?? 0, hexPairs[pair + 1] ?? 0);
+    const pair = packedHexPairs[bytes[i] ?? 0] ?? 0;
+    text += String.fromCharCode(pair & 255, pair >>> 8);
   }
   return text;
 }
@@ -396,7 +444,7 @@ function finishDigest(lifetime: DigestLifetime, bytes: Uint8Array): number {
   }
 }
 
-export function asciiLower(name: string): string {
+function asciiLower(name: string): string {
   let lower = "";
   for (let index = 0; index < name.length; index++) {
     const code = name.charCodeAt(index);
@@ -467,7 +515,12 @@ function loadDigest(algorithm: string, name: string, hmac: boolean): number {
   return digest;
 }
 
-function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
+/** Open a context for `algorithm`, keyed for HMAC. The caller must hand the
+ * lifetime to trackDigest before anything can throw, or the context leaks. */
+export function openDigest(
+  algorithm: string,
+  key: Uint8Array | undefined,
+): DigestLifetime {
   sweepDigests();
   const hmac = key !== undefined;
   const digest = resolveDigest(algorithm, hmac);
@@ -494,47 +547,54 @@ function beginDigest(algorithm: string, key: Uint8Array | undefined): Hash {
     if (context !== 0) disposeContext(context, hmac);
     throw error;
   }
+  return { address: context, hmac, digest, owner: undefined };
+}
 
-  const lifetime: DigestLifetime = {
-    address: context,
-    hmac,
-    digest,
-    owner: undefined,
-  };
-  const hash: Hash = {
-    update(data: string | Uint8Array, encoding?: string): Hash {
-      const address = activeContext(lifetime);
-      if (typeof data === "string")
-        updateString(address, lifetime.hmac, data, encoding);
-      else updateBytes(address, lifetime.hmac, data, data.length);
-      return hash;
-    },
-    digest(encoding?: string): string | Uint8Array {
-      if (!lifetime.hmac) activeContext(lifetime);
-      if (encoding === "hex") {
-        if (lifetime.address === 0) return "";
-        // Leaf calls cannot re-enter JavaScript. The string owns its data.
-        return digestHex(encodedDigest, finishDigest(lifetime, encodedDigest));
-      }
-      const bytes =
-        lifetime.address === 0 ? new Uint8Array(0) : new Uint8Array(64);
-      const output =
-        bytes.length === 0
-          ? bytes
-          : bytes.subarray(0, finishDigest(lifetime, bytes));
-      const name =
-        encoding === undefined ? undefined : bufferEncoding(encoding);
-      return name === undefined ? output : bufferText(output, name);
-    },
-  };
-  lifetime.owner = createWeakSlot(hash, undefined, false);
+/** Free the context with `owner` if the owner is collected before digest(). */
+export function trackDigest(lifetime: DigestLifetime, owner: unknown): void {
+  lifetime.owner = createWeakSlot(owner, undefined, false);
   // Replace a finished tail entry instead of growing the tracking vector.
   const last = lifetimes.length - 1;
   const previous = last < 0 ? undefined : lifetimes[last];
   if (previous !== undefined && previous.address === 0)
     lifetimes[last] = lifetime;
   else lifetimes.push(lifetime);
-  return hash;
+}
+
+/** digest() has run, or its context was released at isolate exit. */
+export function digestFinished(lifetime: DigestLifetime): boolean {
+  return lifetime.address === 0;
+}
+
+export function updateDigest(
+  lifetime: DigestLifetime,
+  data: string | Uint8Array,
+  encoding: string | undefined,
+): void {
+  const address = activeContext(lifetime);
+  if (typeof data === "string")
+    updateString(address, lifetime.hmac, data, encoding);
+  else updateBytes(address, lifetime.hmac, data, data.length);
+}
+
+/** Node returns an empty HMAC after the first digest(); Hash throws. */
+export function finishDigestAs(
+  lifetime: DigestLifetime,
+  encoding: string | undefined,
+): string | Uint8Array {
+  if (!lifetime.hmac) activeContext(lifetime);
+  if (encoding === "hex") {
+    if (lifetime.address === 0) return "";
+    // Leaf calls cannot re-enter JavaScript. The string owns its data.
+    return digestHex(encodedDigest, finishDigest(lifetime, encodedDigest));
+  }
+  const bytes = lifetime.address === 0 ? new Uint8Array(0) : new Uint8Array(64);
+  const output =
+    bytes.length === 0
+      ? bytes
+      : bytes.subarray(0, finishDigest(lifetime, bytes));
+  const name = encoding === undefined ? undefined : bufferEncoding(encoding);
+  return name === undefined ? output : bufferText(output, name);
 }
 
 export function randomBytes(size: number): Uint8Array {

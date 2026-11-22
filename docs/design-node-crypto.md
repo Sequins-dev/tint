@@ -91,6 +91,16 @@ held after a leaf returns must refer to stable owned storage. Validate
 actual byte offsets and lengths, including subviews, and preserve Node's
 result brands and input encodings.
 
+Each public Hash or Hmac is one ordinary realm object on a prototype the
+isolate caches. A private field holds the typed digest lifetime itself.
+The shared methods recover it through a compiler-bound record view, walking
+the receiver's prototype chain so borrowed methods keep working, and the
+lifetime's weak owner is the realm object. Ordinary, fixed-length,
+in-bounds typed arrays lend their bytes without a range projection; other
+views take the general projection. Algorithm-name checks compare ASCII
+case-insensitively without lowercase copies, and SHA-256-sized digests use
+a fixed-arity hexadecimal encoder like SHA-512's.
+
 Hash and HMAC pass existing byte windows straight to OpenSSL. Tint stores
 native strings as UTF-16. For UTF-8 updates, the shared encoder writes into a
 4 KiB isolate-local scratch window in one pass. OpenSSL consumes each window
