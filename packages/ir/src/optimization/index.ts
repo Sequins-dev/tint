@@ -3,6 +3,7 @@ import { unbounded } from "./budget.ts";
 import { simplifyControlFlow } from "./control-flow.ts";
 import { promoteLoopCells } from "./cell-promotion.ts";
 import { splitOptionalNumbers } from "./optional-split.ts";
+import { shadowGeneralNumbers } from "./general-numbers.ts";
 import { threadBranches } from "./branch-threading.ts";
 import { coalesceOptionalDefaults } from "./coalesce.ts";
 import { compactSlots } from "./slots.ts";
@@ -1466,6 +1467,32 @@ export function optimizeModuleVersion(
     );
   used += split.visited;
   if (completed("split-optional-numbers", split, false)) return stop();
+  // General slots tested as numbers keep a presence and a number shadow, so
+  // their tests read registers and proven reads skip the tag check.
+  const shadows = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = shadowGeneralNumbers(fn, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.shadowed,
+            refused: false,
+          };
+    },
+  );
+  if (shadows.exhausted)
+    return exhausted(
+      "shadow-general-numbers",
+      maxInstructions - used - accessVisited,
+    );
+  used += shadows.visited;
+  if (completed("shadow-general-numbers", shadows, false)) return stop();
   // Thread branches on slot-carried booleans before the sweep, which then
   // forwards the copied reloads and removes the carriers' stores.
   const threaded = rewriteFunctions(

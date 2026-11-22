@@ -1,0 +1,540 @@
+import {
+  instructionResult,
+  naturalLoops,
+  type Block,
+  type FunctionIR,
+  type Instruction,
+  type ScalarType,
+  type Terminator,
+} from "../scalar/index.ts";
+import type { RemarkSink } from "./observer.ts";
+
+export interface GeneralNumberShadows {
+  readonly fn: FunctionIR;
+  readonly visited: number;
+  /** General slots given a number shadow. */
+  readonly shadowed: number;
+}
+
+/** Operators whose scalar result is always a number. */
+function numericBinary(operator: string): boolean {
+  switch (operator) {
+    case "+":
+    case "-":
+    case "*":
+    case "/":
+    case "%":
+    case "**":
+    case "&":
+    case "|":
+    case "^":
+    case "<<":
+    case ">>":
+    case ">>>":
+      return true;
+  }
+  return false;
+}
+function numericUnary(operator: string): boolean {
+  return operator === "-" || operator === "+" || operator === "~";
+}
+
+/** The ID of the scalar number (not general value) `op` defines, if any. */
+function numberResult(
+  op: Instruction,
+  slots: readonly ScalarType[],
+): number | undefined {
+  switch (op.kind) {
+    case "constant":
+      return typeof op.value === "number" ? op.id : undefined;
+    case "binary":
+      return numericBinary(op.operator) ? op.id : undefined;
+    case "unary":
+      return numericUnary(op.operator) ? op.id : undefined;
+    case "load":
+      return slots[op.slot] === "number" ? op.id : undefined;
+    case "general-value":
+      return op.type === "number" ? op.id : undefined;
+    case "string-length":
+    case "string-code-unit":
+      return op.id;
+  }
+  return undefined;
+}
+
+/**
+ * Gives general slots that are tested or read as numbers a number shadow:
+ * a boolean slot that holds exactly "the slot holds a Number" and a number
+ * slot that holds its value whenever it does. Every store to the slot also
+ * stores both shadows (a wrapped scalar number stores them directly), so
+ * `general-is number` on a load of the slot becomes a load of the boolean,
+ * and `general-value number` becomes a load of the number wherever a
+ * forward analysis proves the slot holds a Number on every path (a dominating
+ * test, or stores of wrapped numbers around a loop). Elsewhere the checked
+ * extraction stays. The general slot itself is unchanged, so its other
+ * readers, stack maps and exception paths see the same value; its stores die
+ * when nothing reads it any more.
+ *
+ * Slots written other than by `store` (record, cell and exception
+ * destinations) keep their representation. A slot is shadowed only when its
+ * loop-weighted number tests outweigh the cost of maintaining the shadow at
+ * its stores. Verified IR; blocks are dense by ID.
+ */
+export function shadowGeneralNumbers(
+  fn: FunctionIR,
+  budget: number,
+  remarks?: RemarkSink,
+): GeneralNumberShadows | undefined {
+  if (!Number.isSafeInteger(budget) || budget < 0) return undefined;
+  let visited = 0;
+  const slotCount = fn.slots.length;
+  const candidates = new Uint8Array(slotCount);
+  let count = 0;
+  for (let slot = 0; slot < slotCount; slot++)
+    if (fn.slots[slot] === "general") {
+      candidates[slot] = 1;
+      count++;
+    }
+  if (count === 0 || fn.import === true || fn.blocks.length === 0)
+    return { fn, visited, shadowed: 0 };
+  const blockCount = fn.blocks.length;
+  let nextId = 0;
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "general number block invariant";
+    const exception = block.exception;
+    if (exception !== undefined) candidates[exception.slot] = 0;
+    const term = block.terminator;
+    if (
+      term.kind === "record" ||
+      term.kind === "record-cell" ||
+      term.kind === "cell"
+    )
+      candidates[term.slot] = 0;
+    for (const op of block.instructions) {
+      if (op === undefined) throw "general number instruction invariant";
+      if (++visited > budget) return undefined;
+      const id = instructionResult(op);
+      if (id !== undefined && id >= nextId) nextId = id + 1;
+    }
+  }
+
+  // Loop depth weights, 4 per level as slot homes rank them.
+  const depthWeights = [1, 4, 16, 64, 256, 1024, 4096];
+  const depth = new Uint8Array(blockCount);
+  const forest = naturalLoops(fn, Math.max(1, budget - visited));
+  if (forest === undefined) return undefined;
+  visited += forest.visited;
+  for (const loop of forest.loops) {
+    if (loop === undefined) throw "general number loop invariant";
+    for (const block of loop.body)
+      if (block < blockCount && (depth[block] ?? 0) < 6)
+        depth[block] = (depth[block] ?? 0) + 1;
+  }
+  const uses = new Float64Array(slotCount),
+    costs = new Float64Array(slotCount);
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "general number block invariant";
+    const weight = depthWeights[depth[block.id] ?? 0] ?? 4096;
+    const loads = new Map<number, number>(),
+      wrapped = new Map<number, boolean>(),
+      numbers = new Set<number>();
+    for (const op of block.instructions) {
+      if (op === undefined) throw "general number instruction invariant";
+      if (++visited > budget) return undefined;
+      const scalar = numberResult(op, fn.slots);
+      if (scalar !== undefined) numbers.add(scalar);
+      if (op.kind === "load") {
+        if (candidates[op.slot] === 1) loads.set(op.id, op.slot);
+      } else if (op.kind === "general-wrap") {
+        wrapped.set(op.id, numbers.has(op.value));
+      } else if (
+        (op.kind === "general-is" || op.kind === "general-value") &&
+        op.type === "number"
+      ) {
+        const slot = loads.get(op.value);
+        if (slot !== undefined) uses[slot] = (uses[slot] ?? 0) + 2 * weight;
+      } else if (op.kind === "store" && candidates[op.slot] === 1) {
+        // A wrapped number stores its shadows directly; anything else is
+        // tested and extracted again.
+        const number = wrapped.get(op.value);
+        costs[op.slot] =
+          (costs[op.slot] ?? 0) + (number === true ? 1 : 3) * weight;
+      }
+    }
+  }
+  // Shadow index + 1 per slot; 0 for slots without a shadow.
+  const shadows = new Uint32Array(slotCount);
+  const shadow = (slot: number): number => (shadows[slot] ?? 0) - 1;
+  let shadowed = 0;
+  for (let slot = 0; slot < slotCount; slot++) {
+    if (candidates[slot] !== 1) continue;
+    const benefit = uses[slot] ?? 0;
+    if (benefit > 0 && benefit >= (costs[slot] ?? 0))
+      shadows[slot] = ++shadowed;
+  }
+  if (shadowed === 0) return { fn, visited, shadowed: 0 };
+
+  const slots: ScalarType[] = fn.slots.slice();
+  const presence = new Uint32Array(shadowed),
+    payload = new Uint32Array(shadowed),
+    shadowSlots = new Uint32Array(shadowed);
+  for (let slot = 0; slot < slotCount; slot++) {
+    const index = shadow(slot);
+    if (index < 0) continue;
+    shadowSlots[index] = slot;
+    presence[index] = slots.length;
+    slots.push("boolean");
+    payload[index] = slots.length;
+    slots.push("number");
+  }
+
+  // Forward must-analysis: which shadowed slots hold a Number at block
+  // entry. Optimistic start, intersected over edges; the entry and exception
+  // targets know nothing.
+  const known = new Uint8Array(blockCount * shadowed).fill(1);
+  for (let index = 0; index < shadowed; index++)
+    known[fn.entry * shadowed + index] = 0;
+  const exceptionTargets = new Uint8Array(blockCount);
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "general number block invariant";
+    const exception = block.exception;
+    if (exception !== undefined) {
+      exceptionTargets[exception.target] = 1;
+      for (let index = 0; index < shadowed; index++)
+        known[exception.target * shadowed + index] = 0;
+    }
+  }
+  const state = new Uint8Array(shadowed);
+  // A load or test describes its slot only until the slot's next store:
+  // entries record the slot's store generation with its shadow index.
+  const generations = new Uint32Array(shadowed);
+  const describe = (index: number): number =>
+    index + shadowed * (generations[index] ?? 0);
+  const described = (code: number | undefined): number => {
+    if (code === undefined) return -1;
+    const index = code % shadowed;
+    return Math.floor(code / shadowed) === (generations[index] ?? 0)
+      ? index
+      : -1;
+  };
+  /** Applies the block's instructions to `state`; returns the shadow index
+   * proven by the block's branch on its consequent edge, or -1. */
+  function transfer(block: Block): number {
+    const loads = new Map<number, number>(),
+      numbers = new Set<number>(),
+      wraps = new Set<number>(),
+      tests = new Map<number, number>();
+    for (const op of block.instructions) {
+      if (op === undefined) throw "general number instruction invariant";
+      visited++;
+      const scalar = numberResult(op, fn.slots);
+      if (scalar !== undefined) numbers.add(scalar);
+      if (op.kind === "load") {
+        const index = shadow(op.slot);
+        if (index >= 0) loads.set(op.id, describe(index));
+      } else if (op.kind === "general-wrap") {
+        if (numbers.has(op.value)) wraps.add(op.id);
+      } else if (op.kind === "general-is" && op.type === "number") {
+        const index = described(loads.get(op.value));
+        if (index >= 0) tests.set(op.id, describe(index));
+      } else if (op.kind === "store") {
+        const index = shadow(op.slot);
+        if (index < 0) continue;
+        const copied = described(loads.get(op.value));
+        state[index] = wraps.has(op.value)
+          ? 1
+          : copied >= 0
+            ? (state[copied] ?? 0)
+            : 0;
+        generations[index] = (generations[index] ?? 0) + 1;
+      }
+    }
+    const term = block.terminator;
+    if (term.kind !== "branch") return -1;
+    return described(tests.get(term.condition));
+  }
+  const order = reversePostorder(fn);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const id of order) {
+      if (visited > budget) return undefined;
+      const block = fn.blocks[id];
+      if (block === undefined) throw "general number block invariant";
+      for (let index = 0; index < shadowed; index++)
+        state[index] = known[id * shadowed + index] ?? 0;
+      const proven = transfer(block);
+      const term = block.terminator;
+      const successors = normalSuccessors(term);
+      for (let edge = 0; edge < successors.length; edge++) {
+        const successor = successors[edge];
+        if (successor === undefined || exceptionTargets[successor] === 1)
+          continue;
+        for (let index = 0; index < shadowed; index++) {
+          const fact =
+            (state[index] ?? 0) === 1 || (edge === 0 && index === proven)
+              ? 1
+              : 0;
+          const at = successor * shadowed + index;
+          if (fact === 0 && known[at] === 1) {
+            known[at] = 0;
+            changed = true;
+          }
+        }
+      }
+    }
+  }
+
+  // Rewrite.
+  let proofs = 0;
+  const blocks: Block[] = [];
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "general number block invariant";
+    for (let index = 0; index < shadowed; index++)
+      state[index] = known[block.id * shadowed + index] ?? 0;
+    const instructions: Instruction[] = [];
+    const span = { start: block.terminator.start, end: block.terminator.end };
+    if (block.id === fn.entry) {
+      // Entry-defined slots (parameters, the receiver) start with their
+      // incoming values; other slots start as undefined (false, 0).
+      for (const slot of entryDefinedSlots(fn)) {
+        const index = shadow(slot);
+        if (index < 0) continue;
+        const loaded = nextId++,
+          test = nextId++,
+          number = nextId++;
+        instructions.push(
+          { kind: "load", id: loaded, slot, ...span },
+          {
+            kind: "general-is",
+            id: test,
+            value: loaded,
+            type: "number",
+            ...span,
+          },
+          { kind: "store", slot: presence[index] ?? 0, value: test, ...span },
+          {
+            kind: "general-value",
+            id: number,
+            value: loaded,
+            type: "number",
+            unchecked: true,
+            ...span,
+          },
+          { kind: "store", slot: payload[index] ?? 0, value: number, ...span },
+        );
+      }
+    }
+    const loads = new Map<number, number>(),
+      knownLoads = new Set<number>(),
+      numbers = new Set<number>(),
+      wraps = new Map<number, number>(),
+      absent = new Set<number>();
+    for (const op of block.instructions) {
+      if (op === undefined) throw "general number instruction invariant";
+      if (++visited > budget) return undefined;
+      const scalar = numberResult(op, fn.slots);
+      if (scalar !== undefined) numbers.add(scalar);
+      if (op.kind === "load") {
+        instructions.push(op);
+        const index = shadow(op.slot);
+        if (index >= 0) {
+          loads.set(op.id, describe(index));
+          if (state[index] === 1) knownLoads.add(op.id);
+        }
+        continue;
+      }
+      if (op.kind === "general-wrap") {
+        // Other wrapped scalars are tested at the store like any value.
+        if (numbers.has(op.value)) wraps.set(op.id, op.value);
+        instructions.push(op);
+        continue;
+      }
+      if (op.kind === "general-none" || op.kind === "general-null") {
+        absent.add(op.id);
+        instructions.push(op);
+        continue;
+      }
+      if (op.kind === "general-is" && op.type === "number") {
+        const index = described(loads.get(op.value));
+        if (index >= 0) {
+          proofs++;
+          instructions.push(
+            knownLoads.has(op.value)
+              ? {
+                  kind: "constant",
+                  id: op.id,
+                  value: true,
+                  start: op.start,
+                  end: op.end,
+                }
+              : {
+                  kind: "load",
+                  id: op.id,
+                  slot: presence[index] ?? 0,
+                  start: op.start,
+                  end: op.end,
+                },
+          );
+          continue;
+        }
+      }
+      if (
+        op.kind === "general-value" &&
+        op.type === "number" &&
+        knownLoads.has(op.value)
+      ) {
+        const index = described(loads.get(op.value));
+        if (index >= 0) {
+          proofs++;
+          instructions.push({
+            kind: "load",
+            id: op.id,
+            slot: payload[index] ?? 0,
+            start: op.start,
+            end: op.end,
+          });
+          continue;
+        }
+      }
+      instructions.push(op);
+      if (op.kind !== "store") continue;
+      const index = shadow(op.slot);
+      if (index < 0) continue;
+      const at = { start: op.start, end: op.end };
+      const number = wraps.get(op.value),
+        copied = described(loads.get(op.value));
+      if (number !== undefined) {
+        const yes = nextId++;
+        instructions.push(
+          { kind: "store", slot: payload[index] ?? 0, value: number, ...at },
+          { kind: "constant", id: yes, value: true, ...at },
+          { kind: "store", slot: presence[index] ?? 0, value: yes, ...at },
+        );
+        state[index] = 1;
+      } else if (copied >= 0) {
+        // A copy between shadowed slots copies the shadows.
+        const test = nextId++,
+          value = nextId++;
+        instructions.push(
+          { kind: "load", id: test, slot: presence[copied] ?? 0, ...at },
+          { kind: "store", slot: presence[index] ?? 0, value: test, ...at },
+          { kind: "load", id: value, slot: payload[copied] ?? 0, ...at },
+          { kind: "store", slot: payload[index] ?? 0, value, ...at },
+        );
+        state[index] = knownLoads.has(op.value) ? 1 : 0;
+      } else if (absent.has(op.value)) {
+        // Both shadows are written on every store, so they are initialized
+        // wherever the general slot is.
+        const no = nextId++,
+          zero = nextId++;
+        instructions.push(
+          { kind: "constant", id: no, value: false, ...at },
+          { kind: "store", slot: presence[index] ?? 0, value: no, ...at },
+          { kind: "constant", id: zero, value: 0, ...at },
+          { kind: "store", slot: payload[index] ?? 0, value: zero, ...at },
+        );
+        state[index] = 0;
+      } else {
+        const test = nextId++,
+          value = nextId++;
+        instructions.push(
+          {
+            kind: "general-is",
+            id: test,
+            value: op.value,
+            type: "number",
+            ...at,
+          },
+          { kind: "store", slot: presence[index] ?? 0, value: test, ...at },
+          {
+            kind: "general-value",
+            id: value,
+            value: op.value,
+            type: "number",
+            unchecked: true,
+            ...at,
+          },
+          { kind: "store", slot: payload[index] ?? 0, value, ...at },
+        );
+        state[index] = 0;
+      }
+      // Earlier loads of this slot no longer describe its value.
+      generations[index] = (generations[index] ?? 0) + 1;
+    }
+    blocks.push({ ...block, instructions });
+  }
+  const first = fn.blocks[fn.entry];
+  remarks?.({
+    pass: "shadow-general-numbers",
+    outcome: "applied",
+    function: fn.name,
+    start: first?.terminator.start ?? 0,
+    end: first?.terminator.end ?? 0,
+    message:
+      String(shadowed) +
+      " general slots shadowed, " +
+      String(proofs) +
+      " number tests rewritten",
+  });
+  return { fn: { ...fn, slots, blocks }, visited, shadowed };
+}
+
+/** Slots whose value is defined on entry: parameters and the receiver. */
+function entryDefinedSlots(fn: FunctionIR): number[] {
+  const slots: number[] = [];
+  for (const parameter of fn.parameters)
+    if (parameter !== undefined) slots.push(parameter);
+  const receiver = fn.receiverSlot;
+  if (receiver !== undefined) slots.push(receiver);
+  return slots;
+}
+
+/** Normal (non-exception) successors; a branch's consequent first. */
+function normalSuccessors(term: Terminator): number[] {
+  const successors: number[] = [];
+  if (term.kind === "jump") successors.push(term.target);
+  else if (
+    term.kind === "branch" ||
+    term.kind === "record" ||
+    term.kind === "record-cell" ||
+    term.kind === "cell"
+  ) {
+    successors.push(term.consequent);
+    successors.push(term.alternate);
+  }
+  return successors;
+}
+
+/** Blocks reachable from entry in reverse postorder (exception edges too). */
+function reversePostorder(fn: FunctionIR): number[] {
+  const count = fn.blocks.length;
+  const seen = new Uint8Array(count),
+    postorder: number[] = [],
+    stack: number[] = [fn.entry],
+    next: number[] = [0];
+  seen[fn.entry] = 1;
+  while (stack.length > 0) {
+    const top = stack.length - 1;
+    const id = stack[top] ?? 0,
+      position = next[top] ?? 0;
+    const block = fn.blocks[id];
+    if (block === undefined) throw "general number block invariant";
+    const successors = normalSuccessors(block.terminator);
+    const exception = block.exception;
+    if (exception !== undefined) successors.push(exception.target);
+    const successor = successors[position];
+    if (successor === undefined) {
+      stack.pop();
+      next.pop();
+      postorder.push(id);
+      continue;
+    }
+    next[top] = position + 1;
+    if (seen[successor] === 1) continue;
+    seen[successor] = 1;
+    stack.push(successor);
+    next.push(0);
+  }
+  return postorder.reverse();
+}

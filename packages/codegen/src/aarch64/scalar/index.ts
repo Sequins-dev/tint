@@ -8787,7 +8787,6 @@ function emitModuleForms(
                             ? 4
                             : 5;
                 rawValue(9, op.value);
-                if (op.branch !== true) imm(12, 0);
                 emit({
                   op: "sub-imm",
                   width: 64,
@@ -8823,12 +8822,13 @@ function emitModuleForms(
                   if (op.branch === true && op.id === comparisonValue)
                     comparisonBranch = "eq";
                   else {
-                    emit({ op: "cset", rd: 12, condition: "eq" });
-                    saveRaw(12, op.id);
+                    const target = rawTarget(op.id, 12);
+                    emit({ op: "cset", rd: target, condition: "eq" });
+                    saveRaw(target, op.id);
                   }
                   break;
                 }
-                if (op.branch === true) imm(12, 0);
+                imm(12, 0);
                 // An object whose header marker (bits 0-47) is 2: a typed
                 // array of 1-byte elements, as general-value checks.
                 const nonObject = instructions.length;
@@ -9411,7 +9411,6 @@ function emitModuleForms(
                 break;
               }
               case "general-value": {
-                rawValue(9, op.value);
                 const tag =
                   op.type === "number"
                     ? 1
@@ -9420,16 +9419,19 @@ function emitModuleForms(
                       : op.type === "string"
                         ? 3
                         : 5;
-                emit({
-                  op: "sub-imm",
-                  width: 64,
-                  rd: "zr",
-                  rn: 9,
-                  immediate: tag,
-                  shift: 0,
-                  setFlags: true,
-                });
-                trapIf({ op: "b.cond", condition: "ne" });
+                if (op.unchecked !== true) {
+                  rawValue(9, op.value);
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    immediate: tag,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  trapIf({ op: "b.cond", condition: "ne" });
+                }
                 rawLoad(9, value(op.value).offset + 8);
                 const marker =
                   op.type === "Uint8Array"

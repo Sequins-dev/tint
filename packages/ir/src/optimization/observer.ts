@@ -19,6 +19,7 @@ export interface PassStatistics {
     | "prove-cell-states"
     | "promote-loop-cells"
     | "split-optional-numbers"
+    | "shadow-general-numbers"
     | "lower-proven-record-reads"
     | "ssa-constants"
     | "fold-constants"

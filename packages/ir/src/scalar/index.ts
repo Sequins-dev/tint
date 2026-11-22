@@ -841,6 +841,8 @@ export function verify(
                 op.type !== "Float64Array"
               )
                 fail("TYPE", "unsupported general extraction category");
+              if (op.unchecked === true && op.type !== "number")
+                fail("TYPE", "unchecked general extraction requires number");
               define(op.id, op.type);
               break;
             case "boolean-none":

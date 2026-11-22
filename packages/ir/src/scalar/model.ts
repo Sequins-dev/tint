@@ -101,6 +101,10 @@ export type Instruction = Span &
          * array elements (checked; a narrowed `string | Uint8Array`). */
         readonly type:
           "number" | "boolean" | "string" | "reference" | NativeTypedArray;
+        /** Read the number payload without testing the tag. The result is
+         * meaningful only where a separate test proved the category; other
+         * payloads yield arbitrary bits. Only for type number. */
+        readonly unchecked?: true;
       }
     | {
         readonly kind: "record-has" | "record-read";

@@ -367,7 +367,7 @@ export function encodeInstruction(
       writeSigned(writer, op.value);
       return true;
     case "general-value":
-      writePrefix(writer, 9, op, 0);
+      writePrefix(writer, 9, op, op.unchecked === true ? 2 : 0);
       writeSigned(writer, op.id);
       writeSigned(writer, op.value);
       writeByte(writer, scalarCode(op.type));
@@ -893,7 +893,9 @@ export function decodeInstruction(
       const id = readSigned(reader),
         value = readSigned(reader),
         type = generalValueType(readByte(reader));
-      return { kind: "general-value", id, value, type, ...span };
+      return flagged(flags, 2)
+        ? { kind: "general-value", id, value, type, unchecked: true, ...span }
+        : { kind: "general-value", id, value, type, ...span };
     }
     case 10:
     case 11: {

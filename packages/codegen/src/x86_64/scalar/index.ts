@@ -2854,12 +2854,14 @@ export function emitModule(
           return;
         }
         case "general-value": {
-          emit({
-            op: "cmp",
-            dst: frame(home(op.value)),
-            src: imm(generalTag(op.type)),
-          });
-          branch(emit, "ne", trapLabel);
+          if (op.unchecked !== true) {
+            emit({
+              op: "cmp",
+              dst: frame(home(op.value)),
+              src: imm(generalTag(op.type)),
+            });
+            branch(emit, "ne", trapLabel);
+          }
           emit({ op: "mov", dst: rax, src: frame(home(op.value) + 8) });
           const array = typedArrayMarker(op.type);
           if (array !== 0) {
