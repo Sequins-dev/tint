@@ -1,5 +1,4 @@
 import type { NativeHostBinding } from "@tint/compiler/native";
-import { nativeFixtureTarget } from "./native-host-target.ts";
 
 const memory = "packages/native-runtime/src/intrinsics/memory.ts";
 const shared = "packages/native-runtime/src/intrinsics/shared-atomics.ts";
@@ -65,10 +64,9 @@ export function workerFixtureOptions(
     workerModules,
     nodeWorkers: true,
     nodeWorkerLibrary,
-    runtimeEntry:
-      nativeFixtureTarget().arch === "x86_64"
-        ? ("initializeGenerationalRuntime" as const)
-        : ("initializeCopyingRuntime" as const),
+    // Each isolate initializes its own generational heap
+    // (docs/design-worker-runtime.md).
+    runtimeEntry: "initializeGenerationalRuntime" as const,
     hostBindings: bindings,
   };
 }
