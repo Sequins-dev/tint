@@ -1638,7 +1638,13 @@ function lowerScriptEntry(
     span: Span,
     hasTDZ: boolean,
   ): Expression {
-    const slot = temporary(id("undefined", span), true, true);
+    const slot = temporary(
+      id("undefined", span),
+      true,
+      true,
+      undefined,
+      suspensionInput === undefined ? undefined : "reference",
+    );
     frameLexicals.add(binding);
     localSlots.set(binding, slot);
     if (hasTDZ)
@@ -1746,11 +1752,12 @@ function lowerScriptEntry(
   function finalizeLexicalSlot(binding: number): Expression {
     const current = localSlots.get(binding);
     if (current === undefined) throw "SCRIPT_LEXICAL_SLOT_INVARIANT";
-    // Earlier closures retain their checked cell. Later closures can copy
-    // an initialized value when no source write can change it.
-    const finalized = writtenSlots.has(binding)
-      ? current
-      : temporary(current, true, false, undefined, "value");
+    // Suspension lowering can create a continuation before this initializer.
+    // It closes over the cell and reads it when the continuation runs.
+    const finalized =
+      suspensionInput !== undefined || writtenSlots.has(binding)
+        ? current
+        : temporary(current, true, false, undefined, "value");
     localSlots.set(binding, finalized);
     slotInitialization.delete(binding);
     return finalized;

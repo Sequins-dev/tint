@@ -452,12 +452,10 @@ for (const entry of inventory) {
       ],
       [],
       [],
-      sharedHost === undefined
-        ? []
-        : [
-            ...workerFixtureRuntimes,
-            { module: bridge.id, namespace: "node-ffi-conformance-native" },
-          ],
+      [
+        ...(sharedHost === undefined ? [] : workerFixtureRuntimes),
+        { module: bridge.id, namespace: "node-ffi-conformance-native" },
+      ],
       {
         ...sharedHost,
         replaySources: [bridge],
