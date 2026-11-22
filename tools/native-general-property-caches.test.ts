@@ -114,6 +114,29 @@ function prototypes() {
   out.push(readX(bare));
   return out.join(",");
 }
+function megamorphic() {
+  // One site sees more shapes than its entries hold, so later shapes go
+  // through the shared (shape, name) stub cache.
+  const readV = (o) => o.v;
+  const callM = (o) => o.m();
+  const objects = [];
+  for (let i = 0; i < 12; i++) {
+    const proto = { m() { return "m" + i; } };
+    const o = Object.create(i % 2 ? proto : Object.prototype);
+    for (let k = 0; k < i % 5; k++) o["p" + k] = k;
+    o.v = i;
+    if (i % 2 === 0) o.m = function () { return "own" + i; };
+    objects.push(o);
+  }
+  const out = [];
+  for (let round = 0; round < 3; round++)
+    for (const o of objects) out.push(readV(o), callM(o));
+  objects[3].v = "changed";
+  delete objects[5].v;
+  Object.getPrototypeOf(objects[7]).m = function () { return "replaced"; };
+  for (const o of objects) out.push(String(readV(o)), callM(o));
+  return out.join(",");
+}
 export function sections() {
   return [
     String(sharedShapes()),
@@ -122,6 +145,7 @@ export function sections() {
     inherited(),
     redefinitions(),
     prototypes(),
+    megamorphic(),
   ];
 }
 `;
@@ -139,7 +163,7 @@ test("property caches keep JavaScript lookups across shapes and redefinitions", 
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-  assert.equal(expected.length, 6);
+  assert.equal(expected.length, 7);
   // Exit status 42 when every section matches, else 10 + the first
   // mismatching section's index.
   let general = false;

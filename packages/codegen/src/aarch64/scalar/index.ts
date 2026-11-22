@@ -10465,7 +10465,7 @@ function emitModuleForms(
                 });
                 const tagMiss = instructions.length;
                 emit({ op: "b.cond", condition: "ne", displacement: 0 });
-                const object = 9;
+                const object: number = 9;
                 rawLoad(object, value(op.object).offset + 8);
                 const site = rawRegister(op.site, 10);
                 emit({
@@ -10497,8 +10497,8 @@ function emitModuleForms(
                 });
                 const receiverMiss = instructions.length;
                 emit({ op: "b.cond", condition: "ne", displacement: 0 });
-                let holder = object,
-                  holderMiss = -1;
+                let holder: number = object,
+                  holderMiss: number = -1;
                 if (op.inherited) {
                   if (siteHolder === undefined)
                     throw "property cell layout invariant";

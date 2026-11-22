@@ -60,8 +60,10 @@ function parameterDebug(
   parameters: number,
 ): FunctionDebug {
   const slots: SlotBinding[] = [];
-  for (const binding of debug.slots)
+  for (const binding of debug.slots) {
+    if (binding === undefined) throw "record binding debug invariant";
     if (binding.slot < parameters) slots.push(binding);
+  }
   return {
     variables: debug.variables,
     slots,

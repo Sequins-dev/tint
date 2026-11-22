@@ -88,6 +88,7 @@ export function layoutBlocks(
   }
   const blocks: Block[] = [];
   for (const id of order) {
+    if (id === undefined) throw "layout order invariant";
     if (++visited > budget) return undefined;
     const block = fn.blocks[id];
     if (block === undefined) throw "layout block invariant";

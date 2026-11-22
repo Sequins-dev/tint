@@ -4243,14 +4243,15 @@ function lowerEntries(
               ? undefined
               : recordContracts.fieldIndex(siteRecord, siteName);
         // The present result's record: the cells' layout.
-        let cellRecord: number | undefined = undefined;
+        let cellType = -1;
         const result = checked.types[body.result];
-        if (result?.kind === "union")
+        if (result !== undefined && result.kind === "union")
           for (const member of result.members) {
             if (member === undefined) throw "property cell type invariant";
-            if (checked.types[member]?.kind === "object")
-              cellRecord = recordContracts.forType(member);
+            if (checked.types[member]?.kind === "object") cellType = member;
           }
+        const cellRecord =
+          cellType < 0 ? undefined : recordContracts.forType(cellType);
         const third = fn.parameters[2];
         if (
           first === undefined ||

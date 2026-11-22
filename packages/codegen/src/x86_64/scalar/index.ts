@@ -2548,7 +2548,7 @@ export function emitModule(
           emit({ op: "mov", dst: rax, src: mem(9, shape.offset) });
           emit({ op: "cmp", dst: rax, src: mem(10, siteShape.offset) });
           branch(emit, "ne", none);
-          let holder = 9;
+          let holder: number = 9;
           if (op.inherited) {
             const siteHolder = recordField(op.siteRecord, op.siteField + 2);
             emit({ op: "mov", dst: scratch, src: mem(9, prototype.offset) });
