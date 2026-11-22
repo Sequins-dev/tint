@@ -58,6 +58,10 @@ export interface DigestLifetime {
 
 let lifetimes: DigestLifetime[] = [];
 let sweepAt = 256;
+// The newest digest and its owner stay strongly held until the next digest
+// opens. Most digests finish by then and never need a weak owner slot.
+let pendingLifetime: DigestLifetime | undefined = undefined;
+let pendingOwner: unknown = undefined;
 let digests = new Map<string, number>();
 let fetchedDigests: number[] = [];
 let recentAlgorithm: string | undefined = undefined;
@@ -106,6 +110,13 @@ function recycleContext(address: number, hmac: boolean, digest: number): void {
 }
 
 export function closeDigestContexts(): void {
+  const pending = pendingLifetime;
+  pendingLifetime = undefined;
+  pendingOwner = undefined;
+  if (pending !== undefined && pending.address !== 0) {
+    disposeContext(pending.address, pending.hmac);
+    pending.address = 0;
+  }
   for (const lifetime of lifetimes) {
     if (lifetime === undefined) throw "digest lifetime invariant";
     if (lifetime.address === 0) continue;
@@ -550,8 +561,22 @@ export function openDigest(
   return { address: context, hmac, digest, owner: undefined };
 }
 
-/** Free the context with `owner` if the owner is collected before digest(). */
+/** Free the context with `owner` if the owner is collected before digest().
+ * The owner is held until the next digest opens; only a digest still open
+ * then gets a weak owner slot and joins the swept lifetimes. */
 export function trackDigest(lifetime: DigestLifetime, owner: unknown): void {
+  settlePendingDigest();
+  pendingLifetime = lifetime;
+  pendingOwner = owner;
+}
+
+function settlePendingDigest(): void {
+  const lifetime = pendingLifetime;
+  if (lifetime === undefined) return;
+  const owner = pendingOwner;
+  pendingLifetime = undefined;
+  pendingOwner = undefined;
+  if (lifetime.address === 0) return;
   lifetime.owner = createWeakSlot(owner, undefined, false);
   // Replace a finished tail entry instead of growing the tracking vector.
   const last = lifetimes.length - 1;
