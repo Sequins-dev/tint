@@ -1,0 +1,128 @@
+{
+  "kind": "tint-frozen-self-compile",
+  "workload": "gr8 (frozen at origin/main 3d10cb5c0)",
+  "command": "node tools/frozen-workload.ts run gr8 <labels> --rounds 3 (under tint-timing.lock)",
+  "images": {
+    "base-3d10cb5c0": "f02cbfd39a953b1105ae89ab75e4d6a8fb0527ac22bca2dd65b1d4e7e5f16f33",
+    "step1-7e03decee": "376fd713da2ba7be77252caa918515fc5714e42f3a74131db9c4bd75fdb40645",
+    "step1-nojscvt": "4f0babb407551577b593219b7d14172b510aa5b622a09b4c78f745d5e592a8a5"
+  },
+  "notes": "step1-nojscvt is 7e03decee with jsConvert forced off; all images built by 'frozen-workload.ts build' with the same options",
+  "runs": [
+    {
+      "load": "quiet",
+      "rows": [
+        {
+          "label": "base-3d10cb5c0",
+          "seconds": 95.01,
+          "cycles": 472582096032,
+          "instructions": 2418806340947,
+          "rssBytes": 2227339264
+        },
+        {
+          "label": "step1-7e03decee",
+          "seconds": 105.23,
+          "cycles": 475489167694,
+          "instructions": 2373155751220,
+          "rssBytes": 2227585024
+        },
+        {
+          "label": "base-3d10cb5c0",
+          "seconds": 93.15,
+          "cycles": 462759349179,
+          "instructions": 2417276865273,
+          "rssBytes": 2228011008
+        },
+        {
+          "label": "step1-7e03decee",
+          "seconds": 99.24,
+          "cycles": 474370340303,
+          "instructions": 2371705509930,
+          "rssBytes": 2228027392
+        },
+        {
+          "label": "base-3d10cb5c0",
+          "seconds": 91.7,
+          "cycles": 459189154492,
+          "instructions": 2417593079114,
+          "rssBytes": 2227634176
+        },
+        {
+          "label": "step1-7e03decee",
+          "seconds": 90.8,
+          "cycles": 460860425368,
+          "instructions": 2373027809351,
+          "rssBytes": 2227372032
+        }
+      ]
+    },
+    {
+      "load": "heavy (other streams' gates and timing runs)",
+      "rows": [
+        {
+          "label": "base-3d10cb5c0",
+          "seconds": 178.01,
+          "cycles": 571331960177,
+          "instructions": 2423125617192,
+          "rssBytes": 2227830784
+        },
+        {
+          "label": "step1-7e03decee",
+          "seconds": 184.91,
+          "cycles": 570186947588,
+          "instructions": 2377016366664,
+          "rssBytes": 2227306496
+        },
+        {
+          "label": "step1-nojscvt",
+          "seconds": 175.42,
+          "cycles": 574625585544,
+          "instructions": 2424870269604,
+          "rssBytes": 2226601984
+        },
+        {
+          "label": "base-3d10cb5c0",
+          "seconds": 170.77,
+          "cycles": 562726391560,
+          "instructions": 2424063594947,
+          "rssBytes": 2227011584
+        },
+        {
+          "label": "step1-7e03decee",
+          "seconds": 163.44,
+          "cycles": 562883541548,
+          "instructions": 2376971826288,
+          "rssBytes": 2227175424
+        },
+        {
+          "label": "step1-nojscvt",
+          "seconds": 163.77,
+          "cycles": 572678383618,
+          "instructions": 2424194732314,
+          "rssBytes": 2227290112
+        },
+        {
+          "label": "base-3d10cb5c0",
+          "seconds": 158.71,
+          "cycles": 562862190935,
+          "instructions": 2422017304494,
+          "rssBytes": 2226159616
+        },
+        {
+          "label": "step1-7e03decee",
+          "seconds": 145.17,
+          "cycles": 551422943357,
+          "instructions": 2376130559126,
+          "rssBytes": 2227503104
+        },
+        {
+          "label": "step1-nojscvt",
+          "seconds": 146.31,
+          "cycles": 557036015896,
+          "instructions": 2424449338267,
+          "rssBytes": 2227339264
+        }
+      ]
+    }
+  ]
+}
