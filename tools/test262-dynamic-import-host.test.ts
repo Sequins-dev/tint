@@ -638,7 +638,6 @@ test("historical captures keep their managed vocabulary and adapter", async () =
     "excludeHTMLDDAObjects",
     "cachedOwnPropertyCell",
     "cachedInheritedPropertyCell",
-    "propertySlotWord",
   ];
   const old = {
     ...snapshot,
@@ -679,7 +678,9 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   const previous = createScriptRuntimeRequest(bind, true, old),
     current = createScriptRuntimeRequest(bind, true, snapshot);
   assert.equal(previous.values.length, 136);
-  assert.equal(current.values.length, 152);
+  // The inline property caches import two cell readers (own and inherited)
+  // where they imported one slot reader.
+  assert.equal(current.values.length, 153);
   for (const name of fastPaths) {
     assert.ok(!previous.values.some((value) => value.name === name), name);
     assert.ok(
