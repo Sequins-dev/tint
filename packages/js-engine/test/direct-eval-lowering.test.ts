@@ -133,10 +133,15 @@ test("derived eval reads this lazily and preserves super construction", () => {
   assert.ok(calls(module, "getDerivedThis").length >= 2);
   const construct = calls(module, "constructSuper")[0];
   assert.equal((construct?.arguments[0] as any).name, "$derived");
-  const base = variables(module).find(
-    (x) => x.name === (construct?.arguments[1] as any).name,
-  );
-  assert.equal(base.initializer.object.name, "$activeFunction");
+  const base = construct?.arguments[1];
+  assert.ok(base);
+  const lookup =
+    base.kind === "identifier"
+      ? variables(module).find((x) => x.name === base.name)?.initializer
+      : base;
+  assert.equal(lookup?.kind, "member");
+  assert.equal(lookup.object.name, "$activeFunction");
+  assert.equal(lookup.property, "prototype");
   const site = variables(module).find((x) => x.type?.name === "DirectEvalSite");
   const f = Object.fromEntries(
     site.initializer.properties.map((x: any) => [x.name, x.value]),
@@ -253,10 +258,12 @@ test("runtime-compiled functions skip only unobservable receiver and environment
   assert.equal(uses("param", "sloppyCallReceiverOrThrow"), false);
   for (const name of ["self", "arrow", "sup", "evals"])
     assert.equal(uses(name, "sloppyCallReceiverOrThrow"), true, name);
-  // Environments only where something is bound in them.
+  // Direct eval and arguments need named cells.
   assert.equal(uses("plain", "createDeclarativeEnvironment"), false);
   assert.equal(uses("self", "createDeclarativeEnvironment"), false);
-  for (const name of ["evals", "param", "local", "args"])
+  for (const name of ["param", "local"])
+    assert.equal(uses(name, "createDeclarativeEnvironment"), false, name);
+  for (const name of ["evals", "args"])
     assert.equal(uses(name, "createDeclarativeEnvironment"), true, name);
 });
 

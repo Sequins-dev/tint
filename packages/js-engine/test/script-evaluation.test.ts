@@ -1420,3 +1420,63 @@ test("eval source caches are per realm and per evaluator", () => {
   assert.equal(a.frames[3]?.$argument1.realm, a.realm);
   assert.equal(a.frames[4]?.$argument1.realm, b.realm);
 });
+
+test("register calls select the callee Script and realm and restore the caller on throw", () => {
+  const a = fixture();
+  const b = fixture("indirect-eval", a.realm.agent);
+  const aRecord = runtime.createScriptRecord(a.realm, undefined);
+  const bRecord = runtime.createScriptRecord(b.realm, undefined);
+  const aContext = { realm: a.realm, scriptOrModule: aRecord };
+  const bContext = { realm: b.realm, scriptOrModule: bRecord };
+  const thrown = {};
+  const fn = runtime.runScriptContext(b.realm.agent, bContext, () =>
+    runtime.createRegisterSourceFunction(
+      (_callee, receiver, target, count, first, second) => {
+        assert.equal(b.realm.agent.activeContext?.realm, b.realm);
+        assert.equal(b.realm.agent.activeContext?.scriptOrModule, bRecord);
+        assert.equal(target, undefined);
+        assert.equal(receiver, a.object);
+        assert.equal(count, 1);
+        assert.equal(second, undefined);
+        if (first === "abrupt") throw thrown;
+        return first;
+      },
+      false,
+      b.realm,
+      b.hooks,
+      "callee",
+      1,
+      undefined,
+      "opaque",
+    ),
+  );
+  for (const context of [aContext, bContext]) {
+    runtime.runScriptContext(a.realm.agent, context, () => {
+      assert.equal(
+        runtime.callRegisterObjectValue(
+          context.realm,
+          1,
+          fn,
+          a.object,
+          42,
+          undefined,
+        ),
+        42,
+      );
+      assert.throws(
+        () =>
+          runtime.callRegisterObjectValue(
+            context.realm,
+            1,
+            fn,
+            a.object,
+            "abrupt",
+            undefined,
+          ),
+        (error) => error === thrown,
+      );
+      assert.equal(a.realm.agent.activeContext, context);
+    });
+  }
+  assert.equal(a.realm.agent.activeContext, undefined);
+});

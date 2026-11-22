@@ -1,0 +1,203 @@
+{
+  "sourceCommit": "84873b2b78e370983969e81b89c896e69c3af5b9",
+  "experimentalNativeScriptCalls": true,
+  "matchedBaselineExpectations": 6,
+  "knownProposalDifference": {
+    "selectedCase": 5,
+    "description": "The fixture describes baseline ES2025. Tint implements nonextensible-applies-to-private and requires an extensible receiver before adding private elements."
+  },
+  "observations": [
+    {
+      "name": "foreign base class revoked newTarget reports in the caller realm",
+      "retainedBaselineExpectation": {
+        "kind": "completed"
+      },
+      "startedAt": "2026-11-22T00:32:41.488Z",
+      "containmentTimeoutMs": 60000,
+      "kind": "bespoke-native-regression",
+      "conformance": false,
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/class-construction-realm",
+      "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/cases.json",
+      "fixtureSha256": "1f77c4f24c075a682bff3b9ca7c1acd0c6af5a60307bf7fa92034e1ff521b160",
+      "imageSha256": "abf4fc4d05ff8343b9c3f0969e7e07cc850031ccfb59b8e32969ab70c4d1ca2b",
+      "sourceSnapshot": {
+        "sha256": "b9773be9e6e0d000b3ca1613a9e36d0404c8d3aa840b808a9d4b42a155738bbc",
+        "files": 821
+      },
+      "buildManifest": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/class-construction-realm.manifest.json",
+      "debuggerLaunch": "lldb-local",
+      "debuggerStdio": "disabled",
+      "debuggerTracing": false,
+      "selectedCase": 0,
+      "elapsedMs": 18712.27275,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "foreign base class with field still reports revocation in the caller realm",
+      "retainedBaselineExpectation": {
+        "kind": "completed"
+      },
+      "startedAt": "2026-11-22T00:33:00.272Z",
+      "containmentTimeoutMs": 60000,
+      "kind": "bespoke-native-regression",
+      "conformance": false,
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/class-construction-realm",
+      "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/cases.json",
+      "fixtureSha256": "1f77c4f24c075a682bff3b9ca7c1acd0c6af5a60307bf7fa92034e1ff521b160",
+      "imageSha256": "abf4fc4d05ff8343b9c3f0969e7e07cc850031ccfb59b8e32969ab70c4d1ca2b",
+      "sourceSnapshot": {
+        "sha256": "b9773be9e6e0d000b3ca1613a9e36d0404c8d3aa840b808a9d4b42a155738bbc",
+        "files": 821
+      },
+      "buildManifest": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/class-construction-realm.manifest.json",
+      "debuggerLaunch": "lldb-local",
+      "debuggerStdio": "disabled",
+      "debuggerTracing": false,
+      "selectedCase": 1,
+      "elapsedMs": 5876.744125000001,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "non-object newTarget prototype falls back to the newTarget realm",
+      "retainedBaselineExpectation": {
+        "kind": "completed"
+      },
+      "startedAt": "2026-11-22T00:33:06.207Z",
+      "containmentTimeoutMs": 60000,
+      "kind": "bespoke-native-regression",
+      "conformance": false,
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/class-construction-realm",
+      "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/cases.json",
+      "fixtureSha256": "1f77c4f24c075a682bff3b9ca7c1acd0c6af5a60307bf7fa92034e1ff521b160",
+      "imageSha256": "abf4fc4d05ff8343b9c3f0969e7e07cc850031ccfb59b8e32969ab70c4d1ca2b",
+      "sourceSnapshot": {
+        "sha256": "b9773be9e6e0d000b3ca1613a9e36d0404c8d3aa840b808a9d4b42a155738bbc",
+        "files": 821
+      },
+      "buildManifest": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/class-construction-realm.manifest.json",
+      "debuggerLaunch": "lldb-local",
+      "debuggerStdio": "disabled",
+      "debuggerTracing": false,
+      "selectedCase": 2,
+      "elapsedMs": 4669.157666000003,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "foreign base field initializer errors use the class realm",
+      "retainedBaselineExpectation": {
+        "kind": "completed"
+      },
+      "startedAt": "2026-11-22T00:33:10.932Z",
+      "containmentTimeoutMs": 60000,
+      "kind": "bespoke-native-regression",
+      "conformance": false,
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/class-construction-realm",
+      "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/cases.json",
+      "fixtureSha256": "1f77c4f24c075a682bff3b9ca7c1acd0c6af5a60307bf7fa92034e1ff521b160",
+      "imageSha256": "abf4fc4d05ff8343b9c3f0969e7e07cc850031ccfb59b8e32969ab70c4d1ca2b",
+      "sourceSnapshot": {
+        "sha256": "b9773be9e6e0d000b3ca1613a9e36d0404c8d3aa840b808a9d4b42a155738bbc",
+        "files": 821
+      },
+      "buildManifest": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/class-construction-realm.manifest.json",
+      "debuggerLaunch": "lldb-local",
+      "debuggerStdio": "disabled",
+      "debuggerTracing": false,
+      "selectedCase": 3,
+      "elapsedMs": 4835.226291999999,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "prototype lookup precedes fields and body",
+      "retainedBaselineExpectation": {
+        "kind": "completed"
+      },
+      "startedAt": "2026-11-22T00:33:15.829Z",
+      "containmentTimeoutMs": 60000,
+      "kind": "bespoke-native-regression",
+      "conformance": false,
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/class-construction-realm",
+      "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/cases.json",
+      "fixtureSha256": "1f77c4f24c075a682bff3b9ca7c1acd0c6af5a60307bf7fa92034e1ff521b160",
+      "imageSha256": "abf4fc4d05ff8343b9c3f0969e7e07cc850031ccfb59b8e32969ab70c4d1ca2b",
+      "sourceSnapshot": {
+        "sha256": "b9773be9e6e0d000b3ca1613a9e36d0404c8d3aa840b808a9d4b42a155738bbc",
+        "files": 821
+      },
+      "buildManifest": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/class-construction-realm.manifest.json",
+      "debuggerLaunch": "lldb-local",
+      "debuggerStdio": "disabled",
+      "debuggerTracing": false,
+      "selectedCase": 4,
+      "elapsedMs": 3499.691165999997,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "name": "baseline private fields and methods attach to non-extensible objects",
+      "retainedBaselineExpectation": {
+        "kind": "completed"
+      },
+      "startedAt": "2026-11-22T00:33:19.392Z",
+      "containmentTimeoutMs": 60000,
+      "kind": "bespoke-native-regression",
+      "conformance": false,
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/class-construction-realm",
+      "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/cases.json",
+      "fixtureSha256": "1f77c4f24c075a682bff3b9ca7c1acd0c6af5a60307bf7fa92034e1ff521b160",
+      "imageSha256": "abf4fc4d05ff8343b9c3f0969e7e07cc850031ccfb59b8e32969ab70c4d1ca2b",
+      "sourceSnapshot": {
+        "sha256": "b9773be9e6e0d000b3ca1613a9e36d0404c8d3aa840b808a9d4b42a155738bbc",
+        "files": 821
+      },
+      "buildManifest": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/class-construction-realm.manifest.json",
+      "debuggerLaunch": "lldb-local",
+      "debuggerStdio": "disabled",
+      "debuggerTracing": false,
+      "selectedCase": 5,
+      "elapsedMs": 3619.229124999998,
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "name": "baseline private field stays writable after freeze",
+      "retainedBaselineExpectation": {
+        "kind": "completed"
+      },
+      "startedAt": "2026-11-22T00:35:37.748Z",
+      "containmentTimeoutMs": 60000,
+      "kind": "bespoke-native-regression",
+      "conformance": false,
+      "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/class-construction-realm",
+      "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/cases.json",
+      "fixtureSha256": "1f77c4f24c075a682bff3b9ca7c1acd0c6af5a60307bf7fa92034e1ff521b160",
+      "imageSha256": "abf4fc4d05ff8343b9c3f0969e7e07cc850031ccfb59b8e32969ab70c4d1ca2b",
+      "sourceSnapshot": {
+        "sha256": "b9773be9e6e0d000b3ca1613a9e36d0404c8d3aa840b808a9d4b42a155738bbc",
+        "files": 821
+      },
+      "buildManifest": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-native-class-construction-realm-Qp8vtb/class-construction-realm.manifest.json",
+      "debuggerLaunch": "lldb-local",
+      "debuggerStdio": "disabled",
+      "debuggerTracing": false,
+      "selectedCase": 6,
+      "elapsedMs": 115729.573375,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

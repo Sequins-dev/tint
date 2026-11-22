@@ -1,6 +1,6 @@
 import type { SharedOrder } from "../bytes/shared.ts";
 import { viewObjectValue } from "./values.ts";
-import type { StorageAccess } from "../bytes/index.ts";
+import { byteStorageData, type StorageAccess } from "../bytes/index.ts";
 import {
   bufferStorageWindow,
   bufferStorageImmutable,
@@ -102,6 +102,13 @@ export function readTypedArrayElement(
       : ordinaryBytes;
   const position =
     ordinaryBytes === undefined ? 0 : data.byteOffset + index * width;
+  return decodeTypedArrayElement(data, bytes, position);
+}
+function decodeTypedArrayElement(
+  data: TypedArrayData,
+  bytes: Uint8Array,
+  position: number,
+): unknown {
   const kind = data.kind;
   return kind === "BigInt64" || kind === "BigUint64"
     ? readBigIntBytes(bytes, position, data.endian, kind === "BigInt64")
@@ -115,6 +122,24 @@ export function typedArrayElementAt(
 ): unknown {
   if (!Number.isInteger(index) || index < 0 || (index === 0 && 1 / index < 0))
     return undefined;
+  const storage = data.storage;
+  if (storage.kind === "ordinary") {
+    const bytes = byteStorageData(storage);
+    if (bytes === undefined) return undefined;
+    const width = typedArrayElementWidth(data.kind);
+    const length = data.length;
+    if (length !== undefined && index >= length) return undefined;
+    const end =
+      data.byteOffset + (length === undefined ? index + 1 : length) * width;
+    if (end > bytes.length) return undefined;
+    const offset = data.byteOffset + index * width;
+    if (width === 1) {
+      const byte = bytes[offset];
+      if (byte === undefined) throw "TYPED_ARRAY_READ_BOUNDS_INVARIANT";
+      return data.kind === "Int8" && byte >= 128 ? byte - 256 : byte;
+    }
+    return decodeTypedArrayElement(data, bytes, offset);
+  }
   const window = typedArrayWindow(data, "read", "unordered");
   if (window === undefined || index >= window.length) return undefined;
   return readTypedArrayElement(data, index, window);

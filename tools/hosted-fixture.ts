@@ -132,6 +132,8 @@ export function workspaceGeneralLowering(
     return cached;
   const lowering = createGeneralLowering({
     functionFallback,
+    nativeScriptCalls:
+      process.env.TINT_EXPERIMENTAL_NATIVE_SCRIPT_CALLS === "1",
     runtime: {
       objects: "packages/js-runtime/src/objects/index.ts",
       modules: "packages/js-runtime/src/modules/index.ts",

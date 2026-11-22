@@ -506,6 +506,16 @@ function addInitializedCaptures(
   for (const binding of checked.bindings.bindings) {
     if (binding === undefined) throw "capture binding invariant";
     const kind = binding.kind;
+    if (binding.capture === "reference") continue;
+    if (
+      binding.capture === "value" &&
+      kind === "const" &&
+      binding.captured &&
+      writes.written[binding.id] !== 1
+    ) {
+      result[binding.id] = 1;
+      continue;
+    }
     // Never-reassigned function declarations: each captor copies the
     // function object once it exists.
     if (

@@ -64,7 +64,7 @@ export function indirectCallClass(
 
 /** Ordered parameter encodings shared by value-producing and void calls. */
 function parameterKey(fn: FunctionIR): string {
-  let key = "";
+  let key = fn.scriptEntry === true ? ",javascript" : "";
   for (const parameter of fn.parameters) {
     if (parameter === undefined) throw "call target parameter invariant";
     const type = fn.slots[parameter];

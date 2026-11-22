@@ -29,7 +29,7 @@ test("constant property keys skip ToPropertyKey and reads return values", () => 
   const source = "function f(o){o.x=1;var a=o.x;o.m(a);o.y+=1;return a}";
   assert.equal(calls(source, "objectPropertyKey"), 0);
   assert.equal(calls(source, "getObjectValueProperty"), 0);
-  assert.equal(calls(source, "readObjectValueProperty"), 3);
+  assert.equal(calls(source, "readCachedObjectValueProperty"), 3);
 });
 
 for (const [source, printed, completion] of [

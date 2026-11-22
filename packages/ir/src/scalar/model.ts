@@ -140,6 +140,29 @@ export type Instruction = Span &
         readonly target: number;
         readonly callee: number;
         readonly arguments: readonly number[];
+        /** Actual JavaScript operands. The fixed header contains callee,
+         * receiver, new.target and an optional already-materialized list. */
+        readonly scriptArguments?: readonly number[];
+      }
+    | { readonly kind: "script-argument-count"; readonly id: number }
+    | {
+        /** Numeric address of borrowed operands in a live script frame. */
+        readonly kind: "script-argument-area";
+        readonly id: number;
+        readonly area: "registers" | "stack";
+      }
+    | {
+        /** Read an actual operand of the current script entry. Missing
+         * operands return undefined. The caller owns the overflow roots. */
+        readonly kind: "script-argument";
+        readonly id: number;
+        readonly index: number;
+        /** Legacy Function.arguments reflection borrows an active frame. */
+        readonly frame?: {
+          readonly count: number;
+          readonly registers: number;
+          readonly stack: number;
+        };
       }
     | { readonly kind: "closure-environment"; readonly id: number }
     | { readonly kind: "string-none"; readonly id: number }
@@ -510,6 +533,9 @@ export interface Environment {
   readonly cells: readonly EnvironmentCell[];
 }
 export interface FunctionIR {
+  /** Native JavaScript entry with a fixed call header and variadic actual
+   * operands. The count is supplied by the call site. */
+  readonly scriptEntry?: true | undefined;
   /** Opaque managed-code import: ABI only, no executable body or environment.
    * It obeys managed layout/lifetime contracts; raw native FFI remains a host
    * operation. Linker authority is required before emitting calls to it. */
@@ -620,6 +646,8 @@ export function functionHeader(fn: FunctionIR): FunctionIR {
     blocks: [],
   };
   if (fn.import !== undefined) header = { ...header, import: fn.import };
+  if (fn.scriptEntry !== undefined)
+    header = { ...header, scriptEntry: fn.scriptEntry };
   const receiverSlot = fn.receiverSlot,
     closureEnvironment = fn.closureEnvironment,
     environment = fn.environment;

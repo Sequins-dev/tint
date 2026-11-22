@@ -37,6 +37,7 @@ export interface GeneralRuntimeModules {
 }
 export interface GeneralLoweringOptions {
   readonly runtime: GeneralRuntimeModules;
+  readonly nativeScriptCalls?: boolean;
   /** Enables the limited function fallback route for validated fixtures. */
   readonly functionFallback?: boolean;
   /** A host function `(fd: number, bytes: Uint8Array) => number`, exposed to
@@ -411,6 +412,7 @@ function lowerGeneralProgram(
         (mixed === undefined || mixed.ordinaryEntries !== undefined),
       checkMethodCalls,
       source.module,
+      options.nativeScriptCalls === true,
     );
     if (!lowered.ok)
       return {

@@ -362,6 +362,18 @@ export function emitModule(
         span: undefined,
       },
     };
+  const scriptEntry = module.functions.find((fn) => fn?.scriptEntry === true);
+  if (scriptEntry !== undefined)
+    return {
+      ok: false,
+      error: {
+        code: "UNSUPPORTED",
+        message: "x86-64 scalar: native JavaScript entry ABI",
+        function: scriptEntry.id,
+        block: undefined,
+        span: undefined,
+      },
+    };
 
   let functionId: number | undefined;
   let blockId: number | undefined;

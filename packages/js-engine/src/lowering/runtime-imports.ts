@@ -73,6 +73,12 @@ export function scriptRuntimeImports(
   usesFusedResults: boolean = false,
   usesRetainedFunctions: boolean = false,
   usesPrimitiveContracts: boolean = false,
+  usesFixedCells: boolean = false,
+  usesRegisterCalls: boolean = false,
+  usesPropertyCaches: boolean = false,
+  usesWideRegisterCalls: boolean = false,
+  usesNativeScriptCalls: boolean = false,
+  usesIndexedWrites: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -163,6 +169,26 @@ export function scriptRuntimeImports(
         "updateObjectValue",
         "unaryObjectValueOperation",
         "createSourceFunction",
+        ...(usesNativeScriptCalls
+          ? [
+              "createNativeSourceFunction",
+              "sourceArgumentCount",
+              "sourceArgument",
+              "sourceArgumentArea",
+              "sourceArgumentFromFrame",
+              "enterNativeSourceCall",
+              "enterSourceCall",
+              "exitSourceCall",
+              "enterExecutionName",
+              "leaveExecutionName",
+            ]
+          : []),
+        ...(usesRegisterCalls || declarations === "all"
+          ? ["createRegisterSourceFunction"]
+          : []),
+        ...(usesWideRegisterCalls || declarations === "all"
+          ? ["createWideRegisterSourceFunction"]
+          : []),
         "retainFunctionSource",
         "runScriptContext",
         "createSourceAsyncGeneratorFunction",
@@ -236,9 +262,23 @@ export function scriptRuntimeImports(
         ...(usesTemplateSites ? ["getScriptTemplateSite"] : []),
         ...(usesLiteralTable ? ["getScriptLiteral"] : []),
         "callObjectValue",
+        ...(usesRegisterCalls || declarations === "all"
+          ? ["callRegisterObjectValue"]
+          : []),
+        ...(usesWideRegisterCalls || declarations === "all"
+          ? ["callWideRegisterObjectValue"]
+          : []),
         "getObjectValueProperty",
         "readObjectValueProperty",
+        ...(usesPropertyCaches || declarations === "all"
+          ? [
+              "createScriptPropertyCache",
+              "readCachedObjectValueProperty",
+              "writeCachedObjectValueProperty",
+            ]
+          : []),
         "readObjectValuePropertyKey",
+        ...(usesIndexedWrites ? ["writeObjectValuePropertyKey"] : []),
         "getObjectValuePropertyWithReceiver",
         "setObjectValueProperty",
         "setObjectValuePropertyWithReceiver",
@@ -276,7 +316,7 @@ export function scriptRuntimeImports(
         "resolveBinding",
         "getIdentifierValue",
         // Module code keeps uncached global lookups (see globalIdentifierSites).
-        ...(declarations === "module" ? [] : ["createGlobalIdentifierCache"]),
+        "createGlobalIdentifierCache",
         "getBindingReference",
         "getBindingReferenceForTypeof",
         "putBindingReference",
@@ -329,8 +369,16 @@ export function scriptRuntimeImports(
         "createDeclarativeEnvironment",
         "createMutableBinding",
         "createImmutableBinding",
+        ...(usesFixedCells || declarations === "all"
+          ? ["Binding", "findBinding"]
+          : []),
         ...(declarations === "module" ? ["DeclarativeEnvironment"] : []),
-      ].map((name) => runtimeImport(name, name === "DeclarativeEnvironment")),
+      ].map((name) =>
+        runtimeImport(
+          name,
+          name === "DeclarativeEnvironment" || name === "Binding",
+        ),
+      ),
     },
   ];
   if (declarations === "module")
@@ -395,6 +443,8 @@ export function scriptRuntimeTypeArguments(name: string): readonly string[] {
     case "runAsyncGeneratorSteps":
     case "runGeneratorSteps":
     case "DeclarativeEnvironment":
+    case "Binding":
+    case "findBinding":
     case "initializeBinding":
     case "setMutableBinding":
     case "getBindingValue":

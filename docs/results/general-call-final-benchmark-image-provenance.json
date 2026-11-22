@@ -1,0 +1,70 @@
+{
+  "head": "19342f126fc2aa5be79a6a76ba477bb4d4e7668e",
+  "patchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "node": "/private/tmp/tint-node-v26.13.1.eiNCe7/node-v26.13.1-darwin-arm64/bin/node",
+  "nodeSha256": "266dec4dce3a6cdcf5cdc38722a00cf5ae6a12cc51068d2a227655bbb75751ec",
+  "script": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-general-call-bench-9QbvSO/benchmark.mjs",
+  "scriptSha256": "a399cebe7fee289f86ff232be6e6bc26dd2d05c94b3ad613d64fc2bba7287e68",
+  "native": {
+    "untyped": {
+      "target": "darwin-aarch64",
+      "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-untyped-c2h1zy/general-call-bench-untyped",
+      "imageSha256": "c85a83010badf305c979e546e0f3fc51bf50663a7a3a427afb1dbbf24416edfe",
+      "buildManifest": {
+        "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-untyped-c2h1zy/general-call-bench-untyped.manifest.json",
+        "sha256": "ff8f35444a036e885edf6d05e83a930d1153547abde33829b261c01db4482470"
+      }
+    },
+    "typed": {
+      "target": "darwin-aarch64",
+      "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-typed-XTsdDA/general-call-bench-typed",
+      "imageSha256": "247254d48165ba82726246b998d7d5f782887049e6f7733cfe0c7038099c7648",
+      "buildManifest": {
+        "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-general-call-bench-typed-XTsdDA/general-call-bench-typed.manifest.json",
+        "sha256": "0777b7910bc425510617ef7c485bca21c869726bc23b90eb0fe877231fd212f6"
+      }
+    }
+  },
+  "checksums": {
+    "array": {
+      "sum": 450000,
+      "iterations": 100000,
+      "warm": 20000
+    },
+    "closure": {
+      "sum": 1450000,
+      "iterations": 100000,
+      "warm": 20000
+    },
+    "control": {
+      "sum": 4200000,
+      "iterations": 100000,
+      "warm": 20000
+    },
+    "method": {
+      "sum": 1450000,
+      "iterations": 100000,
+      "warm": 20000
+    },
+    "property": {
+      "sum": 750015,
+      "iterations": 100000,
+      "warm": 20000
+    },
+    "recursive": {
+      "sum": 55000,
+      "iterations": 2000,
+      "warm": 2000
+    },
+    "rest": {
+      "sum": 1650000,
+      "iterations": 100000,
+      "warm": 20000
+    },
+    "stringEquality": {
+      "sum": 50000,
+      "iterations": 100000,
+      "warm": 20000
+    }
+  }
+}

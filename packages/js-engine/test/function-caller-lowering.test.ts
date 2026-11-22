@@ -21,7 +21,8 @@ for (const [source, policy] of [
         if (
           node.kind === "call" &&
           node.callee.kind === "identifier" &&
-          node.callee.name === "createSourceFunction"
+          (node.callee.name === "createSourceFunction" ||
+            node.callee.name === "createRegisterSourceFunction")
         ) {
           const argument = node.arguments[7];
           policies.push(

@@ -69,23 +69,23 @@ test("proposal import phases lower through Script, module, eval and Function ent
 test("import-free lowering retains the caller-policy output contract", () => {
   const cases: [string, boolean, string][] = [
     ["42;", false, "afe92abe8eb5b2c3"],
-    ["function f(){ return a?.b(c); }", false, "c525121a7e1e17e5"],
+    ["function f(){ return a?.b(c); }", false, "52e248e035490ca3"],
     [
       "async function g(){ await x; } function* k(){ yield 1; }",
       false,
-      "bd4e6113330b5878",
+      "e46c4e9aaa9b5208",
     ],
-    ["new (f())(1); x = y ?? z;", false, "4a94ababfe5b4d17"],
-    ['eval("1");', false, "f8cc18776417ba06"],
+    ["new (f())(1); x = y ?? z;", false, "75c90537f442ea70"],
+    ['eval("1");', false, "b9f7100a25337608"],
     ["{ using r = null; }", false, "b20a1da4238fdf5c"],
     [
       "export let a = 1; export function f(){ return a; }",
       true,
-      "631c63136dd74fad",
+      "ab30b84ed114ede4",
     ],
-    ['import {x} from "./x"; export default x;', true, "f4c363c984eb2d22"],
-    ["export async function g(){ await 1; }", true, "37541c2bb5d7d86f"],
-    ["export const o = {a(){ return this?.b; }};", true, "18877a113c6ffe87"],
+    ['import {x} from "./x"; export default x;', true, "251d189aa85b5a54"],
+    ["export async function g(){ await 1; }", true, "651068e61a5a2f4b"],
+    ["export const o = {a(){ return this?.b; }};", true, "0f352a637508376d"],
   ];
   for (const [source, module, hash] of cases) {
     const result = module
@@ -179,8 +179,8 @@ test("runtime vocabulary flags add only requested helpers and preserve the manag
   const script = lowering.scriptRuntimeImports(span),
     module = lowering.scriptRuntimeImports(span, false, false, false, "module");
   assert.equal(count(script), 118);
-  assert.equal(count(module), 121);
-  assert.equal(lowering.scriptRuntimeSurface().length, 165);
+  assert.equal(count(module), 122);
+  assert.equal(lowering.scriptRuntimeSurface().length, 174);
   assert.ok(
     lowering
       .scriptRuntimeSurface()
@@ -213,7 +213,7 @@ test("runtime vocabulary flags add only requested helpers and preserve the manag
         true,
       ),
     ),
-    123,
+    124,
   );
   for (const mode of [
     "indirect-eval",
