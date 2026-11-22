@@ -206,6 +206,8 @@ export {
   viewTypeofObject,
   scriptBoolean,
   scriptIsHTMLDDA,
+  markHTMLDDAObject,
+  excludeHTMLDDAObjects,
   scriptStrictEqual,
   scriptSameValue,
   callObjectValue,

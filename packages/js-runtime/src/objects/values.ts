@@ -188,6 +188,26 @@ export function scriptIsHTMLDDA(
   return object !== undefined && object.internalIsHTMLDDA;
 }
 
+/** Annex B.3.6 [[IsHTMLDDA]] objects are host-defined. Code lowered for a
+ * host that creates none omits their checks and excludes them when its
+ * module initializes; a host marks each object through
+ * markHTMLDDAObject. Either step after the other is an image configuration
+ * error, never a silent change of `==` semantics. */
+let htmlDDAObjects: "unknown" | "present" | "excluded" = "unknown";
+
+export function markHTMLDDAObject<K, V>(object: OrdinaryObject<K, V>): void {
+  if (htmlDDAObjects === "excluded")
+    throw "IsHTMLDDA objects were excluded by code lowered without them";
+  htmlDDAObjects = "present";
+  object.internalIsHTMLDDA = true;
+}
+
+export function excludeHTMLDDAObjects(): void {
+  if (htmlDDAObjects === "present")
+    throw "code lowered without IsHTMLDDA objects runs beside one";
+  htmlDDAObjects = "excluded";
+}
+
 export function scriptBoolean(
   value: unknown,
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,

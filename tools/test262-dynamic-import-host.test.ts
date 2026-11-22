@@ -96,7 +96,7 @@ test("generated module loaders widen only with explicit dynamic import capabilit
     createHash("sha256")
       .update(old.replaceAll('architecture:"x86_64",\n ', ""))
       .digest("hex"),
-    "08bb9bfce1a77c8c18b72c373153d244ef579486e6d08e1fe23eff8e12912f7f",
+    "39e9305032a00956f823e618a6b3791aa4cffa7cd741a1f8f06d4d397d9fba65",
   );
   assert.match(
     old,
@@ -301,7 +301,7 @@ test("Script-root runtime text is enabled only for batches that need it", () => 
     createHash("sha256")
       .update(moduleOnly.replaceAll('architecture:"x86_64",\n ', ""))
       .digest("hex"),
-    "e0635368f958779317efded2232f841a486ea706a6b766985652ce21f038b177",
+    "5663ed9ce3c02cba87154af78ed5f36846aa517fa4862cac956a0ac44dbf56e7",
   );
   const roots = native.nativeTestRuntimeSource(
     evaluation,
@@ -635,6 +635,7 @@ test("historical captures keep their managed vocabulary and adapter", async () =
     "writeCachedObjectValueProperty",
     "scriptIsHTMLDDA",
     "looselyEqualOrThrow",
+    "excludeHTMLDDAObjects",
   ];
   const old = {
     ...snapshot,
@@ -669,7 +670,7 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   const previous = createScriptRuntimeRequest(bind, true, old),
     current = createScriptRuntimeRequest(bind, true, snapshot);
   assert.equal(previous.values.length, 136);
-  assert.equal(current.values.length, 149);
+  assert.equal(current.values.length, 150);
   for (const name of fastPaths) {
     assert.ok(!previous.values.some((value) => value.name === name), name);
     assert.ok(

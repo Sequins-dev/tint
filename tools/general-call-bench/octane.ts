@@ -119,7 +119,7 @@ export function prepareOctane(
       features: [],
       includes: [],
     });
-    const result = prepareNativeScripts(plan, "raw", []);
+    const result = prepareNativeScripts(plan, "raw", [], false);
     if (!result.ok)
       assert.fail(filename + ": " + JSON.stringify(result.outcome));
     return result.modules.map((module) => ({

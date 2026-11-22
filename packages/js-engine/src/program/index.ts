@@ -369,6 +369,8 @@ function lowerGeneralProgram(
       checkMethodCalls,
       source.module,
       options.nativeScriptCalls === true,
+      // General program hosts create no [[IsHTMLDDA]] objects.
+      false,
     );
     if (!lowered.ok)
       return {

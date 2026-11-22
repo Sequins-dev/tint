@@ -310,6 +310,7 @@ const sourceRecipes = new WeakMap<
 function loweredScriptRecipe(
   source: string,
   nativeScriptCalls: boolean,
+  htmlDDAObjects: boolean,
 ): NativeModuleRecipe["load"] {
   return () => {
     const bytes = new TextEncoder().encode(source);
@@ -317,7 +318,10 @@ function loweredScriptRecipe(
     if (!decoded.ok) throw Error("native Script source failed");
     const parsed = parseScript(decoded.value);
     if (!parsed.ok) throw Error(JSON.stringify(parsed.error));
-    const lowered = lowerScript(parsed.value, source, { nativeScriptCalls });
+    const lowered = lowerScript(parsed.value, source, {
+      nativeScriptCalls,
+      htmlDDAObjects,
+    });
     if (!lowered.ok) throw Error(JSON.stringify(lowered.error));
     return lowered.value;
   };
@@ -366,10 +370,13 @@ export function deferNativeCase(
   };
 }
 
+/** Benchmark hosts create no [[IsHTMLDDA]] object, so their Scripts lower
+ * with `htmlDDAObjects` false; Test262 hosts keep it. */
 export function prepareNativeScripts(
   plan: ExecutionPlan,
   variant: SyntaxVariant,
   harness: readonly { readonly filename: string; readonly source: string }[],
+  htmlDDAObjects: boolean = true,
 ):
   | { readonly ok: true; readonly modules: readonly SourceModule[] }
   | { readonly ok: false; readonly outcome: ExecutionOutcome } {
@@ -381,15 +388,17 @@ export function prepareNativeScripts(
     return unsupported("native module execution is not implemented");
   if (plan.harness.length !== harness.length)
     return unsupported("harness inputs do not match the execution plan");
-  return prepareNativeScriptInputs([
-    ...harness,
-    { filename: "test", source: plan.source },
-  ]);
+  return prepareNativeScriptInputs(
+    [...harness, { filename: "test", source: plan.source }],
+    undefined,
+    htmlDDAObjects,
+  );
 }
 
 function prepareNativeScriptInputs(
   inputs: readonly { readonly filename: string; readonly source: string }[],
   dynamicRootIndex?: number,
+  htmlDDAObjects: boolean = true,
 ):
   | { readonly ok: true; readonly modules: readonly SourceModule[] }
   | { readonly ok: false; readonly outcome: ExecutionOutcome } {
@@ -411,6 +420,7 @@ function prepareNativeScriptInputs(
       return unsupported(input.filename + ": " + JSON.stringify(parsed.error));
     const lowered = lowerScript(parsed.value, input.source, {
       nativeScriptCalls,
+      htmlDDAObjects,
     });
     if (!lowered.ok)
       return unsupported(input.filename + ": " + JSON.stringify(lowered.error));
@@ -427,7 +437,7 @@ function prepareNativeScriptInputs(
       );
     sourceRecipes.set(
       lowered.value,
-      loweredScriptRecipe(input.source, nativeScriptCalls),
+      loweredScriptRecipe(input.source, nativeScriptCalls, htmlDDAObjects),
     );
     modules.push({
       id: "test262-script-" + index,
@@ -1154,7 +1164,7 @@ import {createNativeFileHost,readlinkSync} from "native-fs";
 import {readFile} from "files";
 import {createTzifZone,type TzifZone} from "tzif";
 import {readTimeZoneIdentifiers} from "zone-identifiers";
-import {${shadowRealm ? "installShadowRealmIntrinsics," : ""}${sourcePhases ? "createModuleSourceObject," : ""}${scriptEvaluation?.directEval ? "installDirectEvalCompiler," : ""}${scriptEvaluation?.indirectEval ? "installEvalCompiler," : ""}${weakRef ? "installWeakRefIntrinsics," : ""}${finalizationRegistry ? "installFinalizationRegistryIntrinsics," : ""}${weakProvider === undefined ? "" : "installWeakCollectionIntrinsics,"}${atomics ? "installAtomicsIntrinsics," : ""}${sharedBuffers ? "installSharedArrayBufferIntrinsics," : ""}${disposal ? "installDisposableStackIntrinsics," : ""}${asyncDisposal ? "installAsyncDisposableStackIntrinsics," : ""}type ScriptRecord,createScriptRecord,primaryTimeZoneIdentifiers,installIntlIntrinsics,createNamedTimeZoneProvider,type NamedTimeZoneProvider,type NamedTimeZoneLookup,type ErrorRealm,type OrdinaryObject,type ScriptPropertyKey,createObject,createCallableObject,getOwnProperty,createDataProperty,stringValue,drainScriptJobs,createRuntimeError,rejectUnsupportedExecution,createScriptAgent,createSymbolRegistry,createErrorRealm,installDateTimeZone,installArrayBufferIntrinsics,installDataViewIntrinsics,installTypedArrayIntrinsics,detachArrayBuffer,installErrorIntrinsics,installArrayIntrinsics,installObjectIntrinsics,installFunctionIntrinsics,installPrimitiveIntrinsics,installMapIntrinsics,installSetIntrinsics,installIteratorConstructor,installRegExpIntrinsics,installSymbolIntrinsics,installMathIntrinsics,installPromiseIntrinsics,installProxyIntrinsics,installReflectIntrinsics,installGlobalProperties,installEvalIntrinsic,installTemporalIntrinsics,callObjectValue,viewObjectValue,scriptSameValue as sameValue,type ObjectHooks} from "object";
+import {${shadowRealm ? "installShadowRealmIntrinsics," : ""}${sourcePhases ? "createModuleSourceObject," : ""}${scriptEvaluation?.directEval ? "installDirectEvalCompiler," : ""}${scriptEvaluation?.indirectEval ? "installEvalCompiler," : ""}${weakRef ? "installWeakRefIntrinsics," : ""}${finalizationRegistry ? "installFinalizationRegistryIntrinsics," : ""}${weakProvider === undefined ? "" : "installWeakCollectionIntrinsics,"}${atomics ? "installAtomicsIntrinsics," : ""}${sharedBuffers ? "installSharedArrayBufferIntrinsics," : ""}${disposal ? "installDisposableStackIntrinsics," : ""}${asyncDisposal ? "installAsyncDisposableStackIntrinsics," : ""}type ScriptRecord,createScriptRecord,primaryTimeZoneIdentifiers,installIntlIntrinsics,createNamedTimeZoneProvider,type NamedTimeZoneProvider,type NamedTimeZoneLookup,type ErrorRealm,type OrdinaryObject,type ScriptPropertyKey,createObject,createCallableObject,getOwnProperty,createDataProperty,stringValue,drainScriptJobs,createRuntimeError,rejectUnsupportedExecution,createScriptAgent,createSymbolRegistry,createErrorRealm,installDateTimeZone,installArrayBufferIntrinsics,installDataViewIntrinsics,installTypedArrayIntrinsics,detachArrayBuffer,installErrorIntrinsics,installArrayIntrinsics,installObjectIntrinsics,installFunctionIntrinsics,installPrimitiveIntrinsics,installMapIntrinsics,installSetIntrinsics,installIteratorConstructor,installRegExpIntrinsics,installSymbolIntrinsics,installMathIntrinsics,installPromiseIntrinsics,installProxyIntrinsics,installReflectIntrinsics,installGlobalProperties,installEvalIntrinsic,installTemporalIntrinsics,callObjectValue,viewObjectValue,scriptSameValue as sameValue,type ObjectHooks${benchmarkHost ? "" : ",markHTMLDDAObject"}} from "object";
 ${
   sharedBuffers
     ? `let sharedBlocks:NativeSharedBlockService|undefined=undefined;
@@ -1354,9 +1364,15 @@ function installRealmHost(host:RealmHost,realms:ErrorRealm[]):OrdinaryObject<Scr
      : ""
  }
  const api=createObject<ScriptPropertyKey,unknown>(realm.objectPrototype);
+${
+  // Benchmark Scripts are lowered without [[IsHTMLDDA]] checks.
+  benchmarkHost
+    ? ""
+    : `
  const htmlDDA=createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver,args):unknown=>null);
- htmlDDA.internalIsHTMLDDA=true;
- createDataProperty<ScriptPropertyKey,unknown>(api,"IsHTMLDDA",htmlDDA,hooks);
+ markHTMLDDAObject(htmlDDA);
+ createDataProperty<ScriptPropertyKey,unknown>(api,"IsHTMLDDA",htmlDDA,hooks);`
+}
  const create=createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver,args):unknown=>{
    const child=createRealmHost(realm,realms);
    ${shadowRealm ? "const initializeModuleHost=host.moduleHost;if(initializeModuleHost!==undefined)initializeModuleHost(child);\n   " : ""}return installRealmHost(child,realms);

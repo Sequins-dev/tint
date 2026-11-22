@@ -80,6 +80,11 @@ export type ScriptLoweringResult =
 export interface ScriptLoweringOptions {
   readonly runtimeCompiled?: boolean;
   readonly nativeScriptCalls?: boolean;
+  /** False when the host creates no Annex B [[IsHTMLDDA]] objects: inline
+   * loose equality with null omits their check, and the lowered module
+   * excludes such objects when it initializes (markHTMLDDAObject then
+   * fails). Defaults to true. */
+  readonly htmlDDAObjects?: boolean;
 }
 /** Immutable numeric imports proved by the hosted function planner. */
 export interface NumericCallSite extends Span {
@@ -424,6 +429,7 @@ export function lowerScript(
     false,
     undefined,
     options.nativeScriptCalls === true,
+    options.htmlDDAObjects !== false,
   );
 }
 /** Lower source-module bodies through the shared execution lowering. */
@@ -435,6 +441,7 @@ export function lowerSourceTextModule(
   checkMethodCalls: boolean = false,
   sourceTypes?: Module,
   nativeScriptCalls: boolean = false,
+  htmlDDAObjects: boolean = true,
 ): ScriptLoweringResult {
   return lowerScriptEntry(
     module,
@@ -448,6 +455,7 @@ export function lowerSourceTextModule(
     checkMethodCalls,
     sourceTypes,
     nativeScriptCalls,
+    htmlDDAObjects,
   );
 }
 /** Indirect eval uses fresh lexical storage and eval declaration admission. */
@@ -506,6 +514,7 @@ function lowerScriptEntry(
   checkMethodCalls: boolean = false,
   sourceTypes?: Module,
   nativeScriptCalls: boolean = false,
+  htmlDDAObjects: boolean = true,
 ): ScriptLoweringResult {
   const bound =
     entryKind === "module"
@@ -1044,6 +1053,7 @@ function lowerScriptEntry(
   let usesNativeScriptCalls = false;
   let usesIndexedWrites = false;
   let usesNullishEquality = false;
+  let excludesHTMLDDAObjects = false;
   let usesRelationalFallback = false;
   let usesLooseEqualityFallback = false;
   let usesPrimitiveContracts = false;
@@ -4122,14 +4132,19 @@ function lowerScriptEntry(
     );
   }
   function nullishEquality(subject: Expression, span: Span): Expression {
+    const nullish = scalarBinary(
+      "||",
+      nullOperand(subject, span),
+      undefinedOperand(subject, span),
+      span,
+    );
+    if (!htmlDDAObjects) {
+      excludesHTMLDDAObjects = true;
+      return nullish;
+    }
     usesNullishEquality = true;
     return scalarBranch(
-      scalarBinary(
-        "||",
-        nullOperand(subject, span),
-        undefinedOperand(subject, span),
-        span,
-      ),
+      nullish,
       { ...at(span), kind: "boolean", value: true },
       scalarBinary(
         "&&",
@@ -10251,12 +10266,24 @@ function lowerScriptEntry(
     usesNullishEquality,
     usesRelationalFallback,
     usesLooseEqualityFallback,
+    excludesHTMLDDAObjects,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,
     kind: "import",
     declaration,
   }));
+  // Inline checks above assumed no [[IsHTMLDDA]] objects: the Script or
+  // module holds its host to that before any of its code runs.
+  const htmlDDAExclusion: Statement[] = excludesHTMLDDAObjects
+    ? [
+        {
+          ...generated,
+          kind: "expression",
+          expression: call("excludeHTMLDDAObjects", [], generated),
+        },
+      ]
+    : [];
   const execution: BlockStatement = {
     ...at(script),
     kind: "block",
@@ -10473,7 +10500,10 @@ function lowerScriptEntry(
       ),
       body: moduleContinuation ?? body,
     };
-    const factoryStatements = globalCacheDeclarations();
+    const factoryStatements = [
+      ...htmlDDAExclusion,
+      ...globalCacheDeclarations(),
+    ];
     appendStatements(factoryStatements, fixedCellTable());
     // Each Module Record owns its parsed template sites even when the host
     // reuses a compiled factory for equal source text at different specifiers.
@@ -10655,7 +10685,7 @@ function lowerScriptEntry(
     appendStatements(caches, body.statements);
     contextArrowBody = { ...body, statements: caches };
   }
-  const contextualStatements: Statement[] = [];
+  const contextualStatements: Statement[] = [...htmlDDAExclusion];
   contextualStatements.push({
     ...generated,
     kind: "variable",

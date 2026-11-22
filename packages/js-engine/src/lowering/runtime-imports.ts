@@ -82,6 +82,7 @@ export function scriptRuntimeImports(
   usesNullishEquality: boolean = false,
   usesRelationalFallback: boolean = false,
   usesLooseEqualityFallback: boolean = false,
+  excludesHTMLDDAObjects: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -171,6 +172,9 @@ export function scriptRuntimeImports(
           : []),
         ...(usesLooseEqualityFallback || declarations === "all"
           ? ["looselyEqualOrThrow"]
+          : []),
+        ...(excludesHTMLDDAObjects || declarations === "all"
+          ? ["excludeHTMLDDAObjects"]
           : []),
         ...(usesRelationalFallback && !usesFusedResults
           ? ["binaryObjectValueOperationOrThrow"]

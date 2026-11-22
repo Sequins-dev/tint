@@ -54,6 +54,67 @@ test("literal nullish equality bypasses general equality completions", () => {
   );
 });
 
+test("hosts without IsHTMLDDA objects lower null equality to a tag test", () => {
+  const source = "function f(x) { return x == null || void 0 != x; }";
+  function lowered(htmlDDAObjects: boolean) {
+    const parsed = parseScript(createSourceTextView(source));
+    assert.ok(parsed.ok);
+    const result = lowerScript(parsed.value, source, { htmlDDAObjects });
+    assert.ok(result.ok, JSON.stringify(result));
+    const imported = new Set(
+      result.value.imports.flatMap((declaration) =>
+        declaration.bindings.map((binding) => binding.imported),
+      ),
+    );
+    let checks = 0,
+      exclusions = 0;
+    rewriteModule(result.value, {
+      expression: (mapped) => {
+        if (mapped.kind === "call" && mapped.callee.kind === "identifier") {
+          if (mapped.callee.name === "scriptIsHTMLDDA") checks++;
+          if (mapped.callee.name === "excludeHTMLDDAObjects") exclusions++;
+        }
+        return mapped;
+      },
+    });
+    return { imported, checks, exclusions };
+  }
+  const hosted = lowered(true);
+  assert.equal(hosted.checks, 2);
+  assert.equal(hosted.exclusions, 0);
+  assert.ok(!hosted.imported.has("excludeHTMLDDAObjects"));
+  const plain = lowered(false);
+  assert.equal(plain.checks, 0);
+  assert.equal(plain.exclusions, 1);
+  assert.ok(plain.imported.has("excludeHTMLDDAObjects"));
+  assert.ok(!plain.imported.has("scriptIsHTMLDDA"));
+});
+
+test("null equality without IsHTMLDDA objects keeps operand order and identity", () => {
+  const realm = createLoweredRealm((script, text) =>
+    lowerScript(script, text, { htmlDDAObjects: false }),
+  );
+  assert.equal(
+    realm.run(`
+      const order = [];
+      function at(name, value) { order.push(name); return value; }
+      print(String(at("a", null) == at("b", void 0)));
+      print(String(at("c", {}) == null) + " " + String(null != at("d", function () {})));
+      print(String(0 == null) + " " + String("" == void 0) + " " + String(0n != null));
+      with ({ undefined: 1 }) print(String(undefined == null));
+      print(order.join(""));
+    `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, [
+    "true",
+    "false true",
+    "false false true",
+    "false",
+    "abcd",
+  ]);
+});
+
 test("numeric loose equality guards a scalar comparison", () => {
   const source = "function f(x, y) { if (x == y) return 1; return 0; }";
   assert.equal(runtimeCalls(source, "looselyEqual"), 0);
