@@ -223,6 +223,17 @@ function invalidScalar(
   );
 }
 
+/** Validate an i32 argument, testing an exact int32 first. -0 passes, as
+ * it does in the general check. */
+export function checkedFfiI32(
+  core: ProgramRealmCore,
+  value: unknown,
+  argumentIndex: number,
+): number {
+  if (typeof value === "number" && (value | 0) === value) return value;
+  return checkedFfiNumber(core, 4, value, argumentIndex);
+}
+
 export function checkedFfiNumber(
   core: ProgramRealmCore,
   kind: number,

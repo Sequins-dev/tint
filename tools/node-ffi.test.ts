@@ -627,6 +627,103 @@ test("node:ffi registers runtime signatures without a fixed callback pool", () =
   );
 });
 
+const generalCallerLibrary = `
+int32_t tint_add2(int32_t left, int32_t right) { return left + right; }
+int32_t tint_first_byte(const uint8_t *bytes) { return bytes[0]; }
+`;
+
+/** General callers reach bindings through positional entries and the typed
+ * Buffer and callback entries. Each must keep Node's argument contracts. */
+function generalCallersSource(library: string): string {
+  return `
+import { dlopen } from "node:ffi";
+import { Buffer } from "node:buffer";
+function code(run) {
+  try { run(); return "none"; }
+  catch (error) { return error.code + ":" + error.message; }
+}
+export function run() {
+  const { lib, functions } = dlopen(${JSON.stringify(library)}, {
+    tint_add2: { arguments: ["i32", "i32"], return: "i32" },
+    tint_first_byte: { arguments: ["buffer"], return: "i32" },
+    tint_call_i32: { arguments: ["function", "i32"], return: "i32" },
+  });
+  const add = functions.tint_add2, first = functions.tint_first_byte;
+  const call = functions.tint_call_i32;
+  try {
+    const sum = add(40, 2);
+    if (sum !== 42 || add(-2147483648, 0) !== -2147483648) return 1;
+    if (code(() => add(1)) !== "ERR_INVALID_ARG_VALUE:Invalid argument count: expected 2, got 1") return 2;
+    if (code(() => add(1, 2, 3)) !== "ERR_INVALID_ARG_VALUE:Invalid argument count: expected 2, got 3") return 3;
+    const fraction = code(() => add(1.5, 2)), wide = code(() => add(1, 2147483648));
+    if (!fraction.startsWith("ERR_INVALID_ARG_VALUE:Argument 0 ") ||
+        !wide.startsWith("ERR_INVALID_ARG_VALUE:Argument 1 ")) return 4;
+    if (add.call({}, 20, 22) !== 42) return 5;
+    const bytes = Buffer.from([7, 8, 9]);
+    if (first(bytes) !== 7 || first(bytes.subarray(1)) !== 8 || first(bytes) !== 7) return 6;
+    if (first("A") !== 65 || first(new Uint8Array([5, 6]).buffer) !== 5) return 7;
+    const detached = new ArrayBuffer(4);
+    detached.transfer();
+    if (!code(() => first(detached)).startsWith("ERR_INVALID_ARG_VALUE:")) return 8;
+    let depth = 0;
+    const pointer = lib.registerCallback({ arguments: ["i32"], return: "i32" }, (value) => {
+      depth++;
+      // The nested call reenters the same binding during its own call.
+      return value > 0 ? call(pointer, value - 1) + 2 : add(value, 100);
+    });
+    if (call(pointer, 3) !== 106 || depth !== 4) return 9;
+    if (add(1, 1) !== 2 || first(bytes) !== 7) return 10;
+    const both = code(() => call(1n << 70n, 1.5)), second = code(() => call(pointer, 1.5));
+    if (!both.startsWith("ERR_INVALID_ARG_VALUE:Argument 0 ") ||
+        !second.startsWith("ERR_INVALID_ARG_VALUE:Argument 1 ")) return 11;
+    if (code(() => call(pointer)) !== "ERR_INVALID_ARG_VALUE:Invalid argument count: expected 2, got 1") return 12;
+    lib.unregisterCallback(pointer);
+    return 42;
+  } finally {
+    lib.close();
+  }
+}`;
+}
+
+test(
+  "the general caller fixture agrees with the pinned Node reference",
+  { skip: oracle === "" ? "Node 26.13.1 reference unavailable" : false },
+  () =>
+    assert.ok(
+      withDynamicLibrary((library) => {
+        runOracle(generalCallersSource(library));
+        return true;
+      }, callbackLibrary + generalCallerLibrary),
+      "clang is required",
+    ),
+);
+
+test("general Node FFI callers keep argument contracts on positional entries", () => {
+  assert.ok(
+    withDynamicLibrary(
+      (library) =>
+        verifyHostedFixture(
+          generalCallersSource(library),
+          "node-ffi-general-callers",
+          [
+            ["node:ffi", "packages/native-runtime/src/node/ffi.ts"],
+            ["node:buffer", "packages/native-runtime/src/node/buffer.ts"],
+          ],
+          [],
+          [],
+          [],
+          {
+            allowJit: true,
+            managedBytes: 67108864,
+            allocationCapacity: 1048576,
+          },
+        ),
+      callbackLibrary + generalCallerLibrary,
+    ),
+    "clang is required",
+  );
+});
+
 test("node:ffi lends the mapped span of a shared ArrayBuffer view", (context) => {
   const previous = process.env.TINT_GENERAL_FALLBACK;
   process.env.TINT_GENERAL_FALLBACK = "0";

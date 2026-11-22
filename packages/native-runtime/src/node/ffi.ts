@@ -449,6 +449,19 @@ function invokeScalar(
         continue;
       }
       const cell = Cell.view(bytes);
+      if (
+        parameter.kind === 4 &&
+        typeof argument === "number" &&
+        (argument | 0) === argument
+      ) {
+        // An exact int32 needs no further checks. A register word holds the
+        // same bits as the general path writes; a stack operand keeps to its
+        // four bytes because a neighbour can share the cell.
+        if (!parameter.register) cell.i32 = argument;
+        else if (parameter.signExtend) cell.i64 = argument;
+        else cell.u64 = argument >>> 0;
+        continue;
+      }
       if (parameter.register) cell.u64 = 0;
       writeScalar(core, cell, parameter.kind, argument, index);
       if (parameter.signExtend && typeof argument === "number")
@@ -826,12 +839,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       // Invalid or unprojected operands take the ordinary path, which
       // reports them in argument order.
       const input = args[1];
-      if (
-        typeof input === "number" &&
-        Number.isInteger(input) &&
-        input >= -2147483648 &&
-        input <= 2147483647
-      ) {
+      if (typeof input === "number" && (input | 0) === input) {
         const result = invokePointerI32Callback(binding, plan, args[0], input);
         if (result !== undefined) return result;
       }

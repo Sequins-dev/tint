@@ -412,13 +412,15 @@ function numericFfiSource(plan: StaticFfiPlan, index: number): string {
     if (type?.kind !== "scalar") throw "static numeric FFI parameter invariant";
     parameters.push("p" + parameter + ":number");
     args.push(
-      "checkedFfiNumber(core," +
-        nodeFfiScalarKind(type.scalar) +
-        ",args[" +
-        parameter +
-        "]," +
-        parameter +
-        ")",
+      type.scalar === "i32"
+        ? "checkedFfiI32(core,args[" + parameter + "]," + parameter + ")"
+        : "checkedFfiNumber(core," +
+            nodeFfiScalarKind(type.scalar) +
+            ",args[" +
+            parameter +
+            "]," +
+            parameter +
+            ")",
     );
   }
   const returns = plan.signature.result.kind === "void" ? "void" : "number";
@@ -450,7 +452,7 @@ export function makeStaticFfiModule(
 ): SourceModule {
   let text =
     'import type { ProgramRealmCore } from "objects";\n' +
-    'import { checkedFfiNumber } from "memory";\n' +
+    'import { checkedFfiI32, checkedFfiNumber } from "memory";\n' +
     "export type StaticFfiNumberCall=(core:ProgramRealmCore,target:number,args:readonly unknown[])=>unknown;\n" +
     "export type StaticFfiBytesCall=(target:number,bytes:Uint8Array)=>number;\n" +
     "export function ffiWeakProcessing():boolean { return " +
