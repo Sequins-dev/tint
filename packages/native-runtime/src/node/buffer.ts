@@ -113,9 +113,25 @@ function view(
   );
 }
 
+// The isolate has one program realm. Cache its Buffer prototype so result
+// adoption skips the brand registry lookup.
+let prototypeCore: ProgramRealmCore | undefined = undefined;
+let cachedPrototype: RealmObject | undefined = undefined;
+
+function bufferPrototype(core: ProgramRealmCore): RealmObject | undefined {
+  if (prototypeCore === core && cachedPrototype !== undefined)
+    return cachedPrototype;
+  const prototype = core.realm.prototypes.get(bufferBrand);
+  if (prototype !== undefined) {
+    prototypeCore = core;
+    cachedPrototype = prototype;
+  }
+  return prototype;
+}
+
 /** Buffer identity is shared between the host constructor and FFI results. */
 export function isNodeBuffer(core: ProgramRealmCore, value: unknown): boolean {
-  const prototype = core.realm.prototypes.get(bufferBrand);
+  const prototype = bufferPrototype(core);
   const object = viewObjectValue(value, core.object);
   return (
     prototype !== undefined &&
@@ -130,10 +146,10 @@ export function adoptNodeBuffer(
   bytes: Uint8Array,
 ): RealmObject {
   const realm = core.realm;
-  let prototype = realm.prototypes.get(bufferBrand);
+  let prototype = bufferPrototype(core);
   if (prototype === undefined) {
     installNodeBuffer(core);
-    prototype = realm.prototypes.get(bufferBrand);
+    prototype = bufferPrototype(core);
   }
   const buffer = adoptArrayBuffer(bytes, realm);
   const storage = buffer.internalArrayBufferData;
