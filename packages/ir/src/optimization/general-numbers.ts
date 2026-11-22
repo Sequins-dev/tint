@@ -304,24 +304,38 @@ export function shadowGeneralNumbers(
           test = nextId++,
           number = nextId++;
         instructions.push(
-          { kind: "load", id: loaded, slot, ...span },
+          { kind: "load", id: loaded, slot, start: span.start, end: span.end },
           {
             kind: "general-is",
             id: test,
             value: loaded,
             type: "number",
-            ...span,
+            start: span.start,
+            end: span.end,
           },
-          { kind: "store", slot: presence[index] ?? 0, value: test, ...span },
+          {
+            kind: "store",
+            slot: presence[index] ?? 0,
+            value: test,
+            start: span.start,
+            end: span.end,
+          },
           {
             kind: "general-value",
             id: number,
             value: loaded,
             type: "number",
             unchecked: true,
-            ...span,
+            start: span.start,
+            end: span.end,
           },
-          { kind: "store", slot: payload[index] ?? 0, value: number, ...span },
+          {
+            kind: "store",
+            slot: payload[index] ?? 0,
+            value: number,
+            start: span.start,
+            end: span.end,
+          },
         );
       }
     }
@@ -407,9 +421,27 @@ export function shadowGeneralNumbers(
       if (number !== undefined) {
         const yes = nextId++;
         instructions.push(
-          { kind: "store", slot: payload[index] ?? 0, value: number, ...at },
-          { kind: "constant", id: yes, value: true, ...at },
-          { kind: "store", slot: presence[index] ?? 0, value: yes, ...at },
+          {
+            kind: "store",
+            slot: payload[index] ?? 0,
+            value: number,
+            start: at.start,
+            end: at.end,
+          },
+          {
+            kind: "constant",
+            id: yes,
+            value: true,
+            start: at.start,
+            end: at.end,
+          },
+          {
+            kind: "store",
+            slot: presence[index] ?? 0,
+            value: yes,
+            start: at.start,
+            end: at.end,
+          },
         );
         state[index] = 1;
       } else if (copied >= 0) {
@@ -417,10 +449,34 @@ export function shadowGeneralNumbers(
         const test = nextId++,
           value = nextId++;
         instructions.push(
-          { kind: "load", id: test, slot: presence[copied] ?? 0, ...at },
-          { kind: "store", slot: presence[index] ?? 0, value: test, ...at },
-          { kind: "load", id: value, slot: payload[copied] ?? 0, ...at },
-          { kind: "store", slot: payload[index] ?? 0, value, ...at },
+          {
+            kind: "load",
+            id: test,
+            slot: presence[copied] ?? 0,
+            start: at.start,
+            end: at.end,
+          },
+          {
+            kind: "store",
+            slot: presence[index] ?? 0,
+            value: test,
+            start: at.start,
+            end: at.end,
+          },
+          {
+            kind: "load",
+            id: value,
+            slot: payload[copied] ?? 0,
+            start: at.start,
+            end: at.end,
+          },
+          {
+            kind: "store",
+            slot: payload[index] ?? 0,
+            value,
+            start: at.start,
+            end: at.end,
+          },
         );
         state[index] = knownLoads.has(op.value) ? 1 : 0;
       } else if (absent.has(op.value)) {
@@ -429,10 +485,34 @@ export function shadowGeneralNumbers(
         const no = nextId++,
           zero = nextId++;
         instructions.push(
-          { kind: "constant", id: no, value: false, ...at },
-          { kind: "store", slot: presence[index] ?? 0, value: no, ...at },
-          { kind: "constant", id: zero, value: 0, ...at },
-          { kind: "store", slot: payload[index] ?? 0, value: zero, ...at },
+          {
+            kind: "constant",
+            id: no,
+            value: false,
+            start: at.start,
+            end: at.end,
+          },
+          {
+            kind: "store",
+            slot: presence[index] ?? 0,
+            value: no,
+            start: at.start,
+            end: at.end,
+          },
+          {
+            kind: "constant",
+            id: zero,
+            value: 0,
+            start: at.start,
+            end: at.end,
+          },
+          {
+            kind: "store",
+            slot: payload[index] ?? 0,
+            value: zero,
+            start: at.start,
+            end: at.end,
+          },
         );
         state[index] = 0;
       } else {
@@ -444,18 +524,32 @@ export function shadowGeneralNumbers(
             id: test,
             value: op.value,
             type: "number",
-            ...at,
+            start: at.start,
+            end: at.end,
           },
-          { kind: "store", slot: presence[index] ?? 0, value: test, ...at },
+          {
+            kind: "store",
+            slot: presence[index] ?? 0,
+            value: test,
+            start: at.start,
+            end: at.end,
+          },
           {
             kind: "general-value",
             id: value,
             value: op.value,
             type: "number",
             unchecked: true,
-            ...at,
+            start: at.start,
+            end: at.end,
           },
-          { kind: "store", slot: payload[index] ?? 0, value, ...at },
+          {
+            kind: "store",
+            slot: payload[index] ?? 0,
+            value,
+            start: at.start,
+            end: at.end,
+          },
         );
         state[index] = 0;
       }

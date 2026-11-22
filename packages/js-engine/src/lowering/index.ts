@@ -10500,10 +10500,9 @@ function lowerScriptEntry(
       ),
       body: moduleContinuation ?? body,
     };
-    const factoryStatements = [
-      ...htmlDDAExclusion,
-      ...globalCacheDeclarations(),
-    ];
+    const factoryStatements: Statement[] = [];
+    appendStatements(factoryStatements, htmlDDAExclusion);
+    appendStatements(factoryStatements, globalCacheDeclarations());
     appendStatements(factoryStatements, fixedCellTable());
     // Each Module Record owns its parsed template sites even when the host
     // reuses a compiled factory for equal source text at different specifiers.
@@ -10685,7 +10684,8 @@ function lowerScriptEntry(
     appendStatements(caches, body.statements);
     contextArrowBody = { ...body, statements: caches };
   }
-  const contextualStatements: Statement[] = [...htmlDDAExclusion];
+  const contextualStatements: Statement[] = [];
+  appendStatements(contextualStatements, htmlDDAExclusion);
   contextualStatements.push({
     ...generated,
     kind: "variable",
