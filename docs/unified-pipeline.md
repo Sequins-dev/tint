@@ -54,8 +54,9 @@ libraries and two object models**:
   category/payload encoding for `unknown` and heterogeneous unions.
 - General values are always the two-word encoding (`unknown`); objects are
   `js-runtime` ordinary/exotic objects (`ObjectValue` records with shapes,
-  descriptors and prototypes). Identifiers resolve by name through environment
-  records (`resolveBinding`/`getIdentifierValue`), not slots.
+  descriptors and prototypes). Resolved bindings use native frame or context
+  slots. Environment records handle lookups that depend on `with`, `eval` or
+  the global object.
 
 The two-word general encoding and strings are physically shared: `js-runtime`
 is itself typed TypeScript over `unknown` and `string`. Typed records, lists,
@@ -288,6 +289,26 @@ The bridge is also what lets general code import typed, trusted runtime and
 FFI modules: their exports cross as boxed values with typed adapters instead
 of being refused.
 
+### Numeric calls and loops in general code
+
+General lowering can give a local source closure a native entry when its
+result uses only numeric literals, parameters and primitive arithmetic. A
+fixed-arity call reads the callee before evaluating its arguments. An immutable
+binding proves the target. A writable binding compares the already-read
+callee with the original closure. The native entry receives primitive numbers
+in registers. It cannot observe the receiver, arguments, calling realm or
+Script identity. If the callee or argument checks fail, the same evaluated
+operands enter the general call path.
+
+An AOT function whose loops and returns operate solely on numeric locals
+and immutable numeric leaves can check its incoming operands once. The
+success branch runs through the ordinary scalar pipeline with unboxed local
+values. The proof excludes dynamic bindings, coercion hooks and escaping
+locals. Non-number operands enter the original function body before any
+source initialization or loop work. These internal types are guarded
+representations for unannotated code. Written annotations still use the
+source contract rules.
+
 ### Native errors and narrowing (slice 4a)
 
 The typed path accepts the `Error` annotation and allocates a plain Error
@@ -470,6 +491,45 @@ The [B4 ledger](results/unified-pipeline-ledger-slice4a-b4-main-34187f4a8-dev-ll
 covers 74 constructs. Both new typed forms stay typed, both untyped forms
 pass, and all 144 forms shared with the C2 and B3 baseline retain their paths
 and outcomes.
+
+### Binding slots in general lowering
+
+The binder identifies references to parameters, locals, class names and
+module bindings before code generation. General lowering gives uncaptured
+locals native slots and uses the shared closure compiler for retained
+values. A lexical declaration starts with an uninitialized flag until its
+initializer finishes. Slot reads and writes enforce the temporal dead zone
+until initialization dominates the reference.
+
+Direct eval and with preserve the named heap cells visible from their
+evaluation scopes. Mapped arguments continue to share cells with aliased
+parameters. Closures and suspension steps retain their live bindings.
+A closure can copy a general value after initialization when later source
+writes cannot change it. Earlier closures retain the shared cell and
+initialization flag. The native record layout traces both forms.
+
+Classic loop headers carry fixed iteration fields when a closure can
+observe a distinct mutable binding. An initializer closure retains the
+pre-iteration binding. Each iteration creates its own retained fields
+before the update, including after a continue that runs a finally block.
+For-in and for-of retain the iterable's TDZ and initialize fresh slots for
+the body. Annex B block functions update the variable binding when the block
+declaration is evaluated.
+
+Module and Script lexical references use the cells established by
+declaration instantiation. Linked import aliases keep the exporting cell,
+so updates and temporal dead zones remain visible through the alias.
+Global object names use per-site caches when resolution reaches the
+global record. Property changes and global lexical declarations
+invalidate the cached property cell.
+
+General addition and less-than can test both evaluated operands for the
+number category. The numeric branch uses the shared native scalar
+operations. Other operand pairs enter the general arithmetic helper with
+the original values in evaluation order.
+
+The [paired candidate results](results/general-call-benchmark-darwin-arm64-206530edd-candidates.md)
+record the earlier slot and arithmetic experiments.
 
 ### Live native views (slice 2b)
 

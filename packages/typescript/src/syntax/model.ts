@@ -130,6 +130,8 @@ export type Expression = Span &
       }
     | {
         readonly kind: "arrow";
+        /** Compiler-generated native Script body. Never parsed from source. */
+        readonly scriptEntry?: true;
         readonly typeParameters?: TypeParameters | undefined;
         readonly async?: boolean | undefined;
         readonly strict?: boolean;
@@ -220,6 +222,11 @@ export type Expression = Span &
       }
     | {
         readonly kind: "call";
+        /** The first four operands form the fixed Script entry header. */
+        readonly scriptCall?: true;
+        /** Compiler-generated access to the current entry's actuals. */
+        readonly scriptArgument?:
+          "index" | "count" | "registers" | "stack" | "load-frame";
         readonly optional?: boolean;
         readonly typeArguments?: readonly TypeNode[];
         readonly callee: Expression;
@@ -283,6 +290,8 @@ export interface PropertySignature extends Span {
 }
 export interface Binding extends Span {
   readonly kind?: "binding";
+  /** Capture order established by the lowering that created this binding. */
+  readonly capture?: "reference" | "value";
   readonly name: string;
   readonly type: TypeNode | undefined;
   readonly initializer: Expression | undefined;

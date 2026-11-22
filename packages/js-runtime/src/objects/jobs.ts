@@ -12,7 +12,11 @@ import {
   type JobQueue,
 } from "../jobs/index.ts";
 import { rejectEngineAbort, type ErrorRealm } from "./errors.ts";
-import type { ObjectExecutionContext } from "./operations.ts";
+import {
+  createScriptPropertyStubCache,
+  type ObjectExecutionContext,
+  type ScriptPropertyStubCache,
+} from "./operations.ts";
 
 /** Host identity for one successfully parsed Script, independent of compiled
  * code identity. Eval and dynamic functions inherit the active record. */
@@ -70,6 +74,7 @@ export interface ScriptAgent {
   readonly pendingAtomicWaits: PendingAtomicWait[];
   /** Immutable host policy for this agent; other realms share the same agent. */
   readonly canSuspend: boolean;
+  readonly propertyStubCache: ScriptPropertyStubCache;
   /** Stable target flags shared by every realm using this agent. */
   atomicsCapabilities: AtomicCapabilities | undefined;
   weakStorage: WeakStorageService | undefined;
@@ -107,9 +112,21 @@ export interface ScriptAgent {
 export interface SourceCallFrame {
   callee: unknown;
   legacyArguments: readonly unknown[] | undefined;
+  argumentCount: number;
+  firstArgument: unknown;
+  secondArgument: unknown;
+  argumentRegisters: number;
+  argumentStack: number;
+  argumentReader: SourceArgumentReader | undefined;
   readonly previous: SourceCallFrame | undefined;
   next: SourceCallFrame | undefined;
 }
+export type SourceArgumentReader = (
+  index: number,
+  count: number,
+  registers: number,
+  stack: number,
+) => unknown;
 /** Reusable execution-context trace-name frame, chained like SourceCallFrame. */
 export interface ExecutionNameFrame {
   name: string | undefined;
@@ -122,6 +139,12 @@ function sourceCallFrame(
   return {
     callee: undefined,
     legacyArguments: undefined,
+    argumentCount: -1,
+    firstArgument: undefined,
+    secondArgument: undefined,
+    argumentRegisters: 0,
+    argumentStack: 0,
+    argumentReader: undefined,
     previous,
     next: undefined,
   };
@@ -137,6 +160,7 @@ export function createScriptAgent(canSuspend: boolean = false): ScriptAgent {
   return {
     pendingAtomicWaits: [],
     canSuspend,
+    propertyStubCache: createScriptPropertyStubCache(),
     atomicsCapabilities: undefined,
     weakStorage: undefined,
     stackGuard: undefined,
@@ -155,22 +179,62 @@ export function createScriptAgent(canSuspend: boolean = false): ScriptAgent {
     jobs: createJobQueue<QueuedScriptJob>(),
   };
 }
-/** Push a caller-reflection slot; `visibleCallee` is undefined for hidden
- * frames. Pair every entry with `exitSourceCall` in a finally block. */
+/** Track the visible caller. Hidden frames can share the nearest barrier.
+ * Pair every entry with `exitSourceCall` in a finally block. */
 export function enterSourceCall(
   agent: ScriptAgent,
   visibleCallee: unknown,
   legacyArguments: readonly unknown[] | undefined = undefined,
 ): number {
-  const top = agent.sourceCallTop,
-    reused = top.next,
+  const top = agent.sourceCallTop;
+  const depth = agent.sourceCallDepth;
+  if (
+    visibleCallee === undefined &&
+    legacyArguments === undefined &&
+    top.callee === undefined
+  )
+    return depth;
+  const reused = top.next,
     frame = reused === undefined ? sourceCallFrame(top) : reused;
   if (reused === undefined) top.next = frame;
   frame.callee = visibleCallee;
   frame.legacyArguments = legacyArguments;
   agent.sourceCallTop = frame;
-  const depth = agent.sourceCallDepth;
   agent.sourceCallDepth = depth + 1;
+  return depth;
+}
+export function enterRegisterSourceCall(
+  agent: ScriptAgent,
+  visibleCallee: unknown,
+  argumentCount: number,
+  firstArgument: unknown,
+  secondArgument: unknown,
+): number {
+  const depth = enterSourceCall(agent, visibleCallee);
+  if (argumentCount >= 0) {
+    const frame = agent.sourceCallTop;
+    frame.argumentCount = argumentCount;
+    frame.firstArgument = firstArgument;
+    frame.secondArgument = secondArgument;
+  }
+  return depth;
+}
+/** The addresses are valid only while this compiled source frame is active.
+ * Its maps keep the values at both addresses current across collections. */
+export function enterNativeSourceCall(
+  agent: ScriptAgent,
+  callee: unknown,
+  count: number,
+  registers: number,
+  stack: number,
+  reader: SourceArgumentReader,
+): number {
+  const depth = enterSourceCall(agent, callee);
+  const frame = agent.sourceCallTop;
+  frame.argumentCount = count;
+  frame.argumentRegisters = registers;
+  frame.argumentStack = stack;
+  frame.argumentReader = reader;
   return depth;
 }
 export function exitSourceCall(agent: ScriptAgent, depth: number): void {
@@ -181,6 +245,14 @@ export function exitSourceCall(agent: ScriptAgent, depth: number): void {
     if (previous === undefined) throw "SOURCE_CALL_FRAME_INVARIANT";
     frame.callee = undefined;
     frame.legacyArguments = undefined;
+    if (frame.argumentCount >= 0) {
+      frame.argumentCount = -1;
+      frame.firstArgument = undefined;
+      frame.secondArgument = undefined;
+      frame.argumentRegisters = 0;
+      frame.argumentStack = 0;
+      frame.argumentReader = undefined;
+    }
     agent.sourceCallTop = previous;
     agent.sourceCallDepth = agent.sourceCallDepth - 1;
   }
@@ -211,9 +283,45 @@ export function activeSourceArguments(
   for (;;) {
     const previous = frame.previous;
     if (previous === undefined) return undefined;
-    if (frame.callee === callee) return frame.legacyArguments;
+    if (frame.callee === callee) {
+      if (frame.argumentCount < 0) return frame.legacyArguments;
+      const reader = frame.argumentReader;
+      if (reader !== undefined) {
+        const actuals: unknown[] = [];
+        const count = frame.argumentCount;
+        for (let index = 0; index < count; index++)
+          actuals.push(
+            reader(index, count, frame.argumentRegisters, frame.argumentStack),
+          );
+        return actuals;
+      }
+      if (frame.argumentCount === 0) return [];
+      if (frame.argumentCount === 1) return [frame.firstArgument];
+      return [frame.firstArgument, frame.secondArgument];
+    }
     frame = previous;
   }
+}
+
+/** Reuse the named frame while a same-Script register entry executes inline. */
+export function enterExecutionName(
+  agent: ScriptAgent,
+  name: string,
+): ExecutionNameFrame {
+  const top = agent.executionNameTop;
+  const reused = top.next;
+  const frame = reused === undefined ? executionNameFrame(top) : reused;
+  if (reused === undefined) top.next = frame;
+  frame.name = name;
+  agent.executionNameTop = frame;
+  return top;
+}
+export function leaveExecutionName(
+  agent: ScriptAgent,
+  previous: ExecutionNameFrame,
+): void {
+  agent.executionNameTop.name = undefined;
+  agent.executionNameTop = previous;
 }
 /** The agent state `enterScriptContext` replaced, for `leaveScriptContext`. */
 export interface ScriptContextFrame {

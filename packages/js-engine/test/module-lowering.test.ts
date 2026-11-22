@@ -66,7 +66,7 @@ test("modules export a factory over the shared runtime without Script entry or g
   const serialized = JSON.stringify(module);
   assert.ok(!serialized.includes('"name":"$script"'));
   assert.ok(serialized.includes('"name":"$environment"'));
-  assert.equal(lowering.scriptRuntimeSurface().length, 165);
+  assert.equal(lowering.scriptRuntimeSurface().length, 174);
 });
 test("module this is undefined while ordinary function receivers keep their own binding", () => {
   const module = lower(
@@ -166,4 +166,15 @@ test("exported function and class source retention excludes the export wrapper",
     "class C{}",
   ])
     assert.ok(retained.includes(source), JSON.stringify(retained));
+});
+
+test("module bodies address live local and imported cells without name resolution", () => {
+  const names = calls(
+    lower(
+      'import { step } from "./other.js"; export let total = 0; export function next() { total += step; return total; }',
+    ),
+  );
+  assert.equal(names.filter((name) => name === "getIdentifierValue").length, 0);
+  assert.equal(names.filter((name) => name === "resolveBinding").length, 0);
+  assert.equal(names.filter((name) => name === "findBinding").length, 2);
 });

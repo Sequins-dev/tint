@@ -100,6 +100,8 @@ export function instructionEffects(op: Instruction): number {
     case "general-equal":
     case "general-null":
     case "general-none":
+    case "script-argument-count":
+    case "script-argument-area":
     case "general-wrap":
     case "general-value":
     case "boolean-none":
@@ -129,6 +131,8 @@ export function instructionEffects(op: Instruction): number {
     case "unary":
     case "binary":
       return 0;
+    case "script-argument":
+      return op.frame === undefined ? 0 : effectReadHeap;
     default:
       return effectUnknown;
   }

@@ -304,14 +304,17 @@ const sourceRecipes = new WeakMap<
   NativeModuleRecipe["load"]
 >();
 
-function loweredScriptRecipe(source: string): NativeModuleRecipe["load"] {
+function loweredScriptRecipe(
+  source: string,
+  nativeScriptCalls: boolean,
+): NativeModuleRecipe["load"] {
   return () => {
     const bytes = new TextEncoder().encode(source);
     const decoded = createSourceText(bytes, bytes.length);
     if (!decoded.ok) throw Error("native Script source failed");
     const parsed = parseScript(decoded.value);
     if (!parsed.ok) throw Error(JSON.stringify(parsed.error));
-    const lowered = lowerScript(parsed.value, source);
+    const lowered = lowerScript(parsed.value, source, { nativeScriptCalls });
     if (!lowered.ok) throw Error(JSON.stringify(lowered.error));
     return lowered.value;
   };
@@ -392,6 +395,8 @@ function prepareNativeScriptInputs(
     outcome: { kind: "unsupported" as const, reason },
   });
   const modules: SourceModule[] = [];
+  const nativeScriptCalls =
+    process.env.TINT_EXPERIMENTAL_NATIVE_SCRIPT_CALLS === "1";
   for (const [index, input] of inputs.entries()) {
     const bytes = new TextEncoder().encode(input.source);
     const source = createSourceText(bytes, bytes.length);
@@ -401,7 +406,9 @@ function prepareNativeScriptInputs(
     // A partial grammar's rejection is not sufficient evidence of a spec early error.
     if (!parsed.ok)
       return unsupported(input.filename + ": " + JSON.stringify(parsed.error));
-    const lowered = lowerScript(parsed.value, input.source);
+    const lowered = lowerScript(parsed.value, input.source, {
+      nativeScriptCalls,
+    });
     if (!lowered.ok)
       return unsupported(input.filename + ": " + JSON.stringify(lowered.error));
     const dynamicImport = lowered.value.imports.some(
@@ -415,7 +422,10 @@ function prepareNativeScriptInputs(
       return unsupported(
         input.filename + ": Script dynamic import requires HOST-ESM M3b",
       );
-    sourceRecipes.set(lowered.value, loweredScriptRecipe(input.source));
+    sourceRecipes.set(
+      lowered.value,
+      loweredScriptRecipe(input.source, nativeScriptCalls),
+    );
     modules.push({
       id: "test262-script-" + index,
       module: lowered.value,
@@ -859,6 +869,7 @@ export function nativeTestRuntimeSource(
   agentProvider?: string,
   sourcePhases: boolean = false,
   assetModules: boolean = false,
+  benchmarkHost: boolean = false,
 ): string {
   const shadowRealm = scriptEvaluation?.shadowRealm === true;
   if (
@@ -1135,7 +1146,7 @@ import {createEngineCodeStorage} from "@tint/js-engine/native/code-storage";
 import {createDynamicFunctionCompiler} from "@tint/js-engine/dynamic-function";
 import {${scriptEvaluation === undefined ? "" : "nativeValueFunctionDescriptor,nativeValueFunctionSignature,"}mapExecutableMemory,writeExecutableMemory,callExecutableValue,callExecutableManagedWithIndex,nativeFunctionDescriptorWithIndex,nativeFunctionSignatureWithIndex,readMemoryWord,registerExternalMemory,registerStackMaps,currentContextDomain${scriptEvaluation?.hostGc ? ",collectGarbage" : ""}${scriptEvaluation?.stackGuard ? ",isStackOverflow" : ""}} from "memory";
 import {randomNumber} from "random";
-import {wallClockMilliseconds} from "clock";
+import {wallClockMilliseconds} from "clock";${benchmarkHost && agentProvider === undefined ? '\nimport {monotonicMilliseconds} from "clock";' : ""}${benchmarkHost ? '\nimport {writeSync} from "native-fs";' : ""}
 import {createNativeFileHost,readlinkSync} from "native-fs";
 import {readFile} from "files";
 import {createTzifZone,type TzifZone} from "tzif";
@@ -1325,7 +1336,20 @@ function createRealmHost(parent:ErrorRealm|undefined,realms:ErrorRealm[],canSusp
  }
 }
 function installRealmHost(host:RealmHost,realms:ErrorRealm[]):OrdinaryObject<ScriptPropertyKey,unknown> {
- const realm=host.realm,hooks=host.hooks;
+ const realm=host.realm,hooks=host.hooks;${
+   benchmarkHost
+     ? `
+ const now=createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver,args):unknown=>monotonicMilliseconds());
+ createDataProperty<ScriptPropertyKey,unknown>(host.object,"tintBenchmarkNow",now,hooks);
+ const report=createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver,args):unknown=>{
+  const line=args[0];if(typeof line!=="string")throw "BENCHMARK_LINE";
+  const bytes=new TextEncoder().encode(line+"\\n");
+  if(writeSync(1,bytes,0,bytes.length,null)!==bytes.length)throw "BENCHMARK_WRITE";
+  return undefined;
+ });
+ createDataProperty<ScriptPropertyKey,unknown>(host.object,"tintBenchmarkReport",report,hooks);`
+     : ""
+ }
  const api=createObject<ScriptPropertyKey,unknown>(realm.objectPrototype);
  const htmlDDA=createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver,args):unknown=>null);
  htmlDDA.internalIsHTMLDDA=true;
@@ -1390,6 +1414,7 @@ function nativeTestRuntime(
   agentProvider?: string,
   sourcePhases: boolean = false,
   assetModules: boolean = false,
+  benchmarkHost: boolean = false,
 ): NativeModuleRecipe {
   const text = nativeTestRuntimeSource(
     scriptEvaluation,
@@ -1412,6 +1437,7 @@ function nativeTestRuntime(
     agentProvider,
     sourcePhases,
     assetModules,
+    benchmarkHost,
   );
   return nativeHostRecipe(
     id,
@@ -1586,6 +1612,7 @@ function prepareNativeBatchInputs(
   agentProvider?: string,
   sourcePhases: boolean = false,
   assetModules: boolean = false,
+  benchmarkHost: boolean = false,
 ): NativeModuleInput[] {
   if (cases.length === 0) throw new Error("empty native test batch");
   const scriptRoots = cases.some((item) => item.scriptRoot !== undefined);
@@ -1615,6 +1642,7 @@ function prepareNativeBatchInputs(
       agentProvider,
       sourcePhases,
       assetModules,
+      benchmarkHost,
     ),
   ];
   const hosts: string[] = [];
@@ -2569,6 +2597,7 @@ export function prepareConfiguredBatch(
   cases: readonly NativeTestCase<NativeModuleInput>[],
   moduleExecution: boolean,
   config: NativeBatchConfiguration,
+  benchmarkHost: boolean = false,
 ): NativeModuleInput[] {
   const { capabilities } = config;
   return prepareNativeBatchInputs(
@@ -2592,6 +2621,7 @@ export function prepareConfiguredBatch(
     config.agentProvider,
     config.sourcePhases,
     config.assetModules,
+    benchmarkHost,
   );
 }
 export type NativeBatchBuild =
@@ -2608,6 +2638,7 @@ export function createNativeBatchBuilder(
   snapshot: WorkspaceSourceSnapshot = workspaceSources(),
   moduleExecution: boolean = false,
   serviceImage?: import("./native-service-image.ts").NativeServiceImagePlan,
+  benchmarkHost: boolean = false,
 ) {
   const config = nativeBatchConfiguration(snapshot, moduleExecution);
   const request = nativeBatchImageRequest(
@@ -2619,8 +2650,32 @@ export function createNativeBatchBuilder(
   return (
     cases: readonly NativeTestCase<NativeModuleInput>[],
   ): NativeBatchBuild => {
+    const build = request(
+      prepareConfiguredBatch(cases, moduleExecution, config, benchmarkHost),
+    );
     const built = buildMacOSProgram(
-      request(prepareConfiguredBatch(cases, moduleExecution, config)),
+      benchmarkHost
+        ? {
+            ...build,
+            debugSymbols: process.env.TINT_DEBUG_SYMBOLS === "1",
+            hostBindings: [
+              ...(build.hostBindings ?? []),
+              ...((build.hostBindings ?? []).some(
+                (binding) =>
+                  binding.module === clockModule &&
+                  binding.name === "monotonicMilliseconds",
+              )
+                ? []
+                : [
+                    {
+                      module: clockModule,
+                      name: "monotonicMilliseconds",
+                      operation: "monotonic-time" as const,
+                    },
+                  ]),
+            ],
+          }
+        : build,
     );
     if (!built.ok) return nativeCompilationFailure(built.error);
     return { ok: true, bytes: built.value };
