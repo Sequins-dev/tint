@@ -340,15 +340,18 @@ function fixedFfiSource(
         args.join(",") +
         ");\n";
     }
-  body += "const mode=plan.mode();if(mode===0)return undefined;\n";
+  // Numeric entries keep only the direct checks in the entry itself, so a
+  // direct call does not pay for the frame path's saved registers.
+  const outlineMode = !mixed && direct;
+  let modeBody = "const mode=plan.mode();if(mode===0)return undefined;\n";
   if (mixed && arity === 1)
-    body +=
+    modeBody +=
       "const pointerLeaf=plan.unaryPointerLeaf;" +
       "if(mode===1&&pointerLeaf!==undefined)return pointerLeaf(p0);\n";
   if (mixed && arity === 2) {
     direct = true;
     // On a numeric guard miss the general entry validates the pointer first.
-    body +=
+    modeBody +=
       "const callback=plan.pointerI32Callback;" +
       "if(mode===2&&callback!==undefined){" +
       "if(typeof p1!=='number'||(p1|0)!==p1)return undefined;" +
@@ -363,6 +366,7 @@ function fixedFfiSource(
         ? general
         : "if(plan.numbersOnly){\n" + numbers + "}else{\n" + general + "}\n") +
     "return plan.complete(frame,mayCallback);\n}finally{plan.release(frame);}\n";
+  if (!outlineMode) body += modeBody;
   const guarded =
     "export function " +
     name +
@@ -377,7 +381,7 @@ function fixedFfiSource(
     "invoke" + (mixed ? "TryMixedFfi" : "TryFixedFfi") + arity + "Frame";
   const frameParameters = [
     "plan:TypedFfiCall",
-    "mode:number",
+    ...(outlineMode ? [] : ["mode:number"]),
     ...parameters.slice(1),
   ];
   return (
@@ -385,13 +389,14 @@ function fixedFfiSource(
     "return " +
     invoke +
     "(" +
-    ["plan", "mode", ...argumentsList].join(",") +
+    ["plan", ...(outlineMode ? [] : ["mode"]), ...argumentsList].join(",") +
     ");\n}\n" +
     "function " +
     invoke +
     "(" +
     frameParameters.join(",") +
-    "):number{\n" +
+    "):number" +
+    (outlineMode ? "|undefined{\n" + modeBody : "{\n") +
     frameBody +
     "}\n"
   );
