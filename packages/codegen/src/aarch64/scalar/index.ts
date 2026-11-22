@@ -748,6 +748,9 @@ export type CodegenAnalysis =
 
 export interface EmissionOptions {
   readonly workerFunctions?: ReadonlySet<string> | undefined;
+  /** The target implements FEAT_JSCVT (every Apple silicon core does), so
+   * ToInt32 of an unproven binary64 is one FJCVTZS. */
+  readonly jsConvert?: boolean | undefined;
   readonly maxByteLength?: number | undefined;
   /** Ahead-of-time builds: lift the work limits of codegen analyses (each
    * of which otherwise falls back to slower, conservative code on large
@@ -1074,6 +1077,7 @@ function emitModuleForms(
   // Fixups already patched in place to a nearby veneer (branchIsland).
   const resolvedFixups = new Set<number>();
   const imports: NativeImportReference[] = [];
+  const jsConvert = options.jsConvert === true;
   const throwTraces = options.throwTraces ?? false,
     startupCalls: NativeStartupCall[] = [];
   const managedRequests: NativeManagedPointerImport[] = [],
@@ -6115,6 +6119,8 @@ function emitModuleForms(
           if (kind === 1 || kind === 3) imm(9, wordConstants[index] ?? 0);
           else if (kind === 2 || kind === 5 || kind === 6 || kind === 7)
             emit({ op: "fcvtzs-x-d", rd: 9, rn: floatOperand(id, 0) });
+          else if (jsConvert)
+            emit({ op: "fjcvtzs", rd: 9, rn: floatOperand(id, 0) });
           else {
             // Most unknown operands already hold an integral binary64. An exact
             // round trip through int64 yields ToUint32's low 32 bits directly;

@@ -210,6 +210,13 @@ export type Instruction =
       readonly rn: number;
     }
   | {
+      /** FEAT_JSCVT: Wd = ToInt32(Dn) (truncation modulo 2^32, NaN and
+       * infinities to 0), zero-extended. */
+      readonly op: "fjcvtzs";
+      readonly rd: DataRegister;
+      readonly rn: number;
+    }
+  | {
       readonly op: "scvtf-d-w" | "scvtf-d-x";
       readonly rd: number;
       readonly rn: DataRegister;
@@ -786,6 +793,11 @@ export function encode(instruction: Instruction): EncodingResult<number> {
           i.rn * 32 +
           rd,
       );
+    }
+    case "fjcvtzs": {
+      const rd = register(i.rd, "zr");
+      if (rd < 0 || !integer(i.rn, 0, 31)) return fail("INVALID_REGISTER");
+      return word(0x1e7e0000 + i.rn * 32 + rd);
     }
     case "ldr-d":
     case "str-d": {

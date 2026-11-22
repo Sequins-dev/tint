@@ -93,6 +93,14 @@ function shadowedSwap(a, b) {
   }
   return String(x) + "|" + String(y);
 }
+function bits(values) {
+  let out = "";
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    out += [v | 0, v & 0xffff, v ^ -1, v << 1, v >> 1, v >>> 0].join(" ") + ";";
+  }
+  return out;
+}
 export function sections() {
   return [
     String(sum([1, 2, 3.5])),
@@ -106,6 +114,11 @@ export function sections() {
     captured(),
     params(2, 3) + params("2", "10") + params(1n, 2n) + params(undefined, 1),
     shadowedSwap(1, "s") + shadowedSwap(2, 3),
+    bits([
+      0, -0, 1.9, -1.9, 2 ** 31, -(2 ** 31) - 1, 2 ** 32 + 5, -(2 ** 53),
+      1e20, -1e300, 2 ** 63, NaN, Infinity, -Infinity, 4294967295.5,
+      "7", true, null, undefined,
+    ]),
   ];
 }
 `;
@@ -123,7 +136,7 @@ test("general number shadows keep JavaScript values across category changes", as
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-  assert.equal(expected.length, 11);
+  assert.equal(expected.length, 12);
   // Exit status 42 when every section matches, else 10 + the first
   // mismatching section's index.
   let general = false;

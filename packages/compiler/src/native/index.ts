@@ -245,6 +245,9 @@ export interface CompileRequest extends ModuleRequest {
   /** The target's host policy (NativeTarget.hostABI). Builds pass their
    * target's; direct callers (tests and tools) default to darwin-aarch64. */
   readonly hostABI?: PosixHostABI;
+  /** The target implements FEAT_JSCVT (Darwin arm64 targets: all Apple
+   * silicon), so codegen may convert to ToInt32 with FJCVTZS. */
+  readonly jsConvert?: boolean;
   readonly recordBindings?: readonly NativeRecordBinding[];
   readonly weakBindings?: readonly NativeWeakBinding[];
   /** Require the hosted context's optional linear-allocation state at byte 56. */
@@ -708,7 +711,11 @@ export function compileNativeProgram(
 ): Compilation {
   const backend = selectNativeBackend(target);
   if (!backend.ok) return { ok: false, error: backend.error };
-  return compileArm64Program({ ...request, hostABI: backend.target.hostABI });
+  return compileArm64Program({
+    ...request,
+    hostABI: backend.target.hostABI,
+    jsConvert: backend.target.os === "darwin",
+  });
 }
 
 function withoutDynamicObjectRuntime(request: CompileRequest): {
@@ -3994,6 +4001,7 @@ function compileTypedProgram(
         });
     },
     hostABI: request.hostABI ?? darwinAArch64Target.hostABI,
+    jsConvert: request.jsConvert === true,
     debugSpans: request.debugSymbols === true || request.stackTraces === true,
     throwTraces: request.stackTraces ?? false,
     operationRanges: request.operationRanges ?? false,
