@@ -157,3 +157,30 @@ test("small packets share a segment until every packet and the producer let go",
   api.releaseNativeAgentMailboxBlocks(host, registry);
   assert.equal(host.kernel.mappings.size, 1);
 });
+
+test("a recycling mailbox reuses one released large packet mapping", async () => {
+  const api = await import("../packages/native-runtime/src/agent-messages.ts");
+  const host = new NodeSharedMemoryHost();
+  const parking = {
+    park: (_address: number, _expected: number, _timeout: number) => 0,
+    wake: (_address: number) => 0,
+  };
+  const created = api.createNativeAgentMailbox(host, parking, 76, true);
+  assert.ok(created.ok);
+  const registry = created.value.registry;
+  const first = api.allocateNativeAgentPacket(host, parking, registry, 200000);
+  assert.ok(first !== undefined && first.byteLength > 16384);
+  api.releaseNativeAgentPacket(host, parking, registry, first);
+  // The same size comes back warm, from the same mapping.
+  const again = api.allocateNativeAgentPacket(host, parking, registry, 190000);
+  assert.deepEqual(again, first);
+  // A much smaller request does not take a mapping four times its size.
+  api.releaseNativeAgentPacket(host, parking, registry, again!);
+  const small = api.allocateNativeAgentPacket(host, parking, registry, 20000);
+  assert.ok(small !== undefined && small.base !== first.base);
+  // Releasing it keeps the larger cached mapping and unmaps the smaller.
+  api.releaseNativeAgentPacket(host, parking, registry, small);
+  assert.equal(host.kernel.mappings.size, 2);
+  api.releaseNativeAgentMailboxBlocks(host, registry);
+  assert.equal(host.kernel.mappings.size, 1);
+});

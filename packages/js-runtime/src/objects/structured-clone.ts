@@ -273,8 +273,17 @@ export function serializeWorkerValue(
       const property = getOwnProperty<ScriptPropertyKey, unknown>(object, name);
       if (property === undefined || !property.enumerable) continue;
       key(name);
+      // [[Get]] of an own data property is its value unless the object
+      // overrides [[Get]]; accessors still run their getter.
       encode(
-        getProperty<ScriptPropertyKey, unknown>(object, name, object, hooks),
+        !property.accessor && object.internalMethods?.get === undefined
+          ? property.value
+          : getProperty<ScriptPropertyKey, unknown>(
+              object,
+              name,
+              object,
+              hooks,
+            ),
       );
     }
   }

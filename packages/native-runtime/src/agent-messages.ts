@@ -38,6 +38,10 @@ const MAPPING_QUANTUM = 16384,
   FREE = 40,
   FREE_COUNT = 48,
   RECYCLE = 56,
+  // One released multi-quantum packet mapping, kept for the next large send
+  // (warm pages, no mmap); its byte length follows.
+  LARGE = 64,
+  LARGE_BYTES = 72,
   MESSAGE_HEADER = 16,
   MAX_UNITS = 8 * 1024 * 1024;
 /** Most payload blocks one recycling mailbox keeps for reuse. */
@@ -85,6 +89,69 @@ export function releaseNativeAgentMailboxBlocks(
   }
   writeNumber(host, registry, FREE, 0);
   writeNumber(host, registry, FREE_COUNT, 0);
+  const large = readNumber(host, registry, LARGE, scratch);
+  if (large !== 0) {
+    if (
+      host.unmapMemory(
+        large,
+        readNumber(host, registry, LARGE_BYTES, scratch),
+      ) !== 0
+    )
+      throw "NATIVE_AGENT_MESSAGE_RELEASE";
+    writeNumber(host, registry, LARGE, 0);
+    writeNumber(host, registry, LARGE_BYTES, 0);
+  }
+}
+/** Takes the cached large mapping when it holds `byteLength` bytes without
+ * wasting more than three quarters of itself, or returns undefined. */
+function takeLarge(
+  host: NativeSharedMemoryHost,
+  parking: NativeWaiterParkingHost,
+  registry: NativeSharedBlockRegistry,
+  byteLength: number,
+  scratch: Uint32Array,
+): NativeAgentPacket | undefined {
+  if (readNumber(host, registry, RECYCLE, scratch) === 0) return undefined;
+  lock(host, parking, registry, scratch);
+  try {
+    const base = readNumber(host, registry, LARGE, scratch);
+    if (base === 0) return undefined;
+    const cached = readNumber(host, registry, LARGE_BYTES, scratch);
+    if (cached < byteLength || cached > byteLength * 4) return undefined;
+    writeNumber(host, registry, LARGE, 0);
+    writeNumber(host, registry, LARGE_BYTES, 0);
+    return { base, byteLength: cached, segment: 0 };
+  } finally {
+    unlock(host, parking, registry, scratch);
+  }
+}
+/** Keeps the larger of a released large mapping and the cached one; the
+ * other is unmapped. */
+function returnLarge(
+  host: NativeSharedMemoryHost,
+  parking: NativeWaiterParkingHost,
+  registry: NativeSharedBlockRegistry,
+  packet: NativeAgentPacket,
+  scratch: Uint32Array,
+): void {
+  let unmap = packet.base,
+    unmapBytes = packet.byteLength;
+  if (readNumber(host, registry, RECYCLE, scratch) !== 0) {
+    lock(host, parking, registry, scratch);
+    try {
+      const cached = readNumber(host, registry, LARGE_BYTES, scratch);
+      if (cached < packet.byteLength) {
+        unmap = readNumber(host, registry, LARGE, scratch);
+        unmapBytes = cached;
+        writeNumber(host, registry, LARGE, packet.base);
+        writeNumber(host, registry, LARGE_BYTES, packet.byteLength);
+      }
+    } finally {
+      unlock(host, parking, registry, scratch);
+    }
+  }
+  if (unmap !== 0 && host.unmapMemory(unmap, unmapBytes) !== 0)
+    throw "NATIVE_AGENT_MESSAGE_RELEASE";
 }
 /** Pops a free payload block, or returns 0. */
 function takeBlock(
@@ -177,6 +244,10 @@ export function allocateNativeAgentPacket(
   if (!integer(payload) || payload > MAX_UNITS * 4) return undefined;
   const byteLength = packetBytes(payload);
   const scratch = new Uint32Array(2);
+  if (byteLength > MAPPING_QUANTUM) {
+    const cached = takeLarge(host, parking, registry, byteLength, scratch);
+    if (cached !== undefined) return cached;
+  }
   const recycled =
     byteLength === MAPPING_QUANTUM
       ? takeBlock(host, parking, registry, scratch)
@@ -233,8 +304,7 @@ export function releaseNativeAgentPacket(
   }
   if (packet.byteLength === MAPPING_QUANTUM)
     retireBlock(host, parking, registry, packet.base, scratch);
-  else if (host.unmapMemory(packet.base, packet.byteLength) !== 0)
-    throw "NATIVE_AGENT_MESSAGE_RELEASE";
+  else returnLarge(host, parking, registry, packet, scratch);
 }
 /** One sender's packet allocator for one mailbox. Small packets are carved
  * from the sender's current segment, one open packet at a time; a nested or
