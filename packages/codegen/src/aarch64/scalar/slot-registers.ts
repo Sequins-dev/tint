@@ -70,8 +70,9 @@ function analyzeLiveIn(
   maxWork: number,
   tracked: readonly number[],
   precise: boolean,
+  denseRowWords: number | undefined,
 ): LiveIn | undefined {
-  if (fitsLiveRows(fn, tracked.length))
+  if (fitsLiveRows(fn, tracked.length, denseRowWords))
     return liveIn(
       precise
         ? analyzeLiveSlotRowsPrecisely(fn, maxWork, tracked)
@@ -140,6 +141,8 @@ export function slotHomes(
   words: readonly number[],
   references: ReferenceHomes | undefined,
   maxWork: number = 2000000,
+  /** Dense live-in table limit in words (tests force the list form). */
+  denseRowWords?: number,
 ): SlotHomes | undefined {
   const count = fn.slots.length;
   if (!Number.isSafeInteger(maxWork) || maxWork < 1 || count > 65536)
@@ -218,13 +221,25 @@ export function slotHomes(
   const allLive =
     homeable.length === 0
       ? undefined
-      : analyzeLiveIn(fn, Math.max(1, maxWork - work), homeable, false);
+      : analyzeLiveIn(
+          fn,
+          Math.max(1, maxWork - work),
+          homeable,
+          false,
+          denseRowWords,
+        );
   const conservative =
     allLive !== undefined
       ? allLive
       : candidates.length === 0
         ? undefined
-        : analyzeLiveIn(fn, Math.max(1, maxWork - work), candidates, false);
+        : analyzeLiveIn(
+            fn,
+            Math.max(1, maxWork - work),
+            candidates,
+            false,
+            denseRowWords,
+          );
   if (conservative !== undefined) work += conservative.work;
   let shared = homeable.length === 0 || allLive !== undefined;
   // Live candidates as a sparse set (members plus positions), so resetting
@@ -318,6 +333,7 @@ export function slotHomes(
         Math.max(1, maxWork - work),
         candidates,
         true,
+        denseRowWords,
       ),
       rootLive = precise ?? conservative;
     if (precise !== undefined) work += precise.work;

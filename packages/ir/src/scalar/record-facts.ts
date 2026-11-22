@@ -400,6 +400,8 @@ export function dataflowRecordGuards(
   fn: FunctionIR,
   maxWork: number = 2000000,
   stableLayouts: boolean = false,
+  /** Dense live-in table limit in words (tests force the list form). */
+  denseRowWords?: number,
 ): Uint8Array | undefined {
   if (!Number.isSafeInteger(maxWork) || maxWork < 0) return undefined;
   const blockCount = fn.blocks.length,
@@ -428,13 +430,13 @@ export function dataflowRecordGuards(
   }
   if (work > maxWork) return undefined;
   // Live-in sets as dense rows when they fit (same sets and work).
-  const rowLiveness = fitsLiveRows(fn, trackedSlots.length)
+  const dense = fitsLiveRows(fn, trackedSlots.length, denseRowWords),
+    rowLiveness = dense
       ? analyzeLiveSlotRows(fn, maxWork - work, trackedSlots)
       : undefined,
-    listLiveness =
-      rowLiveness === undefined && !fitsLiveRows(fn, trackedSlots.length)
-        ? analyzeLiveSlots(fn, maxWork - work, trackedSlots)
-        : undefined;
+    listLiveness = dense
+      ? undefined
+      : analyzeLiveSlots(fn, maxWork - work, trackedSlots);
   if (rowLiveness === undefined && listLiveness === undefined) return undefined;
   work += rowLiveness?.work ?? listLiveness?.work ?? 0;
   const liveSlots = listLiveness?.slots;

@@ -29,9 +29,14 @@ export function liveRowWords(trackedCount: number): number {
 /** Largest dense live-in table (32-bit words, 64 MiB) callers request;
  * larger tables keep the sparse lists, whose size follows the live ranges. */
 const denseLiveWords = 16777216;
-/** Whether live-in sets of `trackedCount` slots fit the dense row form. */
-export function fitsLiveRows(fn: FunctionIR, trackedCount: number): boolean {
-  return fn.blocks.length * liveRowWords(trackedCount) <= denseLiveWords;
+/** Whether live-in sets of `trackedCount` slots fit the dense row form
+ * within `limit` words (tests lower it to exercise the list form). */
+export function fitsLiveRows(
+  fn: FunctionIR,
+  trackedCount: number,
+  limit: number = denseLiveWords,
+): boolean {
+  return fn.blocks.length * liveRowWords(trackedCount) <= limit;
 }
 interface SlotAnalysis {
   readonly slots: readonly (readonly number[])[];
