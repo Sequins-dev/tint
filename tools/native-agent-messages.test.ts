@@ -23,6 +23,13 @@ async function fixture() {
 test("agent report mailbox copies exact UTF-16 through raw mappings and releases consumed payloads", async () => {
   const f = await fixture();
   const messages = ["", "a\0b", "😀", "\ud800x\udfff", "42", "x".repeat(20000)];
+  // Receiving reads eight units at a time and then the remainder.
+  for (let length = 0; length <= 17; length++)
+    messages.push(
+      Array.from({ length }, (_, i) =>
+        String.fromCharCode(0xd7f0 + i * 257),
+      ).join(""),
+    );
   assert.equal(f.peer.receive(), undefined);
   for (const message of messages)
     assert.deepEqual(f.queue.send(message), { ok: true, value: undefined });

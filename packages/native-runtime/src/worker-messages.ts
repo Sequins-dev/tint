@@ -17,11 +17,6 @@ import {
   type OrdinaryObject,
   type ScriptPropertyKey,
 } from "@tint/js-runtime/objects";
-import {
-  appendString,
-  createStringBuilder,
-  finishString,
-} from "@tint/foundation/text/string-builder";
 import type {
   NativeWorkerBacking,
   NativeWorkerBackingGrant,
@@ -81,13 +76,13 @@ export interface NativeWorkerMessages {
 }
 
 function encodeEnvelope(payload: string, grants: readonly Grant[]): string {
-  const result = createStringBuilder();
+  const result: string[] = [];
   function number(value: number): void {
-    appendString(result, String(value) + ":");
+    result.push(String(value) + ":");
   }
   number(grants.length);
   for (const grant of grants) {
-    appendString(result, grant.kind);
+    result.push(grant.kind);
     if (grant.kind === "a") {
       number(grant.backing.address);
       number(grant.backing.length);
@@ -102,8 +97,8 @@ function encodeEnvelope(payload: string, grants: readonly Grant[]): string {
       number(grant.handle);
     }
   }
-  appendString(result, payload);
-  return finishString(result);
+  result.push(payload);
+  return result.join("");
 }
 
 function decodeEnvelope(packet: string): Envelope {

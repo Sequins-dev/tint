@@ -1,8 +1,3 @@
-import {
-  appendString,
-  createStringBuilder,
-  finishString,
-} from "@tint/foundation/text/string-builder";
 import { setMap } from "@tint/foundation/collections/linked-map";
 import { decodeFloat64, encodeFloat64 } from "@tint/foundation/binary/bytes";
 import { createByteStorage, byteStorageData } from "../bytes/index.ts";
@@ -154,11 +149,12 @@ export function serializeWorkerValue(
   realm: ErrorRealm,
   attachments?: WorkerCloneAttachments,
 ): string {
-  const packet = createStringBuilder();
+  // Parts join once: typed join sizes and writes the result in one pass.
+  const packet: string[] = [];
   const objects = new Map<number, number>();
   const hooks = realm.objectHooks;
   function tag(value: string): void {
-    appendString(packet, value);
+    packet.push(value);
   }
   function word(value: number): void {
     tag(String.fromCharCode(Math.floor(value / 65536), value % 65536));
@@ -355,7 +351,7 @@ export function serializeWorkerValue(
     tag(".");
   }
   encode(value);
-  return finishString(packet);
+  return packet.join("");
 }
 
 export function deserializeWorkerValue(
