@@ -575,6 +575,15 @@ runtime-classified call plan. Libraries with registered callbacks enter through
 the rooted native transition. Callback registration classifies the declared
 signature and allocates an executable entry with the same library lifetime.
 
+General code calls a wrapper through the engine's call protocol. A wrapper
+created in a Script or module also carries a positional register entry for
+calls from that context with up to six arguments. It skips the argument
+list, realm thunk and result record of the ordinary entry, which would run
+in the same caller context. Per-call checks avoid object identity
+comparisons, because realm error views expose both operands of each one,
+and integer argument checks use primitive tag tests rather than the realm
+typeof classifier.
+
 Typed programs call the same public realm functions, constructors and
 property operations as general code. The compiler links the realm helpers
 when an application uses the reviewed FFI exports. It projects primitive

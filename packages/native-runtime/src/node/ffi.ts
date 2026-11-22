@@ -111,6 +111,10 @@ interface Binding {
   readonly typedCall: number;
   readonly staticNumberCall: StaticFfiNumberCall | undefined;
   readonly staticBytesCall: StaticFfiBytesCall | undefined;
+  /** One lent pointer argument and a Number result. */
+  readonly unaryPointerNumber: boolean;
+  /** `(pointer, i32) => i32`, the shape of a callback trampoline call. */
+  readonly pointerI32: boolean;
   readonly numericAddress: number;
   leafWorkspace: TypedFfiWorkspace | undefined;
   callbackWorkspace: TypedFfiWorkspace | undefined;
@@ -750,6 +754,7 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       staticCall >= 0 && addressFits
         ? staticFfiNumberCall(staticCall)
         : undefined;
+    const parameters = signature.parameters;
     return {
       name,
       signature,
@@ -758,6 +763,18 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
       typedCall: typedIndex,
       staticNumberCall,
       staticBytesCall: staticFfiBytesCall(typedIndex),
+      unaryPointerNumber:
+        plan !== undefined &&
+        plan.parameters.length === 1 &&
+        plan.parameters[0]?.pointer === true &&
+        plan.resultKind >= 0 &&
+        plan.resultKind !== 6 &&
+        plan.resultKind !== 7,
+      pointerI32:
+        signature.result === "i32" &&
+        parameters.length === 2 &&
+        parameters[0] === "pointer" &&
+        parameters[1] === "i32",
       numericAddress,
       plan,
       leafWorkspace: undefined,
@@ -798,10 +815,27 @@ function createNodeFfi(core: ProgramRealmCore, suffix: string): NodeFfi {
           args.length,
       );
     const mayCallback = callbacks.active() || hasRegisteredCallbacks();
-    const numberCall = binding.staticNumberCall;
-    if (!mayCallback && numberCall !== undefined)
-      return numberCall(core, binding.numericAddress, args);
-
+    // General callers share the typed callers' entries for these shapes.
+    if (!mayCallback) {
+      const numberCall = binding.staticNumberCall;
+      if (numberCall !== undefined)
+        return numberCall(core, binding.numericAddress, args);
+      if (binding.unaryPointerNumber)
+        return invokeUnaryPointerLeaf(core, binding, plan, args[0]);
+    } else if (binding.pointerI32 && binding.scalarDepth === 0) {
+      // Invalid or unprojected operands take the ordinary path, which
+      // reports them in argument order.
+      const input = args[1];
+      if (
+        typeof input === "number" &&
+        Number.isInteger(input) &&
+        input >= -2147483648 &&
+        input <= 2147483647
+      ) {
+        const result = invokePointerI32Callback(binding, plan, args[0], input);
+        if (result !== undefined) return result;
+      }
+    }
     return invokeScalar(
       core,
       binding,
