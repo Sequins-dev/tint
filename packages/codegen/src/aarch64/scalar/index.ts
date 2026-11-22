@@ -6338,6 +6338,10 @@ function emitModuleForms(
           if (kind === 1 || kind === 3) imm(9, wordConstants[index] ?? 0);
           else if (kind === 2 || kind === 5 || kind === 6 || kind === 7)
             emit({ op: "fcvtzs-x-d", rd: 9, rn: floatOperand(id, 0) });
+          else if (options.hostABI?.javascriptConversion?.kind === "baseline")
+            // FJCVTZS is ECMAScript ToInt32 (truncation modulo 2^32, NaN and
+            // infinities to 0); its low 32 bits are ToUint32's too.
+            emit({ op: "fjcvtzs", rd: 9, rn: floatOperand(id, 0) });
           else {
             // fcvtzs truncates toward zero, ToUint32's first step, and maps
             // NaN to 0, so below 2^63 in magnitude its low 32 bits are
@@ -10462,10 +10466,12 @@ function emitModuleForms(
                 const constant = op.value,
                   home = value(op.id).offset,
                   register = scalarRegisters?.[home / 8] ?? 0;
+                // Materialized straight into a GP home when there is one.
+                const target = rawTarget(op.id, 9);
                 if (typeof constant === "boolean") {
                   if (constant) {
-                    imm(9, 1);
-                    saveRaw(9, op.id);
+                    imm(target, 1);
+                    saveRaw(target, op.id);
                   } else rawStore("zr", home);
                   break;
                 }
@@ -10493,8 +10499,8 @@ function emitModuleForms(
                   emit({ op: "fmov-d-imm", rd: register, imm8: immediate });
                   break;
                 }
-                imm64(9, bits.lo, bits.hi);
-                saveRaw(9, op.id);
+                imm64(target, bits.lo, bits.hi);
+                saveRaw(target, op.id);
                 break;
               }
               case "record-read": {

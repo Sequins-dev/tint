@@ -204,7 +204,8 @@ export type Instruction =
       readonly condition: Condition;
     }
   | {
-      readonly op: "fcvtzs-w-d" | "fcvtzs-x-d" | "fcvtzu-w-d" | "fcvtzu-x-d";
+      readonly op:
+        "fcvtzs-w-d" | "fcvtzs-x-d" | "fcvtzu-w-d" | "fcvtzu-x-d" | "fjcvtzs";
       readonly rd: DataRegister;
       readonly rn: number;
     }
@@ -770,7 +771,8 @@ export function encode(instruction: Instruction): EncodingResult<number> {
     case "fcvtzs-w-d":
     case "fcvtzs-x-d":
     case "fcvtzu-w-d":
-    case "fcvtzu-x-d": {
+    case "fcvtzu-x-d":
+    case "fjcvtzs": {
       const rd = register(i.rd, "zr");
       if (rd < 0 || !integer(i.rn, 0, 31)) return fail("INVALID_REGISTER");
       return word(
@@ -780,7 +782,9 @@ export function encode(instruction: Instruction): EncodingResult<number> {
             ? 0x9e790000
             : i.op === "fcvtzu-w-d"
               ? 0x1e790000
-              : 0x1e780000) +
+              : i.op === "fjcvtzs"
+                ? 0x1e7e0000
+                : 0x1e780000) +
           i.rn * 32 +
           rd,
       );

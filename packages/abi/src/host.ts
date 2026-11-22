@@ -239,6 +239,10 @@ export interface PosixHostABI extends PosixHostFacts {
         readonly type: number;
         readonly mask: number;
       };
+  /** Whether every CPU the target runs on implements FEAT_JSCVT (FJCVTZS:
+   * ECMAScript ToInt32 of a double in one instruction), as Apple silicon
+   * does. Absent: generated code converts without it. */
+  readonly javascriptConversion?: { readonly kind: "baseline" };
   /** The target's C calling convention for foreign (c-call) calls; targets
    * without it cannot emit them. */
   readonly c?: CTarget;
