@@ -294,6 +294,14 @@ test("prototypes get private shapes and their changes bump the epoch", () => {
   );
   assert.equal(propertyEpoch.value, after);
   assert.equal(read(child, "m"), 2);
+  // An empty prototype moved to another prototype stays private.
+  const empty = object(undefined);
+  object(empty);
+  const other = object(undefined);
+  const sibling2 = point(other, ["k"]);
+  assert.ok(setPrototype<ScriptPropertyKey, unknown>(empty, other));
+  createDataProperty<ScriptPropertyKey, unknown>(empty, "k", 1, hooks);
+  assert.notEqual(shape(empty), shape(sibling2));
 });
 
 test("null-prototype and dictionary-like objects keep private shapes", () => {

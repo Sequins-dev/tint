@@ -1103,8 +1103,11 @@ export function setPrototype<Key, Value>(
       0,
     );
   else if (!object.internalDictionary)
+    // An empty prototype grows a private shape when it gets a property.
     object.internalShape =
-      prototype === undefined ? undefined : prototype.internalChildShape;
+      prototype === undefined || object.internalUsedAsPrototype
+        ? undefined
+        : prototype.internalChildShape;
   noteStructureChange<Key, Value>(object);
   return true;
 }
