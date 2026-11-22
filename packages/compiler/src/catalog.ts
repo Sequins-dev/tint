@@ -919,6 +919,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/general-numbers.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/index.ts",
       packageId: "ir",
     },
