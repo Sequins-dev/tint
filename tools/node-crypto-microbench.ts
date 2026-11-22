@@ -1,10 +1,17 @@
 // Build outside the timing lock. `build public` resolves the public module.
 // `build branded` times the typed crypto code with its real Buffer adoption.
 // `build branded-slots` reads the same Buffer's length through typed storage.
-// Run paired rounds under tools/gate/with-lock.sh both.
+// Run paired rounds under tools/gate/with-lock.sh both:
+//   NODE26=<node 26.13.1> node tools/node-crypto-microbench.ts run \
+//     [--rounds N] <label>=<image>... [--control <label>=<image>]
+// Each round runs every image under LLDB, Node 26.13.1 and a Node control in
+// a rotated order. A Tint control image keeps the public call shapes with
+// prebuilt results; the Node control does the same with a plain class.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash as referenceHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { loadavg } from "node:os";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 
 const clock = "packages/native-runtime/src/intrinsics/clock.ts";
@@ -236,60 +243,162 @@ function bufferLength(buffer:OrdinaryObject<ScriptPropertyKey,unknown>):number {
   );
 } else {
   assert.equal(process.argv[2], "run");
-  const image = process.argv[3];
   const oracle = process.env.NODE26;
-  assert.ok(image && oracle, "run requires a native image and NODE26");
+  assert.ok(oracle, "run requires NODE26");
   assert.equal(command(oracle, ["--version"]).trim(), "v26.13.1");
+  const args = process.argv.slice(3);
+  let roundCount = 15;
+  const images: { label: string; image: string; control: boolean }[] = [];
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index]!;
+    if (arg === "--rounds") roundCount = Number(args[++index]);
+    else {
+      const control = arg === "--control";
+      const spec = control ? args[++index] : arg;
+      const at = spec?.indexOf("=") ?? -1;
+      assert.ok(spec && at > 0, "expected <label>=<image>: " + String(spec));
+      images.push({
+        label: spec.slice(0, at),
+        image: spec.slice(at + 1),
+        control,
+      });
+    }
+  }
+  assert.ok(Number.isInteger(roundCount) && roundCount > 0);
+  assert.ok(
+    images.some(({ control }) => !control),
+    "no measured image",
+  );
   const nodeSource = `${imports}
     const monotonicMilliseconds=()=>Number(process.hrtime.bigint())/1000000;
     ${body}`;
-  const native = () =>
-    parse(
-      command("lldb", [
-        "--no-lldbinit",
-        "--batch",
-        "-o",
-        "settings set target.disable-aslr false",
-        "-o",
-        "settings set target.process.stop-on-sharedlibrary-events false",
-        "-o",
-        "process launch --stop-at-entry",
-        "-o",
-        "script assert lldb.process.GetState() == lldb.eStateStopped",
-        "-o",
-        "continue",
-        "-o",
-        "script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42; print('TINT_CRYPTO_EXIT_42')",
-        image,
-      ]),
-    );
-  const node = () =>
-    parse(command(oracle, ["--input-type=module", "-e", nodeSource]));
+  // Same call shapes as the public module with prebuilt results.
+  let controlBody = body;
+  for (const item of cases)
+    if (item.expected !== undefined)
+      controlBody = controlBody.replace(
+        JSON.stringify(item.expected),
+        JSON.stringify("0".repeat(128)),
+      );
+  const nodeControlSource = `import { Buffer } from "node:buffer";
+    const monotonicMilliseconds=()=>Number(process.hrtime.bigint())/1000000;
+    class Hash {
+      constructor(result) { this.result = result; }
+      update(_input) { return this; }
+      digest(_encoding) { return this.result; }
+    }
+    const sha256 = new Hash("0".repeat(64));
+    const sha512 = new Hash("0".repeat(128));
+    const random32 = Buffer.alloc(32);
+    const random4096 = Buffer.alloc(4096);
+    function createHash(algorithm) { return algorithm === "sha256" ? sha256 : sha512; }
+    function createHmac(algorithm, _key) { return createHash(algorithm); }
+    function randomBytes(size) { return size === 32 ? random32 : random4096; }
+    ${controlBody}`;
+  const native = (image: string) => {
+    const output = command("lldb", [
+      "--no-lldbinit",
+      "--batch",
+      "-o",
+      "settings set target.disable-aslr false",
+      "-o",
+      "settings set target.process.stop-on-sharedlibrary-events false",
+      "-o",
+      "process launch --stop-at-entry",
+      "-o",
+      "script assert lldb.process.GetState() == lldb.eStateStopped",
+      "-o",
+      "continue",
+      "-o",
+      "script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42; print('TINT_CRYPTO_EXIT_42')",
+      image,
+    ]);
+    assert.match(output, /^TINT_CRYPTO_EXIT_42$/m);
+    return parse(output);
+  };
+  const variants: [string, () => ReturnType<typeof parse>][] = [
+    ...images.map(
+      ({ label, image }): [string, () => ReturnType<typeof parse>] => [
+        label,
+        () => native(image),
+      ],
+    ),
+    [
+      "node",
+      () => parse(command(oracle, ["--input-type=module", "-e", nodeSource])),
+    ],
+    [
+      "nodeControl",
+      () =>
+        parse(
+          command(oracle, ["--input-type=module", "-e", nodeControlSource]),
+        ),
+    ],
+  ];
+  const labels = variants.map(([label]) => label);
+  assert.equal(new Set(labels).size, labels.length, "duplicate labels");
   const rounds: {
-    tint: ReturnType<typeof parse>;
-    node: ReturnType<typeof parse>;
+    order: string[];
+    load: number[];
+    results: Record<string, ReturnType<typeof parse>>;
   }[] = [];
-  for (let round = 0; round < 5; round++) {
-    const measured =
-      round % 2 === 0
-        ? { tint: native(), node: node() }
-        : { node: node(), tint: native() };
-    for (const [index, result] of measured.tint.entries())
-      assert.equal(result.checksum, measured.node[index]?.checksum);
-    rounds.push(measured);
-    console.error(`Round ${round + 1}/5 complete`);
+  for (let round = 0; round < roundCount; round++) {
+    const shift = round % variants.length;
+    const order = variants.slice(shift).concat(variants.slice(0, shift));
+    const results: Record<string, ReturnType<typeof parse>> = {};
+    const load = loadavg();
+    for (const [label, measure] of order) results[label] = measure();
+    // Controls return equal-length results, so every checksum must agree.
+    for (const label of labels)
+      for (const [index, result] of results[label]!.entries())
+        assert.equal(result.checksum, results.node![index]!.checksum);
+    rounds.push({ order: order.map(([label]) => label), load, results });
+    console.error(`Round ${round + 1}/${roundCount} complete`);
   }
+  const quartiles = (values: number[]) => {
+    const sorted = values.slice().sort((a, b) => a - b);
+    const at = (q: number) => {
+      const position = (sorted.length - 1) * q;
+      const low = Math.floor(position);
+      const high = Math.ceil(position);
+      return sorted[low]! + (sorted[high]! - sorted[low]!) * (position - low);
+    };
+    return { q1: at(0.25), median: at(0.5), q3: at(0.75) };
+  };
+  const control = images.find((image) => image.control)?.label;
   const summary = cases.map(({ name }, index) => {
-    const paired = rounds
-      .map((round) => round.node[index]!.ns / round.tint[index]!.ns)
-      .sort((a, b) => a - b);
-    return { name, medianNodeOverTint: paired[2] };
+    const ns = (label: string, round: (typeof rounds)[number]) =>
+      round.results[label]![index]!.ns;
+    const entry: Record<string, unknown> = { name };
+    for (const label of labels)
+      entry[label + "Ns"] = quartiles(rounds.map((round) => ns(label, round)));
+    for (const { label, control: isControl } of images) {
+      if (isControl) continue;
+      entry[label + "NodeOverTint"] = quartiles(
+        rounds.map((round) => ns("node", round) / ns(label, round)),
+      );
+      if (control !== undefined)
+        entry[label + "AdjustedNodeOverTint"] = quartiles(
+          rounds.map(
+            (round) =>
+              (ns("node", round) - ns("nodeControl", round)) /
+              (ns(label, round) - ns(control, round)),
+          ),
+        );
+    }
+    return entry;
   });
+  const sha256 = (path: string) =>
+    referenceHash("sha256").update(readFileSync(path)).digest("hex");
   console.log(
     JSON.stringify(
       {
         nodeVersion: "26.13.1",
         nodeOpenSSL: command(oracle, ["-p", "process.versions.openssl"]).trim(),
+        images: images.map((image) => ({
+          ...image,
+          sha256: sha256(image.image),
+        })),
         rounds,
         summary,
       },
