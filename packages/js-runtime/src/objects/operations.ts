@@ -93,15 +93,17 @@ export interface OrdinaryObject<Key, Value> {
   readonly properties: Map<Key, Descriptor<Value>>;
   /** Bumped whenever a key is added or deleted or a stored descriptor is
    * replaced. Only an in-place [[Value]] write to a writable data descriptor
-   * leaves it unchanged, so a cached descriptor stays the live cell. */
+   * leaves it unchanged, so a cached descriptor of a dictionary-mode object
+   * stays the live cell. Generated transitions of fast-mode objects, which
+   * hold no descriptors to cache, do not bump it. */
   internalPropertyEpoch: number;
   /** Root of the shared shapes of objects whose [[Prototype]] is this
    * object, so equal shapes also imply the same prototype. */
   internalChildShape: OrdinaryPropertyShape<Key, Value> | undefined;
   /** Own properties live in `properties` with full descriptors: exotic,
    * aliased and contracted objects, the global object, and objects that
-   * deleted a property, defined an accessor, a symbol or numeric key, more
-   * than maxFastKeys keys, or prevented extensions. Permanent. */
+   * deleted a property, defined a canonical numeric key or more than
+   * maxFastKeys keys, or prevented extensions. Permanent. */
   internalDictionary: boolean;
   /** Set once the object is some object's [[Prototype]]: its structural
    * changes then invalidate cached transitions (propertyEpoch), and its
@@ -1196,7 +1198,7 @@ export function writePropertyCell<Value>(
 }
 
 /** Attributes a shape records for a fast-mode key. */
-export const propertyWritable = 1,
+const propertyWritable = 1,
   propertyEnumerable = 2,
   propertyConfigurable = 4,
   /** An accessor: its descriptor stays in `properties` and its value slot
@@ -1803,19 +1805,6 @@ export function storeCachedScriptProperty(
     cache.storeEpoch = epoch;
   }
   return true;
-}
-/** Value slot `index` of a fast-mode Script object, as cached code reads it
- * (no value is undefined). */
-export function readPropertySlot(object: ScriptObject, index: number): unknown {
-  return storedValue<ScriptPropertyKey, unknown>(object, index);
-}
-/** Store value slot `index` of a fast-mode Script object. */
-export function writePropertySlot(
-  object: ScriptObject,
-  index: number,
-  value: unknown,
-): void {
-  setFastValue<ScriptPropertyKey, unknown>(object, index, value);
 }
 /** True when no object on the prototype chain overrides an internal method,
  * so HasProperty and Get are unobservable lookups until a getter runs. */
