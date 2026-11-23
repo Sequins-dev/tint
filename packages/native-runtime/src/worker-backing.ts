@@ -111,7 +111,9 @@ export function createNativeWorkerBacking(
   }
   function inspect(storage: ByteStorage): NativeWorkerBackingGrant | undefined {
     const view = byteStorageData(storage, "write");
-    if (view === undefined || closed) return undefined;
+    // A pinned backing is viewed by native typed arrays: never moved.
+    if (view === undefined || closed || storage.pinned === true)
+      return undefined;
     const address = externalAddress(view);
     if (!mappings.has(address)) return undefined;
     return {

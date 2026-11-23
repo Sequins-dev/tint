@@ -241,11 +241,33 @@ The baseline profiles attribute the transport costs. The fixes, in order:
 for the native element types (Uint8, Uint16, Uint32 and Float64), with the
 RangeErrors of a fixed-length buffer. The IR's `array-view` allocates a view
 of the target type over the buffer, which the collectors move by its owner's
-byte displacement like any view. A typed program's typed array posts as the
-realm typed array it reads as. Still open: typed `SharedArrayBuffer`, typed
-`Atomics`, and the signed element types `Atomics.wait` and `notify` need
-(`Int32Array`, `BigInt64Array`); and typed code cannot yet read a realm typed
-array it receives.
+byte displacement like any view.
+
+- **SharedArrayBuffer.** Typed `new SharedArrayBuffer(n)` creates a
+  fixed-length block of the isolate's shared block service and views its
+  payload as a borrowed byte array that never moves; views of it behave as
+  for an `ArrayBuffer`. The isolate's registry is recorded in its context's
+  identity page, which the Worker host fills before any code runs; an
+  isolate without a Worker host creates its own service on first use
+  (`native-runtime/src/shared-buffers.ts`).
+- **Atomics.** `load`, `store`, `add`, `sub`, `and`, `or`, `xor`,
+  `exchange` and `compareExchange` on native Uint8, Uint16 and Uint32
+  arrays are the IR's `array-atomic`, inline on both backends.
+- **Posting.** A typed program's typed array posts as the realm typed array
+  it reads as. A typed `SharedArrayBuffer`, or a view of one, shares its
+  block: the Worker host finds the block by the buffer's payload address.
+  Other buffers are copied.
+- **Receiving.** A realm typed array passed to a native typed-array
+  parameter, or narrowed by `instanceof` before `Atomics`, is viewed
+  natively (`projectNativeTypedArray`): over an ordinary buffer's backing,
+  which is then pinned with a host detach key (it can no longer be detached
+  or transferred, as a WebAssembly memory's buffer), or over a shared
+  block's payload. Resizable buffers, length-tracking views and growable
+  shared buffers have no fixed native window and keep the TypeError.
+- Still open: the signed element types (`Int8Array` to `BigUint64Array`,
+  PR #17) and with them typed `Atomics.wait` and `notify`; and narrowing an
+  `unknown` to the typed `SharedArrayBuffer` type, so typed code receives a
+  realm SharedArrayBuffer itself rather than a typed array over it.
 
 **Later: one collector helper pool per process.** Each generational isolate
 starts its own pool of parallel-collector helpers, which multiplies threads
@@ -261,17 +283,21 @@ and their results.
 
 **No shared access is cached, moved or removed.**
 
-- Every `SharedArrayBuffer` access, plain or `Atomics`, reaches a `shared-*`
-  host operation through `SharedBlockService`. Shared storage never exposes a
-  byte array, so no path loads it inline.
+- Every realm `SharedArrayBuffer` access, plain or `Atomics`, reaches a
+  `shared-*` host operation through `SharedBlockService`. Realm shared
+  storage never exposes a byte array, so no realm path loads it inline.
 - `instructionEffects` gives every host call unknown effects. GVN, LICM,
   store forwarding and dead-code elimination therefore treat each access as
   reading and writing all memory, and no other memory operation moves across
   it. The inliner does not inline a callee that contains one.
 - Neither backend schedules instructions. On arm64 each access is a call to an
   out-of-line leaf; on x86-64 it is an inline sequence.
-- Typed code cannot create a `SharedArrayBuffer` yet, so typed
-  specializations never see shared memory.
+- Typed code views a block's payload directly. Its plain element accesses
+  are unordered accesses, ordinary loads and stores optimized like any
+  typed-array access. No pass introduces a read or a write, so the
+  transformations are those the memory model allows for data races. A typed
+  `Atomics` operation is an `array-atomic`, whose effects read and write
+  the whole heap: no access merges with it or moves across it.
 
 **Atomics are barriers.** A seq-cst access compiles to
 `dmb ish; ldar|stlr; dmb ish` on arm64, and compare-exchange is a fenced

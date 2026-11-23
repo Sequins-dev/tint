@@ -383,7 +383,7 @@ function buildHostedFixture(
     // Requested runtimes load even when no application module imports them.
     ...additionalRuntimes
       .map((runtime) => runtime.module)
-      .filter((id) => !projectRoots().includes(id)),
+      .filter((id) => !localModuleIds.has(id) && !projectRoots().includes(id)),
     ...dependencies
       .map((dependency) => dependency[1])
       .filter(

@@ -261,3 +261,14 @@ test("immutable copies survive source mutation and failed destination allocation
     undefined,
   );
 });
+test("pinned storage has a detach key: it cannot be detached or transferred", () => {
+  const buffer = create(4, 4, false);
+  storage.byteStorageData(buffer, "write")!.set([1, 2, 3, 4]);
+  storage.pinByteStorage(buffer);
+  assert.equal(storage.detachByteStorage(buffer), "pinned");
+  const moved = storage.transferByteStorage(buffer, 4, "preserve-resizability");
+  assert.deepEqual(moved, { ok: false, error: "pinned" });
+  assert.deepEqual([...storage.byteStorageData(buffer)!], [1, 2, 3, 4]);
+  // Only fixed-length storage can be pinned: a resize replaces the backing.
+  assert.throws(() => storage.pinByteStorage(create()));
+});

@@ -7,6 +7,10 @@ export interface ByteStorage {
   readonly immutable: boolean;
   readonly allocationLimit: number;
   readonly allocator?: ByteAllocator | undefined;
+  /** A native typed array views the backing (pinByteStorage): the storage
+   * has a host [[ArrayBufferDetachKey]], so it can no longer be detached
+   * or transferred. */
+  pinned?: boolean | undefined;
 }
 /** Supplies a live, zero-initialized view of the requested length. */
 export type ByteAllocator = (length: number) => Uint8Array | undefined;
@@ -17,6 +21,7 @@ export type StorageError =
   | "detached"
   | "fixed-length"
   | "immutable"
+  | "pinned"
   | "invalid-length"
   | "allocation-limit";
 export type StorageResult =
@@ -173,10 +178,21 @@ export function byteStorageWindow(
     return undefined;
   return { bytes, length: fixedLength === undefined ? available : fixedLength };
 }
-export function detachByteStorage(storage: ByteStorage): "none" | "immutable" {
+export function detachByteStorage(
+  storage: ByteStorage,
+): "none" | "immutable" | "pinned" {
   if (storage.immutable) return "immutable";
+  if (storage.pinned === true) return "pinned";
   storage.data = undefined;
   return "none";
+}
+/** Give `storage` a host [[ArrayBufferDetachKey]] (as WebAssembly memory
+ * has): a native typed array now views its backing and cannot observe a
+ * detachment, so DetachArrayBuffer throws instead. Only fixed-length
+ * storage is pinned; a resize would replace the backing too. */
+export function pinByteStorage(storage: ByteStorage): void {
+  if (storage.resizable) throw "BYTE_STORAGE_PIN_RESIZABLE";
+  storage.pinned = true;
 }
 function copyBytes(
   source: Uint8Array,
@@ -253,6 +269,7 @@ export function transferByteStorage(
   mode: StorageTransferMode,
 ): StorageResult {
   if (storage.immutable) return { ok: false, error: "immutable" };
+  if (storage.pinned === true) return { ok: false, error: "pinned" };
   const current = storage.data;
   if (current === undefined) return { ok: false, error: "detached" };
   const resizable = mode === "preserve-resizability" && storage.resizable;

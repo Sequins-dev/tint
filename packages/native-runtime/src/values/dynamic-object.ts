@@ -39,6 +39,7 @@ import {
   readObjectValueProperty,
   setObjectLiteralPrototype,
   setObjectValueProperty,
+  typedArrayWindow,
   viewObjectValue,
   type ContractField,
   type ObjectShapeContract,
@@ -48,6 +49,7 @@ import {
   type PropertyValueRule,
   type ScriptPropertyKey,
 } from "@tint/js-runtime/objects";
+import { byteStorageData, pinByteStorage } from "@tint/js-runtime/bytes";
 
 type ObjectRecord = OrdinaryObject<ScriptPropertyKey, unknown>;
 let cachedContracts: Map<string, ObjectShapeContract> | undefined = undefined;
@@ -381,6 +383,50 @@ export function realmInstanceOf(
   );
   if (result.error !== "none") throw createRuntimeError(core.realm, "type");
   return result.value;
+}
+/** A realm typed array as the native typed array of `nativeKind` (Uint8Array,
+ * Uint16Array, Uint32Array or Float64Array) that views the same bytes, for
+ * typed code (the slice 2b buffer view): over an ordinary buffer's backing,
+ * which collections move together with the view and which is then pinned
+ * (it can no longer be detached or transferred), or over a shared block's
+ * nonmoving payload. Undefined when there is no fixed native window: another
+ * kind, a big-endian, length-tracking or out-of-bounds view, a detached or
+ * resizable buffer, or a growable shared one. */
+export function projectNativeTypedArray(
+  value: unknown,
+  nativeKind: string,
+): unknown {
+  const core = programRealmCore();
+  const object = viewObjectValue(value, core.realm.objectPrototype);
+  const data = object?.internalTypedArrayData;
+  if (
+    data === undefined ||
+    data.kind + "Array" !== nativeKind ||
+    data.endian !== "little"
+  )
+    return undefined;
+  const length = data.length;
+  if (length === undefined || typedArrayWindow(data) === undefined)
+    return undefined;
+  const storage = data.storage;
+  let bytes: Uint8Array | undefined;
+  if (storage.kind === "ordinary") {
+    if (storage.resizable) return undefined;
+    bytes = byteStorageData(storage);
+    // The view shares the backing for as long as typed code keeps it.
+    if (bytes !== undefined) pinByteStorage(storage);
+  } else if (!storage.growable) bytes = storage.service.bytes(storage.handle);
+  if (bytes === undefined) return undefined;
+  const offset = bytes.byteOffset + data.byteOffset;
+  if (nativeKind === "Uint8Array")
+    return new Uint8Array(bytes.buffer, offset, length);
+  if (nativeKind === "Uint16Array")
+    return new Uint16Array(bytes.buffer, offset, length);
+  if (nativeKind === "Uint32Array")
+    return new Uint32Array(bytes.buffer, offset, length);
+  if (nativeKind === "Float64Array")
+    return new Float64Array(bytes.buffer, offset, length);
+  return undefined;
 }
 export function invokeArrayMethod(
   receiver: unknown,

@@ -42,6 +42,9 @@ export interface DynamicObjectRuntime {
   readonly speculativeBinary?: number | undefined;
   readonly speculativeString?: number | undefined;
   readonly speculativeUnary?: number | undefined;
+  /** projectNativeTypedArray: a realm typed array passed to a native
+   * typed-array parameter, viewed natively (scalar nativeArrayArgument). */
+  readonly projectTypedArray?: number | undefined;
   readonly bindingObject?: number;
   readonly bindingIterator?: number;
   readonly bindingNext?: number;
@@ -92,6 +95,7 @@ export const realmInstanceofHelpers: readonly string[] = [
   "realmGlobal",
   "realmInstanceOf",
   "invokeArrayMethod",
+  "projectNativeTypedArray",
 ];
 
 /** The receiver's checked brand is independent of its physical carrier. */

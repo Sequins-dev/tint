@@ -2327,13 +2327,20 @@ export function lowerFunction(
    * operands are numbers, so their ToIntegerOrInfinity runs no code. */
   function atomicsCall(
     property: string,
+    kind: "Uint8Array" | "Uint16Array" | "Uint32Array",
     args: readonly number[],
     node: Span,
   ): number {
-    const array = args[0],
+    const source = args[0],
       input = args[1];
-    if (array === undefined || input === undefined)
+    if (source === undefined || input === undefined)
       throw "atomics argument invariant";
+    // A narrowed unknown keeps its general carrier: a native array, or a
+    // realm typed array viewed natively.
+    const array =
+      slots[source] === "general"
+        ? nativeArrayArgument(source, kind, node)
+        : source;
     const operation = atomicOperation(property);
     const index = integerIndex(
       save(numericInput(input, node), "number", node),
@@ -5531,14 +5538,39 @@ export function lowerFunction(
     });
     return save(test, "boolean", node);
   }
+  /** A general value passed to a native typed-array parameter: a native
+   * array of `kind`, or a realm typed array of that kind viewed natively
+   * (projectNativeTypedArray), else a TypeError. */
   function nativeArrayArgument(
     slot: number,
     kind: NativeTypedArray,
     node: Span,
   ): number {
-    const test = nativeArrayTest(slot, kind, node);
+    const project = dynamicObjects?.projectTypedArray;
+    let source = slot;
+    if (project !== undefined) {
+      source = save(coerce(load(slot, node), "general", node), "general", node);
+      const native = block(),
+        projecting = block();
+      choose(
+        load(nativeArrayTest(slot, kind, node), node),
+        native,
+        projecting,
+        node,
+      );
+      current = projecting;
+      const projected = dynamicResult(
+        project,
+        [source, stringSlot(kind, node)],
+        node,
+      );
+      store(source, load(projected, node), node);
+      jump(native.id, node);
+      current = native;
+    }
+    const test = nativeArrayTest(source, kind, node);
     requireCondition(test, "TypeError", nativeArrayArgumentMessage, node);
-    return save(coerce(load(slot, node), kind, node), kind, node);
+    return save(coerce(load(source, node), kind, node), kind, node);
   }
   function arrayInstanceOf(
     node: Expression & { readonly kind: "binary" },
@@ -9860,9 +9892,22 @@ export function lowerFunction(
           const args = node.arguments.map(value),
             first = args[0];
           if (first === undefined) throw "builtin argument invariant";
-          if (builtin === "atomics") {
+          if (
+            builtin === "atomics-uint8" ||
+            builtin === "atomics-uint16" ||
+            builtin === "atomics-uint32"
+          ) {
             if (target.kind !== "member") throw "atomics callee invariant";
-            return atomicsCall(target.property, args, node);
+            return atomicsCall(
+              target.property,
+              builtin === "atomics-uint8"
+                ? "Uint8Array"
+                : builtin === "atomics-uint16"
+                  ? "Uint16Array"
+                  : "Uint32Array",
+              args,
+              node,
+            );
           }
           if (
             builtin === "is-finite" ||

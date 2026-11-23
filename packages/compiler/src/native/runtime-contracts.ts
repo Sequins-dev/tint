@@ -63,6 +63,7 @@ export function dynamicObjectRuntimeSource(
     "realmGlobal",
     "realmInstanceOf",
     "invokeArrayMethod",
+    "projectNativeTypedArray",
   ];
   if (patterns) {
     retainedExports.push(

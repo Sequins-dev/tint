@@ -1949,6 +1949,7 @@ function lowerEntries(
               speculativeBinary: dynamicAliases.get("speculativeBinary"),
               speculativeString: dynamicAliases.get("speculativeString"),
               speculativeUnary: dynamicAliases.get("speculativeUnary"),
+              projectTypedArray: dynamicAliases.get("projectNativeTypedArray"),
             };
       const expressions = createKeyIndex<Expression, ExpressionInfo>(
         syntaxHash,
@@ -3191,11 +3192,26 @@ function lowerEntries(
               else if (
                 intrinsic === "math-min" ||
                 intrinsic === "math-max" ||
-                intrinsic === "math-imul" ||
-                intrinsic === "atomics"
+                intrinsic === "math-imul"
               )
                 builtin = intrinsic;
-              else if (
+              else if (intrinsic === "atomics") {
+                // The array's checked kind: a narrowed unknown keeps its
+                // general carrier, which the lowering converts.
+                const array = node.arguments[0];
+                const kind =
+                  array === undefined
+                    ? undefined
+                    : checked.types[checked.expressions.get(array) ?? -1]?.kind;
+                builtin =
+                  kind === "Uint8Array"
+                    ? "atomics-uint8"
+                    : kind === "Uint16Array"
+                      ? "atomics-uint16"
+                      : kind === "Uint32Array"
+                        ? "atomics-uint32"
+                        : fail("Atomics require a native integer array");
+              } else if (
                 intrinsic === "string-from-code-units" ||
                 intrinsic === "string-from-code-points"
               )

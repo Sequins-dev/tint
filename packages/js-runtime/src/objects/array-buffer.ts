@@ -56,7 +56,10 @@ export function requireArrayBuffer(
 function storageFailure(error: StorageError, realm: ErrorRealm): never {
   throw createRuntimeError(
     realm,
-    error === "detached" || error === "fixed-length" || error === "immutable"
+    error === "detached" ||
+      error === "fixed-length" ||
+      error === "immutable" ||
+      error === "pinned"
       ? "type"
       : "range",
   );
