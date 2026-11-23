@@ -1,0 +1,30 @@
+Shared string fixtures on macOS arm64 at e503b7ee8 (workspace source snapshot
+4524e0098572adae), each image run under LLDB (stop at entry, then exit).
+Columns after the variant: image SHA-256 prefix, source snapshot prefix.
+
+== macos serial stress=0 1f378d9e51af31b0 4524e0098572adae
+STOPPED_AT_ENTRY
+shared strings: ok
+STATE True 42
+== macos serial stress=1 2a94536ed5527c29 4524e0098572adae
+STOPPED_AT_ENTRY
+shared strings stress: ok
+STATE True 42
+== macos parallel stress=0 b49c65ef63beab5d 4524e0098572adae
+STOPPED_AT_ENTRY
+shared strings: ok
+STATE True 42
+== macos parallel stress=1 db2a62016cacdea7 4524e0098572adae
+STOPPED_AT_ENTRY
+shared strings stress: ok
+STATE True 42
+== macos copying stress=0 58467bd93be7c265 4524e0098572adae
+STOPPED_AT_ENTRY
+shared strings: ok
+STATE True 42
+== macos copying stress=1 4f5677169ee117ef 4524e0098572adae
+STOPPED_AT_ENTRY
+shared strings stress: ok
+STATE True 42
+Sample analysis of process 11395 written to file /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-lock-R5zMh8/stall-zc-final.txt
+

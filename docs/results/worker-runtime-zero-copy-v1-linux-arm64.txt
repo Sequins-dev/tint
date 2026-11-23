@@ -1,0 +1,28 @@
+Shared string fixtures on Linux arm64 (the dev container, Debian 12, 4 KiB pages)
+at e503b7ee8, each image built in the container and run under LLDB 19.
+
+head e503b7ee8da49e4ac3061923198fe00b24eed015 aarch64 2026-11-23T20:07:12Z
+== serial /Users/stephenbelanger/.t3/worktrees/tint/t3-e9632f61-027dce68972dac3d/.tint-bench/zc-linux/tmp/tint-hosted-worker-shared-strings-serial-lA3mGt/worker-shared-strings-serial
+STOPPED_AT_ENTRY
+shared strings: ok
+STATE True 42
+== stress serial /Users/stephenbelanger/.t3/worktrees/tint/t3-e9632f61-027dce68972dac3d/.tint-bench/zc-linux/tmp/tint-hosted-worker-shared-strings-stress-serial-AoybH6/worker-shared-strings-stress-serial
+STOPPED_AT_ENTRY
+shared strings stress: ok
+STATE True 42
+== parallel /Users/stephenbelanger/.t3/worktrees/tint/t3-e9632f61-027dce68972dac3d/.tint-bench/zc-linux/tmp/tint-hosted-worker-shared-strings-parallel-FwCt0U/worker-shared-strings-parallel
+STOPPED_AT_ENTRY
+shared strings: ok
+STATE True 42
+== stress parallel /Users/stephenbelanger/.t3/worktrees/tint/t3-e9632f61-027dce68972dac3d/.tint-bench/zc-linux/tmp/tint-hosted-worker-shared-strings-stress-parallel-9PZuih/worker-shared-strings-stress-parallel
+STOPPED_AT_ENTRY
+shared strings stress: ok
+STATE True 42
+== copying /Users/stephenbelanger/.t3/worktrees/tint/t3-e9632f61-027dce68972dac3d/.tint-bench/zc-linux/tmp/tint-hosted-worker-shared-strings-copying-ixClfS/worker-shared-strings-copying
+STOPPED_AT_ENTRY
+shared strings: ok
+STATE True 42
+== stress copying /Users/stephenbelanger/.t3/worktrees/tint/t3-e9632f61-027dce68972dac3d/.tint-bench/zc-linux/tmp/tint-hosted-worker-shared-strings-stress-copying-HV8PQc/worker-shared-strings-stress-copying
+STOPPED_AT_ENTRY
+shared strings stress: ok
+STATE True 42
