@@ -272,6 +272,26 @@ views are the interop path.
 | C3 | Private elements and brand checks, static blocks, class expressions, `extends` of a general (untyped) constructor through the general path at the boundary | Test262 `language/statements/class` typed subset |
 | C4 | Descriptor metadata for PR #12's inline caches | untyped access to typed instances at #12's IC cost |
 
+**Order of work inside C1.** Each step lands with its own tests:
+
+1. **Scoped contract resolution.** Module-instance preparation moves
+   top-level statements into the module's initializer function, so a
+   top-level class becomes a class statement inside a function. The checker
+   rejects those today ("local classes require scoped contract resolution").
+   This step resolves the class contract in the scope where the class
+   appears, with captured module bindings as closures, and removes the
+   module-instance rejection.
+2. **Class statements in closure lowering.** Method and initializer
+   closures are created once, then `buildClassDefinition` runs at the
+   statement's position, with TDZ on the class binding.
+3. **Member reads, writes and method calls.** Own fields, prototype
+   contracts, own-shadow slots, prototype validity cells and the guarded
+   direct calls.
+4. **Record views of instances and prototypes.** Presence-backed deletes,
+   method-named writes into shadow slots, non-configurable annotated fields,
+   and invalidation hooks for mutation from untyped code.
+5. **Fixtures**, one per behaviour in "JavaScript object semantics".
+
 Each phase fails explicitly for what it does not cover:
 
 - decorators, already rejected;
