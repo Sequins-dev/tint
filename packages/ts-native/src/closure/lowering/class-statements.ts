@@ -116,8 +116,12 @@ export function reserveClassEntries(
     }
     if (targets.length !== members.definitionEnvironment.fields.length)
       throw "class member closure invariant";
+    // A derived definition receives the base prototype (ClassDefinitionPlan).
     const definition = signatures.length;
-    signatures.push({ parameters: [], returnType: "reference" });
+    signatures.push({
+      parameters: storage.prototypeLink === undefined ? [] : ["reference"],
+      returnType: "reference",
+    });
     const construction = signatures.length;
     signatures.push({ parameters, returnType: "reference" });
     const callTarget = signatures.length;
