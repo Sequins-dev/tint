@@ -8136,6 +8136,7 @@ function emitModuleForms(
             if (scale === 2) emit({ op: "fcvt-d-s", rd: float, rn: float });
             return true;
           }
+          // LDRSB/LDRSH/LDRSW sign-extend to 64 bits in the load itself.
           emit({
             op: "ldr-indexed",
             size: scale,
@@ -8144,16 +8145,8 @@ function emitModuleForms(
             rn: base,
             rm: index,
             scaled: scale !== 0,
+            signed: layout.element === "signed",
           });
-          if (layout.element === "signed")
-            emit({
-              op: "sbfm",
-              width: 64,
-              rd: integer,
-              rn: integer,
-              immr: 0,
-              imms: (8 << scale) - 1,
-            });
           return false;
         }
         /** An integer element loaded by loadElement as a double. */
@@ -14586,13 +14579,16 @@ function emitModuleForms(
                   element !== "float" &&
                   element !== "clamped" &&
                   storedAsInteger(op.value);
-                if (
+                // A clamped byte is computed inline (no helper), so it stays
+                // in x9, which the index and data pointer loads leave alone.
+                if (op.kind === "array-store" && element === "clamped")
+                  clampedValue(op.value);
+                else if (
                   op.kind === "array-store" &&
                   element !== "float" &&
                   !directWord
                 ) {
-                  if (element === "clamped") clampedValue(op.value);
-                  else wordValue(op.value);
+                  wordValue(op.value);
                   rawStore(9, resultOffset + 24);
                 }
                 const fact = valueIds.intern(op.index);
@@ -14637,6 +14633,7 @@ function emitModuleForms(
                 if (op.kind === "array-store") {
                   let word = 11;
                   if (directWord) word = intRegister(op.value, 11);
+                  else if (element === "clamped") word = 9;
                   else rawLoad(11, resultOffset + 24);
                   emit({
                     op: "str-indexed",
@@ -15348,29 +15345,57 @@ function emitModuleForms(
                   // exact but for -0 (from a product, or a -0 operand),
                   // which becomes +0: its uses do not observe the sign (see
                   // findIntegerUses).
+                  // A product by 2^k or 2^k + 1 (k <= 4) is one shifted
+                  // add: shorter latency than MADD, the same int64 result.
+                  const rightIndex = valueIds.intern(op.right),
+                    factor =
+                      op.operator === "*" && wordKinds[rightIndex] === 3
+                        ? (wordConstants[rightIndex] ?? 0)
+                        : 0,
+                    shift =
+                      factor === 2 || factor === 3
+                        ? 1
+                        : factor === 4 || factor === 5
+                          ? 2
+                          : factor === 8 || factor === 9
+                            ? 3
+                            : factor === 16 || factor === 17
+                              ? 4
+                              : 0;
                   const left = intRegister(op.left, 9),
-                    right = intRegister(op.right, 10),
+                    right = shift !== 0 ? left : intRegister(op.right, 10),
                     target = intTarget(op.id, 9);
                   emit(
-                    op.operator === "*"
+                    shift !== 0
                       ? {
-                          op: "madd",
+                          op: "add-reg",
                           width: 64,
                           rd: target,
-                          rn: left,
-                          rm: right,
-                          ra: "zr",
-                        }
-                      : {
-                          op: op.operator === "+" ? "add-reg" : "sub-reg",
-                          width: 64,
-                          rd: target,
-                          rn: left,
-                          rm: right,
+                          rn: factor % 2 === 1 ? left : "zr",
+                          rm: left,
                           shift: "lsl",
-                          amount: 0,
+                          amount: shift,
                           setFlags: false,
-                        },
+                        }
+                      : op.operator === "*"
+                        ? {
+                            op: "madd",
+                            width: 64,
+                            rd: target,
+                            rn: left,
+                            rm: right,
+                            ra: "zr",
+                          }
+                        : {
+                            op: op.operator === "+" ? "add-reg" : "sub-reg",
+                            width: 64,
+                            rd: target,
+                            rn: left,
+                            rm: right,
+                            shift: "lsl",
+                            amount: 0,
+                            setFlags: false,
+                          },
                   );
                   saveRaw(target, op.id);
                   markInteger(op.id);

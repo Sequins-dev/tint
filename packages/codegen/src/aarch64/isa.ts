@@ -296,6 +296,9 @@ export type Instruction =
       readonly rn: BaseRegister;
       readonly rm: DataRegister;
       readonly scaled: boolean;
+      /** LDRSB/LDRSH/LDRSW: sign-extend a byte, halfword or word load to
+       * 64 bits (general registers, sizes 0-2). */
+      readonly signed?: boolean;
     }
   | {
       readonly op: "ldp" | "stp";
@@ -1056,13 +1059,19 @@ export function encode(instruction: Instruction): EncodingResult<number> {
         return fail("INVALID_WIDTH");
       if (i.fp ? i.size < 2 || !integer(i.rt, 0, 31) : false)
         return fail("INVALID_WIDTH");
+      if (i.signed === true && (i.op !== "ldr-indexed" || i.fp || i.size === 3))
+        return fail("INVALID_WIDTH");
       const rt = i.fp ? i.rt : register(i.rt, "zr");
       if (rt < 0) return fail("INVALID_REGISTER");
       return word(
         i.size * 0x40000000 +
           0x38200800 +
           (i.fp ? 0x04000000 : 0) +
-          (i.op === "ldr-indexed" ? 0x400000 : 0) +
+          (i.signed === true
+            ? 0x800000
+            : i.op === "ldr-indexed"
+              ? 0x400000
+              : 0) +
           rm * 65536 +
           0x6000 +
           (i.scaled ? 0x1000 : 0) +

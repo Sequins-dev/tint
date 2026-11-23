@@ -586,6 +586,47 @@ test("LDR/STR register offset encodes scaled and unscaled index forms", () => {
       },
       0xfc397951,
     ],
+    // ldrsb x11, [x10, x12]; ldrsh x11, [x10, x12, lsl #1];
+    // ldrsw x11, [x10, x12, lsl #2] (clang).
+    [
+      {
+        op: "ldr-indexed",
+        size: 0,
+        fp: false,
+        rt: 11,
+        rn: 10,
+        rm: 12,
+        scaled: false,
+        signed: true,
+      },
+      0x38ac694b,
+    ],
+    [
+      {
+        op: "ldr-indexed",
+        size: 1,
+        fp: false,
+        rt: 11,
+        rn: 10,
+        rm: 12,
+        scaled: true,
+        signed: true,
+      },
+      0x78ac794b,
+    ],
+    [
+      {
+        op: "ldr-indexed",
+        size: 2,
+        fp: false,
+        rt: 11,
+        rn: 10,
+        rm: 12,
+        scaled: true,
+        signed: true,
+      },
+      0xb8ac794b,
+    ],
     // ldr s0, [x10, x12, lsl #2]; str s17, [x10, x25, lsl #2] (clang).
     [
       {
