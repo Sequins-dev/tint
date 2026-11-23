@@ -260,6 +260,55 @@ export function trace(): string {
 }
 `;
 
+// Constructors calling the class's own methods, which read assigned fields
+// and assign others: the checker analyzes the calls in place, so these
+// classes stay typed.
+const constructorMethodCalls = `class Grid {
+  width: number;
+  height: number;
+  cells: number[];
+  total: number;
+  constructor(width: number, height: number) {
+    this.width = width;
+    this.height = height;
+    this.cells = [];
+    this.fill();
+    this.total = this.sum();
+  }
+  fill(): void {
+    for (let i = 0; i < this.width * this.height; i++) this.cells.push(i % 7);
+  }
+  sum(): number {
+    let total = 0;
+    for (const cell of this.cells) total += cell;
+    return total;
+  }
+}
+class Account {
+  owner: string;
+  balance: number;
+  label: string = "account";
+  history: string[];
+  constructor(owner: string) {
+    this.owner = owner;
+    this.balance = 0;
+    this.history = [];
+    this.record("open " + this.describe());
+  }
+  describe(): string {
+    return this.label + ":" + this.owner;
+  }
+  record(entry: string): void {
+    this.history.push(entry);
+  }
+}
+export function trace(): string {
+  const grid = new Grid(5, 4);
+  const account = new Account("ada");
+  return String(grid.total) + "," + account.history.join("|");
+}
+`;
+
 async function expectedTrace(text: string): Promise<string> {
   const directory = mkdtempSync(join(tmpdir(), "tint-typed-classes-"));
   try {
@@ -358,4 +407,18 @@ test("field reads the checker cannot prove initialized take the general path", a
     process.env.TINT_GENERAL_FALLBACK = "0";
   }
   assert.deepEqual(partition, ["fixture"]);
+});
+
+test("constructors calling their own methods stay typed", async () => {
+  const expected = await expectedTrace(constructorMethodCalls);
+  assert.equal(expected, "57,open account:ada");
+  verifyHostedFixture(
+    withComparison(constructorMethodCalls, expected),
+    "typed-classes-constructor-methods",
+    [],
+    [],
+    [],
+    [],
+    { requireTyped: true, managedBytes: 67108864, allocationCapacity: 1048576 },
+  );
 });

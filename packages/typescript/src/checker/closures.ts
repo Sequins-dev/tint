@@ -1208,6 +1208,38 @@ function checkClosureModuleLayout(
     };
   }
   const contracts = resolved.value;
+  // Whether any code writes through a `.prototype` member: then a class's
+  // methods may be replaced before construction calls them.
+  let prototypesWritten = false;
+  function writesPrototype(target: Expression): boolean {
+    let current = ungroup(target);
+    while (current.kind === "member" || current.kind === "index") {
+      if (current.kind === "member" && current.property === "prototype")
+        return true;
+      if (
+        current.kind === "index" &&
+        literalPropertyName(ungroup(current.index)) === "prototype"
+      )
+        return true;
+      current = ungroup(current.object);
+    }
+    return false;
+  }
+  rewriteModule(module, {
+    expression: (mapped, node) => {
+      if (
+        ((node.kind === "assignment" ||
+          node.kind === "compound" ||
+          node.kind === "update") &&
+          writesPrototype(node.target)) ||
+        (node.kind === "unary" &&
+          node.operator === "delete" &&
+          writesPrototype(node.operand))
+      )
+        prototypesWritten = true;
+      return mapped;
+    },
+  });
   const classContracts = createKeyIndex<ClassDefinition, ClassContract>(
     syntaxHash,
   );
@@ -3979,20 +4011,32 @@ function checkClosureModuleLayout(
     if (contract === undefined)
       fail(node, "UNSUPPORTED", "class contract is unavailable");
     const required = new Set<ClassElement>(),
-      receiverOwners = new Set<number>();
+      receiverOwners = new Set<number>(),
+      methods = new Map<string, ClassElement>();
     for (const member of contract.members) {
       if (member === undefined) throw "class member contract invariant";
       const element = member.node;
+      const name =
+        element.kind === "static-block"
+          ? undefined
+          : literalPropertyName(element.key);
       const constructor =
-        element.kind === "method" &&
-        !element.static &&
-        literalPropertyName(element.key) === "constructor";
+        element.kind === "method" && !element.static && name === "constructor";
       if (
         element.kind === "field" &&
         !system.assignable(undefinedType, member.type)
       )
         required.add(element);
-      if (element.kind === "field" || constructor) {
+      // Own instance methods called on `this` during construction are
+      // analyzed in place, unless some code may replace them.
+      const method =
+        element.kind === "method" &&
+        !element.static &&
+        !constructor &&
+        name !== undefined &&
+        !prototypesWritten;
+      if (method && name !== undefined) methods.set(name, element);
+      if (element.kind === "field" || constructor || method) {
         const id = functions.get(element);
         if (id !== undefined) receiverOwners.add(id);
       }
@@ -4020,6 +4064,7 @@ function checkClosureModuleLayout(
       required,
       receivers,
       constructors,
+      methods,
     );
     if (initialization !== undefined)
       fail(

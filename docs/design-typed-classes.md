@@ -215,16 +215,30 @@ paths correct:
   where class fields are configurable, and they follow from treating the
   annotation as a contract.
 - **Fields are defined before initializers run.** JavaScript defines every
-  field as `undefined` before its initializer. Typed storage has no
-  `undefined` for a `number` field, so the typed path depends on the
-  checker. It rejects a class whose field could be read before assignment:
-  `this` escaping before every required field is assigned (a method call, a
-  closure, passing `this`), and a read of a later field. Such a class runs
-  on the general path, which observes `undefined` exactly. Subclass field
-  reads from a base constructor (a dispatch to an override before `super`
-  returns) arrive with C2. Until then `extends` falls back, and C2 must keep
-  the same guarantee with a guard on paths the checker cannot prove.
-  `tools/native-typed-classes.test.ts` covers both cases.
+  field as `undefined` before its initializer. The typed path keeps
+  `undefined`-less storage for fields the checker proves assigned before
+  any read. Calls of the class's own methods on `this` during construction
+  are analyzed in place: the method may read assigned fields, and its
+  definite assignments count after the call. When no code writes through a
+  `prototype`, those calls reach the defined methods. Step 4 adds the
+  validity-cell guard to such calls. Still interim, and to be removed before
+  #17 is ready:
+  - Classes where a field may be read before assignment fall back to the
+    general path, which observes `undefined` exactly. Examples are a
+    method reading a field the constructor assigns later, or `this`
+    escaping to a closure or another function.
+  - They are to compile typed with initialization state (or an
+    `undefined`-capable representation) only on the unproven fields, and
+    reads of those fields get exact `undefined` semantics.
+  - C2 applies the same rule to a base constructor dispatching to a
+    subclass override.
+
+  `tools/native-typed-classes.test.ts` covers both the typed and the
+  fallback cases.
+
+- **Deleting optional fields** is valid TypeScript but is not lowered on
+  the typed path yet: such deletes fall back (interim, to be lowered with
+  presence bytes before #17 is ready).
 - **Object literals typed as a class** (`const b: Box = {...}`) are plain
   records. Accesses through the class type dispatch on the class layout
   first, then on the plain layout, which exists only when such a literal is
@@ -366,62 +380,80 @@ views are the interop path.
   went from 76.8 ms to 35.4 ms steady on macOS arm64; Node 26.13.1 takes
   21.1 ms. The frozen v7 workload is unchanged, with identical output.
 
-**Plan for step 4** (record views and the validity cell, one push):
+**Plan for step 4** (views on PR #12's object model; the validity cell lands
+in the same push that exposes prototypes):
 
-- **Where values cross.** A class instance, prototype or constructor reaches
-  untyped code where a class-typed value is erased to a general value.
-  These erasure points are `unknown` parameters and results, mixed calls
-  into general functions, and boundary exports. The checker records them,
-  as it already does for native callable and record views. Lowering then
-  calls the class's generated publish adapter instead of wrapping the raw
-  pointer, so the realm only ever sees view objects.
-- **Views.** Each class gets generated host adapters, as boundary records
-  do:
-  - The instance view is `createRecordView` over the instance record.
-    Its keys are the own data fields and present shadow slots, and its
-    prototype is the prototype view.
-  - The prototype view holds the methods as native callable views and a
-    non-enumerable `constructor`.
-  - The constructor view is a callable view with `prototype` and the
-    statics.
+PR #12 (`origin/perf/general-runtime`, at 6517de298 when read) replaces the
+realm's property storage with shapes and inline caches:
 
-  Each native object has one view, cached in a hidden view slot, so
-  identity holds. A view coming back into typed code is unwrapped through
-  its `typedRecord` hook: in downcasts, in `instanceof`, and in parameters
-  typed as the class.
+- A shape lists keys and attribute kinds.
+- A key's slot is its position: 8 in-object general slots, then a list.
+- Every slot is a two-word general value.
+- Caches key on the shape word at offset 8 of an `OrdinaryObject`.
+- Objects with overridden internal methods are dictionary mode and always
+  miss. Today's `createRecordView` views are such objects.
 
-- **Method storage.** Untyped code can assign any function, or any value,
-  to a method name. So prototype method fields and instance shadow slots
-  use the general representation. Typed code still writes native closures.
-- **Validity cell.** Each prototype record gets a hidden validity word, set
-  when the class is defined. Several operations clear it, and the cells of
-  every class whose chain contains that prototype:
-  - a prototype-view write, define or delete of a method name;
-  - a prototype change;
-  - an accessor installed in place of a method;
-  - typed writes to a prototype method field, in the same lowering.
+Typed instances must be both correct and cache-fast to untyped code, so
+their views are **record-backed fast objects**:
 
-  A method call on a class instance checks three things, as in "JavaScript
-  object semantics": the receiver's layout, a clear own-shadow presence
-  byte, and the cell of the receiver's prototype. If all hold, it calls the
-  method resolved at definition time directly, through the receiver-passing
-  twin, which inlines. Otherwise it does the full lookup and a general
-  call. This guard replaces the closed-world proof, which views would
-  defeat, and the two land together.
+- **Instance views.** Each instance has one view, cached in the record's
+  `[[view]]` slot. The view is a fast-mode `OrdinaryObject` whose shape is
+  created once per class layout. That shape's keys are the own data fields
+  and method shadow slots. Each key's slot lives in the instance record at a
+  word offset with a representation: float64, boolean, string, reference,
+  general, or optional with a presence byte or `undefined` encoding.
+  Expandos transition from that shape like any other object.
+- **Cache hits.** A hit compares the shape, loads the view's record
+  pointer, loads the field and tags it. That is free for numbers, booleans
+  and strings. A reference field yields the target's view, and misses until
+  one exists.
+- **Prototype and constructor views.** A prototype view is a fast object
+  with a private shape whose method slots hold callable views of the method
+  closures, plus a non-enumerable `constructor`. The constructor view is a
+  callable view with `prototype` and the statics.
+- **Compiler side (this stream).**
+  - The checker records erasure points, where a class-typed value becomes a
+    general value. Lowering calls the class's publish entry there, the one
+    seam into the runtime.
+  - A view coming back is unwrapped to its record: in downcasts, in
+    `instanceof`, and in parameters typed as the class.
+  - Prototype method fields and shadow slots switch to the general
+    representation.
+  - Each prototype record gets the validity word, and method calls get the
+    guard described in "JavaScript object semantics".
+  - Until the runtime part exists, erasure of class values fails explicitly
+    at compile time instead of passing a raw pointer.
+- **Runtime interface needed from #12** (to be built in #12 or on top of it
+  after it merges):
+  1. `createRecordShape(prototypeView, keys, kinds, fieldWords,
+representations, recordDescriptor)`: an immutable fixed-layout shape,
+     registered as the prototype view's child root, from which expando
+     transitions proceed.
+  2. Kind bits:
+     - `recordField`: the value lives in the backing record.
+     - `checked`: stores validate the representation or annotation and
+       throw a `TypeError`, while the descriptor still reports writable.
+     - `maybeAbsent`: a presence byte or shadow slot, so an absent key
+       continues the lookup to the prototype.
+  3. A view object layout with a record pointer at a fixed offset. Each
+     cache site records a representation word, and IR and codegen get
+     per-representation hit sequences for loads and checked stores.
+     Record-flow treats their results as general values with no facts.
+  4. A prototype validity hook. A prototype view points at its record's
+     validity word, and the runtime clears it on:
+     - a store, define or delete of a method key on the prototype view;
+     - `setPrototypeOf` of the prototype view;
+     - an accessor replacing a method.
 
-- **Contracts through views.** A write to an annotated field checks the
-  annotation and throws a `TypeError` on a mismatch. Unannotated fields
-  accept any value.
-- **Deletes through views.** Deletes go through one policy function.
-  - An annotated required field is non-configurable: `false`, or a
-    `TypeError` in strict code.
-  - Optional fields and shadow slots clear their presence byte, and reads
-    then fall through to the prototype.
-  - Defining an annotated field as an accessor throws.
-- **`instanceof` with views.** Classes become reachable as views, so the
-  typed `instanceof` adds the `Symbol.hasInstance` check on the
-  constructor view and the general prototype-chain walk for values that
-  are not instance records.
+     `setPrototypeOf` of an instance view swaps the view's shape and
+     updates the record's prototype link.
+
+  5. Non-configurable record fields for annotated required fields:
+     - their descriptor reports `configurable: false`;
+     - `delete` returns `false`, or throws a `TypeError` in strict code;
+     - redefining them as accessors throws.
+  6. Dictionary-mode demotion keeps record fields live as alias
+     descriptors instead of copying their values out.
 
 Untyped code does not yet see typed instances, prototypes or constructors
 through record views (step 4). Accessors and

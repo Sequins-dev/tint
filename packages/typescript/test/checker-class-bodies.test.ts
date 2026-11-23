@@ -56,7 +56,7 @@ test("required instance fields must be initialized on every returning path", () 
     "class C{x:number;constructor(){return;}}",
     "class C{x:number;constructor(){this.x=this.x+1;}}",
     "class C{x:number=this.y;y:number=1;}",
-    "class C{x:number;constructor(){this.m();this.x=1;}m():void{}}",
+    "class C{x:number;constructor(){this.m();this.x=1;}m():number{return this.x;}}",
   ]) {
     const result = check(source);
     assert.ok(!result.ok, source);
@@ -165,4 +165,31 @@ test("optional class fields admit undefined and need no constructor assignment",
     "class P{x?:number;y:number=1;}export function run():number{const p=new P();const x=p.x;return x===undefined?p.y:x;}",
   );
   assert.ok(result.ok, JSON.stringify(result));
+});
+test("own methods called during construction are analyzed in place", () => {
+  for (const source of [
+    "class C{x:number=1;y:number=this.read();read():number{return this.x;}}",
+    "class C{x:number;y:number;constructor(){this.x=1;this.init();}init():void{this.y=this.x*2;}}",
+    "class C{x:number;y:number;constructor(){this.x=1;this.init();}init():void{if(this.x>0){this.y=1;}else{this.y=2;}}}",
+    "class C{x:number;items:number[];constructor(n:number){this.x=n;this.items=[];this.fill(n);}fill(n:number):void{for(let i=0;i<n;i++)this.items.push(i*this.x);}}",
+    "class C{x:number;constructor(){this.a();this.x=1;}a():void{this.b();}b():void{}}",
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify({ source, result }));
+  }
+  for (const source of [
+    // The method reads a field before its assignment.
+    "class C{x:number;constructor(){this.x=this.twice();}twice():number{return this.x*2;}}",
+    // An early return or a loop does not definitely assign.
+    "class C{x:number;y:number;constructor(){this.x=1;this.init();}init():void{if(this.x>0)return;this.y=2;}}",
+    "class C{x:number;y:number;constructor(){this.x=1;this.init();}init():void{for(let i=0;i<3;i++){this.y=i;}}}",
+    // Recursion, an own override and a written prototype are not analyzed.
+    "class C{x:number;constructor(){this.a();this.x=1;}a():void{this.a();}}",
+    "class C{x:number;m():number{return 1;}constructor(){this.m=():number=>2;this.m();this.x=1;}}",
+    "class C{x:number;constructor(){this.m();this.x=1;}m():void{}}function patch():void{C.prototype.m=function(this:C):void{};}",
+  ]) {
+    const result = check(source);
+    assert.ok(!result.ok, source);
+    assert.equal(result.error.code, "UNINITIALIZED", source);
+  }
 });

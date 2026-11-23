@@ -12,17 +12,31 @@ export interface ClassInitializationError extends Span {
   readonly message: string;
 }
 /** Definite initialization only. Value types and executable bodies are checked separately.
- * Reference sets come from binding identities, including lexical receiver captures. */
+ * Reference sets come from binding identities, including lexical receiver captures.
+ *
+ * A call of one of the class's own instance methods on `this` during
+ * construction (`methods`, whose receiver references are in `receivers`) is
+ * analyzed in place: the method may read only fields assigned before the
+ * call, and the fields it definitely assigns count as assigned after it.
+ * That holds while the call reaches the method the class defined, so callers
+ * pass no methods when a prototype may be written. */
 export function checkClassInitialization(
   definition: ClassDefinition,
   requiredFields: ReadonlySet<ClassElement>,
   receivers: ReadonlySet<Expression>,
   constructors: ReadonlySet<Expression>,
+  methods: ReadonlyMap<string, ClassElement> = new Map<string, ClassElement>(),
 ): ClassInitializationError | undefined {
   let ready = new Set<string>(),
     required = new Set<string>(),
     staticMode = false,
     depth = 0;
+  // Methods being analyzed in place (recursion escapes), names assigned on
+  // the instance (an own override shadows the method), and the assigned
+  // fields at each `return` of the innermost analyzed method.
+  const inlining = new Set<string>(),
+    shadowed = new Set<string>();
+  let exits: Set<string>[] | undefined;
   let error: ClassInitializationError | undefined;
   const abort = {};
   function fail(
@@ -160,7 +174,10 @@ export function checkClassInitialization(
           const property = field(node.target);
           if (property === undefined) expression(node.target);
           expression(node.value);
-          if (property !== undefined) ready.add(property);
+          if (property !== undefined) {
+            ready.add(property);
+            if (methods.has(property)) shadowed.add(property);
+          }
           return;
         }
         case "compound":
@@ -202,6 +219,20 @@ export function checkClassInitialization(
         case "call":
         case "new": {
           const callee = ungroup(node.callee);
+          const method =
+            node.kind === "call" && !staticMode && callee.kind === "member"
+              ? ownMethod(callee)
+              : undefined;
+          if (method !== undefined) {
+            const before = copy(ready);
+            for (const argument of node.arguments) {
+              if (argument === undefined) throw "argument invariant";
+              expression(argument);
+            }
+            if (conditional(node)) ready = before;
+            else invoke(method, callee);
+            return;
+          }
           if (
             (callee.kind === "member" || callee.kind === "index") &&
             receiver(callee.object)
@@ -258,6 +289,50 @@ export function checkClassInitialization(
       depth--;
     }
   }
+  /** The class's own instance method a `this.name(...)` call reaches. */
+  function ownMethod(
+    callee: Expression & { readonly kind: "member" },
+  ): ClassElement | undefined {
+    if (!receiver(callee.object) || callee.optional === true) return undefined;
+    const name = callee.property;
+    if (shadowed.has(name) || inlining.has(name)) return undefined;
+    return methods.get(name);
+  }
+  /** Analyze a method body in place, in the current assigned state. */
+  function invoke(method: ClassElement, site: Span): void {
+    if (method.kind !== "method") throw "class method invariant";
+    const name = literalPropertyName(method.key);
+    if (name === undefined) throw "class method name invariant";
+    if (++depth > 256)
+      fail(site, "LIMIT", "class initialization nesting limit exceeded");
+    const outer = exits,
+      returns: Set<string>[] = [];
+    inlining.add(name);
+    exits = returns;
+    try {
+      for (const parameter of method.parameters) {
+        if (parameter === undefined) throw "parameter invariant";
+        const initializer = parameter.initializer;
+        if (initializer !== undefined) {
+          const before = copy(ready);
+          expression(initializer);
+          ready = before;
+        }
+      }
+      const normal = statement(method.body);
+      let after: Set<string> | undefined = normal ? ready : undefined;
+      for (const exit of returns) {
+        if (exit === undefined) throw "method exit invariant";
+        after = after === undefined ? exit : intersect(after, exit);
+      }
+      // A method that never completes leaves the state of the call.
+      if (after !== undefined) ready = after;
+    } finally {
+      inlining.delete(name);
+      exits = outer;
+      depth--;
+    }
+  }
   function statement(node: Statement): boolean {
     if (complete()) return true;
     if (++depth > 256)
@@ -306,13 +381,91 @@ export function checkClassInitialization(
         case "throw":
           expression(node.expression);
           return false;
-        case "return":
+        case "return": {
           if (node.expression !== undefined) expression(node.expression);
-          requireComplete(node);
+          const returns = exits;
+          if (returns === undefined) requireComplete(node);
+          else returns.push(copy(ready));
           return false;
+        }
         case "function":
           if (staticMode && captured(node, constructors)) requireComplete(node);
           return true;
+        // Loops may run no iteration and a jump may leave early: fields
+        // assigned inside them, or in a switch or try, do not count after
+        // it. A do-while body runs at least once.
+        case "while": {
+          expression(node.test);
+          const before = copy(ready);
+          statement(node.body);
+          ready = before;
+          return true;
+        }
+        case "do-while": {
+          const normal = statement(node.body);
+          if (normal) expression(node.test);
+          return true;
+        }
+        case "for": {
+          const initializer = node.initializer;
+          if (initializer !== undefined && !statement(initializer))
+            return false;
+          const test = node.test;
+          if (test !== undefined) expression(test);
+          const before = copy(ready);
+          statement(node.body);
+          const update = node.update;
+          if (update !== undefined) expression(update);
+          ready = before;
+          return true;
+        }
+        case "for-of":
+        case "for-in": {
+          expression(node.iterable);
+          const before = copy(ready);
+          statement(node.body);
+          ready = before;
+          return true;
+        }
+        case "label": {
+          // A break rejoins after the label.
+          const before = copy(ready);
+          statement(node.body);
+          ready = before;
+          return true;
+        }
+        case "break":
+        case "continue":
+          return false;
+        case "switch": {
+          expression(node.expression);
+          const before = copy(ready);
+          for (const clause of node.clauses) {
+            if (clause === undefined) throw "switch clause invariant";
+            const test = clause.test;
+            if (test !== undefined) expression(test);
+            for (const child of clause.statements) {
+              if (child === undefined) throw "statement invariant";
+              if (!statement(child)) break;
+            }
+          }
+          ready = before;
+          return true;
+        }
+        case "try": {
+          const before = copy(ready);
+          statement(node.body);
+          ready = copy(before);
+          const handler = node.handler;
+          if (handler !== undefined) statement(handler.body);
+          ready = copy(before);
+          const finalizer = node.finalizer;
+          if (finalizer !== undefined) {
+            const normal = statement(finalizer);
+            if (!normal) return false;
+          }
+          return true;
+        }
         default:
           fail(
             node,
