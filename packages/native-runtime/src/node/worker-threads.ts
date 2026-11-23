@@ -91,7 +91,22 @@ export interface NodeWorkerThreads {
   readonly parentPort: ScriptObject | null;
   readonly workerData: unknown;
   readonly resourceLimits: ScriptObject;
+  /** Posts as `object.postMessage(value, transfer)` does when `method`, the
+   * object's postMessage, is still the intrinsic one, without a realm call
+   * (the typed facade's fast path). False, having done nothing, otherwise. */
+  post(
+    object: ScriptObject,
+    method: unknown,
+    value: unknown,
+    transfer: readonly unknown[] | undefined,
+  ): boolean;
   close(): void;
+}
+/** An intrinsic postMessage, by its function object's identity, and the
+ * endpoint of its receivers. */
+interface PostMethod {
+  readonly identity: number;
+  readonly state: (receiver: unknown) => Endpoint;
 }
 interface Listener {
   readonly event: ScriptPropertyKey;
@@ -143,6 +158,7 @@ export function createNodeWorkerThreads(
   const portObjects = new Map<number, Endpoint>();
   const workerObjects = new Map<number, WorkerState>();
   const endpoints: Endpoint[] = [];
+  const postMethods: PostMethod[] = [];
   function read(object: ScriptObject, name: string): unknown {
     return getProperty<ScriptPropertyKey, unknown>(object, name, object, hooks);
   }
@@ -167,15 +183,16 @@ export function createNodeWorkerThreads(
     name: string,
     arity: number,
     call: ObjectCall<unknown>,
-  ): void {
-    builtinProperty(
-      object,
+  ): ScriptObject {
+    const fn = builtinFunction(
+      realm.functionPrototype,
       name,
-      builtinFunction(realm.functionPrototype, name, arity, call, hooks),
-      true,
-      true,
+      arity,
+      call,
       hooks,
     );
+    builtinProperty(object, name, fn, true, true, hooks);
+    return fn;
   }
   function getter(
     object: ScriptObject,
@@ -297,10 +314,17 @@ export function createNodeWorkerThreads(
     };
     method(prototype, "removeListener", 2, remove);
     method(prototype, "off", 2, remove);
-    method(prototype, "postMessage", 2, (receiver, args): unknown => {
-      messages.send(state(receiver).port, args[0], transferList(args[1]));
-      return undefined;
-    });
+    const post = method(
+      prototype,
+      "postMessage",
+      2,
+      (receiver, args): unknown => {
+        messages.send(state(receiver).port, args[0], transferList(args[1]));
+        return undefined;
+      },
+    );
+    post.internalIdentity = realm.agent.nextObjectIdentity++;
+    postMethods.push({ identity: post.internalIdentity, state });
   }
   function closePort(endpoint: Endpoint, notify: boolean): void {
     if (endpoint.closed) return;
@@ -679,6 +703,22 @@ export function createNodeWorkerThreads(
     parentPort: parent === undefined ? null : makePort(parent),
     workerData: data,
     resourceLimits: resources,
+    post: (object, method, value, transfer): boolean => {
+      const fn = viewObjectValue(method, realm.objectPrototype);
+      if (fn === undefined) return false;
+      const identity = fn.internalIdentity;
+      for (const entry of postMethods)
+        if (entry.identity === identity) {
+          const none: readonly unknown[] = [];
+          messages.send(
+            entry.state(object).port,
+            value,
+            transfer === undefined ? none : transfer,
+          );
+          return true;
+        }
+      return false;
+    },
     close: (): void => {
       for (const endpoint of endpoints) closePort(endpoint, false);
       backing.close();

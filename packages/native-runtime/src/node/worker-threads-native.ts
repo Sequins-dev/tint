@@ -126,10 +126,15 @@ function send(
   value: unknown,
   list: readonly unknown[] | undefined,
 ): void {
-  const { realm } = host();
+  const { bindings, realm } = host();
+  // The object's own postMessage, which untyped code may have replaced; the
+  // intrinsic one posts without a realm call.
+  const method = read(object, "postMessage", realm);
+  if (bindings.post(object, method, value, list)) return;
   const args: unknown[] = [value];
   if (list !== undefined) args.push(transferList(list, realm));
-  invoke(object, "postMessage", args);
+  const call = callObjectValue(method, object, args, realm.objectPrototype);
+  if (call.error !== "none") throw call.value;
 }
 function listen(
   object: ScriptObject,
