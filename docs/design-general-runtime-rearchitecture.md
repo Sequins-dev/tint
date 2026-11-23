@@ -1,5 +1,32 @@
 # General JavaScript runtime re-architecture proposal
 
+## Route to parity (2026-11-23)
+
+The landing bar is parity: PR #12 lands only when untyped code is at or faster than Node 26.13.1 on Octane (Richards, DeltaBlue, NavierStokes, RayTrace), the call/loop and generality kernels and the untyped builtin-call kernels. Steps 1, 2 and 2b (below the line, as originally proposed) brought the programs to 43–414× Node. The typed-path call/loop kernels already beat Node, so the typed pipeline is the quality bar the untyped path has to reach.
+
+Main-thread attribution after step 2b ([profiles](results/general-runtime-step2b-octane-profile-darwin-arm64-v1.json)), by the first runtime function below generated code:
+
+| Program | Node ms/op | Tint ms/op | Calls and construct | IC misses | Elements / computed keys | `arguments` | Generated code |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Richards | 0.046 | 4.13 | 46% | 11% | 2% | — | 30% |
+| DeltaBlue | 0.065 | 19.4 | 51% | 25% | 2% | — | 16% |
+| NavierStokes | 1.85 | 78.7 | — | 4% | 44% | — | 50% |
+| RayTrace | 0.51 | ~160 | 35% | 7% | 2% | 40% | 8% |
+
+(RayTrace includes the inherited-writable-data transition fix, 3163021b0, measured in one rough run.) Even with every runtime cost removed, the generated code alone is 20–50× slower than Node's optimized code: 1.2 ms for Richards, 3.1 for DeltaBlue, 40 for NavierStokes, 13 for RayTrace. Cheaper runtime helpers cannot reach parity by themselves; the untyped path has to generate typed-quality code.
+
+| Step | Work | Removes | Expected after the step (× Node) | Estimate |
+| --- | --- | --- | --- | --- |
+| 3 · Call and construct ABI | Native entry for every compiled function with register arguments, direct calls on a callee check, no result records or realm thunks; inline sloppy receivers; `[[Construct]]` from the initial shape; `f.apply(this, arguments)` forwarding without materializing `arguments`; native entries for builtins (`Number`, `Math.*`, `Map.prototype.get`) | Richards 46%, DeltaBlue 51%, RayTrace 75% | Richards ~55, DeltaBlue ~170, RayTrace ~110, NavierStokes 43; generality calls 50–70 ns → ~8–12 ns; builtin calls 100–150 ns → 15–30 ns | 2–3 weeks |
+| 4 · Allocation and inlining | Inline nursery allocation at the initial shape; scalar replacement of non-escaping objects, argument views and closures; inlining of small closed callees with a code-size budget; general values in registers rather than frame slots | Allocation share; most call overhead left in hot small methods; frame copies | Richards ~25, DeltaBlue ~80, RayTrace ~40; generality kernels 1.5–3× Node | 2–3 weeks |
+| 5 · Elements, deep ICs and builtins | Dense and double arrays read and written inline; inherited ICs at any depth validated by the prototype epoch (no per-level shape checks); intrinsics for `Math`, `Number`, string and `Map`/`Set` operations guarded by the builtin's identity; the open step 2/2b regressions (copy propagation refusal, `mixedCall`, `numberCall`, NavierStokes) | NavierStokes 44%, DeltaBlue 25%, Richards 11% | NavierStokes ~20, others little changed in ratio; builtin kernels near Node | 1.5–2 weeks |
+| 6 · Speculative typing | Infer shapes, number representations (int32/double) and call targets for untyped code across the whole program, and compile hot functions through the typed pipeline with guards that fall back to the general code (no deoptimization needed when both paths are compiled); polymorphic inlining by receiver shape | Most of the generated-code gap | Parity on the generality and builtin kernels and plausibly Richards and NavierStokes; DeltaBlue and RayTrace within 1.5–3× | 3–6 weeks |
+| 7 · Feedback (if step 6 falls short) | Record IC and call-target feedback in a training run and recompile ahead of time (PGO), or tier up hot functions through the live-execution compiler | Polymorphic and megamorphic residue | DeltaBlue and RayTrace to parity | 2–4 weeks |
+
+Total: about 10–18 weeks of one stream, with the uncertainty concentrated in steps 6 and 7. The order puts the largest measured shares first; each step keeps instruction budgets per operation (step 3: a warm method call ≤ 60 instructions with zero allocations) and the paired protocol for acceptance. Work that touches disjoint files can run in parallel: step 5's elements and builtin intrinsics alongside step 3's ABI, and an inference prototype for step 6 once step 3's entry convention is fixed.
+
+## Original proposal (2026-11-22)
+
 Start with compact shapes, in-object fields and dense elements, then replace the ordinary call and construction ABI. For Richards, evaluate primitive comparison and binding lowering after layout work. Re-profile before expanding the allocation work. The Octane reports provide the source comparisons, hardware counts, executed instruction paths and cache census supporting this order. [Main-thread samples](results/general-call-octane-cost-breakdown-darwin-arm64-v1.md), [Instruction and cache diagnostics](results/general-call-octane-cost-breakdown-darwin-arm64-v2.md)
 
 ## Gain estimates
