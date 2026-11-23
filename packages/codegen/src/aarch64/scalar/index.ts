@@ -7443,25 +7443,44 @@ function emitModuleForms(
               setFlags: false,
             });
             emit({ op: "str", width: 32, rt: 13, rn: 12, offset: 0 });
-            emit({ op: "ldr", width: 64, rt: 13, rn: 12, offset: 16 });
-            // One start bit per 8-byte granule: word top >> 8, bit (top >> 3) & 31.
-            emit({ op: "ubfm", width: 32, rd: 14, rn: 11, immr: 8, imms: 31 });
-            emit({
-              op: "add-reg",
-              width: 64,
-              rd: 14,
-              rn: 13,
-              rm: 14,
-              shift: "lsl",
-              amount: 2,
-              setFlags: false,
-            });
-            emit({ op: "ubfm", width: 32, rd: 15, rn: 11, immr: 3, imms: 7 });
-            imm(9, 1);
-            emit({ op: "lslv", width: 32, rd: 9, rn: 9, rm: 15 });
-            emit({ op: "ldr", width: 32, rt: 15, rn: 14, offset: 0 });
-            emit({ op: "orr-reg", width: 32, rd: 15, rn: 15, rm: 9 });
-            emit({ op: "str", width: 32, rt: 15, rn: 14, offset: 0 });
+            // The copying runtime's space keeps one start bit per 8-byte
+            // granule: word top >> 8, bit (top >> 3) & 31. A generational
+            // nursery keeps none: it is bump-allocated without gaps, so the
+            // compactor's rare fallback and heap tools walk it by extents.
+            if (!generationalBarriers) {
+              emit({ op: "ldr", width: 64, rt: 13, rn: 12, offset: 16 });
+              emit({
+                op: "ubfm",
+                width: 32,
+                rd: 14,
+                rn: 11,
+                immr: 8,
+                imms: 31,
+              });
+              emit({
+                op: "add-reg",
+                width: 64,
+                rd: 14,
+                rn: 13,
+                rm: 14,
+                shift: "lsl",
+                amount: 2,
+                setFlags: false,
+              });
+              emit({
+                op: "ubfm",
+                width: 32,
+                rd: 15,
+                rn: 11,
+                immr: 3,
+                imms: 7,
+              });
+              imm(9, 1);
+              emit({ op: "lslv", width: 32, rd: 9, rn: 9, rm: 15 });
+              emit({ op: "ldr", width: 32, rt: 15, rn: 14, offset: 0 });
+              emit({ op: "orr-reg", width: 32, rd: 15, rn: 15, rm: 9 });
+              emit({ op: "str", width: 32, rt: 15, rn: 14, offset: 0 });
+            }
             emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 8 });
             emit({
               op: "add-reg",

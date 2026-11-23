@@ -101,6 +101,24 @@ export function clearWords(
   }
   if (at < end) array.fill(0, at, end);
 }
+/** Records the object starts of a gap-free run of objects [from, to) (a
+ * bump-allocated nursery) as start bits relative to `base`: the bits the
+ * allocation fast path does not keep, for a compaction that covers the run. */
+export function recordObjectStarts(
+  starts: Uint32Array,
+  base: number,
+  from: number,
+  to: number,
+): void {
+  let address = from;
+  while (address < to) {
+    const granule = (address - base) >>> 3,
+      word = granule >>> 5;
+    starts[word] = ((starts[word] ?? 0) | (1 << (granule & 31))) >>> 0;
+    address += compactObjectSize(address, read(address));
+  }
+  if (address !== to) throw "COMPACT_NURSERY_WALK";
+}
 /** Zeroes elements [start, end) of `array`. */
 export function clearBytes(
   array: Uint8Array,

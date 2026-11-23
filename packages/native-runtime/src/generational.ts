@@ -2,9 +2,9 @@ import { nativeAllocatorShutdownRequest } from "@tint/abi/host";
 import { initializeExternalMemory } from "./external-memory.ts";
 import {
   clearBytes,
-  clearWords,
   createCheneyCollector,
   createCompactor,
+  recordObjectStarts,
 } from "./tracing/cheney.ts";
 import { createParallelEvacuator } from "./tracing/parallel.ts";
 import { cgroupProcessorLimit } from "./processors.ts";
@@ -251,7 +251,6 @@ export function initializeGenerationalRuntime(
             base,
             rememberedObjects,
           );
-    clearWords(youngBits, 0, Math.ceil(youngTop / 256));
     allocation[3] = oldTop + bytes;
     allocation[0] = 0;
     clearRemembered();
@@ -279,16 +278,27 @@ export function initializeGenerationalRuntime(
     // residency is the space's fill plus metadata.
     const base = activeBase(),
       young = allocation[0] ?? 0,
-      used = young > 0 ? oldCapacity + young : (allocation[3] ?? 0),
-      bytes = compactor.collect(
-        base,
-        used,
-        currentRootHead(),
+      used = young > 0 ? oldCapacity + young : (allocation[3] ?? 0);
+    // The nursery keeps no start bits (it is bump-allocated without gaps); a
+    // compaction that covers it, because its survivors could not fit the old
+    // prefix, records them by walking it. Compaction clears every start bit
+    // it passes, so the nursery's are zero again afterwards.
+    if (young > 0)
+      recordObjectStarts(
         bits,
-        live,
-        chunkOffsets,
-        pending,
+        base,
+        base + oldCapacity,
+        base + oldCapacity + young,
       );
+    const bytes = compactor.collect(
+      base,
+      used,
+      currentRootHead(),
+      bits,
+      live,
+      chunkOffsets,
+      pending,
+    );
     allocation[3] = bytes;
     if (bytes > oldCapacity) exhausted = true;
     // Nothing above the packed prefix is live: return those pages, up to
@@ -340,9 +350,7 @@ export function initializeGenerationalRuntime(
       throw managedHeapExhausted;
     const top = allocation[0] ?? 0;
     if (size > youngCapacity - top) throw managedHeapExhausted;
-    const unit = (oldCapacity + top) / 8,
-      word = unit >>> 5;
-    bits[word] = (bits[word] ?? 0) | (1 << (unit & 31));
+    // Nursery objects keep no start bits (see recordObjectStarts).
     allocation[0] = top + size;
     return oldCapacity + top;
   };
