@@ -148,6 +148,13 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "general-value":
     case "general-wrap":
     case "general-none":
+    // A function value's own environment (a class constructor's state):
+    // a pure read of an explicit operand, unlike closure-environment.
+    case "function-environment":
+    // Thrown errors (such as a class binding's TDZ ReferenceError) and
+    // their messages are position-independent.
+    case "string-literal":
+    case "error-new":
       return references;
     // A direct call stays a call in the caller: an exception it throws
     // reaches the caller's handler, as it did through the callee.
@@ -335,9 +342,10 @@ export function inlineSmallFunctions(
       if (block.exception !== undefined) good = false;
       const term = block.terminator;
       if (term.kind === "return") returns++;
-      // Checked record reads and writes clone with their slots; cells keep
-      // their owner's environment and stay out.
-      if (term.kind === "record-cell" || term.kind === "cell") good = false;
+      // Checked record reads and writes, and record cells (whose
+      // environment object is an explicit operand), clone with their slots;
+      // frame cells keep their owner's environment and stay out.
+      if (term.kind === "cell") good = false;
       for (const op of block.instructions) {
         if (op === undefined) throw "inline instruction invariant";
         if (visited >= budget) return exhausted();
@@ -899,6 +907,35 @@ export function inlineSmallFunctions(
                   inline: at.inline,
                 });
                 break;
+              case "function-environment":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  callee: value(instruction.callee),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "string-literal":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "error-new":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  message: value(instruction.message),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
               case "optional-wrap":
               case "optional-present":
               case "optional-value":
@@ -1097,6 +1134,17 @@ export function inlineSmallFunctions(
               inline: termAt.inline,
             };
           else if (term.kind === "record")
+            terminator = {
+              ...term,
+              object: value(term.object),
+              slot: slot(term.slot),
+              consequent: target(term.consequent),
+              alternate: target(term.alternate),
+              start: termAt.start,
+              end: termAt.end,
+              inline: termAt.inline,
+            };
+          else if (term.kind === "record-cell")
             terminator = {
               ...term,
               object: value(term.object),
