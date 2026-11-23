@@ -7,11 +7,18 @@ import * as lowering from "../src/lowering/index.ts";
 
 test("runtime import vocabulary is shared with Script lowering", () => {
   assert.equal(typeof lowering.scriptRuntimeImports, "function");
-  for (const [text, disposal, asyncDisposal, directEval] of [
-    ["42;", false, false, false],
-    ["{using resource=null;}", true, false, false],
-    ["async function f(){await using resource=null;}", true, true, false],
-    ["eval(7);", false, false, true],
+  // The fused `OrThrow` helpers each Script's slow paths call.
+  for (const [text, disposal, asyncDisposal, directEval, fused] of [
+    ["42;", false, false, false, []],
+    ["{using resource=null;}", true, false, false, []],
+    [
+      "async function f(){await using resource=null;}",
+      true,
+      true,
+      false,
+      ["sloppyCallReceiverOrThrow"],
+    ],
+    ["eval(7);", false, false, true, []],
   ] as const) {
     const bytes = new TextEncoder().encode(text);
     const source = createSourceText(bytes, bytes.length);
@@ -40,6 +47,21 @@ test("runtime import vocabulary is shared with Script lowering", () => {
         false,
         false,
         disposal,
+        // Fused results through HTMLDDA exclusion keep their defaults.
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        fused,
       ),
       result.value.imports,
     );

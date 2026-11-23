@@ -205,7 +205,7 @@ test("only read-modify-write references store the converted key", () => {
           if (
             value?.kind === "call" &&
             value.callee.kind === "identifier" &&
-            value.callee.name === "objectPropertyKey"
+            value.callee.name === "objectPropertyKeyOrThrow"
           )
             conversions.add(declaration.name);
         }
@@ -215,14 +215,13 @@ test("only read-modify-write references store the converted key", () => {
     let count = 0;
     rewriteModule(lowered.value, {
       expression: (node) => {
+        // The fused conversion returns the key itself.
         if (
           node.kind === "assignment" &&
           node.target.kind === "identifier" &&
           node.target.name.startsWith("$value") &&
-          node.value.kind === "member" &&
-          node.value.property === "value" &&
-          node.value.object.kind === "identifier" &&
-          conversions.has(node.value.object.name)
+          node.value.kind === "identifier" &&
+          conversions.has(node.value.name)
         )
           count++;
         return node;

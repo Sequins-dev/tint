@@ -306,8 +306,9 @@ test("general arithmetic in a slot-backed loop emits a guarded numeric operation
       (node) => node.kind === "binary" && node.operator === "+",
     ) > 0,
   );
-  assert.equal(runtimeCalls(source, "binaryObjectValueOperation"), 1);
-  assert.equal(runtimeCalls(source, "binaryObjectValueOperationOrThrow"), 1);
+  // The `+=` and `<` slow paths each call the fused helper.
+  assert.equal(runtimeCalls(source, "binaryObjectValueOperation"), 0);
+  assert.equal(runtimeCalls(source, "binaryObjectValueOperationOrThrow"), 2);
 });
 
 test("for-let captures keep distinct initialization and iteration environments", () => {
@@ -365,7 +366,7 @@ test("a local numeric leaf emits a direct typed closure and retains its general 
     ),
     1,
   );
-  assert.equal(runtimeCalls(source, "callObjectValue"), 1);
+  assert.equal(runtimeCalls(source, "callObjectValueOrThrow"), 1);
 });
 
 test("numeric leaf call guards preserve the evaluated callee and the general operands", () => {
@@ -946,6 +947,7 @@ test("computed writes use the indexed path after evaluating the value", () => {
   const source = "function store(o, key, value) { o[key] = value(); }";
   assert.equal(runtimeCalls(source, "writeObjectValuePropertyKey"), 1);
   assert.equal(runtimeCalls(source, "objectPropertyKey"), 0);
+  assert.equal(runtimeCalls(source, "objectPropertyKeyOrThrow"), 0);
 });
 
 test("fixed-arity calls construct one argument list after evaluating operands", () => {

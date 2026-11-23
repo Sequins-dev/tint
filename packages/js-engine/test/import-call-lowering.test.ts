@@ -73,9 +73,9 @@ test("import-free lowering retains the caller-policy output contract", () => {
     [
       "async function g(){ await x; } function* k(){ yield 1; }",
       false,
-      "e7a5ea1f1cbf38aa",
+      "f3588d87fef2e0b5",
     ],
-    ["new (f())(1); x = y ?? z;", false, "f93f7d704c6509cc"],
+    ["new (f())(1); x = y ?? z;", false, "79b41f6a75395589"],
     ['eval("1");', false, "36790681582352cb"],
     ["{ using r = null; }", false, "7ff4b4b7b1609bd9"],
     [
