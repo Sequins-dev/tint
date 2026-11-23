@@ -552,6 +552,44 @@ general path compiles such classes.
   interface assignability covers methods.
 - Classes with type-only members fail typed checking explicitly.
 
+**Order of work inside C2.** Typed record operations already guard the
+concrete shape and dispatch over a list of layout choices (the union
+machinery), so a base-typed access works on subclass instances once the
+base type's choices list every class of its family and each layout keeps
+the base's fields at the base's offsets. The steps:
+
+1. **Contracts** (landed, gated): a class extending a non-generic typed
+   class by name lists the base's instance properties first; overrides keep
+   their position and must relate to the replaced member (methods
+   bivariantly, without receivers); a class without a constructor
+   constructs through the base's signature. Generic bases, inherited
+   statics and accessors, and unproven overrides take the general path. The
+   closure checker keeps derived classes on the general path until step 4.
+2. **Prefix layouts and prototype chains.** A derived instance layout is the
+   base layout (prototype pointer, fields, presence bytes) followed by the
+   derived class's own fields and presence bytes. A derived prototype record
+   holds only its own methods and a hidden link to the base prototype, whose
+   contract is the base prototype's, so an inherited method read walks two
+   prototype levels with the existing presence and prototype guards. A base
+   instance type's shape choices list every class in its family.
+3. **Derived construction.** Each class that is a base gets an
+   initialization entry on an existing instance (field initializers, then
+   the body). A derived construction allocates the most-derived layout with
+   its prototype, then runs its body; `super(args)` calls the base
+   initialization entry with `this`, then the derived field initializers.
+   A derived class without a constructor runs the base initialization and
+   its own fields. Typed derived constructors must call `super(...)` before
+   any other statement that refers to `this` (others take the general path);
+   a second `super` call throws, as JavaScript specifies.
+4. **Checker expressions.** `super(...)` in derived constructors, typed
+   against the base construct signature, and `super.m(...)`/`super.x` reads
+   in methods, which read the base prototype directly. `instanceof` for a
+   typed class becomes a family test. The closure checker's gate goes.
+5. **Hierarchy dispatch.** Calls on a base-typed receiver dispatch on the
+   shape to each class's resolved method (direct, inlinable entries per
+   arm), with the full lookup as the fallback arm; a closed family with one
+   implementation devirtualizes.
+
 Each phase fails explicitly for what it does not cover:
 
 - decorators, already rejected;
