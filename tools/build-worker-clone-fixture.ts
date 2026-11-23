@@ -34,6 +34,7 @@ const bindings: readonly NativeHostBinding[] = [
 verifyHostedFixture(
   `
 import {createObject,createErrorRealm,createDataProperty,createArrayObject,getOwnProperty,viewObjectValue,callObjectValue,bigIntFromString,bigIntToString,viewBigIntValue,serializeWorkerValue,deserializeWorkerValue,type ScriptPropertyKey,type ObjectHooks,type WorkerCloneSink,type WorkerCloneSource} from 'object';
+import {byteStorageData} from 'bytes';
 import {mapMemory,unmapMemory} from 'memory';
 import {nativePacketMemory} from 'packets';
 export function run():number {
@@ -99,6 +100,37 @@ export function run():number {
   if(cloned===undefined||getOwnProperty<ScriptPropertyKey,unknown>(cloned,"length")?.value!==3000)return 10;
   for(let index=0;index<3000;index++)
     if(getOwnProperty<ScriptPropertyKey,unknown>(cloned,String(index))?.value!==index*1.25)return 11;
+  // A typed program's own typed array arrives as the realm typed array it
+  // reads as, with its whole buffer.
+  const backing=new ArrayBuffer(12);
+  const all=new Uint8Array(backing);
+  for(let index=0;index<12;index++)all[index]=index;
+  const view=new Uint16Array(backing,4,3);
+  const packet=mapMemory(4096);
+  if(packet<=0)return 12;
+  const viewSink:WorkerCloneSink={
+    bytes:packets.view(packet,4096),
+    grow:(used:number,needed:number):void=>{throw "clone fixture view grow";},
+    writeFloat64:(offset:number,value:number):void=>{
+      if(packets.writeFloat64(packet,4096,offset,value)!==0)throw "clone fixture view float";
+    },
+    writeString:(offset:number,value:string):void=>{
+      if(packets.writeString(packet,4096,offset,value)!==0)throw "clone fixture view string";
+    },
+  };
+  const viewEnd=serializeWorkerValue(view,from,viewSink,0);
+  const viewSource:WorkerCloneSource={
+    bytes:viewSink.bytes,
+    readFloat64:(offset:number):number=>packets.readFloat64(packet,4096,offset),
+    readString:(offset:number,units:number):string=>packets.readString(packet,4096,offset,units),
+  };
+  const realmView=viewObjectValue(deserializeWorkerValue(viewSource,0,viewEnd,to),second);
+  if(unmapMemory(packet,4096)!==0)return 13;
+  const data=realmView===undefined?undefined:realmView.internalTypedArrayData;
+  if(data===undefined||data.kind!=="Uint16"||data.byteOffset!==4||data.length!==3)return 14;
+  const copied=data.buffer.internalArrayBufferData;
+  const copiedBytes=copied===undefined?undefined:byteStorageData(copied);
+  if(copiedBytes===undefined||copiedBytes.length!==12||copiedBytes[11]!==11||copiedBytes[4]!==4)return 15;
   return 42;
 }
 `,
@@ -107,6 +139,7 @@ export function run():number {
     ["object", object],
     ["memory", memory],
     ["packets", "packages/native-runtime/src/packet-memory.ts"],
+    ["bytes", "packages/js-runtime/src/bytes/index.ts"],
   ],
   [],
   views.map((name) => ({ module: object, name, operation: "view" })),

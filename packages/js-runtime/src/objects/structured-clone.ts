@@ -334,6 +334,49 @@ function serializeWorkerGraph(
       );
     }
   }
+  /** A typed program's native typed array (a realm sees it as an opaque
+   * reference): serialized as the realm typed array it reads as, with a
+   * copy of its whole buffer, so the receiver gets the same window. */
+  function nativeTypedArray(value: unknown): boolean {
+    let kind = -1,
+      byteOffset = 0,
+      length = 0,
+      data: Uint8Array | undefined;
+    if (value instanceof Uint8Array) {
+      kind = 1;
+      byteOffset = value.byteOffset;
+      length = value.length;
+      data = new Uint8Array(value.buffer);
+    } else if (value instanceof Uint16Array) {
+      kind = 4;
+      byteOffset = value.byteOffset;
+      length = value.length;
+      data = new Uint8Array(value.buffer);
+    } else if (value instanceof Uint32Array) {
+      kind = 6;
+      byteOffset = value.byteOffset;
+      length = value.length;
+      data = new Uint8Array(value.buffer);
+    } else if (value instanceof Float64Array) {
+      kind = 9;
+      byteOffset = value.byteOffset;
+      length = value.length;
+      data = new Uint8Array(value.buffer);
+    }
+    if (data === undefined) return false;
+    tag(tagTypedArray);
+    tag(kind);
+    tag(0);
+    varint(byteOffset);
+    varint(length + 1);
+    tag(tagArrayBuffer);
+    varint(data.length);
+    varint(data.length);
+    reserve(data.length);
+    bytes.set(data, position);
+    position += data.length;
+    return true;
+  }
   function encode(value: unknown): void {
     if (value === undefined) return tag(tagUndefined);
     if (value === null) return tag(tagNull);
@@ -358,6 +401,7 @@ function serializeWorkerGraph(
       tag(tagBigInt);
       return string(digits);
     }
+    if (nativeTypedArray(value)) return;
     const object = viewObjectValue(value, realm.objectPrototype);
     if (object === undefined)
       return throwWorkerCloneError(realm, "The value could not be cloned");

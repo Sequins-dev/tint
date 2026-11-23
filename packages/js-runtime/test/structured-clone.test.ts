@@ -438,3 +438,24 @@ test("a lone primitive takes the same bytes with or without the graph encoder", 
     );
   }
 });
+
+test("a typed program's native typed array arrives as the realm typed array it reads as", () => {
+  const { realm } = isolate();
+  // Natively, typed code's Uint16Array is a native array that the realm
+  // sees as an opaque reference; under Node it is a host typed array.
+  const backing = new Uint8Array(12);
+  for (let index = 0; index < backing.length; index++) backing[index] = index;
+  const view = new Uint16Array(backing.buffer, 4, 3);
+  const copy = deserialize(serialize(view, realm), realm) as ObjectValue;
+  const data = copy.internalTypedArrayData;
+  assert.ok(data !== undefined);
+  assert.equal(data.kind, "Uint16");
+  assert.equal(data.byteOffset, 4);
+  assert.equal(data.length, 3);
+  assert.deepEqual(
+    [...(data.buffer.internalArrayBufferData?.data ?? [])],
+    [...backing],
+  );
+  // The rest of the HTML algorithm still applies to realm values.
+  assert.throws(() => serialize(Symbol("x"), realm));
+});
