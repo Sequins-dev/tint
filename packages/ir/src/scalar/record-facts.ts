@@ -36,6 +36,9 @@ function closedWorldHostOperation(operation: string): boolean {
     case "argument-length":
     case "argument-copy":
     case "environment-copy":
+    // Shrinks a typed-array view to zero elements: no descriptor or
+    // reference changes, and no fact relies on a length across a call.
+    case "native-array-detach":
     case "context-domain":
     case "stack-overflow-is":
     case "engine-range-error":

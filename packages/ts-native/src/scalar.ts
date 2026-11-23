@@ -2346,18 +2346,26 @@ export function lowerFunction(
       save(numericInput(input, node), "number", node),
       node,
     );
-    requireCondition(
-      binarySlot(">=", index, numberSlot(0, node), node),
-      "RangeError",
-      "Invalid atomic access index",
+    // ValidateIntegerTypedArray, then ValidateAtomicAccess: a detached view
+    // (length 0, a negative byte offset) throws TypeError for any index.
+    const inBounds = save(
+      load(binarySlot(">=", index, numberSlot(0, node), node), node),
+      "boolean",
       node,
     );
-    requireCondition(
-      binarySlot("<", index, arrayLength(array, node), node),
-      "RangeError",
-      "Invalid atomic access index",
+    conditionalStore(
+      inBounds,
+      inBounds,
+      () => binarySlot("<", index, arrayLength(array, node), node),
       node,
     );
+    const valid = block(),
+      invalid = block();
+    choose(load(inBounds, node), valid, invalid, node);
+    current = invalid;
+    rejectDetached(array, node);
+    throwNativeError("RangeError", "Invalid atomic access index", node);
+    current = valid;
     const values = args
       .slice(2)
       .map((operand) => save(numericInput(operand, node), "number", node));
@@ -2383,6 +2391,49 @@ export function lowerFunction(
       numberSlot(0, node),
       node,
     );
+  }
+  /** TypeError when native typed array `array` is a detached view (its
+   * data before its owner's, a negative byte offset). A detached view is
+   * empty, so a nonempty array costs one length test. */
+  function rejectDetached(array: number, node: Span): void {
+    const empty = binarySlot(
+      "===",
+      arrayLength(array, node),
+      numberSlot(0, node),
+      node,
+    );
+    const check = block(),
+      done = block();
+    choose(load(empty, node), check, done, node);
+    current = check;
+    const offset = nextValue++;
+    emit({
+      kind: "array-byte-offset",
+      id: offset,
+      array: load(array, node),
+      start: node.start,
+      end: node.end,
+    });
+    requireCondition(
+      binarySlot(">=", save(offset, "number", node), numberSlot(0, node), node),
+      "TypeError",
+      "Cannot perform this operation on a detached ArrayBuffer",
+      node,
+    );
+    jump(done.id, node);
+    current = done;
+  }
+  /** ValidateTypedArray for a native typed-array receiver slot: TypeError
+   * when it is a detached view (other receivers are unchanged). */
+  function rejectDetachedReceiver(receiver: number, node: Span): void {
+    const type = slots[receiver];
+    if (
+      type === "Uint8Array" ||
+      type === "Uint16Array" ||
+      type === "Uint32Array" ||
+      type === "Float64Array"
+    )
+      rejectDetached(receiver, node);
   }
   function arrayLength(array: number, node: Span): number {
     const id = nextValue++;
@@ -6841,11 +6892,21 @@ export function lowerFunction(
           start: node.start,
           end: node.end,
         });
-        return save(
+        const result = save(
           id,
           metadata === "array-buffer" ? "reference" : "number",
           node,
         );
+        // A detached view's data sits before its owner's (a negative
+        // offset): its byteOffset is 0.
+        if (metadata === "array-byte-offset")
+          conditionalStore(
+            binarySlot("<", result, numberSlot(0, node), node),
+            result,
+            () => numberSlot(0, node),
+            node,
+          );
+        return result;
       }
       case "binary": {
         if (info(node).builtin === "list-has") {
@@ -7807,8 +7868,9 @@ export function lowerFunction(
               receiverType === "Uint16Array" ||
               receiverType === "Uint32Array" ||
               receiverType === "Float64Array";
-            const callback = value(argument),
-              input = typed ? undefined : listRuntime(target.object),
+            const callback = value(argument);
+            if (typed) rejectDetachedReceiver(receiver, node);
+            const input = typed ? undefined : listRuntime(target.object),
               output =
                 builtin === "list-map" || builtin === "list-filter"
                   ? listRuntime(node)
@@ -8208,11 +8270,11 @@ export function lowerFunction(
           }
           if (builtin === "list-join" || builtin === "array-join") {
             const receiver = value(target.object),
-              args = node.arguments.map(value),
-              runtime =
-                builtin === "list-join"
-                  ? listRuntime(target.object)
-                  : undefined;
+              args = node.arguments.map(value);
+            if (builtin === "array-join")
+              rejectDetachedReceiver(receiver, node);
+            const runtime =
+              builtin === "list-join" ? listRuntime(target.object) : undefined;
             function literal(text: string): number {
               const id = nextValue++;
               emit({
@@ -8720,6 +8782,7 @@ export function lowerFunction(
             const destination = value(target.object),
               args = node.arguments.map(value),
               input = args[0];
+            rejectDetachedReceiver(destination, node);
             if (input === undefined) throw "set source invariant";
             const kind = info(node).arraySetSource;
             let source = input;
@@ -8802,8 +8865,9 @@ export function lowerFunction(
           }
           if (builtin === "array-subarray" || builtin === "array-slice") {
             const array = value(target.object),
-              args = node.arguments.map(value),
-              lengthId = nextValue++;
+              args = node.arguments.map(value);
+            rejectDetachedReceiver(array, node);
+            const lengthId = nextValue++;
             emit({
               kind: "array-length",
               id: lengthId,
@@ -8857,8 +8921,10 @@ export function lowerFunction(
             return save(id, scalarType(node), node);
           }
           if (builtin === "array-reverse" || builtin === "list-reverse") {
-            const receiver = value(target.object),
-              runtime =
+            const receiver = value(target.object);
+            if (builtin === "array-reverse")
+              rejectDetachedReceiver(receiver, node);
+            const runtime =
                 builtin === "list-reverse"
                   ? listRuntime(target.object)
                   : undefined,
@@ -8972,6 +9038,7 @@ export function lowerFunction(
           if (builtin === "array-at" || builtin === "list-at") {
             const receiver = value(target.object),
               args = node.arguments.map(value);
+            if (builtin === "array-at") rejectDetachedReceiver(receiver, node);
             const index = integerIndex(
               save(
                 numericInput(args[0] ?? numberSlot(0, node), node),
@@ -9892,6 +9959,8 @@ export function lowerFunction(
           const args = node.arguments.map(value),
             first = args[0];
           if (first === undefined) throw "builtin argument invariant";
+          if (builtin === "array-fill" && array !== undefined)
+            rejectDetachedReceiver(array, node);
           if (
             builtin === "atomics-uint8" ||
             builtin === "atomics-uint16" ||

@@ -10741,7 +10741,9 @@ function emitModuleForms(
                     amount: 0,
                     setFlags: false,
                   });
-                  emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
+                  // Signed and 64-bit, as on x86-64: a detached view's data
+                  // sits before its owner's, a negative offset.
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
                   floatStore(0, op.id);
                 }
                 break;
@@ -12026,6 +12028,132 @@ function emitModuleForms(
                   // The hosted __jit_debug_register_code (jitDebugInterface
                   // images), where an attached debugger loads new entries.
                   startupCall("jit-register");
+                  break;
+                }
+                if (operation === "native-array-detach") {
+                  // Only a reference (tag 5) to a typed-array view (marker
+                  // 2-5, flags 2) detaches: length 0, data one word before
+                  // its owner's.
+                  const input = op.arguments[0];
+                  if (input === undefined) throw "array detach invariant";
+                  const skips: { at: number; condition: "ne" | "hi" }[] = [];
+                  function skip(condition: "ne" | "hi"): void {
+                    skips.push({ at: instructions.length, condition });
+                    emit({ op: "b.cond", condition, displacement: 0 });
+                  }
+                  rawValue(9, input);
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    immediate: 5,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  skip("ne");
+                  rawLoad(9, value(input).offset + 8);
+                  const absent = instructions.length;
+                  emit({ op: "cbz", width: 64, rt: 9, displacement: 0 });
+                  emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 11,
+                    rn: 10,
+                    immr: 0,
+                    imms: 47,
+                  });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: 11,
+                    rn: 11,
+                    immediate: 2,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 11,
+                    immediate: 3,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  skip("hi");
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 11,
+                    rn: 10,
+                    immr: 48,
+                    imms: 50,
+                  });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 11,
+                    immediate: 2,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  skip("ne");
+                  emit({
+                    op: "str",
+                    width: 32,
+                    rt: "zr",
+                    rn: 9,
+                    offset: nativeArrayLengthOffset,
+                  });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 10,
+                    rn: 9,
+                    offset: nativeArrayOwnerOffset,
+                  });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 10,
+                    rn: 10,
+                    offset: nativeArrayDataOffset,
+                  });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: 10,
+                    rn: 10,
+                    immediate: 8,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  emit({
+                    op: "str",
+                    width: 64,
+                    rt: 10,
+                    rn: 9,
+                    offset: nativeArrayDataOffset,
+                  });
+                  const end = instructions.length;
+                  patchInstruction(absent, {
+                    op: "cbz",
+                    width: 64,
+                    rt: 9,
+                    displacement: (end - absent) * 4,
+                  });
+                  for (const branch of skips) {
+                    if (branch === undefined)
+                      throw "array detach skip invariant";
+                    patchInstruction(branch.at, {
+                      op: "b.cond",
+                      condition: branch.condition,
+                      displacement: (end - branch.at) * 4,
+                    });
+                  }
                   break;
                 }
                 const resultId = op.id;

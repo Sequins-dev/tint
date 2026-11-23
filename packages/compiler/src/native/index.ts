@@ -34,6 +34,7 @@ import { materializeManagedRuntimeProviders } from "./managed-runtimes.ts";
 import {
   validRuntimeNamespace,
   dynamicObjectRuntimeSource,
+  nativeArrayDetachModule,
   nativeValueViewsModule,
   nativeWeakModule,
   type RuntimeSource,
@@ -705,6 +706,31 @@ export function compileNativeProgram(
   return compileArm64Program({ ...request, hostABI: backend.target.hostABI });
 }
 
+/** The dynamic-object runtime's companion capability: a buffer's detachment
+ * detaches the native typed arrays the program realm projected over it. */
+function addNativeArrayDetach(
+  runtimes: RuntimeSource[],
+  hostBindings: NativeHostBinding[],
+): void {
+  const name = "detachNativeArray";
+  if (!runtimes.some((source) => source?.module === nativeArrayDetachModule))
+    runtimes.push({
+      module: nativeArrayDetachModule,
+      namespace: "native-array-detach",
+      retainedExports: [name],
+    });
+  if (
+    !hostBindings.some(
+      (binding) =>
+        binding?.module === nativeArrayDetachModule && binding.name === name,
+    )
+  )
+    hostBindings.push({
+      module: nativeArrayDetachModule,
+      name,
+      operation: "native-array-detach",
+    });
+}
 function compileTypedWithProgramRealm(
   request: CompileRequest,
   realmTypeofModules?: ReadonlySet<string>,
@@ -758,6 +784,8 @@ function compileTypedWithProgramRealm(
   ];
   const runtimes = without.runtimes.slice();
   runtimes.push(runtime);
+  const hostBindings = (request.hostBindings ?? []).slice();
+  addNativeArrayDetach(runtimes, hostBindings);
   const weakBindings = (request.weakBindings ?? []).slice();
   const bindings = (request.recordBindings ?? []).slice();
   const retained = names.slice();
@@ -861,7 +889,13 @@ function compileTypedWithProgramRealm(
       bindings.push({ module: objects, name, operation: "view" });
   }
   return compileTypedProgram(
-    { ...expandedRequest, runtimes, recordBindings: bindings, weakBindings },
+    {
+      ...expandedRequest,
+      runtimes,
+      hostBindings,
+      recordBindings: bindings,
+      weakBindings,
+    },
     realmModules,
   );
 }
@@ -1022,11 +1056,14 @@ function composeTypedWorkers<T>(
   for (const source of program.modules)
     if (source !== undefined) modules.push(source);
   const runtimes = request.runtimes.slice();
+  const hostBindings = (request.hostBindings ?? []).slice();
   if (
     program.workerEvaluation !== undefined &&
     !runtimes.some((runtime) => runtime?.namespace === "dynamic-object")
-  )
+  ) {
     runtimes.push(dynamicObjectRuntimeSource());
+    addNativeArrayDetach(runtimes, hostBindings);
+  }
   const recordBindings = (request.recordBindings ?? []).slice();
   for (const runtime of [...lowering.runtimes, ...(program.runtimes ?? [])])
     if (
@@ -1058,6 +1095,7 @@ function composeTypedWorkers<T>(
     ...(program.workerEvaluation === undefined
       ? {}
       : { workerEvaluation: program.workerEvaluation }),
+    hostBindings,
     recordBindings,
     runtimes,
   });

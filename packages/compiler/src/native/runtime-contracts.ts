@@ -31,6 +31,10 @@ export const nativeValueViewsModule =
   "packages/native-runtime/src/intrinsics/value-views.ts";
 export const nativeWeakModule =
   "packages/native-runtime/src/intrinsics/weak.ts";
+/** The detachment of the program realm's projected native typed arrays, which
+ * accompanies the dynamic-object runtime. */
+export const nativeArrayDetachModule =
+  "packages/native-runtime/src/intrinsics/native-array-detach.ts";
 
 /** This provider uses module instance state and is demanded by the AOT checker. */
 export function dynamicObjectRuntimeSource(

@@ -4554,6 +4554,9 @@ function cells(
           case "constant":
             type = typeof op.value === "number" ? "number" : "boolean";
             break;
+          case "string-literal":
+            type = "string";
+            break;
           case "load": {
             const t = slots[op.slot];
             if (t === undefined) throw "slot invariant";
@@ -4708,6 +4711,7 @@ function cells(
           };
           break;
         case "constant":
+        case "string-literal":
           if (valueId === undefined) throw "definition invariant";
           transformed = { ...op, id: valueId };
           break;

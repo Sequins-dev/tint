@@ -259,11 +259,15 @@ byte displacement like any view.
   Other buffers are copied.
 - **Receiving.** A realm typed array passed to a native typed-array
   parameter, or narrowed by `instanceof` before `Atomics`, is viewed
-  natively (`projectNativeTypedArray`): over an ordinary buffer's backing,
-  which is then pinned with a host detach key (it can no longer be detached
-  or transferred, as a WebAssembly memory's buffer), or over a shared
-  block's payload. Resizable buffers, length-tracking views and growable
-  shared buffers have no fixed native window and keep the TypeError.
+  natively (`projectNativeTypedArray`): over an ordinary buffer's backing
+  or over a shared block's payload. A view over an ordinary buffer observes
+  the buffer's detachment, by a transfer to a Worker or by
+  `ArrayBuffer.prototype.transfer`, as a realm typed array does: its length
+  becomes 0, element reads give undefined, writes are ignored, and `Atomics`
+  and the validating methods throw TypeError (docs/unified-pipeline.md).
+  Shared-block views never detach and stay direct. Resizable buffers,
+  length-tracking views and growable shared buffers have no fixed native
+  window and keep the TypeError.
 - Still open: the signed element types (`Int8Array` to `BigUint64Array`,
   PR #17) and with them typed `Atomics.wait` and `notify`; and narrowing an
   `unknown` to the typed `SharedArrayBuffer` type, so typed code receives a

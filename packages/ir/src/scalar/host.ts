@@ -29,6 +29,12 @@ export type HostOperation =
   | "native-function-signature"
   | "native-value-function-descriptor"
   | "native-value-function-signature"
+  /** Detach a native typed-array view (a general value): its length becomes
+   * 0 and its data address sits one word before its owner's data, which
+   * collections preserve and no attached view has (a negative byte
+   * offset). Any other value is left unchanged. A typed program's views of
+   * a realm ArrayBuffer observe its detachment this way. */
+  | "native-array-detach"
   | "root-head"
   | "context-domain"
   /** Whether a general value is the one a stack overflow throws (tag 0 with
@@ -175,6 +181,7 @@ export function hostParameters(
       return ["reference"];
     case "native-value-function-descriptor":
     case "native-value-function-signature":
+    case "native-array-detach":
       return ["general"];
     case "external-memory-register":
       return ["number", "number"];
@@ -272,7 +279,8 @@ export function hostReturnType(
     operation === "cpu-pause" ||
     operation === "collect-garbage" ||
     operation === "sha256-rounds" ||
-    operation === "jit-debug-register"
+    operation === "jit-debug-register" ||
+    operation === "native-array-detach"
   )
     return "void";
   if (operation === "memory-read-string") return "string";

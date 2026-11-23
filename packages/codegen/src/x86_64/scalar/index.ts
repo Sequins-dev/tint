@@ -2219,6 +2219,45 @@ export function emitModule(
             bytesOperation(memmove);
             return;
           }
+          if (operation === "native-array-detach") {
+            // Only a reference (tag 5) to a typed-array view (marker 2-5,
+            // flags 2) detaches: length 0, data one word before its owner's.
+            const input = args[0];
+            if (input === undefined) throw "array detach invariant";
+            const done = fnLabel + ":array-detach:" + String(instructionCount);
+            const value = home(input);
+            emit({
+              op: "cmp",
+              dst: frame(value),
+              src: imm(generalTag("reference")),
+            });
+            branch(emit, "ne", done);
+            emit({ op: "mov", dst: r9, src: frame(value + 8) });
+            emit({ op: "test", dst: r9, src: r9 });
+            branch(emit, "e", done);
+            emit({ op: "mov", dst: rax, src: mem(9, 0) });
+            emit({ op: "mov", dst: rdx, src: rax });
+            emit({ op: "shl", dst: rdx, count: 16 });
+            emit({ op: "shr", dst: rdx, count: 16 });
+            emit({ op: "sub", dst: rdx, src: imm(2) });
+            emit({ op: "cmp", dst: rdx, src: imm(3) });
+            branch(emit, "a", done);
+            emit({ op: "shr", dst: rax, count: nativeHeaderFlagsShift });
+            emit({ op: "and", dst: rax, src: imm(7) });
+            emit({ op: "cmp", dst: rax, src: imm(2) });
+            branch(emit, "ne", done);
+            emit({
+              op: "mov",
+              dst: { ...mem(9, nativeArrayLengthOffset), width: 32 },
+              src: imm(0),
+            });
+            emit({ op: "mov", dst: rax, src: mem(9, nativeArrayOwnerOffset) });
+            emit({ op: "mov", dst: rax, src: mem(0, nativeArrayDataOffset) });
+            emit({ op: "sub", dst: rax, src: imm(8) });
+            emit({ op: "mov", dst: mem(9, nativeArrayDataOffset), src: rax });
+            emit({ op: "label", name: done });
+            return;
+          }
           if (operation === "stack-overflow-is" && host !== undefined) {
             const input = args[0];
             if (id === undefined || input === undefined)

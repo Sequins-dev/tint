@@ -1,8 +1,9 @@
 // A realm typed array passed to a typed function's native typed-array
 // parameter (the slice 2b buffer view) is viewed natively: the native view
 // shares the realm buffer's bytes in both directions, keeps them through
-// collections, and pins the buffer, which then cannot be detached. Windows
-// with no fixed native layout still throw TypeError.
+// collections, and observes a detachment of the buffer as V8's typed arrays
+// do (length 0, undefined reads, ignored writes, TypeError from Atomics and
+// methods). Windows with no fixed native layout still throw TypeError.
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createSourceTextView } from "@tint/source/text";
@@ -62,6 +63,53 @@ export function add(value: unknown): number {
   if (value instanceof Uint16Array) return Atomics.add(value, 0, 3);
   return -1;
 }
+let kept: Uint8Array | undefined = undefined;
+function take(value: Uint8Array): Uint8Array {
+  return value;
+}
+function held(): Uint8Array {
+  const view = kept;
+  if (view === undefined) throw new TypeError("nothing kept");
+  return view;
+}
+export function keep(value: unknown): number {
+  if (!(value instanceof Uint8Array)) return -1;
+  const view = take(value);
+  kept = view;
+  return view.length;
+}
+export function keptLength(): number {
+  return held().length;
+}
+export function keptRead(): number {
+  return held()[0] ?? -1;
+}
+export function keptWrite(): number {
+  const view = held();
+  view[0] = 99;
+  return view.length;
+}
+export function keptOffset(): number {
+  return held().byteOffset;
+}
+export function keptAtomics(): number {
+  const view = held();
+  try {
+    Atomics.add(view, 0, 1);
+    return 0;
+  } catch (error) {
+    return error instanceof TypeError ? 1 : error instanceof RangeError ? 2 : 3;
+  }
+}
+export function keptFill(): number {
+  const view = held();
+  try {
+    view.fill(1);
+    return 0;
+  } catch (error) {
+    return error instanceof TypeError ? 1 : 3;
+  }
+}
 export function total(value: unknown): number {
   if (value instanceof Float64Array) return sum(value);
   return -1;
@@ -72,7 +120,7 @@ export function total(value: unknown): number {
     let partition: readonly string[] | undefined;
     verifyHostedFixture(
       `
-import { add, bytes, bump, total } from "./trusted.ts";
+import { add, bytes, bump, total, keep, keptLength, keptRead, keptWrite, keptOffset, keptAtomics, keptFill } from "./trusted.ts";
 function rejects(make) {
   try { make(); } catch (e) {
     return e instanceof TypeError && e.message === ${JSON.stringify(unsupported)};
@@ -95,10 +143,21 @@ export function run(): number {
   // Inline Atomics on a narrowed realm typed array.
   const halves = new Uint16Array([65534, 1]);
   if (add(halves) !== 65534 || halves[0] !== 1) return 12;
-  // A projected buffer is pinned: it can no longer be detached.
-  try { array.buffer.transfer(); return 6; }
-  catch (e) { if (!(e instanceof TypeError)) return 7; }
-  if (array[0] !== 8 || array.length !== 3) return 8;
+  // A typed view kept across a detachment of its buffer sees it detached.
+  const buffer = new ArrayBuffer(8);
+  const window2 = new Uint8Array(buffer, 2, 4);
+  window2[0] = 5;
+  if (keep(window2) !== 4 || keptRead() !== 5 || keptOffset() !== 2) return 6;
+  const moved = buffer.transfer();
+  if (window2.length !== 0 || keptLength() !== 0 || keptRead() !== -1) return 7;
+  if (keptWrite() !== 0 || new Uint8Array(moved)[2] !== 5) return 8;
+  // Atomics and fill reject the detached buffer (TypeError is 1).
+  const atomics = keptAtomics(), fill = keptFill();
+  if (atomics !== 1) return 20 + atomics;
+  if (fill !== 1) return 30 + fill;
+  if (keptOffset() !== 0) return 13;
+  // A typed array already detached is an empty one.
+  if (bytes(window2) !== 0) return 14;
   // No fixed native window: resizable and length-tracking views.
   const resizable = new ArrayBuffer(4, { maxByteLength: 8 });
   if (!rejects(() => bytes(new Uint8Array(resizable, 0, 2)))) return 9;

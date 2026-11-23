@@ -49,7 +49,8 @@ import {
   type PropertyValueRule,
   type ScriptPropertyKey,
 } from "@tint/js-runtime/objects";
-import { byteStorageData, pinByteStorage } from "@tint/js-runtime/bytes";
+import { byteStorageData } from "@tint/js-runtime/bytes";
+import { detachNativeArray } from "../intrinsics/native-array-detach.ts";
 
 type ObjectRecord = OrdinaryObject<ScriptPropertyKey, unknown>;
 let cachedContracts: Map<string, ObjectShapeContract> | undefined = undefined;
@@ -387,11 +388,12 @@ export function realmInstanceOf(
 /** A realm typed array as the native typed array of `nativeKind` (Uint8Array,
  * Uint16Array, Uint32Array or Float64Array) that views the same bytes, for
  * typed code (the slice 2b buffer view): over an ordinary buffer's backing,
- * which collections move together with the view and which is then pinned
- * (it can no longer be detached or transferred), or over a shared block's
- * nonmoving payload. Undefined when there is no fixed native window: another
- * kind, a big-endian, length-tracking or out-of-bounds view, a detached or
- * resizable buffer, or a growable shared one. */
+ * which collections move together with the view, or over a shared block's
+ * nonmoving payload. An ordinary buffer keeps one view per element kind and
+ * window, and its detachment detaches them as V8's typed arrays observe it:
+ * their length becomes 0. A typed array already detached is an empty one.
+ * Undefined when there is no fixed native window: another kind, a big-endian
+ * or length-tracking view, a resizable buffer or a growable shared one. */
 export function projectNativeTypedArray(
   value: unknown,
   nativeKind: string,
@@ -406,18 +408,53 @@ export function projectNativeTypedArray(
   )
     return undefined;
   const length = data.length;
-  if (length === undefined || typedArrayWindow(data) === undefined)
-    return undefined;
+  if (length === undefined) return undefined;
   const storage = data.storage;
-  let bytes: Uint8Array | undefined;
-  if (storage.kind === "ordinary") {
-    if (storage.resizable) return undefined;
-    bytes = byteStorageData(storage);
-    // The view shares the backing for as long as typed code keeps it.
-    if (bytes !== undefined) pinByteStorage(storage);
-  } else if (!storage.growable) bytes = storage.service.bytes(storage.handle);
-  if (bytes === undefined) return undefined;
-  const offset = bytes.byteOffset + data.byteOffset;
+  if (storage.kind === "shared") {
+    const bytes = storage.growable
+      ? undefined
+      : storage.service.bytes(storage.handle);
+    if (bytes === undefined || typedArrayWindow(data) === undefined)
+      return undefined;
+    return nativeView(nativeKind, bytes, data.byteOffset, length);
+  }
+  if (storage.resizable) return undefined;
+  const bytes = byteStorageData(storage);
+  if (bytes === undefined) return emptyNativeArray(nativeKind);
+  if (typedArrayWindow(data) === undefined) return undefined;
+  const views = storage.nativeViews;
+  if (views !== undefined)
+    for (const entry of views)
+      if (
+        entry !== undefined &&
+        entry.kind === nativeKind &&
+        entry.byteOffset === data.byteOffset &&
+        entry.length === length
+      )
+        return entry.view;
+  const view = nativeView(nativeKind, bytes, data.byteOffset, length);
+  const entry = { kind: nativeKind, byteOffset: data.byteOffset, length, view };
+  if (views === undefined) storage.nativeViews = [entry];
+  else views.push(entry);
+  if (storage.onDetach === undefined) {
+    const owner = storage;
+    storage.onDetach = (): void => {
+      const projected = owner.nativeViews;
+      if (projected !== undefined)
+        for (const item of projected)
+          if (item !== undefined) detachNativeArray(item.view);
+    };
+  }
+  return view;
+}
+/** A native typed array of `nativeKind` over `bytes` from `byteOffset`. */
+function nativeView(
+  nativeKind: string,
+  bytes: Uint8Array,
+  byteOffset: number,
+  length: number,
+): unknown {
+  const offset = bytes.byteOffset + byteOffset;
   if (nativeKind === "Uint8Array")
     return new Uint8Array(bytes.buffer, offset, length);
   if (nativeKind === "Uint16Array")
@@ -426,6 +463,13 @@ export function projectNativeTypedArray(
     return new Uint32Array(bytes.buffer, offset, length);
   if (nativeKind === "Float64Array")
     return new Float64Array(bytes.buffer, offset, length);
+  return undefined;
+}
+function emptyNativeArray(nativeKind: string): unknown {
+  if (nativeKind === "Uint8Array") return new Uint8Array(0);
+  if (nativeKind === "Uint16Array") return new Uint16Array(0);
+  if (nativeKind === "Uint32Array") return new Uint32Array(0);
+  if (nativeKind === "Float64Array") return new Float64Array(0);
   return undefined;
 }
 export function invokeArrayMethod(
