@@ -108,7 +108,13 @@ export interface PropertyCacheBinding {
     | "property-load"
     | "inherited-property-load"
     | "absent-test"
-    | "property-store";
+    | "property-store"
+    | "activation-top"
+    | "activation-previous"
+    | "activation-kind"
+    | "activation-callee"
+    | "activation-count"
+    | "activation-argument";
   readonly field?: string;
   readonly count?: number;
   readonly siteField?: string;
@@ -152,6 +158,35 @@ export function propertyCacheBindings(
       count: propertySlots,
       siteField: "storeShape",
     },
+  ];
+}
+/** The runtime objects module's activation chain reads (js-runtime
+ * activations.ts), retained for their native bindings. */
+export const activationNames: readonly string[] = [
+  "activationTop",
+  "activationPrevious",
+  "activationKind",
+  "activationCallee",
+  "activationArgumentCount",
+  "activationArgument",
+];
+/** Native bindings of the activation chain reads (IR activation-read):
+ * native script entries link activation records into their frames instead
+ * of heap bookkeeping. */
+export function activationBindings(
+  module: string,
+): readonly PropertyCacheBinding[] {
+  return [
+    { module, name: "activationTop", operation: "activation-top" },
+    { module, name: "activationPrevious", operation: "activation-previous" },
+    { module, name: "activationKind", operation: "activation-kind" },
+    { module, name: "activationCallee", operation: "activation-callee" },
+    {
+      module,
+      name: "activationArgumentCount",
+      operation: "activation-count",
+    },
+    { module, name: "activationArgument", operation: "activation-argument" },
   ];
 }
 /** Immutable numeric imports proved by the hosted function planner. */
@@ -4922,7 +4957,6 @@ function lowerScriptEntry(
       !options.packed &&
       !tailEnabled &&
       resultContract === 0;
-    const legacyNativeEntry = nativeEntry && !codeStrict && !arrow && !method;
     const materializesArguments = nativeEntry && (hasArguments || hasRest);
     const nativeName = nativeEntry
       ? temporary(
@@ -4933,29 +4967,6 @@ function lowerScriptEntry(
           ),
         )
       : undefined;
-    let nativeArgumentReader: Expression | undefined;
-    if (legacyNativeEntry) {
-      const readerParameters: Parameter[] = [];
-      const readerArguments: Expression[] = [];
-      for (const name of ["$index", "$count", "$registers", "$overflow"]) {
-        if (name === undefined) throw "SCRIPT_ARGUMENT_READER_INVARIANT";
-        readerParameters.push({ ...at(span), name, type: named("number") });
-        readerArguments.push(id(name, span));
-      }
-      nativeArgumentReader = temporary({
-        ...at(span),
-        kind: "arrow",
-        parameters: readerParameters,
-        returnType: named("unknown"),
-        body: {
-          ...at(span),
-          kind: "call",
-          scriptArgument: "load-frame",
-          callee: id("sourceArgumentFromFrame", span),
-          arguments: readerArguments,
-        },
-      });
-    }
     if (nativeEntry) usesNativeScriptCalls = true;
     const wideRegister = codeStrict && parameters.length > 2;
     const register =
@@ -6176,84 +6187,11 @@ function lowerScriptEntry(
       };
       const args = [calleeName, receiverName, newTargetName, incomingArguments];
       const begin = statements.length;
-      const agent = member(id("$errors"), "agent", span);
-      const trace = temporary({
-        ...at(span),
-        kind: "conditional",
-        test: hasList(),
-        consequent: id("undefined", span),
-        alternate: runtimeCall("enterExecutionName", [agent, nativeName], span),
-      });
-      const depth = temporary({
-        ...at(span),
-        kind: "conditional",
-        test: hasList(),
-        consequent: scalarNumber(-1, span),
-        alternate:
-          nativeArgumentReader === undefined
-            ? runtimeCall(
-                "enterSourceCall",
-                [agent, id(codeStrict ? "undefined" : calleeName, span)],
-                span,
-              )
-            : runtimeCall(
-                "enterNativeSourceCall",
-                [
-                  agent,
-                  id(calleeName, span),
-                  nativeArgumentCount(span),
-                  {
-                    ...at(span),
-                    kind: "call",
-                    scriptArgument: "registers",
-                    callee: id("sourceArgumentArea", span),
-                    arguments: [],
-                  },
-                  {
-                    ...at(span),
-                    kind: "call",
-                    scriptArgument: "stack",
-                    callee: id("sourceArgumentArea", span),
-                    arguments: [],
-                  },
-                  nativeArgumentReader,
-                ],
-                span,
-              ),
-      });
-      const cleanup = statements.length;
-      expression(runtimeCall("exitSourceCall", [agent, depth], span));
-      expression(runtimeCall("leaveExecutionName", [agent, trace], span));
-      const cleanupBody = statements.splice(cleanup);
-      statements.push({
-        ...at(span),
-        kind: "try",
-        body: callbackBody,
-        handler: undefined,
-        finalizer: {
-          ...at(span),
-          kind: "block",
-          statements: [
-            {
-              ...at(span),
-              kind: "if",
-              test: {
-                ...at(span),
-                kind: "binary",
-                operator: "!==",
-                left: trace,
-                right: id("undefined", span),
-              },
-              consequent: {
-                ...at(span),
-                kind: "block",
-                statements: cleanupBody,
-              },
-              alternate: undefined,
-            },
-          ],
-        },
-      });
+      // Called with actual operands, the entry links an activation record
+      // into its frame (codegen), which names its callee for stack traces
+      // and caller reflection. Called with a list, the source function's
+      // heap bookkeeping describes it (sourceFunction).
+      statements.push(callbackBody);
       const nativeParameters: Parameter[] = [];
       const bridgeParameters: Parameter[] = [];
       const bridgeArguments: Expression[] = [];

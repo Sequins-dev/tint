@@ -190,13 +190,6 @@ export function scriptRuntimeImports(
               "createNativeSourceFunction",
               "sourceArgumentCount",
               "sourceArgument",
-              "sourceArgumentArea",
-              "sourceArgumentFromFrame",
-              "enterNativeSourceCall",
-              "enterSourceCall",
-              "exitSourceCall",
-              "enterExecutionName",
-              "leaveExecutionName",
             ]
           : []),
         ...(usesRegisterCalls || declarations === "all"

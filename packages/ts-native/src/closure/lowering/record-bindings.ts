@@ -1,4 +1,5 @@
 import type {
+  ActivationField,
   FunctionDebug,
   FunctionIR,
   Instruction,
@@ -36,7 +37,17 @@ export type RecordOperation =
    * cached property store (IR property-store). */
   | "property-store"
   /** `(witness: T): number`: the word index of a named field of T. */
-  | "field-word";
+  | "field-word"
+  /** Native activation chain reads (IR activation-read), without a record
+   * witness: `(): number` the innermost record; `(record: number): F` a
+   * record's previous record, kind, actual count (numbers) or callee
+   * (unknown); `(record: number, index: number): unknown` an actual. */
+  | "activation-top"
+  | "activation-previous"
+  | "activation-kind"
+  | "activation-callee"
+  | "activation-count"
+  | "activation-argument";
 
 /** The record fields a property cache binding reads (see the IR
  * instructions property-load and property-store). */
@@ -113,6 +124,71 @@ function boundBody(
       },
     ],
   };
+}
+/** The activation field an activation binding reads, or undefined. */
+export function activationOperationField(
+  operation: RecordOperation,
+): ActivationField | undefined {
+  switch (operation) {
+    case "activation-top":
+      return "top";
+    case "activation-previous":
+      return "previous";
+    case "activation-kind":
+      return "kind";
+    case "activation-callee":
+      return "callee";
+    case "activation-count":
+      return "count";
+    case "activation-argument":
+      return "argument";
+    default:
+      return undefined;
+  }
+}
+/** The body of an activation binding: one activation-read of its numeric
+ * record (absent for top) and index (argument only) parameters. */
+export function bindActivationRead(
+  fn: FunctionIR,
+  field: ActivationField,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    fn.parameters,
+    (loaded): Instruction => {
+      const id = loaded.length,
+        record = loaded[0],
+        index = loaded[1];
+      if (record === undefined)
+        return {
+          start: span.start,
+          end: span.end,
+          kind: "activation-read",
+          id,
+          field,
+        };
+      if (index === undefined)
+        return {
+          start: span.start,
+          end: span.end,
+          kind: "activation-read",
+          id,
+          field,
+          record,
+        };
+      return {
+        start: span.start,
+        end: span.end,
+        kind: "activation-read",
+        id,
+        field,
+        record,
+        index,
+      };
+    },
+    span,
+  );
 }
 /** The body of a property-load binding: its value and site parameters. */
 export function bindPropertyLoad(

@@ -74,7 +74,8 @@ export {
   provenWordReturns,
   type WordFacts,
 } from "./word-facts.ts";
-export { functionHeader } from "./model.ts";
+export { functionHeader, activationFieldType } from "./model.ts";
+import { activationFieldType } from "./model.ts";
 import { instructionResult } from "./operands.ts";
 export { instructionResult } from "./operands.ts";
 export {
@@ -1623,6 +1624,19 @@ export function verify(
                 fail("TYPE", "argument storage requires a JavaScript entry");
               define(op.id, "number");
               break;
+            case "activation-read": {
+              const record = op.record,
+                index = op.index;
+              // Only `top` names no record; only `argument` takes an index.
+              if ((record === undefined) !== (op.field === "top"))
+                fail("TYPE", "activation fields other than top read a record");
+              if ((index === undefined) !== (op.field !== "argument"))
+                fail("TYPE", "only activation arguments take an index");
+              if (record !== undefined) equal(use(record), "number");
+              if (index !== undefined) equal(use(index), "number");
+              define(op.id, activationFieldType(op.field));
+              break;
+            }
             case "script-argument": {
               const frame = op.frame;
               if (frame === undefined && f.scriptEntry !== true)

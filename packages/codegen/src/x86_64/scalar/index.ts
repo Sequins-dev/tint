@@ -14,6 +14,10 @@ import {
   type SysVCallLayout as CCallLayout,
 } from "@tint/abi/c/sysv";
 import {
+  nativeActivationCalleeOffset,
+  nativeActivationCountOffset,
+  nativeActivationFrameOffset,
+  nativeActivationTopOffset,
   nativeArrayDataOffset,
   nativeArrayInlineOffset,
   nativeArrayLengthOffset,
@@ -2725,6 +2729,84 @@ export function emitModule(
             scalarByteLength(typeOf(op.value)),
           );
           return;
+        case "activation-read": {
+          // Records: @tint/abi/host nativeActivationRecordBytes. This target
+          // has no script entries yet, so the chain stays empty; the reads
+          // follow the shared layout with no register actuals.
+          const record = op.record;
+          if (record === undefined) {
+            emit({ op: "mov", dst: rax, src: frame(savedContext) });
+            emit({
+              op: "mov",
+              dst: rax,
+              src: mem(0, nativeActivationTopOffset),
+            });
+          } else emit({ op: "cvttsd2si", dst: r9, src: frame(home(record)) });
+          if (op.field === "callee" || op.field === "argument") {
+            const index = op.index;
+            const done = fnLabel + ":activation:" + String(op.id);
+            if (index === undefined) {
+              emit({
+                op: "mov",
+                dst: scratch,
+                src: mem(9, nativeActivationCalleeOffset + 8),
+              });
+              emit({
+                op: "mov",
+                dst: rax,
+                src: mem(9, nativeActivationCalleeOffset),
+              });
+            } else {
+              // Missing actuals read undefined; the rest follow the frame
+              // record (frame pointer + 16).
+              const missing = done + ":missing";
+              emit({ op: "cvttsd2si", dst: r10, src: frame(home(index)) });
+              emit({
+                op: "cmp",
+                dst: r10,
+                src: mem(9, nativeActivationCountOffset),
+              });
+              branch(emit, "ae", missing);
+              emit({
+                op: "mov",
+                dst: r9,
+                src: mem(9, nativeActivationFrameOffset),
+              });
+              emit({ op: "shr", dst: r9, count: 4 });
+              emit({ op: "shl", dst: r9, count: 4 });
+              emit({ op: "shl", dst: r10, count: 4 });
+              emit({ op: "add", dst: r9, src: r10 });
+              emit({ op: "mov", dst: scratch, src: mem(9, 24) });
+              emit({ op: "mov", dst: rax, src: mem(9, 16) });
+              emit({ op: "jmp", target: label(done) });
+              emit({ op: "label", name: missing });
+              emit({ op: "xor", dst: rax, src: rax });
+              emit({ op: "xor", dst: scratch, src: scratch });
+              emit({ op: "label", name: done });
+            }
+            emit({ op: "mov", dst: frame(home(op.id) + 8), src: scratch });
+            define(op.id, "general");
+            return;
+          }
+          if (op.field === "previous")
+            emit({ op: "mov", dst: rax, src: mem(9, 0) });
+          else if (op.field === "kind") {
+            emit({
+              op: "mov",
+              dst: rax,
+              src: mem(9, nativeActivationFrameOffset),
+            });
+            emit({ op: "and", dst: rax, src: imm(15) });
+          } else if (op.field === "count")
+            emit({
+              op: "mov",
+              dst: rax,
+              src: mem(9, nativeActivationCountOffset),
+            });
+          numberBits();
+          define(op.id, "number");
+          return;
+        }
         case "closure-environment":
           if (savedEnvironment === undefined)
             throw "closure environment invariant";

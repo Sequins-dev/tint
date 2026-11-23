@@ -136,6 +136,10 @@ export function instructionEffects(op: Instruction): number {
       return 0;
     case "script-argument":
       return op.frame === undefined ? 0 : effectReadHeap;
+    // Records live in the frames of running activations; calls link and
+    // unlink them, so reads stay ordered with calls.
+    case "activation-read":
+      return effectReadHeap;
     default:
       return effectUnknown;
   }

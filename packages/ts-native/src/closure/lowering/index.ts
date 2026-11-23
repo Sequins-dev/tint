@@ -36,6 +36,8 @@ import {
 } from "./dynamic-objects.ts";
 import type { RecordOperation } from "./record-bindings.ts";
 import {
+  activationOperationField,
+  bindActivationRead,
   bindFieldWord,
   bindPropertyLoad,
   bindPropertyStore,
@@ -112,6 +114,7 @@ import {
 import {
   verify,
   instructionResult,
+  activationFieldType,
   type ModuleIR,
   type FunctionIR,
   type Block,
@@ -4211,6 +4214,34 @@ function lowerEntries(
         )
           fail("field word bindings take a record witness with a named field");
         functions[fn.id] = bindFieldWord(fn, placed.offset / 8, span);
+        continue;
+      }
+      const activationField = activationOperationField(binding.operation);
+      if (activationField !== undefined) {
+        // top takes no parameters; argument a record and an index; the
+        // other fields a record. Records and indexes are numbers.
+        const arity =
+          activationField === "top"
+            ? 0
+            : activationField === "argument"
+              ? 2
+              : 1;
+        let numbers: boolean = true;
+        for (const slot of fn.parameters)
+          if (slot === undefined || fn.slots[slot] !== "number")
+            numbers = false;
+        if (
+          fn.parameters.length !== arity ||
+          !numbers ||
+          fn.returnType !== activationFieldType(activationField) ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "activation bindings take numeric record and index parameters and return their field",
+          );
+        functions[fn.id] = bindActivationRead(fn, activationField, span);
         continue;
       }
       if (binding.operation === "absent-test") {

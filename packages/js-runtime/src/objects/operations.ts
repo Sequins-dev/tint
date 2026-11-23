@@ -344,6 +344,10 @@ export type ObjectWideRegisterCall<Value> = (
 ) => Value;
 export interface ObjectRegisterEntry<Value> {
   readonly context: ScriptExecutionContext;
+  /** Stack-trace name and caller policy (SourceCallerPolicy) of the source
+   * function, for native activation records naming it as their callee. */
+  readonly traceName: string;
+  readonly callerPolicy: string;
   readonly invoke: ObjectRegisterCall<Value> | undefined;
   readonly invokeWide: ObjectWideRegisterCall<Value> | undefined;
   readonly scriptInvoke?: ObjectScriptCall<Value>;

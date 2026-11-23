@@ -1375,6 +1375,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/activations.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/arguments.ts",
       packageId: "js-runtime",
     },

@@ -1,4 +1,5 @@
 import type {
+  ActivationField,
   Block,
   Environment,
   EnvironmentCell,
@@ -313,6 +314,15 @@ const generalTests: readonly GeneralTest[] = [
   "nullish",
   "absent",
 ];
+/** Activation fields by their packed index; append only. */
+const activationFields: readonly ActivationField[] = [
+  "top",
+  "previous",
+  "kind",
+  "callee",
+  "count",
+  "argument",
+];
 export function encodeInstruction(
   writer: ByteWriter,
   vocabulary: PackedVocabulary,
@@ -447,6 +457,21 @@ export function encodeInstruction(
         writeSigned(writer, frame.registers);
         writeSigned(writer, frame.stack);
       }
+      return true;
+    }
+    case "activation-read": {
+      const record = op.record,
+        index = op.index;
+      writePrefix(
+        writer,
+        88,
+        op,
+        bit(record !== undefined, 2) + bit(index !== undefined, 4),
+      );
+      writeSigned(writer, op.id);
+      writeByte(writer, activationFields.indexOf(op.field));
+      if (record !== undefined) writeSigned(writer, record);
+      if (index !== undefined) writeSigned(writer, index);
       return true;
     }
     case "script-argument-count":
@@ -1327,6 +1352,18 @@ export function decodeInstruction(
       };
     case 83:
       return { kind: "script-argument-count", id: readSigned(reader), ...span };
+    case 88: {
+      const id = readSigned(reader),
+        field = activationFields[readByte(reader)];
+      if (field === undefined) throw "packed activation field invariant";
+      const record = flagged(flags, 2) ? readSigned(reader) : undefined,
+        index = flagged(flags, 4) ? readSigned(reader) : undefined;
+      if (record === undefined)
+        return { kind: "activation-read", id, field, ...span };
+      if (index === undefined)
+        return { kind: "activation-read", id, field, record, ...span };
+      return { kind: "activation-read", id, field, record, index, ...span };
+    }
     case 85: {
       const id = readSigned(reader),
         object = readSigned(reader),

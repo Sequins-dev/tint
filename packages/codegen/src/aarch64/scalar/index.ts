@@ -10,6 +10,7 @@ import {
 } from "./signature-groups.ts";
 export type { LocalSignatureBinding } from "./signature-groups.ts";
 import {
+  nativeActivationTopOffset,
   nativeContextDomainOffset,
   nativeGenerationalNurseryAddressOffset,
   nativeGenerationalStateWords,
@@ -199,6 +200,7 @@ import {
   callbackState,
   naturalLoops,
   blockSuccessors,
+  activationFieldType,
   type LoopForest,
   type SlotLiveness,
   type WordFacts,
@@ -253,6 +255,11 @@ import {
   type Condition,
 } from "../isa.ts";
 import {
+  activationArgumentsOffset,
+  activationCalleeOffset,
+  activationCountOffset,
+  activationFrameOffset,
+  activationRecordBytes,
   signatureLayout,
   scriptArgumentLayout,
   scriptFirstActualRegister,
@@ -4186,8 +4193,13 @@ function emitModuleForms(
             fn.closureEnvironment === undefined
               ? borrowedEnvironmentOffset
               : localsBase,
-          scriptCountOffset =
+          // A script entry's activation record, then its actual count and
+          // register actuals (abi.ts activationRecordBytes).
+          activationOffset =
             localsBase + (fn.closureEnvironment === undefined ? 0 : 8),
+          scriptCountOffset =
+            activationOffset +
+            (fn.scriptEntry === true ? activationRecordBytes : 0),
           scriptArgumentsOffset = scriptCountOffset + 8,
           localsOffset =
             fn.scriptEntry === true
@@ -4481,6 +4493,10 @@ function emitModuleForms(
               case "script-argument-area":
                 id = op.id;
                 type = "number";
+                break;
+              case "activation-read":
+                id = op.id;
+                type = activationFieldType(op.field);
                 break;
               case "general-value":
                 id = op.id;
@@ -5365,6 +5381,24 @@ function emitModuleForms(
         }
         function epilogue(): void {
           endFrameRange();
+          // Unlink the activation record; x0-x2 hold the completion.
+          if (fn.scriptEntry === true) {
+            emit({
+              op: "ldr",
+              width: 64,
+              rt: 16,
+              rn: "sp",
+              offset: activationOffset,
+            });
+            rawLoad(17, contextOffset);
+            emit({
+              op: "str",
+              width: 64,
+              rt: 16,
+              rn: 17,
+              offset: nativeActivationTopOffset,
+            });
+          }
           calleeSaves(true);
           adjust("add-imm", frameBytes);
           emit({
@@ -5816,6 +5850,46 @@ function emitModuleForms(
             const register = scriptFirstActualRegister + i * 2;
             generalPair(register, offset, false);
           }
+          // Link the activation record (abi.ts activationRecordBytes): the
+          // callee pair is a root from here on; the kind is x2's list bit.
+          const record = activationOffset;
+          if (record + activationCalleeOffset + 8 > 504)
+            fail("FRAME_LIMIT", "activation record beyond pair reach");
+          emit({
+            op: "stp",
+            width: 64,
+            rt: 4,
+            rt2: 5,
+            rn: "sp",
+            offset: record + activationCalleeOffset,
+            mode: "offset",
+          });
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 16,
+            rn: 0,
+            offset: nativeActivationTopOffset,
+          });
+          emit({ op: "ubfm", width: 64, rd: 17, rn: 2, immr: 0, imms: 0 });
+          emit({ op: "orr-reg", width: 64, rd: 17, rn: 17, rm: 29 });
+          emit({
+            op: "stp",
+            width: 64,
+            rt: 16,
+            rt2: 17,
+            rn: "sp",
+            offset: record,
+            mode: "offset",
+          });
+          address(16, record);
+          emit({
+            op: "str",
+            width: 64,
+            rt: 16,
+            rn: 0,
+            offset: nativeActivationTopOffset,
+          });
         }
         frameStart = instructions.length * 4;
         // Words the prologue stores below before publishing the frame record
@@ -9279,6 +9353,197 @@ function emitModuleForms(
                 emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
                 floatStore(0, op.id);
                 break;
+              case "activation-read": {
+                // Records: abi.ts activationRecordBytes.
+                const record = op.record;
+                if (record === undefined) {
+                  rawLoad(9, contextOffset);
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 9,
+                    rn: 9,
+                    offset: nativeActivationTopOffset,
+                  });
+                } else
+                  emit({
+                    op: "fcvtzs-x-d",
+                    rd: 9,
+                    rn: floatOperand(record, 0),
+                  });
+                if (op.field === "callee" || op.field === "argument") {
+                  const index = op.index;
+                  if (index === undefined) {
+                    emit({
+                      op: "ldp",
+                      width: 64,
+                      rt: 9,
+                      rt2: 10,
+                      rn: 9,
+                      offset: activationCalleeOffset,
+                      mode: "offset",
+                    });
+                  } else {
+                    // Missing actuals read undefined; the first ones are
+                    // in the record, the rest above the frame record.
+                    emit({
+                      op: "fcvtzs-x-d",
+                      rd: 11,
+                      rn: floatOperand(index, 1),
+                    });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 12,
+                      rn: 9,
+                      offset: activationCountOffset,
+                    });
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 11,
+                      rm: 12,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    const absent = instructions.length;
+                    emit({ op: "b.cond", condition: "cs", displacement: 0 });
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: 13,
+                      rn: 9,
+                      immediate: activationArgumentsOffset,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 11,
+                      immediate: scriptActualRegisterPairs,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    const inRecord = instructions.length;
+                    emit({ op: "b.cond", condition: "cc", displacement: 0 });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 13,
+                      rn: 9,
+                      offset: activationFrameOffset,
+                    });
+                    // Clear the kind bits: frame pointer + 16.
+                    emit({
+                      op: "ubfm",
+                      width: 64,
+                      rd: 13,
+                      rn: 13,
+                      immr: 4,
+                      imms: 63,
+                    });
+                    emit({
+                      op: "ubfm",
+                      width: 64,
+                      rd: 13,
+                      rn: 13,
+                      immr: 60,
+                      imms: 59,
+                    });
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: 13,
+                      rn: 13,
+                      immediate: 16,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: 11,
+                      rn: 11,
+                      immediate: scriptActualRegisterPairs,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    patchInstruction(inRecord, {
+                      op: "b.cond",
+                      condition: "cc",
+                      displacement: (instructions.length - inRecord) * 4,
+                    });
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 13,
+                      rn: 13,
+                      rm: 11,
+                      shift: "lsl",
+                      amount: 4,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "ldp",
+                      width: 64,
+                      rt: 9,
+                      rt2: 10,
+                      rn: 13,
+                      offset: 0,
+                      mode: "offset",
+                    });
+                    const loaded = instructions.length;
+                    emit({ op: "b", displacement: 0 });
+                    patchInstruction(absent, {
+                      op: "b.cond",
+                      condition: "cs",
+                      displacement: (instructions.length - absent) * 4,
+                    });
+                    imm(9, 0);
+                    imm(10, 0);
+                    patchInstruction(loaded, {
+                      op: "b",
+                      displacement: (instructions.length - loaded) * 4,
+                    });
+                  }
+                  saveRaw(9, op.id);
+                  rawStore(10, value(op.id).offset + 8);
+                  break;
+                }
+                if (op.field === "previous")
+                  emit({ op: "ldr", width: 64, rt: 9, rn: 9, offset: 0 });
+                else if (op.field === "kind") {
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 9,
+                    rn: 9,
+                    offset: activationFrameOffset,
+                  });
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 9,
+                    rn: 9,
+                    immr: 0,
+                    imms: 3,
+                  });
+                } else if (op.field === "count")
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 9,
+                    rn: 9,
+                    offset: activationCountOffset,
+                  });
+                emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                floatStore(0, op.id);
+                break;
+              }
               case "script-argument-area":
                 if (op.area === "registers") address(9, scriptArgumentsOffset);
                 else
@@ -17445,9 +17710,11 @@ function emitModuleForms(
               if (offset === undefined) throw "site reference invariant";
               references.push(offset);
             }
-            if (fn.scriptEntry === true)
+            if (fn.scriptEntry === true) {
+              generals.push(activationOffset + activationCalleeOffset);
               for (let i = 0; i < scriptActualRegisterPairs; i++)
                 generals.push(scriptArgumentsOffset + i * 16);
+            }
             const scriptOverflow = siteGeneralArguments.get(index) ?? 0;
             for (let i = 0; i < scriptOverflow; i++) generals.push(i * 16);
             const map: number[] = [frameBytes];

@@ -94,6 +94,10 @@ export function visitInstructionOperands(
         visit(id);
       }
       return;
+    case "activation-read":
+      if (op.record !== undefined) visit(op.record);
+      if (op.index !== undefined) visit(op.index);
+      return;
     case "script-argument": {
       visit(op.index);
       const frame = op.frame;

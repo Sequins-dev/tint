@@ -30,6 +30,8 @@ import {
   lowerSourceTextModule,
   propertyCacheBindings,
   propertyCacheNames,
+  activationBindings,
+  activationNames,
 } from "@tint/js-engine/lowering";
 import { createSourceTextView } from "@tint/source/text";
 import {
@@ -3483,6 +3485,7 @@ function createNativeImageRequest(
             "viewSymbolValue",
             "viewBigIntValue",
             ...propertyCacheNames,
+            ...activationNames,
             ...intlFormatViewNames,
             ...(finalizationRegistry ? ["viewWeakRegistryOwner"] : []),
           ],
@@ -3539,6 +3542,8 @@ function createNativeImageRequest(
         // Generated property caches compare shapes and load and store
         // values inline.
         ...propertyCacheBindings(objectModule),
+        // Native script entries keep activation records in their frames.
+        ...activationBindings(objectModule),
         ...intlFormatRecordBindings(objectModule),
         ...(finalizationRegistry
           ? [

@@ -283,8 +283,6 @@ export {
   createNativeSourceFunction,
   sourceArgumentCount,
   sourceArgument,
-  sourceArgumentArea,
-  sourceArgumentFromFrame,
   createRegisterSourceFunction,
   createWideRegisterSourceFunction,
   createTailSourceFunction,
@@ -299,12 +297,13 @@ export {
   instanceOfValue,
 } from "./functions.ts";
 export {
-  enterSourceCall,
-  enterNativeSourceCall,
-  exitSourceCall,
-  enterExecutionName,
-  leaveExecutionName,
-} from "./jobs.ts";
+  activationTop,
+  activationPrevious,
+  activationKind,
+  activationCallee,
+  activationArgumentCount,
+  activationArgument,
+} from "./activations.ts";
 export {
   primitiveToNumber,
   primitiveToString,

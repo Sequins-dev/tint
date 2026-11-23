@@ -23,6 +23,8 @@ import {
   lowerSourceTextModule,
   propertyCacheBindings,
   propertyCacheNames,
+  activationBindings,
+  activationNames,
 } from "../lowering/index.ts";
 import { createGeneralIntrinsicPlan } from "./intrinsics.ts";
 import {
@@ -136,6 +138,9 @@ export function createGeneralLowering(
   // inline.
   for (const binding of propertyCacheBindings(runtime.objects))
     recordBindings.push(binding);
+  // Native script entries keep activation records in their frames.
+  for (const binding of activationBindings(runtime.objects))
+    recordBindings.push(binding);
   for (const name of referrerViews)
     recordBindings.push({ module: runtime.modules, name, operation: "view" });
   return {
@@ -163,6 +168,7 @@ export function createGeneralLowering(
         retainedExports: [
           ...objectViews,
           ...propertyCacheNames,
+          ...activationNames,
           "objectTypeof",
           "generalValueTypeof",
           "callGeneralValue",

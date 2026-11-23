@@ -280,6 +280,8 @@ export function createNativeSourceFunction(
   const active = realm.agent.activeContext;
   fn.internalRegisterCall = {
     context: { realm, scriptOrModule: active?.scriptOrModule },
+    traceName: name,
+    callerPolicy,
     invoke: undefined,
     invokeWide: undefined,
     scriptInvoke,
@@ -292,17 +294,6 @@ export function sourceArgumentCount(): number {
   throw "SOURCE_ARGUMENT_INTRINSIC";
 }
 export function sourceArgument(_index: number): unknown {
-  throw "SOURCE_ARGUMENT_INTRINSIC";
-}
-export function sourceArgumentArea(): number {
-  throw "SOURCE_ARGUMENT_INTRINSIC";
-}
-export function sourceArgumentFromFrame(
-  _index: number,
-  _count: number,
-  _registers: number,
-  _stack: number,
-): unknown {
   throw "SOURCE_ARGUMENT_INTRINSIC";
 }
 
@@ -344,6 +335,8 @@ export function createRegisterSourceFunction(
       realm,
       scriptOrModule: active === undefined ? undefined : active.scriptOrModule,
     },
+    traceName: name,
+    callerPolicy,
     invokeWide: undefined,
     invoke: (callee, receiver, newTarget, count, first, second): unknown => {
       const trace = enterExecutionName(agent, name);
@@ -445,6 +438,8 @@ export function createWideRegisterSourceFunction(
       realm,
       scriptOrModule: active === undefined ? undefined : active.scriptOrModule,
     },
+    traceName: name,
+    callerPolicy,
     invoke: (callee, receiver, newTarget, count, first, second): unknown =>
       invoke(
         callee,

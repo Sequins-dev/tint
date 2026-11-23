@@ -18,6 +18,13 @@ export type ScalarType =
   | "Float64Array"
   | "optional-number";
 export type ReturnType = ScalarType | "void";
+/** Fields of IR activation-read. */
+export type ActivationField =
+  "top" | "previous" | "kind" | "callee" | "count" | "argument";
+/** The operands and result type of each activation field. */
+export function activationFieldType(field: ActivationField): ScalarType {
+  return field === "callee" || field === "argument" ? "general" : "number";
+}
 export interface Span {
   readonly start: number;
   readonly end: number;
@@ -236,6 +243,22 @@ export type Instruction = Span &
           readonly registers: number;
           readonly stack: number;
         };
+      }
+    | {
+        /** A field of the native activation chain: the records script
+         * entries link into their frames while they run (see @tint/abi/host
+         * nativeActivationTopOffset). `top` is the innermost record (0 when
+         * none); for a record, `previous` is the next older one, `kind` is 1
+         * for an entry called with actual operands (0 for one called with a
+         * materialized list, which other bookkeeping covers), `callee` its
+         * callee, `count` its actual operand count and `argument` actual
+         * `index` (undefined from the count on). Records and their frames are
+         * read only while their activations run. */
+        readonly kind: "activation-read";
+        readonly id: number;
+        readonly field: ActivationField;
+        readonly record?: number;
+        readonly index?: number;
       }
     | { readonly kind: "closure-environment"; readonly id: number }
     | { readonly kind: "string-none"; readonly id: number }

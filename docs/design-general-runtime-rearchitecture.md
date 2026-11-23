@@ -25,6 +25,21 @@ Main-thread attribution after step 2b ([profiles](results/general-runtime-step2b
 
 Total: about 10–18 weeks of one stream, with the uncertainty concentrated in steps 6 and 7. The order puts the largest measured shares first; each step keeps instruction budgets per operation (step 3: a warm method call ≤ 60 instructions with zero allocations) and the paired protocol for acceptance. Work that touches disjoint files can run in parallel: step 5's elements and builtin intrinsics alongside step 3's ABI, and an inference prototype for step 6 once step 3's entry convention is fixed.
 
+### Activation records
+
+Stack traces and the legacy `caller` and `arguments` accessors need to know which source functions are active. The register and list entry paths kept that in two heap chains (execution names and source-call frames), so every call wrote heap memory and paid remembered-set barriers (about 260 instructions per call). A native script entry instead links a 32-byte activation record into its own frame while it runs:
+
+| Word | Contents |
+| --- | --- |
+| 0 | the previous record (0 at the base) |
+| 8 | the frame pointer, with the kind in its low four bits: 1 when called with actual operands, 0 when called with a materialized list |
+| 16, 24 | the callee's general pair (a stack-map root) |
+| 32 | the actual operand count, followed by the register actuals; stack actuals follow the frame record |
+
+The innermost record's address is a word of the hosted context (`nativeActivationTopOffset`). The entry's prologue links its record and its epilogue unlinks it on every return, normal or exceptional; exceptions return through the epilogue, so no unwinder is involved. The runtime reads records through `activation*` declarations in `js-runtime/src/objects/activations.ts`, bound to IR `activation-read` in native builds. The callee's register entry supplies its trace name and caller policy.
+
+Heap frames remain for list entries, register entries, builtins and barriers. Each records the innermost native record at its push, so the readers merge both chains by stack position: a heap frame is younger than every record at or below the one it recorded. A list-mode record (kind 0) is skipped, because its heap frames already describe the call.
+
 ## Original proposal (2026-11-22)
 
 Start with compact shapes, in-object fields and dense elements, then replace the ordinary call and construction ABI. For Richards, evaluate primitive comparison and binding lowering after layout work. Re-profile before expanding the allocation work. The Octane reports provide the source comparisons, hardware counts, executed instruction paths and cache census supporting this order. [Main-thread samples](results/general-call-octane-cost-breakdown-darwin-arm64-v1.md), [Instruction and cache diagnostics](results/general-call-octane-cost-breakdown-darwin-arm64-v2.md)

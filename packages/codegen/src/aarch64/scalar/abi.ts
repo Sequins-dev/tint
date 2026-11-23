@@ -1,4 +1,11 @@
-import { nativeHostedContextByteLength } from "@tint/abi/host";
+import {
+  nativeActivationArgumentsOffset,
+  nativeActivationCalleeOffset,
+  nativeActivationCountOffset,
+  nativeActivationFrameOffset,
+  nativeActivationRecordBytes,
+  nativeHostedContextByteLength,
+} from "@tint/abi/host";
 import type { FunctionIR, ScalarType } from "@tint/ir/scalar";
 /** Hosted context retains its existing fields; the registrar is a permanent
  * control-allocated function reference. Domain identity occupies the last word. */
@@ -18,6 +25,13 @@ export interface SignatureLayout {
 // x3 carries the completion area. x4–x9 hold callee, receiver and new.target.
 // x16/x17 are available for entry dispatch and x18 is reserved on Darwin.
 export const scriptFirstActualRegister = 10;
+/** A script entry's activation record (@tint/abi/host
+ * nativeActivationRecordBytes): its count and register actuals follow it. */
+export const activationRecordBytes = nativeActivationRecordBytes;
+export const activationFrameOffset = nativeActivationFrameOffset;
+export const activationCalleeOffset = nativeActivationCalleeOffset;
+export const activationCountOffset = nativeActivationCountOffset;
+export const activationArgumentsOffset = nativeActivationArgumentsOffset;
 export const scriptActualRegisterPairs = 3;
 export function scriptArgumentLayout(count: number): {
   readonly registerArguments: number;

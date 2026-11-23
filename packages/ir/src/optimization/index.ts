@@ -1671,6 +1671,7 @@ function removable(op: Instruction): boolean {
     case "general-none":
     case "script-argument-count":
     case "script-argument-area":
+    case "activation-read":
     case "general-null":
     case "general-wrap":
     case "load":

@@ -11,6 +11,7 @@ import { getFunctionRealm } from "./function-realms.ts";
 import type { PromiseRecord } from "../promises/index.ts";
 import { getScriptIterator, collectScriptIterator } from "./iteration.ts";
 import {
+  activeExecutionNames,
   createScriptAgent,
   runScriptContext,
   type ScriptAgent,
@@ -957,17 +958,10 @@ function errorFromPrototype(
   const error = createObject<ScriptPropertyKey, unknown>(prototype);
   error.internalErrorData = true;
   let trace = name;
-  let sourceFrames = 0;
-  for (let frame = agent.executionNameTop; ;) {
-    const previous = frame.previous;
-    if (previous === undefined) break;
-    const frameName = frame.name;
-    if (frameName !== undefined) {
-      trace += "\n    at " + (frameName || "<anonymous>");
-      sourceFrames++;
-    }
-    frame = previous;
-  }
+  const frames = activeExecutionNames(agent, prototype);
+  for (const frameName of frames)
+    trace += "\n    at " + (frameName || "<anonymous>");
+  const sourceFrames = frames.length;
   const active = agent.activeContext;
   if (sourceFrames === 0 && active !== undefined)
     trace +=

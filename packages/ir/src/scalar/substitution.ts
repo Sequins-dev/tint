@@ -312,6 +312,19 @@ export function substituteInstructionValues(
             ...(actuals === undefined ? {} : { scriptArguments: actuals }),
           };
     }
+    case "activation-read": {
+      // Only top names no record; only argument takes an index.
+      const record = op.record,
+        index = op.index;
+      if (record === undefined) return op;
+      const renamedRecord = substitutedValue(values, record);
+      if (index === undefined)
+        return renamedRecord === record ? op : { ...op, record: renamedRecord };
+      const renamedIndex = substitutedValue(values, index);
+      return renamedRecord === record && renamedIndex === index
+        ? op
+        : { ...op, record: renamedRecord, index: renamedIndex };
+    }
     case "script-argument": {
       const index = substitutedValue(values, op.index);
       const frame = op.frame;
