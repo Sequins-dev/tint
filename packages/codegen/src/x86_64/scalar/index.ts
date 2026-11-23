@@ -2001,20 +2001,21 @@ export function emitModule(
             // Check the window, allocate the string, then copy its units
             // out of the caller-owned raw memory. Invalid input traps.
             if (id === undefined) throw "string read result invariant";
+            const memmove = host.symbolPrefix + "memmove";
             const limit = scratch,
               address = gpr(8),
               length = gpr(1);
             emit({ op: "mov", dst: limit, src: bits(0, 0x10000) });
-            for (const [index, target] of [
-              [0, address],
-              [1, length],
-              [2, receiver],
-              [3, r9],
-            ] as const) {
+            // Each argument is an exact integer below 2^48.
+            function boundedArgument(index: number, target: Gpr<64>): void {
               exactInteger(emit, argument(index), target, trapLabel);
               emit({ op: "cmp", dst: target, src: limit });
               branch(emit, "ae", trapLabel);
             }
+            boundedArgument(0, address);
+            boundedArgument(1, length);
+            boundedArgument(2, receiver);
+            boundedArgument(3, r9);
             emit({ op: "test", dst: address, src: address });
             branch(emit, "e", trapLabel);
             emit({ op: "sub", dst: limit, src: address });
@@ -2038,7 +2039,7 @@ export function emitModule(
             emit({ op: "add", dst: environment, src: r10 });
             exactInteger(emit, argument(3), receiver, trapLabel);
             emit({ op: "shl", dst: receiver, count: 1 });
-            bytesOperation(host.symbolPrefix + "memmove");
+            bytesOperation(memmove);
             return;
           }
           if (operation === "stack-overflow-is" && host !== undefined) {
