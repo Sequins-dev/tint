@@ -144,22 +144,24 @@ The typed fast path layers on that:
   Interface reads dispatch over the concrete layouts that flow in. Class
   layouts take the own-field path or the prototype contract, both already
   implemented for records.
-  - Data-only interfaces work today. Methods do not yet: a class method's
-    type requires its class as receiver, and an interface method signature
-    (`m(): T`) constrains no receiver, so the relation rejects it. With an
-    explicit `m(this: R): T` the assignment already checks and calls pass
-    the receiver.
-  - Open decision: give method signatures an implicit receiver (the
-    interface itself), related bivariantly as TypeScript's method
-    bivariance does. Receivers travel in the general receiver slot, so the
-    calling convention is unchanged. Two costs need measuring first. Every
-    call through an interface method would box and pass a receiver, also
-    in the compiler's own interface-heavy code (frozen v7). And mutable
-    method properties relate exactly today, so receiver-less
-    implementations (arrow functions) would need method properties
-    related covariantly, as TypeScript does. The alternative is to pass
-    receivers only at call sites whose possible targets use them, using
-    the closed-world call-target analysis.
+  - Interface method signatures (`m(): T`, also in object types) are
+    method-syntax function types. A member call through one passes its
+    object as the receiver (the general receiver slot, so the calling
+    convention is unchanged), a function requiring a receiver (a class
+    method) relates to one, and writable method properties relate
+    covariantly, as TypeScript's method bivariance does. Class instances,
+    arrow functions and reassigned members all implement such interfaces,
+    and `implements` checks them.
+  - Decided by measurement (2026-11-23) between (a) passing the receiver at
+    every call through a method signature and (b) passing it only where the
+    possible targets use it: (a) costs nothing, so it stays.
+    - Frozen v7, 5 paired rotated rounds, base d4c565e29 against (a):
+      median wall 69.01 s / 68.21 s, cycles 320.32 G / 317.16 G (-1.0%,
+      within noise), instructions 1556.67 G / 1556.25 G (-0.03%).
+    - Typed kernel images (`typed` and `basicClasses` suites) are byte-
+      identical.
+  - Still a gap: an object-literal method that reads `this` under an
+    interface context needs a receiver annotation.
 
 **Other members:**
 

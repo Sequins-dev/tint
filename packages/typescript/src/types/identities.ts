@@ -66,6 +66,7 @@ function fingerprint(type: Type): number {
     }
     case "function":
       hash = mix(hash, type.receiver === undefined ? 0 : type.receiver + 1);
+      if (type.method === true) hash = mix(hash, 2);
       hash = mix(
         mix(hash, type.result),
         type.minimumArguments ??
@@ -157,6 +158,7 @@ function same(left: Type, right: Type): boolean {
         left.result !== right.result ||
         (left.rest === true) !== (right.rest === true) ||
         left.receiver !== right.receiver ||
+        (left.method === true) !== (right.method === true) ||
         left.parameters.length !== right.parameters.length ||
         (left.minimumArguments ??
           left.parameters.length - (left.rest === true ? 1 : 0)) !==

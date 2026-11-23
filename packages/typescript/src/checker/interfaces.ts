@@ -854,6 +854,13 @@ export function resolveInterfaceTypes(
     });
     return add({ kind: "object", properties: fields }, definition);
   }
+  /** A method-syntax member's function type (see the function type's
+   * `method`). */
+  function methodSignature(id: number, node: Span): number {
+    const declared = types[canonical(id)];
+    if (declared?.kind !== "function" || declared.method === true) return id;
+    return add({ ...declared, method: true }, node);
+  }
   function signature(
     parameters: readonly Parameter[],
     result: number,
@@ -1022,7 +1029,10 @@ export function resolveInterfaceTypes(
       const field: Property = {
           name: p.hasInstanceSymbol === true ? "@@hasInstance" : p.name,
           ...(p.hasInstanceSymbol === true ? { hasInstanceSymbol: true } : {}),
-          type: resolve(p.type),
+          type:
+            p.method === true
+              ? methodSignature(resolve(p.type), p)
+              : resolve(p.type),
           readonly: p.readonly,
           ...(p.optional ? { optional: true } : {}),
         },

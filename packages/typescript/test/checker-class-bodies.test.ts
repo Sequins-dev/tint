@@ -266,11 +266,20 @@ test("implements clauses are checked; type-only members are not typed yet", () =
     const result = check(source);
     assert.ok(result.ok, JSON.stringify({ source, result }));
   }
-  // A missing member, and methods, whose receivers relate more strictly
-  // than TypeScript's: the class takes the general path.
+  // Interfaces with methods: member calls pass the object as receiver.
+  for (const source of [
+    "interface R{m():number}class P implements R{m():number{return 1;}}",
+    'interface R{x:number;m():number}class P{x:number=1;y:string="";m():number{return this.x;}}function run():number{const r:R=new P();return r.m();}',
+    "interface R{m(n:number):number}function run():number{let r:R={m:(n:number):number=>n+1};r.m=(n:number):number=>n*2;return r.m(3);}",
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify({ source, result }));
+  }
+  // A missing member: the class takes the general path (Tint's relation is
+  // stricter than TypeScript's for method parameters, so a mismatch is not
+  // reported as TS2420).
   for (const source of [
     "interface R{x:number;y:number}class P implements R{x:number=1;}",
-    "interface R{m():number}class P implements R{m():number{return 1;}}",
   ]) {
     const result = check(source);
     assert.ok(!result.ok, source);

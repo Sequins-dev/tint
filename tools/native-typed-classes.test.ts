@@ -267,12 +267,15 @@ class Tally {
   log: string;
   constructor() {
     this.bump();
-    this.log = String(this.total);
+    this.log = this.show();
     this.total = 3;
     this.bump();
   }
   bump(): void {
     this.total += 1;
+  }
+  show(): string {
+    return String(this.total);
   }
 }
 export function trace(): string {
@@ -582,6 +585,57 @@ export function trace(): string {
 }
 `;
 
+// Class instances and object literals behind one interface with methods:
+// member calls through a method signature pass the object as the receiver,
+// so class methods and arrow functions both implement it.
+const interfaceMethods = `interface Shape {
+  readonly name: string;
+  area(): number;
+  scaled(by: number): number;
+}
+class Square implements Shape {
+  name: string = "square";
+  side: number;
+  constructor(side: number) {
+    this.side = side;
+  }
+  area(): number {
+    return this.side * this.side;
+  }
+  scaled(by: number): number {
+    return this.area() * by;
+  }
+}
+class Circle {
+  name: string = "circle";
+  r: number;
+  constructor(r: number) {
+    this.r = r;
+  }
+  area(): number {
+    return 3 * this.r * this.r;
+  }
+  scaled(by: number): number {
+    return this.area() * by * 2;
+  }
+}
+function total(shapes: Shape[]): number {
+  let sum = 0;
+  for (const shape of shapes) sum += shape.area() + shape.scaled(2);
+  return sum;
+}
+export function trace(): string {
+  const literal: Shape = {
+    name: "literal",
+    area: (): number => 7,
+    scaled: (by: number): number => by * 10,
+  };
+  const shapes: Shape[] = [new Square(2), new Circle(1), literal];
+  const names = shapes.map((shape: Shape): string => shape.name).join(",");
+  return names + "|" + String(total(shapes)) + "|" + String(shapes[0]?.area() ?? -1);
+}
+`;
+
 async function expectedTrace(text: string): Promise<string> {
   const directory = mkdtempSync(join(tmpdir(), "tint-typed-classes-"));
   try {
@@ -812,4 +866,18 @@ test("class values escaping to general code build and run on the general path", 
     process.env.TINT_GENERAL_FALLBACK = "0";
   }
   assert.deepEqual(partition, ["fixture"]);
+});
+
+test("class instances implement interfaces with methods on the typed path", async () => {
+  const expected = await expectedTrace(interfaceMethods);
+  assert.equal(expected, "square,circle,literal|54|4");
+  verifyHostedFixture(
+    withComparison(interfaceMethods, expected),
+    "typed-classes-interface-methods",
+    [],
+    [],
+    [],
+    [],
+    { requireTyped: true, managedBytes: 67108864, allocationCapacity: 1048576 },
+  );
 });

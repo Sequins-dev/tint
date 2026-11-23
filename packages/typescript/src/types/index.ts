@@ -87,6 +87,11 @@ export type Type =
       readonly receiver?: number;
       readonly result: number;
       readonly instancePredicate?: number;
+      /** Declared with method syntax (`m(): T`) in an interface or object
+       * type: a member call passes its object as the receiver, so a function
+       * requiring a receiver relates to it, and method properties relate
+       * covariantly (TypeScript's method bivariance). */
+      readonly method?: boolean;
     };
 export type ErrorCode =
   | "INVALID_TYPE"
@@ -341,6 +346,12 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
   }
   function assignable(actual: number, expected: number): boolean {
     return valid(actual) && valid(expected) && relates(actual, expected);
+  }
+  /** A property declared with method syntax (see the function type's
+   * `method`): it relates covariantly even when writable. */
+  function methodProperty(type: number): boolean {
+    const declared = types[canonicalIds[type] ?? type];
+    return declared?.kind === "function" && declared.method === true;
   }
   // Private callers use validated IDs from the immutable graph or validate their
   // public arguments first. Recursive edges cannot introduce an invalid ID.
@@ -876,7 +887,11 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
           if (q !== undefined)
             dependency(
               beginClause(i),
-              pair(q.type, p.type, exact || (!indexed && !p.readonly)),
+              pair(
+                q.type,
+                p.type,
+                exact || (!indexed && !p.readonly && !methodProperty(p.type)),
+              ),
             );
         }
       } else if (source.kind === "function" && target.kind === "object") {
@@ -920,7 +935,9 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         }
         const sourceReceiver = source.receiver,
           targetReceiver = target.receiver;
-        if (sourceReceiver !== undefined) {
+        if (sourceReceiver !== undefined && target.method === true) {
+          // A member call supplies the object as the receiver.
+        } else if (sourceReceiver !== undefined) {
           if (targetReceiver === undefined) {
             nodeValues[i] = 0;
             continue;
@@ -1700,6 +1717,7 @@ function copyType(
         ...(t.instancePredicate === undefined
           ? {}
           : { instancePredicate: t.instancePredicate }),
+        ...(t.method === true ? { method: true } : {}),
       };
       break;
     }

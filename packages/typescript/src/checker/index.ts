@@ -102,6 +102,9 @@ export interface ExpressionInfo {
   readonly never?: boolean;
   readonly functionTarget?: number | undefined;
   readonly indirect?: boolean | undefined;
+  /** An indirect call through a method-syntax signature (`r.m()` for
+   * `m(): T`): the object is passed as the receiver. */
+  readonly methodReceiver?: boolean | undefined;
   readonly voidValueCall?: boolean | undefined;
   readonly voidCallResults?: readonly number[] | undefined;
   readonly discardCallResult?: boolean | undefined;

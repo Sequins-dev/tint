@@ -10486,12 +10486,26 @@ export function lowerFunction(
           info(node).voidCallResults === undefined
             ? methodCallee(calleeNode)
             : undefined;
+        // A call through a method-syntax signature passes its object as the
+        // receiver (evaluated once, before the callee read).
+        let memberReceiver: number | undefined;
+        if (
+          method === undefined &&
+          !explicitReceiver &&
+          info(node).methodReceiver === true &&
+          receiverTarget.kind === "member"
+        ) {
+          memberReceiver = value(receiverTarget.object);
+          expressionOverrides.set(receiverTarget.object, memberReceiver);
+        }
         const calleeSlot =
           method !== undefined
             ? method.transfer
             : info(node).indirect
               ? value(calleeNode)
               : undefined;
+        if (memberReceiver !== undefined && receiverTarget.kind === "member")
+          expressionOverrides.delete(receiverTarget.object);
         const receiverArgument = explicitReceiver
           ? node.arguments[0]
           : undefined;
@@ -10499,7 +10513,7 @@ export function lowerFunction(
           ? receiverArgument === undefined
             ? undefined
             : value(receiverArgument)
-          : callReceivers.get(receiverTarget);
+          : (callReceivers.get(receiverTarget) ?? memberReceiver);
         const args = explicitReceiver
           ? node.arguments.slice(1)
           : node.arguments;

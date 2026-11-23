@@ -2059,7 +2059,8 @@ function lowerEntries(
                 : scalar(checkedType);
         let callee: number | undefined;
         let functionTarget: number | undefined;
-        let indirect = false;
+        let indirect = false,
+          methodReceiver = false;
         const referenceBinding = referenceBindings.get(node);
         let constant = constants.get(referenceBinding ?? -1);
         let local = localByBinding.get(referenceBinding ?? -1)?.id,
@@ -3374,6 +3375,8 @@ function lowerEntries(
                     node.scriptCall,
                   );
                   indirect = true;
+                  methodReceiver =
+                    signature.method === true && target.kind === "member";
                   expr(node.callee);
                 } else {
                   if (source !== undefined && ownedFunctions.has(source))
@@ -3501,6 +3504,7 @@ function lowerEntries(
             checked.types[checkedType]?.kind === "never",
           functionTarget,
           indirect,
+          methodReceiver,
           voidValueCall: checked.voidValueCalls?.has(node),
           voidCallResults:
             indirect &&
