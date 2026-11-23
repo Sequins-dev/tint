@@ -218,6 +218,13 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
   let timeout: EventLoopHandle | undefined;
   let deadline: number = Infinity;
   function checkpointAtomicWaits(): number {
+    // The common checkpoint: no wait pending and nothing to tear down.
+    if (
+      realm.agent.pendingAtomicWaits.length === 0 &&
+      reference === undefined &&
+      timeout === undefined
+    )
+      return 0;
     const completed = processAtomicWaitEvents(realm.agent, true);
     const pending = realm.agent.pendingAtomicWaits;
     if (pending.length === 0) {

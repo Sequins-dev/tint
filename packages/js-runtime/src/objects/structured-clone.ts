@@ -203,6 +203,53 @@ export function serializeWorkerValue(
   start: number,
   attachments?: WorkerCloneAttachments,
 ): number {
+  const end = serializeWorkerPrimitive(value, sink, start);
+  return end >= 0
+    ? end
+    : serializeWorkerGraph(value, realm, sink, start, attachments);
+}
+/** A lone primitive's encoding, the same bytes the graph encoder writes,
+ * without the reference tables an object graph needs; -1 when the value is
+ * not one or the sink lacks room. */
+function serializeWorkerPrimitive(
+  value: unknown,
+  sink: WorkerCloneSink,
+  start: number,
+): number {
+  const bytes = sink.bytes;
+  // A tag, padding to eight bytes and a binary64, or a five-byte varint.
+  if (start < 0 || start + 16 > bytes.length) return -1;
+  if (value === undefined) bytes[start] = tagUndefined;
+  else if (value === null) bytes[start] = tagNull;
+  else if (typeof value === "boolean")
+    bytes[start] = value ? tagTrue : tagFalse;
+  else if (typeof value !== "number") return -1;
+  else if ((value | 0) === value && (value !== 0 || 1 / value > 0)) {
+    bytes[start] = tagInt32;
+    let zigzag = value >= 0 ? value * 2 : -value * 2 - 1,
+      position = start + 1;
+    while (zigzag >= 128) {
+      bytes[position++] = (zigzag % 128) + 128;
+      zigzag = Math.floor(zigzag / 128);
+    }
+    bytes[position++] = zigzag;
+    return position;
+  } else {
+    bytes[start] = tagDouble;
+    let position = start + 1;
+    while (position % 8 !== 0) bytes[position++] = 0;
+    sink.writeFloat64(position, value);
+    return position + 8;
+  }
+  return start + 1;
+}
+function serializeWorkerGraph(
+  value: unknown,
+  realm: ErrorRealm,
+  sink: WorkerCloneSink,
+  start: number,
+  attachments?: WorkerCloneAttachments,
+): number {
   const objects = new Map<number, number>();
   const keyIndices = new Map<string, number>();
   const hooks = realm.objectHooks;
@@ -529,6 +576,47 @@ export function serializeWorkerValue(
 }
 
 export function deserializeWorkerValue(
+  source: WorkerCloneSource,
+  start: number,
+  end: number,
+  realm: ErrorRealm,
+  attachments?: WorkerCloneAttachments,
+): unknown {
+  // A lone primitive decodes without the reference tables; anything else,
+  // including a malformed payload, takes the graph decoder.
+  const bytes = source.bytes;
+  if (start >= 0 && end <= bytes.length && start < end) {
+    const kind = bytes[start];
+    if (end === start + 1) {
+      if (kind === tagUndefined) return undefined;
+      if (kind === tagNull) return null;
+      if (kind === tagTrue) return true;
+      if (kind === tagFalse) return false;
+    } else if (kind === tagInt32 && end - start <= 6) {
+      let zigzag = 0,
+        scale = 1,
+        position = start + 1;
+      for (; position < end; position++) {
+        const byte = bytes[position] ?? 0;
+        zigzag += (byte % 128) * scale;
+        scale *= 128;
+        if (byte < 128) break;
+      }
+      if (position === end - 1 && zigzag <= 4294967295)
+        return zigzag % 2 === 0 ? zigzag / 2 : -(zigzag + 1) / 2;
+    } else if (kind === tagDouble) {
+      const value = Math.ceil((start + 1) / 8) * 8;
+      if (end === value + 8) {
+        let padded = true;
+        for (let at = start + 1; at < value; at++)
+          if (bytes[at] !== 0) padded = false;
+        if (padded) return source.readFloat64(value);
+      }
+    }
+  }
+  return deserializeWorkerGraph(source, start, end, realm, attachments);
+}
+function deserializeWorkerGraph(
   source: WorkerCloneSource,
   start: number,
   end: number,

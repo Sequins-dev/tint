@@ -225,6 +225,9 @@ const PACKET_HEADER = 32;
 export const nativeAgentPacketHeader = PACKET_HEADER;
 // Packets start after the segment's reference count, at a cache line.
 const SEGMENT_HEADER = 64;
+// References a producer takes on a segment it opens: its own and one for
+// each packet it may carve (a segment holds a few hundred at most).
+const segmentReservation = 4096;
 // A packet starts in a segment only with at least this much payload room.
 const SEGMENT_MINIMUM = 4096;
 function packetBytes(payload: number): number {
@@ -324,14 +327,20 @@ export function createNativeAgentPacketProducer(
   registry: NativeSharedBlockRegistry,
 ): NativeAgentPacketProducer {
   const scratch = new Uint32Array(2);
+  // The open segment and its next packet's offset; `carved` packets have
+  // used references from the segment's reservation.
   let segment = 0,
     offset = 0,
-    open = 0;
+    open = 0,
+    carved = 0;
   function close(): void {
     if (segment === 0) return;
     const retired = segment;
     segment = 0;
-    if (adjustSegment(host, retired, -1, scratch) === 0)
+    // Hand back the producer's own reference and every uncarved one.
+    if (
+      adjustSegment(host, retired, carved - segmentReservation, scratch) === 0
+    )
       retireBlock(host, parking, registry, retired, scratch);
   }
   return {
@@ -343,22 +352,29 @@ export function createNativeAgentPacketProducer(
       )
         return allocateNativeAgentPacket(host, parking, registry, payload);
       const room = Math.max(payload, SEGMENT_MINIMUM) + PACKET_HEADER;
-      if (segment === 0 || MAPPING_QUANTUM - offset < room) {
+      if (
+        segment === 0 ||
+        MAPPING_QUANTUM - offset < room ||
+        carved + 1 === segmentReservation
+      ) {
         close();
         const block = takeBlock(host, parking, registry, scratch);
         const fresh = block !== 0 ? block : host.mapMemory(MAPPING_QUANTUM);
         if (!integer(fresh) || fresh <= 0 || fresh % 8 !== 0) return undefined;
-        // The producer's own reference keeps a drained segment alive.
+        // The producer reserves a reference for itself and one for every
+        // packet it may carve, so carving needs no shared update; receivers
+        // release theirs as they consume packets.
         writeNumber(
           host,
           { base: fresh, byteLength: SEGMENT_HEADER, engineId: 1 },
           0,
-          1,
+          segmentReservation,
         );
         segment = fresh;
         offset = SEGMENT_HEADER;
+        carved = 0;
       }
-      adjustSegment(host, segment, 1, scratch);
+      carved++;
       const packet = {
         base: segment + offset,
         byteLength: MAPPING_QUANTUM - offset,

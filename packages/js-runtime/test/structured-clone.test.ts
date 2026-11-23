@@ -351,3 +351,90 @@ test("repeated property keys are written once and shared by the copies", () => {
     assert.equal(o.getOwnProperty(record, "description")!.value, "r" + index);
   }
 });
+
+test("a lone primitive takes the same bytes with or without the graph encoder", () => {
+  const { realm } = isolate();
+  // A sink too small for the primitive path makes the graph encoder run; a
+  // roomy one takes the fast path. Starting at offset 3 exercises padding.
+  function bytesFrom(value: unknown, room: number): Uint8Array {
+    const sink: objects.WorkerCloneSink = {
+      bytes: new Uint8Array(room),
+      grow(used, needed) {
+        const bytes = new Uint8Array(used + needed + 32);
+        bytes.set(sink.bytes.subarray(0, used));
+        sink.bytes = bytes;
+      },
+      writeFloat64(offset, value) {
+        assert.equal(offset % 8, 0, "aligned binary64");
+        new DataView(sink.bytes.buffer).setFloat64(offset, value, true);
+      },
+      writeString: () => assert.fail("no strings"),
+    };
+    const end = codec.serializeWorkerValue(value, realm, sink, 3);
+    return sink.bytes.slice(0, end);
+  }
+  const values = [
+    undefined,
+    null,
+    true,
+    false,
+    0,
+    -0,
+    1,
+    -1,
+    63,
+    -64,
+    2147483647,
+    -2147483648,
+    2147483648,
+    -2147483649,
+    0.5,
+    NaN,
+    Infinity,
+    -Infinity,
+    Number.MAX_VALUE,
+    Number.MIN_VALUE,
+  ];
+  for (const value of values) {
+    const slow = bytesFrom(value, 4);
+    const fast = bytesFrom(value, 64);
+    assert.deepEqual(fast, slow, String(value));
+    const source: objects.WorkerCloneSource = {
+      bytes: fast,
+      readFloat64: (offset) =>
+        new DataView(fast.buffer).getFloat64(offset, true),
+      readString: () => assert.fail("no strings"),
+    };
+    assert.ok(
+      Object.is(
+        codec.deserializeWorkerValue(source, 3, fast.length, realm),
+        value,
+      ),
+      String(value),
+    );
+  }
+  // Truncated or overlong primitive payloads still fail as the graph
+  // decoder reports them.
+  for (const bytes of [
+    [0, 0, 0, 73, 200],
+    [0, 0, 0, 73, 2, 0],
+    [0, 0, 0, 73, 255, 255, 255, 255, 127],
+    [0, 0, 0, 78, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 95, 95],
+  ]) {
+    const packet = Uint8Array.from(bytes);
+    assert.throws(() =>
+      codec.deserializeWorkerValue(
+        {
+          bytes: packet,
+          readFloat64: (offset) =>
+            new DataView(packet.buffer).getFloat64(offset, true),
+          readString: () => assert.fail("no strings"),
+        },
+        3,
+        packet.length,
+        realm,
+      ),
+    );
+  }
+});
