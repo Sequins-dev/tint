@@ -881,6 +881,20 @@ export function resolveInterfaceTypes(
             "a typed class member must override a base member of the same kind: " +
               name,
           );
+        // A redeclared field keeps the base's storage, so it keeps its type.
+        if (member.kind === "field")
+          for (const field of fields)
+            if (
+              field !== undefined &&
+              field.name === name &&
+              canonical(field.type) !== canonical(type)
+            )
+              unsupportedClass(
+                member,
+                "class-heritage",
+                "a typed class may redeclare a base field only with its type: " +
+                  name,
+              );
         inherited.delete(name);
         for (let index = 0; index < fields.length; index++)
           if (fields[index]?.name === name) fields[index] = property;

@@ -3,6 +3,7 @@ import {
   planClassRecords,
   type ClassAccessorStorage,
   type ClassRecordStorage,
+  type PlannedClassRecords,
 } from "./class-records.ts";
 import { syntaxHash } from "@tint/typescript/syntax";
 import {
@@ -1088,6 +1089,31 @@ export function createRecordContracts(
       | { field: number; record: number; inherited: readonly number[] }
       | undefined
     )[] = [];
+  /** A method slot of a prototype record, falling through a derived
+   * prototype's hidden link to the base prototype's slot while absent. */
+  function prototypeAccess(
+    record: number,
+    field: number,
+    type: ScalarType,
+  ): RecordAccess {
+    const link = prototypes[record],
+      through = link?.inherited[field];
+    const choice: RecordAccessChoice = { record, field, type: "reference" };
+    if (link === undefined || through === undefined || through < 0)
+      return { type, choices: [choice] };
+    return {
+      type,
+      choices: [
+        {
+          ...choice,
+          prototype: {
+            field: link.field,
+            access: prototypeAccess(link.record, through, type),
+          },
+        },
+      ],
+    };
+  }
   // Class instance fields ("record:field") that code may read before their
   // first assignment: only speculative reads and numeric updates are exact.
   const unprovenFields = new Set<string>();
@@ -1592,8 +1618,24 @@ export function createRecordContracts(
     }
     return properties;
   }
+  // Planned classes by instance type: a base precedes its derived classes
+  // in checked.classes, so its plan is available when they are planned.
+  const plannedClasses = new Map<
+    number,
+    {
+      planned: PlannedClassRecords;
+      instance: number;
+      prototype: number;
+      base: number | undefined;
+    }
+  >();
   for (const contract of checked.classes) {
     if (contract === undefined) throw "class storage contract invariant";
+    const baseType = contract.base,
+      baseClass =
+        baseType === undefined ? undefined : plannedClasses.get(baseType);
+    if (baseType !== undefined && baseClass === undefined)
+      fail("base class storage must be planned before derived classes");
     const planned = planClassRecords(
         contract,
         checked.types,
@@ -1601,6 +1643,7 @@ export function createRecordContracts(
         fieldEncoding,
         fail,
         (element) => checked.uninitializedFields?.get(element) === true,
+        baseClass?.planned,
       ),
       prototype = records.length;
     records.push(planned.prototype);
@@ -1617,6 +1660,20 @@ export function createRecordContracts(
       record: prototype,
       inherited: planned.inherited,
     };
+    // A derived prototype falls through its hidden link to the base's.
+    const link = planned.prototypeLink;
+    if (baseClass !== undefined && link !== undefined)
+      prototypes[prototype] = {
+        field: link,
+        record: baseClass.prototype,
+        inherited: planned.prototypeInherited,
+      };
+    plannedClasses.set(contract.instance, {
+      planned,
+      instance,
+      prototype,
+      base: baseType,
+    });
     for (const field of planned.unproven)
       unprovenFields.add(String(instance) + ":" + String(field));
     const staticAccessors: ClassAccessorStorage[] = [];
@@ -1646,6 +1703,14 @@ export function createRecordContracts(
         classShapes[type] = shapes;
       }
       shapes.push(type === contract.instance ? instance : prototype);
+    }
+    // A base-typed value may hold any instance of its family.
+    let ancestor = baseType;
+    while (ancestor !== undefined) {
+      const shapes = classShapes[ancestor];
+      if (shapes === undefined) throw "base class shape invariant";
+      shapes.push(instance);
+      ancestor = plannedClasses.get(ancestor)?.base;
     }
     const constructorState = records.length;
     constructionFields[constructorState] = planned.constructionField;
@@ -1712,6 +1777,7 @@ export function createRecordContracts(
       instance,
       prototype,
       prototypeField: planned.prototypeField,
+      prototypeLink: planned.prototypeLink,
       definitionEnvironment,
       constructionEnvironment,
       staticsEnvironment,
@@ -2140,22 +2206,14 @@ export function createRecordContracts(
             inherited < 0
           )
             choices.push(choice);
-          else {
-            const fallback: RecordAccess = {
-              type,
-              choices: [
-                {
-                  record: prototype.record,
-                  field: inherited,
-                  type: "reference",
-                },
-              ],
-            };
+          else
             choices.push({
               ...choice,
-              prototype: { field: prototype.field, access: fallback },
+              prototype: {
+                field: prototype.field,
+                access: prototypeAccess(prototype.record, inherited, type),
+              },
             });
-          }
         }
       }
       if (choices.length === 0)

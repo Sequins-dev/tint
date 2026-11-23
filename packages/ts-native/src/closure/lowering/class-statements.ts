@@ -294,6 +294,7 @@ export function buildClassEntries(
           record: storage.prototype,
           constructorField: storage.prototypeConstructorField,
           methods: copies(members.methods),
+          link: storage.prototypeLink,
         },
         state: {
           record: storage.constructorState,

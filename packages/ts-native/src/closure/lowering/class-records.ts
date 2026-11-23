@@ -6,13 +6,19 @@ import type { ClassElement } from "@tint/typescript/syntax";
 import type { Type } from "@tint/typescript/types";
 import type { RecordLayout, ScalarType } from "@tint/ir/scalar";
 import type { LayoutPlanner } from "@tint/foundation/layout";
-import { planRecordLayout, type RecordFieldStorage } from "./record-layout.ts";
+import {
+  planExtendedRecordLayout,
+  planRecordLayout,
+  type RecordFieldStorage,
+} from "./record-layout.ts";
 
 export interface ClassRecordStorage {
   readonly contract: ClassContract;
   readonly instance: number;
   readonly prototype: number;
   readonly prototypeField: number;
+  /** A derived prototype's hidden link to the base prototype (C2). */
+  readonly prototypeLink: number | undefined;
   readonly constructorState: number;
   readonly constructionField: number;
   /** The prototype's `constructor` field and the constructor state's `prototype` field. */
@@ -96,11 +102,21 @@ export interface PlannedClassRecords {
    * state) fields, no instance (or constructor state) field. */
   readonly accessors: readonly ClassAccessorStorage[];
   readonly prototypeField: number;
+  /** Derived classes: the prototype's hidden link to the base prototype,
+   * and per prototype field the base prototype field it falls through to
+   * (-1: none). */
+  readonly prototypeLink: number | undefined;
+  readonly prototypeInherited: readonly number[];
+  /** The number of properties of the class's instance type. */
+  readonly contractProperties: number;
   readonly constructorState: RecordLayout;
   readonly constructorNames: readonly string[];
   readonly constructionField: number;
 }
 
+/** The positional name of a root base's hidden prototype pointer in a
+ * derived class's instance names; source names cannot spell it. */
+const hiddenPrototypeName = "@@prototype";
 export function planClassRecords(
   contract: ClassContract,
   types: readonly Type[],
@@ -109,7 +125,10 @@ export function planClassRecords(
   fail: (message: string) => never,
   /** Instance fields code may read before their first assignment. */
   uninitialized: (element: ClassElement) => boolean,
+  /** The base class's planned records (C2), planned first. */
+  baseRecords: PlannedClassRecords | undefined,
 ): PlannedClassRecords {
+  const base = baseRecords;
   const instance = types[contract.instance],
     prototype = types[contract.prototype],
     constructor = types[contract.constructor];
@@ -169,8 +188,64 @@ export function planClassRecords(
       initialized: property.name === "constructor",
     });
   }
-  for (const property of instance.properties) {
+  // A derived prototype holds only its own methods. Inherited method names
+  // get absent shadow slots (so the prototype contract can fall through to
+  // the base prototype at the same names), then the hidden base link.
+  const prototypeInherited: number[] = [];
+  for (const name of prototypeNames) prototypeInherited.push(-1);
+  let prototypeLink: number | undefined;
+  if (base !== undefined) {
+    for (const name of base.prototypeNames) {
+      if (name === undefined) throw "base prototype name invariant";
+      if (name === "constructor" || prototypeNames.includes(name)) continue;
+      prototypeNames.push(name);
+      prototypeInherited.push(base.prototypeNames.indexOf(name));
+      prototypeFields.push({
+        type: "optional-reference",
+        mutable: true,
+        optional: true,
+      });
+    }
+    for (let field = 0; field < prototypeNames.length; field++) {
+      const name = prototypeNames[field];
+      if (name === undefined) throw "prototype name invariant";
+      if (name !== "constructor" && prototypeInherited[field] === -1) {
+        // An own override falls through to the base when deleted.
+        prototypeInherited[field] = base.prototypeNames.indexOf(name);
+      }
+    }
+    prototypeLink = prototypeFields.length;
+    prototypeFields.push({
+      type: "reference",
+      mutable: false,
+      optional: false,
+    });
+  }
+  // A derived instance starts with its base's layout: the base's names,
+  // storage and hidden prototype pointer (named so names stay positional).
+  const baseCount = base === undefined ? 0 : base.instanceNames.length;
+  if (base !== undefined) {
+    for (let field = 0; field < base.instanceNames.length; field++) {
+      const name = base.instanceNames[field],
+        through = base.inherited[field];
+      if (name === undefined || through === undefined)
+        throw "base instance name invariant";
+      instanceNames.push(name);
+      inherited.push(through < 0 ? -1 : prototypeNames.indexOf(name));
+    }
+    // A root base's hidden prototype pointer follows its named fields.
+    while (instanceNames.length < base.instance.fields.length) {
+      instanceNames.push(hiddenPrototypeName);
+      inherited.push(-1);
+    }
+  }
+  // Own storage follows the base layout's fields.
+  const baseFields = base === undefined ? 0 : base.instance.fields.length;
+  for (let position = 0; position < instance.properties.length; position++) {
+    const property = instance.properties[position];
     if (property === undefined) throw "instance property invariant";
+    // The base's properties (overrides included) keep the base's storage.
+    if (base !== undefined && position < base.contractProperties) continue;
     if (instanceAccessors.has(property.name)) continue;
     const inheritedField =
       property.name === "constructor"
@@ -253,9 +328,12 @@ export function planClassRecords(
     optional: false,
     initialized: true,
   });
-  const prototypeField = instanceFields.length;
-  // Hidden pointer has no source property name and cannot collide with a field.
-  instanceFields.push({ type: "reference", mutable: false, optional: false });
+  // Hidden pointer has no source property name and cannot collide with a
+  // field; a derived class shares its base's.
+  const prototypeField =
+    base === undefined ? instanceFields.length : base.prototypeField;
+  if (base === undefined)
+    instanceFields.push({ type: "reference", mutable: false, optional: false });
   // Member closures (docs/design-typed-classes.md, C1): what this phase
   // does not lower fails explicitly.
   const accessors: ClassAccessorStorage[] = [];
@@ -284,7 +362,9 @@ export function planClassRecords(
     if (key.kind === "identifier") return key.name;
     return fail("unsupported class member key");
   }
-  function holdsUndefined(storage: RecordFieldStorage | undefined): boolean {
+  function holdsUndefined(
+    storage: { readonly type: ScalarType } | undefined,
+  ): boolean {
     return (
       storage !== undefined &&
       [
@@ -399,11 +479,17 @@ export function planClassRecords(
       element,
       field,
       initializer: fieldInitializer,
-      undefinedDefault: holdsUndefined(instanceFields[field]),
+      undefinedDefault: holdsUndefined(
+        field < baseFields
+          ? base?.instance.fields[field]
+          : instanceFields[field - baseFields],
+      ),
     });
   }
   const unprovenFields: number[] = [];
-  for (let field = 0; field < instanceNames.length; field++) {
+  if (base !== undefined)
+    for (const field of base.unproven) unprovenFields.push(field);
+  for (let field = baseCount; field < instanceNames.length; field++) {
     const name = instanceNames[field];
     if (name === undefined) throw "instance name invariant";
     if (inherited[field] === -1 && unproven.has(name))
@@ -429,8 +515,19 @@ export function planClassRecords(
           ? undefined
           : closureEnvironment(staticsFields),
     },
-    instance: planRecordLayout(instanceFields, planner, fail),
+    instance:
+      base === undefined
+        ? planRecordLayout(instanceFields, planner, fail)
+        : planExtendedRecordLayout(
+            base.instance,
+            instanceFields,
+            planner,
+            fail,
+          ),
     prototype: planRecordLayout(prototypeFields, planner, fail),
+    prototypeLink,
+    prototypeInherited,
+    contractProperties: instance.properties.length,
     constructorState: planRecordLayout(constructorFields, planner, fail),
     constructorNames,
     constructionField,
