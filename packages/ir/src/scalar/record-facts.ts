@@ -447,6 +447,9 @@ export function dataflowRecordGuards(
   stableLayouts: boolean = false,
   /** Dense live-in table limit in words (tests force the list form). */
   denseRowWords?: number,
+  /** Receives each reached `record-has` whose object the same facts prove
+   * to be its layout (so never null): its guard is redundant. */
+  provenPresence?: Set<Instruction>,
 ): Uint8Array | undefined {
   if (!Number.isSafeInteger(maxWork) || maxWork < 0) return undefined;
   const blockCount = fn.blocks.length,
@@ -508,6 +511,8 @@ export function dataflowRecordGuards(
     // Tracked slots live into the block being met, by stamp.
     liveStamps = new Uint32Array(tracked + 1);
   const pool: number[] = [];
+  // Set for the final pass, which collects record-has proofs.
+  let recordPresence = false;
   let generation = 0,
     outgoingGeneration = 0,
     activeCount = 0,
@@ -668,7 +673,18 @@ export function dataflowRecordGuards(
           set(index, layoutOf(op.value));
         }
       } else if (op.kind === "record-new") define(op.id, op.record + 1, 0, 0);
-      else if (op.kind === "reference-value" || op.kind === "reference-wrap") {
+      else if (op.kind === "record-has") {
+        if (
+          recordPresence &&
+          provenPresence !== undefined &&
+          layoutOf(op.object) === op.record + 1
+        )
+          provenPresence.add(op);
+        define(op.id, 0, 0, 0);
+      } else if (
+        op.kind === "reference-value" ||
+        op.kind === "reference-wrap"
+      ) {
         if (stamps[op.value] === generation)
           define(
             op.id,
@@ -741,13 +757,16 @@ export function dataflowRecordGuards(
     const handler = block.exception;
     if (handler !== undefined) meet(handler.target, true);
   }
+  recordPresence = provenPresence !== undefined;
   for (const block of fn.blocks) {
     if (block === undefined) throw "record dataflow block invariant";
     if (reached[block.id] === 0) continue;
     const term = block.terminator;
-    if (term.kind !== "record" && term.kind !== "record-cell") continue;
+    const checked = term.kind === "record" || term.kind === "record-cell";
+    if (!checked && !recordPresence) continue;
     simulate(block);
-    if (layoutOf(term.object) === term.record + 1) proven[block.id] = 1;
+    if (checked && layoutOf(term.object) === term.record + 1)
+      proven[block.id] = 1;
   }
   return work > maxWork ? undefined : proven;
 }

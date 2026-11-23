@@ -3439,6 +3439,8 @@ function emitModuleForms(
         recordGuardsKnown = false,
         cachedChainGuards: Uint8Array | undefined,
         cachedJoinGuards: Uint8Array | undefined;
+      // record-has instructions whose object the join dataflow proves.
+      const provenPresence = new Set<IRInstruction>();
       // Numbers whose uses all want integers take GP homes, but one computed
       // as a double moves between banks at its definition and at each use.
       // The first attempt records those; one re-emission gives them FP homes.
@@ -8366,11 +8368,20 @@ function emitModuleForms(
             stableGuards,
           );
           // Join-crossing proofs; emission-only, never fed back into the IR.
+          provenPresence.clear();
           cachedJoinGuards = limited<Uint8Array>(
             "join-record-guards",
             fn,
-            dataflowRecordGuards(fn, work(2000000), stableGuards),
+            dataflowRecordGuards(
+              fn,
+              work(2000000),
+              stableGuards,
+              undefined,
+              provenPresence,
+            ),
           );
+          // An exhausted analysis proves nothing.
+          if (cachedJoinGuards === undefined) provenPresence.clear();
           recordGuardsKnown = true;
         }
         const chainGuards = cachedChainGuards,
@@ -10733,7 +10744,8 @@ function emitModuleForms(
                 // and never null: then only the presence byte remains.
                 const presence = field.presenceOffset;
                 if (
-                  provenListHeader(op.object, op.record) === 2 &&
+                  (provenListHeader(op.object, op.record) === 2 ||
+                    provenPresence.has(op)) &&
                   (presence === undefined || presence < 4096)
                 ) {
                   if (presence === undefined) imm(12, 1);
