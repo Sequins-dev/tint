@@ -67,7 +67,11 @@ export type HostOperation =
   /** Return a page-aligned range of a private anonymous mapping to the OS
    * while keeping it mapped read/write: (address, byteLength) -> 0, or
    * -errno. The range reads as zero afterwards. The collector releases an
-   * evacuated semispace with it; the caller proves nothing live remains. */
+   * evacuated semispace with it; the caller proves nothing live remains.
+   * Defensively, both backends release only a range inside the context's
+   * managed mapping or inside the releasable window its identity page
+   * records (nativeIdentityReleasable*Offset: the shared string arena);
+   * any other range, or a misaligned one, returns -1 and maps nothing. */
   | "memory-release"
   | "memory-read-word"
   | "memory-write-word"

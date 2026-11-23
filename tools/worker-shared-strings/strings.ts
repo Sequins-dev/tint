@@ -68,6 +68,15 @@ export function createdBodies(): number {
   const stats = isolateSharedStringStats(memory);
   return stats === undefined ? 0 : stats.created;
 }
+/** Free granules still resident, and page releases the host refused. */
+export function residentGranules(): number {
+  const stats = isolateSharedStringStats(memory);
+  return stats === undefined ? 0 : stats.residentGranules;
+}
+export function refusedReleases(): number {
+  const stats = isolateSharedStringStats(memory);
+  return stats === undefined ? 0 : stats.refusedReleases;
+}
 export function fallbacks(): number {
   const stats = isolateSharedStringStats(memory);
   return stats === undefined ? 0 : stats.fallbacks;

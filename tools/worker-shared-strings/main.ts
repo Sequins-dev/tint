@@ -12,6 +12,8 @@ import {
   intact,
   liveBodies,
   references,
+  refusedReleases,
+  residentGranules,
   referencesAt,
   text,
 } from "./strings.ts";
@@ -209,6 +211,10 @@ function finish(first: Peer): void {
     shared = "";
     collectGarbage();
     check(liveBodies() === 0, "every body freed: " + String(liveBodies()));
+    // Every freed body's pages went back to the OS: none refused, none
+    // left resident after the full collection.
+    check(refusedReleases() === 0, "refused: " + String(refusedReleases()));
+    check(residentGranules() === 0, "resident: " + String(residentGranules()));
     console.log("shared strings: ok");
   });
   first.worker.postMessage("stop");

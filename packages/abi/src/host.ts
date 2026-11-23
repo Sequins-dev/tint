@@ -6,6 +6,19 @@ import type { CTarget } from "./c/types.ts";
  * The mapping is a zeroed read-write page whose first two words record the
  * isolate's shared block registry (native-runtime shared-buffers.ts). */
 export const nativeContextDomainOffset = 88;
+/** Identity page word 2: the address of the isolate's shared string hold
+ * table, published by its collector runtime (native-runtime
+ * external-memory.ts), or 0. */
+export const nativeIdentityHoldTableOffset = 16;
+/** Identity page words 3 and 4: the base and byte length of the one region
+ * besides the managed mapping whose pages memory-release may return (the
+ * process's shared string arena), recorded once by the runtime before any
+ * release in it; 0 for none. */
+export const nativeIdentityReleasableBaseOffset = 24;
+export const nativeIdentityReleasableLengthOffset = 32;
+/** Hosted context words holding the managed mapping's base and byte length. */
+export const nativeContextManagedBaseOffset = 8;
+export const nativeContextManagedLengthOffset = 32;
 
 /** One atomic pipe write from a Tint isolate to the Node launch broker.
  * The argument is an unsigned little-endian word, followed by a reply fd. */

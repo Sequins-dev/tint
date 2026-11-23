@@ -2,6 +2,8 @@ import {
   nativeArrayDataOffset,
   nativeArrayLengthOffset,
   nativeContextDomainOffset,
+  nativeIdentityReleasableBaseOffset,
+  nativeIdentityReleasableLengthOffset,
   nativeStackMapRegistryOffset,
   nativeStackMapSaveBlockOffset,
   nativeStackMapRegistryHeaderBytes,
@@ -895,9 +897,12 @@ export function emitHostCall(request: HostCall): boolean {
         branch(emit, "le", invalid);
       }
       if (release) {
-        // MAP_FIXED is allowed only within the managed mapping.
+        // MAP_FIXED only within the managed mapping or the releasable window
+        // the identity page records (the shared string arena).
         const page = policy.pageSize;
         if (page.kind !== "fixed") return false;
+        const window = site + ":release-window",
+          inside = site + ":release-inside";
         emit({ op: "test", dst: rdi, src: imm(page.bytes - 1) });
         branch(emit, "ne", invalid);
         emit({ op: "test", dst: rsi, src: imm(page.bytes - 1) });
@@ -905,12 +910,33 @@ export function emitHostCall(request: HostCall): boolean {
         emit({ op: "mov", dst: r11, src: context });
         emit({ op: "mov", dst: rax, src: rdi });
         emit({ op: "sub", dst: rax, src: mem(11, managedBaseOffset) });
-        branch(emit, "b", invalid);
+        branch(emit, "b", window);
         emit({ op: "mov", dst: r10, src: mem(11, managedLengthOffset) });
+        emit({ op: "sub", dst: r10, src: rsi });
+        branch(emit, "b", window);
+        emit({ op: "cmp", dst: rax, src: r10 });
+        branch(emit, "be", inside);
+        emit({ op: "label", name: window });
+        emit({ op: "mov", dst: r11, src: mem(11, nativeContextDomainOffset) });
+        emit({ op: "test", dst: r11, src: r11 });
+        branch(emit, "e", invalid);
+        emit({ op: "mov", dst: rax, src: rdi });
+        emit({
+          op: "sub",
+          dst: rax,
+          src: mem(11, nativeIdentityReleasableBaseOffset),
+        });
+        branch(emit, "b", invalid);
+        emit({
+          op: "mov",
+          dst: r10,
+          src: mem(11, nativeIdentityReleasableLengthOffset),
+        });
         emit({ op: "sub", dst: r10, src: rsi });
         branch(emit, "b", invalid);
         emit({ op: "cmp", dst: rax, src: r10 });
         branch(emit, "a", invalid);
+        emit({ op: "label", name: inside });
       }
       if (mapping || release) {
         emit({ op: "mov", dst: edx, src: imm(3) });

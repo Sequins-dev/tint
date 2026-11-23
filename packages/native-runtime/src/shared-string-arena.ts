@@ -15,6 +15,7 @@ import {
   sharedStringArenaLiveGranules,
   sharedStringArenaMagic,
   sharedStringArenaMagicValue,
+  sharedStringArenaRefused,
   sharedStringArenaResident,
   sharedStringArenaShiftWord,
   sharedStringBodyGranules,
@@ -276,8 +277,11 @@ export interface SharedStringArenaStats {
    * an isolate's hold queue. */
   readonly fallbacks: number;
   readonly created: number;
-  /** Free granules a mutator freed whose pages are still resident. */
+  /** Free granules whose pages are still resident: freed by a mutator and
+   * not yet returned by a major collection. */
   readonly residentGranules: number;
+  /** Page releases the host refused (each leaves its body resident). */
+  readonly refusedReleases: number;
 }
 export function sharedStringArenaStats(
   memory: SharedStringMemory,
@@ -294,5 +298,6 @@ export function sharedStringArenaStats(
     fallbacks: word(sharedStringArenaFallbacks),
     created: word(sharedStringArenaCreated),
     residentGranules: word(sharedStringArenaResident),
+    refusedReleases: word(sharedStringArenaRefused),
   };
 }

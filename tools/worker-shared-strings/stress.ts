@@ -12,6 +12,8 @@ import {
   fallbacks,
   intact,
   liveBodies,
+  refusedReleases,
+  residentGranules,
 } from "./strings.ts";
 
 type Reply = (message: unknown) => void;
@@ -123,6 +125,11 @@ function finish(): void {
         "bodies made: " + String(createdBodies()),
       );
       check(liveBodies() === 0, "every body freed: " + String(liveBodies()));
+      check(refusedReleases() === 0, "refused: " + String(refusedReleases()));
+      check(
+        residentGranules() === 0,
+        "resident: " + String(residentGranules()),
+      );
       console.log("shared strings stress: ok");
     });
     peer.worker.postMessage("stop");

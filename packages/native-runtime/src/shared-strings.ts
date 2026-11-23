@@ -1,3 +1,7 @@
+import {
+  nativeIdentityReleasableBaseOffset,
+  nativeIdentityReleasableLengthOffset,
+} from "@tint/abi/host";
 import { currentContextDomain } from "./intrinsics/memory.ts";
 import { readMemoryString } from "./intrinsics/packet-memory.ts";
 import {
@@ -220,11 +224,40 @@ export function createNativeSharedStrings(
     );
     if (base === 0) return false;
     end = base + granules * (1 << shift);
+    // The arena is the isolate's releasable window, so its collectors may
+    // return body pages (memory-release refuses any other range outside the
+    // managed mapping). Recorded once, before the table names the arena.
+    if (!releasableWindow(base, end - base)) return false;
     writeTable(sharedStringTableBase, base % 4294967296);
     writeTable(sharedStringTableBase + 1, Math.floor(base / 4294967296));
     writeTable(sharedStringTableControl, control % 4294967296);
     writeTable(sharedStringTableControl + 1, Math.floor(control / 4294967296));
     usable = 1;
+    return true;
+  }
+  /** Records [windowBase, windowBase + byteLength) as the identity page's
+   * releasable window, unless another one is recorded (false). */
+  function releasableWindow(windowBase: number, byteLength: number): boolean {
+    const page = currentContextDomain();
+    if (page <= 0) return false;
+    const recorded = words.load(
+      page,
+      nativeIdentityReleasableLengthOffset + 8,
+      nativeIdentityReleasableBaseOffset,
+    );
+    if (recorded !== 0) return recorded === windowBase;
+    words.store(
+      page,
+      nativeIdentityReleasableLengthOffset + 8,
+      nativeIdentityReleasableLengthOffset,
+      byteLength,
+    );
+    words.store(
+      page,
+      nativeIdentityReleasableLengthOffset + 8,
+      nativeIdentityReleasableBaseOffset,
+      windowBase,
+    );
     return true;
   }
   /** Queues a hold for a body this isolate starts referencing, unless the

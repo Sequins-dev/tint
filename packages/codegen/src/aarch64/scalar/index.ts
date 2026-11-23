@@ -11,6 +11,10 @@ import {
 export type { LocalSignatureBinding } from "./signature-groups.ts";
 import {
   nativeContextDomainOffset,
+  nativeContextManagedBaseOffset,
+  nativeContextManagedLengthOffset,
+  nativeIdentityReleasableBaseOffset,
+  nativeIdentityReleasableLengthOffset,
   nativeEngineThrowOffset,
   nativeStackOverflowPayload,
   nativeWorkerStopObserved,
@@ -14522,6 +14526,12 @@ function emitModuleForms(
                   break;
                 }
                 let symbol = "";
+                // memory-release's rejected ranges: they return -1 and map
+                // nothing.
+                const releaseRejects: {
+                  index: number;
+                  condition: Condition;
+                }[] = [];
                 if (
                   operation === "memory-map" ||
                   operation === "executable-map"
@@ -14564,6 +14574,132 @@ function emitModuleForms(
                     fail("UNSUPPORTED", "target has no fixed-mapping ABI");
                   integer(0, 0, true);
                   integer(1, 1, true);
+                  // Defensively, only within the managed mapping or the
+                  // releasable window the identity page records (the shared
+                  // string arena): x11 = offset, x12 = room for the length.
+                  function reject(condition: Condition): void {
+                    releaseRejects.push({
+                      index: instructions.length,
+                      condition,
+                    });
+                    emit({ op: "b.cond", condition, displacement: 0 });
+                  }
+                  /** x11 = x0 minus the base word at `baseOffset` of x9,
+                   * setting the flags. */
+                  function offsetFrom(baseOffset: number): void {
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 10,
+                      rn: 9,
+                      offset: baseOffset,
+                    });
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: 11,
+                      rn: 0,
+                      rm: 10,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                  }
+                  rawLoad(9, contextOffset);
+                  offsetFrom(nativeContextManagedBaseOffset);
+                  const belowManaged = instructions.length;
+                  emit({ op: "b.cond", condition: "cc", displacement: 0 });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 12,
+                    rn: 9,
+                    offset: nativeContextManagedLengthOffset,
+                  });
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: 12,
+                    rn: 12,
+                    rm: 1,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  const longerThanManaged = instructions.length;
+                  emit({ op: "b.cond", condition: "cc", displacement: 0 });
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 11,
+                    rm: 12,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  const insideManaged = instructions.length;
+                  emit({ op: "b.cond", condition: "ls", displacement: 0 });
+                  const window = instructions.length;
+                  for (const at of [belowManaged, longerThanManaged])
+                    patchInstruction(at, {
+                      op: "b.cond",
+                      condition: "cc",
+                      displacement: (window - at) * 4,
+                    });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 9,
+                    rn: 9,
+                    offset: nativeContextDomainOffset,
+                  });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  reject("eq");
+                  offsetFrom(nativeIdentityReleasableBaseOffset);
+                  reject("cc");
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 12,
+                    rn: 9,
+                    offset: nativeIdentityReleasableLengthOffset,
+                  });
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: 12,
+                    rn: 12,
+                    rm: 1,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  reject("cc");
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 11,
+                    rm: 12,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  reject("hi");
+                  patchInstruction(insideManaged, {
+                    op: "b.cond",
+                    condition: "ls",
+                    displacement: (instructions.length - insideManaged) * 4,
+                  });
                   imm(2, 3);
                   imm(3, host().anonymousPrivateFlags | fixed);
                   imm(4, 0xffffffff);
@@ -14664,6 +14800,24 @@ function emitModuleForms(
                   op: "b",
                   displacement: (done - finish) * 4,
                 });
+                if (releaseRejects.length !== 0) {
+                  const skip = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  const rejected = instructions.length;
+                  imm(9, 1);
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                  emit({ op: "fneg", rd: 0, rn: 0 });
+                  for (const reject of releaseRejects)
+                    patchInstruction(reject.index, {
+                      op: "b.cond",
+                      condition: reject.condition,
+                      displacement: (rejected - reject.index) * 4,
+                    });
+                  patchInstruction(skip, {
+                    op: "b",
+                    displacement: (instructions.length - skip) * 4,
+                  });
+                }
                 floatStore(0, resultId);
                 break;
               }

@@ -3,6 +3,7 @@ import {
   type ExternalMemoryRegistry,
 } from "./tracing/external-memory.ts";
 import type { SharedStringSpace } from "./tracing/cheney.ts";
+import { nativeIdentityHoldTableOffset } from "@tint/abi/host";
 import {
   compareExchangeMemoryWord,
   configureExternalMemory,
@@ -86,10 +87,11 @@ export interface SharedStringMemory {
   ): number;
 }
 /** Returns a granule-aligned range of the reservation to the OS (it reads as
- * zero afterwards): true when it did. Only collector runtimes can, and only
- * where the host allows a fixed mapping outside the managed heap (not
- * x86-64, whose memory-release is confined to the managed mapping). Bodies
- * not returned stay resident and are counted. */
+ * zero afterwards): true when it did. Only collector runtimes can, inside the
+ * releasable window the mutator recorded in the isolate's identity page when
+ * it attached to the arena (memory-release refuses any other range outside
+ * the managed mapping). A refused release is counted and leaves the body
+ * resident; it is never the normal path. */
 export type SharedStringRelease = (
   address: number,
   byteLength: number,
@@ -116,6 +118,8 @@ export const sharedStringArenaFallbacks = 64;
 export const sharedStringArenaCreated = 72;
 export const sharedStringArenaResident = 80;
 export const sharedStringArenaHint = 88;
+/** Releases a collector runtime asked for and the host refused. */
+export const sharedStringArenaRefused = 96;
 export const sharedStringAllocatedMap = 128;
 export function sharedStringResidentMap(granules: number): number {
   return sharedStringAllocatedMap + Math.ceil(granules / 32) * 8;
@@ -247,6 +251,8 @@ export function releaseSharedStringBody(
     count,
     false,
   );
+  if (release !== undefined && !released)
+    addSharedStringCount(memory, control, sharedStringArenaRefused, 1);
   if (!released) {
     updateSharedStringRun(
       memory,
@@ -316,8 +322,10 @@ function releaseResidentSharedStrings(
     else if (!resident && start >= 0) {
       if (
         !release(base + start * (1 << shift), (granule - start) * (1 << shift))
-      )
+      ) {
+        addSharedStringCount(memory, control, sharedStringArenaRefused, 1);
         break;
+      }
       addSharedStringCount(
         memory,
         control,
@@ -345,7 +353,7 @@ function releaseResidentSharedStrings(
 // starts referencing and reads the per-granule states; the runtime takes the
 // queue at each collection. Both run on the isolate's own thread, never at
 // once.
-export const sharedStringTableIdentityOffset = 16;
+export const sharedStringTableIdentityOffset = nativeIdentityHoldTableOffset;
 export const sharedStringTableMagicValue = 0x54535448;
 export const sharedStringTableMagic = 0;
 export const sharedStringTableShift = 1;
@@ -437,15 +445,8 @@ export function createSharedStringHolds(
     exchange: (at, byteLength, offset, expected, replacement): number =>
       compareExchangeMemoryWord(at, byteLength, offset, expected, replacement),
   };
-  // Cleared when the host refuses a release: later frees leave their pages
-  // resident (counted) instead of retrying.
-  let releasable = true;
-  const release: SharedStringRelease = (at, byteLength): boolean => {
-    if (!releasable) return false;
-    if (releaseMemory(at, byteLength) === 0) return true;
-    releasable = false;
-    return false;
-  };
+  const release: SharedStringRelease = (at, byteLength): boolean =>
+    releaseMemory(at, byteLength) === 0;
   const states = sharedStringTableQueue + queueCapacity,
     space: SharedStringSpace = { base: 0, end: 0, shift, marks };
   let held = 0,
@@ -510,7 +511,7 @@ export function createSharedStringHolds(
         } else drop(granule);
       }
       held = kept;
-      if (!minor && releasable)
+      if (!minor)
         releaseResidentSharedStrings(memory, control, space.base, release);
     },
     shutdown(): void {
