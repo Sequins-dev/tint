@@ -41,6 +41,24 @@ export function cheneyIsForwarded(header: number): boolean {
   return header >= nativeHeaderForwarded;
 }
 
+/** What a collection marks of the process's shared string arena
+ * (shared-string-holds.ts): a reference in [base, end) sets
+ * `marks[(reference - base) >> shift]` to 1, a byte store parallel workers
+ * may race on harmlessly, and is never moved or scanned (bodies are flat
+ * strings). The owner sets `base` and `end` before each collection; both are
+ * 0 when the isolate holds no body. Weak cells never key an arena string, so
+ * key liveness ignores the space. */
+export interface SharedStringSpace {
+  base: number;
+  end: number;
+  shift: number;
+  readonly marks: Uint8Array;
+}
+/** A heap whose isolate never holds a shared string body. */
+export function noSharedStrings(): SharedStringSpace {
+  return { base: 0, end: 0, shift: 0, marks: new Uint8Array(0) };
+}
+
 /** One evacuation moves every reachable object of the source window and
  * returns the bytes copied. Destinations are packed from `toStart` within
  * the destination window; `starts` receives one bit per 8-byte destination
@@ -81,6 +99,12 @@ interface CheneyState {
   weakCopied: number;
   readonly managedBase: number;
   readonly managedLength: number;
+  /** The shared string space, and its bounds for this collection. */
+  readonly shared: SharedStringSpace;
+  sharedBase: number;
+  sharedEnd: number;
+  sharedShift: number;
+  readonly sharedMarks: Uint8Array;
 }
 
 // Single host operations, so the inliner folds them into their callers.
@@ -200,6 +224,12 @@ function referenceSlot(
   const value = read(slot);
   if (value >= state.fromBase && value < state.fromEnd && value !== 0)
     write(slot, evacuate(state, starts, value));
+  else if (value >= state.sharedBase && value < state.sharedEnd)
+    markShared(state, value);
+}
+/** Marks the shared string body at `address` (inside the space) live. */
+function markShared(state: CheneyState, address: number): void {
+  state.sharedMarks[(address - state.sharedBase) >>> state.sharedShift] = 1;
 }
 
 function generalSlot(
@@ -228,6 +258,8 @@ function scanFields(
       value = read(slot);
     if (value >= fromBase && value < fromEnd && value !== 0)
       write(slot, evacuate(state, starts, value));
+    else if (value >= state.sharedBase && value < state.sharedEnd)
+      markShared(state, value);
   }
   const generals = descriptor + 8 + count * 8,
     generalCount = read(generals);
@@ -266,6 +298,8 @@ function scanObject(
         value = read(slot);
       if (value >= fromBase && value < fromEnd && value !== 0)
         write(slot, evacuate(state, starts, value));
+      else if (value >= state.sharedBase && value < state.sharedEnd)
+        markShared(state, value);
     }
   } else if (marker >= 2 && marker <= 5 && flags === 2)
     // Copies fixed their owner when evacuated; this covers in-place scans.
@@ -413,6 +447,7 @@ function finishWeakSlots(state: CheneyState, start: number): void {
 export function createCheneyCollector(
   managedBase: number,
   managedLength: number,
+  shared: SharedStringSpace = noSharedStrings(),
 ): CheneyCollector {
   // Created once with the collector: a collection must not allocate.
   const state: CheneyState = {
@@ -425,6 +460,11 @@ export function createCheneyCollector(
     weakCopied: 0,
     managedBase,
     managedLength,
+    shared,
+    sharedBase: 0,
+    sharedEnd: 0,
+    sharedShift: 0,
+    sharedMarks: shared.marks,
   };
   let currentStarts: Uint32Array = new Uint32Array(0);
   const scanRemembered = (address: number): void => {
@@ -460,6 +500,9 @@ export function createCheneyCollector(
       state.free = destinationStart;
       state.startBase = startBitsBase;
       state.weakCopied = 0;
+      state.sharedBase = shared.base;
+      state.sharedEnd = shared.end;
+      state.sharedShift = shared.shift;
       currentStarts = startBits;
       const start = destinationStart;
       if (
@@ -532,12 +575,18 @@ export interface Compactor {
 }
 
 /** The region a compaction forwards into: its bounds, live bits and chunk
- * offsets. Forwarding reads nothing else, so parallel workers share it. */
+ * offsets, and the shared string space's bounds and marks (SharedStringSpace;
+ * forwarding leaves its references alone). Forwarding reads nothing else, so
+ * parallel workers share it. */
 export interface CompactRegion {
   base: number;
   end: number;
   live: Uint32Array;
   offsets: Uint32Array;
+  sharedBase: number;
+  sharedEnd: number;
+  sharedShift: number;
+  readonly sharedMarks: Uint8Array;
 }
 interface CompactState extends CompactRegion {
   starts: Uint32Array;
@@ -599,6 +648,8 @@ function markObject(state: CompactState, address: number): void {
 function markReference(state: CompactState, value: number): void {
   if (value >= state.base && value < state.end && value !== 0)
     markObject(state, value);
+  else if (value >= state.sharedBase && value < state.sharedEnd)
+    state.sharedMarks[(value - state.sharedBase) >>> state.sharedShift] = 1;
 }
 function markGeneral(state: CompactState, slot: number): void {
   const tag = read(slot);
@@ -875,6 +926,7 @@ export function createCompactor(
   managedLength: number,
   helpers?: CompactHelpers,
   parallelMinimum: number = 0,
+  shared: SharedStringSpace = noSharedStrings(),
 ): Compactor {
   // Created once with the collector: a collection must not allocate.
   const empty = new Uint32Array(0);
@@ -884,6 +936,10 @@ export function createCompactor(
     starts: empty,
     live: empty,
     offsets: empty,
+    sharedBase: 0,
+    sharedEnd: 0,
+    sharedShift: 0,
+    sharedMarks: shared.marks,
     stack: empty,
     depth: 0,
     overflowed: false,
@@ -916,6 +972,9 @@ export function createCompactor(
       const words = Math.ceil(used / 256);
       state.base = base;
       state.end = base + used;
+      state.sharedBase = shared.base;
+      state.sharedEnd = shared.end;
+      state.sharedShift = shared.shift;
       state.starts = starts;
       state.live = live;
       state.offsets = offsets;

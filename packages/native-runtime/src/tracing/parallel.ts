@@ -40,8 +40,10 @@ import {
   evacuatedKeyAlive,
   finishCompactWeak,
   finishEvacuatedWeak,
+  noSharedStrings,
   type CompactRegion,
   type CompactHelpers,
+  type SharedStringSpace,
 } from "./cheney.ts";
 import {
   walkNativeStack,
@@ -160,6 +162,12 @@ interface Worker {
   readonly startsData: number;
   readonly managedBase: number;
   readonly managedLength: number;
+  /** The shared string space's bounds for this evacuation, and its marks
+   * (SharedStringSpace in cheney.ts). */
+  sharedBase: number;
+  sharedEnd: number;
+  sharedShift: number;
+  readonly sharedMarks: Uint8Array;
   /** Mark-compact: the region's live bits' raw address, this worker's
    * mark stack (raw words) and depth, and the bytes it marked. */
   liveData: number;
@@ -423,6 +431,12 @@ function referenceSlot(w: Worker, starts: Uint32Array, slot: number): void {
   const value = read(slot);
   if (value >= w.fromBase && value < w.fromEnd && value !== 0)
     write(slot, evacuate(w, starts, value));
+  else if (value >= w.sharedBase && value < w.sharedEnd) markShared(w, value);
+}
+/** Marks the shared string body at `address` (inside the space) live: a
+ * byte store of 1, which other workers may race on harmlessly. */
+function markShared(w: Worker, address: number): void {
+  w.sharedMarks[(address - w.sharedBase) >>> w.sharedShift] = 1;
 }
 function generalSlot(w: Worker, starts: Uint32Array, slot: number): void {
   const tag = read(slot);
@@ -444,6 +458,7 @@ function scanFields(
       value = read(slot);
     if (value >= fromBase && value < fromEnd && value !== 0)
       write(slot, evacuate(w, starts, value));
+    else if (value >= w.sharedBase && value < w.sharedEnd) markShared(w, value);
   }
   const generals = descriptor + 8 + count * 8,
     generalCount = read(generals);
@@ -483,6 +498,8 @@ function scanHeaded(
         value = read(slot);
       if (value >= fromBase && value < fromEnd && value !== 0)
         write(slot, evacuate(w, starts, value));
+      else if (value >= w.sharedBase && value < w.sharedEnd)
+        markShared(w, value);
     }
   } else if (marker >= 2 && marker <= 5 && flags === 2)
     referenceSlot(w, starts, address + nativeArrayOwnerOffset);
@@ -746,6 +763,8 @@ function markObject(w: Worker, region: CompactRegion, address: number): void {
 function markReference(w: Worker, region: CompactRegion, value: number): void {
   if (value >= region.base && value < region.end && value !== 0)
     markObject(w, region, value);
+  else if (value >= region.sharedBase && value < region.sharedEnd)
+    region.sharedMarks[(value - region.sharedBase) >>> region.sharedShift] = 1;
 }
 function markGeneral(w: Worker, region: CompactRegion, slot: number): void {
   const tag = read(slot);
@@ -968,6 +987,7 @@ export function createParallelEvacuator(
   starts: Uint32Array,
   remembered: Float64Array,
   dirty: Uint8Array,
+  sharedStrings: SharedStringSpace = noSharedStrings(),
 ): ParallelEvacuator | undefined {
   if (!Number.isInteger(workers) || workers < 2 || workers > 64)
     return undefined;
@@ -1007,6 +1027,10 @@ export function createParallelEvacuator(
       startsData,
       managedBase,
       managedLength,
+      sharedBase: 0,
+      sharedEnd: 0,
+      sharedShift: 0,
+      sharedMarks: sharedStrings.marks,
       next: states,
     };
   const head = states;
@@ -1391,6 +1415,9 @@ export function createParallelEvacuator(
         state.weakPending = 0;
         state.weakDone = 0;
         state.weakPendingCount = 0;
+        state.sharedBase = sharedStrings.base;
+        state.sharedEnd = sharedStrings.end;
+        state.sharedShift = sharedStrings.shift;
       }
       shared.rootHead = rootHead;
       shared.rememberedCount = rememberedObjects ? rememberedCount : -2;

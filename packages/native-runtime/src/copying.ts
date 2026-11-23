@@ -1,9 +1,14 @@
-import { initializeExternalMemory } from "./external-memory.ts";
-import { createCheneyCollector } from "./tracing/cheney.ts";
+import {
+  createSharedStringHolds,
+  initializeExternalMemory,
+} from "./external-memory.ts";
+import { createCheneyCollector, noSharedStrings } from "./tracing/cheney.ts";
+import { nativeAllocatorShutdownRequest } from "@tint/abi/host";
 import {
   currentRootHead,
   configureLinearAllocation,
   engineRangeError,
+  memoryPageBytes,
 } from "./intrinsics/memory.ts";
 /** Transitional stop-the-world two-space runtime. It collects the whole managed
  * graph, without extent descriptors or inventory sorting. No generational barrier
@@ -65,7 +70,19 @@ export function initializeCopyingRuntime(
   );
   // Collections copy the active semispace into the other one in a single
   // Cheney pass; a semispace always holds everything the active one holds.
-  const heap = createCheneyCollector(managedBase, managedLength);
+  // Holds on the process's shared string bodies, in workspaces this runtime
+  // does not otherwise use. Every collection is a full one.
+  const holds = createSharedStringHolds(
+    sizes,
+    offsets,
+    marks,
+    memoryPageBytes(),
+  );
+  const heap = createCheneyCollector(
+    managedBase,
+    managedLength,
+    holds !== undefined ? holds.space : noSharedStrings(),
+  );
   if (configureLinearAllocation(allocation, bits) !== 0)
     throw "INVALID_LINEAR_ALLOCATION_STATE";
   // Exhaustion throws, so compiled callers unwind through their exceptional
@@ -73,6 +90,7 @@ export function initializeCopyingRuntime(
   // malformed requests remain invariant failures (undefined traps).
   function collect(top: number): void {
     collecting = true;
+    holds?.begin();
     const source = managedBase + (reverse ? capacity : 0),
       destination = managedBase + (reverse ? 0 : capacity);
     // Start bits are relative to the active space; clear the used prefix and
@@ -92,12 +110,17 @@ export function initializeCopyingRuntime(
     allocation[0] = bytes;
     reverse = !reverse;
     allocation[2] = reverse ? capacity : 0;
+    holds?.finish(false);
     collecting = false;
   }
   // Request size 0 is reserved for a forced full collection (the Test262
   // host's $262.gc); it returns +0 and allocates nothing.
   return (bytes) => {
     let top = allocation[0] ?? 0;
+    if (bytes === nativeAllocatorShutdownRequest && !collecting) {
+      holds?.shutdown();
+      return 0;
+    }
     if (bytes === 0 && !collecting) {
       collect(top);
       return 0;

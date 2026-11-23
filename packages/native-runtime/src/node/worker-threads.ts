@@ -42,6 +42,7 @@ import type {
 import type { NativeSharedMemoryHost } from "../shared-memory-host.ts";
 import type { NativeWaiterParkingHost } from "../shared-waiters.ts";
 import type { NativePacketMemory } from "../packet-memory.ts";
+import type { NativeSharedStrings } from "../shared-strings.ts";
 
 type ScriptObject = OrdinaryObject<ScriptPropertyKey, unknown>;
 
@@ -77,6 +78,8 @@ export interface NodeWorkerThreadsOptions {
   /** See NativeWorkerMessageOptions.sharedBlockAt. */
   readonly sharedBlockAt?: (address: number) => number;
   readonly packets: NativePacketMemory;
+  /** See NativeWorkerMessageOptions.strings. */
+  readonly strings?: NativeSharedStrings;
   prepare(
     filename: string,
     resourceLimits: WorkerResourceLimits,
@@ -400,6 +403,7 @@ export function createNodeWorkerThreads(
     backing,
     ports,
     packets: options.packets,
+    ...(options.strings === undefined ? {} : { strings: options.strings }),
     portForObject: (object): NativeMessagePort | undefined =>
       portObjects.get(object.internalIdentity)?.port,
     objectForPort: makePort,

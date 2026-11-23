@@ -12742,6 +12742,267 @@ function emitModuleForms(
                   floatStore(0, resultId);
                   break;
                 }
+                if (operation === "string-address") {
+                  rawValue(9, argument(0));
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (operation === "string-at") {
+                  // The caller proves a string object lives at the address;
+                  // anything but an exact, nonzero, eight-byte-aligned
+                  // integer below 2^53 traps.
+                  floatLoad(0, argument(0));
+                  emit({ op: "fcvtzs-x-d", rd: 9, rn: 0 });
+                  emit({ op: "scvtf-d-x", rd: 1, rn: 9 });
+                  emit({ op: "fcmp", rn: 0, rm: 1 });
+                  trapIf({ op: "b.cond", condition: "ne" });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  trapIf({ op: "b.cond", condition: "le" });
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 10,
+                    rn: 9,
+                    immr: 0,
+                    imms: 2,
+                  });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 10,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  trapIf({ op: "b.cond", condition: "ne" });
+                  imm(10, 0x1fffffffffffff);
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    rm: 10,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  trapIf({ op: "b.cond", condition: "hi" });
+                  saveRaw(9, resultId);
+                  break;
+                }
+                if (operation === "string-copy") {
+                  // A flat string object, copied verbatim (header, length
+                  // and units) by the extent its header gives, to
+                  // (address, byteLength, offset) of a caller-owned raw
+                  // window. Marker 1 is the only flat string today: its
+                  // extent is 16 + 2·length, rounded up to eight bytes.
+                  // Returns the extent, or -1 for invalid input, a string
+                  // that is not flat, or a window without room.
+                  const failures: { index: number; condition: Condition }[] =
+                    [];
+                  function reject(condition: Condition): void {
+                    failures.push({ index: instructions.length, condition });
+                    emit({ op: "b.cond", condition, displacement: 0 });
+                  }
+                  function compareRegisters(left: number, right: number): void {
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: left,
+                      rm: right,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                  }
+                  /** x10 = the flat extent of the string in x9 (header and
+                   * length read from the object), or a branch to -1. */
+                  function extent(): void {
+                    emit({ op: "ldr", width: 64, rt: 12, rn: 9, offset: 0 });
+                    emit({
+                      op: "ubfm",
+                      width: 64,
+                      rd: 12,
+                      rn: 12,
+                      immr: 0,
+                      imms: 47,
+                    });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 12,
+                      immediate: 1,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    reject("ne");
+                    emit({
+                      op: "ldr",
+                      width: 32,
+                      rt: 10,
+                      rn: 9,
+                      offset: nativeStringLengthOffset,
+                    });
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 10,
+                      rn: "zr",
+                      rm: 10,
+                      shift: "lsl",
+                      amount: 1,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: 10,
+                      rn: 10,
+                      immediate: nativeStringDataOffset + 7,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "ubfm",
+                      width: 64,
+                      rd: 10,
+                      rn: 10,
+                      immr: 3,
+                      imms: 63,
+                    });
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 10,
+                      rn: "zr",
+                      rm: 10,
+                      shift: "lsl",
+                      amount: 3,
+                      setFlags: false,
+                    });
+                  }
+                  // x0 address, x1 byteLength, x2 offset: exact integers
+                  // below 2^53, a nonzero address, the offset inside the
+                  // window, and the window's end below 2^53.
+                  for (let index = 0; index < 3; index++) {
+                    floatLoad(0, argument(index));
+                    emit({ op: "fcvtzs-x-d", rd: index, rn: 0 });
+                    emit({ op: "scvtf-d-x", rd: 1, rn: index });
+                    emit({ op: "fcmp", rn: 0, rm: 1 });
+                    reject("ne");
+                  }
+                  imm(9, 0x1fffffffffffff);
+                  for (const register of [0, 1, 2]) {
+                    compareRegisters(register, 9);
+                    reject("hi");
+                  }
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 0,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  reject("eq");
+                  compareRegisters(2, 1);
+                  reject("hi");
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 11,
+                    rn: 0,
+                    rm: 1,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  compareRegisters(11, 9);
+                  reject("hi");
+                  // Room after the offset, then the extent must fit it.
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: 11,
+                    rn: 1,
+                    rm: 2,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  rawValue(9, argument(3));
+                  extent();
+                  compareRegisters(10, 11);
+                  reject("hi");
+                  // memmove(address + offset, string, extent). Nothing
+                  // between the load and the copy can allocate, so the
+                  // string stays put.
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 0,
+                    rn: 0,
+                    rm: 2,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 1,
+                    rn: 9,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 2,
+                    rn: 10,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  foreign(host().symbolPrefix + "memmove");
+                  // The call clobbers x9-x10: read the extent again.
+                  rawValue(9, argument(3));
+                  extent();
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 10 });
+                  const skip = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  const invalid = instructions.length;
+                  imm(9, 1);
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                  emit({ op: "fneg", rd: 0, rn: 0 });
+                  const done = instructions.length;
+                  for (const failure of failures)
+                    patchInstruction(failure.index, {
+                      op: "b.cond",
+                      condition: failure.condition,
+                      displacement: (invalid - failure.index) * 4,
+                    });
+                  patchInstruction(skip, {
+                    op: "b",
+                    displacement: (done - skip) * 4,
+                  });
+                  floatStore(0, resultId);
+                  break;
+                }
                 if (operation === "jit-debug-descriptor") {
                   // The hosted routine returns the descriptor's address in x0.
                   startupCall("jit-descriptor");

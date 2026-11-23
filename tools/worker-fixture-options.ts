@@ -3,6 +3,7 @@ import type { NativeHostBinding } from "@tint/compiler/native";
 const memory = "packages/native-runtime/src/intrinsics/memory.ts";
 const packet = "packages/native-runtime/src/intrinsics/packet-memory.ts";
 const shared = "packages/native-runtime/src/intrinsics/shared-atomics.ts";
+const strings = "packages/native-runtime/src/intrinsics/shared-strings.ts";
 const bindings: readonly NativeHostBinding[] = [
   { module: memory, name: "mapMemory", operation: "memory-map" },
   { module: memory, name: "unmapMemory", operation: "memory-unmap" },
@@ -37,6 +38,10 @@ const bindings: readonly NativeHostBinding[] = [
     name: "writeMemoryString",
     operation: "memory-write-string",
   },
+  // Shared string bodies (shared-strings.ts).
+  { module: strings, name: "stringAddress", operation: "string-address" },
+  { module: strings, name: "stringAt", operation: "string-at" },
+  { module: strings, name: "copyString", operation: "string-copy" },
   {
     module: memory,
     name: "hostedThreadEntry",
@@ -90,10 +95,19 @@ const packetMemoryRuntime = {
     .filter((binding) => binding.module === packet)
     .map((binding) => binding.name),
 };
+// Shared string bodies' address, view and copy operations.
+const sharedStringRuntime = {
+  module: strings,
+  namespace: "native-shared-strings",
+  retainedExports: bindings
+    .filter((binding) => binding.module === strings)
+    .map((binding) => binding.name),
+};
 export const workerFixtureRuntimes = [
   sharedMemoryRuntime,
   sharedBufferRuntime,
   packetMemoryRuntime,
+  sharedStringRuntime,
 ];
 
 /** A program without Workers whose typed code creates SharedArrayBuffers:

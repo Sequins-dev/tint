@@ -741,6 +741,70 @@ export function emitHostCall(request: HostCall): boolean {
       numberResult(rax);
       return true;
     }
+    case "string-address":
+      emit({ op: "mov", dst: rax, src: argument(0) });
+      numberResult(rax);
+      return true;
+    case "string-copy": {
+      // A flat string object, copied verbatim (header, length and units) by
+      // the extent its header gives, into the window; the extent, or -1.
+      // Marker 1 is the only flat string today: 16 + 2·length bytes,
+      // rounded up to eight.
+      const failed = site + ":copy-invalid",
+        done = site + ":copy-done";
+      const limit = r11;
+      /** RDX = the flat extent of the string in R10, or a branch to -1. */
+      function extent(): void {
+        emit({ op: "mov", dst: r10, src: argument(3) });
+        emit({ op: "mov", dst: rax, src: mem(10, 0) });
+        emit({ op: "shl", dst: rax, count: 16 });
+        emit({ op: "shr", dst: rax, count: 16 });
+        emit({ op: "cmp", dst: rax, src: imm(1) });
+        branch(emit, "ne", failed);
+        emit({
+          op: "mov",
+          dst: edx,
+          src: { ...mem(10, nativeStringLengthOffset), width: 32 },
+        });
+        emit({ op: "shl", dst: rdx, count: 1 });
+        emit({ op: "add", dst: rdx, src: imm(nativeStringDataOffset + 7) });
+        emit({ op: "shr", dst: rdx, count: 3 });
+        emit({ op: "shl", dst: rdx, count: 3 });
+      }
+      emit({ op: "mov", dst: limit, src: bits(0, 0x10000) });
+      const args = [rdi, rsi, rdx];
+      for (let index = 0; index < args.length; index++) {
+        const target = args[index];
+        if (target === undefined) throw "copy-string argument invariant";
+        exactInteger(emit, argument(index), target, failed);
+        emit({ op: "cmp", dst: target, src: limit });
+        branch(emit, "ae", failed);
+      }
+      emit({ op: "test", dst: rdi, src: rdi });
+      branch(emit, "e", failed);
+      emit({ op: "sub", dst: limit, src: rdi });
+      emit({ op: "cmp", dst: rsi, src: limit });
+      branch(emit, "a", failed);
+      emit({ op: "sub", dst: rsi, src: rdx });
+      branch(emit, "b", failed);
+      emit({ op: "add", dst: rdi, src: rdx });
+      // RSI is the room after the offset; the extent must fit it.
+      emit({ op: "mov", dst: limit, src: rsi });
+      extent();
+      emit({ op: "cmp", dst: rdx, src: limit });
+      branch(emit, "a", failed);
+      emit({ op: "mov", dst: rsi, src: r10 });
+      libc("memmove");
+      // The call clobbers RDX and R10: read the extent again.
+      extent();
+      emit({ op: "mov", dst: rax, src: rdx });
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: failed });
+      emit({ op: "mov", dst: rax, src: imm(-1) });
+      emit({ op: "label", name: done });
+      numberResult(rax);
+      return true;
+    }
     case "memory-write-bytes": {
       const failed = site + ":write-invalid",
         done = site + ":write-done";

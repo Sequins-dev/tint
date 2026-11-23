@@ -89,6 +89,19 @@ export type HostOperation =
    * invalid input traps. */
   | "memory-write-string"
   | "memory-read-string"
+  /** Shared string bodies (docs/design-worker-runtime.md, "Shared string
+   * bodies"): flat string objects outside every managed heap, in the
+   * process's shared string arena, which every isolate may reference.
+   * string-address returns a string object's address. string-at returns the
+   * string object at an address the caller proves holds one; anything but an
+   * exact, nonzero, eight-byte-aligned integer below 2^53 traps. string-copy
+   * copies a flat string object verbatim (header, length and units), by the
+   * extent its header gives, to (address, byteLength, offset) of a
+   * caller-owned raw window and returns that extent in bytes, or -1 when the
+   * string is not flat, does not fit or an input is invalid. */
+  | "string-address"
+  | "string-at"
+  | "string-copy"
   /** GDB/LLDB JIT interface of a jitDebugInterface image: the address of
    * __jit_debug_descriptor, and a call of __jit_debug_register_code. */
   | "jit-debug-descriptor"
@@ -236,7 +249,12 @@ export function hostParameters(
     case "memory-read-string":
       return ["number", "number", "number", "number"];
     case "memory-write-string":
+    case "string-copy":
       return ["number", "number", "number", "string"];
+    case "string-address":
+      return ["string"];
+    case "string-at":
+      return ["number"];
     case "executable-unmap":
     case "memory-unmap":
     case "memory-release":
@@ -283,7 +301,8 @@ export function hostReturnType(
     operation === "native-array-detach"
   )
     return "void";
-  if (operation === "memory-read-string") return "string";
+  if (operation === "memory-read-string" || operation === "string-at")
+    return "string";
   return operation === "executable-call-value" ||
     operation === "executable-call-managed" ||
     operation === "engine-range-error"

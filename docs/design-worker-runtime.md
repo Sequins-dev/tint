@@ -273,6 +273,46 @@ byte displacement like any view.
   `unknown` to the typed `SharedArrayBuffer` type, so typed code receives a
   realm SharedArrayBuffer itself rather than a typed array over it.
 
+**Shared string bodies.** A string of at least 32,768 units (64 KiB of
+UTF-16) travels without a copy into the receiver's heap. Strings are flat,
+immutable and identity-free, and every string operation and collector already
+works on a string object outside the managed heap, as image literals are, so
+the receiver uses the sender's copy directly.
+
+- **The arena.** One process-wide arena of bodies: a 256 MiB reservation in
+  whole granules (16 KiB, or the page size where that is larger), made by the
+  first isolate that needs it. Its control page travels in the engine grant
+  and records a spin lock, a soft cap, statistics and two granule maps. A
+  body is a reference count, its granule count, then the flat string object
+  copied verbatim by its header's extent (`string-copy`). When the arena is
+  full, or an isolate's hold queue is, the string is copied as before; the
+  fallback is counted (`external-memory.ts`, `shared-string-arena.ts`).
+- **Sending.** A string in the arena (one this isolate received or sent) adds
+  a reference for the message. Otherwise a bounded send cache of ephemerons,
+  keyed weakly by the sent string with the body's string as value, finds a
+  body made earlier: sending the same string again costs no copy, and the
+  cache keeps the body only while the sent string lives. Otherwise one copy
+  makes a new body, with the sender's hold and the message's reference. A
+  slice (once sliced strings exist) is flattened into a new body, never
+  shared by reference. The message carries a grant (`t`, the body's address);
+  a message discarded unreceived drops its reference.
+- **Receiving.** The decoder returns the body's string object (`string-at`).
+  The isolate queues a hold, which takes over the message's reference, unless
+  it holds the body already, when the message's reference is dropped.
+- **Holds.** Each collector runtime keeps a hold table in workspaces it does
+  not otherwise use and publishes it in the identity page. Collections mark
+  arena references with one range check on the paths that do not move an
+  object (cheney, the parallel evacuator, the compactor's serial and parallel
+  marking, the copying runtime). A minor collection frees the unmarked holds
+  queued since the last collection and makes the marked ones old: it scans no
+  old object, but an old object that refers to a young hold was written since
+  and is remembered. A major or copying collection frees every unmarked hold.
+  Shutdown frees them all, which the arm64 cleanup now requests as x86-64's
+  does. The last reference frees the body; collectors return its pages, and
+  pages a mutator freed are returned at the next major collection.
+- **Costs.** Arena memory is outside every isolate's heap limit; the soft cap
+  bounds it. Heap tools see a body reference as an external string.
+
 **Later: one collector helper pool per process.** Each generational isolate
 starts its own pool of parallel-collector helpers, which multiplies threads
 when a program runs many Workers. A single process-wide pool could serve

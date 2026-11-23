@@ -49,6 +49,8 @@ function closedWorldHostOperation(operation: string): boolean {
     // through the ordinary allocator.
     case "memory-read-float64":
     case "memory-read-string":
+    // A string object's address, read from the reference.
+    case "string-address":
     // A signature query reads immutable closure metadata. Only a separate
     // raw execution capability can use an address to open the call graph.
     case "native-function-signature":
@@ -71,11 +73,13 @@ function closedWorldHostOperation(operation: string): boolean {
  * module instances and reaches the program through the same closed root.
  * Isolates exchange no managed pointers: messages are copied or transferred
  * bytes, and shared memory, parking words, message packets (which
- * `memory-write-float64` and `memory-write-string` fill) and the mappings
- * `memory-unmap` releases are outside every managed heap. None of these
- * operations writes a managed object or creates a function value, so the
- * program's interprocedural facts and generational write tracking hold in
- * every isolate. */
+ * `memory-write-float64` and `memory-write-string` fill), shared string
+ * bodies (which `string-copy` fills and `string-at` references: immutable
+ * flat strings, like image literals) and the mappings `memory-unmap`
+ * releases are outside every managed heap. None of these operations writes
+ * a managed object or creates a function value, so the program's
+ * interprocedural facts and generational write tracking hold in every
+ * isolate. */
 function isolateHostOperation(operation: string): boolean {
   switch (operation) {
     case "thread-start":
@@ -92,6 +96,8 @@ function isolateHostOperation(operation: string): boolean {
     case "shared-compare-exchange-word64":
     case "memory-write-float64":
     case "memory-write-string":
+    case "string-at":
+    case "string-copy":
       return true;
     default:
       return false;

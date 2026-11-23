@@ -25,6 +25,7 @@ import {
   type NativeAgentPacketEntry,
 } from "./agent-messages.ts";
 import type { NativePacketMemory } from "./packet-memory.ts";
+import type { NativeSharedStrings } from "./shared-strings.ts";
 import { externalAddress } from "./ffi/primitives.ts";
 import type {
   NativeWorkerBacking,
@@ -50,7 +51,12 @@ interface SharedGrant {
   readonly engineId: number;
   readonly handle: number;
 }
-type Grant = BufferGrant | PortGrant | SharedGrant;
+/** A shared string body and one reference to it (shared-strings.ts). */
+interface StringGrant {
+  readonly kind: "t";
+  readonly body: number;
+}
+type Grant = BufferGrant | PortGrant | SharedGrant | StringGrant;
 interface BufferMove {
   readonly kind: "a";
   readonly own: ByteStorage;
@@ -73,6 +79,8 @@ export interface NativeWorkerMessageOptions {
   readonly backing: NativeWorkerBacking;
   readonly ports: NativeMessagePorts;
   readonly packets: NativePacketMemory;
+  /** Large strings travel as shared bodies; without it they are copied. */
+  readonly strings?: NativeSharedStrings;
   portForObject(object: ObjectValue): NativeMessagePort | undefined;
   objectForPort(port: NativeMessagePort): ObjectValue;
 }
@@ -96,6 +104,7 @@ const payloadStart = nativeAgentPacketHeader + 8;
 const grantBuffer = 97; // a
 const grantPort = 112; // p
 const grantShared = 115; // s
+const grantString = 116; // t
 // Cloned ArrayBuffers up to this size travel inside the packet; larger ones
 // are copied once into a mapping the receiver adopts.
 const inlineBufferBytes = 1048576;
@@ -154,7 +163,8 @@ function decodeGrants(bytes: Uint8Array, at: number, end: number): Grant[] {
       const engineId = varint(),
         handle = varint();
       grants.push({ kind: "s", engineId, handle });
-    } else throw "NATIVE_WORKER_PACKET_KIND";
+    } else if (kind === grantString) grants.push({ kind: "t", body: varint() });
+    else throw "NATIVE_WORKER_PACKET_KIND";
   }
   if (position !== end) throw "NATIVE_WORKER_PACKET_LENGTH";
   return grants;
@@ -175,7 +185,11 @@ function grantTable(bytes: Uint8Array, end: number): number {
 export function createNativeWorkerMessages(
   options: NativeWorkerMessageOptions,
 ): NativeWorkerMessages {
-  const { realm, shared, backing, ports, packets } = options;
+  const { realm, shared, backing, ports, packets, strings } = options;
+  function sharedStrings(): NativeSharedStrings {
+    if (strings === undefined) throw "NATIVE_WORKER_STRING_GRANT";
+    return strings;
+  }
   function identity(object: ObjectValue): number {
     if (object.internalIdentity === 0)
       object.internalIdentity = realm.agent.nextObjectIdentity++;
@@ -184,6 +198,7 @@ export function createNativeWorkerMessages(
   function discardGrant(grant: Grant): void {
     if (grant.kind === "a") backing.discard(grant.backing);
     else if (grant.kind === "p") ports.discard(grant.port);
+    else if (grant.kind === "t") sharedStrings().discard(grant.body);
   }
   function error(message: string): never {
     return throwWorkerCloneError(realm, message);
@@ -215,6 +230,8 @@ export function createNativeWorkerMessages(
     const moves: Move[] = [];
     const grants: Grant[] = [];
     const copies: NativeWorkerBackingGrant[] = [];
+    // Shared string bodies whose references this message carries.
+    const bodies: number[] = [];
     const indices = new Map<number, number>();
     // Grant indices of typed SharedArrayBuffers' blocks, by handle.
     const blockGrants = new Map<number, number>();
@@ -332,6 +349,16 @@ export function createNativeWorkerMessages(
           blockGrants.set(handle, index);
           return index;
         },
+        ...(strings === undefined
+          ? {}
+          : { sharedStringUnits: strings.minimumUnits }),
+        encodeString: (value): number | undefined => {
+          const body = strings?.send(value) ?? 0;
+          if (body === 0) return undefined;
+          bodies.push(body);
+          grants.push({ kind: "t", body });
+          return grants.length - 1;
+        },
       });
       // Getters can close ports or detach, grow and re-transfer buffers.
       // Revalidate every move before mutating any source.
@@ -374,10 +401,13 @@ export function createNativeWorkerMessages(
           position = writeVarint(bytes, position, grant.port.base);
           position = writeVarint(bytes, position, grant.port.side);
           position = writeVarint(bytes, position, grant.port.generation);
-        } else {
+        } else if (grant.kind === "s") {
           bytes[position++] = grantShared;
           position = writeVarint(bytes, position, grant.engineId);
           position = writeVarint(bytes, position, grant.handle);
+        } else {
+          bytes[position++] = grantString;
+          position = writeVarint(bytes, position, grant.body);
         }
       }
       if (table > 4294967295) throw "NATIVE_WORKER_PACKET_LENGTH";
@@ -396,6 +426,7 @@ export function createNativeWorkerMessages(
           if (copy === undefined) throw "NATIVE_WORKER_CLONE_INDEX";
           backing.discard(copy);
         }
+        for (const body of bodies) sharedStrings().discard(body);
         for (let index = 0; index < moved; index++) {
           const grant = grants[index];
           if (grant === undefined) throw "NATIVE_WORKER_TRANSFER_INDEX";
@@ -448,7 +479,11 @@ export function createNativeWorkerMessages(
               throw reason;
             }
           }
-          if (shared === undefined || shared.engineId !== grant.engineId)
+          if (
+            grant.kind !== "s" ||
+            shared === undefined ||
+            shared.engineId !== grant.engineId
+          )
             return undefined;
           const storage = attachSharedStorage(shared, grant.handle);
           if (!storage.ok) return undefined;
@@ -458,6 +493,13 @@ export function createNativeWorkerMessages(
           object.internalSharedArrayBufferData = storage.value;
           used.add(index);
           return object;
+        },
+        decodeString: (index): string | undefined => {
+          const grant = grants[index];
+          if (grant === undefined || grant.kind !== "t" || used.has(index))
+            return undefined;
+          used.add(index);
+          return sharedStrings().receive(grant.body);
         },
       });
     } finally {

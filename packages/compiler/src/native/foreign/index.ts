@@ -99,7 +99,7 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
   readonly weakBindings: readonly {
     readonly module: string;
     readonly name: string;
-    readonly operation: "new" | "key";
+    readonly operation: "new" | "key" | "value";
   }[];
   readonly hostBindings: readonly {
     readonly module: string;
@@ -150,6 +150,8 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
     weakBindings: [
       { module: modules.weak, name: "createWeakSlot", operation: "new" },
       { module: modules.weak, name: "weakSlotKey", operation: "key" },
+      // The Worker message path's send cache of shared string bodies.
+      { module: modules.weak, name: "weakSlotValue", operation: "value" },
     ],
     hostBindings: [
       {

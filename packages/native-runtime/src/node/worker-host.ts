@@ -34,6 +34,10 @@ import type { NativeWaiterParkingHost } from "../shared-waiters.ts";
 import { installIsolateSharedBlocks } from "../shared-buffers.ts";
 import { nativePacketMemory } from "../packet-memory.ts";
 import {
+  createNativeSharedStrings,
+  createSharedStringArena,
+} from "../shared-strings.ts";
+import {
   startNativeWorker,
   type NativeWorkerEngineGrant,
   type NativeWorkerLifecycle,
@@ -87,7 +91,11 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
     const sequence = memory.mapMemory(page);
     if (sequence <= 0)
       throw new Error("cannot allocate worker thread identity sequence");
-    engine = { sequence, shared: service.registry };
+    engine = {
+      sequence,
+      shared: service.registry,
+      strings: createSharedStringArena(memory),
+    };
   } else {
     const descriptor = control.engine;
     const waiters = control.waiters;
@@ -181,6 +189,7 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
     shared: service,
     sharedBlockAt: (address: number): number => blocks.handleAt(address),
     packets: nativePacketMemory(),
+    strings: createNativeSharedStrings(memory, engine.strings),
     threadId: host.threadId,
     prepare: (filename, requested): NodeWorkerPlan => {
       const moduleId = host.lookup(filename);

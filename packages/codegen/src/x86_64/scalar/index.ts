@@ -2219,6 +2219,22 @@ export function emitModule(
             bytesOperation(memmove);
             return;
           }
+          if (operation === "string-at") {
+            // The caller proves a string object lives at the address; any
+            // other input than an exact, nonzero, eight-byte-aligned integer
+            // below 2^53 traps.
+            if (id === undefined) throw "string address result invariant";
+            exactInteger(emit, argument(0), rax, trapLabel);
+            emit({ op: "test", dst: rax, src: rax });
+            branch(emit, "le", trapLabel);
+            emit({ op: "test", dst: rax, src: imm(7) });
+            branch(emit, "ne", trapLabel);
+            emit({ op: "mov", dst: scratch, src: bits(0xffffffff, 0x1fffff) });
+            emit({ op: "cmp", dst: rax, src: scratch });
+            branch(emit, "a", trapLabel);
+            define(id, "string");
+            return;
+          }
           if (operation === "native-array-detach") {
             // Only a reference (tag 5) to a typed-array view (marker 2-5,
             // flags 2) detaches: length 0, data one word before its owner's.

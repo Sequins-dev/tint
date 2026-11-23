@@ -2823,6 +2823,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/intrinsics/shared-strings.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/intrinsics/spin-hint.ts",
       packageId: "native-runtime",
     },
@@ -2900,6 +2904,14 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/shared-memory-host.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/shared-string-arena.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/shared-strings.ts",
       packageId: "native-runtime",
     },
     {

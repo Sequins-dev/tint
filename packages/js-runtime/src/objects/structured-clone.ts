@@ -47,6 +47,14 @@ export interface WorkerCloneAttachments {
    * itself), views; undefined for an ordinary buffer, which is copied. */
   encodeNativeBuffer?(buffer: unknown): number | undefined;
   decode?(index: number): ScriptObject | undefined;
+  /** Strings of at least this many code units are offered to
+   * encodeString. */
+  readonly sharedStringUnits?: number;
+  /** The grant index of a shared body holding `value` (a string of at least
+   * sharedStringUnits units), or undefined to copy it into the message. */
+  encodeString?(value: string): number | undefined;
+  /** The string of a shared-body grant, or undefined for an invalid one. */
+  decodeString?(index: number): string | undefined;
 }
 
 export function throwWorkerCloneError(
@@ -158,6 +166,7 @@ const tagString = 99; // c: varint units, then UTF-16 units
 const tagBigInt = 90; // Z: decimal digits as a string payload
 const tagReference = 94; // ^: varint object index
 const tagAttachment = 120; // x: varint grant index
+const tagSharedString = 115; // s: varint grant index of a shared string body
 const tagBoxed = 119; // w: the boxed primitive value
 const tagDate = 68; // D: a double payload
 const tagRegExp = 82; // R: source and flags string payloads
@@ -262,6 +271,9 @@ function serializeWorkerGraph(
   // grant.
   const nativeBuffers = new Map<number, number>();
   const keyIndices = new Map<string, number>();
+  // Strings this long may be shared rather than copied (never, without a
+  // host that shares them).
+  const sharedStringUnits = attachments?.sharedStringUnits ?? Infinity;
   const hooks = realm.objectHooks;
   let bytes = sink.bytes,
     position = start;
@@ -433,6 +445,13 @@ function serializeWorkerGraph(
       return float(value);
     }
     if (typeof value === "string") {
+      if (value.length >= sharedStringUnits) {
+        const grant = attachments?.encodeString?.(value);
+        if (grant !== undefined) {
+          tag(tagSharedString);
+          return varint(grant);
+        }
+      }
       tag(tagString);
       return string(value);
     }
@@ -809,6 +828,10 @@ function deserializeWorkerGraph(
     }
     if (kind === tagDouble) return float();
     if (kind === tagString) return string();
+    if (kind === tagSharedString) {
+      const value = attachments?.decodeString?.(varint());
+      return value === undefined ? invalid() : value;
+    }
     if (kind === tagBigInt) {
       const value = bigIntFromString(string());
       return value === undefined ? invalid() : value;
