@@ -79,9 +79,9 @@ chain, so "instance of C or a subclass" is a bounded family test.
 **Prototypes** are records holding method closures. Each method has one
 closure, created once per class definition, so identity is shared across
 instances. Prototypes also hold accessor pairs, the `constructor`
-back-reference and a hidden link to the base prototype. Prototype layouts
-follow the same prefix rule, so a base method slot has the same offset in
-every subclass prototype.
+back-reference and a hidden link to the base prototype. A prototype holds only
+its own class's members. Inherited members are found through the base link,
+so mutating a base prototype is visible to subclasses.
 
 **Constructors** are managed function values. Their constructor-state
 environment holds the prototype, static fields and methods, and the
@@ -120,16 +120,19 @@ A method call `x.m(args)` has three steps:
 The typed fast path layers on that:
 
 - **Exact class, closed world.** No subclass of `C` exists in the program
-  and `x`'s static type is `C`. The call guards that the presence byte is
-  clear and that the prototype slot still holds the class definition's
-  closure, which is one compare against the identity captured at definition.
-  It then calls the method's entry directly, which makes the call inlinable.
-  On a guard miss it loads the slot and calls indirectly. Prototype mutation
-  and own overrides keep JavaScript semantics.
-- **Class hierarchy.** The call reads the slot at its fixed prototype offset
-  (prefix layouts), a vtable-like load, and calls it indirectly with the same
-  own-shadow guard. Closed-world devirtualization applies when only one
-  implementation exists for the receiver's possible classes.
+  and `x`'s static type is `C`. The call checks that the receiver's
+  prototype pointer is `C.prototype`, that its own-shadow byte is clear, and
+  that `C`'s prototype validity cell is valid. It then calls the method
+  resolved at definition time directly, which makes the call inlinable. On a
+  miss it does the full JavaScript lookup and call. Prototype mutation and
+  own overrides keep JavaScript semantics.
+- **Class hierarchy.** The receiver's prototype pointer selects the class.
+  For each class the call site expects, the method was resolved when the
+  class was defined, guarded by validity cells (see "JavaScript object
+  semantics"). The call dispatches on the prototype pointer to those direct
+  entries, with a full lookup otherwise. Closed-world devirtualization
+  applies when only one implementation exists for the receiver's possible
+  classes.
 - **Union of classes**, and narrowing by `instanceof` or by a discriminant
   field. This uses the existing layout-dispatch machinery for unions over
   instance descriptors, then the per-class path above. `instanceof C` for a
@@ -150,6 +153,89 @@ The typed fast path layers on that:
 - **Static members** live in the constructor-state record.
 - **`super.m()`** loads from the base prototype at its fixed slot and calls
   with the current receiver.
+
+## JavaScript object semantics
+
+Typed classes are still JavaScript classes. Each behaviour below holds from
+typed and untyped code alike, and C1's fixtures check each one against Node.
+
+**Prototype mutation never breaks a fast path.** Code can change behaviour
+at any time with `Foo.prototype.m = f`, `Object.defineProperty` or `delete`
+on a prototype, `Object.setPrototypeOf` on a prototype or an instance, or
+`Foo.prototype.__proto__ = …`, from either side. Two rules keep the fast
+paths correct:
+
+- **Derived prototypes hold only their own members.** An inherited method is
+  absent from a derived prototype, and lookup follows the hidden base link,
+  so a later change to a base prototype is visible through every subclass.
+  This replaces the "vtable slot" wording above: the fixed slot is the
+  class's own slot, not a copy of the base's.
+- **Each class has a prototype validity cell**, one word in its
+  constructor-state record. Any mutation of a prototype on the class's chain
+  invalidates the cells of every class whose chain contains it: assignment,
+  `defineProperty`, `delete`, a prototype change, or an accessor installed in
+  place of a method. Mutations from untyped code reach the prototype through
+  its record view, whose write, define, delete and set-prototype hooks
+  invalidate the cells. Typed code invalidates them in the same lowering.
+
+  A method call site then checks three things: the receiver's prototype
+  pointer is `C.prototype`, the own-shadow byte is clear, and `C`'s cell is
+  valid. If all hold, it calls the method resolved at definition time
+  directly. Otherwise it does the full lookup: own property, then the chain
+  with accessors and exotic objects, then a call. The check is three loads
+  and three compares. Nothing assumes a prototype is unchanged without
+  checking it.
+
+**Instances accept expandos and deletes as JavaScript objects do.**
+- **Expandos.** A record view keeps properties outside the layout
+  (`inst.extra = 1`) as ordinary own properties, as views already do.
+  Typed code reaches them only through general access, since TypeScript
+  rejects unknown names on a class type.
+- **Method-named writes.** Writing a method's name on an instance
+  (`inst.m = f`) goes to the layout's own-shadow slot, not to a view-only
+  property, so typed call sites see the override.
+- **Deletes of open fields.** Unannotated and optional fields carry
+  presence state. `delete inst.field` clears it, and later reads, typed or
+  untyped, fall through to the prototype chain. This extends record views,
+  which today refuse to delete fields.
+- **Annotated required fields are contracts.** They report
+  `configurable: false`, so deleting one fails as JavaScript specifies:
+  `false` in sloppy code, a `TypeError` in strict code. A write of the wrong
+  type throws a `TypeError`. This is the one deliberate departure from
+  JavaScript, where class fields are configurable, and it follows from
+  treating the annotation as a contract. Defining one as an accessor through
+  `defineProperty` throws for the same reason.
+
+**Observable order is JavaScript's:**
+- the callee and arguments of `new` are evaluated first;
+- a base class runs its field initializers in source order with `this` the
+  new instance, then its constructor body;
+- a derived class evaluates its constructor body until `super(...)`, and the
+  base construction runs there;
+- the derived field initializers run when `super` returns;
+- `this` before `super` throws a `ReferenceError`, and so does reading it
+  after a constructor that never called `super`;
+- a second `super` throws a `ReferenceError` after the base constructor has
+  run again, as specified;
+- `new.target` is the constructor `new` was applied to, also inside base
+  constructors and field initializers;
+- static fields initialize in source order after the inner class binding
+  exists.
+
+**Other class semantics:**
+- **`instanceof C`** calls `C[Symbol.hasInstance]` when it isn't
+  `Function.prototype`'s. Otherwise it walks the instance's prototype chain,
+  native links first, comparing with `C.prototype`. That is
+  OrdinaryHasInstance itself, so it stays correct under any mutation and
+  needs no guard. A typed class that declares `static [Symbol.hasInstance]`
+  needs a computed key, which C1 rejects explicitly.
+- **`[[IsClassConstructor]]`:** `C()` without `new` throws a `TypeError`.
+- **`Function.prototype.toString`** returns the class's source text, which
+  is retained like other functions' source.
+- **`typeof C`** is `"function"`.
+- **Class bodies are strict**, including methods, accessors, initializers
+  and static blocks, whether they appear in a script or a module: `this` is
+  not coerced, and assignments to undeclared names throw.
 
 ## Untyped code and PR #12
 
@@ -201,13 +287,22 @@ None of these is dropped silently.
 **Semantic native fixtures, each checked against Node:**
 - field initialization order;
 - method identity across instances;
-- own overrides of methods;
-- prototype mutation after construction;
+- own overrides of methods, from typed code and through the record view;
+- prototype mutation after construction, from typed and untyped code, with
+  a direct-call site before and after (`m = …`, `defineProperty`, `delete`,
+  `setPrototypeOf` on the prototype and on an instance);
+- expandos and deletes of open and optional fields from untyped code, and
+  deleting an annotated field failing;
 - receiver borrowing (`C.prototype.m.call(other)`);
 - getters and setters;
 - statics;
 - `super` ordering, including `this` before `super`;
 - `new.target`;
+- `instanceof` with and without `Symbol.hasInstance` and with changed
+  prototypes;
+- calling a class without `new`;
+- `Function.prototype.toString`;
+- strict-mode behaviour inside class bodies;
 - exceptions thrown from initializers and constructors;
 - GC survival of instances and prototypes under a small heap.
 
