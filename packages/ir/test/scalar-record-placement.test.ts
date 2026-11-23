@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { placeRecordFields, verify } from "@tint/ir/scalar";
+import { extendRecordLayout, placeRecordFields, verify } from "@tint/ir/scalar";
 
 test("placement packs payload words first and one-byte tags after them", () => {
   const layout = placeRecordFields([
@@ -123,4 +123,24 @@ test("deferred fields carry no tag and may be omitted at construction", () => {
       ]),
     /deferred record fields carry no tag/,
   );
+});
+
+test("extended layouts keep the base layout as a prefix", () => {
+  const base = placeRecordFields([
+    { type: "number", mutable: true, optional: false },
+    { type: "optional-reference", mutable: true, optional: true },
+    { type: "reference", mutable: false, optional: false },
+  ]);
+  const derived = extendRecordLayout(base, [
+    { type: "boolean", mutable: true, optional: false },
+    { type: "string", mutable: true, optional: true },
+  ]);
+  assert.deepEqual(derived.fields.slice(0, base.fields.length), base.fields);
+  const own = derived.fields.slice(base.fields.length);
+  assert.ok(own.every((field) => field.offset >= base.byteLength));
+  assert.ok(
+    (own[1]?.presenceOffset ?? 0) >= base.byteLength &&
+      (own[1]?.presenceOffset ?? 0) < derived.byteLength,
+  );
+  assert.equal(derived.byteLength % 8, 0);
 });

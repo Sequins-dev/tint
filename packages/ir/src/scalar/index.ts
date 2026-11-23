@@ -278,6 +278,27 @@ export function placeRecordFields(
     fields: placed,
   };
 }
+/** A layout that begins with `base` unchanged (every field, presence and
+ * state byte at its offset) and places `fields` after it, with their own
+ * tags after them: a derived class's instance layout extends its base's
+ * this way, so code reading the base layout reads either. */
+export function extendRecordLayout(
+  base: RecordLayout,
+  fields: readonly RecordFieldShape[],
+  alignment: number = recordAllocationAlignment,
+): RecordLayout {
+  const extension = placeRecordFields(fields, base.byteLength, alignment);
+  const placed: RecordField[] = [];
+  for (const field of base.fields) {
+    if (field === undefined) throw "record shape invariant";
+    placed.push(field);
+  }
+  for (const field of extension.fields) {
+    if (field === undefined) throw "record shape invariant";
+    placed.push(field);
+  }
+  return { byteLength: extension.byteLength, fields: placed };
+}
 /** `optional-number` is one NaN-boxed binary64 word: a present number is its
  * own IEEE-754 bits and `undefined` is the reserved signalling NaN
  * 0xFFF7_FFFF_FFFF_FFFF (these are its high and low 32-bit halves).
