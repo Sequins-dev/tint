@@ -1,9 +1,8 @@
 // Typed transport workloads (docs/results/worker-runtime-baseline-v1.md): the
 // runtime's messaging cost without the untyped await path. A typed main
 // program drives a typed Worker entry with callbacks: small round trips,
-// batches and 1 KiB string round trips. Typed code cannot create a
-// SharedArrayBuffer yet (the program realm lacks the global), so shared
-// memory stays in transport.mjs.
+// batches, 1 KiB string round trips and a contended counter in a typed
+// SharedArrayBuffer (inline Atomics on both sides).
 // Output lines match transport.mjs:
 //   WORKER_BENCH {"operation":...,"count":...,"elapsed":ms}
 import { Worker } from "node:worker_threads";
@@ -35,6 +34,10 @@ export function runTypedTransport(
     start = 0,
     status = 42;
   const text = "worker-message-".repeat(69).slice(0, 1024);
+  // Contended adds per side and sample; the Worker adds as many.
+  const adds = 100000;
+  const counters = new Uint32Array(new SharedArrayBuffer(8));
+  let added = 0;
   function fail(code: number): void {
     if (status === 42) status = code;
     worker.postMessage("stop");
@@ -54,7 +57,11 @@ export function runTypedTransport(
       worker.postMessage("batch");
       for (let i = 0; i < 10000; i++) worker.postMessage(i);
     } else if (phase === 2) worker.postMessage(text);
-    else worker.postMessage("stop");
+    else if (phase === 3) {
+      // The view shares the buffer; both sides add while the other does.
+      worker.postMessage(counters);
+      for (let i = 0; i < adds; i++) Atomics.add(counters, 0, 1);
+    } else worker.postMessage("stop");
   }
   worker.on("message", (reply: unknown): void => {
     if (reply === "ready") {
@@ -80,6 +87,11 @@ export function runTypedTransport(
         return;
       }
       if (sample >= 0) measure("typed-string-1KiB", 1000, now() - start);
+    } else if (phase === 3) {
+      added += 2 * adds;
+      if (reply !== "added" || Atomics.load(counters, 0) !== added)
+        return fail(5);
+      if (sample >= 0) measure("typed-counter", 2 * adds, now() - start);
     }
     next();
   });
