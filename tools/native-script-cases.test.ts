@@ -1,21 +1,28 @@
-// Native script entries: activation records, proper tail calls and
-// forwarded apply calls, in one image (the sections build a full Script
-// runtime, so one image keeps the fixture's cost to a single build).
+// Script fixtures that need the full Script runtime share one image: its
+// build dominates the gate's native batch, so every case here runs in it.
 //
-// Activation records replace heap bookkeeping, so stack traces and legacy
-// caller and arguments reflection merge them with the heap frames of list
-// invocations (apply, call, construct), builtins and barriers. Tail calls
-// in strict code either replace the frame (a jump) or keep a bounded stack
-// through the trampoline; those sections recurse 100,000 times. A function
-// whose `arguments` only feed `f.apply(thisArg, arguments)` forwards its
-// actuals without creating the object; Node computes the expected
-// observations for that section. Every section throws a distinct value on
-// the first wrong observation.
+// The Annex B [[IsHTMLDDA]] host capability selects how Scripts lower
+// `x == null`. Scripts lowered for a host that declares it keep the brand
+// check; Scripts lowered without it test the tag alone and exclude such
+// objects when they evaluate. The image runs both beside the Test262 host,
+// which marks `$262.IsHTMLDDA` before any Script runs: the declared Script
+// completes, and the mismatched Script must refuse to run rather than
+// observe `$262.IsHTMLDDA == null` as false.
+//
+// Native script entries replace heap bookkeeping with activation records,
+// so stack traces and legacy caller and arguments reflection merge them
+// with the heap frames of list invocations (apply, call, construct),
+// builtins and barriers. Tail calls in strict code either replace the frame
+// (a jump) or keep a bounded stack through the trampoline; those sections
+// recurse 100,000 times. A function whose `arguments` only feed
+// `f.apply(thisArg, arguments)` forwards its actuals without creating the
+// object; Node computes the expected observations for that section. Every
+// section throws a distinct value on the first wrong observation.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import test from "node:test";
+import { after, test } from "node:test";
 import { pathToFileURL } from "node:url";
 import { withNativeFixtureMemory } from "./gate/native-fixture.ts";
 import { executionPlan } from "./test262-execution.ts";
@@ -26,8 +33,37 @@ import {
   deferNativeCase,
   nativeTestResources,
   prepareNativeScripts,
+  test262ScriptHost,
+  type NativeScriptHost,
 } from "./test262-native.ts";
 import { workspaceSources } from "./workspace-sources.ts";
+
+const htmlDDACases: readonly {
+  readonly source: string;
+  readonly host: NativeScriptHost;
+  readonly expected: unknown;
+}[] = [
+  {
+    // The declared capability keeps Annex B loose equality.
+    source: String.raw`const d=$262.IsHTMLDDA;if(!(d==null)||d!=undefined||!(null==d))throw 1;`,
+    host: test262ScriptHost,
+    expected: { kind: "completed" },
+  },
+  {
+    // Lowered without the capability: the exclusion refuses the host's
+    // marked object before the Script body runs, and the refusal escapes
+    // the entry uncaught (status 70, docs/runtime-diagnostics.md).
+    source: String.raw`if($262.IsHTMLDDA==null)throw 1;`,
+    host: benchmarkScriptHost,
+    expected: { kind: "crash", detail: "unexpected native exit status 70" },
+  },
+  {
+    // Without a skipped check there is nothing to exclude.
+    source: String.raw`if(typeof $262.IsHTMLDDA!=="undefined")throw 1;`,
+    host: benchmarkScriptHost,
+    expected: { kind: "completed" },
+  },
+];
 
 const activationSections: readonly string[] = [
   // Trace names, innermost first, through native calls with stack actuals.
@@ -224,45 +260,56 @@ for (var i = 0; i < expected.length; i++)
   );
 }
 
-test("native entries keep traces, caller reflection, tail calls and forwarding", async () => {
-  // The variable is read per preparation.
-  process.env.TINT_NATIVE_SCRIPT_CALLS = "1";
-  const sources = [
-    ...activationSections,
-    ...tailCallSections,
-    await forwardingSection(),
-  ];
-  const deferred = sources.map((source) => {
-    const plan = executionPlan(source, "raw", {
-      flags: ["raw"],
-      features: [],
-      includes: [],
-    });
-    const prepared = prepareNativeScripts(plan, "raw", [], benchmarkScriptHost);
-    assert.ok(prepared.ok, JSON.stringify(prepared));
-    return deferNativeCase({
-      scripts: prepared.modules,
-      asynchronous: plan.asynchronous,
-    });
+// Native entries are the subject of the call cases; the variable is read
+// per preparation.
+process.env.TINT_NATIVE_SCRIPT_CALLS = "1";
+const callSources = [
+  ...activationSections,
+  ...tailCallSections,
+  await forwardingSection(),
+];
+const cases: readonly {
+  readonly source: string;
+  readonly host: NativeScriptHost;
+}[] = [
+  ...htmlDDACases,
+  ...callSources.map((source) => ({ source, host: benchmarkScriptHost })),
+];
+const deferred = cases.map(({ source, host }) => {
+  const plan = executionPlan(source, "raw", {
+    flags: ["raw"],
+    features: [],
+    includes: [],
   });
-  const built = withNativeFixtureMemory(() =>
-    createNativeBatchBuilder(workspaceSources())(deferred),
-  );
-  if (!built.ok) assert.fail(JSON.stringify(built.outcome));
-  const image = new NativeImageRunner(
-    built.bytes,
-    nativeTestResources.timeoutMs,
-  );
-  try {
-    for (let index = 0; index < sources.length; index++) {
-      const outcome = image.run(index);
-      assert.deepEqual(
-        outcome,
-        { kind: "completed" },
-        JSON.stringify({ index, outcome }),
-      );
-    }
-  } finally {
-    image.close();
+  const prepared = prepareNativeScripts(plan, "raw", [], host);
+  assert.ok(prepared.ok, JSON.stringify(prepared));
+  return deferNativeCase({
+    scripts: prepared.modules,
+    asynchronous: plan.asynchronous,
+  });
+});
+const built = withNativeFixtureMemory(() =>
+  createNativeBatchBuilder(workspaceSources())(deferred),
+);
+if (!built.ok) assert.fail(JSON.stringify(built.outcome));
+const image = new NativeImageRunner(built.bytes, nativeTestResources.timeoutMs);
+after(() => image.close());
+
+test("Scripts lowered without the IsHTMLDDA capability refuse a host that creates one", () => {
+  for (const [index, { expected }] of htmlDDACases.entries()) {
+    const outcome = image.run(index);
+    console.log(JSON.stringify({ index, outcome }));
+    assert.deepEqual(outcome, expected, JSON.stringify({ index, outcome }));
+  }
+});
+
+test("native entries keep traces, caller reflection, tail calls and forwarding", () => {
+  for (let index = 0; index < callSources.length; index++) {
+    const outcome = image.run(htmlDDACases.length + index);
+    assert.deepEqual(
+      outcome,
+      { kind: "completed" },
+      JSON.stringify({ index, outcome }),
+    );
   }
 });

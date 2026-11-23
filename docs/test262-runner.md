@@ -544,7 +544,7 @@ changing loose equality: the refusal escapes the program's entry uncaught
 | General programs (`createGeneralLowering`) | Not declared by default.               |
 | Script lowering (`lowerScript`, eval)      | Declared by default.                   |
 
-`tools/native-html-dda-capability.test.ts` runs Scripts lowered both ways
+`tools/native-script-cases.test.ts` runs Scripts lowered both ways
 beside the Test262 host's marked object.
 
 ### Debugger transport
