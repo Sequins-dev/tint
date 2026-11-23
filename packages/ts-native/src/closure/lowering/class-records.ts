@@ -1,4 +1,7 @@
-import type { ClassContract } from "@tint/typescript/checker";
+import {
+  classAccessorSlot,
+  type ClassContract,
+} from "@tint/typescript/checker";
 import type { ClassElement } from "@tint/typescript/syntax";
 import type { Type } from "@tint/typescript/types";
 import type { RecordLayout, ScalarType } from "@tint/ir/scalar";
@@ -71,6 +74,13 @@ export interface ClassFieldStorage {
    * hold it; otherwise construction leaves them for the constructor body. */
   readonly undefinedDefault: boolean;
 }
+export interface ClassAccessorStorage {
+  readonly name: string;
+  readonly static: boolean;
+  /** Prototype field, or constructor state field for static accessors. */
+  readonly getter: number;
+  readonly setter: number | undefined;
+}
 export interface PlannedClassRecords {
   readonly members: ClassMemberEnvironment;
   readonly instance: RecordLayout;
@@ -82,6 +92,9 @@ export interface PlannedClassRecords {
   /** Instance fields stored `undefined`-capable because code may read them
    * before their first assignment. */
   readonly unproven: readonly number[];
+  /** Accessor properties: closures in hidden prototype (or constructor
+   * state) fields, no instance (or constructor state) field. */
+  readonly accessors: readonly ClassAccessorStorage[];
   readonly prototypeField: number;
   readonly constructorState: RecordLayout;
   readonly constructorNames: readonly string[];
@@ -113,10 +126,20 @@ export function planClassRecords(
     inherited: number[] = [];
   // Required fields code may read before their first assignment
   // (CheckedClosures.uninitializedFields) store `undefined` until then.
-  const unproven = new Set<string>();
+  // Accessor names have no own field.
+  const unproven = new Set<string>(),
+    instanceAccessors = new Set<string>(),
+    staticAccessors = new Set<string>();
   for (const member of contract.members) {
     if (member === undefined) throw "class member invariant";
     const element = member.node;
+    if (element.kind === "get" || element.kind === "set") {
+      const key = element.key;
+      if (!element.computed && key.kind === "string") {
+        if (element.static) staticAccessors.add(key.value);
+        else instanceAccessors.add(key.value);
+      }
+    }
     if (
       element.kind !== "field" ||
       element.static ||
@@ -148,6 +171,7 @@ export function planClassRecords(
   }
   for (const property of instance.properties) {
     if (property === undefined) throw "instance property invariant";
+    if (instanceAccessors.has(property.name)) continue;
     const inheritedField =
       property.name === "constructor"
         ? -1
@@ -193,6 +217,7 @@ export function planClassRecords(
     constructorFields: RecordFieldStorage[] = [];
   for (const property of constructor.properties) {
     if (property === undefined) throw "constructor property invariant";
+    if (staticAccessors.has(property.name)) continue;
     const type: ScalarType | undefined =
       property.name === "prototype" ? "reference" : encoding(property.type);
     if (type === undefined) fail("unsupported class constructor storage");
@@ -233,6 +258,7 @@ export function planClassRecords(
   instanceFields.push({ type: "reference", mutable: false, optional: false });
   // Member closures (docs/design-typed-classes.md, C1): what this phase
   // does not lower fails explicitly.
+  const accessors: ClassAccessorStorage[] = [];
   const methods: ClassMethodStorage[] = [],
     staticMethods: ClassMethodStorage[] = [],
     fields: ClassFieldStorage[] = [],
@@ -276,9 +302,41 @@ export function planClassRecords(
     const element = member.node;
     if (element.kind === "static-block")
       fail("class static blocks are not lowered yet");
-    if (element.kind === "get" || element.kind === "set")
-      fail("class accessors are not lowered yet");
     const name = nameOf(element);
+    if (element.kind === "get" || element.kind === "set") {
+      const getter = element.kind === "get",
+        isStatic = element.static;
+      const names = isStatic ? constructorNames : prototypeNames;
+      const field = names.indexOf(
+        classAccessorSlot(getter ? "get" : "set", name),
+      );
+      if (field < 0) fail("class accessor storage invariant");
+      (isStatic ? staticMethods : methods).push({
+        element,
+        field,
+        environmentField: environmentFields++,
+      });
+      let known = -1;
+      for (let index = 0; index < accessors.length; index++) {
+        const accessor = accessors[index];
+        if (
+          accessor !== undefined &&
+          accessor.name === name &&
+          accessor.static === isStatic
+        )
+          known = index;
+      }
+      const previous = known < 0 ? undefined : accessors[known];
+      const entry: ClassAccessorStorage = {
+        name,
+        static: isStatic,
+        getter: getter ? field : (previous?.getter ?? -1),
+        setter: getter ? previous?.setter : field,
+      };
+      if (known < 0) accessors.push(entry);
+      else accessors[known] = entry;
+      continue;
+    }
     if (
       element.kind === "method" &&
       !element.static &&
@@ -380,6 +438,7 @@ export function planClassRecords(
     prototypeNames,
     inherited,
     unproven: unprovenFields,
+    accessors,
     prototypeField,
   };
 }

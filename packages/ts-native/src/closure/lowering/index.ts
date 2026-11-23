@@ -554,6 +554,19 @@ function lowerEntries(
             recordTarget.recordIdentity,
             viewed,
             branded,
+            (type) => {
+              const signature = checked.types[type];
+              if (signature?.kind !== "function")
+                fail("class accessor witness requires a function type");
+              const result = checked.types[signature.result]?.kind;
+              return callbackSignature(
+                signature.parameters.map(scalar),
+                result === "void" || result === "never"
+                  ? "void"
+                  : scalar(signature.result),
+                type,
+              );
+            },
           );
     const constants = new Map<number, number | boolean | string>();
     if (layout === undefined) {

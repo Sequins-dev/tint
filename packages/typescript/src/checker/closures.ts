@@ -4061,7 +4061,8 @@ function checkClosureModuleLayout(
       fail(node, "UNSUPPORTED", "class contract is unavailable");
     const required = new Set<ClassElement>(),
       receiverOwners = new Set<number>(),
-      methods = new Map<string, ClassElement>();
+      methods = new Map<string, ClassElement>(),
+      accessors = new Set<string>();
     for (const member of contract.members) {
       if (member === undefined) throw "class member contract invariant";
       const element = member.node;
@@ -4085,6 +4086,11 @@ function checkClosureModuleLayout(
         name !== undefined &&
         !prototypesWritten;
       if (method && name !== undefined) methods.set(name, element);
+      if (
+        (element.kind === "get" || element.kind === "set") &&
+        name !== undefined
+      )
+        accessors.add((element.static ? "static " : "") + name);
       if (element.kind === "field" || constructor || method) {
         const id = functions.get(element);
         if (id !== undefined) receiverOwners.add(id);
@@ -4114,6 +4120,7 @@ function checkClosureModuleLayout(
       receivers,
       constructors,
       methods,
+      accessors,
     );
     const initializationError = initialization.error;
     if (initializationError !== undefined)

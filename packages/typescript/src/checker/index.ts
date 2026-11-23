@@ -1594,6 +1594,7 @@ export type {
   ClassMemberContract,
 } from "./interfaces.ts";
 
+export { classAccessorSlot } from "./interfaces.ts";
 export { cViewMember } from "./c-views.ts";
 export type {
   CViewMember,

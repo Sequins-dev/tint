@@ -296,6 +296,18 @@ export interface RecordAccessChoice {
     readonly field: number;
     readonly access: RecordAccess;
   };
+  /** An accessor property (typed classes): the layout has no field for it.
+   * Its getter or setter closure is read through the prototype pointer
+   * `field`, or from the receiver itself when `field` is -1 (constructor
+   * state), and called with the receiver. */
+  readonly accessor?: RecordAccessor;
+}
+/** Where an accessor's closures are read, and their signature witnesses. */
+export interface RecordAccessor {
+  readonly get: RecordAccess;
+  readonly getTarget: number;
+  readonly set: RecordAccess | undefined;
+  readonly setTarget: number | undefined;
 }
 export interface ConstructionField {
   readonly name: string;
@@ -3275,6 +3287,27 @@ export function lowerFunction(
     for (const field of records?.accesses.get(node)?.choices ?? []) {
       if (field === undefined) throw "literal property layout invariant";
       const next = chooseRecord(field.record);
+      // An accessor is always present (on the prototype); a read calls it.
+      const accessor = field.accessor;
+      if (accessor !== undefined) {
+        if (membership) answer(booleanSlot(true, node));
+        else {
+          const value = temporary("general");
+          accessorCall(
+            reference(),
+            field,
+            accessor,
+            value,
+            "read",
+            "general",
+            next.id,
+            node,
+          );
+          answer(value);
+        }
+        current = next;
+        continue;
+      }
       function readField(receiver: number, field: RecordAccessChoice): void {
         const inherited = field.prototype;
         const present = fieldPresent(
@@ -4297,6 +4330,77 @@ export function lowerFunction(
     finish({ kind: "trap", start: node.start, end: node.end });
     current = done;
   }
+  /** Reads or writes a class accessor property: loads the getter or setter
+   * closure (through the receiver's prototype pointer, which also guards the
+   * layout, or from the receiver itself) and calls it with the receiver. */
+  function accessorCall(
+    receiver: number,
+    choice: RecordAccessChoice,
+    accessor: RecordAccessor,
+    transfer: number,
+    operation: "read" | "write" | "delete",
+    type: ScalarType,
+    mismatch: number,
+    node: Span,
+  ): void {
+    if (operation === "delete") throw "class accessors cannot be deleted";
+    const self = save(receiver, "reference", node);
+    let closures = self;
+    if (choice.field >= 0) {
+      const pointer = temporary("reference"),
+        found = block();
+      finish({
+        kind: "record",
+        object: load(self, node),
+        record: choice.record,
+        field: choice.field,
+        operation: "read",
+        slot: pointer,
+        consequent: found.id,
+        alternate: mismatch,
+        start: node.start,
+        end: node.end,
+      });
+      current = found;
+      closures = pointer;
+    }
+    const read = operation === "read",
+      closureAccess = read ? accessor.get : accessor.set,
+      target = read ? accessor.getTarget : accessor.setTarget;
+    if (closureAccess === undefined || target === undefined)
+      throw "class setter invariant";
+    const closure = temporary(closureAccess.type);
+    recordAccess(closures, closure, "read", closureAccess, node);
+    const signature = signatures[target];
+    if (signature === undefined) throw "class accessor signature invariant";
+    let callee = load(closure, node);
+    if (valueTypes[callee] === "optional-reference") {
+      const unwrapped = nextValue++;
+      emitUnwrap(unwrapped, callee, "reference", node);
+      callee = unwrapped;
+    }
+    const args: number[] = [];
+    if (!read) {
+      const parameter = signature.parameters[0];
+      if (parameter === undefined) throw "class setter parameter invariant";
+      args.push(coerce(load(transfer, node), parameter, node));
+    }
+    const call = callValue(callee, args),
+      id = read ? nextValue++ : undefined;
+    if (read && signature.returnType === "void")
+      throw "class getter result invariant";
+    emit({
+      kind: "call-indirect",
+      id,
+      target,
+      callee: call.callee,
+      arguments: call.arguments,
+      receiver: coerce(load(self, node), "general", node),
+      start: node.start,
+      end: node.end,
+    });
+    if (id !== undefined) store(transfer, coerce(id, type, node), node);
+  }
   /** The callee of `object.method(...)` when the method is read through a
    * prototype contract (class instances): the ordinary read into `transfer`,
    * plus the inherited read (see InheritedRead). */
@@ -4379,6 +4483,22 @@ export function lowerFunction(
         const unwrapped = nextValue++;
         emitUnwrap(unwrapped, receiver, "reference", node);
         receiver = unwrapped;
+      }
+      const accessor = choice.accessor;
+      if (accessor !== undefined) {
+        accessorCall(
+          receiver,
+          choice,
+          accessor,
+          transfer,
+          operation,
+          access.type,
+          next.id,
+          node,
+        );
+        jump(merge.id, node);
+        current = next;
+        continue;
       }
       const prototype = choice.prototype;
       if (operation === "read" && prototype !== undefined) {

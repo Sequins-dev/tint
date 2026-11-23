@@ -30,13 +30,17 @@ export interface ClassInitialization {
  * where `this` escapes (to a closure, another function, a call the analysis
  * does not follow), is unproven: JavaScript reads `undefined` there, so its
  * storage and reads must admit `undefined`. A static field read early, and a
- * required field still unassigned when construction completes, are errors. */
+ * required field still unassigned when construction completes, are errors.
+ * Reading or writing one of the class's `accessors` (static ones prefixed
+ * "static ") on `this` runs a getter or setter the analysis does not
+ * follow, so it exposes `this`. */
 export function checkClassInitialization(
   definition: ClassDefinition,
   requiredFields: ReadonlySet<ClassElement>,
   receivers: ReadonlySet<Expression>,
   constructors: ReadonlySet<Expression>,
   methods: ReadonlyMap<string, ClassElement> = new Map<string, ClassElement>(),
+  accessors: ReadonlySet<string> = new Set<string>(),
 ): ClassInitialization {
   let ready = new Set<string>(),
     required = new Set<string>(),
@@ -98,6 +102,9 @@ export function checkClassInitialization(
       node = node.expression;
     return node;
   }
+  function accessor(name: string): boolean {
+    return accessors.has((staticMode ? "static " : "") + name);
+  }
   function receiver(node: Expression): boolean {
     const value = ungroup(node);
     return receivers.has(value) || (staticMode && constructors.has(value));
@@ -146,6 +153,10 @@ export function checkClassInitialization(
       }
       const name = field(node);
       if (name !== undefined) {
+        if (accessor(name)) {
+          expose(node);
+          return;
+        }
         if (required.has(name) && !ready.has(name)) {
           if (staticMode)
             fail(
@@ -198,7 +209,8 @@ export function checkClassInitialization(
           const property = field(node.target);
           if (property === undefined) expression(node.target);
           expression(node.value);
-          if (property !== undefined) {
+          if (property !== undefined && accessor(property)) expose(node);
+          else if (property !== undefined) {
             ready.add(property);
             if (methods.has(property)) shadowed.add(property);
           }

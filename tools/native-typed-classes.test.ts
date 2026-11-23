@@ -6,9 +6,10 @@
 // method identity, own overrides and prototype mutation from typed code,
 // `instanceof`, `typeof`, exceptions from initializers and constructor bodies,
 // instances surviving collections under a small heap, `delete` of fields
-// that admit undefined, and fields read before their first assignment. Each
-// source runs in Node for the expected trace and natively under LLDB, on the
-// typed path unless a test asserts the general-path partition.
+// that admit undefined, fields read before their first assignment, and
+// accessors. Each source runs in Node for the expected trace and natively
+// under LLDB, on the typed path unless a test asserts the general-path
+// partition.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -483,6 +484,66 @@ export function trace(): string {
 }
 `;
 
+// Accessors: getter and setter closures live in hidden prototype (or
+// constructor state) slots and are called with the receiver, including
+// compound assignment, a throwing getter, a getter called during
+// construction, `in`, and reads through a data-only interface.
+const accessors = `let log = "";
+class Temperature {
+  celsius: number;
+  seen: string;
+  constructor(celsius: number) {
+    this.seen = this.label;
+    this.celsius = celsius;
+  }
+  get fahrenheit(): number {
+    log += "get;";
+    return this.celsius * 9 / 5 + 32;
+  }
+  set fahrenheit(value: number) {
+    log += "set " + String(value) + ";";
+    this.celsius = (value - 32) * 5 / 9;
+  }
+  get label(): string {
+    return String(this.celsius) + "C";
+  }
+  get broken(): number {
+    throw new RangeError("no reading");
+  }
+  static scale: string = "metric";
+  static get describe(): string {
+    return "scale:" + Temperature.scale;
+  }
+  static set describe(value: string) {
+    Temperature.scale = value;
+  }
+}
+interface Labeled {
+  readonly label: string;
+}
+function read(value: Temperature): string {
+  return value.label;
+}
+export function trace(): string {
+  const t = new Temperature(100);
+  const before = t.fahrenheit;
+  t.fahrenheit = 32;
+  t.fahrenheit += 18;
+  let caught = "none";
+  try {
+    caught = String(t.broken);
+  } catch (error) {
+    caught = error instanceof RangeError ? error.message : "other";
+  }
+  Temperature.describe = "imperial";
+  const labeled: Labeled = t;
+  return [
+    String(before), String(t.celsius), t.label, t.seen, Temperature.describe,
+    caught, String("label" in t), labeled.label, read(t), log,
+  ].join("|");
+}
+`;
+
 async function expectedTrace(text: string): Promise<string> {
   const directory = mkdtempSync(join(tmpdir(), "tint-typed-classes-"));
   try {
@@ -669,4 +730,21 @@ test("TypeScript-only class syntax compiles on the general path", async () => {
     process.env.TINT_GENERAL_FALLBACK = "0";
   }
   assert.deepEqual(partition, ["fixture"]);
+});
+
+test("class accessors call their getters and setters on the typed path", async () => {
+  const expected = await expectedTrace(accessors);
+  assert.equal(
+    expected,
+    "212|10|10C|undefinedC|scale:imperial|no reading|true|10C|10C|get;set 32;get;set 50;",
+  );
+  verifyHostedFixture(
+    withComparison(accessors, expected),
+    "typed-classes-accessors",
+    [],
+    [],
+    [],
+    [],
+    { requireTyped: true, managedBytes: 67108864, allocationCapacity: 1048576 },
+  );
 });

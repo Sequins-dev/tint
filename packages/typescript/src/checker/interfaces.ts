@@ -108,6 +108,11 @@ export interface ClassContract {
   readonly prototype: number;
   readonly members: readonly ClassMemberContract[];
 }
+/** The hidden prototype (or constructor) property holding an accessor's
+ * getter or setter closure. Source names cannot spell it as an identifier. */
+export function classAccessorSlot(kind: "get" | "set", name: string): string {
+  return "@@" + kind + ":" + name;
+}
 export interface ClassMemberContract {
   readonly node: ClassElement;
   readonly type: number;
@@ -688,6 +693,10 @@ export function resolveInterfaceTypes(
         { name: "prototype", type: prototype, readonly: true },
       ],
       members: ClassMemberContract[] = [];
+    // Accessor names with a getter and with a setter (prefixed "static "
+    // for the constructor side).
+    const getters = new Set<string>(),
+      setters = new Set<string>();
     let construct: number | undefined;
     for (const member of definition.elements) {
       if (member === undefined) throw "class member invariant";
@@ -767,12 +776,55 @@ export function resolveInterfaceTypes(
             "class method return requires annotation until body inference is available",
           );
         type = signature(member.parameters, resolve(result), receiver, member);
-      } else
-        unsupportedClass(
-          member,
-          "class-accessor-contract",
-          "class accessor contracts require separate read and write checking",
-        );
+      } else {
+        // An accessor pair is one property of the instance (or constructor),
+        // whose getter and setter agree on its type, plus hidden slots on
+        // the prototype (or constructor) holding the two closures.
+        const getter = member.kind === "get";
+        const annotation = getter
+          ? member.returnType
+          : member.parameters[0]?.type;
+        if (annotation === undefined)
+          unsupportedClass(
+            member,
+            "class-accessor-contract",
+            "class accessors require a value type annotation",
+          );
+        const value = resolve(annotation);
+        type = getter
+          ? signature([], value, receiver, member)
+          : signature(member.parameters, 5, receiver, member);
+        parameters = outer;
+        let index = -1;
+        for (let position = 0; position < properties.length; position++)
+          if (properties[position]?.name === name) index = position;
+        const key = (isStatic ? "static " : "") + name,
+          same = getter ? getters : setters,
+          other = getter ? setters : getters;
+        if (index >= 0) {
+          const existing = properties[index];
+          if (existing === undefined) throw "class accessor invariant";
+          if (same.has(key) || !other.has(key))
+            fail(member, "INVALID_TYPE", "duplicate class property: " + name);
+          if (canonical(existing.type) !== canonical(value))
+            unsupportedClass(
+              member,
+              "class-accessor-contract",
+              "class getters and setters of different types are not typed yet",
+            );
+          properties[index] = { name, type: existing.type, readonly: false };
+        } else properties.push({ name, type: value, readonly: getter });
+        same.add(key);
+        const slot: Property = {
+          name: classAccessorSlot(getter ? "get" : "set", name),
+          type,
+          readonly: false,
+        };
+        if (isStatic) statics.push(slot);
+        else prototypeFields.push(slot);
+        members.push({ node: member, type, receiver });
+        continue;
+      }
       parameters = outer;
       if (properties.some((property) => property.name === name))
         fail(member, "INVALID_TYPE", "duplicate class property: " + name);
@@ -781,6 +833,13 @@ export function resolveInterfaceTypes(
       if (!isStatic && member.kind === "method") prototypeFields.push(property);
       members.push({ node: member, type, receiver });
     }
+    for (const key of setters)
+      if (!getters.has(key))
+        unsupportedClass(
+          definition,
+          "class-accessor-contract",
+          "class setters without a getter are not typed yet: " + key,
+        );
     if (construct === undefined)
       construct = signature([], instance, undefined, definition);
     types[constructor] = { kind: "object", properties: statics, construct };

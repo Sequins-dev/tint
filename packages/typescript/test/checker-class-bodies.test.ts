@@ -292,3 +292,35 @@ test("implements clauses are checked; type-only members are not typed yet", () =
     assert.match(result.error.message, /overload|index|optional/, source);
   }
 });
+test("class accessors are one property backed by prototype closures", () => {
+  for (const source of [
+    "class P{x:number=1;get double():number{return this.x*2;}set double(v:number){this.x=v/2;}}function run():number{const p=new P();p.double=10;p.double+=2;return p.double;}",
+    "class P{static n:number=1;static get twice():number{return P.n*2;}}function run():number{return P.twice;}",
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify({ source, result }));
+  }
+  // A getter-only accessor is read-only.
+  const readonly = check(
+    "class P{get v():number{return 1;}}function run():void{new P().v=2;}",
+  );
+  assert.ok(!readonly.ok);
+  assert.equal(readonly.error.code, "IMMUTABLE");
+  for (const source of [
+    "class P{set v(x:number){}}",
+    "class P{get v():number{return 1;}set v(x:string){}}",
+    "class P{get v(){return 1;}}",
+  ]) {
+    const result = check(source);
+    assert.ok(!result.ok, source);
+    assert.equal(result.error.code, "UNSUPPORTED", source);
+  }
+  // A getter called during construction may read the fields not assigned
+  // yet (`s` is assigned only after it returns).
+  assert.deepEqual(
+    unproven(
+      "class P{x:number;s:string;constructor(){this.s=this.show;this.x=1;}get show():string{return String(this.x);}}",
+    ),
+    ["x", "s"],
+  );
+});

@@ -159,7 +159,7 @@ test("class contract extraction rejects unavailable inference and inheritance ex
     ["class C{x=1;}", /field.*annotation/],
     ["class C{m(){return 1;}}", /return.*annotation/],
     ["class C extends Base{}", /inheritance/],
-    ["class C{get x():number{return 1;}}", /accessor/],
+    ["class C{set x(v:number){}}", /setters without a getter/],
     ["class C{[name]:number;}", /computed/],
   ] as const) {
     const resolved = resolveInterfaceTypes(parse(source));

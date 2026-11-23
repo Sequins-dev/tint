@@ -164,8 +164,20 @@ The typed fast path layers on that:
 **Other members:**
 
 - **Accessors** (`get`/`set`) are prototype slots holding the getter and
-  setter closures. A read or write calls them, guarded the same way as
-  methods.
+  setter closures (constructor-state slots for static accessors). A read or
+  write calls them with the receiver, guarded the same way as methods.
+  - The instance (or constructor) type has one property for the pair; the
+    getter and setter must agree on its type, and a getter-only accessor is
+    read-only. The closures sit in hidden prototype fields
+    (`classAccessorSlot`) and the instance layout has no field for them.
+  - Accesses through the class type, or through a data-only interface the
+    class layout flows into, plan an accessor choice: read the prototype
+    pointer (which also guards the layout), load the closure, call it.
+    Compound assignment calls the getter, then the setter.
+  - A getter or setter running during construction may observe unassigned
+    fields, so the initialization analysis treats it as `this` escaping.
+  - Not typed yet: set-only accessors and getters and setters of different
+    types (explicit fallback).
 - **Static members** live in the constructor-state record.
 - **`super.m()`** loads from the base prototype at its fixed slot and calls
   with the current receiver.
@@ -500,8 +512,8 @@ representations, recordDescriptor)`: an immutable fixed-layout shape,
      descriptors instead of copying their values out.
 
 Untyped code does not yet see typed instances, prototypes or constructors
-through record views (step 4). Accessors and
-unannotated fields and method results still fail at check time. Evidence:
+through record views (step 4). Unannotated fields and method results still
+fail at check time. Evidence:
 `tools/native-typed-classes.test.ts`.
 
 **TypeScript-only class syntax.** The parser keeps heritage type arguments
