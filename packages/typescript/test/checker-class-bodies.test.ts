@@ -261,3 +261,34 @@ test("fields code may read before assignment stay typed and are recorded", () =>
     assert.equal(result.error.code, code, source);
   }
 });
+test("implements clauses are checked; type-only members are not typed yet", () => {
+  for (const source of [
+    "interface R{x:number}class P implements R{x:number=1;}function run():number{const r:R=new P();return r.x;}",
+    'interface R{x:number}interface S{}class P implements R,S{x:number=1;y:string="";}',
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify({ source, result }));
+  }
+  // A missing member, and methods, whose receivers relate more strictly
+  // than TypeScript's: the class takes the general path.
+  for (const source of [
+    "interface R{x:number;y:number}class P implements R{x:number=1;}",
+    "interface R{m():number}class P implements R{m():number{return 1;}}",
+  ]) {
+    const result = check(source);
+    assert.ok(!result.ok, source);
+    assert.equal(result.error.code, "UNSUPPORTED", source);
+    assert.notEqual(result.error.preventsFallback, true, source);
+  }
+  for (const source of [
+    "class P{[key:string]:unknown;}",
+    "class P{m(x:number):number;m(x:unknown):unknown{return x;}}",
+    "class P{constructor(x:number);constructor(x:unknown){}}",
+    "class P{m?():void;}",
+  ]) {
+    const result = check(source);
+    assert.ok(!result.ok, source);
+    assert.equal(result.error.code, "UNSUPPORTED", source);
+    assert.match(result.error.message, /overload|index|optional/, source);
+  }
+});

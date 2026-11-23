@@ -7,8 +7,8 @@
 // `instanceof`, `typeof`, exceptions from initializers and constructor bodies,
 // instances surviving collections under a small heap, `delete` of fields
 // that admit undefined, and fields read before their first assignment. Each
-// source runs in Node for the expected trace and natively under LLDB on the
-// typed path.
+// source runs in Node for the expected trace and natively under LLDB, on the
+// typed path unless a test asserts the general-path partition.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -435,6 +435,54 @@ export function trace(): string {
 }
 `;
 
+// TypeScript-only class syntax: heritage type arguments, `implements`, index
+// signatures, overload signatures and optional methods. Erasure drops the
+// types; the typed checker does not lower these classes yet, so the module
+// takes the general path.
+const typeScriptClassSyntax = `interface Shape {
+  area(): number;
+}
+interface Named {
+  name: string;
+}
+class Base<T> {
+  value: T;
+  constructor(value: T) {
+    this.value = value;
+  }
+}
+class Square extends Base<number> implements Shape, Named {
+  name: string = "square";
+  [key: string]: unknown;
+  constructor(side: number);
+  constructor(side: number, label: string);
+  constructor(side: number, label?: string) {
+    super(side);
+    if (label !== undefined) this.name = label;
+  }
+  area(): number {
+    return this.value * this.value;
+  }
+  scale(by: number): number;
+  scale(by: string): number;
+  scale(by: number | string): number {
+    return typeof by === "number" ? this.value * by : -1;
+  }
+  describe?(): string {
+    return this.name + ":" + String(this.area());
+  }
+  later?(): void;
+}
+export function trace(): string {
+  const square = new Square(3, "box");
+  const shape: Shape = square;
+  return [
+    String(shape.area()), square.describe?.() ?? "none", String(square.scale(2)),
+    String(square.scale("x")), String(square.later === undefined), String("later" in square),
+  ].join("|");
+}
+`;
+
 async function expectedTrace(text: string): Promise<string> {
   const directory = mkdtempSync(join(tmpdir(), "tint-typed-classes-"));
   try {
@@ -594,4 +642,31 @@ test("optional fields and properties are deleted on the typed path", async () =>
     [],
     { requireTyped: true, managedBytes: 67108864, allocationCapacity: 1048576 },
   );
+});
+
+test("TypeScript-only class syntax compiles on the general path", async () => {
+  const expected = await expectedTrace(typeScriptClassSyntax);
+  assert.equal(expected, "9|box:9|6|-1|true|false");
+  let partition: readonly string[] | undefined;
+  delete process.env.TINT_GENERAL_FALLBACK;
+  try {
+    verifyHostedFixture(
+      withComparison(typeScriptClassSyntax, expected),
+      "typed-classes-typescript-syntax",
+      [],
+      [],
+      [],
+      [],
+      {
+        managedBytes: 67108864,
+        allocationCapacity: 1048576,
+        onGeneralFallback(modules) {
+          partition = modules;
+        },
+      },
+    );
+  } finally {
+    process.env.TINT_GENERAL_FALLBACK = "0";
+  }
+  assert.deepEqual(partition, ["fixture"]);
 });

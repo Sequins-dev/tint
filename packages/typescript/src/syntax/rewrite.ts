@@ -219,6 +219,12 @@ export function rewriteModule(module: Module, rewrite: SyntaxRewrite): Module {
       decorators: node.decorators?.map(expression),
       heritage:
         node.heritage === undefined ? undefined : expression(node.heritage),
+      ...(node.heritageTypeArguments === undefined
+        ? {}
+        : { heritageTypeArguments: node.heritageTypeArguments.map(type) }),
+      ...(node.implements === undefined
+        ? {}
+        : { implements: node.implements.map(type) }),
       elements: node.elements.map((element): ClassElement => {
         if (element.kind === "static-block")
           return { ...element, body: block(element.body) };

@@ -488,6 +488,19 @@ through record views (step 4). Accessors and
 unannotated fields and method results still fail at check time. Evidence:
 `tools/native-typed-classes.test.ts`.
 
+**TypeScript-only class syntax.** The parser keeps heritage type arguments
+(`extends Base<T>`) and `implements` types on the class definition, and
+records overload signatures, index signatures and optional methods as
+type-only members; erasure drops them as TypeScript's emit does, so the
+general path compiles such classes.
+
+- The checker requires the instance type to be assignable to each
+  `implements` type. Methods relate only through their receivers, which is
+  stricter than TypeScript (method bivariance), so a mismatch is an
+  explicit general-path fallback rather than TS2420 until instance →
+  interface assignability covers methods.
+- Classes with type-only members fail typed checking explicitly.
+
 Each phase fails explicitly for what it does not cover:
 
 - decorators, already rejected;

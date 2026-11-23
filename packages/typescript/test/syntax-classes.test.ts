@@ -130,3 +130,67 @@ test("class fields keep TypeScript's readonly and optional modifiers", () => {
     [true, false],
   ]);
 });
+test("class heritage keeps TypeScript type arguments and implements clauses", () => {
+  const result = parse(
+    "class D extends Base<number, string> implements R, S<T> {} let E = class implements R {};",
+    true,
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  const [declaration, variable] = result.value.statements;
+  assert.ok(declaration?.kind === "class");
+  const definition = declaration.definition;
+  assert.equal(definition.heritage?.kind, "identifier");
+  assert.deepEqual(
+    definition.heritageTypeArguments?.map((node) => node.kind),
+    ["named", "named"],
+  );
+  assert.deepEqual(
+    definition.implements?.map((node) =>
+      node.kind === "named" ? node.name : node.kind,
+    ),
+    ["R", "S"],
+  );
+  assert.ok(variable?.kind === "variable");
+  const value = variable.declarations[0]?.initializer;
+  assert.ok(value?.kind === "class-expression");
+  assert.equal(value.definition.name, undefined);
+  assert.equal(value.definition.implements?.length, 1);
+  // Rewriting keeps them.
+  const rewritten = rewriteModule(result.value, {});
+  const copy = rewritten.statements[0];
+  assert.ok(copy?.kind === "class");
+  assert.equal(copy.definition.implements?.length, 2);
+  assert.equal(copy.definition.heritageTypeArguments?.length, 2);
+  // `implements` is reserved in JavaScript class syntax.
+  assert.equal(parse("class C implements R {}").ok, false);
+});
+test("TypeScript type-only class members are recorded apart from elements", () => {
+  const result = parse(
+    "class C {" +
+      " [key: string]: unknown;" +
+      " static readonly [index: number]: string;" +
+      " m(x: number): number; m(x: string): string; m(x: unknown): unknown { return x; }" +
+      " constructor(x: number); constructor(x: unknown) {}" +
+      " o?(): void;" +
+      " p?(): number { return 1; }" +
+      "}",
+    true,
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  const statement = result.value.statements[0];
+  assert.ok(statement?.kind === "class");
+  const definition = statement.definition;
+  // Index signatures, two method overloads, one constructor overload and two
+  // optional methods; the optional method with a body is also an element.
+  assert.equal(definition.typeOnlyMembers?.length, 7);
+  assert.deepEqual(
+    definition.elements.map((element) =>
+      element.kind === "static-block" || element.key.kind !== "string"
+        ? element.kind
+        : element.key.value,
+    ),
+    ["m", "constructor", "p"],
+  );
+  // JavaScript methods still require bodies.
+  assert.equal(parse("class C { m(); }").ok, false);
+});

@@ -146,6 +146,8 @@ export interface InterfaceFallback {
     | "class-field-inference"
     | "class-method-inference"
     | "class-accessor-contract"
+    | "class-type-only-member"
+    | "class-implements"
     | "class-initialization"
     | "index-key-layout"
     | "intersection-layout"
@@ -235,6 +237,12 @@ export function resolveInterfaceTypes(
     redirects: number[] = [],
     pending = new Set<number>(),
     heritage: { derived: number; base: number; node: Span }[] = [],
+    implementations: {
+      instance: number;
+      target: number;
+      node: Span;
+      owner: Span;
+    }[] = [],
     constraints: {
       argument: number;
       bound: number;
@@ -649,6 +657,22 @@ export function resolveInterfaceTypes(
         "class-heritage",
         "class inheritance contracts require heritage checking",
       );
+    const typeOnly = definition.typeOnlyMembers?.[0];
+    if (typeOnly !== undefined)
+      unsupportedClass(
+        typeOnly,
+        "class-type-only-member",
+        "class overload signatures, index signatures and optional methods are not typed yet",
+      );
+    for (const target of definition.implements ?? []) {
+      if (target === undefined) throw "class implements invariant";
+      implementations.push({
+        instance,
+        target: resolve(target),
+        node: target,
+        owner: definition,
+      });
+    }
     const constructor = add({ kind: "object", properties: [] }, definition);
     const prototype = add({ kind: "object", properties: [] }, definition);
     const constructorProperty: Property = {
@@ -1711,6 +1735,33 @@ export function resolveInterfaceTypes(
           code: "INVALID_TYPE",
           message:
             "type argument does not satisfy constraint for " + constraint.name,
+        },
+      };
+  }
+  // TypeScript requires the instance type to be assignable to every
+  // `implements` type (TS2420). Methods relate here only through their
+  // receivers, which is stricter than TypeScript, so a mismatch is not yet
+  // reported as a type error: the class takes the general path.
+  for (const implementation of implementations) {
+    if (implementation === undefined) throw "class implements invariant";
+    if (
+      !system.value.assignable(
+        canonical(implementation.instance),
+        canonical(implementation.target),
+      )
+    )
+      return {
+        ok: false,
+        error: {
+          start: implementation.node.start,
+          end: implementation.node.end,
+          code: "UNSUPPORTED",
+          message: "class implements clause is not proven",
+          fallback: {
+            capability: "class-implements",
+            ownerKind: "class",
+            owner: implementation.owner,
+          },
         },
       };
   }
