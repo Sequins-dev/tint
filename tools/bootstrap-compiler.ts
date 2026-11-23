@@ -191,6 +191,9 @@ const built = buildMacOSProgram({
   managedBytes: managedBytes ?? request.managedBytes,
   allocationCapacity: allocationCapacity ?? request.allocationCapacity,
   debugSymbols: bootstrapArgv.includes("--debug-symbols"),
+  // --stack-traces: an uncaught throw prints its value and a symbolicated
+  // trace (docs/runtime-diagnostics.md).
+  ...(bootstrapArgv.includes("--stack-traces") ? { stackTraces: true } : {}),
   // --signposts: os_signpost GC and allocation intervals
   // (docs/runtime-diagnostics.md).
   ...(bootstrapArgv.includes("--signposts") ? { signposts: true } : {}),

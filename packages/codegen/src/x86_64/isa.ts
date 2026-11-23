@@ -1230,6 +1230,13 @@ export interface Assembler {
   readonly labels: ReadonlyMap<string, number>;
   readonly byteLength: () => number;
   readonly instruction: (insn: Instruction) => void;
+  /** Starts a scope (one function): labels defined until endScope are
+   * local to it. */
+  readonly beginScope: () => void;
+  /** Patches every fixup recorded in the scope whose label the scope
+   * defined, and forgets those labels unless `keep` names them, so a large
+   * module does not hold every local label and relocation until finish. */
+  readonly endScope: (keep: (label: string) => boolean) => void;
   readonly finish: (
     isExternal?: (label: string) => boolean,
     byteLength?: number,
@@ -1242,11 +1249,37 @@ export function createAssembler(far: boolean = false): Assembler {
   const out: Encoding = { bytes: byteBuffer(), fixups: [], far };
   const labels = new Map<string, number>();
   let finished = false;
+  // The open scope: labels it defined and the first fixup it recorded.
+  let scopeLabels: Set<string> | undefined;
+  let scopeFixups = 0;
+  const scopeScratch = new Uint8Array(8);
+  function beginScope(): void {
+    if (scopeLabels !== undefined) invalid("assembler scope already open");
+    scopeLabels = new Set<string>();
+    scopeFixups = out.fixups.length;
+  }
+  function endScope(keep: (label: string) => boolean): void {
+    const local = scopeLabels;
+    if (local === undefined) invalid("assembler scope is not open");
+    let write = scopeFixups;
+    for (let read = scopeFixups; read < out.fixups.length; read++) {
+      const fixup = out.fixups[read];
+      if (fixup === undefined) throw "rel32 fixup invariant";
+      const label = fixup.ref.label;
+      const target = local.has(label) ? labels.get(label) : undefined;
+      if (target === undefined) out.fixups[write++] = fixup;
+      else patchChunkRelative(out.bytes, fixup, target, scopeScratch);
+    }
+    out.fixups.length = write;
+    for (const label of local) if (!keep(label)) labels.delete(label);
+    scopeLabels = undefined;
+  }
   function instruction(insn: Instruction): void {
     if (finished) invalid("assembler already finalized");
     if (insn.op === "label") {
       if (labels.has(insn.name)) invalid("duplicate label: " + insn.name);
       labels.set(insn.name, out.bytes.length);
+      scopeLabels?.add(insn.name);
     } else if (insn.op === "align-entry") {
       while (out.bytes.length % 4 !== 0) append(out.bytes, 0x90);
     } else {
@@ -1298,6 +1331,8 @@ export function createAssembler(far: boolean = false): Assembler {
     labels,
     byteLength: (): number => out.bytes.length,
     instruction,
+    beginScope,
+    endScope,
     finish,
   };
 }

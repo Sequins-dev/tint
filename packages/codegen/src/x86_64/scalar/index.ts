@@ -658,6 +658,7 @@ export function emitModule(
   }
 
   function body(fn: FunctionIR): void {
+    assembler.beginScope();
     const fnLabel = functionLabel(fn.id);
     const interruptible =
       workerFunctions?.has(
@@ -3470,6 +3471,18 @@ export function emitModule(
         fn.closureEnvironment === undefined ? undefined : savedEnvironment,
       ))
         if (map !== undefined) pendingMaps.push(map);
+    // Local labels (blocks and inline jump targets) are resolved now; the
+    // function's bounds, safepoints and unwind rows stay for final layout.
+    const local = fnLabel + ":";
+    assembler.endScope(
+      (label) =>
+        !label.startsWith(local) ||
+        label === fnEnd ||
+        label === done ||
+        label === fnLabel + ":debug-body" ||
+        label.startsWith(local + "safepoint:") ||
+        label.startsWith(local + "cfi:"),
+    );
   }
 
   function collectorLeaves(): void {
