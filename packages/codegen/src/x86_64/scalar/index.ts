@@ -692,16 +692,22 @@ export function emitModule(
       depth += scalarByteLength(type);
       slots.push(-depth);
     }
+    // Values are local to their block (the verifier requires it), and stack
+    // maps include a value's home only while it is live within its block,
+    // so blocks share one area of value homes, sized by the largest block.
+    const homesBase = depth;
+    let homesDepth = depth;
     for (const block of fn.blocks) {
       if (block === undefined) throw "block invariant";
+      depth = homesBase;
       for (const op of block.instructions) {
         if (op === undefined) throw "instruction invariant";
         const id = instructionResult(op);
         if (id !== undefined) {
-          // Every home can hold a complete two-word scalar. Compact layout
-          // and reuse across liveness ranges are later optimizations.
+          // Every home can hold a complete two-word scalar.
           depth += 16;
           homes.set(id, -depth);
+          if (depth > homesDepth) homesDepth = depth;
         }
         if (op.kind === "c-call") {
           if (op.call.mayCallback === true) {
@@ -735,6 +741,7 @@ export function emitModule(
         }
       }
     }
+    depth = homesDepth;
     if (transitionCapacity !== 0) depth = align16(depth) + transitionCapacity;
     const transitionOffset = -depth;
     if (signpost !== undefined && signpost.metrics === true)
