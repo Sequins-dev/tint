@@ -403,8 +403,12 @@ test("a counter running to a string's length inclusive stays a 32-bit slot", () 
 function codeUnitLoop(options: {
   readonly start?: number;
   readonly operator?: "<" | "<=" | ">";
-  /** "length": compare with s.length directly; "hoisted": with slot n. */
-  readonly bound?: "length" | "hoisted";
+  /** "length": compare with s.length directly; "hoisted": with slot n;
+   * "stored": with slot n, the length of a fresh string stored to s (as
+   * LICM leaves a call result's length); "restored": like "stored", but s
+   * is stored again after its length was taken; "copied": with slot n2, a
+   * copy of slot n (as counted-loop preheaders copy hoisted lengths). */
+  readonly bound?: "length" | "hoisted" | "stored" | "restored" | "copied";
   /** Which string the body reads. */
   readonly read?: 0 | 1;
   /** A write in the body before the read: to i or to s. */
@@ -412,7 +416,9 @@ function codeUnitLoop(options: {
 }): FunctionIR {
   const start = options.start ?? 0,
     operator = options.operator ?? "<",
-    hoisted = options.bound === "hoisted";
+    stored = options.bound === "stored" || options.bound === "restored",
+    copied = options.bound === "copied",
+    hoisted = options.bound === "hoisted" || stored || copied;
   const late: Instruction[] =
     options.write === "index"
       ? [
@@ -437,7 +443,7 @@ function codeUnitLoop(options: {
   const comparison: Instruction[] = [
     { kind: "load", id: 10, slot: 2, ...span },
     ...(hoisted
-      ? [{ kind: "load" as const, id: 11, slot: 4, ...span }]
+      ? [{ kind: "load" as const, id: 11, slot: copied ? 5 : 4, ...span }]
       : [
           { kind: "load" as const, id: 12, slot: 0, ...span },
           { kind: "string-length" as const, id: 11, string: 12, ...span },
@@ -451,7 +457,7 @@ function codeUnitLoop(options: {
     name: "sum",
     exported: true,
     parameters: [0, 1],
-    slots: ["string", "string", "number", "number", "number"],
+    slots: ["string", "string", "number", "number", "number", "number"],
     returnType: "number",
     entry: 0,
     blocks: [
@@ -462,13 +468,37 @@ function codeUnitLoop(options: {
           { kind: "store", slot: 2, value: 0, ...span },
           { kind: "constant", id: 1, value: 0, ...span },
           { kind: "store", slot: 3, value: 1, ...span },
-          ...(hoisted
+          ...(stored
             ? [
-                { kind: "load" as const, id: 2, slot: 0, ...span },
-                { kind: "string-length" as const, id: 3, string: 2, ...span },
+                {
+                  kind: "string-literal" as const,
+                  id: 5,
+                  value: "abcdef",
+                  ...span,
+                },
+                { kind: "store" as const, slot: 0, value: 5, ...span },
+                { kind: "string-length" as const, id: 3, string: 5, ...span },
                 { kind: "store" as const, slot: 4, value: 3, ...span },
+                ...(options.bound === "restored"
+                  ? [
+                      { kind: "load" as const, id: 6, slot: 1, ...span },
+                      { kind: "store" as const, slot: 0, value: 6, ...span },
+                    ]
+                  : []),
               ]
-            : []),
+            : hoisted
+              ? [
+                  { kind: "load" as const, id: 2, slot: 0, ...span },
+                  { kind: "string-length" as const, id: 3, string: 2, ...span },
+                  { kind: "store" as const, slot: 4, value: 3, ...span },
+                  ...(copied
+                    ? [
+                        { kind: "load" as const, id: 7, slot: 4, ...span },
+                        { kind: "store" as const, slot: 5, value: 7, ...span },
+                      ]
+                    : []),
+                ]
+              : []),
         ],
         terminator: { kind: "jump", target: 1, ...span },
       },
@@ -548,6 +578,10 @@ test("code units indexed below their string's length are in bounds", () => {
   assert.equal(codeUnitInBounds(codeUnitLoop({})), true);
   assert.equal(codeUnitInBounds(codeUnitLoop({ bound: "hoisted" })), true);
   assert.equal(codeUnitInBounds(codeUnitLoop({ operator: ">" })), true);
+  // The length of a string stored to its slot in the same block.
+  assert.equal(codeUnitInBounds(codeUnitLoop({ bound: "stored" })), true);
+  // A copy of the slot holding the length.
+  assert.equal(codeUnitInBounds(codeUnitLoop({ bound: "copied" })), true);
 });
 
 test("code units stay checked without the length relation", () => {
@@ -558,6 +592,8 @@ test("code units stay checked without the length relation", () => {
   // The index or the string changes after the comparison.
   assert.equal(codeUnitInBounds(codeUnitLoop({ write: "index" })), false);
   assert.equal(codeUnitInBounds(codeUnitLoop({ write: "string" })), false);
+  // The string slot is stored again after its length was taken.
+  assert.equal(codeUnitInBounds(codeUnitLoop({ bound: "restored" })), false);
   // A negative index is below the length too.
   assert.equal(codeUnitInBounds(codeUnitLoop({ start: -1 })), false);
   assert.equal(

@@ -166,11 +166,13 @@ const emptyState: SparseState = { slots: [], intervals: [] };
 /** Relational facts between number and string slots: Len(L, S) when slot L
  * holds the length of the string slot S holds, Less(I, S) when slot I holds
  * a number below that length. Keys are (first * slots + string) * 2, plus 1
- * for Less. Facts come only from instructions (a stored `string-length` of a
- * load of S) and from the taken edge of `I < length` (or the untaken edge
- * of `length <= I`), comparing loads not overwritten before the branch;
- * any store to either slot, a terminator transfer into it and exception
- * entries end them. Block entry facts meet by intersection. */
+ * for Less. Facts come only from instructions (a stored `string-length` of
+ * S's current value: a load of S, or the value last stored to S) and from
+ * the taken edge of `I < length` (or the untaken edge of `length <= I`),
+ * comparing loads not overwritten before the branch. A store of a slot's
+ * current value to another slot copies that slot's facts to it. Any other
+ * store to either slot, a terminator transfer into it and exception entries
+ * end them. Block entry facts meet by intersection. */
 interface StringIndexWalk {
   /** Facts before the terminator. */
   readonly out: Set<number>;
@@ -218,7 +220,10 @@ function analyzeStringIndices(
       lastStore = new Map<number, number>(),
       // string-length values: the string slot and the position of its load.
       lengthOf = new Map<number, number>(),
-      lengthLoadAt = new Map<number, number>();
+      lengthLoadAt = new Map<number, number>(),
+      // Values stored to a slot: the slot and the position of the store.
+      storedSlot = new Map<number, number>(),
+      storedAt = new Map<number, number>();
     const kill = (slot: number): void => {
       const doomed: number[] = [];
       for (const key of live) {
@@ -229,12 +234,17 @@ function analyzeStringIndices(
       }
       for (const key of doomed) if (key !== undefined) live.delete(key);
     };
-    /** The slot a value was loaded from, if not stored since the load. */
+    /** The slot a value was loaded from, if not stored since the load, or
+     * the slot it was stored to, if that store is the slot's last. */
     const current = (value: number): number => {
       const slot = loadSlot.get(value),
         at = loadAt.get(value);
-      if (slot === undefined || at === undefined) return -1;
-      return (lastStore.get(slot) ?? -1) < at ? slot : -1;
+      if (slot !== undefined && at !== undefined)
+        return (lastStore.get(slot) ?? -1) < at ? slot : -1;
+      const stored = storedSlot.get(value),
+        storedPosition = storedAt.get(value);
+      if (stored === undefined || storedPosition === undefined) return -1;
+      return lastStore.get(stored) === storedPosition ? stored : -1;
     };
     for (let position = 0; position < block.instructions.length; position++) {
       const op = block.instructions[position];
@@ -247,7 +257,18 @@ function analyzeStringIndices(
         const string = current(op.string);
         if (string >= 0 && fn.slots[string] === "string") {
           lengthOf.set(op.id, string);
-          lengthLoadAt.set(op.id, loadAt.get(op.string) ?? 0);
+          // The string slot must not be stored after the load (or after
+          // the store that put the string there).
+          const loaded = loadAt.get(op.string),
+            stored = storedAt.get(op.string);
+          lengthLoadAt.set(
+            op.id,
+            loaded !== undefined
+              ? loaded
+              : stored !== undefined
+                ? stored + 1
+                : 0,
+          );
         }
       } else if (op.kind === "string-code-unit") {
         const index = current(op.index),
@@ -255,8 +276,33 @@ function analyzeStringIndices(
         if (index >= 0 && string >= 0 && live.has(less(index, string)))
           visit(op.id);
       } else if (op.kind === "store") {
+        // A copy of a slot carries its facts (as counted-loop and LICM
+        // preheaders copy lengths and indices).
+        const source = current(op.value);
         kill(op.slot);
         lastStore.set(op.slot, position);
+        if (source >= 0 && source !== op.slot) {
+          const copied: number[] = [];
+          for (const key of live) {
+            if (key === undefined) continue;
+            const pair = Math.floor(key / 2),
+              first = Math.floor(pair / slots),
+              string = pair % slots;
+            if (first === source && string !== op.slot)
+              copied.push((op.slot * slots + string) * 2 + (key % 2));
+            else if (
+              string === source &&
+              first !== op.slot &&
+              fn.slots[op.slot] === "string"
+            )
+              copied.push((first * slots + op.slot) * 2 + (key % 2));
+          }
+          for (const key of copied) if (key !== undefined) live.add(key);
+        }
+        if (!loadSlot.has(op.value)) {
+          storedSlot.set(op.value, op.slot);
+          storedAt.set(op.value, position);
+        }
         const string = lengthOf.get(op.value);
         if (
           string !== undefined &&
