@@ -50,14 +50,17 @@ export interface ArrayElements<Key, Value> {
   /** General storage, once any element was not a Number. */
   values: ElementCell<Value>[] | undefined;
   /** The value of the array's "length" (at least the count), mirrored by
-   * every length definition so generated code reads it here. */
+   * every length definition so the runtime's length read takes it here
+   * instead of looking the property up. */
   length: number;
 }
 
 const dataFields =
   valueField | writableField | enumerableField | configurableField;
-// Storage of an array whose elements are not numbers (or that has none yet).
-const noNumbers = 0;
+// Number storage of every array with no room for numbers: elements that are
+// not numbers, or none yet. It has no cells to write, so arrays share it and
+// creating an array allocates no storage.
+const noNumbers = new Float64Array(0);
 // Initial and minimum grown capacity of number storage.
 const firstCapacity = 4;
 // Largest Float64Array extent below the native allocator's aligned uint32 bound.
@@ -71,7 +74,7 @@ export function createArrayElements<Key, Value>(
     keys,
     undefinedValue,
     numberCount: 0,
-    numbers: new Float64Array(noNumbers),
+    numbers: noNumbers,
     values: undefined,
     length: 0,
   };
@@ -144,7 +147,7 @@ export function writeArrayElement<Key, Value>(
     }
     elements.values = converted;
     elements.numberCount = 0;
-    elements.numbers = new Float64Array(noNumbers);
+    elements.numbers = noNumbers;
   }
   const values = elements.values;
   if (values === undefined || index > values.length)

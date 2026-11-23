@@ -93,7 +93,8 @@ export function createArrayObject<Key, Value>(
   return object;
 }
 /** Define the array's length, keeping the packed elements' mirror of its
- * value current (generated code reads `length` there). */
+ * value current (the runtime's length read takes it there). An accepted
+ * definition with a value leaves exactly that value. */
 function defineLength<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   update: DescriptorUpdate<Value>,
@@ -107,10 +108,12 @@ function defineLength<Key, Value>(
     hooks,
   );
   const elements = object.internalArrayElements;
-  if (elements !== undefined && (update.fields & valueField) !== 0) {
-    const length = object.properties.get(array.lengthKey);
-    const value =
-      length === undefined ? undefined : array.numberPayload(length.value);
+  if (
+    result === "accepted" &&
+    elements !== undefined &&
+    (update.fields & valueField) !== 0
+  ) {
+    const value = array.numberPayload(update.value);
     if (value === undefined) throw "ARRAY_LENGTH_INVARIANT";
     elements.length = value;
   }
