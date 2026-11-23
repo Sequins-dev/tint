@@ -86,14 +86,17 @@ export function provenRecordFacts(
     try {
       if (++work > maxWork) return undefined;
       if (fn.environment !== undefined) return undefined;
-      // Receiver contracts do not yet provide a closed interprocedural layout proof.
-      if (fn.receiverSlot !== undefined) externalFields = true;
       slotBases[fn.id] = nodes;
       nodes += fn.slots.length;
       let functionValues = 0,
         maximumValue = -1;
       if (roots === undefined ? fn.exported : roots.includes(fn.id)) {
         if (recordBearing(fn.returnType)) externalFields = true;
+        // An entry's receiver, like its parameters, may be a record whose
+        // fields were written outside the module. Other receivers are
+        // unknown values (merged below) but come from module code, so
+        // they do not open every field.
+        if (fn.receiverSlot !== undefined) externalFields = true;
         for (const slot of fn.parameters) {
           if (slot === undefined) throw "record flow parameter invariant";
           const type = fn.slots[slot];
