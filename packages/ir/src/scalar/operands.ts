@@ -187,6 +187,14 @@ export function visitInstructionOperands(
       visit(op.begin);
       visit(op.length);
       return;
+    case "array-view":
+      visit(op.buffer);
+      visit(op.byteOffset);
+      visit(op.length);
+      return;
+    case "array-buffer-byte-length":
+      visit(op.buffer);
+      return;
     case "array-length":
     case "array-buffer":
     case "array-byte-offset":

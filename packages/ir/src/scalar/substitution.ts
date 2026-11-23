@@ -205,6 +205,20 @@ export function substituteInstructionValues(
         ? op
         : { ...op, array, begin, length };
     }
+    case "array-view": {
+      const buffer = substitutedValue(values, op.buffer),
+        byteOffset = substitutedValue(values, op.byteOffset),
+        length = substitutedValue(values, op.length);
+      return buffer === op.buffer &&
+        byteOffset === op.byteOffset &&
+        length === op.length
+        ? op
+        : { ...op, buffer, byteOffset, length };
+    }
+    case "array-buffer-byte-length": {
+      const buffer = substitutedValue(values, op.buffer);
+      return buffer === op.buffer ? op : { ...op, buffer };
+    }
     case "array-length":
     case "array-buffer":
     case "array-byte-offset":

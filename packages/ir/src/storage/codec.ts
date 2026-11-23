@@ -620,6 +620,19 @@ export function encodeInstruction(
       writeSigned(writer, op.begin);
       writeSigned(writer, op.length);
       return true;
+    case "array-view":
+      writePrefix(writer, 85, op, 0);
+      writeSigned(writer, op.id);
+      writeByte(writer, scalarCode(op.type));
+      writeSigned(writer, op.buffer);
+      writeSigned(writer, op.byteOffset);
+      writeSigned(writer, op.length);
+      return true;
+    case "array-buffer-byte-length":
+      writePrefix(writer, 86, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.buffer);
+      return true;
     case "weak-slot-new":
       writePrefix(writer, 48, op, 0);
       writeSigned(writer, op.id);
@@ -1118,6 +1131,27 @@ export function decodeInstruction(
         begin = readSigned(reader),
         length = readSigned(reader);
       return { kind: "array-subarray", id, array, begin, length, ...span };
+    }
+    case 85: {
+      const id = readSigned(reader),
+        type = arrayType(readByte(reader)),
+        buffer = readSigned(reader),
+        byteOffset = readSigned(reader),
+        length = readSigned(reader);
+      return {
+        kind: "array-view",
+        id,
+        type,
+        buffer,
+        byteOffset,
+        length,
+        ...span,
+      };
+    }
+    case 86: {
+      const id = readSigned(reader),
+        buffer = readSigned(reader);
+      return { kind: "array-buffer-byte-length", id, buffer, ...span };
     }
     case 48: {
       const id = readSigned(reader),

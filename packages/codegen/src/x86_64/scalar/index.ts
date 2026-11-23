@@ -1304,6 +1304,93 @@ export function emitModule(
       define(op.id, type);
     }
 
+    /** The byte length of typed ArrayBuffer `buffer` (an owning or borrowed
+     * array: marker 2-5 for 1-, 2-, 4- and 8-byte elements) into `output`;
+     * rcx keeps the element width's shift. */
+    function bufferByteLength(buffer: Gpr<64>, output: Gpr<64>): void {
+      const shift = gpr(1);
+      marker(buffer, shift);
+      emit({ op: "sub", dst: shift, src: imm(2) });
+      emit({ op: "cmp", dst: shift, src: imm(3) });
+      branch(emit, "a", trapLabel);
+      emit({
+        op: "mov",
+        dst: output,
+        src: mem(buffer.index, nativeArrayLengthOffset),
+      });
+      emit({ op: "shl", dst: output, count: "cl" });
+    }
+    /** A typed-array view over a typed ArrayBuffer (`array-view`): the
+     * subarray layout with the target type's marker, its data at the
+     * buffer's data plus `byteOffset`, and the buffer as owner. */
+    function bufferView(
+      op: {
+        readonly id: number;
+        readonly type:
+          "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array";
+        readonly buffer: number;
+        readonly byteOffset: number;
+        readonly length: number;
+      },
+      block: Block,
+      index: number,
+    ): void {
+      const site = fnLabel + ":buffer-view:" + String(op.id);
+      const denied = site + ":invalid";
+      const width = arrayWidth(op.type);
+      const length = gpr(8);
+      function operands(): void {
+        exactInteger(emit, frame(home(op.byteOffset)), r9, trapLabel);
+        exactInteger(emit, frame(home(op.length)), length, trapLabel);
+      }
+      operands();
+      emit({ op: "cmp", dst: r9, src: imm(0) });
+      branch(emit, "l", trapLabel);
+      emit({ op: "cmp", dst: length, src: imm(0) });
+      branch(emit, "l", trapLabel);
+      if (width > 1) {
+        // The offset is a multiple of the element width.
+        emit({ op: "test", dst: r9, src: imm(width - 1) });
+        branch(emit, "ne", trapLabel);
+      }
+      // The view's end lies within the buffer's bytes.
+      emit({
+        op: "lea",
+        dst: r10,
+        src: {
+          kind: "mem",
+          width: 64,
+          address: { kind: "base", base: 9, index: 8, scale: width, disp: 0 },
+        },
+      });
+      emit({ op: "mov", dst: rdx, src: frame(home(op.buffer)) });
+      bufferByteLength(rdx, scratch);
+      emit({ op: "cmp", dst: r10, src: scratch });
+      branch(emit, "a", trapLabel);
+      emit({ op: "mov", dst: r10, src: imm(nativeArrayViewByteLength) });
+      allocate(block, index, site, denied);
+      if (generational) operands();
+      // A slow allocation can move the buffer: reload it.
+      emit({ op: "mov", dst: rdx, src: frame(home(op.buffer)) });
+      emit({
+        op: "mov",
+        dst: scratch,
+        src: bits(arrayMarker(width), 2 * (nativeHeaderFlagUnit / 4294967296)),
+      });
+      emit({ op: "mov", dst: mem(0, 0), src: scratch });
+      emit({ op: "mov", dst: mem(0, nativeArrayLengthOffset), src: length });
+      emit({ op: "mov", dst: scratch, src: mem(2, nativeArrayDataOffset) });
+      emit({ op: "add", dst: scratch, src: r9 });
+      emit({ op: "mov", dst: mem(0, nativeArrayDataOffset), src: scratch });
+      emit({ op: "mov", dst: mem(0, nativeArrayOwnerOffset), src: rdx });
+      emit({
+        op: "mov",
+        dst: mem(0, nativeArrayViewByteLength - 8),
+        src: imm(0),
+      });
+      define(op.id, op.type);
+    }
+
     function marker(object: Gpr<64>, output: Gpr<64>): void {
       emit({ op: "mov", dst: output, src: mem(object.index, 0) });
       emit({ op: "shl", dst: output, count: 64 - nativeHeaderFlagsShift });
@@ -2309,6 +2396,17 @@ export function emitModule(
         case "array-subarray":
           if (host === undefined) break;
           arrayView(op, block, index);
+          return;
+        case "array-view":
+          if (host === undefined) break;
+          bufferView(op, block, index);
+          return;
+        case "array-buffer-byte-length":
+          if (host === undefined) break;
+          emit({ op: "mov", dst: rdx, src: frame(home(op.buffer)) });
+          bufferByteLength(rdx, rax);
+          numberBits();
+          define(op.id, "number");
           return;
         case "array-length":
         case "array-byte-length":

@@ -584,6 +584,8 @@ function functionFlows(
           case "error-message":
           case "error-is":
           case "array-subarray":
+          case "array-view":
+          case "array-buffer-byte-length":
           case "reference-vector-new":
           case "reference-vector-length":
           case "reference-vector-is":

@@ -189,6 +189,7 @@ export function instructionMayThrow(op: Instruction): boolean {
     case "weak-slot-new":
     case "reference-vector-new":
     case "array-subarray":
+    case "array-view":
     case "string-concat":
     case "string-slice":
     case "string-from-code-units":
@@ -931,6 +932,16 @@ export function verify(
               define(op.id, type);
               break;
             }
+            case "array-view":
+              equal(use(op.buffer), "reference");
+              equal(use(op.byteOffset), "number");
+              equal(use(op.length), "number");
+              define(op.id, op.type);
+              break;
+            case "array-buffer-byte-length":
+              equal(use(op.buffer), "reference");
+              define(op.id, "number");
+              break;
             case "weak-slot-new":
               equal(use(op.key), "general");
               equal(use(op.value), "general");

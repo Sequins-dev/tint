@@ -3456,6 +3456,7 @@ function emitModuleForms(
                   op.kind === "general-none" ||
                   op.kind === "general-null" ||
                   op.kind === "array-subarray" ||
+                  op.kind === "array-view" ||
                   op.kind === "array-new" ||
                   op.kind === "weak-slot-new" ||
                   op.kind === "reference-vector-new" ||
@@ -3573,7 +3574,8 @@ function emitModuleForms(
                 slotType === "Uint8Array" ||
                 slotType === "Uint16Array" ||
                 slotType === "Uint32Array" ||
-                (op.kind === "array-new" && op.type !== "Float64Array") ||
+                ((op.kind === "array-new" || op.kind === "array-view") &&
+                  op.type !== "Float64Array") ||
                 (op.kind === "array-subarray" &&
                   integerArrays[valueIds.intern(op.array)] === 1)
               )
@@ -4146,6 +4148,7 @@ function emitModuleForms(
                   op.kind === "weak-slot-new" ||
                   op.kind === "reference-vector-new" ||
                   op.kind === "array-subarray" ||
+                  op.kind === "array-view" ||
                   (op.kind === "host-call" &&
                     op.operation === "memory-read-string"),
               ),
@@ -4447,8 +4450,13 @@ function emitModuleForms(
                 type = value(op.array).type;
                 break;
               case "array-new":
+              case "array-view":
                 id = op.id;
                 type = op.type;
+                break;
+              case "array-buffer-byte-length":
+                id = op.id;
+                type = "number";
                 break;
               case "error-message":
               case "general-kind":
@@ -4585,13 +4593,13 @@ function emitModuleForms(
                 id = op.id;
                 type = "reference";
                 break;
-              case "array-byte-offset":
-              case "array-byte-length":
               case "reference-vector-is":
               case "array-copy":
                 id = op.id;
                 type = "boolean";
                 break;
+              case "array-byte-offset":
+              case "array-byte-length":
               case "reference-vector-length":
               case "array-length":
               case "array-read":
@@ -7740,6 +7748,175 @@ function emitModuleForms(
           }
           return register;
         }
+        /** The byte length of typed ArrayBuffer `buffer` (an owning or
+         * borrowed array: marker 2-5 for 1-, 2-, 4- and 8-byte elements)
+         * into `rd`; x13 keeps the element width's shift. */
+        function bufferByteLength(buffer: number, rd: number): void {
+          emit({ op: "ldr", width: 64, rt: 13, rn: buffer, offset: 0 });
+          emit({ op: "ubfm", width: 64, rd: 13, rn: 13, immr: 0, imms: 47 });
+          emit({
+            op: "sub-imm",
+            width: 64,
+            rd: 13,
+            rn: 13,
+            immediate: 2,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "sub-imm",
+            width: 64,
+            rd: "zr",
+            rn: 13,
+            immediate: 3,
+            shift: 0,
+            setFlags: true,
+          });
+          trapIf({ op: "b.cond", condition: "hi" });
+          emit({
+            op: "ldr",
+            width: 32,
+            rt: rd,
+            rn: buffer,
+            offset: nativeArrayLengthOffset,
+          });
+          emit({ op: "lslv", width: 64, rd, rn: rd, rm: 13 });
+        }
+        /** A typed-array view over a typed ArrayBuffer (`array-view`): the
+         * subarray layout with the target type's marker, its data at the
+         * buffer's data plus `byteOffset`, and the buffer as owner. */
+        function arrayView(op: {
+          readonly id: number;
+          readonly type:
+            "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array";
+          readonly buffer: number;
+          readonly byteOffset: number;
+          readonly length: number;
+        }): void {
+          const shift =
+            op.type === "Uint8Array"
+              ? 0
+              : op.type === "Uint16Array"
+                ? 1
+                : op.type === "Float64Array"
+                  ? 3
+                  : 2;
+          allocate(
+            () => {
+              function bound(id: number, offset: number): void {
+                rawValue(9, id);
+                callHelper("to-uint32");
+                emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
+                floatLoad(1, id);
+                emit({ op: "fcmp", rn: 0, rm: 1 });
+                trapIf({ op: "b.cond", condition: "ne" });
+                rawStore(9, offset);
+              }
+              bound(op.byteOffset, allocationOffset + 8);
+              bound(op.length, allocationOffset + 16);
+              rawLoad(11, allocationOffset + 8);
+              if (shift > 0) {
+                // The offset is a multiple of the element width.
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 12,
+                  rn: 11,
+                  immr: 0,
+                  imms: shift - 1,
+                });
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 12,
+                  immediate: 0,
+                  shift: 0,
+                  setFlags: true,
+                });
+                trapIf({ op: "b.cond", condition: "ne" });
+              }
+              // The view's end lies within the buffer's bytes.
+              rawLoad(12, allocationOffset + 16);
+              emit({
+                op: "add-reg",
+                width: 64,
+                rd: 9,
+                rn: 11,
+                rm: 12,
+                shift: "lsl",
+                amount: shift,
+                setFlags: false,
+              });
+              rawValue(10, op.buffer);
+              bufferByteLength(10, 14);
+              emit({
+                op: "sub-reg",
+                width: 64,
+                rd: "zr",
+                rn: 9,
+                rm: 14,
+                shift: "lsl",
+                amount: 0,
+                setFlags: true,
+              });
+              trapIf({ op: "b.cond", condition: "hi" });
+            },
+            (rd) => imm(rd, nativeArrayViewByteLength),
+          );
+          // A slow allocation can move the buffer: reload it.
+          rawValue(10, op.buffer);
+          rawLoad(11, allocationOffset + 8);
+          rawLoad(12, allocationOffset + 16);
+          imm64(13, shift + 2, 2 * (nativeHeaderFlagUnit / 4294967296));
+          emit({ op: "str", width: 64, rt: 13, rn: 9, offset: 0 });
+          emit({
+            op: "str",
+            width: 64,
+            rt: 12,
+            rn: 9,
+            offset: nativeArrayLengthOffset,
+          });
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 13,
+            rn: 10,
+            offset: nativeArrayDataOffset,
+          });
+          emit({
+            op: "add-reg",
+            width: 64,
+            rd: 13,
+            rn: 13,
+            rm: 11,
+            shift: "lsl",
+            amount: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "str",
+            width: 64,
+            rt: 13,
+            rn: 9,
+            offset: nativeArrayDataOffset,
+          });
+          emit({
+            op: "str",
+            width: 64,
+            rt: 10,
+            rn: 9,
+            offset: nativeArrayOwnerOffset,
+          });
+          emit({
+            op: "str",
+            width: 64,
+            rt: "zr",
+            rn: 9,
+            offset: nativeArrayViewByteLength - 8,
+          });
+          saveRaw(9, op.id);
+        }
         function allocateIndexed(
           id: number,
           length: number,
@@ -9423,6 +9600,20 @@ function emitModuleForms(
                 saveRaw(9, op.id);
                 break;
               }
+              case "array-view":
+                arrayView(op);
+                break;
+              case "array-buffer-byte-length":
+                rawValue(10, op.buffer);
+                bufferByteLength(10, 14);
+                if (wantsInteger(op.id)) {
+                  saveRaw(14, op.id);
+                  markInteger(op.id);
+                } else {
+                  emit({ op: "ucvtf-d-x", rd: 0, rn: 14 });
+                  floatStore(0, op.id);
+                }
+                break;
               case "weak-slot-new": {
                 allocate(
                   () => {},

@@ -34,6 +34,7 @@ export function instructionEffects(op: Instruction): number {
     case "array-buffer":
     case "array-byte-offset":
     case "array-byte-length":
+    case "array-buffer-byte-length":
     case "array-valid":
     case "closure-environment":
     case "record-read":
@@ -87,6 +88,7 @@ export function instructionEffects(op: Instruction): number {
     case "array-new":
     case "reference-vector-new":
     case "array-subarray":
+    case "array-view":
     case "string-concat":
     case "string-slice":
     case "string-from-code-units":

@@ -214,6 +214,16 @@ const instructions: Instruction[] = [
   { kind: "c-memory", access, id: 1, arguments: [2], ...span },
   { kind: "array-subarray", id: 1, array: 2, begin: 3, length: 4, ...span },
   {
+    kind: "array-view",
+    id: 1,
+    type: "Uint16Array",
+    buffer: 2,
+    byteOffset: 3,
+    length: 4,
+    ...span,
+  },
+  { kind: "array-buffer-byte-length", id: 1, buffer: 2, ...span },
+  {
     kind: "weak-slot-new",
     id: 1,
     key: 2,
@@ -343,6 +353,7 @@ const terminators: Terminator[] = [
  * here, and the round-trip test requires an instance of each. */
 const instructionKinds: { readonly [K in Instruction["kind"]]: true } = {
   "array-buffer": true,
+  "array-buffer-byte-length": true,
   "array-byte-length": true,
   "array-byte-offset": true,
   "array-copy": true,
@@ -353,6 +364,7 @@ const instructionKinds: { readonly [K in Instruction["kind"]]: true } = {
   "array-store": true,
   "array-subarray": true,
   "array-valid": true,
+  "array-view": true,
   "array-write": true,
   binary: true,
   "boolean-none": true,

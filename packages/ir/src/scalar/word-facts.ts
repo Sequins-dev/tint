@@ -265,7 +265,10 @@ export function provenWordFacts(
         add(n, known === 0 ? 15 : known);
       } else {
         add(n, 15);
-        if (op.kind === "array-new" && op.type !== "Float64Array")
+        if (
+          (op.kind === "array-new" || op.kind === "array-view") &&
+          op.type !== "Float64Array"
+        )
           arrayWords[n] = 1;
         if (op.kind === "array-subarray")
           arrayWords[n] = arrayWords[node(op.array)] ?? 0;

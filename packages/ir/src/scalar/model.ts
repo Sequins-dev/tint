@@ -324,6 +324,26 @@ export type Instruction = Span &
         readonly length: number;
       }
     | {
+        /** A view of `type` over typed ArrayBuffer `buffer` (an owning or
+         * borrowed array): `length` elements from `byteOffset`. Traps
+         * unless both are integers, `byteOffset` is a multiple of the
+         * element width and the view lies within the buffer's bytes. */
+        readonly kind: "array-view";
+        readonly id: number;
+        readonly type:
+          "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array";
+        readonly buffer: number;
+        readonly byteOffset: number;
+        readonly length: number;
+      }
+    | {
+        /** The byte length of typed ArrayBuffer `buffer`, whose element
+         * width its header records. */
+        readonly kind: "array-buffer-byte-length";
+        readonly id: number;
+        readonly buffer: number;
+      }
+    | {
         /** Trusted opaque cell: general handles must never be viewed as records. */
         readonly kind: "weak-slot-new";
         readonly id: number;

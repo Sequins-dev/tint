@@ -2405,7 +2405,8 @@ function lowerEntries(
               if (
                 metadata === "array-buffer" ||
                 metadata === "array-byte-offset" ||
-                metadata === "array-byte-length"
+                metadata === "array-byte-length" ||
+                metadata === "array-buffer-byte-length"
               ) {
                 builtin = metadata;
                 expr(node.object);
@@ -2791,11 +2792,16 @@ function lowerEntries(
                 }
                 break;
               }
-              if (checked.intrinsics.get(node) !== "array-new")
+              const construction = checked.intrinsics.get(node);
+              if (
+                construction !== "array-new" &&
+                construction !== "array-view-new" &&
+                construction !== "array-buffer-new"
+              )
                 fail("unsupported constructor");
               if (layout !== undefined)
                 fail("owned arrays cannot enter borrowed closure environments");
-              builtin = "array-new";
+              builtin = construction;
               exprArguments(node.arguments);
               break;
             }

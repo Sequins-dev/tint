@@ -486,7 +486,11 @@ export function lowerFunction(
         type = valueTypes[op.array];
         break;
       case "array-new":
+      case "array-view":
         type = op.type;
+        break;
+      case "array-buffer-byte-length":
+        type = "number";
         break;
       case "string-none":
       case "string-wrap":
@@ -3208,6 +3212,179 @@ export function lowerFunction(
   function requireRange(condition: number, node: Span): void {
     requireCondition(condition, "RangeError", "Invalid range", node);
   }
+  /** ToIndex of an optional typed number argument; absent is `fallback`. */
+  function argumentIndex(
+    argument: number | undefined,
+    fallback: () => number,
+    node: Span,
+  ): number {
+    if (argument === undefined || undefinedSlots[argument] === 1)
+      return fallback();
+    const index = integerIndex(
+      save(numericInput(argument, node), "number", node),
+      node,
+    );
+    requireRange(binarySlot(">=", index, numberSlot(0, node), node), node);
+    requireRange(
+      binarySlot("<=", index, numberSlot(9007199254740991, node), node),
+      node,
+    );
+    if (slots[argument] === "optional-number") {
+      const present = nextValue++;
+      emitPresence(present, load(argument, node), false, node);
+      conditionalStore(
+        unarySlot("!", save(present, "boolean", node), "boolean", node),
+        index,
+        fallback,
+        node,
+      );
+    }
+    return index;
+  }
+  /** `new ArrayBuffer(length)`: a zeroed owned byte array, typed as the
+   * buffer it roots. */
+  function arrayBufferNew(node: Expression & { readonly kind: "new" }): number {
+    const size = node.arguments[0];
+    const length = argumentIndex(
+      size === undefined ? undefined : value(size),
+      () => numberSlot(0, node),
+      node,
+    );
+    const array = nextValue++;
+    emit({
+      kind: "array-new",
+      id: array,
+      type: "Uint8Array",
+      length: load(length, node),
+      start: node.start,
+      end: node.end,
+    });
+    const owned = save(array, "Uint8Array", node),
+      buffer = nextValue++;
+    emit({
+      kind: "array-buffer",
+      id: buffer,
+      array: load(owned, node),
+      start: node.start,
+      end: node.end,
+    });
+    return save(buffer, "reference", node);
+  }
+  /** `new T(buffer, byteOffset?, length?)` (InitializeTypedArrayFromArrayBuffer
+   * for a fixed-length buffer): the offset must be a multiple of the element
+   * width; without a length the view runs to the buffer's end, which must
+   * fall on an element boundary; with one, the view must fit. */
+  function arrayViewNew(node: Expression & { readonly kind: "new" }): number {
+    const type = scalarType(node);
+    if (
+      type !== "Uint8Array" &&
+      type !== "Uint16Array" &&
+      type !== "Uint32Array" &&
+      type !== "Float64Array"
+    )
+      throw "array view contract invariant";
+    const width =
+      type === "Uint8Array"
+        ? 1
+        : type === "Uint16Array"
+          ? 2
+          : type === "Float64Array"
+            ? 8
+            : 4;
+    const source = node.arguments[0],
+      offsetArgument = node.arguments[1],
+      lengthArgument = node.arguments[2];
+    if (source === undefined) throw "array view buffer invariant";
+    const buffer = value(source),
+      offsetInput =
+        offsetArgument === undefined ? undefined : value(offsetArgument),
+      lengthInput =
+        lengthArgument === undefined ? undefined : value(lengthArgument);
+    const zero = numberSlot(0, node),
+      elementBytes = numberSlot(width, node);
+    const offset = argumentIndex(offsetInput, () => zero, node);
+    if (width > 1)
+      requireCondition(
+        binarySlot(
+          "===",
+          binarySlot("%", offset, elementBytes, node),
+          zero,
+          node,
+        ),
+        "RangeError",
+        "start offset of " + type + " should be a multiple of " + width,
+        node,
+      );
+    const byteLengthId = nextValue++;
+    emit({
+      kind: "array-buffer-byte-length",
+      id: byteLengthId,
+      buffer: load(buffer, node),
+      start: node.start,
+      end: node.end,
+    });
+    const bytes = save(byteLengthId, "number", node);
+    // The view's element count when no length is given.
+    function remaining(): number {
+      if (width > 1)
+        requireCondition(
+          binarySlot(
+            "===",
+            binarySlot("%", bytes, elementBytes, node),
+            zero,
+            node,
+          ),
+          "RangeError",
+          "byte length of " + type + " should be a multiple of " + width,
+          node,
+        );
+      requireCondition(
+        binarySlot("<=", offset, bytes, node),
+        "RangeError",
+        "start offset is outside the bounds of the buffer",
+        node,
+      );
+      return binarySlot(
+        "/",
+        binarySlot("-", bytes, offset, node),
+        elementBytes,
+        node,
+      );
+    }
+    const length = argumentIndex(lengthInput, remaining, node);
+    if (lengthInput !== undefined && undefinedSlots[lengthInput] !== 1) {
+      // An explicit length must fit: checked again for an absent optional
+      // length, where it holds by construction.
+      requireCondition(
+        binarySlot(
+          "<=",
+          binarySlot(
+            "+",
+            offset,
+            binarySlot("*", length, elementBytes, node),
+            node,
+          ),
+          bytes,
+          node,
+        ),
+        "RangeError",
+        "invalid typed array length",
+        node,
+      );
+    }
+    const id = nextValue++;
+    emit({
+      kind: "array-view",
+      id,
+      type,
+      buffer: load(buffer, node),
+      byteOffset: load(offset, node),
+      length: load(length, node),
+      start: node.start,
+      end: node.end,
+    });
+    return save(id, type, node);
+  }
   /** Continue when boolean slot `condition` holds, else throw `error`. */
   /** Records and typed arrays: present references (never undefined). */
   function referenceSlot(type: ScalarType | undefined): boolean {
@@ -5604,6 +5781,9 @@ export function lowerFunction(
           }
           return set;
         }
+        if (info(node).builtin === "array-buffer-new")
+          return arrayBufferNew(node);
+        if (info(node).builtin === "array-view-new") return arrayViewNew(node);
         const type = scalarType(node);
         if (
           info(node).builtin !== "array-new" ||
@@ -6453,9 +6633,21 @@ export function lowerFunction(
           recordAccess(object, result, "read", access, node);
           return result;
         }
+        const metadata = info(node).builtin;
+        if (metadata === "array-buffer-byte-length") {
+          const buffer = value(node.object),
+            id = nextValue++;
+          emit({
+            kind: "array-buffer-byte-length",
+            id,
+            buffer: load(buffer, node.object),
+            start: node.start,
+            end: node.end,
+          });
+          return save(id, "number", node);
+        }
         const array = value(node.object),
           id = nextValue++;
-        const metadata = info(node).builtin;
         emit({
           kind:
             metadata === "array-buffer" ||

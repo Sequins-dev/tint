@@ -171,6 +171,9 @@ export type ClosureIntrinsic =
   | "array-subarray"
   | "array-slice"
   | "array-new"
+  | "array-view-new"
+  | "array-buffer-new"
+  | "array-buffer-byte-length"
   | "array-join"
   | "array-at"
   | "array-reverse"
@@ -5390,6 +5393,14 @@ function checkClosureModuleLayout(
             break;
           }
           if (
+            types[obj]?.kind === "ArrayBuffer" &&
+            node.property === "byteLength"
+          ) {
+            intrinsics.set(node, "array-buffer-byte-length");
+            result = number;
+            break;
+          }
+          if (
             isArray(obj) &&
             ["buffer", "byteOffset", "byteLength"].includes(node.property)
           ) {
@@ -5677,6 +5688,22 @@ function checkClosureModuleLayout(
             intrinsics.set(node, map ? "map-new" : "set-new");
             break;
           }
+          if (
+            target.kind === "identifier" &&
+            !references.has(target) &&
+            target.name === "ArrayBuffer" &&
+            node.typeArguments.length === 0 &&
+            node.arguments.length <= 1
+          ) {
+            // A fixed-length buffer of zeroed bytes. A resizable one (with
+            // a maxByteLength option) takes the realm constructor.
+            const size = node.arguments[0];
+            if (size !== undefined)
+              requireType(expression(size, owner), optionalNumber, size);
+            result = primitive("ArrayBuffer");
+            intrinsics.set(node, "array-buffer-new");
+            break;
+          }
 
           if (
             target.kind !== "identifier" ||
@@ -5731,30 +5758,48 @@ function checkClosureModuleLayout(
               "ARITY",
               "typed-array construction accepts an optional numeric length, numeric array or supported typed-array source",
             );
+          const source = node.arguments[0];
+          const input =
+            source === undefined
+              ? undefined
+              : expression(
+                  source,
+                  owner,
+                  ungroup(source).kind === "array"
+                    ? typeOf(optionalNumericListAnnotation)
+                    : undefined,
+                );
+          if (
+            source !== undefined &&
+            input !== undefined &&
+            types[input]?.kind === "ArrayBuffer"
+          ) {
+            // A view of the buffer's bytes: (buffer, byteOffset?, length?).
+            if (node.arguments.length > 3)
+              fail(
+                node,
+                "ARITY",
+                "typed-array buffer views accept a byte offset and a length",
+              );
+            for (const arg of node.arguments.slice(1)) {
+              if (arg === undefined) throw "missing call argument";
+              requireType(expression(arg, owner), optionalNumber, arg);
+            }
+            result = primitive(target.name);
+            intrinsics.set(node, "array-view-new");
+            break;
+          }
           if (node.arguments.length > 1)
             unsupported(
               node,
               "realm-library-construction",
-              "typed-array byte offsets and lengths require the realm constructor",
+              "typed-array byte offsets and lengths require a buffer",
             );
-          for (const arg of node.arguments) {
-            if (arg === undefined) throw "missing call argument";
-            const input = expression(
-              arg,
-              owner,
-              ungroup(arg).kind === "array"
-                ? typeOf(optionalNumericListAnnotation)
-                : undefined,
-            );
-            if (types[input]?.kind === "ArrayBuffer")
-              unsupported(
-                arg,
-                "realm-library-construction",
-                "typed-array buffer construction requires the realm constructor",
-              );
+          if (source !== undefined && input !== undefined) {
             if (isList(input))
-              requireType(listReadType(input, arg), optionalNumber, arg);
-            else if (!isArray(input)) requireType(input, optionalNumber, arg);
+              requireType(listReadType(input, source), optionalNumber, source);
+            else if (!isArray(input))
+              requireType(input, optionalNumber, source);
           }
           result = primitive(target.name);
           intrinsics.set(node, "array-new");
