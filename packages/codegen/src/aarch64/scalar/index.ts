@@ -96,7 +96,11 @@ export type {
   NativeInlineRange,
 } from "./debug-variables.ts";
 import { forwardRegisterRoundTrips } from "./register-moves.ts";
-import { fallsThrough, forwardableEntries } from "./block-entries.ts";
+import {
+  chainedBlockOrder,
+  fallsThrough,
+  forwardableEntries,
+} from "./block-entries.ts";
 import {
   createWordBuffer,
   appendWord,
@@ -4278,7 +4282,9 @@ function emitModuleForms(
           });
         }
         forwardSites = [];
-        const forwardable = forwardableEntries(fn),
+        // Single-predecessor continuations follow their block (P7).
+        const layout = chainedBlockOrder(fn);
+        const forwardable = forwardableEntries(fn, layout),
           functionFixups = fixups.length;
         edgeWords.clear();
         edgeBranches.clear();
@@ -8640,9 +8646,9 @@ function emitModuleForms(
           viewValueTokens.set(id, token);
           return token;
         }
-        for (let blockIndex = 0; blockIndex < fn.blocks.length; blockIndex++) {
-          const b = fn.blocks[blockIndex],
-            nextBlock = fn.blocks[blockIndex + 1]?.id;
+        for (let position = 0; position < layout.length; position++) {
+          const b = fn.blocks[layout[position] ?? -1],
+            nextBlock = layout[position + 1];
           if (b === undefined) throw "block invariant";
           deferredIntegers.clear();
           // Fused dispatch continuations are unreachable; their head tests
@@ -17426,8 +17432,8 @@ function emitModuleForms(
           // Labels laid out after a seeded block that emitted nothing share
           // its address but get their own entry state.
           const seededStarts = new Set<number>();
-          for (let index = fn.blocks.length - 1; index >= 0; index--) {
-            const block = fn.blocks[index];
+          for (let index = layout.length - 1; index >= 0; index--) {
+            const block = fn.blocks[layout[index] ?? -1];
             if (block === undefined) throw "block invariant";
             const start = offsets[block.id * 2];
             if (start === undefined) continue;
