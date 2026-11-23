@@ -210,6 +210,82 @@ test("a general field write to an old object skips the barrier helper for non-re
   assert.ok(five > state && three > five, JSON.stringify({ five, three }));
 });
 
+test("record-new stores zero-valued fields as XZR without materializing them", () => {
+  const module: ModuleIR = {
+    records: [
+      {
+        byteLength: 48,
+        fields: [
+          { offset: 8, type: "optional-reference", mutable: true },
+          { offset: 16, type: "general", mutable: true },
+          { offset: 32, type: "number", mutable: true },
+          { offset: 40, type: "boolean", mutable: true },
+        ],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "fresh",
+        exported: true,
+        parameters: [],
+        slots: [],
+        returnType: "reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "reference-none", id: 0, ...span },
+              { kind: "general-none", id: 1, ...span },
+              { kind: "constant", id: 2, value: 0, ...span },
+              { kind: "constant", id: 3, value: false, ...span },
+              {
+                kind: "record-new",
+                id: 4,
+                record: 0,
+                arguments: [0, 1, 2, 3],
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 4, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  const result = emitModule(module);
+  assert.ok(result.ok, JSON.stringify(result));
+  const view = new DataView(result.value.code.buffer),
+    fn = result.value.functions[0]!;
+  const words: number[] = [];
+  for (let offset = fn.offset; offset < fn.offset + fn.byteLength; offset += 4)
+    words.push(view.getUint32(offset, true));
+  const pair = (offset: number): number => {
+    const word = encode({
+      op: "stp",
+      width: 64,
+      rt: "zr",
+      rt2: "zr",
+      rn: 9,
+      offset,
+      mode: "offset",
+    });
+    assert.ok(word.ok);
+    return word.value;
+  };
+  // Words 8..40 are zero: two STP XZR pairs, the fifth word one STR XZR.
+  assert.ok(words.includes(pair(8)));
+  assert.ok(words.includes(pair(24)));
+  const single = encode({ op: "str", width: 64, rt: "zr", rn: 9, offset: 40 });
+  assert.ok(single.ok);
+  assert.ok(words.includes(single.value));
+  // The constants are never materialized in the frame: no MOV x9, #0 and
+  // no STR XZR, [sp, #imm].
+  assert.ok(!words.includes(0xd2800009));
+  assert.ok(!words.some((word) => (word & 0xffc003ff) >>> 0 === 0xf90003ff));
+});
+
 test("reference vector copies are one indexed loop with at most one barrier", () => {
   function words(rebase: boolean, generationalBarriers: boolean): number[] {
     const module: ModuleIR = {

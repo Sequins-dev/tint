@@ -3872,6 +3872,9 @@ function emitModuleForms(
           // reference-none and string-none: one zero word. Used only as an
           // equality operand, they fold into a test of the other side.
           noneValues = new Uint8Array(resultBound),
+          // Values whose every word is zero (none values, general-none,
+          // boolean-none, false and +0): record-new stores them as XZR.
+          zeroValues = new Uint8Array(resultBound),
           // `typedArray[i] ?? 0`: an out-of-range read already yields an
           // all-zero element word, so a read whose only use is an
           // optional-value-or with fallback +0 writes that result directly
@@ -3900,6 +3903,21 @@ function emitModuleForms(
           const numericConstants = new Uint8Array(resultBound),
             uses = new Uint32Array(resultBound),
             folded = new Uint32Array(resultBound);
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "zero value block invariant";
+            for (const op of block.instructions) {
+              if (op === undefined) throw "zero value instruction invariant";
+              if (
+                op.kind === "reference-none" ||
+                op.kind === "string-none" ||
+                op.kind === "general-none" ||
+                op.kind === "boolean-none" ||
+                (op.kind === "constant" &&
+                  (op.value === false || (op.value === 0 && 1 / op.value > 0)))
+              )
+                zeroValues[valueIds.intern(op.id)] = 1;
+            }
+          }
           for (const block of fn.blocks) {
             if (block === undefined) throw "constant use block invariant";
             visitTerminatorOperands(block.terminator, (id) => {
@@ -3934,6 +3952,15 @@ function emitModuleForms(
                 const index = valueIds.intern(id);
                 uses[index] = (uses[index] ?? 0) + 1;
               });
+              // A constant field of a new record is stored as XZR or the
+              // absent number's bits, not read from its frame word.
+              if (op.kind === "record-new")
+                for (const argument of op.arguments) {
+                  if (argument === undefined) continue;
+                  const index = valueIds.intern(argument);
+                  if (zeroValues[index] === 1 || undefinedValues[index] === 1)
+                    folded[index] = (folded[index] ?? 0) + 1;
+                }
               if (
                 op.kind === "binary" &&
                 (op.operator === "<<" ||
@@ -4077,6 +4104,7 @@ function emitModuleForms(
               (numericConstants[index] === 1 ||
                 undefinedValues[index] === 1 ||
                 noneValues[index] === 1 ||
+                zeroValues[index] === 1 ||
                 literalValues[index] === 1) &&
               (folded[index] ?? 0) > 0 &&
               (uses[index] ?? 0) === (folded[index] ?? 0)
@@ -9396,6 +9424,8 @@ function emitModuleForms(
               }
               case "general-null":
               case "general-none":
+                // Folded into the record-new fields that are its only uses.
+                if (foldedConstants[valueIds.intern(op.id)] === 1) break;
                 imm(9, op.kind === "general-null" ? 4 : 0);
                 saveRaw(9, op.id);
                 rawStore("zr", value(op.id).offset + 8);
@@ -10557,37 +10587,55 @@ function emitModuleForms(
                 );
                 descriptorPointer(op.record);
                 emit({ op: "str", width: 64, rt: 11, rn: 9, offset: 0 });
+                /** x9 + offset in x12 when STR cannot reach it. */
+                function fieldBase(offset: number): number {
+                  if (offset <= 32760) return 9;
+                  imm(12, offset);
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 12,
+                    rn: 9,
+                    rm: 12,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  return 12;
+                }
+                // Zero words are stored last, adjacent pairs with one STP.
+                const zeroWords: number[] = [];
                 for (let i = 0; i < layout.fields.length; i++) {
                   const field = layout.fields[i],
                     arg = op.arguments[i];
                   if (field === undefined) throw "record field invariant";
+                  const argIndex =
+                    arg === undefined ? -1 : valueIds.intern(arg);
                   for (
                     let word = 0;
                     word < scalarByteLength(field.type);
                     word += 8
                   ) {
-                    // A missing optional number is `undefined`, not +0.
-                    if (arg === undefined && field.type === "optional-number")
-                      absentNumber(10);
-                    else if (arg === undefined) imm(10, 0);
-                    else rawLoad(10, value(arg).offset + word);
                     const offset = field.offset + word;
-                    if (offset <= 32760)
-                      emit({ op: "str", width: 64, rt: 10, rn: 9, offset });
-                    else {
-                      imm(12, offset);
-                      emit({
-                        op: "add-reg",
-                        width: 64,
-                        rd: 12,
-                        rn: 9,
-                        rm: 12,
-                        shift: "lsl",
-                        amount: 0,
-                        setFlags: false,
-                      });
-                      emit({ op: "str", width: 64, rt: 10, rn: 12, offset: 0 });
+                    // A missing optional number is `undefined`, not +0.
+                    if (
+                      (arg === undefined && field.type !== "optional-number") ||
+                      zeroValues[argIndex] === 1
+                    ) {
+                      zeroWords.push(offset);
+                      continue;
                     }
+                    if (arg === undefined || undefinedValues[argIndex] === 1)
+                      absentNumber(10);
+                    else rawLoad(10, value(arg).offset + word);
+                    const base = fieldBase(offset);
+                    emit({
+                      op: "str",
+                      width: 64,
+                      rt: 10,
+                      rn: base,
+                      offset: base === 9 ? offset : 0,
+                    });
                   }
                   const stateOffset = field.stateOffset ?? field.presenceOffset;
                   if (stateOffset !== undefined) {
@@ -10608,6 +10656,72 @@ function emitModuleForms(
                     });
                     emit({ op: "strb", rt: 10, rn: 12, offset: 0 });
                   }
+                }
+                zeroWords.sort((a: number, b: number): number => a - b);
+                // Pairs beyond STP's reach from x9 address from x12 = x9 +
+                // pairBase (-1 until materialized).
+                let pairBase = -1;
+                for (let index = 0; index < zeroWords.length; index++) {
+                  const offset = zeroWords[index];
+                  if (offset === undefined) throw "record zero invariant";
+                  if (zeroWords[index + 1] !== offset + 8) {
+                    const base = fieldBase(offset);
+                    emit({
+                      op: "str",
+                      width: 64,
+                      rt: "zr",
+                      rn: base,
+                      offset: base === 9 ? offset : 0,
+                    });
+                    // fieldBase may have replaced x12.
+                    if (base === 12) pairBase = -1;
+                    continue;
+                  }
+                  let rn = 9,
+                    relative = offset;
+                  if (offset > 504) {
+                    if (
+                      pairBase < 0 ||
+                      offset - pairBase > 504 ||
+                      offset < pairBase
+                    ) {
+                      if (offset > 4095) {
+                        imm(12, offset);
+                        emit({
+                          op: "add-reg",
+                          width: 64,
+                          rd: 12,
+                          rn: 9,
+                          rm: 12,
+                          shift: "lsl",
+                          amount: 0,
+                          setFlags: false,
+                        });
+                      } else
+                        emit({
+                          op: "add-imm",
+                          width: 64,
+                          rd: 12,
+                          rn: 9,
+                          immediate: offset,
+                          shift: 0,
+                          setFlags: false,
+                        });
+                      pairBase = offset;
+                    }
+                    rn = 12;
+                    relative = offset - pairBase;
+                  }
+                  emit({
+                    op: "stp",
+                    width: 64,
+                    rt: "zr",
+                    rt2: "zr",
+                    rn,
+                    offset: relative,
+                    mode: "offset",
+                  });
+                  index++;
                 }
                 // No safepoint occurs between allocation, initialization and root publication.
                 saveRaw(9, op.id);
@@ -11084,6 +11198,7 @@ function emitModuleForms(
                 break;
               }
               case "boolean-none":
+                if (foldedConstants[valueIds.intern(op.id)] === 1) break;
                 rawStore("zr", value(op.id).offset);
                 rawStore("zr", value(op.id).offset + 8);
                 break;
