@@ -3,6 +3,7 @@ import {
   nativeFunctionEnvironmentOffset,
 } from "@tint/abi/function";
 import {
+  nativeAllocatorShutdownRequest,
   nativeHeaderFlagUnit,
   nativeArrayLengthOffset,
   nativeArrayDataOffset,
@@ -776,6 +777,10 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
   imm(21, 0);
   imm(22, 0);
   imm(25, 71);
+  // x28 holds the runtime's allocator closure (a permanent object) once it
+  // is published, and cleanup then sends it the shutdown request; managed
+  // code preserves x19-x28.
+  if (request.threaded === true) imm(28, 0);
   map(20, controlLength);
   map(21, request.managedBytes);
   map(22, stackLength);
@@ -1106,6 +1111,7 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
     offset: nativeFunctionEnvironmentOffset,
   });
   store(9, 120);
+  if (request.threaded === true) move(28, 10);
   store(21, 104);
   if (request.workerSafepoints === true)
     workerBytes(
@@ -1166,6 +1172,44 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
       offset: heapDebugContextOffset,
     });
   }
+  if (request.threaded === true) {
+    // The runtime joins its collector workers (and returns what it holds
+    // outside the heap) before the heap and control mappings go, through
+    // the allocation slow-path ABI with the shutdown request. x28 is nonzero
+    // only once the runtime is published, when sp is the entry frame on the
+    // mapped stack. An unjoined worker could still touch the mappings, so an
+    // abrupt completion keeps them all and exits 71 (x28 stays 1).
+    imm(9, 0);
+    compare(28, 9);
+    branch("shutdown-checked", "eq");
+    stackAddress(0, 96);
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 1,
+      rn: 28,
+      offset: nativeFunctionEnvironmentOffset,
+    });
+    imm(2, 0);
+    stackAddress(3, 64);
+    number(0, -nativeAllocatorShutdownRequest);
+    emit({ op: "fneg", rd: 0, rn: 0 });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 16,
+      rn: 28,
+      offset: nativeFunctionEntryOffset,
+    });
+    emit({ op: "blr", rn: 16 });
+    imm(9, 1);
+    compare(0, 9);
+    imm(28, 0);
+    branch("shutdown-checked", "eq");
+    imm(25, 71);
+    imm(28, 1);
+    label("shutdown-checked");
+  }
   emit({
     op: "add-imm",
     width: 64,
@@ -1175,6 +1219,11 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
     shift: 0,
     setFlags: false,
   });
+  if (request.threaded === true) {
+    imm(9, 0);
+    compare(28, 9);
+    branch("mappings-released", "ne");
+  }
   const releaseRegisters = [21, 20, 22],
     releaseLengths = [request.managedBytes, controlLength, stackLength];
   for (let index = 0; index < releaseRegisters.length; index++) {
@@ -1191,6 +1240,7 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
     foreign("munmap");
     label(skip);
   }
+  label("mappings-released");
   if (request.threaded === true && request.threadExitPipe === true) {
     imm(9, 1);
     emit({
