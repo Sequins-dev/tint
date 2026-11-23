@@ -86,9 +86,14 @@ export interface SharedStringMemory {
   ): number;
 }
 /** Returns a granule-aligned range of the reservation to the OS (it reads as
- * zero afterwards). Only collector runtimes can: the bodies mutators free stay
- * resident until a collector releases them. */
-export type SharedStringRelease = (address: number, byteLength: number) => void;
+ * zero afterwards): true when it did. Only collector runtimes can, and only
+ * where the host allows a fixed mapping outside the managed heap (not
+ * x86-64, whose memory-release is confined to the managed mapping). Bodies
+ * not returned stay resident and are counted. */
+export type SharedStringRelease = (
+  address: number,
+  byteLength: number,
+) => boolean;
 
 export const sharedStringControlBytes = 16384;
 /** The reservation's size: the most body bytes the process can share. */
@@ -227,7 +232,7 @@ export function releaseSharedStringBody(
       sharedStringBodyGranules,
     ),
     start = (body - base) / (1 << shift);
-  if (release !== undefined) release(body, count * (1 << shift));
+  const released = release !== undefined && release(body, count * (1 << shift));
   lockSharedStringArena(memory, control);
   const granules = memory.load(
     control,
@@ -242,7 +247,7 @@ export function releaseSharedStringBody(
     count,
     false,
   );
-  if (release === undefined) {
+  if (!released) {
     updateSharedStringRun(
       memory,
       control,
@@ -309,7 +314,16 @@ function releaseResidentSharedStrings(
         0;
     if (resident && start < 0) start = granule;
     else if (!resident && start >= 0) {
-      release(base + start * (1 << shift), (granule - start) * (1 << shift));
+      if (
+        !release(base + start * (1 << shift), (granule - start) * (1 << shift))
+      )
+        break;
+      addSharedStringCount(
+        memory,
+        control,
+        sharedStringArenaResident,
+        start - granule,
+      );
       updateSharedStringRun(
         memory,
         control,
@@ -321,7 +335,6 @@ function releaseResidentSharedStrings(
       start = -1;
     }
   }
-  memory.store(control, sharedStringControlBytes, sharedStringArenaResident, 0);
   unlockSharedStringArena(memory, control);
 }
 
@@ -424,9 +437,14 @@ export function createSharedStringHolds(
     exchange: (at, byteLength, offset, expected, replacement): number =>
       compareExchangeMemoryWord(at, byteLength, offset, expected, replacement),
   };
-  const release: SharedStringRelease = (at, byteLength): void => {
-    if (releaseMemory(at, byteLength) !== 0)
-      throw "SHARED_STRING_RELEASE_PAGES";
+  // Cleared when the host refuses a release: later frees leave their pages
+  // resident (counted) instead of retrying.
+  let releasable = true;
+  const release: SharedStringRelease = (at, byteLength): boolean => {
+    if (!releasable) return false;
+    if (releaseMemory(at, byteLength) === 0) return true;
+    releasable = false;
+    return false;
   };
   const states = sharedStringTableQueue + queueCapacity,
     space: SharedStringSpace = { base: 0, end: 0, shift, marks };
@@ -492,7 +510,7 @@ export function createSharedStringHolds(
         } else drop(granule);
       }
       held = kept;
-      if (!minor)
+      if (!minor && releasable)
         releaseResidentSharedStrings(memory, control, space.base, release);
     },
     shutdown(): void {

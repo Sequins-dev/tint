@@ -173,24 +173,34 @@ function promote(first: Peer): void {
 }
 
 /** The sender drops its hold while the message waits in a busy Worker's
- * queue: the message's reference keeps the body. */
+ * queue: the message's reference keeps the body. The sender collects in a
+ * later turn (a helper Worker's reply), so no frame of the sending turn can
+ * still hold the string, while the receiver is still busy. */
 function inFlight(first: Peer): void {
   // Settle the main isolate's earlier holds (text(7) is still held until a
   // full collection) so the count below moves only with this body.
   collectGarbage();
   const before = liveBodies();
-  ask(first, "block", 200, (_message: unknown): void => {});
-  postRead(first, 9);
-  collectGarbage();
-  check(liveBodies() === before + 1, "in-flight body kept");
-  first.replies.push((message: unknown): void => {
-    // Intact, queued, and only the receiver's reference.
-    check(number(message) === 111, "in-flight read " + String(number(message)));
-    first.replies.push((_message: unknown): void => {
-      check(liveBodies() === before, "in-flight body freed");
-      finish(first);
+  start(entry, (helper: Peer): void => {
+    ask(first, "block", 1000, (_message: unknown): void => {});
+    postRead(first, 9);
+    ask(helper, "echo", 1, (_message: unknown): void => {
+      collectGarbage();
+      check(liveBodies() === before + 1, "in-flight body kept");
+      helper.worker.postMessage("stop");
     });
-    first.worker.postMessage("release");
+    first.replies.push((message: unknown): void => {
+      // Intact, queued, and only the receiver's reference.
+      check(
+        number(message) === 111,
+        "in-flight read " + String(number(message)),
+      );
+      first.replies.push((_message: unknown): void => {
+        check(liveBodies() === before, "in-flight body freed");
+        finish(first);
+      });
+      first.worker.postMessage("release");
+    });
   });
 }
 
