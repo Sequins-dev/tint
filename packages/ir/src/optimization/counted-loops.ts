@@ -50,8 +50,9 @@ const maxWordBound = 4294967295;
  *
  * Counters the induction proof already accepts are left alone. The
  * rewrite is kept only when the induction proof accepts the counter,
- * the counter is dead where the loop exits (the copy never writes it back)
- * and the loop indexes with it. Loops with exception handlers, transfers
+ * and the counter is dead where the loop exits (the copy never writes it
+ * back). Any counter qualifies, not only one that indexes: an outer loop's
+ * counter feeds inner loops' arithmetic and bitwise operations. Loops with exception handlers, transfers
  * into the counter or bound, or a preheader that is not a plain jump are
  * left alone. Verified IR with dense block IDs only. */
 export function boundCountedLoops(
@@ -273,11 +274,7 @@ function countedLoop(
     loop.writes.has(bound)
   )
     return undefined;
-  // The benefit: the counter indexes an array, vector or list (a call's
-  // argument, as inline list accessors take it), which a double index
-  // first converts and checks.
-  let instructions = 0,
-    indexUses = 0;
+  let instructions = 0;
   const exits: number[] = [];
   for (const id of loop.body) {
     if (id === undefined) throw "counted loop body invariant";
@@ -294,30 +291,12 @@ function countedLoop(
       if (target === undefined) throw "counted loop successor invariant";
       if (!loop.body.has(target) && !exits.includes(target)) exits.push(target);
     }
-    const loads = new Set<number>();
     for (const op of block.instructions) {
       if (op === undefined) throw "counted loop instruction invariant";
       instructions++;
-      if (op.kind === "load" && op.slot === counter) loads.add(op.id);
-      else if (
-        (op.kind === "string-code-unit" ||
-          op.kind === "reference-vector-read" ||
-          op.kind === "reference-vector-write" ||
-          op.kind === "array-valid" ||
-          op.kind === "array-read" ||
-          op.kind === "array-element" ||
-          op.kind === "array-write" ||
-          op.kind === "array-store") &&
-        loads.has(op.index)
-      )
-        indexUses++;
-      else if (op.kind === "call")
-        for (const argument of op.arguments)
-          if (argument !== undefined && loads.has(argument)) indexUses++;
     }
   }
-  if (instructions > maxBoundedInstructions || indexUses === 0)
-    return undefined;
+  if (instructions > maxBoundedInstructions) return undefined;
   return {
     preheader: preheaderId,
     counter,
