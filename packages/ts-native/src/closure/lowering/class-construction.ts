@@ -276,7 +276,9 @@ function buildInitialization(
     const storage = instance.fields[field.field];
     if (
       storage === undefined ||
-      (storage.stateOffset === undefined && storage.deferred !== true) ||
+      (storage.stateOffset === undefined &&
+        storage.presenceOffset === undefined &&
+        storage.deferred !== true) ||
       initialized[field.field] === 1
     )
       throw "class field initialization invariant";
@@ -336,7 +338,8 @@ function buildInitialization(
     }
     if (value === undefined) throw "class field initializer result invariant";
     const next = b.block();
-    // A deferred instance field is written; a static field's state is
+    // A deferred or deletable instance field is written (the write also
+    // marks a deletable field present); a static field's state is
     // initialized.
     if (storage.stateOffset === undefined)
       b.end({

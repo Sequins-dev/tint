@@ -232,9 +232,10 @@ function cellOperation(code: number): "initialize" | "read" | "write" {
 function cellCode(operation: "initialize" | "read" | "write"): number {
   return operation === "initialize" ? 0 : operation === "read" ? 1 : 2;
 }
-function recordOperation(code: number): "read" | "write" {
+function recordOperation(code: number): "read" | "write" | "delete" {
   if (code === 1) return "read";
   if (code === 2) return "write";
+  if (code === 3) return "delete";
   throw "packed IR record operation";
 }
 function writeList(writer: ByteWriter, values: readonly number[]): void {
@@ -1350,7 +1351,14 @@ export function encodeTerminator(
       writeSigned(writer, terminator.object);
       writeSigned(writer, terminator.record);
       writeSigned(writer, terminator.field);
-      writeByte(writer, terminator.operation === "read" ? 1 : 2);
+      writeByte(
+        writer,
+        terminator.operation === "read"
+          ? 1
+          : terminator.operation === "write"
+            ? 2
+            : 3,
+      );
       writeSigned(writer, terminator.slot);
       writeSigned(writer, terminator.consequent);
       writeSigned(writer, terminator.alternate);

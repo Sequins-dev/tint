@@ -1603,10 +1603,16 @@ export function verify(
               "TYPE",
               "initialized cell fields require guarded record-cell access",
             );
-          if (t.operation !== "read" && t.operation !== "write")
+          if (
+            t.operation !== "read" &&
+            t.operation !== "write" &&
+            t.operation !== "delete"
+          )
             fail("GRAPH", "unknown record operation");
-          if (t.operation === "write" && !field.mutable)
+          if (t.operation !== "read" && !field.mutable)
             fail("TYPE", "record field is immutable");
+          if (t.operation === "delete" && field.presenceOffset === undefined)
+            fail("TYPE", "deleted record fields require presence");
           equal(slot(t.slot), field.type);
         }
         if (t.kind === "return") {

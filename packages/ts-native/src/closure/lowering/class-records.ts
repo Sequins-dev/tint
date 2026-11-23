@@ -79,6 +79,9 @@ export interface PlannedClassRecords {
   readonly prototypeNames: readonly string[];
   /** Instance field index to prototype field index; -1 means an own data field. */
   readonly inherited: readonly number[];
+  /** Instance fields stored `undefined`-capable because code may read them
+   * before their first assignment. */
+  readonly unproven: readonly number[];
   readonly prototypeField: number;
   readonly constructorState: RecordLayout;
   readonly constructorNames: readonly string[];
@@ -91,6 +94,8 @@ export function planClassRecords(
   planner: LayoutPlanner,
   encoding: (type: number) => ScalarType | undefined,
   fail: (message: string) => never,
+  /** Instance fields code may read before their first assignment. */
+  uninitialized: (element: ClassElement) => boolean,
 ): PlannedClassRecords {
   const instance = types[contract.instance],
     prototype = types[contract.prototype],
@@ -106,6 +111,25 @@ export function planClassRecords(
     instanceFields: RecordFieldStorage[] = [],
     prototypeFields: RecordFieldStorage[] = [],
     inherited: number[] = [];
+  // Required fields code may read before their first assignment
+  // (CheckedClosures.uninitializedFields) store `undefined` until then.
+  const unproven = new Set<string>();
+  for (const member of contract.members) {
+    if (member === undefined) throw "class member invariant";
+    const element = member.node;
+    if (
+      element.kind !== "field" ||
+      element.static ||
+      element.computed ||
+      !uninitialized(element)
+    )
+      continue;
+    const key = element.key;
+    if (key.kind === "identifier") unproven.add(key.name);
+    else if (key.kind === "string") unproven.add(key.value);
+    else if (key.kind === "number") unproven.add(String(key.value));
+    else fail("unproven class field key invariant");
+  }
   for (const property of prototype.properties) {
     if (property === undefined) throw "prototype property invariant";
     // The back-reference is an opaque managed identity here. This does not
@@ -128,21 +152,41 @@ export function planClassRecords(
       property.name === "constructor"
         ? -1
         : prototypeNames.indexOf(property.name);
-    const type: ScalarType | undefined =
+    let type: ScalarType | undefined =
       inheritedField >= 0 ? "optional-reference" : encoding(property.type);
     if (type === undefined) fail("unsupported class instance storage");
+    if (inheritedField < 0 && unproven.has(property.name)) {
+      if (type === "number") type = "optional-number";
+      else if (type === "string") type = "optional-string";
+      else if (type === "boolean") type = "optional-boolean";
+      else fail("unproven class field requires a primitive representation");
+    }
     instanceNames.push(property.name);
     inherited.push(inheritedField);
+    // A field whose value may be undefined may also be deleted (TypeScript
+    // allows `delete` of exactly those), so it carries a presence byte. So
+    // does an unproven field: an earlier field initializer can observe that
+    // it is not defined yet.
+    const deletable =
+      inheritedField < 0 &&
+      [
+        "optional-number",
+        "optional-boolean",
+        "optional-string",
+        "optional-reference",
+        "general",
+        "primitive",
+      ].includes(type);
     instanceFields.push({
       type,
       // `readonly` is checked by TypeScript only: the property is writable
       // (untyped code and the constructor body assign it).
       mutable: true,
-      optional: inheritedField >= 0,
-      // Own data fields are assigned during construction, and the checker
-      // proves no read precedes the assignment (class-initialization.ts),
-      // so they carry no initialization state.
-      deferred: inheritedField < 0,
+      optional: inheritedField >= 0 || deletable,
+      // Other own data fields are assigned during construction, and the
+      // checker proves no read precedes the assignment
+      // (class-initialization.ts), so they carry no state.
+      deferred: inheritedField < 0 && !deletable,
     });
   }
   const constructorNames: string[] = [],
@@ -300,6 +344,13 @@ export function planClassRecords(
       undefinedDefault: holdsUndefined(instanceFields[field]),
     });
   }
+  const unprovenFields: number[] = [];
+  for (let field = 0; field < instanceNames.length; field++) {
+    const name = instanceNames[field];
+    if (name === undefined) throw "instance name invariant";
+    if (inherited[field] === -1 && unproven.has(name))
+      unprovenFields.push(field);
+  }
   function closureEnvironment(count: number): RecordLayout {
     const fields: RecordFieldStorage[] = [];
     for (let i = 0; i < count; i++)
@@ -328,6 +379,7 @@ export function planClassRecords(
     instanceNames,
     prototypeNames,
     inherited,
+    unproven: unprovenFields,
     prototypeField,
   };
 }

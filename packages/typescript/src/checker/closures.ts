@@ -193,6 +193,7 @@ export type ClosureIntrinsic =
   | "list-has"
   | "flow-property-read"
   | "flow-property-read-boxed"
+  | "uninitialized-field-read"
   | "range-error-new"
   | "range-error-is"
   | "type-error-new"
@@ -214,6 +215,7 @@ export type ClosureIntrinsic =
   | "dynamic-object-compound"
   | "dynamic-object-has"
   | "dynamic-object-delete"
+  | "property-delete"
   | "array-length"
   | "string-from-code-units"
   | "string-from-code-points"
@@ -332,6 +334,10 @@ export interface CheckedClosures {
     readonly NativeRecordViewField[]
   >;
   readonly finitePropertyKeys?: ReadonlyKeyIndex<Expression, readonly string[]>;
+  /** Required instance fields code may read before their first assignment
+   * (class-initialization.ts): their storage admits `undefined`, and their
+   * reads ("uninitialized-field-read") are speculative general values. */
+  readonly uninitializedFields?: ReadonlyKeyIndex<Span, boolean>;
   readonly operations: readonly BindingOperation[];
 }
 export interface NativeRecordViewField {
@@ -1356,6 +1362,22 @@ function checkClosureModuleLayout(
     );
   }
   const intrinsics = createKeyIndex<Expression, ClosureIntrinsic>(syntaxHash);
+  // Unproven class fields (see checkClass) and the object property reads and
+  // updates that may reach them, resolved once every class is checked.
+  const uninitializedFields = createKeyIndex<Span, boolean>(syntaxHash);
+  const unprovenClassFields: {
+    readonly contract: ClassContract;
+    readonly names: ReadonlySet<string>;
+  }[] = [];
+  const propertyReads: {
+    readonly node: Expression;
+    readonly receiver: number;
+    readonly property: string;
+    /** An update, and whether reading `undefined` as NaN is exact for it
+     * (not for `??=`). */
+    readonly update: boolean;
+    readonly numeric: boolean;
+  }[] = [];
   // Validation witnesses for fresh contextual literals are separate from their
   // retained inferred types. They never authorize a runtime reference conversion.
   const contextualProofs = createKeyIndex<Expression, number>(syntaxHash);
@@ -3928,6 +3950,33 @@ function checkClosureModuleLayout(
         "void result cannot be tested for truthiness",
       );
   }
+  /** A delete of a property whose storage has a presence byte: an optional
+   * record property, or a class instance field that may hold undefined (the
+   * class storage gives those presence). Other valid deletes take the
+   * general path. */
+  function presenceDelete(operand: Expression): boolean {
+    const target = ungroup(operand);
+    if (target.kind !== "member" || target.optional === true) return false;
+    const receiver = expressions.get(target.object);
+    const type = receiver === undefined ? undefined : types[receiver];
+    if (type?.kind !== "object" || receiver === undefined) return false;
+    const property = type.properties.find(
+      (candidate) =>
+        candidate !== undefined && candidate.name === target.property,
+    );
+    if (property === undefined) return false;
+    if (property.optional === true) return true;
+    for (const contract of contracts.classes) {
+      if (contract === undefined) throw "class contract invariant";
+      if (
+        contract.instance === receiver ||
+        (system.assignable(receiver, contract.instance) &&
+          system.assignable(contract.instance, receiver))
+      )
+        return system.assignable(undefinedType, property.type);
+    }
+    return false;
+  }
   /** TypeScript's delete checks under strictNullChecks (the pinned
    * compiler's TS2704 and TS2790): a readonly property, or a property that
    * is neither optional nor admits undefined, is not a delete operand. These
@@ -4066,13 +4115,14 @@ function checkClosureModuleLayout(
       constructors,
       methods,
     );
-    if (initialization !== undefined)
+    const initializationError = initialization.error;
+    if (initializationError !== undefined)
       fail(
-        initialization,
-        initialization.code,
-        initialization.message,
+        initializationError,
+        initializationError.code,
+        initializationError.message,
         undefined,
-        initialization.code === "UNSUPPORTED"
+        initializationError.code === "UNSUPPORTED"
           ? {
               capability: "class-initialization",
               ownerKind: "class",
@@ -4080,6 +4130,32 @@ function checkClosureModuleLayout(
             }
           : undefined,
       );
+    if (initialization.unproven.size > 0) {
+      const names = new Set<string>();
+      for (const member of contract.members) {
+        if (member === undefined) throw "class member contract invariant";
+        const element = member.node;
+        if (element.kind !== "field" || element.static) continue;
+        const name = literalPropertyName(element.key);
+        const site =
+          name === undefined ? undefined : initialization.unproven.get(name);
+        if (name === undefined || site === undefined) continue;
+        // Speculative reads have contracts for one primitive category.
+        if (
+          !system.assignable(member.type, number) &&
+          !system.assignable(member.type, string) &&
+          !system.assignable(member.type, boolean)
+        )
+          fail(
+            site,
+            "UNINITIALIZED",
+            "class field read before initialization: " + name,
+          );
+        uninitializedFields.set(element, true);
+        names.add(name);
+      }
+      unprovenClassFields.push({ contract, names });
+    }
     cell(
       outer,
       { kind: "initialize", value: contract.constructor },
@@ -5643,7 +5719,17 @@ function checkClosureModuleLayout(
                 : "flow-property-read",
             );
             result = fact;
-          } else result = fact ?? literal ?? p.value;
+          } else {
+            result = fact ?? literal ?? p.value;
+            if (types[obj]?.kind === "object" && contracts.classes.length > 0)
+              propertyReads.push({
+                node,
+                receiver: obj,
+                property: node.property,
+                update: false,
+                numeric: false,
+              });
+          }
           if (dynamicObject(obj)) result = readDynamicPayload(result, node);
           break;
         }
@@ -7483,6 +7569,18 @@ function checkClosureModuleLayout(
                     target.index,
                     keyType === undefined ? undefined : types[keyType],
                   );
+            if (
+              propertyName !== undefined &&
+              types[object]?.kind === "object" &&
+              contracts.classes.length > 0
+            )
+              propertyReads.push({
+                node: target,
+                receiver: object,
+                property: propertyName,
+                update: true,
+                numeric: node.kind === "update" || node.operator !== "??",
+              });
             if (dynamicObject(object) || realmAggregate(object)) {
               const shape = types[object];
               const fields: Property[] = [];
@@ -8432,7 +8530,14 @@ function checkClosureModuleLayout(
             false,
             node.operator === "void",
           );
-          if (node.operator === "delete") requireDeletable(node.operand);
+          if (node.operator === "delete") {
+            requireDeletable(node.operand);
+            if (presenceDelete(node.operand)) {
+              intrinsics.set(node, "property-delete");
+              result = boolean;
+              break;
+            }
+          }
           if (
             isVoidExpression(value) &&
             node.operator !== "typeof" &&
@@ -9712,6 +9817,63 @@ function checkClosureModuleLayout(
       depth--;
     }
   }
+  /** Reads of an unproven field, through any type whose layout is its
+   * class's, yield `undefined` before the field's first assignment: they
+   * become speculative general values. A numeric update is exact on the
+   * storage directly (`undefined` reads as NaN); other updates are not
+   * lowered yet. */
+  function markUninitializedReads(): void {
+    if (unprovenClassFields.length === 0) return;
+    const matches = new Map<number, ReadonlySet<string>[]>();
+    function unproven(receiver: number): ReadonlySet<string>[] {
+      const known = matches.get(receiver);
+      if (known !== undefined) return known;
+      const found: ReadonlySet<string>[] = [];
+      for (const entry of unprovenClassFields) {
+        const instance = entry.contract.instance;
+        if (
+          instance === receiver ||
+          (system.assignable(receiver, instance) &&
+            system.assignable(instance, receiver))
+        )
+          found.push(entry.names);
+      }
+      matches.set(receiver, found);
+      return found;
+    }
+    for (const read of propertyReads) {
+      if (!unproven(read.receiver).some((names) => names.has(read.property)))
+        continue;
+      if (read.update) {
+        const property = types[read.receiver];
+        const field =
+          property?.kind === "object"
+            ? property.properties.find(
+                (candidate) =>
+                  candidate !== undefined && candidate.name === read.property,
+              )
+            : undefined;
+        if (
+          field === undefined ||
+          !read.numeric ||
+          !system.assignable(field.type, number)
+        )
+          fail(
+            read.node,
+            "UNSUPPORTED",
+            "update of a field that may be read before initialization",
+          );
+        continue;
+      }
+      if (intrinsics.get(read.node) !== undefined)
+        fail(
+          read.node,
+          "UNSUPPORTED",
+          "special read of a field that may be read before initialization",
+        );
+      intrinsics.set(read.node, "uninitialized-field-read");
+    }
+  }
   try {
     const plan = realmPlan;
     if (plan !== undefined)
@@ -9762,6 +9924,7 @@ function checkClosureModuleLayout(
         );
       statement(node, undefined, undefinedType);
     }
+    markUninitializedReads();
   } catch (e) {
     if (e !== abort) throw e;
   }
@@ -9816,6 +9979,7 @@ function checkClosureModuleLayout(
       nativeListViews,
       nativeRecordViews,
       finitePropertyKeys,
+      uninitializedFields,
       operations,
       intrinsics,
       cViewUses,

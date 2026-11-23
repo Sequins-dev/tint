@@ -3452,11 +3452,14 @@ export function lowerFunction(
     const helper = dynamicObjects?.speculativeBinary;
     if (helper === undefined)
       throw "speculative binary operation requires the program realm";
+    // Without realm error views (a typed-only build) no error view exists
+    // to substitute; identity compares the values themselves.
     const identity =
-      node.operator === "===" ||
-      node.operator === "!==" ||
-      node.operator === "==" ||
-      node.operator === "!=";
+      realmErrors !== undefined &&
+      (node.operator === "===" ||
+        node.operator === "!==" ||
+        node.operator === "==" ||
+        node.operator === "!=");
     const result = dynamicResult(
       helper,
       [
@@ -4325,7 +4328,7 @@ export function lowerFunction(
   function recordAccess(
     object: number,
     transfer: number,
-    operation: "read" | "write",
+    operation: "read" | "write" | "delete",
     access: RecordAccess,
     node: Span,
     otherwise?: () => void,
@@ -4367,7 +4370,7 @@ export function lowerFunction(
       if (converted && shared === undefined)
         conversions.set(conversionKey, { slot, success: success.id });
       let physicalSlot = slot;
-      if (operation === "write" && choice.type !== access.type) {
+      if (operation !== "read" && choice.type !== access.type) {
         physicalSlot = temporary(choice.type);
         store(physicalSlot, load(transfer, node), node);
       }
@@ -4449,7 +4452,9 @@ export function lowerFunction(
       const record = choice.record,
         field = choice.field,
         alternate = next.id;
-      if (choice.initialized === true)
+      if (choice.initialized === true) {
+        if (operation === "delete")
+          throw "initialized record fields cannot be deleted";
         finish({
           kind: "record-cell",
           object: receiver,
@@ -4462,7 +4467,7 @@ export function lowerFunction(
           start: node.start,
           end: node.end,
         });
-      else
+      } else
         finish({
           kind: "record",
           object: receiver,
@@ -6579,6 +6584,30 @@ export function lowerFunction(
       case "group":
         return expression(node.expression);
       case "unary": {
+        if (info(node).builtin === "property-delete") {
+          // Clears the presence byte and stores undefined: later reads see
+          // undefined, `in` and own-key enumeration no longer see the field.
+          const target = ungroup(node.operand);
+          if (target.kind !== "member")
+            throw "property delete target invariant";
+          const access = records?.accesses.get(target);
+          if (access === undefined) throw "property delete access invariant";
+          const object = value(target.object),
+            absent = nextValue++;
+          emit({
+            kind: "undefined",
+            id: absent,
+            start: node.start,
+            end: node.end,
+          });
+          const cleared = save(
+            coerce(absent, access.type, node),
+            access.type,
+            node,
+          );
+          recordAccess(object, cleared, "delete", access, node);
+          return booleanSlot(true, node);
+        }
         if (node.operator === "void") {
           expression(node.operand);
           const id = nextValue++;

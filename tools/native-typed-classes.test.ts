@@ -5,8 +5,10 @@
 // constructor bodies, statics and their order against the class bindings,
 // method identity, own overrides and prototype mutation from typed code,
 // `instanceof`, `typeof`, exceptions from initializers and constructor bodies,
-// and instances surviving collections under a small heap. Each source runs in
-// Node for the expected trace and natively under LLDB on the typed path.
+// instances surviving collections under a small heap, `delete` of fields
+// that admit undefined, and fields read before their first assignment. Each
+// source runs in Node for the expected trace and natively under LLDB on the
+// typed path.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -223,22 +225,102 @@ export function trace(): string {
 }
 `;
 
-// Field reads the checker cannot prove initialized (a method called from the
-// constructor before the assignment, a base constructor dispatching to a
-// subclass override) observe undefined in JavaScript. The checker rejects
-// these classes, so they run on the general path.
-const uninitializedReads = `class Early {
+// Required fields read before their first assignment: through a method the
+// constructor calls, through `this` escaping to another function, and by a
+// numeric update. The reads give `undefined` exactly; such fields are
+// stored `undefined`-capable and their reads are speculative general values.
+const unprovenFields = `class Early {
+  x: number;
+  label: string;
+  flag: boolean;
+  seen: string;
+  constructor() {
+    this.seen = this.describe();
+    this.x = 1;
+    this.label = "l";
+    this.flag = true;
+  }
+  describe(): string {
+    return (
+      String(this.x) + "," + String(this.label) + "," + String(this.flag) + "," +
+      String(this.x === undefined) + "," + String(this.x + 1) + "," +
+      typeof this.label + "," + (this.flag ? "yes" : "no") + "," + \`\${this.label}\`
+    );
+  }
+}
+function capture(note: Note): string {
+  return String(note.count) + ":" + note.title;
+}
+class Note {
+  title: string;
+  count: number;
+  observed: string;
+  constructor(title: string) {
+    this.title = title;
+    this.observed = capture(this);
+    this.count = 2;
+  }
+}
+class Tally {
+  total: number;
+  log: string;
+  constructor() {
+    this.bump();
+    this.log = String(this.total);
+    this.total = 3;
+    this.bump();
+  }
+  bump(): void {
+    this.total += 1;
+  }
+}
+export function trace(): string {
+  const early = new Early(),
+    note = new Note("n"),
+    tally = new Tally();
+  return [
+    early.seen,
+    early.describe(),
+    note.observed,
+    String(note.count),
+    tally.log,
+    String(tally.total),
+    String("count" in note),
+  ].join("|");
+}
+`;
+
+// An `undefined` read reaching a written `number` result is outside the
+// result's contract: a TypeError (docs/unified-pipeline.md, contracts), where
+// untyped JavaScript would return `undefined`.
+const unprovenContract = `class Early {
   x: number;
   seen: string;
   constructor() {
-    this.seen = String(this.read());
+    this.seen = this.probe();
     this.x = 1;
+  }
+  probe(): string {
+    try {
+      return String(this.read());
+    } catch (error) {
+      return error instanceof TypeError ? "TypeError" : "other";
+    }
   }
   read(): number {
     return this.x;
   }
 }
-class Base {
+export function trace(): string {
+  const early = new Early();
+  return early.seen + "," + early.probe();
+}
+`;
+
+// A base constructor dispatching to a subclass override reads the subclass
+// field before its initializer runs (C2): the general path observes
+// `undefined` exactly.
+const uninitializedReads = `class Base {
   seen: string;
   constructor() {
     this.seen = this.describe();
@@ -254,9 +336,8 @@ class Derived extends Base {
   }
 }
 export function trace(): string {
-  const early = new Early(),
-    derived = new Derived();
-  return early.seen + "," + String(early.x) + "," + derived.seen + "," + derived.label;
+  const derived = new Derived();
+  return derived.seen + "," + derived.label;
 }
 `;
 
@@ -306,6 +387,51 @@ export function trace(): string {
   const grid = new Grid(5, 4);
   const account = new Account("ada");
   return String(grid.total) + "," + account.history.join("|");
+}
+`;
+
+// `delete` of fields that admit undefined (optional, `| undefined`,
+// `unknown`) and of an optional interface property: the property becomes
+// absent (`in` is false, reads give undefined) until written again.
+const optionalDeletes = `class Note {
+  title: string;
+  body?: string;
+  count: number | undefined;
+  extra: unknown = "x";
+  constructor(title: string) {
+    this.title = title;
+    this.body = "text";
+    this.count = 3;
+  }
+}
+interface Options {
+  name: string;
+  limit?: number;
+}
+function presence(note: Note): string {
+  return [
+    "body" in note,
+    "count" in note,
+    "extra" in note,
+    note.body === undefined,
+    note.count === undefined,
+    note.extra === undefined,
+  ].join(",");
+}
+export function trace(): string {
+  const note = new Note("a");
+  const before = presence(note);
+  const removed = [delete note.body, delete note.count, delete note.extra, delete note.body].join(",");
+  const after = presence(note);
+  note.body = "again";
+  note.extra = 1;
+  const restored = presence(note) + "," + (note.body ?? "none");
+  const options: Options = { name: "x", limit: 5 };
+  const removedOption = String(delete options.limit);
+  const optionAfter = String("limit" in options) + "," + String(options.limit === undefined);
+  options.limit = 7;
+  const optionRestored = String("limit" in options) + "," + String(options.limit ?? -1);
+  return [before, removed, after, restored, removedOption, optionAfter, optionRestored, note.title].join("|");
 }
 `;
 
@@ -382,9 +508,39 @@ test("object literals typed as a class stay plain objects", async () => {
   );
 });
 
-test("field reads the checker cannot prove initialized take the general path", async () => {
+test("fields read before their first assignment read undefined on the typed path", async () => {
+  const expected = await expectedTrace(unprovenFields);
+  assert.equal(
+    expected,
+    "undefined,undefined,undefined,true,NaN,undefined,no,undefined|1,l,true,false,2,string,yes,l|undefined:n|2|NaN|4|true",
+  );
+  verifyHostedFixture(
+    withComparison(unprovenFields, expected),
+    "typed-classes-unproven",
+    [],
+    [],
+    [],
+    [],
+    { requireTyped: true, managedBytes: 67108864, allocationCapacity: 1048576 },
+  );
+});
+
+test("an undefined read returned through a number result throws a TypeError", async () => {
+  assert.equal(await expectedTrace(unprovenContract), "undefined,1");
+  verifyHostedFixture(
+    withComparison(unprovenContract, "TypeError,1"),
+    "typed-classes-unproven-contract",
+    [],
+    [],
+    [],
+    [],
+    { requireTyped: true, managedBytes: 67108864, allocationCapacity: 1048576 },
+  );
+});
+
+test("base constructors dispatching to subclass overrides take the general path", async () => {
   const expected = await expectedTrace(uninitializedReads);
-  assert.equal(expected, "undefined,1,undefined,derived");
+  assert.equal(expected, "undefined,derived");
   let partition: readonly string[] | undefined;
   delete process.env.TINT_GENERAL_FALLBACK;
   try {
@@ -415,6 +571,23 @@ test("constructors calling their own methods stay typed", async () => {
   verifyHostedFixture(
     withComparison(constructorMethodCalls, expected),
     "typed-classes-constructor-methods",
+    [],
+    [],
+    [],
+    [],
+    { requireTyped: true, managedBytes: 67108864, allocationCapacity: 1048576 },
+  );
+});
+
+test("optional fields and properties are deleted on the typed path", async () => {
+  const expected = await expectedTrace(optionalDeletes);
+  assert.equal(
+    expected,
+    "true,true,true,false,false,false|true,true,true,true|false,false,false,true,true,true|true,false,true,false,true,false,again|true|false,true|true,7|a",
+  );
+  verifyHostedFixture(
+    withComparison(optionalDeletes, expected),
+    "typed-classes-delete",
     [],
     [],
     [],

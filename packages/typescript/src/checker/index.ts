@@ -191,6 +191,7 @@ export interface ExpressionInfo {
     | "error-is"
     | "error-property"
     | "literal-property-has"
+    | "property-delete"
     | "flow-property-read"
     | "flow-property-read-boxed"
     | "speculative-property-read"

@@ -221,24 +221,52 @@ paths correct:
   are analyzed in place: the method may read assigned fields, and its
   definite assignments count after the call. When no code writes through a
   `prototype`, those calls reach the defined methods. Step 4 adds the
-  validity-cell guard to such calls. Still interim, and to be removed before
-  #17 is ready:
-  - Classes where a field may be read before assignment fall back to the
-    general path, which observes `undefined` exactly. Examples are a
-    method reading a field the constructor assigns later, or `this`
-    escaping to a closure or another function.
-  - They are to compile typed with initialization state (or an
-    `undefined`-capable representation) only on the unproven fields, and
-    reads of those fields get exact `undefined` semantics.
-  - C2 applies the same rule to a base constructor dispatching to a
-    subclass override.
+  validity-cell guard to such calls.
+- **Fields read before their first assignment** (unproven fields) stay
+  typed. A required instance field is unproven when some code may observe
+  it before its assignment: a read in the constructor, a field initializer
+  or a method analyzed in place, or `this` escaping (to another function, a
+  closure, a call the analysis does not follow, a recursive or replaced
+  method) while the field is unassigned.
+  - Only those fields change representation: an `undefined`-capable one
+    (`optional-number`, `optional-string`, `optional-boolean`) with a
+    presence byte. Construction defines them in field order, so an earlier
+    initializer sees them absent (`in` is `false`).
+  - Every read of an unproven field, through the class or any type sharing
+    its layout, is a speculative general value. Operators, string
+    conversion, `typeof` and comparisons on it follow JavaScript, so a read
+    before the assignment gives `undefined` exactly. Where the value reaches
+    a written type (a parameter, an annotated result or binding, a typed
+    field), the speculative contract check applies: `undefined` there is a
+    `TypeError`, as for any value outside a written type.
+  - A numeric update (`+=`, `++`, `|=` and the like) works on the storage
+    directly, since unwrapping `undefined` gives NaN, as `ToNumeric` does.
+  - Still interim, to be removed before #17 is ready:
+    - unproven fields of other types (references, lists, object unions);
+    - other updates of unproven fields (`??=`, logical assignments of
+      booleans) and indexed reads (`this["x"]`);
+    - static fields read before their initializer;
+    - a base constructor dispatching to a subclass override (C2).
 
-  `tools/native-typed-classes.test.ts` covers both the typed and the
-  fallback cases.
+    Each fails explicitly, so the module takes the general path.
 
-- **Deleting optional fields** is valid TypeScript but is not lowered on
-  the typed path yet: such deletes fall back (interim, to be lowered with
-  presence bytes before #17 is ready).
+  - Every read of an unproven field pays the speculative path, also after
+    construction. Reads proven to follow construction (no escape of `this`)
+    can use the storage directly; not done yet.
+  - The pinned TypeScript reports a direct early read in the constructor
+    (TS2565) or a field initializer (TS2729). This checker does not
+    reproduce those diagnostics yet; such programs read `undefined` as
+    JavaScript does.
+
+  `tools/native-typed-classes.test.ts` covers the typed cases, the contract
+  `TypeError`, and the general-path case.
+
+- **Deleting fields that admit `undefined`** (`x?: T`, `x: T | undefined`,
+  `unknown`, and optional interface properties) is lowered on the typed
+  path. Such a field carries a presence byte: construction defines it
+  (present, value `undefined` unless initialized), `delete` stores the
+  field's absent value and clears the byte, so `in` is `false` and reads
+  give `undefined` until the next write marks it present again.
 - **Object literals typed as a class** (`const b: Box = {...}`) are plain
   records. Accesses through the class type dispatch on the class layout
   first, then on the plain layout, which exists only when such a literal is

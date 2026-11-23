@@ -300,6 +300,17 @@ const terminators: Terminator[] = [
     ...span,
   },
   {
+    kind: "record",
+    object: 1,
+    record: 2,
+    field: 3,
+    operation: "delete",
+    slot: 4,
+    consequent: 5,
+    alternate: 6,
+    ...span,
+  },
+  {
     kind: "record-cell",
     object: 1,
     record: 2,

@@ -38,6 +38,7 @@ import {
   hasDynamicObject,
   dynamicObjectRuntime,
   planFlowPropertyStorage,
+  hasUninitializedReads,
   dynamicRuntimeAliasPrefix,
   type DynamicObjectRuntime,
 } from "./dynamic-objects.ts";
@@ -1097,7 +1098,9 @@ function lowerEntries(
             info: nodeErrorRecord(nodeErrorTypes.info),
           };
     const flowStorage =
-      realmErrors === undefined ? undefined : planFlowPropertyStorage(checked);
+      realmErrors === undefined && !hasUninitializedReads(checked)
+        ? undefined
+        : planFlowPropertyStorage(checked);
     function bindingScalar(binding: number): SourceScalarType {
       return flowStorage?.bindings.has(binding) === true
         ? "general"
@@ -2474,6 +2477,29 @@ function lowerEntries(
               expr(node.expression);
               break;
             case "unary":
+              if (dynamicIntrinsic === "property-delete") {
+                let target = node.operand;
+                while (target.kind === "group" || target.kind === "satisfies")
+                  target = target.expression;
+                const fieldType = checked.expressions.get(target);
+                if (
+                  target.kind !== "member" ||
+                  recordContracts === undefined ||
+                  fieldType === undefined
+                )
+                  fail("property delete invariant");
+                const representation = scalar(fieldType);
+                recordContracts.access(
+                  target,
+                  target.object,
+                  target.property,
+                  representation,
+                  true,
+                );
+                builtin = "property-delete";
+                expr(target.object);
+                break;
+              }
               if (dynamicIntrinsic === "dynamic-object-delete") {
                 if (dynamicObjects === undefined)
                   fail("dynamic-key object delete requires the program realm");

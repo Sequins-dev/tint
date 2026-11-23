@@ -54,9 +54,6 @@ test("required instance fields must be initialized on every returning path", () 
     "class C{x:number;}",
     "class C{x:number;constructor(flag:boolean){if(flag)this.x=1;}}",
     "class C{x:number;constructor(){return;}}",
-    "class C{x:number;constructor(){this.x=this.x+1;}}",
-    "class C{x:number=this.y;y:number=1;}",
-    "class C{x:number;constructor(){this.m();this.x=1;}m():number{return this.x;}}",
   ]) {
     const result = check(source);
     assert.ok(!result.ok, source);
@@ -71,8 +68,6 @@ test("defaults, short circuits and later field definitions cannot fake definite 
     "class C{x:number;constructor(flag:boolean){flag||(this.x=1);}}",
     "class C{y:number=(this.x=1);x:number;}",
     "class C{static x:number=C.y;static y:number=1;}",
-    "class C{x:number;constructor(){const escape=()=>this.x;this.x=1;}}",
-    "function expose(value:{x:number}):void{}class C{x:number;constructor(){expose(this);this.x=1;}}",
   ]) {
     const result = check(source);
     assert.ok(!result.ok, source);
@@ -151,13 +146,11 @@ test("delete follows TypeScript's strict checks (TS2704, TS2790) and fails the b
     assert.equal(text.slice(result.error.start, result.error.end), operand);
     assert.equal(result.error.preventsFallback, true, operand);
   }
-  // Optional and open operands are valid TypeScript; deleting them is not
-  // lowered on the typed path yet, so they take the general path.
+  // Operands that admit undefined (optional, `unknown`) are valid TypeScript
+  // and are deleted on the typed path.
   for (const operand of ["p.d", "p.f", "r.h"]) {
     const result = check(prefix + "delete " + operand + ";}");
-    assert.ok(!result.ok, operand);
-    assert.equal(result.error.code, "UNSUPPORTED", operand);
-    assert.notEqual(result.error.preventsFallback, true, operand);
+    assert.ok(result.ok, JSON.stringify({ operand, result }));
   }
 });
 test("optional class fields admit undefined and need no constructor assignment", () => {
@@ -177,19 +170,94 @@ test("own methods called during construction are analyzed in place", () => {
     const result = check(source);
     assert.ok(result.ok, JSON.stringify({ source, result }));
   }
+  // An early return or a loop does not definitely assign: the field is
+  // unassigned when construction completes.
   for (const source of [
-    // The method reads a field before its assignment.
-    "class C{x:number;constructor(){this.x=this.twice();}twice():number{return this.x*2;}}",
-    // An early return or a loop does not definitely assign.
     "class C{x:number;y:number;constructor(){this.x=1;this.init();}init():void{if(this.x>0)return;this.y=2;}}",
     "class C{x:number;y:number;constructor(){this.x=1;this.init();}init():void{for(let i=0;i<3;i++){this.y=i;}}}",
-    // Recursion, an own override and a written prototype are not analyzed.
-    "class C{x:number;constructor(){this.a();this.x=1;}a():void{this.a();}}",
-    "class C{x:number;m():number{return 1;}constructor(){this.m=():number=>2;this.m();this.x=1;}}",
-    "class C{x:number;constructor(){this.m();this.x=1;}m():void{}}function patch():void{C.prototype.m=function(this:C):void{};}",
   ]) {
     const result = check(source);
     assert.ok(!result.ok, source);
     assert.equal(result.error.code, "UNINITIALIZED", source);
+  }
+});
+/** Field names the checker records as possibly read before assignment. */
+function unproven(source: string): string[] {
+  const result = check(source);
+  assert.ok(result.ok, JSON.stringify({ source, result }));
+  const names: string[] = [];
+  for (const contract of result.value.classes)
+    for (const member of contract.members) {
+      const element = member.node;
+      if (
+        element.kind === "field" &&
+        element.key.kind === "string" &&
+        result.value.uninitializedFields?.get(element) === true
+      )
+        names.push(element.key.value);
+    }
+  return names;
+}
+test("fields code may read before assignment stay typed and are recorded", () => {
+  for (const [source, names] of [
+    // A method reads the field before its assignment.
+    [
+      "class C{x:number;constructor(){this.x=this.twice();}twice():number{return this.x*2;}}",
+      ["x"],
+    ],
+    [
+      "class C{x:number;constructor(){this.m();this.x=1;}m():number{return this.x;}}",
+      ["x"],
+    ],
+    // Direct early reads: the pinned TypeScript reports TS2565 and TS2729
+    // here, which this checker does not reproduce yet (see
+    // docs/design-typed-classes.md); they read undefined exactly.
+    ["class C{x:number;constructor(){this.x=this.x+1;}}", ["x"]],
+    ["class C{x:number=this.y;y:number=1;}", ["y"]],
+    // Recursion, an own override, a written prototype and an escape of
+    // `this` are not followed: unassigned fields may be observed.
+    [
+      "class C{x:number;constructor(){this.a();this.x=1;}a():void{this.a();}}",
+      ["x"],
+    ],
+    [
+      "class C{x:number;m():number{return 1;}constructor(){this.m=():number=>2;this.m();this.x=1;}}",
+      ["x"],
+    ],
+    [
+      "class C{x:number;constructor(){this.m();this.x=1;}m():void{}}function patch():void{C.prototype.m=function(this:C):void{};}",
+      ["x"],
+    ],
+    [
+      'function see(c:C):number{return c.y;}class C{x:number;y:number;s:string;constructor(){this.x=1;see(this);this.y=2;this.s="";}}',
+      ["y", "s"],
+    ],
+    // Assigned before every observation: nothing is recorded.
+    [
+      "function see(c:C):number{return c.y;}class C{y:number;constructor(){this.y=2;see(this);}}",
+      [],
+    ],
+  ] as const)
+    assert.deepEqual(unproven(source), names, source);
+  // Speculative reads are typed for one primitive category; other storage,
+  // static fields and non-numeric updates are not lowered yet.
+  for (const [source, code] of [
+    [
+      "class D{}class C{d:D;constructor(){this.read();this.d=new D();}read():D{return this.d;}}",
+      "UNINITIALIZED",
+    ],
+    ["class C{static a:number=C.b;static b:number=1;}", "UNINITIALIZED"],
+    [
+      "class C{b:boolean;constructor(){this.add();this.b=false;}add():void{this.b||=true;}}",
+      "UNSUPPORTED",
+    ],
+    [
+      "class C{n:number;constructor(){this.add();this.n=1;}add():void{this.n??=2;}}",
+      "UNSUPPORTED",
+    ],
+  ] as const) {
+    const result = check(source);
+    assert.ok(!result.ok, source);
+    assert.equal(result.error.code, code, source);
   }
 });

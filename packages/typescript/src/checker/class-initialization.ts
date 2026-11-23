@@ -11,22 +11,33 @@ export interface ClassInitializationError extends Span {
   readonly code: "UNINITIALIZED" | "UNSUPPORTED" | "LIMIT";
   readonly message: string;
 }
+export interface ClassInitialization {
+  readonly error: ClassInitializationError | undefined;
+  /** Required instance fields some code may observe before their first
+   * assignment, each with the first such read or exposure of `this`. */
+  readonly unproven: ReadonlyMap<string, Span>;
+}
 /** Definite initialization only. Value types and executable bodies are checked separately.
  * Reference sets come from binding identities, including lexical receiver captures.
  *
  * A call of one of the class's own instance methods on `this` during
  * construction (`methods`, whose receiver references are in `receivers`) is
- * analyzed in place: the method may read only fields assigned before the
- * call, and the fields it definitely assigns count as assigned after it.
- * That holds while the call reaches the method the class defined, so callers
- * pass no methods when a prototype may be written. */
+ * analyzed in place: the fields it definitely assigns count as assigned
+ * after it. That holds while the call reaches the method the class defined,
+ * so callers pass no methods when a prototype may be written.
+ *
+ * A required instance field read before its assignment, or not yet assigned
+ * where `this` escapes (to a closure, another function, a call the analysis
+ * does not follow), is unproven: JavaScript reads `undefined` there, so its
+ * storage and reads must admit `undefined`. A static field read early, and a
+ * required field still unassigned when construction completes, are errors. */
 export function checkClassInitialization(
   definition: ClassDefinition,
   requiredFields: ReadonlySet<ClassElement>,
   receivers: ReadonlySet<Expression>,
   constructors: ReadonlySet<Expression>,
   methods: ReadonlyMap<string, ClassElement> = new Map<string, ClassElement>(),
-): ClassInitializationError | undefined {
+): ClassInitialization {
   let ready = new Set<string>(),
     required = new Set<string>(),
     staticMode = false,
@@ -38,6 +49,7 @@ export function checkClassInitialization(
     shadowed = new Set<string>();
   let exits: Set<string>[] | undefined;
   let error: ClassInitializationError | undefined;
+  const unproven = new Map<string, Span>();
   const abort = {};
   function fail(
     node: Span,
@@ -58,6 +70,15 @@ export function checkClassInitialization(
         "UNINITIALIZED",
         "class fields must be initialized before exposing this or returning",
       );
+  }
+  /** `this` escapes: the fields not yet assigned may be observed. */
+  function expose(node: Span): void {
+    if (staticMode) {
+      requireComplete(node);
+      return;
+    }
+    for (const name of required)
+      if (!ready.has(name) && !unproven.has(name)) unproven.set(name, node);
   }
   function copy(source: ReadonlySet<string>): Set<string> {
     const result = new Set<string>();
@@ -120,17 +141,20 @@ export function checkClassInitialization(
       fail(node, "LIMIT", "class initialization nesting limit exceeded");
     try {
       if (receiver(node)) {
-        requireComplete(node);
+        expose(node);
         return;
       }
       const name = field(node);
       if (name !== undefined) {
-        if (required.has(name) && !ready.has(name))
-          fail(
-            node,
-            "UNINITIALIZED",
-            "class field read before initialization: " + name,
-          );
+        if (required.has(name) && !ready.has(name)) {
+          if (staticMode)
+            fail(
+              node,
+              "UNINITIALIZED",
+              "class field read before initialization: " + name,
+            );
+          if (!unproven.has(name)) unproven.set(name, node);
+        }
         return;
       }
       switch (node.kind) {
@@ -148,7 +172,7 @@ export function checkClassInitialization(
           return;
         case "super":
         case "this":
-          requireComplete(node);
+          expose(node);
           return;
         case "group":
         case "satisfies":
@@ -237,7 +261,7 @@ export function checkClassInitialization(
             (callee.kind === "member" || callee.kind === "index") &&
             receiver(callee.object)
           )
-            requireComplete(callee);
+            expose(callee);
           expression(node.callee);
           const before = copy(ready);
           for (const argument of node.arguments) {
@@ -276,7 +300,7 @@ export function checkClassInitialization(
             captured(node, receivers) ||
             (staticMode && captured(node, constructors))
           )
-            requireComplete(node);
+            expose(node);
           return;
         default:
           fail(
@@ -389,7 +413,7 @@ export function checkClassInitialization(
           return false;
         }
         case "function":
-          if (staticMode && captured(node, constructors)) requireComplete(node);
+          if (staticMode && captured(node, constructors)) expose(node);
           return true;
         // Loops may run no iteration and a jump may leave early: fields
         // assigned inside them, or in a switch or try, do not count after
@@ -541,5 +565,5 @@ export function checkClassInitialization(
   } catch (caught) {
     if (caught !== abort) throw caught;
   }
-  return error;
+  return { error, unproven };
 }

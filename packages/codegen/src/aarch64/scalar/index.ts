@@ -16892,9 +16892,9 @@ function emitModuleForms(
               transfer(layout, t.field, object);
             }
             const presenceOffset = field.presenceOffset;
-            if (t.operation === "write" && presenceOffset !== undefined) {
+            if (t.operation !== "read" && presenceOffset !== undefined) {
               rawValue(9, t.object);
-              imm(10, 1);
+              imm(10, t.operation === "delete" ? 0 : 1);
               imm(12, presenceOffset);
               emit({
                 op: "add-reg",

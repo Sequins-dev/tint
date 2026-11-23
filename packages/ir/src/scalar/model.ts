@@ -477,7 +477,9 @@ export type Terminator = Span &
         readonly object: number;
         readonly record: number;
         readonly field: number;
-        readonly operation: "read" | "write";
+        /** `delete` stores the transfer slot (the field's absent value) and
+         * clears the presence byte of an optional field. */
+        readonly operation: "read" | "write" | "delete";
         readonly slot: number;
         readonly consequent: number;
         readonly alternate: number;

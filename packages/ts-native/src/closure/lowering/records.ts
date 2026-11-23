@@ -1070,6 +1070,9 @@ export function createRecordContracts(
       | { field: number; record: number; inherited: readonly number[] }
       | undefined
     )[] = [];
+  // Class instance fields ("record:field") that code may read before their
+  // first assignment: only speculative reads and numeric updates are exact.
+  const unprovenFields = new Set<string>();
   function constructorReceiver(id: number): boolean {
     const known = constructorReceivers[id];
     if (known !== undefined) return known;
@@ -1519,6 +1522,7 @@ export function createRecordContracts(
         layout,
         fieldEncoding,
         fail,
+        (element) => checked.uninitializedFields?.get(element) === true,
       ),
       prototype = records.length;
     records.push(planned.prototype);
@@ -1535,6 +1539,8 @@ export function createRecordContracts(
       record: prototype,
       inherited: planned.inherited,
     };
+    for (const field of planned.unproven)
+      unprovenFields.add(String(instance) + ":" + String(field));
     for (const type of [contract.instance, contract.prototype]) {
       if (type === undefined) throw "class storage type invariant";
       let shapes = classShapes[type];
@@ -1944,8 +1950,12 @@ export function createRecordContracts(
             (info.type !== type &&
               !(
                 write &&
-                info.type === "optional-reference" &&
-                type === "reference"
+                ((info.type === "optional-reference" && type === "reference") ||
+                  (unprovenFields.has(String(shape) + ":" + String(field)) &&
+                    ((info.type === "optional-number" && type === "number") ||
+                      (info.type === "optional-string" && type === "string") ||
+                      (info.type === "optional-boolean" &&
+                        type === "boolean"))))
               ) &&
               !primitive &&
               !(
@@ -1985,6 +1995,15 @@ export function createRecordContracts(
           const key = shape + ":" + field;
           if (seen.has(key)) continue;
           seen.add(key);
+          if (!write && type !== "general" && unprovenFields.has(key))
+            fail(
+              "a field read before its first assignment requires a speculative read: " +
+                name +
+                " at " +
+                node.start +
+                ":" +
+                node.end,
+            );
           const prototype = prototypes[shape],
             inherited = prototype?.inherited[field];
           const choice: RecordAccessChoice = {

@@ -3215,7 +3215,11 @@ export function emitModule(
             emit({
               op: "mov",
               dst: { ...mem(9, publishState), width: 8 },
-              src: { kind: "imm8", value: 1 },
+              src: {
+                kind: "imm8",
+                value:
+                  op.kind === "record" && op.operation === "delete" ? 0 : 1,
+              },
             });
           if (
             op.kind !== "cell" &&
