@@ -101,11 +101,12 @@ export function nativeObjectExtent(
   size = Math.ceil(size / 16) * 16;
   if (size > 0xffffffff || size > end - address) return undefined;
   // Typed arrays classify by width class, which fits the caller's four bits.
-  if (classification !== undefined)
-    classification[0] = nativeTypedArrayMarker(marker)
-      ? (marker & 7) + (flags === 2 ? 8 : 0)
-      : marker <= nativeWeakSlotMarker
-        ? marker + (flags === 2 ? 8 : 0)
-        : 0;
+  if (classification !== undefined) {
+    const view = flags === 2 ? 8 : 0;
+    let kind = 0;
+    if (nativeTypedArrayMarker(marker)) kind = (marker & 7) + view;
+    else if (marker <= nativeWeakSlotMarker) kind = marker + view;
+    classification[0] = kind;
+  }
   return size;
 }
