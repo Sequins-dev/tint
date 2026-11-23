@@ -17,7 +17,8 @@ export function run():number {
  const storage=records.classes[0];if(storage===undefined)return 4;
  const instance=records.records[storage.instance],prototype=records.records[storage.prototype];
  if(instance===undefined||prototype===undefined)return 5;
- if(instance.fields[0]?.stateOffset===undefined)return 6;
+ const field=instance.fields[0];
+ if(field===undefined||field.stateOffset!==undefined||field.deferred!==true)return 6;
  if(instance.fields[1]?.presenceOffset===undefined)return 7;
  if(prototype.fields[0]?.stateOffset===undefined)return 8;
  if(records.forType(storage.contract.instance)===storage.instance)return 9;
@@ -56,7 +57,7 @@ export function run():number {
    found=true;
    if(node.property==="read"){
     if(choice.prototype?.access.choices[0]?.record!==storage.prototype)valid=false;
-   }else if(choice.initialized!==true)valid=false;
+   }else if(choice.initialized===true)valid=false;
   }
   if(!found)valid=false;
   count++;
