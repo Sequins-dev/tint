@@ -1,55 +1,39 @@
-import { spawn, spawnSync } from "node:child_process";
-import { once } from "node:events";
+import { spawnSync } from "node:child_process";
 import {
   appendFileSync,
   closeSync,
   existsSync,
-  fstatSync,
   mkdtempSync,
   mkdirSync,
-  openSync,
   rmSync,
-  statSync,
   writeFileSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import { isLocked, tryAcquire } from "./flock.ts";
 import { nativeBatchWaiting } from "./native-batch-clock.ts";
+import {
+  acquireInOrder,
+  enterGateQueue,
+  gateLockPaths,
+  gateQueueDirectory,
+  gateQueueStatus,
+  releaseAll,
+  resourceLocks,
+  type GateResource,
+} from "./queue.ts";
 
 import {
   killGateProcess,
   runWithDeadline,
   runWithWatchdog,
   stageInferior,
+  watchdogSettings,
 } from "./watchdog.ts";
 
 const sleep = new Int32Array(new SharedArrayBuffer(4));
-
-function tryAcquire(file: string): number | undefined {
-  const fd = openSync(file, "a");
-  let acquired = false;
-  try {
-    const result = spawnSync("/usr/bin/lockf", ["-k", "-s", "-t", "0", "3"], {
-      stdio: ["ignore", "ignore", "inherit", fd],
-    });
-    if (result.error !== undefined) throw result.error;
-    if (result.status === 75) return undefined;
-    if (result.status !== 0)
-      throw Error(
-        "lockf failed for " + file + ": " + (result.signal ?? result.status),
-      );
-    // Legacy lockf callers can unlink the pathname as they release their lock.
-    // Never enter a critical section on an inode the pathname no longer names.
-    const held = fstatSync(fd);
-    const current = statSync(file, { throwIfNoEntry: false });
-    acquired = held.ino === current?.ino && held.dev === current.dev;
-    return acquired ? fd : undefined;
-  } finally {
-    if (!acquired) closeSync(fd);
-  }
-}
 
 export interface GateLock {
   fd: number;
@@ -104,61 +88,6 @@ export function acquireGateLockSync(
     const lock = probeGateLocks(files, label, timing);
     if (lock) return lock;
     Atomics.wait(sleep, 0, 0, 250);
-  }
-}
-
-async function waitForGateLock(file: string): Promise<130 | 143 | undefined> {
-  // A pathname wait retains its position through long holds and does not spin
-  // as blocking descriptor-mode lockf can on Darwin.
-  const child = spawn("/usr/bin/lockf", ["-k", "-s", file, "/usr/bin/true"], {
-    stdio: ["ignore", "ignore", "inherit"],
-  });
-  let interrupted: 130 | 143 | undefined;
-  const stop = (signal: NodeJS.Signals) => {
-    interrupted ??= signal === "SIGINT" ? 130 : 143;
-    child.kill();
-  };
-  process.once("SIGINT", stop);
-  process.once("SIGTERM", stop);
-  try {
-    const [status, signal] = await once(child, "exit");
-    if (interrupted !== undefined) return interrupted;
-    if (status !== 0)
-      throw Error("lockf wait failed for " + file + ": " + (signal ?? status));
-  } finally {
-    process.off("SIGINT", stop);
-    process.off("SIGTERM", stop);
-  }
-}
-
-async function acquireGateLockSet(
-  files: readonly string[],
-): Promise<(() => void) | 130 | 143> {
-  if (new Set(files).size !== files.length)
-    throw Error("Expected distinct paths for every lock in the set");
-
-  for (;;) {
-    const descriptors: number[] = [];
-    const release = () => {
-      while (descriptors.length > 0) closeSync(descriptors.pop()!);
-    };
-    let busy: string | undefined;
-    try {
-      // All callers use launch before timing, including after a queue wakeup.
-      for (const file of files) {
-        const fd = tryAcquire(file);
-        if (fd === undefined) {
-          busy = file;
-          break;
-        }
-        descriptors.push(fd);
-      }
-      if (busy === undefined) return release;
-    } finally {
-      if (descriptors.length !== files.length) release();
-    }
-    const interrupted = await waitForGateLock(busy);
-    if (interrupted !== undefined) return interrupted;
   }
 }
 
@@ -227,19 +156,23 @@ function runGateCommand(command: string, args: string[], fd?: number): number {
   return result.status ?? 1;
 }
 
+/** Applies the timed defaults and rejects bad settings before any wait. */
+function prepareTimed(label: string) {
+  if (!process.env.TINT_GATE_EVIDENCE)
+    process.env.TINT_GATE_EVIDENCE = mkdtempSync(join(tmpdir(), "tint-lock-"));
+  process.env.TINT_GATE_STEP_TIMEOUT ??= "3600";
+  watchdogSettings(label);
+}
+
 async function runTimed(
   files: string[],
   label: string,
   command: string,
   args: string[],
 ): Promise<number> {
+  prepareTimed(label);
   const startedAt = Date.now();
   const start = performance.now();
-  const evidence = process.env.TINT_GATE_EVIDENCE;
-  if (!evidence) {
-    process.env.TINT_GATE_EVIDENCE = mkdtempSync(join(tmpdir(), "tint-lock-"));
-  }
-  process.env.TINT_GATE_STEP_TIMEOUT ??= "3600";
   try {
     markStepReady();
     const queued = process.env.TINT_GATE_QUEUE_FILE;
@@ -261,6 +194,59 @@ async function runTimed(
           )
           .join("\n") + "\n",
       );
+  }
+}
+
+/**
+ * Runs a with-lock.sh request through the fair queue: wait for every earlier
+ * conflicting ticket, take the locks in order, then run under the watchdog.
+ */
+async function runQueued(
+  resource: GateResource,
+  label: string,
+  command: string,
+  args: string[],
+): Promise<number> {
+  const outer = process.env.TINT_GATE_TICKET;
+  if (outer && isLocked(outer)) {
+    console.error(
+      `with-lock.sh: ${label} requested a lock inside the job holding ${outer}. ` +
+        "A nested request can wait behind a ticket that waits for this job. " +
+        "Request every lock the job needs in one call, such as with-lock.sh both.",
+    );
+    return 2;
+  }
+  prepareTimed(label);
+  const paths = gateLockPaths();
+  const locks = resourceLocks(resource, paths);
+  for (const lock of locks) mkdirSync(dirname(lock), { recursive: true });
+  const ticket = await enterGateQueue(gateQueueDirectory(), {
+    resource,
+    label,
+    locks,
+    command: [command, ...args],
+  });
+  if (typeof ticket === "number") return ticket;
+  try {
+    const turn = await ticket.waitTurn();
+    if (turn !== undefined) return turn;
+    ticket.record({ state: "acquiring", at: Date.now() });
+    const held = await acquireInOrder(locks, (index) =>
+      ticket.recordLockWait(index),
+    );
+    if (!Array.isArray(held)) return held;
+    try {
+      ticket.record({ state: "running", at: Date.now() });
+      process.env.TINT_GATE_TICKET = ticket.path;
+      if (resource !== "both") process.env.TINT_GATE_HELD_LOCK = locks[0];
+      // Timing rows keep the configured paths in their established order.
+      const rows = resource === "both" ? [paths.launch, paths.timing] : locks;
+      return await runTimed(rows, label, command, args);
+    } finally {
+      await releaseAll(held);
+    }
+  } finally {
+    ticket.close();
   }
 }
 
@@ -370,7 +356,9 @@ function runMacGateBudget(command: string, args: string[]): Promise<number> {
   );
 }
 
-if (import.meta.main) {
+if (import.meta.main && process.argv[2] === "status") {
+  console.log(gateQueueStatus());
+} else if (import.meta.main) {
   const [resource, label, command, ...args] = process.argv.slice(2);
   if (!resource || !label || !command)
     throw Error("Expected resource, label and command");
@@ -391,29 +379,14 @@ if (import.meta.main) {
   } else if (resource === "watchdog") {
     process.exitCode = await runWithWatchdog(label, command, args);
   } else if (resource === "timed") {
+    // For callers that already hold TINT_GATE_HELD_LOCK, such as raw lockf.
     const file = process.env.TINT_GATE_HELD_LOCK;
     if (!file) throw Error("Expected TINT_GATE_HELD_LOCK");
     process.exitCode = await runTimed([file], label, command, args);
+  } else if (resource === "launch" || resource === "timing") {
+    process.exitCode = await runQueued(resource, label, command, args);
   } else if (resource === "timing-and-launch") {
-    const launch = process.env.TINT_GATE_EXCLUSIVE_LOCK;
-    const timingLock = process.env.TINT_GATE_TIMING_LOCK;
-    if (!launch || !timingLock)
-      throw Error("Expected timing and launch lock paths");
-    const release = await acquireGateLockSet([launch, timingLock]);
-    if (typeof release === "number") {
-      process.exitCode = release;
-    } else {
-      try {
-        process.exitCode = await runTimed(
-          [launch, timingLock],
-          label,
-          command,
-          args,
-        );
-      } finally {
-        release();
-      }
-    }
+    process.exitCode = await runQueued("both", label, command, args);
   } else if (resource === "memory") {
     process.exitCode = withGateLock(
       gateMemorySlots(process.env),
