@@ -1172,6 +1172,11 @@ function lowerScriptEntry(
   /** In a native entry whose `arguments` only feed `f.apply(x, arguments)`
    * (argumentsForwardingSites), how those calls forward its actuals. */
   let argumentsForwarding: ArgumentsForwarding | undefined = undefined;
+  /** In a synchronous function body, the local that holds the active
+   * execution context, read once on entry when a native call site uses it:
+   * callees restore the context before they return, so it does not change
+   * within the activation. */
+  let activeContextLocal: { name: string | undefined } | undefined = undefined;
   let usesTailCalls = false;
   let usesRegisterCalls = false;
   let usesWideRegisterCalls = false;
@@ -3685,9 +3690,19 @@ function lowerScriptEntry(
     });
     // Equal records of another identity (a context entered apart from the
     // one the callee was created in) compare their fields.
-    const active = temporary(
-      member(member(errors, "agent", span), "activeContext", span),
-    );
+    const local = activeContextLocal;
+    let localName: string | undefined = undefined;
+    if (local !== undefined) {
+      const existing = local.name;
+      localName = existing === undefined ? "$active" + serial++ : existing;
+      local.name = localName;
+    }
+    const active =
+      localName === undefined
+        ? temporary(
+            member(member(errors, "agent", span), "activeContext", span),
+          )
+        : id(localName, span);
     const context = member(slot, "context", span);
     const same = (field: string): Expression => ({
       ...at(span),
@@ -5459,6 +5474,11 @@ function lowerScriptEntry(
     nativeListName = nativeEntry ? incomingArguments : undefined;
     const outerArgumentsForwarding = argumentsForwarding;
     argumentsForwarding = undefined;
+    const outerActiveContextLocal = activeContextLocal;
+    const contextLocal: { name: string | undefined } | undefined = suspending
+      ? undefined
+      : { name: undefined };
+    activeContextLocal = contextLocal;
     const list: TypeNode = {
       ...at(span),
       kind: "array",
@@ -6516,6 +6536,27 @@ function lowerScriptEntry(
         expression: continuation,
       });
     }
+    const contextLocalName =
+      contextLocal === undefined ? undefined : contextLocal.name;
+    if (contextLocalName !== undefined)
+      statements.splice(start, 0, {
+        ...at(span),
+        kind: "variable",
+        mode: "const",
+        exported: false,
+        declarations: [
+          {
+            ...at(span),
+            name: contextLocalName,
+            type: undefined,
+            initializer: member(
+              member(id("$errors", span), "agent", span),
+              "activeContext",
+              span,
+            ),
+          },
+        ],
+      });
     const callbackBody: BlockStatement = {
       ...at(span),
       kind: "block",
@@ -6537,6 +6578,7 @@ function lowerScriptEntry(
     tailEnds = outerTailEnds;
     nativeListName = outerNativeListName;
     argumentsForwarding = outerArgumentsForwarding;
+    activeContextLocal = outerActiveContextLocal;
     functionDepth--;
     suspensionInput = outerSuspensionInput;
     asyncGeneratorBody = outerAsyncGeneratorBody;
