@@ -24,6 +24,7 @@ import {
   nativeStringDataOffset,
   nativeStringLengthOffset,
   nativeCStackReserveBytes,
+  nativeGenerationalNurseryAddressOffset,
   nativeStackMapFooterMagic,
   nativeStackMapRegistryOffset,
   nativeStackLimitOffset,
@@ -1121,10 +1122,14 @@ export function emitModule(
         emit({ op: "mov", dst: { ...mem(11, 0), width: 32 }, src: word(8) });
         // A generational nursery keeps no start bits: it is bump-allocated
         // without gaps, so the compactor's rare fallback and heap tools walk
-        // it by extents.
-        emit({ op: "mov", dst: eax, src: { ...mem(11, 28), width: 32 } });
+        // it by extents. The object's address is the nursery's absolute
+        // address plus the young top before this allocation.
+        emit({
+          op: "mov",
+          dst: rax,
+          src: mem(11, nativeGenerationalNurseryAddressOffset),
+        });
         emit({ op: "add", dst: rax, src: r9 });
-        emit({ op: "add", dst: rax, src: mem(2, managedBaseOffset) });
         emit({ op: "jmp", target: label(clear) });
       }
       emit({ op: "label", name: slow });

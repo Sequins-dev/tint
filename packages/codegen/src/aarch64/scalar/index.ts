@@ -11,6 +11,8 @@ import {
 export type { LocalSignatureBinding } from "./signature-groups.ts";
 import {
   nativeContextDomainOffset,
+  nativeGenerationalNurseryAddressOffset,
+  nativeGenerationalStateWords,
   nativeEngineThrowOffset,
   nativeStackOverflowPayload,
   nativeWorkerStopObserved,
@@ -7481,28 +7483,43 @@ function emitModuleForms(
               emit({ op: "orr-reg", width: 32, rd: 15, rn: 15, rm: 9 });
               emit({ op: "str", width: 32, rt: 15, rn: 14, offset: 0 });
             }
-            emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 8 });
-            emit({
-              op: "add-reg",
-              width: 64,
-              rd: 9,
-              rn: 9,
-              rm: 11,
-              shift: "lsl",
-              amount: 0,
-              setFlags: false,
-            });
-            emit({ op: "ldr", width: 64, rt: 10, rn: 10, offset: 8 });
-            emit({
-              op: "add-reg",
-              width: 64,
-              rd: 9,
-              rn: 10,
-              rm: 9,
-              shift: "lsl",
-              amount: 0,
-              setFlags: false,
-            });
+            const addTop = (): void =>
+              emit({
+                op: "add-reg",
+                width: 64,
+                rd: 9,
+                rn: 9,
+                rm: 11,
+                shift: "lsl",
+                amount: 0,
+                setFlags: false,
+              });
+            if (generationalBarriers) {
+              // The nursery's absolute address plus the young top.
+              emit({
+                op: "ldr",
+                width: 64,
+                rt: 9,
+                rn: 12,
+                offset: nativeGenerationalNurseryAddressOffset,
+              });
+              addTop();
+            } else {
+              // The semispace's base offset plus the top, then the managed base.
+              emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 8 });
+              addTop();
+              emit({ op: "ldr", width: 64, rt: 10, rn: 10, offset: 8 });
+              emit({
+                op: "add-reg",
+                width: 64,
+                rd: 9,
+                rn: 10,
+                rm: 9,
+                shift: "lsl",
+                amount: 0,
+                setFlags: false,
+              });
+            }
             fastDone = instructions.length;
             emit({ op: "b", displacement: 0 });
             const slow = instructions.length;
@@ -12453,7 +12470,7 @@ function emitModuleForms(
                     rn: 10,
                     offset: nativeArrayLengthOffset,
                   });
-                  imm(12, generational ? 16 : 8);
+                  imm(12, generational ? nativeGenerationalStateWords : 8);
                   compareState(9, 12);
                   requireState("cc");
                   emit({

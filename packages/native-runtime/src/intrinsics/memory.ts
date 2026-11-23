@@ -251,7 +251,7 @@ export function configureLinearAllocation(
   throw "HOST_UNAVAILABLE";
 }
 
-/** Publish the sixteen-word generational allocation/barrier control block.
+/** Publish the eighteen-word generational allocation/barrier control block.
  * All buffers are permanently owned, disjoint control storage. Initial young
  * top and old top are zero; young base equals the aligned old-prefix capacity.
  * The caller supplies zeroed start/dirty maps. Publication installs native data

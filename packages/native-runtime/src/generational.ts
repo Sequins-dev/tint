@@ -1,4 +1,7 @@
-import { nativeAllocatorShutdownRequest } from "@tint/abi/host";
+import {
+  nativeAllocatorShutdownRequest,
+  nativeGenerationalStateWords,
+} from "@tint/abi/host";
 import { initializeExternalMemory } from "./external-memory.ts";
 import {
   clearBytes,
@@ -109,10 +112,15 @@ export function initializeGenerationalRuntime(
     youngBits = bits.subarray(oldCapacity / 256),
     // One dirty bit per granule, eight per 64-byte card byte.
     dirty = marks.subarray(0, Math.ceil(oldCapacity / 64)),
-    allocation = new Uint32Array(16);
+    // The allocation/barrier block, ending with the nursery's absolute address
+    // (words 16/17) for the allocation fast path.
+    allocation = new Uint32Array(nativeGenerationalStateWords);
   allocation[1] = youngCapacity;
   allocation[2] = oldCapacity;
   allocation[7] = oldCapacity;
+  const nursery = managedBase + oldCapacity;
+  allocation[16] = nursery % 4294967296;
+  allocation[17] = Math.floor(nursery / 4294967296);
   let collecting = false;
   /** The space's base: majors compact in place, so the second half of the
    * managed region (a former copy reserve) stays untouched. */
