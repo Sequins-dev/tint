@@ -623,6 +623,10 @@ export interface RecordField {
   /** Cell initialization byte; guarded record-cell access is required. */
   readonly stateOffset?: number;
   readonly presenceOffset?: number;
+  /** Zero-filled when construction omits it, with no state byte: the
+   * producer proves a write precedes every read (class instance fields
+   * assigned during construction). */
+  readonly deferred?: boolean;
   readonly offset: number;
   readonly type: ScalarType;
   readonly mutable: boolean;

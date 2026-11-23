@@ -4002,10 +4002,16 @@ function lowerEntries(
         receiverBinding === undefined
           ? undefined
           : localByBinding.get(receiverBinding)?.id;
+      const receiverType =
+        fn.receiver === sourceId
+          ? checked.receiverTypes.get(sourceId)
+          : undefined;
       const adapted: CheckedFunction = {
         ...(receiverLocal === undefined ? {} : { receiverLocal }),
-        receiver:
-          fn.receiver === sourceId && checked.receiverTypes.has(sourceId),
+        receiver: receiverType !== undefined,
+        ...(receiverType !== undefined && scalar(receiverType) === "reference"
+          ? { receiverReference: true }
+          : {}),
         exhaustiveSwitches: checked.exhaustiveSwitches,
         id: functions.length,
         node: {

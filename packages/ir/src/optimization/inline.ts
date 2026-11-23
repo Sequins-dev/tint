@@ -47,6 +47,13 @@ function crossingType(
     }
     case "reference-value":
       return "reference";
+    case "general-is":
+      return "boolean";
+    case "general-value":
+      return op.type;
+    case "general-wrap":
+    case "general-none":
+      return "general";
     case "reference-wrap":
     case "reference-none":
     case "string-reference":
@@ -133,6 +140,12 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "record-read":
     case "record-new":
     case "reference-vector-new":
+    // General values: a method's receiver conversion (general-is and
+    // general-value of its receiver parameter) and wrapped results.
+    case "general-is":
+    case "general-value":
+    case "general-wrap":
+    case "general-none":
       return references;
     // A direct call stays a call in the caller: an exception it throws
     // reaches the caller's handler, as it did through the callee.
@@ -826,6 +839,7 @@ export function inlineSmallFunctions(
               case "undefined":
               case "boolean-none":
               case "reference-none":
+              case "general-none":
                 cloned.push({
                   ...instruction,
                   id: value(instruction.id),
@@ -896,6 +910,9 @@ export function inlineSmallFunctions(
               case "reference-value":
               case "string-reference":
               case "reference-string":
+              case "general-is":
+              case "general-value":
+              case "general-wrap":
                 cloned.push({
                   ...instruction,
                   id: value(instruction.id),

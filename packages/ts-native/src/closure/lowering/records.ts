@@ -1112,15 +1112,44 @@ export function createRecordContracts(
     }
     return first;
   }
+  const equivalentClassShapes: (readonly number[] | undefined)[] = [],
+    equivalenceSearched: (boolean | undefined)[] = [];
+  /** The class layouts of a class instance or prototype type, or of a type
+   * equivalent to one (checking may intern the same object type more than
+   * once), else undefined. */
+  function classLayouts(id: number): readonly number[] | undefined {
+    const own = classShapes[id];
+    if (own !== undefined) return own;
+    if (equivalenceSearched[id] === true) return equivalentClassShapes[id];
+    let found: readonly number[] | undefined;
+    if (checked.types[id]?.kind === "object")
+      for (const contract of checked.classes) {
+        if (contract === undefined) throw "class contract invariant";
+        for (const type of [contract.instance, contract.prototype]) {
+          if (type === undefined) throw "class contract type invariant";
+          const shapes = classShapes[type];
+          if (
+            found === undefined &&
+            shapes !== undefined &&
+            relations.assignable(id, type) &&
+            relations.assignable(type, id)
+          )
+            found = shapes;
+        }
+      }
+    equivalenceSearched[id] = true;
+    equivalentClassShapes[id] = found;
+    return found;
+  }
   function shapesForType(id: number): readonly number[] {
-    const ordinary = record(id),
-      shapes: number[] = [];
-    if (ordinary !== undefined) shapes.push(ordinary);
-    for (const shape of classShapes[id] ?? []) {
-      if (shape === undefined) throw "class shape invariant";
-      shapes.push(shape);
-    }
-    return shapes;
+    // Values of a class instance or prototype type have only the class
+    // layouts (object literals of such types are not constructed, see
+    // `construct`), so accesses check one layout and record facts can prove
+    // it for later accesses.
+    const layouts = classLayouts(id);
+    if (layouts !== undefined) return layouts;
+    const ordinary = record(id);
+    return ordinary === undefined ? [] : [ordinary];
   }
   const constructions = createKeyIndex<Expression, RecordConstruction>(
       syntaxHash,
@@ -1696,6 +1725,8 @@ export function createRecordContracts(
     construct: (node) => {
       const type = checked.expressions.get(node);
       if (type === undefined) fail("missing constructed type");
+      if (classLayouts(type) !== undefined)
+        fail("object literals typed as a class instance are not lowered yet");
       function shape(type: number, id: number): RecordConstructionShape {
         const fields = names[id];
         if (fields === undefined) throw "record names invariant";
@@ -1930,12 +1961,6 @@ export function createRecordContracts(
             type: info.type,
             primitive,
             initialized: info.stateOffset !== undefined,
-            ...(prototype !== undefined &&
-            inherited !== undefined &&
-            inherited < 0 &&
-            info.stateOffset !== undefined
-              ? { defines: true }
-              : {}),
           };
           if (
             prototype === undefined ||

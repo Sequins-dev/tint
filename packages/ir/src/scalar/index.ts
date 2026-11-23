@@ -221,6 +221,8 @@ export interface RecordFieldShape {
   readonly optional: boolean;
   /** Carries a cell initialization state byte. */
   readonly initialized?: boolean;
+  /** May be omitted at construction (see RecordField.deferred). */
+  readonly deferred?: boolean;
 }
 /** The shared physical record layout. Payload words (all 8-byte multiples
  * with 8-byte alignment) follow the header in field order, so they need no
@@ -237,6 +239,11 @@ export function placeRecordFields(
     if (field === undefined) throw "record shape invariant";
     if (field.optional && field.initialized === true)
       throw "record presence and initialization require separate fields";
+    if (
+      field.deferred === true &&
+      (field.optional || field.initialized === true)
+    )
+      throw "deferred record fields carry no tag";
     offsets.push(cursor);
     cursor += scalarByteLength(field.type);
   }
@@ -253,6 +260,7 @@ export function placeRecordFields(
       offset,
       ...(field.optional ? { presenceOffset: tag } : {}),
       ...(field.initialized === true ? { stateOffset: tag } : {}),
+      ...(field.deferred === true ? { deferred: true } : {}),
     });
   }
   return {
@@ -1141,7 +1149,8 @@ export function verify(
                 if (arg === undefined) {
                   if (
                     field.presenceOffset === undefined &&
-                    field.stateOffset === undefined
+                    field.stateOffset === undefined &&
+                    field.deferred !== true
                   )
                     fail("TYPE", "required record field cannot be omitted");
                 } else equal(use(arg), field.type);

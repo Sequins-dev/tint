@@ -139,7 +139,10 @@ export function planClassRecords(
       // (untyped code and the constructor body assign it).
       mutable: true,
       optional: inheritedField >= 0,
-      initialized: inheritedField < 0,
+      // Own data fields are assigned during construction, and the checker
+      // proves no read precedes the assignment (class-initialization.ts),
+      // so they carry no initialization state.
+      deferred: inheritedField < 0,
     });
   }
   const constructorNames: string[] = [],

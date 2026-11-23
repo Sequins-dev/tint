@@ -207,7 +207,8 @@ function buildInitialization(
         if (index === prototypeField) return b.load(proto);
         if (
           field.stateOffset === undefined &&
-          field.presenceOffset === undefined
+          field.presenceOffset === undefined &&
+          field.deferred !== true
         )
           throw "class field requires initialization state";
         return undefined;
@@ -275,7 +276,7 @@ function buildInitialization(
     const storage = instance.fields[field.field];
     if (
       storage === undefined ||
-      storage.stateOffset === undefined ||
+      (storage.stateOffset === undefined && storage.deferred !== true) ||
       initialized[field.field] === 1
     )
       throw "class field initialization invariant";
@@ -335,18 +336,34 @@ function buildInitialization(
     }
     if (value === undefined) throw "class field initializer result invariant";
     const next = b.block();
-    b.end({
-      kind: "record-cell",
-      object: b.load(object),
-      record,
-      field: field.field,
-      operation: "initialize",
-      slot: value,
-      consequent: next,
-      alternate: trap,
-      start: field.start,
-      end: field.end,
-    });
+    // A deferred instance field is written; a static field's state is
+    // initialized.
+    if (storage.stateOffset === undefined)
+      b.end({
+        kind: "record",
+        object: b.load(object),
+        record,
+        field: field.field,
+        operation: "write",
+        slot: value,
+        consequent: next,
+        alternate: trap,
+        start: field.start,
+        end: field.end,
+      });
+    else
+      b.end({
+        kind: "record-cell",
+        object: b.load(object),
+        record,
+        field: field.field,
+        operation: "initialize",
+        slot: value,
+        consequent: next,
+        alternate: trap,
+        start: field.start,
+        end: field.end,
+      });
     b.at(next);
   }
   const body = construction === undefined ? undefined : construction.body;

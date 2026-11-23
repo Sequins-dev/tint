@@ -315,19 +315,39 @@ views are the interop path.
 - Calling a class without `new` throws the TypeError V8 reports.
 - `readonly` fields and methods are writable in storage. `readonly` is
   checked by TypeScript only, and untyped code may write those properties.
-- Own data fields carry initialization state until construction defines
-  them. An assignment to an unset field defines it and an assignment to a
-  set field writes it, so constructor bodies may assign a field more than
-  once.
+- Constructor bodies may assign a field more than once (see step 3 for
+  the field storage).
 - `x instanceof C` for a typed class compares `C.prototype` with the
   operand's prototype pointer after testing for `C`'s instance layout
   (OrdinaryHasInstance). It needs no `Symbol.hasInstance` check while typed
   constructors have no realm view. Step 4 adds that check with the views.
 - `typeof` of a callable or constructible object type is `"function"`.
 
+**Status of step 3** (in progress):
+
+- Own data fields are `deferred` record fields: construction leaves them
+  zero-filled with no initialization state, and the checker proves each is
+  assigned before it is read, so accesses are plain loads and stores.
+- Values of a class instance or prototype type dispatch only on the class
+  layouts (also for structurally identical types the checker interned
+  separately). Object literals typed as a class instance fail explicitly.
+- A method converts its receiver once on entry, without trapping, so record
+  facts prove the layout for later `this` accesses.
+- A method call reads an inherited method into a slot that only prototype
+  reads write and calls through it. An own override takes the ordinary
+  call. With closed records the optimizer then knows the closure's target
+  whenever no code writes another closure into that prototype field. It
+  calls a twin that takes the receiver and environment as parameters, and
+  the inliner inlines it. This is the closed-world form of the guarded direct
+  call. Step 4's record views write prototype fields from untyped code, and
+  such a write makes the field's target unknown. Step 4 therefore adds the
+  prototype validity cell as the run-time guard on the same direct call.
+- `basicClasses` in the typed benchmark (`tools/typed-bench/classes-basic.ts`)
+  went from 76.8 ms to 35.4 ms steady on macOS arm64; Node 26.13.1 takes
+  21.1 ms. The frozen v7 workload is unchanged, with identical output.
+
 Untyped code does not yet see typed instances, prototypes or constructors
-through record views (step 4). Method calls still do the full own-then-
-prototype lookup (step 3 adds guarded direct calls). Accessors and
+through record views (step 4). Accessors and
 unannotated fields and method results still fail at check time. Evidence:
 `tools/native-typed-classes.test.ts`.
 

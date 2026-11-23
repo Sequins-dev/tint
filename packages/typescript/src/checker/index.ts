@@ -244,6 +244,9 @@ export interface CheckedFunction {
   readonly receiver?: boolean;
   /** Typed local used to initialize an owned lexical receiver cell. */
   readonly receiverLocal?: number;
+  /** The receiver's type has a managed reference representation (class
+   * methods): the entry converts it once, and `this` reads that conversion. */
+  readonly receiverReference?: boolean;
   readonly exhaustiveSwitches?: ReadonlySet<Statement>;
   readonly id: number;
   readonly node: FunctionDeclaration;

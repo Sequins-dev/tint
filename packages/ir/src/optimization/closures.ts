@@ -53,10 +53,7 @@ export function devirtualizeClosureCalls(
   function eligible(target: number): boolean {
     const fn = module.functions[target];
     return (
-      fn !== undefined &&
-      fn.import !== true &&
-      fn.receiverSlot === undefined &&
-      fn.environment === undefined
+      fn !== undefined && fn.import !== true && fn.environment === undefined
     );
   }
   /** Closure targets given a direct twin, in twin order. */
@@ -68,7 +65,7 @@ export function devirtualizeClosureCalls(
     if (fn === undefined) throw "closure target invariant";
     const existing = twins[target];
     if (existing !== undefined) return existing;
-    if (fn.closureEnvironment === undefined) {
+    if (fn.closureEnvironment === undefined && fn.receiverSlot === undefined) {
       twins[target] = target;
       return target;
     }
@@ -77,7 +74,9 @@ export function devirtualizeClosureCalls(
     twins[target] = id;
     return id;
   }
-  /** The twin of a closure body: its environment is a trailing parameter. */
+  /** The twin of a closure body: its receiver and environment are trailing
+   * parameters, in that order, so the twin is an ordinary (inlinable)
+   * function. */
   function twin(fn: FunctionIR, id: number): FunctionIR | undefined {
     const environmentSlot = fn.slots.length;
     const blocks: Block[] = [];
@@ -105,9 +104,12 @@ export function devirtualizeClosureCalls(
       );
     }
     const slots = fn.slots.slice();
-    slots.push("reference");
     const parameters = fn.parameters.slice();
-    parameters.push(environmentSlot);
+    if (fn.receiverSlot !== undefined) parameters.push(fn.receiverSlot);
+    if (fn.closureEnvironment !== undefined) {
+      slots.push("reference");
+      parameters.push(environmentSlot);
+    }
     return {
       id,
       name: fn.name + "$direct",
@@ -318,11 +320,7 @@ export function devirtualizeClosureCalls(
             known[op.id] = slotKnown;
         }
         if (instructions !== undefined) instructions.push(op);
-        if (
-          op.kind !== "call-indirect" ||
-          op.receiver !== undefined ||
-          op.scriptArguments !== undefined
-        )
+        if (op.kind !== "call-indirect" || op.scriptArguments !== undefined)
           continue;
         const closure = known[op.callee];
         if (closure === undefined) {
@@ -346,7 +344,8 @@ export function devirtualizeClosureCalls(
         if (
           target === undefined ||
           target.parameters.length !== op.arguments.length ||
-          (target.closureEnvironment === undefined) === closure.environment
+          (target.closureEnvironment === undefined) === closure.environment ||
+          (target.receiverSlot === undefined) !== (op.receiver === undefined)
         ) {
           if (remarks !== undefined)
             remarks({
@@ -365,7 +364,7 @@ export function devirtualizeClosureCalls(
                       String(target.parameters.length) +
                       " parameters, the call passes " +
                       String(op.arguments.length)
-                    : target.name + " environment shape differs"),
+                    : target.name + " environment or receiver shape differs"),
             });
           continue;
         }
@@ -375,6 +374,9 @@ export function devirtualizeClosureCalls(
           instructions = block.instructions.slice(0, i);
         else instructions.pop();
         const args = op.arguments.slice();
+        // A method's twin takes the call's receiver as a parameter.
+        const receiver = op.receiver;
+        if (receiver !== undefined) args.push(receiver);
         if (closure.environment) {
           const optional = nextValue++,
             environment = nextValue++;

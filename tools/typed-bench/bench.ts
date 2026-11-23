@@ -1,7 +1,7 @@
 // Typed code-generation benchmark (docs/results/typed-codegen-baseline-v1.md).
 // The kernels in kernels.ts run as one typed native image (general fallback
 // disabled) and as the same text under Node 26.13.1, timed in-process:
-//   node tools/typed-bench/bench.ts prepare NODE26 PREPARED.json [--suite typed|classes] [--steady N] [KERNEL ...]
+//   node tools/typed-bench/bench.ts prepare NODE26 PREPARED.json [--suite typed|classes|basicClasses] [--steady N] [KERNEL ...]
 //   tools/gate/with-lock.sh launch typed-bench-smoke \
 //     node tools/typed-bench/bench.ts smoke PREPARED.json
 //   tools/gate/with-lock.sh both typed-bench \
@@ -31,7 +31,8 @@ import { nativeArtifact } from "../native-target-runner.ts";
  * typed kernels keep PR #15's scales so their results compare with the
  * Worker baseline; the others are calibrated to about 20 ms of steady Node
  * 26.13.1 time per iteration on an M5 Max. `classes` may fall back to general
- * semantics: typed classes do not lower natively yet. */
+ * semantics: classes with `extends` do not lower natively yet;
+ * `basicClasses` has no inheritance and must stay typed. */
 const suites: Record<
   string,
   { file: string; typed: boolean; scales: Record<string, number> }
@@ -55,6 +56,11 @@ const suites: Record<
     },
   },
   classes: { file: "classes.ts", typed: false, scales: { classes: 10000 } },
+  basicClasses: {
+    file: "classes-basic.ts",
+    typed: true,
+    scales: { basicClasses: 15000 },
+  },
 };
 const clock = "packages/native-runtime/src/intrinsics/clock.ts";
 const marker = "TINT_TYPED_BENCH";
@@ -541,7 +547,7 @@ if (mode === "prepare" && rest.length >= 2) {
   );
 } else {
   throw Error(`Usage:
-  node tools/typed-bench/bench.ts prepare NODE26 PREPARED.json [--suite typed|classes] [--steady N] [KERNEL ...]
+  node tools/typed-bench/bench.ts prepare NODE26 PREPARED.json [--suite typed|classes|basicClasses] [--steady N] [KERNEL ...]
   tools/gate/with-lock.sh launch typed-bench-smoke node tools/typed-bench/bench.ts smoke PREPARED.json
   tools/gate/with-lock.sh both typed-bench node tools/typed-bench/bench.ts measure PREPARED.json REPORT.json [ROUNDS] [CANDIDATE.json ...]
   node tools/typed-bench/bench.ts v8-script KERNEL SCRIPT.mjs`);

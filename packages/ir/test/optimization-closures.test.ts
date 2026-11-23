@@ -400,3 +400,120 @@ test("closures copied into environment fields from slots devirtualize", () => {
   assert.ok(kept);
   assert.equal(kept.rewritten, 0);
 });
+
+/** `run()` creates a closure of `method`, a function with a receiver, and
+ * calls it through a slot with a receiver (or without one). The method tests
+ * its receiver as class methods do on entry. */
+function methodModule(receiver: boolean): ModuleIR {
+  const run: FunctionIR = {
+    id: 0,
+    name: "run",
+    exported: true,
+    parameters: [],
+    slots: ["reference"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "function-new", id: 0, target: 1, ...span },
+          { kind: "store", slot: 0, value: 0, ...span },
+          { kind: "load", id: 1, slot: 0, ...span },
+          { kind: "general-none", id: 2, ...span },
+          { kind: "constant", id: 3, value: 41, ...span },
+          {
+            kind: "call-indirect",
+            id: 4,
+            target: 1,
+            callee: 1,
+            ...(receiver ? { receiver: 2 } : {}),
+            arguments: [3],
+            ...span,
+          },
+        ],
+        terminator: { kind: "return", value: 4, ...span },
+      },
+    ],
+  };
+  const method: FunctionIR = {
+    id: 1,
+    name: "method",
+    exported: false,
+    parameters: [0],
+    slots: ["number", "general"],
+    receiverSlot: 1,
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 1, ...span },
+          { kind: "general-is", id: 1, value: 0, type: "object", ...span },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 1,
+          consequent: 1,
+          alternate: 2,
+          ...span,
+        },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "load", id: 2, slot: 0, ...span }],
+        terminator: { kind: "return", value: 2, ...span },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 3, slot: 0, ...span },
+          { kind: "constant", id: 4, value: 1, ...span },
+          { kind: "binary", id: 5, operator: "+", left: 3, right: 4, ...span },
+        ],
+        terminator: { kind: "return", value: 5, ...span },
+      },
+    ],
+  };
+  return { functions: [run, method] };
+}
+
+test("method calls with receivers become direct calls of a receiver-passing twin", () => {
+  const input = methodModule(true);
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+  const result = devirtualizeClosureCalls(input, 1000);
+  assert.ok(result);
+  assert.equal(result.rewritten, 1);
+  assert.ok(verify(result.module).ok, JSON.stringify(verify(result.module)));
+  const twin = result.module.functions[2]!;
+  assert.equal(twin.name, "method$direct");
+  assert.equal(twin.receiverSlot, undefined);
+  assert.deepEqual(twin.parameters, [0, 1]);
+  const call = result.module.functions[0]!.blocks[0]!.instructions.find(
+    (op) => op.kind === "call",
+  );
+  assert.ok(call?.kind === "call");
+  assert.equal(call.target, 2);
+  assert.deepEqual(call.arguments, [3, 2]);
+  // The twin (receiver test included) inlines into its caller.
+  const optimized = optimizeModule(input, 20000000, {
+    devirtualizeClosures: true,
+  });
+  assert.ok(verify(optimized.module).ok);
+  assert.ok(
+    !optimized.module.functions[0]!.blocks.some((block) =>
+      block.instructions.some(
+        (op) => op.kind === "call-indirect" || op.kind === "call",
+      ),
+    ),
+  );
+});
+
+test("calls without a receiver keep methods indirect", () => {
+  const input = methodModule(false);
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+  const result = devirtualizeClosureCalls(input, 1000);
+  assert.ok(result);
+  assert.equal(result.rewritten, 0);
+});

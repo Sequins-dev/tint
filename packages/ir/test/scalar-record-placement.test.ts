@@ -63,3 +63,64 @@ test("placement packs payload words first and one-byte tags after them", () => {
     },
   );
 });
+
+test("deferred fields carry no tag and may be omitted at construction", () => {
+  const layout = placeRecordFields([
+    { type: "number", mutable: true, optional: false, deferred: true },
+    { type: "reference", mutable: true, optional: false },
+  ]);
+  assert.deepEqual(layout.fields[0], {
+    type: "number",
+    mutable: true,
+    offset: 8,
+    deferred: true,
+  });
+  const span = { start: 0, end: 0 };
+  function construct(omitted: number) {
+    return verify({
+      records: [layout],
+      functions: [
+        {
+          id: 0,
+          name: "make",
+          exported: true,
+          parameters: [0],
+          slots: ["reference"],
+          returnType: "reference",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...span },
+                { kind: "constant", id: 1, value: 1, ...span },
+                {
+                  kind: "record-new",
+                  id: 2,
+                  record: 0,
+                  arguments: omitted === 0 ? [undefined, 0] : [1, undefined],
+                  ...span,
+                },
+              ],
+              terminator: { kind: "return", value: 2, ...span },
+            },
+          ],
+        },
+      ],
+    });
+  }
+  assert.deepEqual(construct(0), { ok: true });
+  const required = construct(1);
+  assert.ok(!required.ok);
+  assert.match(
+    required.error.message,
+    /required record field cannot be omitted/,
+  );
+  assert.throws(
+    () =>
+      placeRecordFields([
+        { type: "number", mutable: true, optional: true, deferred: true },
+      ]),
+    /deferred record fields carry no tag/,
+  );
+});
