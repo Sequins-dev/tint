@@ -77,7 +77,8 @@ export function forwardClosureEnvironments(
       }
     }
   }
-  const mirrors = new Int32Array(slotCount).fill(-1),
+  // Mirror slot + 1 per closure slot (0: none).
+  const mirrors = new Uint32Array(slotCount),
     slots: ScalarType[] = fn.slots.slice();
   let candidates = 0;
   for (let slot = 0; slot < slotCount; slot++)
@@ -86,7 +87,7 @@ export function forwardClosureEnvironments(
       excluded[slot] !== 1 &&
       (environmentReads[slot] ?? 0) > 0
     ) {
-      mirrors[slot] = slots.length;
+      mirrors[slot] = slots.length + 1;
       slots.push("reference");
       candidates++;
     }
@@ -114,20 +115,20 @@ export function forwardClosureEnvironments(
       if (++visited > budget) return undefined;
       if (op.kind === "function-new" && op.environment !== undefined)
         environments.set(op.id, op.environment);
-      if (op.kind === "store" && (mirrors[op.slot] ?? -1) >= 0) {
+      if (op.kind === "store" && (mirrors[op.slot] ?? 0) !== 0) {
         const environment = environments.get(op.value);
         if (environment === undefined) throw "closure environment invariant";
         instructions.push(op);
         instructions.push({
           kind: "store",
-          slot: mirrors[op.slot] ?? -1,
+          slot: (mirrors[op.slot] ?? 0) - 1,
           value: environment,
           start: op.start,
           end: op.end,
         });
         continue;
       }
-      if (op.kind === "load" && (mirrors[op.slot] ?? -1) >= 0) {
+      if (op.kind === "load" && (mirrors[op.slot] ?? 0) !== 0) {
         loads.set(op.id, op.slot);
         instructions.push(op);
         continue;
@@ -139,7 +140,7 @@ export function forwardClosureEnvironments(
           instructions.push({
             kind: "load",
             id: mirrored,
-            slot: mirrors[slot] ?? -1,
+            slot: (mirrors[slot] ?? 0) - 1,
             start: op.start,
             end: op.end,
           });
@@ -181,7 +182,7 @@ export function forwardClosureEnvironments(
       if (op === undefined) throw "closure environment instruction invariant";
       if (
         op.kind === "load" &&
-        (mirrors[op.slot] ?? -1) >= 0 &&
+        (mirrors[op.slot] ?? 0) !== 0 &&
         used.has(op.id)
       )
         remaining[op.slot] = (remaining[op.slot] ?? 0) + 1;
@@ -197,7 +198,7 @@ export function forwardClosureEnvironments(
         op.kind === "load" || op.kind === "store" ? op.slot : undefined;
       if (
         slot !== undefined &&
-        (mirrors[slot] ?? -1) >= 0 &&
+        (mirrors[slot] ?? 0) !== 0 &&
         (remaining[slot] ?? 0) === 0
       )
         continue;

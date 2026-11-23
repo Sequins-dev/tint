@@ -895,6 +895,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/closure-environments.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/closures.ts",
       packageId: "ir",
     },
