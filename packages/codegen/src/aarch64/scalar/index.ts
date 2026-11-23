@@ -4336,25 +4336,43 @@ function emitModuleForms(
           borrowedEnvironmentOffset = resultPointerOffset + 8,
           allocationOffset =
             borrowedEnvironmentOffset + (fn.environment === undefined ? 0 : 8),
-          // Frame words owned by the function start here: the collector finds
-          // the live ones through per-safepoint stack maps (no frame header).
-          localsBase =
-            allocationOffset +
-            (fn.blocks.some((b) =>
+          allocationScratchBytes = fn.blocks.some((b) =>
+            b.instructions.some(
+              (op) =>
+                op.kind === "string-from-code-units" ||
+                op.kind === "string-concat" ||
+                op.kind === "string-slice" ||
+                op.kind === "string-allocate" ||
+                op.kind === "array-new" ||
+                op.kind === "weak-slot-new" ||
+                op.kind === "reference-vector-new" ||
+                op.kind === "array-subarray",
+            ),
+          )
+            ? 24
+            : 0,
+          // Record constructors with numeric fields keep numeric temporaries
+          // (d16..d31) live across their allocation: the slow path saves
+          // them here around the allocator call (see preservesFloats).
+          floatSaveOffset = allocationOffset + allocationScratchBytes,
+          floatSaveBytes =
+            floatSaveOffset + 128 <= 32760 &&
+            fn.blocks.some((b) =>
               b.instructions.some(
                 (op) =>
-                  op.kind === "string-from-code-units" ||
-                  op.kind === "string-concat" ||
-                  op.kind === "string-slice" ||
-                  op.kind === "string-allocate" ||
-                  op.kind === "array-new" ||
-                  op.kind === "weak-slot-new" ||
-                  op.kind === "reference-vector-new" ||
-                  op.kind === "array-subarray",
+                  op.kind === "record-new" &&
+                  (module.records?.[op.record]?.fields ?? []).some(
+                    (field) =>
+                      field.type === "number" ||
+                      field.type === "optional-number",
+                  ),
               ),
             )
-              ? 24
-              : 0),
+              ? 128
+              : 0,
+          // Frame words owned by the function start here: the collector finds
+          // the live ones through per-safepoint stack maps (no frame header).
+          localsBase = floatSaveOffset + floatSaveBytes,
           environmentOffset =
             fn.closureEnvironment === undefined
               ? borrowedEnvironmentOffset
@@ -4959,8 +4977,26 @@ function emitModuleForms(
                       noSafepoints[op.target] !== 1
                     : op.kind === "call-indirect" ||
                       (irInstructionEffects(op) & irEffectAllocate) !== 0,
+            floatSaveBytes === 0
+              ? undefined
+              : (op: IRInstruction): boolean => op.kind === "record-new",
           );
         }
+        // FP temporaries a record constructor's slow path saves: every
+        // d16..d31 some numeric temporary of this function is homed in.
+        let floatTemporaryMask = 0;
+        const floatTemporaries = transientRegisters;
+        if (floatSaveBytes !== 0 && floatTemporaries !== undefined)
+          for (let id = 0; id < floatTemporaries.length; id++) {
+            const register = floatTemporaries[id] ?? 0;
+            if (
+              register >= 16 &&
+              register <= 31 &&
+              (value(id).type === "number" ||
+                value(id).type === "optional-number")
+            )
+              floatTemporaryMask |= 1 << (register - 16);
+          }
         function referenceTemporary(id: number): number {
           const type = value(id).type;
           return managed(type) && type !== "primitive"
@@ -7768,6 +7804,7 @@ function emitModuleForms(
         function allocate(
           prepare: () => void,
           size: (rd: number) => void,
+          preserveFloats: boolean = false,
         ): void {
           pollWorkerStop();
           prepare();
@@ -7856,7 +7893,19 @@ function emitModuleForms(
           }
           // The slow path: the shared allocate-call kernel zeroes the result
           // area and loads the allocator's arguments; the call, its
-          // safepoint and exceptional edge stay here.
+          // safepoint and exceptional edge stay here. Numeric temporaries
+          // live across a record constructor stay in d16..d31 on the fast
+          // path, so this path saves and restores them around the call (an
+          // exceptional exit leaves the block, where none is live).
+          const saved = preserveFloats ? floatTemporaryMask : 0;
+          for (let r = 0; r < 16; r++)
+            if ((saved & (1 << r)) !== 0)
+              emit({
+                op: "str-d",
+                rt: 16 + r,
+                rn: "sp",
+                offset: floatSaveOffset + r * 8,
+              });
           rawLoad(0, contextOffset);
           address(3, resultOffset);
           size(9);
@@ -7879,6 +7928,14 @@ function emitModuleForms(
           size(10);
           rawLoad(11, contextOffset);
           callHelper("allocate-finish");
+          for (let r = 0; r < 16; r++)
+            if ((saved & (1 << r)) !== 0)
+              emit({
+                op: "ldr-d",
+                rt: 16 + r,
+                rn: "sp",
+                offset: floatSaveOffset + r * 8,
+              });
           if (fastDone >= 0)
             patchInstruction(fastDone, {
               op: "b",
@@ -10402,6 +10459,7 @@ function emitModuleForms(
                 allocate(
                   () => {},
                   (rd) => imm(rd, layout.byteLength),
+                  floatSaveBytes !== 0,
                 );
                 descriptorPointer(op.record);
                 emit({ op: "str", width: 64, rt: 11, rn: 9, offset: 0 });
@@ -10414,12 +10472,32 @@ function emitModuleForms(
                     word < scalarByteLength(field.type);
                     word += 8
                   ) {
+                    const offset = field.offset + word;
+                    // A word already in a register home is stored from it
+                    // (an FP home without a bank transfer).
+                    const home =
+                      arg === undefined
+                        ? 0
+                        : (scalarRegisters?.[(value(arg).offset + word) / 8] ??
+                          0);
+                    if (home !== 0 && offset <= 32760) {
+                      if (home < 32)
+                        emit({ op: "str-d", rt: home, rn: 9, offset });
+                      else
+                        emit({
+                          op: "str",
+                          width: 64,
+                          rt: home - 32,
+                          rn: 9,
+                          offset,
+                        });
+                      continue;
+                    }
                     // A missing optional number is `undefined`, not +0.
                     if (arg === undefined && field.type === "optional-number")
                       absentNumber(10);
                     else if (arg === undefined) imm(10, 0);
                     else rawLoad(10, value(arg).offset + word);
-                    const offset = field.offset + word;
                     if (offset <= 32760)
                       emit({ op: "str", width: 64, rt: 10, rn: 9, offset });
                     else {

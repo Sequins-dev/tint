@@ -65,6 +65,10 @@ export function temporaryRegisters(
    * opaque operation but no safepoint needs no root: it joins the word
    * temporaries (callee-saved, preserved by calls and helpers). */
   collects?: (op: Instruction) => boolean,
+  /** Opaque instructions whose code preserves d16..d31 (inline allocations
+   * that save and restore them around their slow-path call): numeric
+   * temporaries may cross them. References still may not. */
+  preservesFloats?: (op: Instruction) => boolean,
 ): Uint8Array | undefined {
   if (
     !Number.isSafeInteger(maxWork) ||
@@ -97,7 +101,9 @@ export function temporaryRegisters(
       if (op === undefined) throw "temporary instruction invariant";
       if (++work > maxWork) return undefined;
       position++;
-      const safe = transparent(op),
+      const safe =
+          transparent(op) ||
+          (preservesFloats !== undefined && preservesFloats(op)),
         referenceSafe = referenceTransparent(op);
       if (!safe) epoch++;
       if (!referenceSafe) referenceEpoch++;
