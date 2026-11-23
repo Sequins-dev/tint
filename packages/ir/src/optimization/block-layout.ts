@@ -1,4 +1,9 @@
-import type { Block, FunctionIR, Terminator } from "../scalar/model.ts";
+import {
+  instructionResult,
+  type Block,
+  type FunctionIR,
+  type Terminator,
+} from "../scalar/index.ts";
 
 /** Blocks that end the function abnormally: placed after every other block,
  * so no hot path falls through or branches past them. */
@@ -7,14 +12,37 @@ function coldBlock(block: Block): boolean {
   return kind === "trap" || kind === "throw" || kind === "throw-literal";
 }
 
+/** The successor a branch takes when its block's cached property access
+ * hits: true of a property-store's result, false of the absent test of a
+ * property-load's value (only a miss produces absent). Undefined for any
+ * other condition. */
+function cacheHit(
+  block: Block,
+  condition: number,
+  consequent: number,
+  alternate: number,
+): number | undefined {
+  for (let index = block.instructions.length - 1; index >= 0; index--) {
+    const op = block.instructions[index];
+    if (op === undefined) throw "layout instruction invariant";
+    if (instructionResult(op) !== condition) continue;
+    if (op.kind === "property-store") return consequent;
+    if (op.kind === "general-is" && op.type === "absent") return alternate;
+    return undefined;
+  }
+  return undefined;
+}
+
 /** Fallthrough-aware block order. Chains start at the entry and then at the
  * first unplaced block in the current order; each block is followed by its
  * preferred unplaced successor, so the emitter elides that edge's branch: a
- * jump's target, the success edge of a record or cell access, and for a
- * branch the earlier of its non-cold successors in the current order (the
- * source order of a loop body or `if` consequent). Blocks ending in a trap
- * or throw go last. Blocks are renumbered densely in the new order. Only
- * the layout changes: every edge keeps its source and target. */
+ * jump's target, the success edge of a record or cell access, the hit edge
+ * of a cached property access (its miss continues in a later chain), and
+ * for any other branch the earlier of its non-cold successors in the
+ * current order (the source order of a loop body or `if` consequent).
+ * Blocks ending in a trap or throw go last. Blocks are renumbered densely
+ * in the new order. Only the layout changes: every edge keeps its source
+ * and target. */
 export function layoutBlocks(
   fn: FunctionIR,
   budget: number,
@@ -33,7 +61,8 @@ export function layoutBlocks(
   function eligible(id: number): boolean {
     return placed[id] === 0 && cold[id] === 0;
   }
-  function preferred(terminator: Terminator): number {
+  function preferred(block: Block): number {
+    const terminator = block.terminator;
     if (terminator.kind === "jump")
       return placed[terminator.target] === 0 ? terminator.target : -1;
     if (
@@ -45,6 +74,13 @@ export function layoutBlocks(
       return eligible(terminator.alternate) ? terminator.alternate : -1;
     }
     if (terminator.kind === "branch") {
+      const hit = cacheHit(
+        block,
+        terminator.condition,
+        terminator.consequent,
+        terminator.alternate,
+      );
+      if (hit !== undefined) return eligible(hit) ? hit : -1;
       const first = Math.min(terminator.consequent, terminator.alternate),
         second = Math.max(terminator.consequent, terminator.alternate);
       if (eligible(first)) return first;
@@ -62,7 +98,7 @@ export function layoutBlocks(
       order.push(id);
       const block = fn.blocks[id];
       if (block === undefined) throw "layout block invariant";
-      id = preferred(block.terminator);
+      id = preferred(block);
     }
     while (start < count && !eligible(start)) {
       if (++visited > budget) return undefined;
