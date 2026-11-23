@@ -381,6 +381,8 @@ export type ClassElement =
             /** TypeScript modifiers with checking meaning only. */
             readonly readonly?: boolean | undefined;
             readonly optional?: boolean | undefined;
+            /** `x!: T`: TypeScript skips definite assignment checks. */
+            readonly definite?: boolean | undefined;
             readonly type: TypeNode | undefined;
             readonly initializer: Expression | undefined;
           }

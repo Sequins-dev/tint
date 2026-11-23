@@ -281,13 +281,22 @@ paths correct:
   - Every read of an unproven field pays the speculative path, also after
     construction. Reads proven to follow construction (no escape of `this`)
     can use the storage directly; not done yet.
-  - The pinned TypeScript reports a direct early read in the constructor
-    (TS2565) or a field initializer (TS2729). This checker does not
-    reproduce those diagnostics yet; such programs read `undefined` as
-    JavaScript does.
+  - Direct early reads are TypeScript's own type errors and fail the build
+    as tsc does under Tint's profile (`tsconfig.base.json`: strict, target
+    ES2022):
+    - TS2565 (needs strictNullChecks and strictPropertyInitialization) for
+      `this.x` or `this["x"]` read directly in the constructor before
+      TypeScript's flow analysis assigns it. Method calls do not assign, and
+      arrows are separate. The pass reproduces TypeScript's flow for
+      branches, short circuits, loops, try/catch/finally, switch and `never`
+      calls, and stops without a diagnostic where it does not.
+    - TS2729 for a property access in a field initializer of a field
+      declared later, of the field itself, or of an earlier one without an
+      initializer or `!` read through `this`.
 
-  `tools/native-typed-classes.test.ts` covers the typed cases, the contract
-  `TypeError`, and the general-path case.
+    `tools/source-validation.test.ts` compares both with tsc 6.0.3.
+    `tools/native-typed-classes.test.ts` covers the typed cases, the contract
+    `TypeError`, and the general-path case.
 
 - **Deleting fields that admit `undefined`** (`x?: T`, `x: T | undefined`,
   `unknown`, and optional interface properties) is lowered on the typed

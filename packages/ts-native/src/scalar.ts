@@ -7140,6 +7140,11 @@ export function lowerFunction(
         if (builtin === "literal-property-has") {
           value(node.left);
           const object = value(node.right);
+          // A typed record is never a realm error: test its layouts natively
+          // (a realm error check would pass it to general code).
+          const typedRecord =
+            slots[object] === "reference" ||
+            slots[object] === "optional-reference";
           const property = info(node).propertyKey;
           if (property === undefined) throw "literal property key invariant";
           const receiver = save(
@@ -7162,7 +7167,9 @@ export function lowerFunction(
             "in requires an object operand",
             node,
           );
-          return literalPropertyOperation(receiver, property, true, node);
+          return typedRecord
+            ? nativeProperty(receiver, property, true, node)
+            : literalPropertyOperation(receiver, property, true, node);
         }
         if (
           builtin === "type-error-is" ||

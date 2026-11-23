@@ -476,6 +476,7 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
       flag(node.accessor);
       flag(node.readonly);
       flag(node.optional);
+      flag(node.definite);
       optionalType(node.type);
       optionalExpression(node.initializer);
       return;

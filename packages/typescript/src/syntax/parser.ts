@@ -1770,8 +1770,9 @@ function parseSource(
             );
           // `x?: T` is an optional property; `x!: T` only skips TypeScript's
           // definite assignment check.
-          const optional = language !== "javascript" && at("?");
-          if (language !== "javascript" && (at("?") || at("!"))) take();
+          const optional = language !== "javascript" && at("?"),
+            definite = language !== "javascript" && at("!");
+          if (optional || definite) take();
           const annotation = eat(":") ? type() : undefined;
           const previousSuper = superProperty;
           const previousSuperCall = superCall;
@@ -1805,6 +1806,7 @@ function parseSource(
             ...(privateName ? { private: true } : {}),
             ...(readonlyField ? { readonly: true } : {}),
             ...(optional ? { optional: true } : {}),
+            ...(definite ? { definite: true } : {}),
             computed,
             static: isStatic,
             type: annotation,

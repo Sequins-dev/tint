@@ -579,3 +579,563 @@ export function checkClassInitialization(
   }
   return { error, unproven };
 }
+
+/** TypeScript's TS2565 ("Property 'x' is used before being assigned"), under
+ * the pinned strict profile (strictNullChecks and
+ * strictPropertyInitialization): a read of `this.x` or `this["x"]` directly
+ * in the constructor (not in a nested function or arrow) where `x` is one of
+ * `tracked` (instance fields of this class without an initializer or `!`,
+ * not optional, whose type excludes undefined) and TypeScript's flow
+ * analysis has not definitely assigned it. Unlike checkClassInitialization,
+ * calls are not followed (TypeScript does not). Constructs whose flow this
+ * pass does not reproduce exactly stop it without a diagnostic, so it never
+ * reports what tsc accepts. `neverCall` tells calls typed `never`, after
+ * which TypeScript treats the code as unreachable. Returns the property
+ * name's span of the first such read. */
+export function constructorReadBeforeAssignment(
+  definition: ClassDefinition,
+  tracked: ReadonlySet<string>,
+  neverCall: (node: Expression) => boolean,
+): (Span & { readonly name: string }) | undefined {
+  if (tracked.size === 0) return undefined;
+  let body: Statement | undefined;
+  for (const element of definition.elements) {
+    if (element === undefined) throw "class member invariant";
+    if (
+      element.kind === "method" &&
+      !element.static &&
+      literalPropertyName(element.key) === "constructor"
+    )
+      body = element.body;
+  }
+  if (body === undefined) return undefined;
+  // Definitely assigned names, or undefined where control cannot reach.
+  let state: Set<string> | undefined = new Set<string>();
+  let found: (Span & { readonly name: string }) | undefined;
+  // While collecting assignments only (`collected`), reads are not
+  // diagnosed.
+  let quiet = false;
+  let collected: Set<string> | undefined;
+  const stop = {};
+  function bail(): never {
+    throw stop;
+  }
+  function copy(source: Set<string> | undefined): Set<string> | undefined {
+    if (source === undefined) return undefined;
+    const result = new Set<string>();
+    for (const name of source) result.add(name);
+    return result;
+  }
+  function meet(
+    a: Set<string> | undefined,
+    b: Set<string> | undefined,
+  ): Set<string> | undefined {
+    if (a === undefined) return copy(b);
+    const other = b;
+    if (other === undefined) return copy(a);
+    const result = new Set<string>();
+    for (const name of a) if (other.has(name)) result.add(name);
+    return result;
+  }
+  /** The tracked name a `this.x` or `this["x"]` access names. */
+  function thisField(node: Expression): string | undefined {
+    if (node.kind !== "member" && node.kind !== "index") return undefined;
+    if (node.object.kind !== "this") return undefined;
+    const name =
+      node.kind === "member" ? node.property : literalPropertyName(node.index);
+    return name !== undefined && tracked.has(name) ? name : undefined;
+  }
+  function read(node: Expression, name: string): void {
+    const current = state;
+    if (
+      quiet ||
+      found !== undefined ||
+      current === undefined ||
+      current.has(name)
+    )
+      return;
+    if (node.kind === "member")
+      found = { start: node.end - name.length, end: node.end, name };
+    else if (node.kind === "index")
+      found = { start: node.index.start, end: node.index.end, name };
+    throw stop;
+  }
+  function assign(name: string): void {
+    state?.add(name);
+    collected?.add(name);
+  }
+  function conditional(node: Expression): boolean {
+    if (node.kind === "member" || node.kind === "index")
+      return node.optional === true || conditional(node.object);
+    if (node.kind === "call")
+      return node.optional === true || conditional(node.callee);
+    return false;
+  }
+  function expression(node: Expression): void {
+    const name = thisField(node);
+    if (name !== undefined) {
+      read(node, name);
+      return;
+    }
+    switch (node.kind) {
+      case "number":
+      case "string":
+      case "boolean":
+      case "null":
+      case "identifier":
+      case "this":
+      case "new-target":
+      case "elision":
+      case "arrow":
+      case "function-expression":
+      case "class-expression":
+        return;
+      case "group":
+      case "satisfies":
+        expression(node.expression);
+        return;
+      case "spread":
+        expression(node.value);
+        return;
+      case "unary":
+        if (node.operator === "delete") bail();
+        expression(node.operand);
+        return;
+      case "member":
+        expression(node.object);
+        return;
+      case "index": {
+        expression(node.object);
+        const before = copy(state);
+        expression(node.index);
+        if (conditional(node)) state = meet(before, state);
+        return;
+      }
+      case "assignment": {
+        const target = node.target;
+        const assigned = thisField(target);
+        if (assigned === undefined) {
+          if (target.kind === "member") expression(target.object);
+          else if (target.kind === "index") {
+            expression(target.object);
+            expression(target.index);
+          } else if (target.kind !== "identifier") bail();
+        }
+        expression(node.value);
+        if (assigned !== undefined) assign(assigned);
+        return;
+      }
+      case "compound":
+        if (
+          node.operator === "&&" ||
+          node.operator === "||" ||
+          node.operator === "??"
+        )
+          bail();
+        expression(node.target);
+        expression(node.value);
+        return;
+      case "update":
+        expression(node.target);
+        return;
+      case "binary": {
+        expression(node.left);
+        if (
+          node.operator === "&&" ||
+          node.operator === "||" ||
+          node.operator === "??"
+        ) {
+          const before = copy(state);
+          expression(node.right);
+          state = meet(before, state);
+        } else expression(node.right);
+        return;
+      }
+      case "conditional": {
+        expression(node.test);
+        const before = copy(state);
+        expression(node.consequent);
+        const yes = state;
+        state = before;
+        expression(node.alternate);
+        state = meet(yes, state);
+        return;
+      }
+      case "call":
+      case "new": {
+        expression(node.callee);
+        const before = copy(state);
+        for (const argument of node.arguments) {
+          if (argument === undefined) throw "argument invariant";
+          expression(argument);
+        }
+        if (conditional(node)) state = meet(before, state);
+        return;
+      }
+      case "template-expression":
+        for (const substitution of node.substitutions) {
+          if (substitution === undefined) throw "template invariant";
+          expression(substitution);
+        }
+        return;
+      case "tagged-template":
+        expression(node.tag);
+        expression(node.template);
+        return;
+      case "array":
+        for (const element of node.elements) {
+          if (element === undefined) throw "array element invariant";
+          expression(element);
+        }
+        return;
+      case "object":
+        for (const property of node.properties) {
+          if (property === undefined) throw "object property invariant";
+          expression(property.value);
+        }
+        return;
+      default:
+        bail();
+    }
+  }
+  /** Names assigned anywhere in a statement (its own flow ignored). */
+  function assignedWithin(node: Statement): Set<string> {
+    const saved = state,
+      wasQuiet = quiet,
+      outer = collected;
+    const result = new Set<string>();
+    state = new Set<string>();
+    quiet = true;
+    collected = result;
+    try {
+      statement(node);
+    } catch (caught) {
+      if (caught !== stop) throw caught;
+      // An unmodeled construct: assume everything tracked is assigned.
+      for (const name of tracked) result.add(name);
+    } finally {
+      state = saved;
+      quiet = wasQuiet;
+      collected = outer;
+    }
+    if (outer !== undefined) for (const name of result) outer.add(name);
+    return result;
+  }
+  function jumps(node: Statement): boolean {
+    switch (node.kind) {
+      case "break":
+      case "continue":
+        return true;
+      case "block":
+        return node.statements.some(
+          (child) => child !== undefined && jumps(child),
+        );
+      case "if":
+        return (
+          jumps(node.consequent) ||
+          (node.alternate !== undefined && jumps(node.alternate))
+        );
+      case "try":
+        return (
+          jumps(node.body) ||
+          (node.handler !== undefined && jumps(node.handler.body)) ||
+          (node.finalizer !== undefined && jumps(node.finalizer))
+        );
+      case "label":
+        return jumps(node.body);
+      default:
+        return false;
+    }
+  }
+  function statement(node: Statement): void {
+    switch (node.kind) {
+      case "debugger":
+      case "empty":
+      case "function":
+      case "class":
+        return;
+      case "block":
+        for (const child of node.statements) {
+          if (child === undefined) throw "statement invariant";
+          statement(child);
+        }
+        return;
+      case "expression":
+        expression(node.expression);
+        if (node.expression.kind === "call" && neverCall(node.expression))
+          state = undefined;
+        return;
+      case "variable":
+        for (const binding of node.declarations) {
+          if (binding === undefined) throw "declaration invariant";
+          if (binding.initializer !== undefined)
+            expression(binding.initializer);
+        }
+        return;
+      case "if": {
+        expression(node.test);
+        const before = copy(state);
+        statement(node.consequent);
+        const yes = state;
+        state = before;
+        if (node.alternate !== undefined) statement(node.alternate);
+        state = meet(yes, state);
+        return;
+      }
+      case "return":
+        if (node.expression !== undefined) expression(node.expression);
+        state = undefined;
+        return;
+      case "throw":
+        expression(node.expression);
+        state = undefined;
+        return;
+      case "break":
+      case "continue":
+        if (node.label !== undefined) bail();
+        state = undefined;
+        return;
+      // A loop body may run zero times, so its assignments do not count
+      // after it; a constant-true loop leaves only through jumps.
+      case "while": {
+        const test = node.test;
+        if (test.kind === "boolean" && test.value) bail();
+        expression(test);
+        const before = copy(state);
+        statement(node.body);
+        state = before;
+        return;
+      }
+      case "do-while": {
+        if (jumps(node.body)) bail();
+        statement(node.body);
+        expression(node.test);
+        return;
+      }
+      case "for": {
+        const initializer = node.initializer;
+        if (initializer !== undefined) statement(initializer);
+        const test = node.test;
+        if (test === undefined) bail();
+        if (test.kind === "boolean" && test.value) bail();
+        expression(test);
+        const before = copy(state);
+        statement(node.body);
+        if (state !== undefined && node.update !== undefined)
+          expression(node.update);
+        state = before;
+        return;
+      }
+      case "for-of":
+      case "for-in": {
+        expression(node.iterable);
+        const before = copy(state);
+        statement(node.body);
+        state = before;
+        return;
+      }
+      case "switch": {
+        expression(node.expression);
+        const before = copy(state);
+        let fallthrough: Set<string> | undefined;
+        let first = true;
+        for (const clause of node.clauses) {
+          if (clause === undefined) throw "switch clause invariant";
+          state = first ? copy(before) : meet(before, fallthrough);
+          first = false;
+          if (clause.test !== undefined) expression(clause.test);
+          for (const child of clause.statements) {
+            if (child === undefined) throw "statement invariant";
+            statement(child);
+          }
+          fallthrough = state;
+        }
+        // Breaks leave from inside clauses: over-approximate what is
+        // assigned after the switch, which can only drop diagnostics.
+        const after = copy(before) ?? new Set<string>();
+        for (const clause of node.clauses) {
+          if (clause === undefined) throw "switch clause invariant";
+          for (const child of clause.statements) {
+            if (child === undefined) throw "statement invariant";
+            for (const name of assignedWithin(child)) after.add(name);
+          }
+        }
+        state = before === undefined ? undefined : after;
+        return;
+      }
+      case "try": {
+        // The catch clause and the finally block may be entered from any
+        // point of the try block: before its assignments.
+        const before = copy(state);
+        statement(node.body);
+        let completed = state;
+        const handler = node.handler;
+        if (handler !== undefined) {
+          state = copy(before);
+          statement(handler.body);
+          completed = meet(completed, state);
+        }
+        const finalizer = node.finalizer;
+        if (finalizer !== undefined) {
+          state = copy(before);
+          statement(finalizer);
+          const assigned = state;
+          if (assigned === undefined) return;
+          const done = completed;
+          if (done !== undefined) for (const name of assigned) done.add(name);
+        }
+        state = completed;
+        return;
+      }
+      default:
+        bail();
+    }
+  }
+  try {
+    statement(body);
+  } catch (caught) {
+    if (caught !== stop) throw caught;
+  }
+  return found;
+}
+
+/** TypeScript's TS2729 ("Property 'b' is used before its initialization"),
+ * which needs no strict flag: directly in a field initializer (not in a
+ * nested function or arrow), a property access `this.b`, `(this).b` or
+ * `C.b` (`constructors` are references to the class) of one of the class's
+ * own fields that is not optional and is declared after the use, is the
+ * field being initialized, or is declared before it without an initializer
+ * or `!` and read through `this`.
+ * Instance initializers read instance fields through `this`; static ones,
+ * and `C.b` anywhere, read static fields. Returns the property name's span
+ * of the first such access, in source order. */
+export function initializerReadBeforeInitialization(
+  definition: ClassDefinition,
+  constructors: ReadonlySet<Expression>,
+): (Span & { readonly name: string }) | undefined {
+  const fields: (ClassElement & { readonly kind: "field" })[] = [];
+  for (const element of definition.elements) {
+    if (element === undefined) throw "class member invariant";
+    if (element.kind === "field") fields.push(element);
+  }
+  let found: (Span & { readonly name: string }) | undefined;
+  let current: ClassElement | undefined;
+  function access(
+    node: Expression & { readonly kind: "member" },
+    staticInitializer: boolean,
+  ): void {
+    let receiver = node.object;
+    while (receiver.kind === "group" || receiver.kind === "satisfies")
+      receiver = receiver.expression;
+    const viaThis = receiver.kind === "this";
+    if (!viaThis && !constructors.has(receiver)) return;
+    const staticSide = viaThis ? staticInitializer : true;
+    for (const field of fields) {
+      if (
+        field === undefined ||
+        field.static !== staticSide ||
+        field.optional === true ||
+        field.computed ||
+        literalPropertyName(field.key) !== node.property
+      )
+        continue;
+      if (
+        field.start > node.start ||
+        field === current ||
+        (node.object.kind === "this" &&
+          field.initializer === undefined &&
+          field.definite !== true)
+      )
+        found = {
+          start: node.end - node.property.length,
+          end: node.end,
+          name: node.property,
+        };
+    }
+  }
+  function expression(node: Expression, staticInitializer: boolean): void {
+    if (found !== undefined) return;
+    switch (node.kind) {
+      case "member":
+        access(node, staticInitializer);
+        expression(node.object, staticInitializer);
+        return;
+      case "index":
+        expression(node.object, staticInitializer);
+        expression(node.index, staticInitializer);
+        return;
+      case "group":
+      case "satisfies":
+        expression(node.expression, staticInitializer);
+        return;
+      case "spread":
+        expression(node.value, staticInitializer);
+        return;
+      case "unary":
+        expression(node.operand, staticInitializer);
+        return;
+      case "assignment":
+        expression(node.target, staticInitializer);
+        expression(node.value, staticInitializer);
+        return;
+      case "compound":
+        expression(node.target, staticInitializer);
+        expression(node.value, staticInitializer);
+        return;
+      case "update":
+        expression(node.target, staticInitializer);
+        return;
+      case "binary":
+        expression(node.left, staticInitializer);
+        expression(node.right, staticInitializer);
+        return;
+      case "conditional":
+        expression(node.test, staticInitializer);
+        expression(node.consequent, staticInitializer);
+        expression(node.alternate, staticInitializer);
+        return;
+      case "call":
+      case "new":
+        expression(node.callee, staticInitializer);
+        for (const argument of node.arguments) {
+          if (argument === undefined) throw "argument invariant";
+          expression(argument, staticInitializer);
+        }
+        return;
+      case "template-expression":
+        for (const substitution of node.substitutions) {
+          if (substitution === undefined) throw "template invariant";
+          expression(substitution, staticInitializer);
+        }
+        return;
+      case "tagged-template":
+        expression(node.tag, staticInitializer);
+        expression(node.template, staticInitializer);
+        return;
+      case "array":
+        for (const element of node.elements) {
+          if (element === undefined) throw "array element invariant";
+          expression(element, staticInitializer);
+        }
+        return;
+      case "object":
+        for (const property of node.properties) {
+          if (property === undefined) throw "object property invariant";
+          expression(property.value, staticInitializer);
+        }
+        return;
+      default:
+        // Literals, identifiers, `this`, and function, arrow and class
+        // expressions (their own containers).
+        return;
+    }
+  }
+  for (const field of fields) {
+    if (field === undefined) throw "class field invariant";
+    const initializer = field.initializer;
+    current = field;
+    if (initializer !== undefined) expression(initializer, field.static);
+    if (found !== undefined) return found;
+  }
+  return undefined;
+}

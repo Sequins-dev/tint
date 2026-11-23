@@ -209,11 +209,7 @@ test("fields code may read before assignment stay typed and are recorded", () =>
       "class C{x:number;constructor(){this.m();this.x=1;}m():number{return this.x;}}",
       ["x"],
     ],
-    // Direct early reads: the pinned TypeScript reports TS2565 and TS2729
-    // here, which this checker does not reproduce yet (see
-    // docs/design-typed-classes.md); they read undefined exactly.
-    ["class C{x:number;constructor(){this.x=this.x+1;}}", ["x"]],
-    ["class C{x:number=this.y;y:number=1;}", ["y"]],
+
     // Recursion, an own override, a written prototype and an escape of
     // `this` are not followed: unassigned fields may be observed.
     [
@@ -246,7 +242,8 @@ test("fields code may read before assignment stay typed and are recorded", () =>
       "class D{}class C{d:D;constructor(){this.read();this.d=new D();}read():D{return this.d;}}",
       "UNINITIALIZED",
     ],
-    ["class C{static a:number=C.b;static b:number=1;}", "UNINITIALIZED"],
+    // A direct static early read is TypeScript's TS2729.
+    ["class C{static a:number=C.b;static b:number=1;}", "TS2729"],
     [
       "class C{b:boolean;constructor(){this.add();this.b=false;}add():void{this.b||=true;}}",
       "UNSUPPORTED",
@@ -325,24 +322,28 @@ test("class accessors are one property backed by prototype closures", () => {
   );
 });
 test("class values reaching general code take the general path", () => {
-  // Erased to `unknown` and only tested natively: stays typed.
+  // Erased to `unknown` but only read by typed code (a typed class's native
+  // `instanceof`, typed lists): stays typed, also when the program uses
+  // dynamic objects for other values.
   for (const source of [
     "class P{x:number=1;}function f(u:unknown):boolean{return u instanceof P;}export function run():boolean{return f(new P());}",
+    "class P{x:number=1;}function f(u:unknown):boolean{return u instanceof P;}export function run():number{const u:unknown=new P();f(u);const bag:Record<string,unknown>={};bag.k=1;return 1;}",
+    "class P{x:number=1;}export function run():number{const xs:P[]=[];xs.push(new P());return xs.length;}",
   ]) {
     const result = check(source);
     assert.ok(result.ok, JSON.stringify({ source, result }));
   }
-  // Thrown, stored in a dynamic object, or erased while the program hands
-  // general values to general code (an exported `unknown` result, a dynamic
-  // object, a realm error test): an explicit fallback, never a build error.
+  // Thrown, stored in a dynamic object (also through an `unknown` result),
+  // tested by the realm, or returned from an exported `unknown` function:
+  // an explicit fallback, never a build error.
   for (const source of [
     "class P{x:number=1;}export function run():void{throw new P();}",
     "class P{x:number=1;}export function run():void{const bag:Record<string,unknown>={};bag.p=new P();}",
+    "class P{x:number=1;}function keep(u:unknown):unknown{return u;}export function run():void{const bag:Record<string,unknown>={};bag.p=keep(new P());}",
     "class P{x:number=1;}export function run():unknown{const u:unknown=new P();return u;}",
-    "class P{x:number=1;}function f(u:unknown):boolean{return u instanceof P;}export function run():number{const u:unknown=new P();f(u);const bag:Record<string,unknown>={};bag.k=1;return 1;}",
     "class P{x:number=1;}function f(u:unknown):boolean{return u instanceof RangeError;}export function run():boolean{return f(new P());}",
-    // A structural type a class instance may hold is a class value too.
-    "interface R{x:number}class P{x:number=1;}export function run():unknown{const r:R={x:1};return r;}",
+    // An interface a class instance was converted to holds class values.
+    "interface R{x:number}class P{x:number=1;m():number{return 1;}}function wrap(p:P):R{return p;}export function run():unknown{const r:R=wrap(new P());return r;}",
   ]) {
     const result = check(source);
     assert.ok(!result.ok, source);
