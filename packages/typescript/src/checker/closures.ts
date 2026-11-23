@@ -401,7 +401,8 @@ export interface ClosureFallback {
     | "realm-aggregate-update"
     | "general-result-projection"
     | "operator-layout"
-    | "class-erasure";
+    | "class-erasure"
+    | "class-heritage";
   readonly ownerKind: "function" | "class" | "module";
   readonly owner: Span;
 }
@@ -4413,6 +4414,12 @@ function checkClosureModuleLayout(
       );
     if (contract === undefined)
       fail(node, "UNSUPPORTED", "class contract is unavailable");
+    if (contract.base !== undefined)
+      unsupported(
+        node,
+        "class-heritage",
+        "typed derived classes require prefix layouts and super construction",
+      );
     const required = new Set<ClassElement>(),
       receiverOwners = new Set<number>(),
       methods = new Map<string, ClassElement>(),
