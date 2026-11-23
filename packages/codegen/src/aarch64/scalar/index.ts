@@ -28,6 +28,7 @@ import {
   nativeArrayInlineOffset,
   nativeArrayOwnerOffset,
   nativeArrayViewByteLength,
+  nativeAllocationDataThresholdWord,
 } from "@tint/abi/host";
 import {
   nativeWeakSlotMarker,
@@ -7449,9 +7450,14 @@ function emitModuleForms(
         // Size emission must be nonallocating and preserve x9 when writing x10.
         // prepare runs before the callback; size can reload stable stack metadata after it.
         // Returns an uninitialized object in x9. Initialize and publish before any safepoint.
+        /** `data`: the object holds no references (a string or an owned
+         * numeric typed array), so a request at or above the runtime's data
+         * threshold takes the slow path flagged as data, which may place it in
+         * the large-object space. */
         function allocate(
           prepare: () => void,
           size: (rd: number) => void,
+          data: boolean = false,
         ): void {
           pollWorkerStop();
           prepare();
@@ -7470,6 +7476,30 @@ function emitModuleForms(
             });
             const absent = instructions.length;
             emit({ op: "cbz", width: 64, rt: 12, displacement: 0 });
+            let large = -1;
+            if (data) {
+              // The data threshold (state word 15; 0 never routes).
+              emit({
+                op: "ldr",
+                width: 32,
+                rt: 13,
+                rn: 12,
+                offset: nativeAllocationDataThresholdWord * 4,
+              });
+              emit({ op: "cbz", width: 32, rt: 13, displacement: 12 });
+              emit({
+                op: "sub-reg",
+                width: 64,
+                rd: "zr",
+                rn: 9,
+                rm: 13,
+                shift: "lsl",
+                amount: 0,
+                setFlags: true,
+              });
+              large = instructions.length;
+              emit({ op: "b.cond", condition: "cs", displacement: 0 });
+            }
             emit({ op: "ldr", width: 32, rt: 11, rn: 12, offset: 0 });
             emit({ op: "ldr", width: 32, rt: 13, rn: 12, offset: 4 });
             emit({
@@ -7560,6 +7590,12 @@ function emitModuleForms(
               condition: "hi",
               displacement: (slow - exhausted) * 4,
             });
+            if (large >= 0)
+              patchInstruction(large, {
+                op: "b.cond",
+                condition: "cs",
+                displacement: (slow - large) * 4,
+              });
           }
           // The slow path: the shared allocate-call kernel zeroes the result
           // area and loads the allocator's arguments; the call, its
@@ -7567,7 +7603,7 @@ function emitModuleForms(
           rawLoad(0, contextOffset);
           address(3, resultOffset);
           size(9);
-          callHelper("allocate-call");
+          callHelper(data ? "allocate-data-call" : "allocate-call");
           emit({ op: "blr", rn: 16 });
           safepoint();
           emit({
@@ -8126,6 +8162,8 @@ function emitModuleForms(
               rawStore(11, allocationOffset);
             },
             (rd) => rawLoad(rd, allocationOffset),
+            // Numeric typed arrays (markers 2-5) hold no references.
+            marker >= 2 && marker <= 5,
           );
           rawLoad(10, allocationOffset + 8);
           rawLoad(11, allocationOffset);
@@ -10109,6 +10147,7 @@ function emitModuleForms(
                     prepareStringSize();
                   },
                   (rd) => rawLoad(rd, allocationOffset),
+                  true,
                 );
                 saveRaw(9, op.id);
                 imm(10, 1);
@@ -10168,6 +10207,7 @@ function emitModuleForms(
                     prepareStringSize();
                   },
                   (rd) => rawLoad(rd, allocationOffset),
+                  true,
                 );
                 rawValue(10, op.string);
                 rawLoad(11, allocationOffset + 8);
@@ -10208,6 +10248,7 @@ function emitModuleForms(
                     prepareStringSize();
                   },
                   (rd) => rawLoad(rd, allocationOffset),
+                  true,
                 );
                 // Inputs may move at the allocation safepoint: reload their rooted slots.
                 rawValue(10, op.left);
@@ -10226,6 +10267,7 @@ function emitModuleForms(
                     prepareStringSize();
                   },
                   (rd) => rawLoad(rd, allocationOffset),
+                  true,
                 );
                 saveRaw(9, op.id);
                 imm(10, 1);
@@ -12665,6 +12707,7 @@ function emitModuleForms(
                         prepareStringSize();
                       },
                       (rd) => rawLoad(rd, allocationOffset),
+                      true,
                     );
                     saveRaw(9, resultId);
                     imm(10, 1);
@@ -17618,7 +17661,9 @@ function emitModuleForms(
                     ? rememberedBarrier()
                     : kind === "stack-overflow"
                       ? stackOverflowHelper()
-                      : kind === "allocate-call" || kind === "allocate-finish"
+                      : kind === "allocate-call" ||
+                          kind === "allocate-data-call" ||
+                          kind === "allocate-finish"
                         ? allocationHelper(kind)
                         : stringHelper(kind);
         for (const instruction of body) {

@@ -59,11 +59,11 @@ RECORD_PREFIX = "__tint_record."
 # The generational collector's `collect` (snapshot points stop there).
 COLLECT_FUNCTION = "generational.ts:collect"
 MAGIC = b"TINTHEAP"
-VERSION = 2
+VERSION = 3
 # Version 2 headers are one word: the marker (or record descriptor address)
 # in the bits below FLAGS_SHIFT, the kind flags in the three bits above it.
 FLAGS_SHIFT = 48
-# Object layouts of the version 2 header (packages/abi/src/host.ts).
+# Object layouts of the version 2+ header (packages/abi/src/host.ts).
 LENGTH_OFFSET = 8
 STRING_UNITS_OFFSET = 16
 ARRAY_INLINE_OFFSET = 24
@@ -116,7 +116,7 @@ class Descriptor(object):
                 % DESCRIPTOR_SYMBOL
             )
         self.address = address
-        fixed = inferior.read(address, 160)
+        fixed = inferior.read(address, 176)
         if fixed[0:8] != MAGIC:
             raise TintError("bad heap descriptor magic at 0x%x" % address)
         version, length = struct.unpack_from("<II", fixed, 8)
@@ -160,6 +160,10 @@ class Descriptor(object):
             "oldCapacity": u32(132),
             "dirtyBits": u32(136),
             "queueCount": u32(140),
+            "largeChunks": u32(160),
+            "largeCount": u32(164),
+            "largeBase": u32(168),
+            "largeGranule": u32(172),
         }
         count, table, pool, pool_bytes = u32(144), u32(148), u32(152), u32(156)
         names = raw[pool : pool + pool_bytes]
@@ -205,7 +209,12 @@ class Descriptor(object):
             "youngStartBits": dword("startBits"),
             "dirtyBits": dword("dirtyBits"),
             "queueCount": word("queueCount"),
+            "largeChunks": dword("largeChunks"),
+            "largeCount": word("largeCount"),
+            "largeOffset": word("largeBase"),
+            "largeGranule": word("largeGranule"),
         }
+        s["largeBase"] = self.managed_base + s["largeOffset"]
         s["youngBase"] = self.managed_base + s["youngBaseOffset"]
         s["oldBase"] = s["youngBase"] - s["oldCapacity"]
         s["startBits"] = s["youngStartBits"] - s["oldCapacity"] // (self.granule * 8)
@@ -284,6 +293,16 @@ def _object_extent(descriptor, read_word, address, record_sizes):
     return (size + granule - 1) // granule * granule, "record"
 
 
+def large_objects(descriptor):
+    """Object addresses of the large-object space's live chunks, ascending."""
+    s = descriptor.state
+    count = s["largeCount"]
+    if count == 0 or s["largeChunks"] == 0:
+        return []
+    table = struct.unpack_from("<%dI" % count, descriptor.inferior.read(s["largeChunks"], 4 * count))
+    return sorted(s["largeBase"] + start * s["largeGranule"] for start in table)
+
+
 def verify_heap(descriptor):
     """Walks both spaces through the start bits and checks every header and
     extent: objects decode, stay inside their space and never overlap."""
@@ -333,6 +352,23 @@ def verify_heap(descriptor):
             entry[0] += 1
             entry[1] += size
         totals[name] = {"objects": objects, "bytes": walked, "top": top, "kinds": kinds}
+    # Large objects: one per chunk, never overlapping the next chunk.
+    objects = 0
+    walked = 0
+    kinds = {}
+    addresses = large_objects(descriptor)
+    for index, address in enumerate(addresses):
+        size, label = _object_extent(descriptor, lambda at: read_u64(p, at), address, record_sizes)
+        if size is None:
+            raise TintError("large object 0x%x: %s" % (address, label))
+        if index + 1 < len(addresses) and address + size > addresses[index + 1]:
+            raise TintError("large object 0x%x overlaps the next chunk" % address)
+        objects += 1
+        walked += size
+        entry = kinds.setdefault(label, [0, 0])
+        entry[0] += 1
+        entry[1] += size
+    totals["large"] = {"objects": objects, "bytes": walked, "kinds": kinds}
     return totals
 
 
@@ -480,8 +516,8 @@ def _stack_extent(inferior, start_fp, sp):
 
 
 def dump_heap(descriptor, directory, thread, walk):
-    """Writes meta.json, old.bin, young.bin, starts.bin, stack.bin and
-    registry.bin for the stopped `thread`. `walk` is {"start": frame
+    """Writes meta.json, old.bin, young.bin, starts.bin, large.bin,
+    stack.bin and registry.bin for the stopped `thread`. `walk` is {"start": frame
     pointer, "saves": [x19..x28] or None, "kind": "sample"|"registry"}."""
     inferior = descriptor.inferior
     s = descriptor.state
@@ -495,6 +531,17 @@ def dump_heap(descriptor, directory, thread, walk):
     granule = descriptor.granule
     bit_bytes = (s["oldCapacity"] + s["youngTop"] + granule * 8 - 1) // (granule * 8)
     absent += _dump_range(inferior, s["startBits"], bit_bytes, os.path.join(directory, "starts.bin"))
+    # Large objects, concatenated in address order (meta "large" lists them).
+    large = []
+    with open(os.path.join(directory, "large.bin"), "wb") as handle:
+        for address in large_objects(descriptor):
+            size, label = _object_extent(descriptor, lambda at: read_u64(inferior, at), address, {})
+            if size is None:
+                raise TintError("large object 0x%x: %s" % (address, label))
+            data, missing = _read_core_range(inferior, address, size)
+            handle.write(data)
+            absent += missing
+            large.append({"address": address, "size": size})
     count = read_u64(inferior, descriptor.registry)
     registry_bytes = 32 + count * 24
     absent += _dump_range(inferior, descriptor.registry, registry_bytes, os.path.join(directory, "registry.bin"))
@@ -511,7 +558,8 @@ def dump_heap(descriptor, directory, thread, walk):
     meta = {
         "format": "tint-heap-dump",
         "pending": pending,
-        "formatVersion": 2,
+        "formatVersion": 3,
+        "large": large,
         "time": time.time(),
         "image": inferior.image_info(),
         "descriptor": descriptor.summary(),

@@ -15,7 +15,13 @@ import {
   type TypeInfo,
 } from "../profiling/heap-graph.ts";
 import type { ReportTotals } from "../profiling/analysis.ts";
-import { HeapDump, splitHeader, wordAt, type RecordInfo } from "./dump.ts";
+import {
+  HeapDump,
+  splitHeader,
+  wordAt,
+  type RecordInfo,
+  type Region,
+} from "./dump.ts";
 
 export {
   edgeElement,
@@ -188,14 +194,23 @@ export function buildGraph(dump: HeapDump): TintHeapGraph {
     rootWalk: "",
     pendingBytes: 0,
   };
-  const spaces = [
-    { region: dump.old, top: state.oldTop, first: 0 },
+  // Each large object is its region's only object, at its start (single).
+  const spaces: {
+    region: Region;
+    top: number;
+    first: number;
+    single: boolean;
+  }[] = [
+    { region: dump.old, top: state.oldTop, first: 0, single: false },
     {
       region: dump.young,
       top: state.youngTop,
       first: state.oldCapacity / granule,
+      single: false,
     },
   ];
+  for (const region of dump.large)
+    spaces.push({ region, top: region.bytes.length, first: 0, single: true });
   const registers = meta.thread.registers,
     pending =
       meta.pending ??
@@ -211,13 +226,14 @@ export function buildGraph(dump: HeapDump): TintHeapGraph {
     const units = Math.floor(space.top / granule);
     let end = 0;
     for (let unit = 0; unit < units;) {
+      if (space.single && unit > 0) break;
       const bit = space.first + unit,
-        byte = dump.starts[bit >>> 3] ?? 0;
-      if (byte === 0 && (bit & 7) === 0) {
+        byte = space.single ? 1 : (dump.starts[bit >>> 3] ?? 0);
+      if (!space.single && byte === 0 && (bit & 7) === 0) {
         unit += 8;
         continue;
       }
-      if (((byte >>> (bit & 7)) & 1) === 0) {
+      if (!space.single && ((byte >>> (bit & 7)) & 1) === 0) {
         unit++;
         continue;
       }

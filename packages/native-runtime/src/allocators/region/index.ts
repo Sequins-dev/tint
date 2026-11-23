@@ -423,7 +423,15 @@ export function createRegionAllocator(
       indexLeaves = leaves;
       return true;
     },
-    allocate: (bytes) => place(bytes, false, byteLength),
+    // The startup allocator has no large-object space: a data request
+    // (2^32 added, nativeAllocationDataRequest in @tint/abi/host; this
+    // module is compiled alone, without imports) is an ordinary one.
+    allocate: (request) =>
+      place(
+        request >= 4294967296 ? request - 4294967296 : request,
+        false,
+        byteLength,
+      ),
     allocateFromEnd: (bytes) => place(bytes, true, 0),
     allocateBelow: (bytes, limit) => place(bytes, false, limit),
     allocateAbove: (bytes, limit) => place(bytes, true, limit),

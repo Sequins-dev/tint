@@ -32,6 +32,7 @@ import {
   nativeWorkerStopPayload,
   nativeWorkerStopPointerOffset,
   nativeWorkerStopRequested,
+  nativeAllocationDataThresholdWord,
   type PosixHostFacts,
 } from "@tint/abi/host";
 import {
@@ -1065,7 +1066,14 @@ export function emitModule(
       raise(block, callResult);
     }
 
-    function callAllocator(block: Block, index: number, site: string): void {
+    /** `data`: the request is for an object without references, passed as
+     * size + nativeAllocationDataRequest (see allocate). */
+    function callAllocator(
+      block: Block,
+      index: number,
+      site: string,
+      data: boolean,
+    ): void {
       emit({ op: "mov", dst: context, src: frame(savedContext) });
       emit({
         op: "mov",
@@ -1074,7 +1082,11 @@ export function emitModule(
       });
       emit({ op: "xor", dst: receiver, src: receiver });
       emit({ op: "lea", dst: result, src: frame(callResult) });
-      emit({ op: "cvtsi2sd", dst: x0, src: r10 });
+      if (data) {
+        emit({ op: "mov", dst: scratch, src: bits(0, 1) });
+        emit({ op: "add", dst: scratch, src: r10 });
+        emit({ op: "cvtsi2sd", dst: x0, src: scratch });
+      } else emit({ op: "cvtsi2sd", dst: x0, src: r10 });
       if (allocationProbes) probes.interval("alloc.slow", false);
       emit({ op: "call", target: mem(7, allocatorEntryOffset) });
       safepoint(block, index);
@@ -1089,12 +1101,17 @@ export function emitModule(
     }
 
     /** R10 is the aligned allocation size. Only RAX survives, with the
-     * cleared address. Constructors must reload movable arguments from homes. */
+     * cleared address. Constructors must reload movable arguments from homes.
+     * `data`: the object holds no references (a string or an owned numeric
+     * typed array), so a request at or above the runtime's data threshold
+     * takes the slow path flagged as data, which may place it in the
+     * large-object space. */
     function allocate(
       block: Block,
       index: number,
       site: string,
       denied: string,
+      data: boolean = false,
     ): void {
       pollWorkerStop();
       emit({ op: "mov", dst: rdx, src: frame(savedContext) });
@@ -1124,6 +1141,23 @@ export function emitModule(
         // The allocator routes requests >= max(128, youngCapacity/4)
         // directly to old space. Match that threshold before bumping.
         emit({ op: "mov", dst: scratch, src: mem(2, allocationStateOffset) });
+        if (data) {
+          // The data threshold (state word 15; 0 never routes).
+          const small = site + ":small";
+          emit({
+            op: "mov",
+            dst: eax,
+            src: {
+              ...mem(11, nativeAllocationDataThresholdWord * 4),
+              width: 32,
+            },
+          });
+          emit({ op: "test", dst: eax, src: eax });
+          branch(emit, "e", small);
+          emit({ op: "cmp", dst: r10, src: rax });
+          branch(emit, "ae", slow);
+          emit({ op: "label", name: small });
+        }
         emit({ op: "mov", dst: eax, src: { ...mem(11, 4), width: 32 } });
         emit({ op: "mov", dst: word(8), src: eax });
         emit({ op: "shr", dst: word(8), count: 2 });
@@ -1162,7 +1196,7 @@ export function emitModule(
       }
       emit({ op: "label", name: slow });
       emit({ op: "mov", dst: frame(savedAllocationSize), src: r10 });
-      callAllocator(block, index, site);
+      callAllocator(block, index, site, data);
       exactInteger(emit, frame(callResult + resultPayload), rax, trapLabel);
       emit({ op: "test", dst: rax, src: imm(7) });
       branch(emit, "ne", trapLabel);
@@ -1237,7 +1271,7 @@ export function emitModule(
         },
       });
       emit({ op: "and", dst: r10, src: imm(-8) });
-      allocate(block, index, site, denied);
+      allocate(block, index, site, denied, marker >= 2 && marker <= 5);
       if (generational) exactInteger(emit, frame(home(length)), r9, trapLabel);
       emit({ op: "mov", dst: mem(0, 0), src: imm(marker) });
       emit({ op: "mov", dst: mem(0, nativeArrayLengthOffset), src: r9 });
@@ -1761,7 +1795,7 @@ export function emitModule(
         },
       });
       emit({ op: "and", dst: r10, src: imm(-8) });
-      allocate(block, index, site, denied);
+      allocate(block, index, site, denied, true);
       emit({ op: "mov", dst: mem(0, 0), src: imm(1) });
       emit({ op: "mov", dst: scratch, src: frame(home(id) + 8) });
       emit({ op: "mov", dst: mem(0, nativeStringLengthOffset), src: scratch });
@@ -2147,7 +2181,7 @@ export function emitModule(
             pollWorkerStop();
             const site = fnLabel + ":collect:" + String(instructionCount);
             emit({ op: "xor", dst: word(10), src: word(10) });
-            callAllocator(block, index, site);
+            callAllocator(block, index, site, false);
             return;
           }
           if (op.operation === "engine-range-error" && host !== undefined) {

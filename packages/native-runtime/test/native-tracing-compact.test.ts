@@ -14,7 +14,8 @@ registerHooks({
       : resolved;
   },
 });
-const { createCompactor } = await import("../src/tracing/cheney.ts");
+const { createCompactor, noLargeSpace } =
+  await import("../src/tracing/cheney.ts");
 const { nativeHeaderFlagUnit } = await import("@tint/abi/host");
 const { simulate } = await import("./fixtures/simulated-memory.ts");
 const { writeStackRoots } = await import("./fixtures/stack-roots.ts");
@@ -26,7 +27,7 @@ const image = 0x1000,
   stack = 0x4000,
   region = 0x10000,
   regionBytes = 0x1000;
-function heap(stackCapacity = 1024) {
+function heap(stackCapacity = 1024, large = noLargeSpace()) {
   const words = new Map<number, number>();
   simulate(words);
   const read = (address: number): number => words.get(address) ?? 0;
@@ -69,7 +70,7 @@ function heap(stackCapacity = 1024) {
   }
   const root = (index: number): number => read(stack + 16 + index * 8);
   function collect(head: number): number {
-    return createCompactor(region, regionBytes).collect(
+    return createCompactor(region, regionBytes, large).collect(
       region,
       top - region,
       head,
@@ -295,4 +296,59 @@ test("ephemerons keep values exactly while their keys live, to a fixpoint", () =
     7 + nativeHeaderFlagUnit,
     "ephemeron headers are unchanged",
   );
+});
+
+test("a major collection marks large objects in place and judges their weak keys", () => {
+  // Four large strings; granules 0 and 2 young, 1 and 3 old.
+  const granule = 0x10000,
+    base = 0x100000,
+    large = {
+      base,
+      end: base + 4 * granule,
+      shift: 16,
+      marks: new Uint8Array(4),
+      young: new Uint8Array([1, 0, 1, 0]),
+    };
+  const h = heap(1024, large);
+  const strings = [0, 1, 2, 3].map((index) => base + index * granule);
+  for (const string of strings) {
+    h.words.set(string, 1);
+    h.words.set(string + 8, 4);
+  }
+  const pair = h.descriptor(24, [8, 16]),
+    leaf = h.descriptor(16, []);
+  h.allocate(24, [pair, 0, 0]); // garbage, so survivors slide down
+  const holder = h.allocate(24, [pair, strings[0]!, 0]);
+  const weakDead = weakSlot(h, false, strings[1]!, 0);
+  // key -> strings[2] (first), strings[2] -> value (second, found on a
+  // later pass: the large mark must keep the fixpoint going).
+  const key = h.allocate(16, [leaf, 10]);
+  const value = h.allocate(16, [leaf, 11]);
+  const second = weakSlot(h, true, strings[2]!, value);
+  const first = weakSlot(h, true, key, strings[2]!);
+  const bytes = h.collect(h.roots([holder, weakDead, first, second, key]));
+  assert.equal(
+    bytes,
+    24 + 3 * 40 + 2 * 16,
+    "large objects take no region bytes",
+  );
+  assert.deepEqual([...large.marks], [1, 0, 1, 0]);
+  assert.equal(
+    h.read(h.root(0) + 8),
+    strings[0],
+    "references to large objects stay",
+  );
+  assert.equal(
+    h.read(h.root(1) + 8),
+    0,
+    "a weak key on an unmarked chunk is cleared",
+  );
+  assert.equal(
+    h.read(h.root(2) + 32),
+    strings[2],
+    "an ephemeron keeps a large value",
+  );
+  const kept = h.read(h.root(3) + 32);
+  assert.notEqual(kept, 0, "the chained ephemeron keeps its value");
+  assert.equal(h.read(kept + 8), 11);
 });

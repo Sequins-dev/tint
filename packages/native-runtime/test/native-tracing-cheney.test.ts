@@ -14,7 +14,8 @@ registerHooks({
       : resolved;
   },
 });
-const { createCheneyCollector } = await import("../src/tracing/cheney.ts");
+const { createCheneyCollector, noLargeSpace } =
+  await import("../src/tracing/cheney.ts");
 const { nativeHeaderForwarded, nativeHeaderFlagUnit } =
   await import("@tint/abi/host");
 const { simulate } = await import("./fixtures/simulated-memory.ts");
@@ -74,17 +75,11 @@ function heap() {
     return words.get(stack + 16 + index * 8) ?? 0;
   }
   function collect(head: number, starts = new Uint32Array(semispace / 256)) {
-    const bytes = createCheneyCollector(managed, 2 * semispace).collect(
-      from,
-      top - from,
-      to,
-      0,
-      semispace,
-      head,
-      starts,
-      to,
-      undefined,
-    );
+    const bytes = createCheneyCollector(
+      managed,
+      2 * semispace,
+      noLargeSpace(),
+    ).collect(from, top - from, to, 0, semispace, head, starts, to, undefined);
     return { bytes, starts };
   }
   return {
@@ -286,26 +281,95 @@ test("remembered objects outside the source are updated in place", () => {
   [pair, young, 0].forEach((value, index) =>
     h.words.set(old + index * 8, value),
   );
-  const bytes = createCheneyCollector(managed, 2 * semispace).collect(
-    from,
-    24,
-    to,
-    0,
-    semispace,
-    0,
-    new Uint32Array(8),
-    to,
-    (scan) => scan(old),
+  const bytes = createCheneyCollector(
+    managed,
+    2 * semispace,
+    noLargeSpace(),
+  ).collect(from, 24, to, 0, semispace, 0, new Uint32Array(8), to, (scan) =>
+    scan(old),
   );
   assert.equal(bytes, 24);
   assert.equal(h.words.get(old + 8), to);
+});
+
+test("large objects are marked in place, never copied, and dead young keys clear", () => {
+  const h = heap();
+  // A six-granule large-object space: granule 2 is old, the rest young.
+  const granule = 0x10000,
+    base = 0x100000,
+    large = {
+      base,
+      end: base + 6 * granule,
+      shift: 16,
+      marks: new Uint8Array(6),
+      young: new Uint8Array([1, 1, 0, 1, 1, 1]),
+    };
+  // Four-unit strings at granules 0-4; an owned Uint8Array at granule 5.
+  const strings = [0, 1, 2, 3, 4].map((index) => base + index * granule);
+  for (const string of strings) {
+    h.words.set(string, 1);
+    h.words.set(string + 8, 4);
+  }
+  const bytes = base + 5 * granule;
+  [2, 64, bytes + 32].forEach((value, index) =>
+    h.words.set(bytes + index * 8, value),
+  );
+  const pair = h.descriptor(24, [8, 16]);
+  const young = h.allocate(24, [pair, strings[0]!, 0]);
+  const weakYoung = h.allocate(40, [7, 3, strings[1]!, 0, 0]);
+  const weakOld = h.allocate(40, [7, 3, strings[2]!, 0, 0]);
+  // A Uint8Array view (marker 2, flags 2) of 8 bytes at offset 16.
+  const view = h.allocate(40, [
+    2 + 2 * nativeHeaderFlagUnit,
+    8,
+    bytes + 32 + 16,
+    bytes,
+  ]);
+  // A remembered old record refers to the young string at granule 4.
+  const old = 0x8000;
+  [pair, strings[4]!, 0].forEach((value, index) =>
+    h.words.set(old + index * 8, value),
+  );
+  const copied = createCheneyCollector(managed, 2 * semispace, large).collect(
+    from,
+    24 + 40 + 40 + 40,
+    to,
+    0,
+    semispace,
+    h.roots([young, weakYoung, weakOld, strings[3]!, view]),
+    new Uint32Array(semispace / 256),
+    to,
+    (scan) => scan(old),
+  );
+  assert.equal(copied, 24 + 40 + 40 + 40, "large objects are never copied");
+  assert.deepEqual(
+    [...large.marks],
+    [1, 0, 0, 1, 1, 1],
+    "strong references mark their chunks; weak keys do not",
+  );
+  assert.equal(h.root(3), strings[3], "a root to a large object is unchanged");
+  assert.equal(h.read(h.root(0) + 8), strings[0]);
+  assert.equal(h.words.get(old + 8), strings[4], "remembered old record");
+  assert.equal(h.read(h.root(1) + 8), 0, "a dead young large key is cleared");
+  assert.equal(
+    h.read(h.root(2) + 16),
+    strings[2],
+    "an old large key outlives a minor collection",
+  );
+  const movedView = h.root(4);
+  assert.equal(h.read(movedView + 24), bytes, "the view keeps its owner");
+  assert.equal(h.read(movedView + 16), bytes + 48, "and its data pointer");
 });
 
 test("a destination that cannot hold the survivors is an invariant failure", () => {
   const h = heap();
   const leafDescriptor = h.descriptor(16, []);
   const object = h.allocate(16, [leafDescriptor, 0]);
-  const collector = createCheneyCollector(managed, 2 * semispace);
+  const collector = createCheneyCollector(
+    managed,
+    2 * semispace,
+    noLargeSpace(),
+  );
   assert.throws(
     () =>
       collector.collect(

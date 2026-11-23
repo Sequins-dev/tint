@@ -15,6 +15,15 @@ export const nativeHostedContextByteLength = 96;
 /** The hosted entry sends this to its allocator only after the mutator
  * has returned, before reclaiming the collector's permanent storage. */
 export const nativeAllocatorShutdownRequest = -1;
+/** Added to an allocation request's byte count when the object holds no
+ * references (strings and owned numeric typed arrays): the allocator may
+ * place it in a large-object space that collectors mark but never scan or
+ * move. Real requests are below 2^32, so the sum is unambiguous. */
+export const nativeAllocationDataRequest = 4294967296;
+/** The allocation state block's word at which the runtime publishes the
+ * byte size from which data allocations take the slow path (0: never), so
+ * the allocator can route them to its large-object space. */
+export const nativeAllocationDataThresholdWord = 15;
 /** Threaded images may accept a tagged startup record (aligned address + 1).
  * Its first word starts at zero, then startup publishes exit status + 1 after
  * releasing the worker's managed storage. Both descriptors are duplicates

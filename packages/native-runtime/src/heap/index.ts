@@ -1,3 +1,4 @@
+import { nativeAllocationDataRequest } from "@tint/abi/host";
 import { createRegionCompactor, type CompactionStorage } from "./compaction.ts";
 export type { CompactionStorage } from "./compaction.ts";
 import {
@@ -183,7 +184,12 @@ export function createCollectingRegion(
     // Request size 0 is reserved for a forced full collection (the Test262
     // host's $262.gc, collect-garbage): +0 when it completed. A failed or
     // reentrant collection is an invariant failure (undefined traps).
-    allocate: (bytes) => {
+    allocate: (request) => {
+      // This region has no large-object space: a data request is ordinary.
+      const bytes =
+        request >= nativeAllocationDataRequest
+          ? request - nativeAllocationDataRequest
+          : request;
       if (bytes === 0)
         return !collecting && collect() === "complete" ? 0 : undefined;
       if (

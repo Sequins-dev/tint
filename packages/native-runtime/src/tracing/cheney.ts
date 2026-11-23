@@ -41,6 +41,47 @@ export function cheneyIsForwarded(header: number): boolean {
   return header >= nativeHeaderForwarded;
 }
 
+/** The generational heap's large-object space: objects without references
+ * (strings and owned numeric typed arrays) in chunks of [base, end) that
+ * collections mark but never scan or move. Every chunk starts on a
+ * 2^shift-byte granule and holds one object at its start, so a reference
+ * into the space marks `marks[(reference - base) >> shift]`: a plain byte
+ * store of 1, which parallel workers may race on harmlessly. `young` is 1
+ * at the granule of each chunk allocated since the last collection: a minor
+ * collection frees the unmarked ones and leaves old chunks alone, a major
+ * one frees every unmarked chunk. `base` and `end` are 0 when a heap has no
+ * such space. */
+export interface LargeSpace {
+  readonly base: number;
+  readonly end: number;
+  readonly shift: number;
+  readonly marks: Uint8Array;
+  readonly young: Uint8Array;
+}
+/** A heap without a large-object space. */
+export function noLargeSpace(): LargeSpace {
+  return {
+    base: 0,
+    end: 0,
+    shift: 0,
+    marks: new Uint8Array(0),
+    young: new Uint8Array(0),
+  };
+}
+/** Whether the large object at `address` (inside the space) survives the
+ * current collection: marked, or old during a minor one. */
+export function largeAlive(
+  large: LargeSpace,
+  address: number,
+  minor: boolean,
+): boolean {
+  const granule = (address - large.base) >>> large.shift;
+  return (
+    (large.marks[granule] ?? 0) !== 0 ||
+    (minor && (large.young[granule] ?? 0) === 0)
+  );
+}
+
 /** One evacuation moves every reachable object of the source window and
  * returns the bytes copied. Destinations are packed from `toStart` within
  * the destination window; `starts` receives one bit per 8-byte destination
@@ -81,6 +122,12 @@ interface CheneyState {
   weakCopied: number;
   readonly managedBase: number;
   readonly managedLength: number;
+  /** The large-object space, and its bounds and marks for the hot paths. */
+  readonly large: LargeSpace;
+  readonly largeBase: number;
+  readonly largeEnd: number;
+  readonly largeShift: number;
+  readonly largeMarks: Uint8Array;
 }
 
 // Single host operations, so the inliner folds them into their callers.
@@ -176,6 +223,8 @@ function evacuate(
             ? evacuate(state, starts, owner)
             : owner,
         data = read(address + nativeArrayDataOffset);
+      if (owner >= state.largeBase && owner < state.largeEnd)
+        markLarge(state, owner);
       write(
         destination + nativeArrayDataOffset,
         moved === owner
@@ -200,6 +249,12 @@ function referenceSlot(
   const value = read(slot);
   if (value >= state.fromBase && value < state.fromEnd && value !== 0)
     write(slot, evacuate(state, starts, value));
+  else if (value >= state.largeBase && value < state.largeEnd)
+    markLarge(state, value);
+}
+/** Marks the large object at `address` (inside the space) live. */
+function markLarge(state: CheneyState, address: number): void {
+  state.largeMarks[(address - state.largeBase) >>> state.largeShift] = 1;
 }
 
 function generalSlot(
@@ -228,6 +283,8 @@ function scanFields(
       value = read(slot);
     if (value >= fromBase && value < fromEnd && value !== 0)
       write(slot, evacuate(state, starts, value));
+    else if (value >= state.largeBase && value < state.largeEnd)
+      markLarge(state, value);
   }
   const generals = descriptor + 8 + count * 8,
     generalCount = read(generals);
@@ -266,6 +323,8 @@ function scanObject(
         value = read(slot);
       if (value >= fromBase && value < fromEnd && value !== 0)
         write(slot, evacuate(state, starts, value));
+      else if (value >= state.largeBase && value < state.largeEnd)
+        markLarge(state, value);
     }
   } else if (marker >= 2 && marker <= 5 && flags === 2)
     // Copies fixed their owner when evacuated; this covers in-place scans.
@@ -283,13 +342,14 @@ function drain(state: CheneyState, starts: Uint32Array, from: number): number {
 }
 
 /** Whether the key of the evacuated weak slot `slot` survived an evacuation
- * of [fromBase, fromEnd): 1 live (or outside the source window, or not a
- * reference), 0 dead or cleared. A live key's reference is updated. Shared
+ * of [fromBase, fromEnd): 1 live (or outside the source window and not a
+ * dead young large object, or not a reference), 0 dead or cleared. A live key's reference is updated. Shared
  * with the parallel evacuator, which calls it once its pool is quiescent or
  * for slots only the calling worker touches. */
 export function evacuatedKeyAlive(
   fromBase: number,
   fromEnd: number,
+  large: LargeSpace,
   slot: number,
 ): number {
   const tag = read(slot + nativeWeakSlotKeyOffset);
@@ -297,14 +357,19 @@ export function evacuatedKeyAlive(
   if (tag !== 3 && tag !== 5 && tag !== 6 && tag !== 7) return 1;
   const key = read(slot + nativeWeakSlotKeyPayloadOffset);
   if (key === 0) return 0;
-  if (key < fromBase || key >= fromEnd) return 1;
+  if (key < fromBase || key >= fromEnd) {
+    // A young large key lives only if marked; old ones outlive a minor.
+    if (key >= large.base && key < large.end)
+      return largeAlive(large, key, true) ? 1 : 0;
+    return 1;
+  }
   const header = read(key);
   if (header < nativeHeaderForwarded) return 0;
   write(slot + nativeWeakSlotKeyPayloadOffset, header - nativeHeaderForwarded);
   return 1;
 }
 function keyAlive(state: CheneyState, slot: number): number {
-  return evacuatedKeyAlive(state.fromBase, state.fromEnd, slot);
+  return evacuatedKeyAlive(state.fromBase, state.fromEnd, state.large, slot);
 }
 
 /** Traces ephemeron values whose keys survived, to a fixpoint. */
@@ -361,12 +426,17 @@ function clearWeakPairs(slot: number, flags: number, alive: number): void {
 export function finishEvacuatedWeak(
   fromBase: number,
   fromEnd: number,
+  large: LargeSpace,
   slot: number,
 ): void {
   const flags = headerFlags(read(slot));
   if (flags !== nativeWeakSlotWeak && flags !== nativeWeakSlotEphemeron)
     throw "CHENEY_WEAK";
-  clearWeakPairs(slot, flags, evacuatedKeyAlive(fromBase, fromEnd, slot));
+  clearWeakPairs(
+    slot,
+    flags,
+    evacuatedKeyAlive(fromBase, fromEnd, large, slot),
+  );
 }
 
 function finishWeakSlots(state: CheneyState, start: number): void {
@@ -413,6 +483,7 @@ function finishWeakSlots(state: CheneyState, start: number): void {
 export function createCheneyCollector(
   managedBase: number,
   managedLength: number,
+  large: LargeSpace,
 ): CheneyCollector {
   // Created once with the collector: a collection must not allocate.
   const state: CheneyState = {
@@ -425,6 +496,11 @@ export function createCheneyCollector(
     weakCopied: 0,
     managedBase,
     managedLength,
+    large,
+    largeBase: large.base,
+    largeEnd: large.end,
+    largeShift: large.shift,
+    largeMarks: large.marks,
   };
   let currentStarts: Uint32Array = new Uint32Array(0);
   const scanRemembered = (address: number): void => {
@@ -538,6 +614,12 @@ export interface CompactRegion {
   end: number;
   live: Uint32Array;
   offsets: Uint32Array;
+  /** The large-object space (LargeSpace): its objects are marked, never
+   * moved, so forwarding leaves references to them alone. */
+  readonly largeBase: number;
+  readonly largeEnd: number;
+  readonly largeShift: number;
+  readonly largeMarks: Uint8Array;
 }
 interface CompactState extends CompactRegion {
   starts: Uint32Array;
@@ -549,6 +631,9 @@ interface CompactState extends CompactRegion {
   sawView: boolean;
   /** A marked weak slot: ephemerons and clearing follow the mark. */
   sawWeak: boolean;
+  /** Large objects newly marked (they add no live region bytes, so the
+   * ephemeron fixpoint counts them separately). */
+  largeMarked: number;
   readonly managedBase: number;
   readonly managedLength: number;
 }
@@ -599,6 +684,13 @@ function markObject(state: CompactState, address: number): void {
 function markReference(state: CompactState, value: number): void {
   if (value >= state.base && value < state.end && value !== 0)
     markObject(state, value);
+  else if (value >= state.largeBase && value < state.largeEnd) {
+    const granule = (value - state.largeBase) >>> state.largeShift;
+    if ((state.largeMarks[granule] ?? 0) === 0) {
+      state.largeMarks[granule] = 1;
+      state.largeMarked += 1;
+    }
+  }
 }
 function markGeneral(state: CompactState, slot: number): void {
   const tag = read(slot);
@@ -655,15 +747,23 @@ function closeMarks(state: CompactState): void {
     drainMarks(state);
   }
 }
-/** 1 when weak slot `slot`'s key is live (marked, outside the region, or
- * not a reference), 0 when it is dead or cleared. */
+/** 1 when weak slot `slot`'s key is live (marked, outside the region and
+ * the large-object space, or not a reference), 0 when it is dead or
+ * cleared. */
 export function compactKeyAlive(state: CompactRegion, slot: number): number {
   const tag = read(slot + nativeWeakSlotKeyOffset);
   if (tag === 0) return 0;
   if (tag !== 3 && tag !== 5 && tag !== 6 && tag !== 7) return 1;
   const key = read(slot + nativeWeakSlotKeyPayloadOffset);
   if (key === 0) return 0;
-  if (key < state.base || key >= state.end) return 1;
+  if (key < state.base || key >= state.end) {
+    if (key >= state.largeBase && key < state.largeEnd)
+      return (state.largeMarks[(key - state.largeBase) >>> state.largeShift] ??
+        0) !== 0
+        ? 1
+        : 0;
+    return 1;
+  }
   const granule = (key - state.base) >>> 3;
   return ((state.live[granule >>> 5] ?? 0) & (1 << (granule & 31))) !== 0
     ? 1
@@ -873,6 +973,7 @@ export interface CompactHelpers {
 export function createCompactor(
   managedBase: number,
   managedLength: number,
+  large: LargeSpace,
   helpers?: CompactHelpers,
   parallelMinimum: number = 0,
 ): Compactor {
@@ -884,12 +985,17 @@ export function createCompactor(
     starts: empty,
     live: empty,
     offsets: empty,
+    largeBase: large.base,
+    largeEnd: large.end,
+    largeShift: large.shift,
+    largeMarks: large.marks,
     stack: empty,
     depth: 0,
     overflowed: false,
     liveBytes: 0,
     sawView: false,
     sawWeak: false,
+    largeMarked: 0,
     managedBase,
     managedLength,
   };
@@ -925,6 +1031,7 @@ export function createCompactor(
       state.liveBytes = 0;
       state.sawView = false;
       state.sawWeak = false;
+      state.largeMarked = 0;
       live.fill(0, 0, words);
       // 1. Mark (in parallel for large regions).
       const delegate = used >= parallelMinimum ? helpers : undefined;
@@ -959,8 +1066,8 @@ export function createCompactor(
         // (re-marking is idempotent: a pass that marks nothing ends it);
         // then dead keys clear their slots.
         let before = -1;
-        while (before !== state.liveBytes) {
-          before = state.liveBytes;
+        while (before !== state.liveBytes + state.largeMarked) {
+          before = state.liveBytes + state.largeMarked;
           forEachLive(state, markEphemeron);
           closeMarks(state);
         }

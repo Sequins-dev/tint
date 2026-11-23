@@ -90,6 +90,11 @@ export interface DumpMeta {
     readonly saves: readonly number[] | null;
   };
   readonly stack: { readonly base: number; readonly top: number };
+  /** Large objects (format 3), concatenated in large.bin in this order. */
+  readonly large?: readonly {
+    readonly address: number;
+    readonly size: number;
+  }[];
   /** The allocation reported at the sample hook, not yet initialized. */
   readonly pending?: { readonly address: number; readonly size: number } | null;
   readonly records: Readonly<Record<string, RecordInfo>>;
@@ -100,7 +105,7 @@ export interface DumpMeta {
   readonly label?: string;
 }
 
-interface Region {
+export interface Region {
   readonly base: number;
   readonly bytes: Buffer;
 }
@@ -161,6 +166,8 @@ export class HeapDump {
   readonly meta: DumpMeta;
   readonly old: Region;
   readonly young: Region;
+  /** One region per large object (its chunk's only object). */
+  readonly large: readonly Region[];
   readonly starts: Buffer;
   readonly stack: Region;
   readonly registry: Region;
@@ -173,9 +180,9 @@ export class HeapDump {
     this.meta = JSON.parse(
       readFileSync(join(directory, "meta.json"), "utf8"),
     ) as DumpMeta;
-    if (this.meta.format !== "tint-heap-dump" || this.meta.formatVersion !== 2)
+    if (this.meta.format !== "tint-heap-dump" || this.meta.formatVersion !== 3)
       throw Error("unsupported heap dump format");
-    if (this.meta.descriptor.version !== 2)
+    if (this.meta.descriptor.version !== 3)
       throw Error(
         "heap descriptor version " +
           this.meta.descriptor.version +
@@ -191,6 +198,17 @@ export class HeapDump {
       bytes: readFileSync(join(directory, "young.bin")),
     };
     this.starts = readFileSync(join(directory, "starts.bin"));
+    const large = readFileSync(join(directory, "large.bin")),
+      regions: Region[] = [];
+    let cursor = 0;
+    for (const entry of this.meta.large ?? []) {
+      regions.push({
+        base: entry.address,
+        bytes: large.subarray(cursor, cursor + entry.size),
+      });
+      cursor += entry.size;
+    }
+    this.large = regions;
     this.stack = {
       base: this.meta.stack.base,
       bytes: readFileSync(join(directory, "stack.bin")),
@@ -221,7 +239,13 @@ export class HeapDump {
   readonly read = (address: number): number | undefined => {
     const synthetic = this.synthetic.get(address);
     if (synthetic !== undefined) return synthetic;
-    for (const region of [this.old, this.young, this.stack, this.registry]) {
+    for (const region of [
+      this.old,
+      this.young,
+      ...this.large,
+      this.stack,
+      this.registry,
+    ]) {
       const offset = address - region.base;
       if (offset >= 0 && offset + 8 <= region.bytes.length)
         return wordAt(region.bytes, offset);
@@ -233,7 +257,7 @@ export class HeapDump {
   };
   /** The region and offset holding a heap address. */
   heapBytes(address: number): { bytes: Buffer; offset: number } | undefined {
-    for (const region of [this.old, this.young]) {
+    for (const region of [this.old, this.young, ...this.large]) {
       const offset = address - region.base;
       if (offset >= 0 && offset < region.bytes.length)
         return { bytes: region.bytes, offset };

@@ -15,6 +15,9 @@
  *                save-core`, `gcore`)
  *   allocations  a sampled allocation profile attributing the fixture's
  *                allocation volume to its known allocation site
+ *   large        large strings and typed arrays in the large-object space:
+ *                found through the descriptor's chunk table, walked and
+ *                dumped into the snapshot graph
  *   collect      a forced major collection at an allocation safepoint
  *                (`collect-begin`/`collect-end`, the DevTools bridge's
  *                collectGarbage): the nursery empties, the heap walks
@@ -41,6 +44,7 @@ import {
   retainedNodes,
 } from "./heap-tools-fixture.ts";
 import { allocationProfile, convert } from "./heap-snapshot/cli.ts";
+import { verifyHostedFixture } from "./hosted-fixture.ts";
 import { heapDebugger } from "./heap-snapshot/debuggers.ts";
 import { HeapDump } from "./heap-snapshot/dump.ts";
 import { buildGraph, reportTotals } from "./heap-snapshot/graph.ts";
@@ -197,9 +201,80 @@ try {
     };
     assert.deepEqual(
       [first.version, first.headerBytes, first.granule],
-      [2, 8, 8],
+      [3, 8, 8],
     );
     console.log("descriptor: state and start-bit walks match the collector");
+  }
+
+  if (run("large")) {
+    // Strings and typed arrays of at least the data threshold live in the
+    // large-object space: the descriptor's chunk table finds them, the
+    // walk checks them and the dump carries them into the snapshot graph.
+    const largeLine = 6;
+    const largeImage = verifyHostedFixture(
+      `export function run(): number {
+  const bytes = new Uint8Array(400000);
+  bytes[1] = 7;
+  let text = "ab";
+  while (text.length < 200000) text = text + text;
+  const sizes: number[] = [bytes.length, text.length];
+  return (sizes[0] ?? 0) > 0 && bytes[1] === 7 ? 42 : 1;
+}
+`,
+      "heap-tools-large",
+      [],
+      [],
+      [],
+      [],
+      {
+        managedBytes: 16777216,
+        allocationCapacity: 1048576,
+        runtimeEntry: "initializeGenerationalRuntime",
+      },
+    );
+    const largeDump = join(work, "large");
+    // The walk runs at the line; the dump needs a precise safepoint, the
+    // next allocation's sample hook (whose object is not yet initialized).
+    const output = debug.run(largeImage, [
+      debug.breakAtLine("fixture", largeLine),
+      debug.launch,
+      debug.python("assert " + debug.stoppedExpression),
+      "tint-heap info --json",
+      "tint-heap verify --json",
+      debug.deleteBreakpoints,
+      "tint-heap arm 1",
+      debug.breakAtSymbol("__tint_allocation_sample"),
+      debug.resume,
+      assertAtSymbol("__tint_allocation_sample"),
+      "tint-heap dump " + largeDump,
+      debug.deleteBreakpoints,
+      debug.resume,
+      debug.assertExit(42),
+    ]);
+    const info = jsonLines(output, '{"descriptor"')[0] as {
+      state: { largeCount: number; largeGranule: number };
+    };
+    assert.equal(info.state.largeGranule, 65536, output);
+    // The array and every doubled string from 262,144 units up.
+    assert.ok(info.state.largeCount >= 2, output);
+    const walk = jsonLines(output, '{"old"')[0] as Record<
+      string,
+      { objects: number; kinds: Record<string, [number, number]> }
+    >;
+    assert.equal(walk.large?.objects, info.state.largeCount, output);
+    assert.ok((walk.large?.kinds.Uint8Array?.[0] ?? 0) >= 1, output);
+    assert.ok((walk.large?.kinds.string?.[0] ?? 0) >= 1, output);
+    const dump = new HeapDump(largeDump),
+      graph = buildGraph(dump);
+    assert.equal(dump.large.length, info.state.largeCount);
+    const largest = Math.max(
+      ...dump.large.map((region) => region.bytes.length),
+    );
+    assert.ok(largest >= 400000, "the typed array's chunk was dumped");
+    assert.equal(graph.stats.rootWalk, "complete");
+    console.log(
+      `large: ${info.state.largeCount} large objects walked and dumped`,
+    );
   }
 
   if (run("formatters")) {

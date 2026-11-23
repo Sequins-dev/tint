@@ -4,7 +4,8 @@ import type { Instruction } from "../isa.ts";
  * call). Each allocation site keeps its own call, safepoint and exceptional
  * branch; these leaf kernels hold the setup and the result checks, which are
  * the same at every site. */
-export type AllocationHelper = "allocate-call" | "allocate-finish";
+export type AllocationHelper =
+  "allocate-call" | "allocate-data-call" | "allocate-finish";
 /** Hosted context words the allocator call reads (see the context layout in
  * the runtime): managed base, allocator entry, its closure, managed limit. */
 const contextManagedBase = 8,
@@ -18,6 +19,10 @@ const contextManagedBase = 8,
  * x0 context, x1 closure, x2 = 0, x3, d0 = size, and its entry in x16 (the
  * site then calls x16). Traps when no allocator is published. Clobbers x1,
  * x2, x16, d0, NZCV.
+ *
+ * allocate-data-call: the same for an object without references, whose
+ * request is size + nativeAllocationDataRequest (d0), so the allocator may
+ * place it in its large-object space.
  *
  * allocate-finish: x9 = the allocator's result word (`number | undefined`,
  * NaN-boxed), x10 = byte size, x11 = context. Returns the object's native
@@ -42,7 +47,7 @@ export function allocationHelper(
       setFlags: true,
     });
   }
-  if (kind === "allocate-call") {
+  if (kind === "allocate-call" || kind === "allocate-data-call") {
     emit({
       op: "stp",
       width: 64,
@@ -77,8 +82,25 @@ export function allocationHelper(
     });
     compareZero(16);
     branch("trap", "eq");
-    emit({ op: "movz", width: 64, rd: 2, immediate: 0, shift: 0 });
-    emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
+    if (kind === "allocate-data-call") {
+      // size + 2^32 (nativeAllocationDataRequest), exact in a double.
+      emit({ op: "movz", width: 64, rd: 2, immediate: 1, shift: 32 });
+      emit({
+        op: "add-reg",
+        width: 64,
+        rd: 2,
+        rn: 2,
+        rm: 9,
+        shift: "lsl",
+        amount: 0,
+        setFlags: false,
+      });
+      emit({ op: "ucvtf-d-x", rd: 0, rn: 2 });
+      emit({ op: "movz", width: 64, rd: 2, immediate: 0, shift: 0 });
+    } else {
+      emit({ op: "movz", width: 64, rd: 2, immediate: 0, shift: 0 });
+      emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
+    }
     emit({ op: "ret", rn: 30 });
   } else {
     // `undefined` (the reserved NaN payload) is an invariant failure.

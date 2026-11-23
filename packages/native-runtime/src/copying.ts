@@ -1,5 +1,6 @@
+import { nativeAllocationDataRequest } from "@tint/abi/host";
 import { initializeExternalMemory } from "./external-memory.ts";
-import { createCheneyCollector } from "./tracing/cheney.ts";
+import { createCheneyCollector, noLargeSpace } from "./tracing/cheney.ts";
 import {
   currentRootHead,
   configureLinearAllocation,
@@ -48,8 +49,10 @@ export function initializeCopyingRuntime(
     fixupCapacity < 1
   )
     throw "INVALID_COPYING_WORKSPACE";
+  // Sixteen words: generated code reads the data threshold at word 15,
+  // which stays 0 here (this runtime has no large-object space).
   const bits = metadata.subarray(0, words),
-    allocation = new Uint32Array(8);
+    allocation = new Uint32Array(16);
   allocation[1] = capacity;
   let reverse = false,
     collecting = false;
@@ -65,7 +68,11 @@ export function initializeCopyingRuntime(
   );
   // Collections copy the active semispace into the other one in a single
   // Cheney pass; a semispace always holds everything the active one holds.
-  const heap = createCheneyCollector(managedBase, managedLength);
+  const heap = createCheneyCollector(
+    managedBase,
+    managedLength,
+    noLargeSpace(),
+  );
   if (configureLinearAllocation(allocation, bits) !== 0)
     throw "INVALID_LINEAR_ALLOCATION_STATE";
   // Exhaustion throws, so compiled callers unwind through their exceptional
@@ -96,7 +103,12 @@ export function initializeCopyingRuntime(
   }
   // Request size 0 is reserved for a forced full collection (the Test262
   // host's $262.gc); it returns +0 and allocates nothing.
-  return (bytes) => {
+  return (request) => {
+    // No large-object space: a data request is an ordinary one.
+    const bytes =
+      request >= nativeAllocationDataRequest
+        ? request - nativeAllocationDataRequest
+        : request;
     let top = allocation[0] ?? 0;
     if (bytes === 0 && !collecting) {
       collect(top);

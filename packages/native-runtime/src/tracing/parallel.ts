@@ -38,6 +38,7 @@ import {
   compactForwardObject,
   compactKeyAlive,
   evacuatedKeyAlive,
+  type LargeSpace,
   finishCompactWeak,
   finishEvacuatedWeak,
   type CompactRegion,
@@ -160,6 +161,13 @@ interface Worker {
   readonly startsData: number;
   readonly managedBase: number;
   readonly managedLength: number;
+  /** The large-object space (see LargeSpace in cheney.ts): references into
+   * it mark their chunk instead of evacuating. */
+  readonly large: LargeSpace;
+  readonly largeBase: number;
+  readonly largeEnd: number;
+  readonly largeShift: number;
+  readonly largeMarks: Uint8Array;
   /** Mark-compact: the region's live bits' raw address, this worker's
    * mark stack (raw words) and depth, and the bytes it marked. */
   liveData: number;
@@ -391,6 +399,7 @@ function evacuate(w: Worker, starts: Uint32Array, address: number): number {
               ? evacuate(w, starts, owner)
               : owner,
           data = read(address + nativeArrayDataOffset);
+        if (owner >= w.largeBase && owner < w.largeEnd) markLarge(w, owner);
         write(
           destination + nativeArrayDataOffset,
           moved === owner
@@ -423,6 +432,12 @@ function referenceSlot(w: Worker, starts: Uint32Array, slot: number): void {
   const value = read(slot);
   if (value >= w.fromBase && value < w.fromEnd && value !== 0)
     write(slot, evacuate(w, starts, value));
+  else if (value >= w.largeBase && value < w.largeEnd) markLarge(w, value);
+}
+/** Marks the large object at `address` (inside the space) live: a byte
+ * store of 1, which other workers may race on harmlessly. */
+function markLarge(w: Worker, address: number): void {
+  w.largeMarks[(address - w.largeBase) >>> w.largeShift] = 1;
 }
 function generalSlot(w: Worker, starts: Uint32Array, slot: number): void {
   const tag = read(slot);
@@ -444,6 +459,7 @@ function scanFields(
       value = read(slot);
     if (value >= fromBase && value < fromEnd && value !== 0)
       write(slot, evacuate(w, starts, value));
+    else if (value >= w.largeBase && value < w.largeEnd) markLarge(w, value);
   }
   const generals = descriptor + 8 + count * 8,
     generalCount = read(generals);
@@ -483,6 +499,7 @@ function scanHeaded(
         value = read(slot);
       if (value >= fromBase && value < fromEnd && value !== 0)
         write(slot, evacuate(w, starts, value));
+      else if (value >= w.largeBase && value < w.largeEnd) markLarge(w, value);
     }
   } else if (marker >= 2 && marker <= 5 && flags === 2)
     referenceSlot(w, starts, address + nativeArrayOwnerOffset);
@@ -551,7 +568,7 @@ function traceCopiedEphemerons(
   while (source !== 0) {
     const next = read(source + nativeWeakSlotKeyOffset),
       slot = read(source) - nativeHeaderForwarded;
-    if (evacuatedKeyAlive(w.fromBase, w.fromEnd, slot) === 1) {
+    if (evacuatedKeyAlive(w.fromBase, w.fromEnd, w.large, slot) === 1) {
       generalSlot(w, starts, slot + nativeWeakSlotValueOffset);
       write(source + nativeWeakSlotKeyOffset, owner.weakDone);
       owner.weakDone = source;
@@ -571,6 +588,7 @@ function finishCopiedList(w: Worker, source: number): void {
     finishEvacuatedWeak(
       w.fromBase,
       w.fromEnd,
+      w.large,
       read(at) - nativeHeaderForwarded,
     );
     at = read(at + nativeWeakSlotKeyOffset);
@@ -746,6 +764,8 @@ function markObject(w: Worker, region: CompactRegion, address: number): void {
 function markReference(w: Worker, region: CompactRegion, value: number): void {
   if (value >= region.base && value < region.end && value !== 0)
     markObject(w, region, value);
+  else if (value >= region.largeBase && value < region.largeEnd)
+    region.largeMarks[(value - region.largeBase) >>> region.largeShift] = 1;
 }
 function markGeneral(w: Worker, region: CompactRegion, slot: number): void {
   const tag = read(slot);
@@ -966,6 +986,7 @@ export function createParallelEvacuator(
   starts: Uint32Array,
   remembered: Float64Array,
   dirty: Uint8Array,
+  large: LargeSpace,
 ): ParallelEvacuator | undefined {
   if (!Number.isInteger(workers) || workers < 2 || workers > 64)
     return undefined;
@@ -1005,6 +1026,11 @@ export function createParallelEvacuator(
       startsData,
       managedBase,
       managedLength,
+      large,
+      largeBase: large.base,
+      largeEnd: large.end,
+      largeShift: large.shift,
+      largeMarks: large.marks,
       next: states,
     };
   const head = states;

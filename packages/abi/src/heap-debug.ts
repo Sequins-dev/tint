@@ -31,9 +31,10 @@ export const heapDebugSampleThunkSymbol = "__tint_allocation_sample_thunk";
 /** "TINTHEAP" as two little-endian words. */
 export const heapDebugMagicLow = 0x544e4954;
 export const heapDebugMagicHigh = 0x50414548;
-/** Version 2: one-word headers (marker and kind flags in one word), the
- * 8-byte granule, and per-kind minimum element counts. */
-export const heapDebugVersion = 2;
+/** Version 3: one-word headers (marker and kind flags in one word), the
+ * 8-byte granule, per-kind minimum element counts, and the large-object
+ * space (heapDebugStateLarge*). */
+export const heapDebugVersion = 3;
 
 // Header and live words (u64 unless noted).
 export const heapDebugMagicOffset = 0;
@@ -115,7 +116,18 @@ export const heapDebugKindTableOffset = 148;
 /** Name pool: offset and byte length of NUL-terminated names. */
 export const heapDebugNamePoolOffset = 152;
 export const heapDebugNamePoolBytesOffset = 156;
-export const heapDebugFixedBytes = 160;
+/** u32 word indices into the state block for the large-object space
+ * (version 3): the u64 address of its live chunk table (u32 granule
+ * indices, one per chunk), the table's entry count, the space's offset
+ * from the managed base and its granule bytes. Chunk i's object starts at
+ * managed base + space offset + table[i] * granule; it is the chunk's only
+ * object and its header gives its extent. The table is consistent outside
+ * a collection. A count of 0 means no large objects (or no such space). */
+export const heapDebugStateLargeChunksOffset = 160;
+export const heapDebugStateLargeCountOffset = 164;
+export const heapDebugStateLargeBaseOffset = 168;
+export const heapDebugStateLargeGranuleOffset = 172;
+export const heapDebugFixedBytes = 176;
 
 /** Collector structures. */
 export const heapDebugCollectorGenerational = 2;
@@ -263,6 +275,10 @@ export function heapDebugDescriptorBytes(): Uint8Array {
   u32(heapDebugStateOldCapacityOffset, 7);
   u32(heapDebugStateDirtyBitsOffset, 8);
   u32(heapDebugStateQueueCountOffset, 12);
+  u32(heapDebugStateLargeChunksOffset, 16);
+  u32(heapDebugStateLargeCountOffset, 18);
+  u32(heapDebugStateLargeBaseOffset, 19);
+  u32(heapDebugStateLargeGranuleOffset, 20);
   u32(heapDebugKindTotalOffset, heapDebugKinds.length);
   u32(heapDebugKindTableOffset, table);
   u32(heapDebugNamePoolOffset, pool);
