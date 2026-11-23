@@ -25,7 +25,11 @@ function isolate() {
 
 /** An in-memory packet: native hosts back the same interfaces with raw
  * mappings. */
-function serialize(value: unknown, realm: objects.ErrorRealm): Uint8Array {
+function serialize(
+  value: unknown,
+  realm: objects.ErrorRealm,
+  attachments?: objects.WorkerCloneAttachments,
+): Uint8Array {
   const sink: objects.WorkerCloneSink = {
     bytes: new Uint8Array(8),
     grow(used, needed) {
@@ -46,10 +50,14 @@ function serialize(value: unknown, realm: objects.ErrorRealm): Uint8Array {
       }
     },
   };
-  const end = codec.serializeWorkerValue(value, realm, sink, 0);
+  const end = codec.serializeWorkerValue(value, realm, sink, 0, attachments);
   return sink.bytes.slice(0, end);
 }
-function deserialize(bytes: Uint8Array, realm: objects.ErrorRealm): unknown {
+function deserialize(
+  bytes: Uint8Array,
+  realm: objects.ErrorRealm,
+  attachments?: objects.WorkerCloneAttachments,
+): unknown {
   const source: objects.WorkerCloneSource = {
     bytes,
     readFloat64: (offset) =>
@@ -63,7 +71,13 @@ function deserialize(bytes: Uint8Array, realm: objects.ErrorRealm): unknown {
       return text;
     },
   };
-  return codec.deserializeWorkerValue(source, 0, bytes.length, realm);
+  return codec.deserializeWorkerValue(
+    source,
+    0,
+    bytes.length,
+    realm,
+    attachments,
+  );
 }
 
 test("worker clone carries cyclic aliases across realm boundaries", () => {
@@ -458,4 +472,57 @@ test("a typed program's native typed array arrives as the realm typed array it r
   );
   // The rest of the HTML algorithm still applies to realm values.
   assert.throws(() => serialize(Symbol("x"), realm));
+});
+
+test("native typed arrays keep later references aligned and share a shared block once", () => {
+  const source = isolate();
+  const target = isolate();
+  // Natively these are typed code's views; the host reports that the
+  // first two view one shared block (grant 7) and the third an ordinary
+  // buffer, which is copied.
+  const block = new ArrayBuffer(16);
+  const words = new Uint32Array(block, 4, 2);
+  const bytes = new Uint8Array(block);
+  const copied = new Uint16Array(3);
+  const inner = o.createObject(source.root);
+  const outer = o.createObject(source.root);
+  o.createDataProperty(outer, "words", words, source.hooks);
+  o.createDataProperty(outer, "bytes", bytes, source.hooks);
+  o.createDataProperty(outer, "copied", copied, source.hooks);
+  o.createDataProperty(outer, "left", inner, source.hooks);
+  o.createDataProperty(outer, "right", inner, source.hooks);
+  const encoded = serialize(outer, source.realm, {
+    encodeNativeBuffer: (buffer) => (buffer === block ? 7 : undefined),
+  });
+  const shared = o.createObject<objects.ScriptPropertyKey, unknown>(
+    target.realm.arrayBufferPrototype,
+  );
+  shared.internalArrayBufferData = {
+    kind: "ordinary" as const,
+    data: new Uint8Array(16),
+    immutable: false,
+    maxByteLength: 16,
+    resizable: false,
+    allocationLimit: 16,
+  };
+  let decoded = 0;
+  const copy = deserialize(encoded, target.realm, {
+    decode: (index) => {
+      assert.equal(index, 7);
+      decoded++;
+      return shared;
+    },
+  }) as ObjectValue;
+  assert.equal(decoded, 1);
+  const read = (name: string): ObjectValue =>
+    o.getProperty(copy, name, copy, target.hooks) as ObjectValue;
+  const wordView = read("words").internalTypedArrayData;
+  const byteView = read("bytes").internalTypedArrayData;
+  assert.equal(wordView?.buffer, shared);
+  assert.equal(byteView?.buffer, shared);
+  assert.equal(wordView?.byteOffset, 4);
+  assert.equal(wordView?.length, 2);
+  assert.notEqual(read("copied").internalTypedArrayData?.buffer, shared);
+  // Two indices per native view kept the later alias aligned.
+  assert.equal(read("left"), read("right"));
 });

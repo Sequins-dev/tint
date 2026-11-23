@@ -165,6 +165,11 @@ export class NodeSharedBlockService implements SharedBlockService {
       : { ok: true, value: block.descriptor };
   }
 
+  bytes(handle: number): Uint8Array | undefined {
+    const block = this.blocks.get(handle);
+    return block === undefined ? undefined : new Uint8Array(block.payload);
+  }
+
   length(handle: number, order: SharedOrder): SharedResult<number> {
     const block = this.blocks.get(handle);
     if (block === undefined) return { ok: false, error: "invalid-handle" };

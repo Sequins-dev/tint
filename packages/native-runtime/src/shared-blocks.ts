@@ -11,6 +11,7 @@ import type {
   SharedUpdate,
 } from "@tint/js-runtime/bytes/shared";
 import { sharedUpdateValue } from "@tint/js-runtime/bytes/shared";
+import { adoptExternal } from "./ffi/primitives.ts";
 import {
   sharedRegistryMagic,
   sharedRegistryHeaderBytes,
@@ -220,6 +221,8 @@ export interface NativeSharedBlockService extends SharedBlockService {
   /** Trusted: the payload address of block `handle` (0 for an invalid
    * handle), for a nonmoving byte view of it (shared-buffers.ts). */
   address(handle: number): number;
+  /** Trusted: the block whose payload starts at `address`, or 0. */
+  handleAt(address: number): number;
 }
 function sharedFacade(
   host: NativeSharedMemoryHost,
@@ -845,6 +848,27 @@ function sharedFacade(
     address: (handle): number => {
       const block = location(handle, new Uint32Array(2));
       return block === undefined ? 0 : block.base;
+    },
+    bytes: (handle): Uint8Array | undefined => {
+      const block = location(handle, new Uint32Array(2));
+      return block === undefined
+        ? undefined
+        : adoptExternal(new Uint8Array(0), block.base, block.maximum);
+    },
+    handleAt: (address): number => {
+      if (!integer(address) || address === 0) return 0;
+      const scratch = new Uint32Array(2),
+        count = readNumber(
+          host,
+          registry,
+          sharedRegistryPublishedCountOffset,
+          scratch,
+        );
+      for (let handle = 1; handle <= count; handle++) {
+        const block = location(handle, scratch);
+        if (block !== undefined && block.base === address) return handle;
+      }
+      return 0;
     },
     length: (handle, order): SharedResult<number> => length(handle, order),
     grow: (handle, target): SharedStatus => grow(handle, target),

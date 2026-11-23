@@ -1,6 +1,8 @@
 import {
   installAtomicsIntrinsics,
+  installProgramTypedArrayIntrinsics,
   installSharedArrayBufferIntrinsics,
+  programRealmCore,
   processAtomicWaitEvents,
   type ErrorRealm,
   type OrdinaryObject,
@@ -112,6 +114,7 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
   }
   // Typed SharedArrayBuffers use the same blocks (shared-buffers.ts).
   installIsolateSharedBlocks(service);
+  const blocks = service;
   const sequence: NativeSharedBlockRegistry = {
     base: engine.sequence,
     byteLength: page,
@@ -133,6 +136,11 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
     lockFree2: true,
     lockFree8: true,
   });
+  // Messages can carry typed arrays and ArrayBuffers, which need their
+  // prototypes even when no source names their constructors (typed code
+  // tests received arrays against the same intrinsics).
+  const core = programRealmCore();
+  if (core.realm === realm) installProgramTypedArrayIntrinsics(core);
   function nextThreadId(): number {
     let previous = readNumber(memory, sequence, 0, scratch);
     for (;;) {
@@ -171,6 +179,7 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
     parking,
     threads: host.threads,
     shared: service,
+    sharedBlockAt: (address: number): number => blocks.handleAt(address),
     packets: nativePacketMemory(),
     threadId: host.threadId,
     prepare: (filename, requested): NodeWorkerPlan => {

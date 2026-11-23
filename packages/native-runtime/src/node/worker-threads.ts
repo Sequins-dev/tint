@@ -74,6 +74,8 @@ export interface NodeWorkerThreadsOptions {
   readonly threads: NativeWorkerThreadHost;
   readonly reactor: ReactorEventLoop;
   readonly shared: SharedBlockService | undefined;
+  /** See NativeWorkerMessageOptions.sharedBlockAt. */
+  readonly sharedBlockAt?: (address: number) => number;
   readonly packets: NativePacketMemory;
   prepare(
     filename: string,
@@ -368,6 +370,9 @@ export function createNodeWorkerThreads(
   const messages: NativeWorkerMessages = createNativeWorkerMessages({
     realm,
     shared: options.shared,
+    ...(options.sharedBlockAt === undefined
+      ? {}
+      : { sharedBlockAt: options.sharedBlockAt }),
     backing,
     ports,
     packets: options.packets,

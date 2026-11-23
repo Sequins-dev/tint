@@ -42,6 +42,10 @@ type ScriptObject = OrdinaryObject<ScriptPropertyKey, unknown>;
  * The codec only refers to grant indices. It never moves native ownership. */
 export interface WorkerCloneAttachments {
   encode?(object: ScriptObject): number | undefined;
+  /** The grant index of the shared block that `buffer`, the buffer of a
+   * typed program's native typed array (or a typed SharedArrayBuffer
+   * itself), views; undefined for an ordinary buffer, which is copied. */
+  encodeNativeBuffer?(buffer: unknown): number | undefined;
   decode?(index: number): ScriptObject | undefined;
 }
 
@@ -251,6 +255,12 @@ function serializeWorkerGraph(
   attachments?: WorkerCloneAttachments,
 ): number {
   const objects = new Map<number, number>();
+  // The decoder's object indices: one per object, and a native typed
+  // array's view and buffer take one each.
+  let objectCount = 0;
+  // Object indices of the shared native buffers already serialized, by
+  // grant.
+  const nativeBuffers = new Map<number, number>();
   const keyIndices = new Map<string, number>();
   const hooks = realm.objectHooks;
   let bytes = sink.bytes,
@@ -335,40 +345,59 @@ function serializeWorkerGraph(
     }
   }
   /** A typed program's native typed array (a realm sees it as an opaque
-   * reference): serialized as the realm typed array it reads as, with a
-   * copy of its whole buffer, so the receiver gets the same window. */
+   * reference): serialized as the realm typed array it reads as. A view of
+   * a shared block shares it, and a typed SharedArrayBuffer (the byte
+   * array that is its own buffer) is that block's realm SharedArrayBuffer;
+   * any other buffer is copied whole, so the receiver gets the same
+   * window. */
   function nativeTypedArray(value: unknown): boolean {
     let kind = -1,
       byteOffset = 0,
       length = 0,
+      buffer: unknown = undefined,
       data: Uint8Array | undefined;
     if (value instanceof Uint8Array) {
       kind = 1;
       byteOffset = value.byteOffset;
       length = value.length;
+      buffer = value.buffer;
       data = new Uint8Array(value.buffer);
     } else if (value instanceof Uint16Array) {
       kind = 4;
       byteOffset = value.byteOffset;
       length = value.length;
+      buffer = value.buffer;
       data = new Uint8Array(value.buffer);
     } else if (value instanceof Uint32Array) {
       kind = 6;
       byteOffset = value.byteOffset;
       length = value.length;
+      buffer = value.buffer;
       data = new Uint8Array(value.buffer);
     } else if (value instanceof Float64Array) {
       kind = 9;
       byteOffset = value.byteOffset;
       length = value.length;
+      buffer = value.buffer;
       data = new Uint8Array(value.buffer);
     }
     if (data === undefined) return false;
+    const grant = attachments?.encodeNativeBuffer?.(buffer);
+    if (grant !== undefined && buffer === value) {
+      sharedBuffer(grant);
+      return true;
+    }
     tag(tagTypedArray);
     tag(kind);
     tag(0);
     varint(byteOffset);
     varint(length + 1);
+    objectCount++;
+    if (grant !== undefined) {
+      sharedBuffer(grant);
+      return true;
+    }
+    objectCount++;
     tag(tagArrayBuffer);
     varint(data.length);
     varint(data.length);
@@ -376,6 +405,19 @@ function serializeWorkerGraph(
     bytes.set(data, position);
     position += data.length;
     return true;
+  }
+  /** The realm SharedArrayBuffer of a typed program's shared block, once
+   * per message. */
+  function sharedBuffer(grant: number): void {
+    const seen = nativeBuffers.get(grant);
+    if (seen !== undefined) {
+      tag(tagReference);
+      varint(seen);
+      return;
+    }
+    nativeBuffers.set(grant, objectCount++);
+    tag(tagAttachment);
+    varint(grant);
   }
   function encode(value: unknown): void {
     if (value === undefined) return tag(tagUndefined);
@@ -412,7 +454,7 @@ function serializeWorkerGraph(
       tag(tagReference);
       return varint(seen);
     }
-    objects.set(object.internalIdentity, objects.size);
+    objects.set(object.internalIdentity, objectCount++);
     const grant = attachments?.encode?.(object);
     if (grant !== undefined) {
       tag(tagAttachment);

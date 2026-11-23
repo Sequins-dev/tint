@@ -144,6 +144,10 @@ export interface SharedBlockService {
     growable: boolean,
   ): SharedResult<SharedBlockDescriptor>;
   describe(handle: number): SharedResult<SharedBlockDescriptor>;
+  /** Trusted: a nonmoving byte view of the block's whole reservation
+   * (maxByteLength bytes), which typed code may view directly; undefined
+   * for an invalid handle or a service that cannot expose its payload. */
+  bytes(handle: number): Uint8Array | undefined;
   length(handle: number, order: SharedOrder): SharedResult<number>;
   /** Atomically revalidate current <= target <= maximum and publish target.
    * Equality also follows the ordered publication path. Never copy or shrink. */

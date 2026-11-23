@@ -25,6 +25,7 @@ import {
   type NativeAgentPacketEntry,
 } from "./agent-messages.ts";
 import type { NativePacketMemory } from "./packet-memory.ts";
+import { externalAddress } from "./ffi/primitives.ts";
 import type {
   NativeWorkerBacking,
   NativeWorkerBackingGrant,
@@ -65,6 +66,10 @@ type Move = BufferMove | PortMove;
 export interface NativeWorkerMessageOptions {
   readonly realm: ErrorRealm;
   readonly shared: SharedBlockService | undefined;
+  /** The `shared` block whose payload starts at an address (0 for none),
+   * so a typed SharedArrayBuffer, a byte array over its block, is shared
+   * rather than copied (shared-buffers.ts). */
+  readonly sharedBlockAt?: (address: number) => number;
   readonly backing: NativeWorkerBacking;
   readonly ports: NativeMessagePorts;
   readonly packets: NativePacketMemory;
@@ -211,6 +216,8 @@ export function createNativeWorkerMessages(
     const grants: Grant[] = [];
     const copies: NativeWorkerBackingGrant[] = [];
     const indices = new Map<number, number>();
+    // Grant indices of typed SharedArrayBuffers' blocks, by handle.
+    const blockGrants = new Map<number, number>();
     const destination = target.inspect();
     for (const entry of transfer) {
       const object = viewObjectValue(entry, realm.objectPrototype);
@@ -302,6 +309,27 @@ export function createNativeWorkerMessages(
             engineId: storage.engineId,
             handle: storage.handle,
           });
+          return index;
+        },
+        encodeNativeBuffer: (buffer): number | undefined => {
+          const lookup = options.sharedBlockAt;
+          // A typed buffer is the byte array that roots it; only a typed
+          // SharedArrayBuffer's is borrowed over a block payload.
+          if (
+            lookup === undefined ||
+            shared === undefined ||
+            !(buffer instanceof Uint8Array)
+          )
+            return undefined;
+          const address = externalAddress(buffer);
+          if (address < 0) return undefined;
+          const handle = lookup(address);
+          if (handle === 0) return undefined;
+          const known = blockGrants.get(handle);
+          if (known !== undefined) return known;
+          const index = grants.length;
+          grants.push({ kind: "s", engineId: shared.engineId, handle });
+          blockGrants.set(handle, index);
           return index;
         },
       });
