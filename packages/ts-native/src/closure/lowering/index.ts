@@ -200,6 +200,11 @@ export interface ModuleEntryOptions {
   readonly bigIntRepresentation?: number;
   readonly numberFromString?: number;
   readonly numberToString?: number;
+  /** A checked `(length: number) => number` creating a fixed-length block
+   * of the isolate's shared block service and returning its payload
+   * address (native-runtime shared-buffers newSharedBlock): typed
+   * `new SharedArrayBuffer` needs it. */
+  readonly sharedBlock?: number;
   readonly lists?: readonly ListRuntimeBinding[];
   readonly sets?: readonly SetRuntimeBinding[];
   readonly maps?: readonly MapRuntimeBinding[];
@@ -295,7 +300,8 @@ export function lowerModuleEntries(
     }
   }
   const numberToString = options?.numberToString,
-    numberFromString = options?.numberFromString;
+    numberFromString = options?.numberFromString,
+    sharedBlock = options?.sharedBlock;
   return lowerEntries(checked, expanded, undefined, undefined, {
     target,
     maxBytes,
@@ -318,6 +324,7 @@ export function lowerModuleEntries(
     debug: options?.debug,
     ...(numberToString === undefined ? {} : { numberToString }),
     ...(numberFromString === undefined ? {} : { numberFromString }),
+    ...(sharedBlock === undefined ? {} : { sharedBlock }),
   });
 }
 interface Initializer {
@@ -334,6 +341,7 @@ function lowerEntries(
     maxBytes: number;
     numberFromString?: number;
     numberToString?: number;
+    sharedBlock?: number;
     lists: readonly ListRuntimeBinding[] | undefined;
     sets: readonly SetRuntimeBinding[] | undefined;
     maps: readonly MapRuntimeBinding[] | undefined;
@@ -407,20 +415,22 @@ function lowerEntries(
     const cached = scalarEncodings[id];
     if (cached !== undefined) return cached;
     const bigint = bigIntType(checked, id);
-    let type: SourceScalarType | undefined =
-      checked.types[id]?.kind === "ArrayBuffer"
-        ? "reference"
-        : bigint !== undefined
-          ? bigint
-          : layout === undefined
-            ? entryType(
-                checked,
-                id,
-                listElements,
-                setElements,
-                recordTarget?.maps ?? [],
-              )
-            : scalarType(checked, id);
+    const buffer =
+      checked.types[id]?.kind === "ArrayBuffer" ||
+      checked.types[id]?.kind === "SharedArrayBuffer";
+    let type: SourceScalarType | undefined = buffer
+      ? "reference"
+      : bigint !== undefined
+        ? bigint
+        : layout === undefined
+          ? entryType(
+              checked,
+              id,
+              listElements,
+              setElements,
+              recordTarget?.maps ?? [],
+            )
+          : scalarType(checked, id);
     // A standalone null needs no allocated primitive wrapper. Preserve the
     // established primitive-runtime representation when that runtime is linked.
     if (
@@ -432,7 +442,7 @@ function lowerEntries(
       type === undefined ||
       (layout !== undefined &&
         type === "reference" &&
-        checked.types[id]?.kind !== "ArrayBuffer" &&
+        !buffer &&
         bigint === undefined)
     )
       fail(
@@ -1139,6 +1149,26 @@ function lowerEntries(
       )
         fail(
           "Number formatting requires an included (number) => string runtime helper",
+        );
+      return target;
+    }
+    function sharedBlockAllocator(): number {
+      const source = recordTarget?.sharedBlock;
+      const target = source === undefined ? undefined : targetIds[source];
+      const signature = target === undefined ? undefined : signatures[target];
+      const helper =
+        source === undefined ? undefined : checked.bindings.functions[source];
+      if (
+        target === undefined ||
+        signature?.returnType !== "number" ||
+        signature.parameters.length !== 1 ||
+        signature.parameters[0] !== "number" ||
+        helper === undefined ||
+        helper.parent !== undefined ||
+        helper.captures.length !== 0
+      )
+        fail(
+          "SharedArrayBuffer requires the shared buffer runtime (native-shared-buffer)",
         );
       return target;
     }
@@ -2793,6 +2823,12 @@ function lowerEntries(
                 break;
               }
               const construction = checked.intrinsics.get(node);
+              if (construction === "shared-array-buffer-new") {
+                builtin = construction;
+                callee = sharedBlockAllocator();
+                exprArguments(node.arguments);
+                break;
+              }
               if (
                 construction !== "array-new" &&
                 construction !== "array-view-new" &&

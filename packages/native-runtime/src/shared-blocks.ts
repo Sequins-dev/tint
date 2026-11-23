@@ -217,6 +217,9 @@ export interface NativeSharedBlockService extends SharedBlockService {
   readonly registry: NativeSharedBlockRegistry;
   readonly waitRegistry: NativeSharedBlockRegistry | undefined;
   readonly waitEvents: NativeWaitRegistry | undefined;
+  /** Trusted: the payload address of block `handle` (0 for an invalid
+   * handle), for a nonmoving byte view of it (shared-buffers.ts). */
+  address(handle: number): number;
 }
 function sharedFacade(
   host: NativeSharedMemoryHost,
@@ -839,6 +842,10 @@ function sharedFacade(
     create: (initial, maximum, growable): SharedResult<SharedBlockDescriptor> =>
       create(initial, maximum, growable),
     describe: (handle): SharedResult<SharedBlockDescriptor> => describe(handle),
+    address: (handle): number => {
+      const block = location(handle, new Uint32Array(2));
+      return block === undefined ? 0 : block.base;
+    },
     length: (handle, order): SharedResult<number> => length(handle, order),
     grow: (handle, target): SharedStatus => grow(handle, target),
     readUnsigned: (handle, offset, width, order): SharedResult<number> =>

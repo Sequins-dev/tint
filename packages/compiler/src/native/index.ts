@@ -1441,6 +1441,7 @@ const baseTypedGlobals: readonly string[] = [
   "Uint32Array",
   "Float64Array",
   "ArrayBuffer",
+  "SharedArrayBuffer",
   "DataView",
   "TextEncoder",
   "TextDecoder",

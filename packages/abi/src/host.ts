@@ -2,7 +2,9 @@ import type { CTarget } from "./c/types.ts";
 /** Hosted contexts reserve the last word for an opaque process-local domain.
  * The issuer retains a dedicated identity mapping permanently, even after heap
  * teardown, so virtual-address reuse cannot make stale code match a new heap.
- * Realms within one context share this token; it is not an agent identifier. */
+ * Realms within one context share this token; it is not an agent identifier.
+ * The mapping is a zeroed read-write page whose first two words record the
+ * isolate's shared block registry (native-runtime shared-buffers.ts). */
 export const nativeContextDomainOffset = 88;
 
 /** One atomic pipe write from a Tint isolate to the Node launch broker.

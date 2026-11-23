@@ -29,6 +29,7 @@ import {
   type NativeSharedBlockRegistry,
 } from "../shared-memory-host.ts";
 import type { NativeWaiterParkingHost } from "../shared-waiters.ts";
+import { installIsolateSharedBlocks } from "../shared-buffers.ts";
 import { nativePacketMemory } from "../packet-memory.ts";
 import {
   startNativeWorker,
@@ -109,6 +110,8 @@ export function startNodeWorkerHost(host: NodeWorkerHost): NodeWorkerSession {
     engine = descriptor;
     reactor.watchReadable(active.input, (): void => {}).unref();
   }
+  // Typed SharedArrayBuffers use the same blocks (shared-buffers.ts).
+  installIsolateSharedBlocks(service);
   const sequence: NativeSharedBlockRegistry = {
     base: engine.sequence,
     byteLength: page,

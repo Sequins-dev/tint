@@ -174,6 +174,7 @@ export type ClosureIntrinsic =
   | "array-new"
   | "array-view-new"
   | "array-buffer-new"
+  | "shared-array-buffer-new"
   | "array-buffer-byte-length"
   | "array-join"
   | "array-at"
@@ -447,6 +448,7 @@ function checkClosureModuleLayout(
     "Uint32Array",
     "Float64Array",
     "ArrayBuffer",
+    "SharedArrayBuffer",
     "TypeError",
     "RangeError",
     "Error",
@@ -2881,6 +2883,7 @@ function checkClosureModuleLayout(
       type?.kind === "map" ||
       type?.kind === "set" ||
       type?.kind === "ArrayBuffer" ||
+      type?.kind === "SharedArrayBuffer" ||
       type?.kind === "Uint8Array" ||
       type?.kind === "Uint16Array" ||
       type?.kind === "Uint32Array" ||
@@ -2976,6 +2979,7 @@ function checkClosureModuleLayout(
                 type?.kind === "set" ||
                 type?.kind === "map" ||
                 type?.kind === "ArrayBuffer" ||
+                type?.kind === "SharedArrayBuffer" ||
                 type?.kind === "Uint8Array" ||
                 type?.kind === "Uint16Array" ||
                 type?.kind === "Uint32Array" ||
@@ -5407,7 +5411,8 @@ function checkClosureModuleLayout(
             break;
           }
           if (
-            types[obj]?.kind === "ArrayBuffer" &&
+            (types[obj]?.kind === "ArrayBuffer" ||
+              types[obj]?.kind === "SharedArrayBuffer") &&
             node.property === "byteLength"
           ) {
             intrinsics.set(node, "array-buffer-byte-length");
@@ -5718,6 +5723,23 @@ function checkClosureModuleLayout(
             intrinsics.set(node, "array-buffer-new");
             break;
           }
+          if (
+            target.kind === "identifier" &&
+            !references.has(target) &&
+            target.name === "SharedArrayBuffer" &&
+            node.typeArguments.length === 0 &&
+            node.arguments.length <= 1
+          ) {
+            // A fixed-length block of the isolate's shared block service
+            // (a growable one, with a maxByteLength option, takes the realm
+            // constructor).
+            const size = node.arguments[0];
+            if (size !== undefined)
+              requireType(expression(size, owner), optionalNumber, size);
+            result = primitive("SharedArrayBuffer");
+            intrinsics.set(node, "shared-array-buffer-new");
+            break;
+          }
 
           if (
             target.kind !== "identifier" ||
@@ -5786,7 +5808,8 @@ function checkClosureModuleLayout(
           if (
             source !== undefined &&
             input !== undefined &&
-            types[input]?.kind === "ArrayBuffer"
+            (types[input]?.kind === "ArrayBuffer" ||
+              types[input]?.kind === "SharedArrayBuffer")
           ) {
             // A view of the buffer's bytes: (buffer, byteOffset?, length?).
             if (node.arguments.length > 3)

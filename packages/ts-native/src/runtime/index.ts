@@ -1052,6 +1052,13 @@ function prepareCollectionPass(
                 ),
               }
             : {}),
+          ...(helpers.has("native-shared-buffer:newSharedBlock")
+            ? {
+                sharedBlock: functionId(
+                  helper("native-shared-buffer", "newSharedBlock"),
+                ),
+              }
+            : {}),
           lists,
           sets,
           maps,

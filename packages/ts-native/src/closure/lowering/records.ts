@@ -217,7 +217,8 @@ function generalType(checked: CheckedClosures, id: number): boolean {
       current?.kind === "Uint16Array" ||
       current?.kind === "Uint32Array" ||
       current?.kind === "Float64Array" ||
-      current?.kind === "ArrayBuffer"
+      current?.kind === "ArrayBuffer" ||
+      current?.kind === "SharedArrayBuffer"
     )
       reference = true;
     else supported = false;
@@ -553,7 +554,11 @@ export function entryType(
   if (checked.types[id]?.kind === "Error") return "reference";
   if (checked.types[id]?.kind === "RangeError") return "reference";
   if (checked.types[id]?.kind === "TypeError") return "reference";
-  if (checked.types[id]?.kind === "ArrayBuffer") return "reference";
+  if (
+    checked.types[id]?.kind === "ArrayBuffer" ||
+    checked.types[id]?.kind === "SharedArrayBuffer"
+  )
+    return "reference";
   const bigint = bigIntType(checked, id);
   if (bigint !== undefined) return bigint;
   if (checked.types[id]?.kind === "null") return "primitive";

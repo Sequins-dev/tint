@@ -215,6 +215,7 @@ export function resolveInterfaceTypes(
     { kind: "RangeError" },
     { kind: "bigint" },
     { kind: "Error" },
+    { kind: "SharedArrayBuffer" },
   ];
   const literals = createKeyIndex<string | number | boolean, number>(
     (value) => {

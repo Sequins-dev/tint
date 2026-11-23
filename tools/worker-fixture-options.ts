@@ -8,6 +8,13 @@ const bindings: readonly NativeHostBinding[] = [
   { module: memory, name: "parkNativeWord", operation: "word-park" },
   { module: memory, name: "wakeNativeWord", operation: "word-wake" },
   { module: memory, name: "startNativeThread", operation: "thread-start" },
+  // The identity page recording the isolate's shared block registry
+  // (shared-buffers.ts).
+  {
+    module: memory,
+    name: "currentContextDomain",
+    operation: "context-domain",
+  },
   // Message packets (packet-memory.ts).
   {
     module: memory,
@@ -62,15 +69,40 @@ const bindings: readonly NativeHostBinding[] = [
   },
 ];
 
-export const workerFixtureRuntimes = [
+const sharedMemoryRuntime = {
+  module: shared,
+  namespace: "worker-threads-shared-memory",
+  retainedExports: bindings
+    .filter((binding) => binding.module === shared)
+    .map((binding) => binding.name),
+};
+// Typed `new SharedArrayBuffer` (the isolate's shared block service).
+const sharedBufferRuntime = {
+  module: "packages/native-runtime/src/shared-buffers.ts",
+  namespace: "native-shared-buffer",
+};
+export const workerFixtureRuntimes = [sharedMemoryRuntime, sharedBufferRuntime];
+
+/** A program without Workers whose typed code creates SharedArrayBuffers:
+ * the shared buffer runtime and the memory and atomic leaves its isolate's
+ * shared block service binds. */
+export const sharedBufferFixtureRuntimes = [
+  sharedMemoryRuntime,
+  sharedBufferRuntime,
   {
-    module: shared,
-    namespace: "worker-threads-shared-memory",
-    retainedExports: bindings
-      .filter((binding) => binding.module === shared)
-      .map((binding) => binding.name),
+    module: memory,
+    namespace: "native-shared-buffer-memory",
+    retainedExports: ["mapMemory", "unmapMemory", "currentContextDomain"],
   },
 ];
+export const sharedBufferHostBindings: readonly NativeHostBinding[] =
+  bindings.filter(
+    (binding) =>
+      binding.module === shared ||
+      binding.operation === "memory-map" ||
+      binding.operation === "memory-unmap" ||
+      binding.operation === "context-domain",
+  );
 
 export function workerFixtureOptions(
   workerModules: readonly string[],

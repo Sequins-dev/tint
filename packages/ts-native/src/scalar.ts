@@ -3352,6 +3352,71 @@ export function lowerFunction(
     });
     return save(buffer, "reference", node);
   }
+  /** `new SharedArrayBuffer(length)` (a fixed-length buffer): a new block
+   * of the isolate's shared block service (the checker's callee), whose
+   * payload a borrowed byte array views without ever moving, typed as the
+   * buffer it roots. */
+  function sharedArrayBufferNew(
+    node: Expression & { readonly kind: "new" },
+  ): number {
+    const size = node.arguments[0];
+    const length = argumentIndex(
+      size === undefined ? undefined : value(size),
+      () => numberSlot(0, node),
+      node,
+    );
+    const allocator = info(node).callee;
+    if (allocator === undefined) throw "shared block allocator invariant";
+    const address = nextValue++;
+    emit({
+      kind: "call",
+      id: address,
+      target: allocator,
+      arguments: [load(length, node)],
+      start: node.start,
+      end: node.end,
+    });
+    const payload = save(address, "number", node),
+      empty = nextValue++;
+    emit({
+      kind: "array-new",
+      id: empty,
+      type: "Uint8Array",
+      length: load(numberSlot(0, node), node),
+      start: node.start,
+      end: node.end,
+    });
+    const owned = save(empty, "Uint8Array", node),
+      adopted = nextValue++;
+    const operands: number[] = [
+      load(owned, node),
+      load(payload, node),
+      load(length, node),
+    ];
+    emit({
+      kind: "c-memory",
+      access: {
+        operation: "adopt",
+        type: { kind: "void" },
+        offset: 0,
+        minimum: 0,
+      },
+      id: adopted,
+      arguments: operands,
+      start: node.start,
+      end: node.end,
+    });
+    const borrowed = save(adopted, "Uint8Array", node),
+      buffer = nextValue++;
+    emit({
+      kind: "array-buffer",
+      id: buffer,
+      array: load(borrowed, node),
+      start: node.start,
+      end: node.end,
+    });
+    return save(buffer, "reference", node);
+  }
   /** `new T(buffer, byteOffset?, length?)` (InitializeTypedArrayFromArrayBuffer
    * for a fixed-length buffer): the offset must be a multiple of the element
    * width; without a length the view runs to the buffer's end, which must
@@ -5865,6 +5930,8 @@ export function lowerFunction(
         }
         if (info(node).builtin === "array-buffer-new")
           return arrayBufferNew(node);
+        if (info(node).builtin === "shared-array-buffer-new")
+          return sharedArrayBufferNew(node);
         if (info(node).builtin === "array-view-new") return arrayViewNew(node);
         const type = scalarType(node);
         if (

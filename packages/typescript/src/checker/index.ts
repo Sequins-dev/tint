@@ -203,6 +203,7 @@ export interface ExpressionInfo {
     | "array-new"
     | "array-view-new"
     | "array-buffer-new"
+    | "shared-array-buffer-new"
     | "array-buffer-byte-length"
     | "array-join"
     | "array-at"

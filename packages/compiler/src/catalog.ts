@@ -2887,6 +2887,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/shared-buffers.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/shared-memory-host.ts",
       packageId: "native-runtime",
     },
