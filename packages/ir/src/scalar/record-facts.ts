@@ -513,6 +513,7 @@ export function dataflowRecordGuards(
   const pool: number[] = [];
   // Set for the final pass, which collects record-has proofs.
   let recordPresence = false;
+  const presence: Set<Instruction> = provenPresence ?? new Set<Instruction>();
   let generation = 0,
     outgoingGeneration = 0,
     activeCount = 0,
@@ -674,12 +675,10 @@ export function dataflowRecordGuards(
         }
       } else if (op.kind === "record-new") define(op.id, op.record + 1, 0, 0);
       else if (op.kind === "record-has") {
-        if (
-          recordPresence &&
-          provenPresence !== undefined &&
-          layoutOf(op.object) === op.record + 1
-        )
-          provenPresence.add(op);
+        if (recordPresence && layoutOf(op.object) === op.record + 1) {
+          const proven: Instruction = op;
+          presence.add(proven);
+        }
         define(op.id, 0, 0, 0);
       } else if (
         op.kind === "reference-value" ||
@@ -765,7 +764,10 @@ export function dataflowRecordGuards(
     const checked = term.kind === "record" || term.kind === "record-cell";
     if (!checked && !recordPresence) continue;
     simulate(block);
-    if (checked && layoutOf(term.object) === term.record + 1)
+    if (
+      (term.kind === "record" || term.kind === "record-cell") &&
+      layoutOf(term.object) === term.record + 1
+    )
       proven[block.id] = 1;
   }
   return work > maxWork ? undefined : proven;
