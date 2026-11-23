@@ -367,6 +367,26 @@ test("unsigned typed-array constructors lower normalized numeric lengths to owne
     ["Uint8Array", "Uint16Array", "Uint32Array"],
   );
 });
+test("signed, clamped and Float32 constructors lower to their own array kinds", () => {
+  const r = lower(
+    "function a(n:number):Int8Array{return new Int8Array(n);} function b(x:Int8Array):Uint8ClampedArray{return new Uint8ClampedArray(x);} function c():Int16Array{return new Int16Array(2);} function d(n:number):Int32Array{return new Int32Array(n);} function e(x:Int32Array):Float32Array{return new Float32Array(x);} interface H {readonly f:Float32Array} function g(h:H):number{h.f[0]=0.1;return h.f[0]??0;}",
+  );
+  assert.ok(r.ok, JSON.stringify(r));
+  assert.ok(verify(r.value.module).ok);
+  assert.deepEqual(
+    r.value.module.functions
+      .flatMap((f) => f.blocks.flatMap((b) => b.instructions))
+      .filter((i) => i.kind === "array-new")
+      .map((i) => i.type),
+    [
+      "Int8Array",
+      "Uint8ClampedArray",
+      "Int16Array",
+      "Int32Array",
+      "Float32Array",
+    ],
+  );
+});
 test("owned typed arrays can flow through traced record fields", () => {
   const r = lower(
     "interface Output {readonly bytes:Uint8Array;wide:Uint32Array} function make(n:number):Output{return {bytes:new Uint8Array(n),wide:new Uint32Array(n)};} function read(x:Output):number{x.bytes[0]=7;return x.bytes[0]??0;}",

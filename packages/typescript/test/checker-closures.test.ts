@@ -662,6 +662,41 @@ test("typed-array copy constructors accept unsigned sources of every width", () 
       );
 });
 
+test("every native typed-array kind is a typed instance with number elements", () => {
+  const kinds = [
+    "Int8Array",
+    "Uint8ClampedArray",
+    "Int16Array",
+    "Int32Array",
+    "Float32Array",
+  ];
+  for (const kind of kinds) {
+    assert.ok(
+      check(
+        `function f(n:number):${kind}{const a=new ${kind}(n);a[0]=1.5;a.fill(-1,1);return a;} function g(a:${kind}):number{let n=0;for(const v of a){n+=v;}return n+(a[0]??0)+a.length;}`,
+      ).ok,
+      kind,
+    );
+    for (const source of kinds)
+      assert.ok(
+        check(
+          `function copy(a:${source}):${kind}{const b=new ${kind}(a);b.set(a);return b.subarray(1);}`,
+        ).ok,
+        source + " to " + kind,
+      );
+    assert.equal(
+      check(`function f(a:${kind}):string{return a[0];}`).ok,
+      false,
+      kind,
+    );
+  }
+  // The BigInt kinds remain realm objects with bigint elements.
+  assert.equal(
+    check("function f(a:BigInt64Array):number{return a[0]??0;}").ok,
+    false,
+  );
+});
+
 test("boolean defaults accept omission and reject nonboolean values", () => {
   assert.ok(
     check(
