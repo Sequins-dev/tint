@@ -398,8 +398,8 @@ test("a site caches stores to writable properties and the transitions that add t
   assert.equal(first.internalValue0, 2);
   assert.equal(again.storeShape, first.internalShape);
   assert.equal(again.storeTransition, undefined);
-  // Read-only properties, inherited keys and non-extensible objects take
-  // the ordinary path.
+  // Read-only properties, inherited read-only keys and non-extensible
+  // objects take the ordinary path.
   redefine(first, "x", writableField, false);
   assert.equal(
     storeCachedScriptProperty(
@@ -411,18 +411,39 @@ test("a site caches stores to writable properties and the transitions that add t
     ),
     false,
   );
+  // An inherited writable data property still makes [[Set]] add an own
+  // one; an inherited read-only property or accessor does not.
   createDataProperty<ScriptPropertyKey, unknown>(
     prototype,
     "shadowed",
     0,
     hooks,
   );
+  const shadowing = object(prototype);
+  const shadowSite = createScriptPropertyCache("shadowed");
+  assert.ok(
+    storeCachedScriptProperty(shadowing, "shadowed", 1, shadowSite, 10),
+  );
+  assert.equal(shadowing.internalValue0, 1);
+  assert.equal(shadowSite.storeShape, prototype.internalChildShape);
+  assert.notEqual(shadowSite.storeTransition, undefined);
+  defineOwnProperty<ScriptPropertyKey, unknown>(
+    prototype,
+    "readOnly",
+    {
+      ...emptyUpdate<unknown>(undefined),
+      fields: valueField | writableField,
+      value: 0,
+      writable: false,
+    },
+    hooks,
+  );
   assert.equal(
     storeCachedScriptProperty(
       object(prototype),
-      "shadowed",
+      "readOnly",
       1,
-      createScriptPropertyCache("shadowed"),
+      createScriptPropertyCache("readOnly"),
       10,
     ),
     false,

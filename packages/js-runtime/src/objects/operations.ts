@@ -1782,23 +1782,37 @@ export function cachedScriptPropertyValue(
 ): unknown {
   return storedValue<ScriptPropertyKey, unknown>(holder, cache.foundIndex);
 }
-/** Whether every object on the prototype chain is ordinary and lacks
- * `key`, so storing it adds a writable data property to the receiver. */
-function chainLacksProperty(object: ScriptObject, key: string): boolean {
+/** Whether [[Set]] of `key` on the object, which lacks it, adds a writable
+ * data property to the object itself: every object on the prototype chain
+ * is ordinary, and the first one holding `key`, if any, holds it as a
+ * writable data property (OrdinarySet then defines the receiver's own). */
+function chainAddsOwnProperty(object: ScriptObject, key: string): boolean {
   let cursor = object.prototype;
   while (cursor !== undefined) {
-    if (
-      cursor.internalMethods !== undefined ||
-      ordinaryHasOwnProperty<ScriptPropertyKey, unknown>(cursor, key)
-    )
-      return false;
+    if (cursor.internalMethods !== undefined) return false;
+    if (!cursor.internalDictionary) {
+      const shape = cursor.internalShape;
+      const index =
+        shape === undefined
+          ? -1
+          : shapeKeyIndex<ScriptPropertyKey, unknown>(shape, key);
+      if (shape !== undefined && index >= 0)
+        return ((shape.kinds[index] ?? 0) & propertyWritable) !== 0;
+    } else {
+      const descriptor = ordinaryGetOwnProperty<ScriptPropertyKey, unknown>(
+        cursor,
+        key,
+      );
+      if (descriptor !== undefined)
+        return !descriptor.accessor && descriptor.writable;
+    }
     cursor = cursor.prototype;
   }
   return true;
 }
 /** Store a property of a fast-mode object the way generated code repeats
  * it: to an existing writable own data property, or by adding a writable
- * data property when no prototype has `key`. Caches the store at the site
+ * data property when the prototype chain lets [[Set]] add one. Caches the store at the site
  * and returns true; false leaves the store to the ordinary path. */
 export function storeCachedScriptProperty(
   object: ScriptObject,
@@ -1825,7 +1839,7 @@ export function storeCachedScriptProperty(
   }
   if (!object.extensible || !fastKey<string>(key)) return false;
   const epoch = propertyEpoch.value;
-  if (!chainLacksProperty(object, key)) return false;
+  if (!chainAddsOwnProperty(object, key)) return false;
   const base =
     shape === undefined
       ? rootPropertyShape<ScriptPropertyKey, unknown>(object, undefined)

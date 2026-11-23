@@ -1285,6 +1285,26 @@ test("cached stores add properties through transitions and respect prototype cha
   ]);
 });
 
+test("cached transitions add own properties over inherited writable data", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(`
+    function Color(r) { this.red = r; }
+    Color.prototype = { red: 0, mix() { return this.red; } };
+    const a = new Color(1), b = new Color(2);
+    print(String(a.red + b.red) + " " + Object.keys(b).join());
+    Object.defineProperty(Color.prototype, "red", { value: 9, writable: false, configurable: true });
+    const c = new Color(3);
+    print(String(c.red) + " " + Object.keys(c).join());
+    Object.defineProperty(Color.prototype, "red", { get() { return "g"; }, set(v) { this.seen = v; }, configurable: true });
+    const d = new Color(4);
+    print(String(d.red) + " " + String(d.seen) + " " + Object.keys(d).join());
+  `),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["3 red", "9 ", "g 4 seen"]);
+});
+
 test("cached reads of primitive receivers follow their prototypes", () => {
   const realm = createLoweredRealm();
   assert.equal(
