@@ -384,7 +384,8 @@ export interface ClosureFallback {
     | "union-field-write"
     | "realm-aggregate-update"
     | "general-result-projection"
-    | "operator-layout";
+    | "operator-layout"
+    | "class-erasure";
   readonly ownerKind: "function" | "class" | "module";
   readonly owner: Span;
 }
@@ -1378,6 +1379,117 @@ function checkClosureModuleLayout(
     readonly update: boolean;
     readonly numeric: boolean;
   }[] = [];
+  /** Whether values of a type may be (or contain) typed class instances,
+   * prototypes or constructors: every type some class contract is
+   * assignable to, and unions, arrays and records over them. */
+  const classValueTypes: (boolean | undefined)[] = [];
+  function holdsClassValues(id: number): boolean {
+    if (contracts.classes.length === 0) return false;
+    const known = classValueTypes[id];
+    if (known !== undefined) return known;
+    classValueTypes[id] = false;
+    const type = types[id];
+    let result = false;
+    if (type?.kind === "union")
+      for (const member of type.members) {
+        if (member === undefined) throw "class value member invariant";
+        if (holdsClassValues(member)) result = true;
+      }
+    else if (type?.kind === "array") result = holdsClassValues(type.element);
+    else if (type?.kind === "object") {
+      for (const contract of contracts.classes) {
+        if (contract === undefined) throw "class contract invariant";
+        if (
+          system.assignable(contract.instance, id) ||
+          system.assignable(contract.prototype, id) ||
+          system.assignable(contract.constructor, id)
+        )
+          result = true;
+      }
+      for (const property of type.properties) {
+        if (property === undefined) throw "class value property invariant";
+        if (!result && holdsClassValues(property.type)) result = true;
+      }
+    }
+    classValueTypes[id] = result;
+    return result;
+  }
+  /** A typed class value reaching general code needs the record views of
+   * step 4 (docs/design-typed-classes.md). Until they exist the module takes
+   * the general path, which runs it with JavaScript semantics: at once for a
+   * thrown value or a dynamic payload, and for a value erased to `unknown`
+   * when the program hands general values to general code (see
+   * closeClassErasures). */
+  const classErasures: Span[] = [];
+  let throwsGeneral = false;
+  function closeClassErasures(): void {
+    const site = classErasures[0];
+    if (site === undefined) return;
+    let sink = throwsGeneral;
+    // `x instanceof C` for a typed class C is the native class test.
+    function classTest(node: Expression): boolean {
+      if (node.kind !== "binary") return false;
+      const constructor = expressions.get(node.right);
+      if (constructor === undefined) return false;
+      for (const contract of contracts.classes) {
+        if (contract === undefined) throw "class contract invariant";
+        if (
+          contract.constructor === constructor ||
+          (system.assignable(constructor, contract.constructor) &&
+            system.assignable(contract.constructor, constructor))
+        )
+          return true;
+      }
+      return false;
+    }
+    intrinsics.forEach((intrinsic, node) => {
+      if (intrinsic === "realm-instanceof" && !classTest(node)) sink = true;
+      if (
+        intrinsic === "general-call" ||
+        intrinsic === "realm-library-call" ||
+        intrinsic === "literal-property-has" ||
+        intrinsic === "error-is" ||
+        intrinsic === "type-error-is" ||
+        intrinsic === "range-error-is" ||
+        intrinsic.startsWith("dynamic-object-")
+      )
+        sink = true;
+    });
+    // `unknown` results of exported functions and exported `unknown`
+    // constants cross into general modules with their identity.
+    function general(id: number | undefined): boolean {
+      const type = id === undefined ? undefined : types[id];
+      if (type?.kind === "unknown") return true;
+      if (type?.kind !== "union") return false;
+      for (const member of type.members) if (general(member)) return true;
+      return false;
+    }
+    for (const statement of module.statements) {
+      if (statement === undefined) throw "class erasure statement invariant";
+      if (statement.kind === "function" && statement.exported) {
+        const signature = types[bindingTypes[binding(statement).id] ?? -1];
+        if (signature?.kind === "function" && general(signature.result))
+          sink = true;
+      }
+      if (statement.kind === "variable" && statement.exported)
+        for (const declaration of statement.declarations) {
+          if (declaration === undefined)
+            throw "class erasure binding invariant";
+          for (const identifier of bindingIdentifiers(declaration)) {
+            if (identifier === undefined) throw "class erasure name invariant";
+            if (general(bindingTypes[binding(identifier).id])) sink = true;
+          }
+        }
+    }
+    if (sink) rejectClassErasure(site);
+  }
+  function rejectClassErasure(node: Span): never {
+    return unsupported(
+      node,
+      "class-erasure",
+      "typed class values reaching general code require class record views",
+    );
+  }
   // Validation witnesses for fresh contextual literals are separate from their
   // retained inferred types. They never authorize a runtime reference conversion.
   const contextualProofs = createKeyIndex<Expression, number>(syntaxHash);
@@ -4660,6 +4772,7 @@ function checkClosureModuleLayout(
     node: Expression,
     erased?: number,
   ): void {
+    if (holdsClassValues(value)) rejectClassErasure(node);
     const unsupported = unsupportedDynamicPayload(types, value);
     if (unsupported === undefined) return;
     const erasing = types[erased ?? -1]?.kind === "unknown";
@@ -8651,6 +8764,13 @@ function checkClosureModuleLayout(
         if (result !== voidType && !system.assignable(undefinedType, result))
           result = unionSubset([result, undefinedType], node);
       } else chainValues.delete(node);
+      // A class value erased to `unknown` (where `expected` is cleared).
+      if (
+        inputExpected !== undefined &&
+        types[inputExpected]?.kind === "unknown" &&
+        holdsClassValues(result)
+      )
+        classErasures.push(node);
       if (
         expected !== undefined &&
         types[result]?.kind === "dynamic-result" &&
@@ -9465,6 +9585,8 @@ function checkClosureModuleLayout(
         case "throw": {
           const value = node.expression;
           const type = expression(value, owner);
+          if (holdsClassValues(type)) rejectClassErasure(value);
+          if (types[type]?.kind === "unknown") throwsGeneral = true;
           if (patternedThrow && patternedThrowOwner === owner)
             checkDynamicPayload(type, value);
           return throwCompletion;
@@ -9932,6 +10054,7 @@ function checkClosureModuleLayout(
       statement(node, undefined, undefinedType);
     }
     markUninitializedReads();
+    closeClassErasures();
   } catch (e) {
     if (e !== abort) throw e;
   }

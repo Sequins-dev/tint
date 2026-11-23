@@ -544,6 +544,44 @@ export function trace(): string {
 }
 `;
 
+// Class values reaching general code (a dynamic object, a thrown value, an
+// exported `unknown` result) need record views (step 4); until then the
+// module takes the general path and runs with JavaScript semantics, never
+// as a raw record and never as a build error.
+const classEscape = `class Point {
+  x: number;
+  y: number;
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+  sum(): number {
+    return this.x + this.y;
+  }
+}
+export function exposed(): unknown {
+  return new Point(1, 2);
+}
+function roundTrip(value: unknown): number {
+  return value instanceof Point ? value.sum() : -1;
+}
+export function trace(): string {
+  const point = new Point(3, 4);
+  const bag: Record<string, unknown> = {};
+  bag.point = point;
+  const stored = bag.point;
+  let keys = "none";
+  if (typeof stored === "object" && stored !== null) keys = Object.keys(stored).join(",");
+  let thrown = "none";
+  try {
+    throw point;
+  } catch (error) {
+    thrown = String(roundTrip(error));
+  }
+  return [keys, String(roundTrip(stored)), String(roundTrip(exposed())), thrown, JSON.stringify(point)].join("|");
+}
+`;
+
 async function expectedTrace(text: string): Promise<string> {
   const directory = mkdtempSync(join(tmpdir(), "tint-typed-classes-"));
   try {
@@ -747,4 +785,31 @@ test("class accessors call their getters and setters on the typed path", async (
     [],
     { requireTyped: true, managedBytes: 67108864, allocationCapacity: 1048576 },
   );
+});
+
+test("class values escaping to general code build and run on the general path", async () => {
+  const expected = await expectedTrace(classEscape);
+  assert.equal(expected, 'x,y|7|3|7|{"x":3,"y":4}');
+  let partition: readonly string[] | undefined;
+  delete process.env.TINT_GENERAL_FALLBACK;
+  try {
+    verifyHostedFixture(
+      withComparison(classEscape, expected),
+      "typed-classes-escape",
+      [],
+      [],
+      [],
+      [],
+      {
+        managedBytes: 67108864,
+        allocationCapacity: 1048576,
+        onGeneralFallback(modules) {
+          partition = modules;
+        },
+      },
+    );
+  } finally {
+    process.env.TINT_GENERAL_FALLBACK = "0";
+  }
+  assert.deepEqual(partition, ["fixture"]);
 });

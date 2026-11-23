@@ -477,8 +477,16 @@ their views are **record-backed fast objects**:
     representation.
   - Each prototype record gets the validity word, and method calls get the
     guard described in "JavaScript object semantics".
-  - Until the runtime part exists, erasure of class values fails explicitly
-    at compile time instead of passing a raw pointer.
+  - Until the runtime part exists, a class value never reaches general code
+    as a raw record. The checker sends the module to the general path
+    instead (capability `class-erasure`; never a build error) when a class
+    value (or a structural type a class instance may hold) is thrown or
+    stored in a dynamic object, or is erased to `unknown` while the program
+    hands general values to general code: general and realm library calls,
+    realm `instanceof` and error tests, dynamic objects, `in` on general
+    values, thrown `unknown` values, and exported `unknown` results or
+    constants. Erasure into typed `unknown` slots that only typed code
+    reads (for example `instanceof C` of a typed class) stays typed.
 - **Runtime interface needed from #12** (to be built in #12 or on top of it
   after it merges):
   1. `createRecordShape(prototypeView, keys, kinds, fieldWords,

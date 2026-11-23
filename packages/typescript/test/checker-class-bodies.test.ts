@@ -324,3 +324,30 @@ test("class accessors are one property backed by prototype closures", () => {
     ["x", "s"],
   );
 });
+test("class values reaching general code take the general path", () => {
+  // Erased to `unknown` and only tested natively: stays typed.
+  for (const source of [
+    "class P{x:number=1;}function f(u:unknown):boolean{return u instanceof P;}export function run():boolean{return f(new P());}",
+  ]) {
+    const result = check(source);
+    assert.ok(result.ok, JSON.stringify({ source, result }));
+  }
+  // Thrown, stored in a dynamic object, or erased while the program hands
+  // general values to general code (an exported `unknown` result, a dynamic
+  // object, a realm error test): an explicit fallback, never a build error.
+  for (const source of [
+    "class P{x:number=1;}export function run():void{throw new P();}",
+    "class P{x:number=1;}export function run():void{const bag:Record<string,unknown>={};bag.p=new P();}",
+    "class P{x:number=1;}export function run():unknown{const u:unknown=new P();return u;}",
+    "class P{x:number=1;}function f(u:unknown):boolean{return u instanceof P;}export function run():number{const u:unknown=new P();f(u);const bag:Record<string,unknown>={};bag.k=1;return 1;}",
+    "class P{x:number=1;}function f(u:unknown):boolean{return u instanceof RangeError;}export function run():boolean{return f(new P());}",
+    // A structural type a class instance may hold is a class value too.
+    "interface R{x:number}class P{x:number=1;}export function run():unknown{const r:R={x:1};return r;}",
+  ]) {
+    const result = check(source);
+    assert.ok(!result.ok, source);
+    assert.equal(result.error.code, "UNSUPPORTED", source);
+    assert.equal(result.error.fallback?.capability, "class-erasure", source);
+    assert.notEqual(result.error.preventsFallback, true, source);
+  }
+});
