@@ -10729,6 +10729,21 @@ function emitModuleForms(
               case "record-has": {
                 const field = module.records?.[op.record]?.fields[op.field];
                 if (field === undefined) throw "record presence invariant";
+                // Record flow may prove the object is always this layout
+                // and never null: then only the presence byte remains.
+                const presence = field.presenceOffset;
+                if (
+                  provenListHeader(op.object, op.record) === 2 &&
+                  (presence === undefined || presence < 4096)
+                ) {
+                  if (presence === undefined) imm(12, 1);
+                  else {
+                    rawValue(9, op.object);
+                    emit({ op: "ldrb", rt: 12, rn: 9, offset: presence });
+                  }
+                  saveRaw(12, op.id);
+                  break;
+                }
                 rawValue(9, op.object);
                 imm(12, 0);
                 const absent = instructions.length;
