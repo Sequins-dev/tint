@@ -102,6 +102,18 @@ widened Float32 NaN is always quiet, so it is never optional-number
 absence. Typed `instanceof` compares header markers, and realm-capable code
 passes the kind name to the realm, which selects that kind's prototype.
 
+The general path's per-kind Test262 selections pass after the marker change
+(TZ=UTC): `built-ins/TypedArrayConstructors/`
+[Int8Array](results/test262-typedarrayconstructors-int8array-native-v1.json),
+[Uint8ClampedArray](results/test262-typedarrayconstructors-uint8clampedarray-native-v1.json),
+[Int16Array](results/test262-typedarrayconstructors-int16array-native-v1.json),
+[Int32Array](results/test262-typedarrayconstructors-int32array-native-v1.json) and
+[Float32Array](results/test262-typedarrayconstructors-float32array-native-v1.json)
+22/22 each, [BigInt64Array](results/test262-typedarrayconstructors-bigint64array-native-v1.json)
+and [BigUint64Array](results/test262-typedarrayconstructors-biguint64array-native-v1.json)
+24/24 each. These are focused selections that overlap the complete
+TypedArrayConstructors report; they do not add to its denominator.
+
 `BigInt64Array`, `BigUint64Array` and `Float16Array` stay realm objects on
 the typed path until BigInt (and binary16) elements have a typed
 representation; their kind-table entries already reserve markers.

@@ -1,0 +1,850 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "startedAt": "2026-11-23T14:53:09.214Z",
+  "generatedAt": "2026-11-23T14:57:27.599Z",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v26-stack-guard",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "process",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 60000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. ShadowRealm hosts create isolated globals and module records, wrap callable values freshly in both directions, copy execution errors and preserve syntax-error phases.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "e2b04eb296ee5da5572924bb2f4777596b3c2ddb8b6880c04e5b89c77bb3ba44",
+    "files": 825
+  },
+  "nativeLinkingMode": "monolithic",
+  "nativeServiceUnitIndexSha256": null,
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 67108864,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "maxSharedScriptEntries": 256,
+    "managedBytes": 536870912,
+    "arrayBufferBytes": 33554432,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 60000,
+    "admissionTimeoutMs": 1800000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": "UTC",
+      "path": "/usr/share/zoneinfo/UTC"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 24,
+        "kind": "execution",
+        "compileMs": 257346.81570799998,
+        "outcome": "compiled",
+        "admissionMs": 7.329541999992216
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is bisected until each failure is attributed to a single-variant build."
+  },
+  "dirty": false,
+  "selection": "built-ins/TypedArrayConstructors/BigUint64Array",
+  "totals": {
+    "total": 24,
+    "passed": 24,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/BYTES_PER_ELEMENT.js",
+      "sha256": "2b6d0b4ec43cf862efd6780464c717cb49758ed423baaa36b6902a57c85e609a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257798.962584,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.467Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/BYTES_PER_ELEMENT.js",
+      "sha256": "2b6d0b4ec43cf862efd6780464c717cb49758ed423baaa36b6902a57c85e609a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257776.306125,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.474Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/constructor.js",
+      "sha256": "17b67e79e34972d81d9fcacbfb18bd43ed6722c46e16b01ba4d9d6bacb023035",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257760.638291,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.481Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/constructor.js",
+      "sha256": "17b67e79e34972d81d9fcacbfb18bd43ed6722c46e16b01ba4d9d6bacb023035",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257759.65016699999,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.486Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/is-a-constructor.js",
+      "sha256": "3802548c7ded45247d6a3d5fb7dcfd2a5eb41f0561d62357299f350d055396bc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": ["Reflect.construct", "TypedArray"],
+        "includes": ["isConstructor.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257755.869666,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.492Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/is-a-constructor.js",
+      "sha256": "3802548c7ded45247d6a3d5fb7dcfd2a5eb41f0561d62357299f350d055396bc",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": ["Reflect.construct", "TypedArray"],
+        "includes": ["isConstructor.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257751.884,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.497Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/length.js",
+      "sha256": "9b63b77abd0b0ac88d9a4e8c5f495da0c174a551d59e1d7bd3e5a73b0f16a9d2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt", "TypedArray"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257751.467666,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.503Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/length.js",
+      "sha256": "9b63b77abd0b0ac88d9a4e8c5f495da0c174a551d59e1d7bd3e5a73b0f16a9d2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt", "TypedArray"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257735.391209,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.510Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/name.js",
+      "sha256": "ebeb0c09fc468b6178931461fc8c564db0f6c71cb1a13743e8837cf83a7044cb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257719.15729200002,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.516Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/name.js",
+      "sha256": "ebeb0c09fc468b6178931461fc8c564db0f6c71cb1a13743e8837cf83a7044cb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257705.69362499999,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.522Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/prop-desc.js",
+      "sha256": "02e252742e501747e700b7f672489d330cd26c4a8277b34727c9da85137b9008",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257691.86033300002,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.527Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/prop-desc.js",
+      "sha256": "02e252742e501747e700b7f672489d330cd26c4a8277b34727c9da85137b9008",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257675.674042,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.533Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/proto.js",
+      "sha256": "bb449b9844533dea76dbad8c8c4447c047f4981b89811b284eeb2ff287f341c2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt", "TypedArray"],
+        "includes": ["testTypedArray.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257661.072916,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.538Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/proto.js",
+      "sha256": "bb449b9844533dea76dbad8c8c4447c047f4981b89811b284eeb2ff287f341c2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt", "TypedArray"],
+        "includes": ["testTypedArray.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257650.38700000002,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.544Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/prototype/BYTES_PER_ELEMENT.js",
+      "sha256": "a0106df554239d5d01e313f7a61c749e5cd35b29ae51af0c97f370c13bd4c5d7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257637.40808300002,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.549Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/prototype/BYTES_PER_ELEMENT.js",
+      "sha256": "a0106df554239d5d01e313f7a61c749e5cd35b29ae51af0c97f370c13bd4c5d7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257622.788917,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.555Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/prototype/constructor.js",
+      "sha256": "4bc7e7d31c0c702e71a7fc5e90763c3cc14b1a64acd01e2684fe09c8dab98ded",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257606.506416,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.560Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/prototype/constructor.js",
+      "sha256": "4bc7e7d31c0c702e71a7fc5e90763c3cc14b1a64acd01e2684fe09c8dab98ded",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257593.17475,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.565Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/prototype/not-typedarray-object.js",
+      "sha256": "497fb4fa6f51dadcf6eea9fa369e041c9a950b3a102c3f3774960ea18f990ef8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257578.434542,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.571Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/prototype/not-typedarray-object.js",
+      "sha256": "497fb4fa6f51dadcf6eea9fa369e041c9a950b3a102c3f3774960ea18f990ef8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257574.956375,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.576Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/prototype/proto.js",
+      "sha256": "d9e1df7aa09353bf0a9fb85650f6255909cdd63b169d7135dd15dd45853bcbcc",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt", "TypedArray"],
+        "includes": ["testTypedArray.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257573.428834,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.581Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/prototype/proto.js",
+      "sha256": "d9e1df7aa09353bf0a9fb85650f6255909cdd63b169d7135dd15dd45853bcbcc",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt", "TypedArray"],
+        "includes": ["testTypedArray.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "testTypedArray.js",
+          "sha256": "51eb50e53e6215f31f14d64d249bea2d08ad943c77835f63ba52ec694de2189a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257563.765166,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.587Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/prototype.js",
+      "sha256": "9a442b574debd743b1480f34b67fea60799688211d016b49ad1c006e7c0b8a7d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257553.994958,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.592Z"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/BigUint64Array/prototype.js",
+      "sha256": "9a442b574debd743b1480f34b67fea60799688211d016b49ad1c006e7c0b8a7d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": ["BigInt"],
+        "includes": ["propertyHelper.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 257537.955041,
+      "batch": 0,
+      "completedAt": "2026-11-23T14:57:27.598Z"
+    }
+  ]
+}
