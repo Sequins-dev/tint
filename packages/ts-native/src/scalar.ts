@@ -410,9 +410,6 @@ export interface OwnedEnvironmentPlan {
   readonly cells: readonly OwnedCell[];
   readonly constructors: ReadonlyMap<number, OwnedConstructor>;
   readonly classes?: readonly OwnedClassDefinition[];
-  /** Function throwing the ReferenceError of a temporal-dead-zone access,
-   * given its message. */
-  readonly temporalDeadZone?: number | undefined;
 }
 /** Emit one function against explicit call signatures. Verify the composed module before use. */
 export interface RealmErrorRuntime {
@@ -1357,9 +1354,8 @@ export function lowerFunction(
     readonly block: Builder;
   }[] = [];
   /** The block throwing the ReferenceError of a read or write of `local`
-   * before its initialization (its temporal dead zone), with V8's message,
-   * through the program's out-of-line throw. Accesses in one handler and
-   * cleanup context share it. */
+   * before its initialization (its temporal dead zone), with V8's message.
+   * Accesses in one handler and cleanup context share it. */
   function temporalDeadZone(local: number, node: Span): Builder {
     const handler = exception,
       cleanup = finalizer;
@@ -1391,19 +1387,18 @@ export function lowerFunction(
       start: node.start,
       end: node.end,
     });
-    const helper = owned?.temporalDeadZone;
-    if (helper === undefined) throw "temporal dead zone helper invariant";
-    const args: number[] = [message];
+    // Inline allocation and a throw keep a function eligible for leaf
+    // registers, which a call would not.
+    const error = newNativeError("ReferenceError", message, undefined, node);
+    const thrown = nextValue++;
     emit({
-      kind: "call",
-      id: undefined,
-      target: helper,
-      arguments: args,
+      kind: "general-wrap",
+      id: thrown,
+      value: error,
       start: node.start,
       end: node.end,
     });
-    // The helper always throws.
-    finish({ kind: "trap", start: node.start, end: node.end });
+    finish({ kind: "throw", value: thrown, start: node.start, end: node.end });
     current = resume;
     return failure;
   }
@@ -2833,7 +2828,7 @@ export function lowerFunction(
     return id;
   }
   function newNativeError(
-    error: "Error" | "RangeError" | "TypeError",
+    error: "Error" | "RangeError" | "TypeError" | "ReferenceError",
     message: number,
     present: number | undefined,
     node: IRSpan,
@@ -2845,7 +2840,9 @@ export function lowerFunction(
           ? layouts.typeError
           : error === "RangeError"
             ? layouts.rangeError
-            : layouts.error;
+            : error === "ReferenceError"
+              ? layouts.referenceError
+              : layouts.error;
       const flag = load(present ?? booleanSlot(true, node), node);
       const args: (number | undefined)[] = [message, flag, undefined];
       const id = nextValue++;

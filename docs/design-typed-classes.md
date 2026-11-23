@@ -366,6 +366,63 @@ views are the interop path.
   went from 76.8 ms to 35.4 ms steady on macOS arm64; Node 26.13.1 takes
   21.1 ms. The frozen v7 workload is unchanged, with identical output.
 
+**Plan for step 4** (record views and the validity cell, one push):
+
+- **Where values cross.** A class instance, prototype or constructor reaches
+  untyped code where a class-typed value is erased to a general value.
+  These erasure points are `unknown` parameters and results, mixed calls
+  into general functions, and boundary exports. The checker records them,
+  as it already does for native callable and record views. Lowering then
+  calls the class's generated publish adapter instead of wrapping the raw
+  pointer, so the realm only ever sees view objects.
+- **Views.** Each class gets generated host adapters, as boundary records
+  do:
+  - The instance view is `createRecordView` over the instance record.
+    Its keys are the own data fields and present shadow slots, and its
+    prototype is the prototype view.
+  - The prototype view holds the methods as native callable views and a
+    non-enumerable `constructor`.
+  - The constructor view is a callable view with `prototype` and the
+    statics.
+
+  Each native object has one view, cached in a hidden view slot, so
+  identity holds. A view coming back into typed code is unwrapped through
+  its `typedRecord` hook: in downcasts, in `instanceof`, and in parameters
+  typed as the class.
+
+- **Method storage.** Untyped code can assign any function, or any value,
+  to a method name. So prototype method fields and instance shadow slots
+  use the general representation. Typed code still writes native closures.
+- **Validity cell.** Each prototype record gets a hidden validity word, set
+  when the class is defined. Several operations clear it, and the cells of
+  every class whose chain contains that prototype:
+  - a prototype-view write, define or delete of a method name;
+  - a prototype change;
+  - an accessor installed in place of a method;
+  - typed writes to a prototype method field, in the same lowering.
+
+  A method call on a class instance checks three things, as in "JavaScript
+  object semantics": the receiver's layout, a clear own-shadow presence
+  byte, and the cell of the receiver's prototype. If all hold, it calls the
+  method resolved at definition time directly, through the receiver-passing
+  twin, which inlines. Otherwise it does the full lookup and a general
+  call. This guard replaces the closed-world proof, which views would
+  defeat, and the two land together.
+
+- **Contracts through views.** A write to an annotated field checks the
+  annotation and throws a `TypeError` on a mismatch. Unannotated fields
+  accept any value.
+- **Deletes through views.** Deletes go through one policy function.
+  - An annotated required field is non-configurable: `false`, or a
+    `TypeError` in strict code.
+  - Optional fields and shadow slots clear their presence byte, and reads
+    then fall through to the prototype.
+  - Defining an annotated field as an accessor throws.
+- **`instanceof` with views.** Classes become reachable as views, so the
+  typed `instanceof` adds the `Symbol.hasInstance` check on the
+  constructor view and the general prototype-chain walk for values that
+  are not instance records.
+
 Untyped code does not yet see typed instances, prototypes or constructors
 through record views (step 4). Accessors and
 unannotated fields and method results still fail at check time. Evidence:

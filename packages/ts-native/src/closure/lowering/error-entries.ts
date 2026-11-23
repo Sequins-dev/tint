@@ -1,9 +1,4 @@
-import {
-  createFunctionBuilder,
-  type FunctionBuilder,
-  type FunctionIR,
-  type Span,
-} from "@tint/ir/scalar";
+import type { FunctionBuilder, Span } from "@tint/ir/scalar";
 
 /** Throw a new native error with `message` (a string value): a native error
  * record, or the realm's error record (message, presence flag) when the
@@ -53,22 +48,4 @@ export function throwNativeError(
     end: span.end,
   });
   b.end({ kind: "throw", value: thrown, start: span.start, end: span.end });
-}
-
-/** The program's out-of-line temporal-dead-zone failure: each access site
- * passes its message, so the allocation and throw exist once. */
-export function buildTemporalDeadZoneThrow(
-  id: number,
-  realmReferenceError: number | undefined,
-): FunctionIR {
-  const span = { start: 0, end: 0 };
-  const b = createFunctionBuilder(
-    id,
-    "$temporal_dead_zone",
-    ["string"],
-    "void",
-    span,
-  );
-  throwNativeError(b, "ReferenceError", b.load(0), realmReferenceError, span);
-  return b.finish();
 }

@@ -25,7 +25,6 @@ export {
   type ClassFieldInitialization,
 } from "./class-construction.ts";
 export type { RecordOperation } from "./record-bindings.ts";
-import { buildTemporalDeadZoneThrow } from "./error-entries.ts";
 import {
   buildClassEntries,
   classConstructionTarget,
@@ -672,14 +671,7 @@ function lowerEntries(
       signatures,
       fail,
     );
-    // Owned lexical cells report temporal-dead-zone access through one
-    // out-of-line throw (see buildTemporalDeadZoneThrow).
-    const temporalDeadZone =
-      recordContracts !== undefined && layout === undefined
-        ? signatures.length
-        : undefined;
-    if (temporalDeadZone !== undefined)
-      signatures.push({ parameters: ["string"], returnType: "void" });
+
     const semanticWitnesses =
       recordOptions?.signatureTypes === true
         ? new Uint32Array(checked.types.length)
@@ -4148,7 +4140,6 @@ function lowerEntries(
             (node) => localByNode.get(node)?.id,
             fail,
           ),
-          temporalDeadZone,
         };
       }
       const lowered = lowerFunction(
@@ -4239,11 +4230,7 @@ function lowerEntries(
       ))
         classFunctions[generated.id] = generated;
     }
-    if (temporalDeadZone !== undefined)
-      classFunctions[temporalDeadZone] = buildTemporalDeadZoneThrow(
-        temporalDeadZone,
-        realmErrors?.referenceError,
-      );
+
     for (let id = entries.length; id < signatures.length; id++) {
       const signature = signatures[id];
       if (signature === undefined) throw "callback signature invariant";
