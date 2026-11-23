@@ -146,6 +146,7 @@ import {
 } from "./callbacks.ts";
 import { createNumberEmission, floatBits } from "./numbers.ts";
 import { nativeSignatureTypeCode } from "../../scalar/signature.ts";
+import { shareFrameSlots } from "../../scalar/slot-sharing.ts";
 import { emitExecutableMemory, serializeCode } from "./executable-memory.ts";
 import {
   bindManagedABI,
@@ -687,10 +688,48 @@ export function emitModule(
     let transitionCapacity = 0;
     const transitions = new Map<Instruction, TransitionPlan>();
     const plans = new Map<Instruction, CCallLayout>();
+    // Slots of one type whose live ranges never meet share an offset
+    // (shareFrameSlots), as on AArch64: frames of large functions such as
+    // the compiler's recursive checker stay small. Parameters, the receiver
+    // and exception slots keep their own words. Stack maps list only live
+    // slots, so a shared word always holds the occupying slot's value.
+    let slotBytes = 0;
     for (const type of fn.slots) {
       if (type === undefined) throw "slot layout invariant";
+      slotBytes += scalarByteLength(type);
+    }
+    const privateSlots = new Uint8Array(fn.slots.length);
+    if (fn.receiverSlot !== undefined) privateSlots[fn.receiverSlot] = 1;
+    for (const parameter of fn.parameters) {
+      if (parameter === undefined) throw "parameter slot invariant";
+      privateSlots[parameter] = 1;
+    }
+    for (const block of fn.blocks) {
+      if (block === undefined) throw "block invariant";
+      const handler = block.exception;
+      if (handler !== undefined) privateSlots[handler.slot] = 1;
+    }
+    const sharing =
+      slotBytes > 64
+        ? shareFrameSlots(
+            fn,
+            (slot) => privateSlots[slot] !== 1,
+            Number.MAX_SAFE_INTEGER,
+          )
+        : undefined;
+    const groupOffsets: number[] = [];
+    for (let slot = 0; slot < fn.slots.length; slot++) {
+      const type = fn.slots[slot];
+      if (type === undefined) throw "slot layout invariant";
+      const group = sharing === undefined ? -1 : (sharing.color[slot] ?? 0) - 1;
+      const shared = group < 0 ? undefined : groupOffsets[group];
+      if (shared !== undefined) {
+        slots.push(shared);
+        continue;
+      }
       depth += scalarByteLength(type);
       slots.push(-depth);
+      if (group >= 0) groupOffsets[group] = -depth;
     }
     // Values are local to their block (the verifier requires it), and stack
     // maps include a value's home only while it is live within its block,

@@ -175,10 +175,6 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
-      id: "packages/codegen/src/aarch64/scalar/slot-sharing.ts",
-      packageId: "codegen",
-    },
-    {
       id: "packages/codegen/src/aarch64/scalar/stack-registers.ts",
       packageId: "codegen",
     },
@@ -208,6 +204,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/codegen/src/scalar/signature.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/scalar/slot-sharing.ts",
       packageId: "codegen",
     },
     {

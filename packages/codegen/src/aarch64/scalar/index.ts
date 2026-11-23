@@ -71,7 +71,10 @@ import {
   poolClearPlan,
   preSafepointResults,
 } from "./pool-clears.ts";
-import { shareFrameSlots, type SlotSharing } from "./slot-sharing.ts";
+import {
+  shareFrameSlots,
+  type SlotSharing,
+} from "../../scalar/slot-sharing.ts";
 import { aliasedSlotLoads } from "./slot-aliases.ts";
 import { slotHomes, type SlotHomes } from "./slot-registers.ts";
 import {
