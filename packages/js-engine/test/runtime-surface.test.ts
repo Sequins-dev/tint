@@ -28,12 +28,12 @@ const corpus = [
   {
     source:
       "function* g(){yield 1;yield* [2]}async function f(){await 1;for await(const x of [2]){}}async function* h(){yield await 2}var arr=[...g()];",
-    sha256: "e6228a27316769e347220a803a150ea726a99348e9289c9c2e42117a250dd22b",
+    sha256: "f67ee90554bd304666aa37bb078642bfc391557d2cb4e9de169f03fa80baccbc",
   },
   {
     source:
       "with({}){x}try{throw 1}catch(e){}label:for(const x of [1]){break label}",
-    sha256: "eb714c3f1cd6d5dd1f6367fb1d4d062fdb728f627d08bf457ce12dba05fe41c3",
+    sha256: "7e6d9c11ea408ccdac34331b9eb753eed43fc2831f7a1a3cb75a409d1038cfb9",
   },
   {
     source:

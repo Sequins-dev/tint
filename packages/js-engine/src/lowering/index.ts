@@ -8385,6 +8385,34 @@ function lowerScriptEntry(
         return result;
       }
       case "array": {
+        let dense = true;
+        for (const element of node.elements)
+          if (element.kind === "spread" || element.kind === "elision")
+            dense = false;
+        if (dense) {
+          // Without spreads or holes the literal is CreateArrayFromList of its
+          // element values. They are evaluated in order first; creating the
+          // array observes nothing, so creating it after them is equivalent.
+          const values: Expression[] = [];
+          for (const element of node.elements) {
+            if (element.kind === "spread" || element.kind === "elision")
+              throw "SCRIPT_ARRAY_ELEMENT_INVARIANT";
+            values.push(temporary(value(element), true));
+          }
+          return temporary(
+            runtimeCall(
+              "createArrayFromList",
+              [
+                { ...at(node), kind: "array", elements: values },
+                { ...at(node), kind: "number", value: 0, raw: "0" },
+                member(id("$errors"), "arrayPrototype", node),
+                id("$errors"),
+                member(id("$global"), "hooks", node),
+              ],
+              node,
+            ),
+          );
+        }
         // Track the next index across spreads and elisions, then finalize trailing holes.
         const result = temporary(
           call(

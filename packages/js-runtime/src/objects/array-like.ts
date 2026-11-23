@@ -1,12 +1,12 @@
 import { viewObjectValue } from "./values.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import {
-  createDataProperty,
   getProperty,
   type OrdinaryObject,
   type ObjectHooks,
 } from "./operations.ts";
 import { createArrayObject } from "./arrays.ts";
+import { writeArrayElement } from "./array-elements.ts";
 import { numberValue } from "./coercion.ts";
 import {
   createRuntimeError,
@@ -47,17 +47,17 @@ export function createArrayFromList(
     realm.arrayHooks,
     hooks,
   );
-  for (let index = 0; index < length; index++) {
-    if (
-      !createDataProperty<ScriptPropertyKey, unknown>(
-        object,
-        String(index),
-        args[start + index],
-        hooks,
-      )
-    )
-      throw "ARRAY_LIST_INVARIANT";
-  }
+  // CreateDataPropertyOrThrow of each index on a new extensible array always
+  // succeeds and runs no user code, leaving exactly the packed elements, so
+  // they are written to packed storage directly.
+  const elements = object.internalArrayElements;
+  if (elements === undefined) throw "ARRAY_LIST_INVARIANT";
+  for (let index = 0; index < length; index++)
+    writeArrayElement<ScriptPropertyKey, unknown>(
+      elements,
+      index,
+      args[start + index],
+    );
   return object;
 }
 

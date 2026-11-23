@@ -3,7 +3,9 @@
 // and leaves every other case to the generic paths: holes and appends,
 // inherited and accessor elements, general elements and kind transitions,
 // frozen, sealed and non-extensible arrays, typed arrays, strings, proxies,
-// array-likes, non-integer and non-Number keys and nullish bases. These
+// array-likes, non-integer and non-Number keys and nullish bases. Array
+// literals without spreads or holes create their packed elements directly,
+// beside setters on Array.prototype, holes, spreads and abrupt elements. These
 // sections drive the same read, write and read-modify-write sites through
 // each of them, so a fast path that applies where it must not changes an
 // observation. Node computes the expected observations from the same
@@ -327,6 +329,60 @@ function appends() {
   try { push(frozenElements, 3); } catch (e) { out.push(e.constructor.name); }
   return out.join(",");
 }
+function literals() {
+  // out and log own index 1 before the setter below exists.
+  const out = ["literals", ":"];
+  const log = ["", ""];
+  const at = (n, v) => { log.push(n); return v; };
+  let seen = "";
+  Object.defineProperty(Array.prototype, 1, {
+    set(v) { seen += "proto-set " + v + ";"; },
+    get() { return "proto-get"; },
+    configurable: true,
+  });
+  const a = [at(0, 1), at(1, "two"), at(2, 3.5)];
+  out.push(a.length, a.join("/"), Object.hasOwn(a, 1), seen, log.join(""));
+  const sparse = [0, , 2];
+  out.push(sparse[1], Object.hasOwn(sparse, 1), seen);
+  delete Array.prototype[1];
+  const numbers = [1, -0, NaN, 2.5];
+  out.push(numbers.map(show).join(" "), numbers.length);
+  numbers[1] = "s";
+  out.push(numbers.join("/"), read(numbers, 2) !== read(numbers, 2));
+  const empty = [];
+  out.push(empty.length, Object.getPrototypeOf(empty) === Array.prototype, Array.isArray(empty));
+  out.push(empty.push(1), empty[0]);
+  const trailing = [1, 2, ,];
+  out.push(trailing.length, 2 in trailing);
+  const spread = [0, ...[1, 2], 3];
+  out.push(spread.join("/"), spread.length);
+  const nested = [[1], [2, [3]]];
+  out.push(nested[1][1][0], nested.length);
+  const missing = [undefined, null];
+  out.push(missing.length, 0 in missing, String(missing[0]), String(missing[1]));
+  try {
+    [at(3, 1), (() => { throw new RangeError("x"); })(), at(4, 2)];
+  } catch (e) {
+    out.push(e.constructor.name, log.join(""));
+  }
+  const fresh = () => [1, 2];
+  const x = fresh();
+  const y = fresh();
+  write(x, 0, 9);
+  out.push(y[0], x !== y, x[0]);
+  const element = Object.getOwnPropertyDescriptor([7], 0);
+  out.push(element.writable, element.enumerable, element.configurable, element.value);
+  const length = Object.getOwnPropertyDescriptor([7, 8], "length");
+  out.push(length.writable, length.enumerable, length.configurable, length.value);
+  out.push(Object.keys(["a", "b"]).join("/"), Object.isExtensible([1]));
+  function rest(...r) { return r; }
+  const r = rest(1, "b", 3);
+  out.push(r.length, r.join("/"), Array.isArray(r), r.push(4), r[3]);
+  const frozen = Object.freeze([1, 2]);
+  try { write(frozen, 0, 5); } catch (e) { out.push(e.constructor.name); }
+  out.push(frozen[0]);
+  return out.join(",");
+}
 export function sections() {
   return [
     dense(),
@@ -337,6 +393,7 @@ export function sections() {
     ordering(),
     lengths(),
     appends(),
+    literals(),
   ];
 }
 `;
@@ -354,7 +411,7 @@ test("element access keeps JavaScript semantics on every receiver and key", asyn
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-  assert.equal(expected.length, 8);
+  assert.equal(expected.length, 9);
   // Exit status 42 when every section matches, else 10 + the first
   // mismatching section's index.
   let general = false;
