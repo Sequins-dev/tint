@@ -203,7 +203,11 @@ paths correct:
   `false` in sloppy code, a `TypeError` in strict code. A write of the wrong
   type throws a `TypeError`. This is the one deliberate departure from
   JavaScript, where class fields are configurable, and it follows from
-  treating the annotation as a contract. Defining one as an accessor through
+  treating the annotation as a contract. **Pending the user's decision:** the
+  configurability of annotated required fields is decided by one policy
+  function in the class-view layer, which reports the descriptor and answers
+  `delete`. Nothing else in C1 depends on its answer, so either outcome is a
+  change to that function and its fixture. Defining one as an accessor through
   `defineProperty` throws for the same reason.
 
 **Observable order is JavaScript's:**
