@@ -2,8 +2,9 @@ import type { NativeHostBinding } from "@tint/compiler/native";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 
 // The binary structured-clone codec over a raw mapping, as Worker packets
-// use it: aliases and cycles, -0, BigInt, bulk strings, binary64 and packed
-// number arrays.
+// use it: aliases and cycles, -0, BigInt, bulk strings, binary64, packed
+// number arrays, and a typed program's typed array, alone and before a
+// back-referenced object in the same message.
 if (process.env.TINT_BUILD_ONLY !== "1")
   throw Error("The worker clone fixture must run under LLDB");
 process.env.TINT_GENERAL_FALLBACK = "0";
@@ -132,6 +133,41 @@ export function run():number {
   const copied=data.buffer.internalArrayBufferData;
   const copiedBytes=copied===undefined?undefined:byteStorageData(copied);
   if(copiedBytes===undefined||copiedBytes.length!==12||copiedBytes[11]!==11||copiedBytes[4]!==4)return 15;
+  // A typed array, then an object named twice, in one message: the decoder
+  // allocates two objects (the view and its buffer) for the typed array, so
+  // the back-reference must count them.
+  const message=createObject<ScriptPropertyKey,unknown>(first);
+  const repeated=createObject<ScriptPropertyKey,unknown>(first);
+  createDataProperty<ScriptPropertyKey,unknown>(repeated,"mark",7,hooks);
+  createDataProperty<ScriptPropertyKey,unknown>(message,"view",view,hooks);
+  createDataProperty<ScriptPropertyKey,unknown>(message,"first",repeated,hooks);
+  createDataProperty<ScriptPropertyKey,unknown>(message,"second",repeated,hooks);
+  const both=mapMemory(4096);
+  if(both<=0)return 16;
+  const bothSink:WorkerCloneSink={
+    bytes:packets.view(both,4096),
+    grow:(used:number,needed:number):void=>{throw "clone fixture message grow";},
+    writeFloat64:(offset:number,value:number):void=>{
+      if(packets.writeFloat64(both,4096,offset,value)!==0)throw "clone fixture message float";
+    },
+    writeString:(offset:number,value:string):void=>{
+      if(packets.writeString(both,4096,offset,value)!==0)throw "clone fixture message string";
+    },
+  };
+  const bothEnd=serializeWorkerValue(message,from,bothSink,0);
+  const bothSource:WorkerCloneSource={
+    bytes:bothSink.bytes,
+    readFloat64:(offset:number):number=>packets.readFloat64(both,4096,offset),
+    readString:(offset:number,units:number):string=>packets.readString(both,4096,offset,units),
+  };
+  const received=viewObjectValue(deserializeWorkerValue(bothSource,0,bothEnd,to),second);
+  if(unmapMemory(both,4096)!==0)return 17;
+  if(received===undefined)return 18;
+  const firstCopy=viewObjectValue(getOwnProperty<ScriptPropertyKey,unknown>(received,"first")?.value,second);
+  if(firstCopy===undefined||firstCopy!==getOwnProperty<ScriptPropertyKey,unknown>(received,"second")?.value)return 19;
+  if(getOwnProperty<ScriptPropertyKey,unknown>(firstCopy,"mark")?.value!==7)return 20;
+  const viewCopy=viewObjectValue(getOwnProperty<ScriptPropertyKey,unknown>(received,"view")?.value,second);
+  if(viewCopy===undefined||viewCopy.internalTypedArrayData?.length!==3)return 21;
   return 42;
 }
 `,
