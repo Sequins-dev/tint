@@ -179,6 +179,74 @@ test("slots with different sources or non-copy stores stay", () => {
   assert.equal(result.rewritten, 0);
 });
 
+test("copy chains resolve to their root, keeping record read proofs", () => {
+  // Inlining chains parameter copies: 1 = 0, 2 = 1, 3 = 2. The descriptor
+  // check reads slot 2 and the guarded read slot 3; rewriting each load one
+  // hop (2 -> 1, 3 -> 2) would check one slot and read another.
+  const input = fn(
+    ["reference", "reference", "reference", "reference", "number"],
+    [
+      block(
+        0,
+        [
+          { kind: "load", id: 0, slot: 0, ...s },
+          { kind: "store", slot: 1, value: 0, ...s },
+        ],
+        { kind: "jump", target: 1, ...s },
+      ),
+      block(
+        1,
+        [
+          { kind: "load", id: 1, slot: 1, ...s },
+          { kind: "store", slot: 2, value: 1, ...s },
+        ],
+        { kind: "jump", target: 2, ...s },
+      ),
+      block(
+        2,
+        [
+          { kind: "load", id: 2, slot: 2, ...s },
+          { kind: "store", slot: 3, value: 2, ...s },
+        ],
+        {
+          kind: "record",
+          object: 2,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 4,
+          consequent: 3,
+          alternate: 4,
+          ...s,
+        },
+      ),
+      block(
+        3,
+        [
+          { kind: "load", id: 3, slot: 3, ...s },
+          {
+            kind: "record-read",
+            id: 4,
+            object: 3,
+            record: 0,
+            field: 0,
+            ...s,
+          },
+        ],
+        { kind: "return", value: 4, ...s },
+      ),
+      block(4, [], ret),
+    ],
+  );
+  const result = propagateSlotCopies(input, 10000);
+  assert.ok(result);
+  assert.equal(result.refused, false);
+  assert.equal(result.rewritten, 3);
+  assert.deepEqual(loadSlots(result.fn, 1), [0]);
+  assert.deepEqual(loadSlots(result.fn, 2), [0]);
+  assert.deepEqual(loadSlots(result.fn, 3), [0]);
+});
+
 /** Deterministic pseudo-random numbers. */
 function random(seed: number): () => number {
   let state = seed >>> 0 || 1;
