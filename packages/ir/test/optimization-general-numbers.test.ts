@@ -198,6 +198,74 @@ test("stores of values of unknown category test them once", () => {
   ]);
 });
 
+/** `t = x < 1; if (typeof t === "number") return t; return x;` with x a
+ * number parameter: the wrapped comparison is never a Number, so the store
+ * writes false and 0 to the shadows without testing the general value. */
+test("stores of wrapped scalars of another category write the shadows directly", () => {
+  const fn = shadowed({
+    id: 0,
+    name: "compare",
+    exported: true,
+    parameters: [0],
+    slots: ["number", "general"],
+    returnType: "general",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...s },
+          { kind: "constant", id: 1, value: 1, ...s },
+          { kind: "binary", id: 2, operator: "<", left: 0, right: 1, ...s },
+          { kind: "general-wrap", id: 3, value: 2, ...s },
+          { kind: "store", slot: 1, value: 3, ...s },
+          { kind: "load", id: 4, slot: 1, ...s },
+          { kind: "general-is", id: 5, value: 4, type: "number", ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 5,
+          consequent: 1,
+          alternate: 2,
+          ...s,
+        },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 6, slot: 1, ...s },
+          { kind: "general-value", id: 7, value: 6, type: "number", ...s },
+          { kind: "general-wrap", id: 8, value: 7, ...s },
+        ],
+        terminator: { kind: "return", value: 8, ...s },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 9, slot: 0, ...s },
+          { kind: "general-wrap", id: 10, value: 9, ...s },
+        ],
+        terminator: { kind: "return", value: 10, ...s },
+      },
+    ],
+  });
+  assert.deepEqual(kinds(block(fn, 0)), [
+    "load",
+    "constant",
+    "binary",
+    "general-wrap",
+    "store",
+    "constant",
+    "store",
+    "constant",
+    "store",
+    "load",
+    "load",
+  ]);
+  const presence = block(fn, 0)[5];
+  assert.ok(presence?.kind === "constant" && presence.value === false);
+});
+
 test("a test of a value loaded before a store proves nothing about the slot", () => {
   const fn = shadowed({
     id: 0,

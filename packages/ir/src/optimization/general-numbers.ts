@@ -62,15 +62,65 @@ function numberResult(
   return undefined;
 }
 
+/** The ID of the scalar of a category other than number `op` defines, if
+ * any: a general value wrapping it is never a Number. */
+function nonNumberResult(
+  op: Instruction,
+  slots: readonly ScalarType[],
+): number | undefined {
+  switch (op.kind) {
+    case "constant":
+      return typeof op.value === "number" ? undefined : op.id;
+    case "string-literal":
+    case "general-is":
+      return op.id;
+    case "binary":
+      switch (op.operator) {
+        case "===":
+        case "!==":
+        case "==":
+        case "!=":
+        case "<":
+        case ">":
+        case "<=":
+        case ">=":
+          return op.id;
+      }
+      return undefined;
+    case "unary":
+      return op.operator === "!" ||
+        op.operator === "truthy" ||
+        op.operator === "is-integer"
+        ? op.id
+        : undefined;
+    case "load": {
+      const type = slots[op.slot];
+      return type === "boolean" ||
+        type === "string" ||
+        type === "reference" ||
+        type === "Uint8Array" ||
+        type === "Uint16Array" ||
+        type === "Uint32Array" ||
+        type === "Float64Array"
+        ? op.id
+        : undefined;
+    }
+    case "general-value":
+      return op.type === "number" ? undefined : op.id;
+  }
+  return undefined;
+}
+
 /**
  * Gives general slots that are tested or read as numbers a number shadow:
  * a boolean slot that holds exactly "the slot holds a Number" and a number
  * slot that holds its value whenever it does. Every store to the slot also
- * stores both shadows (a wrapped scalar number stores them directly), so
- * `general-is number` on a load of the slot becomes a load of the boolean,
- * and `general-value number` becomes a load of the number wherever a
- * forward analysis proves the slot holds a Number on every path (a dominating
- * test, or stores of wrapped numbers around a loop). Elsewhere the checked
+ * stores both shadows (directly for a wrapped scalar of a known category or
+ * an absent value), so `general-is number` on a load of the slot becomes a
+ * load of the boolean, and `general-value number` becomes a load of the
+ * number wherever a forward analysis proves the slot holds a Number on
+ * every path (a dominating test, or stores of wrapped numbers around a
+ * loop). Elsewhere the checked
  * extraction stays. The general slot itself is unchanged, so its other
  * readers, stack maps and exception paths see the same value; its stores die
  * when nothing reads it any more.
@@ -136,17 +186,25 @@ export function shadowGeneralNumbers(
     if (block === undefined) throw "general number block invariant";
     const weight = depthWeights[depth[block.id] ?? 0] ?? 4096;
     const loads = new Map<number, number>(),
-      wrapped = new Map<number, boolean>(),
-      numbers = new Set<number>();
+      // Values whose shadows a store writes directly: wrapped scalars of a
+      // known category and the absent values.
+      direct = new Set<number>(),
+      numbers = new Set<number>(),
+      nonNumbers = new Set<number>();
     for (const op of block.instructions) {
       if (op === undefined) throw "general number instruction invariant";
       if (++visited > budget) return undefined;
       const scalar = numberResult(op, fn.slots);
       if (scalar !== undefined) numbers.add(scalar);
+      const other = nonNumberResult(op, fn.slots);
+      if (other !== undefined) nonNumbers.add(other);
       if (op.kind === "load") {
         if (candidates[op.slot] === 1) loads.set(op.id, op.slot);
       } else if (op.kind === "general-wrap") {
-        wrapped.set(op.id, numbers.has(op.value));
+        if (numbers.has(op.value) || nonNumbers.has(op.value))
+          direct.add(op.id);
+      } else if (op.kind === "general-none" || op.kind === "general-null") {
+        direct.add(op.id);
       } else if (
         (op.kind === "general-is" || op.kind === "general-value") &&
         op.type === "number"
@@ -154,11 +212,9 @@ export function shadowGeneralNumbers(
         const slot = loads.get(op.value);
         if (slot !== undefined) uses[slot] = (uses[slot] ?? 0) + 2 * weight;
       } else if (op.kind === "store" && candidates[op.slot] === 1) {
-        // A wrapped number stores its shadows directly; anything else is
-        // tested and extracted again.
-        const number = wrapped.get(op.value);
+        // Anything not stored directly is tested and extracted again.
         costs[op.slot] =
-          (costs[op.slot] ?? 0) + (number === true ? 1 : 3) * weight;
+          (costs[op.slot] ?? 0) + (direct.has(op.value) ? 1 : 3) * weight;
       }
     }
   }
@@ -342,13 +398,18 @@ export function shadowGeneralNumbers(
     const loads = new Map<number, number>(),
       knownLoads = new Set<number>(),
       numbers = new Set<number>(),
+      nonNumbers = new Set<number>(),
       wraps = new Map<number, number>(),
-      absent = new Set<number>();
+      // General values that are never a Number: absent values and wrapped
+      // scalars of another category.
+      notNumbers = new Set<number>();
     for (const op of block.instructions) {
       if (op === undefined) throw "general number instruction invariant";
       if (++visited > budget) return undefined;
       const scalar = numberResult(op, fn.slots);
       if (scalar !== undefined) numbers.add(scalar);
+      const other = nonNumberResult(op, fn.slots);
+      if (other !== undefined) nonNumbers.add(other);
       if (op.kind === "load") {
         instructions.push(op);
         const index = shadow(op.slot);
@@ -359,13 +420,15 @@ export function shadowGeneralNumbers(
         continue;
       }
       if (op.kind === "general-wrap") {
-        // Other wrapped scalars are tested at the store like any value.
+        // Wrapped scalars of an unknown category are tested at the store
+        // like any value.
         if (numbers.has(op.value)) wraps.set(op.id, op.value);
+        else if (nonNumbers.has(op.value)) notNumbers.add(op.id);
         instructions.push(op);
         continue;
       }
       if (op.kind === "general-none" || op.kind === "general-null") {
-        absent.add(op.id);
+        notNumbers.add(op.id);
         instructions.push(op);
         continue;
       }
@@ -479,7 +542,7 @@ export function shadowGeneralNumbers(
           },
         );
         state[index] = knownLoads.has(op.value) ? 1 : 0;
-      } else if (absent.has(op.value)) {
+      } else if (notNumbers.has(op.value)) {
         // Both shadows are written on every store, so they are initialized
         // wherever the general slot is.
         const no = nextId++,
