@@ -6,6 +6,7 @@ import { splitOptionalNumbers } from "./optional-split.ts";
 import { threadBranches } from "./branch-threading.ts";
 import { coalesceOptionalDefaults } from "./coalesce.ts";
 import { compactSlots } from "./slots.ts";
+import { forwardClosureEnvironments } from "./closure-environments.ts";
 export { compactSlots } from "./slots.ts";
 export { unboundedWork } from "./budget.ts";
 export { simplifyControlFlow } from "./control-flow.ts";
@@ -817,13 +818,17 @@ function deadScalarsRewrite(
   fn: FunctionIR,
   budget: number,
 ): FunctionRewrite | undefined {
-  const result = removeDeadScalars(fn, budget);
+  // Environment reads through closure slots first, so closures only their
+  // environments were read from become dead values here.
+  const forwarded = forwardClosureEnvironments(fn, budget);
+  if (forwarded === undefined) return undefined;
+  const result = removeDeadScalars(forwarded.fn, budget - forwarded.visited);
   return result === undefined
     ? undefined
     : {
         fn: result.fn,
-        visited: result.visited,
-        rewritten: result.removed,
+        visited: forwarded.visited + result.visited,
+        rewritten: forwarded.rewritten + result.removed,
         refused: false,
       };
 }
@@ -1702,6 +1707,8 @@ function removable(op: Instruction): boolean {
     case "reference-string":
     // Reads selected as in bounds cannot fail.
     case "array-element":
+    // An unused closure is an unobservable allocation.
+    case "function-new":
       return true;
     default:
       return false;
