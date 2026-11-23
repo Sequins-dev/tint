@@ -133,6 +133,83 @@ test("generational barriers cover managed writes and omit numeric-only stores", 
     assert.equal(filtered, type !== "number");
   }
 });
+test("a general field write to an old object skips the barrier helper for non-reference tags", () => {
+  const module: ModuleIR = {
+    records: [
+      {
+        byteLength: 32,
+        fields: [{ offset: 16, type: "general", mutable: true }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "write",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["reference", "general"],
+        returnType: "void",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+            terminator: {
+              kind: "record",
+              object: 0,
+              record: 0,
+              field: 0,
+              operation: "write",
+              slot: 1,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [],
+            terminator: { kind: "return", value: undefined, ...span },
+          },
+          { id: 2, instructions: [], terminator: { kind: "trap", ...span } },
+        ],
+      },
+    ],
+  };
+  const result = emitModule(module, {
+    maxByteLength: 0xffffffff,
+    debugSpans: false,
+    linearAllocation: false,
+    generationalBarriers: true,
+  });
+  assert.ok(result.ok, JSON.stringify(result));
+  const view = new DataView(result.value.code.buffer),
+    fn = result.value.functions[0]!;
+  const words: number[] = [];
+  for (let offset = fn.offset; offset < fn.offset + fn.byteLength; offset += 4)
+    words.push(view.getUint32(offset, true));
+  // After the inline nursery test (LDR x12, [x10, #56]): tags 5..7 and 3
+  // carry a reference (CMP x13, #5 / B.HS; CMP x13, #3 / B.NE skips).
+  const state = words.indexOf(0xf9401d4c);
+  assert.ok(state >= 0);
+  const compare = (immediate: number): number => {
+    const word = encode({
+      op: "sub-imm",
+      width: 64,
+      rd: "zr",
+      rn: 13,
+      immediate,
+      shift: 0,
+      setFlags: true,
+    });
+    assert.ok(word.ok);
+    return word.value;
+  };
+  const five = words.indexOf(compare(5), state),
+    three = words.indexOf(compare(3), state);
+  assert.ok(five > state && three > five, JSON.stringify({ five, three }));
+});
+
 test("reference vector copies are one indexed loop with at most one barrier", () => {
   function words(rebase: boolean, generationalBarriers: boolean): number[] {
     const module: ModuleIR = {
