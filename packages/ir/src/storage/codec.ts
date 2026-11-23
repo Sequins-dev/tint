@@ -5,6 +5,7 @@ import type {
   FunctionDebug,
   FunctionIR,
   GeneralTest,
+  NativeTypedArray,
   InlineSite,
   Instruction,
   ReturnType,
@@ -136,6 +137,16 @@ function scalarCode(type: ReturnType): number {
       return 13;
     case "void":
       return 14;
+    case "Int8Array":
+      return 15;
+    case "Uint8ClampedArray":
+      return 16;
+    case "Int16Array":
+      return 17;
+    case "Int32Array":
+      return 18;
+    case "Float32Array":
+      return 19;
   }
 }
 function scalarType(code: number): ScalarType {
@@ -169,14 +180,12 @@ function scalarType(code: number): ScalarType {
     case 13:
       return "optional-number";
   }
-  throw "packed IR scalar type";
+  return arrayType(code);
 }
 function returnType(code: number): ReturnType {
   return code === 14 ? "void" : scalarType(code);
 }
-function arrayType(
-  code: number,
-): "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array" {
+function arrayType(code: number): NativeTypedArray {
   switch (code) {
     case 9:
       return "Uint8Array";
@@ -186,25 +195,25 @@ function arrayType(
       return "Uint32Array";
     case 12:
       return "Float64Array";
+    case 15:
+      return "Int8Array";
+    case 16:
+      return "Uint8ClampedArray";
+    case 17:
+      return "Int16Array";
+    case 18:
+      return "Int32Array";
+    case 19:
+      return "Float32Array";
   }
   throw "packed IR array type";
 }
-function referenceValueType(
-  code: number,
-): "reference" | "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array" {
+function referenceValueType(code: number): "reference" | NativeTypedArray {
   return code === 4 ? "reference" : arrayType(code);
 }
 function generalValueType(
   code: number,
-):
-  | "number"
-  | "boolean"
-  | "string"
-  | "reference"
-  | "Uint8Array"
-  | "Uint16Array"
-  | "Uint32Array"
-  | "Float64Array" {
+): "number" | "boolean" | "string" | "reference" | NativeTypedArray {
   switch (code) {
     case 7:
       return "number";
@@ -311,6 +320,11 @@ const generalTests: readonly GeneralTest[] = [
   "Uint32Array",
   "Float64Array",
   "object",
+  "Int8Array",
+  "Uint8ClampedArray",
+  "Int16Array",
+  "Int32Array",
+  "Float32Array",
 ];
 export function encodeInstruction(
   writer: ByteWriter,

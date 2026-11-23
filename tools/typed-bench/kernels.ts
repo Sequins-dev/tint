@@ -277,8 +277,8 @@ export function compiler(scale: number): number {
 }
 
 // --- Typed arrays: element read/write loops over three element kinds. ---
-// (Uint32Array rather than Int32Array: typed code lowers Uint8, Uint16,
-// Uint32 and Float64 arrays natively; the other kinds are a typed-only gap.)
+// (Kept on Uint32Array for comparable history; typedArrayKinds covers the
+// signed, clamped and Float32 kinds.)
 export function typedArrays(scale: number): number {
   const size = 4096;
   const words = new Uint32Array(size),
@@ -301,6 +301,45 @@ export function typedArrays(scale: number): number {
       (checksum +
         (words[round & (size - 1)] ?? 0) +
         (bytes[(round * 7) & (size - 1)] ?? 0) +
+        Math.floor(sum)) |
+      0;
+  }
+  return checksum;
+}
+
+// --- Typed-array kinds: signed, clamped and Float32 element loops. ---
+export function typedArrayKinds(scale: number): number {
+  const size = 4096;
+  const words = new Int32Array(size),
+    bytes = new Int8Array(size),
+    halves = new Int16Array(size),
+    pixels = new Uint8ClampedArray(size),
+    singles = new Float32Array(size);
+  for (let i = 0; i < size; i++) {
+    words[i] = i * 7 - 9000;
+    bytes[i] = i;
+    halves[i] = i * 13;
+    pixels[i] = i;
+    singles[i] = i * 0.25;
+  }
+  let checksum = 0;
+  for (let round = 0; round < scale; round++) {
+    for (let i = 0; i < size; i++) words[i] = ((words[i] ?? 0) * 3 + round) | 0;
+    for (let i = 1; i < size; i++)
+      bytes[i] = (bytes[i - 1] ?? 0) + (bytes[i] ?? 0);
+    for (let i = 0; i < size; i++)
+      halves[i] = (halves[i] ?? 0) - (bytes[i] ?? 0) * 5;
+    for (let i = 0; i < size; i++) pixels[i] = (pixels[i] ?? 0) * 1.5 - 20.5;
+    let sum = 0;
+    for (let i = 0; i < size; i++) {
+      const single = (singles[i] ?? 0) * 0.999 + 0.5;
+      singles[i] = single;
+      sum += single * ((words[i] ?? 0) & 15) + (pixels[i] ?? 0);
+    }
+    checksum =
+      (checksum +
+        (words[round & (size - 1)] ?? 0) +
+        (halves[(round * 7) & (size - 1)] ?? 0) +
         Math.floor(sum)) |
       0;
   }

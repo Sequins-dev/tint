@@ -202,6 +202,12 @@ import {
   callbackState,
   naturalLoops,
   blockSuccessors,
+  isNativeTypedArray,
+  nativeTypedArray,
+  typedArrayIntegerElements,
+  typedArrayLayout,
+  typedArrayMarker,
+  typedArrayScale,
   type LoopForest,
   type SlotLiveness,
   type WordFacts,
@@ -211,6 +217,7 @@ import {
   type Verification,
   type RecordLayout,
   type ScalarType,
+  type NativeTypedArray,
   type Span,
   type Instruction as IRInstruction,
   type Terminator as IRTerminator,
@@ -488,17 +495,15 @@ interface Fixup {
   readonly far?: true | undefined;
 }
 function managed(type: string): boolean {
-  return [
-    "primitive",
-    "reference",
-    "optional-reference",
-    "optional-string",
-    "string",
-    "Uint8Array",
-    "Uint16Array",
-    "Uint32Array",
-    "Float64Array",
-  ].includes(type);
+  return (
+    [
+      "primitive",
+      "reference",
+      "optional-reference",
+      "optional-string",
+      "string",
+    ].includes(type) || isNativeTypedArray(type)
+  );
 }
 /** A frameless early exit's returned value and parameter test. */
 type EarlyValue =
@@ -3631,12 +3636,14 @@ function emitModuleForms(
               const result = instructionResult(op);
               if (result === undefined) continue;
               const index = valueIds.intern(result),
-                slotType = op.kind === "load" ? fn.slots[op.slot] : undefined;
+                slotArray = nativeTypedArray(
+                  op.kind === "load" ? fn.slots[op.slot] : undefined,
+                );
               if (
-                slotType === "Uint8Array" ||
-                slotType === "Uint16Array" ||
-                slotType === "Uint32Array" ||
-                (op.kind === "array-new" && op.type !== "Float64Array") ||
+                (slotArray !== undefined &&
+                  typedArrayIntegerElements(slotArray)) ||
+                (op.kind === "array-new" &&
+                  typedArrayIntegerElements(op.type)) ||
                 (op.kind === "array-subarray" &&
                   integerArrays[valueIds.intern(op.array)] === 1)
               )
@@ -6372,6 +6379,51 @@ function emitModuleForms(
           }
           return -1;
         }
+        /** ToUint8Clamp of a number into x9: NaN and anything below 0.5
+         * give 0, anything from 254.5 gives 255, and the rest round to
+         * nearest, ties to even. */
+        function clampedValue(id: number): void {
+          if (storedAsInteger(id)) {
+            const integer = intRegister(id, 9);
+            emit({
+              op: "sub-imm",
+              width: 64,
+              rd: "zr",
+              rn: integer,
+              immediate: 0,
+              shift: 0,
+              setFlags: true,
+            });
+            emit({
+              op: "csel",
+              width: 64,
+              rd: 9,
+              rn: "zr",
+              rm: integer,
+              condition: "lt",
+            });
+          } else
+            // Saturates negatives to 0 and NaN to 0.
+            emit({ op: "fcvtnu-w-d", rd: 9, rn: floatOperand(id, 0) });
+          imm(10, 255);
+          emit({
+            op: "sub-imm",
+            width: 64,
+            rd: "zr",
+            rn: 9,
+            immediate: 255,
+            shift: 0,
+            setFlags: true,
+          });
+          emit({
+            op: "csel",
+            width: 64,
+            rd: 9,
+            rn: 10,
+            rm: 9,
+            condition: "hi",
+          });
+        }
         function wordValue(id: number): void {
           if (storedAsWord(id) || storedAsInteger(id)) {
             rawLoad(9, value(id).offset);
@@ -8046,6 +8098,68 @@ function emitModuleForms(
         /** Bounds-checks `index` against `array`: x13 holds whether it is a
          * valid element index, x10 the element base, x11 the length; returns
          * the GP register holding the index as an integer (x9 or its home). */
+        function typedArrayType(type: ScalarType): NativeTypedArray {
+          const array = nativeTypedArray(type);
+          if (array === undefined) throw "typed array element invariant";
+          return array;
+        }
+        /** Load element `index` (a register, scaled by the element size) of
+         * the typed array whose data pointer is in `base`: integer kinds as
+         * an exact int64 in `integer` (zero- or sign-extended), floating-
+         * point kinds as a double in FP register `float`. Returns whether
+         * the element is a double. */
+        function loadElement(
+          type: ScalarType,
+          base: number,
+          index: number,
+          integer: number,
+          float: number,
+        ): boolean {
+          const layout = typedArrayLayout(typedArrayType(type)),
+            scale = typedArrayScale(type);
+          if (layout.element === "float") {
+            emit({
+              op: "ldr-indexed",
+              size: scale,
+              fp: true,
+              rt: float,
+              rn: base,
+              rm: index,
+              scaled: true,
+            });
+            if (scale === 2) emit({ op: "fcvt-d-s", rd: float, rn: float });
+            return true;
+          }
+          emit({
+            op: "ldr-indexed",
+            size: scale,
+            fp: false,
+            rt: integer,
+            rn: base,
+            rm: index,
+            scaled: scale !== 0,
+          });
+          if (layout.element === "signed")
+            emit({
+              op: "sbfm",
+              width: 64,
+              rd: integer,
+              rn: integer,
+              immr: 0,
+              imms: (8 << scale) - 1,
+            });
+          return false;
+        }
+        /** An integer element loaded by loadElement as a double. */
+        function elementToDouble(
+          type: ScalarType,
+          rd: number,
+          rn: number,
+        ): void {
+          if (typedArrayLayout(typedArrayType(type)).element === "signed")
+            emit({ op: "scvtf-d-x", rd, rn });
+          else emit({ op: "ucvtf-d-w", rd, rn });
+        }
         function arrayIndex(
           array: number,
           index: number,
@@ -8825,12 +8939,12 @@ function emitModuleForms(
               wordKinds[valueIds.intern(op.id)] = 2;
             else if (
               op.kind === "array-read" &&
-              value(op.array).type !== "Float64Array"
+              typedArrayIntegerElements(typedArrayType(value(op.array).type))
             )
               wordKinds[valueIds.intern(op.id)] = 4;
             else if (
               op.kind === "array-element" &&
-              value(op.array).type !== "Float64Array"
+              typedArrayIntegerElements(typedArrayType(value(op.array).type))
             )
               wordKinds[valueIds.intern(op.id)] = 2;
             else if (
@@ -9082,16 +9196,7 @@ function emitModuleForms(
                   shift: 0,
                   setFlags: true,
                 });
-                const marker =
-                  op.type === "Uint8Array"
-                    ? 2
-                    : op.type === "Uint16Array"
-                      ? 3
-                      : op.type === "Uint32Array"
-                        ? 4
-                        : op.type === "Float64Array"
-                          ? 5
-                          : 0;
+                const marker = typedArrayMarker(op.type);
                 if (marker === 0) {
                   emit({ op: "cset", rd: 12, condition: "eq" });
                   saveRaw(12, op.id);
@@ -9705,16 +9810,7 @@ function emitModuleForms(
                 });
                 trapIf({ op: "b.cond", condition: "ne" });
                 rawLoad(9, value(op.value).offset + 8);
-                const marker =
-                  op.type === "Uint8Array"
-                    ? 2
-                    : op.type === "Uint16Array"
-                      ? 3
-                      : op.type === "Uint32Array"
-                        ? 4
-                        : op.type === "Float64Array"
-                          ? 5
-                          : 0;
+                const marker = typedArrayMarker(op.type);
                 if (marker !== 0) {
                   // The object's header marker (bits 0-47) must be 2:
                   // a typed array of 1-byte elements (any storage kind).
@@ -9834,14 +9930,7 @@ function emitModuleForms(
                   rn: 13,
                   rm: 11,
                   shift: "lsl",
-                  amount:
-                    value(op.array).type === "Uint8Array"
-                      ? 0
-                      : value(op.array).type === "Uint16Array"
-                        ? 1
-                        : value(op.array).type === "Float64Array"
-                          ? 3
-                          : 2,
+                  amount: typedArrayScale(value(op.array).type),
                   setFlags: false,
                 });
                 emit({
@@ -10029,20 +10118,8 @@ function emitModuleForms(
                 allocateIndexed(
                   op.id,
                   op.length,
-                  op.type === "Uint8Array"
-                    ? 0
-                    : op.type === "Uint16Array"
-                      ? 1
-                      : op.type === "Float64Array"
-                        ? 3
-                        : 2,
-                  op.type === "Uint8Array"
-                    ? 2
-                    : op.type === "Uint16Array"
-                      ? 3
-                      : op.type === "Float64Array"
-                        ? 5
-                        : 4,
+                  typedArrayScale(op.type),
+                  typedArrayMarker(op.type),
                 );
                 break;
               case "string-literal":
@@ -10760,13 +10837,14 @@ function emitModuleForms(
                   // A fused typed-array read left its element word (zero when
                   // absent) in the payload word: convert it, no selection.
                   rawValue(11, op.value);
-                  if (value(arrayOf(op.value)).type === "Float64Array")
+                  const elements = value(arrayOf(op.value)).type;
+                  if (!typedArrayIntegerElements(typedArrayType(elements)))
                     saveRaw(11, op.id);
                   else if (wantsInteger(op.id)) {
                     saveRaw(11, op.id);
                     markInteger(op.id);
                   } else {
-                    emit({ op: "ucvtf-d-w", rd: 0, rn: 11 });
+                    elementToDouble(elements, 0, 11);
                     floatStore(0, op.id);
                   }
                   break;
@@ -14101,14 +14179,7 @@ function emitModuleForms(
                   rn: 10,
                   offset: nativeArrayLengthOffset,
                 });
-                const shift =
-                  value(op.array).type === "Uint8Array"
-                    ? 0
-                    : value(op.array).type === "Uint16Array"
-                      ? 1
-                      : value(op.array).type === "Float64Array"
-                        ? 3
-                        : 2;
+                const shift = typedArrayScale(value(op.array).type);
                 if (shift !== 0)
                   emit({
                     op: "add-reg",
@@ -14385,81 +14456,63 @@ function emitModuleForms(
               }
               case "array-read":
                 const readIndex = arrayIndex(op.array, op.index);
+                const readType = value(op.array).type;
                 if (
                   fusedFallbacks.get(op.id) === undefined &&
                   fusedReads[valueIds.intern(op.id)] === 0
                 ) {
                   // The boxed result starts as `undefined`; only an
                   // in-range element replaces it, as a quiet number: words
-                  // convert exactly, and doubles are quieted, as their raw
-                  // bits could be the reserved `undefined` NaN.
-                  const type = value(op.array).type,
-                    scale =
-                      type === "Uint8Array"
-                        ? 0
-                        : type === "Uint16Array"
-                          ? 1
-                          : type === "Float64Array"
-                            ? 3
-                            : 2;
+                  // convert exactly, Float32 widening always gives a quiet
+                  // NaN, and doubles are quieted, as their raw bits could
+                  // be the reserved `undefined` NaN.
                   absentNumber(11);
-                  emit({ op: "cbz", width: 32, rt: 13, displacement: 16 });
-                  emit({
-                    op: "ldr-indexed",
-                    size: scale,
-                    fp: type === "Float64Array",
-                    rt: type === "Float64Array" ? 0 : 11,
-                    rn: 10,
-                    rm: readIndex,
-                    scaled: scale !== 0,
-                  });
-                  if (type === "Float64Array") quietNumber(0, 0);
-                  else emit({ op: "ucvtf-d-w", rd: 0, rn: 11 });
+                  const absent = instructions.length;
+                  emit({ op: "cbz", width: 32, rt: 13, displacement: 0 });
+                  if (loadElement(readType, 10, readIndex, 11, 0)) {
+                    if (readType === "Float64Array") quietNumber(0, 0);
+                  } else elementToDouble(readType, 0, 11);
                   emit({ op: "fmov-x-d", rd: 11, rn: 0 });
+                  patchInstruction(absent, {
+                    op: "cbz",
+                    width: 32,
+                    rt: 13,
+                    displacement: (instructions.length - absent) * 4,
+                  });
                   saveRaw(11, op.id);
                   break;
                 }
+                // The element (zero when absent) as an exact int64 or, for
+                // floating-point kinds, its double's bits.
                 imm(11, 0);
-                emit({ op: "cbz", width: 32, rt: 13, displacement: 12 });
-                emit({
-                  op: "add-reg",
-                  width: 64,
-                  rd: 10,
-                  rn: 10,
-                  rm: readIndex,
-                  shift: "lsl",
-                  amount:
-                    value(op.array).type === "Uint8Array"
-                      ? 0
-                      : value(op.array).type === "Uint16Array"
-                        ? 1
-                        : value(op.array).type === "Float64Array"
-                          ? 3
-                          : 2,
-                  setFlags: false,
+                const skipRead = instructions.length;
+                emit({ op: "cbz", width: 32, rt: 13, displacement: 0 });
+                if (readType === "Float64Array")
+                  emit({
+                    op: "ldr-indexed",
+                    size: 3,
+                    fp: false,
+                    rt: 11,
+                    rn: 10,
+                    rm: readIndex,
+                    scaled: true,
+                  });
+                else if (loadElement(readType, 10, readIndex, 11, 0))
+                  emit({ op: "fmov-x-d", rd: 11, rn: 0 });
+                patchInstruction(skipRead, {
+                  op: "cbz",
+                  width: 32,
+                  rt: 13,
+                  displacement: (instructions.length - skipRead) * 4,
                 });
-                emit(
-                  value(op.array).type === "Uint8Array"
-                    ? { op: "ldrb", rt: 11, rn: 10, offset: 0 }
-                    : value(op.array).type === "Uint16Array"
-                      ? { op: "ldrh", rt: 11, rn: 10, offset: 0 }
-                      : {
-                          op: "ldr",
-                          width:
-                            value(op.array).type === "Float64Array" ? 64 : 32,
-                          rt: 11,
-                          rn: 10,
-                          offset: 0,
-                        },
-                );
                 const constantFallback = fusedFallbacks.get(op.id);
                 if (constantFallback !== undefined) {
                   // `?? constant`: the read's own home receives the final
                   // number, the converted element or the constant's bits.
                   const absent = instructions.length;
                   emit({ op: "cbz", width: 32, rt: 13, displacement: 0 });
-                  if (value(op.array).type !== "Float64Array") {
-                    emit({ op: "ucvtf-d-w", rd: 0, rn: 11 });
+                  if (typedArrayIntegerElements(typedArrayType(readType))) {
+                    elementToDouble(readType, 0, 11);
                     emit({ op: "fmov-x-d", rd: 11, rn: 0 });
                   }
                   const done = instructions.length;
@@ -14489,28 +14542,26 @@ function emitModuleForms(
                 // The index is a proven integer within the fixed length:
                 // address the element directly, without checks.
                 const type = value(op.array).type,
-                  scale =
-                    type === "Uint8Array"
-                      ? 0
-                      : type === "Uint16Array"
-                        ? 1
-                        : type === "Float64Array"
-                          ? 3
-                          : 2;
+                  array = typedArrayType(type),
+                  element = typedArrayLayout(array).element,
+                  scale = typedArrayScale(type);
                 // Word elements convert first (possibly through a helper,
                 // which clobbers scratch registers) and are staged; int64
-                // values store their low bits (ToUint8/16/32 of an exact
-                // integer) straight from a register, as doubles do.
+                // values store their low bits (ToInt8/16/32 and
+                // ToUint8/16/32 of an exact integer) straight from a
+                // register, as doubles do.
                 const directWord =
                   op.kind === "array-store" &&
-                  type !== "Float64Array" &&
+                  element !== "float" &&
+                  element !== "clamped" &&
                   storedAsInteger(op.value);
                 if (
                   op.kind === "array-store" &&
-                  type !== "Float64Array" &&
+                  element !== "float" &&
                   !directWord
                 ) {
-                  wordValue(op.value);
+                  if (element === "clamped") clampedValue(op.value);
+                  else wordValue(op.value);
                   rawStore(9, resultOffset + 24);
                 }
                 const fact = valueIds.intern(op.index);
@@ -14531,15 +14582,21 @@ function emitModuleForms(
                   rn: 10,
                   offset: nativeArrayDataOffset,
                 });
-                if (op.kind === "array-store" && type === "Float64Array") {
-                  let element = 0;
+                if (op.kind === "array-store" && element === "float") {
+                  let value = 0;
                   if (storedAsInteger(op.value)) floatLoad(0, op.value);
-                  else element = floatOperand(op.value, 0);
+                  else value = floatOperand(op.value, 0);
+                  if (scale === 2) {
+                    // ECMAScript's Float32 conversion rounds to nearest,
+                    // ties to even, as FCVT does.
+                    emit({ op: "fcvt-s-d", rd: 0, rn: value });
+                    value = 0;
+                  }
                   emit({
                     op: "str-indexed",
-                    size: 3,
+                    size: scale,
                     fp: true,
-                    rt: element,
+                    rt: value,
                     rn: 10,
                     rm: index,
                     scaled: true,
@@ -14547,62 +14604,38 @@ function emitModuleForms(
                   break;
                 }
                 if (op.kind === "array-store") {
-                  let element = 11;
-                  if (directWord) element = intRegister(op.value, 11);
+                  let word = 11;
+                  if (directWord) word = intRegister(op.value, 11);
                   else rawLoad(11, resultOffset + 24);
                   emit({
                     op: "str-indexed",
                     size: scale,
                     fp: false,
-                    rt: element,
+                    rt: word,
                     rn: 10,
                     rm: index,
                     scaled: scale !== 0,
                   });
                   break;
                 }
-                if (type === "Float64Array") {
+                if (element === "float") {
                   // Straight into the result's FP home when it has one.
                   const target = floatTarget(op.id, 0);
-                  emit({
-                    op: "ldr-indexed",
-                    size: 3,
-                    fp: true,
-                    rt: target,
-                    rn: 10,
-                    rm: index,
-                    scaled: true,
-                  });
+                  loadElement(type, 10, index, 11, target);
                   floatStore(target, op.id);
                   break;
                 }
                 if (wantsInteger(op.id)) {
-                  // Unsigned element loads zero-extend: an exact int64.
+                  // Integer elements load as an exact int64.
                   const target = intTarget(op.id, 11);
-                  emit({
-                    op: "ldr-indexed",
-                    size: scale,
-                    fp: false,
-                    rt: target,
-                    rn: 10,
-                    rm: index,
-                    scaled: scale !== 0,
-                  });
+                  loadElement(type, 10, index, target, 0);
                   saveRaw(target, op.id);
                   markInteger(op.id);
                   break;
                 }
-                emit({
-                  op: "ldr-indexed",
-                  size: scale,
-                  fp: false,
-                  rt: 11,
-                  rn: 10,
-                  rm: index,
-                  scaled: scale !== 0,
-                });
+                loadElement(type, 10, index, 11, 0);
                 const target = floatTarget(op.id, 0);
-                emit({ op: "ucvtf-d-w", rd: target, rn: 11 });
+                elementToDouble(type, target, 11);
                 floatStore(target, op.id);
                 break;
               }
@@ -14611,63 +14644,50 @@ function emitModuleForms(
                 rawValue(1, op.source);
                 floatLoad(0, op.offset);
                 const type = value(op.array).type;
-                imm(
-                  5,
-                  type === "Uint8Array"
-                    ? 0
-                    : type === "Uint16Array"
-                      ? 1
-                      : type === "Uint32Array"
-                        ? 2
-                        : 3,
-                );
+                imm(5, typedArrayScale(type));
                 callHelper("array-copy");
                 saveRaw(0, op.id);
                 break;
               }
-              case "array-write":
-                if (value(op.array).type === "Float64Array") {
+              case "array-write": {
+                const type = value(op.array).type,
+                  element = typedArrayLayout(typedArrayType(type)).element,
+                  scale = typedArrayScale(type);
+                // Stage the element's bits: a double's, a Float32's, a
+                // clamped byte or a word's low bits.
+                if (type === "Float64Array") {
                   if (storedAsInteger(op.value)) {
                     floatLoad(0, op.value);
                     emit({ op: "fmov-x-d", rd: 9, rn: 0 });
                   } else rawValue(9, op.value);
-                } else wordValue(op.value);
+                } else if (element === "float") {
+                  floatLoad(0, op.value);
+                  emit({ op: "fcvt-s-d", rd: 0, rn: 0 });
+                  emit({ op: "fmov-w-s", rd: 9, rn: 0 });
+                } else if (element === "clamped") clampedValue(op.value);
+                else wordValue(op.value);
                 rawStore(9, resultOffset + 24);
                 const storeIndex = arrayIndex(op.array, op.index);
-                emit({ op: "cbz", width: 32, rt: 13, displacement: 16 });
+                const invalid = instructions.length;
+                emit({ op: "cbz", width: 32, rt: 13, displacement: 0 });
                 rawLoad(11, resultOffset + 24);
                 emit({
-                  op: "add-reg",
-                  width: 64,
-                  rd: 10,
+                  op: "str-indexed",
+                  size: scale,
+                  fp: false,
+                  rt: 11,
                   rn: 10,
                   rm: storeIndex,
-                  shift: "lsl",
-                  amount:
-                    value(op.array).type === "Uint8Array"
-                      ? 0
-                      : value(op.array).type === "Uint16Array"
-                        ? 1
-                        : value(op.array).type === "Float64Array"
-                          ? 3
-                          : 2,
-                  setFlags: false,
+                  scaled: scale !== 0,
                 });
-                emit(
-                  value(op.array).type === "Uint8Array"
-                    ? { op: "strb", rt: 11, rn: 10, offset: 0 }
-                    : value(op.array).type === "Uint16Array"
-                      ? { op: "strh", rt: 11, rn: 10, offset: 0 }
-                      : {
-                          op: "str",
-                          width:
-                            value(op.array).type === "Float64Array" ? 64 : 32,
-                          rt: 11,
-                          rn: 10,
-                          offset: 0,
-                        },
-                );
+                patchInstruction(invalid, {
+                  op: "cbz",
+                  width: 32,
+                  rt: 13,
+                  displacement: (instructions.length - invalid) * 4,
+                });
                 break;
+              }
               case "load":
                 if (integerSlots[op.slot] === 1) {
                   if (wantsInteger(op.id)) {

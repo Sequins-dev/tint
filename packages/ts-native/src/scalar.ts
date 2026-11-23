@@ -34,6 +34,9 @@ import {
   maximumStringLength,
   instructionResult,
   instructionMayThrow,
+  isNativeTypedArray,
+  nativeTypedArray,
+  nativeTypedArrays,
   type ModuleIR,
   type FunctionIR,
   type Block,
@@ -142,6 +145,32 @@ interface FinallyScope {
   readonly parent: FinallyScope | undefined;
 }
 // Input is an unchanged successful checker result; IDs/maps are its public contract.
+
+/** A slot type proven to be a native typed array. */
+function typedArraySlot(type: ScalarType | undefined): NativeTypedArray {
+  const array = nativeTypedArray(type);
+  if (array === undefined) throw "typed array slot invariant";
+  return array;
+}
+/** A slot type proven present. */
+function definedType(type: ScalarType | undefined): ScalarType {
+  if (type === undefined) throw "slot type invariant";
+  return type;
+}
+/** A category general-value extraction accepts. */
+function generalValueType(
+  type: ScalarType | undefined,
+): "number" | "boolean" | "string" | "reference" | NativeTypedArray {
+  if (
+    type === "number" ||
+    type === "boolean" ||
+    type === "string" ||
+    type === "reference"
+  )
+    return type;
+  return typedArraySlot(type);
+}
+
 export function lowerModule(module: CheckedModule): LoweringResult {
   const functions = module.functions.map((fn) =>
     lowerFunction(fn, module.functions),
@@ -656,17 +685,12 @@ export function lowerFunction(
         start: node.start,
         end: node.end,
       });
-    else if (
-      type === "Uint8Array" ||
-      type === "Uint16Array" ||
-      type === "Uint32Array" ||
-      type === "Float64Array"
-    )
+    else if (isNativeTypedArray(type))
       emit({
         kind: "reference-value",
         id,
         value,
-        type,
+        type: typedArraySlot(type),
         start: node.start,
         end: node.end,
       });
@@ -909,15 +933,9 @@ export function lowerFunction(
       current = done;
       return load(result, node);
     }
-    if (
-      sourceType === "optional-reference" &&
-      (type === "Uint8Array" ||
-        type === "Uint16Array" ||
-        type === "Uint32Array" ||
-        type === "Float64Array")
-    ) {
+    if (sourceType === "optional-reference" && isNativeTypedArray(type)) {
       const unwrapped = nextValue++;
-      emitUnwrap(unwrapped, id, type, node);
+      emitUnwrap(unwrapped, id, typedArraySlot(type), node);
       return unwrapped;
     }
     const packOptional =
@@ -1036,17 +1054,14 @@ export function lowerFunction(
         type === "boolean" ||
         type === "string" ||
         type === "reference" ||
-        type === "Uint8Array" ||
-        type === "Uint16Array" ||
-        type === "Uint32Array" ||
-        type === "Float64Array")
+        isNativeTypedArray(type))
     ) {
       const unwrapped = nextValue++;
       emit({
         kind: "general-value",
         id: unwrapped,
         value: id,
-        type,
+        type: generalValueType(type),
         start: node.start,
         end: node.end,
       });
@@ -1151,10 +1166,7 @@ export function lowerFunction(
       const required = type === "optional-string" ? "string" : "reference";
       const present =
         source === required ||
-        (type === "optional-reference" &&
-          ["Uint8Array", "Uint16Array", "Uint32Array", "Float64Array"].includes(
-            source ?? "",
-          ));
+        (type === "optional-reference" && isNativeTypedArray(source ?? ""));
       if (present || undefinedValues[id] === 1) {
         const wrapped = nextValue++;
         if (present)
@@ -3671,13 +3683,7 @@ export function lowerFunction(
   /** Continue when boolean slot `condition` holds, else throw `error`. */
   /** Records and typed arrays: present references (never undefined). */
   function referenceSlot(type: ScalarType | undefined): boolean {
-    return (
-      type === "reference" ||
-      type === "Uint8Array" ||
-      type === "Uint16Array" ||
-      type === "Uint32Array" ||
-      type === "Float64Array"
-    );
+    return type === "reference" || isNativeTypedArray(type);
   }
   /** A slot of the boolean "this list read is not a hole". */
   function holeAbsent(slot: number, node: IRSpan): number {
@@ -4176,14 +4182,8 @@ export function lowerFunction(
       const parameter = parameters[i];
       if (parameter === undefined) throw "call parameter invariant";
       if (slots[slot] === parameter) return slot;
-      if (
-        slots[slot] === "general" &&
-        (parameter === "Uint8Array" ||
-          parameter === "Uint16Array" ||
-          parameter === "Uint32Array" ||
-          parameter === "Float64Array")
-      )
-        return nativeArrayArgument(slot, parameter, node);
+      if (slots[slot] === "general" && isNativeTypedArray(parameter))
+        return nativeArrayArgument(slot, typedArraySlot(parameter), node);
       return save(coerce(load(slot, node), parameter, node), parameter, node);
     });
     const preparedReceiver =
@@ -4988,12 +4988,7 @@ export function lowerFunction(
       if (carrier === undefined) throw "nullish carrier invariant";
       const resultType = scalarType(node);
       const extractionType =
-        reference &&
-        ["Uint8Array", "Uint16Array", "Uint32Array", "Float64Array"].includes(
-          resultType,
-        )
-          ? resultType
-          : carrier;
+        reference && isNativeTypedArray(resultType) ? resultType : carrier;
       emitUnwrap(extracted, load(left, leftNode), extractionType, node);
       store(result, extracted, node);
     }
@@ -5014,12 +5009,7 @@ export function lowerFunction(
     },
     listSource: (expression: Expression): boolean => {
       const type = scalarType(expression);
-      return (
-        type !== "Uint8Array" &&
-        type !== "Uint16Array" &&
-        type !== "Uint32Array" &&
-        type !== "Float64Array"
-      );
+      return !isNativeTypedArray(type);
     },
   };
   /** Arguments for a callback from (item, index, list) slots, unwrapping
@@ -5362,16 +5352,12 @@ export function lowerFunction(
       const liveReceiver = metadata.chainReceiverType;
       if (
         (receiverType === "optional-reference" &&
-          (liveReceiver === "reference" ||
-            liveReceiver === "Uint8Array" ||
-            liveReceiver === "Uint16Array" ||
-            liveReceiver === "Uint32Array" ||
-            liveReceiver === "Float64Array")) ||
+          (liveReceiver === "reference" || isNativeTypedArray(liveReceiver))) ||
         (receiverType === "optional-string" && liveReceiver === "string")
       ) {
         const id = nextValue++;
-        emitUnwrap(id, load(receiver, input), liveReceiver, input);
-        receiver = save(id, liveReceiver, input);
+        emitUnwrap(id, load(receiver, input), definedType(liveReceiver), input);
+        receiver = save(id, definedType(liveReceiver), input);
       }
       if (receiverType === "primitive" && liveReceiver !== undefined) {
         receiver = save(
@@ -5850,13 +5836,7 @@ export function lowerFunction(
       realmErrors === undefined ? operand : exposedError(operand, node);
     const kind = temporary("string"),
       done = block();
-    const arrays: NativeTypedArray[] = [
-      "Uint8Array",
-      "Uint16Array",
-      "Uint32Array",
-      "Float64Array",
-    ];
-    for (const array of arrays) {
+    for (const array of nativeTypedArrays) {
       if (array === undefined) throw "native typed array kind invariant";
       const yes = block(),
         no = block();
@@ -6206,13 +6186,7 @@ export function lowerFunction(
           return set;
         }
         const type = scalarType(node);
-        if (
-          info(node).builtin !== "array-new" ||
-          (type !== "Uint8Array" &&
-            type !== "Uint16Array" &&
-            type !== "Uint32Array" &&
-            type !== "Float64Array")
-        )
+        if (info(node).builtin !== "array-new" || !isNativeTypedArray(type))
           throw "array constructor contract invariant";
         const arg = node.arguments[0],
           input = arg === undefined ? numberSlot(0, node) : value(arg);
@@ -6221,11 +6195,7 @@ export function lowerFunction(
             ? arg
             : undefined;
         const inputType = slots[input],
-          copy =
-            inputType === "Uint8Array" ||
-            inputType === "Uint16Array" ||
-            inputType === "Uint32Array" ||
-            inputType === "Float64Array",
+          copy = isNativeTypedArray(inputType),
           length =
             numericList !== undefined
               ? listValue(listRuntime(numericList), "length", [input], node)
@@ -6239,7 +6209,7 @@ export function lowerFunction(
         emit({
           kind: "array-new",
           id,
-          type,
+          type: typedArraySlot(type),
           length: load(length, node),
           start: node.start,
           end: node.end,
@@ -8078,11 +8048,7 @@ export function lowerFunction(
             const argument = node.arguments[0];
             if (argument === undefined) throw "map callback invariant";
             const receiverType = slots[receiver];
-            const typed =
-              receiverType === "Uint8Array" ||
-              receiverType === "Uint16Array" ||
-              receiverType === "Uint32Array" ||
-              receiverType === "Float64Array";
+            const typed = isNativeTypedArray(receiverType);
             const callback = value(argument),
               input = typed ? undefined : listRuntime(target.object),
               output =
@@ -9012,13 +8978,7 @@ export function lowerFunction(
               source = nativeArrayArgument(input, kind, node);
             }
             const type = slots[source];
-            if (
-              type !== "Uint8Array" &&
-              type !== "Uint16Array" &&
-              type !== "Uint32Array" &&
-              type !== "Float64Array"
-            )
-              throw "set element kind invariant";
+            if (!isNativeTypedArray(type)) throw "set element kind invariant";
             const zero = numberSlot(0, node),
               offset = integerIndex(
                 save(numericInput(args[1] ?? zero, node), "number", node),
@@ -9064,12 +9024,12 @@ export function lowerFunction(
             emit({
               kind: "array-new",
               id,
-              type,
+              type: typedArraySlot(type),
               length: load(length, node),
               start: node.start,
               end: node.end,
             });
-            const snapshot = save(id, type, node);
+            const snapshot = save(id, typedArraySlot(type), node);
             copyElements(source, snapshot, length, zero, zero, node);
             copyElements(snapshot, destination, length, offset, zero, node);
             jump(done.id, node);
@@ -9100,23 +9060,17 @@ export function lowerFunction(
             );
             if (builtin === "array-slice") {
               const type = slots[array];
-              if (
-                type !== "Uint8Array" &&
-                type !== "Uint16Array" &&
-                type !== "Uint32Array" &&
-                type !== "Float64Array"
-              )
-                throw "slice receiver invariant";
+              if (!isNativeTypedArray(type)) throw "slice receiver invariant";
               const id = nextValue++;
               emit({
                 kind: "array-new",
                 id,
-                type,
+                type: typedArraySlot(type),
                 length: load(count, node),
                 start: node.start,
                 end: node.end,
               });
-              const result = save(id, type, node);
+              const result = save(id, typedArraySlot(type), node);
               copyElements(array, result, count, zero, begin, node);
               return result;
             }
@@ -11837,10 +11791,7 @@ export function lowerFunction(
       local.type === "boolean" ||
       local.type === "string" ||
       local.type === "reference" ||
-      local.type === "Uint8Array" ||
-      local.type === "Uint16Array" ||
-      local.type === "Uint32Array" ||
-      local.type === "Float64Array"
+      isNativeTypedArray(local.type)
     ) {
       const extracted = nextValue++;
       emitUnwrap(extracted, payload, local.type, p);

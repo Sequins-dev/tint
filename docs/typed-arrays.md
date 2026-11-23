@@ -74,12 +74,47 @@ still-valid prefix before choosing overlap direction. The retained
 records the older algorithm's skipped copy; the [corrected native result](results/native-typed-array-copywithin-shrink-focused-v1.json) passes. This targeted correction does not
 change the project's overall specification baseline.
 
+## Typed-path representation
+
+Typed code holds `Uint8Array`, `Int8Array`, `Uint8ClampedArray`, `Uint16Array`,
+`Int16Array`, `Uint32Array`, `Int32Array`, `Float32Array` and `Float64Array`
+natively: one header word, the length, a data pointer and inline, borrowed or
+viewed elements. The [kind table](../packages/abi/src/typed-array.ts) gives
+each kind a marker `(kind index << 3) | width class` (width classes 2-5 for
+1, 2, 4 and 8 bytes), so the original four kinds keep markers 2-5 and every
+built-in marker stays below 32, under any record descriptor address. The
+header has no spare bits for a separate kind byte: the marker field holds
+descriptor addresses, the three flag bits distinguish owned, borrowed and
+viewed storage, and the next two bits belong to the collectors. Collectors
+and extent decoding treat any typed-array marker as pointer-free elements
+whose extent follows from the header, through one predicate
+(`nativeTypedArrayMarker`) and the width class
+(`nativeTypedArrayElementBytes`), never per-kind cases.
+
+Element writes convert as the specification requires: the integer kinds
+store the low bits of ToInt32 (ToInt8 and ToInt16 equal ToUint8 and
+ToUint16 bit for bit), `Uint8ClampedArray` stores ToUint8Clamp (AArch64
+FCVTNU then a clamp to 255; x86-64 CVTSD2SI under round-to-nearest after
+range checks; int64 values clamp directly), and `Float32Array` rounds to
+nearest, ties to even (FCVT or CVTSD2SS), overflowing to infinity. Reads
+zero- or sign-extend to an exact integer, or widen a float to a double; a
+widened Float32 NaN is always quiet, so it is never optional-number
+absence. Typed `instanceof` compares header markers, and realm-capable code
+passes the kind name to the realm, which selects that kind's prototype.
+
+`BigInt64Array`, `BigUint64Array` and `Float16Array` stay realm objects on
+the typed path until BigInt (and binary16) elements have a typed
+representation; their kind-table entries already reserve markers.
+
 ## Strict compiler construction
 
-The strict native compiler accepts numeric and readonly numeric-array inputs for
-Uint8Array, Uint16Array, Uint32Array and Float64Array, alongside numeric lengths
-and supported typed-array sources. Copying evaluates the source once, produces
-independent storage, and converts holes/undefined to NaN before element encoding.
-The [native regression](results/native-numeric-array-construction-v1.json) covers
-all four encodings, sparse inputs, empty arrays and copy ownership. This is separate
-from the Script runtime's broader TypedArray constructor support.
+The strict native compiler accepts numeric and readonly numeric-array inputs
+for every native kind, alongside numeric lengths and supported typed-array
+sources. Copying evaluates the source once, produces independent storage,
+and converts holes/undefined to NaN before element encoding; copies between
+different kinds convert by value. The
+[native regression](results/native-numeric-array-construction-v1.json) covers
+the original four encodings, sparse inputs, empty arrays and copy ownership;
+`tools/native-typed-array-kinds.test.ts` covers the conversions, access forms,
+library operations and identities of the added kinds. This is separate from
+the Script runtime's broader TypedArray constructor support.

@@ -52,6 +52,11 @@ import type { Word64 } from "@tint/foundation/binary/word64";
 import {
   instructionResult,
   optionalNumberAbsentHigh,
+  isNativeTypedArray,
+  nativeTypedArray,
+  typedArrayLayout,
+  typedArrayMarker,
+  typedArrayScale,
   optionalNumberAbsentLow,
   scalarByteLength,
   trackedManagedWrites,
@@ -64,6 +69,7 @@ import {
   type RecordField,
   type RecordLayout,
   type ScalarType,
+  type NativeTypedArray,
   type Span,
   type Terminator,
 } from "@tint/ir/scalar";
@@ -144,7 +150,12 @@ import {
   type CallbackThunk,
   type TransitionPlan,
 } from "./callbacks.ts";
-import { createNumberEmission, floatBits } from "./numbers.ts";
+import {
+  bitsFloat,
+  createNumberEmission,
+  float32Bits,
+  floatBits,
+} from "./numbers.ts";
 import { nativeSignatureTypeCode } from "../../scalar/signature.ts";
 import { shareFrameSlots } from "../../scalar/slot-sharing.ts";
 import { emitExecutableMemory, serializeCode } from "./executable-memory.ts";
@@ -279,25 +290,9 @@ const rememberLabel = "remember-old-object";
 
 type ElementBytes = 1 | 2 | 4 | 8;
 function arrayWidth(type: ScalarType): ElementBytes {
-  if (type === "Uint8Array") return 1;
-  if (type === "Uint16Array") return 2;
-  if (type === "Uint32Array") return 4;
-  if (type === "Float64Array") return 8;
-  throw "typed array width invariant";
-}
-function arrayMarker(width: ElementBytes): number {
-  return width === 8 ? 5 : width === 4 ? 4 : width === 2 ? 3 : 2;
-}
-function typedArrayMarker(type: ScalarType | GeneralTest): number {
-  return type === "Uint8Array"
-    ? 2
-    : type === "Uint16Array"
-      ? 3
-      : type === "Uint32Array"
-        ? 4
-        : type === "Float64Array"
-          ? 5
-          : 0;
+  const array = nativeTypedArray(type);
+  if (array === undefined) throw "typed array width invariant";
+  return typedArrayLayout(array).elementBytes;
 }
 function generalTag(type: string): number {
   return type === "number"
@@ -1313,7 +1308,10 @@ export function emitModule(
       emit({
         op: "mov",
         dst: scratch,
-        src: bits(arrayMarker(width), 2 * (nativeHeaderFlagUnit / 4294967296)),
+        src: bits(
+          typedArrayMarker(type),
+          2 * (nativeHeaderFlagUnit / 4294967296),
+        ),
       });
       emit({ op: "mov", dst: mem(0, 0), src: scratch });
       emit({ op: "mov", dst: mem(0, nativeArrayLengthOffset), src: length });
@@ -1409,6 +1407,31 @@ export function emitModule(
       emit({ op: "label", name: done });
     }
 
+    function typedArrayElements(type: ScalarType): NativeTypedArray {
+      const array = nativeTypedArray(type);
+      if (array === undefined) throw "typed array element invariant";
+      return array;
+    }
+    /** ToUint8Clamp of a number into EAX: NaN and anything below 0.5 give
+     * 0, anything from 254.5 gives 255, and the rest round to nearest, ties
+     * to even (CVTSD2SI under the default MXCSR). Preserves R9. */
+    function clampedByte(value: number, site: string): void {
+      const done = site + ":clamped";
+      const x1 = xmm(1);
+      emit({ op: "movsd", dst: x0, src: frame(home(value)) });
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "xorpd", dst: x1, src: x1 });
+      emit({ op: "comisd", dst: x0, src: x1 });
+      // Unordered (NaN) or not above zero.
+      branch(emit, "be", done);
+      emit({ op: "mov", dst: eax, src: imm(255) });
+      emit({ op: "mov", dst: r10, src: bits(0, 0x406fe000) });
+      bitsFloat(emit, x1, r10);
+      emit({ op: "comisd", dst: x0, src: x1 });
+      branch(emit, "ae", done);
+      emit({ op: "cvtsd2si", dst: eax, src: x0 });
+      emit({ op: "label", name: done });
+    }
     function arrayElement(
       op:
         | {
@@ -1434,11 +1457,18 @@ export function emitModule(
         emit({ op: "cmp", dst: r9, src: mem(11, nativeArrayLengthOffset) });
         branch(emit, "ae", invalid);
       }
-      const width = arrayWidth(typeOf(op.array));
+      const type = typeOf(op.array),
+        width = arrayWidth(type),
+        element = typedArrayLayout(typedArrayElements(type)).element;
       const store = op.kind === "array-write" || op.kind === "array-store";
       if (op.kind === "array-write" || op.kind === "array-store") {
         if (width === 8)
           emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
+        else if (element === "float") {
+          // Float32 conversion rounds to nearest, ties to even (MXCSR).
+          emit({ op: "cvtsd2ss", dst: x0, src: frame(home(op.value)) });
+          float32Bits(emit, eax, x0);
+        } else if (element === "clamped") clampedByte(op.value, invalid);
         else {
           // ToUint32 preserves R9 but clobbers the array register.
           numbers.toWord(frame(home(op.value)));
@@ -1493,8 +1523,27 @@ export function emitModule(
             branch(emit, "np", done);
             emit({ op: "mov", dst: rax, src: bits(0, 0x7ff80000) });
           }
+        } else if (element === "float") {
+          // Widening gives a quiet NaN, never optional-number absence.
+          emit({
+            op: "cvtss2sd",
+            dst: x0,
+            src: { kind: "mem", width: 32, address },
+          });
+          floatBits(emit, rax, x0);
         } else {
-          if (width === 1)
+          // Sign extension fills RAX; zero extension clears its top half.
+          if (element === "signed")
+            emit({
+              op: "movsx",
+              dst: rax,
+              src: {
+                kind: "mem",
+                width: width === 1 ? 8 : width === 2 ? 16 : 32,
+                address,
+              },
+            });
+          else if (width === 1)
             emit({
               op: "movzx",
               dst: eax,
@@ -2183,7 +2232,7 @@ export function emitModule(
             op.length,
             op.type,
             width,
-            arrayMarker(width),
+            typedArrayMarker(op.type),
             block,
             index,
           );
@@ -3153,10 +3202,7 @@ export function emitModule(
             );
           } else if (
             (type === "boolean" ||
-              type === "Uint8Array" ||
-              type === "Uint16Array" ||
-              type === "Uint32Array" ||
-              type === "Float64Array" ||
+              isNativeTypedArray(type) ||
               type === "reference" ||
               type === "optional-reference") &&
             (equal || unequal)

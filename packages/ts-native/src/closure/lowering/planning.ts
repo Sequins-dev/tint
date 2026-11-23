@@ -3,7 +3,7 @@ import {
   createKeyIndex,
   type KeyIndex,
 } from "@tint/foundation/collections/key-index";
-import type { ScalarType } from "@tint/ir/scalar";
+import { nativeTypedArray, type ScalarType } from "@tint/ir/scalar";
 import type { CheckedClosures } from "@tint/typescript/checker";
 import type { Binding as BoundBinding } from "@tint/typescript/binding";
 import type { Expression, Span, Statement } from "@tint/typescript/syntax";
@@ -710,15 +710,9 @@ export function scalarType(
 ): ScalarType | undefined {
   const t = checked.types[id];
   if (t === undefined) return undefined;
-  if (
-    t.kind === "number" ||
-    t.kind === "boolean" ||
-    t.kind === "Uint8Array" ||
-    t.kind === "Uint16Array" ||
-    t.kind === "Uint32Array" ||
-    t.kind === "Float64Array"
-  )
-    return t.kind;
+  if (t.kind === "number" || t.kind === "boolean") return t.kind;
+  const array = nativeTypedArray(t.kind);
+  if (array !== undefined) return array;
   if (t.kind === "undefined") return "optional-number";
   if (t.kind === "literal")
     return typeof t.value === "number"

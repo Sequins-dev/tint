@@ -34,15 +34,13 @@ import {
   type Property,
   type StringIndex,
   unsupportedDynamicContract,
+  isNativeTypedArrayKind,
   type DynamicPayloadRejection,
 } from "../types/index.ts";
+/** Typed arrays without a native representation (see
+ * nativeTypedArrayKinds): realm objects on the typed path. */
 export const realmOnlyTypedArrays: readonly string[] = [
-  "Int8Array",
-  "Uint8ClampedArray",
-  "Int16Array",
-  "Int32Array",
   "Float16Array",
-  "Float32Array",
   "BigInt64Array",
   "BigUint64Array",
 ];
@@ -61,13 +59,11 @@ export function realmConstructorInstance(name: string): string | undefined {
     case "TypeError":
     case "RangeError":
     case "ArrayBuffer":
-    case "Uint8Array":
-    case "Uint16Array":
-    case "Uint32Array":
-    case "Float64Array":
       return name;
     default:
-      return realmOnlyTypedArrays.includes(name) ? name : undefined;
+      return isNativeTypedArrayKind(name) || realmOnlyTypedArrays.includes(name)
+        ? name
+        : undefined;
   }
 }
 
@@ -222,6 +218,11 @@ export function resolveInterfaceTypes(
     { kind: "RangeError" },
     { kind: "bigint" },
     { kind: "Error" },
+    { kind: "Int8Array" },
+    { kind: "Uint8ClampedArray" },
+    { kind: "Int16Array" },
+    { kind: "Int32Array" },
+    { kind: "Float32Array" },
   ];
   const literals = createKeyIndex<string | number | boolean, number>(
     (value) => {

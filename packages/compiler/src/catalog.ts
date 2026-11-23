@@ -1091,6 +1091,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/scalar/typed-arrays.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/scalar/value-lifetimes.ts",
       packageId: "ir",
     },

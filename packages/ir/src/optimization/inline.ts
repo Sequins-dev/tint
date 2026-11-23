@@ -1,5 +1,6 @@
 import {
   instructionResult,
+  isNativeTypedArray,
   visitInstructionOperands,
   visitTerminatorOperands,
   substituteInstructionValues,
@@ -319,10 +320,7 @@ export function inlineSmallFunctions(
         type !== "optional-reference" &&
         type !== "string" &&
         type !== "optional-string" &&
-        type !== "Uint8Array" &&
-        type !== "Uint16Array" &&
-        type !== "Uint32Array" &&
-        type !== "Float64Array" &&
+        !isNativeTypedArray(type) &&
         !fn.parameters.includes(slot)
       )
         good = false;

@@ -12,6 +12,7 @@ import {
 import type { CheckedClosures, ClassContract } from "@tint/typescript/checker";
 import type { Expression } from "@tint/typescript/syntax";
 import {
+  isNativeTypedArray,
   type ScalarType,
   type RecordLayout,
   type RecordDebugInfo,
@@ -121,9 +122,7 @@ function collectionElement(
 ): CollectionElement | undefined {
   return (
     primitiveEncoding(checked, id) ??
-    (["Uint8Array", "Uint16Array", "Uint32Array", "Float64Array"].includes(
-      checked.types[id]?.kind ?? "",
-    ) ||
+    (isNativeTypedArray(checked.types[id]?.kind ?? "") ||
     checked.types[id]?.kind === "function" ||
     checked.types[id]?.kind === "array" ||
     checked.types[id]?.kind === "set" ||
@@ -162,12 +161,12 @@ function generalType(checked: CheckedClosures, id: number): boolean {
   )
     return true;
   if (
-    type?.kind === "Uint8Array" ||
-    type?.kind === "Uint16Array" ||
-    type?.kind === "Uint32Array" ||
-    type?.kind === "Float64Array"
+    type !== undefined &&
+    type.kind !== "object" &&
+    type.kind !== "literal" &&
+    isNativeTypedArray(type.kind)
   )
-    return type.arrayFlow === true;
+    return "arrayFlow" in type && type.arrayFlow === true;
   if (type?.kind !== "union") return false;
   const visited = new Set<number>(),
     primitiveKinds = new Set<string>();
@@ -218,10 +217,7 @@ function generalType(checked: CheckedClosures, id: number): boolean {
       current?.kind === "array" ||
       current?.kind === "map" ||
       current?.kind === "set" ||
-      current?.kind === "Uint8Array" ||
-      current?.kind === "Uint16Array" ||
-      current?.kind === "Uint32Array" ||
-      current?.kind === "Float64Array" ||
+      isNativeTypedArray(current?.kind) ||
       current?.kind === "ArrayBuffer"
     )
       reference = true;
@@ -375,8 +371,18 @@ function encodeScalarType(type: ScalarType | undefined): number {
       return 13;
     case "Float64Array":
       return 14;
-    default:
+    case "optional-number":
       return 15;
+    case "Int8Array":
+      return 16;
+    case "Uint8ClampedArray":
+      return 17;
+    case "Int16Array":
+      return 18;
+    case "Int32Array":
+      return 19;
+    case "Float32Array":
+      return 20;
   }
 }
 function decodeScalarType(encoded: number): ScalarType | undefined {
@@ -409,6 +415,16 @@ function decodeScalarType(encoded: number): ScalarType | undefined {
       return "Float64Array";
     case 15:
       return "optional-number";
+    case 16:
+      return "Int8Array";
+    case 17:
+      return "Uint8ClampedArray";
+    case 18:
+      return "Int16Array";
+    case 19:
+      return "Int32Array";
+    case 20:
+      return "Float32Array";
     default:
       return undefined;
   }
@@ -581,9 +597,7 @@ export function entryType(
     if (
       present.length === 1 &&
       first !== undefined &&
-      ["Uint8Array", "Uint16Array", "Uint32Array", "Float64Array"].includes(
-        checked.types[first]?.kind ?? "",
-      )
+      isNativeTypedArray(checked.types[first]?.kind ?? "")
     )
       return "optional-reference";
   }
@@ -625,9 +639,7 @@ export function entryType(
         ) ||
         referenceType(checked, p.type) !== undefined ||
         referenceType(checked, p.type, "string") !== undefined ||
-        ["Uint8Array", "Uint16Array", "Uint32Array", "Float64Array"].includes(
-          checked.types[p.type]?.kind ?? "",
-        ) ||
+        isNativeTypedArray(checked.types[p.type]?.kind ?? "") ||
         (checked.types[p.type]?.kind === "union" &&
           ["primitive", "general", "optional-reference"].includes(
             entryType(checked, p.type, listElements, setElements, mapTypes) ??
@@ -1333,12 +1345,7 @@ export function createRecordContracts(
                   ? "optional-number"
                   : type === "reference" ||
                       type === "optional-reference" ||
-                      [
-                        "Uint8Array",
-                        "Uint16Array",
-                        "Uint32Array",
-                        "Float64Array",
-                      ].includes(type ?? "")
+                      isNativeTypedArray(type ?? "")
                     ? "optional-reference"
                     : type === "string" || type === "optional-string"
                       ? "optional-string"

@@ -506,6 +506,11 @@ export const fixtures: readonly Fixture[] = [
     bytes: [163, 0, 121, 158],
   },
   {
+    assembly: "fcvtnu\tw3, d5",
+    instruction: { op: "fcvtnu-w-d", rd: 3, rn: 5 },
+    bytes: [163, 0, 97, 30],
+  },
+  {
     assembly: "fjcvtzs\tw3, d5",
     instruction: { op: "fjcvtzs", rd: 3, rn: 5 },
     bytes: [163, 0, 126, 30],

@@ -67,6 +67,8 @@ import {
   unsupportedDynamicPayload,
   type CheckedCellOperation,
   type CellOperation,
+  isNativeTypedArrayKind,
+  nativeTypedArrayKind,
 } from "../types/index.ts";
 import {
   installedNonConstructorGlobals,
@@ -449,8 +451,13 @@ function checkClosureModuleLayout(
     "Object",
     "Math",
     "Uint8Array",
+    "Int8Array",
+    "Uint8ClampedArray",
     "Uint16Array",
+    "Int16Array",
     "Uint32Array",
+    "Int32Array",
+    "Float32Array",
     "Float64Array",
     "ArrayBuffer",
     "TypeError",
@@ -2047,11 +2054,7 @@ function checkClosureModuleLayout(
     if (t.kind === "object" && t.realmTypedArray !== undefined) return true;
     // C views are byte arrays with members only.
     if (t.kind === "Uint8Array") return t.view === undefined;
-    return (
-      t.kind === "Uint16Array" ||
-      t.kind === "Uint32Array" ||
-      t.kind === "Float64Array"
-    );
+    return isNativeTypedArrayKind(t.kind);
   }
   function arrayElementType(type: number): number {
     const array = types[type];
@@ -3025,13 +3028,8 @@ function checkClosureModuleLayout(
       else return undefined;
     }
     if (truth && declared !== instance && isArray(instance)) {
-      const kind = types[instance]?.kind;
-      if (
-        kind === "Uint8Array" ||
-        kind === "Uint16Array" ||
-        kind === "Uint32Array" ||
-        kind === "Float64Array"
-      ) {
+      const kind = nativeTypedArrayKind(types[instance]?.kind);
+      if (kind !== undefined) {
         const known = arrayFlowTypes.get(kind);
         const flow =
           known ??
@@ -3301,10 +3299,7 @@ function checkClosureModuleLayout(
       type?.kind === "map" ||
       type?.kind === "set" ||
       type?.kind === "ArrayBuffer" ||
-      type?.kind === "Uint8Array" ||
-      type?.kind === "Uint16Array" ||
-      type?.kind === "Uint32Array" ||
-      type?.kind === "Float64Array" ||
+      isNativeTypedArrayKind(type?.kind) ||
       isErrorKind(type?.kind)
     );
   }
@@ -3396,10 +3391,7 @@ function checkClosureModuleLayout(
                 type?.kind === "set" ||
                 type?.kind === "map" ||
                 type?.kind === "ArrayBuffer" ||
-                type?.kind === "Uint8Array" ||
-                type?.kind === "Uint16Array" ||
-                type?.kind === "Uint32Array" ||
-                type?.kind === "Float64Array" ||
+                isNativeTypedArrayKind(type?.kind) ||
                 isErrorKind(type?.kind)
               ? "object"
               : type?.kind === "realm-callable"
@@ -6442,12 +6434,7 @@ function checkClosureModuleLayout(
           if (
             target.kind !== "identifier" ||
             references.has(target) ||
-            ![
-              "Uint8Array",
-              "Uint16Array",
-              "Uint32Array",
-              "Float64Array",
-            ].includes(target.name)
+            !isNativeTypedArrayKind(target.name)
           ) {
             if (node.typeArguments.length !== 0)
               fail(

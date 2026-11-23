@@ -1,6 +1,7 @@
 import type { SignatureLayout } from "./abi.ts";
 import {
   scalarByteLength,
+  isNativeTypedArray,
   instructionResult,
   visitInstructionOperands,
   visitTerminatorOperands,
@@ -84,10 +85,7 @@ function referenceWord(type: ScalarType): boolean {
     type === "optional-reference" ||
     type === "string" ||
     type === "optional-string" ||
-    type === "Uint8Array" ||
-    type === "Uint16Array" ||
-    type === "Uint32Array" ||
-    type === "Float64Array"
+    isNativeTypedArray(type)
   );
 }
 /** Plan the same private leaf storage bank before emission, so typed copies can

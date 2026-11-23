@@ -13,10 +13,7 @@ export type ScalarType =
   | "optional-string"
   | "number"
   | "boolean"
-  | "Uint8Array"
-  | "Uint16Array"
-  | "Uint32Array"
-  | "Float64Array"
+  | NativeTypedArray
   | "optional-number";
 export type ReturnType = ScalarType | "void";
 export interface Span {
@@ -28,9 +25,18 @@ export interface Span {
 export interface DebugOrigin {
   readonly inline?: number | undefined;
 }
-/** Categories general-is tests. */
+/** Typed-array kinds with a native representation (./typed-arrays.ts). */
 export type NativeTypedArray =
-  "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array";
+  | "Uint8Array"
+  | "Int8Array"
+  | "Uint8ClampedArray"
+  | "Uint16Array"
+  | "Int16Array"
+  | "Uint32Array"
+  | "Int32Array"
+  | "Float32Array"
+  | "Float64Array";
+/** Categories general-is tests. */
 export type GeneralTest =
   | "undefined"
   | "number"
@@ -192,12 +198,7 @@ export type Instruction = Span &
         readonly kind: "reference-value";
         readonly id: number;
         readonly value: number;
-        readonly type?:
-          | "reference"
-          | "Uint8Array"
-          | "Uint16Array"
-          | "Uint32Array"
-          | "Float64Array";
+        readonly type?: "reference" | NativeTypedArray;
       }
     | {
         readonly kind: "string-literal";
@@ -381,8 +382,7 @@ export type Instruction = Span &
     | {
         readonly kind: "array-new";
         readonly id: number;
-        readonly type:
-          "Uint8Array" | "Uint16Array" | "Uint32Array" | "Float64Array";
+        readonly type: NativeTypedArray;
         readonly length: number;
       }
     | {

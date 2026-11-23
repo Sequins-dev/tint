@@ -35,7 +35,7 @@ import {
   type Emit,
 } from "./machine.ts";
 
-import { floatBits } from "./numbers.ts";
+import { floatBits, float32Bits } from "./numbers.ts";
 
 const rax = gpr(0),
   rcx = gpr(1),
@@ -162,15 +162,6 @@ export function toInteger(
     emit({ op: "cmp", dst: r10, src: rax });
     branch(emit, "ne", trap);
   }
-}
-
-function float32Bits(emit: Emit, dst: Gpr<32>, src: Xmm): void {
-  const move: {
-    readonly op: "movd";
-    readonly dst: Gpr<32>;
-    readonly src: Xmm;
-  } = { op: "movd", dst, src };
-  emit(move);
 }
 
 function checkedSignedConversion(emit: Emit, trap: string): void {

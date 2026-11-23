@@ -17,6 +17,62 @@ export interface StringIndex {
   readonly readonly: boolean;
   readonly origin: "signature" | "record";
 }
+/** Typed-array kinds with a native representation; the BigInt kinds are
+ * realm objects (their elements need a BigInt representation). */
+export type NativeTypedArrayKind =
+  | "Uint8Array"
+  | "Int8Array"
+  | "Uint8ClampedArray"
+  | "Uint16Array"
+  | "Int16Array"
+  | "Uint32Array"
+  | "Int32Array"
+  | "Float32Array"
+  | "Float64Array";
+export const nativeTypedArrayKinds: readonly NativeTypedArrayKind[] = [
+  "Uint8Array",
+  "Int8Array",
+  "Uint8ClampedArray",
+  "Uint16Array",
+  "Int16Array",
+  "Uint32Array",
+  "Int32Array",
+  "Float32Array",
+  "Float64Array",
+];
+/** The native typed-array kind a type kind or constructor name denotes. */
+export function nativeTypedArrayKind(
+  kind: string | undefined,
+): NativeTypedArrayKind | undefined {
+  // Optional strings cannot be switched on natively.
+  if (kind === undefined) return undefined;
+  switch (kind) {
+    case "Uint8Array":
+      return "Uint8Array";
+    case "Int8Array":
+      return "Int8Array";
+    case "Uint8ClampedArray":
+      return "Uint8ClampedArray";
+    case "Uint16Array":
+      return "Uint16Array";
+    case "Int16Array":
+      return "Int16Array";
+    case "Uint32Array":
+      return "Uint32Array";
+    case "Int32Array":
+      return "Int32Array";
+    case "Float32Array":
+      return "Float32Array";
+    case "Float64Array":
+      return "Float64Array";
+    default:
+      return undefined;
+  }
+}
+/** Whether a type kind or name is a native typed-array kind. */
+export function isNativeTypedArrayKind(kind: string | undefined): boolean {
+  return nativeTypedArrayKind(kind) !== undefined;
+}
 export type Type =
   | {
       readonly kind:
@@ -30,10 +86,7 @@ export type Type =
         | "RangeError"
         | "Error"
         | "ArrayBuffer"
-        | "Uint8Array"
-        | "Uint16Array"
-        | "Uint32Array"
-        | "Float64Array"
+        | NativeTypedArrayKind
         | "void"
         | "unknown"
         | "realm-callable"

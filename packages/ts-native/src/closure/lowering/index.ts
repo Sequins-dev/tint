@@ -128,6 +128,8 @@ import {
   scalarByteLength,
   recordHeaderBytes,
   recordAllocationAlignment,
+  isNativeTypedArray,
+  nativeTypedArray,
 } from "@tint/ir/scalar";
 export type Result =
   | {
@@ -398,14 +400,9 @@ function lowerEntries(
     if (type === "string" || type === "optional-string")
       return "optional-string";
     if (
-      [
-        "reference",
-        "optional-reference",
-        "Uint8Array",
-        "Uint16Array",
-        "Uint32Array",
-        "Float64Array",
-      ].includes(type)
+      type === "reference" ||
+      type === "optional-reference" ||
+      isNativeTypedArray(type)
     )
       return "optional-reference";
     return fail(
@@ -1293,29 +1290,28 @@ function lowerEntries(
       if (typeof element !== "number") return;
       const objectType = element;
       const system = validatedTypes;
+      const encoding =
+        entryType(
+          checked,
+          element,
+          listElements,
+          setElements,
+          recordTarget?.maps ?? [],
+        ) ?? "";
       if (
         !system.ok ||
-        ![
-          "Uint8Array",
-          "Uint16Array",
-          "Uint32Array",
-          "Float64Array",
-          "reference",
-          "optional-reference",
-          "primitive",
-          "general",
-          "optional-number",
-          "optional-string",
-          "boolean",
-          "optional-boolean",
-        ].includes(
-          entryType(
-            checked,
-            element,
-            listElements,
-            setElements,
-            recordTarget?.maps ?? [],
-          ) ?? "",
+        !(
+          isNativeTypedArray(encoding) ||
+          [
+            "reference",
+            "optional-reference",
+            "primitive",
+            "general",
+            "optional-number",
+            "optional-string",
+            "boolean",
+            "optional-boolean",
+          ].includes(encoding)
         )
       )
         fail(
@@ -1659,12 +1655,9 @@ function lowerEntries(
                 c.storage.alignment !== 8
               )
                 fail("layout does not use scalar cell encodings");
-              const borrowed: { readonly borrowed?: true } = [
-                "Uint8Array",
-                "Uint16Array",
-                "Uint32Array",
-                "Float64Array",
-              ].includes(type)
+              const borrowed: { readonly borrowed?: true } = isNativeTypedArray(
+                type,
+              )
                 ? { borrowed: true }
                 : {};
               return {
@@ -2596,15 +2589,9 @@ function lowerEntries(
                 while (target.kind === "group") target = target.expression;
                 if (target.kind !== "identifier")
                   fail("typed-array constructor invariant");
-                const name = target.name;
-                if (
-                  name !== "Uint8Array" &&
-                  name !== "Uint16Array" &&
-                  name !== "Uint32Array" &&
-                  name !== "Float64Array"
-                )
-                  fail("typed-array kind invariant");
-                arrayInstance = name;
+                const kind = nativeTypedArray(target.name);
+                if (kind === undefined) fail("typed-array kind invariant");
+                arrayInstance = kind;
                 realmGlobal = dynamicAliases.get("realmGlobal");
                 realmInstanceOf = dynamicAliases.get("realmInstanceOf");
                 expr(node.left);
@@ -3075,11 +3062,7 @@ function lowerEntries(
                       checked.expressions.get(target.object) ??
                       -1
                   ]?.kind;
-                const typed =
-                  receiverType === "Uint8Array" ||
-                  receiverType === "Uint16Array" ||
-                  receiverType === "Uint32Array" ||
-                  receiverType === "Float64Array";
+                const typed = isNativeTypedArray(receiverType);
                 const inputElement = representations.arrayElement(
                   receiverContract ??
                     checked.expressions.get(target.object) ??
@@ -3448,13 +3431,7 @@ function lowerEntries(
         const sourceType =
           source === undefined ? undefined : checked.expressions.get(source);
         const sourceKind = checked.types[sourceType ?? -1]?.kind;
-        const arraySetSource =
-          sourceKind === "Uint8Array" ||
-          sourceKind === "Uint16Array" ||
-          sourceKind === "Uint32Array" ||
-          sourceKind === "Float64Array"
-            ? sourceKind
-            : undefined;
+        const arraySetSource = nativeTypedArray(sourceKind);
         const generalTypeof =
           node.kind === "unary" &&
           node.operator === "typeof" &&

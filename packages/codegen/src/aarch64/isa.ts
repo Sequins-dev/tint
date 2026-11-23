@@ -204,8 +204,15 @@ export type Instruction =
       readonly condition: Condition;
     }
   | {
+      /** fcvtnu-w-d rounds to nearest, ties to even, and saturates to
+       * [0, 2^32 - 1] (NaN gives 0). */
       readonly op:
-        "fcvtzs-w-d" | "fcvtzs-x-d" | "fcvtzu-w-d" | "fcvtzu-x-d" | "fjcvtzs";
+        | "fcvtzs-w-d"
+        | "fcvtzs-x-d"
+        | "fcvtzu-w-d"
+        | "fcvtzu-x-d"
+        | "fcvtnu-w-d"
+        | "fjcvtzs";
       readonly rd: DataRegister;
       readonly rn: number;
     }
@@ -281,7 +288,7 @@ export type Instruction =
   | {
       /** LDR/STR (register offset): [rn, rm, LSL #size] when scaled, else
        * [rn, rm]. size: 0 byte, 1 halfword, 2 word, 3 doubleword; fp selects
-       * the SIMD&FP register file (size 3 only). */
+       * the SIMD&FP register file (S for size 2, D for size 3). */
       readonly op: "ldr-indexed" | "str-indexed";
       readonly size: 0 | 1 | 2 | 3;
       readonly fp: boolean;
@@ -772,6 +779,7 @@ export function encode(instruction: Instruction): EncodingResult<number> {
     case "fcvtzs-x-d":
     case "fcvtzu-w-d":
     case "fcvtzu-x-d":
+    case "fcvtnu-w-d":
     case "fjcvtzs": {
       const rd = register(i.rd, "zr");
       if (rd < 0 || !integer(i.rn, 0, 31)) return fail("INVALID_REGISTER");
@@ -782,9 +790,11 @@ export function encode(instruction: Instruction): EncodingResult<number> {
             ? 0x9e790000
             : i.op === "fcvtzu-w-d"
               ? 0x1e790000
-              : i.op === "fjcvtzs"
-                ? 0x1e7e0000
-                : 0x1e780000) +
+              : i.op === "fcvtnu-w-d"
+                ? 0x1e610000
+                : i.op === "fjcvtzs"
+                  ? 0x1e7e0000
+                  : 0x1e780000) +
           i.rn * 32 +
           rd,
       );
@@ -1044,7 +1054,7 @@ export function encode(instruction: Instruction): EncodingResult<number> {
       if (rn < 0 || rm < 0) return fail("INVALID_REGISTER");
       if (i.size !== 0 && i.size !== 1 && i.size !== 2 && i.size !== 3)
         return fail("INVALID_WIDTH");
-      if (i.fp ? i.size !== 3 || !integer(i.rt, 0, 31) : false)
+      if (i.fp ? i.size < 2 || !integer(i.rt, 0, 31) : false)
         return fail("INVALID_WIDTH");
       const rt = i.fp ? i.rt : register(i.rt, "zr");
       if (rt < 0) return fail("INVALID_REGISTER");

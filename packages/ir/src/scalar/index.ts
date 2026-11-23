@@ -75,6 +75,16 @@ export {
   type WordFacts,
 } from "./word-facts.ts";
 export { functionHeader } from "./model.ts";
+import { isNativeTypedArray } from "./typed-arrays.ts";
+export {
+  isNativeTypedArray,
+  nativeTypedArray,
+  nativeTypedArrays,
+  typedArrayIntegerElements,
+  typedArrayLayout,
+  typedArrayMarker,
+  typedArrayScale,
+} from "./typed-arrays.ts";
 import { instructionResult } from "./operands.ts";
 export { instructionResult } from "./operands.ts";
 export {
@@ -296,10 +306,7 @@ function scalar(value: string): boolean {
     value === "string" ||
     value === "number" ||
     value === "boolean" ||
-    value === "Uint32Array" ||
-    value === "Float64Array" ||
-    value === "Uint8Array" ||
-    value === "Uint16Array" ||
+    isNativeTypedArray(value) ||
     value === "optional-number"
   );
 }
@@ -522,13 +529,7 @@ export function verify(
             !scalar(cell.type) ||
             cell.type === "reference" ||
             cell.type === "string" ||
-            [
-              "Uint8Array",
-              "Uint16Array",
-              "Uint32Array",
-              "Float64Array",
-            ].includes(cell.type) !==
-              (cell.borrowed === true)
+            isNativeTypedArray(cell.type) !== (cell.borrowed === true)
           )
             fail(
               "TYPE",
@@ -846,10 +847,7 @@ export function verify(
                 op.type !== "boolean" &&
                 op.type !== "string" &&
                 op.type !== "null" &&
-                op.type !== "Uint8Array" &&
-                op.type !== "Uint16Array" &&
-                op.type !== "Uint32Array" &&
-                op.type !== "Float64Array" &&
+                !isNativeTypedArray(op.type) &&
                 op.type !== "object"
               )
                 fail("TYPE", "general test requires a known category");
@@ -866,10 +864,7 @@ export function verify(
                 t !== "boolean" &&
                 t !== "string" &&
                 t !== "reference" &&
-                t !== "Uint8Array" &&
-                t !== "Uint16Array" &&
-                t !== "Uint32Array" &&
-                t !== "Float64Array"
+                !isNativeTypedArray(t)
               )
                 fail("TYPE", "general packing requires a concrete category");
               define(op.id, "general");
@@ -882,10 +877,7 @@ export function verify(
                 op.type !== "boolean" &&
                 op.type !== "string" &&
                 op.type !== "reference" &&
-                op.type !== "Uint8Array" &&
-                op.type !== "Uint16Array" &&
-                op.type !== "Uint32Array" &&
-                op.type !== "Float64Array"
+                !isNativeTypedArray(op.type)
               )
                 fail("TYPE", "unsupported general extraction category");
               define(op.id, op.type);
@@ -933,31 +925,21 @@ export function verify(
               equal(use(op.value), "optional-reference");
               define(op.id, "optional-string");
               break;
-            case "reference-wrap":
-              if (
-                ![
-                  "reference",
-                  "Uint8Array",
-                  "Uint16Array",
-                  "Uint32Array",
-                  "Float64Array",
-                ].includes(use(op.value))
-              )
+            case "reference-wrap": {
+              const wrapped = use(op.value);
+              if (wrapped !== "reference" && !isNativeTypedArray(wrapped))
                 fail(
                   "TYPE",
                   "reference wrapping requires a reference or typed array",
                 );
               define(op.id, "optional-reference");
               break;
+            }
             case "reference-value":
               if (
-                ![
-                  "reference",
-                  "Uint8Array",
-                  "Uint16Array",
-                  "Uint32Array",
-                  "Float64Array",
-                ].includes(op.type ?? "reference")
+                op.type !== undefined &&
+                op.type !== "reference" &&
+                !isNativeTypedArray(op.type)
               )
                 fail("TYPE", "invalid reference extraction type");
               equal(use(op.value), "optional-reference");
@@ -965,15 +947,8 @@ export function verify(
               break;
             case "array-subarray": {
               const type = use(op.array);
-              if (
-                ![
-                  "Uint8Array",
-                  "Uint16Array",
-                  "Uint32Array",
-                  "Float64Array",
-                ].includes(type)
-              )
-                fail("TYPE", "subarray requires unsigned typed array");
+              if (!isNativeTypedArray(type))
+                fail("TYPE", "subarray requires a typed array");
               equal(use(op.begin), "number");
               equal(use(op.length), "number");
               define(op.id, type);
@@ -1025,14 +1000,7 @@ export function verify(
               equal(use(op.count), "number");
               break;
             case "array-new":
-              if (
-                ![
-                  "Uint8Array",
-                  "Uint16Array",
-                  "Uint32Array",
-                  "Float64Array",
-                ].includes(op.type)
-              )
+              if (!isNativeTypedArray(op.type))
                 fail("TYPE", "invalid allocated array kind");
               equal(use(op.length), "number");
               define(op.id, op.type);
@@ -1269,14 +1237,7 @@ export function verify(
             case "array-byte-offset":
             case "array-byte-length":
             case "array-length":
-              if (
-                ![
-                  "Uint8Array",
-                  "Uint16Array",
-                  "Uint32Array",
-                  "Float64Array",
-                ].includes(use(op.array))
-              )
+              if (!isNativeTypedArray(use(op.array)))
                 fail(
                   "TYPE",
                   "array operand must be an unsigned integer typed array",
@@ -1288,14 +1249,7 @@ export function verify(
               break;
             case "array-copy": {
               const destination = use(op.array);
-              if (
-                ![
-                  "Uint8Array",
-                  "Uint16Array",
-                  "Uint32Array",
-                  "Float64Array",
-                ].includes(destination)
-              )
+              if (!isNativeTypedArray(destination))
                 fail("TYPE", "bulk copy requires typed arrays");
               equal(use(op.source), destination);
               equal(use(op.offset), "number");
@@ -1307,14 +1261,7 @@ export function verify(
             case "array-element":
             case "array-write":
             case "array-store":
-              if (
-                ![
-                  "Uint8Array",
-                  "Uint16Array",
-                  "Uint32Array",
-                  "Float64Array",
-                ].includes(use(op.array))
-              )
+              if (!isNativeTypedArray(use(op.array)))
                 fail(
                   "TYPE",
                   "array operand must be an unsigned integer typed array",

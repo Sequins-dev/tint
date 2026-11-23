@@ -47,6 +47,7 @@ const suites: Record<
       strings: 6000,
       compiler: 200,
       typedArrays: 1700,
+      typedArrayKinds: 1000,
       stringEquality: 15000,
       stringBuild: 20000,
       mapSet: 400,
