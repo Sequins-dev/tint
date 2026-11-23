@@ -7,10 +7,10 @@ export interface ByteStorage {
   readonly immutable: boolean;
   readonly allocationLimit: number;
   readonly allocator?: ByteAllocator | undefined;
-  /** Native typed arrays that view the backing: a typed program's
-   * projections of realm typed arrays (native-runtime
+  /** Native typed arrays that view the backing, as a chain: a typed
+   * program's projections of realm typed arrays (native-runtime
    * projectNativeTypedArray), one per element kind and window. */
-  nativeViews?: NativeStorageView[] | undefined;
+  nativeViews?: NativeStorageView | undefined;
   /** Runs once when the storage detaches, before its data is dropped, so
    * the native views observe the detachment. */
   onDetach?: (() => void) | undefined;
@@ -20,6 +20,9 @@ export interface NativeStorageView {
   readonly byteOffset: number;
   readonly length: number;
   readonly view: unknown;
+  /** The next view of the same storage. A chain rather than a list keeps
+   * the Script surface's collection types unchanged. */
+  readonly next: NativeStorageView | undefined;
 }
 /** Supplies a live, zero-initialized view of the requested length. */
 export type ByteAllocator = (length: number) => Uint8Array | undefined;

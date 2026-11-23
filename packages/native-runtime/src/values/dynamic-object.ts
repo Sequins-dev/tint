@@ -422,27 +422,32 @@ export function projectNativeTypedArray(
   const bytes = byteStorageData(storage);
   if (bytes === undefined) return emptyNativeArray(nativeKind);
   if (typedArrayWindow(data) === undefined) return undefined;
-  const views = storage.nativeViews;
-  if (views !== undefined)
-    for (const entry of views)
-      if (
-        entry !== undefined &&
-        entry.kind === nativeKind &&
-        entry.byteOffset === data.byteOffset &&
-        entry.length === length
-      )
-        return entry.view;
+  let known = storage.nativeViews;
+  while (known !== undefined) {
+    if (
+      known.kind === nativeKind &&
+      known.byteOffset === data.byteOffset &&
+      known.length === length
+    )
+      return known.view;
+    known = known.next;
+  }
   const view = nativeView(nativeKind, bytes, data.byteOffset, length);
-  const entry = { kind: nativeKind, byteOffset: data.byteOffset, length, view };
-  if (views === undefined) storage.nativeViews = [entry];
-  else views.push(entry);
+  storage.nativeViews = {
+    kind: nativeKind,
+    byteOffset: data.byteOffset,
+    length,
+    view,
+    next: storage.nativeViews,
+  };
   if (storage.onDetach === undefined) {
     const owner = storage;
     storage.onDetach = (): void => {
-      const projected = owner.nativeViews;
-      if (projected !== undefined)
-        for (const item of projected)
-          if (item !== undefined) detachNativeArray(item.view);
+      let projected = owner.nativeViews;
+      while (projected !== undefined) {
+        detachNativeArray(projected.view);
+        projected = projected.next;
+      }
     };
   }
   return view;
