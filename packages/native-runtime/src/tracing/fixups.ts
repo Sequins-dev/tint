@@ -1,4 +1,4 @@
-import { nativeArrayDataOffset } from "@tint/abi/host";
+import { nativeArrayDataOffset, nativeTypedArrayMarker } from "@tint/abi/host";
 import {
   createNativeRootScan,
   scanNativeObject,
@@ -117,7 +117,7 @@ export function createNativeFixupPlanner(
         const header = read(start);
         if (header === undefined) return undefined;
         const marker = headerMarker(header);
-        if (marker >= 2 && marker <= 5) {
+        if (nativeTypedArrayMarker(marker)) {
           const data = relocateNativeArrayData(read, start, forward, maxSteps);
           if (
             data === undefined ||

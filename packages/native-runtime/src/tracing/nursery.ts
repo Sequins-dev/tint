@@ -7,7 +7,7 @@ import {
   nativeWeakSlotValueOffset,
   nativeWeakSlotValuePayloadOffset,
 } from "@tint/abi/weak-slot";
-import { nativeArrayDataOffset } from "@tint/abi/host";
+import { nativeArrayDataOffset, nativeTypedArrayMarker } from "@tint/abi/host";
 import { reserveLinear } from "../allocators/linear/index.ts";
 import { nativeObjectExtent } from "./extent.ts";
 import {
@@ -399,7 +399,7 @@ export function createNurseryEvacuator(
           address = plan.base + source,
           marker = kind & 7;
         o.sizes[i] = encodedSize - kind;
-        if (marker >= 2 && marker <= 5) {
+        if (nativeTypedArrayMarker(marker)) {
           const data = relocateNativeArrayData(
             o.read,
             address,

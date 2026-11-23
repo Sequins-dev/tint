@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { nativeHeaderFlagUnit } from "@tint/abi/host";
+import { nativeTypedArrayKinds } from "@tint/abi/typed-array";
 import { nativeObjectExtent } from "../src/tracing/extent.ts";
 
 // One header word (marker + kind flags * 2^48), then the length word.
@@ -19,21 +20,26 @@ test("object extents come from layouts without an allocation inventory", () => {
   assert.equal(nativeObjectExtent(read, 256, 4096), 32);
   header(1, 0, 0);
   assert.equal(nativeObjectExtent(read, 256, 4096), 32);
-  for (const [marker, width] of [
-    [2, 1],
-    [3, 2],
-    [4, 4],
-    [5, 8],
-  ]) {
-    header(marker!, 0, 17);
+  // Every typed-array kind: pointer-free elements sized by the marker's
+  // width class, classified by that class (plus 8 for views).
+  const classification = new Uint8Array(1);
+  for (const { marker, elementBytes } of nativeTypedArrayKinds) {
+    header(marker, 0, 17);
     assert.equal(
-      nativeObjectExtent(read, 256, 4096),
-      Math.ceil((24 + 17 * width!) / 16) * 16,
+      nativeObjectExtent(read, 256, 4096, classification),
+      Math.ceil((24 + 17 * elementBytes) / 16) * 16,
     );
-    header(marker!, 2, 17);
-    assert.equal(nativeObjectExtent(read, 256, 4096), 48);
-    header(marker!, 1, 17);
+    assert.equal(classification[0], marker & 7);
+    header(marker, 2, 17);
+    assert.equal(nativeObjectExtent(read, 256, 4096, classification), 48);
+    assert.equal(classification[0], (marker & 7) + 8);
+    header(marker, 1, 17);
     assert.equal(nativeObjectExtent(read, 256, 4096), 32);
+  }
+  // Built-in markers outside the typed-array classes are not records.
+  for (const marker of [8, 14, 15, 16, 24, 31]) {
+    header(marker, 0, 17);
+    assert.equal(nativeObjectExtent(read, 256, 4096), undefined);
   }
 });
 

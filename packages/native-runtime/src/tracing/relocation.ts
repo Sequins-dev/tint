@@ -4,6 +4,8 @@ import {
   nativeArrayInlineOffset,
   nativeArrayOwnerOffset,
   nativeArrayViewByteLength,
+  nativeTypedArrayMarker,
+  nativeTypedArrayElementBytes,
 } from "@tint/abi/host";
 import { headerMarker, headerFlags, type ReadWord } from "./scan.ts";
 /** Resolve an exact live allocation start; undefined rejects a missing target. */
@@ -48,8 +50,7 @@ export function relocateNativeArrayData(
       length === undefined ||
       data === undefined ||
       !Number.isInteger(marker) ||
-      marker < 2 ||
-      marker > 5 ||
+      !nativeTypedArrayMarker(marker) ||
       !Number.isInteger(flags) ||
       flags < 0 ||
       flags > 2 ||
@@ -60,7 +61,7 @@ export function relocateNativeArrayData(
       data < 0
     )
       return undefined;
-    const width = marker === 2 ? 1 : marker === 3 ? 2 : marker === 4 ? 4 : 8,
+    const width = nativeTypedArrayElementBytes(marker),
       bytes = length * width;
     if (!Number.isSafeInteger(data + bytes) || (data === 0 && bytes > 0))
       return undefined;

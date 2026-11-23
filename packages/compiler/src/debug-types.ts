@@ -17,6 +17,10 @@ import {
   nativeStringLengthOffset,
   nativeStringDataOffset,
 } from "@tint/abi/host";
+import {
+  nativeTypedArrayKind,
+  nativeTypedArrayKinds,
+} from "@tint/abi/typed-array";
 import type {
   DebugHeapRecord,
   DebugRecordFlag,
@@ -252,13 +256,23 @@ function flexibleArray(table: DebugTypeTable, element: number): number {
   }));
 }
 function bufferElement(table: DebugTypeTable, scalar: string): number {
-  return scalar === "Uint8Array"
-    ? baseType(table, "uint8", 1, "unsigned")
-    : scalar === "Uint16Array"
-      ? baseType(table, "uint16", 2, "unsigned")
-      : scalar === "Uint32Array"
-        ? baseType(table, "uint32", 4, "unsigned")
-        : baseType(table, "number", 8, "float");
+  const entry = nativeTypedArrayKind(scalar);
+  if (entry === undefined) throw "debug buffer kind invariant";
+  const bytes = entry.elementBytes,
+    bits = String(bytes * 8);
+  switch (entry.element) {
+    case "float":
+      return bytes === 8
+        ? baseType(table, "number", 8, "float")
+        : baseType(table, "float" + bits, bytes, "float");
+    case "signed":
+    case "bigint-signed":
+      return baseType(table, "int" + bits, bytes, "signed");
+    case "unsigned":
+    case "clamped":
+    case "bigint-unsigned":
+      return baseType(table, "uint" + bits, bytes, "unsigned");
+  }
 }
 /** A typed buffer owning its elements: header, length, the data
  * pointer (derived: it points at the elements), then the elements. */
@@ -291,13 +305,9 @@ export function heapKindTypes(table: DebugTypeTable): void {
     });
     return members;
   });
-  for (const scalar of [
-    "Uint8Array",
-    "Uint16Array",
-    "Uint32Array",
-    "Float64Array",
-  ]) {
-    if (scalar === undefined) throw "debug buffer kind invariant";
+  for (const entry of nativeTypedArrayKinds) {
+    if (entry === undefined) throw "debug buffer kind invariant";
+    const scalar = entry.name;
     const owner = bufferStructure(table, scalar);
     structure(
       table,

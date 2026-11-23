@@ -11,6 +11,8 @@ import {
   nativeArrayDataOffset,
   nativeArrayInlineOffset,
   nativeArrayOwnerOffset,
+  nativeTypedArrayMarker,
+  nativeBuiltinMarkerLimit,
 } from "@tint/abi/host";
 import {
   readMemoryWord,
@@ -377,7 +379,7 @@ function evacuate(w: Worker, starts: Uint32Array, address: number): number {
     // The copy took the claimed header.
     write(destination, header);
     markStart(w, starts, destination, size <= largeBytes);
-    if (marker >= 2 && marker <= 5) {
+    if (nativeTypedArrayMarker(marker)) {
       if (flags === 0)
         write(
           destination + nativeArrayDataOffset,
@@ -468,7 +470,7 @@ function scanHeaded(
   marker: number,
   flags: number,
 ): void {
-  if (marker > 6) {
+  if (marker === nativeWeakSlotMarker || marker >= nativeBuiltinMarkerLimit) {
     if (marker === nativeWeakSlotMarker) return;
     if (marker % 8 !== 0 || flags !== 0) fail(w, 5);
     scanFields(w, starts, marker + 8, address);
@@ -484,7 +486,7 @@ function scanHeaded(
       if (value >= fromBase && value < fromEnd && value !== 0)
         write(slot, evacuate(w, starts, value));
     }
-  } else if (marker >= 2 && marker <= 5 && flags === 2)
+  } else if (nativeTypedArrayMarker(marker) && flags === 2)
     referenceSlot(w, starts, address + nativeArrayOwnerOffset);
 }
 
@@ -810,7 +812,7 @@ function traceMarkedEphemerons(
 function markChildren(w: Worker, region: CompactRegion, address: number): void {
   const header = read(address),
     marker = headerMarker(header);
-  if (marker > 6) {
+  if (marker === nativeWeakSlotMarker || marker >= nativeBuiltinMarkerLimit) {
     if (marker === nativeWeakSlotMarker) recordMarkedWeak(w, address, header);
     else markFields(w, region, marker + 8, address);
   } else if (marker === 6) {
@@ -821,7 +823,7 @@ function markChildren(w: Worker, region: CompactRegion, address: number): void {
         region,
         read(address + nativeArrayInlineOffset + index * 8),
       );
-  } else if (marker >= 2 && headerFlags(header) === 2) {
+  } else if (nativeTypedArrayMarker(marker) && headerFlags(header) === 2) {
     write(w.record + recordSawView, 1);
     markReference(w, region, read(address + nativeArrayOwnerOffset));
   }

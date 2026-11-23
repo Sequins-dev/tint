@@ -63,6 +63,9 @@ VERSION = 3
 # Version 2 headers are one word: the marker (or record descriptor address)
 # in the bits below FLAGS_SHIFT, the kind flags in the three bits above it.
 FLAGS_SHIFT = 48
+# Built-in kind markers are below this; records' descriptor addresses are not
+# (nativeBuiltinMarkerLimit in packages/abi/src/host.ts).
+BUILTIN_MARKER_LIMIT = 32
 # Object layouts of the version 2 header (packages/abi/src/host.ts).
 LENGTH_OFFSET = 8
 STRING_UNITS_OFFSET = 16
@@ -1234,7 +1237,7 @@ def object_kind(inferior, address):
     marker, flags = split_header(read_u64(inferior, address))
     if marker == 0:
         return None, "uninitialized", None
-    if marker <= 7:
+    if marker < BUILTIN_MARKER_LIMIT:
         name = None
         try:
             kind = Descriptor(inferior).kind_for(marker, flags)

@@ -59,6 +59,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "abi",
     },
     {
+      id: "packages/abi/src/typed-array.ts",
+      packageId: "abi",
+    },
+    {
       id: "packages/abi/src/unwind.ts",
       packageId: "abi",
     },
@@ -3335,6 +3339,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "codegen",
+      specifier: "@tint/abi/typed-array",
+      target: "packages/abi/src/typed-array.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/abi/unwind",
       target: "packages/abi/src/unwind.ts",
     },
@@ -3607,6 +3616,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/abi/shared-block",
       target: "packages/abi/src/shared-block.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/abi/typed-array",
+      target: "packages/abi/src/typed-array.ts",
     },
     {
       packageId: "compiler",
@@ -4260,6 +4274,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "image",
+      specifier: "@tint/abi/typed-array",
+      target: "packages/abi/src/typed-array.ts",
+    },
+    {
+      packageId: "image",
       specifier: "@tint/abi/unwind",
       target: "packages/abi/src/unwind.ts",
     },
@@ -4500,6 +4519,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "ir",
+      specifier: "@tint/abi/typed-array",
+      target: "packages/abi/src/typed-array.ts",
+    },
+    {
+      packageId: "ir",
       specifier: "@tint/abi/unwind",
       target: "packages/abi/src/unwind.ts",
     },
@@ -4737,6 +4761,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-engine",
       specifier: "@tint/abi/shared-block",
       target: "packages/abi/src/shared-block.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/abi/typed-array",
+      target: "packages/abi/src/typed-array.ts",
     },
     {
       packageId: "js-engine",
@@ -5390,6 +5419,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "native-runtime",
+      specifier: "@tint/abi/typed-array",
+      target: "packages/abi/src/typed-array.ts",
+    },
+    {
+      packageId: "native-runtime",
       specifier: "@tint/abi/unwind",
       target: "packages/abi/src/unwind.ts",
     },
@@ -5687,6 +5721,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "platform",
       specifier: "@tint/abi/shared-block",
       target: "packages/abi/src/shared-block.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/abi/typed-array",
+      target: "packages/abi/src/typed-array.ts",
     },
     {
       packageId: "platform",

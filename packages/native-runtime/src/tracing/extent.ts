@@ -11,14 +11,18 @@ import {
   nativeArrayInlineOffset,
   nativeArrayBorrowedByteLength,
   nativeArrayViewByteLength,
+  nativeTypedArrayElementBytes,
+  nativeTypedArrayMarker,
+  nativeBuiltinMarkerLimit,
 } from "@tint/abi/host";
 import { headerMarker, headerFlags, type ReadWord } from "./scan.ts";
 /** Decode a 16-byte-aligned allocation extent from an original object header.
  * The caller proves that address is an object start, headers are initialized and
  * immutable, and read authorizes descriptor memory. This does not prove liveness
  * or validate edges/backing pointers. end is the exclusive containing limit.
- * Optional caller-owned one-byte classification receives the marker (plus 8 for array views) for
- * built-in headers, or zero for records, only after successful validation. */
+ * Optional caller-owned one-byte classification receives the marker (a typed
+ * array's width class; plus 8 for array views) for built-in headers, or zero
+ * for records, only after successful validation. */
 export function nativeObjectExtent(
   read: ReadWord,
   address: number,
@@ -59,7 +63,7 @@ export function nativeObjectExtent(
     )
       return undefined;
     size = nativeArrayInlineOffset + capacity * 8;
-  } else if (marker <= 5) {
+  } else if (marker === 1 || nativeTypedArrayMarker(marker)) {
     if (end - address < nativeStringDataOffset) return undefined;
     const length = read(address + nativeStringLengthOffset);
     if (
@@ -78,11 +82,12 @@ export function nativeObjectExtent(
     } else if (flags === 2) size = nativeArrayViewByteLength;
     else if (flags === 1) size = nativeArrayBorrowedByteLength;
     else if (flags === 0) {
-      const width = marker === 2 ? 1 : marker === 3 ? 2 : marker === 4 ? 4 : 8;
+      const width = nativeTypedArrayElementBytes(marker);
       size = nativeArrayInlineOffset + length * width;
     } else return undefined;
   } else {
-    if (marker % 8 !== 0 || flags !== 0) return undefined;
+    if (marker < nativeBuiltinMarkerLimit || marker % 8 !== 0 || flags !== 0)
+      return undefined;
     const extent = read(marker);
     if (
       extent === undefined ||
@@ -95,8 +100,12 @@ export function nativeObjectExtent(
   }
   size = Math.ceil(size / 16) * 16;
   if (size > 0xffffffff || size > end - address) return undefined;
+  // Typed arrays classify by width class, which fits the caller's four bits.
   if (classification !== undefined)
-    classification[0] =
-      marker <= nativeWeakSlotMarker ? marker + (flags === 2 ? 8 : 0) : 0;
+    classification[0] = nativeTypedArrayMarker(marker)
+      ? (marker & 7) + (flags === 2 ? 8 : 0)
+      : marker <= nativeWeakSlotMarker
+        ? marker + (flags === 2 ? 8 : 0)
+        : 0;
   return size;
 }

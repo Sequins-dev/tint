@@ -1,4 +1,9 @@
-import { nativeHeaderByteLength, nativeHeaderFlagsShift } from "./host.ts";
+import {
+  nativeBuiltinMarkerLimit,
+  nativeHeaderByteLength,
+  nativeHeaderFlagsShift,
+} from "./host.ts";
+import { nativeTypedArrayKinds } from "./typed-array.ts";
 /** Heap debugger descriptor: the exported `__tint_heap_descriptor` data
  * symbol of images built with heap introspection (see
  * docs/native-heap-profiling.md). In the spirit of `__jit_debug_descriptor`,
@@ -165,31 +170,6 @@ export interface HeapDebugKind {
   readonly name: string;
   readonly minimumCount: number;
 }
-/** Built-in object kinds of the current header format (marker 1: flat
- * UTF-16 string, in the heap or an image literal; 2-5: typed buffers by
- * element width, owning (flags 0), borrowing external storage (1) or
- * viewing an owner (2); 6: reference vector; 7: weak slot, weak (0) or
- * ephemeron (1)). Functions are records whose descriptor is the image's
- * function-record descriptor. Offsets follow packages/abi/src/host.ts. */
-export const heapDebugKinds: readonly HeapDebugKind[] = [
-  // Strings span at least four units (inline comparisons read them).
-  kind(1, 0, 16, 8, 2, 0, 0, "string", 4),
-  kind(2, 0, 24, 8, 1, 0, 0, "Uint8Array"),
-  kind(2, 1, 24, -1, 0, 0, 0, "Uint8Array.external"),
-  kind(2, 2, 40, -1, 0, 2, 24, "Uint8Array.view"),
-  kind(3, 0, 24, 8, 2, 0, 0, "Uint16Array"),
-  kind(3, 1, 24, -1, 0, 0, 0, "Uint16Array.external"),
-  kind(3, 2, 40, -1, 0, 2, 24, "Uint16Array.view"),
-  kind(4, 0, 24, 8, 4, 0, 0, "Uint32Array"),
-  kind(4, 1, 24, -1, 0, 0, 0, "Uint32Array.external"),
-  kind(4, 2, 40, -1, 0, 2, 24, "Uint32Array.view"),
-  kind(5, 0, 24, 8, 8, 0, 0, "Float64Array"),
-  kind(5, 1, 24, -1, 0, 0, 0, "Float64Array.external"),
-  kind(5, 2, 40, -1, 0, 2, 24, "Float64Array.view"),
-  kind(6, 0, 24, 8, 8, 1, 24, "vector"),
-  kind(7, 0, 40, -1, 0, 3, 8, "weak-slot"),
-  kind(7, 1, 40, -1, 0, 3, 8, "ephemeron-slot"),
-];
 function kind(
   marker: number,
   flags: number,
@@ -199,7 +179,7 @@ function kind(
   edges: number,
   referenceOffset: number,
   name: string,
-  minimumCount: number = 0,
+  minimumCount: number,
 ): HeapDebugKind {
   return {
     marker,
@@ -213,6 +193,28 @@ function kind(
     minimumCount,
   };
 }
+function builtinKinds(): HeapDebugKind[] {
+  // Strings span at least four units (inline comparisons read them).
+  const kinds: HeapDebugKind[] = [kind(1, 0, 16, 8, 2, 0, 0, "string", 4)];
+  for (const entry of nativeTypedArrayKinds) {
+    if (entry === undefined) throw "heap debug typed array invariant";
+    const name = entry.name;
+    kinds.push(kind(entry.marker, 0, 24, 8, entry.elementBytes, 0, 0, name, 0));
+    kinds.push(kind(entry.marker, 1, 24, -1, 0, 0, 0, name + ".external", 0));
+    kinds.push(kind(entry.marker, 2, 40, -1, 0, 2, 24, name + ".view", 0));
+  }
+  kinds.push(kind(6, 0, 24, 8, 8, 1, 24, "vector", 0));
+  kinds.push(kind(7, 0, 40, -1, 0, 3, 8, "weak-slot", 0));
+  kinds.push(kind(7, 1, 40, -1, 0, 3, 8, "ephemeron-slot", 0));
+  return kinds;
+}
+/** Built-in object kinds of the current header format (marker 1: flat
+ * UTF-16 string, in the heap or an image literal; typed buffers by element
+ * kind (./typed-array.ts), owning (flags 0), borrowing external storage (1)
+ * or viewing an owner (2); 6: reference vector; 7: weak slot, weak (0) or
+ * ephemeron (1)). Functions are records whose descriptor is the image's
+ * function-record descriptor. Offsets follow packages/abi/src/host.ts. */
+export const heapDebugKinds: readonly HeapDebugKind[] = builtinKinds();
 
 /** The descriptor's initial image bytes. Startup stores the live context
  * word; tools write the sampling words. */
@@ -244,7 +246,7 @@ export function heapDebugDescriptorBytes(): Uint8Array {
   u32(heapDebugGranuleBytesOffset, 8);
   u32(heapDebugMarkerOffset, 0);
   u32(heapDebugFlagsShiftOffset, nativeHeaderFlagsShift);
-  u32(heapDebugMaxKindMarkerOffset, 7);
+  u32(heapDebugMaxKindMarkerOffset, nativeBuiltinMarkerLimit - 1);
   u32(heapDebugRecordExtentOffset, 0);
   u32(heapDebugRecordReferencesOffset, 8);
   u32(heapDebugRecordIndexBeforeOffset, 8);

@@ -16,6 +16,9 @@ import {
   nativeArrayInlineOffset,
   nativeArrayOwnerOffset,
   nativeArrayViewByteLength,
+  nativeTypedArrayMarker,
+  nativeTypedArrayElementBytes,
+  nativeBuiltinMarkerLimit,
 } from "@tint/abi/host";
 /** Layout marker (or descriptor address) of a live header. */
 export function headerMarker(header: number): number {
@@ -187,7 +190,7 @@ function scanObject(
     }
     return "complete";
   }
-  if (marker >= 1 && marker <= 5) {
+  if (marker === 1 || nativeTypedArrayMarker(marker)) {
     // Strings and arrays share the length offset.
     const length = read(address + nativeStringLengthOffset),
       payload = marker === 1 ? nativeStringDataOffset : nativeArrayInlineOffset;
@@ -200,19 +203,13 @@ function scanObject(
     }
     if (flags !== 0 && flags !== 1) return "invalid";
     if (flags === 0) {
-      const width =
-        marker === 1 || marker === 3
-          ? 2
-          : marker === 2
-            ? 1
-            : marker === 4
-              ? 4
-              : 8;
+      const width = marker === 1 ? 2 : nativeTypedArrayElementBytes(marker);
       if (length * width > byteLength - payload) return "invalid";
     }
     return "complete";
   }
-  if (!pointer(marker) || flags !== 0) return "invalid";
+  if (marker < nativeBuiltinMarkerLimit || !pointer(marker) || flags !== 0)
+    return "invalid";
   const extent = read(marker);
   if (extent === undefined) return "read";
   if (

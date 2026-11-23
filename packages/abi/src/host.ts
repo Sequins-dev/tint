@@ -330,6 +330,24 @@ export const nativeHeaderFlagUnit = 281474976710656;
 export const nativeHeaderClaimed = 2251799813685248;
 /** Collector-only: forwarded to the destination in the low bits (2^52). */
 export const nativeHeaderForwarded = 4503599627370496;
+/** Built-in layout markers are below this limit; a larger marker is the
+ * address of a record or function descriptor. */
+export const nativeBuiltinMarkerLimit = 32;
+/** Typed-array markers. The low three bits are the element-width class (2:
+ * one byte, 3: two, 4: four, 5: eight) and the bits above it the element
+ * kind (nativeTypedArrayKinds), so Uint8, Uint16, Uint32 and Float64 keep
+ * markers 2-5. Collectors and the cross-isolate path treat every typed
+ * array as pointer-free data whose extent follows from its header, through
+ * these two functions only. */
+export function nativeTypedArrayMarker(marker: number): boolean {
+  if (marker < 2 || marker >= nativeBuiltinMarkerLimit) return false;
+  const width = marker & 7;
+  return width >= 2 && width <= 5;
+}
+/** The element size of a typed-array marker (nativeTypedArrayMarker). */
+export function nativeTypedArrayElementBytes(marker: number): number {
+  return 1 << ((marker & 7) - 2);
+}
 /** Strings: UTF-16 code-unit length, then the code units. */
 export const nativeStringLengthOffset = 8;
 export const nativeStringDataOffset = 16;
