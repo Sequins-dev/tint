@@ -7,6 +7,7 @@ if (process.env.TINT_BUILD_ONLY !== "1")
 process.env.TINT_GENERAL_FALLBACK = "0";
 const target = nativeFixtureTarget();
 const memory = "packages/native-runtime/src/intrinsics/memory.ts";
+const packet = "packages/native-runtime/src/intrinsics/packet-memory.ts";
 const shared = "packages/native-runtime/src/intrinsics/shared-atomics.ts";
 const clock = "packages/native-runtime/src/intrinsics/clock.ts";
 const bindings: readonly NativeHostBinding[] = [
@@ -17,22 +18,22 @@ const bindings: readonly NativeHostBinding[] = [
   { module: memory, name: "wakeNativeWord", operation: "word-wake" },
   { module: memory, name: "startNativeThread", operation: "thread-start" },
   {
-    module: memory,
+    module: packet,
     name: "readMemoryString",
     operation: "memory-read-string",
   },
   {
-    module: memory,
+    module: packet,
     name: "writeMemoryString",
     operation: "memory-write-string",
   },
   {
-    module: memory,
+    module: packet,
     name: "readMemoryFloat64",
     operation: "memory-read-float64",
   },
   {
-    module: memory,
+    module: packet,
     name: "writeMemoryFloat64",
     operation: "memory-write-float64",
   },
@@ -189,6 +190,13 @@ export function run(argument:number):number {
       namespace: "worker-port-shared-memory",
       retainedExports: bindings
         .filter((binding) => binding.module === shared)
+        .map((binding) => binding.name),
+    },
+    {
+      module: packet,
+      namespace: "worker-port-packet-memory",
+      retainedExports: bindings
+        .filter((binding) => binding.module === packet)
         .map((binding) => binding.name),
     },
   ],

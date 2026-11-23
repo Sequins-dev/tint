@@ -1,6 +1,7 @@
 import type { NativeHostBinding } from "@tint/compiler/native";
 
 const memory = "packages/native-runtime/src/intrinsics/memory.ts";
+const packet = "packages/native-runtime/src/intrinsics/packet-memory.ts";
 const shared = "packages/native-runtime/src/intrinsics/shared-atomics.ts";
 const bindings: readonly NativeHostBinding[] = [
   { module: memory, name: "mapMemory", operation: "memory-map" },
@@ -17,22 +18,22 @@ const bindings: readonly NativeHostBinding[] = [
   },
   // Message packets (packet-memory.ts).
   {
-    module: memory,
+    module: packet,
     name: "readMemoryFloat64",
     operation: "memory-read-float64",
   },
   {
-    module: memory,
+    module: packet,
     name: "writeMemoryFloat64",
     operation: "memory-write-float64",
   },
   {
-    module: memory,
+    module: packet,
     name: "readMemoryString",
     operation: "memory-read-string",
   },
   {
-    module: memory,
+    module: packet,
     name: "writeMemoryString",
     operation: "memory-write-string",
   },
@@ -81,7 +82,19 @@ const sharedBufferRuntime = {
   module: "packages/native-runtime/src/shared-buffers.ts",
   namespace: "native-shared-buffer",
 };
-export const workerFixtureRuntimes = [sharedMemoryRuntime, sharedBufferRuntime];
+// Message packets' raw-window accesses (packet-memory.ts).
+const packetMemoryRuntime = {
+  module: packet,
+  namespace: "native-packet-memory",
+  retainedExports: bindings
+    .filter((binding) => binding.module === packet)
+    .map((binding) => binding.name),
+};
+export const workerFixtureRuntimes = [
+  sharedMemoryRuntime,
+  sharedBufferRuntime,
+  packetMemoryRuntime,
+];
 
 /** A program without Workers whose typed code creates SharedArrayBuffers:
  * the shared buffer runtime and the memory and atomic leaves its isolate's

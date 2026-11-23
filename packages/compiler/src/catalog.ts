@@ -2803,6 +2803,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/intrinsics/packet-memory.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/intrinsics/process.ts",
       packageId: "native-runtime",
     },

@@ -4,7 +4,7 @@ import {
   readMemoryString,
   writeMemoryFloat64,
   writeMemoryString,
-} from "./intrinsics/memory.ts";
+} from "./intrinsics/packet-memory.ts";
 
 /** Trusted access to raw message packets (docs/design-worker-runtime.md):
  * a byte view of a mapping and bulk binary64 and UTF-16 copies, each with the

@@ -10,23 +10,24 @@ process.env.TINT_GENERAL_FALLBACK = "0";
 
 const object = "packages/js-runtime/src/objects/index.ts";
 const memory = "packages/native-runtime/src/intrinsics/memory.ts";
+const packet = "packages/native-runtime/src/intrinsics/packet-memory.ts";
 const views = ["viewObjectValue", "viewSymbolValue", "viewBigIntValue"];
 const bindings: readonly NativeHostBinding[] = [
   { module: memory, name: "mapMemory", operation: "memory-map" },
   { module: memory, name: "unmapMemory", operation: "memory-unmap" },
   {
-    module: memory,
+    module: packet,
     name: "readMemoryFloat64",
     operation: "memory-read-float64",
   },
   {
-    module: memory,
+    module: packet,
     name: "writeMemoryFloat64",
     operation: "memory-write-float64",
   },
-  { module: memory, name: "readMemoryString", operation: "memory-read-string" },
+  { module: packet, name: "readMemoryString", operation: "memory-read-string" },
   {
-    module: memory,
+    module: packet,
     name: "writeMemoryString",
     operation: "memory-write-string",
   },
@@ -143,7 +144,16 @@ export function run():number {
   ],
   [],
   views.map((name) => ({ module: object, name, operation: "view" })),
-  [{ module: object, namespace: "ordinary-object", retainedExports: views }],
+  [
+    { module: object, namespace: "ordinary-object", retainedExports: views },
+    {
+      module: packet,
+      namespace: "worker-clone-packet-memory",
+      retainedExports: bindings
+        .filter((binding) => binding.module === packet)
+        .map((binding) => binding.name),
+    },
+  ],
   {
     managedBytes: 16777216,
     allocationCapacity: 262144,
