@@ -443,10 +443,13 @@ function serializeWorkerGraph(
       tag(tagBigInt);
       return string(digits);
     }
-    if (nativeTypedArray(value)) return;
     const object = viewObjectValue(value, realm.objectPrototype);
-    if (object === undefined)
+    // A typed program's native typed array is opaque to the realm, so only a
+    // value that is not a realm object pays for its instanceof tests.
+    if (object === undefined) {
+      if (nativeTypedArray(value)) return;
       return throwWorkerCloneError(realm, "The value could not be cloned");
+    }
     if (object.internalIdentity === 0)
       object.internalIdentity = realm.agent.nextObjectIdentity++;
     const seen = objects.get(object.internalIdentity);
