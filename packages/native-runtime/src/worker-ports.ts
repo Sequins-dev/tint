@@ -420,6 +420,7 @@ export function createNativeMessagePorts(
                 parking,
                 incoming.registry,
                 clearSignal,
+                scratch,
               )
             )
               return false;

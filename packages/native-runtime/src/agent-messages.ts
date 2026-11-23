@@ -488,8 +488,8 @@ export function settleNativeAgentPackets(
   parking: NativeWaiterParkingHost,
   registry: NativeSharedBlockRegistry,
   empty: () => void,
+  scratch: Uint32Array,
 ): boolean {
-  const scratch = new Uint32Array(2);
   lock(host, parking, registry, scratch);
   try {
     if (readNumber(host, registry, HEAD, scratch) !== 0) return true;

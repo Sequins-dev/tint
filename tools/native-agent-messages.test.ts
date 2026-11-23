@@ -219,7 +219,7 @@ test("a polling receiver settles under the queue lock before it parks", async ()
   assert.equal(api.nativeAgentPacketsQueued(host, registry, scratch), true);
   // Queued work keeps the receiver awake; it does not park.
   assert.equal(
-    api.settleNativeAgentPackets(host, parking, registry, park),
+    api.settleNativeAgentPackets(host, parking, registry, park, scratch),
     true,
   );
   assert.deepEqual(idle, []);
@@ -227,7 +227,7 @@ test("a polling receiver settles under the queue lock before it parks", async ()
   assert.equal(entries.length, 1);
   // With the queue empty it parks inside the lock, and the next send wakes it.
   assert.equal(
-    api.settleNativeAgentPackets(host, parking, registry, park),
+    api.settleNativeAgentPackets(host, parking, registry, park, scratch),
     false,
   );
   assert.deepEqual(idle, ["park"]);

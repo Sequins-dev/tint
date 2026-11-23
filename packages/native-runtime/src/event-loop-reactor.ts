@@ -72,12 +72,14 @@ export function createReactorEventLoop(
   let nextToken = 1;
   const reads = createKeyIndex<number, ReadWatch>((token): number => token);
   let idleSources: ReactorIdleSource[] = [];
+  // The sources armed for the current idle poll, reused across polls.
+  const armed: ReactorIdleSource[] = [];
   // When the loop last polled its descriptors.
   let polled = 0;
   /** Polls the idle sources that arm for up to `limit` milliseconds, then
    * settles them; whether that scheduled work, so the loop must not block. */
   function pollIdleSources(limit: number): boolean {
-    const armed: ReactorIdleSource[] = [];
+    armed.length = 0;
     for (const source of idleSources) if (source.arm()) armed.push(source);
     if (armed.length === 0) return false;
     const deadline = options.now() + Math.min(limit, idleSpinMilliseconds);
@@ -90,6 +92,7 @@ export function createReactorEventLoop(
         }
     let scheduled = false;
     for (const source of armed) if (source.settle()) scheduled = true;
+    armed.length = 0;
     return scheduled;
   }
   /** The poll timeout once the idle sources had their turn: zero when they
