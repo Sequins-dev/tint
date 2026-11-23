@@ -736,6 +736,13 @@ export function encodeInstruction(
       writeSigned(writer, op.source);
       writeSigned(writer, op.offset);
       return true;
+    case "array-fill":
+      writePrefix(writer, 85, op, 0);
+      writeSigned(writer, op.array);
+      writeSigned(writer, op.value);
+      writeSigned(writer, op.from);
+      writeSigned(writer, op.to);
+      return true;
     case "array-write":
     case "array-store":
       writePrefix(writer, op.kind === "array-write" ? 68 : 69, op, 0);
@@ -1232,6 +1239,13 @@ export function decodeInstruction(
         source = readSigned(reader),
         offset = readSigned(reader);
       return { kind: "array-copy", id, array, source, offset, ...span };
+    }
+    case 85: {
+      const array = readSigned(reader),
+        value = readSigned(reader),
+        from = readSigned(reader),
+        to = readSigned(reader);
+      return { kind: "array-fill", array, value, from, to, ...span };
     }
     case 68:
     case 69: {

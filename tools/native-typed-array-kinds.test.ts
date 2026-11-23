@@ -151,6 +151,94 @@ function methods(): string {
   text += String(c.at(-1) ?? 0) + ":" + a.reverse().join(" ");
   return text;
 }
+// Bulk fills: relative and clamped bounds, empty ranges, lengths that leave
+// every tail size, each kind's conversion and the returned receiver.
+function fills(): string {
+  const bounds: number[][] = [
+    [],
+    [2],
+    [-2],
+    [1, -1],
+    [-100, 100],
+    [NaN, Infinity],
+    [5, 2],
+    [-Infinity, -1],
+    [1.7, 3.2],
+    [3, 3],
+  ];
+  function range(a: number[], length: number): number[] {
+    let from = a[0] ?? 0,
+      to = a[1] ?? length;
+    from = from !== from ? 0 : Math.trunc(from);
+    to = to !== to ? 0 : Math.trunc(to);
+    if (from < 0) from = Math.max(length + from, 0);
+    else from = Math.min(from, length);
+    if (to < 0) to = Math.max(length + to, 0);
+    else to = Math.min(to, length);
+    return [from, to];
+  }
+  let text = "";
+  for (const length of [0, 1, 7, 37, 70]) {
+    for (const bound of bounds) {
+      const b8 = new Int8Array(length),
+        c8 = new Uint8ClampedArray(length),
+        u16 = new Uint16Array(length),
+        i16 = new Int16Array(length),
+        u32 = new Uint32Array(length),
+        i32 = new Int32Array(length),
+        f32 = new Float32Array(length),
+        f64 = new Float64Array(length);
+      const clamped = range(bound, length),
+        from = clamped[0] ?? 0,
+        to = clamped[1] ?? 0;
+      const first = bound[0],
+        second = bound[1];
+      if (first === undefined) {
+        b8.fill(200);
+        c8.fill(300.5);
+        u16.fill(65537);
+        i16.fill(-32769);
+        u32.fill(-1);
+        i32.fill(2147483648);
+        f32.fill(0.1);
+        f64.fill(-0);
+      } else if (second === undefined) {
+        b8.fill(-129, first);
+        c8.fill(2.5, first);
+        u16.fill(-1, first);
+        i16.fill(40000, first);
+        u32.fill(4294967297, first);
+        i32.fill(-1.9, first);
+        f32.fill(1e40, first);
+        f64.fill(NaN, first);
+      } else {
+        b8.fill(1.5, first, second);
+        c8.fill(-3, first, second);
+        u16.fill(7, first, second);
+        i16.fill(-7, first, second);
+        u32.fill(123456789, first, second);
+        i32.fill(-123456789, first, second);
+        f32.fill(16777217, first, second);
+        f64.fill(0.5, first, second);
+      }
+      let sum = 0;
+      for (let i = 0; i < length; i++)
+        sum +=
+          (b8[i] ?? 0) +
+          (c8[i] ?? 0) +
+          (u16[i] ?? 0) +
+          (i16[i] ?? 0) +
+          (u32[i] ?? 0) +
+          (i32[i] ?? 0) +
+          (f32[i] ?? 0) +
+          ((f64[i] ?? 0) === (f64[i] ?? 0) ? (f64[i] ?? 0) : 1000);
+      text += String(from) + "-" + String(to) + ":" + String(sum) + ",";
+    }
+  }
+  const bytes = new Uint8Array(5);
+  const same = bytes.fill(9, 1) === bytes;
+  return text + String(same) + bytes.join("") + String(1 / (new Float64Array(2).fill(-0)[1] ?? 1));
+}
 function kinds(): string {
   const values: unknown[] = [
     new Int8Array(1),
@@ -184,6 +272,7 @@ export function trace(): string {
   note(proven());
   note(optional());
   note(methods());
+  note(fills());
   note(kinds());
   return log;
 }

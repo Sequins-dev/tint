@@ -229,6 +229,18 @@ export function substituteInstructionValues(
         ? op
         : { ...op, array, source, offset };
     }
+    case "array-fill": {
+      const array = substitutedValue(values, op.array),
+        value = substitutedValue(values, op.value),
+        from = substitutedValue(values, op.from),
+        to = substitutedValue(values, op.to);
+      return array === op.array &&
+        value === op.value &&
+        from === op.from &&
+        to === op.to
+        ? op
+        : { ...op, array, value, from, to };
+    }
     case "array-write":
     case "array-store": {
       const array = substitutedValue(values, op.array),
@@ -379,6 +391,7 @@ export function renumberInstructionResult(
     case "store":
     case "array-write":
     case "array-store":
+    case "array-fill":
     case "weak-slot-set-value":
     case "weak-slot-clear":
     case "reference-vector-write":

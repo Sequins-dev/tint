@@ -346,6 +346,31 @@ export function typedArrayKinds(scale: number): number {
   return checksum;
 }
 
+// --- Typed-array fill: bitmap clears and sets, byte and float patterns. ---
+export function typedArrayFill(scale: number): number {
+  const words = new Uint32Array(4096),
+    bytes = new Uint8Array(16384),
+    floats = new Float64Array(2048),
+    halves = new Int16Array(4099);
+  let checksum = 0;
+  for (let round = 0; round < scale; round++) {
+    words.fill(0);
+    words.fill(0xffffffff, round & 63, 4096 - (round & 31));
+    bytes.fill(round & 255);
+    bytes.fill(0, -(round & 1023));
+    floats.fill(round * 0.5);
+    halves.fill(-round, 3);
+    checksum =
+      (checksum +
+        (words[round & 4095] ?? 0) +
+        (bytes[(round * 7) & 16383] ?? 0) +
+        (halves[(round * 3) % 4099] ?? 0) +
+        Math.floor(floats[round & 2047] ?? 0)) |
+      0;
+  }
+  return checksum;
+}
+
 // --- String equality: fresh strings against literals, a switch and a list. ---
 const reservedWords: readonly string[] = [
   "break",

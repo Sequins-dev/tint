@@ -1587,6 +1587,95 @@ export function emitModule(
         );
     }
 
+    /** Stores the element pattern (converted once, replicated to 64
+     * bits) over elements [from, to), 8 bytes per step, then 4/2/1-byte
+     * tails; chunks stay in phase because each starts at a multiple of the
+     * element size. */
+    function arrayFill(op: {
+      readonly array: number;
+      readonly value: number;
+      readonly from: number;
+      readonly to: number;
+    }): void {
+      const site = fnLabel + ":fill:" + String(instructionCount);
+      const type = typeOf(op.array),
+        width = arrayWidth(type),
+        element = typedArrayLayout(typedArrayElements(type)).element;
+      if (width === 8)
+        emit({ op: "mov", dst: rax, src: frame(home(op.value)) });
+      else if (element === "float") {
+        emit({ op: "cvtsd2ss", dst: x0, src: frame(home(op.value)) });
+        float32Bits(emit, eax, x0);
+      } else if (element === "clamped") clampedByte(op.value, site);
+      else numbers.toWord(frame(home(op.value)));
+      if (width !== 8) {
+        if (width === 1) emit({ op: "movzx", dst: eax, src: byte(0) });
+        else if (width === 2)
+          emit({
+            op: "movzx",
+            dst: eax,
+            src: { kind: "gpr", width: 16, index: 0 },
+          });
+        else emit({ op: "mov", dst: eax, src: eax });
+        const repeat = width === 1 ? 0x01010101 : width === 2 ? 0x00010001 : 1;
+        emit({ op: "mov", dst: r10, src: bits(repeat, repeat) });
+        emit({ op: "imul", dst: rax, src: r10 });
+      }
+      const done = site + ":done";
+      emit({ op: "cvttsd2si", dst: r9, src: frame(home(op.from)) });
+      emit({ op: "cvttsd2si", dst: r10, src: frame(home(op.to)) });
+      emit({ op: "sub", dst: r10, src: r9 });
+      branch(emit, "le", done);
+      emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+      emit({ op: "mov", dst: scratch, src: mem(11, nativeArrayDataOffset) });
+      emit({
+        op: "lea",
+        dst: scratch,
+        src: {
+          kind: "mem",
+          width: 64,
+          address: { kind: "base", base: 11, index: 9, scale: width, disp: 0 },
+        },
+      });
+      if (width > 1)
+        emit({
+          op: "shl",
+          dst: r10,
+          count: width === 2 ? 1 : width === 4 ? 2 : 3,
+        });
+      const words = site + ":words",
+        half = site + ":half",
+        short = site + ":short",
+        single = site + ":byte";
+      emit({ op: "label", name: words });
+      emit({ op: "cmp", dst: r10, src: imm(8) });
+      branch(emit, "b", half);
+      emit({ op: "mov", dst: mem(11, 0), src: rax });
+      emit({ op: "add", dst: scratch, src: imm(8) });
+      emit({ op: "sub", dst: r10, src: imm(8) });
+      emit({ op: "jmp", target: label(words) });
+      emit({ op: "label", name: half });
+      emit({ op: "cmp", dst: r10, src: imm(4) });
+      branch(emit, "b", short);
+      emit({ op: "mov", dst: { ...mem(11, 0), width: 32 }, src: eax });
+      emit({ op: "add", dst: scratch, src: imm(4) });
+      emit({ op: "sub", dst: r10, src: imm(4) });
+      emit({ op: "label", name: short });
+      emit({ op: "cmp", dst: r10, src: imm(2) });
+      branch(emit, "b", single);
+      emit({
+        op: "mov",
+        dst: { ...mem(11, 0), width: 16 },
+        src: { kind: "gpr", width: 16, index: 0 },
+      });
+      emit({ op: "add", dst: scratch, src: imm(2) });
+      emit({ op: "sub", dst: r10, src: imm(2) });
+      emit({ op: "label", name: single });
+      emit({ op: "cmp", dst: r10, src: imm(1) });
+      branch(emit, "b", done);
+      emit({ op: "mov", dst: { ...mem(11, 0), width: 8 }, src: byte(0) });
+      emit({ op: "label", name: done });
+    }
     function arrayCopy(
       op: {
         readonly id: number;
@@ -2389,6 +2478,10 @@ export function emitModule(
         case "array-copy":
           if (host === undefined) break;
           arrayCopy(op, host.symbolPrefix + "memmove");
+          return;
+        case "array-fill":
+          if (host === undefined) break;
+          arrayFill(op);
           return;
         case "string-none":
           emit({ op: "xor", dst: eax, src: eax });

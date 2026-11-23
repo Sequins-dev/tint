@@ -132,6 +132,7 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "array-length":
     case "array-write":
     case "array-store":
+    case "array-fill":
       return true;
     case "reference-none":
     case "reference-wrap":
@@ -986,6 +987,18 @@ export function inlineSmallFunctions(
                   array: value(instruction.array),
                   index: value(instruction.index),
                   value: value(instruction.value),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "array-fill":
+                cloned.push({
+                  ...instruction,
+                  array: value(instruction.array),
+                  value: value(instruction.value),
+                  from: value(instruction.from),
+                  to: value(instruction.to),
                   start: at.start,
                   end: at.end,
                   inline: at.inline,

@@ -425,6 +425,16 @@ export type Instruction = Span &
         readonly value: number;
       }
     | {
+        /** Stores `value`, converted once to the element encoding, into
+         * elements [from, to) of `array`. from and to are integers in
+         * [0, length]; to <= from fills nothing. */
+        readonly kind: "array-fill";
+        readonly array: number;
+        readonly value: number;
+        readonly from: number;
+        readonly to: number;
+      }
+    | {
         /** The write selected for a proven in-bounds integer index (no check). */
         readonly kind: "array-store";
         readonly array: number;

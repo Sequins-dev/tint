@@ -1277,6 +1277,13 @@ export function verify(
               define(op.id, "boolean");
               break;
             }
+            case "array-fill":
+              if (!isNativeTypedArray(use(op.array)))
+                fail("TYPE", "bulk fill requires a typed array");
+              equal(use(op.value), "number");
+              equal(use(op.from), "number");
+              equal(use(op.to), "number");
+              break;
             case "array-valid":
             case "array-read":
             case "array-element":

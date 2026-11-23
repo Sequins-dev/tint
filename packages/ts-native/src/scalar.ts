@@ -10394,6 +10394,21 @@ export function lowerFunction(
                 : listValue(runtime, "length", [array], node),
             index = relativeBound(args[1], length, numberSlot(0, node), node),
             limit = relativeBound(args[2], length, length, node);
+          if (runtime === undefined) {
+            // One bulk store of the value, converted once to the element
+            // encoding (the conversion is pure, so this equals per-element
+            // writes).
+            emit({
+              kind: "array-fill",
+              array: load(array, node),
+              value: load(first, node),
+              from: load(index, node),
+              to: load(limit, node),
+              start: node.start,
+              end: node.end,
+            });
+            return array;
+          }
           const head = block(),
             body = block(),
             exit = block();
@@ -10406,16 +10421,7 @@ export function lowerFunction(
             node,
           );
           current = body;
-          if (runtime === undefined) {
-            emit({
-              kind: "array-write",
-              array: load(array, node),
-              index: load(index, node),
-              value: load(first, node),
-              start: node.start,
-              end: node.end,
-            });
-          } else listCall(runtime, "write", [array, index, first], node);
+          listCall(runtime, "write", [array, index, first], node);
           store(
             index,
             load(binarySlot("+", index, numberSlot(1, node), node), node),

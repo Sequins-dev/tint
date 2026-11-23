@@ -48,6 +48,7 @@ export function instructionEffects(op: Instruction): number {
       return effectReadHeap | effectWriteHeap;
     case "array-write":
     case "array-store":
+    case "array-fill":
       return effectWriteHeap;
     // A leaf C call cannot allocate, throw, invoke managed code or retain a
     // managed pointer past its return; it may read and write any memory its

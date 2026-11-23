@@ -141,7 +141,7 @@ import {
   sharedMemoryPrimitive,
   type SharedMemoryPrimitive,
 } from "./shared-memory.ts";
-import { memoryMover } from "./memory.ts";
+import { memoryFiller, memoryMover } from "./memory.ts";
 import { externalMemoryCapability } from "./external-memory.ts";
 import {
   emitDualMappingMap,
@@ -161,6 +161,7 @@ export type LeafHelperKind =
   | "array-initialize"
   | "memory-move"
   | "array-copy"
+  | "array-fill"
   | "remember-object"
   | "stack-overflow";
 import {
@@ -3697,7 +3698,9 @@ function emitModuleForms(
               if (op.kind === "optional-wrap")
                 signs[valueIds.intern(op.value)] = 1;
               else if (
-                (op.kind === "array-write" || op.kind === "array-store") &&
+                (op.kind === "array-write" ||
+                  op.kind === "array-store" ||
+                  op.kind === "array-fill") &&
                 integerArrays[valueIds.intern(op.array)] !== 1
               )
                 signs[valueIds.intern(op.value)] = 1;
@@ -3762,6 +3765,7 @@ function emitModuleForms(
                 op.kind === "array-valid" ||
                 op.kind === "array-write" ||
                 op.kind === "array-store" ||
+                op.kind === "array-fill" ||
                 op.kind === "reference-vector-read" ||
                 op.kind === "reference-vector-write" ||
                 // Inline code units index with an int64 (the helper path
@@ -14649,6 +14653,97 @@ function emitModuleForms(
                 saveRaw(0, op.id);
                 break;
               }
+              case "array-fill": {
+                // The element's bits once, replicated to a 64-bit pattern
+                // the fill helper stores over [from, to).
+                const type = value(op.array).type,
+                  element = typedArrayLayout(typedArrayType(type)).element,
+                  scale = typedArrayScale(type);
+                if (type === "Float64Array") {
+                  if (storedAsInteger(op.value)) {
+                    floatLoad(0, op.value);
+                    emit({ op: "fmov-x-d", rd: 9, rn: 0 });
+                  } else rawValue(9, op.value);
+                } else if (element === "float") {
+                  floatLoad(0, op.value);
+                  emit({ op: "fcvt-s-d", rd: 0, rn: 0 });
+                  emit({ op: "fmov-w-s", rd: 9, rn: 0 });
+                } else if (element === "clamped") clampedValue(op.value);
+                else wordValue(op.value);
+                if (scale < 3) {
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 9,
+                    rn: 9,
+                    immr: 0,
+                    imms: (8 << scale) - 1,
+                  });
+                  const repeat =
+                    scale === 0 ? 0x01010101 : scale === 1 ? 0x00010001 : 1;
+                  imm64(10, repeat, repeat);
+                  emit({
+                    op: "madd",
+                    width: 64,
+                    rd: 9,
+                    rn: 9,
+                    rm: 10,
+                    ra: "zr",
+                  });
+                }
+                rawStore(9, resultOffset + 24);
+                intOperand(op.from, 10);
+                intOperand(op.to, 11);
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: 1,
+                  rn: 11,
+                  rm: 10,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                const empty = instructions.length;
+                emit({ op: "b.cond", condition: "le", displacement: 0 });
+                rawValue(12, op.array);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 12,
+                  rn: 12,
+                  offset: nativeArrayDataOffset,
+                });
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 0,
+                  rn: 12,
+                  rm: 10,
+                  shift: "lsl",
+                  amount: scale,
+                  setFlags: false,
+                });
+                if (scale !== 0)
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 1,
+                    rn: "zr",
+                    rm: 1,
+                    shift: "lsl",
+                    amount: scale,
+                    setFlags: false,
+                  });
+                rawLoad(2, resultOffset + 24);
+                callHelper("array-fill");
+                patchInstruction(empty, {
+                  op: "b.cond",
+                  condition: "le",
+                  displacement: (instructions.length - empty) * 4,
+                });
+                break;
+              }
               case "array-write": {
                 const type = value(op.array).type,
                   element = typedArrayLayout(typedArrayType(type)).element,
@@ -17686,13 +17781,15 @@ function emitModuleForms(
                 ? arrayInitializer()
                 : kind === "memory-move" || kind === "array-copy"
                   ? memoryMover(kind === "array-copy")
-                  : kind === "remember-object"
-                    ? rememberedBarrier()
-                    : kind === "stack-overflow"
-                      ? stackOverflowHelper()
-                      : kind === "allocate-call" || kind === "allocate-finish"
-                        ? allocationHelper(kind)
-                        : stringHelper(kind);
+                  : kind === "array-fill"
+                    ? memoryFiller()
+                    : kind === "remember-object"
+                      ? rememberedBarrier()
+                      : kind === "stack-overflow"
+                        ? stackOverflowHelper()
+                        : kind === "allocate-call" || kind === "allocate-finish"
+                          ? allocationHelper(kind)
+                          : stringHelper(kind);
         for (const instruction of body) {
           if (instruction === undefined) throw "helper instruction invariant";
           emit(instruction);

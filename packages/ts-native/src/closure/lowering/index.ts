@@ -4829,6 +4829,15 @@ function cells(
             value: reload(op.value, op),
           };
           break;
+        case "array-fill":
+          transformed = {
+            ...op,
+            array: reload(op.array, op),
+            value: reload(op.value, op),
+            from: reload(op.from, op),
+            to: reload(op.to, op),
+          };
+          break;
         case "call-indirect":
           transformed = {
             ...op,

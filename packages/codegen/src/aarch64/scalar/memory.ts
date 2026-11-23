@@ -196,3 +196,110 @@ export function memoryMover(
   emit({ op: "ret", rn: 30 });
   return asm.finish();
 }
+
+/** x0 destination address, x1 byte count (a multiple of the element size),
+ * x2 the element pattern replicated to 64 bits. Stores the pattern over the
+ * range, 64 bytes per iteration, then 32/16/8/4/2/1-byte tails. Every chunk
+ * starts at a multiple of the element size from x0, so the pattern stays in
+ * phase. Nonallocating; clobbers x0 and x1. */
+export function memoryFiller(): readonly Instruction[] {
+  const asm = createLeafAssembler(),
+    emit = asm.emit;
+  function below(bytes: number, label: string): void {
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: "zr",
+      rn: 1,
+      immediate: bytes,
+      shift: 0,
+      setFlags: true,
+    });
+    asm.branch(label, "cc");
+  }
+  function consume(bytes: number): void {
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 0,
+      rn: 0,
+      immediate: bytes,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: 1,
+      rn: 1,
+      immediate: bytes,
+      shift: 0,
+      setFlags: false,
+    });
+  }
+  asm.label("wide");
+  below(64, "quad");
+  for (let offset = 0; offset < 64; offset += 16)
+    emit({
+      op: "stp",
+      width: 64,
+      rt: 2,
+      rt2: 2,
+      rn: 0,
+      offset,
+      mode: "offset",
+    });
+  consume(64);
+  asm.branch("wide");
+  asm.label("quad");
+  below(32, "pair");
+  emit({
+    op: "stp",
+    width: 64,
+    rt: 2,
+    rt2: 2,
+    rn: 0,
+    offset: 0,
+    mode: "offset",
+  });
+  emit({
+    op: "stp",
+    width: 64,
+    rt: 2,
+    rt2: 2,
+    rn: 0,
+    offset: 16,
+    mode: "offset",
+  });
+  consume(32);
+  asm.label("pair");
+  below(16, "word");
+  emit({
+    op: "stp",
+    width: 64,
+    rt: 2,
+    rt2: 2,
+    rn: 0,
+    offset: 0,
+    mode: "offset",
+  });
+  consume(16);
+  asm.label("word");
+  below(8, "half");
+  emit({ op: "str", width: 64, rt: 2, rn: 0, offset: 0 });
+  consume(8);
+  asm.label("half");
+  below(4, "short");
+  emit({ op: "str", width: 32, rt: 2, rn: 0, offset: 0 });
+  consume(4);
+  asm.label("short");
+  below(2, "byte");
+  emit({ op: "strh", rt: 2, rn: 0, offset: 0 });
+  consume(2);
+  asm.label("byte");
+  below(1, "done");
+  emit({ op: "strb", rt: 2, rn: 0, offset: 0 });
+  asm.label("done");
+  emit({ op: "ret", rn: 30 });
+  return asm.finish();
+}

@@ -149,7 +149,8 @@ export function leafStorageRegisters(
     for (const op of block.instructions) {
       if (op === undefined) throw "leaf storage instruction invariant";
       if (++work > maxWork) return undefined;
-      if (op.kind === "array-copy") integerSafe = false;
+      if (op.kind === "array-copy" || op.kind === "array-fill")
+        integerSafe = false;
       visitInstructionOperands(op, operand);
       const result = instructionResult(op);
       if (result !== undefined) operand(result);
