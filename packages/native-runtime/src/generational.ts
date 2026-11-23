@@ -173,6 +173,10 @@ export function initializeGenerationalRuntime(
     roots,
     dirty,
   );
+  // The pool starts with the heap, not inside the first large collection:
+  // that collection already promotes the whole startup heap (measured in
+  // docs/results/worker-runtime-first-minor-v1.md).
+  parallel?.warm();
   // Majors mark and forward on the same pool (inside the pause) when the
   // space is large enough to repay waking it.
   const compactor = createCompactor(

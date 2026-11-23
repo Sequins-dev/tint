@@ -930,6 +930,8 @@ export interface ParallelEvacuator extends CompactHelpers {
   readonly workers: number;
   /** Stop and join all workers before releasing permanent state. */
   readonly dispose: () => void;
+  /** Starts the pool's threads now rather than at the first collection. */
+  readonly warm: () => void;
   /** Evacuates every object of [fromBase, fromBase + fromLength) reachable
    * from the root chain and, when `remembered` is true, the remembered set
    * (`rememberedCount` offsets, or -1 for dirty cards below `oldTop`) into
@@ -1295,6 +1297,9 @@ export function createParallelEvacuator(
     dispose() {
       stopWorkers();
       releaseWorkspaces();
+    },
+    warm() {
+      if (!started) start();
     },
     mark(region, rootHead) {
       if (!started && !start()) return -1;
