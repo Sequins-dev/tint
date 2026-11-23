@@ -5973,7 +5973,8 @@ function checkClosureModuleLayout(
             break;
           }
           result = choose(expected, "object", node);
-          const context = types[result];
+          const literalContext = result;
+          const context = types[literalContext];
           if (context?.kind !== "object") throw "object context invariant";
           const values = node.properties.map((inputProperty): ObjectValue => {
             if (inputProperty === undefined) throw "missing object property";
@@ -5989,9 +5990,25 @@ function checkClosureModuleLayout(
             );
             if (field === undefined)
               fail(p, "PROPERTY", "unknown object property");
+            // A method of a literal contextually typed by an interface whose
+            // member is a method signature has the interface as `this`
+            // (TypeScript's noImplicitThis); calls through the signature
+            // pass the object as the receiver.
+            const declared = types[field.type];
+            const contextual =
+              p.method === true &&
+              declared?.kind === "function" &&
+              declared.method === true &&
+              declared.receiver === undefined
+                ? appendType(
+                    { ...declared, receiver: literalContext },
+                    p,
+                    "invalid object method receiver signature",
+                  )
+                : field.type;
             return {
               name: p.name,
-              type: expression(p.value, owner, field.type),
+              type: expression(p.value, owner, contextual),
             };
           });
           const checked = system.object(result, values);

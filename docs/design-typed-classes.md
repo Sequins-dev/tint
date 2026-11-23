@@ -160,8 +160,12 @@ The typed fast path layers on that:
       within noise), instructions 1556.67 G / 1556.25 G (-0.03%).
     - Typed kernel images (`typed` and `basicClasses` suites) are byte-
       identical.
-  - Still a gap: an object-literal method that reads `this` under an
-    interface context needs a receiver annotation.
+  - An object-literal method under such a signature has the interface as
+    `this` (TypeScript's noImplicitThis), so it may read `this` and stays
+    typed. Under a property signature (`m: () => T`) or without a context,
+    calls pass no receiver, so a literal method reading `this` there takes
+    the general path; tsc accepts both, and
+    `tools/source-validation.test.ts` checks neither fails the build.
 
 **Other members:**
 

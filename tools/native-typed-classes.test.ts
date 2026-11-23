@@ -636,6 +636,43 @@ export function trace(): string {
 }
 `;
 
+// Object-literal methods reading `this` under an interface with method
+// signatures: `this` is the interface (TypeScript's noImplicitThis), and
+// calls through the signature pass the object, as for class instances.
+const literalMethods = `interface Counter {
+  count: number;
+  bump(by: number): number;
+  label(): string;
+}
+class Tally implements Counter {
+  count: number = 10;
+  bump(by: number): number {
+    this.count += by;
+    return this.count;
+  }
+  label(): string {
+    return "tally:" + String(this.count);
+  }
+}
+function drive(counter: Counter, times: number): string {
+  for (let i = 0; i < times; i++) counter.bump(i);
+  return counter.label();
+}
+export function trace(): string {
+  const literal: Counter = {
+    count: 0,
+    bump(by: number): number {
+      this.count += by * 2;
+      return this.count;
+    },
+    label() {
+      return "literal:" + String(this.count);
+    },
+  };
+  return [drive(literal, 4), drive(new Tally(), 3), String(literal.bump(1))].join("|");
+}
+`;
+
 async function expectedTrace(text: string): Promise<string> {
   const directory = mkdtempSync(join(tmpdir(), "tint-typed-classes-"));
   try {
@@ -874,6 +911,20 @@ test("class instances implement interfaces with methods on the typed path", asyn
   verifyHostedFixture(
     withComparison(interfaceMethods, expected),
     "typed-classes-interface-methods",
+    [],
+    [],
+    [],
+    [],
+    { requireTyped: true, managedBytes: 67108864, allocationCapacity: 1048576 },
+  );
+});
+
+test("object-literal methods read this through an interface on the typed path", async () => {
+  const expected = await expectedTrace(literalMethods);
+  assert.equal(expected, "literal:12|tally:13|14");
+  verifyHostedFixture(
+    withComparison(literalMethods, expected),
+    "typed-classes-literal-methods",
     [],
     [],
     [],

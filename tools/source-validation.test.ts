@@ -280,3 +280,44 @@ test("Tint's checker reports TS2565 and TS2729 exactly where pinned tsc does", (
       assert.equal(result.error.preventsFallback, true, body);
   }
 });
+
+test("object-literal methods reading `this` never fail a build tsc accepts", () => {
+  for (const [body, typed] of [
+    // An interface method signature types `this` as the interface.
+    [
+      "interface R { x: number; m(): number }\nexport function run(): number { const r: R = { x: 1, m() { return this.x; } }; return r.m(); }",
+      true,
+    ],
+    [
+      "interface R { x: number; m(n: number): number }\nexport function run(): number { const r: R = { x: 2, m(n: number): number { return this.x * n; } }; return r.m(3); }",
+      true,
+    ],
+    // A property signature or no context: tsc still types `this`; Tint
+    // takes the general path for these.
+    [
+      "interface R { x: number; m: () => number }\nexport function run(): number { const r: R = { x: 1, m() { return this.x; } }; return r.m(); }",
+      false,
+    ],
+    [
+      "export function run(): number { const o = { x: 1, m() { return this.x; } }; return o.m(); }",
+      false,
+    ],
+  ] as const) {
+    const text = body + "\n";
+    assert.deepEqual(
+      createHostedSourceValidator([{ id: "main", text }])("main").map(
+        ({ code }) => code,
+      ),
+      [],
+      body,
+    );
+    const bytes = new TextEncoder().encode(text);
+    const source = createSourceText(bytes, bytes.length);
+    assert.ok(source.ok);
+    const parsed = parseModule(source.value);
+    assert.ok(parsed.ok, body);
+    const result = checkClosureModule(parsed.value);
+    assert.equal(result.ok, typed, body);
+    if (!result.ok) assert.notEqual(result.error.preventsFallback, true, body);
+  }
+});
