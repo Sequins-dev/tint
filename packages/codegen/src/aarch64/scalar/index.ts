@@ -1131,9 +1131,12 @@ function emitModuleForms(
    * Objects at or above the nursery's start need no remembering, which is
    * exactly when the helper would return at once, so that test is inline:
    * the generational state (context +56, zero until published) holds the
-   * nursery's offset from the managed base (context +8) at +8. Clobbers
-   * x10..x16 like the helper. */
-  function rememberObject(): void {
+   * nursery's offset from the managed base (context +8) at +8. For an old
+   * object, `unneeded` (when given) may first prove the store created no
+   * edge to a managed object: it emits code using x12..x14 and returns the
+   * sites of `b.ne` branches that skip the helper. Clobbers x10..x16 like
+   * the helper. */
+  function rememberObject(unneeded?: () => readonly number[]): void {
     emit({ op: "ldr", width: 64, rt: 12, rn: 10, offset: 56 });
     const unpublished = instructions.length;
     emit({ op: "cbz", width: 64, rt: 12, displacement: 0 });
@@ -1161,8 +1164,15 @@ function emitModuleForms(
     });
     const young = instructions.length;
     emit({ op: "b.cond", condition: "cs", displacement: 0 });
+    const skips = unneeded === undefined ? [] : unneeded();
     callHelper("remember-object");
     const done = instructions.length;
+    for (const skip of skips)
+      patchInstruction(skip, {
+        op: "b.cond",
+        condition: "ne",
+        displacement: (done - skip) * 4,
+      });
     patchInstruction(unpublished, {
       op: "cbz",
       width: 64,
@@ -1174,6 +1184,41 @@ function emitModuleForms(
       condition: "cs",
       displacement: (done - young) * 4,
     });
+  }
+  /** For rememberObject: a `b.ne` site taken when the general value whose
+   * tag word is at frame `offset` refers to no managed object. Only tags
+   * 3, 5, 6 and 7 carry a reference (the collectors' general scan); the
+   * others (undefined, number, boolean, null) need no remembering. */
+  function nonReferenceTag(offset: number): number[] {
+    rawLoad(13, offset);
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: "zr",
+      rn: 13,
+      immediate: 5,
+      shift: 0,
+      setFlags: true,
+    });
+    const reference = instructions.length;
+    emit({ op: "b.cond", condition: "cs", displacement: 0 });
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: "zr",
+      rn: 13,
+      immediate: 3,
+      shift: 0,
+      setFlags: true,
+    });
+    const skip = instructions.length;
+    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+    patchInstruction(reference, {
+      op: "b.cond",
+      condition: "cs",
+      displacement: (instructions.length - reference) * 4,
+    });
+    return [skip];
   }
   /** x9/x10 string objects -> w9 (1 equal, 0 different). Identical objects
    * are equal and different lengths unequal without the content helper,
@@ -10941,10 +10986,32 @@ function emitModuleForms(
                   mode: "offset",
                 });
                 if (generationalBarriers) {
-                  // An old object may now refer to a young value or shape.
+                  // An old object may now refer to a young value or shape:
+                  // remember it unless no transition was stored (the site
+                  // register is intact) and the value is no reference.
                   emit({ op: "orr-reg", width: 64, rd: 9, rn: "zr", rm: 10 });
                   rawLoad(10, contextOffset);
-                  rememberObject();
+                  const transitionOffset = siteShape.offset + 16,
+                    valueOffset = value(op.value).offset;
+                  rememberObject((): readonly number[] => {
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 13,
+                      rn: site,
+                      offset: transitionOffset,
+                    });
+                    const transition = instructions.length;
+                    emit({ op: "cbnz", width: 64, rt: 13, displacement: 0 });
+                    const skips = nonReferenceTag(valueOffset);
+                    patchInstruction(transition, {
+                      op: "cbnz",
+                      width: 64,
+                      rt: 13,
+                      displacement: (instructions.length - transition) * 4,
+                    });
+                    return skips;
+                  });
                 }
                 if (fusedMiss !== undefined) break;
                 const target = rawTarget(op.id, 12);
@@ -17113,7 +17180,12 @@ function emitModuleForms(
             ) {
               rawValue(9, t.object);
               rawLoad(10, contextOffset);
-              rememberObject();
+              const written = slotOffset(t.slot);
+              rememberObject(
+                field.type === "general"
+                  ? (): readonly number[] => nonReferenceTag(written)
+                  : undefined,
+              );
             }
             if (t.consequent !== nextBlock)
               branch({ op: "b" }, fn.id, t.consequent);
@@ -17254,7 +17326,12 @@ function emitModuleForms(
                   if (managed(field.type) || field.type === "general") {
                     rawValue(9, t.object);
                     rawLoad(10, contextOffset);
-                    rememberObject();
+                    const written = slotOffset(t.slot);
+                    rememberObject(
+                      field.type === "general"
+                        ? (): readonly number[] => nonReferenceTag(written)
+                        : undefined,
+                    );
                   }
                 }
                 if (t.consequent !== nextBlock)
@@ -17287,8 +17364,14 @@ function emitModuleForms(
                 if (managed(field.type) || field.type === "general") {
                   rawValue(9, t.object);
                   rawLoad(10, contextOffset);
-                  // The barrier preserves the cell helper's w0 completion status.
-                  rememberObject();
+                  // The barrier (and its tag filter, x12..x14) preserves the
+                  // cell helper's w0 completion status.
+                  const written = slotOffset(t.slot);
+                  rememberObject(
+                    field.type === "general"
+                      ? (): readonly number[] => nonReferenceTag(written)
+                      : undefined,
+                  );
                 }
               }
               branch({ op: "cbz", width: 32, rt: 0 }, fn.id, t.consequent);
