@@ -1163,6 +1163,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-engine",
     },
     {
+      id: "packages/js-engine/src/lowering/arguments-forwarding.ts",
+      packageId: "js-engine",
+    },
+    {
       id: "packages/js-engine/src/lowering/direct-eval-flags.ts",
       packageId: "js-engine",
     },

@@ -1535,6 +1535,23 @@ export function verify(
                   "TYPE",
                   "JavaScript calls take the receiver in the header",
                 );
+              if (op.kind === "call-indirect" && op.tail === true) {
+                // The entry returns the result at once, with no handler.
+                const terminator = b.terminator;
+                if (
+                  scriptArguments === undefined ||
+                  f.scriptEntry !== true ||
+                  i !== b.instructions.length - 1 ||
+                  b.exception !== undefined ||
+                  terminator.kind !== "return" ||
+                  terminator.value === undefined ||
+                  terminator.value !== op.id
+                )
+                  fail(
+                    "TYPE",
+                    "a tail call is a JavaScript entry's returned last call",
+                  );
+              }
               for (const argument of scriptArguments ?? []) {
                 if (argument === undefined)
                   fail("TYPE", "missing actual argument");
@@ -1619,7 +1636,6 @@ export function verify(
               break;
             }
             case "script-argument-count":
-            case "script-argument-area":
               if (f.scriptEntry !== true)
                 fail("TYPE", "argument storage requires a JavaScript entry");
               define(op.id, "number");
@@ -1637,19 +1653,12 @@ export function verify(
               define(op.id, activationFieldType(op.field));
               break;
             }
-            case "script-argument": {
-              const frame = op.frame;
-              if (frame === undefined && f.scriptEntry !== true)
+            case "script-argument":
+              if (f.scriptEntry !== true)
                 fail("TYPE", "actual arguments require a JavaScript entry");
-              if (frame !== undefined) {
-                equal(use(frame.count), "number");
-                equal(use(frame.registers), "number");
-                equal(use(frame.stack), "number");
-              }
               equal(use(op.index), "number");
               define(op.id, "general");
               break;
-            }
           }
         }
         instruction = undefined;

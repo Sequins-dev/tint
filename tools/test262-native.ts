@@ -13,7 +13,10 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { functionStorageFromEnvironment } from "./emission-storage.ts";
-import { nativeFixtureTarget } from "./native-host-target.ts";
+import {
+  nativeFixtureTarget,
+  nativeScriptCallsEnabled,
+} from "./native-host-target.ts";
 import {
   nativeSyntaxVerdictSource,
   nativeSyntaxDependencies,
@@ -427,8 +430,7 @@ function prepareNativeScriptInputs(
     outcome: { kind: "unsupported" as const, reason },
   });
   const modules: SourceModule[] = [];
-  const nativeScriptCalls =
-    process.env.TINT_EXPERIMENTAL_NATIVE_SCRIPT_CALLS === "1";
+  const nativeScriptCalls = nativeScriptCallsEnabled();
   for (const [index, input] of inputs.entries()) {
     const bytes = new TextEncoder().encode(input.source);
     const source = createSourceText(bytes, bytes.length);

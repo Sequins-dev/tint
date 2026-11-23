@@ -518,6 +518,21 @@ export function drainScriptJobs(
   });
 }
 
+/** The execution context of a source function created now: the active
+ * context when it belongs to `realm`, shared so that native call sites
+ * compare one identity (an equal record of another identity only misses
+ * that fast path), else a new record for the realm and the active Script or
+ * module. */
+export function functionExecutionContext(
+  realm: ErrorRealm,
+): ScriptExecutionContext {
+  const active = realm.agent.activeContext;
+  if (active !== undefined && active.realm === realm) return active;
+  return {
+    realm,
+    scriptOrModule: active === undefined ? undefined : active.scriptOrModule,
+  };
+}
 /** Source functions retain their definition-time Script/module; built-ins use
  * the realm context, which preserves the caller's active Script/module. */
 export function createSourceExecutionContext(
@@ -526,11 +541,7 @@ export function createSourceExecutionContext(
   callerBarrier: boolean = true,
 ): ObjectExecutionContext<unknown> {
   const agent = realm.agent;
-  const active = agent.activeContext;
-  const context: ScriptExecutionContext = {
-    realm,
-    scriptOrModule: active === undefined ? undefined : active.scriptOrModule,
-  };
+  const context = functionExecutionContext(realm);
   return {
     getRealm: (): ErrorRealm => realm,
     run: (action): unknown => {

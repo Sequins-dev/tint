@@ -479,7 +479,6 @@ export function lowerFunction(
       case "string-length":
       case "string-code-unit":
       case "script-argument-count":
-      case "script-argument-area":
         type = "number";
         break;
       case "array-subarray":
@@ -3750,6 +3749,7 @@ export function lowerFunction(
     receiver: number | undefined,
     node: Expression,
     scriptArguments?: readonly number[],
+    tail: boolean = false,
   ): number | undefined {
     const signature = signatures[target];
     if (signature === undefined) throw "call signature invariant";
@@ -3867,22 +3867,51 @@ export function lowerFunction(
     if (calleeSlot === undefined) emit({ kind: "call", ...call });
     else {
       const operation = callValue(load(calleeSlot, node), call.arguments);
-      emit({
-        kind: "call-indirect",
-        ...call,
-        ...(info(node).discardCallResult === true
-          ? { discardResult: true }
-          : {}),
-        callee: operation.callee,
-        arguments: operation.arguments,
-        ...(scriptArguments === undefined
-          ? {}
-          : {
-              scriptArguments: scriptArguments.map((slot) =>
-                coerce(load(slot, node), "general", node),
-              ),
-            }),
-      });
+      if (tail) {
+        if (scriptArguments === undefined) throw "script tail call invariant";
+        emit({
+          kind: "call-indirect",
+          ...call,
+          callee: operation.callee,
+          arguments: operation.arguments,
+          scriptArguments: scriptArguments.map((slot) =>
+            coerce(load(slot, node), "general", node),
+          ),
+          tail: true,
+        });
+      } else
+        emit({
+          kind: "call-indirect",
+          ...call,
+          ...(info(node).discardCallResult === true
+            ? { discardResult: true }
+            : {}),
+          callee: operation.callee,
+          arguments: operation.arguments,
+          ...(scriptArguments === undefined
+            ? {}
+            : {
+                scriptArguments: scriptArguments.map((slot) =>
+                  coerce(load(slot, node), "general", node),
+                ),
+              }),
+        });
+      if (tail) {
+        // The entry returns the callee's completion at once; the source's
+        // own return of this value follows in an unreachable block.
+        if (id === undefined || finalizer !== undefined)
+          throw "script tail call outside a returning position";
+        finish({ kind: "return", value: id, start: node.start, end: node.end });
+        current = block();
+        const absent = nextValue++;
+        emit({
+          kind: "general-none",
+          id: absent,
+          start: node.start,
+          end: node.end,
+        });
+        return save(absent, "general", node);
+      }
     }
     if (type === "void") return undefined;
     if (id !== undefined) return save(id, type, node);
@@ -7204,55 +7233,15 @@ export function lowerFunction(
           });
           return save(id, "number", node);
         }
-        if (
-          node.scriptArgument === "registers" ||
-          node.scriptArgument === "stack"
-        ) {
-          const id = nextValue++;
-          emit({
-            kind: "script-argument-area",
-            id,
-            area: node.scriptArgument,
-            start: node.start,
-            end: node.end,
-          });
-          return save(id, "number", node);
-        }
-        if (
-          node.scriptArgument === "index" ||
-          node.scriptArgument === "load-frame"
-        ) {
+        if (node.scriptArgument === "index") {
           const argument = node.arguments[0];
           if (argument === undefined) throw "script argument index invariant";
-          const indexSlot = value(argument);
-          let frame:
-            { count: number; registers: number; stack: number } | undefined;
-          if (node.scriptArgument === "load-frame") {
-            const count = node.arguments[1],
-              registers = node.arguments[2],
-              stack = node.arguments[3];
-            if (
-              count === undefined ||
-              registers === undefined ||
-              stack === undefined
-            )
-              throw "script argument frame invariant";
-            const size = value(count),
-              reg = value(registers),
-              overflow = value(stack);
-            frame = {
-              count: load(size, node),
-              registers: load(reg, node),
-              stack: load(overflow, node),
-            };
-          }
-          const index = load(indexSlot, node),
+          const index = load(value(argument), node),
             id = nextValue++;
           emit({
             kind: "script-argument",
             id,
             index,
-            ...(frame === undefined ? {} : { frame }),
             start: node.start,
             end: node.end,
           });
@@ -9917,6 +9906,7 @@ export function lowerFunction(
             undefined,
             node,
             args.slice(4).map(value),
+            node.scriptTail === true,
           );
         }
         return invoke(

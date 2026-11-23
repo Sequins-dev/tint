@@ -1,5 +1,6 @@
 import { forwardSingleUseTemporaries } from "./forward-temporaries.ts";
 import { collectTailCalls } from "./tail-position.ts";
+import { argumentsForwardingSites } from "./arguments-forwarding.ts";
 import { sourceModuleShape } from "./module-shape.ts";
 import {
   directEvalStrict,
@@ -87,6 +88,21 @@ export interface ScriptLoweringOptions {
    * marks one (markHTMLDDAObject) fails loudly instead of changing `==`. */
   readonly htmlDDAObjects?: boolean;
 }
+/** How a native entry's `f.apply(x, arguments)` calls forward its actuals
+ * (argumentsForwardingSites): the calls (their `arguments` operand's
+ * start), the actual count and operand `index`, the parameters mapped to
+ * the object (sloppy simple parameters, else none) and how to create the
+ * object for any other use. */
+interface ArgumentsForwarding {
+  readonly sites: ReadonlySet<number>;
+  readonly count: () => Expression;
+  readonly actual: (index: number) => Expression;
+  readonly mapped: readonly string[];
+  readonly materialize: () => void;
+}
+/** Actual operands a native script entry receives in registers (codegen's
+ * scriptActualRegisterPairs): tail calls pass no stack actuals. */
+const scriptRegisterActuals = 3;
 /** In-place value slots of an ordinary object (js-runtime propertySlots). */
 export const propertySlots = 8;
 /** The runtime functions generated property caches read and store values
@@ -1150,6 +1166,12 @@ function lowerScriptEntry(
   const templateSites: Statement[] = [];
   let functionDepth = 0;
   let tailEnds: ReadonlyMap<number, number> = new Map<number, number>();
+  /** In a native entry's body, the parameter holding its materialized
+   * argument list (undefined when called with actual operands). */
+  let nativeListName: string | undefined = undefined;
+  /** In a native entry whose `arguments` only feed `f.apply(x, arguments)`
+   * (argumentsForwardingSites), how those calls forward its actuals. */
+  let argumentsForwarding: ArgumentsForwarding | undefined = undefined;
   let usesTailCalls = false;
   let usesRegisterCalls = false;
   let usesWideRegisterCalls = false;
@@ -3580,23 +3602,405 @@ function lowerScriptEntry(
         named("DirectEvalSite"),
       );
     }
-    const result = temporary(
+    const candidate = (tail: boolean): Expression => {
+      const result = temporary(
+        runtimeCall(
+          tail ? "callEvalTailCandidate" : "callEvalCandidate",
+          [
+            callee,
+            callReceiver,
+            list,
+            member(id("$global"), "object", span),
+            id("$errors"),
+            { ...at(span), kind: "number", value: flags, raw: String(flags) },
+            site,
+          ],
+          span,
+        ),
+      );
+      check(member(result, "error", span), span);
+      return member(result, "value", span);
+    };
+    if (!isTailCall(span)) return candidate(false);
+    // A native entry called with actual operands has no trampoline.
+    const listName = nativeListName;
+    if (listName === undefined) return candidate(true);
+    return selectByInvocation(
+      listName,
+      (): Expression => candidate(true),
+      (): Expression => candidate(false),
+      span,
+    );
+  }
+  /** The native script entry of an evaluated callee and the test that
+   * selects it: an entry exists, the callee runs in the caller's execution
+   * context and, to construct, it is an ordinary constructor. Functions
+   * share the context record they were created in
+   * (functionExecutionContext), so an identity check usually proves the
+   * realm and Script or module match. */
+  function scriptEntryGuard(
+    target: Expression,
+    construct: boolean,
+    span: Span,
+  ): {
+    readonly object: Expression;
+    readonly entry: Expression;
+    readonly accepts: Expression;
+  } {
+    const errors = id("$errors", span);
+    const object = temporary(
       runtimeCall(
-        isTailCall(span) ? "callEvalTailCandidate" : "callEvalCandidate",
+        "viewObjectValue",
+        [target, member(errors, "objectPrototype", span)],
+        span,
+      ),
+    );
+    const slot = temporary({
+      ...at(span),
+      kind: "member",
+      object,
+      property: "internalRegisterCall",
+      optional: true,
+    });
+    const entry = temporary({
+      ...at(span),
+      kind: "member",
+      object: slot,
+      property: "scriptInvoke",
+      optional: true,
+    });
+    const both = (left: Expression, right: Expression): Expression => ({
+      ...at(span),
+      kind: "binary",
+      operator: "&&",
+      left,
+      right,
+    });
+    const defined = (operand: Expression): Expression => ({
+      ...at(span),
+      kind: "binary",
+      operator: "!==",
+      left: operand,
+      right: id("undefined", span),
+    });
+    // Equal records of another identity (a context entered apart from the
+    // one the callee was created in) compare their fields.
+    const active = temporary(
+      member(member(errors, "agent", span), "activeContext", span),
+    );
+    const context = member(slot, "context", span);
+    const same = (field: string): Expression => ({
+      ...at(span),
+      kind: "binary",
+      operator: "===",
+      left: member(context, field, span),
+      right: member(active, field, span),
+    });
+    let accepts = both(both(defined(entry), defined(slot)), {
+      ...at(span),
+      kind: "binary",
+      operator: "||",
+      left: {
+        ...at(span),
+        kind: "binary",
+        operator: "===",
+        left: context,
+        right: active,
+      },
+      right: both(both(defined(active), same("realm")), same("scriptOrModule")),
+    });
+    if (construct) accepts = both(accepts, member(slot, "constructible", span));
+    return { object, entry, accepts };
+  }
+  /** `new` of an evaluated callee with evaluated actuals. An ordinary
+   * constructor in the caller's context runs its native entry directly:
+   * OrdinaryCreateFromConstructor, then the body with the new object as its
+   * receiver and the callee as new.target; an object result replaces the
+   * new object. Any other target takes the general [[Construct]]. */
+  function constructNative(
+    target: Expression,
+    args: readonly Expression[],
+    span: Span,
+  ): Expression {
+    usesNativeScriptCalls = true;
+    const actuals = args.map((argument) => {
+      if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      return temporary(value(argument), true);
+    });
+    const { entry, accepts } = scriptEntryGuard(target, true, span);
+    const result = temporary(id("undefined", span), true, true);
+    const general = statements.length;
+    expression({
+      ...at(span),
+      kind: "assignment",
+      target: result,
+      value: checkedRuntimeValue(
+        "constructObjectValue",
         [
-          callee,
-          callReceiver,
-          list,
+          target,
+          { ...at(span), kind: "array", elements: actuals },
           member(id("$global"), "object", span),
-          id("$errors"),
-          { ...at(span), kind: "number", value: flags, raw: String(flags) },
-          site,
+        ],
+        span,
+      ),
+    });
+    const alternate: BlockStatement = {
+      ...at(span),
+      kind: "block",
+      statements: statements.splice(general),
+    };
+    const direct = statements.length;
+    // An ordinary constructor's "prototype" is a non-configurable data
+    // property: the site's cached read is its Get.
+    const instance = temporary(
+      runtimeCall(
+        "createSourceInstance",
+        [
+          readProperty(target, text("prototype", span), span),
+          id("$errors", span),
         ],
         span,
       ),
     );
-    check(member(result, "error", span), span);
-    return member(result, "value", span);
+    const operands: Expression[] = [
+      target,
+      instance,
+      target,
+      id("undefined", span),
+    ];
+    for (const actual of actuals) {
+      if (actual === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      operands.push(actual);
+    }
+    const returned = temporary({
+      ...at(span),
+      kind: "call",
+      scriptCall: true,
+      callee: entry,
+      arguments: operands,
+    });
+    expression({
+      ...at(span),
+      kind: "assignment",
+      target: result,
+      value: {
+        ...at(span),
+        kind: "conditional",
+        test: {
+          ...at(span),
+          kind: "binary",
+          operator: "===",
+          left: runtimeCall(
+            "viewObjectValue",
+            [returned, member(id("$errors", span), "objectPrototype", span)],
+            span,
+          ),
+          right: id("undefined", span),
+        },
+        consequent: instance,
+        alternate: returned,
+      },
+    });
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test: accepts,
+      consequent: {
+        ...at(span),
+        kind: "block",
+        statements: statements.splice(direct),
+      },
+      alternate,
+    });
+    return result;
+  }
+  /** `f.apply(thisArg, arguments)` in a forwarding entry. When `apply` is
+   * the intrinsic and `f` a native entry in the caller's context, the call
+   * passes the arguments object's elements (mapped parameters' current
+   * values, then the remaining actuals) as actual operands, one call per
+   * count up to the register actuals, without creating the object. Any
+   * other case creates it and calls `apply` as written. In tail position
+   * the general call keeps the trampoline's bounded stack. */
+  function invokeForwardedApply(
+    apply: Expression,
+    receiver: Expression,
+    args: readonly Expression[],
+    forwarding: ArgumentsForwarding,
+    span: Span,
+  ): Expression {
+    const target = temporary(receiver, true);
+    const first = args[0],
+      second = args[1];
+    if (first === undefined || second === undefined)
+      throw "FORWARDING_OPERAND_INVARIANT";
+    const thisArg = temporary(value(first), true);
+    const result = temporary(id("undefined", span), true, true);
+    const general = (): BlockStatement => {
+      const begin = statements.length;
+      forwarding.materialize();
+      expression({
+        ...at(span),
+        kind: "assignment",
+        target: result,
+        value: invokeList(
+          apply,
+          target,
+          { ...at(span), kind: "array", elements: [thisArg, value(second)] },
+          span,
+        ),
+      });
+      return {
+        ...at(span),
+        kind: "block",
+        statements: statements.splice(begin),
+      };
+    };
+    if (isTailCall(span) || !nativeScriptCalls || compactResults) {
+      const block = general();
+      for (const statement of block.statements) {
+        if (statement === undefined) throw "FORWARDING_STATEMENT_INVARIANT";
+        statements.push(statement);
+      }
+      return result;
+    }
+    usesNativeScriptCalls = true;
+    const { entry, accepts } = scriptEntryGuard(target, false, span);
+    const count = temporary(forwarding.count());
+    const forwardedValue = (index: number): Expression => {
+      const parameter = forwarding.mapped[index];
+      return parameter === undefined
+        ? forwarding.actual(index)
+        : identifierValue(parameter, span);
+    };
+    // Counts above the register actuals take the general call.
+    let chain: Statement = general();
+    for (let size: number = scriptRegisterActuals; size >= 0; size--) {
+      const begin = statements.length;
+      const operands: Expression[] = [
+        target,
+        thisArg,
+        id("undefined", span),
+        id("undefined", span),
+      ];
+      for (let index = 0; index < size; index++)
+        operands.push(temporary(forwardedValue(index), true));
+      expression({
+        ...at(span),
+        kind: "assignment",
+        target: result,
+        value: {
+          ...at(span),
+          kind: "call",
+          scriptCall: true,
+          callee: entry,
+          arguments: operands,
+        },
+      });
+      chain = {
+        ...at(span),
+        kind: "if",
+        test: {
+          ...at(span),
+          kind: "binary",
+          operator: "===",
+          left: count,
+          right: scalarNumber(size, span),
+        },
+        consequent: {
+          ...at(span),
+          kind: "block",
+          statements: statements.splice(begin),
+        },
+        alternate: chain,
+      };
+    }
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test: {
+        ...at(span),
+        kind: "binary",
+        operator: "&&",
+        left: {
+          ...at(span),
+          kind: "binary",
+          operator: "===",
+          left: apply,
+          right: member(id("$errors", span), "functionApply", span),
+        },
+        right: accepts,
+      },
+      consequent: chain,
+      alternate: general(),
+    });
+    return result;
+  }
+  /** A tail call in a native entry's body. Called with actual operands, a
+   * native callee in the caller's context replaces this entry's frame (a
+   * proper tail call); any other case takes invokeList's tail call. An
+   * entry called with a list always requests from its trampoline, so frames
+   * left by ordinary fallback calls never alternate with jumps. */
+  function invokeNativeTail(
+    callee: Expression,
+    receiver: Expression,
+    args: readonly Expression[],
+    listName: string,
+    span: Span,
+  ): Expression {
+    usesNativeScriptCalls = true;
+    const target = temporary(callee, true);
+    const thisValue = temporary(receiver, true);
+    const actuals = args.map((argument) => {
+      if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      return temporary(value(argument), true);
+    });
+    const { entry, accepts } = scriptEntryGuard(target, false, span);
+    const operands: Expression[] = [
+      target,
+      thisValue,
+      id("undefined", span),
+      id("undefined", span),
+    ];
+    for (const actual of actuals) {
+      if (actual === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      operands.push(actual);
+    }
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test: {
+        ...at(span),
+        kind: "binary",
+        operator: "&&",
+        left: {
+          ...at(span),
+          kind: "binary",
+          operator: "===",
+          left: id(listName, span),
+          right: id("undefined", span),
+        },
+        right: accepts,
+      },
+      consequent: {
+        ...at(span),
+        kind: "return",
+        expression: {
+          ...at(span),
+          kind: "call",
+          scriptCall: true,
+          scriptTail: true,
+          callee: entry,
+          arguments: operands,
+        },
+      },
+      alternate: undefined,
+    });
+    return invokeList(
+      target,
+      thisValue,
+      { ...at(span), kind: "array", elements: actuals },
+      span,
+    );
   }
   function invoke(
     callee: Expression,
@@ -3604,6 +4008,16 @@ function lowerScriptEntry(
     args: readonly Expression[],
     span: Span,
   ): Expression {
+    const listName = nativeListName;
+    if (
+      nativeScriptCalls &&
+      !compactResults &&
+      listName !== undefined &&
+      isTailCall(span) &&
+      args.length <= scriptRegisterActuals &&
+      !args.some((argument) => argument?.kind === "spread")
+    )
+      return invokeNativeTail(callee, receiver, args, listName, span);
     if (
       nativeScriptCalls &&
       !compactResults &&
@@ -3617,72 +4031,7 @@ function lowerScriptEntry(
         if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
         return temporary(value(argument), true);
       });
-      const errors = id("$errors", span);
-      const object = temporary(
-        runtimeCall(
-          "viewObjectValue",
-          [target, member(errors, "objectPrototype", span)],
-          span,
-        ),
-      );
-      const slot = temporary({
-        ...at(span),
-        kind: "member",
-        object,
-        property: "internalRegisterCall",
-        optional: true,
-      });
-      const entry = temporary({
-        ...at(span),
-        kind: "member",
-        object: slot,
-        property: "scriptInvoke",
-        optional: true,
-      });
-      const active = temporary(
-        member(member(errors, "agent", span), "activeContext", span),
-      );
-      const context = member(slot, "context", span);
-      let accepts: Expression = {
-        ...at(span),
-        kind: "binary",
-        operator: "!==",
-        left: entry,
-        right: id("undefined", span),
-      };
-      for (const left of [slot, active]) {
-        if (left === undefined) throw "SCRIPT_NATIVE_GUARD_INVARIANT";
-        accepts = {
-          ...at(span),
-          kind: "binary",
-          operator: "&&",
-          left: accepts,
-          right: {
-            ...at(span),
-            kind: "binary",
-            operator: "!==",
-            left,
-            right: id("undefined", span),
-          },
-        };
-      }
-      for (const property of ["realm", "scriptOrModule"]) {
-        if (property === undefined) throw "SCRIPT_CONTEXT_FIELD_INVARIANT";
-        const test: Expression = {
-          ...at(span),
-          kind: "binary",
-          operator: "===",
-          left: member(active, property, span),
-          right: member(context, property, span),
-        };
-        accepts = {
-          ...at(span),
-          kind: "binary",
-          operator: "&&",
-          left: accepts,
-          right: test,
-        };
-      }
+      const { entry, accepts } = scriptEntryGuard(target, false, span);
       const result = temporary(id("undefined", span), true, true);
       const start = statements.length;
       const slow = invokeList(
@@ -3888,6 +4237,46 @@ function lowerScriptEntry(
     }
     return list;
   }
+  /** In a native entry's body, a value computed by `listed` when the entry
+   * was called with a materialized list, else by `actual`. */
+  function selectByInvocation(
+    listName: string,
+    listed: () => Expression,
+    actual: () => Expression,
+    span: Span,
+  ): Expression {
+    const result = temporary(id("undefined", span), true, true);
+    const branch = (compute: () => Expression): BlockStatement => {
+      const start = statements.length;
+      expression({
+        ...at(span),
+        kind: "assignment",
+        target: result,
+        value: compute(),
+      });
+      return {
+        ...at(span),
+        kind: "block",
+        statements: statements.splice(start),
+      };
+    };
+    const consequent = branch(listed);
+    const alternate = branch(actual);
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test: {
+        ...at(span),
+        kind: "binary",
+        operator: "!==",
+        left: id(listName, span),
+        right: id("undefined", span),
+      },
+      consequent,
+      alternate,
+    });
+    return result;
+  }
   function invokePrepared(
     callee: Expression,
     receiver: Expression,
@@ -3911,21 +4300,44 @@ function lowerScriptEntry(
     span: Span,
   ): Expression {
     if (isTailCall(span)) {
-      const result = temporary(
-        runtimeCall(
-          "requestSourceTailCall",
-          [
-            callee,
-            receiver,
-            arguments_,
-            member(id("$global"), "object", span),
-            id("$errors"),
-          ],
-          span,
-        ),
+      const request = (): Expression => {
+        const result = temporary(
+          runtimeCall(
+            "requestSourceTailCall",
+            [
+              callee,
+              receiver,
+              arguments_,
+              member(id("$global"), "object", span),
+              id("$errors"),
+            ],
+            span,
+          ),
+        );
+        check(member(result, "error", span), span);
+        return member(result, "value", span);
+      };
+      // In a native entry's body only a list invocation has a trampoline
+      // to request from; one with actual operands calls ordinarily (the
+      // callee's own tail calls then trampoline in its list entry).
+      const listName = nativeListName;
+      if (listName === undefined) return request();
+      return selectByInvocation(
+        listName,
+        request,
+        (): Expression =>
+          checkedRuntimeValue(
+            "callObjectValue",
+            [
+              callee,
+              receiver,
+              arguments_,
+              member(id("$global"), "object", span),
+            ],
+            span,
+          ),
+        span,
       );
-      check(member(result, "error", span), span);
-      return member(result, "value", span);
     }
     return checkedRuntimeValue(
       "callObjectValue",
@@ -4955,9 +5367,14 @@ function lowerScriptEntry(
       !derived &&
       !suspending &&
       !options.packed &&
-      !tailEnabled &&
       resultContract === 0;
-    const materializesArguments = nativeEntry && (hasArguments || hasRest);
+    const forwardingSites =
+      nativeEntry && hasArguments && !arrow && body.kind === "block"
+        ? argumentsForwardingSites(parameters, body)
+        : undefined;
+    const materializesArguments =
+      nativeEntry &&
+      ((hasArguments && forwardingSites === undefined) || hasRest);
     const nativeName = nativeEntry
       ? temporary(
           runtimeCall(
@@ -5038,6 +5455,10 @@ function lowerScriptEntry(
       incomingArguments = materializesArguments
         ? "$incoming" + serial++
         : argsName;
+    const outerNativeListName = nativeListName;
+    nativeListName = nativeEntry ? incomingArguments : undefined;
+    const outerArgumentsForwarding = argumentsForwarding;
+    argumentsForwarding = undefined;
     const list: TypeNode = {
       ...at(span),
       kind: "array",
@@ -5088,14 +5509,16 @@ function lowerScriptEntry(
           }
         : fromList;
     }
-    if (materializesArguments) {
+    /** Declare `target` and assign it this entry's argument list: its
+     * materialized list, or one collected from its actual operands. */
+    function materializeList(target: string): void {
       statements.push({
         ...at(span),
         kind: "variable",
         mode: "let",
         exported: false,
         declarations: [
-          { ...at(span), name: argsName, type: list, initializer: undefined },
+          { ...at(span), name: target, type: list, initializer: undefined },
         ],
       });
       const begin = statements.length;
@@ -5146,7 +5569,7 @@ function lowerScriptEntry(
       expression({
         ...at(span),
         kind: "assignment",
-        target: id(argsName, span),
+        target: id(target, span),
         value: actual,
       });
       const collect: BlockStatement = {
@@ -5164,13 +5587,14 @@ function lowerScriptEntry(
           expression: {
             ...at(span),
             kind: "assignment",
-            target: id(argsName, span),
+            target: id(target, span),
             value: id(incomingArguments, span),
           },
         },
         alternate: collect,
       });
     }
+    if (materializesArguments) materializeList(argsName);
     if (numericImplementation !== undefined) {
       const operands: Expression[] = [];
       let guard: Expression | undefined;
@@ -5582,20 +6006,94 @@ function lowerScriptEntry(
         ],
         span,
       );
-      expression(
-        runtimeCall(
-          "instantiateScriptArguments",
-          [
-            parameterRecord,
-            id(argsName, span),
-            raw ? id("undefined") : id(calleeName, span),
-            argumentPlan,
-            id("$errors"),
-            member(id("$global"), "hooks", span),
+      const instantiate = (listName: string): void => {
+        expression(
+          runtimeCall(
+            "instantiateScriptArguments",
+            [
+              parameterRecord,
+              id(listName, span),
+              raw ? id("undefined") : id(calleeName, span),
+              argumentPlan,
+              id("$errors"),
+              member(id("$global"), "hooks", span),
+            ],
+            span,
+          ),
+        );
+      };
+      if (forwardingSites === undefined) instantiate(argsName);
+      else {
+        // Forwarding calls read the actuals directly; any other use of the
+        // object creates it first, once per invocation.
+        const ready = "$argumentsReady" + serial++;
+        statements.push({
+          ...at(span),
+          kind: "variable",
+          mode: "let",
+          exported: false,
+          declarations: [
+            {
+              ...at(span),
+              name: ready,
+              type: named("boolean"),
+              initializer: { ...at(span), kind: "boolean", value: false },
+            },
           ],
-          span,
-        ),
-      );
+        });
+        const mapped: string[] = [];
+        if (!strict && simple)
+          for (const parameter of parameters) {
+            if (
+              parameter === undefined ||
+              parameter.kind === "pattern-parameter"
+            )
+              throw "FORWARDING_PARAMETER_INVARIANT";
+            mapped.push(parameter.name);
+          }
+        argumentsForwarding = {
+          sites: forwardingSites,
+          count: (): Expression => ({
+            ...at(span),
+            kind: "conditional",
+            test: hasList(),
+            consequent: member(id(incomingArguments, span), "length", span),
+            alternate: nativeArgumentCount(span),
+          }),
+          actual: (index: number): Expression =>
+            argumentAt(scalarNumber(index, span), span),
+          mapped,
+          materialize: (): void => {
+            const begin = statements.length;
+            expression({
+              ...at(span),
+              kind: "assignment",
+              target: id(ready, span),
+              value: { ...at(span), kind: "boolean", value: true },
+            });
+            const lazy = "$arguments" + serial++;
+            materializeList(lazy);
+            instantiate(lazy);
+            const body: BlockStatement = {
+              ...at(span),
+              kind: "block",
+              statements: statements.splice(begin),
+            };
+            statements.push({
+              ...at(span),
+              kind: "if",
+              test: {
+                ...at(span),
+                kind: "unary",
+                operator: "!",
+                operand: id(ready, span),
+              },
+              consequent: body,
+              alternate: undefined,
+            });
+          },
+        };
+      }
     }
     for (let i = 0; i < parameters.length; i++) {
       const parameter = parameters[i];
@@ -6037,6 +6535,8 @@ function lowerScriptEntry(
     newTarget = outerNewTarget;
     strict = outerStrict;
     tailEnds = outerTailEnds;
+    nativeListName = outerNativeListName;
+    argumentsForwarding = outerArgumentsForwarding;
     functionDepth--;
     suspensionInput = outerSuspensionInput;
     asyncGeneratorBody = outerAsyncGeneratorBody;
@@ -6246,6 +6746,7 @@ function lowerScriptEntry(
           [
             bridge,
             nativeBody,
+            { ...at(span), kind: "boolean", value: tailEnabled },
             constructible,
             id("$errors"),
             member(id("$global"), "hooks", span),
@@ -7600,6 +8101,12 @@ function lowerScriptEntry(
       }
       case "new": {
         const target = temporary(value(node.callee), true);
+        if (
+          nativeScriptCalls &&
+          !compactResults &&
+          !node.arguments.some((argument) => argument?.kind === "spread")
+        )
+          return constructNative(target, node.arguments, node);
         const args = argumentList(node.arguments, node);
         return checkedRuntimeValue(
           "constructObjectValue",
@@ -7656,6 +8163,21 @@ function lowerScriptEntry(
               methodContract,
               id("$errors"),
             ],
+            node,
+          );
+        const forwarding = argumentsForwarding;
+        const forwarded = node.arguments[1];
+        if (
+          forwarding !== undefined &&
+          forwarded !== undefined &&
+          forwarded.kind === "identifier" &&
+          forwarding.sites.has(forwarded.start)
+        )
+          return invokeForwardedApply(
+            callee,
+            evaluated.receiver,
+            node.arguments,
+            forwarding,
             node,
           );
         if (isDirectEvalCandidate(node))

@@ -179,6 +179,7 @@ export function installFunctionIntrinsics(
     },
     hooks,
   );
+  realm.functionApply = apply;
   function forwardCall(
     receiver: unknown,
     args: readonly unknown[],

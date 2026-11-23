@@ -291,6 +291,7 @@ export {
   constructorPrototype,
   retainFunctionSource,
   createRetainedSourceFunction,
+  createSourceInstance,
   type SourceFunctionCall,
   constructObjectValue,
   ordinaryHasInstance,

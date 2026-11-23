@@ -4490,7 +4490,6 @@ function emitModuleForms(
                 type = "general";
                 break;
               case "script-argument-count":
-              case "script-argument-area":
                 id = op.id;
                 type = "number";
                 break;
@@ -5225,6 +5224,8 @@ function emitModuleForms(
             });
         }
         let throwExit = false;
+        // The block whose tail call left the frame (it emits no return).
+        let tailExitBlock = -1;
         const interruptible =
           options.workerFunctions?.has(
             fn.name.endsWith("$direct") ? fn.name.slice(0, -7) : fn.name,
@@ -5379,9 +5380,12 @@ function emitModuleForms(
               );
           }
         }
-        function epilogue(): void {
+        /** Pop the frame. A return keeps its completion in x0-x2; a tail
+         * call keeps the callee's operands in x0-x15 and its entry in x17,
+         * with the context in x0. */
+        function teardown(tail: boolean): void {
           endFrameRange();
-          // Unlink the activation record; x0-x2 hold the completion.
+          // Unlink the activation record.
           if (fn.scriptEntry === true) {
             emit({
               op: "ldr",
@@ -5390,12 +5394,12 @@ function emitModuleForms(
               rn: "sp",
               offset: activationOffset,
             });
-            rawLoad(17, contextOffset);
+            if (!tail) rawLoad(17, contextOffset);
             emit({
               op: "str",
               width: 64,
               rt: 16,
-              rn: 17,
+              rn: tail ? 0 : 17,
               offset: nativeActivationTopOffset,
             });
           }
@@ -5410,6 +5414,9 @@ function emitModuleForms(
             offset: 16,
             mode: "post",
           });
+        }
+        function epilogue(): void {
+          teardown(false);
           emit({ op: "ret", rn: 30 });
           // Later blocks are entered with this frame still live, not by falling
           // through the preceding return. Their scopes begin after its teardown.
@@ -9544,28 +9551,11 @@ function emitModuleForms(
                 floatStore(0, op.id);
                 break;
               }
-              case "script-argument-area":
-                if (op.area === "registers") address(9, scriptArgumentsOffset);
-                else
-                  emit({
-                    op: "add-imm",
-                    width: 64,
-                    rd: 9,
-                    rn: 29,
-                    immediate: 16,
-                    shift: 0,
-                    setFlags: false,
-                  });
-                emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
-                floatStore(0, op.id);
-                break;
               case "script-argument": {
-                const frame = op.frame;
                 const fact = valueIds.intern(op.index);
                 const position =
                   wordKinds[fact] === 3 ? wordConstants[fact] : undefined;
                 if (
-                  frame === undefined &&
                   position !== undefined &&
                   position < scriptActualRegisterPairs
                 ) {
@@ -9575,11 +9565,7 @@ function emitModuleForms(
                   rawStore(10, value(op.id).offset + 8);
                   break;
                 }
-                if (
-                  frame === undefined &&
-                  position !== undefined &&
-                  position < 2048
-                ) {
+                if (position !== undefined && position < 2048) {
                   const offset =
                     16 + (position - scriptActualRegisterPairs) * 16;
                   rawLoad(9, scriptCountOffset);
@@ -9619,23 +9605,6 @@ function emitModuleForms(
                   rawStore(10, value(op.id).offset + 8);
                   break;
                 }
-                if (frame !== undefined) {
-                  emit({
-                    op: "fcvtzs-x-d",
-                    rd: 12,
-                    rn: floatOperand(frame.count, 0),
-                  });
-                  emit({
-                    op: "fcvtzs-x-d",
-                    rd: 13,
-                    rn: floatOperand(frame.registers, 0),
-                  });
-                  emit({
-                    op: "fcvtzs-x-d",
-                    rd: 14,
-                    rn: floatOperand(frame.stack, 0),
-                  });
-                }
                 const input = floatOperand(op.index, 0);
                 const exact = input === 1 ? 0 : 1;
                 emit({ op: "fcvtzs-x-d", rd: 9, rn: input });
@@ -9643,22 +9612,20 @@ function emitModuleForms(
                 emit({ op: "fcmp", rn: input, rm: exact });
                 const nonInteger = instructions.length;
                 emit({ op: "b.cond", condition: "ne", displacement: 0 });
-                if (frame === undefined) rawLoad(10, scriptCountOffset);
+                rawLoad(10, scriptCountOffset);
                 emit({
                   op: "sub-reg",
                   width: 64,
                   rd: "zr",
                   rn: 9,
-                  rm: frame === undefined ? 10 : 12,
+                  rm: 10,
                   shift: "lsl",
                   amount: 0,
                   setFlags: true,
                 });
                 const absent = instructions.length;
                 emit({ op: "b.cond", condition: "cs", displacement: 0 });
-                if (frame === undefined) address(11, scriptArgumentsOffset);
-                else
-                  emit({ op: "orr-reg", width: 64, rd: 11, rn: "zr", rm: 13 });
+                address(11, scriptArgumentsOffset);
                 emit({
                   op: "sub-imm",
                   width: 64,
@@ -9670,18 +9637,15 @@ function emitModuleForms(
                 });
                 const inRegister = instructions.length;
                 emit({ op: "b.cond", condition: "cc", displacement: 0 });
-                if (frame === undefined)
-                  emit({
-                    op: "add-imm",
-                    width: 64,
-                    rd: 11,
-                    rn: 29,
-                    immediate: 16,
-                    shift: 0,
-                    setFlags: false,
-                  });
-                else
-                  emit({ op: "orr-reg", width: 64, rd: 11, rn: "zr", rm: 14 });
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 11,
+                  rn: 29,
+                  immediate: 16,
+                  shift: 0,
+                  setFlags: false,
+                });
                 emit({
                   op: "sub-imm",
                   width: 64,
@@ -16699,7 +16663,22 @@ function emitModuleForms(
                   directCallee.receiverSlot !== undefined
                 )
                   imm(2, 0);
-                address(3, resultOffset);
+                // A tail call completes into this entry's own completion
+                // area (abi.ts) and returns to this entry's caller.
+                const tailCall =
+                  op.kind === "call-indirect" && op.tail === true;
+                if (
+                  tailCall &&
+                  (actuals === undefined ||
+                    actuals.length > scriptActualRegisterPairs ||
+                    fn.scriptEntry !== true)
+                )
+                  fail(
+                    "UNSUPPORTED",
+                    "tail calls pass register actuals between script entries",
+                  );
+                if (tailCall) rawLoad(3, resultPointerOffset);
+                else address(3, resultOffset);
                 if (op.kind === "call-indirect") {
                   rawValue(12, op.callee);
                   guardDescriptor(12, functionRecord);
@@ -16823,6 +16802,22 @@ function emitModuleForms(
                       displacement: (instructions.length - list) * 4,
                     });
                   }
+                  if (tailCall) {
+                    // The callee replaces this frame: no safepoint, no
+                    // completion check, no return of our own.
+                    emit({
+                      op: "orr-reg",
+                      width: 64,
+                      rd: 17,
+                      rn: "zr",
+                      rm: 16,
+                    });
+                    teardown(true);
+                    emit({ op: "br", rn: 17 });
+                    frameStart = instructions.length * 4;
+                    tailExitBlock = b.id;
+                    break;
+                  }
                   emit({ op: "blr", rn: 16 });
                 } else if (importedEntry !== undefined) {
                   managedPointer(16, importedEntry);
@@ -16898,7 +16893,9 @@ function emitModuleForms(
               instructions.length * 4,
             );
           span = { start: t.start, end: t.end };
-          if (t.kind === "trap") emit({ op: "brk", immediate: 0 });
+          if (tailExitBlock === b.id) {
+            // The tail call already left this frame.
+          } else if (t.kind === "trap") emit({ op: "brk", immediate: 0 });
           else if (t.kind === "throw") {
             rawValue(9, t.value);
             rawStore(9, resultOffset + 16);

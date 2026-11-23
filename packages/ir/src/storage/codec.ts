@@ -436,7 +436,8 @@ export function encodeInstruction(
         bit(receiver !== undefined, 2) +
           bit(id !== undefined, 4) +
           bit(op.discardResult === true, 8) +
-          bit(op.scriptArguments !== undefined, 16),
+          bit(op.scriptArguments !== undefined, 16) +
+          bit(op.tail === true, 32),
       );
       if (receiver !== undefined) writeSigned(writer, receiver);
       if (id !== undefined) writeSigned(writer, id);
@@ -447,18 +448,11 @@ export function encodeInstruction(
         writeList(writer, op.scriptArguments);
       return true;
     }
-    case "script-argument": {
-      const frame = op.frame;
-      writePrefix(writer, 82, op, bit(frame !== undefined, 2));
+    case "script-argument":
+      writePrefix(writer, 82, op, 0);
       writeSigned(writer, op.id);
       writeSigned(writer, op.index);
-      if (frame !== undefined) {
-        writeSigned(writer, frame.count);
-        writeSigned(writer, frame.registers);
-        writeSigned(writer, frame.stack);
-      }
       return true;
-    }
     case "activation-read": {
       const record = op.record,
         index = op.index;
@@ -476,10 +470,6 @@ export function encodeInstruction(
     }
     case "script-argument-count":
       writePrefix(writer, 83, op, 0);
-      writeSigned(writer, op.id);
-      return true;
-    case "script-argument-area":
-      writePrefix(writer, 84, op, bit(op.area === "stack", 2));
       writeSigned(writer, op.id);
       return true;
     case "record-slot-read":
@@ -1006,7 +996,22 @@ export function decodeInstruction(
         id = flagged(flags, 4) ? readSigned(reader) : undefined,
         target = readSigned(reader),
         callee = readSigned(reader),
-        args = readList(reader);
+        args = readList(reader),
+        scriptArguments = flagged(flags, 16) ? readList(reader) : undefined;
+      // A tail call is a script call: no receiver, its result used.
+      if (flagged(flags, 32)) {
+        if (scriptArguments === undefined) throw "packed tail call invariant";
+        return {
+          kind: "call-indirect",
+          id,
+          target,
+          callee,
+          arguments: args,
+          scriptArguments,
+          tail: true,
+          ...span,
+        };
+      }
       return {
         kind: "call-indirect",
         ...(receiver === undefined ? {} : { receiver }),
@@ -1015,7 +1020,7 @@ export function decodeInstruction(
         target,
         callee,
         arguments: args,
-        ...(flagged(flags, 16) ? { scriptArguments: readList(reader) } : {}),
+        ...(scriptArguments === undefined ? {} : { scriptArguments }),
         ...span,
       };
     }
@@ -1339,15 +1344,6 @@ export function decodeInstruction(
         kind: "script-argument",
         id: readSigned(reader),
         index: readSigned(reader),
-        ...(flagged(flags, 2)
-          ? {
-              frame: {
-                count: readSigned(reader),
-                registers: readSigned(reader),
-                stack: readSigned(reader),
-              },
-            }
-          : {}),
         ...span,
       };
     case 83:
@@ -1433,13 +1429,6 @@ export function decodeInstruction(
         ...span,
       };
     }
-    case 84:
-      return {
-        kind: "script-argument-area",
-        id: readSigned(reader),
-        area: flagged(flags, 2) ? "stack" : "registers",
-        ...span,
-      };
     case 81: {
       const id = readSigned(reader),
         value = readSigned(reader);

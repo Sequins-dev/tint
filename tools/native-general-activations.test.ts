@@ -96,9 +96,7 @@ if (after() !== after) throw 3;
 /** Builds every section into one image and runs each to completion. */
 function runSections(nativeScriptCalls: boolean): void {
   // The variable is read per preparation.
-  process.env.TINT_EXPERIMENTAL_NATIVE_SCRIPT_CALLS = nativeScriptCalls
-    ? "1"
-    : "0";
+  process.env.TINT_NATIVE_SCRIPT_CALLS = nativeScriptCalls ? "1" : "0";
   const deferred = sections.map((source) => {
     const plan = executionPlan(source, "raw", {
       flags: ["raw"],

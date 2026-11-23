@@ -348,6 +348,9 @@ export interface ObjectRegisterEntry<Value> {
    * function, for native activation records naming it as their callee. */
   readonly traceName: string;
   readonly callerPolicy: string;
+  /** Whether its [[Construct]] is the ordinary one of a base source
+   * function (OrdinaryCreateFromConstructor, then the body). */
+  readonly constructible: boolean;
   readonly invoke: ObjectRegisterCall<Value> | undefined;
   readonly invokeWide: ObjectWideRegisterCall<Value> | undefined;
   readonly scriptInvoke?: ObjectScriptCall<Value>;

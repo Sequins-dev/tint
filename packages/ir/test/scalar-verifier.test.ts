@@ -2344,3 +2344,149 @@ test("locally established initialization needs no fixed-point bit matrices", () 
     Uint32Array.prototype.fill = original;
   }
 });
+
+test("activation reads name a record except top and an index only for actuals", () => {
+  const read = (
+    instructions: FunctionIR["blocks"][number]["instructions"],
+    returned: number,
+    returnType: FunctionIR["returnType"],
+  ) =>
+    verify({
+      functions: [
+        {
+          id: 0,
+          name: "activation",
+          exported: true,
+          parameters: [0],
+          slots: ["number"],
+          returnType,
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions,
+              terminator: { kind: "return", value: returned, ...span },
+            },
+          ],
+        },
+      ],
+    });
+  const record = { kind: "load", id: 0, slot: 0, ...span } as const;
+  assert.equal(
+    read(
+      [{ kind: "activation-read", id: 1, field: "top", ...span }],
+      1,
+      "number",
+    ).ok,
+    true,
+  );
+  assert.equal(
+    read(
+      [
+        record,
+        { kind: "activation-read", id: 1, field: "callee", record: 0, ...span },
+      ],
+      1,
+      "general",
+    ).ok,
+    true,
+  );
+  assert.equal(
+    read(
+      [record, { kind: "activation-read", id: 1, field: "previous", ...span }],
+      1,
+      "number",
+    ).ok,
+    false,
+  );
+  assert.equal(
+    read(
+      [
+        record,
+        {
+          kind: "activation-read",
+          id: 1,
+          field: "count",
+          record: 0,
+          index: 0,
+          ...span,
+        },
+      ],
+      1,
+      "number",
+    ).ok,
+    false,
+  );
+  assert.equal(
+    read(
+      [
+        record,
+        {
+          kind: "activation-read",
+          id: 1,
+          field: "argument",
+          record: 0,
+          index: 0,
+          ...span,
+        },
+      ],
+      1,
+      "general",
+    ).ok,
+    true,
+  );
+});
+
+test("a tail call is a script entry's returned last call", () => {
+  const entry = (
+    id: number,
+    instructions: FunctionIR["blocks"][number]["instructions"],
+    returned: number,
+  ): FunctionIR => ({
+    id,
+    name: "entry" + id,
+    exported: false,
+    scriptEntry: true,
+    parameters: [0, 1, 2, 3],
+    slots: ["general", "general", "general", "optional-reference"],
+    returnType: "general",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions,
+        terminator: { kind: "return", value: returned, ...span },
+      },
+    ],
+  });
+  const module = (returned: number) => ({
+    functions: [
+      entry(0, [{ kind: "load", id: 0, slot: 0, ...span }], 0),
+      entry(
+        1,
+        [
+          { kind: "function-new", id: 0, target: 0, ...span },
+          { kind: "general-none", id: 1, ...span },
+          { kind: "reference-none", id: 2, ...span },
+          {
+            kind: "call-indirect",
+            id: 3,
+            target: 0,
+            callee: 0,
+            arguments: [1, 1, 1, 2],
+            scriptArguments: [],
+            tail: true,
+            ...span,
+          },
+        ],
+        returned,
+      ),
+    ],
+  });
+  assert.deepEqual(verify(module(3)), { ok: true });
+  const other = verify(module(1));
+  assert.ok(
+    !other.ok && other.error.message.includes("tail call"),
+    JSON.stringify(other),
+  );
+});

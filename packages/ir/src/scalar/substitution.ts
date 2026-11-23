@@ -51,7 +51,6 @@ export function substituteInstructionValues(
     case "general-null":
     case "general-none":
     case "script-argument-count":
-    case "script-argument-area":
     case "boolean-none":
     case "string-none":
     case "reference-none":
@@ -327,18 +326,7 @@ export function substituteInstructionValues(
     }
     case "script-argument": {
       const index = substitutedValue(values, op.index);
-      const frame = op.frame;
-      if (frame === undefined)
-        return index === op.index ? op : { ...op, index };
-      const count = substitutedValue(values, frame.count),
-        registers = substitutedValue(values, frame.registers),
-        stack = substitutedValue(values, frame.stack);
-      return index === op.index &&
-        count === frame.count &&
-        registers === frame.registers &&
-        stack === frame.stack
-        ? op
-        : { ...op, index, frame: { count, registers, stack } };
+      return index === op.index ? op : { ...op, index };
     }
     case "record-new": {
       const args = optionalList(op.arguments, values),

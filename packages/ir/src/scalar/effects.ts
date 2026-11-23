@@ -104,7 +104,6 @@ export function instructionEffects(op: Instruction): number {
     case "general-null":
     case "general-none":
     case "script-argument-count":
-    case "script-argument-area":
     case "general-wrap":
     case "general-value":
     case "boolean-none":
@@ -135,7 +134,7 @@ export function instructionEffects(op: Instruction): number {
     case "binary":
       return 0;
     case "script-argument":
-      return op.frame === undefined ? 0 : effectReadHeap;
+      return 0;
     // Records live in the frames of running activations; calls link and
     // unlink them, so reads stay ordered with calls.
     case "activation-read":

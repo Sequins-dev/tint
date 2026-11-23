@@ -10,7 +10,11 @@ import { performPromiseThen } from "../promises/index.ts";
 import type { ObjectHooks, OrdinaryObject } from "../objects/operations.ts";
 import type { ScriptPropertyKey } from "../objects/symbols.ts";
 import { createModuleCapability } from "./loading.ts";
-import { loadedModule, type ModuleRecord } from "./records.ts";
+import {
+  loadedModule,
+  moduleExecutionContext,
+  type ModuleRecord,
+} from "./records.ts";
 interface EvaluationStack {
   readonly modules: ModuleRecord[];
   depth: number;
@@ -109,7 +113,7 @@ function runSynchronousBody(
   try {
     runScriptContext<void>(
       module.realm.agent,
-      { realm: module.realm, scriptOrModule: module },
+      moduleExecutionContext(module),
       module.execute,
     );
     return undefined;
@@ -264,7 +268,7 @@ function executeAsync(module: ModuleRecord, hooks: ObjectHooks<unknown>): void {
   // A synchronous throw here is an embedding invariant, never a JS rejection.
   runScriptContext<void>(
     module.realm.agent,
-    { realm: module.realm, scriptOrModule: module },
+    moduleExecutionContext(module),
     (): void => execute(capability),
   );
 }

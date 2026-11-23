@@ -188,6 +188,7 @@ export function scriptRuntimeImports(
         ...(usesNativeScriptCalls
           ? [
               "createNativeSourceFunction",
+              "createSourceInstance",
               "sourceArgumentCount",
               "sourceArgument",
             ]

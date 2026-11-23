@@ -100,6 +100,8 @@ export interface ErrorRealm {
   readonly supportedImportAttributes: readonly string[];
   /** The realm-owned %eval% identity; ordinary global writes cannot replace it. */
   evalFunction: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
+  /** %Function.prototype.apply%, which forwarding call sites compare. */
+  functionApply: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
   evalCompiler: EvalCompiler | undefined;
   directEvalCompiler: DirectEvalCompiler | undefined;
   dynamicFunctionCompiler: DynamicFunctionCompiler | undefined;
@@ -351,15 +353,19 @@ export function createErrorRealm(
   prototypes.set("suppressed", prototype("SuppressedError", error));
   const executionContext: ObjectExecutionContext<unknown> = {
     getRealm: (): ErrorRealm => realm,
+    // Built-ins keep the caller's Script or module: a caller in this realm
+    // already has that context record.
     run: (action): unknown => {
       const active = agent.activeContext;
       return runScriptContext<unknown>(
         agent,
-        {
-          realm,
-          scriptOrModule:
-            active === undefined ? undefined : active.scriptOrModule,
-        },
+        active !== undefined && active.realm === realm
+          ? active
+          : {
+              realm,
+              scriptOrModule:
+                active === undefined ? undefined : active.scriptOrModule,
+            },
         action,
       );
     },
@@ -453,6 +459,7 @@ export function createErrorRealm(
     supportedImportAttributes: importAttributes,
     dynamicFunctionCompiler: undefined,
     evalFunction: undefined,
+    functionApply: undefined,
     evalCompiler: undefined,
     directEvalCompiler: undefined,
     namedTimeZones: undefined,

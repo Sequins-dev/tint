@@ -40,6 +40,14 @@ The innermost record's address is a word of the hosted context (`nativeActivatio
 
 Heap frames remain for list entries, register entries, builtins and barriers. Each records the innermost native record at its push, so the readers merge both chains by stack position: a heap frame is younger than every record at or below the one it recorded. A list-mode record (kind 0) is skipped, because its heap frames already describe the call.
 
+### Native entry calls, construction and tail calls
+
+On aarch64 targets every ordinary compiled function gets a native script entry by default (`TINT_NATIVE_SCRIPT_CALLS=0` or `1` overrides it). A call site evaluates the callee and actuals, then takes the entry when the callee has one and runs in the caller's execution context: functions share the context record they were created in (modules share one record between linking and evaluation), so an identity comparison usually decides, and equal records of another identity compare their realm and Script or module. Otherwise the call takes the general path through the list bridge.
+
+`new F(...)` takes F's entry when F is an ordinary base constructor in the caller's context: OrdinaryCreateFromConstructor (`createSourceInstance`), the entry with the new object as receiver and F as `new.target`, and the object result rule. Class and derived constructors keep the general [[Construct]].
+
+Strict functions with tail calls get native entries too. A tail call from an entry called with actual operands to a native callee in the same context, with register actuals only, pops the frame (activation record included) and jumps to the callee's entry, which completes into the caller's completion area (IR `call-indirect` with `tail`, a block's returned last instruction). Every other tail call keeps a bounded stack: an entry called through its list bridge requests the call from the trampoline that called it, and an entry called with actual operands makes one ordinary call, below which the callee's tail calls trampoline. A list-called entry never jumps, so frames left by those ordinary calls cannot alternate with jumps.
+
 ## Original proposal (2026-11-22)
 
 Start with compact shapes, in-object fields and dense elements, then replace the ordinary call and construction ABI. For Richards, evaluate primitive comparison and binding lowering after layout work. Re-profile before expanding the allocation work. The Octane reports provide the source comparisons, hardware counts, executed instruction paths and cache census supporting this order. [Main-thread samples](results/general-call-octane-cost-breakdown-darwin-arm64-v1.md), [Instruction and cache diagnostics](results/general-call-octane-cost-breakdown-darwin-arm64-v2.md)

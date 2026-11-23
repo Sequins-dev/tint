@@ -4,6 +4,7 @@ import { checkPrimitiveContract, scriptBoolean } from "./values.ts";
 import {
   createSourceExecutionContext,
   createFunctionRealmContext,
+  functionExecutionContext,
   enterSourceCall,
   enterRegisterSourceCall,
   exitSourceCall,
@@ -173,6 +174,19 @@ export function constructorPrototype(
     : selected;
 }
 
+/** OrdinaryCreateFromConstructor(newTarget, "%Object.prototype%") for a
+ * native entry's construction in its own realm, given the value of the
+ * target's "prototype": an ordinary object with that prototype, or with the
+ * realm's Object.prototype when the value is not an object. */
+export function createSourceInstance(
+  prototype: unknown,
+  realm: ErrorRealm,
+): unknown {
+  return createObject<ScriptPropertyKey, unknown>(
+    viewObjectValue(prototype, realm.objectPrototype) ?? realm.objectPrototype,
+  );
+}
+
 /** Source execution receives the actual function object, independently of its
  * mutable source binding. Calls pass undefined newTarget; construction preserves
  * the actual target independently of the function identity. */
@@ -255,9 +269,13 @@ export function createSourceFunction(
   );
 }
 
+/** A source function with a native script entry (`scriptInvoke`) and its
+ * list bridge (`implementation`). A body with tail calls requests them
+ * from its list invocation's trampoline (`tailCalls`). */
 export function createNativeSourceFunction(
   implementation: SourceFunctionCall,
   scriptInvoke: ObjectScriptCall<unknown>,
+  tailCalls: boolean,
   constructible: boolean,
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
@@ -274,14 +292,14 @@ export function createNativeSourceFunction(
     name,
     length,
     home,
-    false,
+    tailCalls,
     callerPolicy,
   );
-  const active = realm.agent.activeContext;
   fn.internalRegisterCall = {
-    context: { realm, scriptOrModule: active?.scriptOrModule },
+    context: functionExecutionContext(realm),
     traceName: name,
     callerPolicy,
+    constructible,
     invoke: undefined,
     invokeWide: undefined,
     scriptInvoke,
@@ -311,7 +329,6 @@ export function createRegisterSourceFunction(
   callerPolicy: SourceCallerPolicy,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const agent = realm.agent;
-  const active = agent.activeContext;
   const fn = createSourceFunction(
     (receiver, args, callee, newTarget): unknown =>
       implementation(
@@ -331,12 +348,10 @@ export function createRegisterSourceFunction(
     callerPolicy,
   );
   fn.internalRegisterCall = {
-    context: {
-      realm,
-      scriptOrModule: active === undefined ? undefined : active.scriptOrModule,
-    },
+    context: functionExecutionContext(realm),
     traceName: name,
     callerPolicy,
+    constructible,
     invokeWide: undefined,
     invoke: (callee, receiver, newTarget, count, first, second): unknown => {
       const trace = enterExecutionName(agent, name);
@@ -378,7 +393,6 @@ export function createWideRegisterSourceFunction(
   callerPolicy: SourceCallerPolicy,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const agent = realm.agent;
-  const active = agent.activeContext;
   const fn = createSourceFunction(
     (receiver, args, callee, newTarget): unknown =>
       implementation(
@@ -434,12 +448,10 @@ export function createWideRegisterSourceFunction(
     }
   };
   fn.internalRegisterCall = {
-    context: {
-      realm,
-      scriptOrModule: active === undefined ? undefined : active.scriptOrModule,
-    },
+    context: functionExecutionContext(realm),
     traceName: name,
     callerPolicy,
+    constructible,
     invoke: (callee, receiver, newTarget, count, first, second): unknown =>
       invoke(
         callee,

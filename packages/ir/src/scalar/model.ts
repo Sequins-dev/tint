@@ -223,26 +223,17 @@ export type Instruction = Span &
         /** Actual JavaScript operands. The fixed header contains callee,
          * receiver, new.target and an optional already-materialized list. */
         readonly scriptArguments?: readonly number[];
+        /** A proper tail call of a script entry: the block returns its
+         * result at once, so the callee may replace the entry's frame. */
+        readonly tail?: true;
       }
     | { readonly kind: "script-argument-count"; readonly id: number }
-    | {
-        /** Numeric address of borrowed operands in a live script frame. */
-        readonly kind: "script-argument-area";
-        readonly id: number;
-        readonly area: "registers" | "stack";
-      }
     | {
         /** Read an actual operand of the current script entry. Missing
          * operands return undefined. The caller owns the overflow roots. */
         readonly kind: "script-argument";
         readonly id: number;
         readonly index: number;
-        /** Legacy Function.arguments reflection borrows an active frame. */
-        readonly frame?: {
-          readonly count: number;
-          readonly registers: number;
-          readonly stack: number;
-        };
       }
     | {
         /** A field of the native activation chain: the records script

@@ -13,7 +13,6 @@ export function visitInstructionOperands(
     case "general-null":
     case "general-none":
     case "script-argument-count":
-    case "script-argument-area":
     case "boolean-none":
     case "string-none":
     case "reference-none":
@@ -98,16 +97,9 @@ export function visitInstructionOperands(
       if (op.record !== undefined) visit(op.record);
       if (op.index !== undefined) visit(op.index);
       return;
-    case "script-argument": {
+    case "script-argument":
       visit(op.index);
-      const frame = op.frame;
-      if (frame !== undefined) {
-        visit(frame.count);
-        visit(frame.registers);
-        visit(frame.stack);
-      }
       return;
-    }
     case "call":
       if (op.receiver !== undefined) visit(op.receiver);
       for (const id of op.arguments) {

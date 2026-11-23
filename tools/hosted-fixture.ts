@@ -64,7 +64,10 @@ import {
   type RuntimeSource,
   type ManagedSurfaceRequest,
 } from "@tint/compiler/native";
-import { nativeFixtureTarget } from "./native-host-target.ts";
+import {
+  nativeFixtureTarget,
+  nativeScriptCallsEnabled,
+} from "./native-host-target.ts";
 import { writeNodeExecutable } from "./node-file-host.ts";
 import { buildNativeFixture } from "./gate/native-fixture.ts";
 import { admitDarwinFixture } from "./native-admission.ts";
@@ -393,8 +396,7 @@ export function workspaceGeneralLowering(
     return cached;
   const lowering = createGeneralLowering({
     functionFallback,
-    nativeScriptCalls:
-      process.env.TINT_EXPERIMENTAL_NATIVE_SCRIPT_CALLS === "1",
+    nativeScriptCalls: nativeScriptCallsEnabled(),
     runtime: {
       objects: "packages/js-runtime/src/objects/index.ts",
       modules: "packages/js-runtime/src/modules/index.ts",
