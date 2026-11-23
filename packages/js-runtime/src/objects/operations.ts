@@ -1209,13 +1209,27 @@ export function writePropertyCell<Value>(
   cell.value = value;
 }
 
-/** Attributes a shape records for a fast-mode key. */
+/** Attributes a shape records for a fast-mode key: an open bit set, and
+ * transitions key on the exact kind, so a new bit gives new shapes. */
 const propertyWritable = 1,
   propertyEnumerable = 2,
   propertyConfigurable = 4,
   /** An accessor: its descriptor stays in `properties` and its value slot
    * holds no value. */
   propertyAccessor = 8;
+/** Kinds whose value is not a plain general value in the object's own value
+ * slots, so site caches, cached stores and cached transitions leave them to
+ * the ordinary lookup. Kinds added later for values held elsewhere or for
+ * checked stores (docs/design-typed-classes.md, record-backed views) belong
+ * in this mask until generated code learns their hit sequences. */
+const propertyNotInlineData = propertyAccessor;
+/** Whether a key of this kind holds a writable plain data value in place,
+ * which cached stores may overwrite and cached transitions may shadow. */
+function inlineWritableData(kind: number): boolean {
+  return (
+    (kind & propertyWritable) !== 0 && (kind & propertyNotInlineData) === 0
+  );
+}
 /** Fast-mode objects past this many keys move to dictionary mode, so a key
  * lookup stays a bounded scan of the shape. */
 const maxFastKeys = 128;
@@ -1272,7 +1286,10 @@ function noteStructureChange<Key, Value>(
   object.internalIndexedProperties = undefined;
   if (object.internalUsedAsPrototype) propertyEpoch.value++;
 }
-/** In-place value slots per object (internalValue0..7). */
+/** In-place value slots per object (internalValue0..7). storedValue and
+ * setFastValue are the only places that locate a key's value from its
+ * shape position, the extension point for values held outside the
+ * object's own slots. */
 export const propertySlots = 8;
 function storedValue<Key, Value>(
   object: OrdinaryObject<Key, Value>,
@@ -1746,8 +1763,12 @@ export function lookupCachedScriptProperty(
       prototype = current.prototype;
     }
   }
-  // Accessors keep the ordinary lookup, which calls them.
-  if (offset < 0 || ((holderShape.kinds[offset] ?? 0) & propertyAccessor) !== 0)
+  // Accessors (and other kinds without a plain in-place value) keep the
+  // ordinary lookup.
+  if (
+    offset < 0 ||
+    ((holderShape.kinds[offset] ?? 0) & propertyNotInlineData) !== 0
+  )
     return undefined;
   let entry = cache.entries[cache.used];
   if (entry === undefined) {
@@ -1797,7 +1818,7 @@ function chainAddsOwnProperty(object: ScriptObject, key: string): boolean {
           ? -1
           : shapeKeyIndex<ScriptPropertyKey, unknown>(shape, key);
       if (shape !== undefined && index >= 0)
-        return ((shape.kinds[index] ?? 0) & propertyWritable) !== 0;
+        return inlineWritableData(shape.kinds[index] ?? 0);
     } else {
       const descriptor = ordinaryGetOwnProperty<ScriptPropertyKey, unknown>(
         cursor,
@@ -1828,7 +1849,7 @@ export function storeCachedScriptProperty(
       ? -1
       : shapeKeyIndex<ScriptPropertyKey, unknown>(shape, key);
   if (shape !== undefined && index >= 0) {
-    if (((shape.kinds[index] ?? 0) & propertyWritable) === 0) return false;
+    if (!inlineWritableData(shape.kinds[index] ?? 0)) return false;
     setFastValue<ScriptPropertyKey, unknown>(object, index, value);
     if (index < propertySlots) {
       cache.storeShape = shape;
