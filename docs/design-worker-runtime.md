@@ -198,7 +198,11 @@ The baseline profiles attribute the transport costs. The fixes, in order:
    count; a large one takes a mapping of its own, and a mailbox keeps one
    warm large mapping for reuse.
 6. **Batched delivery.** Done. One I/O task drains the whole queue and
-   delivers up to 1,000 packets, with a microtask checkpoint after each.
+   delivers up to 1,000 packets, with a microtask checkpoint after each. A
+   lone primitive encodes and decodes without the reference tables an
+   object graph needs; a producer reserves a segment's packet references
+   when it opens it, so carving a packet makes no shared update; and an
+   atomic-wait checkpoint with nothing pending returns at once.
 7. **Wakeups.** Done:
    - On macOS, a zero-timeout `kevent64` is not a poll: a zero timespec
      takes the timed-wait path and reschedules the thread, about 11 µs per
@@ -214,6 +218,12 @@ The baseline profiles attribute the transport costs. The fixes, in order:
      loop just handled usually arrives within the window, so a round trip
      makes no system call. A loop that keeps finding work this way checks
      its descriptors at most once per millisecond.
+   - The trade-off is CPU: an idle turn after a delivery spends up to 50 µs
+     polling before it parks. Across the transport suite that is about 8%
+     more process CPU (2.60 s to 2.81 s, user plus system); a Worker that
+     receives one message every 100 ms spends at most 0.05% of a core on
+     it. Only a port that delivered in that turn polls, so an idle Worker,
+     a timer-driven loop or a loop with no ports never does.
    - The kernel wake itself is not the cost. Two native threads ping-pong in
      5.8 µs per round trip through a pipe watched by `kevent`, 3.9 µs through
      an `EVFILT_USER` trigger (libuv 1.52's `uv_async_send` on macOS) and
@@ -226,9 +236,16 @@ The baseline profiles attribute the transport costs. The fixes, in order:
 9. **Untyped await overhead.** This belongs to the untyped runtime stream. The
    typed transport variant measures the runtime's messaging cost without it.
 
-**Typed SharedArrayBuffer.** Typed code cannot create a `SharedArrayBuffer`
-yet: the program realm does not install the global. Until it does, typed
-shared memory and typed `Atomics` stay unmeasured.
+**Typed buffers.** Typed code builds typed arrays over an `ArrayBuffer`:
+`new ArrayBuffer(n)`, `byteLength`, and `new T(buffer, byteOffset?, length?)`
+for the native element types (Uint8, Uint16, Uint32 and Float64), with the
+RangeErrors of a fixed-length buffer. The IR's `array-view` allocates a view
+of the target type over the buffer, which the collectors move by its owner's
+byte displacement like any view. A typed program's typed array posts as the
+realm typed array it reads as. Still open: typed `SharedArrayBuffer`, typed
+`Atomics`, and the signed element types `Atomics.wait` and `notify` need
+(`Int32Array`, `BigInt64Array`); and typed code cannot yet read a realm typed
+array it receives.
 
 **Later: one collector helper pool per process.** Each generational isolate
 starts its own pool of parallel-collector helpers, which multiplies threads
