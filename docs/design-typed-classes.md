@@ -199,17 +199,36 @@ paths correct:
   presence state. `delete inst.field` clears it, and later reads, typed or
   untyped, fall through to the prototype chain. This extends record views,
   which today refuse to delete fields.
-- **Annotated required fields are contracts.** They report
-  `configurable: false`, so deleting one fails as JavaScript specifies:
-  `false` in sloppy code, a `TypeError` in strict code. A write of the wrong
-  type throws a `TypeError`. This is the one deliberate departure from
-  JavaScript, where class fields are configurable, and it follows from
-  treating the annotation as a contract. **Pending the user's decision:** the
-  configurability of annotated required fields is decided by one policy
-  function in the class-view layer, which reports the descriptor and answers
-  `delete`. Nothing else in C1 depends on its answer, so either outcome is a
-  change to that function and its fixture. Defining one as an accessor through
-  `defineProperty` throws for the same reason.
+- **Deleting fields follows TypeScript** (user decision, 2026-11-23). The
+  pinned TypeScript (6.0.3, strict) rejects `delete p.x` with TS2790 when
+  `x` is neither optional (`x?: T`) nor typed to admit `undefined`, and with
+  TS2704 when `x` is `readonly`. Tint's checker reports the same codes and
+  spans as build-failing type errors, so a native build without the hosted
+  validator fails as `tsc` does. Optional and unannotated fields stay
+  deletable. Deletes that bypass the checker (`as any` reaching the realm,
+  untyped code) see an annotated required field as `configurable: false`:
+  `delete` returns `false` in sloppy code and throws a `TypeError` in strict
+  code. One policy function in the class-view layer reports the descriptor
+  and answers `delete`. Defining such a field as an accessor through
+  `defineProperty` throws for the same reason. A write of the wrong type
+  throws a `TypeError`. These are the deliberate departures from JavaScript,
+  where class fields are configurable, and they follow from treating the
+  annotation as a contract.
+- **Fields are defined before initializers run.** JavaScript defines every
+  field as `undefined` before its initializer. Typed storage has no
+  `undefined` for a `number` field, so the typed path depends on the
+  checker. It rejects a class whose field could be read before assignment:
+  `this` escaping before every required field is assigned (a method call, a
+  closure, passing `this`), and a read of a later field. Such a class runs
+  on the general path, which observes `undefined` exactly. Subclass field
+  reads from a base constructor (a dispatch to an override before `super`
+  returns) arrive with C2. Until then `extends` falls back, and C2 must keep
+  the same guarantee with a guard on paths the checker cannot prove.
+  `tools/native-typed-classes.test.ts` covers both cases.
+- **Object literals typed as a class** (`const b: Box = {...}`) are plain
+  records. Accesses through the class type dispatch on the class layout
+  first, then on the plain layout, which exists only when such a literal is
+  constructed.
 
 **Observable order is JavaScript's:**
 
@@ -330,7 +349,8 @@ views are the interop path.
   assigned before it is read, so accesses are plain loads and stores.
 - Values of a class instance or prototype type dispatch only on the class
   layouts (also for structurally identical types the checker interned
-  separately). Object literals typed as a class instance fail explicitly.
+  separately), and on the plain layout only when an object literal has the
+  class type.
 - A method converts its receiver once on entry, without trapping, so record
   facts prove the layout for later `this` accesses.
 - A method call reads an inherited method into a slot that only prototype

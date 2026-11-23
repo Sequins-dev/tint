@@ -3896,6 +3896,71 @@ function checkClosureModuleLayout(
         "void result cannot be tested for truthiness",
       );
   }
+  /** TypeScript's delete checks under strictNullChecks (the pinned
+   * compiler's TS2704 and TS2790): a readonly property, or a property that
+   * is neither optional nor admits undefined, is not a delete operand. These
+   * are type errors, so they fail the build. */
+  function requireDeletable(operand: Expression): void {
+    const target = ungroup(operand);
+    if (target.kind !== "member" && target.kind !== "index") return;
+    const name =
+      target.kind === "member"
+        ? target.property
+        : literalPropertyName(ungroup(target.index));
+    if (name === undefined) return;
+    const receiver = expressions.get(target.object);
+    const type = receiver === undefined ? undefined : types[receiver];
+    if (type?.kind !== "object") return;
+    const property = type.properties.find(
+      (candidate) => candidate !== undefined && candidate.name === name,
+    );
+    if (property === undefined) return;
+    let readonly = property.readonly;
+    if (receiver !== undefined)
+      for (const contract of contracts.classes) {
+        if (contract === undefined) throw "class contract invariant";
+        if (
+          contract.instance !== receiver &&
+          !(
+            system.assignable(receiver, contract.instance) &&
+            system.assignable(contract.instance, receiver)
+          )
+        )
+          continue;
+        for (const member of contract.members) {
+          if (member === undefined) throw "class member contract invariant";
+          const element = member.node;
+          if (
+            element.kind === "field" &&
+            !element.static &&
+            element.readonly === true &&
+            literalPropertyName(element.key) === name
+          )
+            readonly = true;
+        }
+      }
+    if (readonly)
+      fail(
+        target,
+        "TS2704",
+        "The operand of a 'delete' operator cannot be a read-only property.",
+        true,
+      );
+    const kind = types[property.type]?.kind;
+    if (
+      property.optional === true ||
+      kind === "unknown" ||
+      kind === "never" ||
+      system.assignable(undefinedType, property.type)
+    )
+      return;
+    fail(
+      target,
+      "TS2790",
+      "The operand of a 'delete' operator must be optional.",
+      true,
+    );
+  }
   function checkClass(
     node: Statement & { readonly kind: "class" },
     owner: number | undefined,
@@ -8322,6 +8387,7 @@ function checkClosureModuleLayout(
             false,
             node.operator === "void",
           );
+          if (node.operator === "delete") requireDeletable(node.operand);
           if (
             isVoidExpression(value) &&
             node.operator !== "typeof" &&

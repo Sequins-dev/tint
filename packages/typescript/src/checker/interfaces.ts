@@ -722,6 +722,10 @@ export function resolveInterfaceTypes(
             "class field requires annotation until initializer inference is available",
           );
         type = resolve(annotation);
+        // `x?: T` is defined as undefined at construction: always present,
+        // with a value that may be undefined.
+        if (member.optional === true && canonical(type) !== 2)
+          type = add({ kind: "union", members: [type, 2] }, member);
       } else if (member.kind === "method") {
         if (!isStatic && name === "constructor") {
           if (construct !== undefined)

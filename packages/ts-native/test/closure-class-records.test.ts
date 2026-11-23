@@ -176,18 +176,23 @@ test("new contracts select hidden construction entries through compatible constr
   }
 });
 
-test("object literals typed as a class instance fail explicitly", () => {
+test("object literals typed as a class instance are plain records accesses also dispatch on", () => {
   const { checked, records } = fixture(`
     class Box {value:number=1; read():number{return this.value;}}
     function literal():Box{return {value:2, read():number{return 2;}};}
+    function field(box:Box):number{return box.value;}
   `);
   let literal: (Expression & { kind: "object" }) | undefined;
+  let member: (Expression & { kind: "member" }) | undefined;
   checked.expressions.forEach((_, node) => {
     if (node.kind === "object") literal = node;
+    if (node.kind === "member" && node.property === "value") member = node;
   });
-  assert.ok(literal);
-  assert.throws(
-    () => records.construct(literal!),
-    /object literals typed as a class instance are not lowered yet/,
-  );
+  assert.ok(literal !== undefined && member !== undefined);
+  records.construct(literal);
+  const plain = records.constructions.get(literal)?.record;
+  assert.ok(plain !== undefined);
+  records.access(member, member.object, "value", "number", false);
+  const choices = records.accesses.get(member)!.choices.map((c) => c.record);
+  assert.deepEqual(choices, [records.classes[0]!.instance, plain]);
 });

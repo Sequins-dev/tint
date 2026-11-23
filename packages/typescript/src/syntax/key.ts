@@ -470,6 +470,8 @@ function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
     flag(node.static);
     if (node.kind === "field") {
       flag(node.accessor);
+      flag(node.readonly);
+      flag(node.optional);
       optionalType(node.type);
       optionalExpression(node.initializer);
       return;

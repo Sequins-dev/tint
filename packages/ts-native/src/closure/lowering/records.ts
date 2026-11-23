@@ -1095,8 +1095,17 @@ export function createRecordContracts(
         if (layout !== undefined) exact.push(layout);
       }
     else {
-      const layout = record(receiver);
-      if (layout !== undefined) exact.push(layout);
+      // A class type's values are usually its instances.
+      const classes = classLayouts(receiver);
+      if (classes !== undefined)
+        for (const layout of classes) {
+          if (layout === undefined) throw "class shape invariant";
+          exact.push(layout);
+        }
+      else {
+        const layout = record(receiver);
+        if (layout !== undefined) exact.push(layout);
+      }
     }
     if (exact.length === 0) return choices;
     const first: RecordAccessChoice[] = [],
@@ -1141,15 +1150,40 @@ export function createRecordContracts(
     equivalentClassShapes[id] = found;
     return found;
   }
+  /** Class layouts some object literal's type shares: TypeScript lets an
+   * object literal be typed as a class instance, so such values are plain
+   * records too. Found once, from every checked object literal. */
+  let literalClassLayouts: Set<readonly number[]> | undefined;
+  function literalClass(layouts: readonly number[]): boolean {
+    let found = literalClassLayouts;
+    if (found === undefined) {
+      const literals = new Set<readonly number[]>();
+      checked.expressions.forEach((type, node) => {
+        if (node.kind !== "object") return;
+        const shared = classLayouts(type);
+        if (shared !== undefined) literals.add(shared);
+      });
+      found = literals;
+      literalClassLayouts = literals;
+    }
+    return found.has(layouts);
+  }
   function shapesForType(id: number): readonly number[] {
-    // Values of a class instance or prototype type have only the class
-    // layouts (object literals of such types are not constructed, see
-    // `construct`), so accesses check one layout and record facts can prove
+    // Values of a class instance or prototype type have the class layouts,
+    // plus the plain record layout only when an object literal has that
+    // type, so accesses usually check one layout and record facts can prove
     // it for later accesses.
     const layouts = classLayouts(id);
-    if (layouts !== undefined) return layouts;
+    if (layouts !== undefined && !literalClass(layouts)) return layouts;
     const ordinary = record(id);
-    return ordinary === undefined ? [] : [ordinary];
+    if (layouts === undefined) return ordinary === undefined ? [] : [ordinary];
+    const shapes: number[] = [];
+    for (const shape of layouts) {
+      if (shape === undefined) throw "class shape invariant";
+      shapes.push(shape);
+    }
+    if (ordinary !== undefined) shapes.push(ordinary);
+    return shapes;
   }
   const constructions = createKeyIndex<Expression, RecordConstruction>(
       syntaxHash,
@@ -1725,8 +1759,6 @@ export function createRecordContracts(
     construct: (node) => {
       const type = checked.expressions.get(node);
       if (type === undefined) fail("missing constructed type");
-      if (classLayouts(type) !== undefined)
-        fail("object literals typed as a class instance are not lowered yet");
       function shape(type: number, id: number): RecordConstructionShape {
         const fields = names[id];
         if (fields === undefined) throw "record names invariant";

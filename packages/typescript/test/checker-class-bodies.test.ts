@@ -133,3 +133,36 @@ test("classes declared directly in a non-generic module-level function resolve t
     assert.match(result.error.message, message, source);
   }
 });
+test("delete follows TypeScript's strict checks (TS2704, TS2790) and fails the build", () => {
+  const prefix =
+    "class P{readonly a:number=1;readonly b?:number;c:number=1;d:unknown=1;e!:number;f?:number;constructor(){this.e=1;}}" +
+    "interface R{g:number;h?:number;}export function run(r:R):boolean{const p=new P();return ";
+  for (const [operand, code] of [
+    ["p.a", "TS2704"],
+    ["p.b", "TS2704"],
+    ['p["c"]', "TS2790"],
+    ["p.e", "TS2790"],
+    ["r.g", "TS2790"],
+  ] as const) {
+    const text = prefix + "delete " + operand + ";}";
+    const result = check(text);
+    assert.ok(!result.ok, operand);
+    assert.equal(result.error.code, code, operand);
+    assert.equal(text.slice(result.error.start, result.error.end), operand);
+    assert.equal(result.error.preventsFallback, true, operand);
+  }
+  // Optional and open operands are valid TypeScript; deleting them is not
+  // lowered on the typed path yet, so they take the general path.
+  for (const operand of ["p.d", "p.f", "r.h"]) {
+    const result = check(prefix + "delete " + operand + ";}");
+    assert.ok(!result.ok, operand);
+    assert.equal(result.error.code, "UNSUPPORTED", operand);
+    assert.notEqual(result.error.preventsFallback, true, operand);
+  }
+});
+test("optional class fields admit undefined and need no constructor assignment", () => {
+  const result = check(
+    "class P{x?:number;y:number=1;}export function run():number{const p=new P();const x=p.x;return x===undefined?p.y:x;}",
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+});

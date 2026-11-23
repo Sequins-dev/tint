@@ -371,6 +371,9 @@ export type ClassElement =
         | {
             readonly kind: "field";
             readonly accessor?: boolean | undefined;
+            /** TypeScript modifiers with checking meaning only. */
+            readonly readonly?: boolean | undefined;
+            readonly optional?: boolean | undefined;
             readonly type: TypeNode | undefined;
             readonly initializer: Expression | undefined;
           }

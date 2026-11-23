@@ -188,6 +188,78 @@ export function trace(): string {
 }
 `;
 
+// TypeScript lets an object literal be typed as a class instance: such
+// values are plain objects, and accesses through the class type dispatch on
+// both layouts.
+const classTypedLiteral = `class Box {
+  value: number = 1;
+  read(): number {
+    return this.value;
+  }
+}
+function make(literal: boolean): Box {
+  if (literal)
+    return {
+      value: 2,
+      read(): number {
+        return 20;
+      },
+    };
+  return new Box();
+}
+function total(boxes: Box[]): number {
+  let sum = 0;
+  for (const box of boxes) sum += box.read() + box.value;
+  return sum;
+}
+export function trace(): string {
+  const a = make(false),
+    b = make(true);
+  return (
+    String(a.read()) + "," + String(b.read()) + "," +
+    String(a instanceof Box) + "," + String(b instanceof Box) + "," +
+    String(total([a, b, a]))
+  );
+}
+`;
+
+// Field reads the checker cannot prove initialized (a method called from the
+// constructor before the assignment, a base constructor dispatching to a
+// subclass override) observe undefined in JavaScript. The checker rejects
+// these classes, so they run on the general path.
+const uninitializedReads = `class Early {
+  x: number;
+  seen: string;
+  constructor() {
+    this.seen = String(this.read());
+    this.x = 1;
+  }
+  read(): number {
+    return this.x;
+  }
+}
+class Base {
+  seen: string;
+  constructor() {
+    this.seen = this.describe();
+  }
+  describe(): string {
+    return "base";
+  }
+}
+class Derived extends Base {
+  label: string = "derived";
+  describe(): string {
+    return String(this.label);
+  }
+}
+export function trace(): string {
+  const early = new Early(),
+    derived = new Derived();
+  return early.seen + "," + String(early.x) + "," + derived.seen + "," + derived.label;
+}
+`;
+
 async function expectedTrace(text: string): Promise<string> {
   const directory = mkdtempSync(join(tmpdir(), "tint-typed-classes-"));
   try {
@@ -245,4 +317,45 @@ test("typed class construction propagates exceptions and survives collection", a
       rootCapacity: 65536,
     },
   );
+});
+
+test("object literals typed as a class stay plain objects", async () => {
+  const expected = await expectedTrace(classTypedLiteral);
+  assert.equal(expected, "1,20,true,false,26");
+  verifyHostedFixture(
+    withComparison(classTypedLiteral, expected),
+    "typed-classes-literal",
+    [],
+    [],
+    [],
+    [],
+    { requireTyped: true, managedBytes: 67108864, allocationCapacity: 1048576 },
+  );
+});
+
+test("field reads the checker cannot prove initialized take the general path", async () => {
+  const expected = await expectedTrace(uninitializedReads);
+  assert.equal(expected, "undefined,1,undefined,derived");
+  let partition: readonly string[] | undefined;
+  delete process.env.TINT_GENERAL_FALLBACK;
+  try {
+    verifyHostedFixture(
+      withComparison(uninitializedReads, expected),
+      "typed-classes-uninitialized",
+      [],
+      [],
+      [],
+      [],
+      {
+        managedBytes: 67108864,
+        allocationCapacity: 1048576,
+        onGeneralFallback(modules) {
+          partition = modules;
+        },
+      },
+    );
+  } finally {
+    process.env.TINT_GENERAL_FALLBACK = "0";
+  }
+  assert.deepEqual(partition, ["fixture"]);
 });

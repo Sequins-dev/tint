@@ -1429,7 +1429,8 @@ function parseSource(
         const elementDecorators = decorators();
         // TypeScript member modifiers have no runtime meaning, except that
         // `declare` and `abstract` members do not exist at runtime.
-        let ambient = false;
+        let ambient = false,
+          readonlyField = false;
         const memberModifiers = (): void => {
           while (
             language !== "javascript" &&
@@ -1446,6 +1447,7 @@ function parseSource(
             !current(1).lineBreakBefore
           ) {
             if (at("declare") || at("abstract")) ambient = true;
+            if (at("readonly")) readonlyField = true;
             take();
           }
         };
@@ -1708,6 +1710,9 @@ function parseSource(
               "SYNTAX_ERROR",
               key,
             );
+          // `x?: T` is an optional property; `x!: T` only skips TypeScript's
+          // definite assignment check.
+          const optional = language !== "javascript" && at("?");
           if (language !== "javascript" && (at("?") || at("!"))) take();
           const annotation = eat(":") ? type() : undefined;
           const previousSuper = superProperty;
@@ -1740,6 +1745,8 @@ function parseSource(
             accessor,
             key,
             ...(privateName ? { private: true } : {}),
+            ...(readonlyField ? { readonly: true } : {}),
+            ...(optional ? { optional: true } : {}),
             computed,
             static: isStatic,
             type: annotation,

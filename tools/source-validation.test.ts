@@ -193,3 +193,28 @@ const fromFixed = fixed.value as { n: number };
     [["TS2352", "fixed.value as { n: number }"]],
   );
 });
+
+test("reports TypeScript's delete diagnostics for required and readonly class fields", () => {
+  const text = `class P {
+  readonly a: number = 1;
+  b: number = 1;
+  c?: number;
+}
+export function run(): number {
+  const p = new P();
+  delete p.a;
+  delete p.b;
+  delete p.c;
+  return 1;
+}`;
+  const diagnostics = createHostedSourceValidator([{ id: "main", text }])(
+    "main",
+  );
+  assert.deepEqual(
+    diagnostics.map(({ code, start, end }) => [code, text.slice(start, end)]),
+    [
+      ["TS2704", "p.a"],
+      ["TS2790", "p.b"],
+    ],
+  );
+});

@@ -109,3 +109,24 @@ test("get and set fields permit ASI before generator methods", () => {
     }
   }
 });
+test("class fields keep TypeScript's readonly and optional modifiers", () => {
+  const result = parse(
+    "class C { readonly a: number = 1; b?: string; c!: number; private readonly d?: number; static readonly e = 1; }",
+    true,
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  const statement = result.value.statements[0];
+  assert.ok(statement?.kind === "class");
+  const flags = statement.definition.elements.map((element) =>
+    element.kind === "field"
+      ? [element.readonly === true, element.optional === true]
+      : undefined,
+  );
+  assert.deepEqual(flags, [
+    [true, false],
+    [false, true],
+    [false, false],
+    [true, true],
+    [true, false],
+  ]);
+});
