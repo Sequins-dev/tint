@@ -3064,7 +3064,8 @@ function emitModuleForms(
     let hasFunctionOperations = false,
       hasResultDiscard = false,
       hasTypeErrors = false,
-      hasPlainErrors = false;
+      hasPlainErrors = false,
+      hasReferenceErrors = false;
     for (const header of module.functions) {
       if (header === undefined) throw "feature function invariant";
       const fn = bodies.get(header.id);
@@ -3100,6 +3101,7 @@ function emitModuleForms(
               hasTypeErrors = true;
               if (op.kind === "error-new" && op.error === "Error")
                 hasPlainErrors = true;
+              if (op.error === "ReferenceError") hasReferenceErrors = true;
             }
           }
         }
@@ -3177,9 +3179,12 @@ function emitModuleForms(
           },
         ],
       });
-    const typeErrorRecord = recordLayouts.length;
+    // Native error descriptors: TypeError, RangeError, then Error and
+    // ReferenceError when the module creates them.
+    const typeErrorRecord = recordLayouts.length,
+      errorDescriptorCount = hasReferenceErrors ? 4 : hasPlainErrors ? 3 : 2;
     if (hasTypeErrors)
-      for (let i = 0; i < (hasPlainErrors ? 3 : 2); i++)
+      for (let i = 0; i < errorDescriptorCount; i++)
         recordLayouts.push({
           byteLength: recordHeaderBytes + 8,
           fields: [
@@ -9371,7 +9376,9 @@ function emitModuleForms(
                       ? 1
                       : op.error === "Error"
                         ? 2
-                        : 0),
+                        : op.error === "ReferenceError"
+                          ? 3
+                          : 0),
                 );
                 emit({ op: "str", width: 64, rt: 11, rn: 9, offset: 0 });
                 rawValue(10, op.message);
@@ -9401,7 +9408,12 @@ function emitModuleForms(
                 rawLoad(10, value(op.value).offset + 8);
                 emit({ op: "ldr", width: 64, rt: 10, rn: 10, offset: 0 });
                 descriptorPointer(
-                  typeErrorRecord + (op.error === "RangeError" ? 1 : 0),
+                  typeErrorRecord +
+                    (op.error === "RangeError"
+                      ? 1
+                      : op.error === "ReferenceError"
+                        ? 3
+                        : 0),
                 );
                 emit({
                   op: "sub-reg",
@@ -9415,8 +9427,7 @@ function emitModuleForms(
                 });
                 emit({ op: "cset", rd: 9, condition: "eq" });
                 if (op.error === "Error") {
-                  const count = hasPlainErrors ? 3 : 2;
-                  for (let i = 1; i < count; i++) {
+                  for (let i = 1; i < errorDescriptorCount; i++) {
                     descriptorPointer(typeErrorRecord + i);
                     emit({
                       op: "sub-reg",

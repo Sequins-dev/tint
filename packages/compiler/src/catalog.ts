@@ -3063,6 +3063,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ts-native",
     },
     {
+      id: "packages/ts-native/src/closure/lowering/error-entries.ts",
+      packageId: "ts-native",
+    },
+    {
       id: "packages/ts-native/src/closure/lowering/function-bindings.ts",
       packageId: "ts-native",
     },

@@ -2764,7 +2764,13 @@ export function emitModule(
           const site = fnLabel + ":error:" + String(op.id);
           const record =
             errorRecord +
-            (op.error === "TypeError" ? 0 : op.error === "RangeError" ? 1 : 2);
+            (op.error === "TypeError"
+              ? 0
+              : op.error === "RangeError"
+                ? 1
+                : op.error === "ReferenceError"
+                  ? 3
+                  : 2);
           emit({ op: "mov", dst: r10, src: imm(errorLayout.byteLength) });
           allocate(block, index, site, site + ":denied");
           address(scratch, descriptor(record));
@@ -2968,8 +2974,14 @@ export function emitModule(
           emit({ op: "mov", dst: r9, src: frame(home(op.value) + 8) });
           emit({ op: "test", dst: r9, src: r9 });
           branch(emit, "e", done);
-          const first = op.error === "RangeError" ? 1 : 0;
-          const last = op.error === "Error" ? 2 : first;
+          const first =
+            op.error === "RangeError"
+              ? 1
+              : op.error === "ReferenceError"
+                ? 3
+                : 0;
+          // Error covers every native brand (ReferenceError is kind 3).
+          const last = op.error === "Error" ? 3 : first;
           for (let kind: number = first; kind <= last; kind++) {
             address(scratch, descriptor(errorRecord + kind));
             emit({ op: "cmp", dst: mem(9, 0), src: scratch });

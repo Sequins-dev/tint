@@ -378,6 +378,8 @@ export function realmInstanceOf(
     prototype = core.realm.prototypes.get("type");
   else if (nativeKind === "RangeError")
     prototype = core.realm.prototypes.get("range");
+  else if (nativeKind === "ReferenceError")
+    prototype = core.realm.prototypes.get("reference");
   else if (nativeKind !== "") {
     installProgramTypedArrayIntrinsics(core);
     prototype = core.realm.typedArrayPrototypes.get(nativeKind.slice(0, -5));

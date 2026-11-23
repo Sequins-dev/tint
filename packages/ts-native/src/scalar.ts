@@ -410,6 +410,9 @@ export interface OwnedEnvironmentPlan {
   readonly cells: readonly OwnedCell[];
   readonly constructors: ReadonlyMap<number, OwnedConstructor>;
   readonly classes?: readonly OwnedClassDefinition[];
+  /** Function throwing the ReferenceError of a temporal-dead-zone access,
+   * given its message. */
+  readonly temporalDeadZone?: number | undefined;
 }
 /** Emit one function against explicit call signatures. Verify the composed module before use. */
 export interface RealmErrorRuntime {
@@ -418,6 +421,7 @@ export interface RealmErrorRuntime {
   readonly error: number;
   readonly typeError: number;
   readonly rangeError: number;
+  readonly referenceError: number;
   readonly applies: (span: IRSpan) => boolean;
 }
 
@@ -1301,8 +1305,15 @@ export function lowerFunction(
     }
     const pointer = cellPointers[local];
     if (pointer === undefined) throw "owned cell pointer invariant";
+    // Strict definite-assignment proofs allow a var cell to acquire its concrete
+    // payload on the first write; subsequent writes share the same mutable cell.
+    const hoistedWrite =
+      operation === "write" && fn.locals[local]?.hoisted === true;
     const success = block(),
-      failure = block();
+      failure =
+        operation === "initialize" || hoistedWrite
+          ? block()
+          : temporalDeadZone(local, node);
     finish({
       kind: "record-cell",
       object: load(pointer, node),
@@ -1315,27 +1326,86 @@ export function lowerFunction(
       start: node.start,
       end: node.end,
     });
-    current = failure;
-    // Strict definite-assignment proofs allow a var cell to acquire its concrete
-    // payload on the first write; subsequent writes share the same mutable cell.
-    if (operation === "write" && fn.locals[local]?.hoisted === true) {
-      const failed = block();
-      finish({
-        kind: "record-cell",
-        object: load(pointer, node),
-        record: cell.record,
-        field: 0,
-        operation: "initialize",
-        slot: local,
-        consequent: success.id,
-        alternate: failed.id,
-        start: node.start,
-        end: node.end,
-      });
-      current = failed;
+    if (operation === "initialize" || hoistedWrite) {
+      current = failure;
+      if (hoistedWrite) {
+        const failed = block();
+        finish({
+          kind: "record-cell",
+          object: load(pointer, node),
+          record: cell.record,
+          field: 0,
+          operation: "initialize",
+          slot: local,
+          consequent: success.id,
+          alternate: failed.id,
+          start: node.start,
+          end: node.end,
+        });
+        current = failed;
+      }
+      // A failed initialization cannot happen in checked code.
+      finish({ kind: "trap", start: node.start, end: node.end });
     }
-    finish({ kind: "trap", start: node.start, end: node.end });
     current = success;
+  }
+  const temporalDeadZones: {
+    readonly local: number;
+    readonly exception:
+      { readonly target: number; readonly slot: number } | undefined;
+    readonly finalizer: FinallyScope | undefined;
+    readonly block: Builder;
+  }[] = [];
+  /** The block throwing the ReferenceError of a read or write of `local`
+   * before its initialization (its temporal dead zone), with V8's message,
+   * through the program's out-of-line throw. Accesses in one handler and
+   * cleanup context share it. */
+  function temporalDeadZone(local: number, node: Span): Builder {
+    const handler = exception,
+      cleanup = finalizer;
+    for (const known of temporalDeadZones) {
+      if (known === undefined) throw "temporal dead zone invariant";
+      if (
+        known.local === local &&
+        known.exception === handler &&
+        known.finalizer === cleanup
+      )
+        return known.block;
+    }
+    const failure = block(),
+      resume = current;
+    temporalDeadZones.push({
+      local,
+      exception: handler,
+      finalizer: cleanup,
+      block: failure,
+    });
+    current = failure;
+    const declared = fn.locals[local],
+      name = declared?.displayName ?? declared?.name ?? "";
+    const message = nextValue++;
+    emit({
+      kind: "string-literal",
+      id: message,
+      value: "Cannot access '" + name + "' before initialization",
+      start: node.start,
+      end: node.end,
+    });
+    const helper = owned?.temporalDeadZone;
+    if (helper === undefined) throw "temporal dead zone helper invariant";
+    const args: number[] = [message];
+    emit({
+      kind: "call",
+      id: undefined,
+      target: helper,
+      arguments: args,
+      start: node.start,
+      end: node.end,
+    });
+    // The helper always throws.
+    finish({ kind: "trap", start: node.start, end: node.end });
+    current = resume;
+    return failure;
   }
   function readLocal(local: number, node: Span): number {
     cellAccess(local, "read", node);
@@ -2590,10 +2660,14 @@ export function lowerFunction(
    * contract), and a passing value converts to T's representation. */
   function nativeErrorTest(
     value: number,
-    error: "Error" | "RangeError" | "TypeError",
+    error: "Error" | "RangeError" | "TypeError" | "ReferenceError",
     node: IRSpan,
   ): number {
-    if (nodeErrors === undefined || error === "TypeError")
+    if (
+      nodeErrors === undefined ||
+      error === "TypeError" ||
+      error === "ReferenceError"
+    )
       return intrinsicErrorTest(value, error, node);
     const candidates: (number | undefined)[] =
       error === "RangeError"
@@ -2624,7 +2698,7 @@ export function lowerFunction(
   }
   function intrinsicErrorTest(
     value: number,
-    error: "Error" | "RangeError" | "TypeError",
+    error: "Error" | "RangeError" | "TypeError" | "ReferenceError",
     node: IRSpan,
   ): number {
     const layouts = realmErrors;
@@ -2633,10 +2707,13 @@ export function lowerFunction(
         return errorRecordTest(value, layouts.typeError, node);
       if (error === "RangeError")
         return errorRecordTest(value, layouts.rangeError, node);
+      if (error === "ReferenceError")
+        return errorRecordTest(value, layouts.referenceError, node);
       const candidates: number[] = [
         layouts.error,
         layouts.typeError,
         layouts.rangeError,
+        layouts.referenceError,
       ];
       const operand = save(value, "general", node);
       const yes = block(),
@@ -5667,11 +5744,8 @@ export function lowerFunction(
       jump(done.id, node);
       current = no;
     }
-    const errors: ("Error" | "TypeError" | "RangeError")[] = [
-      "TypeError",
-      "RangeError",
-      "Error",
-    ];
+    const errors: ("Error" | "TypeError" | "RangeError" | "ReferenceError")[] =
+      ["TypeError", "RangeError", "ReferenceError", "Error"];
     for (const error of errors) {
       if (error === undefined) throw "native error kind invariant";
       const yes = block(),

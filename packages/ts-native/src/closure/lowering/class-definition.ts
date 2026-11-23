@@ -5,6 +5,7 @@ import {
   type Span,
 } from "@tint/ir/scalar";
 import type { FunctionSignature } from "../../scalar.ts";
+import { throwNativeError } from "./error-entries.ts";
 
 /** Copy an already-created method/initializer closure from the definition environment. */
 export interface ClassDefinitionEntry {
@@ -291,44 +292,6 @@ export function buildClassCallTarget(plan: ClassCallTargetPlan): FunctionIR {
     start: source.start,
     end: source.end,
   });
-  const error = b.next(),
-    typeError = plan.typeError;
-  if (typeError === undefined)
-    b.emit({
-      kind: "error-new",
-      id: error,
-      error: "TypeError",
-      message,
-      start: source.start,
-      end: source.end,
-    });
-  else {
-    const present = b.next();
-    b.emit({
-      kind: "constant",
-      id: present,
-      value: true,
-      start: source.start,
-      end: source.end,
-    });
-    const fields: (number | undefined)[] = [message, present, undefined];
-    b.emit({
-      kind: "record-new",
-      id: error,
-      record: typeError,
-      arguments: fields,
-      start: source.start,
-      end: source.end,
-    });
-  }
-  const thrown = b.next();
-  b.emit({
-    kind: "general-wrap",
-    id: thrown,
-    value: error,
-    start: source.start,
-    end: source.end,
-  });
-  b.end({ kind: "throw", value: thrown, start: source.start, end: source.end });
+  throwNativeError(b, "TypeError", message, plan.typeError, source);
   return { ...b.finish(), closureEnvironment: plan.state };
 }

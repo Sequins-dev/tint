@@ -1624,7 +1624,9 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
     {
       evaluation: "instance",
       origins: false,
-      sourceNames: runtimeNamespacesByModule.has(nativeValueViewsModule),
+      // Source binding names: callable views' `name`, and the binding a
+      // temporal-dead-zone ReferenceError names.
+      sourceNames: true,
     },
   );
   // Managed-surface layouts link only the runtimes; the application's input
@@ -2340,7 +2342,10 @@ function checkTypedProgram(
     value: {
       checked: prepared.value.checked,
       nodeErrors,
-      options: prepared.value.options,
+      options: {
+        ...prepared.value.options,
+        sourceNames: linkedProgram.sourceNames,
+      },
       exports,
       ranges,
       runtimeNamespacesByModule,
@@ -2645,12 +2650,17 @@ function lowerTypedProgram(
     "getRangeErrorView",
     "general-record-views",
   );
+  const referenceErrorSlot = realmHelper(
+    "getReferenceErrorView",
+    "general-record-views",
+  );
   if (
     errorView !== undefined &&
     (errorOperation === undefined ||
       errorSlot === undefined ||
       typeErrorSlot === undefined ||
-      rangeErrorSlot === undefined)
+      rangeErrorSlot === undefined ||
+      referenceErrorSlot === undefined)
   )
     return stageFailure(
       "record-binding",
@@ -2681,7 +2691,8 @@ function lowerTypedProgram(
         errorOperation === undefined ||
         errorSlot === undefined ||
         typeErrorSlot === undefined ||
-        rangeErrorSlot === undefined
+        rangeErrorSlot === undefined ||
+        referenceErrorSlot === undefined
           ? undefined
           : {
               view: errorView,
@@ -2689,6 +2700,7 @@ function lowerTypedProgram(
               error: errorSlot,
               typeError: typeErrorSlot,
               rangeError: rangeErrorSlot,
+              referenceError: referenceErrorSlot,
               applies: realmTypeofSourcePredicate(ranges, realmTypeofModules),
             },
       nodeErrorTypes:

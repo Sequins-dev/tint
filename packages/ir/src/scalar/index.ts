@@ -1162,6 +1162,7 @@ export function verify(
               if (
                 op.error !== "TypeError" &&
                 op.error !== "RangeError" &&
+                op.error !== "ReferenceError" &&
                 op.error !== "Error"
               )
                 fail("TYPE", "invalid error brand");
@@ -1172,6 +1173,7 @@ export function verify(
               if (
                 op.error !== "TypeError" &&
                 op.error !== "RangeError" &&
+                op.error !== "ReferenceError" &&
                 op.error !== "Error"
               )
                 fail("TYPE", "invalid error brand");

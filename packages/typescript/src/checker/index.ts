@@ -38,6 +38,8 @@ export interface Local {
   readonly hoisted?: boolean;
   readonly id: number;
   readonly name: string;
+  /** The source name of a linked (renamed) binding. */
+  readonly displayName?: string;
   readonly type: ScalarType;
   readonly mutable: boolean;
   readonly parameter: boolean;

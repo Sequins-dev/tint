@@ -1,6 +1,7 @@
 import type { HostOperation } from "./host.ts";
 import type { ForeignCall, ForeignMemoryAccess } from "./foreign.ts";
-export type NativeErrorKind = "Error" | "TypeError" | "RangeError";
+export type NativeErrorKind =
+  "Error" | "TypeError" | "RangeError" | "ReferenceError";
 
 export type ScalarType =
   | "general"

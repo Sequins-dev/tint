@@ -25,6 +25,7 @@ export {
   type ClassFieldInitialization,
 } from "./class-construction.ts";
 export type { RecordOperation } from "./record-bindings.ts";
+import { buildTemporalDeadZoneThrow } from "./error-entries.ts";
 import {
   buildClassEntries,
   classConstructionTarget,
@@ -173,6 +174,7 @@ interface RealmErrorSources {
   readonly error: number;
   readonly typeError: number;
   readonly rangeError: number;
+  readonly referenceError: number;
   readonly applies: (span: IRSpan) => boolean;
 }
 
@@ -212,6 +214,8 @@ export interface ModuleEntryOptions {
   readonly maps?: readonly MapRuntimeBinding[];
   /** Attach source-debugging metadata (slot names, record names) to the IR. */
   readonly debug?: boolean;
+  /** Linked binding names to source names (runtime messages). */
+  readonly sourceNames?: ReadonlyMap<string, string> | undefined;
 }
 export interface RecordBinding {
   readonly function: number;
@@ -323,6 +327,7 @@ export function lowerModuleEntries(
     importedFunctions: options?.importedFunctions,
     functionAddressBindings: options?.functionAddressBindings,
     debug: options?.debug,
+    sourceNames: options?.sourceNames,
     ...(numberToString === undefined ? {} : { numberToString }),
     ...(numberFromString === undefined ? {} : { numberFromString }),
   });
@@ -358,6 +363,7 @@ function lowerEntries(
     importedFunctions?: readonly number[] | undefined;
     functionAddressBindings?: readonly FunctionAddressBinding[] | undefined;
     debug?: boolean | undefined;
+    sourceNames?: ReadonlyMap<string, string> | undefined;
   },
 ): Result {
   const recordTarget = recordOptions,
@@ -666,6 +672,14 @@ function lowerEntries(
       signatures,
       fail,
     );
+    // Owned lexical cells report temporal-dead-zone access through one
+    // out-of-line throw (see buildTemporalDeadZoneThrow).
+    const temporalDeadZone =
+      recordContracts !== undefined && layout === undefined
+        ? signatures.length
+        : undefined;
+    if (temporalDeadZone !== undefined)
+      signatures.push({ parameters: ["string"], returnType: "void" });
     const semanticWitnesses =
       recordOptions?.signatureTypes === true
         ? new Uint32Array(checked.types.length)
@@ -1075,6 +1089,7 @@ function lowerEntries(
             error: errorRecord(realmErrorSources.error),
             typeError: errorRecord(realmErrorSources.typeError),
             rangeError: errorRecord(realmErrorSources.rangeError),
+            referenceError: errorRecord(realmErrorSources.referenceError),
             applies: realmErrorSources.applies,
           };
     function nodeErrorRecord(type: number | undefined): number | undefined {
@@ -1851,9 +1866,11 @@ function lowerEntries(
       }
       for (const b of selected) {
         if (b === undefined) fail("b array invariant");
+        const sourceName = recordTarget?.sourceNames?.get(b.name);
         const local: Local = {
           id: locals.length,
           name: b.name,
+          ...(sourceName === undefined ? {} : { displayName: sourceName }),
           type: bindingScalar(b.id),
           mutable: b.mutable,
           parameter: b.kind === "parameter" || b.owner !== sourceId,
@@ -4131,6 +4148,7 @@ function lowerEntries(
             (node) => localByNode.get(node)?.id,
             fail,
           ),
+          temporalDeadZone,
         };
       }
       const lowered = lowerFunction(
@@ -4221,6 +4239,11 @@ function lowerEntries(
       ))
         classFunctions[generated.id] = generated;
     }
+    if (temporalDeadZone !== undefined)
+      classFunctions[temporalDeadZone] = buildTemporalDeadZoneThrow(
+        temporalDeadZone,
+        realmErrors?.referenceError,
+      );
     for (let id = entries.length; id < signatures.length; id++) {
       const signature = signatures[id];
       if (signature === undefined) throw "callback signature invariant";
