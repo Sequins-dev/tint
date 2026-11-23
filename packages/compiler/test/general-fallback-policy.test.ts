@@ -435,22 +435,16 @@ test("class heritage fallback is owned by the whole class", () => {
   );
 });
 
-test("module instance preparation reports the class declaration as a unit", () => {
+test("module classes compile on the typed path", () => {
   const { lowering, requests } = recordingLowering();
   const text =
     "class Clazz { value: number = 42; }\nexport function run(): number { return new Clazz().value; }";
-  compileArm64Program({
+  const compiled = compileArm64Program({
     ...generatorProgram({ ...lowering, validateSource: () => [] }),
     modules: [source("main", text)],
   });
-  const trigger = requests[0]?.trigger;
-  assert.equal(trigger?.phase, "runtime");
-  assert.equal(trigger?.capability, "module-class-construction");
-  assert.equal(trigger?.owner.kind, "class");
-  assert.equal(
-    text.slice(trigger?.owner.start, trigger?.owner.end),
-    "class Clazz { value: number = 42; }",
-  );
+  assert.equal(requests.length, 0);
+  assert.equal(compiled.ok, true, compiled.ok ? "" : compiled.error.message);
 });
 
 test("a typed binder restriction inside a method is owned by the class", () => {

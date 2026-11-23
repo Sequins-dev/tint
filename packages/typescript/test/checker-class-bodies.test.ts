@@ -99,3 +99,37 @@ test("class prototypes do not masquerade as initialized instances", () => {
   );
   assert.ok(result.ok, JSON.stringify(result));
 });
+test("classes declared directly in a non-generic module-level function resolve there", () => {
+  // Module instances evaluate module classes in their initializer function.
+  const local = check(
+    "function init():number{class C{x:number=1;m():number{return this.x;}}return new C().m();}",
+  );
+  assert.ok(local.ok, JSON.stringify(local));
+  assert.equal(local.value.classes.length, 1);
+  for (const [source, message] of [
+    // A generic function's type parameters are not in module scope.
+    [
+      "function init<T>(value:T):number{class C{x:number=1;}return new C().x;}",
+      /generic functions require specialization/,
+    ],
+    // Nested classes need scoped contract resolution, and a body class may
+    // not shadow another declaration.
+    [
+      "function init():number{if(true){class C{x:number=1;}return new C().x;}return 0;}",
+      /local classes require scoped contract resolution/,
+    ],
+    [
+      "function init():number{const f=():number=>{class C{x:number=1;}return new C().x;};return f();}",
+      /local classes require scoped contract resolution/,
+    ],
+    [
+      "class C{x:number=2;}function init():number{class C{x:number=1;}return new C().x;}",
+      /local classes require scoped contract resolution/,
+    ],
+  ] as const) {
+    const result = check(source);
+    assert.ok(!result.ok, source);
+    assert.equal(result.error.code, "UNSUPPORTED", source);
+    assert.match(result.error.message, message, source);
+  }
+});

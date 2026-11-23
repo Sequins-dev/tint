@@ -3055,6 +3055,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ts-native",
     },
     {
+      id: "packages/ts-native/src/closure/lowering/class-statements.ts",
+      packageId: "ts-native",
+    },
+    {
       id: "packages/ts-native/src/closure/lowering/dynamic-objects.ts",
       packageId: "ts-native",
     },

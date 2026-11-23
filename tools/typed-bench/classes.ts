@@ -1,8 +1,8 @@
 // Class kernel of the typed code-generation benchmark
-// (docs/results/typed-codegen-baseline-v1.md). Typed classes do not lower
-// natively yet ("module instance classes require scoped contract and
-// construction lowering"), so this file is a separate image that is allowed
-// to fall back to general semantics; it measures that gap, not typed code.
+// (docs/results/typed-codegen-baseline-v1.md). Classes with `extends` do not
+// lower natively yet (docs/design-typed-classes.md, C2), so this file is a
+// separate image that is allowed to fall back to general semantics; it
+// measures that gap, not typed code.
 // Erasable syntax only; Node 26.13.1 runs the stripped text.
 
 class Particle {

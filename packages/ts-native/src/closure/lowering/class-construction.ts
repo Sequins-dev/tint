@@ -27,7 +27,7 @@ export interface ClassConstructionPlan extends Span {
   readonly instancePrototypeField: number;
   /** Source order; required fields assigned by the body may remain uninitialized. */
   readonly fields: readonly ClassFieldInitialization[];
-  readonly body?: ClassConstructionEntry;
+  readonly body?: ClassConstructionEntry | undefined;
 }
 
 export interface ClassStaticInitializationPlan extends Span {

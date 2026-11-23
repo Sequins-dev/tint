@@ -1502,14 +1502,33 @@ function checkClosureModuleLayout(
     const b = declarations.get(node);
     if (b !== undefined) bindingTypes[b.id] = typeOf(type);
   });
-  for (const node of module.statements) {
-    if (node === undefined || node.kind !== "class") continue;
+  // Class bindings take their constructor types before any body is checked,
+  // so functions hoisted above a class may reference it: module classes, and
+  // classes declared directly in a module-level function body whose
+  // contracts resolved there.
+  function declareClassBinding(
+    node: Statement & { readonly kind: "class" },
+    required: boolean,
+  ): void {
     const contract = classContracts.get(node.definition);
-    if (contract === undefined) throw "class contract invariant";
+    if (contract === undefined) {
+      if (required) throw "class contract invariant";
+      return;
+    }
     const outer = declarations.get(node),
       inner = declarations.get(node.definition);
     if (outer !== undefined) bindingTypes[outer.id] = contract.constructor;
     if (inner !== undefined) bindingTypes[inner.id] = contract.constructor;
+  }
+  for (const node of module.statements) {
+    if (node === undefined) continue;
+    if (node.kind === "class") declareClassBinding(node, true);
+    if (node.kind !== "function") continue;
+    const body = node.body;
+    if (body === undefined || body.kind !== "block") continue;
+    for (const statement of body.statements)
+      if (statement !== undefined && statement.kind === "class")
+        declareClassBinding(statement, false);
   }
   const assignedVars = new Set<number>();
   for (const node of varAssignments) {
@@ -3881,13 +3900,17 @@ function checkClosureModuleLayout(
     node: Statement & { readonly kind: "class" },
     owner: number | undefined,
   ): void {
-    if (owner !== undefined)
+    const contract = classContracts.get(node.definition);
+    // A class in a function body has a contract only when it is declared
+    // directly in a module-level function (a module instance's initializer
+    // holds the module's classes); other local classes need scoped contract
+    // resolution.
+    if (owner !== undefined && contract === undefined)
       fail(
         node,
         "UNSUPPORTED",
         "local classes require scoped contract resolution",
       );
-    const contract = classContracts.get(node.definition);
     if (contract === undefined)
       fail(node, "UNSUPPORTED", "class contract is unavailable");
     const required = new Set<ClassElement>(),

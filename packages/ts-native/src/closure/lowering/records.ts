@@ -21,6 +21,7 @@ import type {
   RecordConstructionShape,
   ConstructionField,
   ConstructorCall,
+  ClassInstanceTest,
   CollectionElement,
 } from "../../scalar.ts";
 import {
@@ -601,6 +602,13 @@ export function entryType(
     if (t.members.length > 0 && t.members.every(primitive)) return "primitive";
   }
   if (t?.kind === "function") return "reference";
+  // A class's constructor is a managed function value, like other functions
+  // (its static side lives in the constructor-state environment).
+  if (
+    t?.kind === "object" &&
+    checked.classes.some((contract) => contract?.constructor === id)
+  )
+    return "reference";
   if (
     t?.kind === "object" &&
     t.call === undefined &&
@@ -722,6 +730,11 @@ export interface RecordContracts extends RecordOperations {
   readonly constructClass: (
     node: Expression & { readonly kind: "new" },
     target: number,
+  ) => void;
+  /** Plan `x instanceof C` for the typed class stored as `storage`. */
+  readonly testClassInstance: (
+    node: Expression,
+    storage: ClassRecordStorage,
   ) => void;
   readonly construct: (node: Expression & { readonly kind: "object" }) => void;
   readonly addFiniteAccess: (
@@ -1116,7 +1129,10 @@ export function createRecordContracts(
     finiteAccesses = createKeyIndex<Expression, readonly FiniteRecordAccess[]>(
       syntaxHash,
     ),
-    constructors = createKeyIndex<Expression, ConstructorCall>(syntaxHash);
+    constructors = createKeyIndex<Expression, ConstructorCall>(syntaxHash),
+    classInstanceTests = createKeyIndex<Expression, ClassInstanceTest>(
+      syntaxHash,
+    );
   const spreads = new Map<
     Expression,
     { name: string; access: RecordAccess; alwaysPresent: boolean }[]
@@ -1476,13 +1492,50 @@ export function createRecordContracts(
       constructorStates[contract.constructor] = states;
     }
     states.push(constructorState);
+    const definitionEnvironment = records.length;
+    records.push(planned.members.definitionEnvironment);
+    names.push(
+      planned.members.definitionEnvironment.fields.map(
+        (_, index) => "$member" + String(index),
+      ),
+    );
+    classNames[definitionEnvironment] = className + ".definition";
+    const constructionEnvironment = records.length;
+    records.push(planned.members.constructionEnvironment);
+    names.push(
+      planned.members.constructionEnvironment.fields.map(
+        (_, index) => "$entry" + String(index),
+      ),
+    );
+    classNames[constructionEnvironment] = className + ".construction";
+    const staticsLayout = planned.members.staticsEnvironment;
+    let staticsEnvironment: number | undefined;
+    if (staticsLayout !== undefined) {
+      staticsEnvironment = records.length;
+      records.push(staticsLayout);
+      names.push(
+        staticsLayout.fields.map((_, index) => "$static" + String(index)),
+      );
+      classNames[staticsEnvironment] = className + ".statics";
+    }
+    const prototypeConstructorField =
+        planned.prototypeNames.indexOf("constructor"),
+      statePrototypeField = planned.constructorNames.indexOf("prototype");
+    if (prototypeConstructorField < 0 || statePrototypeField < 0)
+      fail("class prototype and constructor storage require their links");
     classes.push({
       constructorState,
       constructionField: planned.constructionField,
+      prototypeConstructorField,
+      statePrototypeField,
       contract,
       instance,
       prototype,
       prototypeField: planned.prototypeField,
+      definitionEnvironment,
+      constructionEnvironment,
+      staticsEnvironment,
+      members: planned.members,
     });
   }
   let structuralErrors: readonly number[] | undefined;
@@ -1588,11 +1641,30 @@ export function createRecordContracts(
     },
     constructions,
     constructors,
+    classInstanceTests,
     clearFunctionOperations: () => {
       constructions.clear();
       constructors.clear();
+      classInstanceTests.clear();
       accesses.clear();
       spreads.clear();
+    },
+    testClassInstance: (node, storage) => {
+      classInstanceTests.set(node, {
+        prototype: {
+          type: "reference",
+          functionEnvironment: true,
+          choices: [
+            {
+              record: storage.constructorState,
+              field: storage.statePrototypeField,
+              type: "reference",
+            },
+          ],
+        },
+        instance: storage.instance,
+        prototypeField: storage.prototypeField,
+      });
     },
     constructClass: (node, target) => {
       const receiver = checked.expressions.get(node.callee);
@@ -1858,6 +1930,12 @@ export function createRecordContracts(
             type: info.type,
             primitive,
             initialized: info.stateOffset !== undefined,
+            ...(prototype !== undefined &&
+            inherited !== undefined &&
+            inherited < 0 &&
+            info.stateOffset !== undefined
+              ? { defines: true }
+              : {}),
           };
           if (
             prototype === undefined ||

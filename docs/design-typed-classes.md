@@ -187,6 +187,7 @@ paths correct:
   checking it.
 
 **Instances accept expandos and deletes as JavaScript objects do.**
+
 - **Expandos.** A record view keeps properties outside the layout
   (`inst.extra = 1`) as ordinary own properties, as views already do.
   Typed code reaches them only through general access, since TypeScript
@@ -211,6 +212,7 @@ paths correct:
   `defineProperty` throws for the same reason.
 
 **Observable order is JavaScript's:**
+
 - the callee and arguments of `new` are evaluated first;
 - a base class runs its field initializers in source order with `this` the
   new instance, then its constructor body;
@@ -227,6 +229,7 @@ paths correct:
   exists.
 
 **Other class semantics:**
+
 - **`instanceof C`** calls `C[Symbol.hasInstance]` when it isn't
   `Function.prototype`'s. Otherwise it walks the instance's prototype chain,
   native links first, comparing with `C.prototype`. That is
@@ -269,12 +272,12 @@ views are the interop path.
 
 ## Phases
 
-| Phase | Scope | Exit |
-| --- | --- | --- |
-| C1 | Classes without heritage in module instances: fields (annotated contracts, unannotated open), constructor, methods, accessors, statics, `instanceof`; exact-class guarded direct calls; class instance → interface assignability | `classes`-style kernels without `extends` compile with `TINT_GENERAL_FALLBACK=0`; ledger `class-basic` passes typed |
-| C2 | Single inheritance among typed classes: prefix layouts, `super(...)`, `super.m()`, overrides, hierarchy dispatch, unions of classes and narrowing | the benchmark's `classes` kernel compiles typed and is at or under Node |
-| C3 | Private elements and brand checks, static blocks, class expressions, `extends` of a general (untyped) constructor through the general path at the boundary | Test262 `language/statements/class` typed subset |
-| C4 | Descriptor metadata for PR #12's inline caches | untyped access to typed instances at #12's IC cost |
+| Phase | Scope                                                                                                                                                                                                                            | Exit                                                                                                                |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| C1    | Classes without heritage in module instances: fields (annotated contracts, unannotated open), constructor, methods, accessors, statics, `instanceof`; exact-class guarded direct calls; class instance → interface assignability | `classes`-style kernels without `extends` compile with `TINT_GENERAL_FALLBACK=0`; ledger `class-basic` passes typed |
+| C2    | Single inheritance among typed classes: prefix layouts, `super(...)`, `super.m()`, overrides, hierarchy dispatch, unions of classes and narrowing                                                                                | the benchmark's `classes` kernel compiles typed and is at or under Node                                             |
+| C3    | Private elements and brand checks, static blocks, class expressions, `extends` of a general (untyped) constructor through the general path at the boundary                                                                       | Test262 `language/statements/class` typed subset                                                                    |
+| C4    | Descriptor metadata for PR #12's inline caches                                                                                                                                                                                   | untyped access to typed instances at #12's IC cost                                                                  |
 
 **Order of work inside C1.** Each step lands with its own tests:
 
@@ -296,6 +299,38 @@ views are the interop path.
    and invalidation hooks for mutation from untyped code.
 5. **Fixtures**, one per behaviour in "JavaScript object semantics".
 
+**Status of steps 1 and 2** (landed together):
+
+- Contracts resolve for classes declared directly in the body of a
+  non-generic module-level function, which is where module instances put
+  module classes. Nested classes, classes in generic functions and body
+  classes that shadow another declaration still fail as unsupported local
+  classes. Generic classes still fall back.
+- A class statement creates one closure per member, then calls generated
+  definition, construction and `[[Call]]` entries
+  (`closure/lowering/class-statements.ts`). The class-scope binding is
+  initialized before static fields run, and the statement binding after
+  them. Static methods live in the constructor-state record. Static fields
+  initialize in source order through a generated static entry.
+- Calling a class without `new` throws the TypeError V8 reports.
+- `readonly` fields and methods are writable in storage. `readonly` is
+  checked by TypeScript only, and untyped code may write those properties.
+- Own data fields carry initialization state until construction defines
+  them. An assignment to an unset field defines it and an assignment to a
+  set field writes it, so constructor bodies may assign a field more than
+  once.
+- `x instanceof C` for a typed class compares `C.prototype` with the
+  operand's prototype pointer after testing for `C`'s instance layout
+  (OrdinaryHasInstance). It needs no `Symbol.hasInstance` check while typed
+  constructors have no realm view. Step 4 adds that check with the views.
+- `typeof` of a callable or constructible object type is `"function"`.
+
+Untyped code does not yet see typed instances, prototypes or constructors
+through record views (step 4). Method calls still do the full own-then-
+prototype lookup (step 3 adds guarded direct calls). Accessors and
+unannotated fields and method results still fail at check time. Evidence:
+`tools/native-typed-classes.test.ts`.
+
 Each phase fails explicitly for what it does not cover:
 
 - decorators, already rejected;
@@ -309,6 +344,7 @@ None of these is dropped silently.
 ## Validation
 
 **Semantic native fixtures, each checked against Node:**
+
 - field initialization order;
 - method identity across instances;
 - own overrides of methods, from typed code and through the record view;
@@ -331,6 +367,7 @@ None of these is dropped silently.
 - GC survival of instances and prototypes under a small heap.
 
 **Contract fixtures:**
+
 - annotated fields throw on bad writes from untyped code;
 - unannotated fields accept any value.
 

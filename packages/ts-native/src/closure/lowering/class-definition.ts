@@ -264,3 +264,71 @@ export function buildClassDefinition(
   b.end({ kind: "trap", start: source.start, end: source.end });
   return { ...b.finish(), closureEnvironment: plan.environment };
 }
+
+export interface ClassCallTargetPlan extends Span {
+  readonly id: number;
+  readonly name: string;
+  readonly className: string;
+  /** Constructor state record: the [[Call]] entry's closure environment. */
+  readonly state: number;
+  /** The realm's TypeError record, when the program's errors are realm objects. */
+  readonly typeError?: number | undefined;
+}
+
+/** A class constructor's [[Call]]: calling it without `new` throws a
+ * TypeError (ECMA-262 10.2.1 step 2). */
+export function buildClassCallTarget(plan: ClassCallTargetPlan): FunctionIR {
+  const b = createFunctionBuilder(plan.id, plan.name, [], "void", plan);
+  const source = { start: plan.start, end: plan.end };
+  const message = b.next();
+  b.emit({
+    kind: "string-literal",
+    id: message,
+    value:
+      "Class constructor " +
+      plan.className +
+      " cannot be invoked without 'new'",
+    start: source.start,
+    end: source.end,
+  });
+  const error = b.next(),
+    typeError = plan.typeError;
+  if (typeError === undefined)
+    b.emit({
+      kind: "error-new",
+      id: error,
+      error: "TypeError",
+      message,
+      start: source.start,
+      end: source.end,
+    });
+  else {
+    const present = b.next();
+    b.emit({
+      kind: "constant",
+      id: present,
+      value: true,
+      start: source.start,
+      end: source.end,
+    });
+    const fields: (number | undefined)[] = [message, present, undefined];
+    b.emit({
+      kind: "record-new",
+      id: error,
+      record: typeError,
+      arguments: fields,
+      start: source.start,
+      end: source.end,
+    });
+  }
+  const thrown = b.next();
+  b.emit({
+    kind: "general-wrap",
+    id: thrown,
+    value: error,
+    start: source.start,
+    end: source.end,
+  });
+  b.end({ kind: "throw", value: thrown, start: source.start, end: source.end });
+  return { ...b.finish(), closureEnvironment: plan.state };
+}

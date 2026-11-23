@@ -26,6 +26,13 @@ export {
 } from "./class-construction.ts";
 export type { RecordOperation } from "./record-bindings.ts";
 import {
+  buildClassEntries,
+  classConstructionTarget,
+  classStorage,
+  ownedClassDefinitions,
+  reserveClassEntries,
+} from "./class-statements.ts";
+import {
   arrayFlowReceiver,
   encodeDynamicContract,
   hasDynamicObject,
@@ -486,6 +493,9 @@ function lowerEntries(
       owned !== undefined && owned.types === checked.types
         ? { ok: true, value: owned.system }
         : createTypeSystem(checked.types);
+    // Typed classes lower where their statement is evaluated (module
+    // instances move them into the initializer); a module-scope class has
+    // no evaluation site here.
     if (checked.module.statements.some((node) => node.kind === "class"))
       fail("typed class declarations require class construction lowering");
     if (!validatedTypes.ok) fail("invalid checked type graph");
@@ -647,6 +657,15 @@ function lowerEntries(
         signatureKey(signature.parameters, signature.returnType);
       if (!signatureIds.has(key)) signatureIds.set(key, index);
     }
+    const classEntries = reserveClassEntries(
+      checked,
+      recordContracts?.classes ?? [],
+      entries,
+      bodyByFunction,
+      targetIds,
+      signatures,
+      fail,
+    );
     const semanticWitnesses =
       recordOptions?.signatureTypes === true
         ? new Uint32Array(checked.types.length)
@@ -1939,6 +1958,12 @@ function lowerEntries(
       function nativeCallableType(id: number): boolean {
         const type = checked.types[id];
         if (type?.kind === "function") return true;
+        // Callable and constructible objects (class constructors) are functions.
+        if (
+          type?.kind === "object" &&
+          (type.call !== undefined || type.construct !== undefined)
+        )
+          return true;
         if (type?.kind !== "union") return false;
         let callable = false;
         for (const member of type.members) {
@@ -2456,6 +2481,21 @@ function lowerEntries(
               expr(node.operand);
               break;
             case "binary": {
+              if (node.operator === "instanceof") {
+                const constructor = checked.expressions.get(node.right);
+                const tested =
+                  constructor === undefined
+                    ? undefined
+                    : classStorage(classEntries, constructor);
+                if (tested !== undefined) {
+                  if (recordContracts === undefined)
+                    fail("class instance tests require record contracts");
+                  recordContracts.testClassInstance(node, tested);
+                  expr(node.left);
+                  expr(node.right);
+                  break;
+                }
+              }
               if (dynamicIntrinsic === "list-has") {
                 const element = representations.arrayElement(
                   checked.expressions.get(node.right) ?? -1,
@@ -2790,6 +2830,19 @@ function lowerEntries(
                   expr(argument);
                   markSetIterable(argument);
                 }
+                break;
+              }
+              const calleeType = checked.expressions.get(node.callee);
+              const classTarget =
+                calleeType === undefined
+                  ? undefined
+                  : classConstructionTarget(classEntries, calleeType);
+              if (classTarget !== undefined) {
+                if (recordContracts === undefined)
+                  fail("class construction requires record contracts");
+                expr(node.callee);
+                exprArguments(node.arguments);
+                recordContracts.constructClass(node, classTarget);
                 break;
               }
               if (checked.intrinsics.get(node) !== "array-new")
@@ -3854,6 +3907,16 @@ function lowerEntries(
             if (node.update !== undefined) expr(node.update);
             stmt(node.body);
             break;
+          case "class":
+            if (
+              !classEntries.some(
+                (item) => item !== undefined && item.statement === node,
+              )
+            )
+              fail(
+                "class statements are lowered where their contract resolves",
+              );
+            break;
           case "break":
           case "continue":
           case "debugger":
@@ -4056,6 +4119,12 @@ function lowerEntries(
           record: incoming?.record,
           cells: ownedLocalCells,
           constructors,
+          classes: ownedClassDefinitions(
+            classEntries,
+            sourceId,
+            (node) => localByNode.get(node)?.id,
+            fail,
+          ),
         };
       }
       const lowered = lowerFunction(
@@ -4134,9 +4203,26 @@ function lowerEntries(
             ),
       );
     }
+    const classFunctions: (FunctionIR | undefined)[] = [];
+    for (const item of classEntries) {
+      if (item === undefined) throw "class entry invariant";
+      if (recordContracts === undefined) throw "class records invariant";
+      for (const generated of buildClassEntries(
+        item,
+        recordContracts.records,
+        signatures,
+        realmErrors?.typeError,
+      ))
+        classFunctions[generated.id] = generated;
+    }
     for (let id = entries.length; id < signatures.length; id++) {
       const signature = signatures[id];
       if (signature === undefined) throw "callback signature invariant";
+      const generated = classFunctions[id];
+      if (generated !== undefined) {
+        functions.push(generated);
+        continue;
+      }
       functions.push({
         id,
         name: "$callback$" + String(id),

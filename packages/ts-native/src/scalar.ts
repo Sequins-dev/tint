@@ -291,6 +291,9 @@ export interface RecordAccessChoice {
   readonly primitive?: boolean;
   /** Field uses the record-cell initialization state contract. */
   readonly initialized?: boolean;
+  /** A write to the unset field defines it: own data fields of class
+   * instances, which are unset only until construction defines them. */
+  readonly defines?: boolean;
   /** Read fallback through this record's prototype pointer. Writes remain own. */
   readonly prototype?: {
     readonly field: number;
@@ -313,6 +316,18 @@ export interface RecordConstruction extends RecordConstructionShape {
     readonly tag: string | number | boolean | undefined;
   })[];
 }
+/** `x instanceof C` for a typed class C (docs/design-typed-classes.md):
+ * OrdinaryHasInstance compares C.prototype with the operand's prototype
+ * link. Typed class constructors have no realm view, so they carry no own
+ * `Symbol.hasInstance` and keep Function.prototype's; realm objects cannot
+ * reach a typed class prototype, so only C's instances can match. */
+export interface ClassInstanceTest {
+  /** Reads C.prototype from the constructor's state record. */
+  readonly prototype: RecordAccess;
+  /** C's instance layout and its hidden prototype pointer field. */
+  readonly instance: number;
+  readonly prototypeField: number;
+}
 export interface ConstructorCall {
   /** Signature witness for the separate construction closure. */
   readonly target: number;
@@ -324,6 +339,7 @@ export interface FiniteRecordAccess {
 }
 export interface RecordOperations {
   readonly constructors?: ReadonlyKeyIndex<Expression, ConstructorCall>;
+  readonly classInstanceTests?: ReadonlyKeyIndex<Expression, ClassInstanceTest>;
   readonly spreads?: ReadonlyMap<
     Expression,
     readonly {
@@ -362,12 +378,35 @@ export interface OwnedConstructor {
   readonly record: number;
   readonly locals: readonly number[];
 }
+/** A class statement evaluated by this function (docs/design-typed-classes.md).
+ * Its member closures are created in source order, stored in the definition
+ * environment, and the generated definition entry returns the constructor. */
+export interface OwnedClassDefinition {
+  readonly declaration: Span;
+  /** The outer (statement) binding, and the class-scope binding when used. */
+  readonly local: number;
+  readonly innerLocal?: number | undefined;
+  readonly definition: number;
+  readonly environment: number;
+  /** Member closure targets by definition environment field. */
+  readonly members: readonly number[];
+  /** Static field initialization: an entry closed over an environment of
+   * the constructor (field 0) and initializer closures (fields from 1). */
+  readonly statics?:
+    | {
+        readonly target: number;
+        readonly environment: number;
+        readonly members: readonly number[];
+      }
+    | undefined;
+}
 /** Explicit lexical cells and owned environment records planned by the source adapter. */
 export interface OwnedEnvironmentPlan {
   readonly hoisted?: readonly OwnedHoistedFunction[];
   readonly record?: number | undefined;
   readonly cells: readonly OwnedCell[];
   readonly constructors: ReadonlyMap<number, OwnedConstructor>;
+  readonly classes?: readonly OwnedClassDefinition[];
 }
 /** Emit one function against explicit call signatures. Verify the composed module before use. */
 export interface RealmErrorRuntime {
@@ -2622,6 +2661,73 @@ export function lowerFunction(
     });
     return id;
   }
+  function classInstanceOf(
+    node: Expression & { readonly kind: "binary" },
+    test: ClassInstanceTest,
+  ): number {
+    const operand = value(node.left),
+      constructor = value(node.right);
+    const prototype = temporary("reference");
+    recordAccess(constructor, prototype, "read", test.prototype, node);
+    const result = temporary("boolean"),
+      linked = temporary("reference"),
+      compare = block(),
+      rejected = block(),
+      done = block();
+    let object: number;
+    if (slots[operand] === "reference") object = load(operand, node);
+    else {
+      // Primitives and other objects fail the layout test.
+      const general = save(
+        coerce(load(operand, node), "general", node),
+        "general",
+        node,
+      );
+      const matches = nextValue++;
+      emit({
+        kind: "general-record-is",
+        id: matches,
+        value: load(general, node),
+        record: test.instance,
+        start: node.start,
+        end: node.end,
+      });
+      const instance = block();
+      choose(matches, instance, rejected, node);
+      current = instance;
+      object = coerce(load(general, node), "reference", node);
+    }
+    finish({
+      kind: "record",
+      object,
+      record: test.instance,
+      field: test.prototypeField,
+      operation: "read",
+      slot: linked,
+      consequent: compare.id,
+      alternate: rejected.id,
+      start: node.start,
+      end: node.end,
+    });
+    current = compare;
+    const same = nextValue++;
+    emit({
+      kind: "binary",
+      operator: "===",
+      id: same,
+      left: load(linked, node),
+      right: load(prototype, node),
+      start: node.start,
+      end: node.end,
+    });
+    store(result, same, node);
+    jump(done.id, node);
+    current = rejected;
+    store(result, load(booleanSlot(false, node), node), node);
+    jump(done.id, node);
+    current = done;
+    return result;
+  }
   function errorRecordTest(
     value: number,
     record: number,
@@ -4203,7 +4309,40 @@ export function lowerFunction(
       const record = choice.record,
         field = choice.field,
         alternate = next.id;
-      if (choice.initialized === true)
+      if (
+        operation === "write" &&
+        choice.initialized === true &&
+        choice.defines === true
+      ) {
+        // Assignment to a set field writes it; an unset one is defined.
+        const define = block(),
+          receiverSlot = save(receiver, "reference", node);
+        finish({
+          kind: "record-cell",
+          object: load(receiverSlot, node),
+          record,
+          field,
+          operation,
+          slot: physicalSlot,
+          consequent: successId,
+          alternate: define.id,
+          start: node.start,
+          end: node.end,
+        });
+        current = define;
+        finish({
+          kind: "record-cell",
+          object: load(receiverSlot, node),
+          record,
+          field,
+          operation: "initialize",
+          slot: physicalSlot,
+          consequent: successId,
+          alternate,
+          start: node.start,
+          end: node.end,
+        });
+      } else if (choice.initialized === true)
         finish({
           kind: "record-cell",
           object: receiver,
@@ -6719,6 +6858,8 @@ export function lowerFunction(
           );
         }
 
+        const classTest = records?.classInstanceTests?.get(node);
+        if (classTest !== undefined) return classInstanceOf(node, classTest);
         const metadata = info(node);
         const array = metadata.arrayInstance;
         if (array !== undefined) return arrayInstanceOf(node, array, metadata);
@@ -10489,6 +10630,93 @@ export function lowerFunction(
         )
           throw "function hoisting contract invariant";
         break;
+      case "class": {
+        const plan = owned?.classes?.find(
+          (item) => item !== undefined && item.declaration === node,
+        );
+        if (plan === undefined) throw "class definition contract invariant";
+        // ClassDefinitionEvaluation: member closures exist before the
+        // prototype and constructor; the class scope binding is initialized
+        // before static fields, and the statement binding after them.
+        allocateCells(node.definition);
+        const environment = nextValue++;
+        emit({
+          kind: "record-new",
+          id: environment,
+          record: plan.environment,
+          arguments: plan.members.map((target) =>
+            load(functionValue(target, node), node),
+          ),
+          start: node.start,
+          end: node.end,
+        });
+        const definition = nextValue++;
+        emit({
+          kind: "function-new",
+          id: definition,
+          target: plan.definition,
+          environment,
+          start: node.start,
+          end: node.end,
+        });
+        const constructor = nextValue++;
+        emit({
+          kind: "call-indirect",
+          id: constructor,
+          target: plan.definition,
+          callee: definition,
+          arguments: [],
+          start: node.start,
+          end: node.end,
+        });
+        const value = save(constructor, "reference", node),
+          inner = plan.innerLocal,
+          outer = plan.local;
+        if (inner !== undefined)
+          writeLocal(
+            inner,
+            coerce(load(value, node), slots[inner], node),
+            node.definition,
+          );
+        const statics = plan.statics;
+        if (statics !== undefined) {
+          const initializers = statics.members.map((target) =>
+            functionValue(target, node),
+          );
+          const staticsEnvironment = nextValue++;
+          emit({
+            kind: "record-new",
+            id: staticsEnvironment,
+            record: statics.environment,
+            arguments: [
+              load(value, node),
+              ...initializers.map((slot) => load(slot, node)),
+            ],
+            start: node.start,
+            end: node.end,
+          });
+          const initialize = nextValue++;
+          emit({
+            kind: "function-new",
+            id: initialize,
+            target: statics.target,
+            environment: staticsEnvironment,
+            start: node.start,
+            end: node.end,
+          });
+          emit({
+            kind: "call-indirect",
+            id: undefined,
+            target: statics.target,
+            callee: initialize,
+            arguments: [],
+            start: node.start,
+            end: node.end,
+          });
+        }
+        writeLocal(outer, coerce(load(value, node), slots[outer], node), node);
+        break;
+      }
       case "debugger":
       case "empty":
         break;

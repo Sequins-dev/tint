@@ -301,12 +301,44 @@ export function resolveInterfaceTypes(
     }
     return collections.get(key) ?? -1;
   }
+  // Type declarations by index: the module's statements, then classes
+  // declared directly in the body of a non-generic module-level function,
+  // where only module types are in scope. Module instances move top-level
+  // classes into their initializer; a body class whose name is not otherwise
+  // declared resolves like a module class (scoped resolution of other local
+  // classes is not implemented).
+  const declarationStatements: Statement[] = [];
+  for (const node of module.statements) {
+    if (node === undefined) throw "missing module statement";
+    declarationStatements.push(node);
+  }
+  for (const node of module.statements) {
+    if (
+      node === undefined ||
+      node.kind !== "function" ||
+      typeParameterCount(node.typeParameters) !== 0
+    )
+      continue;
+    const body = node.body;
+    if (body === undefined || body.kind !== "block") continue;
+    for (const statement of body.statements)
+      if (statement !== undefined && statement.kind === "class")
+        declarationStatements.push(statement);
+  }
   const instances = createStringIndex<number>();
   let parameters = createStringIndex<number>();
+  /** Whether a body class's statement or inner name is already declared. */
+  function bodyClassCollides(node: TypeDeclaration): boolean {
+    if (names.has(node.name) || declarations.has(node.name)) return true;
+    if (node.kind !== "class") return false;
+    const inner = node.definition.name;
+    if (inner === undefined || inner === node.name) return false;
+    return (inner !== "Error" && names.has(inner)) || declarations.has(inner);
+  }
   function lookupDeclaration(name: string): TypeDeclaration | undefined {
     const index = declarations.get(name);
     if (index === undefined) return undefined;
-    const node = module.statements[index];
+    const node = declarationStatements[index];
     if (node === undefined) throw "type declaration invariant";
     if (
       node.kind === "interface" ||
@@ -1376,14 +1408,18 @@ export function resolveInterfaceTypes(
     }
   }
   try {
-    for (let index = 0; index < module.statements.length; index++) {
-      const node = module.statements[index];
+    for (let index = 0; index < declarationStatements.length; index++) {
+      const node = declarationStatements[index];
       if (node === undefined) throw "missing module statement";
       if (
         node.kind === "interface" ||
         node.kind === "type-alias" ||
         node.kind === "class"
       ) {
+        // A body class colliding with another declaration stays unresolved
+        // (the checker then reports it as an unsupported local class).
+        if (index >= module.statements.length && bodyClassCollides(node))
+          continue;
         if (
           (node.name !== "Error" && names.has(node.name)) ||
           declarations.has(node.name)
@@ -1442,7 +1478,7 @@ export function resolveInterfaceTypes(
     // their definition nodes, so modules with classes resolve afresh.
     const typeStatements: Statement[] = [];
     let classes = false;
-    for (const node of module.statements) {
+    for (const node of declarationStatements) {
       if (node === undefined) throw "missing module statement";
       if (node.kind === "class") classes = true;
       else if (node.kind === "interface" || node.kind === "type-alias")
