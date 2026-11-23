@@ -12,8 +12,10 @@
 //       .tint-bootstrap/workload-<name>/native-<label>. --runtime-tree links
 //       the tree's native runtime (collector) into the frozen program instead
 //       of the snapshot's, so runtime changes are measured; the program's
-//       input, and so its output, stays the frozen snapshot. Only files the
-//       snapshot already has are replaced (refreeze for new runtime files).
+//       input, and so its output, stays the frozen snapshot. With the runtime
+//       come the @tint/abi host-ABI contract files it imports, which it shares
+//       with the current code generator (tools/frozen-runtime-tree.ts). Only
+//       files the snapshot already has are replaced (refreeze for new files).
 //       --tree <path> (repeatable) does the same for another source directory
 //       or a single .ts file, e.g. packages/foundation/src/collections for
 //       built-in collections or packages/compiler/src/project.ts for bindings.
@@ -25,6 +27,7 @@ import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { workspaceSources } from "./workspace-sources.ts";
+import { runtimeDirectory, runtimeTreeFiles } from "./frozen-runtime-tree.ts";
 import { freezeNodeToolchain } from "./frozen-node-toolchain.ts";
 import { formatCounter, measureProcess } from "./host-tools.ts";
 
@@ -86,40 +89,43 @@ if (command === "freeze") {
 } else if (command === "build") {
   const label = labels()[0];
   if (label === undefined) throw Error("build needs a label");
-  let root = source;
-  const trees: string[] = [];
-  if (rest.includes("--runtime-tree"))
-    trees.push("packages/native-runtime/src");
+  // Tree files to copy over the snapshot. Only files the snapshot has are
+  // replaced: its catalog is compiled into the program and also selects the
+  // program's input files, so it must not change. New files need a refreeze.
+  const files = new Set<string>();
+  if (rest.includes("--runtime-tree")) {
+    const runtime = runtimeTreeFiles(".", source);
+    for (const file of runtime.files) files.add(file);
+    const contracts = runtime.files.filter(
+      (file) => !file.startsWith(runtimeDirectory + "/"),
+    );
+    console.log("--runtime-tree: host-ABI contract: " + contracts.join(", "));
+    for (const entry of runtime.missing)
+      console.log("--runtime-tree: not in the snapshot: " + entry);
+  }
   for (let index = 0; index < rest.length; index++)
     if (rest[index] === "--tree") {
       const directory = rest[index + 1];
       if (directory === undefined) throw Error("--tree needs a directory");
-      trees.push(directory);
+      if (directory.endsWith(".ts")) {
+        if (!existsSync(join(source, directory)) || !existsSync(directory))
+          throw Error("--tree file must exist in the snapshot and the tree");
+        files.add(directory);
+        continue;
+      }
+      for (const file of readdirSync(join(source, directory), {
+        recursive: true,
+        encoding: "utf8",
+      }) as string[])
+        if (file.endsWith(".ts") && existsSync(join(directory, file)))
+          files.add(join(directory, file));
     }
-  if (trees.length > 0) {
+  let root = source;
+  if (files.size > 0) {
     root = join(workload, "source-" + label);
     rmSync(root, { recursive: true, force: true });
     cpSync(source, root, { recursive: true });
-  }
-  for (const directory of trees) {
-    // Replace only files the snapshot has: its catalog is compiled into the
-    // program and also selects the program's input files, so it must not
-    // change. A change that adds files needs a fresh freeze.
-    const snapshot = join(root, directory),
-      tree = resolve(directory);
-    if (directory.endsWith(".ts")) {
-      if (!existsSync(snapshot) || !existsSync(tree))
-        throw Error("--tree file must exist in the snapshot and the tree");
-      cpSync(tree, snapshot);
-      continue;
-    }
-    for (const file of readdirSync(snapshot, {
-      recursive: true,
-      encoding: "utf8",
-    }) as string[]) {
-      if (!file.endsWith(".ts") || !existsSync(join(tree, file))) continue;
-      cpSync(join(tree, file), join(snapshot, file));
-    }
+    for (const file of files) cpSync(resolve(file), join(root, file));
   }
   run(process.execPath, [
     "tools/bootstrap-compiler.ts",

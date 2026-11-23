@@ -183,9 +183,10 @@ A worker invariant failure is fatal:
 
 Collector code is runtime source. Build with
 `frozen-workload.ts build <name> <label> --runtime-tree` to replace the
-snapshot's runtime files with the tree's. The snapshot's catalog also selects
-the program's input files, so it is never changed. New runtime files need a
-fresh freeze; `v2` was frozen with `parallel.ts`.
+snapshot's runtime files, and the host-ABI contract files they import, with the
+tree's ([frozen workloads](benchmarking.md#frozen-workloads)). The snapshot's
+catalog also selects the program's input files, so it is never changed. New
+runtime files need a fresh freeze; `v2` was frozen with `parallel.ts`.
 
 On `v2` (frozen 2026-11-13; outputs byte-identical to the serial build and to
 Node):
