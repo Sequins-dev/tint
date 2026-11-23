@@ -125,6 +125,7 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "array-length":
     case "array-write":
     case "array-store":
+    case "array-atomic":
       return true;
     case "reference-none":
     case "reference-wrap":
@@ -1021,6 +1022,21 @@ export function inlineSmallFunctions(
                   array: value(instruction.array),
                   index: value(instruction.index),
                   value: value(instruction.value),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "array-atomic":
+                cloned.push({
+                  ...instruction,
+                  id:
+                    instruction.id === undefined
+                      ? undefined
+                      : value(instruction.id),
+                  array: value(instruction.array),
+                  index: value(instruction.index),
+                  operands: instruction.operands.map(value),
                   start: at.start,
                   end: at.end,
                   inline: at.inline,

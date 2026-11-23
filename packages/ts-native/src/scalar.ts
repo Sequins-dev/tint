@@ -44,7 +44,32 @@ import {
   type ReturnType,
   type Span as IRSpan,
   type ForeignMemoryAccess,
+  type ArrayAtomicOperation,
 } from "@tint/ir/scalar";
+/** The IR operation of an `Atomics` function the checker admitted. */
+function atomicOperation(property: string): ArrayAtomicOperation {
+  switch (property) {
+    case "load":
+      return "load";
+    case "store":
+      return "store";
+    case "add":
+      return "add";
+    case "sub":
+      return "sub";
+    case "and":
+      return "and";
+    case "or":
+      return "or";
+    case "xor":
+      return "xor";
+    case "exchange":
+      return "exchange";
+    case "compareExchange":
+      return "compare-exchange";
+  }
+  throw "atomics operation invariant";
+}
 const nativeArrayArgumentMessage: string =
   "Passing a realm typed array to a native typed-array parameter requires the slice 2b buffer view";
 
@@ -490,6 +515,7 @@ export function lowerFunction(
         type = op.type;
         break;
       case "array-buffer-byte-length":
+      case "array-atomic":
         type = "number";
         break;
       case "string-none":
@@ -2294,6 +2320,62 @@ export function lowerFunction(
       end: node.end,
     });
     return save(id, "string", node);
+  }
+  /** `Atomics.<property>(array, index, ...operands)` on a native integer
+   * array, its arguments already evaluated: ValidateAtomicAccess (ToIndex,
+   * then the length check) and the sequentially consistent access. The
+   * operands are numbers, so their ToIntegerOrInfinity runs no code. */
+  function atomicsCall(
+    property: string,
+    args: readonly number[],
+    node: Span,
+  ): number {
+    const array = args[0],
+      input = args[1];
+    if (array === undefined || input === undefined)
+      throw "atomics argument invariant";
+    const operation = atomicOperation(property);
+    const index = integerIndex(
+      save(numericInput(input, node), "number", node),
+      node,
+    );
+    requireCondition(
+      binarySlot(">=", index, numberSlot(0, node), node),
+      "RangeError",
+      "Invalid atomic access index",
+      node,
+    );
+    requireCondition(
+      binarySlot("<", index, arrayLength(array, node), node),
+      "RangeError",
+      "Invalid atomic access index",
+      node,
+    );
+    const values = args
+      .slice(2)
+      .map((operand) => save(numericInput(operand, node), "number", node));
+    const id = operation === "store" ? undefined : nextValue++;
+    emit({
+      kind: "array-atomic",
+      operation,
+      id,
+      array: load(array, node),
+      index: load(index, node),
+      operands: values.map((operand) => load(operand, node)),
+      start: node.start,
+      end: node.end,
+    });
+    if (id !== undefined) return save(id, "number", node);
+    // Atomics.store returns ToIntegerOrInfinity(value) as a number: +0 for
+    // NaN and either zero.
+    const stored = values[0];
+    if (stored === undefined) throw "atomics operand invariant";
+    return binarySlot(
+      "+",
+      integerIndex(stored, node),
+      numberSlot(0, node),
+      node,
+    );
   }
   function arrayLength(array: number, node: Span): number {
     const id = nextValue++;
@@ -9711,6 +9793,10 @@ export function lowerFunction(
           const args = node.arguments.map(value),
             first = args[0];
           if (first === undefined) throw "builtin argument invariant";
+          if (builtin === "atomics") {
+            if (target.kind !== "member") throw "atomics callee invariant";
+            return atomicsCall(target.property, args, node);
+          }
           if (
             builtin === "is-finite" ||
             builtin === "is-nan" ||

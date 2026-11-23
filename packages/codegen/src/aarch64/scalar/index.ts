@@ -207,13 +207,14 @@ import {
   type ScalarType,
   type Span,
   type Instruction as IRInstruction,
+  type ArrayAtomicOperation,
   type Terminator as IRTerminator,
   type ForeignCall,
   instructionEffects as irInstructionEffects,
   effectAllocate as irEffectAllocate,
 } from "@tint/ir/scalar";
 import { compactSlots } from "@tint/ir/optimization";
-import type { BaseRegister } from "../isa.ts";
+import type { BaseRegister, MemoryAccessWidth } from "../isa.ts";
 import {
   classifyCCall,
   cTypeName,
@@ -3683,6 +3684,9 @@ function emitModuleForms(
                 op.kind === "array-valid" ||
                 op.kind === "array-write" ||
                 op.kind === "array-store" ||
+                // Atomic operands convert like element writes (wordValue)
+                // and the index like an element read (arrayIndex).
+                op.kind === "array-atomic" ||
                 op.kind === "reference-vector-read" ||
                 op.kind === "reference-vector-write" ||
                 // Inline code units index with an int64 (the helper path
@@ -4457,6 +4461,12 @@ function emitModuleForms(
               case "array-buffer-byte-length":
                 id = op.id;
                 type = "number";
+                break;
+              case "array-atomic":
+                if (op.id !== undefined) {
+                  id = op.id;
+                  type = "number";
+                }
                 break;
               case "error-message":
               case "general-kind":
@@ -7785,6 +7795,146 @@ function emitModuleForms(
         /** A typed-array view over a typed ArrayBuffer (`array-view`): the
          * subarray layout with the target type's marker, its data at the
          * buffer's data plus `byteOffset`, and the buffer as owner. */
+        /** An Atomics operation on a native integer array (the IR's
+         * `array-atomic`), sequentially consistent: full inner-shareable
+         * fences around an acquire/release access, as the shared-memory
+         * primitives use. Read-modify-writes are exclusive-pair loops: x11
+         * observes the element, x12 is the value written (a
+         * compare-exchange writes x15) and x13 the store status. */
+        function arrayAtomic(op: {
+          readonly operation: ArrayAtomicOperation;
+          readonly id: number | undefined;
+          readonly array: number;
+          readonly index: number;
+          readonly operands: readonly number[];
+        }): void {
+          const type = value(op.array).type,
+            scale = type === "Uint8Array" ? 0 : type === "Uint16Array" ? 1 : 2,
+            width: MemoryAccessWidth = scale === 0 ? 8 : scale === 1 ? 16 : 32;
+          if (
+            type !== "Uint8Array" &&
+            type !== "Uint16Array" &&
+            type !== "Uint32Array"
+          )
+            throw "atomic array type invariant";
+          // Operands convert first (possibly through a helper, which
+          // clobbers scratch registers) and are staged in the result area.
+          for (let at = 0; at < op.operands.length; at++) {
+            const operand = op.operands[at];
+            if (operand === undefined) throw "atomic operand invariant";
+            wordValue(operand);
+            rawStore(9, resultOffset + 16 + at * 8);
+          }
+          const index = arrayIndex(op.array, op.index);
+          // The lowering validated the index.
+          emit({ op: "cbnz", width: 32, rt: 13, displacement: 8 });
+          emit({ op: "brk", immediate: 3 });
+          emit({
+            op: "add-reg",
+            width: 64,
+            rd: 10,
+            rn: 10,
+            rm: index,
+            shift: "lsl",
+            amount: scale,
+            setFlags: false,
+          });
+          if (op.operands.length > 0) rawLoad(14, resultOffset + 16);
+          if (op.operands.length > 1) rawLoad(15, resultOffset + 24);
+          emit({ op: "dmb", domain: "ish" });
+          if (op.operation === "load")
+            emit({ op: "ldar", width, rt: 11, rn: 10 });
+          else if (op.operation === "store")
+            emit({ op: "stlr", width, rt: 14, rn: 10 });
+          else {
+            const exchange = op.operation === "compare-exchange";
+            // The element loads zero-extended, so the expected value
+            // compares in the element's width.
+            if (exchange && width < 32)
+              emit({
+                op: "ubfm",
+                width: 64,
+                rd: 14,
+                rn: 14,
+                immr: 0,
+                imms: width - 1,
+              });
+            const loop = instructions.length;
+            emit({ op: "ldaxr", width, rt: 11, rn: 10 });
+            let mismatch = -1;
+            if (exchange) {
+              emit({
+                op: "sub-reg",
+                width: 32,
+                rd: "zr",
+                rn: 11,
+                rm: 14,
+                shift: "lsl",
+                amount: 0,
+                setFlags: true,
+              });
+              mismatch = instructions.length;
+              emit({ op: "b.cond", condition: "ne", displacement: 0 });
+            } else if (op.operation === "add" || op.operation === "sub")
+              emit({
+                op: op.operation === "add" ? "add-reg" : "sub-reg",
+                width: 32,
+                rd: 12,
+                rn: 11,
+                rm: 14,
+                shift: "lsl",
+                amount: 0,
+                setFlags: false,
+              });
+            else if (op.operation !== "exchange") {
+              const combine: "and-reg" | "orr-reg" | "eor-reg" =
+                op.operation === "and"
+                  ? "and-reg"
+                  : op.operation === "or"
+                    ? "orr-reg"
+                    : "eor-reg";
+              emit({ op: combine, width: 32, rd: 12, rn: 11, rm: 14 });
+            }
+            const written: number = exchange
+              ? 15
+              : op.operation === "exchange"
+                ? 14
+                : 12;
+            emit({ op: "stlxr", width, rs: 13, rt: written, rn: 10 });
+            emit({
+              op: "cbnz",
+              width: 32,
+              rt: 13,
+              displacement: (loop - instructions.length) * 4,
+            });
+            if (exchange) {
+              const over = instructions.length;
+              emit({ op: "b", displacement: 0 });
+              patchInstruction(mismatch, {
+                op: "b.cond",
+                condition: "ne",
+                displacement: (instructions.length - mismatch) * 4,
+              });
+              emit({ op: "clrex" });
+              patchInstruction(over, {
+                op: "b",
+                displacement: (instructions.length - over) * 4,
+              });
+            }
+          }
+          emit({ op: "dmb", domain: "ish" });
+          const id = op.id;
+          if (id === undefined) return;
+          // The previous element, zero-extended in x11.
+          if (wantsInteger(id)) {
+            saveRaw(11, id);
+            markInteger(id);
+          } else {
+            const target = floatTarget(id, 0);
+            emit({ op: "ucvtf-d-w", rd: target, rn: 11 });
+            floatStore(target, id);
+          }
+        }
         function arrayView(op: {
           readonly id: number;
           readonly type:
@@ -9602,6 +9752,9 @@ function emitModuleForms(
               }
               case "array-view":
                 arrayView(op);
+                break;
+              case "array-atomic":
+                arrayAtomic(op);
                 break;
               case "array-buffer-byte-length":
                 rawValue(10, op.buffer);

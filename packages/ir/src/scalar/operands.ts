@@ -195,6 +195,11 @@ export function visitInstructionOperands(
     case "array-buffer-byte-length":
       visit(op.buffer);
       return;
+    case "array-atomic":
+      visit(op.array);
+      visit(op.index);
+      for (const operand of op.operands) visit(operand);
+      return;
     case "array-length":
     case "array-buffer":
     case "array-byte-offset":

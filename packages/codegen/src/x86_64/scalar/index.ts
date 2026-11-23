@@ -59,6 +59,7 @@ import {
   type FunctionIR,
   type GeneralTest,
   type Instruction,
+  type ArrayAtomicOperation,
   type ModuleIR,
   type RecordField,
   type RecordLayout,
@@ -1463,6 +1464,95 @@ export function emitModule(
       emit({ op: "label", name: done });
     }
 
+    /** An Atomics operation on a native integer array (the IR's
+     * `array-atomic`). Locked instructions (and xchg, which is locked with
+     * a memory operand) order every access sequentially consistently under
+     * x86-TSO, so a load is a plain load. The element's previous value
+     * ends in eax, zero-extended. */
+    function arrayAtomic(op: {
+      readonly operation: ArrayAtomicOperation;
+      readonly id: number | undefined;
+      readonly array: number;
+      readonly index: number;
+      readonly operands: readonly number[];
+    }): void {
+      const width = arrayWidth(typeOf(op.array)),
+        rcx = gpr(1);
+      if (width === 8) throw "atomic array type invariant";
+      const bits: 8 | 16 | 32 = width === 1 ? 8 : width === 2 ? 16 : 32;
+      const sized = (index: number): Gpr<8 | 16 | 32> => ({
+        kind: "gpr",
+        width: bits,
+        index,
+      });
+      // The lowering validated the index.
+      exactInteger(emit, frame(home(op.index)), r9, trapLabel);
+      emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+      emit({ op: "cmp", dst: r9, src: mem(11, nativeArrayLengthOffset) });
+      branch(emit, "ae", trapLabel);
+      // ToUint32 (eax) preserves r9 and r10. A compare-exchange's
+      // replacement goes to r10 and its expected value to eax, the
+      // comparand of cmpxchg; other operations' value ends in eax.
+      const [first, second] = op.operands;
+      if (second !== undefined) {
+        numbers.toWord(frame(home(second)));
+        emit({ op: "mov", dst: r10, src: rax });
+      }
+      if (first !== undefined) numbers.toWord(frame(home(first)));
+      emit({ op: "mov", dst: scratch, src: frame(home(op.array)) });
+      emit({ op: "mov", dst: scratch, src: mem(11, nativeArrayDataOffset) });
+      const element: Memory<8 | 16 | 32> = {
+        kind: "mem",
+        width: bits,
+        address: { kind: "base", base: 11, index: 9, scale: width, disp: 0 },
+      };
+      // eax = the element, zero-extended.
+      function loadElement(): void {
+        if (bits === 32) emit({ op: "mov", dst: eax, src: element });
+        else emit({ op: "movzx", dst: eax, src: element });
+      }
+      switch (op.operation) {
+        case "load":
+          loadElement();
+          break;
+        case "store":
+        case "exchange":
+          emit({ op: "xchg", dst: element, src: sized(0) });
+          break;
+        case "add":
+        case "sub":
+          if (op.operation === "sub") emit({ op: "neg", dst: eax });
+          emit({ op: "lock-xadd", dst: element, src: sized(0) });
+          break;
+        case "compare-exchange":
+          emit({ op: "lock-cmpxchg", dst: element, src: sized(10) });
+          break;
+        default: {
+          // and, or, xor: retry a compare-exchange of the combined value
+          // (ecx) until the element is unchanged since it was read (eax).
+          const retry =
+            fnLabel + ":atomic:" + String(instructionCount) + ":retry";
+          emit({ op: "mov", dst: r10, src: rax });
+          loadElement();
+          emit({ op: "label", name: retry });
+          emit({ op: "mov", dst: rcx, src: rax });
+          if (op.operation === "and") emit({ op: "and", dst: rcx, src: r10 });
+          else if (op.operation === "or")
+            emit({ op: "or", dst: rcx, src: r10 });
+          else emit({ op: "xor", dst: rcx, src: r10 });
+          emit({ op: "lock-cmpxchg", dst: element, src: sized(1) });
+          branch(emit, "ne", retry);
+        }
+      }
+      const id = op.id;
+      if (id === undefined) return;
+      // A compare-exchange that stored leaves its comparand in eax, whose
+      // ToUint32 conversion may have left bits above it in rax.
+      if (bits === 32) emit({ op: "mov", dst: eax, src: eax });
+      else emit({ op: "movzx", dst: eax, src: sized(0) });
+      numberBits();
+      define(id, "number");
+    }
     function arrayElement(
       op:
         | {
@@ -2400,6 +2490,10 @@ export function emitModule(
         case "array-view":
           if (host === undefined) break;
           bufferView(op, block, index);
+          return;
+        case "array-atomic":
+          if (host === undefined) break;
+          arrayAtomic(op);
           return;
         case "array-buffer-byte-length":
           if (host === undefined) break;

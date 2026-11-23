@@ -224,6 +224,24 @@ const instructions: Instruction[] = [
   },
   { kind: "array-buffer-byte-length", id: 1, buffer: 2, ...span },
   {
+    kind: "array-atomic",
+    operation: "compare-exchange",
+    id: 1,
+    array: 2,
+    index: 3,
+    operands: [4, 5],
+    ...span,
+  },
+  {
+    kind: "array-atomic",
+    operation: "store",
+    id: undefined,
+    array: 2,
+    index: 3,
+    operands: [4],
+    ...span,
+  },
+  {
     kind: "weak-slot-new",
     id: 1,
     key: 2,
@@ -352,6 +370,7 @@ const terminators: Terminator[] = [
 /** Every kind of the IR: adding one fails to type-check until it is listed
  * here, and the round-trip test requires an instance of each. */
 const instructionKinds: { readonly [K in Instruction["kind"]]: true } = {
+  "array-atomic": true,
   "array-buffer": true,
   "array-buffer-byte-length": true,
   "array-byte-length": true,

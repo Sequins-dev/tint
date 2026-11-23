@@ -3155,7 +3155,8 @@ function lowerEntries(
               else if (
                 intrinsic === "math-min" ||
                 intrinsic === "math-max" ||
-                intrinsic === "math-imul"
+                intrinsic === "math-imul" ||
+                intrinsic === "atomics"
               )
                 builtin = intrinsic;
               else if (

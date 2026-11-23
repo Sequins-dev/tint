@@ -3730,3 +3730,28 @@ test("dynamic-key erasure requests native views for witnessed layouts", () => {
     { name: "label", type: "string", optional: false, readonly: true },
   ]);
 });
+test("typed Atomics run inline on native integer arrays only", () => {
+  for (const type of ["Uint8Array", "Uint16Array", "Uint32Array"])
+    assert.ok(
+      check(
+        `function f(a:${type}):number{Atomics.store(a,0,1);return Atomics.add(a,0,1)+Atomics.sub(a,0,1)+Atomics.and(a,0,1)+Atomics.or(a,0,1)+Atomics.xor(a,0,1)+Atomics.exchange(a,0,1)+Atomics.compareExchange(a,0,1,2)+Atomics.load(a,0);}`,
+      ).ok,
+      type,
+    );
+  for (const text of [
+    // The pinned library types Atomics on integer typed arrays only.
+    "function f(a:Float64Array):number{return Atomics.add(a,0,1);}",
+    "function f(a:Uint32Array):number{return Atomics.add(a,0);}",
+    "function f(a:Uint32Array):number{return Atomics.load(a,0,1);}",
+    "function f(a:Uint32Array):number{return Atomics.compareExchange(a,0,1);}",
+    'function f(a:Uint32Array):number{return Atomics.add(a,"0",1);}',
+    "function f(a:Uint32Array):number{return Atomics.add(a,0,true);}",
+    "function f(a:Uint32Array,v:number|undefined):number{return Atomics.store(a,0,v);}",
+  ])
+    assert.equal(check(text).ok, false, text);
+  // A local binding named Atomics is an ordinary value.
+  const shadowed = check(
+    "function f(a:Uint32Array):number{const Atomics={add:(x:Uint32Array,i:number,v:number):number=>v};return Atomics.add(a,0,1);}",
+  );
+  assert.ok(shadowed.ok);
+});

@@ -164,6 +164,7 @@ export type ClosureIntrinsic =
   | "math-sign"
   | "math-floor"
   | "math-imul"
+  | "atomics"
   | "math-min"
   | "math-max"
   | "numeric-constant"
@@ -240,6 +241,18 @@ export type ClosureIntrinsic =
   | "string-char-at"
   | "string-at"
   | "string-code-unit";
+/** The Atomics functions typed code runs inline on native integer arrays. */
+const atomicsOperations: readonly string[] = [
+  "load",
+  "store",
+  "add",
+  "sub",
+  "and",
+  "or",
+  "xor",
+  "exchange",
+  "compareExchange",
+];
 export interface ClosureBody {
   readonly node: Span;
   readonly scriptEntry: true | undefined;
@@ -428,6 +441,7 @@ function checkClosureModuleLayout(
     "BigInt",
     "Object",
     "Math",
+    "Atomics",
     "Uint8Array",
     "Uint16Array",
     "Uint32Array",
@@ -6158,6 +6172,57 @@ function checkClosureModuleLayout(
           }
           if (target.kind === "member") {
             const receiver = ungroup(target.object);
+            if (
+              receiver.kind === "identifier" &&
+              receiver.name === "Atomics" &&
+              !references.has(receiver) &&
+              atomicsOperations.includes(target.property)
+            ) {
+              // Atomics on a native integer array are inline (the pinned
+              // library types them on integer typed arrays only).
+              const arity =
+                target.property === "load"
+                  ? 2
+                  : target.property === "compareExchange"
+                    ? 4
+                    : 3;
+              if (node.arguments.length !== arity)
+                fail(
+                  node,
+                  "ARITY",
+                  "Atomics." +
+                    target.property +
+                    " takes " +
+                    String(arity) +
+                    " arguments",
+                );
+              const source = node.arguments[0];
+              if (source === undefined) throw "missing call argument";
+              const array = types[expression(source, owner)]?.kind;
+              if (array === "Float64Array")
+                fail(
+                  source,
+                  "TYPE_MISMATCH",
+                  "Atomics operations require an integer typed array",
+                );
+              if (
+                array !== "Uint8Array" &&
+                array !== "Uint16Array" &&
+                array !== "Uint32Array"
+              )
+                unsupported(
+                  node,
+                  "realm-library-member",
+                  "Atomics on a realm typed array requires realm projection",
+                );
+              for (const argument of node.arguments.slice(1)) {
+                if (argument === undefined) throw "missing call argument";
+                requireType(expression(argument, owner), number, argument);
+              }
+              intrinsics.set(node, "atomics");
+              result = number;
+              break;
+            }
             if (
               receiver.kind === "identifier" &&
               receiver.name === "Math" &&

@@ -1433,6 +1433,7 @@ const baseTypedGlobals: readonly string[] = [
   "Number",
   "BigInt",
   "Math",
+  "Atomics",
   "Map",
   "Set",
   "Uint8Array",

@@ -180,6 +180,7 @@ export interface ExpressionInfo {
     | "sign"
     | "floor"
     | "math-imul"
+    | "atomics"
     | "math-min"
     | "math-max"
     | "array-set"

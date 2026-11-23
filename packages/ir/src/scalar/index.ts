@@ -942,6 +942,26 @@ export function verify(
               equal(use(op.buffer), "reference");
               define(op.id, "number");
               break;
+            case "array-atomic": {
+              const type = use(op.array);
+              if (!["Uint8Array", "Uint16Array", "Uint32Array"].includes(type))
+                fail("TYPE", "atomics require a native integer array");
+              equal(use(op.index), "number");
+              for (const operand of op.operands) equal(use(operand), "number");
+              if (
+                op.operands.length !==
+                (op.operation === "load"
+                  ? 0
+                  : op.operation === "compare-exchange"
+                    ? 2
+                    : 1)
+              )
+                fail("VALUE", "atomic operand count");
+              if ((op.id === undefined) !== (op.operation === "store"))
+                fail("VALUE", "only an atomic store has no result");
+              if (op.id !== undefined) define(op.id, "number");
+              break;
+            }
             case "weak-slot-new":
               equal(use(op.key), "general");
               equal(use(op.value), "general");
