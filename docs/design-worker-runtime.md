@@ -310,6 +310,13 @@ the receiver uses the sender's copy directly.
   Shutdown frees them all, which the arm64 cleanup now requests as x86-64's
   does. The last reference frees the body; collectors return its pages, and
   pages a mutator freed are returned at the next major collection.
+- **Releasing pages.** On both backends, `memory-release` returns pages only
+  inside the context's managed mapping or inside the one releasable window
+  recorded in the isolate's identity page (words 3 and 4). The Worker host
+  records the arena there when it attaches, before any body is freed. Any
+  other range is rejected (-1), so a wrong address cannot unmap live memory.
+  A refused release leaves the body resident and is counted in the arena
+  statistics (`tools/build-memory-release-fixture.ts`).
 - **Costs.** Arena memory is outside every isolate's heap limit; the soft cap
   bounds it. Heap tools see a body reference as an external string.
 
