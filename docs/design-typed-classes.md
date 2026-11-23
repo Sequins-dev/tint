@@ -144,6 +144,22 @@ The typed fast path layers on that:
   Interface reads dispatch over the concrete layouts that flow in. Class
   layouts take the own-field path or the prototype contract, both already
   implemented for records.
+  - Data-only interfaces work today. Methods do not yet: a class method's
+    type requires its class as receiver, and an interface method signature
+    (`m(): T`) constrains no receiver, so the relation rejects it. With an
+    explicit `m(this: R): T` the assignment already checks and calls pass
+    the receiver.
+  - Open decision: give method signatures an implicit receiver (the
+    interface itself), related bivariantly as TypeScript's method
+    bivariance does. Receivers travel in the general receiver slot, so the
+    calling convention is unchanged. Two costs need measuring first. Every
+    call through an interface method would box and pass a receiver, also
+    in the compiler's own interface-heavy code (frozen v7). And mutable
+    method properties relate exactly today, so receiver-less
+    implementations (arrow functions) would need method properties
+    related covariantly, as TypeScript does. The alternative is to pass
+    receivers only at call sites whose possible targets use them, using
+    the closed-world call-target analysis.
 
 **Other members:**
 
