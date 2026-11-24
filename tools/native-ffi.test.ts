@@ -13,6 +13,7 @@ import { verifyDylibProbe } from "./ffi-dylib-probe.ts";
 import {
   verifyCallbackFixture,
   verifyCallbackTrap,
+  verifyMayCallbackOnlyFixture,
   verifyZlibCallbackFixture,
   withCallbackLibrary,
 } from "./native-callback-fixtures.ts";
@@ -144,6 +145,9 @@ test("callbacks: qsort over records, nesting, GC inside and exceptions (generati
 });
 test("callbacks: qsort over records, nesting, GC inside and exceptions (copying)", () => {
   verifyCallbackFixture("initializeCopyingRuntime");
+});
+test("a may-callback call in a program without callbacks finds its callback state", () => {
+  verifyMayCallbackOnlyFixture();
 });
 test("registered callbacks: zlib's allocator round trip under GC (generational)", () => {
   verifyZlibCallbackFixture();

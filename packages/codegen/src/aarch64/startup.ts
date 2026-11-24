@@ -890,8 +890,15 @@ export function planHostedEntry(request: HostRequest): HostPlanning {
     });
   }
   // Callback thunks find each thread's callback state under one pthread
-  // key, created here before any managed code (or agent) runs.
-  if (request.program.native.callbackThunks !== undefined) {
+  // key, created here before any managed code (or agent) runs. Code that
+  // reads the key (callbackKey(), as callback-state setup does) needs it
+  // even when no thunk survived optimization.
+  if (
+    program.callbackThunks !== undefined ||
+    [allocator, runtime, program].some((native) =>
+      native.imports.some((fixup) => fixup.target.name === "tint:callback-key"),
+    )
+  ) {
     callbackKeyReferences.push({
       offset: instructions.length * 4,
       rd: 0,

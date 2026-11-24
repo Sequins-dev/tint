@@ -199,6 +199,41 @@ export function verifyCallbackFixture(
   );
 }
 
+/** A may-callback call in a program with no callback (docs/native-ffi.md,
+ * "Callbacks"): the call still publishes the thread's callback state under
+ * the image's callback key, so the image creates the key although it has
+ * no callback thunk. */
+export const mayCallbackOnlyDeclarations: FixtureForeignDeclaration = {
+  id: "fixture/may-callback-only.d.ts",
+  text: `declare module "tint:c/libsystem" {
+  import type { i32, MayCallback } from "tint:ffi";
+  export function abs(value: i32): MayCallback<i32>;
+}
+`,
+};
+export function verifyMayCallbackOnlyFixture(): string {
+  return verifyHostedFixture(
+    `import { abs } from "may-callback-only";
+export function run(): number {
+  return abs(-42) === 42 && abs(7) === 7 ? 42 : 1;
+}
+`,
+    "ffi-may-callback-only",
+    [
+      ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
+      ["may-callback-only", mayCallbackOnlyDeclarations.id],
+    ],
+    [],
+    [],
+    [],
+    {
+      managedBytes: 4194304,
+      allocationCapacity: 65536,
+      foreignDeclarations: [mayCallbackOnlyDeclarations],
+    },
+  );
+}
+
 /** A C library for callback contract tests: it keeps a callback for later
  * (as C libraries do), calls one now, calls one from a new thread, and
  * passes one a pointer to a record. */
