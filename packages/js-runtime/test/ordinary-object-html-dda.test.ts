@@ -19,7 +19,7 @@ test("IsHTMLDDA is a host-only internal slot, not inherited state", () => {
   assert.equal(exoticSlots(host).internalIsHTMLDDA, true);
   const child = createObject<ScriptPropertyKey, unknown>(host);
   assert.equal(exoticSlots(child).internalIsHTMLDDA, false);
-  assert.equal(child.properties.has("internalIsHTMLDDA"), false);
+  assert.equal(child.properties?.has("internalIsHTMLDDA") ?? false, false);
 });
 
 test("code lowered without IsHTMLDDA objects cannot run beside a marked one", () => {

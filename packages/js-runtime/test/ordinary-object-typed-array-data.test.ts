@@ -153,15 +153,7 @@ test("typedArrayElementAt reads exactly what the canonical string key reads", as
     await import("../src/objects/typed-array-data.ts");
   const { fixed, tracking, storage } = setup();
   // An inherited numeric property never answers a typed array's numeric key.
-  fixed.prototype!.properties.set("5", {
-    accessor: false,
-    value: "inherited",
-    writable: true,
-    enumerable: true,
-    configurable: true,
-    get: undefined,
-    set: undefined,
-  });
+  assert.ok(o.createDataProperty(fixed.prototype!, "5", "inherited", hooks));
   assert.ok(
     o.setProperty(fixed, "1", 7, { object: fixed, value: fixed }, hooks),
   );

@@ -71,7 +71,7 @@ test("primitive wrapper payloads are internal and strings expose immutable UTF-1
   assert.ok(
     Object.is(objects.exoticSlots(number).internalPrimitiveData?.value, -0),
   );
-  assert.equal(number.properties.size, 0);
+  assert.equal(number.properties?.size ?? 0, 0);
 });
 
 test("String code point construction is an ordinary nonconstructor builtin", () => {

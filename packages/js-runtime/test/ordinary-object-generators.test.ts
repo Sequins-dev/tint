@@ -27,7 +27,7 @@ test("generator creation installs private state without evaluating the body", ()
   const generator = object.createGeneratorObject(continuation, realm);
   assert.equal(generator.prototype, realm.generatorPrototype);
   assert.equal(realm.generatorPrototype.prototype, realm.iteratorPrototype);
-  assert.equal(generator.properties.size, 0);
+  assert.equal(generator.properties?.size ?? 0, 0);
   assert.equal(generator.internalGeneratorData?.state, "suspended-start");
   assert.equal(
     typeof generator.internalGeneratorData?.continuation,

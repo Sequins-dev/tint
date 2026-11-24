@@ -114,16 +114,18 @@ function clearConfigurableIndices<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   array: ArrayObjectHooks<Key, Value>,
 ): boolean {
-  for (const [key, descriptor] of object.properties) {
+  const properties = object.properties;
+  if (properties === undefined) throw "ARRAY_LENGTH_INVARIANT";
+  for (const [key, descriptor] of properties) {
     if (key === array.lengthKey) continue;
     if (!descriptor.configurable || array.index(key) < 0) return false;
   }
-  const length = object.properties.get(array.lengthKey);
+  const length = properties.get(array.lengthKey);
   if (length === undefined) throw "ARRAY_LENGTH_INVARIANT";
   const elements = object.internalArrayElements;
   if (elements !== undefined) truncateArrayElements<Key, Value>(elements, 0);
-  object.properties.clear();
-  object.properties.set(array.lengthKey, length);
+  properties.clear();
+  properties.set(array.lengthKey, length);
   object.internalPropertyEpoch++;
   return true;
 }

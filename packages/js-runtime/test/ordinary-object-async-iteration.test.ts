@@ -28,7 +28,7 @@ test("async-from-sync objects retain a private iterator and shared methods", () 
     realm.asyncFromSyncIteratorPrototype.prototype ===
       realm.asyncIteratorPrototype,
   );
-  assert.equal(wrapper.properties.size, 0);
+  assert.equal(wrapper.properties?.size ?? 0, 0);
   assert.equal(
     object.exoticSlots(realm.asyncFromSyncIteratorPrototype)
       .internalSyncIteratorData,

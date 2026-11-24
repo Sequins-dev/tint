@@ -64,7 +64,7 @@ test("sloppy eval checks global lexical conflicts before creating any binding", 
         (name) => name === undefined,
       ) && (lexical.overflow?.size ?? 0) === 0,
     );
-    assert.equal(record.object.properties.size, 0);
+    assert.equal(record.object.properties?.size ?? 0, 0);
     assert.equal(made, 0);
   }
 });
@@ -217,7 +217,7 @@ test("strict eval keeps var and function declarations local and shares their bin
     ),
     "none",
   );
-  assert.equal(record.object.properties.size, 0);
+  assert.equal(record.object.properties?.size ?? 0, 0);
   assert.equal(getBindingValue(lexical, "fn").value, 42);
   assert.equal(getBindingValue(lexical, "v").value, 0);
   assert.equal(deleteBinding(lexical, "fn"), true);

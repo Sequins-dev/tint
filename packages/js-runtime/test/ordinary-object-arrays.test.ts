@@ -292,7 +292,7 @@ function define(
 test("packed elements keep array indices out of the property map", () => {
   const a = packed(100);
   assert.notEqual(a.internalArrayElements, undefined);
-  assert.equal(a.properties.size, 1);
+  assert.equal(a.properties?.size, 1);
   assert.equal(length(a), 100);
   assert.deepEqual(data(a, "42"), [false, 42, true, true, true]);
   assert.equal(get(a, "99"), 99);
@@ -300,7 +300,7 @@ test("packed elements keep array indices out of the property map", () => {
   assert.deepEqual(keys(a).slice(0, 3), ["0", "1", "2"]);
   assert.equal(keys(a).at(-1), "length");
   assert.equal(objects.createDataProperty(a, "100", 100, hooks), true);
-  assert.equal(a.properties.size, 1);
+  assert.equal(a.properties?.size, 1);
 });
 
 test("storing a non-number switches number elements to values once", () => {
@@ -322,7 +322,7 @@ test("storing a non-number switches number elements to values once", () => {
   assert.equal(get(a, "3"), "three");
   put(a, "4", 4);
   assert.equal(get(a, "4"), 4);
-  assert.equal(a.properties.size, 1);
+  assert.equal(a.properties?.size, 1);
   assert.equal(length(a), 5);
 });
 

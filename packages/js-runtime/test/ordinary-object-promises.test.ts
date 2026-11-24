@@ -10,7 +10,7 @@ test("promise state is a private capability and does not leak through inheritanc
   const promise = promises.createPromiseObject(prototype);
   assert.ok(promise.internalPromiseData?.promise === promise);
   assert.equal(promise.internalPromiseData?.state, "pending");
-  assert.equal(promise.properties.size, 0);
+  assert.equal(promise.properties?.size ?? 0, 0);
   assert.equal(object.createObject(promise).internalPromiseData, undefined);
 });
 

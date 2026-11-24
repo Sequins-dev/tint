@@ -88,9 +88,9 @@ export interface OrdinaryObject<Key, Value> {
   prototype: OrdinaryObject<Key, Value> | undefined;
   extensible: boolean;
   internalImmutablePrototype: boolean;
-  /** Dictionary-mode own properties. In fast mode, only the descriptors of
-   * accessor keys (their values live in the shape's slots otherwise). */
-  readonly properties: Map<Key, Descriptor<Value>>;
+  /** Dictionary-mode own properties. In fast mode, allocated lazily only for
+   * accessor keys' descriptors (data values live in the shape's slots). */
+  properties: Map<Key, Descriptor<Value>> | undefined;
   /** Bumped whenever a key is added or deleted or a stored descriptor is
    * replaced. Only an in-place [[Value]] write to a writable data descriptor
    * leaves it unchanged, so a cached descriptor of a dictionary-mode object
@@ -692,6 +692,15 @@ export function createAliasedObject<Key, Value>(
     undefined,
   );
 }
+function ensureProperties<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+): Map<Key, Descriptor<Value>> {
+  const existing = object.properties;
+  if (existing !== undefined) return existing;
+  const created = new Map<Key, Descriptor<Value>>();
+  object.properties = created;
+  return created;
+}
 /** Attach only to an existing writable data property. This is an internal
  * construction operation; source property redefinition uses defineOwnProperty. */
 export function aliasDataProperty<Key, Value>(
@@ -700,7 +709,8 @@ export function aliasDataProperty<Key, Value>(
   alias: DataAlias<Value>,
 ): void {
   const aliases = object.internalDataAliases;
-  const descriptor = object.properties.get(key);
+  const properties = object.properties;
+  const descriptor = properties === undefined ? undefined : properties.get(key);
   if (
     aliases === undefined ||
     descriptor === undefined ||
@@ -771,7 +781,8 @@ function allocateObject<Key, Value>(
 ): OrdinaryObject<Key, Value> {
   const dictionary =
     internalMethods !== undefined || internalDataAliases !== undefined;
-  if (prototype !== undefined) markPrototype<Key, Value>(prototype);
+  if (prototype !== undefined && !prototype.internalUsedAsPrototype)
+    markPrototype<Key, Value>(prototype);
   return {
     // A fast object starts at its prototype's root shape once one exists.
     internalShape:
@@ -781,7 +792,7 @@ function allocateObject<Key, Value>(
     prototype,
     extensible: true,
     internalImmutablePrototype: false,
-    properties: new Map<Key, Descriptor<Value>>(),
+    properties: dictionary ? new Map<Key, Descriptor<Value>>() : undefined,
     internalPropertyEpoch: 0,
     internalChildShape: undefined,
     internalDictionary: dictionary,
@@ -849,7 +860,8 @@ export function ordinaryGetOwnProperty<Key, Value>(
       ? undefined
       : fastDescriptor<Key, Value>(object, shape, index);
   }
-  const descriptor = object.properties.get(key);
+  const properties = object.properties;
+  const descriptor = properties === undefined ? undefined : properties.get(key);
   if (descriptor === undefined) return undefined;
   const aliases = object.internalDataAliases;
   const alias = aliases === undefined ? undefined : aliases.get(key);
@@ -935,9 +947,12 @@ export function ordinaryDefineOwnProperty<Key, Value>(
         : descriptor.value;
       if (shape !== undefined && index >= 0) {
         const previous = shape.kinds[index] ?? 0;
-        if (descriptor.accessor) object.properties.set(key, descriptor);
-        else if ((previous & propertyAccessor) !== 0)
-          object.properties.delete(key);
+        if (descriptor.accessor)
+          ensureProperties<Key, Value>(object).set(key, descriptor);
+        else if ((previous & propertyAccessor) !== 0) {
+          const properties = object.properties;
+          if (properties !== undefined) properties.delete(key);
+        }
         if (previous !== kind)
           reshapeFastProperty<Key, Value>(object, shape, index, kind);
         setFastValue<Key, Value>(object, index, value);
@@ -948,13 +963,14 @@ export function ordinaryDefineOwnProperty<Key, Value>(
           ? rootPropertyShape<Key, Value>(object, hooks.undefinedValue)
           : shape;
       if (base.keys.length < maxFastKeys) {
-        if (descriptor.accessor) object.properties.set(key, descriptor);
+        if (descriptor.accessor)
+          ensureProperties<Key, Value>(object).set(key, descriptor);
         addFastProperty<Key, Value>(object, base, key, kind, value);
         return "accepted";
       }
     }
     useDictionaryProperties<Key, Value>(object);
-    object.properties.set(key, descriptor);
+    ensureProperties<Key, Value>(object).set(key, descriptor);
     noteStructureChange<Key, Value>(object);
     return "accepted";
   }
@@ -990,7 +1006,7 @@ export function ordinaryDefineOwnProperty<Key, Value>(
         descriptor,
         current === undefined || (update.fields & valueField) !== 0,
       );
-    object.properties.set(key, descriptor);
+    ensureProperties<Key, Value>(object).set(key, descriptor);
     noteStructureChange<Key, Value>(object);
     if (aliases !== undefined && alias !== undefined) {
       if (descriptor.accessor) aliases.delete(key);
@@ -1008,9 +1024,10 @@ function unpackArrayElements<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   elements: ArrayElements<Key, Value>,
 ): void {
+  const properties = ensureProperties<Key, Value>(object);
   const count = arrayElementCount<Key, Value>(elements);
   for (let index = 0; index < count; index++)
-    object.properties.set(
+    properties.set(
       elements.keys.indexKey(index),
       arrayElementDescriptor<Key, Value>(elements, index),
     );
@@ -1054,21 +1071,27 @@ export function createDataProperty<Key, Value>(
     object.internalArrayElements === undefined &&
     object.internalDataAliases === undefined &&
     object.internalPropertyContract === undefined &&
-    object.extensible &&
-    !object.properties.has(key)
+    object.extensible
   ) {
-    const descriptor: Descriptor<Value> = {
-      accessor: false,
-      value,
-      writable: true,
-      get: hooks.undefinedValue,
-      set: hooks.undefinedValue,
-      enumerable: true,
-      configurable: true,
-    };
-    object.properties.set(key, descriptor);
-    noteStructureChange<Key, Value>(object);
-    return true;
+    const existing = object.properties;
+    if (existing === undefined || !existing.has(key)) {
+      const descriptor: Descriptor<Value> = {
+        accessor: false,
+        value,
+        writable: true,
+        get: hooks.undefinedValue,
+        set: hooks.undefinedValue,
+        enumerable: true,
+        configurable: true,
+      };
+      const target =
+        existing === undefined
+          ? ensureProperties<Key, Value>(object)
+          : existing;
+      target.set(key, descriptor);
+      noteStructureChange<Key, Value>(object);
+      return true;
+    }
   }
   return (
     defineOwnProperty<Key, Value>(
@@ -1145,12 +1168,13 @@ export function ordinaryDeleteProperty<Key, Value>(
     if (((shape.kinds[index] ?? 0) & propertyConfigurable) === 0) return false;
     useDictionaryProperties<Key, Value>(object);
   }
-  const descriptor = object.properties.get(key);
+  const properties = object.properties;
+  const descriptor = properties === undefined ? undefined : properties.get(key);
   if (descriptor === undefined) return true;
   if (!descriptor.configurable) return false;
   const contract = object.internalPropertyContract;
   if (contract !== undefined && !contract.canDelete(key)) return false;
-  object.properties.delete(key);
+  if (properties !== undefined) properties.delete(key);
   noteStructureChange<Key, Value>(object);
   const aliases = object.internalDataAliases;
   if (aliases !== undefined) aliases.delete(key);
@@ -1194,7 +1218,8 @@ export function setPrototype<Key, Value>(
     cursor = cursor.prototype;
   }
   object.prototype = prototype;
-  if (prototype !== undefined) markPrototype<Key, Value>(prototype);
+  if (prototype !== undefined && !prototype.internalUsedAsPrototype)
+    markPrototype<Key, Value>(prototype);
   // Shapes grow from the prototype's root: replay the keys from the new one.
   const shape = object.internalShape;
   if (!object.internalDictionary && shape !== undefined)
@@ -1288,7 +1313,8 @@ export function refreshPropertyCell<Key, Value>(
     object.internalPropertyContract !== undefined
   )
     return undefined;
-  const descriptor = object.properties.get(key);
+  const properties = object.properties;
+  const descriptor = properties === undefined ? undefined : properties.get(key);
   if (descriptor === undefined || descriptor.accessor) return undefined;
   cache.object = object;
   cache.epoch = object.internalPropertyEpoch;
@@ -1487,7 +1513,11 @@ function fastAccessor<Key, Value>(
   index: number,
 ): Descriptor<Value> {
   const key = shape.keys[index];
-  const descriptor = key === undefined ? undefined : object.properties.get(key);
+  const properties = object.properties;
+  const descriptor =
+    key === undefined || properties === undefined
+      ? undefined
+      : properties.get(key);
   if (descriptor === undefined || !descriptor.accessor)
     throw "FAST_ACCESSOR_INVARIANT";
   return descriptor;
@@ -1556,18 +1586,19 @@ export function useDictionaryProperties<Key, Value>(
 ): void {
   if (object.internalDictionary) return;
   const shape = object.internalShape;
+  const properties = ensureProperties<Key, Value>(object);
   if (shape !== undefined) {
     // Accessors are already stored; insert every key in shape order.
     const descriptors: Descriptor<Value>[] = [];
     for (let index = 0; index < shape.keys.length; index++)
       descriptors.push(fastDescriptor<Key, Value>(object, shape, index));
-    object.properties.clear();
+    properties.clear();
     for (let index = 0; index < shape.keys.length; index++) {
       const key = shape.keys[index],
         descriptor = descriptors[index];
       if (key === undefined || descriptor === undefined)
         throw "PROPERTY_KEY_INVARIANT";
-      object.properties.set(key, descriptor);
+      properties.set(key, descriptor);
     }
   }
   object.internalDictionary = true;
@@ -1688,7 +1719,9 @@ function buildIndexedPropertyLayout<Key, Value>(
 ): IndexedPropertyLayout<Value> | null {
   let keys: number[] | undefined = undefined;
   let cells: Descriptor<Value>[] | undefined = undefined;
-  for (const [key, descriptor] of object.properties) {
+  const properties = object.properties;
+  if (properties === undefined) return null;
+  for (const [key, descriptor] of properties) {
     if (typeof key !== "string") continue;
     const numeric = canonicalNumericIndex(key);
     if (
@@ -2354,7 +2387,11 @@ export function ordinaryOwnKeys<Key, Value>(
         if (key === undefined) throw "PROPERTY_KEY_INVARIANT";
         keys.push(key);
       }
-  } else for (const [key, descriptor] of object.properties) keys.push(key);
+  } else {
+    const properties = object.properties;
+    if (properties !== undefined)
+      for (const [key, descriptor] of properties) keys.push(key);
+  }
   const elements = object.internalArrayElements;
   if (elements !== undefined) {
     // Packed indices precede every map key, which holds no array index.

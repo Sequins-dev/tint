@@ -97,7 +97,7 @@ test("objects with one prototype and key order share one shape", () => {
     [a.internalValue0, a.internalValue1, a.internalValue2, a.internalValue3],
     [0, 1, 2, undefined],
   );
-  assert.equal(a.properties.size, 0);
+  assert.equal(a.properties, undefined);
   // A different order or prototype is a different shape.
   assert.notEqual(shape(point(prototype, ["y", "x", "z"])), shape(a));
   assert.notEqual(shape(point(object(undefined), ["x", "y", "z"])), shape(a));
@@ -266,7 +266,7 @@ test("accessors and symbol keys stay in fast mode", () => {
   assert.equal(read(target, "z"), 3);
   // Turning the accessor into data drops its stored descriptor.
   redefine(target, "y", writableField, true);
-  assert.equal(target.properties.size, 0);
+  assert.equal(target.properties?.size ?? 0, 0);
   assert.equal(read(target, "y"), 7);
   // Dictionary mode keeps the key order.
   assert.ok(deleteProperty<ScriptPropertyKey, unknown>(target, "x"));

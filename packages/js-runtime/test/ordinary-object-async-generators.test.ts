@@ -27,7 +27,7 @@ test("async generator objects have private lazy state and distinct prototype cha
     realm.asyncGeneratorPrototype.prototype === realm.asyncIteratorPrototype,
   );
   assert.ok(realm.asyncIteratorPrototype.prototype === root);
-  assert.equal(generator.properties.size, 0);
+  assert.equal(generator.properties?.size ?? 0, 0);
   assert.equal(
     generator.internalAsyncGeneratorData?.record.state,
     "suspended-start",
