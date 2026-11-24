@@ -416,6 +416,20 @@ export interface ArrayAccessSelection {
 
 /** The largest safe integer, 2^53 - 1. */
 const maxSafeInteger = 9007199254740991;
+/** The integer an interval holds exactly, if it holds one. */
+function constantOf(interval: Interval | undefined): number | undefined {
+  return interval !== undefined &&
+    interval.integer &&
+    interval.lo === interval.hi &&
+    !interval.negativeZero
+    ? interval.lo
+    : undefined;
+}
+/** A constant `&` mask in [0, 2^31 - 1] (which bounds the result), else -1. */
+function maskOf(interval: Interval | undefined): number {
+  const mask = constantOf(interval);
+  return mask !== undefined && mask >= 0 && mask <= 2147483647 ? mask : -1;
+}
 /** Selects unchecked typed-array accesses (`array-element`, `array-store`)
  * where the index is proven an integer within the array's length. Facts:
  * interval analysis over number slots (constants, + - * and % with integer
@@ -779,6 +793,37 @@ export function selectArrayAccesses(
         case "binary": {
           const left = values.get(op.left),
             right = values.get(op.right);
+          // Bitwise results are 32-bit integers, never -0, whatever the
+          // operands: `>>>` unsigned (`x >>> 0` keeps an integer x already
+          // in that range, as counted-loops' word bounds), `&` with a
+          // non-negative 31-bit mask within the mask, the others signed.
+          if (op.operator === ">>>") {
+            values.set(
+              op.id,
+              left !== undefined &&
+                left.integer &&
+                left.lo >= 0 &&
+                left.hi <= 4294967295 &&
+                constantOf(right) === 0
+                ? integerInterval(left.lo, left.hi, false)
+                : integerInterval(0, 4294967295, false),
+            );
+            break;
+          }
+          if (op.operator === "&") {
+            const mask = Math.max(maskOf(left), maskOf(right));
+            values.set(
+              op.id,
+              mask >= 0
+                ? integerInterval(0, mask, false)
+                : integerInterval(-2147483648, 2147483647, false),
+            );
+            break;
+          }
+          if (["|", "^", "<<", ">>", "imul"].includes(op.operator)) {
+            values.set(op.id, integerInterval(-2147483648, 2147483647, false));
+            break;
+          }
           if (left === undefined || right === undefined) break;
           if (op.operator === "+") values.set(op.id, add(left, right, 1));
           else if (op.operator === "-") values.set(op.id, add(left, right, -1));
