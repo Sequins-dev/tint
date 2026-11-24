@@ -201,46 +201,68 @@ export function propertySlotWord(
 }
 
 /** The value of `value`'s own data property cached at `site`: its shape is
- * the site's own shape, which proves the property and its slot. Otherwise
- * the site itself, which absentPropertyValue recognizes and no property
- * holds. Native code binds this to IR property-load, whose miss is a
- * dedicated non-value. */
+ * one of the site's own entry shapes, which proves the property and its
+ * slot. Otherwise the site itself, which absentPropertyValue recognizes and
+ * no property holds. Native code binds this to IR property-load, whose miss
+ * is a dedicated non-value. */
 export function cachedOwnPropertyValue(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
   value: unknown,
   site: ScriptPropertyCache,
 ): unknown {
   const object = viewObjectValue(value, witness);
-  if (object === undefined || object.internalShape !== site.ownShape)
-    return site;
+  if (object === undefined) return site;
+  // The entries in order, as generated code tests them (a retained
+  // declaration reads the site's fields directly).
+  const shape = object.internalShape;
+  let slot = 0;
+  if (shape === site.ownShape) slot = site.ownSlot;
+  else if (shape === site.ownShape1) slot = site.ownSlot1;
+  else if (shape === site.ownShape2) slot = site.ownSlot2;
+  else if (shape === site.ownShape3) slot = site.ownSlot3;
+  else return site;
   // The site's raw-bit word index, two words per value.
   return readPropertyValueSlot(
     object,
-    (site.ownSlot / Number.MIN_VALUE - propertySlotWord(witness)) / 2,
+    (slot / Number.MIN_VALUE - propertySlotWord(witness)) / 2,
   );
 }
 
 /** As cachedOwnPropertyValue, for a data property of an object on the
- * receiver's prototype chain, the site's inherited object: the receiver's
+ * receiver's prototype chain, an inherited entry's holder: the receiver's
  * shape implies its prototype, and the site's inherited epoch must still be
- * current (no prototype changed structure since the entry was stored). */
+ * current (no prototype changed structure since the entries were found). */
 export function cachedInheritedPropertyValue(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
   value: unknown,
   site: ScriptPropertyCache,
 ): unknown {
   const object = viewObjectValue(value, witness);
-  if (object === undefined || object.internalShape !== site.inheritedShape)
-    return site;
-  const holder = site.inheritedObject;
   if (
-    holder === undefined ||
+    object === undefined ||
     site.inheritedEpochs.value !== site.inheritedEpoch
   )
     return site;
+  const shape = object.internalShape;
+  let slot = 0,
+    holder: OrdinaryObject<ScriptPropertyKey, unknown> | undefined = undefined;
+  if (shape === site.inheritedShape) {
+    slot = site.inheritedSlot;
+    holder = site.inheritedObject;
+  } else if (shape === site.inheritedShape1) {
+    slot = site.inheritedSlot1;
+    holder = site.inheritedObject1;
+  } else if (shape === site.inheritedShape2) {
+    slot = site.inheritedSlot2;
+    holder = site.inheritedObject2;
+  } else if (shape === site.inheritedShape3) {
+    slot = site.inheritedSlot3;
+    holder = site.inheritedObject3;
+  }
+  if (holder === undefined) return site;
   return readPropertyValueSlot(
     holder,
-    (site.inheritedSlot / Number.MIN_VALUE - propertySlotWord(witness)) / 2,
+    (slot / Number.MIN_VALUE - propertySlotWord(witness)) / 2,
   );
 }
 

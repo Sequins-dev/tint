@@ -10925,8 +10925,8 @@ function emitModuleForms(
                   miss();
                 }
                 // The receiver's tag (x9) and payload (x10), then its first
-                // word against the site's shape (x12; the verified site layout
-                // pairs it with the word index, x13).
+                // word (x9) against the site's entry shapes (x12; the verified
+                // site layout pairs each with its word index, x13).
                 generalPair(9, value(op.object).offset, true);
                 emit({
                   op: "sub-imm",
@@ -10940,47 +10940,42 @@ function emitModuleForms(
                 miss();
                 const site = rawRegister(op.site, 11);
                 emit({
-                  op: "ldp",
-                  width: 64,
-                  rt: 12,
-                  rt2: 13,
-                  rn: site,
-                  offset: siteShape.offset,
-                  mode: "offset",
-                });
-                emit({
                   op: "ldr",
                   width: 64,
                   rt: 9,
                   rn: 10,
                   offset: shapeField.offset,
                 });
-                compare(9, 12);
+                /** x12/x13 = the shape and word index of the entry at `at`. */
+                function entryPair(at: number): void {
+                  emit({
+                    op: "ldp",
+                    width: 64,
+                    rt: 12,
+                    rt2: 13,
+                    rn: site,
+                    offset: at,
+                    mode: "offset",
+                  });
+                }
                 if (op.kind === "property-load") {
                   let holder = 10;
+                  const stride = op.inherited ? 24 : 16;
                   if (op.inherited) {
-                    // The receiver's shape implies its prototype; the site's
-                    // holder (x14) is current while the epoch it was found
+                    // The receiver's shape implies its prototype; the entries'
+                    // holders are current while the epoch they were found
                     // under (x12) is the epoch record's value (x15).
                     const epochField =
                       module.records?.[op.epochRecord]?.fields[op.epochField];
-                    if (epochField === undefined)
+                    const epochAt = siteShape.offset + op.entries * stride;
+                    if (epochField === undefined || epochAt > 4088)
                       throw "property cache layout invariant";
-                    emit({
-                      op: "ldp",
-                      width: 64,
-                      rt: 14,
-                      rt2: 12,
-                      rn: site,
-                      offset: siteShape.offset + 16,
-                      mode: "offset",
-                    });
                     emit({
                       op: "ldr",
                       width: 64,
                       rt: 15,
                       rn: site,
-                      offset: siteShape.offset + 32,
+                      offset: epochAt + 8,
                     });
                     emit({
                       op: "ldr",
@@ -10989,8 +10984,77 @@ function emitModuleForms(
                       rn: 15,
                       offset: epochField.offset,
                     });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 12,
+                      rn: site,
+                      offset: epochAt,
+                    });
                     compare(15, 12);
                     holder = 14;
+                  }
+                  // Entry 0 first; a match branches to the shared hit with the
+                  // word index in x13 (and the holder in x14); the last
+                  // entry's mismatch is the miss.
+                  const hits: number[] = [];
+                  function holderOf(at: number): void {
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 14,
+                      rn: site,
+                      offset: at + 16,
+                    });
+                  }
+                  for (let entry = 0; entry < op.entries; entry++) {
+                    const at = siteShape.offset + entry * stride;
+                    if (at > 496) throw "property cache layout invariant";
+                    entryPair(at);
+                    if (entry === op.entries - 1) {
+                      // Falls through to the hit.
+                      compare(9, 12);
+                      if (op.inherited) holderOf(at);
+                      break;
+                    }
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 9,
+                      rm: 12,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    if (!op.inherited) {
+                      hits.push(instructions.length);
+                      emit({ op: "b.cond", condition: "eq", displacement: 0 });
+                      continue;
+                    }
+                    const next = instructions.length;
+                    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                    holderOf(at);
+                    hits.push(instructions.length);
+                    emit({ op: "b", displacement: 0 });
+                    patchInstruction(next, {
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (instructions.length - next) * 4,
+                    });
+                  }
+                  for (const at of hits) {
+                    const target = (instructions.length - at) * 4;
+                    patchInstruction(
+                      at,
+                      op.inherited
+                        ? { op: "b", displacement: target }
+                        : {
+                            op: "b.cond",
+                            condition: "eq",
+                            displacement: target,
+                          },
+                    );
                   }
                   emit({
                     op: "add-reg",
@@ -11046,6 +11110,8 @@ function emitModuleForms(
                   });
                   break;
                 }
+                entryPair(siteShape.offset);
+                compare(9, 12);
                 const epochField =
                   module.records?.[op.epochRecord]?.fields[op.epochField];
                 if (epochField === undefined)

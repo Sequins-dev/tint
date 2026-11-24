@@ -223,6 +223,8 @@ export interface NativeRecordBinding {
   readonly count?: number;
   /** Property cache operations: the site's first cache field. */
   readonly siteField?: string;
+  /** Property cache reads: the site's consecutive entries (default 1). */
+  readonly entries?: number;
 }
 /** Opaque managed weak storage is available only to declared runtime exports. */
 export interface NativeWeakBinding {
@@ -2457,6 +2459,7 @@ function lowerTypedProgram(
     field?: string | undefined;
     count?: number | undefined;
     siteField?: string | undefined;
+    entries?: number | undefined;
   }[] = [];
   for (const plan of surfacePlans) {
     if (plan === undefined) throw "surface plan invariant";
@@ -2520,6 +2523,7 @@ function lowerTypedProgram(
       field: binding.field,
       count: binding.count,
       siteField: binding.siteField,
+      entries: binding.entries,
     });
   }
   const serviceSources: {

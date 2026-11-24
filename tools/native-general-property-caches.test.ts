@@ -263,6 +263,40 @@ function deepChains() {
   out.push(v(c), v(b));
   return out.join(",");
 }
+function polymorphic() {
+  // Read sites with two to five receiver shapes and method sites over four
+  // classes: entries fill, rotate past four, and go stale when a value,
+  // a key or a prototype changes.
+  const readX = (o) => o.x;
+  const out = [];
+  const shapes = [
+    { x: 1 },
+    { a: 0, x: 2 },
+    { b: 0, c: 0, x: 3 },
+    { d: 0, x: 4 },
+    { e: 0, f: 0, g: 0, x: 5 },
+  ];
+  for (let round = 0; round < 3; round++)
+    for (const o of shapes) out.push(readX(o));
+  shapes[1].x = 20;
+  delete shapes[2].x;
+  out.push(readX(shapes[1]), String(readX(shapes[2])), readX(shapes[0]));
+  class A { m() { return "A"; } }
+  class B { m() { return "B"; } }
+  class C extends A {}
+  class D extends C { m() { return "D" + super.m(); } }
+  const call = (o) => o.m();
+  const objects = [new A(), new B(), new C(), new D()];
+  for (let round = 0; round < 3; round++)
+    for (const o of objects) out.push(call(o));
+  A.prototype.m = function () { return "A2"; };
+  for (const o of objects) out.push(call(o));
+  Object.setPrototypeOf(C.prototype, B.prototype);
+  for (const o of objects) out.push(call(o));
+  objects[2].m = function () { return "own"; };
+  for (const o of objects) out.push(call(o));
+  return out.join(",");
+}
 export function sections() {
   return [
     String(sharedShapes()),
@@ -275,6 +309,7 @@ export function sections() {
     stores(),
     builtins(),
     deepChains(),
+    polymorphic(),
   ];
 }
 `;
@@ -292,7 +327,7 @@ test("property caches keep JavaScript lookups across shapes and redefinitions", 
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-  assert.equal(expected.length, 10);
+  assert.equal(expected.length, 11);
   // Exit status 42 when every section matches, else 10 + the first
   // mismatching section's index.
   let general = false;

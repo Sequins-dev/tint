@@ -403,26 +403,44 @@ export interface PropertyEpoch {
   value: number;
 }
 export const propertyEpoch: PropertyEpoch = { value: 0 };
+/** Inline entries per site for reads (IR property-load `entries`): own and
+ * inherited entries each, newest-first placement, oldest replaced. */
+export const propertyCacheEntries = 4;
 export interface ScriptPropertyCache {
-  /** The newest own entry as generated code reads it (IR property-load):
+  /** The own entries as generated code reads them (IR property-load), each
    * the receiver shape and the value's raw-bit word index (inlineSlotBits).
-   * The newest entry held by a prototype follows: the receiver shape, the
-   * word index, the holder, the propertyEpoch value the entry was found
-   * under and the epoch record itself. A receiver shape implies its
-   * prototype (prototypes have private shapes, and changing an object's
-   * prototype reshapes it), and every structural change of a prototype
-   * advances the epoch, so an unchanged epoch keeps the whole chain down
-   * to the holder. Then the newest store: the receiver shape, the value's
-   * word index, the shape a transition reaches (undefined for a store to
-   * an existing property) and the propertyEpoch value the transition was
-   * found under. The fields are first and consecutive; an empty shape is
-   * unusedPropertyShape. Values past the in-place slots take the miss
-   * path. */
+   * The entries for values held by a prototype follow, each the receiver
+   * shape, the word index and the holder, then the propertyEpoch value they
+   * were found under and the epoch record itself. A receiver shape implies
+   * its prototype (prototypes have private shapes, and changing an
+   * object's prototype reshapes it), and every structural change of a
+   * prototype advances the epoch, so an unchanged epoch keeps the whole
+   * chain down to each holder. Then the newest store: the receiver shape,
+   * the value's word index, the shape a transition reaches (undefined for
+   * a store to an existing property) and the propertyEpoch value the
+   * transition was found under. The fields are first and consecutive; an
+   * empty shape is unusedPropertyShape. Values past the in-place slots
+   * take the miss path. */
   ownShape: ScriptShape;
   ownSlot: number;
+  ownShape1: ScriptShape;
+  ownSlot1: number;
+  ownShape2: ScriptShape;
+  ownSlot2: number;
+  ownShape3: ScriptShape;
+  ownSlot3: number;
   inheritedShape: ScriptShape;
   inheritedSlot: number;
   inheritedObject: ScriptObject | undefined;
+  inheritedShape1: ScriptShape;
+  inheritedSlot1: number;
+  inheritedObject1: ScriptObject | undefined;
+  inheritedShape2: ScriptShape;
+  inheritedSlot2: number;
+  inheritedObject2: ScriptObject | undefined;
+  inheritedShape3: ScriptShape;
+  inheritedSlot3: number;
+  inheritedObject3: ScriptObject | undefined;
   inheritedEpoch: number;
   readonly inheritedEpochs: PropertyEpoch;
   storeShape: ScriptShape;
@@ -437,6 +455,9 @@ export interface ScriptPropertyCache {
   readonly nameHash: number;
   used: number;
   megamorphic: boolean;
+  /** The inline own and inherited entry each replaces next once full. */
+  ownNext: number;
+  inheritedNext: number;
 }
 function propertyCacheEntry(): ScriptPropertyCacheEntry {
   return {
@@ -455,9 +476,24 @@ export function createScriptPropertyCache(
   return {
     ownShape: unusedPropertyShape,
     ownSlot: 0,
+    ownShape1: unusedPropertyShape,
+    ownSlot1: 0,
+    ownShape2: unusedPropertyShape,
+    ownSlot2: 0,
+    ownShape3: unusedPropertyShape,
+    ownSlot3: 0,
     inheritedShape: unusedPropertyShape,
     inheritedSlot: 0,
     inheritedObject: undefined,
+    inheritedShape1: unusedPropertyShape,
+    inheritedSlot1: 0,
+    inheritedObject1: undefined,
+    inheritedShape2: unusedPropertyShape,
+    inheritedSlot2: 0,
+    inheritedObject2: undefined,
+    inheritedShape3: unusedPropertyShape,
+    inheritedSlot3: 0,
+    inheritedObject3: undefined,
     inheritedEpoch: 0,
     inheritedEpochs: propertyEpoch,
     storeShape: unusedPropertyShape,
@@ -476,6 +512,8 @@ export function createScriptPropertyCache(
     nameHash: hashString(name),
     used: 0,
     megamorphic: false,
+    ownNext: 0,
+    inheritedNext: 0,
   };
 }
 export interface ScriptPropertyStubCache {
@@ -1718,6 +1756,181 @@ function cachedScriptPropertyHolder(
 export function inlineSlotBits(word: number): number {
   return word * Number.MIN_VALUE;
 }
+/** The receiver shape of a site's inline own (or inherited) entry. */
+export function inlineEntryShape(
+  cache: ScriptPropertyCache,
+  inherited: boolean,
+  index: number,
+): ScriptShape {
+  switch (index) {
+    case 0:
+      return inherited ? cache.inheritedShape : cache.ownShape;
+    case 1:
+      return inherited ? cache.inheritedShape1 : cache.ownShape1;
+    case 2:
+      return inherited ? cache.inheritedShape2 : cache.ownShape2;
+    case 3:
+      return inherited ? cache.inheritedShape3 : cache.ownShape3;
+  }
+  throw "PROPERTY_CACHE_ENTRY_INVARIANT";
+}
+/** The raw-bit word index of a site's inline own (or inherited) entry. */
+export function inlineEntrySlot(
+  cache: ScriptPropertyCache,
+  inherited: boolean,
+  index: number,
+): number {
+  switch (index) {
+    case 0:
+      return inherited ? cache.inheritedSlot : cache.ownSlot;
+    case 1:
+      return inherited ? cache.inheritedSlot1 : cache.ownSlot1;
+    case 2:
+      return inherited ? cache.inheritedSlot2 : cache.ownSlot2;
+    case 3:
+      return inherited ? cache.inheritedSlot3 : cache.ownSlot3;
+  }
+  throw "PROPERTY_CACHE_ENTRY_INVARIANT";
+}
+/** The holder of a site's inline inherited entry. */
+export function inlineEntryHolder(
+  cache: ScriptPropertyCache,
+  index: number,
+): ScriptObject | undefined {
+  switch (index) {
+    case 0:
+      return cache.inheritedObject;
+    case 1:
+      return cache.inheritedObject1;
+    case 2:
+      return cache.inheritedObject2;
+    case 3:
+      return cache.inheritedObject3;
+  }
+  throw "PROPERTY_CACHE_ENTRY_INVARIANT";
+}
+function setOwnEntry(
+  cache: ScriptPropertyCache,
+  index: number,
+  shape: ScriptShape,
+  slot: number,
+): void {
+  switch (index) {
+    case 0:
+      cache.ownShape = shape;
+      cache.ownSlot = slot;
+      return;
+    case 1:
+      cache.ownShape1 = shape;
+      cache.ownSlot1 = slot;
+      return;
+    case 2:
+      cache.ownShape2 = shape;
+      cache.ownSlot2 = slot;
+      return;
+    case 3:
+      cache.ownShape3 = shape;
+      cache.ownSlot3 = slot;
+      return;
+  }
+  throw "PROPERTY_CACHE_ENTRY_INVARIANT";
+}
+function setInheritedEntry(
+  cache: ScriptPropertyCache,
+  index: number,
+  shape: ScriptShape,
+  slot: number,
+  holder: ScriptObject | undefined,
+): void {
+  switch (index) {
+    case 0:
+      cache.inheritedShape = shape;
+      cache.inheritedSlot = slot;
+      cache.inheritedObject = holder;
+      return;
+    case 1:
+      cache.inheritedShape1 = shape;
+      cache.inheritedSlot1 = slot;
+      cache.inheritedObject1 = holder;
+      return;
+    case 2:
+      cache.inheritedShape2 = shape;
+      cache.inheritedSlot2 = slot;
+      cache.inheritedObject2 = holder;
+      return;
+    case 3:
+      cache.inheritedShape3 = shape;
+      cache.inheritedSlot3 = slot;
+      cache.inheritedObject3 = holder;
+      return;
+  }
+  throw "PROPERTY_CACHE_ENTRY_INVARIANT";
+}
+/** The inline entry to (re)fill for a receiver shape: its own entry, else
+ * the first empty one, else the next in rotation. */
+function inlineEntryIndex(
+  cache: ScriptPropertyCache,
+  inherited: boolean,
+  shape: ScriptShape,
+): number {
+  let empty = -1;
+  for (let index = 0; index < propertyCacheEntries; index++) {
+    const current = inlineEntryShape(cache, inherited, index);
+    if (current === shape) return index;
+    if (empty < 0 && current === unusedPropertyShape) empty = index;
+  }
+  if (empty >= 0) return empty;
+  const next = inherited ? cache.inheritedNext : cache.ownNext;
+  if (inherited) cache.inheritedNext = (next + 1) % propertyCacheEntries;
+  else cache.ownNext = (next + 1) % propertyCacheEntries;
+  return next;
+}
+function addOwnEntry(
+  cache: ScriptPropertyCache,
+  shape: ScriptShape,
+  slot: number,
+): void {
+  setOwnEntry(cache, inlineEntryIndex(cache, false, shape), shape, slot);
+}
+/** Inherited entries share one epoch: entries found under an older one are
+ * stale, so they are cleared before a newer entry is added. */
+function addInheritedEntry(
+  cache: ScriptPropertyCache,
+  shape: ScriptShape,
+  slot: number,
+  holder: ScriptObject,
+): void {
+  const epoch = propertyEpoch.value;
+  if (cache.inheritedEpoch !== epoch) {
+    for (let index = 0; index < propertyCacheEntries; index++)
+      setInheritedEntry(cache, index, unusedPropertyShape, 0, undefined);
+    cache.inheritedNext = 0;
+    cache.inheritedEpoch = epoch;
+  }
+  setInheritedEntry(
+    cache,
+    inlineEntryIndex(cache, true, shape),
+    shape,
+    slot,
+    holder,
+  );
+}
+/** Make a found property an inline entry: own when the object holds it,
+ * else inherited. Each value is a two-word general slot; values past the
+ * in-place slots stay off the inline entries. */
+function addInlineEntry(
+  cache: ScriptPropertyCache,
+  object: ScriptObject,
+  shape: ScriptShape,
+  holder: ScriptObject,
+  offset: number,
+  slotWord: number,
+): void {
+  if (offset >= propertySlots) return;
+  const slot = inlineSlotBits(slotWord + offset * 2);
+  if (holder === object) addOwnEntry(cache, shape, slot);
+  else addInheritedEntry(cache, shape, slot, holder);
+}
 /** Find `key` on a fast-mode object or its first prototypes and cache where
  * it was found. Returns the holder of the data property, with its shape
  * index in cache.foundIndex, or undefined to take the ordinary lookup.
@@ -1732,12 +1945,15 @@ export function lookupCachedScriptProperty(
 ): ScriptObject | undefined {
   const shape = cacheableShape(object);
   if (shape === undefined) return undefined;
+  // Generated code missed every inline entry: an entry found below goes
+  // back inline.
   for (let index = 0; index < cache.used; index++) {
     const entry = cache.entries[index];
     if (entry === undefined) throw "PROPERTY_CACHE_ENTRY_INVARIANT";
     const holder = cachedScriptPropertyHolder(object, entry, own);
     if (holder !== undefined) {
       cache.foundIndex = entry.offset;
+      addInlineEntry(cache, object, shape, holder, entry.offset, slotWord);
       return holder;
     }
   }
@@ -1748,6 +1964,7 @@ export function lookupCachedScriptProperty(
     const holder = cachedScriptPropertyHolder(object, stub, own);
     if (holder !== undefined) {
       cache.foundIndex = stub.offset;
+      addInlineEntry(cache, object, shape, holder, stub.offset, slotWord);
       return holder;
     }
   }
@@ -1793,18 +2010,7 @@ export function lookupCachedScriptProperty(
   entry.ancestor = ancestor;
   entry.holder = holder === object ? undefined : holderShape;
   entry.offset = offset;
-  // Each value is a two-word general slot.
-  if (offset < propertySlots) {
-    if (holder === object) {
-      cache.ownShape = shape;
-      cache.ownSlot = inlineSlotBits(slotWord + offset * 2);
-    } else {
-      cache.inheritedShape = shape;
-      cache.inheritedSlot = inlineSlotBits(slotWord + offset * 2);
-      cache.inheritedObject = holder;
-      cache.inheritedEpoch = propertyEpoch.value;
-    }
-  }
+  addInlineEntry(cache, object, shape, holder, offset, slotWord);
   cache.foundIndex = offset;
   return holder;
 }

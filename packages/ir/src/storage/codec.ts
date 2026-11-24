@@ -491,6 +491,7 @@ export function encodeInstruction(
       writeSigned(writer, op.count);
       writeSigned(writer, op.siteRecord);
       writeSigned(writer, op.siteField);
+      writeSigned(writer, op.entries);
       writeSigned(writer, op.epochRecord);
       writeSigned(writer, op.epochField);
       return true;
@@ -1389,6 +1390,7 @@ export function decodeInstruction(
         count = readSigned(reader),
         siteRecord = readSigned(reader),
         siteField = readSigned(reader),
+        entries = readSigned(reader),
         epochRecord = readSigned(reader),
         epochField = readSigned(reader);
       return {
@@ -1402,6 +1404,7 @@ export function decodeInstruction(
         siteRecord,
         siteField,
         inherited: flagged(flags, 2),
+        entries,
         epochRecord,
         epochField,
         ...span,

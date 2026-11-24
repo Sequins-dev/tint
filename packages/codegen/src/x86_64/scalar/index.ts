@@ -2539,33 +2539,84 @@ export function emitModule(
         case "property-store": {
           // See the AArch64 emission: the receiver's first word against the
           // site's shape, then the value at the site's raw word index.
-          const shape = recordField(op.record, 0),
-            siteShape = recordField(op.siteRecord, op.siteField),
-            siteSlot = recordField(op.siteRecord, op.siteField + 1);
+          const shape = recordField(op.record, 0);
           const site = fnLabel + ":" + op.kind + ":" + String(op.id);
           const missed = site + ":miss",
-            done = site + ":done";
+            done = site + ":done",
+            hit = site + ":hit";
           emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
           branch(emit, "ne", missed);
           emit({ op: "mov", dst: r9, src: frame(home(op.object) + 8) });
           emit({ op: "mov", dst: gpr(10), src: frame(home(op.site)) });
-          emit({ op: "mov", dst: rax, src: mem(9, shape.offset) });
-          emit({ op: "cmp", dst: rax, src: mem(10, siteShape.offset) });
-          branch(emit, "ne", missed);
           let holder: number = 9;
-          if (op.kind === "property-load" && op.inherited) {
-            // The site's holder is current while the epoch it was found
-            // under is the epoch record's value.
-            const siteObject = recordField(op.siteRecord, op.siteField + 2),
-              epoch = recordField(op.siteRecord, op.siteField + 3),
-              epochRecord = recordField(op.siteRecord, op.siteField + 4),
-              current = recordField(op.epochRecord, op.epochField);
-            emit({ op: "mov", dst: rax, src: mem(10, epochRecord.offset) });
-            emit({ op: "mov", dst: rax, src: mem(0, current.offset) });
-            emit({ op: "cmp", dst: rax, src: mem(10, epoch.offset) });
+          if (op.kind === "property-load") {
+            const inherited = op.inherited,
+              stride = inherited ? 3 : 2;
+            if (inherited) {
+              // The entries' holders are current while the epoch they were
+              // found under is the epoch record's value.
+              const epoch = recordField(
+                  op.siteRecord,
+                  op.siteField + op.entries * 3,
+                ),
+                epochRecord = recordField(
+                  op.siteRecord,
+                  op.siteField + op.entries * 3 + 1,
+                ),
+                current = recordField(op.epochRecord, op.epochField);
+              emit({ op: "mov", dst: rax, src: mem(10, epochRecord.offset) });
+              emit({ op: "mov", dst: rax, src: mem(0, current.offset) });
+              emit({ op: "cmp", dst: rax, src: mem(10, epoch.offset) });
+              branch(emit, "ne", missed);
+              holder = 11;
+            }
+            emit({ op: "mov", dst: rax, src: mem(9, shape.offset) });
+            // Every entry but the last branches to its own hit tail, which
+            // loads the word index (and holder) into rax (and r11).
+            for (let entry = 0; entry < op.entries; entry++) {
+              const first = op.siteField + entry * stride,
+                entryShape = recordField(op.siteRecord, first);
+              emit({ op: "cmp", dst: rax, src: mem(10, entryShape.offset) });
+              const last = entry === op.entries - 1;
+              const matched = site + ":entry" + String(entry);
+              branch(emit, last ? "ne" : "e", last ? missed : matched);
+            }
+            const lastEntry = op.siteField + (op.entries - 1) * stride;
+            if (inherited)
+              emit({
+                op: "mov",
+                dst: scratch,
+                src: mem(10, recordField(op.siteRecord, lastEntry + 2).offset),
+              });
+            emit({
+              op: "mov",
+              dst: rax,
+              src: mem(10, recordField(op.siteRecord, lastEntry + 1).offset),
+            });
+            if (op.entries > 1) emit({ op: "jmp", target: label(hit) });
+            for (let entry = 0; entry < op.entries - 1; entry++) {
+              const first = op.siteField + entry * stride;
+              emit({ op: "label", name: site + ":entry" + String(entry) });
+              if (inherited)
+                emit({
+                  op: "mov",
+                  dst: scratch,
+                  src: mem(10, recordField(op.siteRecord, first + 2).offset),
+                });
+              emit({
+                op: "mov",
+                dst: rax,
+                src: mem(10, recordField(op.siteRecord, first + 1).offset),
+              });
+              if (entry < op.entries - 2)
+                emit({ op: "jmp", target: label(hit) });
+            }
+            if (op.entries > 1) emit({ op: "label", name: hit });
+          } else {
+            const siteShape = recordField(op.siteRecord, op.siteField);
+            emit({ op: "mov", dst: rax, src: mem(9, shape.offset) });
+            emit({ op: "cmp", dst: rax, src: mem(10, siteShape.offset) });
             branch(emit, "ne", missed);
-            emit({ op: "mov", dst: scratch, src: mem(10, siteObject.offset) });
-            holder = 11;
           }
           if (op.kind === "property-store") {
             const transition = recordField(op.siteRecord, op.siteField + 2),
@@ -2582,8 +2633,12 @@ export function emitModule(
             branch(emit, "ne", missed);
             emit({ op: "mov", dst: mem(9, shape.offset), src: scratch });
             emit({ op: "label", name: existing });
+            emit({
+              op: "mov",
+              dst: rax,
+              src: mem(10, recordField(op.siteRecord, op.siteField + 1).offset),
+            });
           }
-          emit({ op: "mov", dst: rax, src: mem(10, siteSlot.offset) });
           const word = (disp: number): Memory<64> => ({
             kind: "mem",
             width: 64,

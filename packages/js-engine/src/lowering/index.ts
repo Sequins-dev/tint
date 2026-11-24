@@ -105,6 +105,9 @@ interface ArgumentsForwarding {
 const scriptRegisterActuals = 3;
 /** In-place value slots of an ordinary object (js-runtime propertySlots). */
 export const propertySlots = 8;
+/** Inline own and inherited read entries per site (js-runtime
+ * propertyCacheEntries). */
+export const propertyCacheEntries = 4;
 /** The runtime functions generated property caches read and store values
  * with, and the slot accessors their portable bodies share. */
 export const propertyCacheNames: readonly string[] = [
@@ -134,6 +137,8 @@ export interface PropertyCacheBinding {
   readonly field?: string;
   readonly count?: number;
   readonly siteField?: string;
+  /** Property cache reads: the site's consecutive entries (default 1). */
+  readonly entries?: number;
 }
 /** Native record bindings of the property cache functions in the runtime's
  * objects module: inline shape compares with value loads (IR property-load)
@@ -156,6 +161,7 @@ export function propertyCacheBindings(
       field: "internalValue0",
       count: propertySlots,
       siteField: "ownShape",
+      entries: propertyCacheEntries,
     },
     {
       module,
@@ -164,6 +170,7 @@ export function propertyCacheBindings(
       field: "internalValue0",
       count: propertySlots,
       siteField: "inheritedShape",
+      entries: propertyCacheEntries,
     },
     { module, name: "absentPropertyValue", operation: "absent-test" },
     {

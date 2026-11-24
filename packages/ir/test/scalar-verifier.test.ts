@@ -5,6 +5,9 @@ import {
   instructionResult,
   type FunctionIR,
   type Block,
+  type ModuleIR,
+  type RecordField,
+  type RecordLayout,
 } from "@tint/ir/scalar";
 const span = { start: 0, end: 1 };
 test("function environment extraction requires a reference and returns an optional reference", () => {
@@ -2489,4 +2492,86 @@ test("a tail call is a script entry's returned last call", () => {
     !other.ok && other.error.message.includes("tail call"),
     JSON.stringify(other),
   );
+});
+
+test("property loads verify every entry of their site layout", () => {
+  // Object record 1 (shape, one value), epoch record 3, and site record 2
+  // with four inherited entries (shape, word index, holder) then the epoch
+  // and its record.
+  const siteFields: RecordField[] = [];
+  for (let entry = 0; entry < 4; entry++)
+    siteFields.push(
+      { offset: 8 + entry * 24, type: "reference", mutable: true },
+      { offset: 16 + entry * 24, type: "number", mutable: true },
+      { offset: 24 + entry * 24, type: "optional-reference", mutable: true },
+    );
+  siteFields.push(
+    { offset: 104, type: "number", mutable: true },
+    { offset: 112, type: "reference", mutable: false },
+  );
+  const records: RecordLayout[] = [
+    { byteLength: 16, fields: [] },
+    {
+      byteLength: 32,
+      fields: [
+        { offset: 8, type: "optional-reference", mutable: true },
+        { offset: 16, type: "general", mutable: true },
+      ],
+    },
+    { byteLength: 120, fields: siteFields },
+    { byteLength: 16, fields: [{ offset: 8, type: "number", mutable: true }] },
+  ];
+  const load = (
+    entries: number,
+    inherited: boolean,
+    siteField: number = 0,
+  ): ModuleIR => ({
+    records,
+    functions: [
+      {
+        id: 0,
+        name: "read",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["general", "reference"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              {
+                kind: "property-load",
+                id: 2,
+                object: 0,
+                site: 1,
+                record: 1,
+                field: 1,
+                count: 1,
+                siteRecord: 2,
+                siteField,
+                inherited,
+                entries,
+                epochRecord: 3,
+                epochField: 0,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+        ],
+      },
+    ],
+  });
+  assert.equal(verify(load(4, true)).ok, true);
+  assert.equal(verify(load(1, true, 9)).ok, true);
+  // Five entries run past the layout; zero is no cache.
+  assert.equal(verify(load(5, true)).ok, false);
+  assert.equal(verify(load(0, true)).ok, false);
+  // Own entries take two fields each: the third field is a holder, not a
+  // shape, so a two-entry own load over this layout is rejected.
+  assert.equal(verify(load(1, false)).ok, true);
+  assert.equal(verify(load(2, false)).ok, false);
 });

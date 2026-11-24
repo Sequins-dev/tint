@@ -139,22 +139,24 @@ export type Instruction = Span &
         /** A cached property value of a JavaScript object (js-runtime
          * property caches), or the absent value (which general-is "absent"
          * recognizes and no property holds) unless the general value
-         * `object` is object-tagged and the cache applies. Its payload is
-         * any record such a value can hold; its first word is compared with
-         * the shape in field `siteField` of the `siteRecord` record `site`;
-         * no record but a `record` object has a shape in that word. On a
-         * match the holder is the object, or for `inherited` the object in
-         * site field `siteField + 2` when site field `siteField + 3` equals
-         * field `epochField` of the `epochRecord` object in site field
-         * `siteField + 4`. That epoch advances with every structural change
-         * of an object used as a prototype, and a receiver shape implies
-         * its prototype, so the whole chain down to the holder (at any
-         * depth) is as it was when the runtime stored the entry. The
-         * result is the holder's general field whose word index is the raw
-         * binary64 bits of site field `siteField + 1`. The runtime writes
-         * only indices of fields `field..field+count-1` (consecutive
-         * general fields) with a shape under which they hold the
-         * property's value. */
+         * `object` is object-tagged and one of the site's `entries`
+         * consecutive entries applies. Its payload is any record such a
+         * value can hold; its first word is compared with each entry's
+         * shape; no record but a `record` object has a shape in that word.
+         * Entries start at field `siteField` of the `siteRecord` record
+         * `site`. An own entry is two fields, the shape and the word index,
+         * and its holder is the object. An inherited entry is three, the
+         * shape, the word index and the holder; inherited entries apply
+         * only while the site field after the last one equals field
+         * `epochField` of the `epochRecord` object in the field after it.
+         * That epoch advances with every structural change of an object
+         * used as a prototype, and a receiver shape implies its prototype,
+         * so the whole chain down to each holder (at any depth) is as it
+         * was when the runtime stored the entries. The result is the
+         * holder's general field whose word index is the raw binary64 bits
+         * of the entry's word index. The runtime writes only indices of
+         * fields `field..field+count-1` (consecutive general fields) with a
+         * shape under which they hold the property's value. */
         readonly kind: "property-load";
         readonly id: number;
         readonly object: number;
@@ -165,6 +167,8 @@ export type Instruction = Span &
         readonly siteRecord: number;
         readonly siteField: number;
         readonly inherited: boolean;
+        /** Entries at the site: 1 to 4. */
+        readonly entries: number;
         readonly epochRecord: number;
         readonly epochField: number;
       }

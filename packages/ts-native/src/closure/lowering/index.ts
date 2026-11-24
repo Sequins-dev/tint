@@ -225,6 +225,8 @@ export interface RecordBinding {
   /** Property cache operations: the site record's first cache field (see
    * the IR property-load and property-store). */
   readonly siteField?: string | undefined;
+  /** Property cache reads: the site's consecutive entries (default 1). */
+  readonly entries?: number | undefined;
 }
 export function lowerModuleEntries(
   checked: CheckedClosures,
@@ -4278,7 +4280,8 @@ function lowerEntries(
               : recordContracts.forType(siteType);
         const valueName = binding.field,
           siteName = binding.siteField,
-          count = binding.count;
+          count = binding.count,
+          entries = binding.entries ?? 1;
         const field =
             record === undefined || valueName === undefined
               ? undefined
@@ -4328,6 +4331,10 @@ function lowerEntries(
           count === undefined ||
           !Number.isSafeInteger(count) ||
           count < 1 ||
+          !Number.isSafeInteger(entries) ||
+          entries < 1 ||
+          entries > 4 ||
+          (store && entries !== 1) ||
           epochRecord === undefined ||
           epochField === undefined ||
           fn.closureEnvironment !== undefined ||
@@ -4355,6 +4362,7 @@ function lowerEntries(
               target,
               layout,
               binding.operation === "inherited-property-load",
+              entries,
               epochRecord,
               epochField,
               span,

@@ -293,6 +293,7 @@ test("an inherited property load retains and remaps its epoch record", () => {
                 siteRecord: 2,
                 siteField: 0,
                 inherited: true,
+                entries: 1,
                 epochRecord: 3,
                 epochField: 0,
                 ...s,

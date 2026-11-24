@@ -810,21 +810,44 @@ export function verify(
                   field.offset === siteShape.offset + 8 * index
                 );
               };
-              // An inherited load's holder entry and a store's transition
-              // entry both end with an epoch and the record holding its
-              // current value.
+              // A load's further entries follow at a stride of two fields
+              // (own) or three (inherited: with the holder). Inherited entries
+              // and a store's transition entry end with an epoch and the
+              // record holding its current value.
+              const entries = op.kind === "property-load" ? op.entries : 1;
+              const stride =
+                op.kind === "property-load" && op.inherited ? 3 : 2;
+              if (!natural(entries) || entries < 1 || entries > 4)
+                fail("TYPE", "property load requires one to four entries");
+              for (let entry = 1; entry < entries; entry++)
+                if (
+                  !pair(entry * stride, "reference") ||
+                  !pair(entry * stride + 1, "number")
+                )
+                  fail("TYPE", "property load entries require shape and value");
               const epoch =
                 module.records?.[op.epochRecord]?.fields[op.epochField];
-              const epochEntry =
+              const epochFields = (at: number): boolean =>
                 natural(op.epochRecord) &&
                 natural(op.epochField) &&
-                pair(2, "optional-reference") &&
-                pair(3, "number") &&
-                pair(4, "reference") &&
+                pair(at, "number") &&
+                pair(at + 1, "reference") &&
                 plainRecordField(epoch, "number");
-              if (op.kind === "property-load" && op.inherited && !epochEntry)
-                fail("TYPE", "inherited property load requires a holder entry");
-              if (op.kind === "property-store" && !epochEntry)
+              if (op.kind === "property-load" && op.inherited) {
+                let holders = true;
+                for (let entry = 0; entry < entries; entry++)
+                  if (!pair(entry * 3 + 2, "optional-reference"))
+                    holders = false;
+                if (!holders || !epochFields(entries * 3))
+                  fail(
+                    "TYPE",
+                    "inherited property load requires a holder entry",
+                  );
+              }
+              if (
+                op.kind === "property-store" &&
+                (!pair(2, "optional-reference") || !epochFields(3))
+              )
                 fail("TYPE", "property store requires a transition entry");
               for (let slot = 0; slot < op.count; slot++) {
                 const field = fields[op.field + slot];

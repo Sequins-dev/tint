@@ -9,8 +9,12 @@ import {
   defineOwnProperty,
   getOwnProperty,
   getProperty,
+  inlineEntryHolder,
+  inlineEntryShape,
+  inlineEntrySlot,
   inlineSlotBits,
   lookupCachedScriptProperty,
+  propertyCacheEntries,
   ownKeys,
   preventExtensions,
   propertyEpoch,
@@ -411,6 +415,62 @@ test("an inherited entry holds a deeper prototype until any prototype changes st
   );
   assert.equal(site.inheritedObject, middle);
   assert.equal(site.inheritedEpoch, propertyEpoch.value);
+});
+
+test("a site keeps one inline entry per receiver shape and rotates once full", () => {
+  const prototype = object(undefined);
+  // Five receiver shapes holding "x" at different slots.
+  const receivers = [
+    point(prototype, ["x"]),
+    point(prototype, ["a", "x"]),
+    point(prototype, ["b", "x"]),
+    point(prototype, ["c", "d", "x"]),
+    point(prototype, ["e", "x"]),
+  ];
+  const site = createScriptPropertyCache("x");
+  for (let index = 0; index < propertyCacheEntries; index++) {
+    lookupCachedScriptProperty(receivers[index]!, "x", site, false, stubs, 10);
+    assert.equal(
+      inlineEntryShape(site, false, index),
+      shape(receivers[index]!),
+    );
+  }
+  assert.equal(inlineEntrySlot(site, false, 0), inlineSlotBits(10));
+  assert.equal(inlineEntrySlot(site, false, 3), inlineSlotBits(14));
+  // A repeated shape refreshes its own entry.
+  lookupCachedScriptProperty(receivers[1]!, "x", site, false, stubs, 10);
+  assert.equal(inlineEntryShape(site, false, 1), shape(receivers[1]!));
+  // A fifth shape replaces the oldest entry, then the next.
+  lookupCachedScriptProperty(receivers[4]!, "x", site, false, stubs, 10);
+  assert.equal(inlineEntryShape(site, false, 0), shape(receivers[4]!));
+  assert.equal(inlineEntrySlot(site, false, 0), inlineSlotBits(12));
+  lookupCachedScriptProperty(receivers[0]!, "x", site, false, stubs, 10);
+  assert.equal(inlineEntryShape(site, false, 1), shape(receivers[0]!));
+});
+
+test("inherited entries share an epoch and clear when a newer one finds an entry", () => {
+  const base = object(undefined);
+  createDataProperty<ScriptPropertyKey, unknown>(base, "m", "base", hooks);
+  const other = object(undefined);
+  createDataProperty<ScriptPropertyKey, unknown>(other, "m", "other", hooks);
+  const first = point(base, ["x"]),
+    second = point(other, ["x"]);
+  const site = createScriptPropertyCache("m");
+  lookupCachedScriptProperty(first, "m", site, false, stubs, 10);
+  lookupCachedScriptProperty(second, "m", site, false, stubs, 10);
+  assert.equal(inlineEntryHolder(site, 0), base);
+  assert.equal(inlineEntryHolder(site, 1), other);
+  assert.equal(site.inheritedEpoch, propertyEpoch.value);
+  // A prototype's structural change makes both entries stale; the next
+  // entry found starts over under the new epoch.
+  createDataProperty<ScriptPropertyKey, unknown>(other, "n", 1, hooks);
+  assert.notEqual(site.inheritedEpoch, propertyEpoch.value);
+  lookupCachedScriptProperty(first, "m", site, false, stubs, 10);
+  assert.equal(site.inheritedEpoch, propertyEpoch.value);
+  assert.equal(inlineEntryShape(site, true, 0), shape(first));
+  assert.equal(inlineEntryHolder(site, 0), base);
+  assert.equal(inlineEntryShape(site, true, 1), unusedPropertyShape);
+  assert.equal(inlineEntryHolder(site, 1), undefined);
 });
 
 test("a site caches stores to writable properties and the transitions that add them", () => {
