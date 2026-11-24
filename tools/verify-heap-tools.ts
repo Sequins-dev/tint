@@ -5,7 +5,9 @@
  * adapters of the debugger-neutral tools/debugger/tint_heap.py:
  *
  *   descriptor   `tint-heap info` against the collector's own locals at a
- *                collection, and a complete start-bit walk of both spaces
+ *                collection, and a complete walk of both spaces: the old
+ *                prefix through its start bits, the bump-allocated nursery
+ *                (which keeps none) by object extents
  *   formatters   strings, lists, number lists, maps, sets, general values
  *                and records retyped from opaque object pointers
  *   snapshot     a dump at the fixture's allocation in `inspect` (a precise
@@ -194,8 +196,9 @@ try {
         string,
         { objects: number; bytes: number; top?: number }
       >;
-      // Small collections are serial and leave no gaps: the start bits
-      // cover every allocated byte of both spaces.
+      // Small collections are serial and leave no gaps: the old prefix's
+      // start bits cover every allocated byte, and the nursery's extents
+      // chain from its base exactly to its top.
       assert.equal(walk.old?.bytes, seen.oldTop, "old walk");
       assert.equal(walk.young?.bytes, seen.youngTop, "young walk");
       assert.ok((walk.young?.objects ?? 0) > 1000);
@@ -207,9 +210,11 @@ try {
     };
     assert.deepEqual(
       [first.version, first.headerBytes, first.granule],
-      [2, 8, 8],
+      [3, 8, 8],
     );
-    console.log("descriptor: state and start-bit walks match the collector");
+    console.log(
+      "descriptor: the old start-bit walk and the young extent walk match the collector",
+    );
   }
 
   if (run("formatters")) {

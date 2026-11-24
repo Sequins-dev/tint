@@ -31,9 +31,10 @@ export const heapDebugSampleThunkSymbol = "__tint_allocation_sample_thunk";
 /** "TINTHEAP" as two little-endian words. */
 export const heapDebugMagicLow = 0x544e4954;
 export const heapDebugMagicHigh = 0x50414548;
-/** Version 2: one-word headers (marker and kind flags in one word), the
- * 8-byte granule, and per-kind minimum element counts. */
-export const heapDebugVersion = 2;
+/** Version 3: one-word headers (marker and kind flags in one word), the
+ * 8-byte granule, per-kind minimum element counts, and a nursery without
+ * start bits (walked by object extents; see the state block below). */
+export const heapDebugVersion = 3;
 
 // Header and live words (u64 unless noted).
 export const heapDebugMagicOffset = 0;
@@ -93,14 +94,15 @@ export const heapDebugContextManagedBytesOffset = 104;
 export const heapDebugContextStateOffset = 108;
 /** u32 word indices into the state block (generational collector): young
  * top, young limit, young base (offset of the nursery from the managed
- * base), old top, the u64 address of the young object-start bits (bit i:
- * a granule-aligned object starts at young base + i * granule; the active
- * old prefix's bits immediately precede them, one bit per granule from the
- * old base = young base - old capacity), old capacity, the u64 address of
- * the dirty-card bitmap (one bit per granule of the old prefix), and the
- * remembered-queue count. Objects occupy [old base, old base + old top) and
- * [young base, young base + young top); both are found through the start
- * bits, since parallel evacuation leaves unformatted gaps. */
+ * base), old top, the u64 address of the young object-start bits (the old
+ * prefix's bits immediately precede it: bit i says a granule-aligned object
+ * starts at old base + i * granule, old base = young base - old capacity),
+ * old capacity, the u64 address of the dirty-card bitmap (one bit per
+ * granule of the old prefix), and the remembered-queue count. Objects occupy
+ * [old base, old base + old top), found through the start bits since
+ * parallel evacuation leaves unformatted gaps, and [young base, young base +
+ * young top), which is bump-allocated without gaps and keeps no start bits:
+ * it is walked object by object from its base by each object's extent. */
 export const heapDebugStateYoungTopOffset = 112;
 export const heapDebugStateYoungLimitOffset = 116;
 export const heapDebugStateYoungBaseOffset = 120;

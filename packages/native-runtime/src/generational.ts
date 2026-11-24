@@ -1,10 +1,13 @@
-import { nativeAllocatorShutdownRequest } from "@tint/abi/host";
+import {
+  nativeAllocatorShutdownRequest,
+  nativeGenerationalStateWords,
+} from "@tint/abi/host";
 import { initializeExternalMemory } from "./external-memory.ts";
 import {
   clearBytes,
-  clearWords,
   createCheneyCollector,
   createCompactor,
+  recordObjectStarts,
 } from "./tracing/cheney.ts";
 import { createParallelEvacuator } from "./tracing/parallel.ts";
 import { cgroupProcessorLimit } from "./processors.ts";
@@ -109,10 +112,15 @@ export function initializeGenerationalRuntime(
     youngBits = bits.subarray(oldCapacity / 256),
     // One dirty bit per granule, eight per 64-byte card byte.
     dirty = marks.subarray(0, Math.ceil(oldCapacity / 64)),
-    allocation = new Uint32Array(16);
+    // The allocation/barrier block, ending with the nursery's absolute address
+    // (words 16/17) for the allocation fast path.
+    allocation = new Uint32Array(nativeGenerationalStateWords);
   allocation[1] = youngCapacity;
   allocation[2] = oldCapacity;
   allocation[7] = oldCapacity;
+  const nursery = managedBase + oldCapacity;
+  allocation[16] = nursery % 4294967296;
+  allocation[17] = Math.floor(nursery / 4294967296);
   let collecting = false;
   /** The space's base: majors compact in place, so the second half of the
    * managed region (a former copy reserve) stays untouched. */
@@ -251,7 +259,6 @@ export function initializeGenerationalRuntime(
             base,
             rememberedObjects,
           );
-    clearWords(youngBits, 0, Math.ceil(youngTop / 256));
     allocation[3] = oldTop + bytes;
     allocation[0] = 0;
     clearRemembered();
@@ -279,16 +286,27 @@ export function initializeGenerationalRuntime(
     // residency is the space's fill plus metadata.
     const base = activeBase(),
       young = allocation[0] ?? 0,
-      used = young > 0 ? oldCapacity + young : (allocation[3] ?? 0),
-      bytes = compactor.collect(
-        base,
-        used,
-        currentRootHead(),
+      used = young > 0 ? oldCapacity + young : (allocation[3] ?? 0);
+    // The nursery keeps no start bits (it is bump-allocated without gaps); a
+    // compaction that covers it, because its survivors could not fit the old
+    // prefix, records them by walking it. Compaction clears every start bit
+    // it passes, so the nursery's are zero again afterwards.
+    if (young > 0)
+      recordObjectStarts(
         bits,
-        live,
-        chunkOffsets,
-        pending,
+        base,
+        base + oldCapacity,
+        base + oldCapacity + young,
       );
+    const bytes = compactor.collect(
+      base,
+      used,
+      currentRootHead(),
+      bits,
+      live,
+      chunkOffsets,
+      pending,
+    );
     allocation[3] = bytes;
     if (bytes > oldCapacity) exhausted = true;
     // Nothing above the packed prefix is live: return those pages, up to
@@ -340,9 +358,7 @@ export function initializeGenerationalRuntime(
       throw managedHeapExhausted;
     const top = allocation[0] ?? 0;
     if (size > youngCapacity - top) throw managedHeapExhausted;
-    const unit = (oldCapacity + top) / 8,
-      word = unit >>> 5;
-    bits[word] = (bits[word] ?? 0) | (1 << (unit & 31));
+    // Nursery objects keep no start bits (see recordObjectStarts).
     allocation[0] = top + size;
     return oldCapacity + top;
   };

@@ -175,7 +175,7 @@ export class HeapDump {
     ) as DumpMeta;
     if (this.meta.format !== "tint-heap-dump" || this.meta.formatVersion !== 2)
       throw Error("unsupported heap dump format");
-    if (this.meta.descriptor.version !== 2)
+    if (this.meta.descriptor.version !== 3)
       throw Error(
         "heap descriptor version " +
           this.meta.descriptor.version +
