@@ -3874,6 +3874,58 @@ function emitModuleForms(
               nonNegativeValues[valueIds.intern(op.id)] = 1;
           }
         }
+        // Truncated sums: an imul whose only use is a `+` of an integer
+        // addend (see truncatableAddend), where that sum's every use reads
+        // only its low 32 bits (bitwise operators and imul), as in
+        // `(h * 31 + u) | 0`. The sum is then a 32-bit add and the product
+        // needs no sign extension: low bits of exact sums and products
+        // depend only on low bits. The facts are use-based and block-local
+        // (values are block-local); the addend is checked at the product.
+        const soleConsumers: (IRInstruction | undefined)[] = [],
+          useCounts = new Uint32Array(resultBound),
+          low32UseCounts = new Uint32Array(resultBound),
+          truncatedSums = new Uint8Array(resultBound);
+        for (const block of fn.blocks) {
+          if (block === undefined) throw "truncation block invariant";
+          visitTerminatorOperands(block.terminator, (id) => {
+            const index = valueIds.intern(id);
+            useCounts[index] = (useCounts[index] ?? 0) + 1;
+          });
+          for (const op of block.instructions) {
+            if (op === undefined) throw "truncation instruction invariant";
+            const low32 =
+              (op.kind === "binary" &&
+                ["|", "&", "^", "<<", ">>", ">>>", "imul"].includes(
+                  op.operator,
+                )) ||
+              (op.kind === "unary" && op.operator === "~");
+            visitInstructionOperands(op, (id) => {
+              const index = valueIds.intern(id);
+              useCounts[index] = (useCounts[index] ?? 0) + 1;
+              if (low32)
+                low32UseCounts[index] = (low32UseCounts[index] ?? 0) + 1;
+              soleConsumers[index] = op;
+            });
+          }
+        }
+        /** Whether every use of `id` reads only its low 32 bits. */
+        function low32Only(id: number): boolean {
+          const index = valueIds.intern(id),
+            count = useCounts[index] ?? 0;
+          return count > 0 && (low32UseCounts[index] ?? 0) === count;
+        }
+        /** The `+` that is the only use of `id`, if any. */
+        function soleSum(id: number): IRInstruction | undefined {
+          const index = valueIds.intern(id),
+            consumer = soleConsumers[index];
+          return (useCounts[index] ?? 0) === 1 &&
+            consumer !== undefined &&
+            consumer.kind === "binary" &&
+            consumer.operator === "+" &&
+            low32Only(consumer.id)
+            ? consumer
+            : undefined;
+        }
         const foldedConstants = new Uint8Array(resultBound),
           // Numeric constants 0 or -0: `x | 0` and `x ^ 0` are ToInt32(x).
           zeroConstants = new Uint8Array(resultBound),
@@ -6173,6 +6225,24 @@ function emitModuleForms(
             if (wordKinds[index] === 3) imm(rt, wordConstants[index] ?? 0);
             else emit({ op: "fcvtzs-x-d", rd: rt, rn: floatOperand(id, 0) });
           }
+        }
+        /** Whether `id` is an integer of magnitude at most 2^53 - 2^31,
+         * so its double sum with any int32 is exact and the sum's low 32
+         * bits are those of the addends' low bits (truncatedSums): a 32-bit
+         * integer, a numeric constant (also one the block emits later) or
+         * a bounded integer. Int64 storage alone does not bound it. */
+        function truncatableAddend(id: number): boolean {
+          const index = valueIds.intern(id),
+            kind = wordKinds[index] ?? 0;
+          if (kind === 2 || kind === 3) return true;
+          const constant = numberConstant(id),
+            limit = 9007197107257344;
+          if (constant !== undefined)
+            return (
+              Number.isSafeInteger(constant) && Math.abs(constant) <= limit
+            );
+          const magnitude = kind === 6 ? wordMagnitude(index) : -1;
+          return magnitude >= 0 && magnitude <= limit;
         }
         /** Proven integral without NaN: int64 storage, a 32-bit integer or
          * exact uint32 constant, or a bounded safe integer. */
@@ -14867,7 +14937,48 @@ function emitModuleForms(
                   saveRaw(9, op.id);
                   break;
                 }
-                if (integerArithmetic(op) && immediate !== undefined) {
+                if (truncatedSums[valueIds.intern(op.id)] === 1) {
+                  // A product's only use, read only in its low word: a
+                  // 32-bit add (the product was left unextended), of an add
+                  // immediate when the other addend is one.
+                  if (immediate !== undefined) {
+                    const constant = deferredIntegers.get(immediate);
+                    if (constant === undefined) throw "immediate invariant";
+                    const source = intRegister(
+                        immediate === op.right ? op.left : op.right,
+                        9,
+                      ),
+                      target = intTarget(op.id, 9),
+                      magnitude = Math.abs(constant),
+                      shifted = magnitude > 4095;
+                    emit({
+                      op: constant < 0 ? "sub-imm" : "add-imm",
+                      width: 32,
+                      rd: target,
+                      rn: source,
+                      immediate: shifted ? magnitude / 4096 : magnitude,
+                      shift: shifted ? 12 : 0,
+                      setFlags: false,
+                    });
+                    saveRaw(target, op.id);
+                  } else {
+                    const left = intRegister(op.left, 9),
+                      right = intRegister(op.right, 10),
+                      target = intTarget(op.id, 9);
+                    emit({
+                      op: "add-reg",
+                      width: 32,
+                      rd: target,
+                      rn: left,
+                      rm: right,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
+                    saveRaw(target, op.id);
+                  }
+                  markInteger(op.id);
+                } else if (integerArithmetic(op) && immediate !== undefined) {
                   // An immediate operand: an add/sub immediate, or a
                   // multiplier 2^k (LSL) or 2^k + 1 (ADD shifted).
                   const constant = deferredIntegers.get(immediate);
@@ -15391,6 +15502,22 @@ function emitModuleForms(
                                       rm: right,
                                     },
                     );
+                  }
+                  const sum =
+                    op.operator === "imul" &&
+                    !storedAsWord(op.id) &&
+                    wantsInteger(op.id)
+                      ? soleSum(op.id)
+                      : undefined;
+                  if (
+                    sum !== undefined &&
+                    sum.kind === "binary" &&
+                    wantsInteger(sum.id) &&
+                    truncatableAddend(sum.left === op.id ? sum.right : sum.left)
+                  ) {
+                    // Its sum reads only its low word (truncatedSums).
+                    truncatedSums[valueIds.intern(sum.id)] = 1;
+                    extended = true;
                   }
                   if (storedAsWord(op.id)) saveRaw(target, op.id);
                   else if (wantsInteger(op.id)) {
