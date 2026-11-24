@@ -244,6 +244,44 @@ export interface BuildRequest extends ModuleRequest {
   readonly rootCapacity: number;
   readonly stackBytes: number;
   readonly report: (stage: string) => void;
+  /** Shares the program-independent runtime units between builds: called
+   * with the inputs that determine them and a function that compiles them,
+   * it must return units compiled from equal inputs. Without it, every build
+   * compiles its own. */
+  readonly runtimeUnits?: (
+    inputs: RuntimeUnitInputs,
+    compile: () => CompiledRuntimeUnitsResult,
+  ) => CompiledRuntimeUnitsResult;
+}
+/** The allocator and runtime of a hosted build. They are compiled from their
+ * own sources and the build options in `RuntimeUnitInputs.key`, never from
+ * the program, so builds that agree on those inputs can share them. */
+export interface CompiledRuntimeUnits {
+  readonly allocatorSource: SourceModule;
+  readonly allocator: NativeModule;
+  readonly allocatorInitializer: number;
+  readonly allocate: number;
+  readonly environmentBytes: number;
+  readonly runtime: CompiledProgram;
+  readonly runtimeEntry: number;
+}
+export type CompiledRuntimeUnitsResult =
+  | { readonly ok: true; readonly value: CompiledRuntimeUnits }
+  | {
+      readonly ok: false;
+      readonly error: {
+        readonly stage: string;
+        readonly message: string;
+        readonly module?: string;
+      };
+    };
+/** Everything the runtime units are compiled from. */
+export interface RuntimeUnitInputs {
+  /** The target and the build options the units read, encoded as one string. */
+  readonly key: string;
+  /** The allocator module and the runtime's import closure, the only source
+   * modules the units are compiled from. */
+  readonly modules: readonly SourceModule[];
 }
 export type BuildResult =
   | { readonly ok: true; readonly value: Uint8Array }
@@ -922,10 +960,16 @@ function parallelCollectorBindings(request: BuildRequest): NativeHostBinding[] {
   return collectorBindings;
 }
 
-/** The standalone collector links only its own dependency graph. */
+/** The standalone collector links only its own dependency graph: the runtime
+ * module's and memory module's import closure, in request order. */
 function runtimeModules(request: BuildRequest): readonly SourceModule[] {
   const loader = request.moduleLoader;
-  if (loader === undefined) return request.modules;
+  const available = new Map<string, SourceModule>();
+  if (loader === undefined)
+    for (const source of request.modules) {
+      if (source === undefined) throw "runtime module invariant";
+      available.set(source.id, source);
+    }
   const pending = [request.runtimeModule, request.memoryModule];
   const seen = new Set<string>();
   const modules = new Map<string, SourceModule>();
@@ -934,7 +978,8 @@ function runtimeModules(request: BuildRequest): readonly SourceModule[] {
     if (id === undefined) throw "runtime module invariant";
     if (seen.has(id)) continue;
     seen.add(id);
-    const source = loader.load([id])[0];
+    const source =
+      loader === undefined ? available.get(id) : loader.load([id])[0];
     if (source === undefined) continue;
     modules.set(id, source);
     for (const declaration of source.module.imports) {
@@ -944,11 +989,17 @@ function runtimeModules(request: BuildRequest): readonly SourceModule[] {
     }
   }
   const ordered: SourceModule[] = [];
-  for (const id of loader.ids) {
-    if (id === undefined) throw "runtime module ID invariant";
-    const source = modules.get(id);
-    if (source !== undefined) ordered.push(source);
-  }
+  if (loader === undefined)
+    for (const source of request.modules) {
+      if (source === undefined) throw "runtime module invariant";
+      if (modules.get(source.id) === source) ordered.push(source);
+    }
+  else
+    for (const id of loader.ids) {
+      if (id === undefined) throw "runtime module ID invariant";
+      const source = modules.get(id);
+      if (source !== undefined) ordered.push(source);
+    }
   return ordered;
 }
 function movingWorkspaceError(
@@ -1021,131 +1072,19 @@ export function compileMacOSProgram(
     const invalid = movingWorkspaceError(request, generational);
     if (invalid !== undefined) return compileFailure("memory-policy", invalid);
   }
-  const hostABI = target.hostABI;
-  request.report("allocator");
-  const source = requestModules(request, [request.allocatorModule])[0];
-  if (source === undefined)
-    return compileFailure("allocator", "allocator source is missing");
-  const checked = checkClosureModule(source.module);
-  if (!checked.ok) return compileFailure("allocator", checked.error.message);
-  const declaration = checked.value.module.statements.find(
-    (statement) =>
-      statement !== undefined &&
-      statement.kind === "function" &&
-      statement.name === "createRegionAllocator",
-  );
-  if (declaration === undefined)
-    return compileFailure("allocator", "allocator factory is missing");
-  const fn = checked.value.bindings.functions.find(
-    (item) => item !== undefined && item.node === declaration,
-  );
-  if (fn === undefined)
-    return compileFailure("allocator", "allocator factory binding is missing");
-  const planned = planScalarClosures(checked.value, nativeTargetLayout, 4096);
-  if (!planned.ok) return compileFailure("allocator", planned.error);
-  const scope = fn.scope;
-  const environment = planned.value.environments.find(
-    (item) => item !== undefined && item.scope === scope,
-  );
-  if (environment === undefined)
-    return compileFailure("allocator", "allocator environment is missing");
-  const lowered = lowerClosureFactory(checked.value, fn.id, environment);
-  if (!lowered.ok) return compileFailure("allocator", lowered.error);
-  const allocate = lowered.value.exports.find(
-    (item) => item !== undefined && item.name === "allocate",
-  );
-  if (allocate === undefined)
-    return compileFailure("allocator", "allocation export is missing");
-  const allocator = emitModule(
-    request.optimization === "none"
-      ? lowered.value.module
-      : optimizeModule(lowered.value.module, unboundedWork).module,
-    {
-      maxByteLength: Number.MAX_SAFE_INTEGER,
-      unboundedAnalysis: true,
-      hostABI,
-      debugSpans: request.debugSymbols === true || request.stackTraces === true,
-      throwTraces: request.stackTraces === true,
-      pageAlignedCode: true,
-      forceFarReach: request.forceFarReach === true ? true : undefined,
-    },
-  );
-  if (!allocator.ok)
-    return compileFailure("allocator", allocator.error.message);
-  request.report("runtime");
-  const collectorBindings = parallelCollectorBindings(request);
-  const runtimeBindings: NativeHostBinding[] = [
-    {
-      module: request.memoryModule,
-      name: "configureExternalMemory",
-      operation: "external-memory-configure",
-    },
-    {
-      module: request.memoryModule,
-      name: "configureGenerationalAllocation",
-      operation: "generational-state",
-    },
-    {
-      module: request.memoryModule,
-      name: "configureLinearAllocation",
-      operation: "allocation-state",
-    },
-    {
-      module: request.memoryModule,
-      name: "readMemoryWord",
-      operation: "memory-read-word",
-    },
-    {
-      module: request.memoryModule,
-      name: "currentRootHead",
-      operation: "root-head",
-    },
-    {
-      module: request.memoryModule,
-      name: "engineRangeError",
-      operation: "engine-range-error",
-    },
-    {
-      module: request.memoryModule,
-      name: "writeMemoryWord",
-      operation: "memory-write-word",
-    },
-    {
-      module: request.memoryModule,
-      name: "moveMemory",
-      operation: "memory-move",
-    },
-  ];
-  for (const binding of collectorBindings) {
-    if (binding === undefined) throw "collector binding invariant";
-    runtimeBindings.push(binding);
-  }
-  const runtime = compileNativeProgram(
-    {
-      pageAlignedCode: true,
-      forceFarReach: request.forceFarReach === true,
-      optimization: request.optimization ?? "basic",
-      debugSymbols: request.debugSymbols ?? false,
-      stackTraces: request.stackTraces === true,
-      symbols: request.signposts === true,
-      maxSpecializations: request.maxSpecializations ?? 4096,
-      modules: runtimeModules(request),
-      entry: request.runtimeModule,
-      exports: [request.runtimeEntry ?? "initializeRuntime"],
-      start: request.runtimeEntry ?? "initializeRuntime",
-      runtimes: [{ module: request.memoryModule, namespace: "native-memory" }],
-      hostBindings: runtimeBindings,
-    },
-    target,
-  );
-  if (!runtime.ok)
-    return compileFailure(
-      "runtime " + runtime.error.stage,
-      runtime.error.message,
-    );
-  const runtimeEntry = runtime.value.entry;
-  if (runtimeEntry === undefined)
-    return compileFailure("runtime", "runtime entry is missing");
+  const share = request.runtimeUnits;
+  const units =
+    share === undefined
+      ? compileRuntimeUnits(request, target)
+      : share(
+          {
+            key: runtimeUnitKey(request, target),
+            modules: runtimeUnitModules(request),
+          },
+          () => compileRuntimeUnits(request, target),
+        );
+  if (!units.ok) return { ok: false, error: units.error };
+  const runtimeUnits = units.value;
   request.report("program");
   const program = compileNativeProgram(
     {
@@ -1221,6 +1160,147 @@ export function compileMacOSProgram(
   return {
     ok: true,
     value: {
+      allocatorSource: runtimeUnits.allocatorSource,
+      allocator: runtimeUnits.allocator,
+      allocatorInitializer: runtimeUnits.allocatorInitializer,
+      allocate: runtimeUnits.allocate,
+      environmentBytes: runtimeUnits.environmentBytes,
+      runtime: runtimeUnits.runtime,
+      runtimeEntry: runtimeUnits.runtimeEntry,
+      program: program.value,
+      programEntry,
+    },
+  };
+}
+/** Compile the allocator and runtime (see CompiledRuntimeUnits). */
+function compileRuntimeUnits(
+  request: BuildRequest,
+  target: AArch64Target,
+): CompiledRuntimeUnitsResult {
+  const hostABI = target.hostABI;
+  request.report("allocator");
+  const source = requestModules(request, [request.allocatorModule])[0];
+  if (source === undefined)
+    return unitFailure("allocator", "allocator source is missing");
+  const checked = checkClosureModule(source.module);
+  if (!checked.ok) return unitFailure("allocator", checked.error.message);
+  const declaration = checked.value.module.statements.find(
+    (statement) =>
+      statement !== undefined &&
+      statement.kind === "function" &&
+      statement.name === "createRegionAllocator",
+  );
+  if (declaration === undefined)
+    return unitFailure("allocator", "allocator factory is missing");
+  const fn = checked.value.bindings.functions.find(
+    (item) => item !== undefined && item.node === declaration,
+  );
+  if (fn === undefined)
+    return unitFailure("allocator", "allocator factory binding is missing");
+  const planned = planScalarClosures(checked.value, nativeTargetLayout, 4096);
+  if (!planned.ok) return unitFailure("allocator", planned.error);
+  const scope = fn.scope;
+  const environment = planned.value.environments.find(
+    (item) => item !== undefined && item.scope === scope,
+  );
+  if (environment === undefined)
+    return unitFailure("allocator", "allocator environment is missing");
+  const lowered = lowerClosureFactory(checked.value, fn.id, environment);
+  if (!lowered.ok) return unitFailure("allocator", lowered.error);
+  const allocate = lowered.value.exports.find(
+    (item) => item !== undefined && item.name === "allocate",
+  );
+  if (allocate === undefined)
+    return unitFailure("allocator", "allocation export is missing");
+  const allocator = emitModule(
+    request.optimization === "none"
+      ? lowered.value.module
+      : optimizeModule(lowered.value.module, unboundedWork).module,
+    {
+      maxByteLength: Number.MAX_SAFE_INTEGER,
+      unboundedAnalysis: true,
+      hostABI,
+      debugSpans: request.debugSymbols === true || request.stackTraces === true,
+      throwTraces: request.stackTraces === true,
+      pageAlignedCode: true,
+      forceFarReach: request.forceFarReach === true ? true : undefined,
+    },
+  );
+  if (!allocator.ok) return unitFailure("allocator", allocator.error.message);
+  request.report("runtime");
+  const collectorBindings = parallelCollectorBindings(request);
+  const runtimeBindings: NativeHostBinding[] = [
+    {
+      module: request.memoryModule,
+      name: "configureExternalMemory",
+      operation: "external-memory-configure",
+    },
+    {
+      module: request.memoryModule,
+      name: "configureGenerationalAllocation",
+      operation: "generational-state",
+    },
+    {
+      module: request.memoryModule,
+      name: "configureLinearAllocation",
+      operation: "allocation-state",
+    },
+    {
+      module: request.memoryModule,
+      name: "readMemoryWord",
+      operation: "memory-read-word",
+    },
+    {
+      module: request.memoryModule,
+      name: "currentRootHead",
+      operation: "root-head",
+    },
+    {
+      module: request.memoryModule,
+      name: "engineRangeError",
+      operation: "engine-range-error",
+    },
+    {
+      module: request.memoryModule,
+      name: "writeMemoryWord",
+      operation: "memory-write-word",
+    },
+    {
+      module: request.memoryModule,
+      name: "moveMemory",
+      operation: "memory-move",
+    },
+  ];
+  for (const binding of collectorBindings) {
+    if (binding === undefined) throw "collector binding invariant";
+    runtimeBindings.push(binding);
+  }
+  const runtime = compileNativeProgram(
+    {
+      pageAlignedCode: true,
+      forceFarReach: request.forceFarReach === true,
+      optimization: request.optimization ?? "basic",
+      debugSymbols: request.debugSymbols ?? false,
+      stackTraces: request.stackTraces === true,
+      symbols: request.signposts === true,
+      maxSpecializations: request.maxSpecializations ?? 4096,
+      modules: runtimeModules(request),
+      entry: request.runtimeModule,
+      exports: [request.runtimeEntry ?? "initializeRuntime"],
+      start: request.runtimeEntry ?? "initializeRuntime",
+      runtimes: [{ module: request.memoryModule, namespace: "native-memory" }],
+      hostBindings: runtimeBindings,
+    },
+    target,
+  );
+  if (!runtime.ok)
+    return unitFailure("runtime " + runtime.error.stage, runtime.error.message);
+  const runtimeEntry = runtime.value.entry;
+  if (runtimeEntry === undefined)
+    return unitFailure("runtime", "runtime entry is missing");
+  return {
+    ok: true,
+    value: {
       allocatorSource: source,
       allocator: allocator.value,
       allocatorInitializer: lowered.value.initializer,
@@ -1228,10 +1308,51 @@ export function compileMacOSProgram(
       environmentBytes: environment.layout.size,
       runtime: runtime.value,
       runtimeEntry,
-      program: program.value,
-      programEntry,
     },
   };
+}
+function unitFailure(
+  stage: string,
+  message: string,
+): CompiledRuntimeUnitsResult {
+  return { ok: false, error: { stage, message } };
+}
+/** The target and build options the runtime units read (see compileRuntimeUnits). */
+function runtimeUnitKey(request: BuildRequest, target: AArch64Target): string {
+  return (
+    target.name +
+    "\n" +
+    request.allocatorModule +
+    "\n" +
+    request.runtimeModule +
+    "\n" +
+    request.memoryModule +
+    "\n" +
+    (request.runtimeEntry ?? "initializeRuntime") +
+    "\n" +
+    (request.optimization ?? "basic") +
+    "\n" +
+    (request.debugSymbols === true ? "debug-symbols" : "") +
+    "\n" +
+    (request.stackTraces === true ? "stack-traces" : "") +
+    "\n" +
+    (request.signposts === true ? "signposts" : "") +
+    "\n" +
+    (request.forceFarReach === true ? "far-reach" : "") +
+    "\n" +
+    String(request.maxSpecializations ?? 4096)
+  );
+}
+/** The source modules the runtime units are compiled from. */
+function runtimeUnitModules(request: BuildRequest): readonly SourceModule[] {
+  const modules: SourceModule[] = [];
+  const allocator = requestModules(request, [request.allocatorModule])[0];
+  if (allocator !== undefined) modules.push(allocator);
+  for (const source of runtimeModules(request)) {
+    if (source === undefined) throw "runtime unit module invariant";
+    modules.push(source);
+  }
+  return modules;
 }
 /** Link the request's native services into a compiled program and compose
  * the signed executable. */

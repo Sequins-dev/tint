@@ -44,13 +44,20 @@ to override the default of three workers for the macOS gate. Standalone
 `pnpm check:exclusive` and the macOS CI runner default to two. The macOS gate prints the effective limit and records
 it in `check-native-concurrency.txt`. Fixture builds use the memory semaphore
 and release the slot before taking the exclusive lock for admission and
-execution. `native-images.jsonl` records path, bytes, build time, memory and
-exclusive waits, admission and execution. Phase start records survive a
+execution. `native-images.jsonl` records path, bytes, image SHA-256, build
+time, memory and exclusive waits, admission and execution. Phase start records survive a
 cancelled batch. The gate prints distinct built, admitted and launch-attempted
 path counts. Hosted callers can set `TINT_BUILD_ONLY=defer-admission` to
 produce an image without LLDB admission. `TINT_BUILD_ONLY=1` still admits
 Darwin images before returning. Test262 smokes also separate building from
 admission and execution.
+
+Hosted fixture builds in one test process share the parsed workspace modules
+and the compiled allocator and runtime while the workspace sources are
+unchanged. Neither depends on the fixture program (`BuildRequest.runtimeUnits`
+in `packages/compiler/src/build.ts`), and images are byte-identical to builds
+that compile them again (`tools/fixture-cache.test.ts`). Set
+`TINT_FIXTURE_CACHE=0` to start every build from scratch.
 
 Each macOS native bootstrap stage takes the exclusive lock for its LLDB
 invocation. LLDB attaches and debugserver launches can fail under concurrent
@@ -78,8 +85,7 @@ The macOS gate also watches launch-lock holders for 120 seconds of no
 progress. It observes the identified inferior's accumulated CPU time, so a
 stopped or blocked inferior can time out even while its profiler is busy.
 If the inferior is still launching, it watches the debugger, then falls
-back to the command tree for jobs without a debugger. An idle stall exits
-125. An active deadline exits 124. The watchdog snapshots process
+back to the command tree for jobs without a debugger. An idle stall exits 125. An active deadline exits 124. The watchdog snapshots process
 state and CPU time, attempts a bounded five-second `sample`, and kills the
 command tree, including the debugger and inferior. The gate records the
 step in `stalls.tsv`, `stall-<step>.txt`, and the final summary.
