@@ -3585,9 +3585,12 @@ function emitModuleForms(
         /** Results whose zero sign an accepted integer use still observes:
          * optional payloads, Float64Array element values, the operands of
          * +, - and * results that may be -0 and are so observed, and the
-         * dividends of % results so observed. Such results are recorded in
-         * zeroSignResults. */
-        function findZeroSignResults(): Uint8Array {
+         * dividends of % results so observed (`results`, recorded in
+         * zeroSignResults); and results that are never -0 (`signless`). */
+        function findZeroSignResults(): {
+          readonly results: Uint8Array;
+          readonly signless: Uint8Array;
+        } {
           const signs = new Uint8Array(resultBound),
             results = new Uint8Array(resultBound),
             // Arrays proven integer-typed (their elements store no -0).
@@ -3688,7 +3691,7 @@ function emitModuleForms(
               }
             }
           }
-          return results;
+          return { results, signless };
         }
         function findIntegerUses(): Uint8Array {
           const uses = new Uint8Array(resultBound),
@@ -3742,12 +3745,13 @@ function emitModuleForms(
                   (listReadShapes(op.target) !== undefined ||
                     (op.id === undefined &&
                       writeShapes[op.target] !== undefined)));
-              if (op.kind === "binary" && op.operator === "%")
+              if (op.kind === "binary" && op.operator === "%") {
                 // An int64 divisor divides directly (see the % case). The
                 // dividend's zero sign shows in the remainder (-0 % 3 is
-                // -0), so it is never accepted.
-                rejected[valueIds.intern(op.left)] = 1;
-              else if (!accepts)
+                // -0), so only a dividend that is never -0 is accepted.
+                if (signlessResults[valueIds.intern(op.left)] !== 1)
+                  rejected[valueIds.intern(op.left)] = 1;
+              } else if (!accepts)
                 visitInstructionOperands(op, (id) => {
                   rejected[valueIds.intern(id)] = 1;
                 });
@@ -3762,7 +3766,10 @@ function emitModuleForms(
         // +, - and * results that may be -0 where the sign is observed. Int64
         // arithmetic turns -0 into +0, so these keep double arithmetic (see
         // the +/-/* case).
-        const zeroSignResults = findZeroSignResults();
+        const zeroSignFacts = findZeroSignResults(),
+          zeroSignResults = zeroSignFacts.results,
+          // Read by findIntegerUses, declared above.
+          signlessResults: Uint8Array = zeroSignFacts.signless;
         let anyIntegerSlot = false;
         for (let slot = 0; slot < fn.slots.length; slot++)
           if (integerSlots[slot] === 1) anyIntegerSlot = true;

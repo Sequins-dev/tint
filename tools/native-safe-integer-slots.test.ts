@@ -3,8 +3,9 @@
 // whose loads are bounded integers. Products beyond 32 bits, negative
 // ones, values at 2^53 - 1, loop-invariant products moved to a preheader,
 // and every kind of use (int64 arithmetic and remainders, comparisons,
-// division, formatting, ToInt32, negation of zero), next to slots that may
-// exceed 2^53 or hold -0 and so stay doubles, against Node.
+// division, formatting, ToInt32, negation of zero, remainder dividends that
+// may or may not be -0), next to slots that may exceed 2^53 or hold -0 and
+// so stay doubles, against Node.
 import { stripTypeScriptTypes } from "node:module";
 import test from "node:test";
 
@@ -44,6 +45,13 @@ function kernel(): number {
     checksum = mix(checksum, (over + 1) % 1000003);
     checksum = mix(checksum, over / 4503599627370496);
     checksum = mix(checksum, 1 / signed === -Infinity ? 9 : signed % 4093);
+    // Remainder dividends: one that may be -0 keeps its sign; signless
+    // ones divide as int64s, a zero remainder taking the dividend's sign.
+    const zeroProduct = (round & 1) * -(round & 6);
+    checksum = mix(checksum, 1 / (zeroProduct % 7) === -Infinity ? 10 : 11);
+    const negativeSum = 0 - (round & 3);
+    checksum = mix(checksum, 1 / ((negativeSum * 5) % 5) === -Infinity ? 12 : 13);
+    checksum = mix(checksum, ((negativeSum * 5) % 3) * 7);
     for (let i = 0; i < 16; i++) {
       // round * 7 and round * 1099511627776 are loop invariant here.
       const sum = round * 7 + i * 61;
