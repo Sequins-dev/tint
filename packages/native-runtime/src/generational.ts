@@ -1,6 +1,11 @@
 import { nativeAllocatorShutdownRequest } from "@tint/abi/host";
 import { initializeExternalMemory } from "./external-memory.ts";
-import { createCheneyCollector, createCompactor } from "./tracing/cheney.ts";
+import {
+  clearBytes,
+  clearWords,
+  createCheneyCollector,
+  createCompactor,
+} from "./tracing/cheney.ts";
 import { createParallelEvacuator } from "./tracing/parallel.ts";
 import { cgroupProcessorLimit } from "./processors.ts";
 import {
@@ -145,7 +150,7 @@ export function initializeGenerationalRuntime(
     }
   }
   function clearRemembered(): void {
-    if ((allocation[14] ?? 0) !== 0) dirty.fill(0);
+    if ((allocation[14] ?? 0) !== 0) clearBytes(dirty, 0, dirty.length);
     else
       for (let i = 0; i < (allocation[12] ?? 0); i++) {
         const offset = roots[i];
@@ -211,73 +216,88 @@ export function initializeGenerationalRuntime(
     configureGenerationalAllocation(allocation, youngBits, dirty, roots) !== 0
   )
     throw "INVALID_GENERATIONAL_STATE";
+  /** A minor collection: the nursery is evacuated into the old prefix, which
+   * has room for all of it; remembered old objects are the only old-to-young
+   * edges. */
+  function evacuateNursery(youngTop: number, oldTop: number): void {
+    const base = activeBase();
+    const top =
+      parallel !== undefined && youngTop >= parallelMinimum
+        ? parallel.collect(
+            base + oldCapacity,
+            youngTop,
+            base,
+            oldTop,
+            oldCapacity,
+            youngTop,
+            currentRootHead(),
+            base,
+            true,
+            (allocation[14] ?? 0) !== 0 ? -1 : (allocation[12] ?? 0),
+            oldTop,
+          )
+        : -1;
+    const bytes =
+      top >= 0
+        ? top - oldTop
+        : heap.collect(
+            base + oldCapacity,
+            youngTop,
+            base,
+            oldTop,
+            oldCapacity,
+            currentRootHead(),
+            bits,
+            base,
+            rememberedObjects,
+          );
+    clearWords(youngBits, 0, Math.ceil(youngTop / 256));
+    allocation[3] = oldTop + bytes;
+    allocation[0] = 0;
+    clearRemembered();
+  }
   function collect(forceMajor: boolean): boolean {
     if (exhausted) return false;
     const youngTop = allocation[0] ?? 0,
-      oldTop = allocation[3] ?? 0;
-    const minor =
-      !forceMajor && youngTop > 0 && youngTop <= oldCapacity - oldTop;
+      oldTop = allocation[3] ?? 0,
+      // What the space has used: the old fill, and the nursery's when it is
+      // not empty (the gap between them is untouched).
+      reach = youngTop > 0 ? oldCapacity + youngTop : oldTop;
     collecting = true;
-    const base = activeBase();
-    if (minor) {
-      // The nursery is evacuated into the old prefix, which has room for all
-      // of it; remembered old objects are the only old-to-young edges.
-      const top =
-        parallel !== undefined && youngTop >= parallelMinimum
-          ? parallel.collect(
-              base + oldCapacity,
-              youngTop,
-              base,
-              oldTop,
-              oldCapacity,
-              youngTop,
-              currentRootHead(),
-              base,
-              true,
-              (allocation[14] ?? 0) !== 0 ? -1 : (allocation[12] ?? 0),
-              oldTop,
-            )
-          : -1;
-      const bytes =
-        top >= 0
-          ? top - oldTop
-          : heap.collect(
-              base + oldCapacity,
-              youngTop,
-              base,
-              oldTop,
-              oldCapacity,
-              currentRootHead(),
-              bits,
-              base,
-              rememberedObjects,
-            );
-      youngBits.fill(0, 0, Math.ceil(youngTop / 256));
-      allocation[3] = oldTop + bytes;
-    } else {
-      // The whole active space compacts in place: live old and young
-      // objects slide down into a packed old prefix (survivors that no
-      // longer fit exhaust the heap for good), so no second space is
-      // touched and peak residency is the space's fill plus metadata.
-      const used = youngTop > 0 ? oldCapacity + youngTop : oldTop,
-        bytes = compactor.collect(
-          base,
-          used,
-          currentRootHead(),
-          bits,
-          live,
-          chunkOffsets,
-          pending,
-        );
-      allocation[3] = bytes;
-      if (bytes > oldCapacity) exhausted = true;
-      // Nothing above the packed prefix is live: return those pages. The
-      // nursery and the old fill fault back in as zero pages when reused.
-      const start = Math.ceil((base + bytes) / releasePage) * releasePage,
-        end = Math.floor((base + used) / releasePage) * releasePage;
-      if (end > start && releaseMemory(start, end - start) !== 0)
-        throw "GENERATIONAL_RELEASE";
+    if (youngTop > 0 && youngTop <= oldCapacity - oldTop) {
+      evacuateNursery(youngTop, oldTop);
+      if (!forceMajor) {
+        collecting = false;
+        return true;
+      }
+      // A major collection then compacts only the packed old prefix, not
+      // the whole capacity up to the nursery's top.
     }
+    // The whole occupied space compacts in place: live old and young
+    // objects slide down into a packed old prefix (survivors that no longer
+    // fit exhaust the heap for good), so no second space is touched and peak
+    // residency is the space's fill plus metadata.
+    const base = activeBase(),
+      young = allocation[0] ?? 0,
+      used = young > 0 ? oldCapacity + young : (allocation[3] ?? 0),
+      bytes = compactor.collect(
+        base,
+        used,
+        currentRootHead(),
+        bits,
+        live,
+        chunkOffsets,
+        pending,
+      );
+    allocation[3] = bytes;
+    if (bytes > oldCapacity) exhausted = true;
+    // Nothing above the packed prefix is live: return those pages, up to
+    // what the space had used (the nursery included). The nursery and the
+    // old fill fault back in as zero pages when reused.
+    const start = Math.ceil((base + bytes) / releasePage) * releasePage,
+      end = Math.floor((base + reach) / releasePage) * releasePage;
+    if (end > start && releaseMemory(start, end - start) !== 0)
+      throw "GENERATIONAL_RELEASE";
     allocation[0] = exhausted ? youngCapacity : 0;
     clearRemembered();
     collecting = false;
