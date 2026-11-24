@@ -7412,12 +7412,19 @@ function emitModuleForms(
             emit({ op: "cbz", width: 64, rt: 12, displacement: 0 });
             emit({ op: "ldr", width: 32, rt: 11, rn: 12, offset: 0 });
             emit({ op: "ldr", width: 32, rt: 13, rn: 12, offset: 4 });
+            // The limit may be lowered below the top at any time (a debugger
+            // arming allocation sampling while an allocation was between
+            // this check and its store), so compare top + size with it
+            // rather than size with limit - top, which would wrap. Top,
+            // limit and size are uint32 offsets zero-extended into 64-bit
+            // registers, so the sum cannot wrap; the slow path rejects any
+            // request of 2^31 bytes or more.
             emit({
-              op: "sub-reg",
+              op: "add-reg",
               width: 64,
               rd: 14,
-              rn: 13,
-              rm: 11,
+              rn: 11,
+              rm: 9,
               shift: "lsl",
               amount: 0,
               setFlags: false,
@@ -7426,25 +7433,15 @@ function emitModuleForms(
               op: "sub-reg",
               width: 64,
               rd: "zr",
-              rn: 9,
-              rm: 14,
+              rn: 14,
+              rm: 13,
               shift: "lsl",
               amount: 0,
               setFlags: true,
             });
             const exhausted = instructions.length;
             emit({ op: "b.cond", condition: "hi", displacement: 0 });
-            emit({
-              op: "add-reg",
-              width: 32,
-              rd: 13,
-              rn: 11,
-              rm: 9,
-              shift: "lsl",
-              amount: 0,
-              setFlags: false,
-            });
-            emit({ op: "str", width: 32, rt: 13, rn: 12, offset: 0 });
+            emit({ op: "str", width: 32, rt: 14, rn: 12, offset: 0 });
             // The copying runtime's space keeps one start bit per 8-byte
             // granule: word top >> 8, bit (top >> 3) & 31. A generational
             // nursery keeps none: it is bump-allocated without gaps, so the

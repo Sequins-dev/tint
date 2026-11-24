@@ -53,7 +53,10 @@ export const heapDebugContextOffset = 16;
  * (address, size, context) after the allocation succeeds, then rearms the
  * limit from the (possibly updated) interval. Disarming stores interval 0
  * and restores the saved limit. Unarmed, generated code and the inline
- * allocation sequence are unchanged and the thunk only forwards. */
+ * allocation sequence are unchanged and the thunk only forwards. Arming may
+ * happen at any instruction, below the top of an allocation in flight: the
+ * inline sequence compares top + size with the limit, so the next allocation
+ * then takes the slow path (docs/allocation-throughput.md). */
 export const heapDebugSampleIntervalOffset = 24;
 export const heapDebugSampleLimitOffset = 32;
 /** Samples taken (incremented by the thunk). */
