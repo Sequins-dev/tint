@@ -43,6 +43,7 @@ import {
   bindPropertyStore,
   bindAbsentTest,
   bindRecordOperation,
+  bindScriptEntry,
 } from "./record-bindings.ts";
 import { incompatibleRepresentationView } from "./representation-views.ts";
 import {
@@ -4258,6 +4259,156 @@ function lowerEntries(
         )
           fail("absent test bindings take an unknown value and a cache site");
         functions[fn.id] = bindAbsentTest(fn, first, span);
+        continue;
+      }
+      if (
+        binding.operation === "script-call-entry" ||
+        binding.operation === "script-construct-entry"
+      ) {
+        const unwrapObjectType = (
+          typeId: number | undefined,
+        ): number | undefined => {
+          if (typeId === undefined) return undefined;
+          const current = checked.types[typeId];
+          if (current?.kind === "object") return typeId;
+          if (current?.kind === "union") {
+            for (const member of current.members) {
+              if (
+                member !== undefined &&
+                checked.types[member]?.kind === "object"
+              )
+                return member;
+            }
+          }
+          return undefined;
+        };
+        const propertyType = (
+          objectTypeId: number | undefined,
+          name: string,
+        ): number | undefined => {
+          if (objectTypeId === undefined) return undefined;
+          const object = checked.types[objectTypeId];
+          if (object?.kind !== "object") return undefined;
+          for (const property of object.properties) {
+            if (property !== undefined && property.name === name)
+              return property.type;
+          }
+          return undefined;
+        };
+        const realmType = unwrapObjectType(
+          checked.bindingTypes[bindingId(body.parameters[1])],
+        );
+        const realmRecord =
+          realmType === undefined
+            ? undefined
+            : recordContracts.forType(realmType);
+        const agentField =
+          realmRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(realmRecord, "agent");
+        const agentType = unwrapObjectType(propertyType(realmType, "agent"));
+        const agentRecord =
+          agentType === undefined
+            ? undefined
+            : recordContracts.forType(agentType);
+        const activeField =
+          agentRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(agentRecord, "activeContext");
+        const activeType = unwrapObjectType(
+          propertyType(agentType, "activeContext"),
+        );
+        const contextRecord =
+          activeType === undefined
+            ? undefined
+            : recordContracts.forType(activeType);
+        const realmField =
+          contextRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(contextRecord, "realm");
+        const scriptOrModuleField =
+          contextRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(contextRecord, "scriptOrModule");
+        const objectType = unwrapObjectType(
+          propertyType(realmType, "objectPrototype"),
+        );
+        const objectRecord =
+          objectType === undefined
+            ? undefined
+            : recordContracts.forType(objectType);
+        const registerCallField =
+          objectRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(objectRecord, "internalRegisterCall");
+        const entryType = unwrapObjectType(
+          propertyType(objectType, "internalRegisterCall"),
+        );
+        const entryRecord =
+          entryType === undefined
+            ? undefined
+            : recordContracts.forType(entryType);
+        const invokeField =
+          entryRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(entryRecord, "scriptInvoke");
+        const contextField =
+          entryRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(entryRecord, "context");
+        const constructibleField =
+          entryRecord === undefined
+            ? undefined
+            : recordContracts.fieldIndex(entryRecord, "constructible");
+        if (
+          first === undefined ||
+          second === undefined ||
+          fn.parameters.length !== 2 ||
+          fn.slots[first] !== "general" ||
+          fn.slots[second] !== "reference" ||
+          fn.returnType !== "optional-reference" ||
+          realmRecord === undefined ||
+          agentField === undefined ||
+          agentRecord === undefined ||
+          activeField === undefined ||
+          objectRecord === undefined ||
+          registerCallField === undefined ||
+          entryRecord === undefined ||
+          invokeField === undefined ||
+          contextField === undefined ||
+          constructibleField === undefined ||
+          contextRecord === undefined ||
+          realmField === undefined ||
+          scriptOrModuleField === undefined ||
+          fn.closureEnvironment !== undefined ||
+          fn.environment !== undefined ||
+          fn.receiverSlot !== undefined
+        )
+          fail(
+            "script entry bindings take a callee value and a realm with agent.activeContext",
+          );
+        functions[fn.id] = bindScriptEntry(
+          fn,
+          first,
+          second,
+          binding.operation === "script-construct-entry",
+          {
+            realmRecord,
+            agentField,
+            agentRecord,
+            activeField,
+            objectRecord,
+            registerCallField,
+            entryRecord,
+            invokeField,
+            contextField,
+            constructibleField,
+            contextRecord,
+            realmField,
+            scriptOrModuleField,
+          },
+          span,
+        );
         continue;
       }
       if (

@@ -138,6 +138,27 @@ function pruneTracedModule(
             epochRecord !== op.epochRecord
           )
             rewritten = { ...op, record, siteRecord, epochRecord };
+        } else if (op.kind === "script-entry") {
+          const realmRecord = recordId(op.realmRecord),
+            agentRecord = recordId(op.agentRecord),
+            objectRecord = recordId(op.objectRecord),
+            entryRecord = recordId(op.entryRecord),
+            contextRecord = recordId(op.contextRecord);
+          if (
+            realmRecord !== op.realmRecord ||
+            agentRecord !== op.agentRecord ||
+            objectRecord !== op.objectRecord ||
+            entryRecord !== op.entryRecord ||
+            contextRecord !== op.contextRecord
+          )
+            rewritten = {
+              ...op,
+              realmRecord,
+              agentRecord,
+              objectRecord,
+              entryRecord,
+              contextRecord,
+            };
         }
         if (rewritten !== op && instructions === undefined)
           instructions = block.instructions.slice(0, i);

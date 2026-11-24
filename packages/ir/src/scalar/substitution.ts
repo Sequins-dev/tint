@@ -131,6 +131,13 @@ export function substituteInstructionValues(
         ? op
         : { ...op, object, value, site };
     }
+    case "script-entry": {
+      const callee = substitutedValue(values, op.callee),
+        realm = substitutedValue(values, op.realm);
+      return callee === op.callee && realm === op.realm
+        ? op
+        : { ...op, callee, realm };
+    }
     case "error-new": {
       const message = substitutedValue(values, op.message);
       return message === op.message ? op : { ...op, message };

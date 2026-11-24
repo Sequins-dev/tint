@@ -376,7 +376,7 @@ export interface ObjectRegisterEntry<Value> {
   readonly constructible: boolean;
   readonly invoke: ObjectRegisterCall<Value> | undefined;
   readonly invokeWide: ObjectWideRegisterCall<Value> | undefined;
-  readonly scriptInvoke?: ObjectScriptCall<Value>;
+  readonly scriptInvoke: ObjectScriptCall<Value> | undefined;
 }
 /** The ordered keys of a fast-mode object's own data properties and the
  * attributes of each (propertyWritable | propertyEnumerable |

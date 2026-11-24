@@ -78,6 +78,10 @@ export function visitInstructionOperands(
       visit(op.value);
       visit(op.site);
       return;
+    case "script-entry":
+      visit(op.callee);
+      visit(op.realm);
+      return;
     case "function-new":
       if (op.environment !== undefined) visit(op.environment);
       return;

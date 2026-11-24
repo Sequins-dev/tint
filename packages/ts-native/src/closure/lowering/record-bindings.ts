@@ -47,7 +47,29 @@ export type RecordOperation =
   | "activation-kind"
   | "activation-callee"
   | "activation-count"
-  | "activation-argument";
+  | "activation-argument"
+  /** `(callee: unknown, realm: ErrorRealm):
+   * ObjectScriptCall<unknown> | undefined`: resolve a native script entry
+   * closure for a direct call or ordinary construction (IR script-entry). */
+  | "script-call-entry"
+  | "script-construct-entry";
+
+/** The record fields a script-entry binding reads (IR script-entry). */
+export interface ScriptEntryLayout {
+  readonly realmRecord: number;
+  readonly agentField: number;
+  readonly agentRecord: number;
+  readonly activeField: number;
+  readonly objectRecord: number;
+  readonly registerCallField: number;
+  readonly entryRecord: number;
+  readonly invokeField: number;
+  readonly contextField: number;
+  readonly constructibleField: number;
+  readonly contextRecord: number;
+  readonly realmField: number;
+  readonly scriptOrModuleField: number;
+}
 
 /** The record fields a property cache binding reads (see the IR
  * instructions property-load and property-store). */
@@ -276,6 +298,44 @@ export function bindPropertyStore(
       siteField: layout.siteField,
       epochRecord,
       epochField,
+    }),
+    span,
+  );
+}
+/** The body of a script-entry binding: one IR script-entry over its callee
+ * and realm parameters. */
+export function bindScriptEntry(
+  fn: FunctionIR,
+  callee: number,
+  realm: number,
+  construct: boolean,
+  layout: ScriptEntryLayout,
+  span: Span,
+): FunctionIR {
+  return boundBody(
+    fn,
+    [callee, realm],
+    (loaded): Instruction => ({
+      start: span.start,
+      end: span.end,
+      kind: "script-entry",
+      id: loaded.length,
+      callee: loaded[0] ?? -1,
+      realm: loaded[1] ?? -1,
+      construct,
+      realmRecord: layout.realmRecord,
+      agentField: layout.agentField,
+      agentRecord: layout.agentRecord,
+      activeField: layout.activeField,
+      objectRecord: layout.objectRecord,
+      registerCallField: layout.registerCallField,
+      entryRecord: layout.entryRecord,
+      invokeField: layout.invokeField,
+      contextField: layout.contextField,
+      constructibleField: layout.constructibleField,
+      contextRecord: layout.contextRecord,
+      realmField: layout.realmField,
+      scriptOrModuleField: layout.scriptOrModuleField,
     }),
     span,
   );

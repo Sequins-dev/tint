@@ -205,6 +205,8 @@ export {
 } from "./intl-format-views.ts";
 export {
   viewObjectValue,
+  resolveScriptCallEntry,
+  resolveScriptConstructEntry,
   objectValueTypeof,
   objectTypeof,
   generalValueTypeof,

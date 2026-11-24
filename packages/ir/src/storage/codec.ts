@@ -509,6 +509,25 @@ export function encodeInstruction(
       writeSigned(writer, op.epochRecord);
       writeSigned(writer, op.epochField);
       return true;
+    case "script-entry":
+      writePrefix(writer, 89, op, bit(op.construct, 2));
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.callee);
+      writeSigned(writer, op.realm);
+      writeSigned(writer, op.realmRecord);
+      writeSigned(writer, op.agentField);
+      writeSigned(writer, op.agentRecord);
+      writeSigned(writer, op.activeField);
+      writeSigned(writer, op.objectRecord);
+      writeSigned(writer, op.registerCallField);
+      writeSigned(writer, op.entryRecord);
+      writeSigned(writer, op.invokeField);
+      writeSigned(writer, op.contextField);
+      writeSigned(writer, op.constructibleField);
+      writeSigned(writer, op.contextRecord);
+      writeSigned(writer, op.realmField);
+      writeSigned(writer, op.scriptOrModuleField);
+      return true;
     case "closure-environment":
       writePrefix(writer, 21, op, 0);
       writeSigned(writer, op.id);
@@ -1435,6 +1454,45 @@ export function decodeInstruction(
         siteField,
         epochRecord,
         epochField,
+        ...span,
+      };
+    }
+    case 89: {
+      const id = readSigned(reader),
+        callee = readSigned(reader),
+        realm = readSigned(reader),
+        realmRecord = readSigned(reader),
+        agentField = readSigned(reader),
+        agentRecord = readSigned(reader),
+        activeField = readSigned(reader),
+        objectRecord = readSigned(reader),
+        registerCallField = readSigned(reader),
+        entryRecord = readSigned(reader),
+        invokeField = readSigned(reader),
+        contextField = readSigned(reader),
+        constructibleField = readSigned(reader),
+        contextRecord = readSigned(reader),
+        realmField = readSigned(reader),
+        scriptOrModuleField = readSigned(reader);
+      return {
+        kind: "script-entry",
+        id,
+        callee,
+        realm,
+        construct: flagged(flags, 2),
+        realmRecord,
+        agentField,
+        agentRecord,
+        activeField,
+        objectRecord,
+        registerCallField,
+        entryRecord,
+        invokeField,
+        contextField,
+        constructibleField,
+        contextRecord,
+        realmField,
+        scriptOrModuleField,
         ...span,
       };
     }

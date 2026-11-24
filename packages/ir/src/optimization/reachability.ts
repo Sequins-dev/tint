@@ -95,6 +95,12 @@ export function traceModuleReferences(
           includeRecord(op.record);
           includeRecord(op.siteRecord);
           includeRecord(op.epochRecord);
+        } else if (op.kind === "script-entry") {
+          includeRecord(op.realmRecord);
+          includeRecord(op.agentRecord);
+          includeRecord(op.objectRecord);
+          includeRecord(op.entryRecord);
+          includeRecord(op.contextRecord);
         }
       }
       const t = block.terminator;

@@ -193,6 +193,8 @@ export function scriptRuntimeImports(
               "createSourceInstance",
               "sourceArgumentCount",
               "sourceArgument",
+              "resolveScriptCallEntry",
+              "resolveScriptConstructEntry",
             ]
           : []),
         ...(usesRegisterCalls || declarations === "all"

@@ -174,6 +174,8 @@ export function createScriptRuntimeRequest(
       "createSourceInstance",
       "sourceArgumentCount",
       "sourceArgument",
+      "resolveScriptCallEntry",
+      "resolveScriptConstructEntry",
     ]) {
       if (!objects?.has(name)) missingFastPaths.add(name);
     }

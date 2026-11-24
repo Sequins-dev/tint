@@ -4721,6 +4721,7 @@ function emitModuleForms(
               case "reference-vector-read":
               case "string-reference":
               case "function-environment":
+              case "script-entry":
                 id = op.id;
                 type = "optional-reference";
                 break;
@@ -11402,6 +11403,249 @@ function emitModuleForms(
                   displacement: (instructions.length - stored) * 4,
                 });
                 saveRaw(target, op.id);
+                break;
+              }
+              case "script-entry": {
+                const realmFields = module.records?.[op.realmRecord]?.fields,
+                  agentFields = module.records?.[op.agentRecord]?.fields,
+                  objectFields = module.records?.[op.objectRecord]?.fields,
+                  entryFields = module.records?.[op.entryRecord]?.fields,
+                  contextFields = module.records?.[op.contextRecord]?.fields;
+                const agent = realmFields?.[op.agentField],
+                  activeField = agentFields?.[op.activeField],
+                  registerCall = objectFields?.[op.registerCallField],
+                  invoke = entryFields?.[op.invokeField],
+                  context = entryFields?.[op.contextField],
+                  constructible = entryFields?.[op.constructibleField],
+                  realm = contextFields?.[op.realmField],
+                  scriptOrModule = contextFields?.[op.scriptOrModuleField];
+                if (
+                  agent === undefined ||
+                  activeField === undefined ||
+                  registerCall === undefined ||
+                  invoke === undefined ||
+                  context === undefined ||
+                  constructible === undefined ||
+                  realm === undefined ||
+                  scriptOrModule === undefined ||
+                  agent.offset > 32760 ||
+                  activeField.offset > 32760 ||
+                  registerCall.offset > 32760 ||
+                  invoke.offset > 32760 ||
+                  context.offset > 32760 ||
+                  constructible.offset > 32760 ||
+                  realm.offset > 32760 ||
+                  scriptOrModule.offset > 496
+                )
+                  throw "script entry layout invariant";
+                const neMisses: number[] = [];
+                const cbzMisses: {
+                  readonly index: number;
+                  readonly rt: number;
+                }[] = [];
+                function missNe(): void {
+                  neMisses.push(instructions.length);
+                  emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                }
+                function missZero(rt: number): void {
+                  cbzMisses.push({ index: instructions.length, rt });
+                  emit({ op: "cbz", width: 64, rt, displacement: 0 });
+                }
+                // x9 = callee.tag, x10 = callee.payload
+                generalPair(9, value(op.callee).offset, true);
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  immediate: 5,
+                  shift: 0,
+                  setFlags: true,
+                });
+                missNe();
+                missZero(10);
+                emit({ op: "ldr", width: 64, rt: 9, rn: 10, offset: 0 });
+                descriptorPointer(op.objectRecord);
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                missNe();
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 12,
+                  rn: 10,
+                  offset: registerCall.offset,
+                });
+                missZero(12);
+                if (op.construct) {
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 9,
+                    rn: 12,
+                    offset: constructible.offset,
+                  });
+                  missZero(9);
+                }
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 11,
+                  rn: 12,
+                  offset: invoke.offset,
+                });
+                missZero(11);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 9,
+                  rn: 12,
+                  offset: context.offset,
+                });
+                const realmReg = rawRegister(op.realm, 10);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 10,
+                  rn: realmReg,
+                  offset: agent.offset,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 10,
+                  rn: 10,
+                  offset: activeField.offset,
+                });
+                const active = 10;
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  rm: active,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                const contextCheck = instructions.length;
+                emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                const hitFast = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                // Distinct context records with the same realm and
+                // scriptOrModule still match the caller's execution context.
+                patchInstruction(contextCheck, {
+                  op: "b.cond",
+                  condition: "ne",
+                  displacement: (instructions.length - contextCheck) * 4,
+                });
+                missZero(active);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 12,
+                  rn: 9,
+                  offset: realm.offset,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 13,
+                  rn: active,
+                  offset: realm.offset,
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 12,
+                  rm: 13,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                missNe();
+                emit({
+                  op: "ldp",
+                  width: 64,
+                  rt: 12,
+                  rt2: 13,
+                  rn: 9,
+                  offset: scriptOrModule.offset,
+                  mode: "offset",
+                });
+                emit({
+                  op: "ldp",
+                  width: 64,
+                  rt: 14,
+                  rt2: 15,
+                  rn: active,
+                  offset: scriptOrModule.offset,
+                  mode: "offset",
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 12,
+                  rm: 14,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                missNe();
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 13,
+                  rm: 15,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                const hitSlow = instructions.length;
+                emit({ op: "b.cond", condition: "eq", displacement: 0 });
+                const missAt = instructions.length;
+                for (const site of neMisses)
+                  patchInstruction(site, {
+                    op: "b.cond",
+                    condition: "ne",
+                    displacement: (missAt - site) * 4,
+                  });
+                for (const site of cbzMisses)
+                  patchInstruction(site.index, {
+                    op: "cbz",
+                    width: 64,
+                    rt: site.rt,
+                    displacement: (missAt - site.index) * 4,
+                  });
+                emit({
+                  op: "orr-reg",
+                  width: 64,
+                  rd: 11,
+                  rn: "zr",
+                  rm: "zr",
+                });
+                const doneAt = instructions.length;
+                patchInstruction(hitFast, {
+                  op: "b",
+                  displacement: (doneAt - hitFast) * 4,
+                });
+                patchInstruction(hitSlow, {
+                  op: "b.cond",
+                  condition: "eq",
+                  displacement: (doneAt - hitSlow) * 4,
+                });
+                saveRaw(11, op.id);
                 break;
               }
               case "record-has": {

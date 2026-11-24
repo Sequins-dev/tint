@@ -867,6 +867,53 @@ export function verify(
               );
               break;
             }
+            case "script-entry": {
+              hasRecordReads = true;
+              equal(use(op.callee), "general");
+              equal(use(op.realm), "reference");
+              const realmFields = module.records?.[op.realmRecord]?.fields,
+                agentFields = module.records?.[op.agentRecord]?.fields,
+                objectFields = module.records?.[op.objectRecord]?.fields,
+                entryFields = module.records?.[op.entryRecord]?.fields,
+                contextFields = module.records?.[op.contextRecord]?.fields;
+              const agent = realmFields?.[op.agentField],
+                active = agentFields?.[op.activeField],
+                registerCall = objectFields?.[op.registerCallField],
+                invoke = entryFields?.[op.invokeField],
+                context = entryFields?.[op.contextField],
+                constructible = entryFields?.[op.constructibleField],
+                realm = contextFields?.[op.realmField],
+                scriptOrModule = contextFields?.[op.scriptOrModuleField];
+              if (
+                !natural(op.realmRecord) ||
+                !natural(op.agentField) ||
+                !natural(op.agentRecord) ||
+                !natural(op.activeField) ||
+                !natural(op.objectRecord) ||
+                !natural(op.registerCallField) ||
+                !natural(op.entryRecord) ||
+                !natural(op.invokeField) ||
+                !natural(op.contextField) ||
+                !natural(op.constructibleField) ||
+                !natural(op.contextRecord) ||
+                !natural(op.realmField) ||
+                !natural(op.scriptOrModuleField) ||
+                !plainRecordField(agent, "reference") ||
+                !plainRecordField(active, "optional-reference") ||
+                !plainRecordField(registerCall, "optional-reference") ||
+                !plainRecordField(invoke, "optional-reference") ||
+                !plainRecordField(context, "reference") ||
+                !plainRecordField(constructible, "boolean") ||
+                !plainRecordField(realm, "reference") ||
+                !plainRecordField(scriptOrModule, "general")
+              )
+                fail(
+                  "TYPE",
+                  "script entry resolution requires realm, agent, object, register-entry and execution-context fields",
+                );
+              define(op.id, "optional-reference");
+              break;
+            }
             case "record-has": {
               const type = use(op.object);
               if (type !== "reference" && type !== "optional-reference")

@@ -21,6 +21,7 @@ import {
   storeCachedScriptProperty,
   type ScriptPropertyCache,
   type ObjectHooks,
+  type ObjectScriptCall,
   type OrdinaryObject,
 } from "./operations.ts";
 import { callObject } from "./call.ts";
@@ -173,6 +174,52 @@ export function viewObjectValue(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
   throw "UNBOUND_OBJECT_VIEW";
+}
+
+/** Resolve a callee's native script entry closure for a direct call in
+ * `realm`'s active execution context, or undefined when the call must take the
+ * general path. Native code binds this to IR script-entry. */
+export function resolveScriptCallEntry(
+  callee: unknown,
+  realm: ErrorRealm,
+): ObjectScriptCall<unknown> | undefined {
+  const object = viewTypeofObject(callee);
+  const slot = object === undefined ? undefined : object.internalRegisterCall;
+  if (slot === undefined) return undefined;
+  const entry = slot.scriptInvoke;
+  if (entry === undefined) return undefined;
+  const context = slot.context;
+  const active = realm.agent.activeContext;
+  if (
+    context !== active &&
+    (active === undefined ||
+      context.realm !== active.realm ||
+      context.scriptOrModule !== active.scriptOrModule)
+  )
+    return undefined;
+  return entry;
+}
+
+/** As resolveScriptCallEntry, requiring an ordinary constructor. */
+export function resolveScriptConstructEntry(
+  callee: unknown,
+  realm: ErrorRealm,
+): ObjectScriptCall<unknown> | undefined {
+  const object = viewTypeofObject(callee);
+  const slot = object === undefined ? undefined : object.internalRegisterCall;
+  if (slot === undefined || !slot.constructible) return undefined;
+  const entry = slot.scriptInvoke;
+  if (entry === undefined) return undefined;
+  const context = slot.context;
+  const active = realm.agent.activeContext;
+  if (
+    context !== active &&
+    (active === undefined ||
+      context.realm !== active.realm ||
+      context.scriptOrModule !== active.scriptOrModule)
+  )
+    return undefined;
+  return entry;
 }
 
 /** In-place value `index` of a fast-mode Script object (internalValue0..7),

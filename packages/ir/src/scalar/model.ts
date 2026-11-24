@@ -197,6 +197,30 @@ export type Instruction = Span &
         readonly epochRecord: number;
         readonly epochField: number;
       }
+    | {
+        /** Resolve the native script entry closure of general `callee` for a
+         * direct call (`construct: false`) or ordinary construction
+         * (`construct: true`) in `realm`'s active execution context; returns
+         * reference-none (0) when the callee must take the general path. */
+        readonly kind: "script-entry";
+        readonly id: number;
+        readonly callee: number;
+        readonly realm: number;
+        readonly construct: boolean;
+        readonly realmRecord: number;
+        readonly agentField: number;
+        readonly agentRecord: number;
+        readonly activeField: number;
+        readonly objectRecord: number;
+        readonly registerCallField: number;
+        readonly entryRecord: number;
+        readonly invokeField: number;
+        readonly contextField: number;
+        readonly constructibleField: number;
+        readonly contextRecord: number;
+        readonly realmField: number;
+        readonly scriptOrModuleField: number;
+      }
     | { readonly kind: "boolean-none"; readonly id: number }
     | {
         readonly kind: "boolean-wrap" | "boolean-value" | "boolean-present";

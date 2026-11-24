@@ -2676,6 +2676,75 @@ export function emitModule(
           define(op.id, "boolean");
           return;
         }
+        case "script-entry": {
+          const agent = recordField(op.realmRecord, op.agentField),
+            activeField = recordField(op.agentRecord, op.activeField),
+            registerCall = recordField(op.objectRecord, op.registerCallField),
+            invoke = recordField(op.entryRecord, op.invokeField),
+            context = recordField(op.entryRecord, op.contextField),
+            constructible = recordField(op.entryRecord, op.constructibleField),
+            realm = recordField(op.contextRecord, op.realmField),
+            scriptOrModule = recordField(
+              op.contextRecord,
+              op.scriptOrModuleField,
+            );
+          const site = fnLabel + ":script-entry:" + String(op.id);
+          const hit = site + ":hit",
+            miss = site + ":miss",
+            done = site + ":done";
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "cmp", dst: frame(home(op.callee)), src: imm(5) });
+          branch(emit, "ne", done);
+          emit({ op: "mov", dst: r9, src: frame(home(op.callee) + 8) });
+          emit({ op: "test", dst: r9, src: r9 });
+          branch(emit, "e", done);
+          address(scratch, descriptor(op.objectRecord));
+          emit({ op: "cmp", dst: mem(9, 0), src: scratch });
+          branch(emit, "ne", done);
+          emit({ op: "mov", dst: r9, src: mem(9, registerCall.offset) });
+          emit({ op: "test", dst: r9, src: r9 });
+          branch(emit, "e", done);
+          if (op.construct) {
+            emit({ op: "cmp", dst: mem(9, constructible.offset), src: imm(0) });
+            branch(emit, "e", done);
+          }
+          emit({ op: "mov", dst: gpr(10), src: mem(9, invoke.offset) });
+          emit({ op: "test", dst: gpr(10), src: gpr(10) });
+          branch(emit, "e", done);
+          emit({ op: "mov", dst: r9, src: mem(9, context.offset) });
+          emit({ op: "mov", dst: scratch, src: frame(home(op.realm)) });
+          emit({ op: "mov", dst: scratch, src: mem(11, agent.offset) });
+          emit({ op: "mov", dst: scratch, src: mem(11, activeField.offset) });
+          emit({ op: "cmp", dst: r9, src: scratch });
+          branch(emit, "e", hit);
+          emit({ op: "test", dst: scratch, src: scratch });
+          branch(emit, "e", done);
+          emit({ op: "mov", dst: rax, src: mem(9, realm.offset) });
+          emit({ op: "cmp", dst: rax, src: mem(11, realm.offset) });
+          branch(emit, "ne", miss);
+          emit({ op: "mov", dst: rax, src: mem(9, scriptOrModule.offset) });
+          emit({ op: "cmp", dst: rax, src: mem(11, scriptOrModule.offset) });
+          branch(emit, "ne", miss);
+          emit({
+            op: "mov",
+            dst: rax,
+            src: mem(9, scriptOrModule.offset + 8),
+          });
+          emit({
+            op: "cmp",
+            dst: rax,
+            src: mem(11, scriptOrModule.offset + 8),
+          });
+          branch(emit, "ne", miss);
+          emit({ op: "label", name: hit });
+          emit({ op: "mov", dst: rax, src: gpr(10) });
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: miss });
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "label", name: done });
+          define(op.id, "optional-reference");
+          return;
+        }
         case "record-has": {
           const field = recordField(op.record, op.field);
           const site = fnLabel + ":record-has:" + String(op.id);

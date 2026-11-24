@@ -344,6 +344,7 @@ export function createRegisterSourceFunction(
     callerPolicy,
     constructible,
     invokeWide: undefined,
+    scriptInvoke: undefined,
     invoke: (callee, receiver, newTarget, count, first, second): unknown => {
       const trace = enterExecutionName(agent, name);
       const depth = enterRegisterSourceCall(
@@ -457,6 +458,7 @@ export function createWideRegisterSourceFunction(
         undefined,
       ),
     invokeWide: invoke,
+    scriptInvoke: undefined,
   };
   return fn;
 }

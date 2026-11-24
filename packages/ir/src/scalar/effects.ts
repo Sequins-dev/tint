@@ -39,6 +39,7 @@ export function instructionEffects(op: Instruction): number {
     case "record-read":
     case "record-slot-read":
     case "property-load":
+    case "script-entry":
     case "array-read":
     case "array-element":
     case "weak-slot-key":

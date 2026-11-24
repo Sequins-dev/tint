@@ -133,7 +133,9 @@ export interface PropertyCacheBinding {
     | "activation-kind"
     | "activation-callee"
     | "activation-count"
-    | "activation-argument";
+    | "activation-argument"
+    | "script-call-entry"
+    | "script-construct-entry";
   readonly field?: string;
   readonly count?: number;
   readonly siteField?: string;
@@ -192,10 +194,12 @@ export const activationNames: readonly string[] = [
   "activationCallee",
   "activationArgumentCount",
   "activationArgument",
+  "resolveScriptCallEntry",
+  "resolveScriptConstructEntry",
 ];
-/** Native bindings of the activation chain reads (IR activation-read):
- * native script entries link activation records into their frames instead
- * of heap bookkeeping. */
+/** Native bindings of the activation chain reads (IR activation-read) and
+ * native script entry dispatch (IR script-entry): native script entries link
+ * activation records into their frames instead of heap bookkeeping. */
 export function activationBindings(
   module: string,
 ): readonly PropertyCacheBinding[] {
@@ -210,6 +214,16 @@ export function activationBindings(
       operation: "activation-count",
     },
     { module, name: "activationArgument", operation: "activation-argument" },
+    {
+      module,
+      name: "resolveScriptCallEntry",
+      operation: "script-call-entry",
+    },
+    {
+      module,
+      name: "resolveScriptConstructEntry",
+      operation: "script-construct-entry",
+    },
   ];
 }
 /** Immutable numeric imports proved by the hosted function planner. */
@@ -1189,11 +1203,6 @@ function lowerScriptEntry(
   /** In a native entry whose `arguments` only feed `f.apply(x, arguments)`
    * (argumentsForwardingSites), how those calls forward its actuals. */
   let argumentsForwarding: ArgumentsForwarding | undefined = undefined;
-  /** In a synchronous function body, the local that holds the active
-   * execution context, read once on entry when a native call site uses it:
-   * callees restore the context before they return, so it does not change
-   * within the activation. */
-  let activeContextLocal: { name: string | undefined } | undefined = undefined;
   let usesTailCalls = false;
   let usesRegisterCalls = false;
   let usesWideRegisterCalls = false;
@@ -3641,84 +3650,24 @@ function lowerScriptEntry(
     construct: boolean,
     span: Span,
   ): {
-    readonly object: Expression;
     readonly entry: Expression;
     readonly accepts: Expression;
   } {
-    const errors = id("$errors", span);
-    const object = temporary(
+    const entry = temporary(
       runtimeCall(
-        "viewObjectValue",
-        [target, member(errors, "objectPrototype", span)],
+        construct ? "resolveScriptConstructEntry" : "resolveScriptCallEntry",
+        [target, id("$errors", span)],
         span,
       ),
     );
-    const slot = temporary({
-      ...at(span),
-      kind: "member",
-      object,
-      property: "internalRegisterCall",
-      optional: true,
-    });
-    const entry = temporary({
-      ...at(span),
-      kind: "member",
-      object: slot,
-      property: "scriptInvoke",
-      optional: true,
-    });
-    const both = (left: Expression, right: Expression): Expression => ({
-      ...at(span),
-      kind: "binary",
-      operator: "&&",
-      left,
-      right,
-    });
-    const defined = (operand: Expression): Expression => ({
+    const accepts: Expression = {
       ...at(span),
       kind: "binary",
       operator: "!==",
-      left: operand,
+      left: entry,
       right: id("undefined", span),
-    });
-    // Equal records of another identity (a context entered apart from the
-    // one the callee was created in) compare their fields.
-    const local = activeContextLocal;
-    let localName: string | undefined = undefined;
-    if (local !== undefined) {
-      const existing = local.name;
-      localName = existing === undefined ? "$active" + serial++ : existing;
-      local.name = localName;
-    }
-    const active =
-      localName === undefined
-        ? temporary(
-            member(member(errors, "agent", span), "activeContext", span),
-          )
-        : id(localName, span);
-    const context = member(slot, "context", span);
-    const same = (field: string): Expression => ({
-      ...at(span),
-      kind: "binary",
-      operator: "===",
-      left: member(context, field, span),
-      right: member(active, field, span),
-    });
-    let accepts = both(both(defined(entry), defined(slot)), {
-      ...at(span),
-      kind: "binary",
-      operator: "||",
-      left: {
-        ...at(span),
-        kind: "binary",
-        operator: "===",
-        left: context,
-        right: active,
-      },
-      right: both(both(defined(active), same("realm")), same("scriptOrModule")),
-    });
-    if (construct) accepts = both(accepts, member(slot, "constructible", span));
-    return { object, entry, accepts };
+    };
+    return { entry, accepts };
   }
   /** `new` of an evaluated callee with evaluated actuals. An ordinary
    * constructor in the caller's context runs its native entry directly:
@@ -5467,11 +5416,6 @@ function lowerScriptEntry(
     nativeListName = nativeEntry ? incomingArguments : undefined;
     const outerArgumentsForwarding = argumentsForwarding;
     argumentsForwarding = undefined;
-    const outerActiveContextLocal = activeContextLocal;
-    const contextLocal: { name: string | undefined } | undefined = suspending
-      ? undefined
-      : { name: undefined };
-    activeContextLocal = contextLocal;
     const list: TypeNode = {
       ...at(span),
       kind: "array",
@@ -6538,27 +6482,6 @@ function lowerScriptEntry(
         expression: continuation,
       });
     }
-    const contextLocalName =
-      contextLocal === undefined ? undefined : contextLocal.name;
-    if (contextLocalName !== undefined)
-      statements.splice(start, 0, {
-        ...at(span),
-        kind: "variable",
-        mode: "const",
-        exported: false,
-        declarations: [
-          {
-            ...at(span),
-            name: contextLocalName,
-            type: undefined,
-            initializer: member(
-              member(id("$errors", span), "agent", span),
-              "activeContext",
-              span,
-            ),
-          },
-        ],
-      });
     const callbackBody: BlockStatement = {
       ...at(span),
       kind: "block",
@@ -6580,7 +6503,6 @@ function lowerScriptEntry(
     tailEnds = outerTailEnds;
     nativeListName = outerNativeListName;
     argumentsForwarding = outerArgumentsForwarding;
-    activeContextLocal = outerActiveContextLocal;
     functionDepth--;
     suspensionInput = outerSuspensionInput;
     asyncGeneratorBody = outerAsyncGeneratorBody;
