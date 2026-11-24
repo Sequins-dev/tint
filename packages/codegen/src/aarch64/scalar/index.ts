@@ -3499,15 +3499,29 @@ function emitModuleForms(
         // Integer slots hold an exact int64 instead of a double: number
         // slots whose every assignment is proven a 32-bit integer, that only
         // instruction loads and stores access (the facts never admit -0), and
-        // whose loads are all used as integers (see below).
+        // whose loads are all used as integers (see below). Parameters arrive
+        // as doubles: one that every direct call passes a proven 32-bit
+        // integer (wordArguments; escaped functions have none) and that
+        // arrives in a register converts once in the prologue.
         const integerSlots = new Uint8Array(fn.slots.length);
         if (slotIntegerFacts !== undefined) {
           for (let slot = 0; slot < fn.slots.length; slot++)
             if (fn.slots[slot] === "number" && slotIntegerFacts[slot] === 1)
               integerSlots[slot] = 1;
           if (fn.receiverSlot !== undefined) integerSlots[fn.receiverSlot] = 0;
-          for (const parameter of fn.parameters)
-            if (parameter !== undefined) integerSlots[parameter] = 0;
+          const parameterWords =
+              wordArguments === undefined ? undefined : wordArguments[fn.id],
+            parameterLocations = signatures[fn.id]?.parameters;
+          for (let i = 0; i < fn.parameters.length; i++) {
+            const parameter = fn.parameters[i];
+            if (parameter === undefined) throw "parameter slot invariant";
+            if (
+              parameterWords === undefined ||
+              parameterWords[parameter] !== 1 ||
+              parameterLocations?.[i]?.kind !== "float"
+            )
+              integerSlots[parameter] = 0;
+          }
           for (const block of fn.blocks) {
             if (block === undefined) throw "integer slot block invariant";
             if (block.exception !== undefined)
@@ -6166,7 +6180,12 @@ function emitModuleForms(
               scalarRegisters === undefined
                 ? 0
                 : (scalarRegisters[offset / 8] ?? 0);
-            if (register !== 0)
+            if (integerSlots[slot] === 1) {
+              // A word parameter (see integerSlots): its exact int64.
+              const target = register >= 32 ? register - 32 : 9;
+              emit({ op: "fcvtzs-x-d", rd: target, rn: location.index });
+              rawStore(target, offset);
+            } else if (register !== 0)
               emit({ op: "fmov-d-d", rd: register, rn: location.index });
             else emit({ op: "str-d", rt: location.index, rn: "sp", offset });
           } else if (location.kind === "integer")
