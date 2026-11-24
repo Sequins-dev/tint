@@ -26,6 +26,7 @@ function record(
     sha256?: string;
     fixture?: string;
     general?: string;
+    peakRssMiB?: number;
     failed?: boolean;
     memoryWaitMs?: number;
   },
@@ -108,6 +109,8 @@ export function buildNativeFixture(
         bytes: statSync(path).size,
         sha256: fileSha256(path),
         ...(general === undefined ? {} : { general }),
+        // The building process's peak resident size so far (memory slots).
+        peakRssMiB: Math.round(process.resourceUsage().maxRSS / 1024),
         memoryWaitMs,
       });
       return path;
@@ -268,7 +271,8 @@ if (import.meta.main) {
   };
   /** Fixtures whose program took the general fallback, and large images. */
   const general = new Map<string, string>(),
-    large = new Map<string, string>();
+    large = new Map<string, string>(),
+    peaks: [number, string][] = [];
   if (statSync(journal, { throwIfNoEntry: false })) {
     for (const line of readFileSync(journal, "utf8").trimEnd().split("\n")) {
       if (!line) continue;
@@ -278,6 +282,7 @@ if (import.meta.main) {
         bytes?: number;
         fixture?: string;
         general?: string;
+        peakRssMiB?: number;
         failed?: boolean;
       };
       if (event.path && !event.failed) {
@@ -288,6 +293,8 @@ if (import.meta.main) {
             general.set(event.path, fixture + ": " + event.general);
           if ((event.bytes ?? 0) >= largeImageBytes)
             large.set(event.path, fixture + ": " + event.bytes + " bytes");
+          if (event.peakRssMiB !== undefined)
+            peaks.push([event.peakRssMiB, fixture]);
         }
         if (event.phase === "admission") images.admitted.add(event.path);
         if (event.phase === "execution-start") images.launched.add(event.path);
@@ -301,4 +308,10 @@ if (import.meta.main) {
     console.log("native-images general fallback: " + entry);
   for (const entry of large.values())
     console.log("native-images large image: " + entry);
+  // Peak resident sizes of building processes, for sizing memory slots.
+  peaks.sort((a, b) => b[0] - a[0]);
+  for (const [mib, fixture] of peaks.slice(0, 5))
+    console.log(
+      "native-images peak build RSS: " + fixture + ": " + mib + " MiB",
+    );
 }

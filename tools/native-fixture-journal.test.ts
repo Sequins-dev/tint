@@ -38,6 +38,7 @@ test("build records carry a fixture's general fallback reason", () => {
       .split("\n")
       .map((line) => JSON.parse(line))
       .filter((event) => event.phase === "build");
+    assert.ok(builds.every((event) => event.peakRssMiB > 0));
     assert.deepEqual(
       builds.map((event) => [event.fixture, event.general]),
       [
@@ -60,6 +61,7 @@ test("the gate summary counts general fallbacks and large images", () => {
         fixture,
         path: join(directory, fixture),
         bytes,
+        peakRssMiB: Math.round(bytes / 100000),
         ...(general === undefined ? {} : { general }),
       });
     writeFileSync(
@@ -86,6 +88,9 @@ test("the gate summary counts general fallbacks and large images", () => {
       "native-images general fallback: fallback: check: invalid read",
       "native-images large image: fallback: 24000000 bytes",
       "native-images large image: compiler: 80000000 bytes",
+      "native-images peak build RSS: compiler: 800 MiB",
+      "native-images peak build RSS: fallback: 240 MiB",
+      "native-images peak build RSS: small: 7 MiB",
     ]);
   } finally {
     rmSync(directory, { recursive: true, force: true });
