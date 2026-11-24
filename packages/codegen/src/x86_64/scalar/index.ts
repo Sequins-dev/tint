@@ -24,6 +24,7 @@ import {
   nativeStringDataOffset,
   nativeStringLengthOffset,
   nativeCStackReserveBytes,
+  nativeGenerationalLargeObjectOffset,
   nativeGenerationalNurseryAddressOffset,
   nativeStackMapFooterMagic,
   nativeStackMapRegistryOffset,
@@ -1096,21 +1097,20 @@ export function emitModule(
       const slow = site + ":slow";
       const clear = site + ":clear";
       if (inlineAllocation) {
-        // The allocator routes requests >= max(128, youngCapacity/4)
-        // directly to old space. Match that threshold before bumping.
+        // The allocator routes requests of at least the published threshold
+        // directly to old space; match it before bumping.
         emit({ op: "mov", dst: scratch, src: mem(2, allocationStateOffset) });
-        emit({ op: "mov", dst: eax, src: { ...mem(11, 4), width: 32 } });
-        emit({ op: "mov", dst: word(8), src: eax });
-        emit({ op: "shr", dst: word(8), count: 2 });
-        emit({ op: "mov", dst: word(1), src: imm(128) });
-        emit({ op: "cmp", dst: word(8), src: word(1) });
-        emit({ op: "cmovcc", cc: "b", dst: word(8), src: word(1) });
-        emit({ op: "cmp", dst: r10, src: gpr(8) });
+        emit({
+          op: "cmp",
+          dst: word(10),
+          src: { ...mem(11, nativeGenerationalLargeObjectOffset), width: 32 },
+        });
         branch(emit, "ae", slow);
         // top + size against the limit: zero-extended uint32 offsets in
         // 64-bit registers, so a limit lowered below an in-flight top (a
         // debugger arming sampling) sends the next allocation to the slow
         // path instead of wrapping (docs/allocation-throughput.md).
+        emit({ op: "mov", dst: eax, src: { ...mem(11, 4), width: 32 } });
         emit({ op: "mov", dst: word(9), src: { ...mem(11, 0), width: 32 } });
         emit({
           op: "lea",
