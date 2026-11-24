@@ -12,6 +12,8 @@ export { unboundedWork } from "./budget.ts";
 export { simplifyControlFlow } from "./control-flow.ts";
 import { lowerProvenRecordReads } from "./record-access.ts";
 export { lowerProvenRecordReads } from "./record-access.ts";
+import { sinkEnvironmentLoads } from "./sink-environment-loads.ts";
+export { sinkEnvironmentLoads } from "./sink-environment-loads.ts";
 import { reuseUnionReads } from "./union-reads.ts";
 export { reuseUnionReads } from "./union-reads.ts";
 import { proveCellStates } from "./cell-states.ts";
@@ -1574,9 +1576,36 @@ export function optimizeModuleVersion(
     );
   if (completed("simplify-control-flow", control, false)) return stop();
   const controlVisited = control.visited;
-  const compacted = rewriteFunctions(
+  // Sink cold closure-environment loads from the entry block to the lowest
+  // common dominator of their uses outside loops, freeing callee-saved
+  // registers on hot paths.
+  const sunk = rewriteFunctions(
     version,
     maxInstructions - used - accessVisited - controlVisited,
+    undefined,
+    undefined,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = sinkEnvironmentLoads(fn, version.module, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.sunk,
+            refused: false,
+          };
+    },
+  );
+  if (sunk.exhausted)
+    return exhausted(
+      "sink-environment-loads",
+      maxInstructions - used - accessVisited - controlVisited,
+    );
+  if (completed("sink-environment-loads", sunk, false)) return stop();
+  const sinkVisited = sunk.visited;
+  const compacted = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited - controlVisited - sinkVisited,
     undefined,
     undefined,
     (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
@@ -1594,7 +1623,7 @@ export function optimizeModuleVersion(
   if (compacted.exhausted)
     return exhausted(
       "compact-slots",
-      maxInstructions - used - accessVisited - controlVisited,
+      maxInstructions - used - accessVisited - controlVisited - sinkVisited,
     );
   if (completed("compact-slots", compacted, false)) return stop();
   const compactVisited = compacted.visited;
@@ -1603,7 +1632,12 @@ export function optimizeModuleVersion(
   // trusts that cache, so nothing may move code after this; copying a whole
   // loop with its refreshes keeps it current).
   const vectorBudget =
-    maxInstructions - used - accessVisited - controlVisited - compactVisited;
+    maxInstructions -
+    used -
+    accessVisited -
+    controlVisited -
+    sinkVisited -
+    compactVisited;
   const vectors = rewriteModuleVersion(
     version,
     undefined,

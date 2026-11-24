@@ -3500,6 +3500,7 @@ function createNativeImageRequest(
             "viewObjectValue",
             "viewSymbolValue",
             "viewBigIntValue",
+            "viewTypeofObject",
             ...propertyCacheNames,
             ...activationNames,
             ...intlFormatViewNames,
@@ -3555,6 +3556,7 @@ function createNativeImageRequest(
         { module: objectModule, name: "viewObjectValue", operation: "view" },
         { module: objectModule, name: "viewSymbolValue", operation: "view" },
         { module: objectModule, name: "viewBigIntValue", operation: "view" },
+        { module: objectModule, name: "viewTypeofObject", operation: "view" },
         // Generated property caches compare shapes and load and store
         // values inline.
         ...propertyCacheBindings(objectModule),

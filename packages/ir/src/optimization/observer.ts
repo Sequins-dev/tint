@@ -21,6 +21,7 @@ export interface PassStatistics {
     | "split-optional-numbers"
     | "shadow-general-numbers"
     | "lower-proven-record-reads"
+    | "sink-environment-loads"
     | "ssa-constants"
     | "fold-constants"
     | "coalesce-defaults"
