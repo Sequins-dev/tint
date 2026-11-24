@@ -57,16 +57,36 @@ export function llvmTool(name: string): string {
  * supplies the SDK sysroot (the toolchain binary alone finds neither the
  * headers nor libSystem), else the distribution's clang. Throws when no
  * clang is installed. */
-export function compileC(args: readonly string[]): {
+export function compileC(
+  args: readonly string[],
+  env: NodeJS.ProcessEnv = process.env,
+): {
   readonly status: number | null;
   readonly stderr: string;
 } {
   const result =
     process.platform === "darwin"
-      ? spawnSync("xcrun", ["clang", ...args], { encoding: "utf8" })
-      : spawnSync(llvmTool("clang"), args, { encoding: "utf8" });
+      ? spawnSync("xcrun", ["clang", ...args], { encoding: "utf8", env })
+      : spawnSync(llvmTool("clang"), args, { encoding: "utf8", env });
   if (result.error !== undefined) throw result.error;
   return { status: result.status, stderr: result.stderr };
+}
+
+/** Compiles a C program with debug information (-g -O0) reproducibly: the
+ * object file is written beside the program rather than to a temporary path
+ * (the debug map names it), and ZERO_AR_DATE=1 zeroes the object timestamp
+ * the Darwin linker records there. The object stays for the debugger. */
+export function compileDebugProgram(
+  source: string,
+  program: string,
+): { readonly status: number | null; readonly stderr: string } {
+  const object = program + ".o";
+  const compiled = compileC(["-g", "-O0", "-c", source, "-o", object]);
+  if (compiled.status !== 0) return compiled;
+  return compileC(["-g", object, "-o", program], {
+    ...process.env,
+    ZERO_AR_DATE: "1",
+  });
 }
 
 /** One measured run of a command. Counters are undefined where the host

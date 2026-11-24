@@ -25,6 +25,7 @@ import test from "node:test";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
 import { cgroupProcessorLimitFrom } from "../packages/native-runtime/src/processors.ts";
+import { stableScratchDirectory } from "./fixture-scratch.ts";
 
 const memory = "packages/native-runtime/src/intrinsics/memory.ts",
   rounds = "packages/foundation/src/binary/sha256-rounds.ts",
@@ -280,7 +281,7 @@ const cgroupCases: readonly {
 ];
 
 test("cgroup v1, v2 and hybrid limits parse natively from fixture files", () => {
-  const directory = mkdtempSync(join(tmpdir(), "tint-cgroups-"));
+  const directory = stableScratchDirectory("cgroups");
   try {
     const roots = cgroupCases.map((item, index) => {
       const root = join(directory, String(index));
