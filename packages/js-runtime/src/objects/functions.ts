@@ -176,18 +176,7 @@ export function constructorPrototype(
     : selected;
 }
 
-/** OrdinaryCreateFromConstructor(newTarget, "%Object.prototype%") for a
- * native entry's construction in its own realm, given the value of the
- * target's "prototype": an ordinary object with that prototype, or with the
- * realm's Object.prototype when the value is not an object. */
-export function createSourceInstance(
-  prototype: unknown,
-  realm: ErrorRealm,
-): unknown {
-  return createObject<ScriptPropertyKey, unknown>(
-    viewObjectValue(prototype, realm.objectPrototype) ?? realm.objectPrototype,
-  );
-}
+export { createSourceInstance } from "./values.ts";
 
 /** Source execution receives the actual function object, independently of its
  * mutable source binding. Calls pass undefined newTarget; construction preserves

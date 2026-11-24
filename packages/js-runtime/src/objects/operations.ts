@@ -1653,7 +1653,9 @@ function reshapeFastProperty<Key, Value>(
 /** Note that object is a [[Prototype]]: from now on it grows private shapes,
  * which cached transitions never start at, and its structural changes bump
  * propertyEpoch. */
-function markPrototype<Key, Value>(object: OrdinaryObject<Key, Value>): void {
+export function markPrototype<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+): void {
   if (object.internalUsedAsPrototype) return;
   object.internalUsedAsPrototype = true;
   const shape = object.internalShape;

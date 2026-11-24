@@ -5487,6 +5487,15 @@ function lowerScriptEntry(
         right: id("undefined", span),
       };
     }
+    function noList(): Expression {
+      return {
+        ...at(span),
+        kind: "binary",
+        operator: "===",
+        left: id(incomingArguments, span),
+        right: id("undefined", span),
+      };
+    }
     function nativeArgument(index: Expression, site: Span): Expression {
       return {
         ...at(site),
@@ -5516,9 +5525,9 @@ function lowerScriptEntry(
         ? {
             ...at(site),
             kind: "conditional",
-            test: hasList(),
-            consequent: fromList,
-            alternate: nativeArgument(index, site),
+            test: noList(),
+            consequent: nativeArgument(index, site),
+            alternate: fromList,
           }
         : fromList;
     }

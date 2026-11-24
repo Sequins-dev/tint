@@ -3962,14 +3962,18 @@ function emitModuleForms(
             // Exact uint32 constants defined earlier in this block: memory
             // host operations take them as immediates (wordKinds 3, set as
             // each constant is emitted) and never read their frame words.
-            const wordImmediates = new Set<number>();
+            const wordImmediates = new Set<number>(),
+              scriptArgImmediates = new Set<number>();
             for (const op of block.instructions) {
               if (op === undefined) throw "constant use instruction invariant";
               if (op.kind === "constant") {
                 const constant = op.value;
                 if (typeof constant === "number") {
                   numericConstants[valueIds.intern(op.id)] = 1;
-                  if (constant >>> 0 === constant) wordImmediates.add(op.id);
+                  if (constant >>> 0 === constant) {
+                    wordImmediates.add(op.id);
+                    if (constant < 2048) scriptArgImmediates.add(op.id);
+                  }
                   if (constant === 0) zeroConstants[valueIds.intern(op.id)] = 1;
                 }
               }
@@ -3996,6 +4000,40 @@ function emitModuleForms(
                   if (zeroValues[index] === 1 || undefinedValues[index] === 1)
                     folded[index] = (folded[index] ?? 0) + 1;
                 }
+              // Constant script-argument positions (< 2048) are folded directly
+              // into the frame offset (see case "script-argument").
+              if (
+                op.kind === "script-argument" &&
+                scriptArgImmediates.has(op.index)
+              ) {
+                const index = valueIds.intern(op.index);
+                folded[index] = (folded[index] ?? 0) + 1;
+              }
+              // Zero header/register actual operands of a native script call
+              // are loaded as immediates instead of materialized to the frame.
+              if (op.kind === "call-indirect") {
+                const scriptArgs = op.scriptArguments;
+                if (scriptArgs !== undefined) {
+                  for (let i = 2; i < op.arguments.length; i++) {
+                    const argument = op.arguments[i];
+                    if (argument === undefined) continue;
+                    const index = valueIds.intern(argument);
+                    if (zeroValues[index] === 1)
+                      folded[index] = (folded[index] ?? 0) + 1;
+                  }
+                  for (
+                    let i = 0;
+                    i < scriptActualRegisterPairs && i < scriptArgs.length;
+                    i++
+                  ) {
+                    const argument = scriptArgs[i];
+                    if (argument === undefined) continue;
+                    const index = valueIds.intern(argument);
+                    if (zeroValues[index] === 1)
+                      folded[index] = (folded[index] ?? 0) + 1;
+                  }
+                }
+              }
               if (
                 op.kind === "binary" &&
                 (op.operator === "<<" ||
@@ -17051,18 +17089,20 @@ function emitModuleForms(
                 if (op.kind === "call" && op.environment === "inherit")
                   rawLoad(1, environmentOffset);
                 else if (
-                  directCallee === undefined ||
-                  directCallee.import === true ||
-                  directCallee.environment !== undefined ||
-                  directCallee.closureEnvironment !== undefined
+                  actuals === undefined &&
+                  (directCallee === undefined ||
+                    directCallee.import === true ||
+                    directCallee.environment !== undefined ||
+                    directCallee.closureEnvironment !== undefined)
                 )
                   imm(1, 0);
                 if (op.receiver !== undefined)
                   address(2, value(op.receiver).offset);
                 else if (
-                  directCallee === undefined ||
-                  directCallee.import === true ||
-                  directCallee.receiverSlot !== undefined
+                  actuals === undefined &&
+                  (directCallee === undefined ||
+                    directCallee.import === true ||
+                    directCallee.receiverSlot !== undefined)
                 )
                   imm(2, 0);
                 // A tail call completes into this entry's own completion
@@ -17173,11 +17213,25 @@ function emitModuleForms(
                       generalPair(9, source, true);
                       generalPair(9, target, false);
                     }
+                    let listFolded = false;
                     for (let i = 0; i < op.arguments.length; i++) {
                       const argument = op.arguments[i],
                         location = target.parameters[i];
                       if (argument === undefined || location === undefined)
                         throw "script call header invariant";
+                      if (
+                        i >= 2 &&
+                        zeroValues[valueIds.intern(argument)] === 1
+                      ) {
+                        if (location.kind === "pair") {
+                          imm(location.index, 0);
+                          imm(location.index + 1, 0);
+                        } else {
+                          imm(location.index, actuals.length * 2 + 1);
+                          listFolded = true;
+                        }
+                        continue;
+                      }
                       const offset = value(argument).offset;
                       if (location.kind === "pair")
                         generalPair(location.index, offset, true);
@@ -17186,7 +17240,10 @@ function emitModuleForms(
                     for (let i = 0; i < scriptActualRegisterPairs; i++) {
                       const register = scriptFirstActualRegister + i * 2;
                       const argument = actuals[i];
-                      if (argument === undefined) {
+                      if (
+                        argument === undefined ||
+                        zeroValues[valueIds.intern(argument)] === 1
+                      ) {
                         imm(register, 0);
                         imm(register + 1, 0);
                       } else {
@@ -17194,15 +17251,17 @@ function emitModuleForms(
                         generalPair(register, offset, true);
                       }
                     }
-                    const list = instructions.length;
-                    emit({ op: "cbnz", width: 64, rt: 2, displacement: 0 });
-                    imm(2, actuals.length * 2 + 1);
-                    patchInstruction(list, {
-                      op: "cbnz",
-                      width: 64,
-                      rt: 2,
-                      displacement: (instructions.length - list) * 4,
-                    });
+                    if (!listFolded) {
+                      const list = instructions.length;
+                      emit({ op: "cbnz", width: 64, rt: 2, displacement: 0 });
+                      imm(2, actuals.length * 2 + 1);
+                      patchInstruction(list, {
+                        op: "cbnz",
+                        width: 64,
+                        rt: 2,
+                        displacement: (instructions.length - list) * 4,
+                      });
+                    }
                   }
                   if (tailCall) {
                     // The callee replaces this frame: no safepoint, no

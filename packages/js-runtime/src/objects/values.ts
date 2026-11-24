@@ -15,6 +15,7 @@ import {
   setProperty,
   deleteProperty,
   setPrototype,
+  markPrototype,
   lookupCachedScriptProperty,
   cachedScriptPropertyValue,
   storeCachedScriptProperty,
@@ -119,6 +120,49 @@ export function enumerateObjectValue(
   return {
     error: "none",
     value: iterator,
+  };
+}
+
+/** OrdinaryCreateFromConstructor(newTarget, "%Object.prototype%") for a
+ * native entry's construction in its own realm, given the value of the
+ * target's "prototype": an ordinary object with that prototype, or with the
+ * realm's Object.prototype when the value is not an object. Constructs the
+ * fast-mode object directly without generic createObject indirection. */
+export function createSourceInstance(
+  prototype: unknown,
+  realm: ErrorRealm,
+): unknown {
+  const proto =
+    viewObjectValue(prototype, realm.objectPrototype) ?? realm.objectPrototype;
+  if (!proto.internalUsedAsPrototype)
+    markPrototype<ScriptPropertyKey, unknown>(proto);
+  return {
+    internalShape: proto.internalChildShape,
+    prototype: proto,
+    extensible: true,
+    properties: undefined,
+    internalPropertyEpoch: 0,
+    internalChildShape: undefined,
+    internalDictionary: false,
+    internalUsedAsPrototype: false,
+    internalValues: undefined,
+    internalCall: undefined,
+    internalRegisterCall: undefined,
+    internalConstruct: undefined,
+    internalExecutionContext: undefined,
+    internalArrayData: false,
+    internalArrayElements: undefined,
+    internalMethods: undefined,
+    internalRareSlots: undefined,
+    internalExoticSlots: undefined,
+    internalValue0: undefined,
+    internalValue1: undefined,
+    internalValue2: undefined,
+    internalValue3: undefined,
+    internalValue4: undefined,
+    internalValue5: undefined,
+    internalValue6: undefined,
+    internalValue7: undefined,
   };
 }
 
