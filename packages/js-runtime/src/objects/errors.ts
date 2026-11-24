@@ -435,6 +435,7 @@ export function createErrorRealm(
       return result.value;
     },
     rangeError: (): unknown => createRuntimeError(activeArrayRealm(), "range"),
+    internalMethods: undefined,
   };
   const arrayPrototype = createArrayObject<ScriptPropertyKey, unknown>(
     0,

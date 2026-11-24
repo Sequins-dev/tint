@@ -6,6 +6,8 @@ import {
   type Descriptor,
   type DescriptorUpdate,
 } from "../descriptors/index.ts";
+import type { ObjectInternalMethods } from "./operations.ts";
+import type { ScriptPropertyKey } from "./symbols.ts";
 
 /** Embedding conversions for array exotic objects. `index`, `indexKey`,
  * `numberPayload` and `fromNumber` are pure and are also used by packed
@@ -22,12 +24,15 @@ export interface ArrayObjectHooks<Key, Value> {
   readonly toNumber: (value: Value) => number;
   readonly fromNumber: (value: number) => Value;
   readonly rangeError: () => Value;
+  /** Cached shared exotic methods for arrays sharing these hooks. */
+  internalMethods?: ObjectInternalMethods<Key, Value> | undefined;
 }
 
 /** Packed own elements of an array exotic object. While present, indices
  * `0..count-1` are writable, enumerable and configurable data properties and no
- * other array index is an own property; the property map holds no index key,
- * and the object has no property contract (attaching one unpacks them).
+ * other array index is an own property; the property map holds no index key and
+ * no "length" key (stored inline here), and the object has no property contract
+ * (attaching one unpacks them).
  *
  * Elements start as binary64 numbers and move to general storage at the first
  * element that is not a Number. Generated code reads and overwrites the number
@@ -49,10 +54,11 @@ export interface ArrayElements<Key, Value> {
   numbers: Float64Array;
   /** General storage, once any element was not a Number. */
   values: ElementCell<Value>[] | undefined;
-  /** The value of the array's "length" (at least the count), mirrored by
-   * every length definition so the runtime's length read takes it here
-   * instead of looking the property up. */
+  /** The value of the array's own non-configurable, non-enumerable "length"
+   * property (at least the count). */
   length: number;
+  /** Whether the array's own "length" property is writable. */
+  lengthWritable: boolean;
 }
 
 const dataFields =
@@ -69,6 +75,7 @@ const maximumCapacity = 536870906;
 export function createArrayElements<Key, Value>(
   keys: ArrayObjectHooks<Key, Value>,
   undefinedValue: Value,
+  length: number = 0,
 ): ArrayElements<Key, Value> {
   return {
     keys,
@@ -76,7 +83,92 @@ export function createArrayElements<Key, Value>(
     numberCount: 0,
     numbers: noNumbers,
     values: undefined,
-    length: 0,
+    length: length === 0 ? 0 : length,
+    lengthWritable: true,
+  };
+}
+
+/** Create packed Script array elements directly from an argument slice without
+ * per-element descriptor or hook dispatch. */
+export function createArrayElementsFromList(
+  keys: ArrayObjectHooks<ScriptPropertyKey, unknown>,
+  undefinedValue: unknown,
+  args: readonly unknown[],
+  start: number,
+  length: number,
+): ArrayElements<ScriptPropertyKey, unknown> {
+  if (length === 0)
+    return createArrayElements<ScriptPropertyKey, unknown>(
+      keys,
+      undefinedValue,
+      0,
+    );
+  const first = args[start];
+  if (typeof first === "number" && length <= maximumCapacity) {
+    const capacity = length < firstCapacity ? firstCapacity : length;
+    const numbers = new Float64Array(capacity);
+    numbers[0] = first;
+    let index = 1;
+    while (index < length) {
+      const item = args[start + index];
+      if (typeof item !== "number") break;
+      numbers[index] = item;
+      index++;
+    }
+    if (index === length)
+      return {
+        keys,
+        undefinedValue,
+        numberCount: length,
+        numbers,
+        values: undefined,
+        length,
+        lengthWritable: true,
+      };
+    const values: ElementCell<unknown>[] = [];
+    for (let i = 0; i < index; i++) {
+      const number = numbers[i];
+      if (number === undefined) throw "ARRAY_ELEMENTS_INVARIANT";
+      values.push({ value: number });
+    }
+    for (let i = index; i < length; i++)
+      values.push({ value: args[start + i] });
+    return {
+      keys,
+      undefinedValue,
+      numberCount: 0,
+      numbers: noNumbers,
+      values,
+      length,
+      lengthWritable: true,
+    };
+  }
+  const values: ElementCell<unknown>[] = [];
+  for (let i = 0; i < length; i++) values.push({ value: args[start + i] });
+  return {
+    keys,
+    undefinedValue,
+    numberCount: 0,
+    numbers: noNumbers,
+    values,
+    length,
+    lengthWritable: true,
+  };
+}
+
+/** The ordinary descriptor of the array's own "length" property. */
+export function arrayLengthDescriptor<Key, Value>(
+  elements: ArrayElements<Key, Value>,
+): Descriptor<Value> {
+  const undefinedValue = elements.undefinedValue;
+  return {
+    accessor: false,
+    value: elements.keys.fromNumber(elements.length),
+    writable: elements.lengthWritable,
+    enumerable: false,
+    configurable: false,
+    get: undefinedValue,
+    set: undefinedValue,
   };
 }
 

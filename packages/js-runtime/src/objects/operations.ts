@@ -53,6 +53,7 @@ import {
 import {
   arrayElementCount,
   arrayElementDescriptor,
+  arrayLengthDescriptor,
   packedElementUpdate,
   readArrayElement,
   truncateArrayElements,
@@ -709,6 +710,44 @@ export function createObject<Key, Value>(
     internalValue7: undefined,
   };
 }
+/** Compact array exotic object with packed elements, lazy property map, and
+ * shared exotic dispatch. */
+export function createPackedArrayObject<Key, Value>(
+  prototype: OrdinaryObject<Key, Value> | undefined,
+  elements: ArrayElements<Key, Value>,
+  methods: ObjectInternalMethods<Key, Value>,
+): OrdinaryObject<Key, Value> {
+  if (prototype !== undefined && !prototype.internalUsedAsPrototype)
+    markPrototype<Key, Value>(prototype);
+  return {
+    internalShape: undefined,
+    prototype,
+    extensible: true,
+    properties: undefined,
+    internalPropertyEpoch: 0,
+    internalChildShape: undefined,
+    internalDictionary: true,
+    internalUsedAsPrototype: false,
+    internalValues: undefined,
+    internalCall: undefined,
+    internalRegisterCall: undefined,
+    internalConstruct: undefined,
+    internalExecutionContext: undefined,
+    internalArrayData: true,
+    internalArrayElements: elements,
+    internalMethods: methods,
+    internalRareSlots: undefined,
+    internalExoticSlots: undefined,
+    internalValue0: undefined,
+    internalValue1: undefined,
+    internalValue2: undefined,
+    internalValue3: undefined,
+    internalValue4: undefined,
+    internalValue5: undefined,
+    internalValue6: undefined,
+    internalValue7: undefined,
+  };
+}
 /** Only ordinary data storage and the standard Array exotic can enroll. */
 export function acceptsPropertyContract<Key, Value>(
   object: OrdinaryObject<Key, Value>,
@@ -906,6 +945,8 @@ export function ordinaryGetOwnProperty<Key, Value>(
 ): Descriptor<Value> | undefined {
   const elements = object.internalArrayElements;
   if (elements !== undefined) {
+    if (key === elements.keys.lengthKey)
+      return arrayLengthDescriptor<Key, Value>(elements);
     const index = elements.keys.index(key);
     // Packed storage owns every array index; the property map holds none.
     if (index >= 0)
@@ -959,6 +1000,31 @@ export function ordinaryDefineOwnProperty<Key, Value>(
 ): PropertyDefinitionResult {
   const elements = object.internalArrayElements;
   if (elements !== undefined) {
+    if (key === elements.keys.lengthKey) {
+      const result = applyDescriptor<Value>(
+        arrayLengthDescriptor<Key, Value>(elements),
+        object.extensible,
+        update,
+        hooks.undefinedValue,
+        hooks.sameValue,
+      );
+      const descriptor = result.descriptor;
+      if (result.status === "accepted") {
+        if (descriptor === undefined) throw "ACCEPTED_DESCRIPTOR_INVARIANT";
+        if (
+          descriptor.accessor ||
+          descriptor.enumerable ||
+          descriptor.configurable
+        )
+          throw "ARRAY_LENGTH_INVARIANT";
+        const value = elements.keys.numberPayload(descriptor.value);
+        if (value === undefined) throw "ARRAY_LENGTH_INVARIANT";
+        elements.length = value;
+        elements.lengthWritable = descriptor.writable;
+        noteStructureChange<Key, Value>(object);
+      }
+      return result.status;
+    }
     const index = elements.keys.index(key);
     if (index >= 0) {
       const count = arrayElementCount<Key, Value>(elements);
@@ -1082,19 +1148,28 @@ export function ordinaryDefineOwnProperty<Key, Value>(
   }
   return result.status;
 }
-/** Move packed elements to ordinary descriptors permanently. Index keys are
- * absent from the map while packed, so ordering comes from key classification. */
+/** Move packed elements and inline "length" to ordinary descriptors
+ * permanently. "length" is inserted before any existing expando keys so
+ * insertion order matches creation order. */
 function unpackArrayElements<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   elements: ArrayElements<Key, Value>,
 ): void {
-  const properties = ensureProperties<Key, Value>(object);
+  const existing = object.properties;
+  const properties = new Map<Key, Descriptor<Value>>();
+  properties.set(
+    elements.keys.lengthKey,
+    arrayLengthDescriptor<Key, Value>(elements),
+  );
   const count = arrayElementCount<Key, Value>(elements);
   for (let index = 0; index < count; index++)
     properties.set(
       elements.keys.indexKey(index),
       arrayElementDescriptor<Key, Value>(elements, index),
     );
+  if (existing !== undefined)
+    for (const [key, descriptor] of existing) properties.set(key, descriptor);
+  object.properties = properties;
   noteStructureChange<Key, Value>(object);
   object.internalArrayElements = undefined;
 }
@@ -1283,6 +1358,7 @@ export function ordinaryDeleteProperty<Key, Value>(
 ): boolean {
   const elements = object.internalArrayElements;
   if (elements !== undefined) {
+    if (key === elements.keys.lengthKey) return false;
     const index = elements.keys.index(key);
     if (index >= 0) {
       const count = arrayElementCount<Key, Value>(elements);
@@ -1412,7 +1488,12 @@ export function hasProperty<Key, Value>(
       cursor = cursor.prototype;
       continue;
     }
-    if (getOwnProperty<Key, Value>(cursor, key) !== undefined) return true;
+    if (
+      cursor.internalMethods?.getOwnProperty === undefined
+        ? ordinaryHasOwnProperty<Key, Value>(cursor, key)
+        : getOwnProperty<Key, Value>(cursor, key) !== undefined
+    )
+      return true;
     cursor = getPrototype<Key, Value>(cursor);
   }
   return false;
@@ -1775,7 +1856,14 @@ export function ordinaryHasOwnProperty<Key, Value>(
     const shape = object.internalShape;
     return shape !== undefined && shapeKeyIndex<Key, Value>(shape, key) >= 0;
   }
-  return ordinaryGetOwnProperty<Key, Value>(object, key) !== undefined;
+  const elements = object.internalArrayElements;
+  if (elements !== undefined) {
+    if (key === elements.keys.lengthKey) return true;
+    const index = elements.keys.index(key);
+    if (index >= 0) return index < arrayElementCount<Key, Value>(elements);
+  }
+  const properties = object.properties;
+  return properties !== undefined && properties.has(key);
 }
 
 const emptyPropertyShapeHash = 2166136261;
@@ -2396,6 +2484,8 @@ export function getProperty<Key, Value>(
       elements !== undefined &&
       cursor.internalMethods?.getOwnProperty === undefined
     ) {
+      if (key === elements.keys.lengthKey)
+        return elements.keys.fromNumber(elements.length);
       const index = elements.keys.index(key);
       if (index >= 0) {
         if (index < arrayElementCount<Key, Value>(elements))
@@ -2453,6 +2543,10 @@ export function setProperty<Key, Value>(
       elements !== undefined &&
       cursor.internalMethods?.getOwnProperty === undefined
     ) {
+      if (key === elements.keys.lengthKey) {
+        if (!elements.lengthWritable) return false;
+        break;
+      }
       const index = elements.keys.index(key);
       if (index >= 0) {
         if (index >= arrayElementCount<Key, Value>(elements)) {
@@ -2551,16 +2645,20 @@ export function ordinaryOwnKeys<Key, Value>(
   }
   const elements = object.internalArrayElements;
   if (elements !== undefined) {
-    // Packed indices precede every map key, which holds no array index.
+    // Packed indices precede every other key, and "length" was created at
+    // array construction so it precedes every non-index string key.
     const ordered: Key[] = [];
     const count = arrayElementCount<Key, Value>(elements);
     for (let index = 0; index < count; index++)
       ordered.push(elements.keys.indexKey(index));
-    const sorted = sortPropertyKeys<Key>(keys, keyOrder);
-    for (let position = 0; position < sorted.length; position++) {
-      const key = sorted[position];
-      if (key === undefined) throw "PROPERTY_KEY_INVARIANT";
-      ordered.push(key);
+    ordered.push(elements.keys.lengthKey);
+    if (keys.length > 0) {
+      const sorted = sortPropertyKeys<Key>(keys, keyOrder);
+      for (let position = 0; position < sorted.length; position++) {
+        const key = sorted[position];
+        if (key === undefined) throw "PROPERTY_KEY_INVARIANT";
+        ordered.push(key);
+      }
     }
     return ordered;
   }

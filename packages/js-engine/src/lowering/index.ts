@@ -8404,6 +8404,19 @@ function lowerScriptEntry(
         return result;
       }
       case "array": {
+        if (node.elements.length === 0)
+          return temporary(
+            call(
+              "createArrayObject",
+              [
+                { ...at(node), kind: "number", value: 0, raw: "0" },
+                member(id("$errors"), "arrayPrototype", node),
+                member(id("$errors"), "arrayHooks", node),
+                member(id("$global"), "hooks", node),
+              ],
+              node,
+            ),
+          );
         let dense = true;
         for (const element of node.elements)
           if (element.kind === "spread" || element.kind === "elision")

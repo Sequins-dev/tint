@@ -289,10 +289,12 @@ function define(
   );
 }
 
-test("packed elements keep array indices out of the property map", () => {
+test("packed elements keep array indices and length out of the property map", () => {
   const a = packed(100);
+  const b = array();
   assert.notEqual(a.internalArrayElements, undefined);
-  assert.equal(a.properties?.size, 1);
+  assert.equal(a.properties, undefined);
+  assert.equal(a.internalMethods, b.internalMethods);
   assert.equal(length(a), 100);
   assert.deepEqual(data(a, "42"), [false, 42, true, true, true]);
   assert.equal(get(a, "99"), 99);
@@ -300,7 +302,7 @@ test("packed elements keep array indices out of the property map", () => {
   assert.deepEqual(keys(a).slice(0, 3), ["0", "1", "2"]);
   assert.equal(keys(a).at(-1), "length");
   assert.equal(objects.createDataProperty(a, "100", 100, hooks), true);
-  assert.equal(a.properties?.size, 1);
+  assert.equal(a.properties, undefined);
 });
 
 test("storing a non-number switches number elements to values once", () => {
@@ -323,7 +325,7 @@ test("storing a non-number switches number elements to values once", () => {
   assert.equal(get(a, "3"), "three");
   put(a, "4", 4);
   assert.equal(get(a, "4"), 4);
-  assert.equal(a.properties?.size, 1);
+  assert.equal(a.properties, undefined);
   assert.equal(length(a), 5);
 });
 
@@ -593,4 +595,84 @@ test("packed arrays created with a length start empty and grow by define", () =>
   assert.equal(objects.createDataProperty(a, "2", "c", hooks), true);
   assert.equal(a.internalArrayElements, undefined);
   assert.deepEqual(keys(a), ["0", "2", "length"]);
+});
+
+test("unpacking after expando properties keeps length before non-index string keys", () => {
+  const a = packed(2);
+  const symbol = objects.createSymbolValue("sym");
+  assert.equal(objects.createDataProperty(a, "first", 1, hooks), true);
+  assert.equal(objects.createDataProperty(a, symbol, 2, hooks), true);
+  assert.equal(objects.createDataProperty(a, "second", 3, hooks), true);
+  assert.notEqual(a.internalArrayElements, undefined);
+  assert.deepEqual(keys(a), ["0", "1", "length", "first", "second", symbol]);
+  // Truncating a packed array with expandos keeps expandos and stays packed.
+  assert.equal(resize(a, 1), "accepted");
+  assert.notEqual(a.internalArrayElements, undefined);
+  assert.deepEqual(keys(a), ["0", "length", "first", "second", symbol]);
+  // A sparse write unpacks while keeping "length" ahead of existing expandos.
+  assert.equal(put(a, "10", 10), true);
+  assert.equal(a.internalArrayElements, undefined);
+  assert.deepEqual(keys(a), ["0", "10", "length", "first", "second", symbol]);
+  assert.equal(get(a, "first"), 1);
+  assert.equal(get(a, symbol), 2);
+  assert.equal(get(a, "second"), 3);
+});
+
+test("inline length honors descriptor invariants, freezing, sealing, and prototype inheritance", () => {
+  const empty = array();
+  assert.equal(objects.ordinaryHasOwnProperty(empty, "length"), true);
+  assert.equal(objects.hasProperty(empty, "length"), true);
+  assert.equal(objects.deleteProperty(empty, "length"), false);
+  assert.equal(
+    define(empty, "length", { fields: 16, enumerable: true }),
+    "rejected",
+  );
+  assert.equal(
+    define(empty, "length", { fields: 32, configurable: true }),
+    "rejected",
+  );
+  assert.equal(
+    define(empty, "length", { fields: 4, get: () => 0 }),
+    "rejected",
+  );
+  assert.equal(define(empty, "length", { fields: 0 }), "accepted");
+  assert.equal(objects.preventExtensions(empty), true);
+  assert.equal(
+    define(empty, "length", { fields: 32, configurable: false }),
+    "accepted",
+  );
+  assert.notEqual(empty.internalArrayElements, undefined);
+  assert.equal(empty.properties, undefined);
+  assert.equal(
+    define(empty, "length", {
+      fields: 2 | 32,
+      writable: false,
+      configurable: false,
+    }),
+    "accepted",
+  );
+  assert.notEqual(empty.internalArrayElements, undefined);
+  assert.equal(empty.properties, undefined);
+  assert.deepEqual(data(empty, "length"), [false, 0, false, false, false]);
+  assert.equal(
+    define(empty, "length", { fields: 2, writable: true }),
+    "rejected",
+  );
+
+  // Inherited inline length on an ordinary object prototype chain.
+  const proto = packed(3);
+  const child = objects.createObject<ScriptPropertyKey, unknown>(proto);
+  assert.equal(objects.getProperty(child, "length", child, hooks), 3);
+  assert.equal(resize(proto, 3, false), "accepted");
+  assert.equal(
+    objects.setProperty(
+      child,
+      "length",
+      9,
+      { value: child, object: child },
+      hooks,
+    ),
+    false,
+  );
+  assert.equal(objects.getOwnProperty(child, "length"), undefined);
 });

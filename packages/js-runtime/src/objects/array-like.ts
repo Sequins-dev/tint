@@ -5,8 +5,8 @@ import {
   type OrdinaryObject,
   type ObjectHooks,
 } from "./operations.ts";
-import { createArrayObject } from "./arrays.ts";
-import { writeArrayElement } from "./array-elements.ts";
+import { createArrayWithElements } from "./arrays.ts";
+import { createArrayElementsFromList } from "./array-elements.ts";
 import { numberValue } from "./coercion.ts";
 import {
   createRuntimeError,
@@ -41,24 +41,18 @@ export function createArrayFromList(
   hooks: ObjectHooks<unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const length = Math.max(0, args.length - start);
-  const object = createArrayObject<ScriptPropertyKey, unknown>(
+  const elements = createArrayElementsFromList(
+    realm.arrayHooks,
+    hooks.undefinedValue,
+    args,
+    start,
     length,
+  );
+  return createArrayWithElements<ScriptPropertyKey, unknown>(
     prototype,
     realm.arrayHooks,
-    hooks,
+    elements,
   );
-  // CreateDataPropertyOrThrow of each index on a new extensible array always
-  // succeeds and runs no user code, leaving exactly the packed elements, so
-  // they are written to packed storage directly.
-  const elements = object.internalArrayElements;
-  if (elements === undefined) throw "ARRAY_LIST_INVARIANT";
-  for (let index = 0; index < length; index++)
-    writeArrayElement<ScriptPropertyKey, unknown>(
-      elements,
-      index,
-      args[start + index],
-    );
-  return object;
 }
 
 /** Copy a typed internal string list into an independently mutable Script Array. */

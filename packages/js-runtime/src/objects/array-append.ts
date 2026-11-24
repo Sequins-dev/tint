@@ -1,5 +1,5 @@
 import { arrayElementCount, writeArrayElement } from "./array-elements.ts";
-import { writePropertyCell, type OrdinaryObject } from "./operations.ts";
+import type { OrdinaryObject } from "./operations.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import type { ErrorRealm } from "./errors.ts";
 import { viewObjectValue } from "./values.ts";
@@ -21,7 +21,8 @@ export function appendPackedElement(
   realm: ErrorRealm,
 ): boolean {
   const elements = object.internalArrayElements;
-  if (elements === undefined || !object.extensible) return false;
+  if (elements === undefined || !object.extensible || !elements.lengthWritable)
+    return false;
   const count = arrayElementCount<ScriptPropertyKey, unknown>(elements);
   if (elements.length !== count || count > lastAppendIndex) return false;
   const arrayPrototype = object.prototype;
@@ -40,13 +41,7 @@ export function appendPackedElement(
     objectPrototype.internalDictionary
   )
     return false;
-  const properties = object.properties;
-  const length =
-    properties === undefined ? undefined : properties.get("length");
-  if (length === undefined || length.accessor || !length.writable) return false;
   writeArrayElement<ScriptPropertyKey, unknown>(elements, count, value);
-  // The length descriptor is this array's own cell, replaced in place.
-  writePropertyCell<unknown>(length, count + 1);
   elements.length = count + 1;
   return true;
 }

@@ -386,6 +386,31 @@ function literals() {
   const frozen = Object.freeze([1, 2]);
   try { write(frozen, 0, 5); } catch (e) { out.push(e.constructor.name); }
   out.push(frozen[0]);
+  const frozenEmpty = Object.freeze([]);
+  const sealedEmpty = Object.seal([]);
+  out.push(Object.isFrozen(frozenEmpty), Object.isSealed(sealedEmpty), Object.isFrozen(sealedEmpty));
+  try { frozenEmpty.length = 2; out.push("resized"); } catch (e) { out.push(e.constructor.name); }
+  sealedEmpty.length = 2;
+  try { delete sealedEmpty.length; out.push("deleted"); } catch (e) { out.push(e.constructor.name); }
+  out.push(sealedEmpty.length, Reflect.deleteProperty(sealedEmpty, "length"));
+  const expando = [10, 20];
+  const sym = Symbol("k");
+  expando.first = 1;
+  expando[sym] = 2;
+  expando.second = 3;
+  out.push(Reflect.ownKeys(expando).map((k) => typeof k === "symbol" ? "sym" : k).join("/"));
+  expando.length = 1;
+  out.push(Reflect.ownKeys(expando).map((k) => typeof k === "symbol" ? "sym" : k).join("/"));
+  expando[5] = 50;
+  out.push(Reflect.ownKeys(expando).map((k) => typeof k === "symbol" ? "sym" : k).join("/"));
+  const mixed = [1, 2, "three", 4];
+  out.push(mixed.join("/"), mixed.length);
+  const protoArr = [1, 2, 3];
+  const derived = Object.create(protoArr);
+  out.push(derived.length, Object.hasOwn(protoArr, "length"), "length" in protoArr);
+  Object.defineProperty(protoArr, "length", { writable: false });
+  try { derived.length = 9; out.push("wrote"); } catch (e) { out.push(e.constructor.name); }
+  out.push(derived.length);
   out.push(sumMasked(10), sumDefaulted(10), String(sumPastEnd(10)), sumPastEnd(4));
   return out.join(",");
 }
