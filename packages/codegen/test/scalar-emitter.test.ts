@@ -2,7 +2,7 @@ import { darwinHostABI } from "@tint/platform/darwin/host-abi";
 import { frameRoots } from "./frame-roots.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import type { ModuleIR } from "@tint/ir/scalar";
+import type { ModuleIR, RecordField } from "@tint/ir/scalar";
 import { decodeStackMaps, emitModule } from "@tint/codegen/aarch64/scalar";
 import { encode, relativeAddress } from "@tint/codegen/aarch64/isa";
 const span = { start: 1, end: 3 };
@@ -284,6 +284,116 @@ test("record-new stores zero-valued fields as XZR without materializing them", (
   // no STR XZR, [sp, #imm].
   assert.ok(!words.includes(0xd2800009));
   assert.ok(!words.some((word) => (word & 0xffc003ff) >>> 0 === 0xf90003ff));
+});
+
+test("a fused four-entry property load tests entries 1-3 in a cold stub", () => {
+  // Object record 1 (shape, one value), site record 2 (four own entries:
+  // shape, word index), epoch record 3. Block 0's miss test branches to
+  // block 1 (the miss, emitted after it) and block 2 (the hit).
+  const siteFields: RecordField[] = [];
+  for (let entry = 0; entry < 4; entry++)
+    siteFields.push(
+      { offset: 8 + entry * 16, type: "reference", mutable: true },
+      { offset: 16 + entry * 16, type: "number", mutable: true },
+    );
+  const module: ModuleIR = {
+    records: [
+      { byteLength: 16, fields: [] },
+      {
+        byteLength: 32,
+        fields: [
+          { offset: 8, type: "optional-reference", mutable: true },
+          { offset: 16, type: "general", mutable: true },
+        ],
+      },
+      { byteLength: 72, fields: siteFields },
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "number", mutable: true }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "read",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["general", "reference", "general"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              {
+                kind: "property-load",
+                id: 2,
+                object: 0,
+                site: 1,
+                record: 1,
+                field: 1,
+                count: 1,
+                siteRecord: 2,
+                siteField: 0,
+                inherited: false,
+                entries: 4,
+                epochRecord: 3,
+                epochField: 0,
+                ...span,
+              },
+              { kind: "store", slot: 2, value: 2, ...span },
+              { kind: "general-is", id: 3, value: 2, type: "absent", ...span },
+            ],
+            terminator: {
+              kind: "branch",
+              condition: 3,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [{ kind: "general-none", id: 4, ...span }],
+            terminator: { kind: "return", value: 4, ...span },
+          },
+          {
+            id: 2,
+            instructions: [{ kind: "load", id: 5, slot: 2, ...span }],
+            terminator: { kind: "return", value: 5, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  const result = emitModule(module);
+  assert.ok(result.ok, JSON.stringify(result));
+  const view = new DataView(result.value.code.buffer),
+    fn = result.value.functions[0]!;
+  const words: number[] = [];
+  for (let offset = fn.offset; offset < fn.offset + fn.byteLength; offset += 4)
+    words.push(view.getUint32(offset, true));
+  // CMP x9, x12 once per entry: entry 0 inline, entries 1-3 in the stub.
+  const compare = encode({
+    op: "sub-reg",
+    width: 64,
+    rd: "zr",
+    rn: 9,
+    rm: 12,
+    shift: "lsl",
+    amount: 0,
+    setFlags: true,
+  });
+  assert.ok(compare.ok);
+  const at = words.flatMap((word, index) =>
+    word === compare.value ? [index] : [],
+  );
+  assert.equal(at.length, 4);
+  // Entry 0's mismatch branches forward past the hit and miss code to the
+  // stub, so the stub's compares follow every other instruction of the body.
+  assert.ok(at[1]! - at[0]! > 4);
 });
 
 test("reference vector copies are one indexed loop with at most one barrier", () => {
