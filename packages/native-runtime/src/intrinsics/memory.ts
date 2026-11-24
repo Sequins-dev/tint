@@ -22,6 +22,11 @@ export function memoryPageBytes(): number {
 export function processorCount(): number {
   throw "HOST_UNAVAILABLE";
 }
+/** Compile-time target operating system code (nativeTargetOS* in
+ * @tint/abi/host) for the runtime's own host queries; probes nothing. */
+export function runtimeTargetOS(): number {
+  throw "HOST_UNAVAILABLE";
+}
 /** Read-only file access for the runtime's own host queries (cgroup CPU
  * limits), with the native-fs-host contract: paths are NUL-terminated
  * UTF-8 bytes, results are counts or descriptors, failures -errno. */

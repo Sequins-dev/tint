@@ -196,19 +196,21 @@ export function initializeGenerationalRuntime(
   const heap = createCheneyCollector(managedBase, managedLength, sharedStrings);
   // Pool evacuation for collections large enough to repay waking workers;
   // smaller ones, and any the pool cannot fit with LAB waste, stay serial.
+  // Workspaces and threads are created lazily on the first parallel collection
+  // so short-lived Workers pay no mmap/munmap or thread-join cost.
+  const processors = processorCount();
   const parallel = createParallelEvacuator(
     managedBase,
     managedLength,
-    collectorWorkerCount(processorCount(), cgroupProcessorLimit()),
+    collectorWorkerCount(
+      processors,
+      processors === 1 ? 0 : cgroupProcessorLimit(),
+    ),
     bits,
     roots,
     dirty,
     sharedStrings,
   );
-  // The pool starts with the heap, not inside the first large collection:
-  // that collection already promotes the whole startup heap (measured in
-  // docs/results/worker-runtime-first-minor-v1.md).
-  parallel?.warm();
   // Majors mark and forward on the same pool (inside the pause) when the
   // space is large enough to repay waking it.
   const compactor = createCompactor(
