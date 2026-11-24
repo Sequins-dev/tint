@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   encode,
   float64Immediate,
+  logicalImmediate32,
   writeInstruction,
   patchBranch,
   type Instruction,
@@ -363,6 +364,71 @@ test("FMOV immediates encode exactly the representable binary64 values", () => {
   assert.equal(encode({ op: "fmov-d-imm", rd: 32, imm8: 0 }).ok, false);
   assert.equal(encode({ op: "fmov-d-imm", rd: 0, imm8: 256 }).ok, false);
   assert.equal(encode({ op: "fmov-d-imm", rd: 0, imm8: 0.5 }).ok, false);
+});
+
+/** DecodeBitMasks (Arm ARM, shared pseudocode) for 32-bit operations: the
+ * uint32 a logical immediate's immr and imms fields denote, or undefined
+ * when reserved. Independent of the encoder. */
+function decodeBitMask(immr: number, imms: number): number | undefined {
+  // Element size: the highest clear bit of NOT(imms) within six bits.
+  let size = 32;
+  while (size >= 2 && (imms & size) !== 0) size /= 2;
+  if (size < 2) return undefined;
+  const ones = (imms & (size - 1)) + 1;
+  if (ones === size || immr >= size) return undefined;
+  let element = 0;
+  for (let bit = 0; bit < ones; bit++)
+    element += 2 ** ((bit + size - immr) % size);
+  let value = 0;
+  for (let offset = 0; offset < 32; offset += size)
+    value += element * 2 ** offset;
+  return value;
+}
+test("logical immediates encode exactly the 32-bit bitmask patterns", () => {
+  const patterns = new Set<number>();
+  for (let imms = 0; imms < 64; imms++)
+    for (let immr = 0; immr < 32; immr++) {
+      const value = decodeBitMask(immr, imms);
+      if (value === undefined) continue;
+      patterns.add(value);
+      const fields = logicalImmediate32(value);
+      assert.ok(fields !== undefined, value.toString(16));
+      assert.equal(fields.n, 0);
+      assert.equal(decodeBitMask(fields.immr, fields.imms), value);
+    }
+  // 5 element sizes, each run length and rotation: 1302 distinct values.
+  assert.equal(patterns.size, 1302);
+  // All zeros and all ones are reserved; operands must be uint32 words.
+  for (const value of [0, 0xffffffff, -1, 2 ** 32, 1.5, NaN])
+    assert.equal(logicalImmediate32(value), undefined, String(value));
+  assert.deepEqual(logicalImmediate32(0x80000003), { n: 0, immr: 1, imms: 2 });
+  for (const value of [5, 0x12345678, 0xff00ff01, 0x80000005])
+    assert.equal(logicalImmediate32(value), undefined, value.toString(16));
+  // Every other value is rejected: a deterministic sweep.
+  for (let value = 1, step = 0; step < 20000; step++) {
+    value = (value * 1103515245 + 12345) % 4294967296;
+    assert.equal(
+      logicalImmediate32(value) !== undefined,
+      patterns.has(value),
+      value.toString(16),
+    );
+  }
+  rejected(
+    { op: "and-imm", width: 32, rd: 0, rn: 1, n: 1, immr: 0, imms: 0 },
+    "INVALID_IMMEDIATE",
+  );
+  rejected(
+    { op: "orr-imm", width: 32, rd: 0, rn: 1, n: 0, immr: 32, imms: 0 },
+    "INVALID_IMMEDIATE",
+  );
+  rejected(
+    { op: "ands-imm", width: 64, rd: "sp", rn: 1, n: 1, immr: 0, imms: 0 },
+    "INVALID_REGISTER",
+  );
+  rejected(
+    { op: "and-imm", width: 64, rd: 0, rn: "sp", n: 1, immr: 0, imms: 0 },
+    "INVALID_REGISTER",
+  );
 });
 
 test("SXTW sign-extends a 32-bit register", () => {
