@@ -24,7 +24,18 @@ import {
   nativeHeaderFlagUnit,
   nativeHeaderFlagsShift,
   nativeStringLengthOffset,
+  nativeStringIndexField,
+  nativeStringIndexFieldOffset,
   nativeStringDataOffset,
+  nativeStringTwoByteHeader,
+  nativeStringSlicedFlag,
+  nativeStringMinimumDataBytes,
+  nativeStringSlicedStartOffset,
+  nativeStringParentOffset,
+  nativeStringSlicedByteLength,
+  nativeStringSlicedMinimumLength,
+  nativeNumberStringCacheWord,
+  nativeNumberStringCacheEntries,
   nativeArrayLengthOffset,
   nativeArrayDataOffset,
   nativeArrayInlineOffset,
@@ -132,7 +143,12 @@ import {
 } from "@tint/foundation/binary/bytes";
 import { emitCellAccess, type CellAccess } from "../cell.ts";
 import { numericHelper, type NumericHelper } from "./numeric.ts";
-import { stringHelper, type StringHelper } from "./strings.ts";
+import {
+  stringHelper,
+  stringHelperAlignment,
+  type StringHelper,
+} from "./strings.ts";
+import { isOneByteText, stringTextBytes } from "../../scalar/string-text.ts";
 import { arrayInitializer } from "./arrays.ts";
 import {
   sharedMemoryPrimitive,
@@ -238,6 +254,7 @@ import { dwarfFloatRegister, dwarfStackPointer } from "../unwind.ts";
 import {
   patchBranch,
   branchInReach,
+  branchAt,
   patchRelativeAddress,
   patchAddress,
   pageAddress,
@@ -247,7 +264,6 @@ import {
   float64Immediate,
   logicalImmediate32,
   encode,
-  branchAt,
   type EncodingResult,
   type Instruction,
   type Branch,
@@ -483,6 +499,49 @@ interface Fixup {
   readonly block: number | undefined;
   /** A register-indirect far branch: an x16 address sequence then BR. */
   readonly far?: true | undefined;
+}
+/** log2 of a power-of-two table size (the number-string cache's). */
+function entryBits(entries: number): number {
+  let bits = 0,
+    size = 1;
+  while (size < entries) {
+    size *= 2;
+    bits++;
+  }
+  if (size !== entries) throw "number cache size invariant";
+  return bits;
+}
+/** Bytes of each one-unit pool string: align16(16 + 8), as the literal pool
+ * sizes every string with its minimum eight data bytes. */
+const unitStringBytes: number = 32;
+/** A private leaf helper's instructions, and whether it is a string helper
+ * (whose loop heads are aligned, so it starts aligned). */
+function leafHelperBody(kind: LeafHelperKind): {
+  readonly body: readonly Instruction[];
+  readonly aligned: boolean;
+} {
+  if (
+    kind === "shared-read-unsigned" ||
+    kind === "shared-write-unsigned" ||
+    kind === "shared-read-word64" ||
+    kind === "shared-write-word64" ||
+    kind === "shared-compare-exchange-word64" ||
+    kind === "shared-compare-exchange-unsigned"
+  )
+    return { body: sharedMemoryPrimitive(kind), aligned: false };
+  if (kind === "to-uint32" || kind === "remainder")
+    return { body: numericHelper(kind), aligned: false };
+  if (kind === "array-initialize")
+    return { body: arrayInitializer(), aligned: false };
+  if (kind === "memory-move" || kind === "array-copy")
+    return { body: memoryMover(kind === "array-copy"), aligned: false };
+  if (kind === "remember-object")
+    return { body: rememberedBarrier(), aligned: false };
+  if (kind === "stack-overflow")
+    return { body: stackOverflowHelper(), aligned: false };
+  if (kind === "allocate-call" || kind === "allocate-finish")
+    return { body: allocationHelper(kind), aligned: false };
+  return { body: stringHelper(kind), aligned: true };
 }
 function managed(type: string): boolean {
   return [
@@ -726,6 +785,12 @@ export type {
 } from "../../scalar/managed-abi.ts";
 /** Fused union dispatch chains at least this long test membership with one
  * bitset lookup (about 20 instructions) instead of a comparison per layout. */
+/** The sliced string kind flag's header bit, and that bit in the header's
+ * high word (a 32-bit load at +4). */
+const slicedBit: number = nativeHeaderFlagsShift + 1;
+const slicedHighBit: number = slicedBit - 32;
+/** The one-byte kind flag's bit in the header's high word. */
+const oneByteHighBit: number = nativeHeaderFlagsShift - 32;
 const dispatchBitsetThreshold = 10;
 /** A branch emitted with displacement 0, patched to a label later. */
 interface LocalBranch {
@@ -1112,6 +1177,9 @@ function emitModuleForms(
     // indices (key "set:<ids>"), plus the record descriptor region bounds
     // ("start"/"end") that keep foreign descriptors out of the bitset.
     dispatchFixups: { offset: number; key: string }[] = [];
+  /** Whether code takes one-unit strings from the table that heads the
+   * literal pool (string-from-code-units). */
+  let usesUnitStrings = false;
   const dispatchSets = new Map<
     string,
     { readonly first: number; readonly records: readonly number[] }
@@ -1171,8 +1239,8 @@ function emitModuleForms(
     });
   }
   /** x9/x10 string objects -> w9 (1 equal, 0 different). Identical objects
-   * are equal and different lengths unequal without the content helper,
-   * which covers most discriminant comparisons. */
+   * are equal, and different headers (kinds) or lengths unequal without the
+   * content helper, which covers most discriminant comparisons. */
   function stringEqual(): void {
     emit({
       op: "sub-reg",
@@ -1186,32 +1254,55 @@ function emitModuleForms(
     });
     const same = instructions.length;
     emit({ op: "b.cond", condition: "eq", displacement: 0 });
+    // The header's high word (the kind flags) and the length word of each:
+    // equal strings have equal lengths and kinds (canonical). Unequal
+    // lengths differ at once; equal high words go to the helper, and
+    // otherwise the strings differ unless one is sliced (bit 17 of the
+    // high word): a slice may equal a flat string of its kind.
     emit({
-      op: "ldr",
+      op: "ldp",
       width: 32,
       rt: 11,
+      rt2: 12,
       rn: 9,
-      offset: nativeStringLengthOffset,
+      offset: 4,
+      mode: "offset",
     });
     emit({
-      op: "ldr",
+      op: "ldp",
       width: 32,
-      rt: 12,
+      rt: 13,
+      rt2: 14,
       rn: 10,
-      offset: nativeStringLengthOffset,
+      offset: 4,
+      mode: "offset",
     });
-    emit({
-      op: "sub-reg",
-      width: 32,
-      rd: "zr",
-      rn: 11,
-      rm: 12,
-      shift: "lsl",
-      amount: 0,
-      setFlags: true,
-    });
-    const different = instructions.length;
+    function compareWords(left: number, right: number): void {
+      emit({
+        op: "sub-reg",
+        width: 64,
+        rd: "zr",
+        rn: left,
+        rm: right,
+        shift: "lsl",
+        amount: 0,
+        setFlags: true,
+      });
+    }
+    compareWords(12, 14);
+    const lengths = instructions.length;
     emit({ op: "b.cond", condition: "ne", displacement: 0 });
+    compareWords(11, 13);
+    const kinds = instructions.length;
+    emit({ op: "b.cond", condition: "eq", displacement: 0 });
+    emit({ op: "orr-reg", width: 64, rd: 15, rn: 11, rm: 13 });
+    const flatPair = instructions.length;
+    emit({ op: "tbz", rt: 15, bit: slicedHighBit, displacement: 0 });
+    patchInstruction(kinds, {
+      op: "b.cond",
+      condition: "eq",
+      displacement: (instructions.length - kinds) * 4,
+    });
     callHelper("string-equal");
     const compared = instructions.length;
     emit({ op: "b", displacement: 0 });
@@ -1223,10 +1314,16 @@ function emitModuleForms(
     emit({ op: "movz", width: 64, rd: 9, immediate: 1, shift: 0 });
     const equalDone = instructions.length;
     emit({ op: "b", displacement: 0 });
-    patchInstruction(different, {
+    patchInstruction(lengths, {
       op: "b.cond",
       condition: "ne",
-      displacement: (instructions.length - different) * 4,
+      displacement: (instructions.length - lengths) * 4,
+    });
+    patchInstruction(flatPair, {
+      op: "tbz",
+      rt: 15,
+      bit: slicedHighBit,
+      displacement: (instructions.length - flatPair) * 4,
     });
     emit({ op: "movz", width: 64, rd: 9, immediate: 0, shift: 0 });
     patchInstruction(compared, {
@@ -1369,6 +1466,8 @@ function emitModuleForms(
       case "cset":
       case "csel":
       case "sxtw":
+      case "rbit":
+      case "clz":
       case "adr":
       case "adrp":
       case "fmov-x-d":
@@ -1474,7 +1573,9 @@ function emitModuleForms(
       (i.op === "b" ||
         i.op === "b.cond" ||
         i.op === "cbz" ||
-        i.op === "cbnz") &&
+        i.op === "cbnz" ||
+        i.op === "tbz" ||
+        i.op === "tbnz") &&
       i.displacement > 0
     ) {
       const target = instructions.length + i.displacement / 4;
@@ -1539,7 +1640,9 @@ function emitModuleForms(
       (instruction.op === "b" ||
         instruction.op === "b.cond" ||
         instruction.op === "cbz" ||
-        instruction.op === "cbnz") &&
+        instruction.op === "cbnz" ||
+        instruction.op === "tbz" ||
+        instruction.op === "tbnz") &&
       instruction.displacement > 0
     ) {
       const target = index + instruction.displacement / 4;
@@ -3481,6 +3584,10 @@ function emitModuleForms(
                   op.kind === "string-concat" ||
                   op.kind === "string-slice" ||
                   op.kind === "string-allocate" ||
+                  op.kind === "string-from-latin1" ||
+                  op.kind === "string-from-utf8" ||
+                  op.kind === "string-ascii-case" ||
+                  op.kind === "number-string-cache" ||
                   ((op.kind === "call" || op.kind === "call-indirect") &&
                     op.id !== undefined &&
                     (managed(module.functions[op.target]?.returnType ?? "") ||
@@ -3756,6 +3863,20 @@ function emitModuleForms(
                 // payloads are converted when wrapped.
                 op.kind === "string-slice" ||
                 op.kind === "optional-wrap" ||
+                // Code units load through wordValue, which reads an int64
+                // directly.
+                op.kind === "string-from-code-units" ||
+                // Latin-1 and ASCII primitives take exact uint32 indices
+                // from either representation (latin1Index).
+                op.kind === "string-from-latin1" ||
+                op.kind === "string-copy-latin1" ||
+                op.kind === "string-ascii-prefix" ||
+                op.kind === "bytes-ascii-prefix" ||
+                op.kind === "string-utf8-length" ||
+                op.kind === "string-write-utf8" ||
+                op.kind === "string-from-utf8" ||
+                // A raw window's bounds load like latin1Index's.
+                op.kind === "string-flatten-into" ||
                 // C integer arguments convert from an int64 directly
                 // (numberToInteger); C double arguments through floatLoad.
                 op.kind === "c-call" ||
@@ -3986,6 +4107,15 @@ function emitModuleForms(
             ? consumer
             : undefined;
         }
+        // Optional numbers that are wrapped numbers, so present: a slice
+        // limit among them needs no absence test.
+        const wrappedNumbers = new Uint8Array(resultBound);
+        for (const block of fn.blocks) {
+          if (block === undefined) throw "wrapped number block invariant";
+          for (const op of block.instructions)
+            if (op !== undefined && op.kind === "optional-wrap")
+              wrappedNumbers[valueIds.intern(op.id)] = 1;
+        }
         const foldedConstants = new Uint8Array(resultBound),
           // Numeric constants 0 or -0: `x | 0` and `x ^ 0` are ToInt32(x).
           zeroConstants = new Uint8Array(resultBound),
@@ -4090,7 +4220,9 @@ function emitModuleForms(
                     : -1;
                 const text =
                   chosen < 0 ? undefined : stringLiterals.get(chosen);
-                if (text !== undefined && text.length <= 8) {
+                // Literals of up to eight data bytes (see the string
+                // equality case).
+                if (text !== undefined && stringTextBytes(text) <= 8) {
                   const index = valueIds.intern(chosen);
                   folded[index] = (folded[index] ?? 0) + 1;
                 }
@@ -4347,13 +4479,17 @@ function emitModuleForms(
                   op.kind === "string-concat" ||
                   op.kind === "string-slice" ||
                   op.kind === "string-allocate" ||
+                  op.kind === "string-from-latin1" ||
+                  op.kind === "string-from-utf8" ||
+                  op.kind === "string-ascii-case" ||
+                  op.kind === "number-string-cache" ||
                   op.kind === "array-new" ||
                   op.kind === "weak-slot-new" ||
                   op.kind === "reference-vector-new" ||
                   op.kind === "array-subarray",
               ),
             )
-              ? 24
+              ? 32
               : 0),
           environmentOffset =
             fn.closureEnvironment === undefined
@@ -4674,11 +4810,24 @@ function emitModuleForms(
               case "string-concat":
               case "string-slice":
               case "string-allocate":
+              case "string-from-latin1":
+              case "string-from-utf8":
+              case "string-ascii-case":
+              case "number-string-cached":
                 id = op.id;
                 type = "string";
                 break;
               case "string-length":
               case "string-code-unit":
+              case "string-index-of":
+              case "string-copy-latin1":
+              case "string-ascii-prefix":
+              case "bytes-ascii-prefix":
+              case "string-utf8-length":
+              case "string-write-utf8":
+              case "string-flat":
+              case "string-flatten-into":
+              case "string-index-cached":
                 id = op.id;
                 type = "number";
                 break;
@@ -4789,6 +4938,7 @@ function emitModuleForms(
                 type = "optional-number";
                 break;
               case "string-starts-with":
+              case "string-two-byte":
               case "optional-present":
               case "optional-value":
                 id = op.id;
@@ -6442,6 +6592,59 @@ function emitModuleForms(
           const home = homeOf(id);
           return home >= 32 ? home - 32 : scratch;
         }
+        /** An index operand of the Latin-1 primitives as an exact uint32
+         * in `rd`, from an int64 or an integral double; anything else
+         * traps (a binding invariant). Clobbers x16, d0 and d1. */
+        function latin1Index(id: number, rd: number): void {
+          if (exactInteger(id)) intOperand(id, rd);
+          else {
+            const operand = floatOperand(id, 0);
+            emit({ op: "fcvtzs-x-d", rd, rn: operand });
+            emit({ op: "scvtf-d-x", rd: 1, rn: rd });
+            emit({ op: "fcmp", rn: operand, rm: 1 });
+            trapIf({ op: "b.cond", condition: "ne" });
+          }
+          emit({ op: "ubfm", width: 64, rd: 16, rn: rd, immr: 32, imms: 63 });
+          trapIf({ op: "cbnz", width: 64, rt: 16 });
+        }
+        /** Traps unless x11 <= x12 <= the 32-bit length at [x9 + offset]
+         * (loaded into x10): the range [begin, limit) of a string or byte
+         * array. */
+        function latin1Range(lengthOffset: number): void {
+          emit({ op: "ldr", width: 32, rt: 10, rn: 9, offset: lengthOffset });
+          emit({
+            op: "sub-reg",
+            width: 64,
+            rd: "zr",
+            rn: 12,
+            rm: 10,
+            shift: "lsl",
+            amount: 0,
+            setFlags: true,
+          });
+          trapIf({ op: "b.cond", condition: "hi" });
+          emit({
+            op: "sub-reg",
+            width: 64,
+            rd: "zr",
+            rn: 11,
+            rm: 12,
+            shift: "lsl",
+            amount: 0,
+            setFlags: true,
+          });
+          trapIf({ op: "b.cond", condition: "hi" });
+        }
+        /** Saves the int64 count in x9 as numeric result `id`. */
+        function latin1Count(id: number): void {
+          if (wantsInteger(id)) {
+            saveRaw(9, id);
+            markInteger(id);
+          } else {
+            emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+            floatStore(0, id);
+          }
+        }
         /** Ordinary numeric ALU operands may name their existing FP homes. Only
          * stack-backed values need a scratch load; no conversion or guard changes. */
         function floatOperand(id: number, scratch: number): number {
@@ -7881,13 +8084,176 @@ function emitModuleForms(
               displacement: (instructions.length - fastDone) * 4,
             });
         }
+        /** string-slice-bounds' contract (x9 the source, d0 begin, d1
+         * limit, x10 1 when the limit is present -> x12 begin, x13 count),
+         * inline when the bounds are integers: relative bounds clamped to
+         * [0, length] in integer arithmetic. Other bounds (NaN, infinities,
+         * fractions) call the helper, which clamps doubles. */
+        function sliceBounds(
+          begin: number,
+          limit: number,
+          limitPresent: boolean,
+        ): void {
+          const slow: { index: number; branch: Branch }[] = [];
+          const toSlow = (branch: Branch): void => {
+            slow.push({ index: instructions.length, branch });
+            emit(branchAt(branch, 0));
+          };
+          /** rd = the integer value of `id`, whose double is in `register`
+           * (d0 and d1 stay intact for the helper), or slow. */
+          const integerBound = (
+            id: number,
+            register: number,
+            rd: number,
+          ): void => {
+            if (storedAsInteger(id)) {
+              rawValue(rd, id);
+              return;
+            }
+            emit({ op: "fcvtzs-x-d", rd, rn: register });
+            if (exactInteger(id)) return;
+            emit({ op: "scvtf-d-x", rd: 2, rn: rd });
+            emit({ op: "fcmp", rn: register, rm: 2 });
+            toSlow({ op: "b.cond", condition: "ne" });
+          };
+          const compareZero = (register: number): void => {
+            emit({
+              op: "sub-imm",
+              width: 64,
+              rd: "zr",
+              rn: register,
+              immediate: 0,
+              shift: 0,
+              setFlags: true,
+            });
+          };
+          /** rd = clamp(rd < 0 ? rd + length : rd, 0, length), length in
+           * x11. Clobbers x14. */
+          const clampRelative = (rd: number): void => {
+            compareZero(rd);
+            emit({
+              op: "add-reg",
+              width: 64,
+              rd: 14,
+              rn: rd,
+              rm: 11,
+              shift: "lsl",
+              amount: 0,
+              setFlags: false,
+            });
+            emit({
+              op: "csel",
+              width: 64,
+              rd,
+              rn: 14,
+              rm: rd,
+              condition: "lt",
+            });
+            compareZero(rd);
+            emit({
+              op: "csel",
+              width: 64,
+              rd,
+              rn: "zr",
+              rm: rd,
+              condition: "lt",
+            });
+            emit({
+              op: "sub-reg",
+              width: 64,
+              rd: "zr",
+              rn: rd,
+              rm: 11,
+              shift: "lsl",
+              amount: 0,
+              setFlags: true,
+            });
+            emit({
+              op: "csel",
+              width: 64,
+              rd,
+              rn: 11,
+              rm: rd,
+              condition: "gt",
+            });
+          };
+          integerBound(begin, 0, 12);
+          emit({
+            op: "ldr",
+            width: 32,
+            rt: 11,
+            rn: 9,
+            offset: nativeStringLengthOffset,
+          });
+          // An absent limit is the length.
+          emit({
+            op: "add-reg",
+            width: 64,
+            rd: 13,
+            rn: "zr",
+            rm: 11,
+            shift: "lsl",
+            amount: 0,
+            setFlags: false,
+          });
+          const absent = instructions.length;
+          if (!limitPresent)
+            emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+          integerBound(limit, 1, 13);
+          clampRelative(13);
+          if (!limitPresent)
+            patchInstruction(absent, {
+              op: "cbz",
+              width: 64,
+              rt: 10,
+              displacement: (instructions.length - absent) * 4,
+            });
+          clampRelative(12);
+          // The count: limit - begin, at least zero.
+          emit({
+            op: "sub-reg",
+            width: 64,
+            rd: 13,
+            rn: 13,
+            rm: 12,
+            shift: "lsl",
+            amount: 0,
+            setFlags: true,
+          });
+          emit({
+            op: "csel",
+            width: 64,
+            rd: 13,
+            rn: "zr",
+            rm: 13,
+            condition: "lt",
+          });
+          const done = instructions.length;
+          emit({ op: "b", displacement: 0 });
+          for (const site of slow) {
+            if (site === undefined) throw "slice bounds invariant";
+            patchInstruction(
+              site.index,
+              branchAt(site.branch, (instructions.length - site.index) * 4),
+            );
+          }
+          callHelper("string-slice-bounds");
+          patchInstruction(done, {
+            op: "b",
+            displacement: (instructions.length - done) * 4,
+          });
+        }
         // Combined code-unit count in x11; checked rounded extent saved across allocation.
-        function prepareStringSize(): void {
-          // align8(16 + 2 * length) must fit the uint32 allocation contract.
+        /** Code-unit count in x11 and the kind in `oneByte` (a register
+         * holding 1 for a one-byte string, else 0): saves the checked
+         * rounded extent at allocationOffset and the header at +24, both
+         * across the allocation. Clobbers x11-x13 and x15. */
+        function prepareStringSize(oneByte: number): void {
+          // align8(16 + bytes) must fit the uint32 allocation contract.
           // A longer string can never exist: clamp it to the maximum, whose
-          // extent (0xfffffff0) exceeds every heap's capacity (each is below
-          // 2^31), so the allocator throws its catchable RangeError value
-          // before anything is written.
+          // extent exceeds every heap's capacity (each is below 2^31), so
+          // the allocator throws its catchable RangeError value before
+          // anything is written.
           imm(12, maximumStringLength);
           emit({
             op: "sub-reg",
@@ -7910,25 +8276,38 @@ function emitModuleForms(
             amount: 0,
             setFlags: false,
           });
-          // align8(16 + 2 * max(length, 1)), which equals
-          // align8(16 + 2 * max(length, 4)): every string spans at least four
-          // units, which inline literal comparisons read unchecked.
+          // Data bytes: units << (1 - oneByte).
+          imm(15, 1);
+          emit({
+            op: "sub-reg",
+            width: 64,
+            rd: 15,
+            rn: 15,
+            rm: oneByte,
+            shift: "lsl",
+            amount: 0,
+            setFlags: false,
+          });
+          emit({ op: "lslv", width: 64, rd: 12, rn: 11, rm: 15 });
+          // align8(16 + max(bytes, 1)), which equals align8(16 + max(bytes,
+          // 8)): every string has at least eight data bytes, which inline
+          // literal comparisons read unchecked.
           emit({
             op: "sub-imm",
             width: 64,
             rd: "zr",
-            rn: 11,
+            rn: 12,
             immediate: 0,
             shift: 0,
             setFlags: true,
           });
-          emit({ op: "cset", rd: 12, condition: "eq" });
+          emit({ op: "cset", rd: 13, condition: "eq" });
           emit({
             op: "add-reg",
             width: 64,
             rd: 12,
             rn: 12,
-            rm: 12,
+            rm: 13,
             shift: "lsl",
             amount: 0,
             setFlags: false,
@@ -7940,16 +8319,6 @@ function emitModuleForms(
             rn: 12,
             immediate: nativeStringDataOffset + 7,
             shift: 0,
-            setFlags: false,
-          });
-          emit({
-            op: "add-reg",
-            width: 64,
-            rd: 12,
-            rn: 12,
-            rm: 11,
-            shift: "lsl",
-            amount: 1,
             setFlags: false,
           });
           emit({
@@ -7971,6 +8340,25 @@ function emitModuleForms(
             setFlags: false,
           });
           rawStore(12, allocationOffset);
+          // Header: marker 1 plus the one-byte kind flag (bit 48).
+          emit({
+            op: "ubfm",
+            width: 64,
+            rd: 13,
+            rn: oneByte,
+            immr: 16,
+            imms: 15,
+          });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: 13,
+            rn: 13,
+            immediate: nativeStringTwoByteHeader,
+            shift: 0,
+            setFlags: false,
+          });
+          rawStore(13, allocationOffset + 24);
         }
         // Typed-array object: marker +0, flags +8, length +16, data pointer +24.
         // Returns index in x9, data pointer in x10, validity in x13.
@@ -9980,6 +10368,33 @@ function emitModuleForms(
                 localPointer(9);
                 saveRaw(9, op.id);
                 break;
+              case "string-two-byte": {
+                // Two-byte exactly when the one-byte flag (bit 48) is clear,
+                // flat or sliced.
+                const string = rawRegister(op.string, 9),
+                  target = rawTarget(op.id, 9);
+                emit({ op: "ldr", width: 64, rt: 10, rn: string, offset: 0 });
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 10,
+                  rn: 10,
+                  immr: 48,
+                  imms: 48,
+                });
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 10,
+                  immediate: 0,
+                  shift: 0,
+                  setFlags: true,
+                });
+                emit({ op: "cset", rd: target, condition: "eq" });
+                saveRaw(target, op.id);
+                break;
+              }
               case "string-length": {
                 // A uint32 length: an exact int64 for integer uses.
                 const string = rawRegister(op.string, 9);
@@ -10014,12 +10429,164 @@ function emitModuleForms(
                 callHelper("string-starts-with");
                 saveRaw(9, op.id);
                 break;
+              case "string-index-of":
+                rawValue(9, op.string);
+                rawValue(10, op.search);
+                floatLoad(0, op.position);
+                if (op.reverse) callHelper("string-last-index-of");
+                else callHelper("string-index-of");
+                floatStore(0, op.id);
+                break;
               case "string-code-unit": {
+                /** Loads the unit at `index` of `string` into `target`, by
+                 * its header's high word in w11: 0x10000 flat one-byte (data
+                 * at x10, the string plus the data offset), 0 flat two-byte,
+                 * otherwise sliced (the parent plus the data offset and the
+                 * start offset; one-byte with bit 16). Flat one-byte strings
+                 * take the first branch. Clobbers x10, x13 and flags. */
+                function loadUnit(
+                  target: number,
+                  index: number,
+                  string: number,
+                ): void {
+                  emit({
+                    op: "sub-imm",
+                    width: 32,
+                    rd: "zr",
+                    rn: 11,
+                    immediate: nativeHeaderFlagUnit / 4294967296 / 4096,
+                    shift: 12,
+                    setFlags: true,
+                  });
+                  const oneByte = instructions.length;
+                  emit({ op: "b.cond", condition: "eq", displacement: 0 });
+                  const flatTwoByte = instructions.length;
+                  emit({ op: "cbz", width: 32, rt: 11, displacement: 0 });
+                  emit({
+                    op: "ldp",
+                    width: 64,
+                    rt: 13,
+                    rt2: 10,
+                    rn: string,
+                    offset: nativeStringSlicedStartOffset,
+                    mode: "offset",
+                  });
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 10,
+                    rn: 10,
+                    rm: 13,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 10,
+                    rn: 10,
+                    immediate: nativeStringDataOffset,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  const slicedTwoByte = instructions.length;
+                  emit({
+                    op: "tbz",
+                    rt: 11,
+                    bit: oneByteHighBit,
+                    displacement: 0,
+                  });
+                  const slicedOneByte = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  patchInstruction(flatTwoByte, {
+                    op: "cbz",
+                    width: 32,
+                    rt: 11,
+                    displacement: (instructions.length - flatTwoByte) * 4,
+                  });
+                  patchInstruction(slicedTwoByte, {
+                    op: "tbz",
+                    rt: 11,
+                    bit: oneByteHighBit,
+                    displacement: (instructions.length - slicedTwoByte) * 4,
+                  });
+                  emit({
+                    op: "ldr-indexed",
+                    size: 1,
+                    fp: false,
+                    rt: target,
+                    rn: 10,
+                    rm: index,
+                    scaled: true,
+                  });
+                  const loaded = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  patchInstruction(oneByte, {
+                    op: "b.cond",
+                    condition: "eq",
+                    displacement: (instructions.length - oneByte) * 4,
+                  });
+                  patchInstruction(slicedOneByte, {
+                    op: "b",
+                    displacement: (instructions.length - slicedOneByte) * 4,
+                  });
+                  emit({
+                    op: "ldr-indexed",
+                    size: 0,
+                    fp: false,
+                    rt: target,
+                    rn: 10,
+                    rm: index,
+                    scaled: false,
+                  });
+                  patchInstruction(loaded, {
+                    op: "b",
+                    displacement: (instructions.length - loaded) * 4,
+                  });
+                }
+                if (op.inBounds === true && op.unitKind !== undefined) {
+                  // A flat string of known kind (versionStringLoops): the
+                  // unit's load alone.
+                  const string = rawRegister(op.string, 9),
+                    index = intRegister(op.index, 12),
+                    halfword = op.unitKind === "two-byte";
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 10,
+                    rn: string,
+                    immediate: nativeStringDataOffset,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  const integer = wantsInteger(op.id),
+                    target = integer ? intTarget(op.id, 11) : 11;
+                  emit({
+                    op: "ldr-indexed",
+                    size: halfword ? 1 : 0,
+                    fp: false,
+                    rt: target,
+                    rn: 10,
+                    rm: index,
+                    scaled: halfword,
+                  });
+                  if (integer) {
+                    saveRaw(target, op.id);
+                    markInteger(op.id);
+                    break;
+                  }
+                  const unit = floatTarget(op.id, 0);
+                  emit({ op: "ucvtf-d-w", rd: unit, rn: 11 });
+                  floatStore(unit, op.id);
+                  break;
+                }
                 if (op.inBounds === true) {
                   // Proven a non-negative integer index below the length:
-                  // one halfword load (an int64 for integer uses).
+                  // one byte or halfword load (an int64 for integer uses).
                   const string = rawRegister(op.string, 9),
                     index = intRegister(op.index, 12);
+                  emit({ op: "ldr", width: 32, rt: 11, rn: string, offset: 4 });
                   emit({
                     op: "add-imm",
                     width: 64,
@@ -10031,28 +10598,12 @@ function emitModuleForms(
                   });
                   if (wantsInteger(op.id)) {
                     const target = intTarget(op.id, 11);
-                    emit({
-                      op: "ldr-indexed",
-                      size: 1,
-                      fp: false,
-                      rt: target,
-                      rn: 10,
-                      rm: index,
-                      scaled: true,
-                    });
+                    loadUnit(target, index, string);
                     saveRaw(target, op.id);
                     markInteger(op.id);
                     break;
                   }
-                  emit({
-                    op: "ldr-indexed",
-                    size: 1,
-                    fp: false,
-                    rt: 11,
-                    rn: 10,
-                    rm: index,
-                    scaled: true,
-                  });
+                  loadUnit(11, index, string);
                   const target = floatTarget(op.id, 0);
                   emit({ op: "ucvtf-d-w", rd: target, rn: 11 });
                   floatStore(target, op.id);
@@ -10068,6 +10619,7 @@ function emitModuleForms(
                   if (storedAsInteger(op.index))
                     index = intRegister(op.index, 12);
                   else imm(12, wordConstants[indexFact] ?? 0);
+                  emit({ op: "ldr", width: 32, rt: 11, rn: 9, offset: 4 });
                   emit({
                     op: "ldr",
                     width: 32,
@@ -10096,15 +10648,7 @@ function emitModuleForms(
                     shift: 0,
                     setFlags: false,
                   });
-                  emit({
-                    op: "ldr-indexed",
-                    size: 1,
-                    fp: false,
-                    rt: 11,
-                    rn: 10,
-                    rm: index,
-                    scaled: true,
-                  });
+                  loadUnit(11, index, 9);
                   emit({ op: "ucvtf-d-w", rd: target, rn: 11 });
                   const done = instructions.length;
                   emit({ op: "b", displacement: 0 });
@@ -10129,44 +10673,220 @@ function emitModuleForms(
                 break;
               }
               case "string-from-code-units": {
-                allocate(
-                  () => {
-                    imm(11, op.values.length);
-                    prepareStringSize();
-                  },
-                  (rd) => rawLoad(rd, allocationOffset),
-                );
-                saveRaw(9, op.id);
-                imm(10, 1);
-                emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 0 });
-                imm(10, op.values.length);
-                emit({
-                  op: "str",
-                  width: 64,
-                  rt: 10,
-                  rn: 9,
-                  offset: nativeStringLengthOffset,
-                });
-                for (let index = 0; index < op.values.length; index++) {
-                  const input = op.values[index];
-                  if (input === undefined) throw "string code unit invariant";
-                  rawValue(9, input);
-                  // ToUint16 is ToUint32 modulo 65536; strh stores those low bits.
-                  if (!storedAsWord(input)) callHelper("to-uint32");
-                  rawValue(10, op.id);
-                  imm(11, nativeStringDataOffset + index * 2);
+                // ToUint16 is ToUint32 modulo 65536: the low bits of each
+                // value's word. The string is one-byte when no unit has a bit
+                // in 0xFF00. The first eight units are converted once and kept
+                // packed, four halfwords per scratch word (x15, then x16)
+                // across the allocation; later units are converted again.
+                const values = op.values,
+                  result = op.id,
+                  packed = values.length < 8 ? values.length : 8;
+                /** ToUint32 of `input` in x9 (wordValue: integer storage
+                 * and exact doubles inline, the helper only otherwise). */
+                function codeUnit(input: number): void {
+                  wordValue(input);
+                }
+                // One unit below 256: its string from the one-unit table,
+                // without allocating (V8's single-character string table).
+                let tabled = -1;
+                const single = values.length === 1 ? values[0] : undefined;
+                if (single !== undefined) {
+                  codeUnit(single);
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 10,
+                    rn: 9,
+                    immr: 0,
+                    imms: 15,
+                  });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 10,
+                    immediate: 256,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  const wide = instructions.length;
+                  emit({ op: "b.cond", condition: "cs", displacement: 0 });
+                  usesUnitStrings = true;
+                  stringFixups.push({
+                    offset: instructions.length * 4,
+                    value: "\u0000",
+                  });
+                  localPointer(9);
                   emit({
                     op: "add-reg",
                     width: 64,
-                    rd: 10,
-                    rn: 10,
-                    rm: 11,
+                    rd: 9,
+                    rn: 9,
+                    rm: 10,
                     shift: "lsl",
-                    amount: 0,
+                    amount: 5,
                     setFlags: false,
                   });
-                  emit({ op: "strh", rt: 9, rn: 10, offset: 0 });
+                  saveRaw(9, result);
+                  tabled = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  patchInstruction(wide, {
+                    op: "b.cond",
+                    condition: "cs",
+                    displacement: (instructions.length - wide) * 4,
+                  });
                 }
+                allocate(
+                  () => {
+                    if (values.length === 1) {
+                      // One unit: kept whole in the first scratch word.
+                      const input = values[0];
+                      if (input === undefined)
+                        throw "string code unit invariant";
+                      codeUnit(input);
+                      rawStore(9, allocationOffset + 8);
+                      imm(13, 0xff00);
+                      emit({ op: "and-reg", width: 64, rd: 14, rn: 9, rm: 13 });
+                      emit({
+                        op: "sub-imm",
+                        width: 64,
+                        rd: "zr",
+                        rn: 14,
+                        immediate: 0,
+                        shift: 0,
+                        setFlags: true,
+                      });
+                      emit({ op: "cset", rd: 14, condition: "eq" });
+                      imm(11, 1);
+                      prepareStringSize(14);
+                      return;
+                    }
+                    imm(14, 0);
+                    imm(15, 0);
+                    imm(16, 0);
+                    for (let index = 0; index < values.length; index++) {
+                      const input = values[index];
+                      if (input === undefined)
+                        throw "string code unit invariant";
+                      codeUnit(input);
+                      emit({ op: "orr-reg", width: 64, rd: 14, rn: 14, rm: 9 });
+                      if (index >= packed) continue;
+                      // UBFIZ: the unit's 16 bits at its halfword.
+                      const shift = (index % 4) * 16,
+                        word = index < 4 ? 15 : 16;
+                      emit({
+                        op: "ubfm",
+                        width: 64,
+                        rd: 9,
+                        rn: 9,
+                        immr: (64 - shift) % 64,
+                        imms: 15,
+                      });
+                      emit({
+                        op: "orr-reg",
+                        width: 64,
+                        rd: word,
+                        rn: word,
+                        rm: 9,
+                      });
+                    }
+                    rawStore(15, allocationOffset + 8);
+                    rawStore(16, allocationOffset + 16);
+                    imm(13, 0xff00);
+                    emit({ op: "and-reg", width: 64, rd: 14, rn: 14, rm: 13 });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 14,
+                      immediate: 0,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    emit({ op: "cset", rd: 14, condition: "eq" });
+                    imm(11, values.length);
+                    prepareStringSize(14);
+                  },
+                  (rd) => rawLoad(rd, allocationOffset),
+                );
+                saveRaw(9, result);
+                rawLoad(10, allocationOffset + 24);
+                emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 0 });
+                imm(11, values.length);
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: 11,
+                  rn: 9,
+                  offset: nativeStringLengthOffset,
+                });
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 10,
+                  immediate: nativeStringTwoByteHeader,
+                  shift: 0,
+                  setFlags: true,
+                });
+                const oneByte = instructions.length;
+                emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                /** Stores every unit, a byte or a halfword each: packed units
+                 * from the scratch words, the rest converted again. */
+                function storeUnits(half: boolean): void {
+                  for (let index = 0; index < values.length; index++) {
+                    const offset =
+                      nativeStringDataOffset + (half ? index * 2 : index);
+                    if (index < packed) {
+                      const scratch = allocationOffset + (index < 4 ? 8 : 16),
+                        shift = (index % 4) * 16;
+                      if (half && index % 4 === 0 && index + 4 <= packed) {
+                        // Four packed halfwords are the data's next word.
+                        rawLoad(11, scratch);
+                        rawValue(10, result);
+                        emit({ op: "str", width: 64, rt: 11, rn: 10, offset });
+                        index += 3;
+                        continue;
+                      }
+                      rawLoad(9, scratch);
+                      if (shift !== 0)
+                        emit({
+                          op: "ubfm",
+                          width: 64,
+                          rd: 9,
+                          rn: 9,
+                          immr: shift,
+                          imms: 63,
+                        });
+                    } else {
+                      const input = values[index];
+                      if (input === undefined)
+                        throw "string code unit invariant";
+                      codeUnit(input);
+                    }
+                    // STRB/STRH store the unit's low bits.
+                    rawValue(10, result);
+                    narrowStore(half, 9, 10, offset);
+                  }
+                }
+                storeUnits(true);
+                const stored = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                patchInstruction(oneByte, {
+                  op: "b.cond",
+                  condition: "ne",
+                  displacement: (instructions.length - oneByte) * 4,
+                });
+                storeUnits(false);
+                patchInstruction(stored, {
+                  op: "b",
+                  displacement: (instructions.length - stored) * 4,
+                });
+                if (tabled >= 0)
+                  patchInstruction(tabled, {
+                    op: "b",
+                    displacement: (instructions.length - tabled) * 4,
+                  });
                 break;
               }
               case "string-slice": {
@@ -10175,12 +10895,142 @@ function emitModuleForms(
                     rawValue(9, op.string);
                     floatLoad(0, op.begin);
                     floatLoad(1, op.limit);
-                    rawValue(10, op.limit);
-                    absentFlags(10, 10);
-                    emit({ op: "cset", rd: 10, condition: "ne" });
-                    callHelper("string-slice-bounds");
+                    const present =
+                      wrappedNumbers[valueIds.intern(op.limit)] === 1;
+                    // The helper reads presence from x10.
+                    if (present) imm(10, 1);
+                    else {
+                      rawValue(10, op.limit);
+                      absentFlags(10, 10);
+                      emit({ op: "cset", rd: 10, condition: "ne" });
+                    }
+                    sliceBounds(op.begin, op.limit, present);
                     rawStore(12, allocationOffset + 8);
                     rawStore(13, allocationOffset + 16);
+                    // A result of at least the minimum length in its
+                    // source's kind views the source's units: a 32-byte
+                    // sliced string (docs/design-one-byte-strings.md). A
+                    // one-byte source's long results always do; a two-byte
+                    // source's do unless their units all fit one byte (the
+                    // canonical kind), when they are copied narrow like
+                    // short results.
+                    emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 13,
+                      immediate: nativeStringSlicedMinimumLength,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    const short = instructions.length;
+                    emit({ op: "b.cond", condition: "cc", displacement: 0 });
+                    const oneByteView = instructions.length;
+                    emit({
+                      op: "tbnz",
+                      rt: 10,
+                      bit: nativeHeaderFlagsShift,
+                      displacement: 0,
+                    });
+                    callHelper("string-slice-kind");
+                    const narrow = instructions.length;
+                    emit({ op: "cbnz", width: 64, rt: 14, displacement: 0 });
+                    emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+                    patchInstruction(oneByteView, {
+                      op: "tbnz",
+                      rt: 10,
+                      bit: nativeHeaderFlagsShift,
+                      displacement: (instructions.length - oneByteView) * 4,
+                    });
+                    // The view's header: the source's kind, sliced. Its
+                    // start: the begin's bytes, after a sliced source's
+                    // own start (slices share the flat parent).
+                    emit({
+                      op: "movz",
+                      width: 64,
+                      rd: 14,
+                      immediate: nativeStringSlicedFlag,
+                      shift: 48,
+                    });
+                    emit({ op: "orr-reg", width: 64, rd: 14, rn: 10, rm: 14 });
+                    rawStore(14, allocationOffset + 24);
+                    emit({
+                      op: "tbnz",
+                      rt: 10,
+                      bit: nativeHeaderFlagsShift,
+                      displacement: 8,
+                    });
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 12,
+                      rn: 12,
+                      rm: 12,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "tbz",
+                      rt: 10,
+                      bit: slicedBit,
+                      displacement: 12,
+                    });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 15,
+                      rn: 9,
+                      offset: nativeStringSlicedStartOffset,
+                    });
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 12,
+                      rn: 12,
+                      rm: 15,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
+                    rawStore(12, allocationOffset + 8);
+                    imm(12, nativeStringSlicedByteLength);
+                    rawStore(12, allocationOffset);
+                    const viewSized = instructions.length;
+                    emit({ op: "b", displacement: 0 });
+                    patchInstruction(short, {
+                      op: "b.cond",
+                      condition: "cc",
+                      displacement: (instructions.length - short) * 4,
+                    });
+                    emit({
+                      op: "movz",
+                      width: 64,
+                      rd: 14,
+                      immediate: 1,
+                      shift: 0,
+                    });
+                    const oneByteCopy = instructions.length;
+                    emit({
+                      op: "tbnz",
+                      rt: 10,
+                      bit: nativeHeaderFlagsShift,
+                      displacement: 0,
+                    });
+                    callHelper("string-slice-kind");
+                    patchInstruction(oneByteCopy, {
+                      op: "tbnz",
+                      rt: 10,
+                      bit: nativeHeaderFlagsShift,
+                      displacement: (instructions.length - oneByteCopy) * 4,
+                    });
+                    patchInstruction(narrow, {
+                      op: "cbnz",
+                      width: 64,
+                      rt: 14,
+                      displacement: (instructions.length - narrow) * 4,
+                    });
                     emit({
                       op: "add-reg",
                       width: 64,
@@ -10191,14 +11041,63 @@ function emitModuleForms(
                       amount: 0,
                       setFlags: false,
                     });
-                    prepareStringSize();
+                    prepareStringSize(14);
+                    patchInstruction(viewSized, {
+                      op: "b",
+                      displacement: (instructions.length - viewSized) * 4,
+                    });
                   },
                   (rd) => rawLoad(rd, allocationOffset),
                 );
                 rawValue(10, op.string);
                 rawLoad(11, allocationOffset + 8);
                 rawLoad(12, allocationOffset + 16);
+                rawLoad(13, allocationOffset + 24);
+                const flat = instructions.length;
+                emit({ op: "tbz", rt: 13, bit: slicedBit, displacement: 0 });
+                // A view: header and length, then the start and the flat
+                // parent (a sliced source's own parent, so slices never
+                // chain).
+                emit({
+                  op: "stp",
+                  width: 64,
+                  rt: 13,
+                  rt2: 12,
+                  rn: 9,
+                  offset: 0,
+                  mode: "offset",
+                });
+                emit({ op: "ldr", width: 64, rt: 14, rn: 10, offset: 0 });
+                emit({ op: "tbz", rt: 14, bit: slicedBit, displacement: 8 });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 10,
+                  rn: 10,
+                  offset: nativeStringParentOffset,
+                });
+                emit({
+                  op: "stp",
+                  width: 64,
+                  rt: 11,
+                  rt2: 10,
+                  rn: 9,
+                  offset: nativeStringSlicedStartOffset,
+                  mode: "offset",
+                });
+                const viewed = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                patchInstruction(flat, {
+                  op: "tbz",
+                  rt: 13,
+                  bit: slicedBit,
+                  displacement: (instructions.length - flat) * 4,
+                });
                 callHelper("string-slice-copy");
+                patchInstruction(viewed, {
+                  op: "b",
+                  displacement: (instructions.length - viewed) * 4,
+                });
                 saveRaw(9, op.id);
                 break;
               }
@@ -10231,30 +11130,185 @@ function emitModuleForms(
                       amount: 0,
                       setFlags: false,
                     });
-                    prepareStringSize();
+                    // One-byte exactly when both inputs are: bit 48 of the
+                    // headers' conjunction.
+                    emit({ op: "ldr", width: 64, rt: 12, rn: 9, offset: 0 });
+                    emit({ op: "ldr", width: 64, rt: 13, rn: 10, offset: 0 });
+                    emit({ op: "and-reg", width: 64, rd: 14, rn: 12, rm: 13 });
+                    emit({
+                      op: "ubfm",
+                      width: 64,
+                      rd: 14,
+                      rn: 14,
+                      immr: 48,
+                      imms: 48,
+                    });
+                    prepareStringSize(14);
                   },
                   (rd) => rawLoad(rd, allocationOffset),
                 );
                 // Inputs may move at the allocation safepoint: reload their rooted slots.
                 rawValue(10, op.left);
                 rawValue(11, op.right);
+                rawLoad(12, allocationOffset + 24);
+                // A one-byte result of at most eight units (so both parts
+                // are flat: slices have more) is one data word: the left
+                // part's word below its length, the right part's shifted
+                // above it. Every string has eight readable data bytes, and
+                // bytes past a string's length are never read, so neither
+                // part's tail needs clearing beyond the left mask.
+                const general = instructions.length;
+                emit({
+                  op: "tbz",
+                  rt: 12,
+                  bit: nativeHeaderFlagsShift,
+                  displacement: 0,
+                });
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 13,
+                  rn: 10,
+                  offset: nativeStringLengthOffset,
+                });
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 14,
+                  rn: 11,
+                  offset: nativeStringLengthOffset,
+                });
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 15,
+                  rn: 13,
+                  rm: 14,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 15,
+                  immediate: 8,
+                  shift: 0,
+                  setFlags: true,
+                });
+                const long = instructions.length;
+                emit({ op: "b.cond", condition: "hi", displacement: 0 });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 16,
+                  rn: 10,
+                  offset: nativeStringDataOffset,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 17,
+                  rn: 11,
+                  offset: nativeStringDataOffset,
+                });
+                // x13 = the left part's bits; x14 = its mask, 2^bits - 1
+                // (all ones for eight units, when the right part is empty
+                // and its shifted word is not used).
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 13,
+                  rn: 13,
+                  immr: 61,
+                  imms: 60,
+                });
+                imm(14, 1);
+                emit({ op: "lslv", width: 64, rd: 14, rn: 14, rm: 13 });
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: 14,
+                  rn: 14,
+                  immediate: 1,
+                  shift: 0,
+                  setFlags: false,
+                });
+                emit({ op: "and-reg", width: 64, rd: 14, rn: 16, rm: 14 });
+                emit({ op: "lslv", width: 64, rd: 17, rn: 17, rm: 13 });
+                emit({ op: "orr-reg", width: 64, rd: 14, rn: 14, rm: 17 });
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 13,
+                  immediate: 64,
+                  shift: 0,
+                  setFlags: true,
+                });
+                emit({
+                  op: "csel",
+                  width: 64,
+                  rd: 14,
+                  rn: 16,
+                  rm: 14,
+                  condition: "eq",
+                });
+                emit({
+                  op: "stp",
+                  width: 64,
+                  rt: 12,
+                  rt2: 15,
+                  rn: 9,
+                  offset: 0,
+                  mode: "offset",
+                });
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: 14,
+                  rn: 9,
+                  offset: nativeStringDataOffset,
+                });
+                const done = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                patchInstruction(general, {
+                  op: "tbz",
+                  rt: 12,
+                  bit: nativeHeaderFlagsShift,
+                  displacement: (instructions.length - general) * 4,
+                });
+                patchInstruction(long, {
+                  op: "b.cond",
+                  condition: "hi",
+                  displacement: (instructions.length - long) * 4,
+                });
                 callHelper("string-concat-copy");
+                patchInstruction(done, {
+                  op: "b",
+                  displacement: (instructions.length - done) * 4,
+                });
                 saveRaw(9, op.id);
                 break;
               }
               case "string-allocate": {
                 // The builder writes every unit before any other use, so the
-                // contents are left as allocated.
+                // contents are left as allocated. Its kind is one-byte unless
+                // a part is two-byte.
                 allocate(
                   () => {
                     floatLoad(0, op.length);
                     emit({ op: "fcvtzs-x-d", rd: 11, rn: 0 });
-                    prepareStringSize();
+                    rawValue(14, op.twoByte);
+                    imm(13, 1);
+                    emit({ op: "eor-reg", width: 64, rd: 14, rn: 14, rm: 13 });
+                    prepareStringSize(14);
                   },
                   (rd) => rawLoad(rd, allocationOffset),
                 );
                 saveRaw(9, op.id);
-                imm(10, 1);
+                rawLoad(10, allocationOffset + 24);
                 emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 0 });
                 floatLoad(0, op.length);
                 emit({ op: "fcvtzs-x-d", rd: 10, rn: 0 });
@@ -10267,12 +11321,1311 @@ function emitModuleForms(
                 });
                 break;
               }
-              case "string-write":
+              case "string-write": {
                 rawValue(9, op.target);
                 rawValue(10, op.source);
-                floatLoad(0, op.offset);
-                emit({ op: "fcvtzs-x-d", rd: 11, rn: 0 });
+                if (exactInteger(op.offset)) intOperand(op.offset, 11);
+                else {
+                  floatLoad(0, op.offset);
+                  emit({ op: "fcvtzs-x-d", rd: 11, rn: 0 });
+                }
+                // A flat one-byte source of at most eight units into a
+                // one-byte target is one data word, stored whole while it
+                // stays inside the target's data (its length rounded up to
+                // eight bytes): every builder writes its parts in offset
+                // order, so bytes stored past this part belong to a later
+                // part or to unread spare capacity. Anything else, and an
+                // overrun (which traps), takes the helper.
+                const general: { index: number; branch: Branch }[] = [];
+                const toGeneral = (branch: Branch): void => {
+                  general.push({ index: instructions.length, branch });
+                  emit(branchAt(branch, 0));
+                };
+                emit({ op: "ldr", width: 64, rt: 12, rn: 9, offset: 0 });
+                emit({ op: "ldr", width: 64, rt: 16, rn: 10, offset: 0 });
+                toGeneral({ op: "tbnz", rt: 16, bit: slicedBit });
+                emit({ op: "and-reg", width: 64, rd: 12, rn: 12, rm: 16 });
+                toGeneral({ op: "tbz", rt: 12, bit: nativeHeaderFlagsShift });
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 13,
+                  rn: 10,
+                  offset: nativeStringLengthOffset,
+                });
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 13,
+                  immediate: 8,
+                  shift: 0,
+                  setFlags: true,
+                });
+                toGeneral({ op: "b.cond", condition: "hi" });
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 14,
+                  rn: 9,
+                  offset: nativeStringLengthOffset,
+                });
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 15,
+                  rn: 11,
+                  rm: 13,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 15,
+                  rm: 14,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                toGeneral({ op: "b.cond", condition: "hi" });
+                // x14 = the target's data bytes: align8(length).
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 14,
+                  rn: 14,
+                  immediate: 7,
+                  shift: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 14,
+                  rn: 14,
+                  immr: 3,
+                  imms: 63,
+                });
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 14,
+                  rn: 14,
+                  immr: 61,
+                  imms: 60,
+                });
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 15,
+                  rn: 11,
+                  immediate: 8,
+                  shift: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 15,
+                  rm: 14,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                toGeneral({ op: "b.cond", condition: "hi" });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 16,
+                  rn: 10,
+                  offset: nativeStringDataOffset,
+                });
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 12,
+                  rn: 9,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: 16,
+                  rn: 12,
+                  offset: nativeStringDataOffset,
+                });
+                const written = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                for (const site of general) {
+                  if (site === undefined) throw "string write branch invariant";
+                  patchInstruction(
+                    site.index,
+                    branchAt(
+                      site.branch,
+                      (instructions.length - site.index) * 4,
+                    ),
+                  );
+                }
                 callHelper("string-write-copy");
+                patchInstruction(written, {
+                  op: "b",
+                  displacement: (instructions.length - written) * 4,
+                });
+                break;
+              }
+              case "string-from-latin1": {
+                allocate(
+                  () => {
+                    latin1Index(op.begin, 11);
+                    latin1Index(op.limit, 12);
+                    rawValue(9, op.bytes);
+                    latin1Range(nativeArrayLengthOffset);
+                    rawStore(11, allocationOffset + 8);
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: 11,
+                      rn: 12,
+                      rm: 11,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
+                    rawStore(11, allocationOffset + 16);
+                    imm(14, 1);
+                    prepareStringSize(14);
+                  },
+                  (rd) => rawLoad(rd, allocationOffset),
+                );
+                saveRaw(9, op.id);
+                rawLoad(10, allocationOffset + 24);
+                emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 0 });
+                rawLoad(15, allocationOffset + 16);
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: 15,
+                  rn: 9,
+                  offset: nativeStringLengthOffset,
+                });
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 14,
+                  rn: 9,
+                  immediate: nativeStringDataOffset,
+                  shift: 0,
+                  setFlags: false,
+                });
+                // The bytes may have moved at the allocation safepoint:
+                // reload their rooted slot.
+                rawValue(10, op.bytes);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 13,
+                  rn: 10,
+                  offset: nativeArrayDataOffset,
+                });
+                rawLoad(11, allocationOffset + 8);
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 13,
+                  rn: 13,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                callHelper("bytes-copy");
+                break;
+              }
+              case "string-from-utf8": {
+                // Measures the valid prefix (its units and kind), allocates,
+                // then decodes it; with `whole`, a prefix short of the range
+                // decodes as the empty string. The allocation scratch holds
+                // begin (low half) and the prefix bytes (high half) at +8 and
+                // the units at +16 across the allocation.
+                allocate(
+                  () => {
+                    latin1Index(op.begin, 11);
+                    latin1Index(op.limit, 12);
+                    rawValue(9, op.bytes);
+                    latin1Range(nativeArrayLengthOffset);
+                    rawStore(11, allocationOffset + 8);
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: 15,
+                      rn: 12,
+                      rm: 11,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 13,
+                      rn: 9,
+                      offset: nativeArrayDataOffset,
+                    });
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 13,
+                      rn: 13,
+                      rm: 11,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
+                    callHelper("bytes-utf8-measure");
+                    if (op.whole === true) {
+                      // Bytes left after the prefix: the empty string.
+                      emit({ op: "cbz", width: 64, rt: 15, displacement: 16 });
+                      emit({
+                        op: "movz",
+                        width: 64,
+                        rd: 11,
+                        immediate: 0,
+                        shift: 0,
+                      });
+                      emit({
+                        op: "movz",
+                        width: 64,
+                        rd: 12,
+                        immediate: 0,
+                        shift: 0,
+                      });
+                      emit({
+                        op: "movz",
+                        width: 64,
+                        rd: 14,
+                        immediate: 1,
+                        shift: 0,
+                      });
+                    }
+                    rawLoad(16, allocationOffset + 8);
+                    // x12 << 32 (LSL as UBFM).
+                    emit({
+                      op: "ubfm",
+                      width: 64,
+                      rd: 12,
+                      rn: 12,
+                      immr: 32,
+                      imms: 31,
+                    });
+                    emit({ op: "orr-reg", width: 64, rd: 16, rn: 16, rm: 12 });
+                    rawStore(16, allocationOffset + 8);
+                    rawStore(11, allocationOffset + 16);
+                    prepareStringSize(14);
+                  },
+                  (rd) => rawLoad(rd, allocationOffset),
+                );
+                saveRaw(9, op.id);
+                rawLoad(10, allocationOffset + 24);
+                emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 0 });
+                rawLoad(11, allocationOffset + 16);
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: 11,
+                  rn: 9,
+                  offset: nativeStringLengthOffset,
+                });
+                // The bytes may have moved at the allocation safepoint:
+                // reload their rooted slot.
+                rawValue(10, op.bytes);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 13,
+                  rn: 10,
+                  offset: nativeArrayDataOffset,
+                });
+                rawLoad(16, allocationOffset + 8);
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 15,
+                  rn: 16,
+                  immr: 32,
+                  imms: 63,
+                });
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 16,
+                  rn: 16,
+                  immr: 0,
+                  imms: 31,
+                });
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 13,
+                  rn: 13,
+                  rm: 16,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                callHelper("bytes-utf8-decode");
+                break;
+              }
+              case "string-index-cached": {
+                // The index field (nativeStringIndexFieldOffset): bit 0 set
+                // when an array index is cached in the bits above, so the
+                // value is field >> 1 or (no index) -1: field >> 1 or'ed
+                // with the complement of bit 0 sign-extended.
+                const string = rawRegister(op.string, 9);
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 10,
+                  rn: string,
+                  offset: nativeStringIndexFieldOffset,
+                });
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 11,
+                  rn: 10,
+                  immr: 1,
+                  imms: 31,
+                });
+                emit({
+                  op: "sbfm",
+                  width: 64,
+                  rd: 12,
+                  rn: 10,
+                  immr: 0,
+                  imms: 0,
+                });
+                if (wantsInteger(op.id)) {
+                  const target = rawTarget(op.id, 11);
+                  emit({
+                    op: "orn-reg",
+                    width: 64,
+                    rd: target,
+                    rn: 11,
+                    rm: 12,
+                  });
+                  saveRaw(target, op.id);
+                  markInteger(op.id);
+                  break;
+                }
+                emit({ op: "orn-reg", width: 64, rd: 11, rn: 11, rm: 12 });
+                emit({ op: "scvtf-d-x", rd: floatTarget(op.id, 0), rn: 11 });
+                floatStore(floatTarget(op.id, 0), op.id);
+                break;
+              }
+              case "string-index-cache": {
+                // Only an unset field is written (pool literals are
+                // read-only and carry theirs), by one 32-bit store of the
+                // value the text determines: (value << 1) | 1.
+                const string = rawRegister(op.string, 9);
+                intOperand(op.value, 11);
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 10,
+                  rn: string,
+                  offset: nativeStringIndexFieldOffset,
+                });
+                const set = instructions.length;
+                emit({ op: "cbnz", width: 32, rt: 10, displacement: 0 });
+                emit({
+                  op: "add-reg",
+                  width: 32,
+                  rd: 11,
+                  rn: 11,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "add-imm",
+                  width: 32,
+                  rd: 11,
+                  rn: 11,
+                  immediate: 1,
+                  shift: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "str",
+                  width: 32,
+                  rt: 11,
+                  rn: string,
+                  offset: nativeStringIndexFieldOffset,
+                });
+                patchInstruction(set, {
+                  op: "cbnz",
+                  width: 32,
+                  rt: 10,
+                  displacement: (instructions.length - set) * 4,
+                });
+                break;
+              }
+              case "number-string-cached":
+              case "number-string-cache": {
+                // The number-string cache (nativeNumberStringCacheWord): the
+                // allocation state's word holds the table's managed offset
+                // (0: none, and no state: no cache). An entry is the key's
+                // bits, then its string, at the entry its comment describes.
+                const store = op.kind === "number-string-cache",
+                  indexBits = entryBits(nativeNumberStringCacheEntries),
+                  stateWord = nativeNumberStringCacheWord * 4;
+                // Branches to the end: a CBZ of `rt`, or (rt < 0) a B.NE.
+                const exits: { site: number; rt: number }[] = [];
+                function exitIf(rt: number): void {
+                  exits.push({ site: instructions.length, rt });
+                  emit({ op: "cbz", width: 64, rt, displacement: 0 });
+                }
+                function patchExits(): void {
+                  for (const exit of exits) {
+                    if (exit === undefined) throw "number cache exit invariant";
+                    const displacement = (instructions.length - exit.site) * 4;
+                    patchInstruction(
+                      exit.site,
+                      exit.rt < 0
+                        ? { op: "b.cond", condition: "ne", displacement }
+                        : { op: "cbz", width: 64, rt: exit.rt, displacement },
+                    );
+                  }
+                }
+                /** x13 = the table's entry for the bits in x10 (x13 its
+                 * managed offset); clobbers x11, x14, x15 and d0. */
+                function entry(): void {
+                  rawLoad(14, contextOffset);
+                  emit({ op: "ldr", width: 64, rt: 14, rn: 14, offset: 8 });
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 13,
+                    rn: 14,
+                    rm: 13,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  // The truncated value plus the low bits word and its
+                  // upper 24 bits: fcvtzs saturates rather than trapping,
+                  // and the low word of an integer below 2^21 is zero.
+                  emit({ op: "fmov-d-x", rd: 0, rn: 10 });
+                  emit({ op: "fcvtzs-x-d", rd: 11, rn: 0 });
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 15,
+                    rn: 10,
+                    immr: 0,
+                    imms: 31,
+                  });
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 11,
+                    rn: 11,
+                    rm: 15,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 11,
+                    rn: 11,
+                    rm: 15,
+                    shift: "lsr",
+                    amount: 8,
+                    setFlags: false,
+                  });
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 11,
+                    rn: 11,
+                    immr: 0,
+                    imms: indexBits - 1,
+                  });
+                  emit({
+                    op: "add-reg",
+                    width: 64,
+                    rd: 13,
+                    rn: 13,
+                    rm: 11,
+                    shift: "lsl",
+                    amount: 4,
+                    setFlags: false,
+                  });
+                }
+                rawLoad(9, contextOffset);
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 12,
+                  rn: 9,
+                  offset: nativeAllocationStateOffset,
+                });
+                exitIf(12);
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 13,
+                  rn: 12,
+                  offset: stateWord,
+                });
+                if (op.kind === "number-string-cached") {
+                  exitIf(13);
+                  emit({
+                    op: "fmov-x-d",
+                    rd: 10,
+                    rn: floatOperand(op.value, 0),
+                  });
+                  entry();
+                  emit({
+                    op: "ldp",
+                    width: 64,
+                    rt: 15,
+                    rt2: 16,
+                    rn: 13,
+                    offset: nativeStringDataOffset,
+                    mode: "offset",
+                  });
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 15,
+                    rm: 10,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  exits.push({ site: instructions.length, rt: -1 });
+                  emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                  exitIf(16);
+                  saveRaw(16, op.id);
+                  const hit = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  patchExits();
+                  // A miss: the empty string.
+                  stringFixups.push({
+                    offset: instructions.length * 4,
+                    value: "",
+                  });
+                  localPointer(9);
+                  saveRaw(9, op.id);
+                  patchInstruction(hit, {
+                    op: "b",
+                    displacement: (instructions.length - hit) * 4,
+                  });
+                  break;
+                }
+                // A store: allocate the table first when there is none.
+                const have = instructions.length;
+                emit({ op: "cbnz", width: 64, rt: 13, displacement: 0 });
+                const tableUnits = nativeNumberStringCacheEntries * 16;
+                allocate(
+                  () => {
+                    imm(11, tableUnits);
+                    imm(14, 1);
+                    prepareStringSize(14);
+                  },
+                  (rd) => rawLoad(rd, allocationOffset),
+                );
+                rawLoad(10, allocationOffset + 24);
+                emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 0 });
+                imm(11, tableUnits);
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: 11,
+                  rn: 9,
+                  offset: nativeStringLengthOffset,
+                });
+                // Empty entries: zero bits and no string.
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 10,
+                  rn: 9,
+                  immediate: nativeStringDataOffset,
+                  shift: 0,
+                  setFlags: false,
+                });
+                imm(11, nativeNumberStringCacheEntries);
+                const zero = instructions.length;
+                emit({
+                  op: "stp",
+                  width: 64,
+                  rt: "zr",
+                  rt2: "zr",
+                  rn: 10,
+                  offset: 16,
+                  mode: "post",
+                });
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: 11,
+                  rn: 11,
+                  immediate: 1,
+                  shift: 0,
+                  setFlags: true,
+                });
+                emit({
+                  op: "b.cond",
+                  condition: "ne",
+                  displacement: (zero - instructions.length) * 4,
+                });
+                // Publish the table's managed offset (a collection at the
+                // allocation cleared any older one).
+                rawLoad(10, contextOffset);
+                emit({ op: "ldr", width: 64, rt: 14, rn: 10, offset: 8 });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: 13,
+                  rn: 9,
+                  rm: 14,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 12,
+                  rn: 10,
+                  offset: nativeAllocationStateOffset,
+                });
+                emit({
+                  op: "str",
+                  width: 32,
+                  rt: 13,
+                  rn: 12,
+                  offset: stateWord,
+                });
+                patchInstruction(have, {
+                  op: "cbnz",
+                  width: 64,
+                  rt: 13,
+                  displacement: (instructions.length - have) * 4,
+                });
+                emit({ op: "fmov-x-d", rd: 10, rn: floatOperand(op.value, 0) });
+                entry();
+                rawValue(16, op.string);
+                emit({
+                  op: "stp",
+                  width: 64,
+                  rt: 10,
+                  rt2: 16,
+                  rn: 13,
+                  offset: nativeStringDataOffset,
+                  mode: "offset",
+                });
+                patchExits();
+                break;
+              }
+              case "string-ascii-case": {
+                // A string of the same length and kind, its letters mapped
+                // by the helper.
+                allocate(
+                  () => {
+                    rawValue(9, op.string);
+                    emit({
+                      op: "ldr",
+                      width: 32,
+                      rt: 11,
+                      rn: 9,
+                      offset: nativeStringLengthOffset,
+                    });
+                    emit({ op: "ldr", width: 64, rt: 14, rn: 9, offset: 0 });
+                    emit({
+                      op: "ubfm",
+                      width: 64,
+                      rd: 14,
+                      rn: 14,
+                      immr: 48,
+                      imms: 48,
+                    });
+                    prepareStringSize(14);
+                  },
+                  (rd) => rawLoad(rd, allocationOffset),
+                );
+                saveRaw(9, op.id);
+                rawLoad(10, allocationOffset + 24);
+                emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 0 });
+                // The source may have moved at the allocation safepoint.
+                rawValue(10, op.string);
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 11,
+                  rn: 10,
+                  offset: nativeStringLengthOffset,
+                });
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: 11,
+                  rn: 9,
+                  offset: nativeStringLengthOffset,
+                });
+                callHelper(
+                  op.upper ? "string-ascii-upper" : "string-ascii-lower",
+                );
+                break;
+              }
+              case "string-copy-latin1":
+                latin1Index(op.offset, 14);
+                latin1Index(op.begin, 11);
+                latin1Index(op.limit, 12);
+                rawValue(9, op.string);
+                latin1Range(nativeStringLengthOffset);
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: 15,
+                  rn: 12,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                // offset + count <= bytes.length.
+                rawValue(10, op.bytes);
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 13,
+                  rn: 10,
+                  offset: nativeArrayLengthOffset,
+                });
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 16,
+                  rn: 14,
+                  rm: 15,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 16,
+                  rm: 13,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                trapIf({ op: "b.cond", condition: "hi" });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 10,
+                  rn: 10,
+                  offset: nativeArrayDataOffset,
+                });
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 14,
+                  rn: 10,
+                  rm: 14,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                callHelper("string-copy-latin1");
+                latin1Count(op.id);
+                break;
+              case "string-ascii-prefix":
+                latin1Index(op.begin, 11);
+                latin1Index(op.limit, 12);
+                rawValue(9, op.string);
+                latin1Range(nativeStringLengthOffset);
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: 15,
+                  rn: 12,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                callHelper("string-ascii-prefix");
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 9,
+                  rn: 9,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                latin1Count(op.id);
+                break;
+              case "string-utf8-length":
+                latin1Index(op.begin, 11);
+                latin1Index(op.limit, 12);
+                rawValue(9, op.string);
+                latin1Range(nativeStringLengthOffset);
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: 15,
+                  rn: 12,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                callHelper("string-utf8-length");
+                latin1Count(op.id);
+                break;
+              case "string-write-utf8":
+                latin1Index(op.offset, 14);
+                latin1Index(op.begin, 11);
+                latin1Index(op.limit, 12);
+                rawValue(9, op.string);
+                latin1Range(nativeStringLengthOffset);
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: 15,
+                  rn: 12,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                // offset <= bytes.length; the capacity is the rest.
+                rawValue(10, op.bytes);
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 13,
+                  rn: 10,
+                  offset: nativeArrayLengthOffset,
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: 12,
+                  rn: 13,
+                  rm: 14,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                trapIf({ op: "b.cond", condition: "cc" });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 10,
+                  rn: 10,
+                  offset: nativeArrayDataOffset,
+                });
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 14,
+                  rn: 10,
+                  rm: 14,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                callHelper("string-write-utf8");
+                // The helper yields the units encoded; the result is the
+                // index after them.
+                latin1Index(op.begin, 11);
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 9,
+                  rn: 9,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                latin1Count(op.id);
+                break;
+              case "string-flat": {
+                // 1 unless the sliced flag (bit 17 of the header's high
+                // word) is set.
+                const string = rawRegister(op.string, 9);
+                emit({ op: "ldr", width: 32, rt: 10, rn: string, offset: 4 });
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 10,
+                  rn: 10,
+                  immr: slicedHighBit,
+                  imms: slicedHighBit,
+                });
+                emit({ op: "movz", width: 64, rd: 9, immediate: 1, shift: 0 });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: 9,
+                  rn: 9,
+                  rm: 10,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                latin1Count(op.id);
+                break;
+              }
+              case "string-flatten-into": {
+                // x11 address and x12 byteLength: exact integers in
+                // [0, 2^53) (else -1), a nonzero 8-byte-aligned address and
+                // an end below 2^53.
+                const rejects: { index: number; branch: Branch }[] = [];
+                const reject = (branch: Branch): void => {
+                  rejects.push({ index: instructions.length, branch });
+                  emit(branchAt(branch, 0));
+                };
+                const windowWord = (id: number, rd: number): void => {
+                  if (exactInteger(id)) intOperand(id, rd);
+                  else {
+                    const operand = floatOperand(id, 0);
+                    emit({ op: "fcvtzs-x-d", rd, rn: operand });
+                    emit({ op: "scvtf-d-x", rd: 1, rn: rd });
+                    emit({ op: "fcmp", rn: operand, rm: 1 });
+                    reject({ op: "b.cond", condition: "ne" });
+                  }
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 16,
+                    rn: rd,
+                    immr: 53,
+                    imms: 63,
+                  });
+                  reject({ op: "cbnz", width: 64, rt: 16 });
+                };
+                windowWord(op.address, 11);
+                windowWord(op.byteLength, 12);
+                reject({ op: "cbz", width: 64, rt: 11 });
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 16,
+                  rn: 11,
+                  immr: 0,
+                  imms: 2,
+                });
+                reject({ op: "cbnz", width: 64, rt: 16 });
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 16,
+                  rn: 11,
+                  rm: 12,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 16,
+                  rn: 16,
+                  immr: 53,
+                  imms: 63,
+                });
+                reject({ op: "cbnz", width: 64, rt: 16 });
+                // x16 the flat header and x17 the length; x13 the units (a
+                // slice's parent's, from its start).
+                rawValue(10, op.string);
+                emit({ op: "ldr", width: 64, rt: 16, rn: 10, offset: 0 });
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 17,
+                  rn: 10,
+                  offset: nativeStringLengthOffset,
+                });
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 13,
+                  rn: 10,
+                  immediate: nativeStringDataOffset,
+                  shift: 0,
+                  setFlags: false,
+                });
+                emit({ op: "tbz", rt: 16, bit: slicedBit, displacement: 24 });
+                emit({
+                  op: "ldp",
+                  width: 64,
+                  rt: 14,
+                  rt2: 13,
+                  rn: 10,
+                  offset: nativeStringSlicedStartOffset,
+                  mode: "offset",
+                });
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 13,
+                  rn: 13,
+                  rm: 14,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 13,
+                  rn: 13,
+                  immediate: nativeStringDataOffset,
+                  shift: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "movz",
+                  width: 64,
+                  rd: 14,
+                  immediate: nativeStringSlicedFlag,
+                  shift: 48,
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: 16,
+                  rn: 16,
+                  rm: 14,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                // x15 the data bytes; x9 the extent, align8(16 + max(bytes,
+                // 8)) (nativeFlatStringExtent), at most byteLength.
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 15,
+                  rn: "zr",
+                  rm: 17,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "tbnz",
+                  rt: 16,
+                  bit: nativeHeaderFlagsShift,
+                  displacement: 8,
+                });
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 15,
+                  rn: 15,
+                  rm: 15,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "movz",
+                  width: 64,
+                  rd: 9,
+                  immediate: nativeStringMinimumDataBytes,
+                  shift: 0,
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 15,
+                  rm: 9,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                emit({
+                  op: "csel",
+                  width: 64,
+                  rd: 9,
+                  rn: 15,
+                  rm: 9,
+                  condition: "hi",
+                });
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 9,
+                  rn: 9,
+                  immediate: nativeStringDataOffset + 7,
+                  shift: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 9,
+                  rn: 9,
+                  immr: 3,
+                  imms: 63,
+                });
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 9,
+                  rn: 9,
+                  immr: 61,
+                  imms: 60,
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  rm: 12,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                reject({ op: "b.cond", condition: "hi" });
+                // The last two words first (padding, at most 15 bytes,
+                // stays zero), then the header and length, then the units.
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 14,
+                  rn: 11,
+                  rm: 9,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "stp",
+                  width: 64,
+                  rt: "zr",
+                  rt2: "zr",
+                  rn: 14,
+                  offset: -16,
+                  mode: "offset",
+                });
+                emit({
+                  op: "stp",
+                  width: 64,
+                  rt: 16,
+                  rt2: 17,
+                  rn: 11,
+                  offset: 0,
+                  mode: "offset",
+                });
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 14,
+                  rn: 11,
+                  immediate: nativeStringDataOffset,
+                  shift: 0,
+                  setFlags: false,
+                });
+                callHelper("bytes-copy");
+                const written = instructions.length;
+                emit({ op: "b", displacement: 0 });
+                for (const site of rejects) {
+                  if (site === undefined) throw "flatten reject invariant";
+                  patchInstruction(
+                    site.index,
+                    branchAt(
+                      site.branch,
+                      (instructions.length - site.index) * 4,
+                    ),
+                  );
+                }
+                emit({ op: "movz", width: 64, rd: 9, immediate: 0, shift: 0 });
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: 9,
+                  rn: 9,
+                  immediate: 1,
+                  shift: 0,
+                  setFlags: false,
+                });
+                patchInstruction(written, {
+                  op: "b",
+                  displacement: (instructions.length - written) * 4,
+                });
+                latin1Count(op.id);
+                break;
+              }
+              case "bytes-ascii-prefix":
+                latin1Index(op.begin, 11);
+                latin1Index(op.limit, 12);
+                rawValue(9, op.bytes);
+                latin1Range(nativeArrayLengthOffset);
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: 15,
+                  rn: 12,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 13,
+                  rn: 9,
+                  offset: nativeArrayDataOffset,
+                });
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 13,
+                  rn: 13,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                callHelper("bytes-ascii-prefix");
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 9,
+                  rn: 9,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                latin1Count(op.id);
                 break;
               case "string-present":
                 rawValue(9, op.value);
@@ -14773,66 +17126,186 @@ function emitModuleForms(
                 const leftLiteral = stringLiterals.get(op.left),
                   rightLiteral = stringLiterals.get(op.right),
                   literal = rightLiteral ?? leftLiteral;
+                const literalOneByte =
+                    literal === undefined || isOneByteText(literal),
+                  literalBytes =
+                    literal === undefined ? 0 : stringTextBytes(literal);
                 if (
                   typeOf(op.left) === "string" &&
                   literal !== undefined &&
-                  literal.length <= 8
+                  (literalBytes <= 8 ||
+                    (value(op.right).type === "string" && literal.length <= 32))
                 ) {
-                  // Equality with a short literal: compare the length and
-                  // the UTF-16 units (flat strings, units after the length) inline.
-                  // Up to four units, the eight bytes of units lie inside any
-                  // string's allocation (at least 24 bytes), so the length
-                  // and units combine without branches.
-                  const other = rawRegister(
-                    rightLiteral !== undefined ? op.left : op.right,
-                    9,
-                  );
-                  const units = literal.length,
-                    equal: Condition =
-                      op.operator === "===" || op.operator === "=="
-                        ? "eq"
-                        : "ne";
+                  // Equality with a literal of at most 32 units: the header
+                  // (the kind: equal strings have equal kinds) and length
+                  // in x11, then the data in 8/4/2/1-byte chunks, never past
+                  // either string's last data byte. One-byte literals read
+                  // eight units a word. Up to eight data bytes, the chunks
+                  // lie inside any string's allocation (at least eight data
+                  // bytes), so the compare has no branch; longer literals
+                  // skip the data on a header or length mismatch (the usual
+                  // outcome in a chain of tests) and compare it with the
+                  // literal's pool copy.
+                  const oneByte = literalOneByte,
+                    width = oneByte ? 1 : 2,
+                    bytes = literalBytes,
+                    inline = bytes <= 8;
+                  const literalId =
+                      rightLiteral !== undefined ? op.right : op.left,
+                    other = rawRegister(
+                      rightLiteral !== undefined ? op.left : op.right,
+                      9,
+                    ),
+                    pool = inline ? 0 : rawRegister(literalId, 10);
+                  const equal: Condition =
+                    op.operator === "===" || op.operator === "==" ? "eq" : "ne";
+                  // One pair load: the header's high word (0 two-byte,
+                  // 0x10000 one-byte: the kind flag is bit 48) and the
+                  // length word. A sliced string (more than eight data
+                  // bytes: nativeStringSlicedMinimumLength) can equal only
+                  // a pooled literal: there, the high word stays
+                  // in w14, only its one-byte flag (bit 16) counts, and a
+                  // slice's data is read from its parent plus its start
+                  // (x15 then holds the base the chunks read from).
                   emit({
-                    op: "ldr",
+                    op: "ldp",
                     width: 32,
-                    rt: 11,
+                    rt: inline ? 11 : 14,
+                    rt2: 12,
                     rn: other,
-                    offset: nativeStringLengthOffset,
+                    offset: 4,
+                    mode: "offset",
                   });
+                  let base = other;
+                  if (!inline) {
+                    emit({
+                      op: "ubfm",
+                      width: 64,
+                      rd: 11,
+                      rn: 14,
+                      immr: 16,
+                      imms: 16,
+                    });
+                    if (oneByte)
+                      emit({
+                        op: "sub-imm",
+                        width: 64,
+                        rd: 11,
+                        rn: 11,
+                        immediate: 1,
+                        shift: 0,
+                        setFlags: false,
+                      });
+                  } else if (oneByte)
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: 11,
+                      rn: 11,
+                      immediate: nativeHeaderFlagUnit / 4294967296 / 4096,
+                      shift: 12,
+                      setFlags: false,
+                    });
                   emit({
                     op: "sub-imm",
                     width: 64,
-                    rd: 11,
-                    rn: 11,
-                    immediate: units,
+                    rd: 12,
+                    rn: 12,
+                    immediate: literal.length,
                     shift: 0,
                     setFlags: false,
                   });
+                  emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 12 });
                   let shortcut = -1;
-                  if (units > 4) {
+                  if (!inline) {
                     shortcut = instructions.length;
                     emit({ op: "cbnz", width: 64, rt: 11, displacement: 0 });
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 15,
+                      rn: "zr",
+                      rm: other,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
+                    const flat = instructions.length;
+                    emit({
+                      op: "tbz",
+                      rt: 14,
+                      bit: slicedHighBit,
+                      displacement: 0,
+                    });
+                    emit({
+                      op: "ldp",
+                      width: 64,
+                      rt: 13,
+                      rt2: 15,
+                      rn: other,
+                      offset: nativeStringSlicedStartOffset,
+                      mode: "offset",
+                    });
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 15,
+                      rn: 15,
+                      rm: 13,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
+                    patchInstruction(flat, {
+                      op: "tbz",
+                      rt: 14,
+                      bit: slicedHighBit,
+                      displacement: (instructions.length - flat) * 4,
+                    });
+                    base = 15;
                   }
-                  for (let unit = 0; unit < units;) {
+                  for (let at = 0; at < bytes;) {
                     const take =
-                      units - unit >= 4 ? 4 : units - unit >= 2 ? 2 : 1;
-                    let lo = 0,
-                      hi = 0;
-                    for (let k = 0; k < take; k++) {
-                      const code = literal.charCodeAt(unit + k);
-                      if (k < 2) lo += code * (k === 0 ? 1 : 65536);
-                      else hi += code * (k === 2 ? 1 : 65536);
+                      bytes - at >= 8
+                        ? 8
+                        : bytes - at >= 4
+                          ? 4
+                          : bytes - at >= 2
+                            ? 2
+                            : 1;
+                    const offset = nativeStringDataOffset + at;
+                    function chunk(rt: number, base: number): void {
+                      if (take === 8)
+                        emit({ op: "ldr", width: 64, rt, rn: base, offset });
+                      else if (take === 4)
+                        emit({ op: "ldr", width: 32, rt, rn: base, offset });
+                      else if (take === 2)
+                        emit({ op: "ldrh", rt, rn: base, offset });
+                      else emit({ op: "ldrb", rt, rn: base, offset });
                     }
-                    const offset = nativeStringDataOffset + unit * 2;
-                    if (take === 4)
-                      emit({ op: "ldr", width: 64, rt: 12, rn: other, offset });
-                    else if (take === 2)
-                      emit({ op: "ldr", width: 32, rt: 12, rn: other, offset });
-                    else emit({ op: "ldrh", rt: 12, rn: other, offset });
-                    imm64(13, lo, hi);
+                    chunk(12, base);
+                    if (inline) {
+                      // The literal's little-endian data bytes at..at+take.
+                      let lo = 0,
+                        hi = 0,
+                        scale = 1;
+                      for (let k = 0; k < take; k++) {
+                        const byte = at + k,
+                          code = literal.charCodeAt(Math.floor(byte / width)),
+                          value =
+                            width === 1 || byte % 2 === 0
+                              ? code % 256
+                              : Math.floor(code / 256);
+                        if (k === 4) scale = 1;
+                        if (k < 4) lo += value * scale;
+                        else hi += value * scale;
+                        scale *= 256;
+                      }
+                      imm64(13, lo, hi);
+                    } else chunk(13, pool);
                     emit({ op: "eor-reg", width: 64, rd: 12, rn: 12, rm: 13 });
                     emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 12 });
-                    unit += take;
+                    at += take;
                   }
                   if (shortcut >= 0)
                     patchInstruction(shortcut, {
@@ -14841,88 +17314,6 @@ function emitModuleForms(
                       rt: 11,
                       displacement: (instructions.length - shortcut) * 4,
                     });
-                  emit({
-                    op: "sub-imm",
-                    width: 64,
-                    rd: "zr",
-                    rn: 11,
-                    immediate: 0,
-                    shift: 0,
-                    setFlags: true,
-                  });
-                  if (op.id === comparisonValue) comparisonBranch = equal;
-                  else {
-                    const target = rawTarget(op.id, 9);
-                    emit({ op: "cset", rd: target, condition: equal });
-                    saveRaw(target, op.id);
-                  }
-                  break;
-                }
-                if (
-                  typeOf(op.left) === "string" &&
-                  typeOf(op.right) === "string" &&
-                  literal !== undefined &&
-                  literal.length <= 32
-                ) {
-                  // Equality with a longer literal: a length mismatch (the
-                  // usual outcome in a chain of tests) costs a load and a
-                  // branch; equal lengths compare the units with the
-                  // literal's pool copy inline, never past either string's
-                  // last unit.
-                  const literalId =
-                      rightLiteral !== undefined ? op.right : op.left,
-                    other = rawRegister(
-                      rightLiteral !== undefined ? op.left : op.right,
-                      9,
-                    ),
-                    pool = rawRegister(literalId, 10);
-                  const units = literal.length,
-                    equal: Condition =
-                      op.operator === "===" || op.operator === "=="
-                        ? "eq"
-                        : "ne";
-                  emit({
-                    op: "ldr",
-                    width: 32,
-                    rt: 11,
-                    rn: other,
-                    offset: nativeStringLengthOffset,
-                  });
-                  emit({
-                    op: "sub-imm",
-                    width: 64,
-                    rd: 11,
-                    rn: 11,
-                    immediate: units,
-                    shift: 0,
-                    setFlags: false,
-                  });
-                  const shortcut = instructions.length;
-                  emit({ op: "cbnz", width: 64, rt: 11, displacement: 0 });
-                  for (let unit = 0; unit < units;) {
-                    const take =
-                      units - unit >= 4 ? 4 : units - unit >= 2 ? 2 : 1;
-                    const offset = nativeStringDataOffset + unit * 2;
-                    if (take === 4) {
-                      emit({ op: "ldr", width: 64, rt: 12, rn: other, offset });
-                      emit({ op: "ldr", width: 64, rt: 13, rn: pool, offset });
-                    } else if (take === 2) {
-                      emit({ op: "ldr", width: 32, rt: 12, rn: other, offset });
-                      emit({ op: "ldr", width: 32, rt: 13, rn: pool, offset });
-                    } else {
-                      emit({ op: "ldrh", rt: 12, rn: other, offset });
-                      emit({ op: "ldrh", rt: 13, rn: pool, offset });
-                    }
-                    emit({ op: "eor-reg", width: 64, rd: 12, rn: 12, rm: 13 });
-                    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 12 });
-                    unit += take;
-                  }
-                  patchInstruction(shortcut, {
-                    op: "cbnz",
-                    width: 64,
-                    rt: 11,
-                    displacement: (instructions.length - shortcut) * 4,
-                  });
                   emit({
                     op: "sub-imm",
                     width: 64,
@@ -17525,29 +19916,16 @@ function emitModuleForms(
       if (fixup === undefined) throw "helper fixup invariant";
       const kind = fixup.kind;
       if (!helperOffsets.has(kind)) {
+        const helper = leafHelperBody(kind),
+          body = helper.body;
+        // String helpers start on stringHelperAlignment boundaries (the
+        // padding is never executed), so their aligned loop heads keep
+        // their alignment in the image.
+        if (helper.aligned)
+          while ((instructions.length * 4) % stringHelperAlignment !== 0)
+            emit({ op: "nop" });
         const offset = instructions.length * 4;
         helperOffsets.set(kind, offset);
-        const body =
-          kind === "shared-read-unsigned" ||
-          kind === "shared-write-unsigned" ||
-          kind === "shared-read-word64" ||
-          kind === "shared-write-word64" ||
-          kind === "shared-compare-exchange-word64" ||
-          kind === "shared-compare-exchange-unsigned"
-            ? sharedMemoryPrimitive(kind)
-            : kind === "to-uint32" || kind === "remainder"
-              ? numericHelper(kind)
-              : kind === "array-initialize"
-                ? arrayInitializer()
-                : kind === "memory-move" || kind === "array-copy"
-                  ? memoryMover(kind === "array-copy")
-                  : kind === "remember-object"
-                    ? rememberedBarrier()
-                    : kind === "stack-overflow"
-                      ? stackOverflowHelper()
-                      : kind === "allocate-call" || kind === "allocate-finish"
-                        ? allocationHelper(kind)
-                        : stringHelper(kind);
         for (const instruction of body) {
           if (instruction === undefined) throw "helper instruction invariant";
           emit(instruction);
@@ -17596,15 +19974,34 @@ function emitModuleForms(
       codeLength += emitted.value.length;
     }
     const stringOffsets = new Map<string, number>();
+    // The one-unit string table: the strings of units 0-255 in order, 32
+    // bytes apart, first in the pool, so "\u0000"'s address is its base.
+    if (usesUnitStrings) {
+      codeLength = Math.ceil(codeLength / 16) * 16;
+      if (256 * unitStringBytes > maxByteLength - codeLength)
+        fail("CODE_LIMIT", "literal string pool exceeds byte budget");
+      for (let unit = 0; unit < 256; unit++) {
+        const value = String.fromCharCode(unit);
+        stringOffsets.set(value, codeLength);
+        strings.push({
+          value,
+          offset: codeLength,
+          byteLength: unitStringBytes,
+        });
+        codeLength += unitStringBytes;
+      }
+    }
     for (const fixup of stringFixups) {
       if (fixup === undefined) throw "string fixup invariant";
       if (!stringOffsets.has(fixup.value)) {
         codeLength = Math.ceil(codeLength / 16) * 16;
-        // At least four units, like heap strings (inline comparisons read
-        // that many unchecked).
+        // The canonical kind, with at least eight data bytes like heap
+        // strings (inline comparisons read that many unchecked).
         const byteLength =
           Math.ceil(
-            (nativeStringDataOffset + Math.max(fixup.value.length, 4) * 2) / 16,
+            (nativeStringDataOffset +
+              Math.max(stringTextBytes(fixup.value), 8)) /
+              16,
           ) * 16;
         if (byteLength > maxByteLength - codeLength)
           fail("CODE_LIMIT", "literal string pool exceeds byte budget");
@@ -17755,12 +20152,16 @@ function emitModuleForms(
     codeLength = Math.ceil(codeLength / 4) * 4;
     if (codeLength > maxByteLength)
       fail("CODE_LIMIT", "aligned literal pool exceeds byte budget");
-    // Pool units preserve UTF-16 code units, including lone surrogates.
+    // Pool strings take their canonical kind. Two-byte units preserve UTF-16
+    // code units, including lone surrogates.
     const code = new Uint8Array(codeLength);
     for (const literal of strings) {
       if (literal === undefined) throw "literal invariant";
-      const n = literal.value.length;
+      const n = literal.value.length,
+        oneByte = isOneByteText(literal.value);
+      // The header's marker is byte 0; the one-byte kind flag is bit 48.
       code[literal.offset] = 1;
+      if (oneByte) code[literal.offset + 6] = 1;
       const lengthWritten = writeUnsigned(
         code,
         literal.offset + nativeStringLengthOffset,
@@ -17769,12 +20170,26 @@ function emitModuleForms(
         "little",
       );
       if (!lengthWritten.ok) fail("ENCODING", lengthWritten.error);
+      // Pool literals are read-only: their index field is precomputed.
+      const indexField = nativeStringIndexField(literal.value);
+      if (indexField !== 0) {
+        const fieldWritten = writeUnsigned(
+          code,
+          literal.offset + nativeStringIndexFieldOffset,
+          4,
+          indexField,
+          "little",
+        );
+        if (!fieldWritten.ok) fail("ENCODING", fieldWritten.error);
+      }
       for (let i = 0; i < n; i++) {
         const unit = literal.value.charCodeAt(i);
-        code[literal.offset + nativeStringDataOffset + i * 2] = unit % 256;
-        code[literal.offset + nativeStringDataOffset + 1 + i * 2] = Math.floor(
-          unit / 256,
-        );
+        if (oneByte) code[literal.offset + nativeStringDataOffset + i] = unit;
+        else {
+          code[literal.offset + nativeStringDataOffset + i * 2] = unit % 256;
+          code[literal.offset + nativeStringDataOffset + 1 + i * 2] =
+            Math.floor(unit / 256);
+        }
       }
     }
     function poolWord(offset: number, word: number): void {

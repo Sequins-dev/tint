@@ -23,6 +23,12 @@ import {
   nativeHeaderFlagUnit,
   nativeStringDataOffset,
   nativeStringLengthOffset,
+  nativeStringIndexField,
+  nativeStringIndexFieldOffset,
+  nativeStringMinimumDataBytes,
+  nativeStringParentOffset,
+  nativeStringSlicedStartOffset,
+  nativeStringTwoByteHeader,
   nativeCStackReserveBytes,
   nativeGenerationalLargeObjectOffset,
   nativeGenerationalNurseryAddressOffset,
@@ -146,6 +152,7 @@ import {
 } from "./callbacks.ts";
 import { createNumberEmission, floatBits } from "./numbers.ts";
 import { nativeSignatureTypeCode } from "../../scalar/signature.ts";
+import { isOneByteText, stringTextBytes } from "../../scalar/string-text.ts";
 import { emitExecutableMemory, serializeCode } from "./executable-memory.ts";
 import {
   bindManagedABI,
@@ -265,6 +272,20 @@ interface Argument {
 
 const rax = gpr(0);
 const eax = word(0);
+const edx = word(2);
+const r8d = word(8);
+const r9d = word(9);
+const r10d = word(10);
+const r11d = word(11);
+/** The 32-bit length of the string at `base`: the low half of its length
+ * word, whose high half is its index field (nativeStringIndexFieldOffset). */
+function length32(base: number): Memory<32> {
+  return { ...mem(base, nativeStringLengthOffset), width: 32 };
+}
+/** The index field of the string at `base`. */
+function indexField32(base: number): Memory<32> {
+  return { ...mem(base, nativeStringIndexFieldOffset), width: 32 };
+}
 const rsp = gpr(4);
 const rbp = gpr(5);
 const context = gpr(7);
@@ -522,8 +543,11 @@ export function emitModule(
     const name = "literal:" + value;
     if (!strings.has(name)) {
       strings.set(name, { value, offset: poolBytes });
+      // The canonical kind, with at least eight data bytes like heap strings.
       poolBytes +=
-        Math.ceil((nativeStringDataOffset + value.length * 2) / 8) * 8;
+        Math.ceil(
+          (nativeStringDataOffset + Math.max(stringTextBytes(value), 8)) / 8,
+        ) * 8;
     }
     return rip(name);
   }
@@ -883,6 +907,7 @@ export function emitModule(
 
     const r10 = gpr(10),
       rdx = gpr(2),
+      r8 = gpr(8),
       r9 = gpr(9);
     const x0 = xmm(0);
     const absent = bits(optionalNumberAbsentLow, optionalNumberAbsentHigh);
@@ -1329,7 +1354,7 @@ export function emitModule(
       emit({ op: "jmp", target: label(done) });
       emit({ op: "label", name: string });
       emit({ op: "mov", dst: r9, src: frame(home(value) + 8) });
-      emit({ op: "cmp", dst: mem(9, nativeStringLengthOffset), src: imm(0) });
+      emit({ op: "cmp", dst: length32(9), src: imm(0) });
       setBoolean(emit, "ne", 0);
       emit({ op: "label", name: done });
       if (invert) emit({ op: "xor", dst: eax, src: imm(1) });
@@ -1543,46 +1568,542 @@ export function emitModule(
       define(op.id, "boolean");
     }
 
-    /** Allocate a flat string from its unit count in R9. The spare
-     * word of this result home holds the count across the allocation. */
+    /** Allocate a flat string from its unit count in R9 and its kind in R8
+     * (1 one-byte, 0 two-byte), and write its header and length. The spare
+     * word of this result home holds the count (and the kind above bit 32)
+     * across the allocation, then the count. */
     function allocateString(id: number, block: Block, index: number): void {
       const site = fnLabel + ":allocate-string:" + String(id);
       const denied = site + ":invalid";
       const maxUnits = Math.floor((0xfffffff0 - nativeStringDataOffset) / 2);
       emit({ op: "cmp", dst: r9, src: imm(maxUnits) });
       branch(emit, "a", denied);
-      emit({ op: "mov", dst: frame(home(id) + 8), src: r9 });
-      emit({ op: "mov", dst: r10, src: imm(4) });
-      emit({ op: "cmp", dst: r9, src: r10 });
-      emit({ op: "cmovcc", cc: "a", dst: r10, src: r9 });
+      emit({ op: "mov", dst: scratch, src: r8 });
+      emit({ op: "shl", dst: scratch, count: 32 });
+      emit({ op: "or", dst: scratch, src: r9 });
+      emit({ op: "mov", dst: frame(home(id) + 8), src: scratch });
+      // Data bytes: units, doubled for two-byte; at least eight.
       emit({
         op: "lea",
         dst: r10,
         src: {
           kind: "mem",
           width: 64,
-          address: {
-            kind: "base",
-            index: 10,
-            scale: 2,
-            disp: nativeStringDataOffset + 7,
-          },
+          address: { kind: "base", base: 9, index: 9, scale: 1, disp: 0 },
         },
+      });
+      emit({ op: "test", dst: r8, src: r8 });
+      emit({ op: "cmovcc", cc: "ne", dst: r10, src: r9 });
+      emit({ op: "mov", dst: scratch, src: imm(nativeStringMinimumDataBytes) });
+      emit({ op: "cmp", dst: r10, src: scratch });
+      emit({ op: "cmovcc", cc: "b", dst: r10, src: scratch });
+      emit({
+        op: "lea",
+        dst: r10,
+        src: mem(10, nativeStringDataOffset + 7),
       });
       emit({ op: "and", dst: r10, src: imm(-8) });
       allocate(block, index, site, denied);
-      emit({ op: "mov", dst: mem(0, 0), src: imm(1) });
       emit({ op: "mov", dst: scratch, src: frame(home(id) + 8) });
+      emit({ op: "mov", dst: r10, src: scratch });
+      emit({ op: "shr", dst: r10, count: 32 });
+      emit({ op: "shl", dst: r10, count: 48 });
+      emit({ op: "or", dst: r10, src: imm(nativeStringTwoByteHeader) });
+      emit({ op: "mov", dst: mem(0, 0), src: r10 });
+      emit({ op: "mov", dst: word(11), src: word(11) });
+      emit({ op: "mov", dst: frame(home(id) + 8), src: scratch });
       emit({ op: "mov", dst: mem(0, nativeStringLengthOffset), src: scratch });
     }
 
-    function stringCopy(symbol: string): void {
-      // RDI/RSI: string bases, possibly adjusted by a code-unit offset.
-      // RDX: copy length in units.
+    /** Flags: e when the string at `base` is two-byte. */
+    function testTwoByte(base: number): void {
+      emit({
+        op: "cmp",
+        dst: mem(base, 0),
+        src: imm(nativeStringTwoByteHeader),
+      });
+    }
+    function stringCopy(symbol: string, width: 1 | 2 = 2): void {
+      // RDI/RSI: string bases, possibly adjusted by a byte offset.
+      // RDX: copy length in units of `width` bytes.
       emit({ op: "lea", dst: gpr(7), src: mem(7, nativeStringDataOffset) });
       emit({ op: "lea", dst: gpr(6), src: mem(6, nativeStringDataOffset) });
-      emit({ op: "shl", dst: rdx, count: 1 });
+      if (width === 2) emit({ op: "shl", dst: rdx, count: 1 });
       bytesOperation(symbol);
+    }
+    /** RDI: a two-byte destination's data address; RSI: a one-byte
+     * string's base; RDX: units. Widens each unit. Clobbers RAX. */
+    function widenUnits(site: string): void {
+      const loop = site + ":widen",
+        done = site + ":widened";
+      emit({ op: "test", dst: rdx, src: rdx });
+      branch(emit, "e", done);
+      emit({ op: "label", name: loop });
+      emit({
+        op: "movzx",
+        dst: eax,
+        src: { ...mem(6, nativeStringDataOffset), width: 8 },
+      });
+      emit({
+        op: "mov",
+        dst: { ...mem(7, 0), width: 16 },
+        src: { kind: "gpr", width: 16, index: 0 },
+      });
+      emit({ op: "add", dst: gpr(6), src: imm(1) });
+      emit({ op: "add", dst: gpr(7), src: imm(2) });
+      emit({ op: "sub", dst: rdx, src: imm(1) });
+      branch(emit, "ne", loop);
+      emit({ op: "label", name: done });
+    }
+    /** RDI: a one-byte destination's data address; RSI: two-byte source
+     * data, each unit at most 0xFF; RDX: units. Clobbers RAX. */
+    function narrowUnits(site: string): void {
+      const loop = site + ":narrow",
+        done = site + ":narrowed";
+      emit({ op: "test", dst: rdx, src: rdx });
+      branch(emit, "e", done);
+      emit({ op: "label", name: loop });
+      emit({ op: "movzx", dst: eax, src: { ...mem(6, 0), width: 16 } });
+      emit({ op: "mov", dst: { ...mem(7, 0), width: 8 }, src: byte(0) });
+      emit({ op: "add", dst: gpr(6), src: imm(2) });
+      emit({ op: "add", dst: gpr(7), src: imm(1) });
+      emit({ op: "sub", dst: rdx, src: imm(1) });
+      branch(emit, "ne", loop);
+      emit({ op: "label", name: done });
+    }
+
+    /** The range [begin, limit) of the string or byte array `base`: r8 =
+     * begin, r9 = limit - begin and r11 = the base, trapping unless both
+     * are exact integers with begin <= limit <= the 32-bit length at
+     * `lengthOffset` (an unsigned comparison also rejects negatives).
+     * Clobbers R10, XMM0 and XMM1. */
+    function latin1Range(
+      base: number,
+      begin: number,
+      limit: number,
+      lengthOffset: number,
+    ): void {
+      exactInteger(emit, frame(home(begin)), r8, trapLabel);
+      exactInteger(emit, frame(home(limit)), r9, trapLabel);
+      emit({ op: "mov", dst: scratch, src: frame(home(base)) });
+      emit({
+        op: "mov",
+        dst: word(10),
+        src: { ...mem(11, lengthOffset), width: 32 },
+      });
+      emit({ op: "cmp", dst: r9, src: r10 });
+      branch(emit, "a", trapLabel);
+      emit({ op: "cmp", dst: r8, src: r9 });
+      branch(emit, "a", trapLabel);
+      emit({ op: "sub", dst: r9, src: r8 });
+    }
+    /** RSI: units of `width` bytes; RDX: their count. RAX = the number
+     * before the first unit at 0x80 or above (RDX when there is none). A
+     * word at a time against the high-bit mask, then unit by unit from
+     * the first flagged word. Clobbers RSI, RDX, R9 and R10. */
+    function asciiPrefix(site: string, width: 1 | 2): void {
+      const words = site + ":words",
+        units = site + ":units",
+        done = site + ":done",
+        perWord = 8 / width;
+      emit({
+        op: "mov",
+        dst: r10,
+        src:
+          width === 1
+            ? bits(0x80808080, 0x80808080)
+            : bits(0xff80ff80, 0xff80ff80),
+      });
+      emit({ op: "xor", dst: word(9), src: word(9) });
+      emit({ op: "label", name: words });
+      emit({ op: "cmp", dst: rdx, src: imm(perWord) });
+      branch(emit, "b", units);
+      emit({ op: "test", dst: r10, src: mem(6, 0) });
+      branch(emit, "ne", units);
+      emit({ op: "add", dst: gpr(6), src: imm(8) });
+      emit({ op: "add", dst: r9, src: imm(perWord) });
+      emit({ op: "sub", dst: rdx, src: imm(perWord) });
+      emit({ op: "jmp", target: label(words) });
+      emit({ op: "label", name: units });
+      emit({ op: "test", dst: rdx, src: rdx });
+      branch(emit, "e", done);
+      emit({
+        op: "movzx",
+        dst: eax,
+        src: { ...mem(6, 0), width: width === 1 ? 8 : 16 },
+      });
+      emit({ op: "cmp", dst: eax, src: imm(0x80) });
+      branch(emit, "ae", done);
+      emit({ op: "add", dst: gpr(6), src: imm(width) });
+      emit({ op: "add", dst: r9, src: imm(1) });
+      emit({ op: "sub", dst: rdx, src: imm(1) });
+      emit({ op: "jmp", target: label(units) });
+      emit({ op: "label", name: done });
+      emit({ op: "mov", dst: rax, src: r9 });
+    }
+
+    // UTF-8 primitives (foundation's text/utf8.ts), unit by unit. RSI is
+    // the source and RDI the destination; RAX and R10 are temporaries.
+    /** The address of unit R8 of the string at R11 (`width`-byte units). */
+    function unitAddress(width: 1 | 2): Memory<64> {
+      return {
+        kind: "mem",
+        width: 64,
+        address: {
+          kind: "base",
+          base: 11,
+          index: 8,
+          scale: width,
+          disp: nativeStringDataOffset,
+        },
+      };
+    }
+    function jump(target: string): void {
+      emit({ op: "jmp", target: label(target) });
+    }
+    function add(dst: Gpr<64>, value: number): void {
+      emit({ op: "add", dst, src: imm(value) });
+    }
+    function subtract(dst: Gpr<64>, value: number): void {
+      emit({ op: "sub", dst, src: imm(value) });
+    }
+    /** Branches to `target` unless `count` >= `minimum`. */
+    function below(count: Gpr<64>, minimum: number, target: string): void {
+      emit({ op: "cmp", dst: count, src: imm(minimum) });
+      branch(emit, "b", target);
+    }
+    /** [RDI + at] = `prefix` | (R10 >> `shift`) & `mask`. Clobbers RAX. */
+    function utf8Byte(
+      at: number,
+      prefix: number,
+      shift: number,
+      mask: number,
+    ): void {
+      emit({ op: "mov", dst: rax, src: r10 });
+      if (shift > 0) emit({ op: "shr", dst: rax, count: shift });
+      emit({ op: "and", dst: rax, src: imm(mask) });
+      emit({ op: "or", dst: rax, src: imm(prefix) });
+      emit({ op: "mov", dst: { ...mem(7, at), width: 8 }, src: byte(0) });
+    }
+    /** RSI: units of `width` bytes; RDX: their count. RAX = their UTF-8
+     * byte length. Clobbers RSI, RDX, R9 and R10. */
+    function utf8Length(site: string, width: 1 | 2): void {
+      const loop = site + ":loop",
+        one = site + ":one",
+        two = site + ":two",
+        three = site + ":three",
+        done = site + ":done";
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "label", name: loop });
+      emit({ op: "test", dst: rdx, src: rdx });
+      branch(emit, "e", done);
+      emit({
+        op: "movzx",
+        dst: r10d,
+        src: { ...mem(6, 0), width: width === 1 ? 8 : 16 },
+      });
+      emit({ op: "cmp", dst: r10, src: imm(0x80) });
+      branch(emit, "b", one);
+      if (width === 1) jump(two);
+      else {
+        emit({ op: "cmp", dst: r10, src: imm(0x800) });
+        branch(emit, "b", two);
+        // R10 - 0xD800 below 0x400: a high surrogate, a pair when a low
+        // one follows inside the range.
+        subtract(r10, 0xd800);
+        emit({ op: "cmp", dst: r10, src: imm(0x400) });
+        branch(emit, "ae", three);
+        below(rdx, 2, three);
+        emit({ op: "movzx", dst: r10d, src: { ...mem(6, 2), width: 16 } });
+        subtract(r10, 0xdc00);
+        emit({ op: "cmp", dst: r10, src: imm(0x400) });
+        branch(emit, "ae", three);
+        add(rax, 4);
+        add(gpr(6), 4);
+        subtract(rdx, 2);
+        jump(loop);
+        emit({ op: "label", name: three });
+        add(rax, 1);
+      }
+      emit({ op: "label", name: two });
+      add(rax, 1);
+      emit({ op: "label", name: one });
+      add(rax, 1);
+      add(gpr(6), width);
+      subtract(rdx, 1);
+      jump(loop);
+      emit({ op: "label", name: done });
+    }
+    /** RSI: units of `width` bytes; RDX: their count; RDI: the
+     * destination; R9: its capacity in bytes; R8: the first unit's index.
+     * Encodes scalar by scalar while the next one fits; R8 = the index
+     * after the last unit encoded. Clobbers RAX, RSI, RDI, RDX, R9 and
+     * R10. */
+    function utf8Write(site: string, width: 1 | 2): void {
+      const loop = site + ":loop",
+        multi = site + ":multi",
+        wide = site + ":wide",
+        lone = site + ":lone",
+        bmp = site + ":bmp",
+        done = site + ":done";
+      function next(source: number, units: number, bytes: number): void {
+        add(gpr(6), source);
+        add(r8, units);
+        subtract(rdx, units);
+        add(gpr(7), bytes);
+        subtract(r9, bytes);
+        jump(loop);
+      }
+      emit({ op: "label", name: loop });
+      emit({ op: "test", dst: rdx, src: rdx });
+      branch(emit, "e", done);
+      emit({
+        op: "movzx",
+        dst: r10d,
+        src: { ...mem(6, 0), width: width === 1 ? 8 : 16 },
+      });
+      emit({ op: "cmp", dst: r10, src: imm(0x80) });
+      branch(emit, "ae", multi);
+      below(r9, 1, done);
+      emit({ op: "mov", dst: rax, src: r10 });
+      emit({ op: "mov", dst: { ...mem(7, 0), width: 8 }, src: byte(0) });
+      next(width, 1, 1);
+      emit({ op: "label", name: multi });
+      if (width === 2) {
+        emit({ op: "cmp", dst: r10, src: imm(0x800) });
+        branch(emit, "ae", wide);
+      }
+      below(r9, 2, done);
+      utf8Byte(0, 0xc0, 6, 0x1f);
+      utf8Byte(1, 0x80, 0, 0x3f);
+      next(width, 1, 2);
+      if (width === 2) {
+        emit({ op: "label", name: wide });
+        // RAX = unit - 0xD800: not a surrogate at 0x800 or more, a lone
+        // low one at 0x400 or more.
+        emit({ op: "mov", dst: rax, src: r10 });
+        subtract(rax, 0xd800);
+        emit({ op: "cmp", dst: rax, src: imm(0x800) });
+        branch(emit, "ae", bmp);
+        emit({ op: "cmp", dst: rax, src: imm(0x400) });
+        branch(emit, "ae", lone);
+        below(rdx, 2, lone);
+        emit({ op: "movzx", dst: r10d, src: { ...mem(6, 2), width: 16 } });
+        subtract(r10, 0xdc00);
+        emit({ op: "cmp", dst: r10, src: imm(0x400) });
+        branch(emit, "ae", lone);
+        below(r9, 4, done);
+        // R10 = 0x10000 + ((high - 0xD800) << 10) + (low - 0xDC00).
+        emit({ op: "shl", dst: rax, count: 10 });
+        emit({ op: "add", dst: r10, src: rax });
+        add(r10, 0x10000);
+        utf8Byte(0, 0xf0, 18, 0x07);
+        utf8Byte(1, 0x80, 12, 0x3f);
+        utf8Byte(2, 0x80, 6, 0x3f);
+        utf8Byte(3, 0x80, 0, 0x3f);
+        next(4, 2, 4);
+        emit({ op: "label", name: lone });
+        emit({ op: "mov", dst: r10, src: imm(0xfffd) });
+        emit({ op: "label", name: bmp });
+        below(r9, 3, done);
+        utf8Byte(0, 0xe0, 12, 0x0f);
+        utf8Byte(1, 0x80, 6, 0x3f);
+        utf8Byte(2, 0x80, 0, 0x3f);
+        next(2, 1, 3);
+      }
+      emit({ op: "label", name: done });
+    }
+    /** RSI: bytes; RDX: their count. R9 = the UTF-16 units of the longest
+     * prefix of complete valid UTF-8 sequences, R10 = its bytes, RDX = the
+     * bytes after it and R8 = 1 when every scalar is at most 0xFF, else 0.
+     * Clobbers RAX, RSI and RDI. */
+    function utf8Measure(site: string): void {
+      const loop = site + ":loop",
+        two = site + ":two",
+        three = site + ":three",
+        four = site + ":four",
+        end = site + ":end";
+      emit({ op: "mov", dst: gpr(7), src: gpr(6) });
+      emit({ op: "xor", dst: word(9), src: word(9) });
+      emit({ op: "mov", dst: r8, src: imm(1) });
+      /** Branches to `end` unless the byte at [RSI + at] is in [lower,
+       * upper]. Clobbers R10. */
+      function continuation(at: number, lower: number, upper: number): void {
+        emit({ op: "movzx", dst: r10d, src: { ...mem(6, at), width: 8 } });
+        subtract(r10, lower);
+        emit({ op: "cmp", dst: r10, src: imm(upper - lower) });
+        branch(emit, "a", end);
+      }
+      /** Branches to `checked` once the first continuation of the lead
+       * in RAX is in [lower, upper] when the lead is `lead`; falls through
+       * for other leads. */
+      function special(
+        name: string,
+        lead: number,
+        lower: number,
+        upper: number,
+      ): void {
+        const other = site + ":" + name + ":" + String(lead);
+        emit({ op: "cmp", dst: rax, src: imm(lead) });
+        branch(emit, "ne", other);
+        continuation(1, lower, upper);
+        jump(site + ":" + name + ":checked");
+        emit({ op: "label", name: other });
+      }
+      /** Any other lead's first continuation: 0x80-0xBF. */
+      function ordinary(name: string): void {
+        continuation(1, 0x80, 0xbf);
+        emit({ op: "label", name: site + ":" + name + ":checked" });
+      }
+      /** Branches to `target` when the lead in RAX is in [low, high]. */
+      function leads(low: number, high: number, target: string): void {
+        emit({ op: "mov", dst: r10, src: rax });
+        subtract(r10, low);
+        emit({ op: "cmp", dst: r10, src: imm(high - low) });
+        branch(emit, "be", target);
+      }
+      function next(bytes: number, units: number): void {
+        add(gpr(6), bytes);
+        add(r9, units);
+        subtract(rdx, bytes);
+        jump(loop);
+      }
+      emit({ op: "label", name: loop });
+      emit({ op: "test", dst: rdx, src: rdx });
+      branch(emit, "e", end);
+      emit({ op: "movzx", dst: eax, src: { ...mem(6, 0), width: 8 } });
+      emit({ op: "cmp", dst: rax, src: imm(0x80) });
+      branch(emit, "ae", site + ":lead");
+      next(1, 1);
+      emit({ op: "label", name: site + ":lead" });
+      leads(0xc2, 0xdf, two);
+      leads(0xe0, 0xef, three);
+      leads(0xf0, 0xf4, four);
+      jump(end);
+      emit({ op: "label", name: two });
+      below(rdx, 2, end);
+      continuation(1, 0x80, 0xbf);
+      emit({ op: "cmp", dst: rax, src: imm(0xc3) });
+      branch(emit, "be", site + ":narrow");
+      emit({ op: "xor", dst: word(8), src: word(8) });
+      emit({ op: "label", name: site + ":narrow" });
+      next(2, 1);
+      emit({ op: "label", name: three });
+      below(rdx, 3, end);
+      special("three", 0xe0, 0xa0, 0xbf);
+      special("three", 0xed, 0x80, 0x9f);
+      ordinary("three");
+      continuation(2, 0x80, 0xbf);
+      emit({ op: "xor", dst: word(8), src: word(8) });
+      next(3, 1);
+      emit({ op: "label", name: four });
+      below(rdx, 4, end);
+      special("four", 0xf0, 0x90, 0xbf);
+      special("four", 0xf4, 0x80, 0x8f);
+      ordinary("four");
+      continuation(2, 0x80, 0xbf);
+      continuation(3, 0x80, 0xbf);
+      emit({ op: "xor", dst: word(8), src: word(8) });
+      next(4, 2);
+      emit({ op: "label", name: end });
+      emit({ op: "mov", dst: r10, src: gpr(6) });
+      emit({ op: "sub", dst: r10, src: gpr(7) });
+    }
+    /** RSI: bytes (a measured valid prefix); RDX: their count; RDI: a
+     * fresh string's data; R9: its length in `width`-byte units. Decodes
+     * into it; writes stay within R9 units and reads within RDX bytes
+     * whatever the bytes hold (a shared buffer may change after
+     * measuring), and units left unwritten are zero. Clobbers RAX, RSI,
+     * RDI, RDX, R9 and R10. */
+    function utf8Decode(site: string, width: 1 | 2): void {
+      const loop = site + ":loop",
+        pad = site + ":pad",
+        done = site + ":done";
+      function store(at: number): void {
+        if (width === 1)
+          emit({ op: "mov", dst: { ...mem(7, at), width: 8 }, src: byte(0) });
+        else
+          emit({
+            op: "mov",
+            dst: { ...mem(7, at), width: 16 },
+            src: { kind: "gpr", width: 16, index: 0 },
+          });
+      }
+      function next(bytes: number, units: number): void {
+        add(gpr(6), bytes);
+        subtract(rdx, bytes);
+        add(gpr(7), units * width);
+        subtract(r9, units);
+        jump(loop);
+      }
+      /** RAX = (RAX << 6) | (the byte at [RSI + at] & 63). */
+      function payload(at: number): void {
+        emit({ op: "movzx", dst: r10d, src: { ...mem(6, at), width: 8 } });
+        emit({ op: "and", dst: r10, src: imm(0x3f) });
+        emit({ op: "shl", dst: rax, count: 6 });
+        emit({ op: "or", dst: rax, src: r10 });
+      }
+      emit({ op: "label", name: loop });
+      emit({ op: "test", dst: rdx, src: rdx });
+      branch(emit, "e", pad);
+      emit({ op: "test", dst: r9, src: r9 });
+      branch(emit, "e", done);
+      emit({ op: "movzx", dst: eax, src: { ...mem(6, 0), width: 8 } });
+      emit({ op: "cmp", dst: rax, src: imm(0x80) });
+      branch(emit, "ae", site + ":two");
+      store(0);
+      next(1, 1);
+      emit({ op: "label", name: site + ":two" });
+      if (width === 2) {
+        emit({ op: "cmp", dst: rax, src: imm(0xe0) });
+        branch(emit, "ae", site + ":three");
+      }
+      below(rdx, 2, pad);
+      emit({ op: "and", dst: rax, src: imm(0x1f) });
+      payload(1);
+      store(0);
+      next(2, 1);
+      if (width === 2) {
+        emit({ op: "label", name: site + ":three" });
+        emit({ op: "cmp", dst: rax, src: imm(0xf0) });
+        branch(emit, "ae", site + ":four");
+        below(rdx, 3, pad);
+        emit({ op: "and", dst: rax, src: imm(0x0f) });
+        payload(1);
+        payload(2);
+        store(0);
+        next(3, 1);
+        emit({ op: "label", name: site + ":four" });
+        below(rdx, 4, pad);
+        below(r9, 2, pad);
+        emit({ op: "and", dst: rax, src: imm(0x07) });
+        payload(1);
+        payload(2);
+        payload(3);
+        // A surrogate pair: 0xD800 + (p >> 10), 0xDC00 + (p & 0x3FF) for
+        // p = point - 0x10000.
+        subtract(rax, 0x10000);
+        emit({ op: "mov", dst: r10, src: rax });
+        emit({ op: "shr", dst: rax, count: 10 });
+        emit({ op: "and", dst: rax, src: imm(0x3ff) });
+        add(rax, 0xd800);
+        store(0);
+        emit({ op: "mov", dst: rax, src: r10 });
+        emit({ op: "and", dst: rax, src: imm(0x3ff) });
+        add(rax, 0xdc00);
+        store(2);
+        next(4, 2);
+      }
+      emit({ op: "label", name: pad });
+      emit({ op: "xor", dst: eax, src: eax });
+      emit({ op: "label", name: pad + ":unit" });
+      emit({ op: "test", dst: r9, src: r9 });
+      branch(emit, "e", done);
+      store(0);
+      add(gpr(7), width);
+      subtract(r9, 1);
+      jump(pad + ":unit");
+      emit({ op: "label", name: done });
     }
 
     function sliceIndex(value: number, dst: Gpr<64>, site: string): void {
@@ -1608,16 +2129,17 @@ export function emitModule(
     }
 
     // RDI/RSI hold the two string bases (RDI may already be advanced by a
-    // code-unit offset), RDX the equal-length comparison extent in units.
-    function compareUnits(symbol: string, equal: boolean): void {
+    // byte offset), RDX the equal-length comparison extent in bytes.
+    function compareBytes(symbol: string, equal: boolean): void {
       emit({ op: "lea", dst: gpr(7), src: mem(7, nativeStringDataOffset) });
       emit({ op: "lea", dst: gpr(6), src: mem(6, nativeStringDataOffset) });
-      emit({ op: "shl", dst: rdx, count: 1 });
       bytesOperation(symbol);
       emit({ op: "test", dst: eax, src: eax });
       setBoolean(emit, equal ? "e" : "ne", 0);
     }
 
+    /** Equal strings have equal headers (the canonical kind) and lengths,
+     * then equal data bytes. */
     function stringEqual(
       left: Memory<64>,
       right: Memory<64>,
@@ -1628,6 +2150,7 @@ export function emitModule(
       const same = site + ":same";
       const different = site + ":different";
       const done = site + ":done";
+      const counted = site + ":counted";
       const a = gpr(7),
         b = gpr(6);
       emit({ op: "mov", dst: a, src: left });
@@ -1638,10 +2161,17 @@ export function emitModule(
       branch(emit, "e", different);
       emit({ op: "test", dst: b, src: b });
       branch(emit, "e", different);
-      emit({ op: "mov", dst: rdx, src: mem(7, nativeStringLengthOffset) });
-      emit({ op: "cmp", dst: rdx, src: mem(6, nativeStringLengthOffset) });
+      emit({ op: "mov", dst: rdx, src: mem(7, 0) });
+      emit({ op: "cmp", dst: rdx, src: mem(6, 0) });
       branch(emit, "ne", different);
-      compareUnits(symbol, equal);
+      emit({ op: "mov", dst: edx, src: length32(7) });
+      emit({ op: "cmp", dst: edx, src: length32(6) });
+      branch(emit, "ne", different);
+      testTwoByte(7);
+      branch(emit, "ne", counted);
+      emit({ op: "shl", dst: rdx, count: 1 });
+      emit({ op: "label", name: counted });
+      compareBytes(symbol, equal);
       emit({ op: "jmp", target: label(done) });
       emit({ op: "label", name: same });
       emit({ op: "mov", dst: eax, src: imm(equal ? 1 : 0) });
@@ -1651,6 +2181,9 @@ export function emitModule(
       emit({ op: "label", name: done });
     }
 
+    /** startsWith at a clamped position. A two-byte search never occurs in
+     * a one-byte source (canonical kinds); a one-byte search in a two-byte
+     * source compares each unit widened. */
     function stringPrefix(
       op: {
         readonly id: number;
@@ -1664,12 +2197,16 @@ export function emitModule(
       const clamped = site + ":clamped";
       const absent = site + ":absent";
       const done = site + ":done";
+      const searchOneByte = site + ":search-one-byte";
+      const widened = site + ":widened";
+      const widenedLoop = site + ":widened-loop";
+      const present = site + ":present";
       const a = gpr(7),
         b = gpr(6),
         x1 = xmm(1);
       emit({ op: "mov", dst: a, src: frame(home(op.string)) });
       emit({ op: "mov", dst: b, src: frame(home(op.search)) });
-      emit({ op: "mov", dst: r10, src: mem(7, nativeStringLengthOffset) });
+      emit({ op: "mov", dst: r10d, src: length32(7) });
       emit({ op: "movsd", dst: x0, src: frame(home(op.position)) });
       emit({ op: "xor", dst: word(9), src: word(9) });
       emit({ op: "xorpd", dst: x1, src: x1 });
@@ -1684,9 +2221,14 @@ export function emitModule(
       emit({ op: "cvttsd2si", dst: r9, src: x0 });
       emit({ op: "label", name: clamped });
       emit({ op: "sub", dst: r10, src: r9 });
-      emit({ op: "mov", dst: rdx, src: mem(6, nativeStringLengthOffset) });
+      emit({ op: "mov", dst: edx, src: length32(6) });
       emit({ op: "cmp", dst: rdx, src: r10 });
       branch(emit, "a", absent);
+      testTwoByte(6);
+      branch(emit, "ne", searchOneByte);
+      // A two-byte search: only a two-byte source can hold it.
+      testTwoByte(7);
+      branch(emit, "ne", absent);
       emit({
         op: "lea",
         dst: a,
@@ -1696,12 +2238,180 @@ export function emitModule(
           address: { kind: "base", base: 7, index: 9, scale: 2, disp: 0 },
         },
       });
-      compareUnits(symbol, true);
+      emit({ op: "shl", dst: rdx, count: 1 });
+      compareBytes(symbol, true);
+      emit({ op: "jmp", target: label(done) });
+      emit({ op: "label", name: searchOneByte });
+      testTwoByte(7);
+      branch(emit, "e", widened);
+      emit({
+        op: "lea",
+        dst: a,
+        src: {
+          kind: "mem",
+          width: 64,
+          address: { kind: "base", base: 7, index: 9, scale: 1, disp: 0 },
+        },
+      });
+      compareBytes(symbol, true);
+      emit({ op: "jmp", target: label(done) });
+      // Two-byte source units against one-byte search units.
+      emit({ op: "label", name: widened });
+      emit({
+        op: "lea",
+        dst: a,
+        src: {
+          kind: "mem",
+          width: 64,
+          address: {
+            kind: "base",
+            base: 7,
+            index: 9,
+            scale: 2,
+            disp: nativeStringDataOffset,
+          },
+        },
+      });
+      emit({ op: "lea", dst: b, src: mem(6, nativeStringDataOffset) });
+      emit({ op: "test", dst: rdx, src: rdx });
+      branch(emit, "e", present);
+      emit({ op: "label", name: widenedLoop });
+      emit({ op: "movzx", dst: eax, src: { ...mem(7, 0), width: 16 } });
+      emit({
+        op: "movzx",
+        dst: word(10),
+        src: { ...mem(6, 0), width: 8 },
+      });
+      emit({ op: "cmp", dst: eax, src: word(10) });
+      branch(emit, "ne", absent);
+      emit({ op: "add", dst: a, src: imm(2) });
+      emit({ op: "add", dst: b, src: imm(1) });
+      emit({ op: "sub", dst: rdx, src: imm(1) });
+      branch(emit, "ne", widenedLoop);
+      emit({ op: "label", name: present });
+      emit({ op: "mov", dst: eax, src: imm(1) });
       emit({ op: "jmp", target: label(done) });
       emit({ op: "label", name: absent });
       emit({ op: "xor", dst: eax, src: eax });
       emit({ op: "label", name: done });
       define(op.id, "boolean");
+    }
+
+    /** indexOf/lastIndexOf from a clamped integer position: each
+     * candidate start compares every unit (a two-byte search never occurs
+     * in a one-byte source). RDI/RSI string bases, R9 the start, R10 the
+     * last start, RDX the search length, R8 the unit index. */
+    function stringIndexOf(op: {
+      readonly id: number;
+      readonly string: number;
+      readonly search: number;
+      readonly position: number;
+      readonly reverse: boolean;
+    }): void {
+      const site = fnLabel + ":index-of:" + String(op.id);
+      const found = site + ":found",
+        missing = site + ":missing",
+        done = site + ":done",
+        searchOneByte = site + ":search-one-byte",
+        widened = site + ":widened",
+        bounded = site + ":bounded";
+      emit({ op: "mov", dst: gpr(7), src: frame(home(op.string)) });
+      emit({ op: "mov", dst: gpr(6), src: frame(home(op.search)) });
+      emit({ op: "movsd", dst: x0, src: frame(home(op.position)) });
+      emit({ op: "cvttsd2si", dst: r9, src: x0 });
+      emit({ op: "mov", dst: edx, src: length32(6) });
+      emit({ op: "test", dst: rdx, src: rdx });
+      branch(emit, "e", found);
+      emit({ op: "mov", dst: r10d, src: length32(7) });
+      emit({ op: "sub", dst: r10, src: rdx });
+      branch(emit, "l", missing);
+      emit({ op: "cmp", dst: r9, src: r10 });
+      if (op.reverse) {
+        branch(emit, "le", bounded);
+        emit({ op: "mov", dst: r9, src: r10 });
+        emit({ op: "label", name: bounded });
+      } else branch(emit, "g", missing);
+      function scan(name: string, source: 1 | 2, pattern: 1 | 2): void {
+        const start = site + ":" + name,
+          compare = start + ":compare",
+          next = start + ":next";
+        emit({ op: "label", name: start });
+        emit({ op: "xor", dst: word(8), src: word(8) });
+        emit({ op: "label", name: compare });
+        emit({ op: "cmp", dst: r8, src: rdx });
+        branch(emit, "e", found);
+        emit({
+          op: "lea",
+          dst: scratch,
+          src: {
+            kind: "mem",
+            width: 64,
+            address: { kind: "base", base: 9, index: 8, scale: 1, disp: 0 },
+          },
+        });
+        emit({
+          op: "movzx",
+          dst: eax,
+          src: {
+            kind: "mem",
+            width: source === 1 ? 8 : 16,
+            address: {
+              kind: "base",
+              base: 7,
+              index: 11,
+              scale: source,
+              disp: nativeStringDataOffset,
+            },
+          },
+        });
+        emit({
+          op: "movzx",
+          dst: word(11),
+          src: {
+            kind: "mem",
+            width: pattern === 1 ? 8 : 16,
+            address: {
+              kind: "base",
+              base: 6,
+              index: 8,
+              scale: pattern,
+              disp: nativeStringDataOffset,
+            },
+          },
+        });
+        emit({ op: "cmp", dst: eax, src: word(11) });
+        branch(emit, "ne", next);
+        emit({ op: "add", dst: r8, src: imm(1) });
+        emit({ op: "jmp", target: label(compare) });
+        emit({ op: "label", name: next });
+        if (op.reverse) {
+          emit({ op: "sub", dst: r9, src: imm(1) });
+          branch(emit, "ge", start);
+        } else {
+          emit({ op: "add", dst: r9, src: imm(1) });
+          emit({ op: "cmp", dst: r9, src: r10 });
+          branch(emit, "le", start);
+        }
+        emit({ op: "jmp", target: label(missing) });
+      }
+      testTwoByte(6);
+      branch(emit, "ne", searchOneByte);
+      testTwoByte(7);
+      branch(emit, "ne", missing);
+      scan("two", 2, 2);
+      emit({ op: "label", name: searchOneByte });
+      testTwoByte(7);
+      branch(emit, "e", widened);
+      scan("one", 1, 1);
+      emit({ op: "label", name: widened });
+      scan("mixed", 2, 1);
+      emit({ op: "label", name: missing });
+      emit({ op: "mov", dst: r9, src: imm(-1) });
+      emit({ op: "label", name: found });
+      emit({ op: "mov", dst: rax, src: r9 });
+      numberBits();
+      emit({ op: "label", name: done });
+      define(op.id, "number");
     }
 
     function recordField(record: number, index: number): RecordField {
@@ -2319,22 +3029,68 @@ export function emitModule(
           if (host === undefined) break;
           stringPrefix(op, host.symbolPrefix + "memcmp");
           return;
+        case "string-index-of": {
+          if (host === undefined) break;
+          stringIndexOf(op);
+          return;
+        }
         case "string-from-code-units": {
           if (host === undefined) break;
+          const site = fnLabel + ":code-units:" + String(op.id);
+          // ToUint16 keeps the low 16 bits of each ToUint32 word. The string
+          // is one-byte when no unit has a bit in 0xFF00; the result home
+          // accumulates the units' bits until the allocation defines it.
+          emit({ op: "mov", dst: frame(home(op.id)), src: imm(0) });
+          for (const value of op.values) {
+            if (value === undefined) throw "string code unit invariant";
+            numbers.toWord(frame(home(value)));
+            emit({ op: "or", dst: rax, src: frame(home(op.id)) });
+            emit({ op: "mov", dst: frame(home(op.id)), src: rax });
+          }
+          emit({ op: "mov", dst: r8, src: frame(home(op.id)) });
+          emit({ op: "and", dst: r8, src: imm(0xff00) });
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "test", dst: r8, src: r8 });
+          emit({ op: "setcc", cc: "e", dst: byte(0) });
+          emit({ op: "mov", dst: r8, src: rax });
           emit({ op: "mov", dst: r9, src: imm(op.values.length) });
           allocateString(op.id, block, index);
           define(op.id, "string");
-          for (let unit = 0; unit < op.values.length; unit++) {
-            const value = op.values[unit];
-            if (value === undefined) throw "string code unit invariant";
-            numbers.toWord(frame(home(value)));
-            emit({ op: "mov", dst: r9, src: frame(home(op.id)) });
-            emit({
-              op: "mov",
-              dst: { ...mem(9, nativeStringDataOffset + unit * 2), width: 16 },
-              src: { kind: "gpr", width: 16, index: 0 },
-            });
+          const oneByte = site + ":one-byte",
+            stored = site + ":stored";
+          emit({ op: "mov", dst: r9, src: frame(home(op.id)) });
+          testTwoByte(9);
+          branch(emit, "ne", oneByte);
+          const values = op.values,
+            result = op.id;
+          function storeUnits(half: boolean): void {
+            for (let unit = 0; unit < values.length; unit++) {
+              const value = values[unit];
+              if (value === undefined) throw "string code unit invariant";
+              numbers.toWord(frame(home(value)));
+              emit({ op: "mov", dst: r9, src: frame(home(result)) });
+              if (half)
+                emit({
+                  op: "mov",
+                  dst: {
+                    ...mem(9, nativeStringDataOffset + unit * 2),
+                    width: 16,
+                  },
+                  src: { kind: "gpr", width: 16, index: 0 },
+                });
+              else
+                emit({
+                  op: "mov",
+                  dst: { ...mem(9, nativeStringDataOffset + unit), width: 8 },
+                  src: byte(0),
+                });
+            }
           }
+          storeUnits(true);
+          emit({ op: "jmp", target: label(stored) });
+          emit({ op: "label", name: oneByte });
+          storeUnits(false);
+          emit({ op: "label", name: stored });
           return;
         }
         case "string-allocate": {
@@ -2342,6 +3098,8 @@ export function emitModule(
           const invalid =
             fnLabel + ":allocate-string:" + String(op.id) + ":invalid";
           exactInteger(emit, frame(home(op.length)), r9, invalid);
+          emit({ op: "mov", dst: r8, src: frame(home(op.twoByte)) });
+          emit({ op: "xor", dst: r8, src: imm(1) });
           allocateString(op.id, block, index);
           define(op.id, "string");
           return;
@@ -2349,31 +3107,92 @@ export function emitModule(
         case "string-concat": {
           if (host === undefined) break;
           const move = host.symbolPrefix + "memmove";
+          const site = fnLabel + ":concat:" + String(op.id);
           emit({ op: "mov", dst: receiver, src: frame(home(op.left)) });
           emit({ op: "mov", dst: environment, src: frame(home(op.right)) });
-          emit({ op: "mov", dst: r9, src: mem(2, nativeStringLengthOffset) });
-          emit({ op: "add", dst: r9, src: mem(6, nativeStringLengthOffset) });
+          emit({ op: "mov", dst: r9d, src: length32(2) });
+          emit({ op: "mov", dst: r8d, src: length32(6) });
+          emit({ op: "add", dst: r9, src: r8 });
+          // One-byte exactly when both inputs are: bit 48 of the headers'
+          // conjunction.
+          emit({ op: "mov", dst: r8, src: mem(2, 0) });
+          emit({ op: "and", dst: r8, src: mem(6, 0) });
+          emit({ op: "shr", dst: r8, count: 48 });
           allocateString(op.id, block, index);
           define(op.id, "string");
+          const oneByte = site + ":one-byte",
+            done = site + ":done";
+          emit({ op: "mov", dst: r9, src: frame(home(op.id)) });
+          testTwoByte(9);
+          branch(emit, "ne", oneByte);
+          // Two-byte result: each part copied, or widened when one-byte.
+          // R8 holds the next unit offset.
+          emit({ op: "xor", dst: word(8), src: word(8) });
+          const result = op.id;
+          function widePart(part: number, name: string): void {
+            const widen = site + ":widen:" + name,
+              next = site + ":next:" + name;
+            emit({ op: "mov", dst: environment, src: frame(home(part)) });
+            emit({
+              op: "mov",
+              dst: edx,
+              src: length32(6),
+            });
+            emit({ op: "mov", dst: context, src: frame(home(result)) });
+            emit({
+              op: "lea",
+              dst: context,
+              src: {
+                kind: "mem",
+                width: 64,
+                address: { kind: "base", base: 7, index: 8, scale: 2, disp: 0 },
+              },
+            });
+            emit({ op: "add", dst: r8, src: rdx });
+            emit({ op: "mov", dst: frame(home(result) + 8), src: r8 });
+            testTwoByte(6);
+            branch(emit, "ne", widen);
+            stringCopy(move, 2);
+            emit({ op: "jmp", target: label(next) });
+            emit({ op: "label", name: widen });
+            emit({
+              op: "lea",
+              dst: context,
+              src: mem(7, nativeStringDataOffset),
+            });
+            widenUnits(widen);
+            emit({ op: "label", name: next });
+            emit({ op: "mov", dst: r8, src: frame(home(result) + 8) });
+          }
+          widePart(op.left, "left");
+          widePart(op.right, "right");
+          emit({ op: "jmp", target: label(done) });
+          // One-byte result: both parts are one-byte.
+          emit({ op: "label", name: oneByte });
           emit({ op: "mov", dst: context, src: rax });
           emit({ op: "mov", dst: environment, src: frame(home(op.left)) });
-          emit({ op: "mov", dst: rdx, src: mem(6, nativeStringLengthOffset) });
-          stringCopy(move);
+          emit({ op: "mov", dst: edx, src: length32(6) });
+          stringCopy(move, 1);
           emit({ op: "mov", dst: context, src: frame(home(op.id)) });
           emit({ op: "mov", dst: environment, src: frame(home(op.left)) });
-          emit({ op: "mov", dst: rdx, src: mem(6, nativeStringLengthOffset) });
+          emit({ op: "mov", dst: edx, src: length32(6) });
           emit({
             op: "lea",
             dst: context,
             src: {
               kind: "mem",
               width: 64,
-              address: { kind: "base", base: 7, index: 2, scale: 2, disp: 0 },
+              address: { kind: "base", base: 7, index: 2, scale: 1, disp: 0 },
             },
           });
           emit({ op: "mov", dst: environment, src: frame(home(op.right)) });
-          emit({ op: "mov", dst: rdx, src: mem(6, nativeStringLengthOffset) });
-          stringCopy(move);
+          emit({ op: "mov", dst: edx, src: length32(6) });
+          stringCopy(move, 1);
+          emit({ op: "label", name: done });
+          // The spare word holds the length again.
+          emit({ op: "mov", dst: r9, src: frame(home(op.id)) });
+          emit({ op: "mov", dst: r9d, src: length32(9) });
+          emit({ op: "mov", dst: frame(home(op.id) + 8), src: r9 });
           return;
         }
         case "string-slice": {
@@ -2381,9 +3200,12 @@ export function emitModule(
           const move = host.symbolPrefix + "memmove";
           const site = fnLabel + ":slice:" + String(op.id);
           const bounded = site + ":limit-bounded";
+          const scanned = site + ":scanned",
+            scan = site + ":scan",
+            wide = site + ":wide";
           const begin = gpr(8);
           emit({ op: "mov", dst: scratch, src: frame(home(op.string)) });
-          emit({ op: "mov", dst: rdx, src: mem(11, nativeStringLengthOffset) });
+          emit({ op: "mov", dst: edx, src: length32(11) });
           sliceIndex(op.begin, begin, site + ":begin");
           emit({ op: "mov", dst: scratch, src: absent });
           emit({ op: "cmp", dst: frame(home(op.limit)), src: scratch });
@@ -2395,10 +3217,51 @@ export function emitModule(
           emit({ op: "sub", dst: r9, src: begin });
           emit({ op: "cmovcc", cc: "b", dst: r9, src: rax });
           emit({ op: "mov", dst: frame(home(op.id)), src: begin });
+          // The canonical kind: a one-byte source's slice is one-byte; a
+          // two-byte source's when its units [begin, begin + count) all fit.
+          emit({ op: "mov", dst: scratch, src: frame(home(op.string)) });
+          emit({
+            op: "lea",
+            dst: r10,
+            src: {
+              kind: "mem",
+              width: 64,
+              address: {
+                kind: "base",
+                base: 11,
+                index: 8,
+                scale: 2,
+                disp: nativeStringDataOffset,
+              },
+            },
+          });
+          emit({ op: "mov", dst: rdx, src: r9 });
+          emit({ op: "mov", dst: word(8), src: imm(1) });
+          testTwoByte(11);
+          branch(emit, "ne", scanned);
+          emit({ op: "label", name: scan });
+          emit({ op: "test", dst: rdx, src: rdx });
+          branch(emit, "e", scanned);
+          emit({ op: "movzx", dst: eax, src: { ...mem(10, 0), width: 16 } });
+          emit({ op: "cmp", dst: eax, src: imm(0xff) });
+          branch(emit, "a", wide);
+          emit({ op: "add", dst: r10, src: imm(2) });
+          emit({ op: "sub", dst: rdx, src: imm(1) });
+          emit({ op: "jmp", target: label(scan) });
+          emit({ op: "label", name: wide });
+          emit({ op: "xor", dst: word(8), src: word(8) });
+          emit({ op: "label", name: scanned });
           allocateString(op.id, block, index);
+          const oneByte = site + ":one-byte",
+            narrow = site + ":narrow",
+            done = site + ":done";
           emit({ op: "mov", dst: context, src: rax });
           emit({ op: "mov", dst: environment, src: frame(home(op.string)) });
           emit({ op: "mov", dst: begin, src: frame(home(op.id)) });
+          define(op.id, "string");
+          emit({ op: "mov", dst: rdx, src: frame(home(op.id) + 8) });
+          testTwoByte(7);
+          branch(emit, "ne", oneByte);
           emit({
             op: "lea",
             dst: environment,
@@ -2408,27 +3271,69 @@ export function emitModule(
               address: { kind: "base", base: 6, index: 8, scale: 2, disp: 0 },
             },
           });
-          define(op.id, "string");
-          emit({ op: "mov", dst: rdx, src: frame(home(op.id) + 8) });
-          stringCopy(move);
+          stringCopy(move, 2);
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: oneByte });
+          testTwoByte(6);
+          branch(emit, "e", narrow);
+          emit({
+            op: "lea",
+            dst: environment,
+            src: {
+              kind: "mem",
+              width: 64,
+              address: { kind: "base", base: 6, index: 8, scale: 1, disp: 0 },
+            },
+          });
+          stringCopy(move, 1);
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: narrow });
+          emit({
+            op: "lea",
+            dst: environment,
+            src: {
+              kind: "mem",
+              width: 64,
+              address: {
+                kind: "base",
+                base: 6,
+                index: 8,
+                scale: 2,
+                disp: nativeStringDataOffset,
+              },
+            },
+          });
+          emit({
+            op: "lea",
+            dst: context,
+            src: mem(7, nativeStringDataOffset),
+          });
+          narrowUnits(narrow);
+          emit({ op: "label", name: done });
           return;
         }
         case "string-write": {
           if (host === undefined) break;
           const move = host.symbolPrefix + "memmove";
+          const site = fnLabel + ":write:" + String(instructionCount);
+          const oneByte = site + ":one-byte",
+            widen = site + ":widen",
+            done = site + ":done";
           exactInteger(emit, frame(home(op.offset)), r9, trapLabel);
           emit({ op: "mov", dst: context, src: frame(home(op.target)) });
           emit({ op: "mov", dst: environment, src: frame(home(op.source)) });
-          emit({ op: "mov", dst: rdx, src: mem(6, nativeStringLengthOffset) });
+          emit({ op: "mov", dst: edx, src: length32(6) });
           emit({
             op: "mov",
-            dst: scratch,
-            src: mem(7, nativeStringLengthOffset),
+            dst: r11d,
+            src: length32(7),
           });
           emit({ op: "sub", dst: scratch, src: r9 });
           branch(emit, "b", trapLabel);
           emit({ op: "cmp", dst: rdx, src: scratch });
           branch(emit, "a", trapLabel);
+          testTwoByte(7);
+          branch(emit, "ne", oneByte);
           emit({
             op: "lea",
             dst: context,
@@ -2438,7 +3343,518 @@ export function emitModule(
               address: { kind: "base", base: 7, index: 9, scale: 2, disp: 0 },
             },
           });
-          stringCopy(move);
+          testTwoByte(6);
+          branch(emit, "ne", widen);
+          stringCopy(move, 2);
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: widen });
+          emit({
+            op: "lea",
+            dst: context,
+            src: mem(7, nativeStringDataOffset),
+          });
+          widenUnits(widen);
+          emit({ op: "jmp", target: label(done) });
+          // A one-byte target takes only one-byte sources: the builder chose
+          // its kind from every part, so anything else is an invariant
+          // failure.
+          emit({ op: "label", name: oneByte });
+          testTwoByte(6);
+          branch(emit, "e", trapLabel);
+          emit({
+            op: "lea",
+            dst: context,
+            src: {
+              kind: "mem",
+              width: 64,
+              address: { kind: "base", base: 7, index: 9, scale: 1, disp: 0 },
+            },
+          });
+          stringCopy(move, 1);
+          emit({ op: "label", name: done });
+          return;
+        }
+        case "string-two-byte": {
+          if (host === undefined) break;
+          emit({ op: "mov", dst: scratch, src: frame(home(op.string)) });
+          emit({ op: "xor", dst: eax, src: eax });
+          testTwoByte(11);
+          emit({ op: "setcc", cc: "e", dst: byte(0) });
+          define(op.id, "boolean");
+          return;
+        }
+        case "string-from-latin1": {
+          if (host === undefined) break;
+          const move = host.symbolPrefix + "memmove";
+          latin1Range(op.bytes, op.begin, op.limit, nativeArrayLengthOffset);
+          // The result home holds begin across the allocation, as in
+          // string-slice.
+          emit({ op: "mov", dst: frame(home(op.id)), src: r8 });
+          emit({ op: "mov", dst: r8, src: imm(1) });
+          allocateString(op.id, block, index);
+          emit({ op: "mov", dst: context, src: rax });
+          // The bytes may have moved at the allocation safepoint.
+          emit({ op: "mov", dst: environment, src: frame(home(op.bytes)) });
+          emit({ op: "mov", dst: r8, src: frame(home(op.id)) });
+          define(op.id, "string");
+          emit({ op: "mov", dst: rdx, src: frame(home(op.id) + 8) });
+          emit({
+            op: "mov",
+            dst: environment,
+            src: mem(6, nativeArrayDataOffset),
+          });
+          emit({ op: "add", dst: environment, src: r8 });
+          emit({
+            op: "lea",
+            dst: context,
+            src: mem(7, nativeStringDataOffset),
+          });
+          bytesOperation(move);
+          return;
+        }
+        case "string-ascii-case": {
+          if (host === undefined) break;
+          const site = fnLabel + ":ascii-case:" + String(op.id);
+          const first = op.upper ? 0x61 : 0x41;
+          emit({ op: "mov", dst: scratch, src: frame(home(op.string)) });
+          emit({ op: "mov", dst: r9d, src: length32(11) });
+          emit({ op: "mov", dst: r8, src: mem(11, 0) });
+          emit({ op: "shr", dst: r8, count: 48 });
+          allocateString(op.id, block, index);
+          emit({ op: "mov", dst: context, src: rax });
+          // The source may have moved at the allocation safepoint.
+          emit({ op: "mov", dst: environment, src: frame(home(op.string)) });
+          define(op.id, "string");
+          emit({ op: "mov", dst: rdx, src: frame(home(op.id) + 8) });
+          // Each unit in [first, first + 26) moves to the other case.
+          function units(name: string, width: 8 | 16): void {
+            const loop = site + ":" + name,
+              keep = loop + ":keep";
+            emit({ op: "label", name: loop });
+            emit({ op: "test", dst: rdx, src: rdx });
+            branch(emit, "e", site + ":done");
+            emit({
+              op: "movzx",
+              dst: eax,
+              src: { ...mem(6, nativeStringDataOffset), width },
+            });
+            emit({ op: "mov", dst: r10, src: rax });
+            emit({ op: "sub", dst: r10, src: imm(first) });
+            emit({ op: "cmp", dst: r10, src: imm(25) });
+            branch(emit, "a", keep);
+            emit({ op: "xor", dst: eax, src: imm(0x20) });
+            emit({ op: "label", name: keep });
+            if (width === 8)
+              emit({
+                op: "mov",
+                dst: { ...mem(7, nativeStringDataOffset), width: 8 },
+                src: byte(0),
+              });
+            else
+              emit({
+                op: "mov",
+                dst: { ...mem(7, nativeStringDataOffset), width: 16 },
+                src: { kind: "gpr", width: 16, index: 0 },
+              });
+            emit({ op: "add", dst: environment, src: imm(width / 8) });
+            emit({ op: "add", dst: context, src: imm(width / 8) });
+            emit({ op: "sub", dst: rdx, src: imm(1) });
+            emit({ op: "jmp", target: label(loop) });
+          }
+          testTwoByte(6);
+          branch(emit, "e", site + ":halfwords");
+          units("bytes", 8);
+          units("halfwords", 16);
+          emit({ op: "label", name: site + ":done" });
+          return;
+        }
+        case "string-copy-latin1": {
+          if (host === undefined) break;
+          const move = host.symbolPrefix + "memmove";
+          const site = fnLabel + ":copy-latin1:" + String(op.id);
+          const twoByte = site + ":two-byte",
+            narrow = site + ":narrow",
+            wide = site + ":wide",
+            done = site + ":done";
+          latin1Range(op.string, op.begin, op.limit, nativeStringLengthOffset);
+          // offset <= bytes.length and count <= bytes.length - offset.
+          exactInteger(emit, frame(home(op.offset)), r10, trapLabel);
+          emit({ op: "mov", dst: context, src: frame(home(op.bytes)) });
+          emit({
+            op: "mov",
+            dst: eax,
+            src: { ...mem(7, nativeArrayLengthOffset), width: 32 },
+          });
+          emit({ op: "cmp", dst: r10, src: rax });
+          branch(emit, "a", trapLabel);
+          emit({ op: "sub", dst: rax, src: r10 });
+          emit({ op: "cmp", dst: r9, src: rax });
+          branch(emit, "a", trapLabel);
+          emit({ op: "mov", dst: context, src: mem(7, nativeArrayDataOffset) });
+          emit({ op: "add", dst: context, src: r10 });
+          // The count is the result; its home holds it across the copy.
+          emit({ op: "mov", dst: frame(home(op.id)), src: r9 });
+          emit({ op: "mov", dst: rdx, src: r9 });
+          testTwoByte(11);
+          branch(emit, "e", twoByte);
+          emit({
+            op: "lea",
+            dst: environment,
+            src: {
+              kind: "mem",
+              width: 64,
+              address: {
+                kind: "base",
+                base: 11,
+                index: 8,
+                scale: 1,
+                disp: nativeStringDataOffset,
+              },
+            },
+          });
+          bytesOperation(move);
+          emit({ op: "mov", dst: rax, src: frame(home(op.id)) });
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: twoByte });
+          emit({
+            op: "lea",
+            dst: environment,
+            src: {
+              kind: "mem",
+              width: 64,
+              address: {
+                kind: "base",
+                base: 11,
+                index: 8,
+                scale: 2,
+                disp: nativeStringDataOffset,
+              },
+            },
+          });
+          emit({ op: "label", name: narrow });
+          emit({ op: "test", dst: rdx, src: rdx });
+          branch(emit, "e", site + ":narrowed");
+          emit({ op: "movzx", dst: eax, src: { ...mem(6, 0), width: 16 } });
+          emit({ op: "cmp", dst: eax, src: imm(0xff) });
+          branch(emit, "a", wide);
+          emit({ op: "mov", dst: { ...mem(7, 0), width: 8 }, src: byte(0) });
+          emit({ op: "add", dst: environment, src: imm(2) });
+          emit({ op: "add", dst: context, src: imm(1) });
+          emit({ op: "sub", dst: rdx, src: imm(1) });
+          emit({ op: "jmp", target: label(narrow) });
+          emit({ op: "label", name: site + ":narrowed" });
+          emit({ op: "mov", dst: rax, src: frame(home(op.id)) });
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: wide });
+          emit({ op: "mov", dst: rax, src: imm(-1) });
+          emit({ op: "label", name: done });
+          numberBits();
+          define(op.id, "number");
+          return;
+        }
+        case "string-ascii-prefix": {
+          if (host === undefined) break;
+          const site = fnLabel + ":ascii-prefix:" + String(op.id);
+          const twoByte = site + ":two-byte",
+            done = site + ":done";
+          latin1Range(op.string, op.begin, op.limit, nativeStringLengthOffset);
+          emit({ op: "mov", dst: rdx, src: r9 });
+          emit({ op: "mov", dst: frame(home(op.id)), src: r8 });
+          testTwoByte(11);
+          branch(emit, "e", twoByte);
+          emit({
+            op: "lea",
+            dst: environment,
+            src: {
+              kind: "mem",
+              width: 64,
+              address: {
+                kind: "base",
+                base: 11,
+                index: 8,
+                scale: 1,
+                disp: nativeStringDataOffset,
+              },
+            },
+          });
+          asciiPrefix(site + ":one", 1);
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: twoByte });
+          emit({
+            op: "lea",
+            dst: environment,
+            src: {
+              kind: "mem",
+              width: 64,
+              address: {
+                kind: "base",
+                base: 11,
+                index: 8,
+                scale: 2,
+                disp: nativeStringDataOffset,
+              },
+            },
+          });
+          asciiPrefix(site + ":two", 2);
+          emit({ op: "label", name: done });
+          emit({ op: "add", dst: rax, src: frame(home(op.id)) });
+          numberBits();
+          define(op.id, "number");
+          return;
+        }
+        case "string-utf8-length": {
+          if (host === undefined) break;
+          const site = fnLabel + ":utf8-length:" + String(op.id);
+          latin1Range(op.string, op.begin, op.limit, nativeStringLengthOffset);
+          emit({ op: "mov", dst: rdx, src: r9 });
+          testTwoByte(11);
+          branch(emit, "e", site + ":two-byte");
+          emit({ op: "lea", dst: environment, src: unitAddress(1) });
+          utf8Length(site + ":one", 1);
+          jump(site + ":done");
+          emit({ op: "label", name: site + ":two-byte" });
+          emit({ op: "lea", dst: environment, src: unitAddress(2) });
+          utf8Length(site + ":two", 2);
+          emit({ op: "label", name: site + ":done" });
+          numberBits();
+          define(op.id, "number");
+          return;
+        }
+        case "string-write-utf8": {
+          if (host === undefined) break;
+          const site = fnLabel + ":write-utf8:" + String(op.id);
+          latin1Range(op.string, op.begin, op.limit, nativeStringLengthOffset);
+          // offset <= bytes.length; the capacity is the rest.
+          exactInteger(emit, frame(home(op.offset)), r10, trapLabel);
+          emit({ op: "mov", dst: rdx, src: r9 });
+          emit({ op: "mov", dst: context, src: frame(home(op.bytes)) });
+          emit({
+            op: "mov",
+            dst: eax,
+            src: { ...mem(7, nativeArrayLengthOffset), width: 32 },
+          });
+          emit({ op: "cmp", dst: r10, src: rax });
+          branch(emit, "a", trapLabel);
+          emit({ op: "sub", dst: rax, src: r10 });
+          emit({ op: "mov", dst: r9, src: rax });
+          emit({ op: "mov", dst: context, src: mem(7, nativeArrayDataOffset) });
+          emit({ op: "add", dst: context, src: r10 });
+          testTwoByte(11);
+          branch(emit, "e", site + ":two-byte");
+          emit({ op: "lea", dst: environment, src: unitAddress(1) });
+          utf8Write(site + ":one", 1);
+          jump(site + ":done");
+          emit({ op: "label", name: site + ":two-byte" });
+          emit({ op: "lea", dst: environment, src: unitAddress(2) });
+          utf8Write(site + ":two", 2);
+          emit({ op: "label", name: site + ":done" });
+          emit({ op: "mov", dst: rax, src: r8 });
+          numberBits();
+          define(op.id, "number");
+          return;
+        }
+        case "string-from-utf8": {
+          if (host === undefined) break;
+          const site = fnLabel + ":from-utf8:" + String(op.id);
+          latin1Range(op.bytes, op.begin, op.limit, nativeArrayLengthOffset);
+          // The result home holds begin (low half) and the valid prefix's
+          // bytes (high half) across the allocation, as in string-slice.
+          emit({ op: "mov", dst: frame(home(op.id)), src: r8 });
+          emit({ op: "mov", dst: rdx, src: r9 });
+          emit({
+            op: "mov",
+            dst: environment,
+            src: mem(11, nativeArrayDataOffset),
+          });
+          emit({ op: "add", dst: environment, src: r8 });
+          utf8Measure(site + ":measure");
+          if (op.whole === true) {
+            // Bytes left after the prefix: the empty string.
+            emit({ op: "test", dst: rdx, src: rdx });
+            branch(emit, "e", site + ":whole");
+            emit({ op: "xor", dst: word(9), src: word(9) });
+            emit({ op: "xor", dst: r10d, src: r10d });
+            emit({ op: "mov", dst: r8, src: imm(1) });
+            emit({ op: "label", name: site + ":whole" });
+          }
+          emit({ op: "shl", dst: r10, count: 32 });
+          emit({ op: "mov", dst: rax, src: frame(home(op.id)) });
+          emit({ op: "or", dst: rax, src: r10 });
+          emit({ op: "mov", dst: frame(home(op.id)), src: rax });
+          allocateString(op.id, block, index);
+          emit({ op: "mov", dst: context, src: rax });
+          emit({ op: "mov", dst: r10, src: frame(home(op.id)) });
+          define(op.id, "string");
+          emit({ op: "mov", dst: rdx, src: r10 });
+          emit({ op: "shr", dst: rdx, count: 32 });
+          emit({ op: "mov", dst: r10d, src: r10d });
+          // The bytes may have moved at the allocation safepoint.
+          emit({ op: "mov", dst: environment, src: frame(home(op.bytes)) });
+          emit({
+            op: "mov",
+            dst: environment,
+            src: mem(6, nativeArrayDataOffset),
+          });
+          emit({ op: "add", dst: environment, src: r10 });
+          emit({ op: "mov", dst: r9, src: frame(home(op.id) + 8) });
+          testTwoByte(7);
+          emit({
+            op: "lea",
+            dst: context,
+            src: mem(7, nativeStringDataOffset),
+          });
+          branch(emit, "e", site + ":two-byte");
+          utf8Decode(site + ":one", 1);
+          jump(site + ":done");
+          emit({ op: "label", name: site + ":two-byte" });
+          utf8Decode(site + ":two", 2);
+          emit({ op: "label", name: site + ":done" });
+          return;
+        }
+        case "string-flat":
+          if (host === undefined) break;
+          // 1 unless the sliced kind flag is set (never on x86-64, which
+          // copies every slice; the test keeps one contract).
+          emit({ op: "mov", dst: scratch, src: frame(home(op.string)) });
+          emit({ op: "mov", dst: rax, src: mem(11, 0) });
+          emit({ op: "shr", dst: rax, count: nativeHeaderFlagsShift + 1 });
+          emit({ op: "and", dst: rax, src: imm(1) });
+          emit({ op: "xor", dst: rax, src: imm(1) });
+          numberBits();
+          define(op.id, "number");
+          return;
+        case "string-flatten-into": {
+          if (host === undefined) break;
+          const move = host.symbolPrefix + "memmove";
+          const site = fnLabel + ":flatten:" + String(op.id);
+          const invalid = site + ":invalid",
+            flat = site + ":flat",
+            sized = site + ":sized",
+            done = site + ":done";
+          // R8 address and R9 byteLength: exact integers, a nonzero
+          // 8-byte-aligned address and an end below 2^53 (else -1).
+          exactInteger(emit, frame(home(op.address)), r8, invalid);
+          exactInteger(emit, frame(home(op.byteLength)), r9, invalid);
+          emit({ op: "test", dst: r8, src: r8 });
+          branch(emit, "le", invalid);
+          emit({ op: "test", dst: r8, src: imm(7) });
+          branch(emit, "ne", invalid);
+          emit({ op: "test", dst: r9, src: r9 });
+          branch(emit, "l", invalid);
+          emit({ op: "mov", dst: r10, src: r8 });
+          emit({ op: "add", dst: r10, src: r9 });
+          emit({ op: "shr", dst: r10, count: 53 });
+          branch(emit, "ne", invalid);
+          // RAX the flat header, RDX the length, RSI the units (a slice's
+          // parent's, from its start).
+          emit({ op: "mov", dst: scratch, src: frame(home(op.string)) });
+          emit({ op: "mov", dst: rax, src: mem(11, 0) });
+          emit({
+            op: "mov",
+            dst: edx,
+            src: length32(11),
+          });
+          emit({
+            op: "lea",
+            dst: environment,
+            src: mem(11, nativeStringDataOffset),
+          });
+          emit({ op: "mov", dst: r10, src: rax });
+          emit({ op: "shr", dst: r10, count: nativeHeaderFlagsShift + 1 });
+          emit({ op: "and", dst: r10, src: imm(1) });
+          branch(emit, "e", flat);
+          emit({
+            op: "mov",
+            dst: r10,
+            src: mem(11, nativeStringSlicedStartOffset),
+          });
+          emit({
+            op: "mov",
+            dst: environment,
+            src: mem(11, nativeStringParentOffset),
+          });
+          emit({
+            op: "lea",
+            dst: environment,
+            src: {
+              kind: "mem",
+              width: 64,
+              address: {
+                kind: "base",
+                base: 6,
+                index: 10,
+                scale: 1,
+                disp: nativeStringDataOffset,
+              },
+            },
+          });
+          emit({ op: "mov", dst: r10, src: imm(1) });
+          emit({ op: "shl", dst: r10, count: nativeHeaderFlagsShift + 1 });
+          emit({ op: "sub", dst: rax, src: r10 });
+          emit({ op: "label", name: flat });
+          // R11 the data bytes, R10 the extent align8(16 + max(bytes, 8))
+          // (nativeFlatStringExtent).
+          emit({ op: "mov", dst: scratch, src: rdx });
+          emit({ op: "mov", dst: r10, src: rax });
+          emit({ op: "shr", dst: r10, count: nativeHeaderFlagsShift });
+          emit({ op: "and", dst: r10, src: imm(1) });
+          branch(emit, "ne", sized);
+          emit({ op: "add", dst: scratch, src: scratch });
+          emit({ op: "label", name: sized });
+          emit({ op: "mov", dst: r10, src: scratch });
+          emit({ op: "cmp", dst: r10, src: imm(nativeStringMinimumDataBytes) });
+          branch(emit, "ae", site + ":minimum");
+          emit({ op: "mov", dst: r10, src: imm(nativeStringMinimumDataBytes) });
+          emit({ op: "label", name: site + ":minimum" });
+          emit({ op: "add", dst: r10, src: imm(nativeStringDataOffset + 7) });
+          emit({ op: "and", dst: r10, src: imm(-8) });
+          emit({ op: "cmp", dst: r10, src: r9 });
+          branch(emit, "a", invalid);
+          // The last two words first (padding, at most 15 bytes, stays
+          // zero), then the header and length, then the units.
+          const padding = (disp: number): Memory<64> => ({
+            kind: "mem",
+            width: 64,
+            address: { kind: "base", base: 8, index: 10, scale: 1, disp },
+          });
+          emit({ op: "mov", dst: padding(-8), src: imm(0) });
+          emit({ op: "mov", dst: padding(-16), src: imm(0) });
+          emit({ op: "mov", dst: mem(8, 0), src: rax });
+          emit({ op: "mov", dst: mem(8, nativeStringLengthOffset), src: rdx });
+          // The extent is the result; its home holds it across the copy.
+          emit({ op: "mov", dst: frame(home(op.id)), src: r10 });
+          emit({
+            op: "lea",
+            dst: context,
+            src: mem(8, nativeStringDataOffset),
+          });
+          emit({ op: "mov", dst: rdx, src: scratch });
+          bytesOperation(move);
+          emit({ op: "mov", dst: rax, src: frame(home(op.id)) });
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: invalid });
+          emit({ op: "mov", dst: rax, src: imm(-1) });
+          emit({ op: "label", name: done });
+          numberBits();
+          define(op.id, "number");
+          return;
+        }
+        case "bytes-ascii-prefix": {
+          if (host === undefined) break;
+          const site = fnLabel + ":bytes-ascii-prefix:" + String(op.id);
+          latin1Range(op.bytes, op.begin, op.limit, nativeArrayLengthOffset);
+          emit({ op: "mov", dst: rdx, src: r9 });
+          emit({ op: "mov", dst: frame(home(op.id)), src: r8 });
+          emit({
+            op: "mov",
+            dst: environment,
+            src: mem(11, nativeArrayDataOffset),
+          });
+          emit({ op: "add", dst: environment, src: r8 });
+          asciiPrefix(site, 1);
+          emit({ op: "add", dst: rax, src: frame(home(op.id)) });
+          numberBits();
+          define(op.id, "number");
           return;
         }
         case "string-literal":
@@ -2446,10 +3862,56 @@ export function emitModule(
           emit({ op: "lea", dst: rax, src: literal(op.value) });
           define(op.id, "string");
           return;
+        // The number-string cache holds nothing on x86-64: every lookup
+        // misses ("") and stores are dropped, as in the portable bodies.
+        case "number-string-cached":
+          if (host === undefined) break;
+          emit({ op: "lea", dst: rax, src: literal("") });
+          define(op.id, "string");
+          return;
+        case "number-string-cache":
+          if (host === undefined) break;
+          return;
+        // A string's index field (nativeStringIndexFieldOffset): bit 0 set
+        // when an array index is cached in the bits above.
+        case "string-index-cached": {
+          if (host === undefined) break;
+          const site = fnLabel + ":index-cached:" + String(op.id),
+            none = site + ":none",
+            done = site + ":done";
+          emit({ op: "mov", dst: scratch, src: frame(home(op.string)) });
+          emit({ op: "mov", dst: eax, src: indexField32(11) });
+          emit({ op: "test", dst: rax, src: imm(1) });
+          branch(emit, "e", none);
+          emit({ op: "shr", dst: eax, count: 1 });
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: none });
+          emit({ op: "mov", dst: rax, src: imm(-1) });
+          emit({ op: "label", name: done });
+          numberBits();
+          define(op.id, "number");
+          return;
+        }
+        // Only an unset field is written (pool literals are read-only and
+        // carry theirs), by one 32-bit store of (value << 1) | 1.
+        case "string-index-cache": {
+          if (host === undefined) break;
+          const set = fnLabel + ":index-cache:" + String(instructionCount);
+          emit({ op: "mov", dst: scratch, src: frame(home(op.string)) });
+          emit({ op: "mov", dst: eax, src: indexField32(11) });
+          emit({ op: "test", dst: rax, src: rax });
+          branch(emit, "ne", set);
+          exactInteger(emit, frame(home(op.value)), r10, trapLabel);
+          emit({ op: "add", dst: r10, src: r10 });
+          emit({ op: "add", dst: r10, src: imm(1) });
+          emit({ op: "mov", dst: indexField32(11), src: r10d });
+          emit({ op: "label", name: set });
+          return;
+        }
         case "string-length":
           if (host === undefined) break;
           emit({ op: "mov", dst: scratch, src: frame(home(op.string)) });
-          emit({ op: "mov", dst: rax, src: mem(11, nativeStringLengthOffset) });
+          emit({ op: "mov", dst: eax, src: length32(11) });
           numberBits();
           define(op.id, "number");
           return;
@@ -2474,28 +3936,56 @@ export function emitModule(
           emit({ op: "mov", dst: scratch, src: frame(home(op.string)) });
           if (op.inBounds !== true) {
             // The indefinite integer for overflow and Infinity is unsigned out of range.
-            emit({
-              op: "cmp",
-              dst: r9,
-              src: mem(11, nativeStringLengthOffset),
-            });
+            emit({ op: "mov", dst: eax, src: length32(11) });
+            emit({ op: "cmp", dst: r9, src: rax });
             branch(emit, "ae", invalid);
           }
-          emit({
-            op: "movzx",
-            dst: eax,
-            src: {
-              kind: "mem",
-              width: 16,
-              address: {
-                kind: "base",
-                base: 11,
-                index: 9,
-                scale: 2,
-                disp: nativeStringDataOffset,
+          // A halfword, or a byte from a one-byte string (only the one
+          // the kind allows when versionStringLoops knows it).
+          const oneByte = site + ":one-byte",
+            loaded = site + ":loaded",
+            unitKind = op.unitKind;
+          if (unitKind === undefined) {
+            testTwoByte(11);
+            branch(emit, "ne", oneByte);
+          }
+          if (unitKind !== "one-byte") {
+            emit({
+              op: "movzx",
+              dst: eax,
+              src: {
+                kind: "mem",
+                width: 16,
+                address: {
+                  kind: "base",
+                  base: 11,
+                  index: 9,
+                  scale: 2,
+                  disp: nativeStringDataOffset,
+                },
               },
-            },
-          });
+            });
+            if (unitKind === undefined)
+              emit({ op: "jmp", target: label(loaded) });
+          }
+          emit({ op: "label", name: oneByte });
+          if (unitKind !== "two-byte")
+            emit({
+              op: "movzx",
+              dst: eax,
+              src: {
+                kind: "mem",
+                width: 8,
+                address: {
+                  kind: "base",
+                  base: 11,
+                  index: 9,
+                  scale: 1,
+                  disp: nativeStringDataOffset,
+                },
+              },
+            });
+          emit({ op: "label", name: loaded });
           numberBits();
           if (op.inBounds !== true) {
             emit({ op: "jmp", target: label(done) });
@@ -3035,11 +4525,7 @@ export function emitModule(
               emit({ op: "mov", dst: scratch, src });
               emit({ op: "test", dst: scratch, src: scratch });
               branch(emit, "e", absent);
-              emit({
-                op: "cmp",
-                dst: mem(11, nativeStringLengthOffset),
-                src: imm(0),
-              });
+              emit({ op: "cmp", dst: length32(11), src: imm(0) });
               emit({ op: "label", name: absent });
               setBoolean(emit, op.operator === "!" ? "e" : "ne", 0);
             }
@@ -3803,8 +5289,11 @@ export function emitModule(
     if (poolEnd > poolBase) {
       for (const [, item] of strings) {
         if (item === undefined) throw "x86-64 literal invariant";
-        const start = poolBase + item.offset;
+        const start = poolBase + item.offset,
+          oneByte = isOneByteText(item.value);
+        // Marker 1 in byte 0; the one-byte kind flag is bit 48 (byte 6).
         code[start] = 1;
+        if (oneByte) code[start + 6] = 1;
         if (
           !writeUnsigned(
             code,
@@ -3815,12 +5304,25 @@ export function emitModule(
           ).ok
         )
           throw "x86-64 literal length invariant";
+        // Pool literals are read-only: their index field is precomputed.
+        const indexField = nativeStringIndexField(item.value);
+        if (
+          indexField !== 0 &&
+          !writeUnsigned(
+            code,
+            start + nativeStringIndexFieldOffset,
+            4,
+            indexField,
+            "little",
+          ).ok
+        )
+          throw "x86-64 literal index field invariant";
         for (let i = 0; i < item.value.length; i++)
           if (
             !writeUnsigned(
               code,
-              start + nativeStringDataOffset + i * 2,
-              2,
+              start + nativeStringDataOffset + (oneByte ? i : i * 2),
+              oneByte ? 1 : 2,
               item.value.charCodeAt(i),
               "little",
             ).ok

@@ -113,6 +113,12 @@ function literalStrings(node: Expression): readonly Expression[] | undefined {
   }
   return node.elements;
 }
+/** An operand of a fusible typed string `+` chain and the `+` it belongs
+ * to (lowering's stringChainLeaves). */
+interface StringChainLeaf {
+  readonly leaf: Expression;
+  readonly parent: Expression;
+}
 export const nativeClosureCallMessage: string =
   "Calling a native closure through Function requires the slice 2b closure view";
 
@@ -465,6 +471,7 @@ export function lowerFunction(
       case "general-is":
       case "boolean-value":
       case "boolean-present":
+      case "string-two-byte":
         type = "boolean";
         break;
       case "error-message":
@@ -478,6 +485,7 @@ export function lowerFunction(
         break;
       case "string-length":
       case "string-code-unit":
+      case "string-index-of":
       case "script-argument-count":
       case "script-argument-area":
         type = "number";
@@ -1766,6 +1774,43 @@ export function lowerFunction(
     if (slots[slot] === "number") {
       const target = info(node).callee;
       if (target === undefined) throw "number formatter binding invariant";
+      // The number-string cache inline first (no number converts to "",
+      // its miss), and the formatter, which caches, only on a miss.
+      const result = temporary("string"),
+        cached = nextValue++;
+      emit({
+        kind: "number-string-cached",
+        id: cached,
+        value: load(slot, node),
+        start: node.start,
+        end: node.end,
+      });
+      store(result, cached, node);
+      const length = nextValue++;
+      emit({
+        kind: "string-length",
+        id: length,
+        string: load(result, node),
+        start: node.start,
+        end: node.end,
+      });
+      const miss = block(),
+        done = block();
+      choose(
+        load(
+          binarySlot(
+            "===",
+            save(length, "number", node),
+            numberSlot(0, node),
+            node,
+          ),
+          node,
+        ),
+        miss,
+        done,
+        node,
+      );
+      current = miss;
       const id = nextValue++;
       emit({
         kind: "call",
@@ -1775,7 +1820,10 @@ export function lowerFunction(
         start: node.start,
         end: node.end,
       });
-      return save(id, "string", node);
+      store(result, id, node);
+      jump(done.id, node);
+      current = done;
+      return result;
     }
     if (slots[slot] !== "boolean") throw "string operand invariant";
     const result = temporary("string"),
@@ -2396,6 +2444,228 @@ export function lowerFunction(
       end: node.end,
     });
     return id;
+  }
+  /** The concatenation of the string slots `pieces` (at least one), in
+   * order: the piece itself, one string-concat for two, and for more one
+   * allocation of the total length and canonical kind (two-byte when some
+   * piece is) with each piece written in turn, as join lowers, instead of
+   * an allocation and a copy of the whole prefix per concatenation. */
+  function emitStringPieces(
+    pieces: readonly number[],
+    node: Expression,
+  ): number {
+    const first = pieces[0],
+      second = pieces[1];
+    if (first === undefined) throw "string pieces invariant";
+    if (second === undefined) return first;
+    if (pieces.length === 2)
+      return save(emitStringConcat(first, second, node), "string", node);
+    const lengths: number[] = [];
+    let total = -1,
+      wide = -1;
+    for (const piece of pieces) {
+      if (piece === undefined) throw "string piece invariant";
+      const lengthId = nextValue++;
+      emit({
+        kind: "string-length",
+        id: lengthId,
+        string: load(piece, node),
+        start: node.start,
+        end: node.end,
+      });
+      const length = save(lengthId, "number", node);
+      lengths.push(length);
+      const twoByteId = nextValue++;
+      emit({
+        kind: "string-two-byte",
+        id: twoByteId,
+        string: load(piece, node),
+        start: node.start,
+        end: node.end,
+      });
+      const twoByte = unarySlot(
+        "boolean-number",
+        save(twoByteId, "boolean", node),
+        "number",
+        node,
+      );
+      total = total < 0 ? length : binarySlot("+", total, length, node);
+      wide = wide < 0 ? twoByte : binarySlot("|", wide, twoByte, node);
+    }
+    const allocated = nextValue++;
+    emit({
+      kind: "string-allocate",
+      id: allocated,
+      length: load(total, node),
+      twoByte: load(binarySlot("!==", wide, numberSlot(0, node), node), node),
+      start: node.start,
+      end: node.end,
+    });
+    const result = save(allocated, "string", node);
+    let offset = numberSlot(0, node);
+    for (let index = 0; index < pieces.length; index++) {
+      const piece = pieces[index],
+        length = lengths[index];
+      if (piece === undefined || length === undefined)
+        throw "string piece invariant";
+      emit({
+        kind: "string-write",
+        target: load(result, node),
+        offset: load(offset, node),
+        source: load(piece, node),
+        start: node.start,
+        end: node.end,
+      });
+      if (index + 1 < pieces.length)
+        offset = binarySlot("+", offset, length, node);
+    }
+    return result;
+  }
+  /** Whether `node` is a typed string `+` whose operands convert to strings
+   * without the general or speculative paths, so a chain of them can be
+   * concatenated at once (stringChainLeaves). */
+  function fusibleStringPlus(node: Expression): boolean {
+    return (
+      node.kind === "binary" &&
+      node.operator === "+" &&
+      scalarType(node) === "string" &&
+      fusibleStringLeaf(node.left) &&
+      fusibleStringLeaf(node.right)
+    );
+  }
+  function fusibleStringLeaf(node: Expression): boolean {
+    if (fusibleStringPlus(node)) return true;
+    const type = scalarType(node),
+      facts = info(node);
+    return (
+      (type === "string" || type === "number" || type === "boolean") &&
+      facts.speculative !== true &&
+      facts.bigint !== true
+    );
+  }
+  /** The leaves of a fusible `+` chain, left to right, with the `+` whose
+   * operand each is (it carries the number formatter binding). */
+  function stringChainLeaves(
+    node: Expression,
+    leaves: StringChainLeaf[],
+  ): void {
+    if (node.kind !== "binary") throw "string chain invariant";
+    stringChainOperand(node.left, node, leaves);
+    stringChainOperand(node.right, node, leaves);
+  }
+  function stringChainOperand(
+    operand: Expression,
+    parent: Expression,
+    leaves: StringChainLeaf[],
+  ): void {
+    if (operand.kind === "binary" && fusibleStringPlus(operand))
+      stringChainLeaves(operand, leaves);
+    else leaves.push({ leaf: operand, parent });
+  }
+  /** `x = x + a + b ...`: a fusible string chain of three or more operands
+   * whose first operand reads the local it is assigned to. It is built as
+   * `x + (a + b ...)`, an append of the rest fused into one piece, so a
+   * loop of such appends builds its string in a buffer
+   * (build-loop-strings). The operands are evaluated and converted in the
+   * same order as the whole chain, and the rest's conversions to strings
+   * are the ones the chain would make after a string. Undefined for any
+   * other expression. */
+  /** Whether evaluating `node` can assign no local: it holds no
+   * assignment, update, function or class syntax (calls cannot assign an
+   * uncaptured local). Conservative: other kinds answer false. */
+  function assignmentFree(node: Expression): boolean {
+    switch (node.kind) {
+      case "identifier":
+      case "number":
+      case "string":
+      case "boolean":
+      case "null":
+      case "this":
+        return true;
+      case "group":
+      case "satisfies":
+        return assignmentFree(node.expression);
+      case "unary":
+        return assignmentFree(node.operand);
+      case "binary":
+        return assignmentFree(node.left) && assignmentFree(node.right);
+      case "conditional":
+        return (
+          assignmentFree(node.test) &&
+          assignmentFree(node.consequent) &&
+          assignmentFree(node.alternate)
+        );
+      case "member":
+        return assignmentFree(node.object);
+      case "index":
+        return assignmentFree(node.object) && assignmentFree(node.index);
+      case "call":
+        return (
+          assignmentFree(node.callee) &&
+          node.arguments.every((argument) => assignmentFree(argument))
+        );
+      case "template-expression":
+        return node.substitutions.every((part) => assignmentFree(part));
+      default:
+        return false;
+    }
+  }
+  /** Whether `local` may be read after evaluating `pieces` instead of
+   * before, as an append's left operand is: an uncaptured local (no cell,
+   * so nothing else can write it) that the pieces do not assign. Loop
+   * string builders then find the read next to its concatenation even
+   * when a piece branches. */
+  function readableAfter(
+    local: number,
+    pieces: readonly Expression[],
+  ): boolean {
+    return (
+      ownedCells.every((cell) => cell === undefined || cell.local !== local) &&
+      pieces.every((piece) => assignmentFree(piece))
+    );
+  }
+  function appendedChain(node: Expression, local: number): number | undefined {
+    if (
+      node.kind !== "binary" ||
+      node.operator !== "+" ||
+      !fusibleStringPlus(node) ||
+      node.left.kind !== "binary" ||
+      !fusibleStringPlus(node.left)
+    )
+      return undefined;
+    const leaves: StringChainLeaf[] = [];
+    stringChainLeaves(node, leaves);
+    const head = leaves[0];
+    if (head === undefined) throw "string chain leaf invariant";
+    const leaf = head.leaf;
+    if (
+      leaf.kind !== "identifier" ||
+      info(leaf).local !== local ||
+      info(leaf).realmGlobal !== undefined ||
+      info(leaf).undefinedValue === true ||
+      scalarType(leaf) !== "string"
+    )
+      return undefined;
+    const tail: StringChainLeaf[] = [];
+    for (let index = 1; index < leaves.length; index++) {
+      const entry = leaves[index];
+      if (entry === undefined) throw "string chain leaf invariant";
+      tail.push(entry);
+    }
+    const late = readableAfter(
+      local,
+      tail.map((entry) => entry.leaf),
+    );
+    let first = late ? -1 : stringOperand(value(leaf), head.parent);
+    const rest: number[] = [];
+    for (const entry of tail)
+      rest.push(stringOperand(value(entry.leaf), entry.parent));
+    if (late) first = stringOperand(value(leaf), head.parent);
+    return save(
+      emitStringConcat(first, emitStringPieces(rest, node), node),
+      "string",
+      node,
+    );
   }
   /** Make negative integer offsets relative to the end, without clamping. */
   function adjustNegativeIndex(
@@ -6840,6 +7110,24 @@ export function lowerFunction(
               : unarySlot("!", equal, "boolean", node);
           }
         }
+        // A typed string `+` chain of three or more operands is built with
+        // one allocation. Its operands are primitive, so converting each
+        // right after evaluating it is unobservable.
+        if (
+          node.operator === "+" &&
+          fusibleStringPlus(node) &&
+          node.left.kind === "binary" &&
+          fusibleStringPlus(node.left)
+        ) {
+          const leaves: StringChainLeaf[] = [];
+          stringChainLeaves(node, leaves);
+          const pieces: number[] = [];
+          for (const entry of leaves) {
+            if (entry === undefined) throw "string chain leaf invariant";
+            pieces.push(stringOperand(value(entry.leaf), entry.parent));
+          }
+          return emitStringPieces(pieces, node);
+        }
         const left = value(node.left);
         if (node.operator === "&&" || node.operator === "||") {
           const result = temporary(scalarType(node));
@@ -7164,6 +7452,29 @@ export function lowerFunction(
           });
         }
         const string = scalarType(node) === "string";
+        // `s += piece` reads s after the piece when that is unobservable.
+        if (
+          string &&
+          node.kind === "compound" &&
+          node.operator === "+" &&
+          slots[local] === "string" &&
+          readableAfter(local, [node.value])
+        ) {
+          const right = value(node.value),
+            old = save(readLocal(local, node.target), "string", node.target);
+          const id = nextValue++;
+          emit({
+            kind: "string-concat",
+            id,
+            left: load(old, node),
+            right: load(right, node),
+            start: node.start,
+            end: node.end,
+          });
+          const updated = save(id, "string", node);
+          writeLocal(local, load(updated, node), node);
+          return updated;
+        }
         let read = readLocal(local, node.target);
         if (
           slots[local] === "optional-number" ||
@@ -7299,9 +7610,9 @@ export function lowerFunction(
           });
           return result;
         }
-        const result = value(node.value),
-          local = info(node).local;
+        const local = info(node).local;
         if (local === undefined) throw "assignment invariant";
+        const result = appendedChain(node.value, local) ?? value(node.value);
         writeLocal(local, load(result, node.value), node);
         return result;
       }
@@ -7338,30 +7649,26 @@ export function lowerFunction(
           });
           return save(id, "string", node);
         }
-        let result = part(first);
+        // Empty literal parts add nothing; the pieces are concatenated at
+        // once (emitStringPieces).
+        const pieces: number[] = [];
+        if (first.length > 0) pieces.push(part(first));
         for (let i = 0; i < node.substitutions.length; i++) {
           const substitution = node.substitutions[i],
             tail = node.parts[i + 1];
           if (substitution === undefined || tail === undefined)
             throw "template substitution invariant";
           const input = value(substitution);
-          const converted = info(substitution).undefinedValue
-            ? part("undefined")
-            : info(substitution).nullValue
-              ? part("null")
-              : stringOperand(input, node);
-          result = save(
-            emitStringConcat(result, converted, node),
-            "string",
-            node,
+          pieces.push(
+            info(substitution).undefinedValue
+              ? part("undefined")
+              : info(substitution).nullValue
+                ? part("null")
+                : stringOperand(input, node),
           );
-          result = save(
-            emitStringConcat(result, part(tail), node),
-            "string",
-            node,
-          );
+          if (tail.length > 0) pieces.push(part(tail));
         }
-        return result;
+        return pieces.length === 0 ? part("") : emitStringPieces(pieces, node);
       }
       case "call": {
         if (node.scriptArgument === "count") {
@@ -8209,13 +8516,33 @@ export function lowerFunction(
               jump(head.id, node);
               current = exit;
             }
-            const total = numberSlot(0, node);
-            visitParts((part) => add(total, lengthOf(part)));
+            // The result is two-byte exactly when some part is (strings
+            // are canonical).
+            const total = numberSlot(0, node),
+              twoByte = booleanSlot(false, node);
+            visitParts((part) => {
+              add(total, lengthOf(part));
+              const wide = nextValue++;
+              emit({
+                kind: "string-two-byte",
+                id: wide,
+                string: load(part, node),
+                start: node.start,
+                end: node.end,
+              });
+              conditionalStore(
+                save(wide, "boolean", node),
+                twoByte,
+                () => booleanSlot(true, node),
+                node,
+              );
+            });
             const allocated = nextValue++;
             emit({
               kind: "string-allocate",
               id: allocated,
               length: load(total, node),
+              twoByte: load(twoByte, node),
               start: node.start,
               end: node.end,
             });
@@ -9043,34 +9370,34 @@ export function lowerFunction(
             store(index, load(next, node), node);
             jump(unitHead.id, node);
             current = delimited;
+            // Each piece ends at the separator's next occurrence at or after
+            // its start.
             const head = block(),
-              search = block(),
               matched = block(),
-              advance = block(),
               resume = block(),
               tail = block();
             jump(head.id, node);
             current = head;
-            choose(
-              load(binarySlot("<=", index, length, node), node),
-              search,
-              tail,
-              node,
-            );
-            current = search;
-            const match = nextValue++;
+            const found = nextValue++;
             emit({
-              kind: "string-starts-with",
-              id: match,
+              kind: "string-index-of",
+              id: found,
               string: load(string, node),
               search: load(separator, node),
-              position: load(index, node),
+              position: load(start, node),
+              reverse: false,
               start: node.start,
               end: node.end,
             });
-            choose(match, matched, advance, node);
+            const position = save(found, "number", node);
+            choose(
+              load(binarySlot("<", position, zero, node), node),
+              tail,
+              matched,
+              node,
+            );
             current = matched;
-            append(start, index);
+            append(start, position);
             choose(
               load(
                 binarySlot(
@@ -9086,13 +9413,9 @@ export function lowerFunction(
               node,
             );
             current = resume;
-            store(index, load(binarySlot("+", index, width, node), node), node);
-            store(start, load(index, node), node);
-            jump(head.id, node);
-            current = advance;
             store(
-              index,
-              load(binarySlot("+", index, numberSlot(1, node), node), node),
+              start,
+              load(binarySlot("+", position, width, node), node),
               node,
             );
             jump(head.id, node);
@@ -9136,83 +9459,20 @@ export function lowerFunction(
                 node,
               );
             const index = absoluteIndex(input, length, node);
-            const initial = nextValue++;
+            const found = nextValue++;
             emit({
-              kind: "constant",
-              id: initial,
-              value: indexResult ? -1 : false,
-              start: node.start,
-              end: node.end,
-            });
-            const result = save(
-                initial,
-                indexResult ? "number" : "boolean",
-                node,
-              ),
-              head = block(),
-              body = block(),
-              advance = block(),
-              found = block(),
-              done = block();
-            jump(head.id, node);
-            current = head;
-            choose(
-              load(
-                binarySlot(
-                  reverse ? ">=" : "<=",
-                  index,
-                  reverse ? zero : length,
-                  node,
-                ),
-                node,
-              ),
-              body,
-              done,
-              node,
-            );
-            current = body;
-            const match = nextValue++;
-            emit({
-              kind: "string-starts-with",
-              id: match,
+              kind: "string-index-of",
+              id: found,
               string: load(string, node),
               search: load(search, node),
               position: load(index, node),
+              reverse,
               start: node.start,
               end: node.end,
             });
-            choose(match, found, advance, node);
-            current = found;
-            if (indexResult) store(result, load(index, node), node);
-            else {
-              const yes = nextValue++;
-              emit({
-                kind: "constant",
-                id: yes,
-                value: true,
-                start: node.start,
-                end: node.end,
-              });
-              store(result, yes, node);
-            }
-            jump(done.id, node);
-            current = advance;
-            store(
-              index,
-              load(
-                binarySlot(
-                  reverse ? "-" : "+",
-                  index,
-                  numberSlot(1, node),
-                  node,
-                ),
-                node,
-              ),
-              node,
-            );
-            jump(head.id, node);
-            current = done;
-            return result;
+            const result = save(found, "number", node);
+            if (indexResult) return result;
+            return binarySlot("!==", result, numberSlot(-1, node), node);
           }
           if (builtin === "string-ends-with") {
             const string = value(target.object),

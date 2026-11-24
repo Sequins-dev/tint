@@ -419,6 +419,7 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "lower-proven-record-reads",
       "propagate-slot-copies",
       "hoist-loop-invariants",
+      "build-loop-strings",
       "select-array-access",
       "split-optional-numbers",
       "thread-branches",
@@ -429,6 +430,7 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "cache-list-vectors",
       "bound-counted-loops",
       "version-nonzero-divisors",
+      "version-string-loops",
     ],
   );
   assert.ok(

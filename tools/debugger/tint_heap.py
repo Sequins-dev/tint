@@ -66,6 +66,11 @@ FLAGS_SHIFT = 48
 # Object layouts of the version 2 header (packages/abi/src/host.ts).
 LENGTH_OFFSET = 8
 STRING_UNITS_OFFSET = 16
+STRING_ONE_BYTE_FLAG = 1
+# A sliced string (kind flag 2) holds the byte offset of its first unit in
+# its flat parent's units where a flat string's units start, then the parent.
+STRING_SLICED_FLAG = 2
+STRING_SLICED_PARENT_OFFSET = 24
 ARRAY_INLINE_OFFSET = 24
 # Header word of a reference vector (kind marker 6, no flags).
 VECTOR_HEADER = 6
@@ -1218,11 +1223,22 @@ def string_text(inferior, address, limit=STRING_LIMIT):
     """A string object's text as a JSON literal ("..." past the limit)."""
     if address == 0:
         return None
-    length = read_u64(inferior, address + LENGTH_OFFSET)
+    # The length is the word's low 32 bits; the high ones hold the index
+    # field (nativeStringIndexFieldOffset).
+    length = read_u32(inferior, address + LENGTH_OFFSET)
     shown = min(length, limit)
-    units = (
-        struct.unpack("<%dH" % shown, inferior.read(address + STRING_UNITS_OFFSET, shown * 2)) if shown else ()
-    )
+    # Kind flag 1: one-byte (Latin-1) units; otherwise two-byte UTF-16 units.
+    flags = split_header(read_u64(inferior, address))[1]
+    one_byte = (flags & STRING_ONE_BYTE_FLAG) != 0
+    data = (read_u64(inferior, address + STRING_SLICED_PARENT_OFFSET)
+            + STRING_UNITS_OFFSET + read_u64(inferior, address + STRING_UNITS_OFFSET)
+            if flags & STRING_SLICED_FLAG else address + STRING_UNITS_OFFSET)
+    if not shown:
+        units = ()
+    elif one_byte:
+        units = tuple(inferior.read(data, shown))
+    else:
+        units = struct.unpack("<%dH" % shown, inferior.read(data, shown * 2))
     text = "".join(chr(u) if u < 0xD800 or u > 0xDFFF else "�" for u in units)
     return json.dumps(text, ensure_ascii=False) + ("..." if length > limit else "")
 

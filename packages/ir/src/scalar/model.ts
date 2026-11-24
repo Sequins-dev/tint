@@ -208,6 +208,14 @@ export type Instruction = Span &
         readonly id: number;
         readonly string: number;
       }
+    /** Whether the string stores two bytes per code unit: strings are
+     * canonical, so this is whether some unit is above 0xFF. Builders
+     * choose their result's kind from their parts'. */
+    | {
+        readonly kind: "string-two-byte";
+        readonly id: number;
+        readonly string: number;
+      }
     | {
         readonly kind: "string-code-unit";
         readonly id: number;
@@ -217,6 +225,9 @@ export type Instruction = Span &
          * the string: the index is a non-negative integer below its length,
          * so the result is an integer in [0, 65535], never NaN. */
         readonly inBounds?: boolean;
+        /** Known by the optimizer (versionStringLoops) to read a flat
+         * string of this kind, so no kind dispatch is needed. */
+        readonly unitKind?: "one-byte" | "two-byte";
       }
     | {
         readonly kind: "string-starts-with";
@@ -232,6 +243,160 @@ export type Instruction = Span &
         readonly begin: number;
         readonly limit: number;
       }
+    /** Latin-1 and ASCII bulk primitives (docs/design-one-byte-strings.md),
+     * bound to foundation functions whose portable bodies define the same
+     * results. Indices are integers in range (0 <= begin <= limit <= length,
+     * offset + limit - begin <= bytes.length); anything else is a binding
+     * invariant failure and traps.
+     *
+     * string-from-latin1: the one-byte string of bytes [begin, limit). */
+    | {
+        readonly kind: "string-from-latin1";
+        readonly id: number;
+        readonly bytes: number;
+        readonly begin: number;
+        readonly limit: number;
+      }
+    /** Copies code units [begin, limit) of `string` into `bytes` at `offset`,
+     * one byte each: limit - begin when every unit is at most 0xFF, else -1
+     * (bytes may be partly written). */
+    | {
+        readonly kind: "string-copy-latin1";
+        readonly id: number;
+        readonly string: number;
+        readonly begin: number;
+        readonly limit: number;
+        readonly bytes: number;
+        readonly offset: number;
+      }
+    /** The first index in [begin, limit) whose code unit (string-ascii-prefix)
+     * or byte (bytes-ascii-prefix) is 0x80 or more, else limit. */
+    | {
+        readonly kind: "string-ascii-prefix";
+        readonly id: number;
+        readonly string: number;
+        readonly begin: number;
+        readonly limit: number;
+      }
+    /** UTF-8 bulk primitives (foundation's text/utf8.ts, bound like the
+     * Latin-1 ones, with the same index contract). A surrogate pair inside
+     * [begin, limit) is one scalar; a lone surrogate encodes as U+FFFD.
+     *
+     * string-utf8-length: the UTF-8 byte length of units [begin, limit). */
+    | {
+        readonly kind: "string-utf8-length";
+        readonly id: number;
+        readonly string: number;
+        readonly begin: number;
+        readonly limit: number;
+      }
+    /** Encodes units [begin, limit) of `string` as UTF-8 into `bytes` from
+     * `offset` (offset <= bytes.length), scalar by scalar while the next
+     * one fits, and yields the index after the last unit encoded (limit
+     * when everything fit). */
+    | {
+        readonly kind: "string-write-utf8";
+        readonly id: number;
+        readonly string: number;
+        readonly begin: number;
+        readonly limit: number;
+        readonly bytes: number;
+        readonly offset: number;
+      }
+    /** The string decoded from the longest prefix of bytes [begin, limit)
+     * that is a sequence of complete, valid UTF-8 encodings of scalars;
+     * with `whole`, that string only when the prefix is the whole range,
+     * otherwise the empty string (which a nonempty valid range never
+     * decodes to). */
+    | {
+        readonly kind: "string-from-utf8";
+        readonly id: number;
+        readonly bytes: number;
+        readonly begin: number;
+        readonly limit: number;
+        readonly whole?: true;
+      }
+    /** The number-string cache (numberStringCached, cacheNumberString;
+     * nativeNumberStringCacheWord): the string cached for `value` by its
+     * exact bits, or the empty string, which no number converts to. */
+    | {
+        readonly kind: "number-string-cached";
+        readonly id: number;
+        readonly value: number;
+      }
+    /** Caches `string` as `value`'s string, allocating the table when the
+     * runtime has none (since the last collection). */
+    | {
+        readonly kind: "number-string-cache";
+        readonly value: number;
+        readonly string: number;
+      }
+    /** The array index `string` is the canonical decimal of, as cached in
+     * its index field (nativeStringIndexFieldOffset), or -1 when none is
+     * cached. */
+    | {
+        readonly kind: "string-index-cached";
+        readonly id: number;
+        readonly string: number;
+      }
+    /** Caches `value`, an array index below nativeStringIndexLimit whose
+     * canonical decimal `string` is, in its index field: a relaxed 32-bit
+     * store, only when the field is still unset. */
+    | {
+        readonly kind: "string-index-cache";
+        readonly string: number;
+        readonly value: number;
+      }
+    /** `string` with each ASCII letter mapped to upper case (`upper`) or
+     * lower case, every other unit unchanged: a new string of the same
+     * length and kind (asciiUppercase and asciiLowercase). */
+    | {
+        readonly kind: "string-ascii-case";
+        readonly id: number;
+        readonly string: number;
+        readonly upper: boolean;
+      }
+    /** 1 when `string` is flat (owns its units: nativeStringIsFlat), else
+     * 0 (a slice). */
+    | {
+        readonly kind: "string-flat";
+        readonly id: number;
+        readonly string: number;
+      }
+    /** Writes a flat image of `string` (its flat header, length and units,
+     * zero-padded: a position-independent, pointer-free string object, as
+     * nativeFlatStringExtent sizes it) at the start of the caller-owned raw
+     * writable window [address, address + byteLength), and yields its byte
+     * extent; a slice's units are copied from its parent. Yields -1 without
+     * writing when the window is too small or its bounds are not exact
+     * integers with a nonzero 8-byte-aligned address and an end below
+     * 2^53. */
+    | {
+        readonly kind: "string-flatten-into";
+        readonly id: number;
+        readonly address: number;
+        readonly byteLength: number;
+        readonly string: number;
+      }
+    | {
+        readonly kind: "bytes-ascii-prefix";
+        readonly id: number;
+        readonly bytes: number;
+        readonly begin: number;
+        readonly limit: number;
+      }
+    /** The first index k >= `position` (with `reverse`, the last k <=
+     * `position`) at which `search` occurs in `string`, or -1: indexOf,
+     * lastIndexOf and includes. `position` is an integer in [0, length],
+     * which the caller has clamped. */
+    | {
+        readonly kind: "string-index-of";
+        readonly id: number;
+        readonly string: number;
+        readonly search: number;
+        readonly position: number;
+        readonly reverse: boolean;
+      }
     | {
         readonly kind: "string-from-code-units";
         readonly id: number;
@@ -245,11 +410,18 @@ export type Instruction = Span &
       }
     /** A fresh string of `length` code units whose contents are undefined until
      * `string-write` fills every unit. Only builders that write all units before
-     * any other use (Array.prototype.join) may produce it. */
+     * any other use (Array.prototype.join) may produce it. `twoByte` (a
+     * boolean) is whether any part written is two-byte (string-two-byte):
+     * the result's canonical kind. A loop string builder (build-loop-strings)
+     * also uses one as a buffer with spare capacity: it is never observable,
+     * its unwritten tail is only copied into a larger buffer, and values
+     * leave it only through string-slice of its written prefix, which
+     * holds a unit above 0xFF whenever the buffer is two-byte. */
     | {
         readonly kind: "string-allocate";
         readonly id: number;
         readonly length: number;
+        readonly twoByte: number;
       }
     /** Copy every code unit of `source` into the fresh `target` at `offset`. */
     | {

@@ -701,19 +701,19 @@ test("typed locals may be assigned on all branches before their first read", () 
   assert.ok(verify(result.value.module).ok);
 });
 
-test("string includes lowers through bounded UTF-16 prefix searches", () => {
+test("string includes lowers to one bounded forward search", () => {
   const result = lower(
     "function has(text:string,search:string,position:number|undefined):boolean{return text.includes(search,position);}",
   );
   assert.ok(result.ok, JSON.stringify(result));
   assert.ok(verify(result.value.module).ok);
-  assert.ok(
-    result.value.module.functions.some((f) =>
-      f.blocks.some((b) =>
-        b.instructions.some((i) => i.kind === "string-starts-with"),
-      ),
+  const searches = result.value.module.functions.flatMap((f) =>
+    f.blocks.flatMap((b) =>
+      b.instructions.filter((i) => i.kind === "string-index-of"),
     ),
   );
+  assert.equal(searches.length, 1);
+  assert.ok(searches.every((i) => i.kind === "string-index-of" && !i.reverse));
 });
 
 test("boolean defaults lower false separately from omitted arguments", () => {
@@ -1365,11 +1365,12 @@ test("string indexOf shares search lowering with includes", () => {
   );
   assert.ok(r.ok, JSON.stringify(r));
   assert.ok(verify(r.value.module).ok);
-  assert.equal(
-    r.value.module.functions
-      .flatMap((f) => f.blocks.flatMap((b) => b.instructions))
-      .filter((op) => op.kind === "string-starts-with").length,
-    2,
+  const searches = r.value.module.functions
+    .flatMap((f) => f.blocks.flatMap((b) => b.instructions))
+    .filter((op) => op.kind === "string-index-of");
+  assert.equal(searches.length, 2);
+  assert.ok(
+    searches.every((op) => op.kind === "string-index-of" && !op.reverse),
   );
 });
 
@@ -1379,11 +1380,12 @@ test("string lastIndexOf uses reverse search with optional positions", () => {
   );
   assert.ok(r.ok, JSON.stringify(r));
   assert.ok(verify(r.value.module).ok);
-  assert.equal(
-    r.value.module.functions
-      .flatMap((f) => f.blocks.flatMap((b) => b.instructions))
-      .filter((op) => op.kind === "string-starts-with").length,
-    2,
+  const searches = r.value.module.functions
+    .flatMap((f) => f.blocks.flatMap((b) => b.instructions))
+    .filter((op) => op.kind === "string-index-of");
+  assert.equal(searches.length, 2);
+  assert.ok(
+    searches.every((op) => op.kind === "string-index-of" && op.reverse),
   );
 });
 

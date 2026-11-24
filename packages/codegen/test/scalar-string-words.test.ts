@@ -5,23 +5,55 @@ import { darwinHostABI } from "@tint/platform/darwin/host-abi";
 import { emitModule } from "../src/aarch64/scalar/index.ts";
 import { stringHelper } from "../src/aarch64/scalar/strings.ts";
 
-test("UTF-16 comparison kernels compare full words and retain scalar tails", () => {
+test("comparison kernels compare full words and both string kinds", () => {
   for (const kind of ["string-equal", "string-starts-with"] as const) {
     const body = stringHelper(kind);
-    assert.ok(body.some((op) => op.op === "ldr" && op.width === 64));
-    assert.ok(body.some((op) => op.op === "ldrh"));
+    assert.ok(
+      body.some(
+        (op) =>
+          (op.op === "ldr" && op.width === 64) ||
+          (op.op === "ldr-indexed" && op.size === 3),
+      ),
+    );
     assert.ok(body.every((op) => op.op !== "bl" && op.op !== "blr"));
   }
+  // Same-kind compares run on bytes, so tails are byte loads; a one-byte
+  // search in a two-byte source compares each unit widened.
+  const prefix = stringHelper("string-starts-with");
+  assert.ok(prefix.some((op) => op.op === "ldrb"));
+  assert.ok(prefix.some((op) => op.op === "ldrh"));
 });
 
-test("UTF-16 copy kernels copy full words without clobbering the destination", () => {
-  for (const kind of ["string-concat-copy", "string-slice-copy"] as const) {
+test("copy kernels copy full words, widen and narrow, keeping the destination", () => {
+  for (const kind of [
+    "string-concat-copy",
+    "string-slice-copy",
+    "string-write-copy",
+  ] as const) {
     const body = stringHelper(kind);
     assert.ok(body.some((op) => op.op === "ldr" && op.width === 64));
-    assert.ok(body.some((op) => op.op === "ldrh"));
+    assert.ok(body.some((op) => op.op === "ldrb"));
     assert.ok(body.every((op) => !("rd" in op) || op.rd !== 9));
     assert.ok(body.every((op) => op.op !== "bl" && op.op !== "blr"));
   }
+  // One-byte parts widen into two-byte results; a one-byte slice of a
+  // two-byte source narrows.
+  assert.ok(stringHelper("string-concat-copy").some((op) => op.op === "strh"));
+  const slice = stringHelper("string-slice-copy");
+  assert.ok(slice.some((op) => op.op === "ldrh"));
+  assert.ok(slice.some((op) => op.op === "strb"));
+  // The slice kind scan preserves its inputs (x9 source, x12/x13 bounds).
+  const scan = stringHelper("string-slice-kind");
+  assert.ok(
+    scan.every(
+      (op) => !("rd" in op) || (op.rd !== 9 && op.rd !== 12 && op.rd !== 13),
+    ),
+  );
+  assert.ok(
+    scan.every(
+      (op) => !("rt" in op) || (op.rt !== 9 && op.rt !== 12 && op.rt !== 13),
+    ),
+  );
 });
 
 test("from-code-units stores an exact integer without a conversion helper", () => {

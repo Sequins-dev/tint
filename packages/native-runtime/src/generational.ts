@@ -1,6 +1,7 @@
 import {
   nativeAllocatorShutdownRequest,
   nativeGenerationalStateWords,
+  nativeNumberStringCacheWord,
 } from "@tint/abi/host";
 import { initializeExternalMemory } from "./external-memory.ts";
 import {
@@ -275,6 +276,9 @@ export function initializeGenerationalRuntime(
   }
   function collect(forceMajor: boolean): boolean {
     if (exhausted) return false;
+    // The number-string cache is never traced: drop it (see
+    // nativeNumberStringCacheWord).
+    allocation[nativeNumberStringCacheWord] = 0;
     const youngTop = allocation[0] ?? 0,
       oldTop = allocation[3] ?? 0,
       // What the space has used: the old fill, and the nursery's when it is

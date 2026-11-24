@@ -127,7 +127,7 @@ import {
   intersectBitWindows,
   copyBitRange,
 } from "@tint/foundation/collections/bit-vector";
-import { hostParameters, hostReturnType } from "./host.ts";
+import { hostInstruction, hostParameters, hostReturnType } from "./host.ts";
 import { foreignCallTypes, foreignMemoryTypes } from "./foreign.ts";
 export {
   foreignCallTypes,
@@ -194,6 +194,10 @@ export function instructionMayThrow(op: Instruction): boolean {
     case "string-slice":
     case "string-from-code-units":
     case "string-allocate":
+    case "string-from-latin1":
+    case "string-from-utf8":
+    case "string-ascii-case":
+    case "number-string-cache":
       return true;
     default:
       return false;
@@ -1040,6 +1044,45 @@ export function verify(
               equal(use(op.position), "number");
               define(op.id, "boolean");
               break;
+            case "string-index-of":
+              equal(use(op.string), "string");
+              equal(use(op.search), "string");
+              equal(use(op.position), "number");
+              define(op.id, "number");
+              break;
+            case "string-from-latin1":
+            case "string-from-utf8":
+              equal(use(op.bytes), "Uint8Array");
+              equal(use(op.begin), "number");
+              equal(use(op.limit), "number");
+              define(op.id, "string");
+              break;
+            case "string-copy-latin1":
+            case "string-write-utf8":
+              equal(use(op.string), "string");
+              equal(use(op.begin), "number");
+              equal(use(op.limit), "number");
+              equal(use(op.bytes), "Uint8Array");
+              equal(use(op.offset), "number");
+              define(op.id, "number");
+              break;
+            case "string-ascii-prefix":
+            case "string-utf8-length":
+              equal(use(op.string), "string");
+              equal(use(op.begin), "number");
+              equal(use(op.limit), "number");
+              define(op.id, "number");
+              break;
+            case "string-ascii-case":
+              equal(use(op.string), "string");
+              define(op.id, "string");
+              break;
+            case "bytes-ascii-prefix":
+              equal(use(op.bytes), "Uint8Array");
+              equal(use(op.begin), "number");
+              equal(use(op.limit), "number");
+              define(op.id, "number");
+              break;
             case "string-slice":
               equal(use(op.string), "string");
               equal(use(op.begin), "number");
@@ -1060,6 +1103,7 @@ export function verify(
               break;
             case "string-allocate":
               equal(use(op.length), "number");
+              equal(use(op.twoByte), "boolean");
               define(op.id, "string");
               break;
             case "string-write":
@@ -1068,6 +1112,36 @@ export function verify(
               equal(use(op.source), "string");
               break;
             case "string-length":
+              equal(use(op.string), "string");
+              define(op.id, "number");
+              break;
+            case "string-two-byte":
+              equal(use(op.string), "string");
+              define(op.id, "boolean");
+              break;
+            case "string-flat":
+              equal(use(op.string), "string");
+              define(op.id, "number");
+              break;
+            case "number-string-cached":
+              equal(use(op.value), "number");
+              define(op.id, "string");
+              break;
+            case "number-string-cache":
+              equal(use(op.value), "number");
+              equal(use(op.string), "string");
+              break;
+            case "string-index-cached":
+              equal(use(op.string), "string");
+              define(op.id, "number");
+              break;
+            case "string-index-cache":
+              equal(use(op.string), "string");
+              equal(use(op.value), "number");
+              break;
+            case "string-flatten-into":
+              equal(use(op.address), "number");
+              equal(use(op.byteLength), "number");
               equal(use(op.string), "string");
               define(op.id, "number");
               break;
@@ -1187,6 +1261,8 @@ export function verify(
                   fail("TYPE", "host call argument invariant");
                 equal(use(argument), parameter);
               }
+              if (hostInstruction(op.operation, 0, []) !== undefined)
+                fail("TYPE", "host operation binds as an instruction");
               const resultType = hostReturnType(op.operation);
               if (resultType === undefined)
                 fail("TYPE", "invalid host return signature");
