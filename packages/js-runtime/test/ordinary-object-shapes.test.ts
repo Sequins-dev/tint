@@ -477,6 +477,35 @@ test("inherited entries share an epoch and clear when a newer one finds an entry
   assert.equal(inlineEntryHolder(site, 1), undefined);
 });
 
+test("a full inherited site keeps its entries until a newer epoch", () => {
+  const prototype = object(undefined);
+  createDataProperty<ScriptPropertyKey, unknown>(prototype, "m", "m", hooks);
+  const receivers = [
+    point(prototype, ["a"]),
+    point(prototype, ["b"]),
+    point(prototype, ["c"]),
+    point(prototype, ["d"]),
+    point(prototype, ["e"]),
+  ];
+  const site = createScriptPropertyCache("m");
+  for (const receiver of receivers)
+    assert.equal(
+      lookupCachedScriptProperty(receiver, "m", site, false, stubs, 10),
+      prototype,
+    );
+  // The fifth shape is past the full entries.
+  for (let index = 0; index < propertyCacheEntries; index++)
+    assert.equal(inlineEntryShape(site, true, index), shape(receivers[index]!));
+  // A prototype's structural change makes the entries stale: the next
+  // lookup starts over with its own shape.
+  createDataProperty<ScriptPropertyKey, unknown>(prototype, "n", 1, hooks);
+  lookupCachedScriptProperty(receivers[4]!, "m", site, false, stubs, 10);
+  assert.equal(site.inheritedEpoch, propertyEpoch.value);
+  assert.equal(inlineEntryShape(site, true, 0), shape(receivers[4]!));
+  assert.equal(inlineEntryHolder(site, 0), prototype);
+  assert.equal(inlineEntryShape(site, true, 1), unusedPropertyShape);
+});
+
 test("a method site keeps own properties among its inherited entries without a holder", () => {
   const prototype = object(undefined);
   createDataProperty<ScriptPropertyKey, unknown>(prototype, "m", "base", hooks);

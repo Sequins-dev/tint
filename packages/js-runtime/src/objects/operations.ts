@@ -1868,9 +1868,10 @@ function setInheritedEntry(
   throw "PROPERTY_CACHE_ENTRY_INVARIANT";
 }
 /** The inline entry to (re)fill for a receiver shape: its own entry, else
- * the first empty one, else -1. Full entries stay: a site with more shapes
- * is megamorphic, and rotating entries through a cycle of more shapes than
- * they hold would miss on every read. */
+ * the first empty one, else -1. Entries therefore fill in order, and the
+ * last one is used only once all are. Full entries stay: a site with more
+ * shapes is megamorphic, and rotating entries through a cycle of more
+ * shapes than they hold would miss on every read. */
 function inlineEntryIndex(
   cache: ScriptPropertyCache,
   inherited: boolean,
@@ -1884,37 +1885,13 @@ function inlineEntryIndex(
   }
   return empty;
 }
-function addOwnEntry(
-  cache: ScriptPropertyCache,
-  shape: ScriptShape,
-  slot: number,
-): void {
-  const index = inlineEntryIndex(cache, false, shape);
-  if (index >= 0) setOwnEntry(cache, index, shape, slot);
-}
-/** Inherited entries share one epoch: entries found under an older one are
- * stale, so they are cleared before a newer entry is added. An undefined
- * holder is the receiver itself. */
-function addInheritedEntry(
-  cache: ScriptPropertyCache,
-  shape: ScriptShape,
-  slot: number,
-  holder: ScriptObject | undefined,
-): void {
-  const epoch = propertyEpoch.value;
-  if (cache.inheritedEpoch !== epoch) {
-    for (let index = 0; index < propertyCacheEntries; index++)
-      setInheritedEntry(cache, index, unusedPropertyShape, 0, undefined);
-    cache.inheritedEpoch = epoch;
-  }
-  const index = inlineEntryIndex(cache, true, shape);
-  if (index >= 0) setInheritedEntry(cache, index, shape, slot, holder);
-}
 /** Make a found property an inline entry: own when the object holds it,
  * except at a method site, else inherited (with no holder for the object's
  * own property, as an object literal's methods). Each value is a two-word
  * general slot; values past the in-place slots stay off the inline
- * entries. */
+ * entries. A megamorphic site misses here on every read of a shape past
+ * its entries, so a full site returns before any other work (its last
+ * entry, propertyCacheEntries - 1, is in use). */
 function addInlineEntry(
   cache: ScriptPropertyCache,
   object: ScriptObject,
@@ -1924,13 +1901,28 @@ function addInlineEntry(
   slotWord: number,
 ): void {
   if (offset >= propertySlots) return;
-  const slot = inlineSlotBits(slotWord + offset * 2);
-  if (holder === object && !cache.method) addOwnEntry(cache, shape, slot);
-  else
-    addInheritedEntry(
+  if (holder === object && !cache.method) {
+    if (cache.ownShape3 !== unusedPropertyShape) return;
+    const index = inlineEntryIndex(cache, false, shape);
+    if (index >= 0)
+      setOwnEntry(cache, index, shape, inlineSlotBits(slotWord + offset * 2));
+    return;
+  }
+  // Inherited entries share one epoch: entries found under an older one
+  // are stale, so they are cleared before a newer entry is added.
+  const epoch = propertyEpoch.value;
+  if (cache.inheritedEpoch !== epoch) {
+    for (let index = 0; index < propertyCacheEntries; index++)
+      setInheritedEntry(cache, index, unusedPropertyShape, 0, undefined);
+    cache.inheritedEpoch = epoch;
+  } else if (cache.inheritedShape3 !== unusedPropertyShape) return;
+  const index = inlineEntryIndex(cache, true, shape);
+  if (index >= 0)
+    setInheritedEntry(
       cache,
+      index,
       shape,
-      slot,
+      inlineSlotBits(slotWord + offset * 2),
       holder === object ? undefined : holder,
     );
 }
