@@ -397,6 +397,89 @@ test("a counter running to a string's length inclusive stays a 32-bit slot", () 
   assert.deepEqual(select(fn).integerSlots, [1]);
 });
 
+test("safe integer slots carry the largest magnitude written", () => {
+  // Slot 0 holds a product of a 32-bit integer slot and 2^40, or -5; slot 1
+  // is a 32-bit integer slot; slot 2 holds 2^53, slot 3 -0 and slot 4 a
+  // fraction, none of them safe integers other than -0. Remainders make
+  // every slot relevant.
+  const fn: FunctionIR = {
+    id: 0,
+    name: "wide",
+    exported: true,
+    parameters: [],
+    slots: ["number", "number", "number", "number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 7, ...span },
+          { kind: "store", slot: 1, value: 0, ...span },
+          { kind: "load", id: 1, slot: 1, ...span },
+          { kind: "constant", id: 2, value: 1099511627776, ...span },
+          { kind: "binary", id: 3, operator: "*", left: 1, right: 2, ...span },
+          { kind: "store", slot: 0, value: 3, ...span },
+          { kind: "constant", id: 4, value: -5, ...span },
+          { kind: "store", slot: 0, value: 4, ...span },
+          { kind: "constant", id: 5, value: 9007199254740992, ...span },
+          { kind: "store", slot: 2, value: 5, ...span },
+          { kind: "constant", id: 6, value: -0, ...span },
+          { kind: "store", slot: 3, value: 6, ...span },
+          { kind: "constant", id: 7, value: 0.5, ...span },
+          { kind: "store", slot: 4, value: 7, ...span },
+          { kind: "load", id: 8, slot: 0, ...span },
+          { kind: "load", id: 9, slot: 2, ...span },
+          { kind: "load", id: 10, slot: 3, ...span },
+          { kind: "load", id: 11, slot: 4, ...span },
+          { kind: "binary", id: 12, operator: "%", left: 8, right: 9, ...span },
+          {
+            kind: "binary",
+            id: 13,
+            operator: "%",
+            left: 10,
+            right: 11,
+            ...span,
+          },
+          {
+            kind: "binary",
+            id: 14,
+            operator: "%",
+            left: 12,
+            right: 13,
+            ...span,
+          },
+        ],
+        terminator: { kind: "return", value: 14, ...span },
+      },
+    ],
+  };
+  const selected = select(fn);
+  assert.deepEqual(selected.integerSlots, [1]);
+  assert.deepEqual(selected.safeIntegerSlots, [0]);
+  assert.deepEqual(selected.safeIntegerBounds, [7696581394432]);
+  // A rerun replaces the facts whole: once slot 0's writes fit 32 bits it
+  // is an integer slot only.
+  const narrowed = select({
+    ...selected,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 7, ...span },
+          { kind: "store", slot: 0, value: 0, ...span },
+          { kind: "load", id: 8, slot: 0, ...span },
+          { kind: "binary", id: 9, operator: "%", left: 8, right: 0, ...span },
+        ],
+        terminator: { kind: "return", value: 9, ...span },
+      },
+    ],
+  });
+  assert.deepEqual(narrowed.integerSlots, [0]);
+  assert.deepEqual(narrowed.safeIntegerSlots, []);
+  assert.deepEqual(narrowed.safeIntegerBounds, []);
+});
+
 /** `sum(s, t)`: i = start; [n = s.length;] while (i <op> bound) { [late
  * write]; total += read.charCodeAt(i); i++ }. Slots: 0 s, 1 t, 2 i, 3
  * total, 4 n. */

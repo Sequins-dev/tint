@@ -414,6 +414,8 @@ export interface ArrayAccessSelection {
   readonly rewritten: number;
 }
 
+/** The largest safe integer, 2^53 - 1. */
+const maxSafeInteger = 9007199254740991;
 /** Selects unchecked typed-array accesses (`array-element`, `array-store`)
  * where the index is proven an integer within the array's length. Facts:
  * interval analysis over number slots (constants, + - * and % with integer
@@ -477,8 +479,8 @@ export function selectArrayAccesses(
   // Functions without typed-array accesses still get integer slot facts
   // (loop counters over lists and strings).
   // Track only number slots whose values reach typed-array indices, array
-  // lengths or comparisons (directly, through arithmetic, or through stores
-  // into other tracked slots); states are dense over them.
+  // lengths, comparisons or remainders (directly, through arithmetic, or
+  // through stores into other tracked slots); states are dense over them.
   const relevant = new Uint8Array(slotCount);
   for (let changed = true; changed;) {
     changed = false;
@@ -508,7 +510,8 @@ export function selectArrayAccesses(
           dependencies.set(op.id, [op.slot]);
         else if (op.kind === "binary") {
           dependencies.set(op.id, combine(op.left, op.right));
-          if (["<", "<=", ">", ">="].includes(op.operator)) {
+          // A remainder of safe integers divides as int64s (codegen).
+          if (["<", "<=", ">", ">=", "%"].includes(op.operator)) {
             mark(op.left);
             mark(op.right);
           }
@@ -527,7 +530,16 @@ export function selectArrayAccesses(
   for (let slot = 0; slot < slotCount; slot++)
     if (relevant[slot] === 1) dense[slot] = ++trackedCount;
   const tracked = (slot: number): number => (dense[slot] ?? 0) - 1;
-  if (trackedCount === 0) return { fn, visited, rewritten: 0 };
+  if (trackedCount === 0)
+    return {
+      // Earlier safe integer facts are replaced whole (see below).
+      fn:
+        fn.safeIntegerSlots === undefined
+          ? fn
+          : { ...fn, safeIntegerSlots: [], safeIntegerBounds: [] },
+      visited,
+      rewritten: 0,
+    };
   // Dataflow: an interval per tracked slot at each block entry, stored
   // sparsely as its integer intervals (any other interval is top) for slots
   // live into the block: a dead slot is stored before it is read, so its
@@ -973,12 +985,18 @@ export function selectArrayAccesses(
   }
   // Number slots whose every reachable write stores a proven 32-bit integer
   // (signed or unsigned) other than -0: codegen may hold them as integers.
+  // Wider ones whose writes are all safe integers other than -0 are safe
+  // integer slots, with the largest magnitude written as their bound.
   // Entry values (parameters, the receiver) and opaque writes are unknown.
-  const integral = new Uint8Array(trackedCount);
+  const integral = new Uint8Array(trackedCount),
+    safe = new Uint8Array(trackedCount),
+    magnitudes = new Float64Array(trackedCount);
   for (let slot = 0; slot < slotCount; slot++) {
     const index = tracked(slot);
-    if (index >= 0 && opaque[slot] !== 1 && fn.slots[slot] === "number")
+    if (index >= 0 && opaque[slot] !== 1 && fn.slots[slot] === "number") {
       integral[index] = 1;
+      safe[index] = 1;
+    }
   }
   for (const block of fn.blocks) {
     if (block === undefined) throw "bounds block invariant";
@@ -994,16 +1012,33 @@ export function selectArrayAccesses(
         interval === undefined ||
         !interval.integer ||
         interval.negativeZero ||
-        interval.lo < -2147483648 ||
-        interval.hi > 4294967295
-      )
+        interval.lo < -maxSafeInteger ||
+        interval.hi > maxSafeInteger
+      ) {
         integral[index] = 0;
+        safe[index] = 0;
+        continue;
+      }
+      if (interval.lo < -2147483648 || interval.hi > 4294967295)
+        integral[index] = 0;
+      magnitudes[index] = Math.max(
+        magnitudes[index] ?? 0,
+        -interval.lo,
+        interval.hi,
+      );
     }
   }
-  const integerSlots: number[] = [];
+  const integerSlots: number[] = [],
+    safeIntegerSlots: number[] = [],
+    safeIntegerBounds: number[] = [];
   for (let slot = 0; slot < slotCount; slot++) {
     const index = tracked(slot);
-    if (index >= 0 && integral[index] === 1) integerSlots.push(slot);
+    if (index < 0) continue;
+    if (integral[index] === 1) integerSlots.push(slot);
+    else if (safe[index] === 1) {
+      safeIntegerSlots.push(slot);
+      safeIntegerBounds.push(magnitudes[index] ?? 0);
+    }
   }
   // A typed array slot's length is the least length any reachable write
   // stores (unreachable writes store nothing).
@@ -1235,20 +1270,17 @@ export function selectArrayAccesses(
           : substituteTerminatorValues(block.terminator, substitution),
     });
   }
-  if (rewritten === 0)
-    return {
-      fn: integerSlots.length === 0 ? fn : { ...fn, integerSlots },
-      visited,
-      rewritten: 0,
-    };
-  return {
-    fn:
-      integerSlots.length === 0
-        ? { ...fn, blocks }
-        : { ...fn, integerSlots, blocks },
-    visited,
-    rewritten,
+  // Safe integer facts replace any earlier ones whole (an earlier list may
+  // name a slot that is now an integer slot).
+  const facts: FunctionIR = {
+    ...fn,
+    ...(integerSlots.length === 0 ? {} : { integerSlots }),
+    ...(safeIntegerSlots.length === 0 && fn.safeIntegerSlots === undefined
+      ? {}
+      : { safeIntegerSlots, safeIntegerBounds }),
   };
+  if (rewritten === 0) return { fn: facts, visited, rewritten: 0 };
+  return { fn: { ...facts, blocks }, visited, rewritten };
 }
 
 /** A comparison's outcome when the intervals of its operands decide it.

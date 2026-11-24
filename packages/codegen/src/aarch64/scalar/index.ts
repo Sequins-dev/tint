@@ -3503,10 +3503,28 @@ function emitModuleForms(
         // as doubles: one that every direct call passes a proven 32-bit
         // integer (wordArguments; escaped functions have none) and that
         // arrives in a register converts once in the prologue.
-        const integerSlots = new Uint8Array(fn.slots.length);
+        const integerSlots = new Uint8Array(fn.slots.length),
+          // Safe integer slots (bounds): int64 slots whose loads are
+          // bounded safe integers (word kind 6) of these magnitudes.
+          safeSlotBounds = new Float64Array(fn.slots.length);
+        const safeIntegerBounds = fn.safeIntegerBounds ?? [];
+        for (
+          let index = 0;
+          index < (fn.safeIntegerSlots?.length ?? 0);
+          index++
+        ) {
+          const slot = fn.safeIntegerSlots?.[index],
+            bound = safeIntegerBounds[index];
+          if (slot === undefined || bound === undefined)
+            throw "safe integer slot invariant";
+          safeSlotBounds[slot] = Math.max(1, bound);
+        }
         if (slotIntegerFacts !== undefined) {
           for (let slot = 0; slot < fn.slots.length; slot++)
-            if (fn.slots[slot] === "number" && slotIntegerFacts[slot] === 1)
+            if (
+              fn.slots[slot] === "number" &&
+              (slotIntegerFacts[slot] === 1 || (safeSlotBounds[slot] ?? 0) > 0)
+            )
               integerSlots[slot] = 1;
           if (fn.receiverSlot !== undefined) integerSlots[fn.receiverSlot] = 0;
           const parameterWords =
@@ -8671,10 +8689,15 @@ function emitModuleForms(
             span = { start: op.start, end: op.end };
             if (op.kind === "load" && slotIntegerFacts !== undefined) {
               const mask = slotIntegerFacts[op.slot] ?? 0,
-                index = valueIds.intern(op.id);
+                index = valueIds.intern(op.id),
+                safeBound = safeSlotBounds[op.slot] ?? 0;
               if (fn.slots[op.slot] === "number") {
                 if (mask === 1) wordKinds[index] = 2;
-                else if (mask !== 0 && (mask & ~3) === 0) wordKinds[index] = 5;
+                else if (safeBound > 0) {
+                  wordKinds[index] = 6;
+                  wordMagnitudes[index] = safeBound;
+                } else if (mask !== 0 && (mask & ~3) === 0)
+                  wordKinds[index] = 5;
               } else if (
                 fn.slots[op.slot] === "optional-number" &&
                 mask !== 0 &&
@@ -14540,7 +14563,7 @@ function emitModuleForms(
                     if (tracker !== undefined)
                       tracker.saved(op.id, instructions.length * 4);
                   } else {
-                    // A proven 32-bit integer (never -0) converts exactly.
+                    // A proven safe integer (never -0) converts exactly.
                     rawLoad(9, slotOffset(op.slot));
                     emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
                     floatStore(0, op.id);

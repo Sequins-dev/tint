@@ -77,6 +77,14 @@ export function formatFunction(
     lines.push(
       "  integer " + fn.integerSlots.map((slot) => `s${slot}`).join(" "),
     );
+  const safeBounds = fn.safeIntegerBounds ?? [];
+  if (fn.safeIntegerSlots !== undefined && fn.safeIntegerSlots.length > 0)
+    lines.push(
+      "  safe " +
+        fn.safeIntegerSlots
+          .map((slot, index) => `s${slot}<=${safeBounds[index] ?? "?"}`)
+          .join(" "),
+    );
   for (const block of fn.blocks) {
     lines.push(
       `  b${block.id}:` +

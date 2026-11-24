@@ -1588,11 +1588,12 @@ export function optimizeModuleVersion(
   // with a cold copy for bounds beyond uint32. Running after the vector
   // caches lets the copy share the loop's cache slots instead of adding
   // its own, which would compete with the hot loop's for registers.
+  const boundChanges: number[] = [];
   const bounded = rewriteFunctions(
     version,
     vectorBudget - vectors.visited,
     undefined,
-    undefined,
+    boundChanges,
     (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
       const result = boundCountedLoops(fn, budget, remarks);
       return result === undefined
@@ -1609,6 +1610,39 @@ export function optimizeModuleVersion(
   if (bounded.exhausted)
     return exhausted("bound-counted-loops", bounded.visited);
   if (completed("bound-counted-loops", bounded, false)) return stop();
+  // Interval facts again where a counter now has a word bound: values
+  // derived from it (a loop-invariant `round * 7` carried in a slot) become
+  // safe integer slots. Selection rewrites accesses in place and moves no
+  // code, which the vector caches above require. It runs (and reports) only
+  // when some loop was bounded.
+  const reboundSelection = new Uint8Array(version.module.functions.length);
+  let rebound = false;
+  for (let id = 0; id < boundChanges.length; id++)
+    if (boundChanges[id] === 1) {
+      reboundSelection[id] = 1;
+      rebound = true;
+    }
+  if (!rebound) return { passes, budgetExhausted: false };
+  const reselected = rewriteFunctions(
+    version,
+    vectorBudget - vectors.visited - bounded.visited,
+    reboundSelection,
+    undefined,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = selectArrayAccesses(fn, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.rewritten,
+            refused: false,
+          };
+    },
+  );
+  if (reselected.exhausted)
+    return exhausted("select-array-access", reselected.visited);
+  if (completed("select-array-access", reselected, false)) return stop();
   return { passes, budgetExhausted: false };
 }
 

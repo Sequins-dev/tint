@@ -46,7 +46,9 @@ const maxWordBound = 4294967295;
  * first test fails in both, as `i < b` does, so the body never runs and no
  * other counter value is ever compared. Only a bound above 2^32 - 1
  * (including +Infinity) enters a cold copy of the loop whose counter is a
- * fresh double slot; the loop itself is not duplicated on the hot path.
+ * fresh double slot, as is each other number slot the loop stores to that
+ * is dead entering and leaving it, so the copy's values never reach the
+ * hot loop's slots; the loop itself is not duplicated on the hot path.
  *
  * Counters the induction proof already accepts are left alone. The
  * rewrite is kept only when the induction proof accepts the counter,
@@ -134,8 +136,15 @@ export function boundCountedLoops(
       continue;
     }
     // The cold copy leaves its counter behind: nothing may read it after.
+    // It also gives fresh slots to the other number slots the loop's stores
+    // write that are dead entering and leaving it (values computed and used
+    // within an iteration, such as loop invariants carried in slots), so
+    // the copy's double counter never reaches the hot loop's slots and their
+    // interval facts stay exact.
+    const local = loopLocalCandidates(current, loop, candidate.counter);
     const live = analyzeLiveSlots(current, budget - visited, [
       candidate.counter,
+      ...local,
     ]);
     if (live === undefined) return undefined;
     visited += live.work;
@@ -143,14 +152,27 @@ export function boundCountedLoops(
       joined = false;
     for (const id of candidate.exits) {
       if (id === undefined) throw "counted loop exit invariant";
-      if ((live.slots[id]?.length ?? 0) > 0) liveAfter = true;
+      if (live.slots[id]?.includes(candidate.counter) === true)
+        liveAfter = true;
       if (predecessors[id]?.length === 1) joined = true;
     }
     if (liveAfter) {
       missed("counter is live after the loop");
       continue;
     }
-    const result = boundLoop(current, loop, candidate, startValue, nextValue);
+    const renamed = local.filter(
+      (slot) =>
+        live.slots[loop.header]?.includes(slot) !== true &&
+        candidate.exits.every((id) => live.slots[id]?.includes(slot) !== true),
+    );
+    const result = boundLoop(
+      current,
+      loop,
+      candidate,
+      startValue,
+      nextValue,
+      renamed,
+    );
     visited += result.visited;
     if (visited > budget) return undefined;
     // The copy's exits join the loop's: a record read proven along the
@@ -187,6 +209,37 @@ export function boundCountedLoops(
       });
   }
   return { fn: current, visited, bounded };
+}
+
+/** Number slots other than `counter` that `loop` writes with store
+ * instructions only (no terminator writes them), excluding parameters and
+ * the receiver. */
+function loopLocalCandidates(
+  fn: FunctionIR,
+  loop: NaturalLoop,
+  counter: number,
+): number[] {
+  const terminatorWrites = new Set<number>();
+  for (const id of loop.body) {
+    const t = fn.blocks[id]?.terminator;
+    if (
+      t !== undefined &&
+      (t.kind === "record" || t.kind === "record-cell" || t.kind === "cell")
+    )
+      terminatorWrites.add(t.slot);
+  }
+  const local: number[] = [];
+  for (const slot of loop.writes)
+    if (
+      slot !== counter &&
+      fn.slots[slot] === "number" &&
+      !terminatorWrites.has(slot) &&
+      !fn.parameters.includes(slot) &&
+      fn.receiverSlot !== slot
+    )
+      local.push(slot);
+  local.sort((left, right) => left - right);
+  return local;
 }
 
 /** Whether every record read `before` proves (as the verifier does, with
@@ -402,6 +455,7 @@ function boundLoop(
   candidate: CountedLoop,
   start: number,
   firstValue: number,
+  renamed: readonly number[],
 ): {
   readonly fn: FunctionIR;
   readonly nextValue: number;
@@ -415,6 +469,13 @@ function boundLoop(
   slots.push("number");
   const coldCounter = slots.length;
   slots.push("number");
+  // The copy's own slot for each loop-local slot (see boundCountedLoops).
+  const coldSlots = new Map<number, number>();
+  coldSlots.set(candidate.counter, coldCounter);
+  for (const slot of renamed) {
+    coldSlots.set(slot, slots.length);
+    slots.push(fn.slots[slot] ?? "number");
+  }
   const start0 = candidate.start,
     end0 = candidate.end;
   // The cold copy: every body block, the counter renamed, exits unchanged.
@@ -449,10 +510,15 @@ function boundLoop(
         substitution[result] = renamed + 1;
         copied = renumberInstructionResult(substituted, renamed);
       }
-      if (copied.kind === "load" && copied.slot === candidate.counter)
-        instructions.push({ ...copied, slot: coldCounter });
-      else if (copied.kind === "store" && copied.slot === candidate.counter)
-        instructions.push({ ...copied, slot: coldCounter });
+      const coldSlot =
+        copied.kind === "load" || copied.kind === "store"
+          ? coldSlots.get(copied.slot)
+          : undefined;
+      if (
+        coldSlot !== undefined &&
+        (copied.kind === "load" || copied.kind === "store")
+      )
+        instructions.push({ ...copied, slot: coldSlot });
       else instructions.push(copied);
     }
     blocks[copyId] = {
