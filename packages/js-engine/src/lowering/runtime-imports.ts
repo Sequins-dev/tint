@@ -203,7 +203,9 @@ export function scriptRuntimeImports(
         "updateObjectValue",
         "unaryObjectValueOperation",
         "createSourceFunction",
-        ...(usesNativeScriptCalls
+        // The complete vocabulary includes them: linked Script units compile
+        // against the surface it publishes.
+        ...(usesNativeScriptCalls || declarations === "all"
           ? [
               "createNativeSourceFunction",
               "createSourceInstance",
