@@ -1,5 +1,8 @@
 import {
   instructionResult,
+  retainDebugValues,
+  substituteInstructionValues,
+  substituteTerminatorValues,
   visitInstructionOperands,
   visitTerminatorOperands,
   type Block,
@@ -103,61 +106,88 @@ export function forwardClosureEnvironments(
   }
   let rewritten = 0;
   // Loads of a rewritten slot that remain (other than environment reads).
-  const remaining = new Uint32Array(slotCount);
+  const remaining = new Uint32Array(slotCount),
+    // Direct unwraps of a rewritten environment read become the mirrored load
+    // itself, leaving the temporary reference-wrap dead so scalar replacement
+    // sees the environment record directly.
+    aliases = new Uint32Array(fresh);
+  let anyUnwrapped = false;
   const blocks: Block[] = [];
   for (const block of fn.blocks) {
     if (block === undefined) throw "closure environment block invariant";
     const environments = new Map<number, number>(),
       loads = new Map<number, number>(),
+      wrappedMirrors = new Map<number, number>(),
       instructions: Instruction[] = [];
+    let blockUnwrapped = false;
     for (const op of block.instructions) {
       if (op === undefined) throw "closure environment instruction invariant";
       if (++visited > budget) return undefined;
-      if (op.kind === "function-new" && op.environment !== undefined)
-        environments.set(op.id, op.environment);
-      if (op.kind === "store" && (mirrors[op.slot] ?? 0) !== 0) {
-        const environment = environments.get(op.value);
+      const current = blockUnwrapped
+        ? substituteInstructionValues(op, aliases)
+        : op;
+      if (current.kind === "function-new" && current.environment !== undefined)
+        environments.set(current.id, current.environment);
+      if (current.kind === "store" && (mirrors[current.slot] ?? 0) !== 0) {
+        const environment = environments.get(current.value);
         if (environment === undefined) throw "closure environment invariant";
-        instructions.push(op);
+        instructions.push(current);
         instructions.push({
           kind: "store",
-          slot: (mirrors[op.slot] ?? 0) - 1,
+          slot: (mirrors[current.slot] ?? 0) - 1,
           value: environment,
-          start: op.start,
-          end: op.end,
+          start: current.start,
+          end: current.end,
         });
         continue;
       }
-      if (op.kind === "load" && (mirrors[op.slot] ?? 0) !== 0) {
-        loads.set(op.id, op.slot);
-        instructions.push(op);
+      if (current.kind === "load" && (mirrors[current.slot] ?? 0) !== 0) {
+        loads.set(current.id, current.slot);
+        instructions.push(current);
         continue;
       }
-      if (op.kind === "function-environment") {
-        const slot = loads.get(op.callee);
+      if (current.kind === "function-environment") {
+        const slot = loads.get(current.callee);
         if (slot !== undefined) {
           const mirrored = fresh++;
           instructions.push({
             kind: "load",
             id: mirrored,
             slot: (mirrors[slot] ?? 0) - 1,
-            start: op.start,
-            end: op.end,
+            start: current.start,
+            end: current.end,
           });
           instructions.push({
             kind: "reference-wrap",
-            id: op.id,
+            id: current.id,
             value: mirrored,
-            start: op.start,
-            end: op.end,
+            start: current.start,
+            end: current.end,
           });
+          wrappedMirrors.set(current.id, mirrored);
           rewritten++;
           continue;
         }
       }
-      instructions.push(op);
+      if (
+        current.kind === "reference-value" &&
+        (current.type === undefined || current.type === "reference")
+      ) {
+        const mirrored = wrappedMirrors.get(current.value);
+        if (mirrored !== undefined) {
+          aliases[current.id] = mirrored + 1;
+          blockUnwrapped = true;
+          anyUnwrapped = true;
+          rewritten++;
+          continue;
+        }
+      }
+      instructions.push(current);
     }
-    blocks.push({ ...block, instructions });
+    const terminator = blockUnwrapped
+      ? substituteTerminatorValues(block.terminator, aliases)
+      : block.terminator;
+    blocks.push({ ...block, instructions, terminator });
   }
   // A closure slot whose only reads were environment reads is now unread:
   // drop its loads (dead values) and stores.
@@ -206,5 +236,18 @@ export function forwardClosureEnvironments(
     }
     result.push({ ...block, instructions });
   }
-  return { fn: { ...fn, slots, blocks: result }, visited, rewritten };
+  const debug =
+    fn.debug === undefined
+      ? undefined
+      : anyUnwrapped
+        ? retainDebugValues(fn, result, [], aliases)
+        : fn.debug;
+  return {
+    fn:
+      debug === undefined
+        ? { ...fn, slots, blocks: result }
+        : { ...fn, slots, blocks: result, debug },
+    visited,
+    rewritten,
+  };
 }

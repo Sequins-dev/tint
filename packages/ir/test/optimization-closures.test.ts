@@ -814,3 +814,239 @@ test("calls without a receiver keep methods indirect", () => {
   assert.ok(result);
   assert.equal(result.rewritten, 0);
 });
+
+test("closure environment with a reference cell field is scalar replaced and promoted out of a loop", () => {
+  // Record 0: cell { value: number } (cell-backed field 0).
+  // Record 1: closure env { step: number, countCell: reference }.
+  // run(step): allocates countCell, initializes it to 0, allocates env { step,
+  // countCell }, builds closure, calls it 8 times in a loop and returns sum.
+  const run: FunctionIR = {
+    id: 0,
+    name: "run",
+    exported: true,
+    parameters: [0],
+    slots: ["number", "reference", "reference", "number", "number", "number"],
+    // 0: step, 1: countCell, 2: closure, 3: i, 4: sum, 5: initZero
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 1, value: 0, ...span },
+          { kind: "record-new", id: 0, record: 0, arguments: [1], ...span },
+          { kind: "store", slot: 1, value: 0, ...span },
+          { kind: "store", slot: 5, value: 1, ...span },
+        ],
+        terminator: {
+          kind: "record-cell",
+          object: 0,
+          record: 0,
+          field: 0,
+          operation: "initialize",
+          slot: 5,
+          consequent: 1,
+          alternate: 5,
+          ...span,
+        },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 2, slot: 0, ...span },
+          { kind: "load", id: 3, slot: 1, ...span },
+          { kind: "record-new", id: 4, record: 1, arguments: [2, 3], ...span },
+          { kind: "function-new", id: 5, target: 1, environment: 4, ...span },
+          { kind: "store", slot: 2, value: 5, ...span },
+          { kind: "constant", id: 6, value: 0, ...span },
+          { kind: "store", slot: 3, value: 6, ...span },
+          { kind: "store", slot: 4, value: 6, ...span },
+        ],
+        terminator: { kind: "jump", target: 2, ...span },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 7, slot: 3, ...span },
+          { kind: "constant", id: 8, value: 8, ...span },
+          { kind: "binary", id: 9, operator: "<", left: 7, right: 8, ...span },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 9,
+          consequent: 3,
+          alternate: 4,
+          ...span,
+        },
+      },
+      {
+        id: 3,
+        instructions: [
+          { kind: "load", id: 10, slot: 2, ...span },
+          {
+            kind: "call-indirect",
+            id: 11,
+            target: 1,
+            callee: 10,
+            arguments: [],
+            ...span,
+          },
+          { kind: "load", id: 12, slot: 4, ...span },
+          {
+            kind: "binary",
+            id: 13,
+            operator: "+",
+            left: 12,
+            right: 11,
+            ...span,
+          },
+          { kind: "store", slot: 4, value: 13, ...span },
+          { kind: "load", id: 14, slot: 3, ...span },
+          { kind: "constant", id: 15, value: 1, ...span },
+          {
+            kind: "binary",
+            id: 16,
+            operator: "+",
+            left: 14,
+            right: 15,
+            ...span,
+          },
+          { kind: "store", slot: 3, value: 16, ...span },
+        ],
+        terminator: { kind: "jump", target: 2, ...span },
+      },
+      {
+        id: 4,
+        instructions: [{ kind: "load", id: 17, slot: 4, ...span }],
+        terminator: { kind: "return", value: 17, ...span },
+      },
+      { id: 5, instructions: [], terminator: { kind: "trap", ...span } },
+    ],
+  };
+  const stepClosure: FunctionIR = {
+    id: 1,
+    name: "next",
+    exported: false,
+    parameters: [],
+    slots: ["number", "reference", "number"],
+    returnType: "number",
+    closureEnvironment: 1,
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [{ kind: "closure-environment", id: 0, ...span }],
+        terminator: {
+          kind: "record",
+          object: 0,
+          record: 1,
+          field: 0,
+          operation: "read",
+          slot: 0,
+          consequent: 1,
+          alternate: 4,
+          ...span,
+        },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "closure-environment", id: 1, ...span }],
+        terminator: {
+          kind: "record",
+          object: 1,
+          record: 1,
+          field: 1,
+          operation: "read",
+          slot: 1,
+          consequent: 2,
+          alternate: 4,
+          ...span,
+        },
+      },
+      {
+        id: 2,
+        instructions: [{ kind: "load", id: 2, slot: 1, ...span }],
+        terminator: {
+          kind: "record-cell",
+          object: 2,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 2,
+          consequent: 3,
+          alternate: 4,
+          ...span,
+        },
+      },
+      {
+        id: 3,
+        instructions: [
+          { kind: "load", id: 3, slot: 2, ...span },
+          { kind: "load", id: 4, slot: 0, ...span },
+          { kind: "binary", id: 5, operator: "+", left: 3, right: 4, ...span },
+          { kind: "store", slot: 2, value: 5, ...span },
+          { kind: "load", id: 6, slot: 1, ...span },
+        ],
+        terminator: {
+          kind: "record-cell",
+          object: 6,
+          record: 0,
+          field: 0,
+          operation: "write",
+          slot: 2,
+          consequent: 5,
+          alternate: 4,
+          ...span,
+        },
+      },
+      { id: 4, instructions: [], terminator: { kind: "trap", ...span } },
+      {
+        id: 5,
+        instructions: [{ kind: "load", id: 7, slot: 2, ...span }],
+        terminator: { kind: "return", value: 7, ...span },
+      },
+    ],
+  };
+  const input: ModuleIR = {
+    records: [
+      {
+        byteLength: 24,
+        fields: [{ offset: 8, type: "number", mutable: true, stateOffset: 16 }],
+      },
+      {
+        byteLength: 24,
+        fields: [
+          { offset: 8, type: "number", mutable: false },
+          { offset: 16, type: "reference", mutable: false },
+        ],
+      },
+    ],
+    functions: [run, stepClosure],
+  };
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+  const optimized = optimizeModule(input, 20000000, {
+    devirtualizeClosures: true,
+    closedCalls: true,
+  });
+  assert.ok(
+    verify(optimized.module).ok,
+    JSON.stringify(verify(optimized.module)),
+  );
+  const out = optimized.module.functions[0]!;
+  // Closure environment record 1 is scalar-replaced (no record-new of record 1).
+  assert.ok(
+    !out.blocks.some((b) =>
+      b.instructions.some((op) => op.kind === "record-new" && op.record === 1),
+    ),
+    "closure environment with reference field must be scalar-replaced",
+  );
+  // The cell read/write in the loop is promoted out (one read before, one write
+  // after; no record-cell terminator inside the loop back-edge cycle).
+  const promoted = optimized.passes.find(
+    (p) => p.pass === "promote-loop-cells",
+  );
+  assert.ok(
+    (promoted?.rewritten ?? 0) >= 1,
+    "cell must be promoted out of loop",
+  );
+});

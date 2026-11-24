@@ -18,14 +18,17 @@ interface Fact {
   readonly field: number;
 }
 
-/** The slot a record-cell access's object was loaded from in its own block,
- * not stored afterwards; -1 otherwise. */
+/** The slot a record-cell access's object was loaded from or stored into in
+ * its own block, not overwritten afterwards; -1 otherwise. */
 function objectSlot(block: Block, object: number): number {
   let slot = -1;
   for (const op of block.instructions) {
     if (op === undefined) throw "cell state instruction invariant";
     if (op.kind === "load" && op.id === object) slot = op.slot;
-    else if (op.kind === "store" && op.slot === slot) slot = -2;
+    else if (op.kind === "store") {
+      if (op.value === object) slot = op.slot;
+      else if (op.slot === slot) slot = -2;
+    }
   }
   return slot;
 }
@@ -59,13 +62,36 @@ export function proveCellStates(
   entry[fn.entry] = [];
   function through(block: Block, facts: Fact[]): Fact[] {
     let current = facts;
+    const loadedFrom = new Map<number, number>(),
+      loadedVersion = new Map<number, number>(),
+      slotVersion = new Map<number, number>();
     for (const op of block.instructions) {
       if (op === undefined) throw "cell state instruction invariant";
       visited++;
       if (current.length === 0) break;
-      if (op.kind === "store") {
-        const slot = op.slot;
+      if (op.kind === "load") {
+        loadedFrom.set(op.id, op.slot);
+        loadedVersion.set(op.id, slotVersion.get(op.slot) ?? 0);
+      } else if (op.kind === "store") {
+        const slot = op.slot,
+          source = loadedFrom.get(op.value);
+        const copied: Fact[] = [];
+        if (
+          source !== undefined &&
+          source !== slot &&
+          loadedVersion.get(op.value) === (slotVersion.get(source) ?? 0)
+        ) {
+          for (const f of current)
+            if (f !== undefined && f.object === source)
+              copied.push({ object: slot, record: f.record, field: f.field });
+        }
         current = current.filter((f) => f.object !== slot);
+        if (copied.length > 0) {
+          const next = current.slice();
+          for (const f of copied) if (f !== undefined) next.push(f);
+          current = next;
+        }
+        slotVersion.set(slot, (slotVersion.get(slot) ?? 0) + 1);
       }
     }
     return current;

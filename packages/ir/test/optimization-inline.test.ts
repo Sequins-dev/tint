@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { verify, type ModuleIR, type FunctionIR } from "@tint/ir/scalar";
+import {
+  verify,
+  type ModuleIR,
+  type FunctionIR,
+  type Instruction,
+} from "@tint/ir/scalar";
 import { inlineSmallFunctions } from "../src/optimization/inline.ts";
 const span = { start: 0, end: 1 };
 function fixture(): ModuleIR {
@@ -1459,5 +1464,139 @@ test("callees with local string slots inline", () => {
     !result.module.functions[0]!.blocks.some((block) =>
       block.instructions.some((op) => op.kind === "call"),
     ),
+  );
+});
+
+test("wrappers with callers stay within the inline ceiling instead of absorbing a large cold callee", () => {
+  // Build a large cold callee (~100 instructions), a small wrapper (~40
+  // instructions) that calls it on a cold branch, and a top-level caller
+  // calling the wrapper. Without the wrapper-budget cap, round 1 would inline
+  // cold into wrapper (growing wrapper past 128 instructions) so round 2
+  // would fail to inline wrapper into caller.
+  const coldInstructions: Instruction[] = [
+    { kind: "load", id: 0, slot: 0, ...span },
+    { kind: "constant", id: 1, value: 1, ...span },
+  ];
+  let prev = 0;
+  for (let i = 2; i < 100; i++) {
+    coldInstructions.push({
+      kind: "binary",
+      id: i,
+      operator: "+",
+      left: prev,
+      right: 1,
+      ...span,
+    });
+    prev = i;
+  }
+  const wrapperBody: Instruction[] = [
+    { kind: "load", id: 0, slot: 0, ...span },
+    { kind: "constant", id: 1, value: 1, ...span },
+  ];
+  let wPrev = 0;
+  for (let i = 2; i < 42; i++) {
+    wrapperBody.push({
+      kind: "binary",
+      id: i,
+      operator: "+",
+      left: wPrev,
+      right: 1,
+      ...span,
+    });
+    wPrev = i;
+  }
+  const condId = 42;
+  wrapperBody.push({
+    kind: "binary",
+    id: condId,
+    operator: "<",
+    left: wPrev,
+    right: 1,
+    ...span,
+  });
+  const module: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0],
+        slots: ["number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "call", id: 1, target: 1, arguments: [0], ...span },
+            ],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "wrapper",
+        exported: false,
+        parameters: [0],
+        slots: ["number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: wrapperBody,
+            terminator: {
+              kind: "branch",
+              condition: condId,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [
+              { kind: "load", id: 43, slot: 0, ...span },
+              { kind: "call", id: 44, target: 2, arguments: [43], ...span },
+            ],
+            terminator: { kind: "return", value: 44, ...span },
+          },
+          {
+            id: 2,
+            instructions: [{ kind: "load", id: 45, slot: 0, ...span }],
+            terminator: { kind: "return", value: 45, ...span },
+          },
+        ],
+      },
+      {
+        id: 2,
+        name: "cold",
+        exported: false,
+        parameters: [0],
+        slots: ["number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: coldInstructions,
+            terminator: { kind: "return", value: prev, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(verify(module), { ok: true });
+  const result = inlineSmallFunctions(module, 200000)!;
+  assert.deepEqual(verify(result.module), { ok: true });
+  // caller must inline wrapper (leaving at most a cold call to target 2).
+  const callerCalls = result.module.functions[0]!.blocks.flatMap((block) =>
+    block.instructions.filter((op) => op.kind === "call"),
+  );
+  assert.ok(
+    !callerCalls.some((op) => op.kind === "call" && op.target === 1),
+    "wrapper must be inlined into caller",
   );
 });

@@ -281,6 +281,7 @@ export function inlineSmallFunctions(
   const eligible = new Uint8Array(module.functions.length),
     // Callees that call or allocate (kept out of shape-recognized helpers).
     effectful = new Uint8Array(module.functions.length),
+    directCallers = new Uint32Array(module.functions.length),
     costs: number[] = [];
   let visited = 0,
     inlined = 0,
@@ -367,6 +368,8 @@ export function inlineSmallFunctions(
           op.kind === "reference-vector-new"
         )
           effectful[fn.id] = 1;
+        if (op.kind === "call" && op.target !== fn.id)
+          directCallers[op.target] = (directCallers[op.target] ?? 0) + 1;
         // Recursive callees keep their calls (each round would unroll one
         // more level).
         if (op.kind === "call" && op.target === fn.id) good = false;
@@ -459,7 +462,19 @@ export function inlineSmallFunctions(
     // slots (eligibility 2) one caller absorbs. Collection accessors (a
     // number list's read, push and resize cost 35-58 each) are this kind, so
     // a loop over several lists needs room for a handful of them.
-    let allowance = incremental ? 128 : originalCount + 128,
+    // A callee already eligible for inlining with internal callers stays within
+    // maxExpansion, so inlining a cold slow path (such as writeNumberList into
+    // pushNumberList) does not disqualify the wrapper from later rounds.
+    const selfCost = costs[fn.id] ?? 0,
+      keepInlineable =
+        !incremental &&
+        eligible[fn.id] !== 0 &&
+        (directCallers[fn.id] ?? 0) > 0;
+    let allowance = incremental
+        ? 128
+        : keepInlineable
+          ? Math.min(originalCount + 128, Math.max(0, maxExpansion - selfCost))
+          : originalCount + 128,
       referenceAllowance = 384,
       changed = false;
     const slots: ScalarType[] = fn.slots.slice(),

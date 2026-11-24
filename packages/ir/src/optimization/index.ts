@@ -676,6 +676,7 @@ function foldModuleSSAConstants(
   version: ModuleVersion,
   maxInstructions: number,
   visited: number,
+  selected?: Uint8Array,
 ): PassStep {
   const ssaFunctions: FunctionIR[] = [],
     ssaLimit = unbounded(maxInstructions)
@@ -686,6 +687,10 @@ function foldModuleSSAConstants(
     ssaRewritten = 0;
   for (const fn of version.module.functions) {
     if (fn === undefined) throw "optimizer SSA function invariant";
+    if (selected !== undefined && selected[fn.id] !== 1) {
+      ssaFunctions.push(fn);
+      continue;
+    }
     // SSA is an optional expensive phase. Bound it independently so a large
     // candidate cannot consume the budgets of established scalar/inline passes.
     const remaining = maxInstructions - visited - ssaVisited;
@@ -1201,15 +1206,19 @@ export function optimizeModuleVersion(
     );
     let spent =
       visited + storeVisited + deadVisited + recordVisited + inlineVisited;
-    for (let phase = 0; phase < 4; phase++) {
+    for (let phase = 0; phase < 5; phase++) {
       const pass: PassStatistics["pass"] =
         phase === 0
           ? "fold-constants"
           : phase === 1
             ? "forward-local-loads"
             : phase === 2
-              ? "remove-unread-stores"
-              : "remove-dead-scalars";
+              ? "propagate-slot-copies"
+              : phase === 3
+                ? "remove-unread-stores"
+                : "remove-dead-scalars";
+      const copyLayoutsEarly =
+        phase === 2 ? stableDescriptors(version.module) : false;
       const cleaned = rewriteFunctions(
         version,
         maxInstructions - spent,
@@ -1221,11 +1230,30 @@ export function optimizeModuleVersion(
             ? (fn: FunctionIR, budget: number): FunctionRewrite | undefined =>
                 forwardLoadsRewrite(fn, budget, undefined)
             : phase === 2
-              ? unreadStoresRewrite
-              : deadScalarsRewrite,
+              ? (
+                  fn: FunctionIR,
+                  budget: number,
+                ): FunctionRewrite | undefined => {
+                  const result = propagateSlotCopies(
+                    fn,
+                    budget,
+                    copyLayoutsEarly,
+                  );
+                  return result === undefined
+                    ? undefined
+                    : {
+                        fn: result.fn,
+                        visited: result.visited,
+                        rewritten: result.rewritten,
+                        refused: result.refused,
+                      };
+                }
+              : phase === 3
+                ? unreadStoresRewrite
+                : deadScalarsRewrite,
       );
       if (cleaned.exhausted) return exhausted(pass, maxInstructions - spent);
-      if (completed(pass, cleaned, false)) return stop();
+      if (completed(pass, cleaned, phase === 2)) return stop();
       spent += cleaned.visited;
     }
     // Inlining exposes callee allocations to their callers: replace the
@@ -1236,20 +1264,40 @@ export function optimizeModuleVersion(
       spent += pass.visited;
     }
     // Replacement resolves record guards to constant branches: fold them,
-    // merge the straight-line blocks, then forward and clean up.
-    for (let phase = 0; phase < 6; phase++) {
+    // merge the straight-line blocks, propagate constants and copies across
+    // inlined parameters and replaced fields, then forward and clean up.
+    for (let phase = 0; phase < 8; phase++) {
       const pass: PassStatistics["pass"] =
         phase === 0
           ? "scalar-replace-records"
           : phase === 1
             ? "simplify-control-flow"
             : phase === 2
-              ? "coalesce-defaults"
+              ? "ssa-constants"
               : phase === 3
-                ? "forward-local-loads"
+                ? "coalesce-defaults"
                 : phase === 4
-                  ? "remove-unread-stores"
-                  : "remove-dead-scalars";
+                  ? "forward-local-loads"
+                  : phase === 5
+                    ? "propagate-slot-copies"
+                    : phase === 6
+                      ? "remove-unread-stores"
+                      : "remove-dead-scalars";
+      if (phase === 2) {
+        const ssaAfter = foldModuleSSAConstants(
+          version,
+          maxInstructions,
+          spent,
+          changed,
+        );
+        if (ssaAfter.exhausted)
+          return exhausted("ssa-constants", maxInstructions - spent);
+        if (completed("ssa-constants", ssaAfter, true)) return stop();
+        spent += ssaAfter.visited;
+        continue;
+      }
+      const copyLayoutsPost =
+        phase === 5 ? stableDescriptors(version.module) : false;
       const cleaned = rewriteFunctions(
         version,
         maxInstructions - spent,
@@ -1260,20 +1308,39 @@ export function optimizeModuleVersion(
               recordReplacementRewrite(fn, version.module, budget, remarks)
           : phase === 1
             ? controlFlowRewrite
-            : phase === 2
+            : phase === 3
               ? coalesceRewrite
-              : phase === 3
+              : phase === 4
                 ? (
                     fn: FunctionIR,
                     budget: number,
                   ): FunctionRewrite | undefined =>
                     forwardLoadsRewrite(fn, budget, undefined)
-                : phase === 4
-                  ? unreadStoresRewrite
-                  : deadScalarsRewrite,
+                : phase === 5
+                  ? (
+                      fn: FunctionIR,
+                      budget: number,
+                    ): FunctionRewrite | undefined => {
+                      const result = propagateSlotCopies(
+                        fn,
+                        budget,
+                        copyLayoutsPost,
+                      );
+                      return result === undefined
+                        ? undefined
+                        : {
+                            fn: result.fn,
+                            visited: result.visited,
+                            rewritten: result.rewritten,
+                            refused: result.refused,
+                          };
+                    }
+                  : phase === 6
+                    ? unreadStoresRewrite
+                    : deadScalarsRewrite,
       );
       if (cleaned.exhausted) return exhausted(pass, maxInstructions - spent);
-      if (completed(pass, cleaned, false)) return stop();
+      if (completed(pass, cleaned, phase === 5)) return stop();
       spent += cleaned.visited;
     }
   }

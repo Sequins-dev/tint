@@ -123,7 +123,12 @@ export function scalarReplaceRecords(
         const field = layout.fields[index];
         if (
           field === undefined ||
-          (field.type !== "number" && field.type !== "boolean") ||
+          (field.type !== "number" &&
+            field.type !== "boolean" &&
+            field.type !== "reference" &&
+            field.type !== "optional-reference" &&
+            field.type !== "string" &&
+            field.type !== "optional-string") ||
           field.stateOffset !== undefined ||
           field.presenceOffset !== undefined ||
           op.arguments[index] === undefined ||

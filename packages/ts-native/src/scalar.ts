@@ -5203,12 +5203,22 @@ export function lowerFunction(
       );
       return at;
     }
+    function callbackNeedsIndex(call: Expression): boolean {
+      const witness = info(call).callee;
+      const signature = witness === undefined ? undefined : signatures[witness];
+      return signature !== undefined && signature.parameters.length >= 2;
+    }
     for (let k = 0; k < plan.stages.length; k++) {
       const stage = plan.stages[k],
         callback = callbacks[k];
       if (stage === undefined || callback === undefined)
         throw "pipeline stage invariant";
-      const args = k === 0 ? [item, index, receiver] : [item, reached(k)];
+      const args =
+        k === 0
+          ? [item, index, receiver]
+          : callbackNeedsIndex(stage.call)
+            ? [item, reached(k)]
+            : [item];
       const returned = callCallback(stage.call, callback, args, node);
       if (returned === undefined) throw "pipeline callback result invariant";
       if (stage.kind === "filter") {
@@ -5217,11 +5227,10 @@ export function lowerFunction(
         current = keep;
       } else item = returned;
     }
-    const at = reached(plan.stages.length);
     if (sink.kind === "collect") {
       if (output === undefined) throw "pipeline output invariant";
-      // The output starts empty and gains one element per reached item, so
-      // `at` is always its length: append (the runtime's dense fast path).
+      // The output starts empty and gains one element per reached item:
+      // append (the runtime's dense fast path).
       listCall(output, "push", [result, item], node);
     } else if (sink.kind === "count")
       store(
@@ -5231,7 +5240,16 @@ export function lowerFunction(
       );
     else {
       if (sinkCallback === undefined) throw "pipeline sink callback invariant";
-      const returned = callCallback(sink.call, sinkCallback, [item, at], node);
+      const at =
+        sink.kind === "find-index" || callbackNeedsIndex(sink.call)
+          ? reached(plan.stages.length)
+          : undefined;
+      const returned = callCallback(
+        sink.call,
+        sinkCallback,
+        at === undefined ? [item] : [item, at],
+        node,
+      );
       if (returned === undefined) throw "pipeline sink result invariant";
       if (sink.kind !== "for-each") {
         const found = block();
@@ -5242,8 +5260,10 @@ export function lowerFunction(
           node,
         );
         current = found;
-        if (sink.kind === "find-index") store(result, load(at, node), node);
-        else if (sink.kind === "find") {
+        if (sink.kind === "find-index") {
+          if (at === undefined) throw "pipeline find-index invariant";
+          store(result, load(at, node), node);
+        } else if (sink.kind === "find") {
           const type = slots[result];
           if (type === undefined) throw "pipeline find invariant";
           store(result, coerce(load(item, node), type, node), node);
