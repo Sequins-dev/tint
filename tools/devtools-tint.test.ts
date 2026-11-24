@@ -19,11 +19,7 @@ testNativeLaunch(
   "DevTools bridge debugs a Tint debug build (core only)",
   { skip: !available && "needs lldb-dap", timeout: 300000 },
   async (onAdmitted) => {
-    const { client, url, close } = await tintSession(
-      "devtools-core",
-      [],
-      onAdmitted,
-    );
+    const { client, url, close } = await tintSession([], onAdmitted);
     try {
       const parsed = await client.next(
         "Debugger.scriptParsed",

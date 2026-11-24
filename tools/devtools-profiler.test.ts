@@ -257,7 +257,6 @@ testNativeLaunch(
   },
   async (onAdmitted) => {
     const { client, url, close } = await tintSession(
-      "devtools-cpu",
       [new TintPlugin(), new CpuProfiler(external)],
       onAdmitted,
     );

@@ -1,8 +1,20 @@
 import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
-import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
+import {
+  chmodSync,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
+import { deserialize, serialize } from "node:v8";
 import { prepareDateTimeNativeService } from "./date-time-native-service.ts";
 import { frozenNativeRunIdentity } from "./native-run-journal.ts";
 import {
@@ -19,6 +31,7 @@ import {
   compileMacOSProgram,
   linkMacOSProgram,
   type BuildRequest,
+  type CompiledRuntimeUnits,
   type CompiledRuntimeUnitsResult,
   type ImageOperationRange,
   type RuntimeUnitInputs,
@@ -104,8 +117,93 @@ export interface FixtureForeignDeclaration {
 function fixtureCache(): boolean {
   return process.env.TINT_FIXTURE_CACHE !== "0";
 }
-/** Runtime unit compiles and reuses in this process (see shareRuntimeUnits). */
-export const fixtureCacheStatistics = { compiled: 0, shared: 0 };
+/** Runtime unit compiles, reuses in this process and restores from the
+ * gate's cache directory (see shareRuntimeUnits). */
+export const fixtureCacheStatistics = { compiled: 0, shared: 0, restored: 0 };
+/** Runtime units shared by every test process of one native batch: beside
+ * its journal (TINT_GATE_NATIVE_IMAGES), or in TINT_FIXTURE_CACHE_DIRECTORY.
+ * Standalone runs keep them in their process only. */
+function fixtureCacheDirectory(): string | undefined {
+  if (!fixtureCache()) return undefined;
+  const directory = process.env.TINT_FIXTURE_CACHE_DIRECTORY;
+  if (directory) return directory;
+  const journal = process.env.TINT_GATE_NATIVE_IMAGES;
+  return journal ? join(dirname(journal), "fixture-cache") : undefined;
+}
+/** Parsed workspace modules, by syntax tree, with the identity of the
+ * captured sources they were parsed from: only those can be restored from
+ * another process's cache entry. */
+const snapshotSyntax = new WeakMap<object, string>();
+function snapshotModules(
+  roots: readonly string[],
+  snapshot: WorkspaceSourceSnapshot,
+  identity: string,
+): readonly SourceModule[] {
+  const modules = workspaceModules(roots, snapshot);
+  for (const module of modules) snapshotSyntax.set(module.module, identity);
+  return modules;
+}
+/** The cache file of runtime units compiled only from captured workspace
+ * sources, or undefined when a fixture supplies or transforms one of them. */
+function runtimeUnitsFile(inputs: RuntimeUnitInputs): string | undefined {
+  const directory = fixtureCacheDirectory();
+  const identity = snapshotSyntax.get(inputs.modules[0]?.module ?? {});
+  if (
+    directory === undefined ||
+    identity === undefined ||
+    inputs.allocator === undefined ||
+    !inputs.modules.every(
+      (source) => snapshotSyntax.get(source.module) === identity,
+    )
+  )
+    return undefined;
+  const key = createHash("sha256")
+    .update(
+      JSON.stringify([
+        "tint-fixture-runtime-units-v1",
+        identity,
+        fixtureTarget.name,
+        inputs.key,
+        inputs.allocator.id,
+        inputs.modules.map((source) => [
+          source.id,
+          [...source.dependencies].sort(),
+        ]),
+      ]),
+    )
+    .digest("hex");
+  return join(directory, "runtime-units-" + key + ".v8");
+}
+/** Restore runtime units from the cache file. The allocator source is not
+ * cloneable (it may hold position callbacks); it comes from this build's
+ * inputs, parsed from the same sources. */
+function restoreRuntimeUnits(
+  file: string,
+  inputs: RuntimeUnitInputs,
+): CompiledRuntimeUnitsResult | undefined {
+  if (inputs.allocator === undefined || !existsSync(file)) return undefined;
+  try {
+    const entry = deserialize(readFileSync(file)) as {
+      readonly file: string;
+      readonly units: Omit<CompiledRuntimeUnits, "allocatorSource">;
+    };
+    if (entry.file !== file) return undefined;
+    return {
+      ok: true,
+      value: { ...entry.units, allocatorSource: inputs.allocator },
+    };
+  } catch {
+    // An unreadable entry is compiled again and replaced.
+    return undefined;
+  }
+}
+function storeRuntimeUnits(file: string, units: CompiledRuntimeUnits): void {
+  mkdirSync(dirname(file), { recursive: true });
+  const staging = file + "." + process.pid + ".tmp";
+  const { allocatorSource: _source, ...stored } = units;
+  writeFileSync(staging, serialize({ file, units: stored }));
+  renameSync(staging, file);
+}
 let currentWorkspace:
   | {
       readonly snapshot: WorkspaceSourceSnapshot;
@@ -152,10 +250,122 @@ function shareRuntimeUnits(
     fixtureCacheStatistics.shared++;
     return shared;
   }
+  const file = runtimeUnitsFile(inputs);
+  const restored =
+    file === undefined ? undefined : restoreRuntimeUnits(file, inputs);
+  if (restored !== undefined) {
+    fixtureCacheStatistics.restored++;
+    sharedRuntimeUnits.set(key, restored);
+    return restored;
+  }
   fixtureCacheStatistics.compiled++;
   const units = compile();
-  if (units.ok) sharedRuntimeUnits.set(key, units);
+  if (units.ok) {
+    sharedRuntimeUnits.set(key, units);
+    if (file !== undefined) storeRuntimeUnits(file, units.value);
+  }
   return units;
+}
+
+/** Copy an image and its build records (manifest, source, run records) to a
+ * new path. A copied manifest names the copied source; the image bytes, and
+ * so the manifest's image hash, are unchanged. */
+function copyFixtureImage(from: string, to: string): void {
+  const prefix = basename(from) + ".";
+  copyFileSync(from, to);
+  chmodSync(to, 0o755);
+  for (const file of readdirSync(dirname(from)))
+    if (file.startsWith(prefix))
+      copyFileSync(
+        join(dirname(from), file),
+        to + "." + file.slice(prefix.length),
+      );
+  const manifest = to + ".manifest.json";
+  if (existsSync(manifest)) {
+    const record = JSON.parse(readFileSync(manifest, "utf8"));
+    if (typeof record.fixture === "string") {
+      record.fixture = to + ".source.ts";
+      writeFileSync(manifest, JSON.stringify(record, null, 2) + "\n");
+    }
+  }
+}
+/** Images of fixed fixtures, built once per process (see sharedFixtureImage). */
+const sharedImages = new Map<string, string>();
+/** Build a fixture whose program and options never vary (`key`) once per
+ * process, and once per native batch through its cache directory. Every
+ * call returns a private copy of the image and its build records, which the
+ * caller may delete. Build-affecting TINT_ variables are part of the key. */
+export function sharedFixtureImage(
+  name: string,
+  key: readonly unknown[],
+  build: () => string,
+): string {
+  if (!fixtureCache()) return build();
+  const environment = Object.entries(process.env)
+    .filter(
+      ([variable]) =>
+        variable.startsWith("TINT_") &&
+        !variable.startsWith("TINT_GATE_") &&
+        !variable.startsWith("TINT_FIXTURE_") &&
+        variable !== "TINT_BUILD_ONLY" &&
+        variable !== "TINT_KEEP_NATIVE",
+    )
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  const id = createHash("sha256")
+    .update(
+      JSON.stringify([
+        "tint-fixture-image-v1",
+        captureWorkspace().identity.sha256,
+        fixtureTarget.name,
+        name,
+        key,
+        environment,
+      ]),
+    )
+    .digest("hex");
+  let kept = sharedImages.get(id);
+  if (kept === undefined || !existsSync(kept)) {
+    const cache = fixtureCacheDirectory();
+    const stored =
+      cache === undefined ? undefined : join(cache, "image-" + id, name);
+    if (stored !== undefined && existsSync(stored + ".manifest.json"))
+      kept = stored;
+    else {
+      const built = build();
+      const staging = mkdtempSync(
+        join(
+          cache ?? process.env.TINT_FIXTURE_TMPDIR ?? tmpdir(),
+          "tint-shared-" + name + "-",
+        ),
+      );
+      copyFixtureImage(built, join(staging, name));
+      rmSync(dirname(built), { recursive: true, force: true });
+      kept = join(staging, name);
+      if (stored !== undefined)
+        try {
+          renameSync(staging, dirname(stored));
+          kept = stored;
+        } catch {
+          // Another process stored the same image first; keep this copy.
+        }
+      if (kept !== stored)
+        process.once("exit", () =>
+          rmSync(staging, { recursive: true, force: true }),
+        );
+    }
+    sharedImages.set(id, kept);
+  }
+  const copy = join(
+    mkdtempSync(
+      join(
+        process.env.TINT_FIXTURE_TMPDIR ?? tmpdir(),
+        "tint-hosted-" + name + "-",
+      ),
+    ),
+    name,
+  );
+  copyFixtureImage(kept, copy);
+  return copy;
 }
 
 type GeneralLowering = ReturnType<typeof createGeneralLowering>;
@@ -490,7 +700,7 @@ function buildHostedFixture(
       ? []
       : (() => {
           const capturedModules: SourceModule[] = [
-            ...workspaceModules(roots, foreign.snapshot),
+            ...snapshotModules(roots, foreign.snapshot, sourceSnapshot.sha256),
             ...fixtureGenerated,
             original,
           ];

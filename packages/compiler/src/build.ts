@@ -282,6 +282,9 @@ export interface RuntimeUnitInputs {
   /** The allocator module and the runtime's import closure, the only source
    * modules the units are compiled from. */
   readonly modules: readonly SourceModule[];
+  /** The allocator module (CompiledRuntimeUnits.allocatorSource), for units
+   * restored without their source modules. */
+  readonly allocator: SourceModule | undefined;
 }
 export type BuildResult =
   | { readonly ok: true; readonly value: Uint8Array }
@@ -1080,6 +1083,7 @@ export function compileMacOSProgram(
           {
             key: runtimeUnitKey(request, target),
             modules: runtimeUnitModules(request),
+            allocator: requestModules(request, [request.allocatorModule])[0],
           },
           () => compileRuntimeUnits(request, target),
         );
