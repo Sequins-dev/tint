@@ -345,9 +345,9 @@ for shared atomics, agent waiting, `Function` and direct eval.
 Linux x86-64 is supported. The Debian x86-64 VM and QEMU user-mode runs
 pass the support gate, including Test262 (22/22 in the VM), glibc 2.34,
 the collector, live code, and F1/F2. The [Linux x86-64 CI
-job](../.github/workflows/ci.yml) runs [the Linux gate](../tools/gate/linux-gate.sh)
-on an x64 host. It builds the `linux-x86_64` bootstrap image, runs its
-native self-build stages, and checks that all three images match byte for byte.
+jobs](../.github/workflows/gate.yml) run the [Linux gate's jobs](validation-gate.md#ci)
+on an x64 host. They build the `linux-x86_64` bootstrap image, run its native
+self-build stage, and check that stage 1 and stage 2 match byte for byte.
 
 ## Performance stance
 

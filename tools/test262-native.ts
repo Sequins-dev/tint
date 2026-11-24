@@ -2681,19 +2681,34 @@ export function createNativeBatchBuilder(
     return { ok: true, bytes: built.value };
   };
 }
+/** The entry key a unit host cache records for a host, and its file. */
+export function unitHostCacheEntry(
+  cache: NativeUnitHostCache,
+  slotCount: number = nativeUnitSlotCount,
+): { readonly key: string; readonly path: string } {
+  const key = createHash("sha256")
+    .update(JSON.stringify(["test262-unit-host-v1", cache.key, slotCount]))
+    .digest("hex");
+  return { key, path: join(cache.directory, key + ".v8") };
+}
+/** A directory of compiled unit hosts. `key` must cover every input of the
+ * host: frozen toolchain, sources and configuration. With `required`, a
+ * missing or foreign entry fails instead of compiling the host. */
+export interface NativeUnitHostCache {
+  readonly directory: string;
+  readonly key: string;
+  readonly required?: boolean;
+}
 /** Compile a unit host, or restore one compiled for the same cache key. An
  * entry records its key, so a damaged or foreign file is recompiled. */
 function cachedUnitHost(
-  cache: { readonly directory: string; readonly key: string } | undefined,
+  cache: NativeUnitHostCache | undefined,
   slotCount: number,
   compile: () => CompiledMacOSProgramResult,
   allocatorSource: SourceModule | undefined,
 ): CompiledMacOSProgramResult {
   if (cache === undefined) return compile();
-  const key = createHash("sha256")
-      .update(JSON.stringify(["test262-unit-host-v1", cache.key, slotCount]))
-      .digest("hex"),
-    path = join(cache.directory, key + ".v8");
+  const { key, path } = unitHostCacheEntry(cache, slotCount);
   if (existsSync(path)) {
     try {
       const entry = deserialize(readFileSync(path)) as {
@@ -2706,6 +2721,8 @@ function cachedUnitHost(
       // Recompile below; the rename replaces the unreadable entry.
     }
   }
+  if (cache.required)
+    throw Error("no precompiled unit host for this toolchain at " + path);
   const compiled = compile();
   if (compiled.ok) {
     mkdirSync(cache.directory, { recursive: true });
@@ -2718,6 +2735,8 @@ function cachedUnitHost(
   }
   return compiled;
 }
+/** Script unit slots in a linked-unit host. */
+export const nativeUnitSlotCount = 1024;
 /** Whether a case runs as linked Script units (see
  * createNativeUnitBatchBuilder); module and Script-root cases need their
  * whole-program host. */
@@ -2747,12 +2766,11 @@ export function createNativeUnitBatchBuilder(
   serviceImage?: import("./native-service-image.ts").NativeServiceImagePlan,
   options: {
     readonly slotCount?: number;
-    /** Reuse the compiled host across runner processes. The key must cover
-     * every input of the host: frozen toolchain, sources and configuration. */
-    readonly hostCache?: { readonly directory: string; readonly key: string };
+    /** Reuse the compiled host across runner processes. */
+    readonly hostCache?: NativeUnitHostCache;
   } = {},
 ) {
-  const slotCount = options.slotCount ?? 1024;
+  const slotCount = options.slotCount ?? nativeUnitSlotCount;
   const config = nativeBatchConfiguration(snapshot, moduleExecution);
   if (config.scriptEvaluation === undefined)
     throw Error("linked Script units require the Script evaluation host");
