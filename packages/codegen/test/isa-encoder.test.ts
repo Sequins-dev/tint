@@ -426,7 +426,15 @@ test("logical immediates encode exactly the 32-bit bitmask patterns", () => {
     "INVALID_REGISTER",
   );
   rejected(
-    { op: "and-imm", width: 64, rd: 0, rn: "sp", n: 1, immr: 0, imms: 0 },
+    {
+      op: "and-imm",
+      width: 64,
+      rd: 0,
+      rn: "sp",
+      n: 1,
+      immr: 0,
+      imms: 0,
+    } as unknown as Instruction,
     "INVALID_REGISTER",
   );
 });
