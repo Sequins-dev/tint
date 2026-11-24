@@ -341,8 +341,8 @@ export function objectTypeof(
   // Retained typeof helpers reach this classifier, and retained code may
   // not call into other modules, so it reads the exotic slot directly
   // instead of through exoticSlots.
-  if (object !== undefined && object.internalIsHTMLDDA === true)
-    return "undefined";
+  const exotic = object === undefined ? undefined : object.internalExoticSlots;
+  if (exotic !== undefined && exotic.internalIsHTMLDDA) return "undefined";
   if (object !== undefined && object.internalCall !== undefined)
     return "function";
   // Runtime internals use raw typeof. In particular this fallback recognizes

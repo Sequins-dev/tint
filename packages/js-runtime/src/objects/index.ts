@@ -159,6 +159,7 @@ export {
   setProperty,
   ownKeys,
   type OrdinaryObject,
+  type ExoticObjectSlots,
   type DataAlias,
   type ObjectHooks,
   type ObjectCall,

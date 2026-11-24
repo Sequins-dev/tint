@@ -10,7 +10,7 @@ import {attachSharedStorage} from "shared-bytes";
 import {attachNativeSharedBlockService,nativeWaiterParkingHost} from "shared-service";
 import {mapMemory as mapAgentMemory,startNativeThread,joinNativeThread,hostedThreadEntry,parkNativeWord} from "memory";
 import {monotonicMilliseconds} from "clock";
-import {processAtomicWaitEvents,numberValue,viewBigIntValue,bigIntToString,bigIntFromString,isCallableObject} from "object";
+import {processAtomicWaitEvents,numberValue,viewBigIntValue,bigIntToString,bigIntFromString,isCallableObject,exoticSlots,ensureExoticSlots} from "object";
 let activeNativeWorker:NativeAgentWorker|undefined=undefined;
 let rootNativeCluster:NativeAgentCluster|undefined=undefined;
 let nativeWorkerLeaving=false;
@@ -61,7 +61,7 @@ function installNativeAgent(host:RealmHost,api:OrdinaryObject<ScriptPropertyKey,
   method("start",(args):unknown=>{const source=text(args[0]),started=nativeCluster(realm).start(source);if(!started.ok)return rejectUnsupportedExecution(realm);return undefined;});
   method("getReport",(args):unknown=>{const cluster=rootNativeCluster;if(cluster===undefined)return null;const report=cluster.getReport();return report===undefined?null:report;});
   method("broadcast",(args):unknown=>{
-   const buffer=viewObjectValue(args[0],host.object),storage=buffer===undefined?undefined:buffer.internalSharedArrayBufferData;
+   const buffer=viewObjectValue(args[0],host.object),storage=buffer===undefined?undefined:exoticSlots(buffer).internalSharedArrayBufferData;
    if(storage===undefined)throw createRuntimeError(realm,"type");
    const service=nativeSharedBlocks(realm);if(storage.engineId!==service.engineId)throw "NATIVE_AGENT_BLOCK_AUTHORITY";
    const bigint=viewBigIntValue(args[1]);let identifier="",isBigInt=false;
@@ -77,7 +77,7 @@ function installNativeAgent(host:RealmHost,api:OrdinaryObject<ScriptPropertyKey,
    while(true){
     const message=worker.pollBroadcast();if(message===undefined){agentSleep(1);continue;}
     const attached=attachSharedStorage(nativeSharedBlocks(realm),message.block);if(!attached.ok)throw "NATIVE_AGENT_BROADCAST_BLOCK";
-    const buffer=createObject<ScriptPropertyKey,unknown>(realm.sharedArrayBufferPrototype);buffer.internalSharedArrayBufferData=attached.value;
+    const buffer=createObject<ScriptPropertyKey,unknown>(realm.sharedArrayBufferPrototype);ensureExoticSlots(buffer).internalSharedArrayBufferData=attached.value;
     let identifier:unknown=Number(message.identifier);if(message.bigInt){const bigint=bigIntFromString(message.identifier);if(bigint===undefined)throw "NATIVE_AGENT_BIGINT";identifier=bigint;}
     const result=callObjectValue(callback,undefined,[buffer,identifier],host.object);if(result.error!=="none")throw result.value;
     return undefined;

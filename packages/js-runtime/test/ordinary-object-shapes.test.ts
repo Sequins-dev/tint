@@ -7,6 +7,8 @@ import {
   createScriptPropertyStubCache,
   cachedScriptPropertyValue,
   defineOwnProperty,
+  ensureExoticSlots,
+  exoticSlots,
   getOwnProperty,
   getProperty,
   inlineEntryHolder,
@@ -623,4 +625,24 @@ test("a site caches stores to writable properties and the transitions that add t
   assert.ok(storeCachedScriptProperty(parent, "y", 1, added, 10));
   assert.equal(added.storeTransition, undefined);
   assert.equal(added.storeShape, unusedPropertyShape);
+});
+
+test("exotic internal slots stay unallocated until written", () => {
+  const plain = object(undefined);
+  const other = object(undefined);
+  assert.equal(plain.internalExoticSlots, undefined);
+  assert.equal(exoticSlots(plain).internalDateValue, undefined);
+  assert.equal(exoticSlots(plain).internalErrorData, false);
+  assert.equal(exoticSlots(plain).internalIsHTMLDDA, false);
+  assert.equal(plain.internalExoticSlots, undefined);
+  const slots = ensureExoticSlots(plain);
+  assert.equal(plain.internalExoticSlots, slots);
+  assert.equal(ensureExoticSlots(plain), slots);
+  slots.internalDateValue = 1234;
+  slots.internalErrorData = true;
+  assert.equal(exoticSlots(plain).internalDateValue, 1234);
+  assert.equal(exoticSlots(plain).internalErrorData, true);
+  assert.equal(other.internalExoticSlots, undefined);
+  assert.equal(exoticSlots(other).internalDateValue, undefined);
+  assert.equal(exoticSlots(other).internalErrorData, false);
 });

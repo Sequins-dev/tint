@@ -121,23 +121,74 @@ export interface OrdinaryObject<Key, Value> {
   /** Compiler/runtime-owned call steps. Each step owns and restores its context
    * before returning a transfer; JavaScript return values never select a step. */
   internalTailDispatch: ObjectTailDispatch<Key, Value> | undefined;
+  internalSourceText: string | undefined;
+  readonly internalConstruct: ObjectConstruct<Value> | undefined;
+  readonly internalExecutionContext: ObjectExecutionContext<Value> | undefined;
+  /** Presence of [[ParameterMap]], including unmapped arguments objects. */
+  internalArgumentsData: boolean;
+  internalArrayData: boolean;
+  /** Packed own elements; present only on array exotic objects until a
+   * property operation requires ordinary descriptors for their indices. */
+  internalArrayElements: ArrayElements<Key, Value> | undefined;
+  internalPromiseData: PromiseRecord<Value> | undefined;
+  internalAwaitOperation: NativeAwaitOperation<Value> | undefined;
+  /** Agent-unique identity for weak-collection indexing, 0 until first needed.
+   * A number, so indexes keyed by it never retain the object. */
+  internalIdentity: number;
+  internalGeneratorData: GeneratorRecord<Value> | undefined;
+  internalAsyncGeneratorData:
+    | {
+        readonly record: AsyncGeneratorRecord<Value>;
+        readonly hooks: AsyncGeneratorHooks<Value>;
+        readonly context: ScriptExecutionContext;
+      }
+    | undefined;
+  internalArrayIteratorData:
+    | {
+        iterated: OrdinaryObject<Key, Value> | undefined;
+        index: number;
+        readonly kind: "key" | "value" | "entry";
+      }
+    | undefined;
+  internalBoundTarget: OrdinaryObject<Key, Value> | undefined;
+  /** Definition-time [[HomeObject]] for super; independent of call receiver. */
+  internalHomeObject: OrdinaryObject<Key, Value> | undefined;
+  readonly internalMethods: ObjectInternalMethods<Key, Value> | undefined;
+  readonly internalDataAliases: Map<Key, DataAlias<Value>> | undefined;
+  /** Lazily allocated side record for rarely-present builtin and exotic
+   * internal slots. Undefined on ordinary objects; read via exoticSlots and
+   * initialized via ensureExoticSlots. */
+  internalExoticSlots: ExoticObjectSlots | undefined;
+  /** Fast-mode values of the shape's first propertySlots keys, in place so
+   * generated caches load and store them at a computed offset. Undefined
+   * (no value) past the shape's keys; a present JavaScript undefined is
+   * the shape's undefinedValue. */
+  internalValue0: Value | undefined;
+  internalValue1: Value | undefined;
+  internalValue2: Value | undefined;
+  internalValue3: Value | undefined;
+  internalValue4: Value | undefined;
+  internalValue5: Value | undefined;
+  internalValue6: Value | undefined;
+  internalValue7: Value | undefined;
+}
+/** Internal slots present only on specific builtin, exotic, error or host
+ * objects. Kept out of OrdinaryObject so ordinary instances stay compact. */
+export interface ExoticObjectSlots {
   /** Built-in [[InitialName]], independent of the mutable public name property. */
   internalInitialName: string | undefined;
-  internalSourceText: string | undefined;
   /** Frozen primitive JSON text; presence is the non-proxy-forwarding raw JSON brand. */
   internalRawJSON: string | undefined;
   internalModuleSourceClassName: string | undefined;
   internalShadowRealm: ShadowRealmHost | undefined;
-  readonly internalConstruct: ObjectConstruct<Value> | undefined;
-  readonly internalExecutionContext: ObjectExecutionContext<Value> | undefined;
   /** Presence of [[ErrorData]], independent of the object's prototype chain. */
   internalErrorData: boolean;
   /** Creation-time logical stack, independent of the public stack property. */
   internalErrorStack: string | undefined;
   /** Typed error operations supplied by a mixed-program boundary adapter. */
   internalTypedErrorAccess: ((operation: string) => unknown) | undefined;
-  internalDisposableStack: DisposalStack<Value> | undefined;
-  internalAsyncDisposableStack: DisposalStack<Value> | undefined;
+  internalDisposableStack: DisposalStack<unknown> | undefined;
+  internalAsyncDisposableStack: DisposalStack<unknown> | undefined;
   internalTemporalPlainYearMonth: GregorianDate | undefined;
   internalTemporalPlainMonthDay: GregorianDate | undefined;
   internalTemporalPlainDate: GregorianDate | undefined;
@@ -163,82 +214,45 @@ export interface OrdinaryObject<Key, Value> {
   /** Host-only [[IsHTMLDDA]]; neither inherited nor forwarded through proxies. */
   internalIsHTMLDDA: boolean;
   internalRegExpData: RegExpData | undefined;
-  /** Presence of [[ParameterMap]], including unmapped arguments objects. */
-  internalArgumentsData: boolean;
-  internalArrayData: boolean;
-  /** Packed own elements; present only on array exotic objects until a
-   * property operation requires ordinary descriptors for their indices. */
-  internalArrayElements: ArrayElements<Key, Value> | undefined;
   internalArrayBufferData: ByteStorage | undefined;
   internalSharedArrayBufferData: SharedBlockStorage | undefined;
   internalArrayBufferView: boolean;
   internalDataViewData: DataViewData | undefined;
   internalTypedArrayData: TypedArrayData | undefined;
-  internalProxyData: ProxyState<Key, Value> | undefined;
-  internalPromiseData: PromiseRecord<Value> | undefined;
-  internalAwaitOperation: NativeAwaitOperation<Value> | undefined;
-  internalSetData: LinkedMap<Value, Value> | undefined;
+  internalProxyData: ProxyState<ScriptPropertyKey, unknown> | undefined;
+  internalSetData: LinkedMap<unknown, unknown> | undefined;
   internalSetIteratorData:
-    | { readonly cursor: MapCursor<Value, Value>; readonly entries: boolean }
+    | {
+        readonly cursor: MapCursor<unknown, unknown>;
+        readonly entries: boolean;
+      }
     | undefined;
-  internalMapData: LinkedMap<Value, Value> | undefined;
+  internalMapData: LinkedMap<unknown, unknown> | undefined;
   internalWeakData: WeakData | undefined;
-  /** Agent-unique identity for weak-collection indexing, 0 until first needed.
-   * A number, so indexes keyed by it never retain the object. */
-  internalIdentity: number;
   internalMapIteratorData:
     | {
-        readonly cursor: MapCursor<Value, Value>;
+        readonly cursor: MapCursor<unknown, unknown>;
         readonly kind: "key" | "value" | "entry";
       }
     | undefined;
-  internalGeneratorData: GeneratorRecord<Value> | undefined;
-  internalSyncIteratorData: IteratorRecord<Value> | undefined;
+  internalSyncIteratorData: IteratorRecord<unknown> | undefined;
   /** Separate [[Iterated]] brand from async-from-sync wrappers. */
-  internalWrappedIteratorData: IteratorRecord<Value> | undefined;
+  internalWrappedIteratorData: IteratorRecord<unknown> | undefined;
   internalIteratorHelperData:
-    | { readonly generator: GeneratorRecord<Value>; readonly close: () => void }
-    | undefined;
-  internalAsyncGeneratorData:
     | {
-        readonly record: AsyncGeneratorRecord<Value>;
-        readonly hooks: AsyncGeneratorHooks<Value>;
-        readonly context: ScriptExecutionContext;
+        readonly generator: GeneratorRecord<unknown>;
+        readonly close: () => void;
       }
     | undefined;
   internalRegExpIteratorData: RegExpIteratorData | undefined;
-  internalArrayIteratorData:
-    | {
-        iterated: OrdinaryObject<Key, Value> | undefined;
-        index: number;
-        readonly kind: "key" | "value" | "entry";
-      }
-    | undefined;
   internalStringIteratorData:
     { text: string | undefined; index: number } | undefined;
   internalPrimitiveData:
     | {
         readonly kind: "number" | "boolean" | "string" | "symbol" | "bigint";
-        readonly value: Value;
+        readonly value: unknown;
       }
     | undefined;
-  internalBoundTarget: OrdinaryObject<Key, Value> | undefined;
-  /** Definition-time [[HomeObject]] for super; independent of call receiver. */
-  internalHomeObject: OrdinaryObject<Key, Value> | undefined;
-  readonly internalMethods: ObjectInternalMethods<Key, Value> | undefined;
-  readonly internalDataAliases: Map<Key, DataAlias<Value>> | undefined;
-  /** Fast-mode values of the shape's first propertySlots keys, in place so
-   * generated caches load and store them at a computed offset. Undefined
-   * (no value) past the shape's keys; a present JavaScript undefined is
-   * the shape's undefinedValue. */
-  internalValue0: Value | undefined;
-  internalValue1: Value | undefined;
-  internalValue2: Value | undefined;
-  internalValue3: Value | undefined;
-  internalValue4: Value | undefined;
-  internalValue5: Value | undefined;
-  internalValue6: Value | undefined;
-  internalValue7: Value | undefined;
 }
 export interface ProxyState<Key, Value> {
   target: OrdinaryObject<Key, Value> | undefined;
@@ -551,6 +565,58 @@ export interface Receiver<Key, Value> {
   readonly value: Value;
   readonly object: OrdinaryObject<Key, Value> | undefined;
 }
+function createExoticSlots(): ExoticObjectSlots {
+  return {
+    internalInitialName: undefined,
+    internalRawJSON: undefined,
+    internalModuleSourceClassName: undefined,
+    internalShadowRealm: undefined,
+    internalErrorData: false,
+    internalErrorStack: undefined,
+    internalTypedErrorAccess: undefined,
+    internalDisposableStack: undefined,
+    internalAsyncDisposableStack: undefined,
+    internalTemporalPlainYearMonth: undefined,
+    internalTemporalPlainMonthDay: undefined,
+    internalTemporalPlainDate: undefined,
+    internalTemporalDuration: undefined,
+    internalTemporalPlainTime: undefined,
+    internalTemporalPlainDateTime: undefined,
+    internalTemporalZonedDateTime: undefined,
+    internalTemporalCalendar: undefined,
+    internalTemporalInstant: undefined,
+    internalLocaleData: undefined,
+    internalListFormatData: undefined,
+    internalSegmenterData: undefined,
+    internalCollatorData: undefined,
+    internalPluralRulesData: undefined,
+    internalIntlFormatData: undefined,
+    internalRelativeTimeData: undefined,
+    internalNumberFormatData: undefined,
+    internalDateValue: undefined,
+    internalIsHTMLDDA: false,
+    internalRegExpData: undefined,
+    internalArrayBufferData: undefined,
+    internalSharedArrayBufferData: undefined,
+    internalArrayBufferView: false,
+    internalDataViewData: undefined,
+    internalTypedArrayData: undefined,
+    internalProxyData: undefined,
+    internalSetData: undefined,
+    internalSetIteratorData: undefined,
+    internalMapData: undefined,
+    internalWeakData: undefined,
+    internalMapIteratorData: undefined,
+    internalSyncIteratorData: undefined,
+    internalWrappedIteratorData: undefined,
+    internalIteratorHelperData: undefined,
+    internalRegExpIteratorData: undefined,
+    internalStringIteratorData: undefined,
+    internalPrimitiveData: undefined,
+  };
+}
+/** Shared read-only defaults for objects without exotic slots; never mutate. */
+const emptyExoticSlots: ExoticObjectSlots = createExoticSlots();
 /** The internal slots few objects have: a builtin kind's data ([[DateValue]],
  * [[RegExpMatcher]], [[MapData]], ...) and rarely read function and error
  * details. Every read goes through exoticSlots (an object without any reads
@@ -558,16 +624,20 @@ export interface Receiver<Key, Value> {
  * ensureExoticSlots. */
 export function exoticSlots(
   object: OrdinaryObject<ScriptPropertyKey, unknown>,
-): OrdinaryObject<ScriptPropertyKey, unknown> {
-  return object;
+): ExoticObjectSlots {
+  const slots = object.internalExoticSlots;
+  return slots === undefined ? emptyExoticSlots : slots;
 }
 /** The exotic slots of `object` for a write. Neither function is generic:
- * every object with such slots is a script object, and retained runtime
- * helpers (typeof) may call them. */
+ * every object with such slots is a script object. */
 export function ensureExoticSlots(
   object: OrdinaryObject<ScriptPropertyKey, unknown>,
-): OrdinaryObject<ScriptPropertyKey, unknown> {
-  return object;
+): ExoticObjectSlots {
+  const existing = object.internalExoticSlots;
+  if (existing !== undefined) return existing;
+  const created = createExoticSlots();
+  object.internalExoticSlots = created;
+  return created;
 }
 export function createObject<Key, Value>(
   prototype: OrdinaryObject<Key, Value> | undefined,
@@ -722,69 +792,24 @@ function allocateObject<Key, Value>(
     internalCall,
     internalRegisterCall: undefined,
     internalTailDispatch: undefined,
-    internalInitialName: undefined,
     internalSourceText: undefined,
-    internalRawJSON: undefined,
-    internalModuleSourceClassName: undefined,
-    internalShadowRealm: undefined,
     internalConstruct,
     internalExecutionContext,
-    internalErrorData: false,
-    internalErrorStack: undefined,
-    internalTypedErrorAccess: undefined,
-    internalDisposableStack: undefined,
-    internalAsyncDisposableStack: undefined,
-    internalTemporalPlainYearMonth: undefined,
-    internalTemporalPlainMonthDay: undefined,
-    internalTemporalPlainDate: undefined,
-    internalTemporalDuration: undefined,
-    internalTemporalPlainTime: undefined,
-    internalTemporalPlainDateTime: undefined,
-    internalTemporalZonedDateTime: undefined,
-    internalTemporalCalendar: undefined,
-    internalTemporalInstant: undefined,
-    internalLocaleData: undefined,
-    internalListFormatData: undefined,
-    internalSegmenterData: undefined,
-    internalCollatorData: undefined,
-    internalPluralRulesData: undefined,
-    internalIntlFormatData: undefined,
-    internalRelativeTimeData: undefined,
-    internalNumberFormatData: undefined,
-    internalDateValue: undefined,
-    internalIsHTMLDDA: false,
-    internalRegExpData: undefined,
     internalArgumentsData: false,
     internalArrayData: false,
     internalArrayElements: undefined,
-    internalArrayBufferData: undefined,
-    internalSharedArrayBufferData: undefined,
-    internalArrayBufferView: false,
-    internalDataViewData: undefined,
-    internalTypedArrayData: undefined,
-    internalProxyData: undefined,
-    internalSetData: undefined,
-    internalSetIteratorData: undefined,
-    internalMapData: undefined,
-    internalWeakData: undefined,
     internalIdentity: 0,
-    internalMapIteratorData: undefined,
     internalGeneratorData: undefined,
-    internalSyncIteratorData: undefined,
-    internalWrappedIteratorData: undefined,
-    internalIteratorHelperData: undefined,
     internalAsyncGeneratorData: undefined,
     internalPromiseData: undefined,
     internalAwaitOperation: undefined,
-    internalRegExpIteratorData: undefined,
     internalArrayIteratorData: undefined,
-    internalStringIteratorData: undefined,
-    internalPrimitiveData: undefined,
     internalBoundTarget: undefined,
     internalHomeObject: undefined,
     internalPrivateElements: undefined,
     internalMethods,
     internalDataAliases,
+    internalExoticSlots: undefined,
     internalValue0: undefined,
     internalValue1: undefined,
     internalValue2: undefined,

@@ -49,7 +49,7 @@ const bindings: readonly NativeHostBinding[] = [
 
 verifyHostedFixture(
   `
-import {createObject,createErrorRealm,createDataProperty,getProperty,viewObjectValue,callObjectValue,type OrdinaryObject,type ScriptPropertyKey,type ObjectHooks,type ErrorRealm} from 'object';
+import {createObject,createErrorRealm,createDataProperty,getProperty,viewObjectValue,callObjectValue,exoticSlots,ensureExoticSlots,type OrdinaryObject,type ScriptPropertyKey,type ObjectHooks,type ErrorRealm} from 'object';
 import {byteStorageData,createByteStorage} from 'bytes';
 import {createSharedStorage} from 'shared-bytes';
 import {monotonicMilliseconds} from 'clock';
@@ -110,11 +110,11 @@ export function run(argument:number):number {
   if(bytes===undefined||original===undefined)return 3;
   bytes[7]=88;
   const transfer=createObject<ScriptPropertyKey,unknown>(from.realm.arrayBufferPrototype);
-  transfer.internalArrayBufferData=made.value;
+  ensureExoticSlots(transfer).internalArrayBufferData=made.value;
   const created=createSharedStorage(shared,4,4,false);
   if(!created.ok)return 4;
   const sab=createObject<ScriptPropertyKey,unknown>(from.realm.sharedArrayBufferPrototype);
-  sab.internalSharedArrayBufferData=created.value;
+  ensureExoticSlots(sab).internalSharedArrayBufferData=created.value;
   const pair=from.ports.create(),peer=to.ports.adopt(pair.second.transfer());
   const second=from.ports.create(),channel=from.wrap(second.second);
   const data=createObject<ScriptPropertyKey,unknown>(from.global);
@@ -139,10 +139,12 @@ export function run(argument:number):number {
   function get(name:string):Value|undefined {
     return viewObjectValue(getProperty<ScriptPropertyKey,unknown>(result,name,result,to.hooks),to.global);
   }
-  const received=get("buffer")?.internalArrayBufferData;
+  const receivedBuffer=get("buffer");
+  const received=receivedBuffer===undefined?undefined:exoticSlots(receivedBuffer).internalArrayBufferData;
   if(received===undefined||to.backing.inspect(received)?.address!==original.address||
      byteStorageData(received)?.[7]!==88)return 9;
-  const sharedCopy=get("shared")?.internalSharedArrayBufferData;
+  const sharedObject=get("shared");
+  const sharedCopy=sharedObject===undefined?undefined:exoticSlots(sharedObject).internalSharedArrayBufferData;
   if(sharedCopy===undefined||sharedCopy.handle!==created.value.handle)return 10;
   const port=get("port");
   if(port===undefined)return 11;

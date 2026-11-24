@@ -718,7 +718,10 @@ export function realmErrorOperation(
 ): unknown {
   // Retained: it reads the exotic slot directly instead of calling
   // exoticSlots in another module.
-  const access = viewTypeofObject(value)?.internalTypedErrorAccess;
+  const object = viewTypeofObject(value);
+  const exotic = object === undefined ? undefined : object.internalExoticSlots;
+  const access =
+    exotic === undefined ? undefined : exotic.internalTypedErrorAccess;
   return access === undefined ? undefined : access(operation);
 }
 

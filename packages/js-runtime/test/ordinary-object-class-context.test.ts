@@ -281,7 +281,7 @@ test("base OrdinaryCreateFromConstructor runs before entering the class realm", 
     handler: objects.createObject(callee.objectPrototype),
   };
   ensureExoticSlots(newTarget).internalProxyData = state as NonNullable<
-    typeof newTarget.internalProxyData
+    ReturnType<typeof ensureExoticSlots>["internalProxyData"]
   >;
   // GetFunctionRealm(revoked proxy) reports in the caller's realm.
   throwsIn(

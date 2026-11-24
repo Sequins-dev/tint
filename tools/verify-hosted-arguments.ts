@@ -1,7 +1,7 @@
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 verifyHostedFixture(
   `
-import {type ScriptPropertyKey,createArgumentsObject,createSourceFunction,callObjectValue,createErrorRealm,viewObjectValue,createObject,getOwnProperty,getProperty,setProperty,deleteProperty,setIntegrityLevel,type ArgumentsIntrinsics,type ObjectHooks,type DataAlias} from "object";
+import {type ScriptPropertyKey,createArgumentsObject,createSourceFunction,callObjectValue,createErrorRealm,viewObjectValue,createObject,getOwnProperty,getProperty,setProperty,deleteProperty,setIntegrityLevel,exoticSlots,type ArgumentsIntrinsics,type ObjectHooks,type DataAlias} from "object";
 import {instantiateFunctionArguments,type FunctionArgumentsPlan} from "global-environment";
 import {createDeclarativeEnvironment,createMutableBinding,initializeBinding,getBindingValue,setMutableBinding} from "environment-record";
 const hooks:ObjectHooks<number>={undefinedValue:0,sameValue:(a,b):boolean=>a===b,call:(callee,receiver,args):number=>{if(callee===99)throw 17;throw 18;}};
@@ -42,7 +42,7 @@ export function run():number{
  let threw=false;
  try{throwCall(undefined,[]);}catch(error){
   const object=viewObjectValue(error,objectPrototype);
-  if(object!==undefined&&object.internalErrorData&&object.prototype===realm.prototypes.get("type"))threw=true;
+  if(object!==undefined&&exoticSlots(object).internalErrorData&&object.prototype===realm.prototypes.get("type"))threw=true;
  }
  if(!threw)return 17;
  const tagged=createObject<ScriptPropertyKey,unknown>(objectPrototype);
