@@ -23,6 +23,15 @@ gate_status() {
 trap gate_status EXIT
 printf 'head=%s evidence=%s\n' "$gate_head" "$gate_output"
 
+# SHA-256 lines for files, on hosts with either tool.
+gate_sha256() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$@"
+  else
+    shasum -a 256 "$@"
+  fi
+}
+
 # Each step gets its own log. Exit checks stay outside pipelines.
 run_step() {
   step_name=$1 step_resource=$2
@@ -73,17 +82,6 @@ run_step_logged() {
     tail -n 25 "$step_stderr" >&2
   fi
   return "$step_exit"
-}
-
-storage_tests() {
-  run_step storage unlocked node --test packages/ir/test/function-store.test.ts tools/function-store-files.test.ts
-  printf 'storage-tests=0 %s\n' "$(grep -E '^ℹ (pass|fail) ' "$step_log" | tr '\n' ' ')"
-}
-
-bootstrap() {
-  run_step bootstrap "$1" env TZ=UTC node tools/bootstrap-compiler.ts \
-    "$gate_output/stage1" --snapshot "$gate_output/source"
-  echo bootstrap=0
 }
 
 stage_step() {

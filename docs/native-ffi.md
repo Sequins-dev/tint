@@ -1433,8 +1433,9 @@ revisit when profiles show it.
   (`verifyForeignFixture`: a linked list walked through `Address` members,
   arrays of records, raw bytes, libSystem's own program name, views passed
   to C, every creation contract, release/address rejection, collections in
-  between) and `node:os` against Node, under the generational and copying
-  runtimes.
+  between) under the generational and copying runtimes;
+  `tools/native-node-os.test.ts` runs `node:os` against Node under both runtimes
+  and checks that each target's `node:os` fails to resolve on the other.
 - Callbacks ([tests](#callbacks)): `tools/native-ffi.test.ts` runs the
   callback, zlib-allocator and contract-trap fixtures natively on both
   targets and collectors; unit tests cover the transition walk, the push

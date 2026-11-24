@@ -116,8 +116,11 @@ export function initializeGenerationalRuntime(
     youngBits = bits.subarray(oldCapacity / 256),
     // One dirty bit per granule, eight per 64-byte card byte.
     dirty = marks.subarray(0, Math.ceil(oldCapacity / 64)),
-    // The allocation/barrier block, ending with the nursery's absolute address
-    // (words 16/17) for the allocation fast path.
+    // Requests of at least this size go directly to old space.
+    largeObjectBytes = Math.max(128, youngCapacity / 4),
+    // The allocation/barrier block, then the nursery's absolute address
+    // (words 16/17) and the large-object threshold (word 18) for the
+    // allocation fast path.
     allocation = new Uint32Array(nativeGenerationalStateWords);
   allocation[1] = youngCapacity;
   allocation[2] = oldCapacity;
@@ -125,6 +128,7 @@ export function initializeGenerationalRuntime(
   const nursery = managedBase + oldCapacity;
   allocation[16] = nursery % 4294967296;
   allocation[17] = Math.floor(nursery / 4294967296);
+  allocation[18] = largeObjectBytes;
   let collecting = false;
   /** The space's base: majors compact in place, so the second half of the
    * managed region (a former copy reserve) stays untouched. */
@@ -363,9 +367,12 @@ export function initializeGenerationalRuntime(
     if (collecting || !Number.isInteger(bytes) || bytes <= 0) return undefined;
     // No collection can make room for this request (an impossible string
     // length lands here too): a catchable RangeError, not an engine abort.
-    if (bytes > oldCapacity) throw engineRangeError();
+    // Every heap is below 2^31 bytes; requests of 2^31 or more are rejected
+    // outright, which keeps tops and sizes within the 32 bits the inline
+    // fast path's limit check adds without wrapping.
+    if (bytes >= 2147483648 || bytes > oldCapacity) throw engineRangeError();
     const size = Math.ceil(bytes / 8) * 8;
-    if (size >= Math.max(128, youngCapacity / 4)) {
+    if (size >= largeObjectBytes) {
       if (size > oldCapacity - (allocation[3] ?? 0) && !collect(true))
         throw managedHeapExhausted;
       const top = allocation[3] ?? 0;

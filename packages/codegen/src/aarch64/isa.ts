@@ -84,6 +84,18 @@ export type Instruction =
       readonly ra: DataRegister;
     }
   | {
+      /** Bitwise operations with a logical immediate: a run of ones,
+       * rotated right by immr within an element and replicated across the
+       * register (see logicalImmediate32). ands sets flags (TST with zr). */
+      readonly op: "and-imm" | "orr-imm" | "eor-imm" | "ands-imm";
+      readonly width: RegisterWidth;
+      readonly rd: Register;
+      readonly rn: DataRegister;
+      readonly n: 0 | 1;
+      readonly immr: number;
+      readonly imms: number;
+    }
+  | {
       readonly op: "ubfm" | "sbfm";
       readonly width: RegisterWidth;
       readonly rd: DataRegister;
@@ -488,6 +500,39 @@ export function encode(instruction: Instruction): EncodingResult<number> {
                       : 0x1ac00c00;
       return word(
         base + (i.width === 64 ? 0x80000000 : 0) + rm * 65536 + rn * 32 + rd,
+      );
+    }
+    case "and-imm":
+    case "orr-imm":
+    case "eor-imm":
+    case "ands-imm": {
+      if (i.width !== 32 && i.width !== 64) return fail("INVALID_WIDTH");
+      const rd = register(i.rd, i.op === "ands-imm" ? "zr" : "sp"),
+        rn = register(i.rn, "zr");
+      if (rd < 0 || rn < 0) return fail("INVALID_REGISTER");
+      if (
+        (i.n !== 0 && i.n !== 1) ||
+        (i.width === 32 && i.n !== 0) ||
+        !integer(i.immr, 0, i.width - 1) ||
+        !integer(i.imms, 0, 63)
+      )
+        return fail("INVALID_IMMEDIATE");
+      const base =
+        i.op === "and-imm"
+          ? 0x12000000
+          : i.op === "orr-imm"
+            ? 0x32000000
+            : i.op === "eor-imm"
+              ? 0x52000000
+              : 0x72000000;
+      return word(
+        base +
+          (i.width === 64 ? 0x80000000 : 0) +
+          i.n * 0x400000 +
+          i.immr * 65536 +
+          i.imms * 1024 +
+          rn * 32 +
+          rd,
       );
     }
     case "madd":
@@ -1410,4 +1455,43 @@ export function float64Immediate(value: number): number | undefined {
     middle = Math.floor(exponent / 4) % 256;
   if (middle !== (b === 1 ? 255 : 0)) return undefined;
   return sign * 128 + b * 64 + (exponent % 4) * 16 + fraction;
+}
+
+/** The 32-bit logical immediate fields encoding `value` (a uint32), or
+ * undefined. Encodable values replicate an element of 2, 4, 8, 16 or 32
+ * bits that is a run of ones rotated right by immr; imms holds the element
+ * size marker and the run length less one. 0 and 0xffffffff are not
+ * encodable. */
+export function logicalImmediate32(
+  value: number,
+): { readonly n: 0; readonly immr: number; readonly imms: number } | undefined {
+  if (!integer(value, 1, 4294967294)) return undefined;
+  // The smallest period: each halving keeps both halves of the element
+  // equal. `unit` is 2^(size / 2).
+  let size = 32,
+    unit = 65536;
+  while (size > 2) {
+    if (value % unit !== Math.floor(value / unit) % unit) break;
+    size /= 2;
+    unit = Math.sqrt(unit);
+  }
+  const modulus = unit * unit,
+    element = value % modulus;
+  let ones = 0;
+  for (let rest = element; rest > 0; rest = Math.floor(rest / 2))
+    ones += rest % 2;
+  if (ones === size) return undefined;
+  // The run rotated right by immr within the element: its low immr bits
+  // move to the top.
+  let run = 1;
+  for (let bit = 0; bit < ones; bit++) run *= 2;
+  run -= 1;
+  let low = 1;
+  for (let immr = 0; immr < size; immr++) {
+    const rotated = Math.floor(run / low) + (run % low) * (modulus / low);
+    if (rotated === element)
+      return { n: 0, immr, imms: ((64 - 2 * size) % 64) + ones - 1 };
+    low *= 2;
+  }
+  return undefined;
 }

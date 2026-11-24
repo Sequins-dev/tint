@@ -1,4 +1,12 @@
-import { appendFileSync, readFileSync, statSync } from "node:fs";
+import { createHash } from "node:crypto";
+import {
+  appendFileSync,
+  closeSync,
+  openSync,
+  readFileSync,
+  readSync,
+  statSync,
+} from "node:fs";
 import { resolve } from "node:path";
 import {
   acquireGateLock,
@@ -15,6 +23,7 @@ function record(
   fields: {
     path?: string;
     bytes?: number;
+    sha256?: string;
     fixture?: string;
     failed?: boolean;
     memoryWaitMs?: number;
@@ -33,6 +42,20 @@ function record(
       ...fields,
     }) + "\n",
   );
+}
+
+/** SHA-256 of a built image, so the journal names exactly what ran. */
+function fileSha256(path: string): string {
+  const fd = openSync(path, "r");
+  try {
+    const hash = createHash("sha256"),
+      chunk = Buffer.allocUnsafe(1 << 20);
+    for (let length; (length = readSync(fd, chunk)) !== 0;)
+      hash.update(chunk.subarray(0, length));
+    return hash.digest("hex");
+  } finally {
+    closeSync(fd);
+  }
 }
 
 export function withNativeFixtureMemory<T>(
@@ -70,6 +93,7 @@ export function buildNativeFixture(
         fixture,
         path,
         bytes: statSync(path).size,
+        sha256: fileSha256(path),
         memoryWaitMs,
       });
       return path;

@@ -1714,6 +1714,9 @@ export function emitDiagnostics(
     // successful allocation calls the hook with its address, then the young
     // limit is rearmed to min(saved limit, young top + interval), or
     // restored when the tool disarmed meanwhile. Unarmed, it only forwards.
+    // The rearm derives the limit from the current top and never reads the
+    // old one, so a limit a tool lowered below the top (the inline sequence
+    // then fell into the slow path) is simply replaced.
     // Frame: record, context, result area, request (d0), status.
     const descriptor = diagnosticHeapDescriptorOffset;
     start = here();

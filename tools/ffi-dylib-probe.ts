@@ -14,6 +14,7 @@ import {
   buildAArch64Executable,
   type AArch64ExecutableRequest,
 } from "./aarch64-executable.ts";
+import { lldbStartCommands } from "./lldb-launch.ts";
 /** An image importing `_getpid` (libSystem), `_zlibVersion` (libz) and a
  * symbol of an absent optional library; its code exits 42 exactly when the
  * first two slots are bound and the weak one is zero. */
@@ -105,10 +106,7 @@ export function verifyDylibProbe(): void {
       [
         "--no-lldbinit",
         "--batch",
-        "-o",
-        "process launch --stop-at-entry",
-        "-o",
-        "script assert lldb.process.GetState() == lldb.eStateStopped",
+        ...lldbStartCommands(),
         "-o",
         "continue",
         "-o",

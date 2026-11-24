@@ -21,6 +21,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 
 process.env.TINT_GENERAL_FALLBACK = "0";
 const { verifyHostedFixture } = await import("./hosted-fixture.ts");
@@ -268,7 +269,10 @@ test("a dead value in a guarded read's slot is collected at the next full collec
       { module: memory, namespace: "native-memory" },
     ],
     {
-      runtimeEntry: "initializeCopyingRuntime",
+      runtimeEntry:
+        nativeFixtureTarget().arch === "x86_64"
+          ? "initializeGenerationalRuntime"
+          : "initializeCopyingRuntime",
       managedBytes: 4194304,
       allocationCapacity: 65536,
       rootCapacity: 8192,

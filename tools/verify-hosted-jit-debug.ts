@@ -31,6 +31,7 @@ import {
   workspaceSources,
   workspaceSourceIdentity,
 } from "./workspace-sources.ts";
+import { lldbStartCommands } from "./lldb-launch.ts";
 
 const output = process.argv[2];
 if (!output)
@@ -225,6 +226,7 @@ if (x64) {
   assert.equal(result?.kind, "exited", JSON.stringify(result));
   assert.equal(result.status, 42, JSON.stringify(result));
   console.log(JSON.stringify(result));
+  console.log("Verified JIT debugger registration (x86-64).");
   process.exit(0);
 }
 const session = runDarwinFixture(path, () =>
@@ -239,10 +241,7 @@ const session = runDarwinFixture(path, () =>
       "breakpoint set --name jit:jitSum",
       "-o",
       "breakpoint set --file jit-source.ts --line 3",
-      "-o",
-      "process launch --stop-at-entry",
-      "-o",
-      "script assert lldb.process.GetState() == lldb.eStateStopped",
+      ...lldbStartCommands(),
       "-o",
       "continue",
       "-o",

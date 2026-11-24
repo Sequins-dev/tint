@@ -1,0 +1,25 @@
+name: Gate evidence
+description: Upload a gate job's evidence directory (logs, journals, timings and reports), without its build products.
+
+inputs:
+  name:
+    description: Unique artifact name suffix for the job.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+      with:
+        name: evidence-${{ inputs.name }}
+        path: |
+          .tint-bootstrap/gate.*/
+          !.tint-bootstrap/gate.*/source
+          !.tint-bootstrap/gate.*/toolchain
+          !.tint-bootstrap/gate.*/unit-host
+          !.tint-bootstrap/gate.*/stage1
+          !.tint-bootstrap/gate.*/stage2
+          !.tint-bootstrap/gate.*/fixture-cache
+        include-hidden-files: true
+        if-no-files-found: warn
+        retention-days: 14

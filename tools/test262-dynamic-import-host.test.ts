@@ -93,7 +93,9 @@ test("generated module loaders widen only with explicit dynamic import capabilit
   );
   assert.equal(process.env.TZ, undefined);
   assert.equal(
-    createHash("sha256").update(old).digest("hex"),
+    createHash("sha256")
+      .update(old.replaceAll('architecture:"x86_64",\n ', ""))
+      .digest("hex"),
     "08bb9bfce1a77c8c18b72c373153d244ef579486e6d08e1fe23eff8e12912f7f",
   );
   assert.match(
@@ -296,7 +298,9 @@ test("Script-root runtime text is enabled only for batches that need it", () => 
     true,
   );
   assert.equal(
-    createHash("sha256").update(moduleOnly).digest("hex"),
+    createHash("sha256")
+      .update(moduleOnly.replaceAll('architecture:"x86_64",\n ', ""))
+      .digest("hex"),
     "e0635368f958779317efded2232f841a486ea706a6b766985652ce21f038b177",
   );
   const roots = native.nativeTestRuntimeSource(

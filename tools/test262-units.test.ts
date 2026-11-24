@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { deserialize, serialize } from "node:v8";
 import { createSourceTextView } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
 import {
@@ -11,7 +12,12 @@ import {
   compileX64NativeServiceUnit,
   type CompileRequest,
 } from "@tint/compiler/native";
-import { buildMacOSProgram, type BuildRequest } from "@tint/compiler/build";
+import {
+  buildMacOSProgram,
+  compileX64Program,
+  linkX64Program,
+  type BuildRequest,
+} from "@tint/compiler/build";
 import { linuxX86_64Target } from "@tint/platform/target";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import { runtimeSources } from "@tint/compiler/cli";
@@ -214,6 +220,66 @@ test("x86-64 links a managed service, collects through its frames and rejects a 
   };
   const image = buildMacOSProgram(request);
   assert.ok(image.ok, image.ok ? undefined : JSON.stringify(image.error));
+  const compiledHost = compileX64Program({
+    ...request,
+    nativeServices: [],
+    serviceSlots: [{ bind, surface: "counter" }],
+  });
+  assert.ok(
+    compiledHost.ok,
+    compiledHost.ok ? undefined : JSON.stringify(compiledHost.error),
+  );
+  assert.equal(compiledHost.value.forceFarReach, true);
+  const restoredHost = deserialize(serialize(compiledHost.value));
+  const x64Published = restoredHost.program.managedSurfaces?.find(
+    (surface: { readonly name: string }) => surface.name === "counter",
+  );
+  assert.ok(x64Published);
+  const x64Unit = compileX64NativeServiceUnit({
+    ...nativeServiceFixtureRequest(),
+    read: readPublishedSurface(x64Published.directory),
+    linearAllocation: true,
+    generationalBarriers: true,
+  });
+  assert.ok(x64Unit.ok, JSON.stringify(x64Unit));
+  verifyUnitSurface(x64Unit.value, x64Published);
+  const linkPhases: string[] = [];
+  const relinked = linkX64Program(restoredHost, {
+    ...request,
+    nativeServices: [{ bind, unit: x64Unit.value }],
+    report: (phase) => linkPhases.push(phase),
+  });
+  assert.ok(
+    relinked.ok,
+    relinked.ok ? undefined : JSON.stringify(relinked.error),
+  );
+  assert.deepEqual(linkPhases, ["startup"]);
+  assert.deepEqual(relinked.value, image.value);
+  // Service units have no ELF GOT, so byte operations (memmove/memcmp for
+  // string concat/equality) must inline instead of emitting platform imports.
+  const stringUnitSource = parseModule(
+    createSourceTextView(
+      'import {seed,type Counter} from "host";let count:number=seed();function next():number{const prefix:string=count===1?"ti":"xx";const joined:string=prefix+"nt";return joined==="tint"?++count:0;}export function factory():Counter{return {next};}',
+    ),
+  );
+  assert.ok(stringUnitSource.ok);
+  const stringUnit = compileX64NativeServiceUnit({
+    ...nativeServiceFixtureRequest(),
+    module: stringUnitSource.value,
+    read: readPublishedSurface(x64Published.directory),
+    linearAllocation: true,
+    generationalBarriers: true,
+  });
+  assert.ok(stringUnit.ok, JSON.stringify(stringUnit));
+  assert.deepEqual(stringUnit.value.native.imports, []);
+  const stringLinked = linkX64Program(restoredHost, {
+    ...request,
+    nativeServices: [{ bind, unit: stringUnit.value }],
+  });
+  assert.ok(
+    stringLinked.ok,
+    stringLinked.ok ? undefined : JSON.stringify(stringLinked.error),
+  );
   const { native } = unit.value;
   const reference = native.managedFixups[0];
   assert.ok(reference);
@@ -238,13 +304,22 @@ test("x86-64 links a managed service, collects through its frames and rejects a 
   try {
     const path = join(directory, "counter");
     writeFileSync(path, image.value, { mode: 0o755 });
-    const artifact = nativeArtifact(linuxX86_64Target.name, path);
-    const result = runNativeBatch([{ artifact }], {
-      ...process.env,
-      TINT_NATIVE_RUNNER: runner,
-    })[0];
-    assert.equal(result?.kind, "exited", JSON.stringify(result));
-    assert.equal(result.status, 42, JSON.stringify(result));
+    const stringPath = join(directory, "counter-string");
+    writeFileSync(stringPath, stringLinked.value, { mode: 0o755 });
+    const results = runNativeBatch(
+      [
+        { artifact: nativeArtifact(linuxX86_64Target.name, path) },
+        { artifact: nativeArtifact(linuxX86_64Target.name, stringPath) },
+      ],
+      {
+        ...process.env,
+        TINT_NATIVE_RUNNER: runner,
+      },
+    );
+    for (const result of results) {
+      assert.equal(result?.kind, "exited", JSON.stringify(result));
+      assert.equal(result.status, 42, JSON.stringify(result));
+    }
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

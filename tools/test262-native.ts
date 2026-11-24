@@ -14,7 +14,6 @@ import {
 import { join } from "node:path";
 import { functionStorageFromEnvironment } from "./emission-storage.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
-import { darwinAArch64Target } from "@tint/platform/target";
 import {
   nativeSyntaxVerdictSource,
   nativeSyntaxDependencies,
@@ -35,12 +34,19 @@ import {
 import {
   buildMacOSProgram,
   compileMacOSProgram,
+  compileX64Program,
   linkMacOSProgram,
+  linkX64Program,
   type CompiledMacOSProgram,
   type CompiledMacOSProgramResult,
+  type CompiledX64Program,
+  type CompiledX64ProgramResult,
 } from "@tint/compiler/build";
 import { deserialize, serialize } from "node:v8";
-import type { NativeServiceUnit } from "@tint/compiler/native";
+import type {
+  NativeServiceUnit,
+  X64NativeServiceUnit,
+} from "@tint/compiler/native";
 import {
   createScriptUnitCompiler,
   nativeSyntaxKey,
@@ -87,7 +93,9 @@ const objectModule = "packages/js-runtime/src/objects/index.ts";
 const clockModule = "packages/native-runtime/src/intrinsics/clock.ts";
 const randomModule = "packages/native-runtime/src/intrinsics/random.ts";
 const globalModule = "packages/js-runtime/src/environments/global/index.ts";
-const nativeFSModule = "packages/platform/src/darwin/fs.ts";
+export const nativeTestTarget = nativeFixtureTarget();
+const nativeFSModule =
+  "packages/platform/src/" + nativeTestTarget.os + "/fs.ts";
 const fileServiceModule = "packages/platform/src/files/service.ts";
 const timeZoneModule = "packages/foundation/src/chrono/tzif/index.ts";
 const timeZoneIdentifiersModule =
@@ -139,11 +147,6 @@ export function nativeAdmissionTimeout(requested: string | undefined): number {
  * The copying collector reserves half the heap as evacuation space; large
  * generated Unicode inputs cannot fit in the former 4 MiB managed window. */
 export const nativeDebuggerEntitlement = "com.apple.security.get-task-allow";
-// Preserve the library's default Mach-O build profile on arm64 hosts.
-export const nativeTestTarget =
-  process.env.TINT_NATIVE_TARGET === undefined && process.arch === "arm64"
-    ? darwinAArch64Target
-    : nativeFixtureTarget();
 export const nativeTestResources = Object.freeze({
   collector: nativeTestTarget.arch === "x86_64" ? "generational" : "copying",
   // The complete module/agent host plus the decorator runtime surface exceeds
@@ -2681,43 +2684,82 @@ export function createNativeBatchBuilder(
     return { ok: true, bytes: built.value };
   };
 }
+/** The entry key a unit host cache records for a host, and its file. */
+export function unitHostCacheEntry(
+  cache: NativeUnitHostCache,
+  slotCount: number = nativeUnitSlotCount,
+): { readonly key: string; readonly path: string } {
+  const key = createHash("sha256")
+    .update(JSON.stringify(["test262-unit-host-v1", cache.key, slotCount]))
+    .digest("hex");
+  return { key, path: join(cache.directory, key + ".v8") };
+}
+/** A directory of compiled unit hosts. `key` must cover every input of the
+ * host: frozen toolchain, sources and configuration. With `required`, a
+ * missing or foreign entry fails instead of compiling the host. */
+export interface NativeUnitHostCache {
+  readonly directory: string;
+  readonly key: string;
+  readonly required?: boolean;
+}
+type CompiledUnitHost = CompiledMacOSProgram | CompiledX64Program;
+type CompiledUnitHostResult =
+  CompiledMacOSProgramResult | CompiledX64ProgramResult;
+function isCompiledX64Host(
+  host: CompiledUnitHost | Omit<CompiledMacOSProgram, "allocatorSource">,
+): host is CompiledX64Program {
+  return "arch" in host && host.arch === "x86_64";
+}
 /** Compile a unit host, or restore one compiled for the same cache key. An
  * entry records its key, so a damaged or foreign file is recompiled. */
 function cachedUnitHost(
-  cache: { readonly directory: string; readonly key: string } | undefined,
+  cache: NativeUnitHostCache | undefined,
   slotCount: number,
-  compile: () => CompiledMacOSProgramResult,
+  compile: () => CompiledUnitHostResult,
   allocatorSource: SourceModule | undefined,
-): CompiledMacOSProgramResult {
+): CompiledUnitHostResult {
   if (cache === undefined) return compile();
-  const key = createHash("sha256")
-      .update(JSON.stringify(["test262-unit-host-v1", cache.key, slotCount]))
-      .digest("hex"),
-    path = join(cache.directory, key + ".v8");
+  const { key, path } = unitHostCacheEntry(cache, slotCount);
   if (existsSync(path)) {
     try {
       const entry = deserialize(readFileSync(path)) as {
         readonly key: string;
-        readonly compiled: Omit<CompiledMacOSProgram, "allocatorSource">;
+        readonly compiled:
+          Omit<CompiledMacOSProgram, "allocatorSource"> | CompiledX64Program;
       };
-      if (entry.key === key && allocatorSource !== undefined)
-        return { ok: true, value: { ...entry.compiled, allocatorSource } };
+      if (entry.key === key) {
+        if (isCompiledX64Host(entry.compiled))
+          return { ok: true, value: entry.compiled };
+        if (allocatorSource !== undefined)
+          return { ok: true, value: { ...entry.compiled, allocatorSource } };
+      }
     } catch {
       // Recompile below; the rename replaces the unreadable entry.
     }
   }
+  if (cache.required)
+    throw Error("no precompiled unit host for this toolchain at " + path);
   const compiled = compile();
   if (compiled.ok) {
     mkdirSync(cache.directory, { recursive: true });
     const staging = path + "." + process.pid + ".tmp";
     // The allocator source is not cloneable (it may hold position
     // callbacks); a restore takes it from the same frozen sources.
-    const { allocatorSource: _source, ...stored } = compiled.value;
+    let stored:
+      Omit<CompiledMacOSProgram, "allocatorSource"> | CompiledX64Program;
+    if (isCompiledX64Host(compiled.value)) {
+      stored = compiled.value;
+    } else {
+      const { allocatorSource: _source, ...rest } = compiled.value;
+      stored = rest;
+    }
     writeFileSync(staging, serialize({ key, compiled: stored }));
     renameSync(staging, path);
   }
   return compiled;
 }
+/** Script unit slots in a linked-unit host. */
+export const nativeUnitSlotCount = 1024;
 /** Whether a case runs as linked Script units (see
  * createNativeUnitBatchBuilder); module and Script-root cases need their
  * whole-program host. */
@@ -2747,12 +2789,11 @@ export function createNativeUnitBatchBuilder(
   serviceImage?: import("./native-service-image.ts").NativeServiceImagePlan,
   options: {
     readonly slotCount?: number;
-    /** Reuse the compiled host across runner processes. The key must cover
-     * every input of the host: frozen toolchain, sources and configuration. */
-    readonly hostCache?: { readonly directory: string; readonly key: string };
+    /** Reuse the compiled host across runner processes. */
+    readonly hostCache?: NativeUnitHostCache;
   } = {},
 ) {
-  const slotCount = options.slotCount ?? 1024;
+  const slotCount = options.slotCount ?? nativeUnitSlotCount;
   const config = nativeBatchConfiguration(snapshot, moduleExecution);
   if (config.scriptEvaluation === undefined)
     throw Error("linked Script units require the Script evaluation host");
@@ -2774,7 +2815,7 @@ export function createNativeUnitBatchBuilder(
     }));
   let compiledHost:
     | {
-        readonly compiled: CompiledMacOSProgram;
+        readonly compiled: CompiledUnitHost;
         readonly request: Parameters<typeof linkMacOSProgram>[1];
         readonly compile: ReturnType<typeof createScriptUnitCompiler>;
         readonly surface: { readonly name: string; readonly digest: string };
@@ -2820,11 +2861,14 @@ export function createNativeUnitBatchBuilder(
         },
       ],
     };
+    const x64 = nativeTestTarget.arch === "x86_64";
     const compiled = cachedUnitHost(
       options.hostCache,
       slotCount,
-      () => compileMacOSProgram(request),
-      request.moduleLoader?.load([request.allocatorModule])[0],
+      () => (x64 ? compileX64Program(request) : compileMacOSProgram(request)),
+      x64
+        ? undefined
+        : request.moduleLoader?.load([request.allocatorModule])[0],
     );
     if (!compiled.ok)
       throw Error("unit host compilation: " + JSON.stringify(compiled.error));
@@ -2833,14 +2877,23 @@ export function createNativeUnitBatchBuilder(
     );
     if (published === undefined)
       throw Error("unit host does not publish the Script surface");
-    const native = compiled.value.program.native;
+    const policy = isCompiledX64Host(compiled.value)
+      ? {
+          linearAllocation: true,
+          generationalBarriers: true,
+          arch: "x86_64" as const,
+        }
+      : {
+          linearAllocation:
+            compiled.value.program.native.linearAllocation === true,
+          generationalBarriers:
+            compiled.value.program.native.generationalBarriers === true,
+          arch: "aarch64" as const,
+        };
     return {
       compiled: compiled.value,
       request,
-      compile: createScriptUnitCompiler(published.directory, snapshot, {
-        linearAllocation: native.linearAllocation === true,
-        generationalBarriers: native.generationalBarriers === true,
-      }),
+      compile: createScriptUnitCompiler(published.directory, snapshot, policy),
       surface: { name: published.name, digest: published.digest },
     };
   }
@@ -2867,8 +2920,8 @@ export function createNativeUnitBatchBuilder(
     cases: readonly NativeTestCase<NativeModuleInput>[],
   ): NativeBatchBuild {
     const host = preparedHost();
-    const units: NativeServiceUnit[] = [],
-      indexes = new Map<NativeServiceUnit, number>(),
+    const units: (NativeServiceUnit | X64NativeServiceUnit)[] = [],
+      indexes = new Map<NativeServiceUnit | X64NativeServiceUnit, number>(),
       selectors: string[] = [];
     for (const item of cases) {
       if (!nativeUnitEligible(item))
@@ -2923,7 +2976,7 @@ export function createNativeUnitBatchBuilder(
     const first = units[0];
     if (first === undefined) throw Error("empty linked-unit batch");
     // The host's own services stay bound; the batch fills its unit slots.
-    const built = linkMacOSProgram(host.compiled, {
+    const linkRequest = {
       ...host.request,
       nativeServices: [
         ...(host.request.nativeServices ?? []),
@@ -2932,7 +2985,10 @@ export function createNativeUnitBatchBuilder(
           bind: slot.bind,
         })),
       ],
-    });
+    };
+    const built = isCompiledX64Host(host.compiled)
+      ? linkX64Program(host.compiled, linkRequest)
+      : linkMacOSProgram(host.compiled, linkRequest);
     if (!built.ok) return nativeCompilationFailure(built.error);
     return { ok: true, bytes: built.value, selectors };
   }

@@ -37,6 +37,7 @@ import {
   verifyGeneratedZlibAllocatorFixture,
   verifySampleFixture,
 } from "./c-bindgen-fixtures.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 
 const host = hostTarget();
 const clang =
@@ -1145,9 +1146,17 @@ test(
 test("a registered allocator runs inside the generated zlib binding's may-callback calls (generational, LLDB)", () => {
   verifyGeneratedZlibAllocatorFixture();
 });
-test("a registered allocator runs inside the generated zlib binding's may-callback calls (copying, LLDB)", () => {
-  verifyGeneratedZlibAllocatorFixture("initializeCopyingRuntime");
-});
+test(
+  "a registered allocator runs inside the generated zlib binding's may-callback calls (copying, LLDB)",
+  {
+    skip:
+      nativeFixtureTarget().arch === "x86_64" &&
+      "linux-x86_64 does not implement initializeCopyingRuntime",
+  },
+  () => {
+    verifyGeneratedZlibAllocatorFixture("initializeCopyingRuntime");
+  },
+);
 
 test("general code imports a generated binding where its exports cross a checked boundary (LLDB)", () => {
   const { general, blocked } = verifyGeneralBindingImport();

@@ -58,6 +58,7 @@ import {
   bits,
   gpr,
   imageRelocations,
+  x64ModulePatcher,
   imm,
   label,
   managedBaseOffset,
@@ -822,6 +823,10 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
   const relocations = imageRelocations(external, imports);
   const appFixups = native.addressFixups.length;
   const runtimeFixups = runtimeCode?.addressFixups.length ?? 0;
+  const nativePatch = x64ModulePatcher(native);
+  const runtimePatch =
+    runtimeCode === undefined ? undefined : x64ModulePatcher(runtimeCode);
+  const relocPatch = x64ModulePatcher(relocations);
   const patchAddress: ImageAddressPatcher = (
     bytes,
     index,
@@ -830,16 +835,10 @@ export function appendHostedEntry(request: HostedEntry): HostedImage {
     address,
   ) => {
     if (index < appFixups)
-      return native.patchAddress(bytes, index, site, target, address);
-    if (runtimeCode !== undefined && index < appFixups + runtimeFixups)
-      return runtimeCode.patchAddress(
-        bytes,
-        index - appFixups,
-        site,
-        target,
-        address,
-      );
-    return relocations.patchAddress(
+      return nativePatch(bytes, index, site, target, address);
+    if (runtimePatch !== undefined && index < appFixups + runtimeFixups)
+      return runtimePatch(bytes, index - appFixups, site, target, address);
+    return relocPatch(
       bytes,
       index - appFixups - runtimeFixups,
       site,
