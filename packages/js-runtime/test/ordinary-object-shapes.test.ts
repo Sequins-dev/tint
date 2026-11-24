@@ -417,7 +417,7 @@ test("an inherited entry holds a deeper prototype until any prototype changes st
   assert.equal(site.inheritedEpoch, propertyEpoch.value);
 });
 
-test("a site keeps one inline entry per receiver shape and rotates once full", () => {
+test("a site keeps one inline entry per receiver shape until its entries are full", () => {
   const prototype = object(undefined);
   // Five receiver shapes holding "x" at different slots.
   const receivers = [
@@ -437,15 +437,19 @@ test("a site keeps one inline entry per receiver shape and rotates once full", (
   }
   assert.equal(inlineEntrySlot(site, false, 0), inlineSlotBits(10));
   assert.equal(inlineEntrySlot(site, false, 3), inlineSlotBits(14));
-  // A repeated shape refreshes its own entry.
-  lookupCachedScriptProperty(receivers[1]!, "x", site, false, stubs, 10);
-  assert.equal(inlineEntryShape(site, false, 1), shape(receivers[1]!));
-  // A fifth shape replaces the oldest entry, then the next.
-  lookupCachedScriptProperty(receivers[4]!, "x", site, false, stubs, 10);
-  assert.equal(inlineEntryShape(site, false, 0), shape(receivers[4]!));
-  assert.equal(inlineEntrySlot(site, false, 0), inlineSlotBits(12));
-  lookupCachedScriptProperty(receivers[0]!, "x", site, false, stubs, 10);
-  assert.equal(inlineEntryShape(site, false, 1), shape(receivers[0]!));
+  // A fifth shape makes the site megamorphic: the lookup still finds it,
+  // and the full entries stay as they are (rotating them through a cycle
+  // of five shapes would miss on every read).
+  assert.equal(
+    lookupCachedScriptProperty(receivers[4]!, "x", site, false, stubs, 10),
+    receivers[4],
+  );
+  assert.equal(site.megamorphic, true);
+  for (let index = 0; index < propertyCacheEntries; index++)
+    assert.equal(
+      inlineEntryShape(site, false, index),
+      shape(receivers[index]!),
+    );
 });
 
 test("inherited entries share an epoch and clear when a newer one finds an entry", () => {

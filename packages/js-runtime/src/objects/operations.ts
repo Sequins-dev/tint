@@ -404,7 +404,7 @@ export interface PropertyEpoch {
 }
 export const propertyEpoch: PropertyEpoch = { value: 0 };
 /** Inline entries per site for reads (IR property-load `entries`): own and
- * inherited entries each, newest-first placement, oldest replaced. */
+ * inherited entries each, filled in order and then kept. */
 export const propertyCacheEntries = 4;
 export interface ScriptPropertyCache {
   /** The own entries as generated code reads them (IR property-load), each
@@ -455,9 +455,6 @@ export interface ScriptPropertyCache {
   readonly nameHash: number;
   used: number;
   megamorphic: boolean;
-  /** The inline own and inherited entry each replaces next once full. */
-  ownNext: number;
-  inheritedNext: number;
 }
 function propertyCacheEntry(): ScriptPropertyCacheEntry {
   return {
@@ -512,8 +509,6 @@ export function createScriptPropertyCache(
     nameHash: hashString(name),
     used: 0,
     megamorphic: false,
-    ownNext: 0,
-    inheritedNext: 0,
   };
 }
 export interface ScriptPropertyStubCache {
@@ -1867,7 +1862,9 @@ function setInheritedEntry(
   throw "PROPERTY_CACHE_ENTRY_INVARIANT";
 }
 /** The inline entry to (re)fill for a receiver shape: its own entry, else
- * the first empty one, else the next in rotation. */
+ * the first empty one, else -1. Full entries stay: a site with more shapes
+ * is megamorphic, and rotating entries through a cycle of more shapes than
+ * they hold would miss on every read. */
 function inlineEntryIndex(
   cache: ScriptPropertyCache,
   inherited: boolean,
@@ -1879,18 +1876,15 @@ function inlineEntryIndex(
     if (current === shape) return index;
     if (empty < 0 && current === unusedPropertyShape) empty = index;
   }
-  if (empty >= 0) return empty;
-  const next = inherited ? cache.inheritedNext : cache.ownNext;
-  if (inherited) cache.inheritedNext = (next + 1) % propertyCacheEntries;
-  else cache.ownNext = (next + 1) % propertyCacheEntries;
-  return next;
+  return empty;
 }
 function addOwnEntry(
   cache: ScriptPropertyCache,
   shape: ScriptShape,
   slot: number,
 ): void {
-  setOwnEntry(cache, inlineEntryIndex(cache, false, shape), shape, slot);
+  const index = inlineEntryIndex(cache, false, shape);
+  if (index >= 0) setOwnEntry(cache, index, shape, slot);
 }
 /** Inherited entries share one epoch: entries found under an older one are
  * stale, so they are cleared before a newer entry is added. */
@@ -1904,16 +1898,10 @@ function addInheritedEntry(
   if (cache.inheritedEpoch !== epoch) {
     for (let index = 0; index < propertyCacheEntries; index++)
       setInheritedEntry(cache, index, unusedPropertyShape, 0, undefined);
-    cache.inheritedNext = 0;
     cache.inheritedEpoch = epoch;
   }
-  setInheritedEntry(
-    cache,
-    inlineEntryIndex(cache, true, shape),
-    shape,
-    slot,
-    holder,
-  );
+  const index = inlineEntryIndex(cache, true, shape);
+  if (index >= 0) setInheritedEntry(cache, index, shape, slot, holder);
 }
 /** Make a found property an inline entry: own when the object holds it,
  * else inherited. Each value is a two-word general slot; values past the
