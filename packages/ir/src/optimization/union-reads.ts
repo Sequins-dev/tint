@@ -86,15 +86,29 @@ export function reuseUnionReads(
     const term = block.terminator;
     if (term.kind !== "record" || term.operation !== "read") continue;
     if (member[block.id] !== 0 || block.exception !== undefined) continue;
-    // The object comes from a load of its slot in this block, which stores
-    // no slot but copies of it afterwards.
+    // The object comes from a load of its slot in this block (optionally
+    // unwrapped by reference-value), which stores no slot but copies of it
+    // afterwards.
+    let targetObject = term.object;
+    for (let i = block.instructions.length - 1; i >= 0; i--) {
+      const op = block.instructions[i];
+      if (
+        op !== undefined &&
+        op.kind === "reference-value" &&
+        op.id === targetObject
+      ) {
+        targetObject = op.value;
+        break;
+      }
+    }
     let object = -1;
     const copies: number[] = [];
     for (const op of block.instructions) {
       if (op === undefined) throw "union read instruction invariant";
-      if (op.kind === "load" && op.id === term.object) object = op.slot;
+      if (op.kind === "load" && op.id === targetObject) object = op.slot;
       else if (op.kind === "store") {
-        if (op.value === term.object) copies.push(op.slot);
+        if (op.value === term.object || op.value === targetObject)
+          copies.push(op.slot);
         else if (op.slot === object) object = -2;
       }
     }
@@ -106,15 +120,21 @@ export function reuseUnionReads(
     while (next !== undefined && member[next.id] === 0) {
       if (++visited > budget) return undefined;
       const t = next.terminator,
-        first = next.instructions[0];
+        first = next.instructions[0],
+        second = next.instructions[1];
+      if (first === undefined || first.kind !== "load" || t.kind !== "record")
+        break;
+      const unwrap =
+        next.instructions.length === 2 &&
+        second !== undefined &&
+        second.kind === "reference-value" &&
+        second.value === first.id &&
+        t.object === second.id;
       if (
-        next.instructions.length !== 1 ||
-        first === undefined ||
-        first.kind !== "load" ||
+        (!unwrap &&
+          (next.instructions.length !== 1 || t.object !== first.id)) ||
         (first.slot !== object && !copies.includes(first.slot)) ||
-        t.kind !== "record" ||
         t.operation !== "read" ||
-        t.object !== first.id ||
         t.slot !== term.slot ||
         t.consequent !== term.consequent ||
         next.exception !== undefined ||

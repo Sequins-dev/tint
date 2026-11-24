@@ -10,6 +10,10 @@ import {
   instructionResult,
   naturalLoops,
   blockSuccessors,
+  recordReadsKept,
+  retainDebugValues,
+  visitInstructionOperands,
+  visitTerminatorOperands,
   type Block,
   type Dominators,
   type FunctionIR,
@@ -810,7 +814,9 @@ export function cacheListVectors(
         },
       });
     }
-    // Ahead of each loop header, fill its caches.
+    // Ahead of each loop header, fill its caches, and hoist a loop-invariant
+    // header length read (+ uint32 conversion) when the header is never written
+    // in the loop.
     for (const [loop, vectors] of caches) {
       const entry = preheader(loop);
       if (entry === undefined) throw "list vector preheader invariant";
@@ -824,17 +830,284 @@ export function cacheListVectors(
       refresh(lists, instructions);
       replaced.set(entry.id, { ...original, instructions });
     }
-    const blocks: Block[] = [];
+    const baseBlocks: Block[] = [];
     for (const block of fn.blocks) {
       if (block === undefined) throw "list vector block invariant";
-      blocks.push(replaced.get(block.id) ?? block);
+      baseBlocks.push(replaced.get(block.id) ?? block);
     }
     for (const block of added) {
       if (block === undefined) throw "list vector element invariant";
-      if (block.id !== blocks.length) throw "list vector block id invariant";
-      blocks.push(block);
+      if (block.id !== baseBlocks.length)
+        throw "list vector block id invariant";
+      baseBlocks.push(block);
     }
-    return { fn: { ...fn, slots, blocks }, visited: work, rewritten: count };
+    let currentFn: FunctionIR = { ...fn, slots, blocks: baseBlocks };
+    // Try hoisting each unwritten cached list's header length read from the
+    // loop header into its preheader, keeping only rewrites that preserve
+    // proven record reads.
+    for (const [loop, vectors] of caches) {
+      const entry = preheader(loop);
+      if (entry === undefined) continue;
+      const entryBlock = currentFn.blocks[entry.id],
+        headerBlock = currentFn.blocks[loop.header];
+      if (
+        entryBlock === undefined ||
+        headerBlock === undefined ||
+        headerBlock.exception !== undefined
+      )
+        continue;
+      const entryTerm = entryBlock.terminator;
+      if (entryTerm.kind !== "jump" || entryTerm.target !== loop.header)
+        continue;
+      const term = headerBlock.terminator;
+      if (
+        term.kind !== "record" ||
+        term.operation !== "read" ||
+        term.field !== 0 ||
+        term.consequent === loop.header ||
+        !loop.body.has(term.consequent) ||
+        loop.body.has(term.alternate)
+      )
+        continue;
+      if (currentFn.slots[term.slot] !== "number") continue;
+      // Header block must contain only pure loads / reference-value unwraps.
+      let pureHeader = true;
+      for (const op of headerBlock.instructions) {
+        if (
+          op === undefined ||
+          (op.kind !== "load" && op.kind !== "reference-value")
+        ) {
+          pureHeader = false;
+          break;
+        }
+      }
+      if (!pureHeader) continue;
+      // Match term.object against a cached list in this loop.
+      let source: Instruction | undefined;
+      for (const op of headerBlock.instructions)
+        if (op !== undefined && instructionResult(op) === term.object)
+          source = op;
+      let optional = false;
+      if (source !== undefined && source.kind === "reference-value") {
+        const inner = source.value;
+        source = undefined;
+        for (const op of headerBlock.instructions)
+          if (op !== undefined && instructionResult(op) === inner) source = op;
+        optional = true;
+      }
+      if (source === undefined || source.kind !== "load") continue;
+      if (headerBlock.instructions.length !== (optional ? 2 : 1)) continue;
+      const cache = vectors.get(source.slot);
+      if (
+        cache === undefined ||
+        cache.optional !== optional ||
+        cache.header !== term.record
+      )
+        continue;
+      // Header record must have zero write sites in the loop.
+      const headerIndex = headers.get(cache.header) ?? -1;
+      let headerWritten = false;
+      for (const site of sites(loop) ?? []) {
+        if (site === undefined) throw "list vector site invariant";
+        if (site.headers === undefined || site.headers.has(headerIndex)) {
+          headerWritten = true;
+          break;
+        }
+      }
+      if (headerWritten) continue;
+      // Length slot must not be written anywhere else in the loop.
+      let lenWrittenElsewhere = false;
+      for (const id of loop.body) {
+        const b = currentFn.blocks[id];
+        if (b === undefined) {
+          lenWrittenElsewhere = true;
+          break;
+        }
+        if (b.exception !== undefined && b.exception.slot === term.slot) {
+          lenWrittenElsewhere = true;
+          break;
+        }
+        for (const op of b.instructions) {
+          if (
+            op !== undefined &&
+            op.kind === "store" &&
+            op.slot === term.slot
+          ) {
+            lenWrittenElsewhere = true;
+            break;
+          }
+        }
+        if (id !== loop.header) {
+          const bt = b.terminator;
+          if (
+            (bt.kind === "record" ||
+              bt.kind === "record-cell" ||
+              bt.kind === "cell") &&
+            bt.operation === "read" &&
+            bt.slot === term.slot
+          )
+            lenWrittenElsewhere = true;
+        }
+        if (lenWrittenElsewhere) break;
+      }
+      if (lenWrittenElsewhere) continue;
+      // Build candidate rewrite: move the header's length read into entryBlock,
+      // followed by a fresh jump preheader (so counted-loops still sees a plain
+      // jump preheader). Also hoist `unary:uint32(load lenSlot)` from C into
+      // the fresh preheader as a dedicated word-typed bound slot.
+      let candNextValue = nextValue;
+      const entryInsts = entryBlock.instructions.slice();
+      const loadedObj = candNextValue++;
+      entryInsts.push({
+        kind: "load",
+        id: loadedObj,
+        slot: cache.list,
+        start: 0,
+        end: 0,
+      });
+      let recordObj = loadedObj;
+      if (optional) {
+        recordObj = candNextValue++;
+        entryInsts.push({
+          kind: "reference-value",
+          id: recordObj,
+          value: loadedObj,
+          start: 0,
+          end: 0,
+        });
+      }
+      const freshId = currentFn.blocks.length,
+        freshInsts: Instruction[] = [],
+        candSlots = currentFn.slots.slice(),
+        candBlocks = currentFn.blocks.slice();
+      // Check if C (`term.consequent`) converts `load lenSlot` via `unary:uint32`.
+      // Only hoist the bound into a dedicated preheader slot when C is entered
+      // solely from the loop header (so the preheader dominates C).
+      let cSinglePred = true;
+      for (const b of currentFn.blocks) {
+        if (b === undefined) {
+          cSinglePred = false;
+          break;
+        }
+        if (
+          b.exception !== undefined &&
+          b.exception.target === term.consequent
+        ) {
+          cSinglePred = false;
+          break;
+        }
+        if (b.id === loop.header) continue;
+        for (const succ of blockSuccessors(b)) {
+          if (succ === term.consequent) {
+            cSinglePred = false;
+            break;
+          }
+        }
+        if (!cSinglePred) break;
+      }
+      const cBlock = cSinglePred ? candBlocks[term.consequent] : undefined;
+      if (cBlock !== undefined) {
+        const lenLoads = new Set<number>();
+        for (const op of cBlock.instructions)
+          if (op !== undefined && op.kind === "load" && op.slot === term.slot)
+            lenLoads.add(op.id);
+        let uint32Index = -1;
+        for (let i = 0; i < cBlock.instructions.length; i++) {
+          const op = cBlock.instructions[i];
+          if (
+            op !== undefined &&
+            op.kind === "unary" &&
+            op.operator === "uint32" &&
+            lenLoads.has(op.operand)
+          ) {
+            uint32Index = i;
+            break;
+          }
+        }
+        if (uint32Index >= 0) {
+          const uOp = cBlock.instructions[uint32Index];
+          if (uOp !== undefined && uOp.kind === "unary") {
+            const uSlot = candSlots.length;
+            candSlots.push("number");
+            const vLen = candNextValue++,
+              vU = candNextValue++;
+            freshInsts.push(
+              { kind: "load", id: vLen, slot: term.slot, start: 0, end: 0 },
+              {
+                kind: "unary",
+                id: vU,
+                operator: "uint32",
+                operand: vLen,
+                start: 0,
+                end: 0,
+              },
+              { kind: "store", slot: uSlot, value: vU, start: 0, end: 0 },
+            );
+            const cInsts = cBlock.instructions.slice();
+            cInsts[uint32Index] = {
+              kind: "load",
+              id: uOp.id,
+              slot: uSlot,
+              start: 0,
+              end: 0,
+            };
+            // Drop the now-unused `load lenSlot` if nothing else in C uses it.
+            let operandUsed = false;
+            for (const op of cInsts)
+              if (op !== undefined)
+                visitInstructionOperands(op, (id) => {
+                  if (id === uOp.operand) operandUsed = true;
+                });
+            visitTerminatorOperands(cBlock.terminator, (id) => {
+              if (id === uOp.operand) operandUsed = true;
+            });
+            const finalCInsts = operandUsed
+              ? cInsts
+              : cInsts.filter(
+                  (op) =>
+                    op !== undefined && instructionResult(op) !== uOp.operand,
+                );
+            candBlocks[term.consequent] = {
+              ...cBlock,
+              instructions: finalCInsts,
+            };
+          }
+        }
+      }
+      candBlocks[entry.id] = {
+        ...entryBlock,
+        instructions: entryInsts,
+        terminator: {
+          ...term,
+          object: recordObj,
+          consequent: freshId,
+        },
+      };
+      candBlocks[loop.header] = {
+        ...headerBlock,
+        instructions: [],
+        terminator: { kind: "jump", target: term.consequent, start: 0, end: 0 },
+      };
+      candBlocks.push({
+        id: freshId,
+        instructions: freshInsts,
+        terminator: { kind: "jump", target: loop.header, start: 0, end: 0 },
+      });
+      const debug =
+        currentFn.debug === undefined
+          ? undefined
+          : retainDebugValues(currentFn, candBlocks);
+      const candidate: FunctionIR =
+        debug === undefined
+          ? { ...currentFn, slots: candSlots, blocks: candBlocks }
+          : { ...currentFn, slots: candSlots, blocks: candBlocks, debug };
+      if (recordReadsKept(currentFn, candidate)) {
+        currentFn = candidate;
+        nextValue = candNextValue;
+        count++;
+      }
+    }
+    return { fn: currentFn, visited: work, rewritten: count };
   }
   return { module: { ...module, functions }, visited, rewritten };
 }

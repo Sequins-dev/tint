@@ -444,3 +444,165 @@ test("an indirect call that may write the header on every iteration keeps ordina
   const result = cacheListVectors({ functions }, Number.MAX_SAFE_INTEGER, true);
   assert.equal(result?.rewritten, 0);
 });
+
+test("loop-invariant header length read and uint32 conversion hoist when header is unwritten", () => {
+  // Loop header reads field 0 (length) of list header 0, block 2 converts via
+  // uint32 and tests i < length, block 3 reads list[i] and increments i.
+  const makeLoop = (id: number, withWrite: boolean): FunctionIR => ({
+    id,
+    name: "lenLoop" + String(id),
+    exported: true,
+    parameters: [0],
+    slots: ["reference", "number", "number"], // 0: list, 1: i, 2: len
+    returnType: "void",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 0, ...s },
+          { kind: "store", slot: 1, value: 0, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "load", id: 1, slot: 0, ...s }],
+        terminator: {
+          kind: "record",
+          object: 1,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 2,
+          consequent: 2,
+          alternate: 5,
+          ...s,
+        },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 2, slot: 1, ...s },
+          { kind: "load", id: 3, slot: 2, ...s },
+          { kind: "unary", id: 4, operator: "uint32", operand: 3, ...s },
+          { kind: "binary", id: 5, operator: "<", left: 2, right: 4, ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 5,
+          consequent: 3,
+          alternate: 4,
+          ...s,
+        },
+      },
+      {
+        id: 3,
+        instructions: [
+          { kind: "load", id: 6, slot: 0, ...s },
+          { kind: "load", id: 7, slot: 1, ...s },
+          { kind: "call", id: 8, target: 0, arguments: [6, 7], ...s },
+          ...(withWrite
+            ? [
+                { kind: "constant" as const, id: 12, value: 3, ...s },
+                {
+                  kind: "binary" as const,
+                  id: 13,
+                  operator: "===" as const,
+                  left: 7,
+                  right: 12,
+                  ...s,
+                },
+              ]
+            : [
+                { kind: "constant" as const, id: 9, value: 1, ...s },
+                {
+                  kind: "binary" as const,
+                  id: 10,
+                  operator: "+" as const,
+                  left: 7,
+                  right: 9,
+                  ...s,
+                },
+                { kind: "store" as const, slot: 1, value: 10, ...s },
+              ]),
+        ],
+        terminator: withWrite
+          ? { kind: "branch", condition: 13, consequent: 6, alternate: 7, ...s }
+          : { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 4,
+        instructions: [],
+        terminator: { kind: "return", value: undefined, ...s },
+      },
+      { id: 5, instructions: [], terminator: { kind: "trap", ...s } },
+      ...(withWrite
+        ? [
+            {
+              id: 6,
+              instructions: [
+                { kind: "load" as const, id: 14, slot: 0, ...s },
+                {
+                  kind: "call" as const,
+                  id: undefined,
+                  target: 1,
+                  arguments: [14],
+                  ...s,
+                },
+              ],
+              terminator: { kind: "jump" as const, target: 7, ...s },
+            },
+            {
+              id: 7,
+              instructions: [
+                { kind: "load" as const, id: 15, slot: 1, ...s },
+                { kind: "constant" as const, id: 16, value: 1, ...s },
+                {
+                  kind: "binary" as const,
+                  id: 17,
+                  operator: "+" as const,
+                  left: 15,
+                  right: 16,
+                  ...s,
+                },
+                { kind: "store" as const, slot: 1, value: 17, ...s },
+              ],
+              terminator: { kind: "jump" as const, target: 1, ...s },
+            },
+          ]
+        : []),
+    ],
+  });
+  const records = [
+    {
+      byteLength: 24,
+      fields: [
+        { offset: 8, type: "number" as const, mutable: true },
+        { offset: 16, type: "optional-reference" as const, mutable: true },
+      ],
+    },
+  ];
+  const ro = cacheListVectors(
+    { records, functions: [reader(0, 0), writer(1, 0), makeLoop(2, false)] },
+    Number.MAX_SAFE_INTEGER,
+  );
+  assert.ok(ro !== undefined);
+  const roFn = ro.module.functions[2]!;
+  // Header block 1 no longer reads field 0; preheader 0 does, and block 2 reads
+  // the hoisted uint32 slot instead of running unary:uint32 every iteration.
+  assert.equal(roFn.blocks[1]?.terminator.kind, "jump");
+  assert.equal(roFn.blocks[0]?.terminator.kind, "record");
+  assert.ok(
+    !roFn.blocks[2]?.instructions.some(
+      (op) => op.kind === "unary" && op.operator === "uint32",
+    ),
+  );
+  // When the loop may write header 0 on some path, length stays in header 1.
+  const rw = cacheListVectors(
+    { records, functions: [reader(0, 0), writer(1, 0), makeLoop(2, true)] },
+    Number.MAX_SAFE_INTEGER,
+  );
+  assert.ok(rw !== undefined);
+  assert.equal(rw.module.functions[2]?.blocks[1]?.terminator.kind, "record");
+});
