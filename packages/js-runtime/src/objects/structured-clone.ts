@@ -64,6 +64,7 @@ export function throwWorkerCloneError(
 }
 
 function unsupportedObject(object: ScriptObject): boolean {
+  const rare = object.internalRareSlots;
   return (
     object.internalCall !== undefined ||
     object.internalConstruct !== undefined ||
@@ -100,7 +101,7 @@ function unsupportedObject(object: ScriptObject): boolean {
     exoticSlots(object).internalIntlFormatData !== undefined ||
     exoticSlots(object).internalRelativeTimeData !== undefined ||
     exoticSlots(object).internalNumberFormatData !== undefined ||
-    object.internalArgumentsData ||
+    (rare !== undefined && rare.internalArgumentsData) ||
     exoticSlots(object).internalShadowRealm !== undefined
   );
 }

@@ -22,7 +22,8 @@ export function callObject<Key, Value>(
     const implementation = target.internalCall;
     if (implementation === undefined)
       return { error: "type", value: undefinedValue };
-    const dispatch = target.internalTailDispatch;
+    const rare = target.internalRareSlots;
+    const dispatch = rare === undefined ? undefined : rare.internalTailDispatch;
     if (dispatch !== undefined) {
       const step = dispatch(currentReceiver, currentArguments);
       if (step.kind === "return") return { error: "none", value: step.value };

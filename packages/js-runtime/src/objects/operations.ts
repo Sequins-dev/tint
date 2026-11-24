@@ -87,7 +87,6 @@ export interface OrdinaryObject<Key, Value> {
   internalShape: OrdinaryPropertyShape<Key, Value> | undefined;
   prototype: OrdinaryObject<Key, Value> | undefined;
   extensible: boolean;
-  internalImmutablePrototype: boolean;
   /** Dictionary-mode own properties. In fast mode, allocated lazily only for
    * accessor keys' descriptors (data values live in the shape's slots). */
   properties: Map<Key, Descriptor<Value>> | undefined;
@@ -111,21 +110,12 @@ export interface OrdinaryObject<Key, Value> {
   internalUsedAsPrototype: boolean;
   /** Fast-mode values of the shape's keys from propertySlots on. */
   internalValues: Value[] | undefined;
-  /** Lazy numeric-key view of own descriptor storage. Null is an empty view. */
-  internalIndexedProperties: IndexedPropertyLayout<Value> | null | undefined;
-  internalPropertyContract: PropertyWriteContract<Key, Value> | undefined;
-  internalPrivateElements: PrivateElement<Value>[] | undefined;
   /** Internal [[Call]], never a named/inherited JavaScript property. */
   readonly internalCall: ObjectCall<Value> | undefined;
   internalRegisterCall: ObjectRegisterEntry<Value> | undefined;
-  /** Compiler/runtime-owned call steps. Each step owns and restores its context
-   * before returning a transfer; JavaScript return values never select a step. */
-  internalTailDispatch: ObjectTailDispatch<Key, Value> | undefined;
   internalSourceText: string | undefined;
   readonly internalConstruct: ObjectConstruct<Value> | undefined;
   readonly internalExecutionContext: ObjectExecutionContext<Value> | undefined;
-  /** Presence of [[ParameterMap]], including unmapped arguments objects. */
-  internalArgumentsData: boolean;
   internalArrayData: boolean;
   /** Packed own elements; present only on array exotic objects until a
    * property operation requires ordinary descriptors for their indices. */
@@ -150,11 +140,12 @@ export interface OrdinaryObject<Key, Value> {
         readonly kind: "key" | "value" | "entry";
       }
     | undefined;
-  internalBoundTarget: OrdinaryObject<Key, Value> | undefined;
-  /** Definition-time [[HomeObject]] for super; independent of call receiver. */
-  internalHomeObject: OrdinaryObject<Key, Value> | undefined;
   readonly internalMethods: ObjectInternalMethods<Key, Value> | undefined;
-  readonly internalDataAliases: Map<Key, DataAlias<Value>> | undefined;
+  /** Lazily allocated side record for rarely-present generic ordinary-object
+   * internal slots (bound targets, super homes, tail dispatchers, private
+   * elements, arguments aliases, contracts, immutable prototypes, indexed
+   * dictionary layouts). Undefined on ordinary objects. */
+  internalRareSlots: OrdinaryRareSlots<Key, Value> | undefined;
   /** Lazily allocated side record for rarely-present builtin and exotic
    * internal slots. Undefined on ordinary objects; read via exoticSlots and
    * initialized via ensureExoticSlots. */
@@ -171,6 +162,24 @@ export interface OrdinaryObject<Key, Value> {
   internalValue5: Value | undefined;
   internalValue6: Value | undefined;
   internalValue7: Value | undefined;
+}
+/** Generic internal slots present only on specialized ordinary objects.
+ * Allocated lazily via ensureRareSlots so plain instances stay compact. */
+export interface OrdinaryRareSlots<Key, Value> {
+  internalImmutablePrototype: boolean;
+  /** Presence of [[ParameterMap]], including unmapped arguments objects. */
+  internalArgumentsData: boolean;
+  /** Lazy numeric-key view of own descriptor storage. Null is an empty view. */
+  internalIndexedProperties: IndexedPropertyLayout<Value> | null | undefined;
+  internalPropertyContract: PropertyWriteContract<Key, Value> | undefined;
+  internalPrivateElements: PrivateElement<Value>[] | undefined;
+  /** Compiler/runtime-owned call steps. Each step owns and restores its context
+   * before returning a transfer; JavaScript return values never select a step. */
+  internalTailDispatch: ObjectTailDispatch<Key, Value> | undefined;
+  internalBoundTarget: OrdinaryObject<Key, Value> | undefined;
+  /** Definition-time [[HomeObject]] for super; independent of call receiver. */
+  internalHomeObject: OrdinaryObject<Key, Value> | undefined;
+  internalDataAliases: Map<Key, DataAlias<Value>> | undefined;
 }
 /** Internal slots present only on specific builtin, exotic, error or host
  * objects. Kept out of OrdinaryObject so ordinary instances stay compact. */
@@ -639,6 +648,25 @@ export function ensureExoticSlots(
   object.internalExoticSlots = created;
   return created;
 }
+export function ensureRareSlots<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+): OrdinaryRareSlots<Key, Value> {
+  const existing = object.internalRareSlots;
+  if (existing !== undefined) return existing;
+  const created: OrdinaryRareSlots<Key, Value> = {
+    internalImmutablePrototype: false,
+    internalArgumentsData: false,
+    internalIndexedProperties: undefined,
+    internalPropertyContract: undefined,
+    internalPrivateElements: undefined,
+    internalTailDispatch: undefined,
+    internalBoundTarget: undefined,
+    internalHomeObject: undefined,
+    internalDataAliases: undefined,
+  };
+  object.internalRareSlots = created;
+  return created;
+}
 export function createObject<Key, Value>(
   prototype: OrdinaryObject<Key, Value> | undefined,
 ): OrdinaryObject<Key, Value> {
@@ -649,22 +677,17 @@ export function createObject<Key, Value>(
       prototype === undefined ? undefined : prototype.internalChildShape,
     prototype,
     extensible: true,
-    internalImmutablePrototype: false,
     properties: undefined,
     internalPropertyEpoch: 0,
     internalChildShape: undefined,
     internalDictionary: false,
     internalUsedAsPrototype: false,
     internalValues: undefined,
-    internalIndexedProperties: undefined,
-    internalPropertyContract: undefined,
     internalCall: undefined,
     internalRegisterCall: undefined,
-    internalTailDispatch: undefined,
     internalSourceText: undefined,
     internalConstruct: undefined,
     internalExecutionContext: undefined,
-    internalArgumentsData: false,
     internalArrayData: false,
     internalArrayElements: undefined,
     internalIdentity: 0,
@@ -673,11 +696,8 @@ export function createObject<Key, Value>(
     internalPromiseData: undefined,
     internalAwaitOperation: undefined,
     internalArrayIteratorData: undefined,
-    internalBoundTarget: undefined,
-    internalHomeObject: undefined,
-    internalPrivateElements: undefined,
     internalMethods: undefined,
-    internalDataAliases: undefined,
+    internalRareSlots: undefined,
     internalExoticSlots: undefined,
     internalValue0: undefined,
     internalValue1: undefined,
@@ -694,13 +714,15 @@ export function acceptsPropertyContract<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   allowCallable: boolean = false,
 ): boolean {
+  const rare = object.internalRareSlots;
   return (
     (object.internalMethods === undefined || object.internalArrayData) &&
-    object.internalDataAliases === undefined &&
+    (rare === undefined ||
+      (rare.internalDataAliases === undefined &&
+        !rare.internalArgumentsData)) &&
     (allowCallable ||
       (object.internalCall === undefined &&
-        object.internalConstruct === undefined)) &&
-    !object.internalArgumentsData
+        object.internalConstruct === undefined))
   );
 }
 /** Publish a previously validated contract and invalidate any direct cell. */
@@ -717,7 +739,7 @@ export function attachPropertyContract<Key, Value>(
   // packed elements without invoking any user code or changing their keys.
   const elements = object.internalArrayElements;
   if (elements !== undefined) unpackArrayElements<Key, Value>(object, elements);
-  object.internalPropertyContract = contract;
+  ensureRareSlots<Key, Value>(object).internalPropertyContract = contract;
   noteStructureChange<Key, Value>(object);
 }
 export function createAliasedObject<Key, Value>(
@@ -747,7 +769,8 @@ export function aliasDataProperty<Key, Value>(
   key: Key,
   alias: DataAlias<Value>,
 ): void {
-  const aliases = object.internalDataAliases;
+  const rare = object.internalRareSlots;
+  const aliases = rare === undefined ? undefined : rare.internalDataAliases;
   const properties = object.properties;
   const descriptor = properties === undefined ? undefined : properties.get(key);
   if (
@@ -822,6 +845,20 @@ function allocateObject<Key, Value>(
     internalMethods !== undefined || internalDataAliases !== undefined;
   if (prototype !== undefined && !prototype.internalUsedAsPrototype)
     markPrototype<Key, Value>(prototype);
+  const internalRareSlots: OrdinaryRareSlots<Key, Value> | undefined =
+    internalDataAliases === undefined
+      ? undefined
+      : {
+          internalImmutablePrototype: false,
+          internalArgumentsData: false,
+          internalIndexedProperties: undefined,
+          internalPropertyContract: undefined,
+          internalPrivateElements: undefined,
+          internalTailDispatch: undefined,
+          internalBoundTarget: undefined,
+          internalHomeObject: undefined,
+          internalDataAliases,
+        };
   return {
     // A fast object starts at its prototype's root shape once one exists.
     internalShape:
@@ -830,22 +867,17 @@ function allocateObject<Key, Value>(
         : prototype.internalChildShape,
     prototype,
     extensible: true,
-    internalImmutablePrototype: false,
     properties: dictionary ? new Map<Key, Descriptor<Value>>() : undefined,
     internalPropertyEpoch: 0,
     internalChildShape: undefined,
     internalDictionary: dictionary,
     internalUsedAsPrototype: false,
     internalValues: undefined,
-    internalIndexedProperties: undefined,
-    internalPropertyContract: undefined,
     internalCall,
     internalRegisterCall: undefined,
-    internalTailDispatch: undefined,
     internalSourceText: undefined,
     internalConstruct,
     internalExecutionContext,
-    internalArgumentsData: false,
     internalArrayData: false,
     internalArrayElements: undefined,
     internalIdentity: 0,
@@ -854,11 +886,8 @@ function allocateObject<Key, Value>(
     internalPromiseData: undefined,
     internalAwaitOperation: undefined,
     internalArrayIteratorData: undefined,
-    internalBoundTarget: undefined,
-    internalHomeObject: undefined,
-    internalPrivateElements: undefined,
     internalMethods,
-    internalDataAliases,
+    internalRareSlots,
     internalExoticSlots: undefined,
     internalValue0: undefined,
     internalValue1: undefined,
@@ -902,7 +931,8 @@ export function ordinaryGetOwnProperty<Key, Value>(
   const properties = object.properties;
   const descriptor = properties === undefined ? undefined : properties.get(key);
   if (descriptor === undefined) return undefined;
-  const aliases = object.internalDataAliases;
+  const rare = object.internalRareSlots;
+  const aliases = rare === undefined ? undefined : rare.internalDataAliases;
   const alias = aliases === undefined ? undefined : aliases.get(key);
   if (alias === undefined) return descriptor;
   return {
@@ -1013,7 +1043,8 @@ export function ordinaryDefineOwnProperty<Key, Value>(
     noteStructureChange<Key, Value>(object);
     return "accepted";
   }
-  const aliases = object.internalDataAliases;
+  const rare = object.internalRareSlots;
+  const aliases = rare === undefined ? undefined : rare.internalDataAliases;
   const alias = aliases === undefined ? undefined : aliases.get(key);
   let applied = update;
   if (
@@ -1038,7 +1069,8 @@ export function ordinaryDefineOwnProperty<Key, Value>(
   const descriptor = result.descriptor;
   if (result.status === "accepted") {
     if (descriptor === undefined) throw "ACCEPTED_DESCRIPTOR_INVARIANT";
-    const contract = object.internalPropertyContract;
+    const contract =
+      rare === undefined ? undefined : rare.internalPropertyContract;
     if (contract !== undefined)
       contract.beforeDefine(
         key,
@@ -1108,12 +1140,16 @@ export function createDataProperty<Key, Value>(
   } else if (
     object.internalMethods === undefined &&
     object.internalArrayElements === undefined &&
-    object.internalDataAliases === undefined &&
-    object.internalPropertyContract === undefined &&
     object.extensible
   ) {
+    const rare = object.internalRareSlots;
     const existing = object.properties;
-    if (existing === undefined || !existing.has(key)) {
+    if (
+      (rare === undefined ||
+        (rare.internalDataAliases === undefined &&
+          rare.internalPropertyContract === undefined)) &&
+      (existing === undefined || !existing.has(key))
+    ) {
       const descriptor: Descriptor<Value> = {
         accessor: false,
         value,
@@ -1211,11 +1247,13 @@ export function ordinaryDeleteProperty<Key, Value>(
   const descriptor = properties === undefined ? undefined : properties.get(key);
   if (descriptor === undefined) return true;
   if (!descriptor.configurable) return false;
-  const contract = object.internalPropertyContract;
+  const rare = object.internalRareSlots;
+  const contract =
+    rare === undefined ? undefined : rare.internalPropertyContract;
   if (contract !== undefined && !contract.canDelete(key)) return false;
   if (properties !== undefined) properties.delete(key);
   noteStructureChange<Key, Value>(object);
-  const aliases = object.internalDataAliases;
+  const aliases = rare === undefined ? undefined : rare.internalDataAliases;
   if (aliases !== undefined) aliases.delete(key);
   return true;
 }
@@ -1248,7 +1286,12 @@ export function setPrototype<Key, Value>(
   const method = object.internalMethods?.setPrototype;
   if (method !== undefined) return method(object, prototype);
   if (object.prototype === prototype) return true;
-  if (object.internalImmutablePrototype || !object.extensible) return false;
+  const rare = object.internalRareSlots;
+  if (
+    (rare !== undefined && rare.internalImmutablePrototype) ||
+    !object.extensible
+  )
+    return false;
   let cursor = prototype;
   while (cursor !== undefined) {
     if (cursor === object) return false;
@@ -1281,7 +1324,7 @@ export function setPrototype<Key, Value>(
 export function makePrototypeImmutable<Key, Value>(
   object: OrdinaryObject<Key, Value>,
 ): void {
-  object.internalImmutablePrototype = true;
+  ensureRareSlots<Key, Value>(object).internalImmutablePrototype = true;
 }
 /** Ordinary prototype membership excludes the receiver itself. */
 export function hasPrototype<Key, Value>(
@@ -1345,11 +1388,13 @@ export function refreshPropertyCell<Key, Value>(
   key: Key,
   cache: PropertyCellCache<Key, Value>,
 ): Descriptor<Value> | undefined {
+  const rare = object.internalRareSlots;
   if (
     !object.internalDictionary ||
     object.internalMethods !== undefined ||
-    object.internalDataAliases !== undefined ||
-    object.internalPropertyContract !== undefined
+    (rare !== undefined &&
+      (rare.internalDataAliases !== undefined ||
+        rare.internalPropertyContract !== undefined))
   )
     return undefined;
   const properties = object.properties;
@@ -1442,7 +1487,8 @@ function noteStructureChange<Key, Value>(
   object: OrdinaryObject<Key, Value>,
 ): void {
   object.internalPropertyEpoch++;
-  object.internalIndexedProperties = undefined;
+  const rare = object.internalRareSlots;
+  if (rare !== undefined) rare.internalIndexedProperties = undefined;
   if (object.internalUsedAsPrototype) propertyEpoch.value++;
 }
 /** In-place value slots per object (internalValue0..7). storedValue and
@@ -1807,10 +1853,13 @@ export function indexedPropertyCell<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   index: number,
 ): Descriptor<Value> | undefined {
-  let layout = object.internalIndexedProperties;
+  if (object.properties === undefined) return undefined;
+  const rare = object.internalRareSlots;
+  let layout = rare === undefined ? undefined : rare.internalIndexedProperties;
   if (layout === undefined) {
     layout = buildIndexedPropertyLayout<Key, Value>(object);
-    object.internalIndexedProperties = layout;
+    if (layout !== null || rare !== undefined)
+      ensureRareSlots<Key, Value>(object).internalIndexedProperties = layout;
   }
   if (layout === undefined || layout === null) return undefined;
   const keys = layout.keys,
@@ -2361,12 +2410,13 @@ export function setProperty<Key, Value>(
       // OrdinarySetWithOwnDescriptor on the receiver itself redefines only
       // [[Value]]. An entirely ordinary object without an arguments alias for
       // the key cannot observe that define, so store the result directly.
-      const aliases = object.internalDataAliases;
+      const rare = object.internalRareSlots;
+      const aliases = rare === undefined ? undefined : rare.internalDataAliases;
       if (
         cursor === object &&
         receiver.object === object &&
         object.internalMethods === undefined &&
-        object.internalPropertyContract === undefined &&
+        (rare === undefined || rare.internalPropertyContract === undefined) &&
         (aliases === undefined || !aliases.has(key))
       ) {
         // The stored descriptor is this object's own cell (no alias built a

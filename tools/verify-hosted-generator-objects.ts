@@ -53,7 +53,7 @@ export function run():number {
   if(!setProperty<ScriptPropertyKey,unknown>(fn,"prototype",selected,{value:fn,object:fn},hooks))throw "generator prototype update";
   return (kind:string,value:unknown):GeneratorOutcome<unknown> =>{entered++;return {kind:"return",value:args[0]};};
  },realm,hooks,"source",1,root);
- if(initialized!==0||entered!==0||source.internalConstruct!==undefined||source.internalHomeObject!==root)return 12;
+ if(initialized!==0||entered!==0||source.internalConstruct!==undefined||source.internalRareSlots?.internalHomeObject!==root)return 12;
  const created=callObjectValue(source,yielded,[42],root);
  const instance=viewObjectValue(created.value,root);
  if(created.error!=="none"||instance===undefined||instance.prototype!==selected||initialized!==1||entered!==0)return 13;

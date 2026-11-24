@@ -659,8 +659,9 @@ export function createErrorRealm(
       const name = exoticSlots(fn).internalInitialName;
       if (name !== undefined)
         return "function " + nativeFunctionName(name) + "() { [native code] }";
+      const rare = fn.internalRareSlots;
       if (
-        fn.internalBoundTarget !== undefined ||
+        (rare !== undefined && rare.internalBoundTarget !== undefined) ||
         exoticSlots(fn).internalProxyData !== undefined
       )
         return "function () { [native code] }";

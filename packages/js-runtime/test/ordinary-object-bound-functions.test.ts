@@ -46,7 +46,7 @@ test("bound functions preserve arguments, receiver and construction target seman
     Object.is,
   );
   assert.equal(bound.prototype, prototype);
-  assert.equal(bound.internalBoundTarget, target);
+  assert.equal(bound.internalRareSlots?.internalBoundTarget, target);
   assert.equal(bound.internalCall!(99, [3]), 42);
   assert.deepEqual(seen, [7, 1, 2, 3]);
   assert.equal(bound.internalConstruct!([4], bound), target);

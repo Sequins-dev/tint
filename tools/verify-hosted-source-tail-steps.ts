@@ -2,7 +2,7 @@ import { verifyHostedFixture } from "./hosted-fixture.ts";
 
 verifyHostedFixture(
   `
-import {createObject,createCallableObject,createErrorRealm,callObject,type ObjectHooks,type ScriptPropertyKey} from "objects";
+import {createObject,createCallableObject,createErrorRealm,callObject,ensureRareSlots,type ObjectHooks,type ScriptPropertyKey} from "objects";
 import {runSourceTailCallStep,requestSourceTailCall} from "source-calls";
 import {createSourceExecutionContext} from "contexts";
 export function run():number {
@@ -12,7 +12,7 @@ export function run():number {
  let remaining=100000,calls=0;
  const left=createCallableObject<ScriptPropertyKey,unknown>(undefined,(receiver,args):unknown=>{throw 90;});
  const right=createCallableObject<ScriptPropertyKey,unknown>(undefined,(receiver,args):unknown=>{throw 91;});
- left.internalTailDispatch=(receiver,args)=>runSourceTailCallStep(():unknown=>{
+ ensureRareSlots<ScriptPropertyKey,unknown>(left).internalTailDispatch=(receiver,args)=>runSourceTailCallStep(():unknown=>{
   calls++;
   if(realm.agent.activeContext?.realm!==realm||realm.agent.activeTailCallFrame===undefined)throw 60;
   if(remaining===0)return 42;
@@ -21,7 +21,7 @@ export function run():number {
   if(request.error!=="none")throw 61;
   return request.value;
  },execution,realm);
- right.internalTailDispatch=(receiver,args)=>runSourceTailCallStep(():unknown=>{
+ ensureRareSlots<ScriptPropertyKey,unknown>(right).internalTailDispatch=(receiver,args)=>runSourceTailCallStep(():unknown=>{
   calls++;
   if(realm.agent.activeContext?.realm!==realm||realm.agent.activeTailCallFrame===undefined)throw 62;
   if(remaining===0)return 42;

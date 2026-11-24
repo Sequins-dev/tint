@@ -76,11 +76,12 @@ export function readObjectValuePropertyKey(
         if (typed !== undefined)
           return typedArrayElementAt(typed, key === 0 ? 0 : key);
         const methods = object.internalMethods;
+        const rare = object.internalRareSlots;
         if (
           methods?.get !== undefined ||
           methods?.getOwnProperty !== undefined ||
           methods?.getPrototype !== undefined ||
-          object.internalDataAliases !== undefined
+          (rare !== undefined && rare.internalDataAliases !== undefined)
         )
           return getProperty<ScriptPropertyKey, unknown>(
             object,
@@ -146,9 +147,10 @@ export function writeObjectValuePropertyKey(
         else if (strict) throw createRuntimeError(realm, "type");
         return;
       }
+      const rare = object.internalRareSlots;
       if (
         Number.isSafeInteger(key) &&
-        object.internalPropertyContract === undefined
+        (rare === undefined || rare.internalPropertyContract === undefined)
       ) {
         const elements = object.internalArrayElements;
         if (
@@ -161,7 +163,7 @@ export function writeObjectValuePropertyKey(
         }
         if (
           object.internalMethods === undefined &&
-          object.internalDataAliases === undefined
+          (rare === undefined || rare.internalDataAliases === undefined)
         ) {
           const cell = indexedPropertyCell<ScriptPropertyKey, unknown>(
             object,

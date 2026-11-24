@@ -8,6 +8,7 @@ import {
   cachedScriptPropertyValue,
   defineOwnProperty,
   ensureExoticSlots,
+  ensureRareSlots,
   exoticSlots,
   getOwnProperty,
   getProperty,
@@ -645,4 +646,22 @@ test("exotic internal slots stay unallocated until written", () => {
   assert.equal(other.internalExoticSlots, undefined);
   assert.equal(exoticSlots(other).internalDateValue, undefined);
   assert.equal(exoticSlots(other).internalErrorData, false);
+});
+
+test("rare generic internal slots stay unallocated until written", () => {
+  const plain = object(undefined);
+  const other = object(undefined);
+  assert.equal(plain.internalRareSlots === undefined, true);
+  createDataProperty<ScriptPropertyKey, unknown>(plain, "0", 42, hooks);
+  assert.equal(
+    getProperty<ScriptPropertyKey, unknown>(plain, "0", plain, hooks),
+    42,
+  );
+  assert.equal(plain.internalRareSlots === undefined, true);
+  const rare = ensureRareSlots<ScriptPropertyKey, unknown>(plain);
+  assert.equal(plain.internalRareSlots, rare);
+  assert.equal(ensureRareSlots<ScriptPropertyKey, unknown>(plain), rare);
+  rare.internalImmutablePrototype = true;
+  assert.equal(plain.internalRareSlots?.internalImmutablePrototype, true);
+  assert.equal(other.internalRareSlots, undefined);
 });

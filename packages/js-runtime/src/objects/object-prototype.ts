@@ -47,7 +47,8 @@ function defaultObjectTag(
   realm: ErrorRealm,
 ): string {
   if (isArrayValue(object, realm)) return "Array";
-  if (object.internalArgumentsData) return "Arguments";
+  const rare = object.internalRareSlots;
+  if (rare !== undefined && rare.internalArgumentsData) return "Arguments";
   if (object.internalCall !== undefined) return "Function";
   if (exoticSlots(object).internalErrorData) return "Error";
   if (exoticSlots(object).internalRegExpData !== undefined) return "RegExp";

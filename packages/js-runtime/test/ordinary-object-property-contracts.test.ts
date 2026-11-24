@@ -159,12 +159,15 @@ test("typed shapes conjoin fixed and index rules and reject an accessor at admis
     () => enrollObjectPropertyContract(existingAccessor, schema, realm),
     isRealmTypeError,
   );
-  assert.equal(existingAccessor.internalPropertyContract, undefined);
+  assert.equal(
+    existingAccessor.internalRareSlots?.internalPropertyContract,
+    undefined,
+  );
   operations.createDataProperty(object, "mode", "ready", hooks);
   enrollObjectPropertyContract(object, schema, realm);
-  const contract = object.internalPropertyContract;
+  const contract = object.internalRareSlots?.internalPropertyContract;
   enrollObjectPropertyContract(object, schema, realm);
-  assert.equal(contract, object.internalPropertyContract);
+  assert.equal(contract, object.internalRareSlots?.internalPropertyContract);
   assert.throws(
     () =>
       operations.setProperty(
@@ -212,7 +215,7 @@ test("array contracts validate existing packed elements and guard later writes",
     () => enrollObjectPropertyContract(array, schema, realm),
     isRealmTypeError,
   );
-  assert.equal(array.internalPropertyContract, undefined);
+  assert.equal(array.internalRareSlots?.internalPropertyContract, undefined);
   assert.ok(array.internalArrayElements);
   operations.createDataProperty(array, "1", 8, hooks);
   enrollObjectPropertyContract(array, schema, realm);

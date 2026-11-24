@@ -1,4 +1,5 @@
 import {
+  ensureRareSlots,
   getPrototype,
   createCallableObject,
   createConstructorObject,
@@ -46,10 +47,11 @@ export function createBoundFunction<Key, Value>(
             ),
           target.internalExecutionContext,
         );
-  bound.internalBoundTarget = target;
+  const rare = ensureRareSlots<Key, Value>(bound);
+  rare.internalBoundTarget = target;
   // A bound call forwards without owning a source execution context. Return
   // the next step so repeated tail calls do not retain a forwarding frame.
-  bound.internalTailDispatch = (
+  rare.internalTailDispatch = (
     ignored,
     args,
   ): ObjectCallDispatch<Key, Value> => ({

@@ -70,8 +70,11 @@ test("mapped arguments expose data properties and only alias the last duplicate"
     false,
   );
   assert.equal(object.prototype, prototype);
-  assert.equal(object.internalArgumentsData, true);
-  assert.equal(prototype.internalArgumentsData, false);
+  assert.equal(object.internalRareSlots?.internalArgumentsData ?? false, true);
+  assert.equal(
+    prototype.internalRareSlots?.internalArgumentsData ?? false,
+    false,
+  );
 });
 test("an absent last duplicate prevents aliasing the earlier argument", () => {
   const { object, parameters } = make([1], ["a", "a"]);
@@ -85,7 +88,7 @@ test("unmapped arguments copy values and use the shared poison callee accessor",
   const args = [1, undefined];
   const { object } = make(args, undefined);
   args[0] = 42;
-  assert.equal(object.internalArgumentsData, true);
+  assert.equal(object.internalRareSlots?.internalArgumentsData ?? false, true);
   assert.equal(objects.getOwnProperty(object, "0")?.value, 1);
   assert.equal(objects.getOwnProperty(object, "1")?.value, undefined);
   assert.equal(objects.getOwnProperty(object, "length")?.value, 2);

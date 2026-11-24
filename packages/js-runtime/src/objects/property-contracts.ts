@@ -104,7 +104,9 @@ function sameSchema(
   return left.types === right.types && left.root === right.root;
 }
 function attached(object: ObjectRecord, schema: ObjectShapeContract): boolean {
-  const contract = object.internalPropertyContract;
+  const rare = object.internalRareSlots;
+  const contract =
+    rare === undefined ? undefined : rare.internalPropertyContract;
   return (
     contract !== undefined &&
     contract.schemas.some(
@@ -377,7 +379,10 @@ export function findClassMethodContract(
   let cursor = viewObjectValue(base, realm.objectPrototype);
   while (cursor !== undefined && cursor.internalMethods === undefined) {
     if (ordinaryHasOwnProperty<ScriptPropertyKey, unknown>(cursor, key)) {
-      const schemas = cursor.internalPropertyContract?.schemas;
+      const rare = cursor.internalRareSlots;
+      const contract =
+        rare === undefined ? undefined : rare.internalPropertyContract;
+      const schemas = contract === undefined ? undefined : contract.schemas;
       for (const schema of schemas ?? []) {
         if (schema === undefined) throw "PROPERTY_CONTRACT_SCHEMA_INVARIANT";
         const rule = schema.types[schema.root];
@@ -427,7 +432,9 @@ function commit(pending: readonly Enrollment[], realm: ErrorRealm): void {
     if (item === undefined) throw "PROPERTY_CONTRACT_ENROLLMENT_INVARIANT";
     const object = item.object;
     if (attached(object, item.schema)) continue;
-    const existing = object.internalPropertyContract;
+    const rare = object.internalRareSlots;
+    const existing =
+      rare === undefined ? undefined : rare.internalPropertyContract;
     const schemas: ObjectShapeContract[] =
       existing === undefined ? [] : existing.schemas.slice();
     schemas.push(item.schema);

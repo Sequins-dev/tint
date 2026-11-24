@@ -24,6 +24,7 @@ import {
   createObject,
   createCallableObject,
   createConstructorObject,
+  ensureRareSlots,
   getProperty,
   hasPrototype,
   type ObjectCall,
@@ -600,7 +601,10 @@ function sourceFunction(
         metadata,
       );
   if (tailCalls)
-    fn.internalTailDispatch = (receiver, args) =>
+    ensureRareSlots<ScriptPropertyKey, unknown>(fn).internalTailDispatch = (
+      receiver,
+      args,
+    ) =>
       runSourceTailCallStep(
         (): unknown => execute(receiver, args, identity.value, undefined),
         context,
@@ -710,7 +714,8 @@ export function ordinaryHasInstance(
   const fn = viewObjectValue(constructor, realm.objectPrototype);
   if (fn === undefined || fn.internalCall === undefined)
     return { error: "none", value: false };
-  const boundTarget = fn.internalBoundTarget;
+  const rare = fn.internalRareSlots;
+  const boundTarget = rare === undefined ? undefined : rare.internalBoundTarget;
   if (boundTarget !== undefined)
     return instanceOfValue(value, boundTarget, hooks, realm, nativePrototype);
   const object = viewObjectValue(value, realm.objectPrototype);

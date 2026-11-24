@@ -10,7 +10,8 @@ export function getFunctionRealm(
 ): ErrorRealm {
   let target = functionObject;
   while (true) {
-    const bound = target.internalBoundTarget;
+    const rare = target.internalRareSlots;
+    const bound = rare === undefined ? undefined : rare.internalBoundTarget;
     if (bound !== undefined) {
       target = bound;
       continue;
