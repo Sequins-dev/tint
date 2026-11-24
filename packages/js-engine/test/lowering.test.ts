@@ -969,8 +969,7 @@ test("var object destructuring resolves its destination before reading the prope
   rewriteModule(lowered.value, {
     expression(node) {
       if (node.kind === "call" && node.callee.kind === "identifier") {
-        if (node.callee.name === "getObjectValuePropertyOrThrow")
-          events.push("get");
+        if (node.callee.name === "getObjectValueProperty") events.push("get");
         const name = node.arguments[1];
         // Fused identifier reads resolve at the same point as resolveBinding.
         if (

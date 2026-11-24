@@ -52,16 +52,14 @@ test("managed Script assembly emits every import against the real AOT-selected f
       // Primitive tag tests avoid the boxed-null and typeof helper imports.
       // f's warm global read of v loads its cached cell inline: the
       // cachedGlobalIdentifierCell import adds one signature, and reading
-      // the cell's value adds the descriptor record. The `+` slow path calls
-      // the fused binaryObjectValueOperationOrThrow, so no operator result
-      // record (or its variants) is read or imported.
+      // the cell's value adds the descriptor record.
       assert.deepEqual(prepared.value.counts, {
         signatures: 21,
         memberOnly: 3,
-        records: 11,
+        records: 21,
         functions: 7,
       });
-      assert.equal(prepared.value.native.managedImports.length, 40);
+      assert.equal(prepared.value.native.managedImports.length, 50);
     }
     if (text === samples[2]) {
       // Distinct runtime functions with one signature type share a directory

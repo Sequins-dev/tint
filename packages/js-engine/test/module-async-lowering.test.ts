@@ -66,7 +66,7 @@ test("module lowering preserves its caller-policy shape through nested async bod
     ],
     [
       'export const C=class {["x"](){return 1;}};',
-      "468ba50552f2b8124f86c5111d3cdfc471d3782b8f628b422feb4f144f9e51f3",
+      "28617bcbc501925e504a900d13fd475ebae8ba88ad6c7a74fadccd650e4f3bcd",
     ],
     [
       "using resource=x; export let y=2;",

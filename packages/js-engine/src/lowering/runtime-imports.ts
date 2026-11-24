@@ -45,14 +45,6 @@ function moduleRuntimeImport(
   };
 }
 
-/** Fused helpers exported by the binding-reference environment module. */
-function bindingReferenceHelper(name: string): boolean {
-  return (
-    name === "getBindingReferenceOrThrow" ||
-    name === "putBindingReferenceOrThrow"
-  );
-}
-
 /** Single import vocabulary for AOT Script lowering and managed runtime surfaces.
  * Return fresh syntax nodes so linking/rewrite passes cannot mutate the vocabulary. */
 export function scriptRuntimeImports(
@@ -91,16 +83,7 @@ export function scriptRuntimeImports(
   usesRelationalFallback: boolean = false,
   usesLooseEqualityFallback: boolean = false,
   excludesHTMLDDAObjects: boolean = false,
-  /** The fused `<op>OrThrow` helpers an AOT entry calls (usesFusedResults
-   * imports every one). */
-  fusedHelpers: readonly string[] = [],
 ): readonly ImportDeclaration[] {
-  const fusedObjectHelpers = fusedHelpers.filter(
-    (name: string): boolean =>
-      !bindingReferenceHelper(name) &&
-      !(usesRelationalFallback && name === "binaryObjectValueOperationOrThrow"),
-  );
-  const fusedBindingHelpers = fusedHelpers.filter(bindingReferenceHelper);
   if (
     (usesImportMeta && declarations !== "module") ||
     (usesAsyncModule && declarations !== "module")
@@ -196,7 +179,6 @@ export function scriptRuntimeImports(
         ...(usesRelationalFallback && !usesFusedResults
           ? ["binaryObjectValueOperationOrThrow"]
           : []),
-        ...(usesFusedResults ? [] : fusedObjectHelpers),
         "scriptStrictEqual",
         "binaryObjectValueOperation",
         "objectPropertyKey",
@@ -357,7 +339,7 @@ export function scriptRuntimeImports(
         "putBindingReference",
         ...(usesFusedResults
           ? ["getBindingReferenceOrThrow", "putBindingReferenceOrThrow"]
-          : fusedBindingHelpers),
+          : []),
         ...(declarations === "script" || declarations === "all"
           ? ["instantiateGlobalDeclarations"]
           : []),

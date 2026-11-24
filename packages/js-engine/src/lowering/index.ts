@@ -1186,9 +1186,6 @@ function lowerScriptEntry(
   let excludesHTMLDDAObjects = false;
   let usesRelationalFallback = false;
   let usesLooseEqualityFallback = false;
-  // The fused `<op>OrThrow` helpers AOT code calls, in first-use order
-  // (runtime-compiled entries import them all).
-  const fusedHelpers: string[] = [];
   let usesPrimitiveContracts = false;
   let suspensionInput: string | undefined =
     entryKind === "module" ? "$moduleInput" : undefined;
@@ -4471,19 +4468,15 @@ function lowerScriptEntry(
     return { value: result, receiver: resultReceiver };
   }
 
-  /** The operation's fused `OrThrow` helper, which completes the result as
-   * `check` does and returns the value: one out-of-line call instead of a
-   * result record and two inline error comparisons at every slow path. */
+  /** Runtime-compiled entries call the operation's fused `OrThrow` helper,
+   * which completes the result as `check` does and returns the value. */
   function fusedResultCall(
     name: string,
     args: readonly Expression[],
     span: Span,
   ): Expression | undefined {
-    const realm = fusedResultRealm(name);
+    const realm = compactResults ? fusedResultRealm(name) : undefined;
     if (realm === undefined) return undefined;
-    const helper = name + "OrThrow";
-    if (!compactResults && fusedHelpers.indexOf(helper) < 0)
-      fusedHelpers.push(helper);
     const arguments_: Expression[] = realm === 2 ? [id("$errors")] : [];
     for (const argument of args) {
       if (argument === undefined) throw "FUSED_RESULT_ARGUMENT_INVARIANT";
@@ -10795,7 +10788,6 @@ function lowerScriptEntry(
     usesRelationalFallback,
     usesLooseEqualityFallback,
     excludesHTMLDDAObjects,
-    fusedHelpers,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,
