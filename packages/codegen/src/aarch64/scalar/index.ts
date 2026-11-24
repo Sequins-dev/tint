@@ -3799,11 +3799,16 @@ function emitModuleForms(
         // Numeric constants by value ID (a divisor's value, see `%`), and
         // values proven non-negative and never -0 (a dividend whose
         // remainder is never -0): such constants, lengths, code units,
-        // uint32 and >>> words, & with a constant mask below 2^31, and +, *
-        // and % of such operands. Values are block-local, so one forward pass suffices.
+        // uint32 and >>> words, & with a constant mask below 2^31, +, * and
+        // % of such operands, and loads of non-negative slots: proven
+        // 32-bit integer slots (never -0) whose every store is such a
+        // value. Values are block-local, but slot facts are not, so the
+        // forward pass repeats until no slot loses its fact (each round
+        // only removes slots, from an optimistic start).
         const constantFlags = new Uint8Array(resultBound),
           constantNumbers = new Float64Array(resultBound),
-          nonNegativeValues = new Uint8Array(resultBound);
+          nonNegativeValues = new Uint8Array(resultBound),
+          nonNegativeSlots = nonNegativeZeroSlots.slice();
         /** The value of numeric constant `id`, else undefined. */
         function numberConstant(id: number): number | undefined {
           const index = valueIds.intern(id);
@@ -3814,46 +3819,59 @@ function emitModuleForms(
         function nonNegative(id: number): boolean {
           return nonNegativeValues[valueIds.intern(id)] === 1;
         }
-        for (const block of fn.blocks) {
-          if (block === undefined) throw "string literal block invariant";
-          for (const op of block.instructions) {
-            if (op === undefined) continue;
-            if (op.kind === "string-literal")
-              stringLiterals.set(op.id, op.value);
-            else if (op.kind === "constant") {
-              const constant = op.value;
-              if (typeof constant === "number") {
-                const index = valueIds.intern(op.id);
-                constantFlags[index] = 1;
-                constantNumbers[index] = constant;
-                if (constant > 0 || (constant === 0 && 1 / constant > 0))
-                  nonNegativeValues[index] = 1;
-              }
-            } else if (
-              op.kind === "string-length" ||
-              op.kind === "array-length" ||
-              (op.kind === "string-code-unit" && op.inBounds === true) ||
-              (op.kind === "unary" && op.operator === "uint32") ||
-              (op.kind === "binary" && op.operator === ">>>")
+        for (let changed = true; changed;) {
+          changed = false;
+          nonNegativeValues.fill(0);
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "string literal block invariant";
+            for (const op of block.instructions) {
+              if (op === undefined) continue;
+              if (
+                op.kind === "store" &&
+                nonNegativeSlots[op.slot] === 1 &&
+                !nonNegative(op.value)
+              ) {
+                nonNegativeSlots[op.slot] = 0;
+                changed = true;
+              } else markNonNegative(op);
+            }
+          }
+        }
+        /** Records `op`'s literal, constant and non-negative facts. */
+        function markNonNegative(op: IRInstruction): void {
+          if (op.kind === "string-literal") stringLiterals.set(op.id, op.value);
+          else if (op.kind === "constant") {
+            const constant = op.value;
+            if (typeof constant === "number") {
+              const index = valueIds.intern(op.id);
+              constantFlags[index] = 1;
+              constantNumbers[index] = constant;
+              if (constant > 0 || (constant === 0 && 1 / constant > 0))
+                nonNegativeValues[index] = 1;
+            }
+          } else if (
+            op.kind === "string-length" ||
+            op.kind === "array-length" ||
+            (op.kind === "string-code-unit" && op.inBounds === true) ||
+            (op.kind === "unary" && op.operator === "uint32") ||
+            (op.kind === "binary" && op.operator === ">>>") ||
+            (op.kind === "load" && nonNegativeSlots[op.slot] === 1)
+          )
+            nonNegativeValues[valueIds.intern(op.id)] = 1;
+          else if (op.kind === "binary") {
+            const left = nonNegative(op.left),
+              right = nonNegative(op.right),
+              leftMask = numberConstant(op.left) ?? -1,
+              rightMask = numberConstant(op.right) ?? -1;
+            if (
+              // ToInt32 keeps a mask below 2^31 non-negative.
+              (op.operator === "&" &&
+                ((leftMask >= 0 && leftMask <= 2147483647) ||
+                  (rightMask >= 0 && rightMask <= 2147483647))) ||
+              ((op.operator === "+" || op.operator === "*") && left && right) ||
+              (op.operator === "%" && left)
             )
               nonNegativeValues[valueIds.intern(op.id)] = 1;
-            else if (op.kind === "binary") {
-              const left = nonNegative(op.left),
-                right = nonNegative(op.right),
-                leftMask = numberConstant(op.left) ?? -1,
-                rightMask = numberConstant(op.right) ?? -1;
-              if (
-                // ToInt32 keeps a mask below 2^31 non-negative.
-                (op.operator === "&" &&
-                  ((leftMask >= 0 && leftMask <= 2147483647) ||
-                    (rightMask >= 0 && rightMask <= 2147483647))) ||
-                ((op.operator === "+" || op.operator === "*") &&
-                  left &&
-                  right) ||
-                (op.operator === "%" && left)
-              )
-                nonNegativeValues[valueIds.intern(op.id)] = 1;
-            }
           }
         }
         const foldedConstants = new Uint8Array(resultBound),
@@ -8723,6 +8741,21 @@ function emitModuleForms(
                     ? 7
                     : 6;
                 wordMagnitudes[index] = Math.max(1, bound);
+              }
+            }
+            if (op.kind === "binary" && op.operator === "%") {
+              // An exact integer modulo a nonzero integer constant d is an
+              // integer below |d| in magnitude (-0 aside, as for sums).
+              const divisor = numberConstant(op.right);
+              if (
+                divisor !== undefined &&
+                Number.isSafeInteger(divisor) &&
+                divisor !== 0 &&
+                exactInteger(op.left)
+              ) {
+                const index = valueIds.intern(op.id);
+                wordKinds[index] = 6;
+                wordMagnitudes[index] = Math.max(1, Math.abs(divisor) - 1);
               }
             }
             // Binary operations keep an immediate operand deferred, and

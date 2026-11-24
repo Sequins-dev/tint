@@ -113,3 +113,60 @@ export function run(): number {
 `;
   verifyHostedFixture(text, "remainder-integers");
 });
+
+test("native remainders of loop counters: non-negative slots stay integers, signed ones keep -0", () => {
+  // Counters that only count up from 0 are non-negative slots, so their
+  // remainders by constants are int64s feeding sums and code units; a
+  // counter that also counts down keeps -0 for a negative multiple.
+  function kernel(): string {
+    let text = "",
+      signs = 0;
+    for (let round = 0; round < 3; round++)
+      for (let i = 0; i < 64; i++)
+        text += String.fromCharCode(
+          97 + ((round + i) % 26),
+          98 + (i % 20),
+          48 + (i % 10),
+        );
+    for (let j = 10; j >= -10; j--) {
+      const r = j % 5;
+      signs = signs * 3 + (r === 0 ? (1 / r > 0 ? 1 : 2) : 0);
+      signs %= 1000003;
+    }
+    let k = 0;
+    for (let n = 0; n < 20; n++) {
+      k = n % 3 === 0 ? k - 4 : k + 1;
+      signs =
+        (signs * 7 + (k % 4 === 0 ? (1 / (k % 4) > 0 ? 1 : 2) : 3)) % 1000003;
+    }
+    return text + ":" + String(signs);
+  }
+  const expected = kernel();
+  const text = `function kernel(): string {
+  let text = "",
+    signs = 0;
+  for (let round = 0; round < 3; round++)
+    for (let i = 0; i < 64; i++)
+      text += String.fromCharCode(
+        97 + ((round + i) % 26),
+        98 + (i % 20),
+        48 + (i % 10),
+      );
+  for (let j = 10; j >= -10; j--) {
+    const r = j % 5;
+    signs = signs * 3 + (r === 0 ? (1 / r > 0 ? 1 : 2) : 0);
+    signs %= 1000003;
+  }
+  let k = 0;
+  for (let n = 0; n < 20; n++) {
+    k = n % 3 === 0 ? k - 4 : k + 1;
+    signs = (signs * 7 + (k % 4 === 0 ? (1 / (k % 4) > 0 ? 1 : 2) : 3)) % 1000003;
+  }
+  return text + ":" + String(signs);
+}
+export function run(): number {
+  return kernel() === ${JSON.stringify(expected)} ? 42 : 1;
+}
+`;
+  verifyHostedFixture(text, "remainder-counters");
+});
