@@ -16,6 +16,8 @@ import {
 import {
   createObject,
   createCallableObject,
+  ensureExoticSlots,
+  exoticSlots,
   type OrdinaryObject,
   type ObjectHooks,
 } from "./operations.ts";
@@ -88,7 +90,10 @@ export function takeGeneratorStart(
   realm: ErrorRealm,
 ): GeneratorContinuation {
   const object = viewObjectValue(value, realm.objectPrototype);
-  const record = object?.internalGeneratorData;
+  const record =
+    object === undefined
+      ? undefined
+      : exoticSlots(object).internalGeneratorData;
   if (record === undefined || record.state !== "suspended-start")
     throw "DYNAMIC_GENERATOR_CARRIER_INVARIANT";
   const continuation = record.continuation;
@@ -166,15 +171,16 @@ export function createGeneratorObject(
     realm,
     scriptOrModule: active === undefined ? undefined : active.scriptOrModule,
   };
-  generator.internalGeneratorData = createGeneratorRecord<unknown>(
-    (kind, value): GeneratorOutcome<unknown> =>
-      runScriptContext<GeneratorOutcome<unknown>>(
-        realm.agent,
-        context,
-        (): GeneratorOutcome<unknown> => continuation(kind, value),
-      ),
-    contracts,
-  );
+  ensureExoticSlots(generator).internalGeneratorData =
+    createGeneratorRecord<unknown>(
+      (kind, value): GeneratorOutcome<unknown> =>
+        runScriptContext<GeneratorOutcome<unknown>>(
+          realm.agent,
+          context,
+          (): GeneratorOutcome<unknown> => continuation(kind, value),
+        ),
+      contracts,
+    );
   return generator;
 }
 
@@ -219,7 +225,9 @@ export function installGeneratorIntrinsics(
         (receiver, args): unknown => {
           const object = viewObjectValue(receiver, realm.objectPrototype);
           const record =
-            object === undefined ? undefined : object.internalGeneratorData;
+            object === undefined
+              ? undefined
+              : exoticSlots(object).internalGeneratorData;
           if (record === undefined) throw createRuntimeError(realm, "type");
           return resumeGenerator<unknown>(record, kind, args[0], {
             undefinedValue: undefined,

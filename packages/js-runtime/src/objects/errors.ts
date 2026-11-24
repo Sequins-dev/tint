@@ -654,7 +654,7 @@ export function createErrorRealm(
       const fn = viewObjectValue(receiver, realm.objectPrototype);
       if (fn === undefined || fn.internalCall === undefined)
         throw createRuntimeError(realm, "type");
-      const source = fn.internalSourceText;
+      const source = exoticSlots(fn).internalSourceText;
       if (source !== undefined) return source;
       const name = exoticSlots(fn).internalInitialName;
       if (name !== undefined)

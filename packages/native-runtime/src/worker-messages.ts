@@ -154,9 +154,12 @@ export function createNativeWorkerMessages(
 ): NativeWorkerMessages {
   const { realm, shared, backing, ports } = options;
   function identity(object: ObjectValue): number {
-    if (object.internalIdentity === 0)
-      object.internalIdentity = realm.agent.nextObjectIdentity++;
-    return object.internalIdentity;
+    let id = exoticSlots(object).internalIdentity;
+    if (id === 0) {
+      id = realm.agent.nextObjectIdentity++;
+      ensureExoticSlots(object).internalIdentity = id;
+    }
+    return id;
   }
   function discardGrant(grant: Grant): void {
     if (grant.kind === "a") backing.discard(grant.backing);

@@ -65,44 +65,49 @@ export function throwWorkerCloneError(
 
 function unsupportedObject(object: ScriptObject): boolean {
   const rare = object.internalRareSlots;
-  return (
+  if (
     object.internalCall !== undefined ||
     object.internalConstruct !== undefined ||
-    object.internalPromiseData !== undefined ||
-    exoticSlots(object).internalProxyData !== undefined ||
-    exoticSlots(object).internalWeakData !== undefined ||
-    object.internalGeneratorData !== undefined ||
-    object.internalAsyncGeneratorData !== undefined ||
-    exoticSlots(object).internalSyncIteratorData !== undefined ||
-    exoticSlots(object).internalIteratorHelperData !== undefined ||
-    exoticSlots(object).internalWrappedIteratorData !== undefined ||
-    exoticSlots(object).internalMapIteratorData !== undefined ||
-    exoticSlots(object).internalSetIteratorData !== undefined ||
-    exoticSlots(object).internalRegExpIteratorData !== undefined ||
-    object.internalArrayIteratorData !== undefined ||
-    exoticSlots(object).internalStringIteratorData !== undefined ||
-    exoticSlots(object).internalSharedArrayBufferData !== undefined ||
-    exoticSlots(object).internalDisposableStack !== undefined ||
-    exoticSlots(object).internalAsyncDisposableStack !== undefined ||
-    exoticSlots(object).internalTemporalPlainYearMonth !== undefined ||
-    exoticSlots(object).internalTemporalPlainMonthDay !== undefined ||
-    exoticSlots(object).internalTemporalPlainDate !== undefined ||
-    exoticSlots(object).internalTemporalDuration !== undefined ||
-    exoticSlots(object).internalTemporalPlainTime !== undefined ||
-    exoticSlots(object).internalTemporalPlainDateTime !== undefined ||
-    exoticSlots(object).internalTemporalZonedDateTime !== undefined ||
-    exoticSlots(object).internalTemporalCalendar !== undefined ||
-    exoticSlots(object).internalTemporalInstant !== undefined ||
-    exoticSlots(object).internalLocaleData !== undefined ||
-    exoticSlots(object).internalListFormatData !== undefined ||
-    exoticSlots(object).internalSegmenterData !== undefined ||
-    exoticSlots(object).internalCollatorData !== undefined ||
-    exoticSlots(object).internalPluralRulesData !== undefined ||
-    exoticSlots(object).internalIntlFormatData !== undefined ||
-    exoticSlots(object).internalRelativeTimeData !== undefined ||
-    exoticSlots(object).internalNumberFormatData !== undefined ||
-    (rare !== undefined && rare.internalArgumentsData) ||
-    exoticSlots(object).internalShadowRealm !== undefined
+    (rare !== undefined && rare.internalArgumentsData)
+  )
+    return true;
+  const exotic = object.internalExoticSlots;
+  if (exotic === undefined) return false;
+  return (
+    exotic.internalPromiseData !== undefined ||
+    exotic.internalProxyData !== undefined ||
+    exotic.internalWeakData !== undefined ||
+    exotic.internalGeneratorData !== undefined ||
+    exotic.internalAsyncGeneratorData !== undefined ||
+    exotic.internalSyncIteratorData !== undefined ||
+    exotic.internalIteratorHelperData !== undefined ||
+    exotic.internalWrappedIteratorData !== undefined ||
+    exotic.internalMapIteratorData !== undefined ||
+    exotic.internalSetIteratorData !== undefined ||
+    exotic.internalRegExpIteratorData !== undefined ||
+    exotic.internalArrayIteratorData !== undefined ||
+    exotic.internalStringIteratorData !== undefined ||
+    exotic.internalSharedArrayBufferData !== undefined ||
+    exotic.internalDisposableStack !== undefined ||
+    exotic.internalAsyncDisposableStack !== undefined ||
+    exotic.internalTemporalPlainYearMonth !== undefined ||
+    exotic.internalTemporalPlainMonthDay !== undefined ||
+    exotic.internalTemporalPlainDate !== undefined ||
+    exotic.internalTemporalDuration !== undefined ||
+    exotic.internalTemporalPlainTime !== undefined ||
+    exotic.internalTemporalPlainDateTime !== undefined ||
+    exotic.internalTemporalZonedDateTime !== undefined ||
+    exotic.internalTemporalCalendar !== undefined ||
+    exotic.internalTemporalInstant !== undefined ||
+    exotic.internalLocaleData !== undefined ||
+    exotic.internalListFormatData !== undefined ||
+    exotic.internalSegmenterData !== undefined ||
+    exotic.internalCollatorData !== undefined ||
+    exotic.internalPluralRulesData !== undefined ||
+    exotic.internalIntlFormatData !== undefined ||
+    exotic.internalRelativeTimeData !== undefined ||
+    exotic.internalNumberFormatData !== undefined ||
+    exotic.internalShadowRealm !== undefined
   );
 }
 
@@ -188,14 +193,17 @@ export function serializeWorkerValue(
     const object = viewObjectValue(value, realm.objectPrototype);
     if (object === undefined)
       return throwWorkerCloneError(realm, "The value could not be cloned");
-    if (object.internalIdentity === 0)
-      object.internalIdentity = realm.agent.nextObjectIdentity++;
-    const seen = objects.get(object.internalIdentity);
+    let identity = exoticSlots(object).internalIdentity;
+    if (identity === 0) {
+      identity = realm.agent.nextObjectIdentity++;
+      ensureExoticSlots(object).internalIdentity = identity;
+    }
+    const seen = objects.get(identity);
     if (seen !== undefined) {
       tag("r");
       return number(seen);
     }
-    objects.set(object.internalIdentity, objects.size);
+    objects.set(identity, objects.size);
     const grant = attachments?.encode?.(object);
     if (grant !== undefined) {
       tag("x");

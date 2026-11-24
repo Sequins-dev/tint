@@ -53,7 +53,7 @@ export function createArrayIterator(
   const iterator = createObject<ScriptPropertyKey, unknown>(
     realm.arrayIteratorPrototype,
   );
-  iterator.internalArrayIteratorData = {
+  ensureExoticSlots(iterator).internalArrayIteratorData = {
     iterated,
     index: 0,
     kind,
@@ -166,7 +166,7 @@ export function installIteratorIntrinsics(
         const state =
           iterator === undefined
             ? undefined
-            : iterator.internalArrayIteratorData;
+            : exoticSlots(iterator).internalArrayIteratorData;
         if (state === undefined) throw createRuntimeError(realm, "type");
         const source = state.iterated;
         if (source === undefined)

@@ -24,6 +24,7 @@ import {
   createObject,
   createCallableObject,
   createConstructorObject,
+  ensureExoticSlots,
   ensureRareSlots,
   getProperty,
   hasPrototype,
@@ -815,6 +816,6 @@ export function retainFunctionSource(
   fn: OrdinaryObject<ScriptPropertyKey, unknown>,
   source: string,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
-  fn.internalSourceText = source;
+  ensureExoticSlots(fn).internalSourceText = source;
   return fn;
 }

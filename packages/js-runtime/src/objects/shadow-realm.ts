@@ -162,7 +162,8 @@ function importShadowRealmValue(
     evaluateImportCall(specifier, undefined, inner.objectHooks, inner),
   );
   const object = viewObjectValue(imported, inner.objectPrototype);
-  const promise = object === undefined ? undefined : object.internalPromiseData;
+  const promise =
+    object === undefined ? undefined : exoticSlots(object).internalPromiseData;
   if (promise === undefined) throw "SHADOW_REALM_IMPORT_PROMISE_INVARIANT";
   const hooks = realm.objectHooks;
   const capability = createModuleCapability(realm, hooks);

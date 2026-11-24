@@ -134,9 +134,12 @@ test("async dispatch rejects delegate throws and settles profile results", () =>
     assert.ok(value && typeof value === "object");
     const promise = value as OrdinaryObject<ScriptPropertyKey, unknown>;
     assert.equal(
-      promise.internalPromiseData?.state,
+      promise.internalExoticSlots?.internalPromiseData?.state,
       fail ? "rejected" : "fulfilled",
     );
-    assert.equal(promise.internalPromiseData?.result, fail ? marker : 42);
+    assert.equal(
+      promise.internalExoticSlots?.internalPromiseData?.result,
+      fail ? marker : 42,
+    );
   }
 });

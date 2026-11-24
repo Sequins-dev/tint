@@ -67,11 +67,11 @@ test("source methods retain source text without acquiring a built-in initial nam
   );
   assert.equal(objects.exoticSlots(method).internalInitialName, undefined);
   assert.equal(
-    method.internalSourceText,
+    method.internalExoticSlots?.internalSourceText,
     "method /* exact */ () { return 42; }",
   );
   assert.equal(objects.retainFunctionSource(method, "replacement"), method);
-  assert.equal(method.internalSourceText, "replacement");
+  assert.equal(method.internalExoticSlots?.internalSourceText, "replacement");
 });
 
 test("Function.prototype and the intrinsic thrower create length before name", () => {

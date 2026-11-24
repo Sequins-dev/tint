@@ -28,12 +28,18 @@ test("generator creation installs private state without evaluating the body", ()
   assert.equal(generator.prototype, realm.generatorPrototype);
   assert.equal(realm.generatorPrototype.prototype, realm.iteratorPrototype);
   assert.equal(generator.properties?.size ?? 0, 0);
-  assert.equal(generator.internalGeneratorData?.state, "suspended-start");
   assert.equal(
-    typeof generator.internalGeneratorData?.continuation,
+    generator.internalExoticSlots?.internalGeneratorData?.state,
+    "suspended-start",
+  );
+  assert.equal(
+    typeof generator.internalExoticSlots?.internalGeneratorData?.continuation,
     "function",
   );
-  assert.equal(realm.generatorPrototype.internalGeneratorData, undefined);
+  assert.equal(
+    realm.generatorPrototype.internalExoticSlots?.internalGeneratorData,
+    undefined,
+  );
   const prototype = object.createObject<ScriptPropertyKey, unknown>(
     realm.generatorPrototype,
   );
@@ -200,8 +206,14 @@ test("a hidden generator transfers only an unstarted continuation and releases i
       }, realm),
   );
   const start = object.takeGeneratorStart(hidden, realm);
-  assert.equal(hidden.internalGeneratorData?.state, "completed");
-  assert.equal(hidden.internalGeneratorData?.continuation, undefined);
+  assert.equal(
+    hidden.internalExoticSlots?.internalGeneratorData?.state,
+    "completed",
+  );
+  assert.equal(
+    hidden.internalExoticSlots?.internalGeneratorData?.continuation,
+    undefined,
+  );
   const result = object.runScriptContext(
     realm.agent,
     { realm, scriptOrModule: outside },
@@ -228,7 +240,7 @@ test("a hidden generator transfers only an unstarted continuation and releases i
       () => ({ kind: "return", value: undefined }),
       realm,
     );
-    g.internalGeneratorData!.state = state;
+    g.internalExoticSlots!.internalGeneratorData!.state = state;
     assert.throws(
       () => object.takeGeneratorStart(g, realm),
       (e) => e === "DYNAMIC_GENERATOR_CARRIER_INVARIANT",

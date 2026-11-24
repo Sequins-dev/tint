@@ -118,7 +118,7 @@ function createRealmFixture(
 }
 
 function asyncGeneratorState(generator: ScriptObject) {
-  const slot = generator.internalAsyncGeneratorData;
+  const slot = generator.internalExoticSlots?.internalAsyncGeneratorData;
   assert.ok(slot);
   return slot.record;
 }
@@ -401,7 +401,7 @@ test("a reentrant generator call throws without disturbing the running generator
       object.viewObjectValue(error, fixture.root)?.prototype ===
         fixture.realm.prototypes.get("type"),
     );
-  const record = generator.internalGeneratorData;
+  const record = generator.internalExoticSlots?.internalGeneratorData;
   assert.ok(record);
   assert.equal(record.state, "suspended-yield");
   const last = fixture.invoke(generator, "return", ["x"]);

@@ -92,12 +92,13 @@ export function run(argument:number):number {
     const ports=createNativeMessagePorts(memory,parking,threads,loop,(packet:string):void=>messages.discard(packet));
     function wrap(port:NativeMessagePort):Value {
       const object=createObject<ScriptPropertyKey,unknown>(realm.objectPrototype);
-      object.internalIdentity=realm.agent.nextObjectIdentity++;
-      local.set(object.internalIdentity,port);
+      const id=realm.agent.nextObjectIdentity++;
+      ensureExoticSlots(object).internalIdentity=id;
+      local.set(id,port);
       return object;
     }
     const messages:NativeWorkerMessages=createNativeWorkerMessages({
-      realm,shared,backing,ports,portForObject:(object:Value):NativeMessagePort|undefined=>local.get(object.internalIdentity),
+      realm,shared,backing,ports,portForObject:(object:Value):NativeMessagePort|undefined=>local.get(exoticSlots(object).internalIdentity),
       objectForPort:wrap,
     });
     return {global,hooks,realm,backing,ports,messages,wrap,local};
@@ -148,7 +149,7 @@ export function run(argument:number):number {
   if(sharedCopy===undefined||sharedCopy.handle!==created.value.handle)return 10;
   const port=get("port");
   if(port===undefined)return 11;
-  const adopted=to.local.get(port.internalIdentity);
+  const adopted=to.local.get(exoticSlots(port).internalIdentity);
   if(adopted===undefined)return 12;
   const empty:unknown[]=[];
   to.messages.send(adopted,"hello",empty);

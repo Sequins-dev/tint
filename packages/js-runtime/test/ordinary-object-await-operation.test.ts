@@ -6,7 +6,8 @@ import * as awaiting from "../src/objects/await.ts";
 // JavaScript Promise and must not add another Promise reaction job.
 test("native await operations resume in the job that completes their work", () => {
   const capability = awaiting.createNativeAwaitOperation();
-  const operation = capability.value.internalAwaitOperation;
+  const operation =
+    capability.value.internalExoticSlots?.internalAwaitOperation;
   assert.ok(operation);
   const log: unknown[] = [];
   operation.subscribe(
@@ -23,7 +24,8 @@ test("native await operations resume in the job that completes their work", () =
 test("native await operations preserve settled rejection including undefined", () => {
   const capability = awaiting.createNativeAwaitOperation();
   capability.reject(undefined);
-  const operation = capability.value.internalAwaitOperation;
+  const operation =
+    capability.value.internalExoticSlots?.internalAwaitOperation;
   assert.ok(operation);
   let rejected = false;
   operation.subscribe(
@@ -34,5 +36,8 @@ test("native await operations preserve settled rejection including undefined", (
     },
   );
   assert.equal(rejected, true);
-  assert.equal(capability.value.internalPromiseData, undefined);
+  assert.equal(
+    capability.value.internalExoticSlots?.internalPromiseData,
+    undefined,
+  );
 });

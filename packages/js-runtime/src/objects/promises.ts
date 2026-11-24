@@ -7,6 +7,7 @@ import {
 } from "../promises/index.ts";
 import {
   createObject,
+  ensureExoticSlots,
   getProperty,
   type OrdinaryObject,
   type ObjectHooks,
@@ -33,7 +34,7 @@ export function createPromiseObject(
   prototype: OrdinaryObject<ScriptPropertyKey, unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const promise = createObject<ScriptPropertyKey, unknown>(prototype);
-  promise.internalPromiseData = createPromiseRecord<unknown>(
+  ensureExoticSlots(promise).internalPromiseData = createPromiseRecord<unknown>(
     promise,
     undefined,
   );

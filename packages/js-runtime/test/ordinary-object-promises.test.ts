@@ -8,10 +8,18 @@ test("promise state is a private capability and does not leak through inheritanc
     undefined,
   );
   const promise = promises.createPromiseObject(prototype);
-  assert.ok(promise.internalPromiseData?.promise === promise);
-  assert.equal(promise.internalPromiseData?.state, "pending");
+  assert.ok(
+    promise.internalExoticSlots?.internalPromiseData?.promise === promise,
+  );
+  assert.equal(
+    promise.internalExoticSlots?.internalPromiseData?.state,
+    "pending",
+  );
   assert.equal(promise.properties?.size ?? 0, 0);
-  assert.equal(object.createObject(promise).internalPromiseData, undefined);
+  assert.equal(
+    object.createObject(promise).internalExoticSlots?.internalPromiseData,
+    undefined,
+  );
 });
 
 test("Script resolving functions delegate settlement and have builtin descriptors", () => {
@@ -80,7 +88,10 @@ test("Promise intrinsics expose stable constructor and prototype identities", ()
     object.getOwnProperty(realm.promisePrototype, "constructor")?.value,
     constructor,
   );
-  assert.equal(realm.promisePrototype.internalPromiseData, undefined);
+  assert.equal(
+    realm.promisePrototype.internalExoticSlots?.internalPromiseData,
+    undefined,
+  );
   for (const name of ["then", "catch", "finally"]) {
     const descriptor = object.getOwnProperty(realm.promisePrototype, name);
     assert.ok(descriptor);

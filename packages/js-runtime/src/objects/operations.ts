@@ -113,33 +113,12 @@ export interface OrdinaryObject<Key, Value> {
   /** Internal [[Call]], never a named/inherited JavaScript property. */
   readonly internalCall: ObjectCall<Value> | undefined;
   internalRegisterCall: ObjectRegisterEntry<Value> | undefined;
-  internalSourceText: string | undefined;
   readonly internalConstruct: ObjectConstruct<Value> | undefined;
   readonly internalExecutionContext: ObjectExecutionContext<Value> | undefined;
   internalArrayData: boolean;
   /** Packed own elements; present only on array exotic objects until a
    * property operation requires ordinary descriptors for their indices. */
   internalArrayElements: ArrayElements<Key, Value> | undefined;
-  internalPromiseData: PromiseRecord<Value> | undefined;
-  internalAwaitOperation: NativeAwaitOperation<Value> | undefined;
-  /** Agent-unique identity for weak-collection indexing, 0 until first needed.
-   * A number, so indexes keyed by it never retain the object. */
-  internalIdentity: number;
-  internalGeneratorData: GeneratorRecord<Value> | undefined;
-  internalAsyncGeneratorData:
-    | {
-        readonly record: AsyncGeneratorRecord<Value>;
-        readonly hooks: AsyncGeneratorHooks<Value>;
-        readonly context: ScriptExecutionContext;
-      }
-    | undefined;
-  internalArrayIteratorData:
-    | {
-        iterated: OrdinaryObject<Key, Value> | undefined;
-        index: number;
-        readonly kind: "key" | "value" | "entry";
-      }
-    | undefined;
   readonly internalMethods: ObjectInternalMethods<Key, Value> | undefined;
   /** Lazily allocated side record for rarely-present generic ordinary-object
    * internal slots (bound targets, super homes, tail dispatchers, private
@@ -186,6 +165,27 @@ export interface OrdinaryRareSlots<Key, Value> {
 export interface ExoticObjectSlots {
   /** Built-in [[InitialName]], independent of the mutable public name property. */
   internalInitialName: string | undefined;
+  internalSourceText: string | undefined;
+  internalPromiseData: PromiseRecord<unknown> | undefined;
+  internalAwaitOperation: NativeAwaitOperation<unknown> | undefined;
+  /** Agent-unique identity for weak-collection indexing, 0 until first needed.
+   * A number, so indexes keyed by it never retain the object. */
+  internalIdentity: number;
+  internalGeneratorData: GeneratorRecord<unknown> | undefined;
+  internalAsyncGeneratorData:
+    | {
+        readonly record: AsyncGeneratorRecord<unknown>;
+        readonly hooks: AsyncGeneratorHooks<unknown>;
+        readonly context: ScriptExecutionContext;
+      }
+    | undefined;
+  internalArrayIteratorData:
+    | {
+        iterated: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
+        index: number;
+        readonly kind: "key" | "value" | "entry";
+      }
+    | undefined;
   /** Frozen primitive JSON text; presence is the non-proxy-forwarding raw JSON brand. */
   internalRawJSON: string | undefined;
   internalModuleSourceClassName: string | undefined;
@@ -577,6 +577,13 @@ export interface Receiver<Key, Value> {
 function createExoticSlots(): ExoticObjectSlots {
   return {
     internalInitialName: undefined,
+    internalSourceText: undefined,
+    internalPromiseData: undefined,
+    internalAwaitOperation: undefined,
+    internalIdentity: 0,
+    internalGeneratorData: undefined,
+    internalAsyncGeneratorData: undefined,
+    internalArrayIteratorData: undefined,
     internalRawJSON: undefined,
     internalModuleSourceClassName: undefined,
     internalShadowRealm: undefined,
@@ -685,17 +692,10 @@ export function createObject<Key, Value>(
     internalValues: undefined,
     internalCall: undefined,
     internalRegisterCall: undefined,
-    internalSourceText: undefined,
     internalConstruct: undefined,
     internalExecutionContext: undefined,
     internalArrayData: false,
     internalArrayElements: undefined,
-    internalIdentity: 0,
-    internalGeneratorData: undefined,
-    internalAsyncGeneratorData: undefined,
-    internalPromiseData: undefined,
-    internalAwaitOperation: undefined,
-    internalArrayIteratorData: undefined,
     internalMethods: undefined,
     internalRareSlots: undefined,
     internalExoticSlots: undefined,
@@ -875,17 +875,10 @@ function allocateObject<Key, Value>(
     internalValues: undefined,
     internalCall,
     internalRegisterCall: undefined,
-    internalSourceText: undefined,
     internalConstruct,
     internalExecutionContext,
     internalArrayData: false,
     internalArrayElements: undefined,
-    internalIdentity: 0,
-    internalGeneratorData: undefined,
-    internalAsyncGeneratorData: undefined,
-    internalPromiseData: undefined,
-    internalAwaitOperation: undefined,
-    internalArrayIteratorData: undefined,
     internalMethods,
     internalRareSlots,
     internalExoticSlots: undefined,

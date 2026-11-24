@@ -1,5 +1,6 @@
 import type { PromiseResolvingFunctions } from "../promises/index.ts";
 import {
+  exoticSlots,
   type OrdinaryObject,
   type ObjectHooks,
   getProperty,
@@ -92,7 +93,10 @@ export function promiseResolve(
   if (viewObjectValue(constructor, realm.objectPrototype) === undefined)
     throw createRuntimeError(realm, "type");
   const promise = viewObjectValue(value, realm.objectPrototype);
-  if (promise !== undefined && promise.internalPromiseData !== undefined) {
+  if (
+    promise !== undefined &&
+    exoticSlots(promise).internalPromiseData !== undefined
+  ) {
     const actual = getProperty<ScriptPropertyKey, unknown>(
       promise,
       "constructor",

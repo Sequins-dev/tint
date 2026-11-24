@@ -1333,7 +1333,7 @@ export function $tintCallUnit(${signature}):number {
  ${
    workers === undefined
      ? ""
-     : `const promise=viewObjectValue(value,object)?.internalPromiseData;
+     : `const promise=viewObjectValue(value,object)?.internalExoticSlots?.internalPromiseData;
  if(promise!==undefined){
   if(promise.state==="rejected"){report(promise.result);return 1;}
   if(promise.state==="pending"){emit(2,"entry promise did not settle\\n");return 1;}
