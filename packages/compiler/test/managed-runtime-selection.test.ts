@@ -12,7 +12,11 @@ function directory(): SerializedManagedSurfaceDirectory {
     name: "runtime",
     digest: "a".repeat(64),
     frame: undefined,
-    abi: { signature: 1, functionBrand: [48, 1, 24, 0] },
+    abi: {
+      signature: 1,
+      functionBrand: [48, 1, 24, 0],
+      generationalBarriers: false,
+    },
     types: {
       version: 1,
       declarations: "",

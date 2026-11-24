@@ -138,6 +138,36 @@ export function stableRecordLayouts(
 ): boolean {
   return everyHostOperation(module, closedWorldHostOperation, bodies);
 }
+/** Calls into code published at run time (executable memory). */
+function executableCallOperation(operation: string): boolean {
+  return (
+    operation === "executable-call-number" ||
+    operation === "executable-call-value" ||
+    operation === "executable-call-managed"
+  );
+}
+/** The generational mutator's write proof: every managed write carries a
+ * barrier. Every reachable host operation must preserve descriptors (a raw
+ * word write or move could store an unbarriered reference, so those are
+ * rejected). Writing code bytes into executable memory is not a managed
+ * write, but the code a call enters is opaque here, so executable calls are
+ * accepted only under the image's `trustedExecutableCode` contract: every
+ * entry it calls was produced by its own unit linker, which rejects units
+ * compiled with a different barrier policy (docs/native-code-loading.md,
+ * "Trusted executable code"). */
+export function trackedManagedWrites(
+  module: ModuleIR,
+  bodies: FunctionBodySource | undefined,
+  trustedExecutableCode: boolean,
+): boolean {
+  return everyHostOperation(
+    module,
+    (operation) =>
+      descriptorPreservingHostOperation(operation) &&
+      (trustedExecutableCode || !executableCallOperation(operation)),
+    bodies,
+  );
+}
 /** Descriptor stability alone: no reachable operation can replace a managed
  * object's descriptor, so a descriptor proven for an object held in a slot
  * survives calls. Sufficient for intraprocedural descriptor proofs (guards and

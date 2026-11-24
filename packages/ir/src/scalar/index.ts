@@ -96,6 +96,7 @@ export {
   dataflowRecordGuards,
   stableRecordLayouts,
   stableDescriptors,
+  trackedManagedWrites,
 } from "./record-facts.ts";
 export {
   deadSlotsAtEntry,

@@ -455,6 +455,9 @@ function buildHostedFixture(
   additionalRuntimes: readonly RuntimeSource[] = [],
   options: {
     readonly allowJit?: boolean;
+    /** BuildRequest.trustedExecutableCode (a trust boundary; see
+     * docs/native-code-loading.md). */
+    readonly trustedExecutableCode?: boolean;
     readonly threaded?: boolean;
     readonly threadExitPipe?: boolean;
     readonly workerModules?: readonly string[];
@@ -781,6 +784,7 @@ function buildHostedFixture(
         : undefined,
     allowDebugger: true,
     allowJit: options.allowJit ?? false,
+    trustedExecutableCode: options.trustedExecutableCode ?? false,
     runtimes: [
       ...request.runtimes,
       ...additionalRuntimes,

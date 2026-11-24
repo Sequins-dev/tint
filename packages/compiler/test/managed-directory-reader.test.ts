@@ -5,7 +5,7 @@ import { parseModule } from "@tint/typescript/syntax";
 import { checkClosureModule } from "@tint/typescript/checker";
 import * as compiler from "../src/native/index.ts";
 import type { NativeManagedPointerImport } from "@tint/codegen/aarch64/scalar";
-function fixture(withRuntimes = false) {
+function fixture(withRuntimes = false, generationalBarriers = false) {
   const parsed = parseModule(
     createSourceTextView(
       "interface Link{readonly value:number;readonly next:Link|undefined;}function keep(value:Link):Link{return value;}function visit(value:Link,read:(value:Link)=>number):number{return read(value);}",
@@ -36,6 +36,7 @@ function fixture(withRuntimes = false) {
     canonical.value,
     {
       ...facts.value,
+      generationalBarriers,
       runtimes: withRuntimes
         ? [
             {
@@ -137,6 +138,16 @@ test("directory readers rebuild canonical contracts before issuing domain-owned 
     assert.equal(binding.domain, 17);
   }
 });
+test("a barriered image's directory re-derives canonically with its policy", () => {
+  // The reader rebuilds the directory from its contracts; the rebuild must
+  // carry the image's barrier policy, which the digest binds.
+  const { exported, host } = fixture(false, true);
+  assert.equal(exported.directory.abi.generationalBarriers, true);
+  const result = compiler.readManagedSurfaceDirectory(exported, "reader", host);
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.equal(result.value.directory.abi.generationalBarriers, true);
+  assert.deepEqual(result.value.directory, exported.directory);
+});
 test("malformed directories and export counts fail before every host leaf", () => {
   const { exported, events, host } = fixture();
   const directory = exported.directory;
@@ -152,6 +163,16 @@ test("malformed directories and export counts fail before every host leaf", () =
       directory: digest({
         ...directory,
         abi: { ...directory.abi, signature: 999 },
+      }),
+    },
+    {
+      ...exported,
+      directory: digest({
+        ...directory,
+        abi: {
+          ...directory.abi,
+          generationalBarriers: 1 as unknown as boolean,
+        },
       }),
     },
     {
@@ -421,6 +442,29 @@ test("surface linking rechecks the live domain and validates every window before
     17,
   );
   assert.equal(missing.ok, false);
+  assert.equal(reads, 0);
+  // Code compiled with another barrier policy never links, before any read:
+  // this check upholds the image's trustedExecutableCode contract.
+  assert.equal(read.value.directory.abi.generationalBarriers, false);
+  const barriered = compiler.linkManagedSurfaceModule(
+    read.value,
+    { ...native, generationalBarriers: true },
+    reader,
+    17,
+  );
+  assert.equal(barriered.ok, false);
+  if (!barriered.ok) assert.match(barriered.error, /allocation policy differs/);
+  const x64 = compiler.linkX64ManagedSurfaceModule(
+    read.value,
+    {
+      managedImports: [request],
+      generationalBarriers: true,
+    } as unknown as import("@tint/codegen/x86_64/scalar").X64Module,
+    reader,
+    17,
+  );
+  assert.equal(x64.ok, false);
+  if (!x64.ok) assert.match(x64.error, /allocation policy differs/);
   assert.equal(reads, 0);
   const bad = compiler.linkManagedSurfaceModule(
     read.value,

@@ -185,6 +185,7 @@ import {
   provenDirectOnlyFunctions,
   stableRecordLayouts,
   stableDescriptors,
+  trackedManagedWrites,
   instructionResult,
   visitInstructionOperands,
   visitTerminatorOperands,
@@ -796,6 +797,11 @@ export interface EmissionOptions {
   readonly operationRanges?: boolean | undefined;
   readonly linearAllocation?: boolean | undefined;
   readonly generationalBarriers?: boolean | undefined;
+  /** The image's trust boundary for run-time code: every executable entry it
+   * calls was produced by its own unit linker under this image's barrier
+   * policy, so generational emission accepts executable calls
+   * (trackedManagedWrites). Only images built with allowJit may set it. */
+  readonly trustedExecutableCode?: boolean | undefined;
   readonly closedRoots?: readonly number[] | undefined;
   readonly managedABI?: ManagedABIRequest | undefined;
   readonly localSignatures?: readonly LocalSignatureBinding[] | undefined;
@@ -3126,7 +3132,13 @@ function emitModuleForms(
         fail("INVALID_IR", "imported functions cannot be executable roots");
     }
     if (generationalBarriers) {
-      if (!stableRecordLayouts(module, bodies))
+      if (
+        !trackedManagedWrites(
+          module,
+          bodies,
+          options.trustedExecutableCode === true,
+        )
+      )
         fail(
           "INVALID_IR",
           "generational mutator requires tracked managed writes; raw memory capabilities are unsupported",
