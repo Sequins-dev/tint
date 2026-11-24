@@ -7,8 +7,7 @@ import { runDarwinFixture } from "./native-admission.ts";
 // TypeScript through AOT thunks during may-callback calls.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import {
   verifyHostedFixture,
@@ -17,6 +16,7 @@ import {
 import { nativeFixtureTarget } from "./native-host-target.ts";
 import { nativeArtifact, runNativeBatch } from "./native-target-runner.ts";
 import { lldbStartCommands } from "./lldb-launch.ts";
+import { stableScratchDirectory } from "./fixture-scratch.ts";
 
 export const callbackDeclarations: FixtureForeignDeclaration = {
   id: "fixture/callbacks.d.ts",
@@ -419,7 +419,7 @@ export function withCallbackLibrary<T>(
   body: (library: string) => T,
 ): T | undefined {
   if (spawnSync("clang", ["--version"]).status !== 0) return undefined;
-  const directory = mkdtempSync(join(tmpdir(), "tint-callback-traps-"));
+  const directory = stableScratchDirectory("callback-library");
   try {
     const source = join(directory, "callback-traps.c"),
       library = join(

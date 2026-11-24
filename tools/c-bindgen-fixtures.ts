@@ -1,13 +1,13 @@
 // The binding generator's native fixture (docs/native-ffi.md, "Binding
 // generator"): libc calls through a binding generated fresh from this
 // host's headers, compiled by Tint and run under LLDB.
-import { readFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { mkdirSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { darwinSystemLibrary } from "@tint/abi/c";
 import { emitBinding } from "./c-bindgen/emit.ts";
 import { extractFacts, hostTarget } from "./c-bindgen/extract.ts";
 import type { BindingSpec } from "./c-bindgen/spec.ts";
+import { stableScratchPath } from "./fixture-scratch.ts";
 import {
   verifyHostedFixture,
   type FixtureForeignDeclaration,
@@ -112,7 +112,9 @@ export function run(): number {
 export async function verifySampleFixture(): Promise<string> {
   const text = await sampleBinding();
   const machine = process.platform === "darwin" ? "arm64" : "aarch64";
-  const path = join(tmpdir(), `tint-bindgen-sample-${process.pid}`);
+  // The program creates and unlinks this file.
+  const path = stableScratchPath("bindgen-sample-probe");
+  mkdirSync(dirname(path), { recursive: true });
   const declaration = {
     id: "fixture/bindgen-sample.d.ts",
     text,
