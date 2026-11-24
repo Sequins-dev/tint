@@ -642,13 +642,52 @@ export function ensureExoticSlots(
 export function createObject<Key, Value>(
   prototype: OrdinaryObject<Key, Value> | undefined,
 ): OrdinaryObject<Key, Value> {
-  return allocateObject<Key, Value>(
+  if (prototype !== undefined && !prototype.internalUsedAsPrototype)
+    markPrototype<Key, Value>(prototype);
+  return {
+    internalShape:
+      prototype === undefined ? undefined : prototype.internalChildShape,
     prototype,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-  );
+    extensible: true,
+    internalImmutablePrototype: false,
+    properties: undefined,
+    internalPropertyEpoch: 0,
+    internalChildShape: undefined,
+    internalDictionary: false,
+    internalUsedAsPrototype: false,
+    internalValues: undefined,
+    internalIndexedProperties: undefined,
+    internalPropertyContract: undefined,
+    internalCall: undefined,
+    internalRegisterCall: undefined,
+    internalTailDispatch: undefined,
+    internalSourceText: undefined,
+    internalConstruct: undefined,
+    internalExecutionContext: undefined,
+    internalArgumentsData: false,
+    internalArrayData: false,
+    internalArrayElements: undefined,
+    internalIdentity: 0,
+    internalGeneratorData: undefined,
+    internalAsyncGeneratorData: undefined,
+    internalPromiseData: undefined,
+    internalAwaitOperation: undefined,
+    internalArrayIteratorData: undefined,
+    internalBoundTarget: undefined,
+    internalHomeObject: undefined,
+    internalPrivateElements: undefined,
+    internalMethods: undefined,
+    internalDataAliases: undefined,
+    internalExoticSlots: undefined,
+    internalValue0: undefined,
+    internalValue1: undefined,
+    internalValue2: undefined,
+    internalValue3: undefined,
+    internalValue4: undefined,
+    internalValue5: undefined,
+    internalValue6: undefined,
+    internalValue7: undefined,
+  };
 }
 /** Only ordinary data storage and the standard Array exotic can enroll. */
 export function acceptsPropertyContract<Key, Value>(
