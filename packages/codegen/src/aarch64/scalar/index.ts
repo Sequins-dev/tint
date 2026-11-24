@@ -6184,38 +6184,31 @@ function emitModuleForms(
           else if (kind === 2 || kind === 5 || kind === 6 || kind === 7)
             emit({ op: "fcvtzs-x-d", rd: 9, rn: floatOperand(id, 0) });
           else {
-            // Most unknown operands already hold an integral binary64. An exact
-            // round trip through int64 yields ToUint32's low 32 bits directly;
-            // only 2^63 survives saturation, so INT64_MAX (cmn sets V) also
-            // takes the helper with fractional, non-finite and huge inputs.
-            const operand = floatOperand(id, 0);
-            emit({ op: "fcvtzs-x-d", rd: 9, rn: operand });
-            emit({ op: "scvtf-d-x", rd: 1, rn: 9 });
-            emit({ op: "fcmp", rn: operand, rm: 1 });
-            const inexact = instructions.length;
-            emit({ op: "b.cond", condition: "ne", displacement: 0 });
+            // fcvtzs truncates toward zero, ToUint32's first step, and maps
+            // NaN to 0, so below 2^63 in magnitude its low 32 bits are
+            // ToUint32's whether or not the operand is integral. Only
+            // saturation (infinities and magnitudes from 2^63) is wrong:
+            // doubling overflows (cmn sets V) from 2^62, and those operands
+            // take the helper.
+            emit({ op: "fcvtzs-x-d", rd: 9, rn: floatOperand(id, 0) });
             emit({
-              op: "add-imm",
+              op: "add-reg",
               width: 64,
               rd: "zr",
               rn: 9,
-              immediate: 1,
-              shift: 0,
+              rm: 9,
+              shift: "lsl",
+              amount: 0,
               setFlags: true,
             });
-            const exact = instructions.length;
+            const inRange = instructions.length;
             emit({ op: "b.cond", condition: "vc", displacement: 0 });
-            patchInstruction(inexact, {
-              op: "b.cond",
-              condition: "ne",
-              displacement: (instructions.length - inexact) * 4,
-            });
             rawValue(9, id);
             callHelper("to-uint32");
-            patchInstruction(exact, {
+            patchInstruction(inRange, {
               op: "b.cond",
               condition: "vc",
-              displacement: (instructions.length - exact) * 4,
+              displacement: (instructions.length - inRange) * 4,
             });
           }
         }
