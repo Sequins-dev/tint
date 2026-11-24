@@ -4682,10 +4682,11 @@ function lowerScriptEntry(
         [base, member(id("$errors"), "objectPrototype", span)],
         span,
       );
+      const slots = optionalMember(view, "internalExoticSlots", span);
       const storage = (property: string, data: string): Expression =>
         scalarBranch(
           is(property),
-          optionalMember(view, data, span),
+          optionalMember(slots, data, span),
           id("undefined", span),
           span,
         );
@@ -4693,7 +4694,7 @@ function lowerScriptEntry(
         shape === "has"
           ? scalarBranch(
               is("mapHas"),
-              optionalMember(view, "internalMapData", span),
+              optionalMember(slots, "internalMapData", span),
               storage("setHas", "internalSetData"),
               span,
             )

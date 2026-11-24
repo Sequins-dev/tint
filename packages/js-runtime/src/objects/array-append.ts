@@ -40,7 +40,9 @@ export function appendPackedElement(
     objectPrototype.internalDictionary
   )
     return false;
-  const length = object.properties.get("length");
+  const properties = object.properties;
+  const length =
+    properties === undefined ? undefined : properties.get("length");
   if (length === undefined || length.accessor || !length.writable) return false;
   writeArrayElement<ScriptPropertyKey, unknown>(elements, count, value);
   // The length descriptor is this array's own cell, replaced in place.
