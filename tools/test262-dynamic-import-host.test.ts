@@ -640,6 +640,10 @@ test("historical captures keep their managed vocabulary and adapter", async () =
     "cachedInheritedPropertyValue",
     "absentPropertyValue",
     "cachedPropertyStore",
+    "createNativeSourceFunction",
+    "createSourceInstance",
+    "sourceArgumentCount",
+    "sourceArgument",
   ];
   const old = {
     ...snapshot,
@@ -682,8 +686,8 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   assert.equal(previous.values.length, 136);
   // The inline property caches import two value readers (own and
   // inherited), their miss test and the cached store where they imported
-  // one slot reader.
-  assert.equal(current.values.length, 155);
+  // one slot reader; native script entries add their four helpers.
+  assert.equal(current.values.length, 159);
   for (const name of fastPaths) {
     assert.ok(!previous.values.some((value) => value.name === name), name);
     assert.ok(

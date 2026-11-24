@@ -169,6 +169,11 @@ export function createScriptRuntimeRequest(
       "absentPropertyValue",
       "cachedPropertyStore",
       "propertySlotWord",
+      // Native script entries (later than the positional calls).
+      "createNativeSourceFunction",
+      "createSourceInstance",
+      "sourceArgumentCount",
+      "sourceArgument",
     ]) {
       if (!objects?.has(name)) missingFastPaths.add(name);
     }
