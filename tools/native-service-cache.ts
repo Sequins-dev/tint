@@ -242,11 +242,10 @@ function capture(input: NativeServiceCacheInputs): unknown {
   return {
     version: 1,
     profile: "managed-factory-v1",
-    host: {
-      node: process.version,
-      platform: process.platform,
-      arch: process.arch,
-    },
+    // The request's target selects the output; the compiling host does
+    // not. A unit compiled by the same Node on Linux and on macOS is
+    // byte-identical, so CI can precompile Darwin units on Linux.
+    host: { node: process.version },
     toolchain: input.toolchainSha256,
     snapshot: input.sourceSnapshotSha256,
     data: input.data,

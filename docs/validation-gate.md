@@ -14,6 +14,32 @@ usual bootstrap directory. On the Linux dev machine run
 checkouts for parallel gates so each build can update its own TypeScript
 output. Run the gate on a fixed source tree.
 
+Both scripts run the jobs in [`jobs.sh`](../tools/gate/jobs.sh) one after
+another. [CI](#ci) runs the same jobs in parallel. The macOS gate runs:
+
+- static checks: build, compiler catalog, typecheck, boundaries and formatting;
+- the `concurrent`, `memory` and `native` test groups
+  ([classification](#classifying-a-test-file)), the memory group after the
+  selfhost subset (`complete native compiler pipeline`) so a broken native
+  pipeline fails within seconds;
+- the storage tests;
+- the self-build fixpoint: the Node-hosted pipeline builds stage 1 from a
+  fresh source snapshot, stage 1 builds stage 2 from that snapshot under LLDB,
+  and the gate requires `stage1 == stage2` byte for byte;
+- the [Test262 smoke](test262-runner.md#pre-merge-host-smoke): one file,
+  strict and sloppy, through the frozen Node-hosted toolchain with linked
+  Script units. Both variants must pass and no batch may fall back to
+  whole-program linking.
+
+The Linux gate runs the build, the storage tests and the self-build fixpoint.
+
+Stage 1 is the Node-hosted pipeline's build of the compiler and stage 2 is
+the native compiler's build of the same sources. `stage1 == stage2` shows
+that the two pipelines produce identical output and that the native compiler
+reproduces itself. It implies `stage2 == stage3`, because stage 3 would be
+the same bytes running on the same input, so the gate no longer builds
+stage 3.
+
 At most two full macOS gates are admitted at a time. Additional gates wait
 for an admission slot before building or running tests. The active budget
 is 3,600 seconds (`TINT_GATE_BUDGET`). It excludes admission, memory and
@@ -59,11 +85,11 @@ in `packages/compiler/src/build.ts`), and images are byte-identical to builds
 that compile them again (`tools/fixture-cache.test.ts`). Set
 `TINT_FIXTURE_CACHE=0` to start every build from scratch.
 
-Each macOS native bootstrap stage takes the exclusive lock for its LLDB
-invocation. LLDB attaches and debugserver launches can fail under concurrent
-load, so these invocations are serialized with native fixture launches and
-other exclusive steps. Node bootstrap and toolchain freezes use a memory
-slot, and byte comparisons run unlocked.
+The macOS stage 2 build takes the exclusive lock for its LLDB invocation.
+LLDB attaches and debugserver launches can fail under concurrent load, so
+these invocations are serialized with native fixture launches and other
+exclusive steps. Node bootstrap and toolchain freezes use a memory slot, and
+byte comparisons run unlocked.
 
 The watchdog starts when a step begins running. The native batch watchdog
 pauses while every active test file worker waits for a memory slot or the
@@ -78,8 +104,8 @@ Defaults are 1,800 seconds per bootstrap stage (`TINT_GATE_STAGE_TIMEOUT`),
 1,800 seconds for the native test batch (`TINT_GATE_NATIVE_TIMEOUT`), and
 600 seconds per Test262 admission or execution launch (`TINT_GATE_SMOKE_TIMEOUT`).
 The smoke deadline allows for contention in the host's first-launch
-admission queue. Both unlocked Linux native bootstrap stages use the stage
-timeout as well.
+admission queue. The unlocked Linux stage 2 build uses the stage timeout as
+well.
 
 The macOS gate also watches launch-lock holders for 120 seconds of no
 progress. It observes the identified inferior's accumulated CPU time, so a
@@ -96,9 +122,84 @@ queue time. On macOS
 the final line reports total exclusive lock hold in milliseconds, excluding
 queue time. `locks.tsv` records the step, lock path, UTC epoch acquisition
 time in milliseconds, and hold duration excluding queue time. Use the
-`stage2` and `stage3` exclusive-lock rows to revisit the bootstrap timeout. The logs include exit statuses,
-self-build SHA-256s and both Test262 reports. The gate stops on the first
-failed step.
+`stage2` exclusive-lock row to revisit the bootstrap timeout. The logs
+include exit statuses, self-build SHA-256s and the Test262 report. Each test
+group also writes `<step>-files.tsv`: per test file, its top-level test count
+and the sum of their durations in milliseconds. Durations include waits for
+memory slots and the launch lock; the native journal separates them. The gate
+stops on the first failed step.
+
+## CI
+
+[`ci.yml`](../.github/workflows/ci.yml) runs the static checks once on Linux
+x86-64 and calls [`gate.yml`](../.github/workflows/gate.yml) for each target:
+macOS arm64, Linux x86-64 and Linux arm64. Each step runs one
+[`ci.sh`](../tools/gate/ci.sh) job on a fresh runner:
+
+| Job                    | Runner                | Needs                     | Runs                                                     |
+| ---------------------- | --------------------- | ------------------------- | -------------------------------------------------------- |
+| `bootstrap`            | Linux (macOS: x86-64) |                           | build, storage tests, stage 1; packs the bundles         |
+| `fixpoint`             | target                | `bootstrap`               | stage 2 under LLDB, `cmp stage1 stage2`                  |
+| `tests (N/2)` (macOS)  | macOS arm64           | `bootstrap`               | one `concurrent` and one `memory` shard                  |
+| `native (N/3)` (macOS) | macOS arm64           | `bootstrap`               | one native fixture shard                                 |
+| `test262-host` (macOS) | Linux x86-64          |                           | build, freeze, compile the Darwin units host             |
+| `test262` (macOS)      | macOS arm64           | `bootstrap, test262-host` | link and run the Test262 smoke on the precompiled host   |
+| `result`               | Linux                 | all                       | fails unless every job that applies to the target passed |
+
+The Linux targets run `bootstrap` and `fixpoint`, the checks of
+[`linux-gate.sh`](../tools/gate/linux-gate.sh); `result` requires their other
+jobs to be skipped and every macOS job to succeed. The first `tests` shard
+starts with the selfhost subset.
+
+A macOS run takes seven macOS runners, each for one group, and none before
+its Linux jobs end. GitHub's free plan runs five macOS jobs at a time for the
+whole organization; small separate jobs let runs share that pool as runners
+free up, rather than hold a runner for groups run in turn. Node runs 2–2.5
+times slower on macOS runners than on Linux x86-64, so a Linux x86-64 runner
+builds the Darwin stage 1 (`--target darwin-aarch64`), which is byte-identical
+to a macOS build (see [the measurements](results/ci-fast-gate-v1.md)); the
+macOS fixpoint then builds stage 2 with it, so `stage1 == stage2` also shows
+that the Node-hosted build does not depend on its host.
+
+Every job uploads its evidence directories (`evidence-<target>-<job>`)
+without build products; a failed fixpoint also uploads both stages.
+
+The bootstrap job packs two bundles: `build` (each package's `dist` and build
+info) and `stage1` (stage 1 and the source snapshot it was built from). It
+reports each bundle's SHA-256 and stage 1's SHA-256 as job outputs. A job
+that consumes a bundle receives the reported SHA-256 from the workflow and
+fails unless the downloaded file matches it and records this commit; the
+fixpoint also checks stage 1's own SHA-256. The target's other jobs do not
+rebuild: the native fixtures, workspace tests and Test262 use the bootstrap
+job's Node-hosted compiler build, and stage 2 is built by its stage 1.
+
+The units host needs about 7.5 GB, more than the 7 GiB of a macOS runner,
+where it swapped for over 20 minutes. The `test262-host` job runs beside the
+bootstrap job on a 16 GiB Linux x86-64 runner. It builds the workspace,
+freezes the toolchain and compiles the Darwin host with
+`TINT_TEST262_UNIT_HOST=prepare` and `TINT_NATIVE_TARGET=darwin-aarch64`, then
+uploads the cache entry. The macOS `test262` job starts when both the host
+and bootstrap jobs end; it checks the bundle's SHA-256, freezes the toolchain
+from the bootstrap job's build, fails unless that toolchain's SHA-256 equals
+the one the host was compiled with (so both builds are identical), and runs
+the smoke with `TINT_TEST262_UNIT_HOST=require`, so it can only link and run.
+
+A CI job owns its runner. Its launch lock and memory slots live under
+`$RUNNER_TEMP`, so no other job waits on them, but they still order LLDB
+launches and fixture builds within the job. macOS jobs use one memory slot,
+two native test workers and a 5,120 MB Node heap.
+
+`node tools/check-test-files.ts GROUP --shard=INDEX/COUNT` selects one shard
+of a group. Shards balance the per-file costs in
+[`test-costs.json`](../tools/gate/test-costs.json): longest files first, each
+to the lightest shard, with unknown files weighing the median cost. Every
+file still runs in exactly one shard. Native costs are each file's image
+builds, admissions and executions from the fixture journal, which leave out
+memory-slot and launch-lock waits; refresh them with
+`node tools/gate/native-costs.ts <native-images.jsonl>...` from the native
+shards' evidence of a recent run when shards drift apart. Memory costs are
+the `check-memory-files.tsv` duration sums; concurrent files are short and
+weigh the default.
 
 ## Timing and profiling on the shared Mac
 

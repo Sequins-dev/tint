@@ -9,6 +9,13 @@ const manifest = JSON.parse(
   native: string[];
 };
 
+/** Measured seconds per test file on the CI runners, used only to balance
+ * shards (see docs/validation-gate.md). Stale or missing entries cost
+ * balance, never coverage. */
+const shardCosts = JSON.parse(
+  readFileSync(new URL("./gate/test-costs.json", import.meta.url), "utf8"),
+) as Record<string, number>;
+
 export function checkTestFiles(): string[] {
   return globSync(["packages/*/test/*.test.ts", "tools/*.test.ts"]).sort();
 }
@@ -45,14 +52,61 @@ export function nativeTestConcurrency(value: string | undefined): string {
   return concurrency;
 }
 
+export interface CheckTestShard {
+  readonly index: number;
+  readonly count: number;
+}
+
+/** Parses `INDEX/COUNT` (1-based), as in `--shard=2/3`. */
+export function parseCheckTestShard(value: string): CheckTestShard {
+  const match = /^([1-9][0-9]?)\/([1-9][0-9]?)$/.exec(value);
+  const index = Number(match?.[1]),
+    count = Number(match?.[2]);
+  if (!match || index > count)
+    throw Error("Expected a test shard INDEX/COUNT, got " + value);
+  return { index, count };
+}
+
+/**
+ * Splits a group into `count` shards of similar measured cost: longest files
+ * first, each to the currently lightest shard (ties to the lower shard). A
+ * file without a recorded cost weighs the median recorded cost. Every file
+ * lands in exactly one shard; each shard lists its heaviest files first so
+ * they start before the light ones.
+ */
+export function shardCheckTests(
+  files: readonly string[],
+  shard: CheckTestShard,
+  costs: Readonly<Record<string, number>> = shardCosts,
+): string[] {
+  const known = files
+    .map((file) => costs[file])
+    .filter((cost) => cost !== undefined)
+    .sort((a, b) => a - b);
+  const fallback = known.length ? known[Math.floor(known.length / 2)]! : 1;
+  const weighted = files
+    .map((file) => ({ file, cost: costs[file] ?? fallback }))
+    .sort((a, b) => b.cost - a.cost || a.file.localeCompare(b.file));
+  const loads = Array.from({ length: shard.count }, () => 0);
+  const selected: string[] = [];
+  for (const { file, cost } of weighted) {
+    const lightest = loads.indexOf(Math.min(...loads));
+    loads[lightest]! += cost;
+    if (lightest === shard.index - 1) selected.push(file);
+  }
+  return selected;
+}
+
 export function checkTestArguments(
   group: string | undefined,
   concurrency = process.env.TINT_GATE_NATIVE_CONCURRENCY,
+  shard?: CheckTestShard,
 ): string[] {
   const tests = classifiedCheckTests();
   if (group === undefined || !Object.hasOwn(tests, group))
     throw Error("Expected check test group: " + Object.keys(tests).join(", "));
-  const files = tests[group as keyof typeof tests];
+  const all = tests[group as keyof typeof tests];
+  const files = shard === undefined ? all : shardCheckTests(all, shard);
   if (files.length === 0) throw Error("Empty check test group: " + group);
   const args = ["--test"];
   if (group === "native" || group === "exclusive") {
@@ -62,16 +116,33 @@ export function checkTestArguments(
 }
 
 if (import.meta.main) {
-  const group = process.argv[2];
+  const [group, ...options] = process.argv.slice(2);
   if (group === "native-concurrency") {
     console.log(
       nativeTestConcurrency(process.env.TINT_GATE_NATIVE_CONCURRENCY),
     );
   } else {
-    const args = checkTestArguments(group);
+    let shard: CheckTestShard | undefined;
+    for (const option of options) {
+      if (option.startsWith("--shard=") && shard === undefined)
+        shard = parseCheckTestShard(option.slice("--shard=".length));
+      else throw Error("Unknown check test option: " + option);
+    }
+    const args = checkTestArguments(group, undefined, shard);
     if (group === "native" && process.env.TINT_GATE_NATIVE_IMAGES) {
       args.unshift(
         "--import=" + new URL("./gate/native-worker.ts", import.meta.url).href,
+      );
+    }
+    // Per-file times balance CI shards; the spec output stays on stdout.
+    const times = process.env.TINT_GATE_TEST_FILE_TIMES;
+    if (times) {
+      args.unshift(
+        "--test-reporter=spec",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=" +
+          new URL("./gate/test-file-times.ts", import.meta.url).href,
+        "--test-reporter-destination=" + times,
       );
     }
     const run = spawnSync(process.execPath, args, {

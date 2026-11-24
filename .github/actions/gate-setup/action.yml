@@ -1,0 +1,83 @@
+name: Gate setup
+description: Node, the pinned workspace dependencies and the host tools a gate job needs.
+
+inputs:
+  arch:
+    description: The Node architecture the runner must report.
+    required: true
+  debugger:
+    description: Prepare LLDB (DevTools on macOS, the lldb package on Linux).
+    default: "false"
+  test262:
+    description: Restore the pinned Test262 checkout and export TINT_GATE_TEST262.
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+    - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+      with:
+        node-version: 24.12.0
+        cache: pnpm
+
+    - name: Install workspace dependencies
+      shell: bash
+      env:
+        EXPECTED_ARCH: ${{ inputs.arch }}
+      run: |
+        test "$(node -p 'process.arch')" = "$EXPECTED_ARCH"
+        pnpm install --frozen-lockfile
+
+    - name: Prepare macOS SDK
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        sdk="$(xcrun --sdk macosx --show-sdk-path)"
+        test -d "$sdk"
+        echo "SDKROOT=$sdk" >> "$GITHUB_ENV"
+        xcrun --sdk macosx --show-sdk-version
+
+    - name: Prepare macOS debugger
+      if: runner.os == 'macOS' && inputs.debugger == 'true'
+      shell: bash
+      run: |
+        sudo /usr/sbin/DevToolsSecurity -enable
+        lldb --version
+
+    - name: Install Linux debugger
+      if: runner.os == 'Linux' && inputs.debugger == 'true'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lldb
+        lldb --version
+
+    - name: Restore Test262 checkout
+      if: inputs.test262 == 'true'
+      id: test262-cache
+      uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
+      with:
+        path: ${{ runner.temp }}/test262
+        key: test262-${{ runner.os }}-${{ env.TEST262_SHA }}
+
+    - name: Prepare pinned Test262 checkout
+      if: inputs.test262 == 'true'
+      shell: bash
+      run: |
+        checkout="$RUNNER_TEMP/test262"
+        if [ ! -d "$checkout/.git" ]; then
+          git init "$checkout"
+          git -C "$checkout" fetch --depth=1 https://github.com/tc39/test262.git "$TEST262_SHA"
+          git -C "$checkout" checkout --detach FETCH_HEAD
+        fi
+        test "$(git -C "$checkout" rev-parse HEAD)" = "$TEST262_SHA"
+        echo "TINT_GATE_TEST262=$checkout" >> "$GITHUB_ENV"
+
+    - name: Save Test262 checkout
+      if: inputs.test262 == 'true' && steps.test262-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
+      with:
+        path: ${{ runner.temp }}/test262
+        key: ${{ steps.test262-cache.outputs.cache-primary-key }}

@@ -1,6 +1,7 @@
 import { startNativeHeartbeat } from "./test262-native-heartbeat.ts";
 import { attributeNativeModule } from "./native-image-attribution.ts";
 import { nativeVariantSelection } from "./native-variant-selection.ts";
+import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { writeNodeExecutable } from "./node-file-host.ts";
@@ -41,6 +42,7 @@ import {
   nativeVariantRoute,
   createNativeBatchBuilder,
   createNativeUnitBatchBuilder,
+  unitHostCacheEntry,
   type NativeBatchBuild,
   deferNativeCase,
   type NativeModuleInput,
@@ -97,6 +99,18 @@ if (checkout === undefined)
 const target = nativeTestTarget;
 const transport = target.arch === "x86_64";
 const runner = process.env.TINT_NATIVE_RUNNER;
+// "prepare" compiles the linked-unit host into its cache and exits without
+// running a case, so any host with the memory for it can precompile the
+// Darwin host (TINT_NATIVE_TARGET=darwin-aarch64 off arm64); "require" fails
+// instead of compiling a missing host.
+const unitHostMode = process.env.TINT_TEST262_UNIT_HOST;
+if (
+  unitHostMode !== undefined &&
+  unitHostMode !== "prepare" &&
+  unitHostMode !== "require"
+)
+  throw Error("TINT_TEST262_UNIT_HOST must be prepare, require or unset");
+const prepareUnitHostOnly = unitHostMode === "prepare";
 if (transport) {
   if (
     runner !== "x64-local" &&
@@ -112,8 +126,8 @@ if (transport) {
     );
 } else if (
   target.name !== "darwin-aarch64" ||
-  process.platform !== "darwin" ||
-  process.arch !== "arm64"
+  (!prepareUnitHostOnly &&
+    (process.platform !== "darwin" || process.arch !== "arm64"))
 ) {
   throw Error(
     "the Test262 adapter requires local Darwin arm64 or a Linux x86-64 runner",
@@ -240,6 +254,51 @@ try {
     throw Error("TINT_TEST262_LINKING must be program, units, suite or unset");
   if (transport && scriptLinking !== "program")
     throw Error("Linux x86-64 Test262 currently requires program linking");
+  if (unitHostMode !== undefined && scriptLinking !== "units")
+    throw Error("TINT_TEST262_UNIT_HOST requires TINT_TEST262_LINKING=units");
+  // Only a frozen toolchain identifies the host's compiler exactly.
+  const unitHostCache =
+    frozenToolchainSha256 === undefined
+      ? undefined
+      : {
+          directory: resolve(
+            process.env.TINT_TEST262_UNIT_HOST_CACHE ??
+              ".tint-bootstrap/unit-host-cache",
+          ),
+          key: JSON.stringify([
+            frozenToolchainSha256,
+            sourceSnapshot.sha256,
+            moduleExecution,
+            nativeLinkingIdentity,
+          ]),
+          required: unitHostMode === "require",
+        };
+  if (unitHostMode !== undefined && unitHostCache === undefined)
+    throw Error("TINT_TEST262_UNIT_HOST requires a frozen toolchain");
+  if (prepareUnitHostOnly && unitHostCache !== undefined) {
+    heartbeat.phase("preparing the linked-unit host");
+    const started = performance.now();
+    createNativeUnitBatchBuilder(snapshot, moduleExecution, serviceImage, {
+      hostCache: unitHostCache,
+    }).prepare();
+    const { path } = unitHostCacheEntry(unitHostCache);
+    const bytes = readFileSync(path);
+    // Written synchronously: the process exits before any case would run.
+    writeFileSync(
+      process.stdout.fd,
+      JSON.stringify({
+        kind: "unit-host",
+        frozenToolchainSha256,
+        sourceSnapshot,
+        ...nativeLinkingIdentity,
+        path,
+        bytes: bytes.length,
+        sha256: createHash("sha256").update(bytes).digest("hex"),
+        preparationMs: Math.round(performance.now() - started),
+      }) + "\n",
+    );
+    process.exit(0);
+  }
   const { append: journal, checkpoint } = createNativeRunJournal(
     process.env.TINT_TEST262_JOURNAL,
     {
@@ -278,25 +337,12 @@ try {
   );
   const buildUnits =
     scriptLinking === "units"
-      ? createNativeUnitBatchBuilder(snapshot, moduleExecution, serviceImage, {
-          // Only a frozen toolchain identifies the host's compiler exactly.
-          ...(frozenToolchainSha256 === undefined
-            ? {}
-            : {
-                hostCache: {
-                  directory: resolve(
-                    process.env.TINT_TEST262_UNIT_HOST_CACHE ??
-                      ".tint-bootstrap/unit-host-cache",
-                  ),
-                  key: JSON.stringify([
-                    frozenToolchainSha256,
-                    sourceSnapshot.sha256,
-                    moduleExecution,
-                    nativeLinkingIdentity,
-                  ]),
-                },
-              }),
-        })
+      ? createNativeUnitBatchBuilder(
+          snapshot,
+          moduleExecution,
+          serviceImage,
+          unitHostCache === undefined ? {} : { hostCache: unitHostCache },
+        )
       : undefined;
   const buildSyntax = createNativeSyntaxBatchBuilder(snapshot);
   const suiteFunctions = process.env.TINT_TEST262_SUITE_FUNCTIONS,
@@ -323,6 +369,13 @@ try {
    * the first units batch, never charged to a variant's execution. */
   let hostPreparationMs: number | undefined,
     hostPreparationJournaled = false;
+  if (buildUnits !== undefined && unitHostMode === "require") {
+    // Fail before any case when the precompiled host is missing.
+    heartbeat.phase("loading the precompiled linked-unit host");
+    const hostStarted = performance.now();
+    buildUnits.prepare();
+    hostPreparationMs = performance.now() - hostStarted;
+  }
   /** Pending variants by how their batch is built. Each queue fills to the
    * batch size on its own, so interleaved kinds do not cut batches short. */
   type QueueKind = "syntax" | "units" | "program";

@@ -132,15 +132,22 @@ test(
 );
 
 test("macOS bootstrap stages use the exclusive lock", () => {
-  const gate = readFileSync(
-    new URL("./gate/mac-gate.sh", import.meta.url),
-    "utf8",
-  );
-  assert.match(gate, /^stage_lldb exclusive stage1 stage2$/m);
-  assert.match(gate, /^stage_lldb exclusive stage2 stage3$/m);
+  const read = (file: string) =>
+    readFileSync(new URL("./gate/" + file, import.meta.url), "utf8");
+  const gate = read("mac-gate.sh"),
+    ci = read("ci.sh"),
+    jobs = read("jobs.sh");
   assert.match(gate, /^bootstrap memory$/m);
-  assert.match(gate, /^run_step freeze memory /m);
-  assert.match(gate, /^run_step compare unlocked /m);
+  assert.match(gate, /^fixpoint exclusive$/m);
+  assert.match(gate, /^freeze_toolchain memory$/m);
+  assert.match(ci, /^ {2}Darwin\)\n {4}lldb_resource=exclusive$/m);
+  assert.match(ci, /^ {4}fixpoint "\$lldb_resource"$/m);
+  assert.match(jobs, /^ {2}stage_lldb "\$1" stage1 stage2$/m);
+  assert.match(jobs, /^ {2}run_step freeze "\$1" /m);
+  assert.match(
+    jobs,
+    /^ {2}run_step compare unlocked cmp "\$gate_output\/stage1" "\$gate_output\/stage2"$/m,
+  );
 });
 
 test(
