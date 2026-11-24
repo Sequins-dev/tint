@@ -3787,6 +3787,8 @@ function emitModuleForms(
               stringLiterals.set(op.id, op.value);
         }
         const foldedConstants = new Uint8Array(resultBound),
+          // Numeric constants 0 or -0: `x | 0` and `x ^ 0` are ToInt32(x).
+          zeroConstants = new Uint8Array(resultBound),
           undefinedValues = new Uint8Array(resultBound),
           // reference-none and string-none: one zero word. Used only as an
           // equality operand, they fold into a test of the other side.
@@ -3836,6 +3838,7 @@ function emitModuleForms(
                 if (typeof constant === "number") {
                   numericConstants[valueIds.intern(op.id)] = 1;
                   if (constant >>> 0 === constant) wordImmediates.add(op.id);
+                  if (constant === 0) zeroConstants[valueIds.intern(op.id)] = 1;
                 }
               }
               if (op.kind === "host-call" && rawWordOperation(op.operation))
@@ -3861,6 +3864,18 @@ function emitModuleForms(
                 const index = valueIds.intern(op.right);
                 if (numericConstants[index] === 1)
                   folded[index] = (folded[index] ?? 0) + 1;
+              }
+              if (
+                op.kind === "binary" &&
+                (op.operator === "|" || op.operator === "^")
+              ) {
+                // One zero operand folds into a plain ToInt32 of the other.
+                const right = valueIds.intern(op.right),
+                  left = valueIds.intern(op.left);
+                if (zeroConstants[right] === 1)
+                  folded[right] = (folded[right] ?? 0) + 1;
+                else if (zeroConstants[left] === 1)
+                  folded[left] = (folded[left] ?? 0) + 1;
               }
               // A short literal compared inline is read as an immediate
               // (see the string equality case: the right literal if any).
@@ -14920,6 +14935,7 @@ function emitModuleForms(
                     storedAsWord(op.id) || wantsInteger(op.id)
                       ? rawTarget(op.id, 9)
                       : 9;
+                  let extended = false;
                   if (rotation !== 0) {
                     const source = wordOperand(
                       rotateSources[valueIds.intern(op.id)] ?? 0,
@@ -14962,6 +14978,28 @@ function emitModuleForms(
                             imms: 31,
                           },
                     );
+                  } else if (
+                    (op.operator === "|" || op.operator === "^") &&
+                    (zeroConstants[rightIndex] === 1 ||
+                      zeroConstants[valueIds.intern(op.left)] === 1)
+                  ) {
+                    // `x | 0` and `x ^ 0`: the other operand's low 32 bits,
+                    // sign-extended at once for an int64 result.
+                    const source = wordOperand(
+                      zeroConstants[rightIndex] === 1 ? op.left : op.right,
+                      9,
+                    );
+                    if (!storedAsWord(op.id) && wantsInteger(op.id)) {
+                      emit({ op: "sxtw", rd: target, rn: source });
+                      extended = true;
+                    } else
+                      emit({
+                        op: "orr-reg",
+                        width: 32,
+                        rd: target,
+                        rn: "zr",
+                        rm: source,
+                      });
                   } else if (
                     immediate !== undefined &&
                     op.operator === "imul"
@@ -15011,7 +15049,8 @@ function emitModuleForms(
                         setFlags: false,
                       });
                   } else if (immediate !== undefined) {
-                    // A logical immediate, or an identity whose result is
+                    // A logical immediate, or an identity (`& -1`, and
+                    // `| 0` or `^ 0` with a deferred zero) whose result is
                     // the other operand's word (see binaryImmediate).
                     const constant = deferredIntegers.get(immediate);
                     if (constant === undefined)
@@ -15021,15 +15060,7 @@ function emitModuleForms(
                         immediate === op.right ? op.left : op.right,
                         9,
                       );
-                    if (fields === undefined)
-                      emit({
-                        op: "orr-reg",
-                        width: 32,
-                        rd: target,
-                        rn: "zr",
-                        rm: source,
-                      });
-                    else
+                    if (fields !== undefined)
                       emit({
                         op:
                           op.operator === "&"
@@ -15043,6 +15074,17 @@ function emitModuleForms(
                         n: fields.n,
                         immr: fields.immr,
                         imms: fields.imms,
+                      });
+                    else if (!storedAsWord(op.id) && wantsInteger(op.id)) {
+                      emit({ op: "sxtw", rd: target, rn: source });
+                      extended = true;
+                    } else
+                      emit({
+                        op: "orr-reg",
+                        width: 32,
+                        rd: target,
+                        rn: "zr",
+                        rm: source,
                       });
                   } else {
                     // The left operand stays in x13 (or its home) while the
@@ -15112,7 +15154,7 @@ function emitModuleForms(
                   if (storedAsWord(op.id)) saveRaw(target, op.id);
                   else if (wantsInteger(op.id)) {
                     // A W-register result is zero-extended: right for >>>.
-                    if (op.operator !== ">>>")
+                    if (op.operator !== ">>>" && !extended)
                       emit({ op: "sxtw", rd: target, rn: target });
                     saveRaw(target, op.id);
                     markInteger(op.id);
