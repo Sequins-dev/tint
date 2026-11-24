@@ -374,6 +374,7 @@ export interface ClosureFallback {
     | "realm-library-member"
     | "realm-library-construction"
     | "union-member-narrowing"
+    | "union-field-write"
     | "realm-aggregate-update"
     | "general-result-projection"
     | "operator-layout";
@@ -4186,6 +4187,34 @@ function checkClosureModuleLayout(
       "invalid realm array type",
     );
   }
+  /** Checks a record field write. Through a union receiver the value must
+   * fit every member's declared field type (system.writeProperty), while
+   * TypeScript accepts any value of the union's read type. The native write
+   * has no per-member run-time check, so a value TypeScript accepts but some
+   * member's contract rejects falls back to the general path. */
+  function checkFieldWrite(
+    target: Span,
+    receiver: number,
+    name: string,
+    value: number,
+    message: string,
+  ): void {
+    const checked = system.writeProperty(receiver, name, value);
+    if (checked.ok) return;
+    if (
+      checked.error === "TYPE_MISMATCH" &&
+      types[receiver]?.kind === "union"
+    ) {
+      const read = system.property(receiver, name);
+      if (read.ok && system.assignable(value, read.value))
+        unsupported(
+          target,
+          "union-field-write",
+          "a write through a union receiver requires a value of every member's declared field type",
+        );
+    }
+    fail(target, checked.error, message);
+  }
   function finiteRecordKeys(
     object: number,
     keyType: number,
@@ -7586,9 +7615,13 @@ function checkClosureModuleLayout(
             expressions.set(target, property.value);
             if (node.kind === "compound")
               requireType(expression(node.value, owner), number, node.value);
-            const checked = system.writeProperty(object, propertyName, number);
-            if (!checked.ok)
-              fail(target, checked.error, "invalid property update");
+            checkFieldWrite(
+              target,
+              object,
+              propertyName,
+              number,
+              "invalid property update",
+            );
             invalidateCalls();
             result = number;
             break;
@@ -7899,9 +7932,13 @@ function checkClosureModuleLayout(
               if (!read.ok)
                 fail(target, read.error, "invalid property assignment");
               result = expression(node.value, owner, read.value);
-              const checked = system.writeProperty(receiver, property, result);
-              if (!checked.ok)
-                fail(target, checked.error, "invalid property assignment");
+              checkFieldWrite(
+                target,
+                receiver,
+                property,
+                result,
+                "invalid property assignment",
+              );
               intrinsics.set(
                 node,
                 realmAggregate(receiver)
