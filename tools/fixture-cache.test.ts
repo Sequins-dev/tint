@@ -14,7 +14,7 @@ import test from "node:test";
 
 process.env.TINT_GENERAL_FALLBACK = "0";
 process.env.TINT_BUILD_ONLY = "defer-admission";
-const { fixtureCacheStatistics, verifyHostedFixture } =
+const { fixtureCacheStatistics, sharedFixtureImage, verifyHostedFixture } =
   await import("./hosted-fixture.ts");
 
 const sum = `function total(values: number[]): number {
@@ -145,6 +145,41 @@ console.log(JSON.stringify({ imageSha256, ...fixtureCacheStatistics }));`,
     assert.equal(first.imageSha256, fresh);
     assert.equal(second.imageSha256, fresh);
   } finally {
+    rmSync(cache, { recursive: true, force: true });
+  }
+});
+
+test("a fixed fixture is built once and every caller gets its own copy", () => {
+  const cache = mkdtempSync(join(tmpdir(), "tint-fixture-image-cache-"));
+  const saved = process.env.TINT_FIXTURE_CACHE_DIRECTORY;
+  process.env.TINT_FIXTURE_CACHE_DIRECTORY = cache;
+  try {
+    let builds = 0;
+    const image = () =>
+      sharedFixtureImage("cache-shared", [sum], () => {
+        builds++;
+        return verifyHostedFixture(sum, "cache-shared", [], [], [], [], {
+          managedBytes: 16777216,
+          allocationCapacity: 262144,
+        });
+      });
+    const first = image(),
+      second = image();
+    assert.equal(builds, 1);
+    assert.notEqual(first, second);
+    assert.equal(imageSha256(first), imageSha256(second));
+    assert.deepEqual(readFileSync(first), readFileSync(second));
+    // A caller may delete its copy; the next caller still gets one.
+    rmSync(first, { force: true });
+    assert.equal(imageSha256(image()), imageSha256(second));
+    assert.equal(builds, 1);
+    assert.equal(
+      JSON.parse(readFileSync(second + ".manifest.json", "utf8")).fixture,
+      second + ".source.ts",
+    );
+  } finally {
+    if (saved === undefined) delete process.env.TINT_FIXTURE_CACHE_DIRECTORY;
+    else process.env.TINT_FIXTURE_CACHE_DIRECTORY = saved;
     rmSync(cache, { recursive: true, force: true });
   }
 });

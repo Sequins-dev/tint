@@ -1,16 +1,19 @@
 import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import {
+  chmodSync,
+  copyFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   renameSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { deserialize, serialize } from "node:v8";
 import { prepareDateTimeNativeService } from "./date-time-native-service.ts";
 import { frozenNativeRunIdentity } from "./native-run-journal.ts";
@@ -262,6 +265,107 @@ function shareRuntimeUnits(
     if (file !== undefined) storeRuntimeUnits(file, units.value);
   }
   return units;
+}
+
+/** Copy an image and its build records (manifest, source, run records) to a
+ * new path. A copied manifest names the copied source; the image bytes, and
+ * so the manifest's image hash, are unchanged. */
+function copyFixtureImage(from: string, to: string): void {
+  const prefix = basename(from) + ".";
+  copyFileSync(from, to);
+  chmodSync(to, 0o755);
+  for (const file of readdirSync(dirname(from)))
+    if (file.startsWith(prefix))
+      copyFileSync(
+        join(dirname(from), file),
+        to + "." + file.slice(prefix.length),
+      );
+  const manifest = to + ".manifest.json";
+  if (existsSync(manifest)) {
+    const record = JSON.parse(readFileSync(manifest, "utf8"));
+    if (typeof record.fixture === "string") {
+      record.fixture = to + ".source.ts";
+      writeFileSync(manifest, JSON.stringify(record, null, 2) + "\n");
+    }
+  }
+}
+/** Images of fixed fixtures, built once per process (see sharedFixtureImage). */
+const sharedImages = new Map<string, string>();
+/** Build a fixture whose program and options never vary (`key`) once per
+ * process, and once per native batch through its cache directory. Every
+ * call returns a private copy of the image and its build records, which the
+ * caller may delete. Build-affecting TINT_ variables are part of the key. */
+export function sharedFixtureImage(
+  name: string,
+  key: readonly unknown[],
+  build: () => string,
+): string {
+  if (!fixtureCache()) return build();
+  const environment = Object.entries(process.env)
+    .filter(
+      ([variable]) =>
+        variable.startsWith("TINT_") &&
+        !variable.startsWith("TINT_GATE_") &&
+        !variable.startsWith("TINT_FIXTURE_") &&
+        variable !== "TINT_BUILD_ONLY" &&
+        variable !== "TINT_KEEP_NATIVE",
+    )
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  const id = createHash("sha256")
+    .update(
+      JSON.stringify([
+        "tint-fixture-image-v1",
+        captureWorkspace().identity.sha256,
+        fixtureTarget.name,
+        name,
+        key,
+        environment,
+      ]),
+    )
+    .digest("hex");
+  let kept = sharedImages.get(id);
+  if (kept === undefined || !existsSync(kept)) {
+    const cache = fixtureCacheDirectory();
+    const stored =
+      cache === undefined ? undefined : join(cache, "image-" + id, name);
+    if (stored !== undefined && existsSync(stored + ".manifest.json"))
+      kept = stored;
+    else {
+      const built = build();
+      const staging = mkdtempSync(
+        join(
+          cache ?? process.env.TINT_FIXTURE_TMPDIR ?? tmpdir(),
+          "tint-shared-" + name + "-",
+        ),
+      );
+      copyFixtureImage(built, join(staging, name));
+      rmSync(dirname(built), { recursive: true, force: true });
+      kept = join(staging, name);
+      if (stored !== undefined)
+        try {
+          renameSync(staging, dirname(stored));
+          kept = stored;
+        } catch {
+          // Another process stored the same image first; keep this copy.
+        }
+      if (kept !== stored)
+        process.once("exit", () =>
+          rmSync(staging, { recursive: true, force: true }),
+        );
+    }
+    sharedImages.set(id, kept);
+  }
+  const copy = join(
+    mkdtempSync(
+      join(
+        process.env.TINT_FIXTURE_TMPDIR ?? tmpdir(),
+        "tint-hosted-" + name + "-",
+      ),
+    ),
+    name,
+  );
+  copyFixtureImage(kept, copy);
+  return copy;
 }
 
 type GeneralLowering = ReturnType<typeof createGeneralLowering>;

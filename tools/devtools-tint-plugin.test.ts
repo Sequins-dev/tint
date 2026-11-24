@@ -96,7 +96,6 @@ testNativeLaunch(
   { skip: !available && "needs lldb-dap", timeout: 300000 },
   async (onAdmitted) => {
     const { client, url, close } = await tintSession(
-      "devtools-values",
       [new TintPlugin()],
       onAdmitted,
     );
@@ -233,7 +232,6 @@ testNativeLaunch(
   { skip: !available && "needs lldb-dap", timeout: 300000 },
   async (onAdmitted) => {
     const { client, url, session, close } = await tintSession(
-      "devtools-heap",
       [new TintPlugin()],
       onAdmitted,
     );
