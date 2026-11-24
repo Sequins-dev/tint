@@ -4,6 +4,7 @@ import {
   throwIfRuntimeError,
   type ErrorRealm,
 } from "./errors.ts";
+import { appendPackedElement } from "./array-append.ts";
 import { viewSymbolValue, wellKnownSymbol } from "./symbols.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import {
@@ -165,13 +166,14 @@ export function writeObjectValuePropertyKey(
         (rare === undefined || rare.internalPropertyContract === undefined)
       ) {
         const elements = object.internalArrayElements;
-        if (
-          elements !== undefined &&
-          key >= 0 &&
-          key < arrayElementCount<ScriptPropertyKey, unknown>(elements)
-        ) {
-          writeArrayElement<ScriptPropertyKey, unknown>(elements, key, value);
-          return;
+        if (elements !== undefined && key >= 0) {
+          const count = arrayElementCount<ScriptPropertyKey, unknown>(elements);
+          if (key < count) {
+            writeArrayElement<ScriptPropertyKey, unknown>(elements, key, value);
+            return;
+          }
+          if (key === count && appendPackedElement(object, value, realm))
+            return;
         }
         if (
           object.internalMethods === undefined &&

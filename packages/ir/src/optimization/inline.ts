@@ -134,6 +134,9 @@ function supported(op: Instruction, references: boolean = true): boolean {
     // A cached property store is a nonallocating, nonthrowing inline
     // sequence; its write keeps heap effects (see instructionEffects).
     case "property-store":
+    // Element loads and stores are inline, nonallocating and nonthrowing.
+    case "element-load":
+    case "element-store":
       return true;
     case "reference-none":
     case "reference-wrap":
@@ -969,6 +972,29 @@ export function inlineSmallFunctions(
                   object: value(instruction.object),
                   value: value(instruction.value),
                   site: value(instruction.site),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "element-load":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  object: value(instruction.object),
+                  index: value(instruction.index),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "element-store":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  object: value(instruction.object),
+                  index: value(instruction.index),
+                  value: value(instruction.value),
                   start: at.start,
                   end: at.end,
                   inline: at.inline,

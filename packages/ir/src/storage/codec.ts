@@ -509,6 +509,19 @@ export function encodeInstruction(
       writeSigned(writer, op.epochRecord);
       writeSigned(writer, op.epochField);
       return true;
+    case "element-load":
+    case "element-store":
+      writePrefix(writer, op.kind === "element-load" ? 120 : 121, op, 0);
+      writeSigned(writer, op.id);
+      writeSigned(writer, op.object);
+      writeSigned(writer, op.index);
+      if (op.kind === "element-store") writeSigned(writer, op.value);
+      writeSigned(writer, op.record);
+      writeSigned(writer, op.field);
+      writeSigned(writer, op.elementsRecord);
+      writeSigned(writer, op.countField);
+      writeSigned(writer, op.storageField);
+      return true;
     case "closure-environment":
       writePrefix(writer, 21, op, 0);
       writeSigned(writer, op.id);
@@ -1435,6 +1448,52 @@ export function decodeInstruction(
         siteField,
         epochRecord,
         epochField,
+        ...span,
+      };
+    }
+    case 120: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        index = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        elementsRecord = readSigned(reader),
+        countField = readSigned(reader),
+        storageField = readSigned(reader);
+      return {
+        kind: "element-load",
+        id,
+        object,
+        index,
+        record,
+        field,
+        elementsRecord,
+        countField,
+        storageField,
+        ...span,
+      };
+    }
+    case 121: {
+      const id = readSigned(reader),
+        object = readSigned(reader),
+        index = readSigned(reader),
+        value = readSigned(reader),
+        record = readSigned(reader),
+        field = readSigned(reader),
+        elementsRecord = readSigned(reader),
+        countField = readSigned(reader),
+        storageField = readSigned(reader);
+      return {
+        kind: "element-store",
+        id,
+        object,
+        index,
+        value,
+        record,
+        field,
+        elementsRecord,
+        countField,
+        storageField,
         ...span,
       };
     }

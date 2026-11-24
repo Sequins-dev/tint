@@ -2676,6 +2676,72 @@ export function emitModule(
           define(op.id, "boolean");
           return;
         }
+        case "element-load":
+        case "element-store": {
+          // See the AArch64 emission: the object's record descriptor, its
+          // elements, the index as an integer below the number count, then
+          // the binary64 element.
+          const elements = recordField(op.record, op.field),
+            count = recordField(op.elementsRecord, op.countField),
+            storage = recordField(op.elementsRecord, op.storageField);
+          const site = fnLabel + ":" + op.kind + ":" + String(op.id);
+          const missed = site + ":miss",
+            done = site + ":done";
+          if (op.kind === "element-store") {
+            // Only a Number (tag 1) overwrites a binary64 element.
+            emit({ op: "cmp", dst: frame(home(op.value)), src: imm(1) });
+            branch(emit, "ne", missed);
+          }
+          emit({ op: "cmp", dst: frame(home(op.object)), src: imm(5) });
+          branch(emit, "ne", missed);
+          emit({ op: "mov", dst: gpr(10), src: frame(home(op.object) + 8) });
+          address(scratch, descriptor(op.record));
+          emit({ op: "cmp", dst: mem(10, 0), src: scratch });
+          branch(emit, "ne", missed);
+          emit({ op: "mov", dst: gpr(10), src: mem(10, elements.offset) });
+          emit({ op: "test", dst: gpr(10), src: gpr(10) });
+          branch(emit, "e", missed);
+          // An exact integer (R9) compares unsigned: negative ones are huge.
+          exactInteger(emit, frame(home(op.index)), r9, missed);
+          emit({ op: "movsd", dst: xmm(1), src: mem(10, count.offset) });
+          emit({ op: "cvttsd2si", dst: rax, src: xmm(1) });
+          emit({ op: "cmp", dst: r9, src: rax });
+          branch(emit, "ae", missed);
+          emit({ op: "mov", dst: gpr(10), src: mem(10, storage.offset) });
+          emit({
+            op: "mov",
+            dst: gpr(10),
+            src: mem(10, nativeArrayDataOffset),
+          });
+          const element: Memory<64> = {
+            kind: "mem",
+            width: 64,
+            address: { kind: "base", base: 10, index: 9, scale: 8, disp: 0 },
+          };
+          if (op.kind === "element-store") {
+            emit({ op: "mov", dst: rax, src: frame(home(op.value) + 8) });
+            emit({ op: "mov", dst: element, src: rax });
+            emit({ op: "mov", dst: eax, src: imm(1) });
+            emit({ op: "jmp", target: label(done) });
+            emit({ op: "label", name: missed });
+            emit({ op: "xor", dst: eax, src: eax });
+            emit({ op: "label", name: done });
+            define(op.id, "boolean");
+            return;
+          }
+          emit({ op: "mov", dst: rax, src: element });
+          emit({ op: "mov", dst: frame(home(op.id) + 8), src: rax });
+          // A Number: tag 1 and the element's bits.
+          emit({ op: "mov", dst: eax, src: imm(1) });
+          emit({ op: "jmp", target: label(done) });
+          emit({ op: "label", name: missed });
+          // The absent value: undefined's tag with payload 1.
+          emit({ op: "mov", dst: frame(home(op.id) + 8), src: imm(1) });
+          emit({ op: "xor", dst: eax, src: eax });
+          emit({ op: "label", name: done });
+          define(op.id, "general");
+          return;
+        }
         case "record-has": {
           const field = recordField(op.record, op.field);
           const site = fnLabel + ":record-has:" + String(op.id);

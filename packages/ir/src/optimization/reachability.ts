@@ -95,6 +95,9 @@ export function traceModuleReferences(
           includeRecord(op.record);
           includeRecord(op.siteRecord);
           includeRecord(op.epochRecord);
+        } else if (op.kind === "element-load" || op.kind === "element-store") {
+          includeRecord(op.record);
+          includeRecord(op.elementsRecord);
         }
       }
       const t = block.terminator;

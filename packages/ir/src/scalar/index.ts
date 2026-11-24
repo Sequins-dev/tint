@@ -867,6 +867,34 @@ export function verify(
               );
               break;
             }
+            case "element-load":
+            case "element-store": {
+              hasRecordReads = true;
+              equal(use(op.object), "general");
+              equal(use(op.index), "number");
+              if (op.kind === "element-store") equal(use(op.value), "general");
+              const elements = module.records?.[op.record]?.fields[op.field],
+                elementFields = module.records?.[op.elementsRecord]?.fields;
+              if (
+                !natural(op.record) ||
+                !natural(op.field) ||
+                !natural(op.elementsRecord) ||
+                !natural(op.countField) ||
+                !natural(op.storageField) ||
+                !plainRecordField(elements, "optional-reference") ||
+                !plainRecordField(elementFields?.[op.countField], "number") ||
+                !plainRecordField(
+                  elementFields?.[op.storageField],
+                  "Float64Array",
+                )
+              )
+                fail(
+                  "TYPE",
+                  "element access requires an elements reference with a number count and Float64Array storage",
+                );
+              define(op.id, op.kind === "element-load" ? "general" : "boolean");
+              break;
+            }
             case "record-has": {
               const type = use(op.object);
               if (type !== "reference" && type !== "optional-reference")

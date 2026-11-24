@@ -1,4 +1,8 @@
 import type { RealmReferrer } from "../modules/referrer.ts";
+import {
+  createIntrinsicFunctions,
+  type IntrinsicFunctions,
+} from "./intrinsic-functions.ts";
 import type { ByteAllocator } from "../bytes/index.ts";
 import type { ModuleLoader } from "../modules/loading.ts";
 import { installModuleSourceIntrinsic } from "./module-source.ts";
@@ -229,6 +233,8 @@ export interface ErrorRealm {
   readonly arrayIteratorPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly stringIteratorPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   arrayValues: OrdinaryObject<ScriptPropertyKey, unknown> | undefined;
+  /** Builtins generated calls may perform inline (see intrinsic-functions.ts). */
+  readonly intrinsicFunctions: IntrinsicFunctions;
   readonly symbolRegistry: SymbolRegistry;
   readonly intlFallbackSymbol: SymbolValue;
   readonly symbolPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
@@ -586,6 +592,7 @@ export function createErrorRealm(
       iteratorPrototype,
     ),
     arrayValues: undefined,
+    intrinsicFunctions: createIntrinsicFunctions(),
     symbolRegistry,
     intlFallbackSymbol: createSymbolValue("IntlLegacyConstructedSymbol"),
     symbolPrototype: createObject<ScriptPropertyKey, unknown>(objectPrototype),

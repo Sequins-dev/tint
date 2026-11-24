@@ -309,12 +309,13 @@ test("storing a non-number switches number elements to values once", () => {
   put(a, "1", NaN);
   put(a, "2", 2);
   const before = a.internalArrayElements!;
-  assert.notEqual(before.numbers, undefined);
+  assert.equal(before.values, undefined);
+  assert.equal(before.numberCount, 3);
   const object = objects.createObject<ScriptPropertyKey, unknown>(undefined);
   put(a, "1", object);
   put(a, "3", "three");
   const after = a.internalArrayElements!;
-  assert.equal(after.numbers, undefined);
+  assert.equal(after.numberCount, 0);
   assert.notEqual(after.values, undefined);
   assert.ok(Object.is(get(a, "0"), -0));
   assert.equal(get(a, "1"), object);
@@ -324,6 +325,28 @@ test("storing a non-number switches number elements to values once", () => {
   assert.equal(get(a, "4"), 4);
   assert.equal(a.properties?.size, 1);
   assert.equal(length(a), 5);
+});
+
+test("number elements grow in place and an emptied array starts over as numbers", () => {
+  const a = array();
+  for (let i = 0; i < 100; i++) put(a, String(i), i / 2);
+  const elements = a.internalArrayElements!;
+  assert.equal(elements.values, undefined);
+  assert.equal(elements.numberCount, 100);
+  assert.ok(elements.numbers.length >= 100);
+  assert.equal(get(a, "99"), 49.5);
+  put(a, "100", "text");
+  assert.equal(elements.numberCount, 0);
+  // Read through the object: the assertion above narrowed `elements.values`.
+  assert.equal(a.internalArrayElements?.values?.length, 101);
+  assert.equal(get(a, "99"), 49.5);
+  assert.equal(resize(a, 0), "accepted");
+  assert.equal(elements.values, undefined);
+  assert.equal(elements.numberCount, 0);
+  put(a, "0", 7);
+  assert.equal(elements.numberCount, 1);
+  assert.equal(get(a, "0"), 7);
+  assert.equal(length(a), 1);
 });
 
 test("non-default attributes and accessors convert to descriptors", () => {

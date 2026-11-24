@@ -92,20 +92,37 @@ export function createArrayObject<Key, Value>(
   );
   return object;
 }
+/** Define the array's length, keeping the packed elements' mirror of its
+ * value current (generated code reads `length` there). */
+function defineLength<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  update: DescriptorUpdate<Value>,
+  array: ArrayObjectHooks<Key, Value>,
+  hooks: ObjectHooks<Value>,
+): PropertyDefinitionResult {
+  const result = ordinaryDefineOwnProperty<Key, Value>(
+    object,
+    array.lengthKey,
+    update,
+    hooks,
+  );
+  const elements = object.internalArrayElements;
+  if (elements !== undefined && (update.fields & valueField) !== 0) {
+    const length = object.properties.get(array.lengthKey);
+    const value =
+      length === undefined ? undefined : array.numberPayload(length.value);
+    if (value === undefined) throw "ARRAY_LENGTH_INVARIANT";
+    elements.length = value;
+  }
+  return result;
+}
 function requireLengthUpdate<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   update: DescriptorUpdate<Value>,
   array: ArrayObjectHooks<Key, Value>,
   hooks: ObjectHooks<Value>,
 ): void {
-  if (
-    ordinaryDefineOwnProperty<Key, Value>(
-      object,
-      array.lengthKey,
-      update,
-      hooks,
-    ) !== "accepted"
-  )
+  if (defineLength<Key, Value>(object, update, array, hooks) !== "accepted")
     throw "ARRAY_LENGTH_INVARIANT";
 }
 /** No deletion can fail or invoke user code when every remaining key is a
@@ -136,12 +153,7 @@ function setArrayLength<Key, Value>(
   hooks: ObjectHooks<Value>,
 ): PropertyDefinitionResult {
   if ((update.fields & valueField) === 0)
-    return ordinaryDefineOwnProperty<Key, Value>(
-      object,
-      array.lengthKey,
-      update,
-      hooks,
-    );
+    return defineLength<Key, Value>(object, update, array, hooks);
   // The two conversions are intentionally separate: object coercion runs twice.
   const length = array.toNumber(update.value) >>> 0;
   if (length !== array.toNumber(update.value)) throw array.rangeError();
@@ -149,22 +161,12 @@ function setArrayLength<Key, Value>(
   const descriptor = getOwnProperty<Key, Value>(object, array.lengthKey);
   if (descriptor === undefined) throw "ARRAY_LENGTH_INVARIANT";
   if (length >= array.toNumber(descriptor.value))
-    return ordinaryDefineOwnProperty<Key, Value>(
-      object,
-      array.lengthKey,
-      applied,
-      hooks,
-    );
+    return defineLength<Key, Value>(object, applied, array, hooks);
   if (!descriptor.writable) return "rejected";
   const makeReadOnly =
     (update.fields & writableField) !== 0 && !update.writable;
   if (makeReadOnly) applied = { ...applied, writable: true };
-  const result = ordinaryDefineOwnProperty<Key, Value>(
-    object,
-    array.lengthKey,
-    applied,
-    hooks,
-  );
+  const result = defineLength<Key, Value>(object, applied, array, hooks);
   if (result !== "accepted") return result;
   // Packed elements are the only indices while present and all configurable,
   // so removing those at or above the new length cannot fail.

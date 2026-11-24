@@ -1,4 +1,19 @@
 export { viewWeakRegistryOwner } from "./values.ts";
+export {
+  packedNumberElement,
+  absentElementValue,
+  storePackedNumberElement,
+  readCachedLengthValue,
+} from "./element-access.ts";
+export {
+  createIntrinsicFunctions,
+  scriptMapGet,
+  scriptMapHas,
+  scriptMapSet,
+  scriptSetAdd,
+  type IntrinsicFunctions,
+} from "./intrinsic-functions.ts";
+export { scriptArrayPush } from "./array-append.ts";
 export { createModuleSourceObject } from "./module-source.ts";
 export { installFinalizationRegistryIntrinsics } from "./finalization-registry.ts";
 export { installWeakRefIntrinsics } from "./weak-ref.ts";

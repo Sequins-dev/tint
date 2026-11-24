@@ -39,6 +39,7 @@ export function instructionEffects(op: Instruction): number {
     case "record-read":
     case "record-slot-read":
     case "property-load":
+    case "element-load":
     case "array-read":
     case "array-element":
     case "weak-slot-key":
@@ -48,6 +49,7 @@ export function instructionEffects(op: Instruction): number {
     case "array-copy":
     case "reference-vector-copy":
     case "property-store":
+    case "element-store":
       return effectReadHeap | effectWriteHeap;
     case "array-write":
     case "array-store":

@@ -80,28 +80,39 @@ export function installMathIntrinsics(
   constant("PI", 3.141592653589793);
   constant("SQRT1_2", 0.7071067811865476);
   constant("SQRT2", 1.4142135623730951);
-  function unary(name: string, operation: (value: number) => number): void {
-    builtinProperty(
-      math,
+  function unary(
+    name: string,
+    operation: (value: number) => number,
+  ): OrdinaryObject<ScriptPropertyKey, unknown> {
+    const method = builtinFunction(
+      realm.functionPrototype,
       name,
-      builtinFunction(
-        realm.functionPrototype,
-        name,
-        1,
-        (receiver, args): unknown => operation(number(args[0])),
-        hooks,
-      ),
-      true,
-      true,
+      1,
+      (receiver, args): unknown => operation(number(args[0])),
       hooks,
     );
+    builtinProperty(math, name, method, true, true, hooks);
+    return method;
   }
-  unary("abs", (value: number): number => Math.abs(value));
-  unary("ceil", (value: number): number => Math.ceil(value));
-  unary("floor", (value: number): number => Math.floor(value));
-  unary("trunc", (value: number): number => Math.trunc(value));
-  unary("round", (value: number): number => Math.round(value));
-  unary("sign", (value: number): number => Math.sign(value));
+  // Generated calls perform these inline on Numbers (intrinsic-functions.ts)
+  // with the same typed operations.
+  const intrinsics = realm.intrinsicFunctions;
+  intrinsics.mathAbs = unary("abs", (value: number): number => Math.abs(value));
+  intrinsics.mathCeil = unary("ceil", (value: number): number =>
+    Math.ceil(value),
+  );
+  intrinsics.mathFloor = unary("floor", (value: number): number =>
+    Math.floor(value),
+  );
+  intrinsics.mathTrunc = unary("trunc", (value: number): number =>
+    Math.trunc(value),
+  );
+  intrinsics.mathRound = unary("round", (value: number): number =>
+    Math.round(value),
+  );
+  intrinsics.mathSign = unary("sign", (value: number): number =>
+    Math.sign(value),
+  );
   unary("sin", (value: number): number => sine(value));
   unary("cos", (value: number): number => cosine(value));
   unary("tan", (value: number): number => tangent(value));
@@ -121,11 +132,18 @@ export function installMathIntrinsics(
   unary("log10", (value: number): number => numberLog(value, 10));
   unary("log1p", (value: number): number => numberLog1p(value));
   unary("cbrt", (value: number): number => numberCbrt(value));
-  unary("sqrt", (value: number): number => Math.sqrt(value));
-  unary("clz32", (value: number): number => Math.clz32(value));
+  intrinsics.mathSqrt = unary("sqrt", (value: number): number =>
+    Math.sqrt(value),
+  );
+  intrinsics.mathClz32 = unary("clz32", (value: number): number =>
+    Math.clz32(value),
+  );
   unary("fround", (value: number): number => roundFloat(value, 4));
   unary("f16round", (value: number): number => roundFloat(value, 2));
-  function extremum(name: string, maximum: boolean): void {
+  function extremum(
+    name: string,
+    maximum: boolean,
+  ): OrdinaryObject<ScriptPropertyKey, unknown> {
     const method = builtinFunction(
       realm.functionPrototype,
       name,
@@ -150,33 +168,29 @@ export function installMathIntrinsics(
       hooks,
     );
     builtinProperty(math, name, method, true, true, hooks);
+    return method;
   }
-  extremum("min", false);
-  extremum("max", true);
+  intrinsics.mathMin = extremum("min", false);
+  intrinsics.mathMax = extremum("max", true);
   function binary(
     name: string,
     operation: (left: number, right: number) => number,
-  ): void {
-    builtinProperty(
-      math,
+  ): OrdinaryObject<ScriptPropertyKey, unknown> {
+    const method = builtinFunction(
+      realm.functionPrototype,
       name,
-      builtinFunction(
-        realm.functionPrototype,
-        name,
-        2,
-        (receiver, args): unknown => {
-          const left = number(args[0]);
-          const right = number(args[1]);
-          return operation(left, right);
-        },
-        hooks,
-      ),
-      true,
-      true,
+      2,
+      (receiver, args): unknown => {
+        const left = number(args[0]);
+        const right = number(args[1]);
+        return operation(left, right);
+      },
       hooks,
     );
+    builtinProperty(math, name, method, true, true, hooks);
+    return method;
   }
-  binary("imul", (left: number, right: number): number =>
+  intrinsics.mathImul = binary("imul", (left: number, right: number): number =>
     Math.imul(left, right),
   );
   binary("atan2", (y: number, x: number): number => numberAtan2(y, x));

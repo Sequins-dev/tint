@@ -76,10 +76,15 @@ test("plain computed reads convert inside the fused read", () => {
     calls("function f(o,k){return o[k]}", "readObjectValuePropertyKey"),
     1,
   );
-  // Compound assignment retains its converted key for PutValue instead.
+  assert.equal(calls("function f(o,k){return o[k]}", "packedNumberElement"), 1);
+  // Compound assignment reads a Number key's element directly; any other key
+  // converts once and is retained for PutValue.
   const compound = "function f(o,k){o[k]+=1}";
-  assert.equal(calls(compound, "readObjectValuePropertyKey"), 0);
+  assert.equal(calls(compound, "packedNumberElement"), 1);
+  assert.equal(calls(compound, "readObjectValuePropertyKey"), 1);
   assert.equal(calls(compound, "readObjectValueProperty"), 1);
+  assert.equal(calls(compound, "objectPropertyKey"), 1);
+  assert.equal(calls(compound, "writeObjectValuePropertyKey"), 1);
 });
 
 for (const [source, printed, completion] of [

@@ -83,6 +83,8 @@ export function scriptRuntimeImports(
   usesRelationalFallback: boolean = false,
   usesLooseEqualityFallback: boolean = false,
   excludesHTMLDDAObjects: boolean = false,
+  usesElementAccess: boolean = false,
+  usesIntrinsicCalls: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -295,6 +297,23 @@ export function scriptRuntimeImports(
           : []),
         "readObjectValuePropertyKey",
         ...(usesIndexedWrites ? ["writeObjectValuePropertyKey"] : []),
+        ...(usesElementAccess || declarations === "all"
+          ? [
+              "packedNumberElement",
+              "absentElementValue",
+              "storePackedNumberElement",
+              "readCachedLengthValue",
+            ]
+          : []),
+        ...(usesIntrinsicCalls || declarations === "all"
+          ? [
+              "scriptMapGet",
+              "scriptMapHas",
+              "scriptMapSet",
+              "scriptSetAdd",
+              "scriptArrayPush",
+            ]
+          : []),
         "getObjectValuePropertyWithReceiver",
         "setObjectValueProperty",
         "setObjectValuePropertyWithReceiver",

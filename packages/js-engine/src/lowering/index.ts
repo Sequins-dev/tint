@@ -118,6 +118,10 @@ export const propertyCacheNames: readonly string[] = [
   "propertySlotWord",
   "readPropertyValueSlot",
   "writePropertyValueSlot",
+  // Packed number element access (js-runtime objects/element-access.ts).
+  "packedNumberElement",
+  "absentElementValue",
+  "storePackedNumberElement",
 ];
 export interface PropertyCacheBinding {
   readonly module: string;
@@ -128,6 +132,8 @@ export interface PropertyCacheBinding {
     | "inherited-property-load"
     | "absent-test"
     | "property-store"
+    | "element-load"
+    | "element-store"
     | "activation-top"
     | "activation-previous"
     | "activation-kind"
@@ -143,7 +149,9 @@ export interface PropertyCacheBinding {
 /** Native record bindings of the property cache functions in the runtime's
  * objects module: inline shape compares with value loads (IR property-load)
  * and stores (IR property-store), the miss test, and the constant word
- * index of the first in-place value. */
+ * index of the first in-place value; and of the element access functions:
+ * packed number element loads (IR element-load) and overwrites (IR
+ * element-store). */
 export function propertyCacheBindings(
   module: string,
 ): readonly PropertyCacheBinding[] {
@@ -180,6 +188,23 @@ export function propertyCacheBindings(
       field: "internalValue0",
       count: propertySlots,
       siteField: "storeShape",
+    },
+    // Packed number elements: `field` names the object's elements and
+    // `siteField` their count, which the binary64 storage field follows.
+    {
+      module,
+      name: "packedNumberElement",
+      operation: "element-load",
+      field: "internalArrayElements",
+      siteField: "numberCount",
+    },
+    { module, name: "absentElementValue", operation: "absent-test" },
+    {
+      module,
+      name: "storePackedNumberElement",
+      operation: "element-store",
+      field: "internalArrayElements",
+      siteField: "numberCount",
     },
   ];
 }
@@ -1199,6 +1224,8 @@ function lowerScriptEntry(
   let usesWideRegisterCalls = false;
   let usesNativeScriptCalls = false;
   let usesIndexedWrites = false;
+  let usesElementAccess = false;
+  let usesIntrinsicCalls = false;
   let usesNullishEquality = false;
   let excludesHTMLDDAObjects = false;
   let usesRelationalFallback = false;
@@ -2989,16 +3016,20 @@ function lowerScriptEntry(
       args,
       span,
     );
-    if (cached && key.kind === "string" && key.value === "length")
+    if (cached && key.kind === "string" && key.value === "length") {
+      // A String's length; for other values the runtime read, which takes
+      // the length an array with packed elements mirrors first.
+      usesElementAccess = true;
       return temporary(
         scalarBranch(
           categoryOperand(base, "string", span),
           member(base, "length", span),
-          read,
+          runtimeCall("readCachedLengthValue", args, span),
           span,
         ),
         true,
       );
+    }
     if (cache === undefined) return temporary(read, true);
     // The site's inline value (IR property-load natively); a miss takes the
     // runtime read, which refills the site. A method call (`o.m()`) reads
@@ -3019,63 +3050,244 @@ function lowerScriptEntry(
     statements.push(ifAbsent(name, cache, assignTo(name, read, span), span));
     return id(name, span);
   }
-  function readComputedProperty(
+  /** The statements `build` emits, removed from the current list so the
+   * caller can nest them. Temporaries they declare are block scoped. */
+  function nestedStatements(build: () => void): Statement[] {
+    const mark = statements.length;
+    build();
+    return statements.splice(mark);
+  }
+  function block(nested: Statement[], span: Span): Statement {
+    return { ...at(span), kind: "block", statements: nested };
+  }
+  /** The element index of a computed key: the key when it is a Number,
+   * else -1, which no element has. */
+  function elementIndex(key: Expression, span: Span): Expression {
+    return scalarBranch(
+      numberOperand(key, span),
+      { ...key },
+      scalarNumber(-1, span),
+      span,
+    );
+  }
+  /** `name = ` the packed number element (IR element-load natively), else
+   * `fallback()`. */
+  function readNumberElement(
+    name: string,
+    base: Expression,
+    key: Expression,
+    fallback: () => void,
+    span: Span,
+  ): void {
+    usesElementAccess = true;
+    const witness = member(id("$errors"), "objectPrototype", span);
+    statements.push(
+      assignTo(
+        name,
+        runtimeCall(
+          "packedNumberElement",
+          [witness, base, elementIndex(key, span)],
+          span,
+        ),
+        span,
+      ),
+    );
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test: runtimeCall(
+        "absentElementValue",
+        [id(name, span), { ...witness }],
+        span,
+      ),
+      consequent: block(nestedStatements(fallback), span),
+      alternate: undefined,
+    });
+  }
+  /** The array index of a computed key (else -1) and, when it names a packed
+   * general element, that element's cell (else undefined): only the standard
+   * Array exotic owns packed elements, and the count check excludes holes. */
+  function packedGeneralCell(
     base: Expression,
     key: Expression,
     span: Span,
-  ): Expression {
-    const slow = runtimeCall(
-      "readObjectValuePropertyKey",
-      [base, key, member(id("$global"), "hooks", span), id("$errors")],
-      span,
-    );
-    if (compactResults) return temporary(slow, true);
-    const zero = scalarNumber(0, span);
+  ): { readonly index: Expression; readonly cell: Expression } {
     const index = temporary(
       scalarBranch(
         numberOperand(key, span),
-        scalarBinary(">>>", key, zero, span),
+        scalarBinary(">>>", key, scalarNumber(0, span), span),
         scalarNumber(-1, span),
         span,
       ),
     );
-    const object = temporary(
+    const values = temporary(
       scalarBranch(
-        scalarBinary(
-          "&&",
-          scalarBinary(">=", index, zero, span),
-          scalarBinary("===", key, index, span),
-          span,
-        ),
-        runtimeCall(
-          "viewObjectValue",
-          [base, member(id("$errors"), "objectPrototype", span)],
+        scalarBinary("===", key, index, span),
+        optionalMember(
+          optionalMember(
+            runtimeCall(
+              "viewObjectValue",
+              [base, member(id("$errors"), "objectPrototype", span)],
+              span,
+            ),
+            "internalArrayElements",
+            span,
+          ),
+          "values",
           span,
         ),
         id("undefined", span),
         span,
       ),
     );
-    const elements = temporary(
-      optionalMember(object, "internalArrayElements", span),
-    );
-    // Only the standard Array exotic owns packed elements. The length check
-    // excludes holes so the ordinary path can still observe inherited accessors.
-    const packed = (list: Expression, fallback: Expression): Expression =>
+    const cell = temporary(
       scalarBranch(
         scalarBinary(
           "&&",
-          scalarBinary("!==", list, id("undefined", span), span),
-          scalarBinary("<", index, member(list, "length", span), span),
+          scalarBinary("!==", values, id("undefined", span), span),
+          scalarBinary("<", index, member(values, "length", span), span),
           span,
         ),
-        { ...at(span), kind: "index", object: list, index },
-        fallback,
+        { ...at(span), kind: "index", object: values, index },
+        id("undefined", span),
+        span,
+      ),
+    );
+    return { index, cell };
+  }
+  /** Overwrite the packed number element (IR element-store natively) or a
+   * packed general element's cell, else PutValue through the runtime (which
+   * also appends at the count in place when nothing can observe it). A key
+   * that is not a Number never reaches the store; ToPropertyKey of a Number,
+   * String or Symbol calls no user code, so a retained key converted by
+   * GetValue converts again unobservably. */
+  function writeElement(
+    base: Expression,
+    key: Expression,
+    value: Expression,
+    span: Span,
+  ): void {
+    usesElementAccess = true;
+    usesIndexedWrites = true;
+    const witness = member(id("$errors"), "objectPrototype", span);
+    // A packed general element is a writable data property below the count.
+    const general = nestedStatements(() => {
+      const cell = packedGeneralCell(base, key, span).cell;
+      statements.push({
+        ...at(span),
+        kind: "if",
+        test: scalarBinary("!==", cell, id("undefined", span), span),
+        consequent: {
+          ...at(span),
+          kind: "expression",
+          expression: {
+            ...at(span),
+            kind: "assignment",
+            target: member(cell, "value", span),
+            value: { ...value },
+          },
+        },
+        alternate: {
+          ...at(span),
+          kind: "expression",
+          expression: runtimeCall(
+            "writeObjectValuePropertyKey",
+            [
+              { ...base },
+              { ...key },
+              { ...value },
+              { ...at(span), kind: "boolean", value: strict },
+              member(id("$global"), "hooks", span),
+              id("$errors"),
+            ],
+            span,
+          ),
+        },
+      });
+    });
+    // The store's own result selects the branch, so a miss jumps straight to
+    // the general path natively (as for cached property stores).
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test: runtimeCall(
+        "storePackedNumberElement",
+        [witness, base, elementIndex(key, span), value],
+        span,
+      ),
+      consequent: block([], span),
+      alternate: block(general, span),
+    });
+  }
+  function readComputedProperty(
+    base: Expression,
+    key: Expression,
+    span: Span,
+  ): Expression {
+    const slow = (): Expression =>
+      runtimeCall(
+        "readObjectValuePropertyKey",
+        [
+          { ...base },
+          { ...key },
+          member(id("$global"), "hooks", span),
+          id("$errors"),
+        ],
         span,
       );
-    const numbers = temporary(optionalMember(elements, "numbers", span));
-    const values = temporary(optionalMember(elements, "values", span));
-    return temporary(packed(numbers, packed(values, slow)), true);
+    if (compactResults) return temporary(slow(), true);
+    const result = temporary(id("undefined", span), true, true);
+    if (result.kind !== "identifier") throw "element read temporary invariant";
+    const name = result.name;
+    // Else a String's code unit (an own property of the String object below
+    // its length), or a packed general element's cell. Holes and indices past
+    // the length take the ordinary path, which observes inherited properties.
+    readNumberElement(
+      name,
+      base,
+      key,
+      () => {
+        const general = packedGeneralCell(base, key, span);
+        const index = general.index,
+          cell = general.cell;
+        const element = scalarBranch(
+          scalarBinary("!==", cell, id("undefined", span), span),
+          member(cell, "value", span),
+          slow(),
+          span,
+        );
+        const text = base.kind === "identifier" ? base : temporary(base, true);
+        statements.push(
+          assignTo(
+            name,
+            scalarBranch(
+              scalarBinary(
+                "&&",
+                categoryOperand(text, "string", span),
+                scalarBinary(
+                  "&&",
+                  scalarBinary("===", key, index, span),
+                  scalarBinary("<", index, member(text, "length", span), span),
+                  span,
+                ),
+                span,
+              ),
+              {
+                ...at(span),
+                kind: "call",
+                callee: member({ ...text }, "charAt", span),
+                arguments: [{ ...index }],
+              },
+              element,
+              span,
+            ),
+            span,
+          ),
+        );
+      },
+      span,
+    );
+    return id(name, span);
   }
   function typedList(elementType: string, span: Span): Expression {
     return temporary(
@@ -3263,6 +3475,58 @@ function lowerScriptEntry(
       target.retainedKey !== true
     )
       return readComputedProperty(target.base, property, target);
+    if (
+      superReceiver === undefined &&
+      property.kind !== "string" &&
+      !compactResults
+    ) {
+      // A retained Number key needs no conversion record: ToPropertyKey of
+      // a Number calls no user code, so PutValue converts it again.
+      const result = temporary(id("undefined", target), true, true);
+      if (result.kind !== "identifier")
+        throw "element read temporary invariant";
+      const name = result.name;
+      readNumberElement(
+        name,
+        target.base,
+        property,
+        () =>
+          statements.push({
+            ...at(target),
+            kind: "if",
+            test: numberOperand(property, target),
+            consequent: assignTo(
+              name,
+              runtimeCall(
+                "readObjectValuePropertyKey",
+                [
+                  target.base,
+                  property,
+                  member(id("$global"), "hooks", target),
+                  id("$errors"),
+                ],
+                target,
+              ),
+              target,
+            ),
+            alternate: block(
+              nestedStatements(() => {
+                const key = referenceKey(target, property, target, true);
+                statements.push(
+                  assignTo(
+                    name,
+                    readProperty(target.base, key, target, method),
+                    target,
+                  ),
+                );
+              }),
+              target,
+            ),
+          }),
+        target,
+      );
+      return id(name, target);
+    }
     const key = referenceKey(target, property, target, true);
     if (superReceiver === undefined)
       return readProperty(target.base, key, target, method);
@@ -3344,24 +3608,9 @@ function lowerScriptEntry(
     if (
       superReceiver === undefined &&
       property.kind !== "string" &&
-      target.retainedKey !== true &&
       !compactResults
     ) {
-      usesIndexedWrites = true;
-      expression(
-        runtimeCall(
-          "writeObjectValuePropertyKey",
-          [
-            target.base,
-            property,
-            assigned,
-            { ...at(target), kind: "boolean", value: strict },
-            member(id("$global"), "hooks", target),
-            id("$errors"),
-          ],
-          target,
-        ),
-      );
+      writeElement(target.base, property, temporary(assigned, true), target);
       return;
     }
     const key = referenceKey(target, property, target, false);
@@ -3960,13 +4209,17 @@ function lowerScriptEntry(
     args: readonly Expression[],
     listName: string,
     span: Span,
+    evaluated: readonly Expression[] | undefined = undefined,
   ): Expression {
     usesNativeScriptCalls = true;
     const target = temporary(callee, true);
     const thisValue = temporary(receiver, true);
-    const actuals = args.map((argument) => {
+    const actuals = args.map((argument, index) => {
       if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
-      return temporary(value(argument), true);
+      if (evaluated === undefined) return temporary(value(argument), true);
+      const known = evaluated[index];
+      if (known === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      return known;
     });
     const { entry, accepts } = scriptEntryGuard(target, false, span);
     const operands: Expression[] = [
@@ -4016,12 +4269,21 @@ function lowerScriptEntry(
       span,
     );
   }
+  /** `evaluated`, when given, holds `args` already evaluated in order (no
+   * spread), as an inline builtin call's fallback passes them. */
   function invoke(
     callee: Expression,
     receiver: Expression,
     args: readonly Expression[],
     span: Span,
+    evaluated: readonly Expression[] | undefined = undefined,
   ): Expression {
+    const argumentValue = (argument: Expression, index: number): Expression => {
+      if (evaluated === undefined) return temporary(value(argument), true);
+      const known = evaluated[index];
+      if (known === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      return known;
+    };
     const listName = nativeListName;
     if (
       nativeScriptCalls &&
@@ -4031,7 +4293,14 @@ function lowerScriptEntry(
       args.length <= scriptRegisterActuals &&
       !args.some((argument) => argument?.kind === "spread")
     )
-      return invokeNativeTail(callee, receiver, args, listName, span);
+      return invokeNativeTail(
+        callee,
+        receiver,
+        args,
+        listName,
+        span,
+        evaluated,
+      );
     if (
       nativeScriptCalls &&
       !compactResults &&
@@ -4041,9 +4310,9 @@ function lowerScriptEntry(
       usesNativeScriptCalls = true;
       const target = temporary(callee, true);
       const thisValue = temporary(receiver, true);
-      const actuals = args.map((argument) => {
+      const actuals = args.map((argument, index) => {
         if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
-        return temporary(value(argument), true);
+        return argumentValue(argument, index);
       });
       const { entry, accepts } = scriptEntryGuard(target, false, span);
       const result = temporary(id("undefined", span), true, true);
@@ -4118,9 +4387,10 @@ function lowerScriptEntry(
         callee,
         receiver,
       ];
-      for (const argument of args) {
+      for (let index = 0; index < args.length; index++) {
+        const argument = args[index];
         if (argument === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
-        operands.push(temporary(value(argument), true));
+        operands.push(argumentValue(argument, index));
       }
       const width = wide ? 6 : 2;
       while (operands.length < 4 + width) operands.push(id("undefined", span));
@@ -4133,6 +4403,8 @@ function lowerScriptEntry(
         true,
       );
     }
+    if (evaluated !== undefined)
+      return invokePrepared(callee, receiver, evaluated, span);
     return invokeList(callee, receiver, argumentList(args, span), span);
   }
   function invokeNumericLeaf(
@@ -4206,6 +4478,252 @@ function lowerScriptEntry(
       test: guard,
       consequent: { ...at(span), kind: "expression", expression: store },
       alternate,
+    });
+    return result;
+  }
+  /** A call of a builtin performed inline (see js-runtime
+   * intrinsic-functions.ts): when the callee is the realm's own function and
+   * the evaluated operands have the inline form's types, the typed operation
+   * the builtin itself performs; otherwise the ordinary call with the same
+   * operands. The callee's syntax only selects which builtin to compare with;
+   * the identity compare decides. In tail position the ordinary call stays a
+   * tail call (as for invokeNumericLeaf). */
+  function invokeIntrinsic(
+    target: Expression,
+    callee: Expression,
+    receiver: Expression,
+    args: readonly Expression[],
+    span: Span,
+  ): Expression | undefined {
+    if (
+      compactResults ||
+      args.some((arg) => arg === undefined || arg.kind === "spread")
+    )
+      return undefined;
+    let name: string;
+    if (target.kind === "identifier") name = target.name;
+    else if (target.kind === "member" && !target.private && !target.optional)
+      name = target.property;
+    else return undefined;
+    const count = args.length;
+    let field: string | undefined = undefined;
+    let shape:
+      | "math"
+      | "number"
+      | "string"
+      | "map"
+      | "set"
+      | "has"
+      | "push"
+      | undefined = undefined;
+    let arity = 1;
+    if (target.kind === "identifier") {
+      if (name === "Number") {
+        field = "number";
+        shape = "number";
+      }
+    } else if (name === "abs") {
+      field = "mathAbs";
+      shape = "math";
+    } else if (name === "ceil") {
+      field = "mathCeil";
+      shape = "math";
+    } else if (name === "floor") {
+      field = "mathFloor";
+      shape = "math";
+    } else if (name === "trunc") {
+      field = "mathTrunc";
+      shape = "math";
+    } else if (name === "round") {
+      field = "mathRound";
+      shape = "math";
+    } else if (name === "sign") {
+      field = "mathSign";
+      shape = "math";
+    } else if (name === "sqrt") {
+      field = "mathSqrt";
+      shape = "math";
+    } else if (name === "clz32") {
+      field = "mathClz32";
+      shape = "math";
+    } else if (name === "min" || name === "max") {
+      field = name === "min" ? "mathMin" : "mathMax";
+      shape = "math";
+      arity = count >= 1 && count <= 4 ? count : 0;
+    } else if (name === "imul") {
+      field = "mathImul";
+      shape = "math";
+      arity = 2;
+    } else if (name === "charCodeAt" || name === "charAt") {
+      field = name === "charAt" ? "stringCharAt" : "stringCharCodeAt";
+      shape = "string";
+    } else if (name === "get") {
+      field = "mapGet";
+      shape = "map";
+    } else if (name === "set") {
+      field = "mapSet";
+      shape = "map";
+      arity = 2;
+    } else if (name === "has") shape = "has";
+    // push appends every argument; the inline form takes exactly one.
+    else if (name === "push" && count === 1) shape = "push";
+    else if (name === "add") {
+      field = "setAdd";
+      shape = "set";
+    }
+    if (shape === undefined || arity === 0 || count < arity) return undefined;
+    usesIntrinsicCalls = true;
+    const evaluated: Expression[] = [];
+    for (const arg of args) {
+      if (arg === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      evaluated.push(temporary(value(arg), true));
+    }
+    const intrinsics = member(id("$errors"), "intrinsicFunctions", span);
+    const and = (left: Expression, right: Expression): Expression =>
+      scalarBinary("&&", left, right, span);
+    // The callee's object view against the realm's function: a reference
+    // compare. A realm that never installed the builtin leaves its field
+    // undefined, which no view matches.
+    const calleeObject = temporary(
+      runtimeCall(
+        "viewObjectValue",
+        [callee, member(id("$errors"), "objectPrototype", span)],
+        span,
+      ),
+    );
+    const is = (property: string): Expression =>
+      and(
+        scalarBinary("!==", calleeObject, id("undefined", span), span),
+        scalarBinary(
+          "===",
+          calleeObject,
+          member(intrinsics, property, span),
+          span,
+        ),
+      );
+    const operand = (index: number): Expression => {
+      const found = evaluated[index];
+      if (found === undefined) throw "SCRIPT_ARGUMENT_INVARIANT";
+      return found;
+    };
+    const numbers = (test: Expression, through: number): Expression => {
+      for (let index = 0; index < through; index++)
+        test = and(test, numberOperand(operand(index), span));
+      return test;
+    };
+    const base =
+      receiver.kind === "identifier" ? receiver : temporary(receiver, true);
+    let test: Expression;
+    let inline: Expression;
+    let effect: Expression | undefined = undefined;
+    if (shape === "math") {
+      if (field === undefined) throw "intrinsic field invariant";
+      test = numbers(is(field), arity);
+      const operands: Expression[] = [];
+      for (let index = 0; index < arity; index++)
+        operands.push({ ...operand(index) });
+      inline = {
+        ...at(span),
+        kind: "call",
+        callee: member(id("Math", span), name, span),
+        arguments: operands,
+      };
+    } else if (shape === "push") {
+      // A packed append's new length, or -1 for the ordinary call.
+      const length = temporary(
+        scalarBranch(
+          is("arrayPush"),
+          runtimeCall(
+            "scriptArrayPush",
+            [{ ...base }, { ...operand(0) }, id("$errors")],
+            span,
+          ),
+          scalarNumber(-1, span),
+          span,
+        ),
+      );
+      test = scalarBinary(">=", length, scalarNumber(0, span), span);
+      inline = { ...length };
+    } else if (shape === "number") {
+      test = numbers(is("number"), 1);
+      inline = { ...operand(0) };
+    } else if (shape === "string") {
+      if (field === undefined) throw "intrinsic field invariant";
+      test = numbers(and(is(field), categoryOperand(base, "string", span)), 1);
+      inline = {
+        ...at(span),
+        kind: "call",
+        callee: member({ ...base }, name, span),
+        arguments: [{ ...operand(0) }],
+      };
+    } else {
+      // A collection method: the receiver's storage when the callee is the
+      // builtin and the receiver has that storage.
+      const view = runtimeCall(
+        "viewObjectValue",
+        [base, member(id("$errors"), "objectPrototype", span)],
+        span,
+      );
+      const storage = (property: string, data: string): Expression =>
+        scalarBranch(
+          is(property),
+          optionalMember(view, data, span),
+          id("undefined", span),
+          span,
+        );
+      const data = temporary(
+        shape === "has"
+          ? scalarBranch(
+              is("mapHas"),
+              optionalMember(view, "internalMapData", span),
+              storage("setHas", "internalSetData"),
+              span,
+            )
+          : storage(
+              field ?? "",
+              shape === "set" ? "internalSetData" : "internalMapData",
+            ),
+      );
+      test = scalarBinary("!==", data, id("undefined", span), span);
+      const operation =
+        shape === "has"
+          ? "scriptMapHas"
+          : shape === "set"
+            ? "scriptSetAdd"
+            : name === "get"
+              ? "scriptMapGet"
+              : "scriptMapSet";
+      const operands: Expression[] = [{ ...data }];
+      for (let index = 0; index < arity; index++)
+        operands.push({ ...operand(index) });
+      inline = runtimeCall(operation, operands, span);
+      // set and add return their receiver.
+      if (operation === "scriptMapSet" || operation === "scriptSetAdd") {
+        effect = inline;
+        inline = { ...base };
+      }
+    }
+    const result = temporary(id("undefined", span), true, true);
+    if (result.kind !== "identifier") throw "intrinsic temporary invariant";
+    const fallback = nestedStatements(() =>
+      statements.push(
+        assignTo(
+          result.name,
+          invoke(callee, base, args, span, evaluated),
+          span,
+        ),
+      ),
+    );
+    const consequent: Statement[] = [];
+    if (effect !== undefined)
+      consequent.push({ ...at(span), kind: "expression", expression: effect });
+    consequent.push(assignTo(result.name, inline, span));
+    statements.push({
+      ...at(span),
+      kind: "if",
+      test,
+      consequent: block(consequent, span),
+      alternate: block(fallback, span),
     });
     return result;
   }
@@ -8244,6 +8762,14 @@ function lowerScriptEntry(
           );
           if (direct !== undefined) return direct;
         }
+        const intrinsic = invokeIntrinsic(
+          target,
+          callee,
+          evaluated.receiver,
+          node.arguments,
+          node,
+        );
+        if (intrinsic !== undefined) return intrinsic;
         return invoke(callee, evaluated.receiver, node.arguments, node);
       }
       case "conditional": {
@@ -10787,6 +11313,8 @@ function lowerScriptEntry(
     usesRelationalFallback,
     usesLooseEqualityFallback,
     excludesHTMLDDAObjects,
+    usesElementAccess,
+    usesIntrinsicCalls,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,

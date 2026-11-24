@@ -197,6 +197,42 @@ export type Instruction = Span &
         readonly epochRecord: number;
         readonly epochField: number;
       }
+    | {
+        /** A packed binary64 element of a JavaScript array (js-runtime
+         * array elements), or the absent value (see property-load). It is
+         * the element unless the general value `object` is object-tagged
+         * with a `record` payload (its first word is the record's
+         * descriptor) whose optional reference field `field` holds an
+         * `elementsRecord` object, and `index` is an integer at least 0 and
+         * below that object's number field `countField`. The element is
+         * then entry `index` of its Float64Array field `storageField`, which
+         * the runtime keeps at least `countField` long. */
+        readonly kind: "element-load";
+        readonly id: number;
+        readonly object: number;
+        readonly index: number;
+        readonly record: number;
+        readonly field: number;
+        readonly elementsRecord: number;
+        readonly countField: number;
+        readonly storageField: number;
+      }
+    | {
+        /** Overwrite the packed binary64 element `index` (located as for
+         * element-load) with the Number general value `value`; the boolean
+         * result is false, with nothing written, when element-load would
+         * miss or `value` is not a Number. */
+        readonly kind: "element-store";
+        readonly id: number;
+        readonly object: number;
+        readonly index: number;
+        readonly value: number;
+        readonly record: number;
+        readonly field: number;
+        readonly elementsRecord: number;
+        readonly countField: number;
+        readonly storageField: number;
+      }
     | { readonly kind: "boolean-none"; readonly id: number }
     | {
         readonly kind: "boolean-wrap" | "boolean-value" | "boolean-present";
