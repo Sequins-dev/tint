@@ -1346,6 +1346,41 @@ function emitModuleForms(
     if (islandsBefore.has(fn)) forms.longBranches.add(fn);
     else forms.islands.add(fn);
   }
+  /** Code placed after the function body, before its shared trap: stubs
+   * reached only from uncommon branches, so the common path keeps falling
+   * through. Each stub patches its own entry branch. Functions emitted with
+   * trap islands or long branches keep such code inline instead
+   * (coldStubsAvailable). */
+  let coldStubs: (() => void)[] = [];
+  function coldStubsAvailable(): boolean {
+    const owner = functionId;
+    return (
+      owner !== undefined &&
+      !forms.islands.has(owner) &&
+      !forms.longBranches.has(owner)
+    );
+  }
+  function flushColdStubs(): void {
+    while (coldStubs.length !== 0) {
+      const stubs = coldStubs;
+      coldStubs = [];
+      for (const stub of stubs) stub();
+    }
+  }
+  /** A branch between the body and its cold stubs: one beyond reach marks
+   * the function for re-emission with islands, where stubs stay inline. */
+  function farBranch(index: number, instruction: Instruction): void {
+    const encoded = encode(instruction);
+    if (!encoded.ok) {
+      const owner = functionId;
+      if (encoded.error !== "OUT_OF_RANGE" || owner === undefined)
+        fail("ENCODING", encoded.error);
+      compactOverflow = true;
+      conditionalOverflow(owner);
+      return;
+    }
+    patchInstruction(index, instruction);
+  }
   function fail(code: Diagnostic["code"], message: string): never {
     failure = { code, message, function: functionId, block: blockId, span };
     throw abort;
@@ -4145,6 +4180,7 @@ function emitModuleForms(
         // Debug variables and inline scopes; never changes emitted code.
         const tracker = debugSpans ? createDebugTracker(fn) : undefined;
         trapSites = [];
+        coldStubs = [];
         // Calls that may reach a collection, by return offset: each gets a
         // stack map of the frame words live while it runs (see stack-maps.ts).
         const callSites: { offset: number; block: number; index: number }[] =
@@ -10994,10 +11030,12 @@ function emitModuleForms(
                     compare(15, 12);
                     holder = 14;
                   }
-                  // Entry 0 first; a match branches to the shared hit with the
-                  // word index in x13 (and the holder in x14); the last
-                  // entry's mismatch is the miss.
-                  const hits: number[] = [];
+                  // Entry 0 first, falling through to the hit with the word
+                  // index in x13 (and the holder in x14). Further entries
+                  // are tested in a cold stub after the function body that
+                  // branches back to the hit, so a single-shape site keeps
+                  // its fallthrough; without cold stubs they are tested
+                  // inline. The last entry's mismatch is the miss.
                   function holderOf(at: number): void {
                     emit({
                       op: "ldr",
@@ -11007,16 +11045,7 @@ function emitModuleForms(
                       offset: at + 16,
                     });
                   }
-                  for (let entry = 0; entry < op.entries; entry++) {
-                    const at = siteShape.offset + entry * stride;
-                    if (at > 496) throw "property cache layout invariant";
-                    entryPair(at);
-                    if (entry === op.entries - 1) {
-                      // Falls through to the hit.
-                      compare(9, 12);
-                      if (op.inherited) holderOf(at);
-                      break;
-                    }
+                  function compareShape(): void {
                     emit({
                       op: "sub-reg",
                       width: 64,
@@ -11027,35 +11056,58 @@ function emitModuleForms(
                       amount: 0,
                       setFlags: true,
                     });
-                    if (!op.inherited) {
+                  }
+                  if (siteShape.offset + (op.entries - 1) * stride > 496)
+                    throw "property cache layout invariant";
+                  // A fused miss block reached from the stub has an edge
+                  // after it: it must not seed its entry's stack words, so
+                  // it must not have been emitted yet.
+                  const cold =
+                    op.entries > 1 &&
+                    coldStubsAvailable() &&
+                    (fusedMiss === undefined ||
+                      offsets[fusedMiss * 2] === undefined);
+                  if (cold && fusedMiss !== undefined)
+                    forwardable.delete(fusedMiss);
+                  let further = -1;
+                  const hits: number[] = [];
+                  if (cold || op.entries === 1) {
+                    entryPair(siteShape.offset);
+                    if (cold) {
+                      compareShape();
+                      further = instructions.length;
+                      emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                    } else compare(9, 12);
+                    if (op.inherited) holderOf(siteShape.offset);
+                  } else
+                    for (let entry = 0; entry < op.entries; entry++) {
+                      const at = siteShape.offset + entry * stride;
+                      entryPair(at);
+                      if (entry === op.entries - 1) {
+                        compare(9, 12);
+                        if (op.inherited) holderOf(at);
+                        break;
+                      }
+                      compareShape();
+                      const next = instructions.length;
+                      emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                      if (op.inherited) holderOf(at);
                       hits.push(instructions.length);
-                      emit({ op: "b.cond", condition: "eq", displacement: 0 });
-                      continue;
+                      emit({ op: "b", displacement: 0 });
+                      patchInstruction(next, {
+                        op: "b.cond",
+                        condition: "ne",
+                        displacement: (instructions.length - next) * 4,
+                      });
                     }
-                    const next = instructions.length;
-                    emit({ op: "b.cond", condition: "ne", displacement: 0 });
-                    holderOf(at);
-                    hits.push(instructions.length);
-                    emit({ op: "b", displacement: 0 });
-                    patchInstruction(next, {
-                      op: "b.cond",
-                      condition: "ne",
-                      displacement: (instructions.length - next) * 4,
+                  for (const at of hits)
+                    patchInstruction(at, {
+                      op: "b",
+                      displacement: (instructions.length - at) * 4,
                     });
-                  }
-                  for (const at of hits) {
-                    const target = (instructions.length - at) * 4;
-                    patchInstruction(
-                      at,
-                      op.inherited
-                        ? { op: "b", displacement: target }
-                        : {
-                            op: "b.cond",
-                            condition: "eq",
-                            displacement: target,
-                          },
-                    );
-                  }
+                  const hitAt = instructions.length;
+                  // A join: the further entries branch here.
+                  if (cold) stackWords.clear();
                   emit({
                     op: "add-reg",
                     width: 64,
@@ -11091,23 +11143,92 @@ function emitModuleForms(
                     });
                     generalPair(9, offset, false);
                   }
-                  if (fusedMiss !== undefined) break;
-                  const hit = instructions.length;
-                  emit({ op: "b", displacement: 0 });
-                  for (const site of misses)
-                    patchInstruction(site, {
-                      op: "b.cond",
-                      condition: "ne",
-                      displacement: (instructions.length - site) * 4,
+                  // The absent value (unfused) follows the hit's jump.
+                  let absentAt = -1;
+                  if (fusedMiss === undefined) {
+                    const hit = instructions.length;
+                    emit({ op: "b", displacement: 0 });
+                    absentAt = instructions.length;
+                    for (const site of misses)
+                      patchInstruction(site, {
+                        op: "b.cond",
+                        condition: "ne",
+                        displacement: (instructions.length - site) * 4,
+                      });
+                    // The absent value: undefined's tag with payload 1.
+                    emit({
+                      op: "orr-reg",
+                      width: 64,
+                      rd: 9,
+                      rn: "zr",
+                      rm: "zr",
                     });
-                  // The absent value: undefined's tag with payload 1.
-                  emit({ op: "orr-reg", width: 64, rd: 9, rn: "zr", rm: "zr" });
-                  imm(10, 1);
-                  generalPair(9, offset, false);
-                  patchInstruction(hit, {
-                    op: "b",
-                    displacement: (instructions.length - hit) * 4,
-                  });
+                    imm(10, 1);
+                    generalPair(9, offset, false);
+                    patchInstruction(hit, {
+                      op: "b",
+                      displacement: (instructions.length - hit) * 4,
+                    });
+                  }
+                  if (cold) {
+                    const entries = op.entries,
+                      inherited = op.inherited,
+                      first = siteShape.offset,
+                      owner = fn.id;
+                    coldStubs.push((): void => {
+                      farBranch(further, {
+                        op: "b.cond",
+                        condition: "ne",
+                        displacement: (instructions.length - further) * 4,
+                      });
+                      stackWords.clear();
+                      for (let entry = 1; entry < entries; entry++) {
+                        const at = first + entry * stride;
+                        entryPair(at);
+                        compareShape();
+                        let next = -1;
+                        if (entry < entries - 1) {
+                          next = instructions.length;
+                          emit({
+                            op: "b.cond",
+                            condition: "ne",
+                            displacement: 0,
+                          });
+                        } else if (fusedMiss !== undefined)
+                          branch(
+                            { op: "b.cond", condition: "ne" },
+                            owner,
+                            fusedMiss,
+                          );
+                        else {
+                          const missed = instructions.length;
+                          emit({
+                            op: "b.cond",
+                            condition: "ne",
+                            displacement: 0,
+                          });
+                          farBranch(missed, {
+                            op: "b.cond",
+                            condition: "ne",
+                            displacement: (absentAt - missed) * 4,
+                          });
+                        }
+                        if (inherited) holderOf(at);
+                        const back = instructions.length;
+                        emit({ op: "b", displacement: 0 });
+                        farBranch(back, {
+                          op: "b",
+                          displacement: (hitAt - back) * 4,
+                        });
+                        if (next >= 0)
+                          patchInstruction(next, {
+                            op: "b.cond",
+                            condition: "ne",
+                            displacement: (instructions.length - next) * 4,
+                          });
+                      }
+                    });
+                  }
                   break;
                 }
                 entryPair(siteShape.offset);
@@ -17721,6 +17842,7 @@ function emitModuleForms(
           emit({ op: "str", width: 32, rt: 0, rn: 10, offset: 0 });
           epilogue();
         }
+        flushColdStubs();
         flushTraps();
         endFrameRange();
         // Every branch into a seeded block start must be one whose words
