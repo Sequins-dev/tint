@@ -64,6 +64,22 @@ test("DateTimeFormat compiles once and accepts an identical full-key cache hit",
     );
     assert.ok(first.unitBytes > 0);
     assert.equal(first.services.length, 1);
+    const barriered = service.prepareDateTimeNativeService(
+      snapshot,
+      "a".repeat(64),
+      directory,
+      { generationalBarriers: true },
+    );
+    assert.equal(barriered.hit, false);
+    assert.equal(barriered.services[0]?.unit.native.generationalBarriers, true);
+    assert.notEqual(
+      barriered.services[0]?.unit.factoryContract,
+      first.services[0]?.unit.factoryContract,
+    );
+    assert.notEqual(
+      barriered.identity.nativeServiceUnitIndexSha256,
+      first.identity.nativeServiceUnitIndexSha256,
+    );
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
