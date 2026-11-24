@@ -1467,6 +1467,34 @@ export function run() {
 }`,
   },
   {
+    // A record type with a literal field (a discriminant) is a contract like
+    // any other: untyped code writing a value outside a field's declared type,
+    // or changing the readonly discriminant, gets a TypeError. The general
+    // path used to drop the whole record contract for a literal field type.
+    name: "explicit-literal-field-contract",
+    helpers: untypedHelper,
+    node: { typed: 1 },
+    typed: `import { write } from "./untyped.ts";
+interface Tagged { readonly kind: "tagged"; x: string; count: 1 | 2 }
+export function run(): number {
+  const tagged: Tagged = { kind: "tagged", x: "a", count: 1 };
+  let rejected = 0;
+  try { write(tagged, "x", 1); } catch (error) { if (error instanceof TypeError) rejected++; }
+  try { write(tagged, "kind", "other"); } catch (error) { if (error instanceof TypeError) rejected++; }
+  try { write(tagged, "count", 3); } catch (error) { if (error instanceof TypeError) rejected++; }
+  write(tagged, "count", 2);
+  return rejected === 3 && tagged.x === "a" && tagged.kind === "tagged" && tagged.count === 2 ? 42 : 1;
+}`,
+    untyped: `import { write } from "./untyped.ts";
+export function run() {
+  const tagged = { kind: "tagged", x: "a", count: 1 };
+  write(tagged, "x", 1);
+  write(tagged, "kind", "other");
+  write(tagged, "count", 3);
+  return tagged.x === 1 && tagged.kind === "other" && tagged.count === 3 ? 42 : 1;
+}`,
+  },
+  {
     name: "explicit-binding-contract",
     helpers: untypedHelper,
     node: { typed: 1 },
