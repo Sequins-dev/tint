@@ -810,25 +810,22 @@ export function verify(
                   field.offset === siteShape.offset + 8 * index
                 );
               };
-              if (
-                op.kind === "property-load" &&
-                op.inherited &&
-                (!pair(2, "optional-reference") || !pair(3, "reference"))
-              )
+              // An inherited load's holder entry and a store's transition
+              // entry both end with an epoch and the record holding its
+              // current value.
+              const epoch =
+                module.records?.[op.epochRecord]?.fields[op.epochField];
+              const epochEntry =
+                natural(op.epochRecord) &&
+                natural(op.epochField) &&
+                pair(2, "optional-reference") &&
+                pair(3, "number") &&
+                pair(4, "reference") &&
+                plainRecordField(epoch, "number");
+              if (op.kind === "property-load" && op.inherited && !epochEntry)
                 fail("TYPE", "inherited property load requires a holder entry");
-              if (op.kind === "property-store") {
-                const epoch =
-                  module.records?.[op.epochRecord]?.fields[op.epochField];
-                if (
-                  !natural(op.epochRecord) ||
-                  !natural(op.epochField) ||
-                  !pair(2, "optional-reference") ||
-                  !pair(3, "number") ||
-                  !pair(4, "reference") ||
-                  !plainRecordField(epoch, "number")
-                )
-                  fail("TYPE", "property store requires a transition entry");
-              }
+              if (op.kind === "property-store" && !epochEntry)
+                fail("TYPE", "property store requires a transition entry");
               for (let slot = 0; slot < op.count; slot++) {
                 const field = fields[op.field + slot];
                 if (

@@ -1,11 +1,12 @@
 // Generated property caches compare the receiver's shared shape (per-
-// prototype transition trees), and for method calls the prototype's, with
-// the site's inline entry and load the cached value in place (IR
-// property-load natively); named stores go through the site's store cache
-// (IR property-store), which also adds properties by cached transitions.
-// These sections drive read and write sites through shared and diverging
-// shapes, offsets past the in-place slots, inherited methods,
-// redefinitions, deletions, prototype changes, accessors, symbols,
+// prototype transition trees) with the site's inline entry and load the
+// cached value in place (IR property-load natively); a method's holder may
+// be any prototype up the chain while the prototype epoch is unchanged.
+// Named stores go through the site's store cache (IR property-store),
+// which also adds properties by cached transitions. These sections drive
+// read and write sites through shared and diverging shapes, offsets past
+// the in-place slots, inherited methods (also two and three prototypes
+// up), redefinitions, deletions, prototype changes, accessors, symbols,
 // non-extensible receivers and builtin objects, so a stale shape, slot or
 // transition changes an observation. Node computes the expected
 // observations from the same source; the native image runs under LLDB
@@ -220,6 +221,48 @@ function builtins() {
   out.push(arr.length);
   return out.join(",");
 }
+function deepChains() {
+  // Methods two and three prototypes up: each read site warms on the
+  // holder, then a change in the middle of the chain (which leaves the
+  // receiver's and the holder's shapes alone) must be observed.
+  function Base() {}
+  Base.prototype.name = function () { return "base"; };
+  Base.prototype.depth = 0;
+  function Mid() {}
+  Mid.prototype = Object.create(Base.prototype);
+  Mid.prototype.mid = 1;
+  function Leaf() { this.own = 1; }
+  Leaf.prototype = Object.create(Mid.prototype);
+  const call = (o) => o.name();
+  const read = (o) => o.depth;
+  const out = [];
+  const leaf = new Leaf(), mid = new Mid();
+  for (let i = 0; i < 3; i++) out.push(call(leaf), call(mid), read(leaf));
+  Mid.prototype.name = function () { return "mid"; };
+  out.push(call(leaf), call(mid));
+  Leaf.prototype.depth = 2;
+  out.push(read(leaf), read(mid));
+  delete Mid.prototype.name;
+  out.push(call(leaf));
+  Object.defineProperty(Mid.prototype, "depth", { get() { return "getter"; }, configurable: true });
+  out.push(read(leaf), read(mid));
+  delete Leaf.prototype.depth;
+  out.push(read(leaf));
+  Object.setPrototypeOf(Mid.prototype, { name() { return "swapped"; }, depth: 9 });
+  out.push(call(leaf), call(mid));
+  Base.prototype.name = function () { return "unreached"; };
+  out.push(call(leaf));
+  // Three levels: a value on the root of an Object.create chain.
+  const root = { v: "root" };
+  const a = Object.create(root), b = Object.create(a), c = Object.create(b);
+  const v = (o) => o.v;
+  for (let i = 0; i < 3; i++) out.push(v(c));
+  root.v = "changed";
+  out.push(v(c));
+  a.v = "shadow";
+  out.push(v(c), v(b));
+  return out.join(",");
+}
 export function sections() {
   return [
     String(sharedShapes()),
@@ -231,6 +274,7 @@ export function sections() {
     megamorphic(),
     stores(),
     builtins(),
+    deepChains(),
   ];
 }
 `;
@@ -248,7 +292,7 @@ test("property caches keep JavaScript lookups across shapes and redefinitions", 
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-  assert.equal(expected.length, 9);
+  assert.equal(expected.length, 10);
   // Exit status 42 when every section matches, else 10 + the first
   // mismatching section's index.
   let general = false;

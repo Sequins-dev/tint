@@ -491,6 +491,8 @@ export function encodeInstruction(
       writeSigned(writer, op.count);
       writeSigned(writer, op.siteRecord);
       writeSigned(writer, op.siteField);
+      writeSigned(writer, op.epochRecord);
+      writeSigned(writer, op.epochField);
       return true;
     case "property-store":
       writePrefix(writer, 87, op, 0);
@@ -1386,7 +1388,9 @@ export function decodeInstruction(
         field = readSigned(reader),
         count = readSigned(reader),
         siteRecord = readSigned(reader),
-        siteField = readSigned(reader);
+        siteField = readSigned(reader),
+        epochRecord = readSigned(reader),
+        epochField = readSigned(reader);
       return {
         kind: "property-load",
         id,
@@ -1398,6 +1402,8 @@ export function decodeInstruction(
         siteRecord,
         siteField,
         inherited: flagged(flags, 2),
+        epochRecord,
+        epochField,
         ...span,
       };
     }

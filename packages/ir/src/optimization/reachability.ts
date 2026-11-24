@@ -91,10 +91,7 @@ export function traceModuleReferences(
           op.kind === "record-slot-read"
         )
           includeRecord(op.record);
-        else if (op.kind === "property-load") {
-          includeRecord(op.record);
-          includeRecord(op.siteRecord);
-        } else if (op.kind === "property-store") {
+        else if (op.kind === "property-load" || op.kind === "property-store") {
           includeRecord(op.record);
           includeRecord(op.siteRecord);
           includeRecord(op.epochRecord);

@@ -406,21 +406,25 @@ export const propertyEpoch: PropertyEpoch = { value: 0 };
 export interface ScriptPropertyCache {
   /** The newest own entry as generated code reads it (IR property-load):
    * the receiver shape and the value's raw-bit word index (inlineSlotBits).
-   * The newest entry held by the receiver's immediate prototype follows:
-   * the receiver shape, the word index, the prototype and its shape (a
-   * receiver shape implies its prototype: prototypes have private shapes,
-   * and changing an object's prototype reshapes it). Then the
-   * newest store: the receiver shape, the value's word index, the shape a
-   * transition reaches (undefined for a store to an existing property) and
-   * the propertyEpoch value the transition was found under. The fields are
-   * first and consecutive; an empty shape is unusedPropertyShape. Deeper
-   * entries and values past the in-place slots take the miss path. */
+   * The newest entry held by a prototype follows: the receiver shape, the
+   * word index, the holder, the propertyEpoch value the entry was found
+   * under and the epoch record itself. A receiver shape implies its
+   * prototype (prototypes have private shapes, and changing an object's
+   * prototype reshapes it), and every structural change of a prototype
+   * advances the epoch, so an unchanged epoch keeps the whole chain down
+   * to the holder. Then the newest store: the receiver shape, the value's
+   * word index, the shape a transition reaches (undefined for a store to
+   * an existing property) and the propertyEpoch value the transition was
+   * found under. The fields are first and consecutive; an empty shape is
+   * unusedPropertyShape. Values past the in-place slots take the miss
+   * path. */
   ownShape: ScriptShape;
   ownSlot: number;
   inheritedShape: ScriptShape;
   inheritedSlot: number;
   inheritedObject: ScriptObject | undefined;
-  inheritedHolder: ScriptShape;
+  inheritedEpoch: number;
+  readonly inheritedEpochs: PropertyEpoch;
   storeShape: ScriptShape;
   storeSlot: number;
   storeTransition: ScriptShape | undefined;
@@ -454,7 +458,8 @@ export function createScriptPropertyCache(
     inheritedShape: unusedPropertyShape,
     inheritedSlot: 0,
     inheritedObject: undefined,
-    inheritedHolder: unusedPropertyShape,
+    inheritedEpoch: 0,
+    inheritedEpochs: propertyEpoch,
     storeShape: unusedPropertyShape,
     storeSlot: 0,
     storeTransition: undefined,
@@ -1793,11 +1798,11 @@ export function lookupCachedScriptProperty(
     if (holder === object) {
       cache.ownShape = shape;
       cache.ownSlot = inlineSlotBits(slotWord + offset * 2);
-    } else if (parent === undefined) {
+    } else {
       cache.inheritedShape = shape;
       cache.inheritedSlot = inlineSlotBits(slotWord + offset * 2);
       cache.inheritedObject = holder;
-      cache.inheritedHolder = holderShape;
+      cache.inheritedEpoch = propertyEpoch.value;
     }
   }
   cache.foundIndex = offset;

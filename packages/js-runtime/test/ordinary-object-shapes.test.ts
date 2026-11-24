@@ -362,7 +362,8 @@ test("a site exposes its newest own and inherited entries inline", () => {
   assert.equal(cachedScriptPropertyValue(prototype, method), "m");
   assert.equal(method.inheritedShape, shape(target));
   assert.equal(method.inheritedObject, prototype);
-  assert.equal(method.inheritedHolder, shape(prototype));
+  assert.equal(method.inheritedEpoch, propertyEpoch.value);
+  assert.equal(method.inheritedEpochs, propertyEpoch);
   assert.equal(method.inheritedSlot, inlineSlotBits(10));
   assert.equal(method.ownShape, unusedPropertyShape);
   // A newer own entry replaces the own one only.
@@ -370,7 +371,7 @@ test("a site exposes its newest own and inherited entries inline", () => {
   lookupCachedScriptProperty(own, "method", method, false, stubs, 10);
   assert.equal(method.ownShape, shape(own));
   assert.equal(method.ownSlot, inlineSlotBits(10));
-  assert.equal(method.inheritedHolder, shape(prototype));
+  assert.equal(method.inheritedObject, prototype);
   // An empty object takes its root shape so inherited reads cache too.
   const empty = object(prototype);
   const inherited = createScriptPropertyCache("method");
@@ -379,6 +380,37 @@ test("a site exposes its newest own and inherited entries inline", () => {
     prototype,
   );
   assert.equal(inherited.inheritedShape, empty.internalShape);
+});
+
+test("an inherited entry holds a deeper prototype until any prototype changes structure", () => {
+  // target -> middle -> base, where base holds the method.
+  const base = object(undefined);
+  createDataProperty<ScriptPropertyKey, unknown>(base, "method", "m", hooks);
+  const middle = object(base);
+  createDataProperty<ScriptPropertyKey, unknown>(middle, "other", 1, hooks);
+  const target = point(middle, ["x"]);
+  const site = createScriptPropertyCache("method");
+  assert.equal(
+    lookupCachedScriptProperty(target, "method", site, false, stubs, 10),
+    base,
+  );
+  assert.equal(site.inheritedShape, shape(target));
+  assert.equal(site.inheritedObject, base);
+  assert.equal(site.inheritedSlot, inlineSlotBits(10));
+  const found = site.inheritedEpoch;
+  assert.equal(found, propertyEpoch.value);
+  // Shadowing the method on the intermediate prototype changes neither the
+  // receiver's nor the holder's shape, but advances the epoch.
+  createDataProperty<ScriptPropertyKey, unknown>(middle, "method", "n", hooks);
+  assert.notEqual(propertyEpoch.value, found);
+  assert.equal(shape(target), site.inheritedShape);
+  // The next lookup finds the shadowing property and refreshes the entry.
+  assert.equal(
+    lookupCachedScriptProperty(target, "method", site, false, stubs, 10),
+    middle,
+  );
+  assert.equal(site.inheritedObject, middle);
+  assert.equal(site.inheritedEpoch, propertyEpoch.value);
 });
 
 test("a site caches stores to writable properties and the transitions that add them", () => {

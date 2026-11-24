@@ -240,3 +240,77 @@ test("reachability facts are reusable without copying or renumbering IR", async 
   assert.deepEqual([...facts.records], [0, 1]);
   assert.equal(traceClosedModule(module, [1], 0), undefined);
 });
+
+test("an inherited property load retains and remaps its epoch record", () => {
+  const input: ModuleIR = {
+    records: [
+      { byteLength: 16, fields: [] },
+      {
+        byteLength: 32,
+        fields: [
+          { offset: 8, type: "optional-reference", mutable: true },
+          { offset: 16, type: "general", mutable: true },
+        ],
+      },
+      {
+        byteLength: 48,
+        fields: [
+          { offset: 8, type: "reference", mutable: true },
+          { offset: 16, type: "number", mutable: true },
+          { offset: 24, type: "optional-reference", mutable: true },
+          { offset: 32, type: "number", mutable: true },
+          { offset: 40, type: "reference", mutable: false },
+        ],
+      },
+      {
+        byteLength: 16,
+        fields: [{ offset: 8, type: "number", mutable: true }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "read",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["general", "reference"],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...s },
+              { kind: "load", id: 1, slot: 1, ...s },
+              {
+                kind: "property-load",
+                id: 2,
+                object: 0,
+                site: 1,
+                record: 1,
+                field: 1,
+                count: 1,
+                siteRecord: 2,
+                siteField: 0,
+                inherited: true,
+                epochRecord: 3,
+                epochField: 0,
+                ...s,
+              },
+            ],
+            terminator: { kind: "return", value: 2, ...s },
+          },
+        ],
+      },
+    ],
+  };
+  assert.equal(verify(input).ok, true);
+  const result = pruneClosedModule(input, [0]);
+  assert.ok(result);
+  // The unused record goes; the object, site and epoch records stay.
+  assert.equal(result.module.records?.length, 3);
+  assert.equal(verify(result.module).ok, true);
+  const load = result.module.functions[0]?.blocks[0]?.instructions[2];
+  assert.ok(load?.kind === "property-load");
+  assert.deepEqual([load.record, load.siteRecord, load.epochRecord], [0, 1, 2]);
+});

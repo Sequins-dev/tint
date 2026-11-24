@@ -220,9 +220,10 @@ export function cachedOwnPropertyValue(
   );
 }
 
-/** As cachedOwnPropertyValue, for a data property of the receiver's
- * immediate prototype: the receiver's shape implies that prototype, the
- * site's inherited object, whose shape must be the site's holder shape. */
+/** As cachedOwnPropertyValue, for a data property of an object on the
+ * receiver's prototype chain, the site's inherited object: the receiver's
+ * shape implies its prototype, and the site's inherited epoch must still be
+ * current (no prototype changed structure since the entry was stored). */
 export function cachedInheritedPropertyValue(
   witness: OrdinaryObject<ScriptPropertyKey, unknown>,
   value: unknown,
@@ -232,7 +233,10 @@ export function cachedInheritedPropertyValue(
   if (object === undefined || object.internalShape !== site.inheritedShape)
     return site;
   const holder = site.inheritedObject;
-  if (holder === undefined || holder.internalShape !== site.inheritedHolder)
+  if (
+    holder === undefined ||
+    site.inheritedEpochs.value !== site.inheritedEpoch
+  )
     return site;
   return readPropertyValueSlot(
     holder,

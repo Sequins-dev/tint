@@ -4287,13 +4287,14 @@ function lowerEntries(
             siteRecord === undefined || siteName === undefined
               ? undefined
               : recordContracts.fieldIndex(siteRecord, siteName);
-        // A store's transition entry ends with the epoch record whose
-        // `value` the site's epoch must equal.
+        // A store's transition entry and an inherited load's holder entry
+        // end with the epoch record whose `value` the site's epoch must
+        // equal (every site names it; own loads never read it).
         let epochRecord: number | undefined = undefined,
           epochField: number | undefined = undefined;
         const site =
           siteType === undefined ? undefined : checked.types[siteType];
-        if (store && site?.kind === "object") {
+        if (site?.kind === "object") {
           const epoch = site.properties.find(
             (property) => property !== undefined && property.name === "epoch",
           );
@@ -4327,7 +4328,8 @@ function lowerEntries(
           count === undefined ||
           !Number.isSafeInteger(count) ||
           count < 1 ||
-          (store && (epochRecord === undefined || epochField === undefined)) ||
+          epochRecord === undefined ||
+          epochField === undefined ||
           fn.closureEnvironment !== undefined ||
           fn.environment !== undefined ||
           fn.receiverSlot !== undefined
@@ -4336,26 +4338,27 @@ function lowerEntries(
             "property cache bindings take a record witness, unknown values and a cache site with named fields",
           );
         const layout = { record, field, count, siteRecord, siteField };
-        functions[fn.id] =
-          store && epochRecord !== undefined && epochField !== undefined
-            ? bindPropertyStore(
-                fn,
-                second,
-                third,
-                target,
-                layout,
-                epochRecord,
-                epochField,
-                span,
-              )
-            : bindPropertyLoad(
-                fn,
-                second,
-                target,
-                layout,
-                binding.operation === "inherited-property-load",
-                span,
-              );
+        functions[fn.id] = store
+          ? bindPropertyStore(
+              fn,
+              second,
+              third,
+              target,
+              layout,
+              epochRecord,
+              epochField,
+              span,
+            )
+          : bindPropertyLoad(
+              fn,
+              second,
+              target,
+              layout,
+              binding.operation === "inherited-property-load",
+              epochRecord,
+              epochField,
+              span,
+            );
         continue;
       }
       if (binding.operation === "slot-read") {

@@ -190,13 +190,16 @@ export function bindActivationRead(
     span,
   );
 }
-/** The body of a property-load binding: its value and site parameters. */
+/** The body of a property-load binding: its value and site parameters, and
+ * the epoch record an inherited entry names. */
 export function bindPropertyLoad(
   fn: FunctionIR,
   value: number,
   site: number,
   layout: PropertyCacheLayout,
   inherited: boolean,
+  epochRecord: number,
+  epochField: number,
   span: Span,
 ): FunctionIR {
   return boundBody(
@@ -215,6 +218,8 @@ export function bindPropertyLoad(
       siteRecord: layout.siteRecord,
       siteField: layout.siteField,
       inherited,
+      epochRecord,
+      epochField,
     }),
     span,
   );

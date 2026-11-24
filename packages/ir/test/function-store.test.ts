@@ -95,6 +95,8 @@ const instructions: Instruction[] = [
     siteRecord: 8,
     siteField: 9,
     inherited: false,
+    epochRecord: 10,
+    epochField: 11,
     ...span,
   },
   {
@@ -108,6 +110,8 @@ const instructions: Instruction[] = [
     siteRecord: 8,
     siteField: 9,
     inherited: true,
+    epochRecord: 10,
+    epochField: 11,
     ...span,
     inline: 0,
   },

@@ -2554,12 +2554,17 @@ export function emitModule(
           branch(emit, "ne", missed);
           let holder: number = 9;
           if (op.kind === "property-load" && op.inherited) {
+            // The site's holder is current while the epoch it was found
+            // under is the epoch record's value.
             const siteObject = recordField(op.siteRecord, op.siteField + 2),
-              siteHolder = recordField(op.siteRecord, op.siteField + 3);
-            emit({ op: "mov", dst: scratch, src: mem(10, siteObject.offset) });
-            emit({ op: "mov", dst: r9, src: mem(11, shape.offset) });
-            emit({ op: "cmp", dst: r9, src: mem(10, siteHolder.offset) });
+              epoch = recordField(op.siteRecord, op.siteField + 3),
+              epochRecord = recordField(op.siteRecord, op.siteField + 4),
+              current = recordField(op.epochRecord, op.epochField);
+            emit({ op: "mov", dst: rax, src: mem(10, epochRecord.offset) });
+            emit({ op: "mov", dst: rax, src: mem(0, current.offset) });
+            emit({ op: "cmp", dst: rax, src: mem(10, epoch.offset) });
             branch(emit, "ne", missed);
+            emit({ op: "mov", dst: scratch, src: mem(10, siteObject.offset) });
             holder = 11;
           }
           if (op.kind === "property-store") {

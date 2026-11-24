@@ -10959,8 +10959,13 @@ function emitModuleForms(
                 if (op.kind === "property-load") {
                   let holder = 10;
                   if (op.inherited) {
-                    // The receiver's shape implies its prototype, the site's
-                    // holder, when the holder still has the site's shape.
+                    // The receiver's shape implies its prototype; the site's
+                    // holder (x14) is current while the epoch it was found
+                    // under (x12) is the epoch record's value (x15).
+                    const epochField =
+                      module.records?.[op.epochRecord]?.fields[op.epochField];
+                    if (epochField === undefined)
+                      throw "property cache layout invariant";
                     emit({
                       op: "ldp",
                       width: 64,
@@ -10973,11 +10978,18 @@ function emitModuleForms(
                     emit({
                       op: "ldr",
                       width: 64,
-                      rt: 9,
-                      rn: 14,
-                      offset: shapeField.offset,
+                      rt: 15,
+                      rn: site,
+                      offset: siteShape.offset + 32,
                     });
-                    compare(9, 12);
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 15,
+                      rn: 15,
+                      offset: epochField.offset,
+                    });
+                    compare(15, 12);
                     holder = 14;
                   }
                   emit({

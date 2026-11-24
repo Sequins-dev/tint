@@ -144,13 +144,17 @@ export type Instruction = Span &
          * the shape in field `siteField` of the `siteRecord` record `site`;
          * no record but a `record` object has a shape in that word. On a
          * match the holder is the object, or for `inherited` the object in
-         * site field `siteField + 2` when its first word is the shape in
-         * site field `siteField + 3` (a receiver shape implies its
-         * prototype, which the runtime stores there). The result is the
-         * holder's general field whose word index is the raw binary64 bits
-         * of site field `siteField + 1`. The runtime writes only indices of
-         * fields `field..field+count-1` (consecutive general fields) with a
-         * shape under which they hold the property's value. */
+         * site field `siteField + 2` when site field `siteField + 3` equals
+         * field `epochField` of the `epochRecord` object in site field
+         * `siteField + 4`. That epoch advances with every structural change
+         * of an object used as a prototype, and a receiver shape implies
+         * its prototype, so the whole chain down to the holder (at any
+         * depth) is as it was when the runtime stored the entry. The
+         * result is the holder's general field whose word index is the raw
+         * binary64 bits of site field `siteField + 1`. The runtime writes
+         * only indices of fields `field..field+count-1` (consecutive
+         * general fields) with a shape under which they hold the
+         * property's value. */
         readonly kind: "property-load";
         readonly id: number;
         readonly object: number;
@@ -161,6 +165,8 @@ export type Instruction = Span &
         readonly siteRecord: number;
         readonly siteField: number;
         readonly inherited: boolean;
+        readonly epochRecord: number;
+        readonly epochField: number;
       }
     | {
         /** Store general `value` through a cached property store (js-runtime
