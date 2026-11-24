@@ -522,7 +522,7 @@ test(
   "SysV scoped callbacks preserve nested views, throws and moving roots",
   { skip: !x64 },
   () => {
-    verifyCallbackFixture("initializeGenerationalRuntime");
+    verifyCallbackFixture();
   },
 );
 

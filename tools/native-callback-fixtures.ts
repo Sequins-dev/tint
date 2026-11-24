@@ -174,14 +174,10 @@ export function run(): number {
 }
 `;
 }
-export function verifyCallbackFixture(
-  runtimeEntry?: "initializeCopyingRuntime" | "initializeGenerationalRuntime",
-): string {
+export function verifyCallbackFixture(): string {
   return verifyHostedFixture(
     callbackFixtureSource(),
-    runtimeEntry === "initializeCopyingRuntime"
-      ? "ffi-callbacks-copying"
-      : "ffi-callbacks",
+    "ffi-callbacks",
     [
       ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
       ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
@@ -192,7 +188,6 @@ export function verifyCallbackFixture(
     [],
     [],
     {
-      ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
       managedBytes: 4194304,
       allocationCapacity: 65536,
       foreignDeclarations: [callbackDeclarations],
@@ -584,14 +579,10 @@ export function run(): number {
 }
 `;
 }
-export function verifyZlibCallbackFixture(
-  runtimeEntry?: "initializeCopyingRuntime",
-): string {
+export function verifyZlibCallbackFixture(): string {
   return verifyHostedFixture(
     zlibCallbackSource(),
-    runtimeEntry === undefined
-      ? "ffi-zlib-callbacks"
-      : "ffi-zlib-callbacks-copying",
+    "ffi-zlib-callbacks",
     [
       ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
       ["zlib", zlibCallbackDeclarations.id],
@@ -601,7 +592,6 @@ export function verifyZlibCallbackFixture(
     [],
     [],
     {
-      ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
       managedBytes: 4194304,
       allocationCapacity: 65536,
       foreignDeclarations: [zlibCallbackDeclarations],

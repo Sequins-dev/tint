@@ -134,10 +134,8 @@ export function run(): number {
 /** Interfaces such as awdl0 come and go. Reuse the admitted image and sample
  * Node just before each launch. Retry a comparison only if Node's live
  * rendering also changed during that launch. */
-export function verifyOsFixture(
-  runtimeEntry?: "initializeCopyingRuntime",
-): string {
-  const name = runtimeEntry === undefined ? "node-os" : "node-os-copying";
+export function verifyOsFixture(): string {
+  const name = "node-os";
   const args: Parameters<typeof verifyHostedFixture> = [
     osFixtureSource(),
     name,
@@ -146,7 +144,6 @@ export function verifyOsFixture(
     [],
     [],
     {
-      ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
       requireTyped: true,
       managedBytes: 4194304,
       allocationCapacity: 65536,

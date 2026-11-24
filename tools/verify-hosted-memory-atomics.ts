@@ -67,7 +67,7 @@ export function run():number {
   [],
   [{ module: memory, namespace: "memory-atomics-memory" }],
   {
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeRuntime",
     managedBytes: 4194304,
     allocationCapacity: 65536,
     rootCapacity: 4096,

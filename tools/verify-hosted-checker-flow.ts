@@ -127,7 +127,7 @@ ${cases
   [],
   [],
   {
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     managedBytes: 268435456,
     allocationCapacity: 8388608,
     rootCapacity: 16384,

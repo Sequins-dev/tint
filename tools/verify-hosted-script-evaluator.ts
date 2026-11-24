@@ -66,7 +66,7 @@ export function run():number{
     },
   ],
   {
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     managedBytes: 67108864,
     allocationCapacity: 1048576,
     stackBytes: 16777216,

@@ -17,6 +17,7 @@ import {
   type Instruction,
 } from "@tint/codegen/aarch64/isa";
 
+import { nativeGenerationalNurseryAddressOffset } from "@tint/abi/host";
 import { lowerReferenceLists } from "@tint/ir/optimization/reference-lists";
 const original = readFileSync(
   new URL(
@@ -182,12 +183,12 @@ emit({
 // A 64 KiB frame: the result area at 0, the 96-byte native context at 32
 // (heap base at +8, allocation region pointer at +56; the stack limit at +72
 // and the engine-throw word at +80 stay zero), the allocation region at 160
-// with its mark bitmap at 512, and a 32 KiB heap at 1024.
+// (nursery address at +64), and a 32 KiB heap at 1024.
 for (let offset = 0; offset < 1024; offset += 8)
   emit({ op: "str", width: 64, rt: "zr", rn: "sp", offset });
 pointer(40, 1024);
 pointer(88, 160);
-pointer(176, 512);
+pointer(160 + nativeGenerationalNurseryAddressOffset, 1024);
 imm(9, 32768);
 emit({ op: "str", width: 32, rt: 9, rn: "sp", offset: 164 });
 address(0, 32);

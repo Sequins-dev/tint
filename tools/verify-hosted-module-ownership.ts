@@ -39,7 +39,7 @@ export function run():number{
   [],
   [{ module: "generated", namespace: "generated-ownership" }],
   {
-    runtimeEntry: "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     managedBytes: 8388608,
     allocationCapacity: 262144,
     rootCapacity: 4096,

@@ -60,7 +60,7 @@ assert.ok(graph.ok, JSON.stringify(graph));
 const policy = {
   debugSymbols: false,
   allowDebugger: true,
-  runtimeEntry: "initializeCopyingRuntime" as const,
+  runtimeEntry: "initializeGenerationalRuntime" as const,
   denseReferenceLists: false,
   managedBytes: 16777216,
   allocationCapacity: 1048576,

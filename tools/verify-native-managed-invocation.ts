@@ -261,7 +261,7 @@ const predicateModule: ModuleIR = {
 };
 assert.deepEqual(verify(canonicalInvocationModule), { ok: true });
 assert.deepEqual(verify(predicateModule), { ok: true });
-const text = `import {nativeFunctionDescriptor,nativeFunctionSignature,readMemoryWord,mapExecutableMemory,writeExecutableMemory,registerExternalMemory,callExecutableManaged,callExecutableValue,currentRootHead,currentContextDomain} from "memory";
+const text = `import {nativeFunctionDescriptor,nativeFunctionSignature,readMemoryWord,mapExecutableMemory,writeExecutableMemory,registerExternalMemory,registerStackMaps,callExecutableManaged,callExecutableValue,currentRootHead,currentContextDomain} from "memory";
 import {resolveManagedPointers,type ManagedIdentityBinding} from "compiler";
 import {emitModule} from "emitter";
 import type {ModuleIR} from "ir";
@@ -276,7 +276,7 @@ function exercise():number {
  const captured={value:42},callback=make(captured,false);
  const descriptor=nativeFunctionDescriptor(callback),signature=nativeFunctionSignature(callback);
  const module:ModuleIR=${JSON.stringify(canonicalInvocationModule)};
- const emitted=emitModule(module,{managedABI:{version:1,functionBrand:{name:"brand",contract:"tint.function.v1"},signatures:[{witness:1,name:"reader",contract:"tint.test.captured-reader.v1",parameters:[],returnType:"general"}],records:[{witness:0,name:"frame",contract:"tint.test.managed-frame.v1"}]}});
+ const emitted=emitModule(module,{generationalBarriers:true,managedABI:{version:1,functionBrand:{name:"brand",contract:"tint.function.v1"},signatures:[{witness:1,name:"reader",contract:"tint.test.captured-reader.v1",parameters:[],returnType:"general"}],records:[{witness:0,name:"frame",contract:"tint.test.managed-frame.v1"}]}});
  if(!emitted.ok)return 1;
  const native=emitted.value;
  const arenaBytes=65536,arena=mapExecutableMemory(arenaBytes),descriptorOffset=arenaBytes-40;
@@ -297,15 +297,17 @@ function exercise():number {
  if(resolveManagedPointers(native,wrong,read,domain).ok)return 5;
  progress.phase=3;
  if(writeExecutableMemory(arena,arenaBytes,0,linked.value.code)!==0)return 9;
+ const nativeMaps=native.stackMaps[0];if(nativeMaps!==undefined&&registerStackMaps(arena,native.code.length,arena+nativeMaps.tableOffset)!==0)return 28;
  const entry=native.functions[0];if(entry===undefined)throw "ENTRY";
  const predicateInput:ModuleIR=${JSON.stringify(predicateModule)};
- const predicateEmission=emitModule(predicateInput,{managedABI:{version:1,functionBrand:{name:"brand",contract:"tint.function.v1"},signatures:[],records:[{witness:0,name:"frame",contract:"tint.test.managed-frame.v1"}]}});
+ const predicateEmission=emitModule(predicateInput,{generationalBarriers:true,managedABI:{version:1,functionBrand:{name:"brand",contract:"tint.function.v1"},signatures:[],records:[{witness:0,name:"frame",contract:"tint.test.managed-frame.v1"}]}});
  if(!predicateEmission.ok)return 22;
  const predicateNative=predicateEmission.value,predicateLinked=resolveManagedPointers(predicateNative,[brandBinding,frameBinding],read,domain);
  if(!predicateLinked.ok)return 23;
  const predicateOffset=Math.ceil(linked.value.code.length/16)*16;
  if(predicateOffset+predicateLinked.value.code.length>descriptorOffset)return 24;
  if(writeExecutableMemory(arena,arenaBytes,predicateOffset,predicateLinked.value.code)!==0)return 25;
+ const predicateMaps=predicateNative.stackMaps[0];if(predicateMaps!==undefined&&registerStackMaps(arena+predicateOffset,predicateNative.code.length,arena+predicateOffset+predicateMaps.tableOffset)!==0)return 29;
  const maker=native.functions.find(fn=>fn!==undefined&&fn.id===2),predicate=predicateNative.functions[0];
  if(maker===undefined||predicate===undefined)throw "CANONICAL_ENTRY";
  const frame=callExecutableManaged(arena+maker.offset,callback),predicateAddress=arena+predicateOffset+predicate.offset;
@@ -395,6 +397,11 @@ const grants: NativeHostBinding[] = [
   },
   {
     module: memory,
+    name: "registerStackMaps",
+    operation: "stack-maps-register",
+  },
+  {
+    module: memory,
     name: "callExecutableManaged",
     operation: "executable-call-managed",
   },
@@ -411,8 +418,9 @@ const built = buildMacOSProgram({
   target: nativeFixtureTarget(),
   allowDebugger: true,
   allowJit: true,
+  trustedExecutableCode: true,
   debugSymbols: true,
-  runtimeEntry: "initializeCopyingRuntime",
+  runtimeEntry: "initializeGenerationalRuntime",
   entry: "fixture",
   start: "run",
   denseReferenceLists: false,
@@ -440,7 +448,7 @@ writeFileSync(
       expectedExitStatus: 42,
       source: text,
       scope:
-        "AOT to generated to AOT managed invocation with canonical imported record allocation and recognition across independent images before/after copying GC, retained callback identity across copying GC, and allocating callbacks, normal and thrown unknown payloads, nested calls, fresh object returns and root-chain restoration. Trusted canonical metadata linking and permanent publication only; no JavaScript source execution capability.",
+        "AOT to generated to AOT managed invocation with canonical imported record allocation and recognition across independent images before/after generational GC, retained callback identity across generational GC, and allocating callbacks, normal and thrown unknown payloads, nested calls, fresh object returns and root-chain restoration. Trusted canonical metadata linking and permanent publication only; no JavaScript source execution capability.",
     },
     null,
     2,

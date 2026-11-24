@@ -281,13 +281,10 @@ ${checks.join("\n")}
 }
 `;
 }
-/** Under the default (generational) runtime or the copying one. */
-export function verifyZlibFixture(
-  runtimeEntry?: "initializeCopyingRuntime",
-): string {
+export function verifyZlibFixture(): string {
   return verifyHostedFixture(
     zlibFixtureSource(),
-    runtimeEntry === undefined ? "ffi-zlib" : "ffi-zlib-copying",
+    "ffi-zlib",
     [
       ["node:zlib", zlibModule],
       ["node:crypto", "packages/native-runtime/src/node/crypto.ts"],
@@ -298,7 +295,6 @@ export function verifyZlibFixture(
     {
       managedBytes: 16777216,
       allocationCapacity: 262144,
-      ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
     },
   );
 }

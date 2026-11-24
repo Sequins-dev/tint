@@ -89,7 +89,7 @@ export function run():number {
  const emitted=${
    x64
      ? 'emitModule(second.module,linuxX86_64Target.hostABI,true,true,false,[],false,false,{mode:"live",functions:[],records:[],bindings:{version:1,signatures:[],functions:bindings.value}})'
-     : "emitModule(second.module,{closedRoots:[finalRoot],managedABI:{version:1,signatures:[],functions:bindings.value}})"
+     : "emitModule(second.module,{closedRoots:[finalRoot],generationalBarriers:true,managedABI:{version:1,signatures:[],functions:bindings.value}})"
  };if(!emitted.ok)return 18;
  const native=emitted.value,nativeEntry=native.functions[finalRoot];if(nativeEntry===undefined||nativeEntry.import===true)return 19;
  const calls={count:0};
@@ -153,9 +153,7 @@ export function run():number {
   {
     allowJit: true,
     trustedExecutableCode: true,
-    runtimeEntry: x64
-      ? "initializeGenerationalRuntime"
-      : "initializeCopyingRuntime",
+    runtimeEntry: "initializeGenerationalRuntime",
     managedBytes: 67108864,
     allocationCapacity: 1048576,
     rootCapacity: 16384,
