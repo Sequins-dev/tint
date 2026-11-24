@@ -818,6 +818,49 @@ test("undefined guards narrow recursive optional object bindings without preserv
     false,
   );
 });
+test("undefined guards on mutable bindings survive nested loops, switches and labels that leave them unassigned", () => {
+  const header =
+    "interface Cell {readonly id:number;readonly next:Cell|undefined}";
+  const walk = (inner: string) =>
+    header +
+    "function walk(head:Cell|undefined):number{let total=0;let cell:Cell|undefined=head;while(cell!==undefined){total+=cell.id;" +
+    inner +
+    "cell=cell.next;}return total;}";
+  // As in TypeScript, the guard holds after statements that never assign the
+  // binding: each of these used to drop it at the inner statement's exit.
+  for (const inner of [
+    "for(let j=0;j<3;j++)total+=j;",
+    "let k=0;while(k<3)k++;",
+    "do{total++;}while(total<0);",
+    "for(const id of [1,2])total+=id;",
+    "switch(cell.id){case 1:total+=1;break;default:total+=2;}",
+    "outer:for(let j=0;j<3;j++){for(let k=0;k<3;k++){if(k>j)continue outer;if(k>total)break outer;}}",
+  ]) {
+    const r = check(walk(inner));
+    assert.ok(r.ok, inner + ": " + JSON.stringify(r));
+  }
+  // An inner statement that may assign the binding, a var redeclaration in
+  // it, or a closure the loop calls still clears the guard.
+  const varWalk = (inner: string) =>
+    header +
+    "function walk(head:Cell|undefined):number{let total=0;var cell:Cell|undefined=head;while(cell!==undefined){total+=cell.id;for(let j=0;j<1;j++){" +
+    inner +
+    "}cell=cell.next;}return total;}";
+  const varKept = check(varWalk("total++;"));
+  assert.ok(varKept.ok, JSON.stringify(varKept));
+  for (const source of [
+    walk("for(let j=0;j<3;j++){if(j>1)cell=undefined;}"),
+    walk("while(total<0)cell=head;"),
+    walk("switch(total){case 0:cell=undefined;break;}"),
+    varWalk("var cell:Cell|undefined=undefined;"),
+    header +
+      "function walk(head:Cell|undefined):number{let total=0;let cell:Cell|undefined=head;const clear=():void=>{cell=undefined;};while(cell!==undefined){for(let j=0;j<3;j++)clear();cell=cell.next;}return total;}",
+  ]) {
+    const r = check(source);
+    assert.ok(!r.ok && r.error.code === "PROPERTY", source);
+    assert.equal(source.slice(r.error.start, r.error.end), "cell.next");
+  }
+});
 test("string sets check standard construction, methods and readonly views", () => {
   for (const source of [
     'function f():number{const s=new Set<string>();s.add("a").add("b");if(s.has("a"))s.delete("b");const n=s.size;s.clear();return n;}',
