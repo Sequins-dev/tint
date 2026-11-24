@@ -25,16 +25,16 @@ export type RecordOperation =
   /** `(record: T, view: unknown): void`: store the view (ignored for a
    * record of another layout). */
   | "set-view-slot"
-  /** `(witness: T, value: unknown, site: S): unknown`: the cached own (or
-   * inherited) property value of an object value, or a miss (IR
-   * property-load). */
+  /** `(value: unknown, site: S): unknown`: the cached own (or inherited)
+   * property value of an object value, or a miss (IR property-load). The
+   * object record layout is read from `site.inheritedObject`. */
   | "property-load"
   | "inherited-property-load"
   /** `(value: unknown, site: S): boolean`: whether a property-load missed
    * (IR general-is "absent"). */
   | "absent-test"
-  /** `(witness: T, target: unknown, value: unknown, site: S): boolean`: a
-   * cached property store (IR property-store). */
+  /** `(target: unknown, value: unknown, site: S): boolean`: a cached
+   * property store (IR property-store). */
   | "property-store"
   /** `(witness: T): number`: the word index of a named field of T. */
   | "field-word"

@@ -3003,11 +3003,10 @@ function lowerScriptEntry(
     // The site's inline value (IR property-load natively); a miss takes the
     // runtime read, which refills the site. A method call (`o.m()`) reads
     // the inherited entries, which hold the receiver's own methods too.
-    const witness = member(id("$errors"), "objectPrototype", span);
     const result = temporary(
       runtimeCall(
         method ? "cachedInheritedPropertyValue" : "cachedOwnPropertyValue",
-        [witness, object, cache],
+        [object, cache],
         span,
       ),
       true,
@@ -3389,12 +3388,7 @@ function lowerScriptEntry(
         kind: "if",
         test: runtimeCall(
           "cachedPropertyStore",
-          [
-            member(id("$errors"), "objectPrototype", target),
-            target.base,
-            value,
-            cache,
-          ],
+          [target.base, value, cache],
           target,
         ),
         consequent: { ...at(target), kind: "block", statements: [] },

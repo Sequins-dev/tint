@@ -207,11 +207,10 @@ export function propertySlotWord(
  * no property holds. Native code binds this to IR property-load, whose miss
  * is a dedicated non-value. */
 export function cachedOwnPropertyValue(
-  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
   value: unknown,
   site: ScriptPropertyCache,
 ): unknown {
-  const object = viewObjectValue(value, witness);
+  const object = viewTypeofObject(value);
   if (object === undefined) return site;
   // The entries in order, as generated code tests them (a retained
   // declaration reads the site's fields directly).
@@ -223,10 +222,7 @@ export function cachedOwnPropertyValue(
   else if (shape === site.ownShape3) slot = site.ownSlot3;
   else return site;
   // The site's raw-bit word index, two words per value.
-  return readPropertyValueSlot(
-    object,
-    (slot / Number.MIN_VALUE - propertySlotWord(witness)) / 2,
-  );
+  return readPropertyValueSlot(object, slot / Number.MIN_VALUE / 2);
 }
 
 /** As cachedOwnPropertyValue, for a method site: a data property of an
@@ -235,11 +231,10 @@ export function cachedOwnPropertyValue(
  * implies its prototype, and the site's inherited epoch must still be
  * current (no prototype changed structure since the entries were found). */
 export function cachedInheritedPropertyValue(
-  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
   value: unknown,
   site: ScriptPropertyCache,
 ): unknown {
-  const object = viewObjectValue(value, witness);
+  const object = viewTypeofObject(value);
   if (
     object === undefined ||
     site.inheritedEpochs.value !== site.inheritedEpoch
@@ -262,10 +257,7 @@ export function cachedInheritedPropertyValue(
     slot = site.inheritedSlot3;
     holder = site.inheritedObject3;
   } else return site;
-  return readPropertyValueSlot(
-    holder ?? object,
-    (slot / Number.MIN_VALUE - propertySlotWord(witness)) / 2,
-  );
+  return readPropertyValueSlot(holder ?? object, slot / Number.MIN_VALUE / 2);
 }
 
 /** Whether a cached read missed. Native code binds it to the miss test of
@@ -282,12 +274,11 @@ export function absentPropertyValue(
  * prototype changed shape since: see propertyEpoch). False when the cache
  * does not apply. Native code binds this to IR property-store. */
 export function cachedPropertyStore(
-  witness: OrdinaryObject<ScriptPropertyKey, unknown>,
   target: unknown,
   value: unknown,
   site: ScriptPropertyCache,
 ): boolean {
-  const object = viewObjectValue(target, witness);
+  const object = viewTypeofObject(target);
   if (object === undefined || object.internalShape !== site.storeShape)
     return false;
   const transition = site.storeTransition;
@@ -295,11 +286,7 @@ export function cachedPropertyStore(
     if (site.epoch.value !== site.storeEpoch) return false;
     object.internalShape = transition;
   }
-  writePropertyValueSlot(
-    object,
-    (site.storeSlot / Number.MIN_VALUE - propertySlotWord(witness)) / 2,
-    value,
-  );
+  writePropertyValueSlot(object, site.storeSlot / Number.MIN_VALUE / 2, value);
   return true;
 }
 

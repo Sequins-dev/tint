@@ -4266,38 +4266,45 @@ function lowerEntries(
         binding.operation === "property-store"
       ) {
         const store = binding.operation === "property-store";
-        const siteParameter = store ? 3 : 2;
-        const witnessType = checked.bindingTypes[bindingId(body.parameters[0])],
-          siteType =
-            checked.bindingTypes[bindingId(body.parameters[siteParameter])];
-        const record =
-            witnessType === undefined
-              ? undefined
-              : recordContracts.forType(witnessType),
-          siteRecord =
-            siteType === undefined
-              ? undefined
-              : recordContracts.forType(siteType);
+        const siteParameter = store ? 2 : 1;
+        const siteType =
+          checked.bindingTypes[bindingId(body.parameters[siteParameter])];
+        const siteRecord =
+          siteType === undefined
+            ? undefined
+            : recordContracts.forType(siteType);
         const valueName = binding.field,
           siteName = binding.siteField,
           count = binding.count,
           entries = binding.entries ?? 1;
-        const field =
-            record === undefined || valueName === undefined
-              ? undefined
-              : recordContracts.fieldIndex(record, valueName),
-          siteField =
-            siteRecord === undefined || siteName === undefined
-              ? undefined
-              : recordContracts.fieldIndex(siteRecord, siteName);
-        // A store's transition entry and an inherited load's holder entry
-        // end with the epoch record whose `value` the site's epoch must
-        // equal (every site names it; own loads never read it).
-        let epochRecord: number | undefined = undefined,
+        // Read the object record layout from `site.inheritedObject`
+        // (`OrdinaryObject | undefined`) and the epoch record from
+        // `site.epoch` so callers pass no dead witness argument.
+        let record: number | undefined = undefined,
+          epochRecord: number | undefined = undefined,
           epochField: number | undefined = undefined;
         const site =
           siteType === undefined ? undefined : checked.types[siteType];
         if (site?.kind === "object") {
+          const holder = site.properties.find(
+            (property) =>
+              property !== undefined && property.name === "inheritedObject",
+          );
+          const holderType =
+            holder === undefined ? undefined : checked.types[holder.type];
+          if (holder !== undefined && holderType?.kind === "object")
+            record = recordContracts.forType(holder.type);
+          else if (holderType?.kind === "union") {
+            for (const member of holderType.members) {
+              if (
+                member !== undefined &&
+                checked.types[member]?.kind === "object"
+              ) {
+                record = recordContracts.forType(member);
+                break;
+              }
+            }
+          }
           const epoch = site.properties.find(
             (property) => property !== undefined && property.name === "epoch",
           );
@@ -4310,18 +4317,23 @@ function lowerEntries(
               ? undefined
               : recordContracts.fieldIndex(epochRecord, "value");
         }
-        const parameters = store ? 4 : 3;
+        const field =
+            record === undefined || valueName === undefined
+              ? undefined
+              : recordContracts.fieldIndex(record, valueName),
+          siteField =
+            siteRecord === undefined || siteName === undefined
+              ? undefined
+              : recordContracts.fieldIndex(siteRecord, siteName);
+        const parameters = store ? 3 : 2;
         const target = fn.parameters[siteParameter];
-        const third = fn.parameters[2];
         if (
           first === undefined ||
           second === undefined ||
-          third === undefined ||
           target === undefined ||
           fn.parameters.length !== parameters ||
-          fn.slots[first] !== "reference" ||
-          fn.slots[second] !== "general" ||
-          (store && fn.slots[third] !== "general") ||
+          fn.slots[first] !== "general" ||
+          (store && fn.slots[second] !== "general") ||
           fn.slots[target] !== "reference" ||
           fn.returnType !== (store ? "boolean" : "general") ||
           record === undefined ||
@@ -4342,14 +4354,14 @@ function lowerEntries(
           fn.receiverSlot !== undefined
         )
           fail(
-            "property cache bindings take a record witness, unknown values and a cache site with named fields",
+            "property cache bindings take unknown values and a cache site with named object and epoch fields",
           );
         const layout = { record, field, count, siteRecord, siteField };
         functions[fn.id] = store
           ? bindPropertyStore(
               fn,
+              first,
               second,
-              third,
               target,
               layout,
               epochRecord,
@@ -4358,7 +4370,7 @@ function lowerEntries(
             )
           : bindPropertyLoad(
               fn,
-              second,
+              first,
               target,
               layout,
               binding.operation === "inherited-property-load",
