@@ -23,7 +23,7 @@ const corpus = [
   {
     source:
       "class A{#p=1;static m(){return 1}get g(){return this.#p}}class B extends A{constructor(){super();this.q=super.g}}",
-    sha256: "23956924a6b22df9e42f05a8597406b6edb83d6b5a06af182970cbd6b84f271a",
+    sha256: "082bf4b58b7f2d7ff0afd007721a43297bece6ff5cc311ff00b6da04a7c5b4c0",
   },
   {
     source:
@@ -38,7 +38,7 @@ const corpus = [
   {
     source:
       "function p(a,b=1,...c){return arguments.length}(()=>this)();new p();`a${1}`;tag`x`;",
-    sha256: "22de66c21be1f0197e7fa8ec034d247fe80b1fc72792521c00eee4f7e3e1ca5e",
+    sha256: "63977908d4a1a0ece0b81b40f574bffc7353c141278b98585b7612adbaed85e2",
   },
   {
     source:

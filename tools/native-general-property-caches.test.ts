@@ -6,9 +6,9 @@
 // which also adds properties by cached transitions. These sections drive
 // read and write sites through shared and diverging shapes, offsets past
 // the in-place slots, inherited methods (also two and three prototypes
-// up), redefinitions, deletions, prototype changes, accessors, symbols,
-// non-extensible receivers and builtin objects, so a stale shape, slot or
-// transition changes an observation. Node computes the expected
+// up), own methods at method sites, redefinitions, deletions, prototype
+// changes, accessors, symbols, non-extensible receivers and builtin
+// objects, so a stale shape, slot or transition changes an observation. Node computes the expected
 // observations from the same source; the native image runs under LLDB
 // through the general path.
 import assert from "node:assert/strict";
@@ -297,6 +297,44 @@ function polymorphic() {
   for (const o of objects) out.push(call(o));
   return out.join(",");
 }
+function ownMethods() {
+  // A method site over object literals with their own methods, beside
+  // receivers that inherit theirs: own methods share the site's entries
+  // with no holder, and stay correct when replaced, deleted, shadowed,
+  // read through accessors or held past the in-place slots.
+  const call = (o) => o.m();
+  const proto = { m() { return "proto"; } };
+  class K { m() { return "K"; } }
+  const objects = [
+    { m() { return "a"; } },
+    { x: 1, m() { return "b" + this.x; } },
+    new K(),
+    { __proto__: proto, m() { return "c"; } },
+    { __proto__: proto, y: 2 },
+  ];
+  const out = [];
+  for (let round = 0; round < 3; round++)
+    for (const o of objects) out.push(call(o));
+  objects[0].m = function () { return "a2"; };
+  delete objects[3].m;
+  for (const o of objects) out.push(call(o));
+  // A prototype's structural change clears the site's entries.
+  proto.z = 1;
+  K.prototype.n = 1;
+  for (const o of objects) out.push(call(o));
+  // More shapes than entries, an accessor and a method past the in-place
+  // slots.
+  const many = [
+    { p: 0, m() { return "p"; } },
+    { q: 0, m() { return "q"; } },
+    { r: 0, m() { return "r"; } },
+    { get m() { return () => "getter"; } },
+    { k0: 0, k1: 0, k2: 0, k3: 0, k4: 0, k5: 0, k6: 0, k7: 0, k8: 0, m() { return "far"; } },
+  ];
+  for (let round = 0; round < 2; round++)
+    for (const o of [...objects, ...many]) out.push(call(o));
+  return out.join(",");
+}
 export function sections() {
   return [
     String(sharedShapes()),
@@ -310,6 +348,7 @@ export function sections() {
     builtins(),
     deepChains(),
     polymorphic(),
+    ownMethods(),
   ];
 }
 `;
@@ -327,7 +366,7 @@ test("property caches keep JavaScript lookups across shapes and redefinitions", 
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-  assert.equal(expected.length, 11);
+  assert.equal(expected.length, 12);
   // Exit status 42 when every section matches, else 10 + the first
   // mismatching section's index.
   let general = false;

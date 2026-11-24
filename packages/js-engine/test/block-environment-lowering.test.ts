@@ -1220,16 +1220,18 @@ test("polymorphic sites keep receivers and follow a replaced prototype", () => {
   ]);
 });
 
-test("a named load reads the receiver's value, a method call the prototype's, then the receiver's, and a named store uses the store cache", () => {
+test("a named load reads the receiver's value, a method call its inherited entries, and a named store uses the store cache", () => {
   const read = "function read(object) { return object.value; }",
     call = "function call(object) { return object.method(1); }",
     write = "function write(object) { object.value = 1; }";
   assert.equal(runtimeCalls(read, "cachedOwnPropertyValue"), 1);
   assert.equal(runtimeCalls(read, "cachedInheritedPropertyValue"), 0);
   assert.equal(runtimeCalls(read, "absentPropertyValue"), 1);
+  // A method site keeps the receiver's own methods among its inherited
+  // entries, so it has one inline read.
   assert.equal(runtimeCalls(call, "cachedInheritedPropertyValue"), 1);
-  assert.equal(runtimeCalls(call, "cachedOwnPropertyValue"), 1);
-  assert.equal(runtimeCalls(call, "absentPropertyValue"), 2);
+  assert.equal(runtimeCalls(call, "cachedOwnPropertyValue"), 0);
+  assert.equal(runtimeCalls(call, "absentPropertyValue"), 1);
   assert.equal(runtimeCalls(write, "cachedPropertyStore"), 1);
   assert.equal(runtimeCalls(write, "writeCachedObjectValueProperty"), 1);
   // Optional chains read callees as methods too.

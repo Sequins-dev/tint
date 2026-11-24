@@ -477,6 +477,37 @@ test("inherited entries share an epoch and clear when a newer one finds an entry
   assert.equal(inlineEntryHolder(site, 1), undefined);
 });
 
+test("a method site keeps own properties among its inherited entries without a holder", () => {
+  const prototype = object(undefined);
+  createDataProperty<ScriptPropertyKey, unknown>(prototype, "m", "base", hooks);
+  // An object literal's own method, then a prototype's.
+  const literal = point(prototype, ["m"]),
+    instance = point(prototype, ["x"]);
+  const site = createScriptPropertyCache("m", true);
+  assert.equal(site.method, true);
+  assert.equal(
+    lookupCachedScriptProperty(literal, "m", site, false, stubs, 0),
+    literal,
+  );
+  assert.equal(
+    lookupCachedScriptProperty(instance, "m", site, false, stubs, 0),
+    prototype,
+  );
+  assert.equal(site.ownShape, unusedPropertyShape);
+  assert.equal(inlineEntryShape(site, true, 0), shape(literal));
+  assert.equal(inlineEntryHolder(site, 0), undefined);
+  // Portable slot reads count words from the first value (slot word 0).
+  assert.equal(inlineEntrySlot(site, true, 0), inlineSlotBits(0));
+  assert.equal(inlineEntryShape(site, true, 1), shape(instance));
+  assert.equal(inlineEntryHolder(site, 1), prototype);
+  // A plain read site keeps own properties in its own entries.
+  const plain = createScriptPropertyCache("m");
+  assert.equal(plain.method, false);
+  lookupCachedScriptProperty(literal, "m", plain, false, stubs, 0);
+  assert.equal(plain.ownShape, shape(literal));
+  assert.equal(plain.inheritedShape, unusedPropertyShape);
+});
+
 test("a site caches stores to writable properties and the transitions that add them", () => {
   const prototype = object(undefined);
   const first = object(prototype);

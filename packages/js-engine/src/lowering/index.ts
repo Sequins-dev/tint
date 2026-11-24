@@ -1016,10 +1016,20 @@ function lowerScriptEntry(
     appendStatements(tables, slotTable("$pc", propertyCacheInitializers));
     return tables;
   }
-  function propertyCache(name: string, span: Span): Expression {
+  /** A site's property cache; a method site (`o.m()`) caches the
+   * receiver's own properties among its inherited entries. */
+  function propertyCache(
+    name: string,
+    span: Span,
+    method: boolean = false,
+  ): Expression {
     const index = propertyCacheInitializers.length;
     propertyCacheInitializers.push(
-      runtimeCall("createScriptPropertyCache", [text(name)], generated),
+      runtimeCall(
+        "createScriptPropertyCache",
+        [text(name), { ...at(generated), kind: "boolean", value: method }],
+        generated,
+      ),
     );
     return slotField("$pc", index, span);
   }
@@ -2971,7 +2981,7 @@ function lowerScriptEntry(
     ];
     const cache =
       cached && key.kind === "string"
-        ? propertyCache(key.value, span)
+        ? propertyCache(key.value, span, method)
         : undefined;
     if (cache !== undefined) args.push(cache);
     const read = runtimeCall(
@@ -2991,8 +3001,8 @@ function lowerScriptEntry(
       );
     if (cache === undefined) return temporary(read, true);
     // The site's inline value (IR property-load natively); a miss takes the
-    // runtime read, which refills the site. A method call (`o.m()`) tries
-    // the prototype's value, then the receiver's.
+    // runtime read, which refills the site. A method call (`o.m()`) reads
+    // the inherited entries, which hold the receiver's own methods too.
     const witness = member(id("$errors"), "objectPrototype", span);
     const result = temporary(
       runtimeCall(
@@ -3006,25 +3016,7 @@ function lowerScriptEntry(
     if (result.kind !== "identifier")
       throw "property cache temporary invariant";
     const name = result.name;
-    let fallback: Statement = assignTo(name, read, span);
-    if (method)
-      fallback = {
-        ...at(span),
-        kind: "block",
-        statements: [
-          assignTo(
-            name,
-            runtimeCall(
-              "cachedOwnPropertyValue",
-              [{ ...witness }, object, cache],
-              span,
-            ),
-            span,
-          ),
-          ifAbsent(name, cache, fallback, span),
-        ],
-      };
-    statements.push(ifAbsent(name, cache, fallback, span));
+    statements.push(ifAbsent(name, cache, assignTo(name, read, span), span));
     return id(name, span);
   }
   function readComputedProperty(

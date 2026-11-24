@@ -11108,6 +11108,27 @@ function emitModuleForms(
                   const hitAt = instructions.length;
                   // A join: the further entries branch here.
                   if (cold) stackWords.clear();
+                  if (op.inherited) {
+                    // An entry without a holder is the receiver's own
+                    // property (x10).
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 14,
+                      immediate: 0,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    emit({
+                      op: "csel",
+                      width: 64,
+                      rd: 14,
+                      rn: 10,
+                      rm: 14,
+                      condition: "eq",
+                    });
+                  }
                   emit({
                     op: "add-reg",
                     width: 64,

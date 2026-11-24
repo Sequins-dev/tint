@@ -146,7 +146,8 @@ export type Instruction = Span &
          * Entries start at field `siteField` of the `siteRecord` record
          * `site`. An own entry is two fields, the shape and the word index,
          * and its holder is the object. An inherited entry is three, the
-         * shape, the word index and the holder; inherited entries apply
+         * shape, the word index and the holder (none for the object
+         * itself, as a method site caches an object's own method); inherited entries apply
          * only while the site field after the last one equals field
          * `epochField` of the `epochRecord` object in the field after it.
          * That epoch advances with every structural change of an object

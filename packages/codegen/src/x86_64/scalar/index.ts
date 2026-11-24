@@ -2612,6 +2612,11 @@ export function emitModule(
                 emit({ op: "jmp", target: label(hit) });
             }
             if (op.entries > 1) emit({ op: "label", name: hit });
+            if (inherited) {
+              // An entry without a holder is the receiver's own property.
+              emit({ op: "test", dst: scratch, src: scratch });
+              emit({ op: "cmovcc", cc: "e", dst: scratch, src: r9 });
+            }
           } else {
             const siteShape = recordField(op.siteRecord, op.siteField);
             emit({ op: "mov", dst: rax, src: mem(9, shape.offset) });

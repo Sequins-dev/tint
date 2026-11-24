@@ -286,15 +286,31 @@ test("record-new stores zero-valued fields as XZR without materializing them", (
   assert.ok(!words.some((word) => (word & 0xffc003ff) >>> 0 === 0xf90003ff));
 });
 
-test("a fused four-entry property load tests entries 1-3 in a cold stub", () => {
-  // Object record 1 (shape, one value), site record 2 (four own entries:
-  // shape, word index), epoch record 3. Block 0's miss test branches to
-  // block 1 (the miss, emitted after it) and block 2 (the hit).
+/** A function reading a four-entry property site (IR property-load) whose
+ * miss test branches to block 1 (the miss, emitted after it) and block 2
+ * (the hit), as code words. Object record 1 (shape, one value); site
+ * record 2: own entries are a shape and a word index, inherited entries add
+ * a holder and are followed by the epoch they were found under and the
+ * epoch record (record 3). */
+function propertyLoadWords(inherited: boolean): number[] {
+  const stride = inherited ? 24 : 16;
   const siteFields: RecordField[] = [];
-  for (let entry = 0; entry < 4; entry++)
+  for (let entry = 0; entry < 4; entry++) {
     siteFields.push(
-      { offset: 8 + entry * 16, type: "reference", mutable: true },
-      { offset: 16 + entry * 16, type: "number", mutable: true },
+      { offset: 8 + entry * stride, type: "reference", mutable: true },
+      { offset: 16 + entry * stride, type: "number", mutable: true },
+    );
+    if (inherited)
+      siteFields.push({
+        offset: 24 + entry * stride,
+        type: "optional-reference",
+        mutable: true,
+      });
+  }
+  if (inherited)
+    siteFields.push(
+      { offset: 8 + 4 * stride, type: "number", mutable: true },
+      { offset: 16 + 4 * stride, type: "reference", mutable: false },
     );
   const module: ModuleIR = {
     records: [
@@ -306,7 +322,7 @@ test("a fused four-entry property load tests entries 1-3 in a cold stub", () => 
           { offset: 16, type: "general", mutable: true },
         ],
       },
-      { byteLength: 72, fields: siteFields },
+      { byteLength: 8 + siteFields.length * 8, fields: siteFields },
       {
         byteLength: 16,
         fields: [{ offset: 8, type: "number", mutable: true }],
@@ -337,7 +353,7 @@ test("a fused four-entry property load tests entries 1-3 in a cold stub", () => 
                 count: 1,
                 siteRecord: 2,
                 siteField: 0,
-                inherited: false,
+                inherited,
                 entries: 4,
                 epochRecord: 3,
                 epochField: 0,
@@ -375,6 +391,11 @@ test("a fused four-entry property load tests entries 1-3 in a cold stub", () => 
   const words: number[] = [];
   for (let offset = fn.offset; offset < fn.offset + fn.byteLength; offset += 4)
     words.push(view.getUint32(offset, true));
+  return words;
+}
+
+test("a fused four-entry property load tests entries 1-3 in a cold stub", () => {
+  const words = propertyLoadWords(false);
   // CMP x9, x12 once per entry: entry 0 inline, entries 1-3 in the stub.
   const compare = encode({
     op: "sub-reg",
@@ -394,6 +415,24 @@ test("a fused four-entry property load tests entries 1-3 in a cold stub", () => 
   // Entry 0's mismatch branches forward past the hit and miss code to the
   // stub, so the stub's compares follow every other instruction of the body.
   assert.ok(at[1]! - at[0]! > 4);
+});
+
+test("an inherited entry without a holder reads the receiver", () => {
+  // CSEL x14, x10, x14, EQ after CMP x14, #0 at the shared hit: method
+  // sites cache a receiver's own methods with no holder.
+  const select = encode({
+    op: "csel",
+    width: 64,
+    rd: 14,
+    rn: 10,
+    rm: 14,
+    condition: "eq",
+  });
+  assert.ok(select.ok);
+  const count = (words: number[]): number =>
+    words.filter((word) => word === select.value).length;
+  assert.equal(count(propertyLoadWords(true)), 1);
+  assert.equal(count(propertyLoadWords(false)), 0);
 });
 
 test("reference vector copies are one indexed loop with at most one barrier", () => {

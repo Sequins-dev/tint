@@ -409,9 +409,10 @@ export const propertyCacheEntries = 4;
 export interface ScriptPropertyCache {
   /** The own entries as generated code reads them (IR property-load), each
    * the receiver shape and the value's raw-bit word index (inlineSlotBits).
-   * The entries for values held by a prototype follow, each the receiver
-   * shape, the word index and the holder, then the propertyEpoch value they
-   * were found under and the epoch record itself. A receiver shape implies
+   * The inherited entries follow, read by method sites (`method`), each the
+   * receiver shape, the word index and the holder (undefined for a property
+   * of the receiver itself), then the
+   * propertyEpoch value they were found under and the epoch record itself. A receiver shape implies
    * its prototype (prototypes have private shapes, and changing an
    * object's prototype reshapes it), and every structural change of a
    * prototype advances the epoch, so an unchanged epoch keeps the whole
@@ -455,6 +456,9 @@ export interface ScriptPropertyCache {
   readonly nameHash: number;
   used: number;
   megamorphic: boolean;
+  /** A method site (`o.m()`) reads only its inherited entries, so it keeps
+   * the receiver's own properties there too, with no holder. */
+  readonly method: boolean;
 }
 function propertyCacheEntry(): ScriptPropertyCacheEntry {
   return {
@@ -468,6 +472,7 @@ function propertyCacheEntry(): ScriptPropertyCacheEntry {
 }
 export function createScriptPropertyCache(
   name: string = "",
+  method: boolean = false,
 ): ScriptPropertyCache {
   const first = propertyCacheEntry();
   return {
@@ -509,6 +514,7 @@ export function createScriptPropertyCache(
     nameHash: hashString(name),
     used: 0,
     megamorphic: false,
+    method,
   };
 }
 export interface ScriptPropertyStubCache {
@@ -1887,12 +1893,13 @@ function addOwnEntry(
   if (index >= 0) setOwnEntry(cache, index, shape, slot);
 }
 /** Inherited entries share one epoch: entries found under an older one are
- * stale, so they are cleared before a newer entry is added. */
+ * stale, so they are cleared before a newer entry is added. An undefined
+ * holder is the receiver itself. */
 function addInheritedEntry(
   cache: ScriptPropertyCache,
   shape: ScriptShape,
   slot: number,
-  holder: ScriptObject,
+  holder: ScriptObject | undefined,
 ): void {
   const epoch = propertyEpoch.value;
   if (cache.inheritedEpoch !== epoch) {
@@ -1904,8 +1911,10 @@ function addInheritedEntry(
   if (index >= 0) setInheritedEntry(cache, index, shape, slot, holder);
 }
 /** Make a found property an inline entry: own when the object holds it,
- * else inherited. Each value is a two-word general slot; values past the
- * in-place slots stay off the inline entries. */
+ * except at a method site, else inherited (with no holder for the object's
+ * own property, as an object literal's methods). Each value is a two-word
+ * general slot; values past the in-place slots stay off the inline
+ * entries. */
 function addInlineEntry(
   cache: ScriptPropertyCache,
   object: ScriptObject,
@@ -1916,8 +1925,14 @@ function addInlineEntry(
 ): void {
   if (offset >= propertySlots) return;
   const slot = inlineSlotBits(slotWord + offset * 2);
-  if (holder === object) addOwnEntry(cache, shape, slot);
-  else addInheritedEntry(cache, shape, slot, holder);
+  if (holder === object && !cache.method) addOwnEntry(cache, shape, slot);
+  else
+    addInheritedEntry(
+      cache,
+      shape,
+      slot,
+      holder === object ? undefined : holder,
+    );
 }
 /** Find `key` on a fast-mode object or its first prototypes and cache where
  * it was found. Returns the holder of the data property, with its shape
