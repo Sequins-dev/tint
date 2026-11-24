@@ -458,21 +458,33 @@ export interface SourceLineRange {
   readonly line: number;
   readonly column: number;
 }
+export interface PublishedManagedSurface {
+  readonly name: string;
+  readonly digest: string;
+  /** The published directory, for compiling separately linked units
+   * against this program's surface. */
+  readonly directory: SerializedManagedSurfaceDirectory;
+  readonly signatures: number;
+  readonly records: number;
+  readonly runtimeSlots: number;
+  readonly runtimeTargets: number;
+  readonly runtimeSignatures: number;
+}
+export interface CompiledX64HostedProgram {
+  readonly ok: true;
+  readonly native: X64Module;
+  readonly lines: readonly SourceLineRange[];
+  readonly functionNames: ReadonlyMap<string, string>;
+  readonly parameterNames: ReadonlyMap<string, string>;
+  readonly serviceIdentities: readonly NativeServiceBinding[];
+  readonly managedSurfaces?: readonly PublishedManagedSurface[];
+  readonly invocation: number;
+  readonly returnType: "number" | "boolean" | "void" | "reference" | "general";
+}
 export interface CompiledProgram {
   /** Compiler-issued semantic identities in this program's permanent metadata. */
   readonly serviceIdentities?: readonly NativeServiceBinding[];
-  readonly managedSurfaces?: readonly {
-    readonly name: string;
-    readonly digest: string;
-    /** The published directory, for compiling separately linked units
-     * against this program's surface. */
-    readonly directory: SerializedManagedSurfaceDirectory;
-    readonly signatures: number;
-    readonly records: number;
-    readonly runtimeSlots: number;
-    readonly runtimeTargets: number;
-    readonly runtimeSignatures: number;
-  }[];
+  readonly managedSurfaces?: readonly PublishedManagedSurface[];
   readonly optimization: readonly PassStatistics[];
   readonly lines: readonly SourceLineRange[];
   /** Debug builds: source variables and inline scopes by function. */
@@ -699,10 +711,10 @@ export function compileNativeProgram(
   return compileArm64Program({ ...request, hostABI: backend.target.hostABI });
 }
 
-function compileTypedWithProgramRealm(
-  request: CompileRequest,
-  realmTypeofModules?: ReadonlySet<string>,
-): Compilation {
+function withoutDynamicObjectRuntime(request: CompileRequest): {
+  readonly explicit: RuntimeSource | undefined;
+  readonly without: CompileRequest;
+} {
   const explicit = request.runtimes.find(
     (source) => source?.namespace === "dynamic-object",
   );
@@ -713,31 +725,49 @@ function compileTypedWithProgramRealm(
           ...request,
           runtimes: request.runtimes.filter((source) => source !== explicit),
         };
-  const initial = compileTypedProgram(without, realmTypeofModules);
-  if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
-  const projections = initial.error.nativeProjections ?? [];
+  return { explicit, without };
+}
+
+function expandDynamicObjectRealm(
+  request: CompileRequest,
+  without: CompileRequest,
+  explicit: RuntimeSource | undefined,
+  error: CompilationFailure["error"],
+  realmTypeofModules?: ReadonlySet<string>,
+):
+  | {
+      readonly ok: true;
+      readonly request: CompileRequest;
+      readonly realmModules: ReadonlySet<string> | undefined;
+    }
+  | { readonly ok: false; readonly failure: CompilationFailure } {
+  const projections = error.nativeProjections ?? [];
   const callableViews = projections.includes("projectUnaryNumber");
   const runtime =
-    initial.error.needsBindingRealm === true || projections.length !== 0
-      ? dynamicObjectRuntimeSource(initial.error.needsBindingRealm, projections)
+    error.needsBindingRealm === true || projections.length !== 0
+      ? dynamicObjectRuntimeSource(error.needsBindingRealm, projections)
       : (explicit ?? dynamicObjectRuntimeSource());
   const module = runtime.module;
   const loader = request.moduleLoader;
   let expandedRequest = request;
   if (loader === undefined) {
     if (!request.modules.some((source) => source?.id === module))
-      return initial;
+      return { ok: false, failure: { ok: false, error } };
   } else if (!loader.ids.includes(module)) {
     const loadWithRoot = loader.loadWithRoot;
     const expanded =
       loadWithRoot === undefined ? undefined : loadWithRoot(module);
-    if (expanded === undefined) return initial;
+    if (expanded === undefined)
+      return { ok: false, failure: { ok: false, error } };
     if (!expanded.ok)
-      return stageFailure(
-        expanded.error.stage,
-        expanded.error.message,
-        expanded.error.module,
-      );
+      return {
+        ok: false,
+        failure: stageFailure(
+          expanded.error.stage,
+          expanded.error.message,
+          expanded.error.module,
+        ),
+      };
     expandedRequest = {
       ...request,
       modules: expanded.value,
@@ -854,9 +884,60 @@ function compileTypedWithProgramRealm(
     )
       bindings.push({ module: objects, name, operation: "view" });
   }
-  return compileTypedProgram(
-    { ...expandedRequest, runtimes, recordBindings: bindings, weakBindings },
+  return {
+    ok: true,
+    request: {
+      ...expandedRequest,
+      runtimes,
+      recordBindings: bindings,
+      weakBindings,
+    },
     realmModules,
+  };
+}
+
+function compileTypedWithProgramRealm(
+  request: CompileRequest,
+  realmTypeofModules?: ReadonlySet<string>,
+): Compilation {
+  const { explicit, without } = withoutDynamicObjectRuntime(request);
+  const initial = compileTypedProgram(without, realmTypeofModules);
+  if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
+  const expanded = expandDynamicObjectRealm(
+    request,
+    without,
+    explicit,
+    initial.error,
+    realmTypeofModules,
+  );
+  if (!expanded.ok) return expanded.failure;
+  return compileTypedProgram(expanded.request, expanded.realmModules);
+}
+
+function lowerTypedWithProgramRealm(
+  request: CompileRequest,
+  realmTypeofModules?: ReadonlySet<string>,
+  invokeDirectly: boolean = false,
+): TypedLowering {
+  const { explicit, without } = withoutDynamicObjectRuntime(request);
+  const initial = lowerTypedProgram(
+    without,
+    realmTypeofModules,
+    invokeDirectly,
+  );
+  if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
+  const expanded = expandDynamicObjectRealm(
+    request,
+    without,
+    explicit,
+    initial.error,
+    realmTypeofModules,
+  );
+  if (!expanded.ok) return expanded.failure;
+  return lowerTypedProgram(
+    expanded.request,
+    expanded.realmModules,
+    invokeDirectly,
   );
 }
 export function compileArm64Program(original: CompileRequest): Compilation {
@@ -3352,19 +3433,7 @@ export function compileX64HostedProgram(
       reason: string,
     ) => void;
   } = {},
-):
-  | CompilationFailure
-  | {
-      readonly ok: true;
-      readonly native: X64Module;
-      readonly lines: readonly SourceLineRange[];
-      readonly functionNames: ReadonlyMap<string, string>;
-      readonly parameterNames: ReadonlyMap<string, string>;
-      readonly serviceIdentities: readonly NativeServiceBinding[];
-      readonly invocation: number;
-      readonly returnType:
-        "number" | "boolean" | "void" | "reference" | "general";
-    } {
+): CompilationFailure | CompiledX64HostedProgram {
   const selected =
     options.runtime === true ? request : selectX64ForeignRuntime(request);
   if (typeof selected === "string") return stageFailure("foreign", selected);
@@ -3379,7 +3448,7 @@ export function compileX64HostedProgram(
     const typed = compileWithTypedWorkerEntry<TypedProgram>(
       source,
       (prepared): TypedLowering =>
-        lowerTypedProgram(prepared, undefined, invokeDirectly),
+        lowerTypedWithProgramRealm(prepared, undefined, invokeDirectly),
     );
     const lowering = source.generalLowering;
     if (
@@ -3393,7 +3462,7 @@ export function compileX64HostedProgram(
       lowering,
       typed.error,
       (program, realmTypeofModules): TypedLowering =>
-        lowerTypedProgram(program, realmTypeofModules),
+        lowerTypedWithProgramRealm(program, realmTypeofModules),
     );
     if (!general.ok) return general;
     const report = options.onGeneralFallback;
@@ -3624,6 +3693,10 @@ export function compileX64HostedProgram(
       column: position.column,
     });
   }
+  const managedSurfaces = publishedManagedSurfaces(
+    program.surfacePlans,
+    program.surfaceRuntimes,
+  );
   return {
     ok: true,
     native: emitted.value,
@@ -3633,7 +3706,32 @@ export function compileX64HostedProgram(
     functionNames: sourceNames.names,
     parameterNames,
     serviceIdentities,
+    ...(managedSurfaces === undefined ? {} : { managedSurfaces }),
   };
+}
+function publishedManagedSurfaces(
+  surfacePlans: readonly ManagedSurfaceAOTPlan[],
+  surfaceRuntimes: readonly ManagedSurfaceRuntimeExports[],
+): readonly PublishedManagedSurface[] | undefined {
+  if (surfacePlans.length === 0) return undefined;
+  const published: PublishedManagedSurface[] = [];
+  for (let index = 0; index < surfacePlans.length; index++) {
+    const plan = surfacePlans[index];
+    if (plan === undefined) throw "published surface invariant";
+    const stubs = surfaceRuntimes[index]?.entries.stubs;
+    published.push({
+      name: plan.directory.name,
+      digest: plan.directory.digest,
+      directory: plan.directory,
+      signatures: plan.directory.signatures.length,
+      records: plan.directory.records.length,
+      runtimeSlots: surfaceRuntimes[index]?.entries.slots.length ?? 0,
+      runtimeTargets: stubs?.entries.length ?? 0,
+      runtimeSignatures:
+        (stubs?.declarations.length ?? 0) - (stubs?.entries.length ?? 0),
+    });
+  }
+  return published;
 }
 
 function compileTypedProgram(
@@ -4066,6 +4164,10 @@ function compileTypedProgram(
       },
     );
   }
+  const managedSurfaces = publishedManagedSurfaces(
+    surfacePlans,
+    surfaceRuntimes,
+  );
   return {
     ok: true,
     value: {
@@ -4079,24 +4181,7 @@ function compileTypedProgram(
       entry: invocation < 0 ? undefined : invocation,
       exports: request.exports.slice(),
       ...(serviceIdentities.length === 0 ? {} : { serviceIdentities }),
-      ...(surfacePlans.length === 0
-        ? {}
-        : {
-            managedSurfaces: surfacePlans.map((plan, index) => ({
-              name: plan.directory.name,
-              digest: plan.directory.digest,
-              directory: plan.directory,
-              signatures: plan.directory.signatures.length,
-              records: plan.directory.records.length,
-              runtimeSlots: surfaceRuntimes[index]?.entries.slots.length ?? 0,
-              runtimeTargets:
-                surfaceRuntimes[index]?.entries.stubs.entries.length ?? 0,
-              runtimeSignatures:
-                (surfaceRuntimes[index]?.entries.stubs.declarations.length ??
-                  0) -
-                (surfaceRuntimes[index]?.entries.stubs.entries.length ?? 0),
-            })),
-          }),
+      ...(managedSurfaces === undefined ? {} : { managedSurfaces }),
     },
   };
 }

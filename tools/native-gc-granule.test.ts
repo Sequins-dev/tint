@@ -17,6 +17,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 
 const churn = `interface One {
   readonly kind: "one";
@@ -245,7 +246,10 @@ test("weak slots and ephemerons among odd-word objects move and clear exactly", 
           operation: "collect-garbage",
         },
       ],
-      runtimeEntry: "initializeCopyingRuntime",
+      runtimeEntry:
+        nativeFixtureTarget().arch === "x86_64"
+          ? "initializeGenerationalRuntime"
+          : "initializeCopyingRuntime",
       weakBindings: [
         { module: weak, name: "createWeakSlot", operation: "new" },
         { module: weak, name: "weakSlotKey", operation: "key" },

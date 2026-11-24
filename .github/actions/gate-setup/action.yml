@@ -8,6 +8,9 @@ inputs:
   debugger:
     description: Prepare LLDB (DevTools on macOS, the lldb package on Linux).
     default: "false"
+  tools:
+    description: Prepare native test host tools on Linux (clang, gdb, llvm, time, zlib headers).
+    default: "false"
   test262:
     description: Restore the pinned Test262 checkout and export TINT_GATE_TEST262.
     default: "false"
@@ -46,13 +49,29 @@ runs:
         sudo /usr/sbin/DevToolsSecurity -enable
         lldb --version
 
-    - name: Install Linux debugger
-      if: runner.os == 'Linux' && inputs.debugger == 'true'
+    - name: Install Linux host tools
+      if: runner.os == 'Linux' && (inputs.debugger == 'true' || inputs.tools == 'true')
       shell: bash
+      env:
+        NEED_DEBUGGER: ${{ inputs.debugger }}
+        NEED_TOOLS: ${{ inputs.tools }}
       run: |
+        packages=()
+        if [ "$NEED_DEBUGGER" = true ]; then
+          packages+=(lldb)
+        fi
+        if [ "$NEED_TOOLS" = true ]; then
+          packages+=(binutils clang gdb llvm time zlib1g-dev)
+        fi
         sudo apt-get update
-        sudo apt-get install -y lldb
-        lldb --version
+        sudo apt-get install -y "${packages[@]}"
+        if [ "$NEED_DEBUGGER" = true ]; then
+          lldb --version
+        fi
+        if [ "$NEED_TOOLS" = true ]; then
+          clang --version
+          gdb --version | head -n 1
+        fi
 
     - name: Restore Test262 checkout
       if: inputs.test262 == 'true'

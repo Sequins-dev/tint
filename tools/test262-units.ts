@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import {
   compileNativeServiceUnit,
+  compileX64NativeServiceUnit,
   createManagedCollectionPlanCache,
   createManagedTypeContractCache,
   declareManagedJitRuntime,
@@ -8,6 +9,7 @@ import {
   type ManagedSurfaceDirectoryRead,
   type NativeServiceUnit,
   type SerializedManagedSurfaceDirectory,
+  type X64NativeServiceUnit,
 } from "@tint/compiler/native";
 import { runtimeSources } from "@tint/compiler/cli";
 import { createInterfaceResolutionCache } from "@tint/typescript/checker/interfaces";
@@ -66,8 +68,10 @@ export function readPublishedSurface(
   return read.value;
 }
 
+export type CompiledScriptUnit = NativeServiceUnit | X64NativeServiceUnit;
+
 export type ScriptUnitCompilation =
-  | { readonly ok: true; readonly unit: NativeServiceUnit }
+  | { readonly ok: true; readonly unit: CompiledScriptUnit }
   | { readonly ok: false; readonly stage: string; readonly message: string };
 
 /**
@@ -84,6 +88,7 @@ export function createScriptUnitCompiler(
   policy: {
     readonly linearAllocation: boolean;
     readonly generationalBarriers: boolean;
+    readonly arch?: "aarch64" | "x86_64";
   },
 ) {
   const read = readPublishedSurface(directory),
@@ -105,11 +110,15 @@ export function createScriptUnitCompiler(
     specifiers.add(entry.specifier);
     instantiations.set(entry.name, entry.typeArguments);
   }
+  const compile =
+    policy.arch === "x86_64"
+      ? compileX64NativeServiceUnit
+      : compileNativeServiceUnit;
   return (script: NativeModuleInput): ScriptUnitCompilation => {
     const key = scriptKey(script);
     const known = compiled.get(key);
     if (known !== undefined) return known;
-    const unit = compileNativeServiceUnit({
+    const unit = compile({
       module: "module" in script ? script.module : script.load(),
       entry: "execute",
       specifiers,
@@ -149,7 +158,7 @@ export function nativeSyntaxKey(input: NativeModuleInput): string {
 /** A unit links only into an image publishing the surface it was compiled
  * against. */
 export function verifyUnitSurface(
-  unit: NativeServiceUnit,
+  unit: CompiledScriptUnit,
   published: { readonly name: string; readonly digest: string },
 ): void {
   if (

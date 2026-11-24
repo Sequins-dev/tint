@@ -117,9 +117,31 @@ test("absent Script capability keeps the generated host unchanged", () => {
       return {
         ...value,
         arguments: value.arguments.map((argument: unknown, index: number) =>
-          index === 1
-            ? { ...(argument as object), value: 1048576, raw: "1048576" }
-            : argument,
+          index === 0 &&
+          typeof argument === "object" &&
+          argument !== null &&
+          "properties" in argument &&
+          Array.isArray(argument.properties)
+            ? {
+                ...argument,
+                properties: argument.properties.filter(
+                  (property: {
+                    readonly name?: string;
+                    readonly value?: {
+                      readonly kind?: string;
+                      readonly value?: unknown;
+                    };
+                  }) =>
+                    !(
+                      property?.name === "architecture" &&
+                      property.value?.kind === "string" &&
+                      property.value.value === "x86_64"
+                    ),
+                ),
+              }
+            : index === 1
+              ? { ...(argument as object), value: 1048576, raw: "1048576" }
+              : argument,
         ),
       };
     return value;
@@ -411,7 +433,9 @@ test("function fallback reuses the realm evaluation host before constructing the
     indirectEval: true,
   });
   assert.equal(
-    createHash("sha256").update(legacy).digest("hex"),
+    createHash("sha256")
+      .update(legacy.replaceAll('architecture:"x86_64",\n ', ""))
+      .digest("hex"),
     "484c1a81b172a639da2ea4255fd884c819fe60bdd604bc15e7b9503cd57fa2d5",
   );
 });
@@ -497,7 +521,9 @@ test("direct eval shares the same per-realm service after indirect installation"
     functionFallback: true,
   });
   assert.equal(
-    createHash("sha256").update(legacy).digest("hex"),
+    createHash("sha256")
+      .update(legacy.replaceAll('architecture:"x86_64",\n ', ""))
+      .digest("hex"),
     "4e9e4ef629d1c24cd560fa9a23015742169ea97b2b4b5fb08d222df376c07888",
   );
 });

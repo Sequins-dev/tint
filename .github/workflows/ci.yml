@@ -43,31 +43,31 @@ jobs:
     uses: ./.github/workflows/gate.yml
     with:
       id: macos-arm64
+      target: darwin-aarch64
       runner: macos-26
       arch: arm64
       bootstrap-runner: ubuntu-24.04
       bootstrap-arch: x64
       bootstrap-target: darwin-aarch64
-      macos: true
 
   linux-x86-64:
     name: Linux x86-64
     uses: ./.github/workflows/gate.yml
     with:
       id: linux-x86-64
+      target: linux-x86_64
       runner: ubuntu-24.04
       arch: x64
       bootstrap-runner: ubuntu-24.04
       bootstrap-arch: x64
-      macos: false
 
   linux-arm64:
     name: Linux arm64
     uses: ./.github/workflows/gate.yml
     with:
       id: linux-arm64
+      target: linux-aarch64
       runner: ubuntu-24.04-arm
       arch: arm64
       bootstrap-runner: ubuntu-24.04-arm
       bootstrap-arch: arm64
-      macos: false

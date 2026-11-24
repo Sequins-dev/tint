@@ -11,6 +11,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 
 process.env.TINT_GENERAL_FALLBACK = "0";
 process.env.TINT_BUILD_ONLY = "defer-admission";
@@ -78,76 +79,88 @@ function build(
   }
 }
 
-test("shared runtime units leave every image byte-identical", () => {
-  const fixtures = [
-    [sum, "cache-sum", "initializeGenerationalRuntime"],
-    [product, "cache-product", "initializeGenerationalRuntime"],
-    [product, "cache-product-region", "initializeRuntime"],
-  ] as const;
-  const fresh = build(false, fixtures);
-  assert.deepEqual(
-    { compiled: fresh.compiled, shared: fresh.shared },
-    { compiled: 0, shared: 0 },
-  );
-  const cached = build(true, fixtures);
-  assert.deepEqual(cached.images, fresh.images);
-  // The two generational builds share one compile; the region runtime is a
-  // different runtime entry. Earlier builds in this process may already hold
-  // either, so count the total rather than the compiles.
-  assert.equal(cached.compiled + cached.shared, 3);
-  assert.ok(cached.shared >= 1, JSON.stringify(cached));
-  assert.notEqual(fresh.images[1], fresh.images[2]);
-});
+const runtimeUnitCacheSkip =
+  nativeFixtureTarget().arch === "x86_64" &&
+  "linux-x86_64 compiles runtime units inline without shared runtimeUnits caching";
 
-test("another process restores the cached runtime units byte for byte", () => {
-  const [fresh] = build(false, [
-    [sum, "cache-restore", "initializeRuntime"],
-  ]).images;
-  const cache = mkdtempSync(join(tmpdir(), "tint-fixture-cache-dir-"));
-  try {
-    // Each child builds the fixture once; the second finds the first's entry.
-    const child = () => {
-      const result = spawnSync(
-        process.execPath,
-        [
-          "--input-type=module",
-          "-e",
-          `const { fixtureCacheStatistics, verifyHostedFixture } = await import(${JSON.stringify(
-            new URL("./hosted-fixture.ts", import.meta.url).href,
-          )});
+test(
+  "shared runtime units leave every image byte-identical",
+  { skip: runtimeUnitCacheSkip },
+  () => {
+    const fixtures = [
+      [sum, "cache-sum", "initializeGenerationalRuntime"],
+      [product, "cache-product", "initializeGenerationalRuntime"],
+      [product, "cache-product-region", "initializeRuntime"],
+    ] as const;
+    const fresh = build(false, fixtures);
+    assert.deepEqual(
+      { compiled: fresh.compiled, shared: fresh.shared },
+      { compiled: 0, shared: 0 },
+    );
+    const cached = build(true, fixtures);
+    assert.deepEqual(cached.images, fresh.images);
+    // The two generational builds share one compile; the region runtime is a
+    // different runtime entry. Earlier builds in this process may already hold
+    // either, so count the total rather than the compiles.
+    assert.equal(cached.compiled + cached.shared, 3);
+    assert.ok(cached.shared >= 1, JSON.stringify(cached));
+    assert.notEqual(fresh.images[1], fresh.images[2]);
+  },
+);
+
+test(
+  "another process restores the cached runtime units byte for byte",
+  { skip: runtimeUnitCacheSkip },
+  () => {
+    const [fresh] = build(false, [
+      [sum, "cache-restore", "initializeRuntime"],
+    ]).images;
+    const cache = mkdtempSync(join(tmpdir(), "tint-fixture-cache-dir-"));
+    try {
+      // Each child builds the fixture once; the second finds the first's entry.
+      const child = () => {
+        const result = spawnSync(
+          process.execPath,
+          [
+            "--input-type=module",
+            "-e",
+            `const { fixtureCacheStatistics, verifyHostedFixture } = await import(${JSON.stringify(
+              new URL("./hosted-fixture.ts", import.meta.url).href,
+            )});
 const { readFileSync } = await import("node:fs");
 const path = verifyHostedFixture(process.argv[1], "cache-restore", [], [], [], [], {
   runtimeEntry: "initializeRuntime", managedBytes: 16777216, allocationCapacity: 262144,
 });
 const { imageSha256 } = JSON.parse(readFileSync(path + ".manifest.json", "utf8"));
 console.log(JSON.stringify({ imageSha256, ...fixtureCacheStatistics }));`,
-          sum,
-        ],
-        {
-          encoding: "utf8",
-          env: {
-            ...process.env,
-            TINT_FIXTURE_CACHE: "1",
-            TINT_FIXTURE_CACHE_DIRECTORY: cache,
-            TINT_FIXTURE_TMPDIR: cache,
+            sum,
+          ],
+          {
+            encoding: "utf8",
+            env: {
+              ...process.env,
+              TINT_FIXTURE_CACHE: "1",
+              TINT_FIXTURE_CACHE_DIRECTORY: cache,
+              TINT_FIXTURE_TMPDIR: cache,
+            },
           },
-        },
+        );
+        assert.equal(result.status, 0, result.stderr);
+        return JSON.parse(result.stdout.trimEnd().split("\n").pop() ?? "");
+      };
+      const first = child(),
+        second = child();
+      assert.deepEqual(
+        [first.compiled, first.restored, second.compiled, second.restored],
+        [1, 0, 0, 1],
       );
-      assert.equal(result.status, 0, result.stderr);
-      return JSON.parse(result.stdout.trimEnd().split("\n").pop() ?? "");
-    };
-    const first = child(),
-      second = child();
-    assert.deepEqual(
-      [first.compiled, first.restored, second.compiled, second.restored],
-      [1, 0, 0, 1],
-    );
-    assert.equal(first.imageSha256, fresh);
-    assert.equal(second.imageSha256, fresh);
-  } finally {
-    rmSync(cache, { recursive: true, force: true });
-  }
-});
+      assert.equal(first.imageSha256, fresh);
+      assert.equal(second.imageSha256, fresh);
+    } finally {
+      rmSync(cache, { recursive: true, force: true });
+    }
+  },
+);
 
 test("a fixed fixture is built once and every caller gets its own copy", () => {
   const cache = mkdtempSync(join(tmpdir(), "tint-fixture-image-cache-"));

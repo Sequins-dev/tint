@@ -11,6 +11,7 @@ import { rmSync } from "node:fs";
 import { dirname } from "node:path";
 import test from "node:test";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 
 const weak = "packages/native-runtime/src/intrinsics/weak.ts",
   memory = "packages/native-runtime/src/intrinsics/memory.ts";
@@ -386,7 +387,7 @@ function functionHits(
   for (const name of functions)
     args.push(
       "-o",
-      "breakpoint set -G true -r '" + name.replaceAll(".", "\\.") + " '",
+      "breakpoint set -G true -r '" + name.replaceAll(".", "\\.") + "( |$)'",
     );
   args.push(
     "-o",
@@ -430,9 +431,17 @@ test("weak cells take the parallel collector paths in a large generational heap"
     8,
   );
 });
-test("weak cells clear and survive exactly under the copying collector", () => {
-  verify("weak-cells-copying", "initializeCopyingRuntime");
-});
+test(
+  "weak cells clear and survive exactly under the copying collector",
+  {
+    skip:
+      nativeFixtureTarget().arch === "x86_64" &&
+      "linux-x86_64 does not implement initializeCopyingRuntime",
+  },
+  () => {
+    verify("weak-cells-copying", "initializeCopyingRuntime");
+  },
+);
 test("weak slots, chains and cycles across parallel workers", () => {
   verifyHostedFixture(
     parallelSource,

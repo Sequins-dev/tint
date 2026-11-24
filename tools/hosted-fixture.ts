@@ -699,8 +699,27 @@ function buildHostedFixture(
     original === undefined
       ? []
       : (() => {
+          let workspace = snapshotModules(
+            roots,
+            foreign.snapshot,
+            sourceSnapshot.sha256,
+          );
+          if (
+            fixtureTarget.arch === "x86_64" &&
+            workspace.some(
+              (module) => module.id === foreignRuntimeModules.unsafe,
+            ) &&
+            !workspace.some(
+              (module) => module.id === foreignRuntimeModules.sysv,
+            )
+          )
+            workspace = snapshotModules(
+              [...roots, foreignRuntimeModules.sysv],
+              foreign.snapshot,
+              sourceSnapshot.sha256,
+            );
           const capturedModules: SourceModule[] = [
-            ...snapshotModules(roots, foreign.snapshot, sourceSnapshot.sha256),
+            ...workspace,
             ...fixtureGenerated,
             original,
           ];
@@ -715,9 +734,11 @@ function buildHostedFixture(
     moduleLoader,
   );
   const runtimeEntry =
-    fixtureTarget.arch === "x86_64"
-      ? options.runtimeEntry
-      : (options.runtimeEntry ?? defaultRuntimeEntry ?? "initializeRuntime");
+    options.runtimeEntry ??
+    defaultRuntimeEntry ??
+    (fixtureTarget.arch === "x86_64"
+      ? "initializeGenerationalRuntime"
+      : "initializeRuntime");
   // The tint:ffi runtime's capabilities when the program loads it.
   const ffi = foreignRuntimeBindings(
     new Set(moduleLoader?.ids ?? modules.map((module) => module.id)),
@@ -853,7 +874,11 @@ function buildHostedFixture(
     // Copying GC metadata needs a forwarding word per semispace allocation unit.
     allocationCapacity: options.allocationCapacity,
     rootCapacity: options.rootCapacity ?? 4096,
-    stackBytes: options.stackBytes ?? 1048576,
+    // x86-64 stack frames spill more slots than arm64; 1 MiB overflows during
+    // general-fallback realm startup.
+    stackBytes:
+      options.stackBytes ??
+      (fixtureTarget.arch === "x86_64" ? 4194304 : 1048576),
     identifier: "tint-hosted-" + name,
     ...(options.maxSpecializations === undefined
       ? {}

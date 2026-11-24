@@ -145,23 +145,27 @@ stops on the first failed step.
 
 [`ci.yml`](../.github/workflows/ci.yml) runs the static checks once on Linux
 x86-64 and calls [`gate.yml`](../.github/workflows/gate.yml) for each target:
-macOS arm64, Linux x86-64 and Linux arm64. Each step runs one
+macOS arm64, Linux x86-64 and Linux arm64. Every target runs the full suite —
+`bootstrap`, `fixpoint`, `tests`, `native`, `test262-host`, `test262`, and
+`result` — with no skipped jobs. Each step runs one
 [`ci.sh`](../tools/gate/ci.sh) job on a fresh runner:
 
-| Job                    | Runner                | Needs                     | Runs                                                     |
-| ---------------------- | --------------------- | ------------------------- | -------------------------------------------------------- |
-| `bootstrap`            | Linux (macOS: x86-64) |                           | build, storage tests, stage 1; packs the bundles         |
-| `fixpoint`             | target                | `bootstrap`               | stage 2 under LLDB, `cmp stage1 stage2`                  |
-| `tests (N/2)` (macOS)  | macOS arm64           | `bootstrap`               | one `concurrent` and one `memory` shard                  |
-| `native (N/3)` (macOS) | macOS arm64           | `bootstrap`               | one native fixture shard                                 |
-| `test262-host` (macOS) | Linux x86-64          |                           | build, freeze, compile the Darwin units host             |
-| `test262` (macOS)      | macOS arm64           | `bootstrap, test262-host` | link and run the Test262 smoke on the precompiled host   |
-| `result`               | Linux                 | all                       | fails unless every job that applies to the target passed |
+| Job            | Runner                | Needs                     | Runs                                                   |
+| -------------- | --------------------- | ------------------------- | ------------------------------------------------------ |
+| `bootstrap`    | target (macOS: x86-64)|                           | build, storage tests, stage 1; packs the bundles       |
+| `fixpoint`     | target                | `bootstrap`               | stage 2 under LLDB, `cmp stage1 stage2`                |
+| `tests (N/2)`  | target                | `bootstrap`               | one `concurrent` and one `memory` shard                |
+| `native (N/3)` | target                | `bootstrap`               | one native fixture shard                               |
+| `test262-host` | Linux x86-64          |                           | build, freeze, compile the target's units host         |
+| `test262`      | target                | `bootstrap, test262-host` | link and run the Test262 smoke on the precompiled host |
+| `result`       | Linux                 | all                       | fails unless every job for the target succeeded        |
 
-The Linux targets run `bootstrap` and `fixpoint`, the checks of
-[`linux-gate.sh`](../tools/gate/linux-gate.sh); `result` requires their other
-jobs to be skipped and every macOS job to succeed. The first `tests` shard
-starts with the selfhost subset.
+The first `tests` shard starts with the selfhost subset. Linux runners use
+`/usr/bin/flock` (the equivalent of Darwin's `/usr/bin/lockf -k`) for job-local
+locks, install `lldb` and the native test toolchains (`clang`, `gdb`, `llvm`,
+`binutils`, `time`, `zlib1g-dev`) in [`gate-setup`](../.github/actions/gate-setup/action.yml),
+and set `TINT_NATIVE_RUNNER=x64-local` (plus the corresponding x86-64 test
+runner variables) on Linux x86-64.
 
 A macOS run takes seven macOS runners, each for one group, and none before
 its Linux jobs end. GitHub's free plan runs five macOS jobs at a time for the
@@ -187,10 +191,10 @@ job's Node-hosted compiler build, and stage 2 is built by its stage 1.
 
 The units host needs about 7.5 GB, more than the 7 GiB of a macOS runner,
 where it swapped for over 20 minutes. The `test262-host` job runs beside the
-bootstrap job on a 16 GiB Linux x86-64 runner. It builds the workspace,
-freezes the toolchain and compiles the Darwin host with
-`TINT_TEST262_UNIT_HOST=prepare` and `TINT_NATIVE_TARGET=darwin-aarch64`, then
-uploads the cache entry. The macOS `test262` job starts when both the host
+bootstrap job on a 16 GiB Linux x86-64 runner for every target. It builds the
+workspace, freezes the toolchain and compiles the target's units host with
+`TINT_TEST262_UNIT_HOST=prepare` and `TINT_NATIVE_TARGET=<target>`, then
+uploads the cache entry. The target's `test262` job starts when both the host
 and bootstrap jobs end; it checks the bundle's SHA-256, freezes the toolchain
 from the bootstrap job's build, fails unless that toolchain's SHA-256 equals
 the one the host was compiled with (so both builds are identical), and runs

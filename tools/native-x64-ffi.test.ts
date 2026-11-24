@@ -22,6 +22,7 @@ import { parseForeignDeclarations } from "@tint/compiler/native";
 import { createSourceText } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 import {
   nativeArtifact,
   runNativeBatch,
@@ -33,7 +34,7 @@ import {
   verifyCallbackTrap,
 } from "./native-callback-fixtures.ts";
 
-const x64 = process.env.TINT_NATIVE_TARGET === "linux-x86_64";
+const x64 = nativeFixtureTarget().name === "linux-x86_64";
 
 test(
   "SysV static bindings call glibc with integer arguments and an SSE result",
@@ -166,37 +167,56 @@ function withOracle(
       source = join(directory, "oracle.c");
       writeFileSync(source, sourceText);
     }
-    const sysroot = join(homedir(), ".t3", "tint-x64-sysroot");
-    const built = spawnSync(
-      "container",
-      [
-        "machine",
-        "run",
-        "-n",
-        "dev",
-        "-w",
-        process.cwd(),
-        "--",
-        "clang",
-        "--target=x86_64-linux-gnu",
-        "--sysroot=" + sysroot,
-        "-march=x86-64-v2",
-        "--ld-path=/usr/bin/ld.lld-23",
-        "-O2",
-        "-fPIC",
-        "-fno-stack-protector",
-        "-nostdlib",
-        "-shared",
-        "-Wl,-z,defs",
-        "-L" + join(sysroot, "lib", "x86_64-linux-gnu"),
-        "-Wl,--no-as-needed",
-        "-l:libc.so.6",
-        "-o",
-        library,
-        source,
-      ],
-      { encoding: "utf8", timeout: 12000 },
-    );
+    const built =
+      process.platform === "linux" && process.arch === "x64"
+        ? spawnSync(
+            "clang",
+            [
+              "-march=x86-64-v2",
+              "-O2",
+              "-fPIC",
+              "-fno-stack-protector",
+              "-shared",
+              "-Wl,-z,defs",
+              "-o",
+              library,
+              source,
+            ],
+            { encoding: "utf8", timeout: 12000 },
+          )
+        : (() => {
+            const sysroot = join(homedir(), ".t3", "tint-x64-sysroot");
+            return spawnSync(
+              "container",
+              [
+                "machine",
+                "run",
+                "-n",
+                "dev",
+                "-w",
+                process.cwd(),
+                "--",
+                "clang",
+                "--target=x86_64-linux-gnu",
+                "--sysroot=" + sysroot,
+                "-march=x86-64-v2",
+                "--ld-path=/usr/bin/ld.lld-23",
+                "-O2",
+                "-fPIC",
+                "-fno-stack-protector",
+                "-nostdlib",
+                "-shared",
+                "-Wl,-z,defs",
+                "-L" + join(sysroot, "lib", "x86_64-linux-gnu"),
+                "-Wl,--no-as-needed",
+                "-l:libc.so.6",
+                "-o",
+                library,
+                source,
+              ],
+              { encoding: "utf8", timeout: 12000 },
+            );
+          })();
     assert.equal(built.status, 0, built.error?.message ?? built.stderr);
     if (
       process.env.TINT_NATIVE_RUNNER !== "x64-ssh" ||

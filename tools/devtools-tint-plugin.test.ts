@@ -17,8 +17,14 @@ import {
   type Frame,
   type Property,
 } from "./devtools-fixture.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 
 const available = findLldbDap() !== undefined;
+const supportedTarget = nativeFixtureTarget().arch === "aarch64";
+const tintDebugSkip =
+  (!available && "needs lldb-dap") ||
+  (!supportedTarget &&
+    "Tint debug-build DWARF inlines and heap introspection require aarch64");
 
 const byName = (list: Property[], name: string): Property["value"] => {
   const found = list.find((property) => property.name === name);
@@ -93,7 +99,7 @@ test("an internal heap operation waits for an inspectable stop", async () => {
 
 testNativeLaunch(
   "Tint plugin formats strings, lists, records, Map, Set and generals",
-  { skip: !available && "needs lldb-dap", timeout: 300000 },
+  { skip: tintDebugSkip, timeout: 300000 },
   async (onAdmitted) => {
     const { client, url, close } = await tintSession(
       [new TintPlugin()],
@@ -229,7 +235,7 @@ interface HeapNode {
 
 testNativeLaunch(
   "Tint plugin: heap snapshots, sampling heap profiles and collectGarbage",
-  { skip: !available && "needs lldb-dap", timeout: 300000 },
+  { skip: tintDebugSkip, timeout: 300000 },
   async (onAdmitted) => {
     const { client, url, session, close } = await tintSession(
       [new TintPlugin()],
@@ -366,10 +372,8 @@ testNativeLaunch(
           .some((event) => event.method === "Debugger.paused"),
       );
       // And while paused mid-tail: the nursery is evacuated and only live
-      // data stays in the old space.
-      mark = client.events.length;
-      await client.send("Debugger.pause");
-      await client.next("Debugger.paused", () => true, 30000, mark);
+      // data stays in the old space. Let the tail allocate after the running
+      // collection above so the pause observes non-empty garbage to reclaim.
       const info = async (): Promise<{
         state: { youngTop: number; oldTop: number };
       }> =>
@@ -378,7 +382,17 @@ testNativeLaunch(
         ) as {
           state: { youngTop: number; oldTop: number };
         };
-      const before = await info();
+      let before = { state: { youngTop: 0, oldTop: 0 } };
+      for (let attempt = 0; attempt < 10; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        mark = client.events.length;
+        await client.send("Debugger.pause");
+        await client.next("Debugger.paused", () => true, 30000, mark);
+        before = await info();
+        if (before.state.youngTop > 0) break;
+        await client.send("Debugger.resume");
+      }
+      assert.ok(before.state.youngTop > 0, "tail allocated before pause");
       mark = client.events.length;
       await client.send("HeapProfiler.collectGarbage");
       await client.next("Debugger.paused", () => true, 10000, mark);

@@ -15,18 +15,26 @@ gate_tools=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 . "$gate_tools/common.sh"
 . "$gate_tools/jobs.sh"
 # A CI job owns its runner, so its bundles and locks live in the job's
-# temporary directory. The locks still order LLDB launches within the job.
+# temporary directory. The locks still order LLDB launches and heavy builds
+# within the job.
 ci_temp=${RUNNER_TEMP:-$gate_output}
 bundles=${TINT_CI_BUNDLES:-$ci_temp/tint-bundles}
+export TINT_GATE_EXCLUSIVE_LOCK="${TINT_GATE_EXCLUSIVE_LOCK:-$ci_temp/tint-gate/exclusive.lock}"
+export TINT_GATE_MEMORY_DIRECTORY="${TINT_GATE_MEMORY_DIRECTORY:-$ci_temp/tint-gate/memory}"
+mkdir -p "$(dirname -- "$TINT_GATE_EXCLUSIVE_LOCK")"
 case "$(uname -s)" in
   Darwin)
     lldb_resource=exclusive
-    export TINT_GATE_EXCLUSIVE_LOCK="${TINT_GATE_EXCLUSIVE_LOCK:-$ci_temp/tint-gate/exclusive.lock}"
-    export TINT_GATE_MEMORY_DIRECTORY="${TINT_GATE_MEMORY_DIRECTORY:-$ci_temp/tint-gate/memory}"
-    mkdir -p "$(dirname -- "$TINT_GATE_EXCLUSIVE_LOCK")"
     ;;
   *) lldb_resource=watchdog ;;
 esac
+# On a native Linux x86-64 runner, enable direct x86-64 native execution.
+if [ "$(uname -s)/$(uname -m)" = Linux/x86_64 ]; then
+  export TINT_NATIVE_RUNNER="${TINT_NATIVE_RUNNER:-x64-local}"
+  export TINT_X64_HOSTED_RUNNER="${TINT_X64_HOSTED_RUNNER:-x64-local}"
+  export TINT_X64_RUNNER_TEST="${TINT_X64_RUNNER_TEST:-x64-local}"
+  export TINT_X64_SCALAR_RUNNER="${TINT_X64_SCALAR_RUNNER:-x64-local}"
+fi
 
 # Runner hardware differs between jobs; record it beside the timings.
 {
@@ -134,7 +142,7 @@ case "$job" in
     native_checks "$1"
     ;;
   test262-host)
-    # Any host with the memory for it compiles the same Darwin host.
+    # Any host with the memory for it compiles TINT_NATIVE_TARGET's units host.
     test "$#" -eq 0 || usage
     run_step build unlocked pnpm build
     echo build=0

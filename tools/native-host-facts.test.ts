@@ -23,6 +23,7 @@ import { pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 import { cgroupProcessorLimitFrom } from "../packages/native-runtime/src/processors.ts";
 
 const memory = "packages/native-runtime/src/intrinsics/memory.ts",
@@ -76,6 +77,7 @@ function hostPageBytes(): number {
 }
 /** Whether this CPU implements the SHA-256 instructions, per the OS. */
 function hostSha256(): boolean {
+  if (nativeFixtureTarget().arch === "x86_64") return false;
   if (platform() === "darwin") return true;
   const features = /^Features\s*:(.*)$/m.exec(
     readFileSync("/proc/cpuinfo", "utf8"),

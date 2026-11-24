@@ -226,6 +226,7 @@ if (x64) {
   assert.equal(result?.kind, "exited", JSON.stringify(result));
   assert.equal(result.status, 42, JSON.stringify(result));
   console.log(JSON.stringify(result));
+  console.log("Verified JIT debugger registration (x86-64).");
   process.exit(0);
 }
 const session = runDarwinFixture(path, () =>
