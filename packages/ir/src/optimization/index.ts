@@ -1630,12 +1630,13 @@ export function optimizeModuleVersion(
     undefined,
     (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
       const result = selectArrayAccesses(fn, budget, remarks);
+      // New facts alone are a rewrite here: the module must adopt them.
       return result === undefined
         ? undefined
         : {
             fn: result.fn,
             visited: result.visited,
-            rewritten: result.rewritten,
+            rewritten: result.rewritten + (result.fn === fn ? 0 : 1),
             refused: false,
           };
     },
