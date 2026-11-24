@@ -536,6 +536,8 @@ interface FunctionRewrite {
   readonly visited: number;
   readonly rewritten: number;
   readonly refused: boolean;
+  /** Conservative redos (PassStatistics.fallbacks). */
+  readonly fallbacks?: number;
 }
 /** A module-wide pass's result in the shape the module drivers adopt. */
 interface ModuleRewrite {
@@ -549,6 +551,7 @@ interface PassStep {
   readonly visited: number;
   readonly rewritten: number;
   readonly skipped: number;
+  readonly fallbacks?: number;
   readonly exhausted: boolean;
   /** The version's module was replaced. */
   readonly replaced: boolean;
@@ -587,7 +590,8 @@ function rewriteFunctions(
   const functions: FunctionIR[] = [];
   let visited = 0,
     rewritten = 0,
-    refused = 0;
+    refused = 0,
+    fallbacks = 0;
   for (const fn of version.module.functions) {
     if (fn === undefined) throw "optimizer function invariant";
     if (selected !== undefined && selected[fn.id] !== 1) {
@@ -606,12 +610,20 @@ function rewriteFunctions(
     functions.push(result.fn);
     visited += result.visited;
     rewritten += result.rewritten;
+    fallbacks += result.fallbacks ?? 0;
     if (result.refused) refused++;
   }
   const replaced =
     rewritten > 0 &&
     adoptModule(version, { ...version.module, functions }, changes);
-  return { visited, rewritten, skipped: refused, exhausted: false, replaced };
+  return {
+    visited,
+    rewritten,
+    skipped: refused,
+    fallbacks,
+    exhausted: false,
+    replaced,
+  };
 }
 /** Runs a module-wide pass over the version and adopts its result. */
 function rewriteModuleVersion(
@@ -947,21 +959,23 @@ export function optimizeModuleVersion(
     step: PassStep,
     skipped: boolean,
   ): boolean {
+    const statistics: PassStatistics = skipped
+      ? {
+          phase: "scalar",
+          pass,
+          visited: step.visited,
+          rewritten: step.rewritten,
+          skipped: step.skipped,
+        }
+      : {
+          phase: "scalar",
+          pass,
+          visited: step.visited,
+          rewritten: step.rewritten,
+        };
+    const fallbacks = step.fallbacks ?? 0;
     return record(
-      skipped
-        ? {
-            phase: "scalar",
-            pass,
-            visited: step.visited,
-            rewritten: step.rewritten,
-            skipped: step.skipped,
-          }
-        : {
-            phase: "scalar",
-            pass,
-            visited: step.visited,
-            rewritten: step.rewritten,
-          },
+      fallbacks > 0 ? { ...statistics, fallbacks } : statistics,
       version.module,
       false,
     );
@@ -1409,6 +1423,7 @@ export function optimizeModuleVersion(
             visited: result.visited,
             rewritten: result.hoisted,
             refused: false,
+            fallbacks: result.redone,
           };
     },
   );

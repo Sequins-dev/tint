@@ -22,6 +22,8 @@ export interface InvariantMotion {
   readonly visited: number;
   /** Values (and checked reads) moved to loop preheaders. */
   readonly hoisted: number;
+  /** Rounds redone without moving checked reads (a visible fallback). */
+  readonly redone: number;
 }
 
 /** The result type of a pure operation LICM may move, or undefined. */
@@ -79,6 +81,7 @@ export function hoistLoopInvariants(
 ): InvariantMotion | undefined {
   let visited = 0,
     hoisted = 0,
+    redone = 0,
     current = fn;
   for (let round = 0; round < 8; round++) {
     // Remarks wait for the round that is kept.
@@ -97,7 +100,20 @@ export function hoistLoopInvariants(
       break;
     }
     if (!recordReadsKept(current, result.fn, verifierRecordWork)) {
+      redone++;
       pending.length = 0;
+      if (remarks !== undefined)
+        pending.push({
+          pass: "hoist-loop-invariants",
+          outcome: "missed",
+          function: fn.name,
+          start: 0,
+          end: 0,
+          message:
+            "round " +
+            String(round + 1) +
+            " redone without moving checked reads: a moved check left a direct record read unproven",
+        });
       result = hoistRound(current, module, budget - visited, sink, false);
       if (result === undefined) return undefined;
       visited += result.visited;
@@ -113,7 +129,7 @@ export function hoistLoopInvariants(
     hoisted += result.hoisted;
     current = result.fn;
   }
-  return { fn: current, visited, hoisted };
+  return { fn: current, visited, hoisted, redone };
 }
 function flush(
   pending: readonly OptimizationRemark[],
@@ -124,6 +140,12 @@ function flush(
   for (const remark of pending) if (remark !== undefined) sink(remark);
 }
 
+/** One LICM round over every loop. */
+interface RoundMotion {
+  readonly fn: FunctionIR;
+  readonly visited: number;
+  readonly hoisted: number;
+}
 function hoistRound(
   fn: FunctionIR,
   module: ModuleIR,
@@ -131,7 +153,7 @@ function hoistRound(
   remarks: RemarkSink | undefined,
   /** Whether checked reads may move (see hoistLoopInvariants). */
   readHoists: boolean,
-): InvariantMotion | undefined {
+): RoundMotion | undefined {
   const forest = naturalLoops(fn, budget);
   if (forest === undefined) return undefined;
   let visited = forest.visited;

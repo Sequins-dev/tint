@@ -433,6 +433,22 @@ test("pass tables and JSON carry statistics, exhaustion and times", () => {
     milliseconds: 0,
   });
   assert.equal(json.passes[0].milliseconds, 1.25);
+  // Fallbacks (conservative redos) show in both forms.
+  const fallback = {
+    statistics: {
+      phase: "scalar" as const,
+      pass: "hoist-loop-invariants" as const,
+      visited: 5,
+      rewritten: 1,
+      fallbacks: 2,
+    },
+    budgetExhausted: false,
+  };
+  assert.match(
+    formatPassTable([fallback]),
+    /hoist-loop-invariants\s+5\s+1\s+0  fallbacks 2\n[^]*total.*fallbacks 2/,
+  );
+  assert.equal(JSON.parse(formatPassJSON([fallback])).passes[0].fallbacks, 2);
   // Untimed reports (native builds without a clock binding) omit times.
   const untimed = formatPassTable([
     { statistics: reports[0]!.statistics, budgetExhausted: false },
