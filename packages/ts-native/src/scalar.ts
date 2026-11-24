@@ -291,9 +291,20 @@ export interface ListRuntimeBinding {
   readonly erasedRecords?: boolean;
 }
 export type ListOperation =
-  "has" | "delete" | "resize" | "create" | "read" | "write" | "push" | "length";
+  | "has"
+  | "delete"
+  | "resize"
+  | "create"
+  | "read"
+  | "write"
+  | "push"
+  | "length"
+  | "pop";
 export interface ListRuntime {
   readonly sort?: number;
+  /** Removes and returns the last element (undefined when empty); lists
+   * without it pop through length, read and resize. */
+  readonly pop?: number;
   readonly has?: number;
   readonly delete?: number;
   readonly resize?: number;
@@ -4721,6 +4732,9 @@ export function lowerFunction(
       case "length":
         target = runtime.length;
         break;
+      case "pop":
+        target = runtime.pop;
+        break;
     }
     if (target === undefined) throw "numeric list runtime invariant";
     return runtimeCall(target, args, node);
@@ -8430,6 +8444,8 @@ export function lowerFunction(
           if (builtin === "list-pop") {
             const receiver = value(target.object),
               runtime = listRuntime(target.object);
+            if (runtime.pop !== undefined)
+              return listValue(runtime, "pop", [receiver], node);
             const length = listValue(runtime, "length", [receiver], node);
             const index = binarySlot("-", length, numberSlot(1, node), node);
             // The read contract returns undefined for invalid indices, including -1.

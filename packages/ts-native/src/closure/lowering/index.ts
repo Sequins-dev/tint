@@ -1385,9 +1385,10 @@ function lowerEntries(
       const sort = source.sort,
         has = source.has,
         remove = source.delete,
-        resize = source.resize;
+        resize = source.resize,
+        pop = source.pop;
       const receivers = [source.read, source.write, source.push, source.length];
-      for (const receiver of [sort, has, remove, resize]) {
+      for (const receiver of [sort, has, remove, resize, pop]) {
         if (receiver !== undefined) receivers.push(receiver);
       }
       const helper = runtimeHelpers(
@@ -1464,6 +1465,9 @@ function lowerEntries(
             : {
                 resize: helper(resize, ["reference", "number"], "void"),
               }),
+          ...(pop === undefined
+            ? {}
+            : { pop: helper(pop, ["reference"], optionalEncoding) }),
         },
       });
     }

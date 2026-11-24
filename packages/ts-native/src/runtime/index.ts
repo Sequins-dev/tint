@@ -702,6 +702,7 @@ function prepareCollectionPass(
           has: functionId(helper("number-list", "hasNumberList")),
           delete: functionId(helper("number-list", "deleteNumberList")),
           resize: functionId(helper("number-list", "resizeNumberList")),
+          pop: functionId(helper("number-list", "popNumberList")),
         };
       } else {
         const element = preparedElement(list.element);

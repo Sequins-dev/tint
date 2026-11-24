@@ -124,11 +124,14 @@ export function pushNumberList(
   return list.length;
 }
 export function popNumberList(list: NumberList): number | undefined {
-  if (list.length === 0) return undefined;
-  const index = list.length - 1,
+  const length = list.length;
+  if (length === 0) return undefined;
+  const index = length - 1,
     value = readNumberList(list, index),
     present = list.present;
-  if (present !== undefined) present[index] = 0;
+  // An emptied list has no holes, as after resizeNumberList(list, 0).
+  if (index === 0) list.present = undefined;
+  else if (present !== undefined) present[index] = 0;
   list.length = index;
   return value;
 }
