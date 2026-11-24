@@ -755,3 +755,34 @@ test("single-mapping writes flip the spanned granules RW then RX", () => {
   assert.equal(refused.result, "rejected");
   assert.deepEqual(refused.calls, ["mprotect(0x40004000,0x4000,0x3)"]);
 });
+
+test("the generational mutator accepts executable calls only under the trusted-code contract", () => {
+  const options = { hostABI: linuxHostABI(), generationalBarriers: true };
+  const trusted = { ...options, trustedExecutableCode: true };
+  // Publishing code bytes is not a managed write.
+  for (const [operation, slots] of [
+    ["executable-map", ["number"]],
+    ["executable-write", ["number", "number", "number", "Uint8Array"]],
+    ["executable-unmap", ["number", "number"]],
+  ] as const) {
+    const result = emitModule(hostModule(operation, [...slots]), options);
+    assert.ok(result.ok, operation + ": " + JSON.stringify(result));
+  }
+  // The code a call enters is opaque: only the image's unit linker, which
+  // rejects a differing barrier policy, can vouch for it.
+  const call = hostModule("executable-call-number", ["number"]);
+  const untrusted = emitModule(call, options);
+  assert.equal(untrusted.ok, false);
+  if (!untrusted.ok)
+    assert.match(untrusted.error.message, /tracked managed writes/);
+  const accepted = emitModule(call, trusted);
+  assert.ok(accepted.ok, JSON.stringify(accepted));
+  // A raw word write could store an unbarriered reference, trusted or not.
+  const raw = emitModule(
+    hostModule("memory-write-word", ["number", "number", "number", "number"]),
+    trusted,
+  );
+  assert.equal(raw.ok, false);
+  if (!raw.ok)
+    assert.match(raw.error.message, /raw memory capabilities are unsupported/);
+});

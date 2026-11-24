@@ -167,7 +167,18 @@ export interface BuildRequest extends ModuleRequest {
   }[];
   readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
   readonly allowDebugger?: boolean;
+  /** Grants the executable-memory host capabilities (publishing and calling
+   * code at run time). */
   readonly allowJit?: boolean;
+  /** A trust boundary for run-time code (docs/native-code-loading.md,
+   * "Trusted executable code"). Setting it asserts that every executable entry
+   * the image calls was produced by its own unit linker, whose policy check
+   * rejects a unit compiled with a different `generationalBarriers` setting
+   * than the image; that check is what upholds the generational write proof
+   * for published code. Only allowJit images may set it, and only when they
+   * publish nothing but linker output (the Test262 host). Without it the
+   * generational mutator rejects executable calls. */
+  readonly trustedExecutableCode?: boolean;
   readonly recordBindings?: readonly NativeRecordBinding[];
   readonly weakBindings?: readonly NativeWeakBinding[];
   readonly inlineAllocation?: boolean;
@@ -496,6 +507,14 @@ export function compileX64Program(
         message: "the JIT debug interface requires allowJit",
       },
     };
+  if (request.trustedExecutableCode === true && request.allowJit !== true)
+    return {
+      ok: false,
+      error: {
+        stage: "startup",
+        message: "trustedExecutableCode requires allowJit",
+      },
+    };
   if (request.stackTraces === true || request.heapIntrospection === true)
     return {
       ok: false,
@@ -652,6 +671,7 @@ export function compileX64Program(
       generational,
       forceFarReach,
       jitDebugInterface: request.jitDebugInterface === true,
+      trustedExecutableCode: request.trustedExecutableCode === true,
       inlineAllocation: request.inlineAllocation !== false,
       threaded: request.threaded === true,
       nodeWorkerLibrary: request.nodeWorkerLibrary === true,
@@ -1220,6 +1240,8 @@ export function compileMacOSProgram(
       "host-binding",
       "executable-memory capabilities require allowJit",
     );
+  if (request.trustedExecutableCode === true && request.allowJit !== true)
+    return compileFailure("startup", "trustedExecutableCode requires allowJit");
   const generational = request.runtimeEntry === "initializeGenerationalRuntime";
   if (request.runtimeEntry === "initializeCopyingRuntime" || generational) {
     const invalid = movingWorkspaceError(request, generational);
@@ -1255,6 +1277,7 @@ export function compileMacOSProgram(
           request.runtimeEntry === "initializeGenerationalRuntime"),
       generationalBarriers:
         request.runtimeEntry === "initializeGenerationalRuntime",
+      trustedExecutableCode: request.trustedExecutableCode === true,
       optimization: request.optimization ?? "basic",
       debugSymbols: request.debugSymbols ?? false,
       stackTraces: request.stackTraces === true,

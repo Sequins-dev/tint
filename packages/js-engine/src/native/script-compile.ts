@@ -719,16 +719,18 @@ export function createScriptEntryCompiler(
       read,
       runtime,
       // Contract indexes describe one checked graph; a compile-scoped cache
-      // keeps no previous graph alive between entries (copying collections
-      // otherwise copy it on every cycle).
+      // keeps no previous graph alive between entries (collections otherwise
+      // keep moving it).
       typeContracts: createManagedTypeContractCache(),
       collectionPlans,
       interfaceCache,
+      // Entries carry the publishing image's barrier policy; the surface
+      // linkers reject any other, which upholds trustedExecutableCode.
+      generationalBarriers: read.directory.abi.generationalBarriers,
     };
     if (host.storage.architecture === "x86_64") {
       const prepared = prepareX64ManagedSurfaceEntry({
         ...request,
-        generationalBarriers: true,
         linearAllocation: true,
       });
       if (!prepared.ok) return { ok: false, stage: prepared.error.stage };

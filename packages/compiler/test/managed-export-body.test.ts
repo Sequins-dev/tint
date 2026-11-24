@@ -12,7 +12,7 @@ function fixture() {
  interface Field{readonly offset:number;readonly type:string;readonly mutable:boolean;readonly presenceOffset?:number;readonly stateOffset?:number;}
  interface Layout{readonly byteLength:number;readonly fields:readonly Field[];}
  interface Types{readonly version:number;readonly declarations:string;readonly table:string;readonly entries:readonly {readonly name:string;readonly local:string;readonly type:string;}[];readonly types:readonly {readonly name:string;readonly type:string;}[];}
- interface Directory{readonly version:number;readonly name:string;readonly frame:string|undefined;readonly abi:{readonly signature:number;readonly functionBrand:readonly number[];};readonly types:Types;readonly signatures:readonly {readonly alias:string;readonly aliases:readonly string[];readonly function:number;readonly parameters:readonly string[];readonly returnType:string;}[];readonly records:readonly {readonly alias:string;readonly aliases:readonly string[];readonly layout:Layout;}[];readonly runtimes:readonly {readonly kind:string;readonly element:string;readonly value:string;readonly operations:readonly {readonly operation:string;readonly parameters:readonly string[];readonly returnType:string;}[];}[];readonly digest:string;}
+ interface Directory{readonly version:number;readonly name:string;readonly frame:string|undefined;readonly abi:{readonly signature:number;readonly functionBrand:readonly number[];readonly generationalBarriers:boolean;};readonly types:Types;readonly signatures:readonly {readonly alias:string;readonly aliases:readonly string[];readonly function:number;readonly parameters:readonly string[];readonly returnType:string;}[];readonly records:readonly {readonly alias:string;readonly aliases:readonly string[];readonly layout:Layout;}[];readonly runtimes:readonly {readonly kind:string;readonly element:string;readonly value:string;readonly operations:readonly {readonly operation:string;readonly parameters:readonly string[];readonly returnType:string;}[];}[];readonly digest:string;}
  interface ManagedSurfaceExport{readonly directory:Directory;readonly table:unknown;readonly functions:readonly unknown[];readonly records:Float64Array;readonly entries:Float64Array;}
  interface Link{readonly value:number;readonly next:Link|undefined;}
  export function keep(value:Link):Link{return value;}
@@ -343,6 +343,7 @@ test("an empty surface plan does not traverse or copy the application syntax", a
     new Set(),
     [],
     4096,
+    false,
   );
   assert.ok(result.ok);
   assert.equal(result.value.module, module);

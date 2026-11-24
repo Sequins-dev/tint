@@ -215,17 +215,43 @@ retain their registered mapping lifetime. This is not a foreign ABI.
 The Test262 host lazily maps a bounded arena, aligns each publication and
 registers the entire arena before publication and retains it until process exit.
 It never recycles a live entry.
-Arena exhaustion reports unsupported. The copying collector is used because the
-generational write-proof gate still rejects raw code capabilities; that gate has
-not been weakened.
+Arena exhaustion reports unsupported. The host runs the generational collector
+on both architectures, under the trusted-code contract below.
+
+### Trusted executable code
+
+The generational mutator's write proof (`trackedManagedWrites`) requires every
+managed write to carry a barrier. Every reachable host operation must preserve
+descriptors, so raw word writes and moves are rejected outright. Writing code
+bytes into executable memory is not a managed write, but the code an executable
+call enters is opaque to the emitter, so executable calls are rejected unless the
+image declares `trustedExecutableCode`. That flag is a trust boundary:
+
+- **Who may set it:** only `allowJit` images that publish nothing but their own
+  unit linker's output. Today that is the Test262 host alone.
+- **What it asserts:** every executable entry the image calls was produced by its
+  own linkers for this image.
+- **What upholds it:** both linkers check the barrier policy, so every published
+  entry carries the image's barriers. The service-unit linker rejects a Script
+  unit whose `generationalBarriers` setting differs from the image's ("unit
+  allocation policy differs"). Eval and `Function` entries compile against the
+  image's managed-surface directory, which records the policy
+  (`abi.generationalBarriers`, bound by its digest and kept when the reader
+  re-derives it). The managed-surface linkers reject an entry compiled with any
+  other policy ("surface link: allocation policy differs"). An image that
+  published bytes from any other source must not set the flag.
+  `tools/verify-test262-native-eval-barrier.ts` is the native regression: code
+  that eval and `Function` publish stores young objects into promoted ones that
+  survive minor collections.
+
+Both backends apply the same rule.
 
 A collector-owned, set-once registrar grants readable external leaf ranges through
 `registerExternalMemory`. Its bounded interval table lives in permanent control
 storage. Registration rejects invalid ranges and overlaps with managed heap,
 control storage, image and stack windows; exact duplicate grants are idempotent.
 These grants permit reads and tracing of permanent strings, not managed writes or
-embedded managed references. Copying, mark/sweep and generational collectors share
-this policy; raw code publication still uses the copying profile.
+embedded managed references. Every collector shares this policy.
 
 The trusted mapping owner must guarantee readable, permanent storage without
 managed edges. Registration does not inspect OS mappings. The hosted context is

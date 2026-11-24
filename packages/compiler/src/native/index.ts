@@ -250,6 +250,9 @@ export interface CompileRequest extends ModuleRequest {
   /** Require the hosted context's optional linear-allocation state at byte 56. */
   readonly linearAllocation?: boolean;
   readonly generationalBarriers?: boolean;
+  /** BuildRequest.trustedExecutableCode: the image's trust boundary for code
+   * it publishes and calls at run time. */
+  readonly trustedExecutableCode?: boolean;
   /** One-shot executable entry; no external calls may enter another native function. */
   readonly closedProgram?: boolean;
   /** Experimental: authorize bundled SparseList semantics for representation
@@ -1780,6 +1783,7 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
     retainedRuntimeModules,
     globals,
     request.maxSpecializations ?? 8192,
+    request.generationalBarriers === true,
   );
   if (!surfaces.ok) return stageFailure("surface", surfaces.error);
   const surfacePlans = surfaces.value.plans;
@@ -3422,6 +3426,7 @@ export function compileX64HostedProgram(
     readonly forceFarReach?: boolean;
     readonly jitDebugInterface?: boolean;
     readonly generational?: boolean;
+    readonly trustedExecutableCode?: boolean;
     readonly inlineAllocation?: boolean;
     readonly threaded?: boolean;
     readonly nodeWorkerLibrary?: boolean;
@@ -3439,6 +3444,9 @@ export function compileX64HostedProgram(
   if (typeof selected === "string") return stageFailure("foreign", selected);
   const source = withForeignRuntimes({
     ...request,
+    // Recorded in managed-surface directories (the x86-64 emitter takes the
+    // policy from options.generational).
+    generationalBarriers: options.generational === true,
     moduleLoader: selected.moduleLoader,
     modules: selected.modules,
     symbols: true,
@@ -3612,6 +3620,7 @@ export function compileX64HostedProgram(
       : undefined,
     options.jitDebugInterface === true,
     program.workerFunctions,
+    options.trustedExecutableCode === true,
   );
   if (!emitted.ok) {
     const message = emitted.error.message;
@@ -3999,6 +4008,7 @@ function compileTypedProgram(
     operationRanges: request.operationRanges ?? false,
     linearAllocation: request.linearAllocation ?? false,
     generationalBarriers: request.generationalBarriers ?? false,
+    trustedExecutableCode: request.trustedExecutableCode === true,
     managedABI:
       serviceImports.length === 0
         ? undefined

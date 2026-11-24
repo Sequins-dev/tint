@@ -229,3 +229,55 @@ test("service composition rejects a unit compiled without the host's generationa
     false,
   );
 });
+
+test("under trustedExecutableCode a generational host still rejects a unit with a different barrier policy", () => {
+  // trustedExecutableCode asserts that every published entry comes from this
+  // linker; the barrier-policy check below is what upholds it.
+  const emit = (generationalBarriers: boolean) => {
+    const result = emitModule(
+      {
+        functions: [
+          {
+            id: 0,
+            name: "identity",
+            exported: true,
+            parameters: [0],
+            slots: ["number"],
+            returnType: "number",
+            entry: 0,
+            blocks: [
+              {
+                id: 0,
+                instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+                terminator: { kind: "return", value: 0, ...span },
+              },
+            ],
+          },
+        ],
+      },
+      {
+        generationalBarriers,
+        trustedExecutableCode: generationalBarriers,
+      },
+    );
+    assert.ok(result.ok, JSON.stringify(result));
+    return result.value;
+  };
+  const host = emit(true);
+  assert.equal(host.generationalBarriers, true);
+  for (const unit of [
+    emit(false),
+    { ...emit(true), generationalBarriers: false },
+  ])
+    assert.equal(
+      compiler.linkNativeServiceModules(host, [{ native: unit, bindings: [] }])
+        .ok,
+      false,
+    );
+  assert.equal(
+    compiler.linkNativeServiceModules(host, [
+      { native: emit(true), bindings: [] },
+    ]).ok,
+    true,
+  );
+});
